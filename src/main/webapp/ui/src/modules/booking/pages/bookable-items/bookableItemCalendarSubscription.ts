@@ -41,6 +41,10 @@ function calendarSubscriptionPath(configurationId: number): string {
   return `/api/v2/booking-configurations/${configurationId}/calendar-subscription`;
 }
 
+const userCalendarSubscriptionPath = "/api/v2/users/me/booking-calendar-subscription";
+
+export const userCalendarSubscriptionQueryKey = ["api-v2", "users", "me", "booking-calendar-subscription"] as const;
+
 async function requireSuccess(response: Response): Promise<Response> {
   if (!response.ok) throw await parseApiV2Problem(response);
   return response;
@@ -75,6 +79,37 @@ export async function createOrReplaceCalendarSubscription(
 
 export async function revokeCalendarSubscription(configurationId: number, token: string): Promise<void> {
   const response = await fetch(calendarSubscriptionPath(configurationId), {
+    method: "DELETE",
+    headers: bookingApiV2Headers(token),
+  });
+  if (response.status !== 204) throw await parseApiV2Problem(response);
+}
+
+export async function fetchUserCalendarSubscriptionStatus(
+  token: string,
+  signal?: AbortSignal,
+): Promise<CalendarSubscriptionStatus> {
+  const response = await requireSuccess(
+    await fetch(userCalendarSubscriptionPath, {
+      headers: bookingApiV2Headers(token),
+      signal,
+    }),
+  );
+  return parseOrThrow(CalendarSubscriptionStatusSchema, (await response.json()) as unknown);
+}
+
+export async function createOrReplaceUserCalendarSubscription(token: string): Promise<CalendarSubscriptionCreated> {
+  const response = await requireSuccess(
+    await fetch(userCalendarSubscriptionPath, {
+      method: "POST",
+      headers: bookingApiV2Headers(token),
+    }),
+  );
+  return parseOrThrow(CalendarSubscriptionCreatedSchema, (await response.json()) as unknown);
+}
+
+export async function revokeUserCalendarSubscription(token: string): Promise<void> {
+  const response = await fetch(userCalendarSubscriptionPath, {
     method: "DELETE",
     headers: bookingApiV2Headers(token),
   });

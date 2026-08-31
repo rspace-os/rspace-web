@@ -6,9 +6,17 @@ import { PencilIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { SchedulingSettingsFields } from "@/modules/booking/configuration/schedulingSettings";
+import { BookingCreationButtonGroup } from "@/modules/booking/creation/BookingCreationButtonGroup";
+import { bookableItemOption } from "@/modules/booking/creation/bookableItemOption";
 import { bookingApiV2JsonHeaders } from "@/modules/booking/domain/apiV2";
 import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { RenderFields } from "@/modules/common/collection-form/RenderFields";
+import {
+  RESPONSIVE_INLINE_FIELD_CONTAINER_CLASS_NAME,
+  RESPONSIVE_INLINE_FIELD_GRID_CLASS_NAME,
+  RESPONSIVE_INLINE_FIELD_ROW_CLASS_NAME,
+} from "@/modules/common/collection-form/responsiveFieldLayout";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { Badge } from "@/modules/common/ui/badge";
@@ -28,7 +36,6 @@ import {
   fetchBookingConfigurationByTarget,
 } from "./bookingConfiguration";
 import { CalendarSubscriptionPopover } from "./CalendarSubscriptionPopover";
-import { SchedulingSettingsFields } from "./schedulingSettings";
 
 type BookableItemTab = "bookings" | "details" | "audit";
 
@@ -93,7 +100,7 @@ function SpotlightHeader({
           />
         ) : null}
       </InventoryItem>
-      <div className="flex shrink-0 flex-wrap items-center gap-3">
+      <div className="flex w-full min-w-0 flex-wrap items-center gap-3 sm:w-auto sm:shrink-0">
         <Badge variant={configuration.enabled ? "default" : "secondary"}>
           {configuration.enabled ? t("bookableItemDetails.enabled") : t("bookableItemDetails.disabled")}
         </Badge>
@@ -164,14 +171,16 @@ function RulesReadOut({
   ];
 
   return (
-    <dl className="grid gap-x-8 gap-y-4 sm:grid-cols-[max-content_1fr]">
-      {facts.map(([label, value]) => (
-        <div className="grid gap-1 sm:contents" key={label}>
-          <dt className="font-medium">{label}</dt>
-          <dd>{value}</dd>
-        </div>
-      ))}
-    </dl>
+    <div className={RESPONSIVE_INLINE_FIELD_CONTAINER_CLASS_NAME}>
+      <dl className={`${RESPONSIVE_INLINE_FIELD_GRID_CLASS_NAME} gap-y-4`}>
+        {facts.map(([label, value]) => (
+          <div className={RESPONSIVE_INLINE_FIELD_ROW_CLASS_NAME} key={label}>
+            <dt className="font-medium">{label}</dt>
+            <dd>{value}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
   );
 }
 
@@ -261,7 +270,17 @@ function LoadedBookableItemPage({
         <SpotlightHeader
           configuration={configuration}
           target={target}
-          action={<CalendarSubscriptionPopover configurationId={configuration.id} token={token} />}
+          action={
+            <>
+              <BookingCreationButtonGroup
+                ownerId={`bookable-item-${configuration.id}`}
+                target={bookableItemOption({ ...configuration, target })}
+                lockTarget
+                disabled={!configuration.enabled}
+              />
+              <CalendarSubscriptionPopover configurationId={configuration.id} token={token} />
+            </>
+          }
         />
 
         <Tabs.List className="flex flex-wrap border-b">
@@ -342,7 +361,7 @@ function LoadedBookableItemPage({
                 <Form
                   id={formId}
                   of={form}
-                  className="grid gap-x-8 gap-y-4 sm:grid-cols-[max-content_1fr]"
+                  className="min-w-0 space-y-4"
                   onSubmit={(input) => updateMutation.mutateAsync(input)}
                 >
                   <RenderFields
@@ -352,11 +371,10 @@ function LoadedBookableItemPage({
                     form={form}
                     disabled={updateMutation.isPending}
                     layout="inline"
-                    className="sm:contents"
                   />
                   <SchedulingSettingsFields form={form} disabled={updateMutation.isPending} layout="inline" />
                   {updateMutation.isError ? (
-                    <p role="alert" className="text-sm text-destructive sm:col-span-2">
+                    <p role="alert" className="text-sm text-destructive">
                       {t("bookableItems.editError")}
                     </p>
                   ) : null}

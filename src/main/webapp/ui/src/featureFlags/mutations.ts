@@ -26,7 +26,7 @@ export async function patchFeatureFlag({ flagName, document }: PatchFeatureFlagP
 
 export function usePatchFeatureFlagMutation() {
   const queryClient = useQueryClient();
-  const { data: token } = useOauthTokenQuery();
+  const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
   return useMutation({
     mutationFn: async (variables: PatchFeatureFlagParams) => patchFeatureFlag(variables, token),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: [...featureFlagQueryKeys.all, "flags"] }),

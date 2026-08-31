@@ -172,6 +172,7 @@
     "purify-ts": "2.1.4",
     "qr-scanner": "1.4.2",
     "react": "19.2.8",
+    "react-day-picker": "10.0.1",
     "react-device-detect": "2.2.3",
     "react-dom": "19.2.8",
     "react-i18next": "17.0.11",

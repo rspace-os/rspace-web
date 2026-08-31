@@ -18,6 +18,7 @@ import com.researchspace.model.collection.AccessContext;
 import com.researchspace.model.collection.AccessContext.Operation;
 import com.researchspace.model.collection.ApiV2UserResource;
 import com.researchspace.model.collection.CollectionDescription.WriteOperation;
+import com.researchspace.model.collection.CollectionQueryException;
 import com.researchspace.model.collection.DocumentValidationException;
 import com.researchspace.model.collection.FieldSelection;
 import com.researchspace.model.collection.FilterSelector;
@@ -119,6 +120,19 @@ class ApiV2BookingConfigurationResourceTest {
         ApiV2BookingConfigurationResource.DESCRIPTION.requireRelationship("createdBy").nullable());
     assertTrue(
         ApiV2BookingConfigurationResource.DESCRIPTION.requireRelationship("updatedBy").nullable());
+  }
+
+  @Test
+  void keepsTheDeletedFilterAvailableOnlyToServerConstraints() {
+    assertInstanceOf(
+        FilterSelector.Property.class,
+        ApiV2BookingConfigurationResource.DESCRIPTION.requireFilterSelector("deleted"));
+    assertThrows(
+        CollectionQueryException.class,
+        () -> ApiV2BookingConfigurationResource.DESCRIPTION.requirePublicFilterSelector("deleted"));
+    assertFalse(
+        ApiV2BookingConfigurationResource.DESCRIPTION.schema().filters().stream()
+            .anyMatch(filter -> filter.selector().equals("deleted")));
   }
 
   @Test

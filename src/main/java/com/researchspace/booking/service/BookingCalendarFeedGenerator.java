@@ -2,6 +2,7 @@ package com.researchspace.booking.service;
 
 import com.researchspace.booking.service.TimeSlotBookingManager.CalendarEvent;
 import com.researchspace.booking.service.TimeSlotBookingManager.CalendarSource;
+import com.researchspace.model.booking.BookingEventKind;
 import com.researchspace.model.booking.BookingPrivacy;
 import com.researchspace.service.MessageSourceUtils;
 import java.io.ByteArrayOutputStream;
@@ -53,7 +54,12 @@ public final class BookingCalendarFeedGenerator {
             .add(new ProdId(PROD_ID))
             .add(ImmutableVersion.VERSION_2_0)
             .add(ImmutableCalScale.GREGORIAN)
-            .add(new XProperty("X-WR-CALNAME", source.itemName()))
+            .add(
+                new XProperty(
+                    "X-WR-CALNAME",
+                    source.translateName()
+                        ? messages.getMessageForLocale(source.itemName(), locale)
+                        : source.itemName()))
             .add(new XProperty("X-WR-TIMEZONE", source.timeZone()));
     ComponentList<VEvent> events = new ComponentList<>();
     for (CalendarEvent event : source.events()) {
@@ -78,22 +84,39 @@ public final class BookingCalendarFeedGenerator {
   private VEvent event(CalendarEvent source, URI serverBaseUrl, Locale locale) {
     Instant stamp = timestamp(source);
     boolean full = source.privacy() == BookingPrivacy.FULL;
+    String summary =
+        messages.getMessageForLocale(
+            source.kind() == BookingEventKind.MAINTENANCE
+                ? "booking:calendar.feed.maintenance"
+                : full ? "booking:calendar.feed.booked" : "booking:calendar.feed.busy",
+            locale);
+    if (source.itemName() != null && !source.itemName().isBlank()) {
+      summary =
+          messages.getMessage(
+              "booking:calendar.feed.itemSummary",
+              new Object[] {source.itemName(), summary},
+              locale);
+    }
     PropertyList properties =
         new PropertyList()
             .add(new Uid("booking-" + source.id() + "@" + serverBaseUrl.getHost()))
             .add(new DtStamp(stamp))
             .add(new DtStart<>(source.start().toInstant()))
             .add(new DtEnd<>(source.end().toInstant()))
-            .add(
-                new Summary(
-                    messages.getMessageForLocale(
-                        full ? "booking:calendar.feed.booked" : "booking:calendar.feed.busy",
-                        locale)));
+            .add(new Summary(summary));
     if (full) {
       List<String> description = new ArrayList<>();
       description.add(
           messages.getMessage(
-              "booking:calendar.feed.bookedBy", new Object[] {source.bookedBy()}, locale));
+              source.kind() == BookingEventKind.MAINTENANCE
+                  ? "booking:calendar.feed.createdBy"
+                  : "booking:calendar.feed.bookedBy",
+              new Object[] {
+                source.kind() == BookingEventKind.MAINTENANCE
+                    ? source.createdBy()
+                    : source.bookedBy()
+              },
+              locale));
       if (source.purpose() != null && !source.purpose().isBlank()) {
         description.add(
             messages.getMessage(

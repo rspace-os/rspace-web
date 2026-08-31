@@ -770,9 +770,12 @@ export default interface Resources {
         "viewDetails": "View details"
       },
       "date": "Date",
+      "dateControls": "Availability date controls",
+      "dateNavigation": "Availability date navigation",
       "fields": {
         "actions": "Actions"
       },
+      "jumpToDate": "Jump to date",
       "plural": "All Bookable Items",
       "quickFilters": {
         "availableNow": "Available now",
@@ -784,7 +787,8 @@ export default interface Resources {
         "scope": "Availability uses the selected display date and timezone."
       },
       "singular": "Bookable item",
-      "title": "All Bookable Items"
+      "title": "All Bookable Items",
+      "toolbar": "All Bookable Items controls"
     },
     "availabilityBar": {
       "current": {
@@ -803,6 +807,19 @@ export default interface Resources {
         "blockout": "Blocked out: {ranges}.",
         "booking": "Booked: {ranges}.",
         "overlap": "Booked and blocked out: {ranges}."
+      },
+      "slice": {
+        "count": "{count, plural, one {# constituent event} other {# constituent events}}",
+        "sources": {
+          "booking": "Booking",
+          "openingHours": "Outside opening hours"
+        },
+        "states": {
+          "blockout": "Outside opening hours",
+          "booking": "Booked",
+          "overlap": "Booked and outside opening hours"
+        },
+        "trigger": "{itemName}, {state}, {period}, {count, plural, one {# constituent event} other {# constituent events}}"
       },
       "summary": "Availability period: {period}. {states}",
       "timezone": "Time zone: {timezone}"
@@ -998,16 +1015,31 @@ export default interface Resources {
     },
     "bookings": {
       "actions": {
+        "createEvent": "Create calendar event",
         "delete": "Delete booking",
-        "edit": "Edit"
+        "edit": "Edit",
+        "moreCreationOptions": "More event creation options",
+        "newBooking": "New Booking",
+        "newMaintenance": "New Maintenance Event"
       },
       "addTitle": "Add Booking",
+      "compact": {
+        "bookingDescription": "Choose a bookable item and time for the new booking.",
+        "bookingTitle": "New Booking",
+        "discard": "Discard changes",
+        "discardDescription": "Your unsaved event changes will be lost.",
+        "discardTitle": "Discard this event?",
+        "keepEditing": "Keep editing",
+        "maintenanceDescription": "Choose a bookable item and time for the maintenance blockout.",
+        "maintenanceTitle": "New Maintenance Event"
+      },
       "deleteDialog": {
         "description": "Delete Booking removes the {itemName} event for {period} from the Calendar. This release cannot restore the event.",
         "title": "Delete booking?"
       },
       "editTitle": "Edit Booking",
       "errors": {
+        "concurrentModification": "This event changed while you were editing it. Review the latest details and try again.",
         "deleteForbidden": "You no longer have permission to delete this booking.",
         "deleteGeneric": "RSpace could not delete the booking. Try again.",
         "deleteStale": "This booking is no longer editable.",
@@ -1018,6 +1050,7 @@ export default interface Resources {
         "granularity": "Start and end times must use this bookable item's time increment.",
         "itemLoad": "RSpace could not load bookable items.",
         "itemRequired": "Select a bookable item.",
+        "load": "RSpace could not load this booking.",
         "maximumDuration": "This booking exceeds the bookable item's maximum duration.",
         "noLongerEditable": "This booking is no longer editable.",
         "nonexistentTime": "This local time does not occur in the selected time zone.",
@@ -1033,6 +1066,8 @@ export default interface Resources {
         "date": "Date",
         "earlierOccurrence": "Earlier occurrence ({offset})",
         "end": "End",
+        "endDate": "End date",
+        "endTime": "End time",
         "item": "Bookable item",
         "itemChoose": "Choose a bookable item",
         "itemNone": "No bookable items found",
@@ -1041,6 +1076,8 @@ export default interface Resources {
         "itemSearch": "Search bookable items",
         "laterOccurrence": "Later occurrence ({offset})",
         "maximumDuration": "Maximum booking duration: {count, number} minutes",
+        "notes": "Notes",
+        "notesCount": "{count, number}/1,000 characters",
         "occurrence": "Repeated local time",
         "openItem": "Open {globalId}",
         "openingHours": "Opening hours: {start}–{end}",
@@ -1050,7 +1087,10 @@ export default interface Resources {
         "save": "Save changes",
         "schedulingTimezone": "Opening hours are enforced in {timezone}.",
         "start": "Start",
+        "startDate": "Start date",
+        "startTime": "Start time",
         "submit": "Book",
+        "submitMaintenance": "Create maintenance event",
         "time": "Time",
         "timezone": "Time zone: {timezone}",
         "type": "Booking type",
@@ -1059,7 +1099,8 @@ export default interface Resources {
         "typeBooking": "Booking"
       },
       "loading": "Loading booking.",
-      "loadingConfiguration": "Loading bookable item settings."
+      "loadingConfiguration": "Loading bookable item settings.",
+      "maintenanceLabel": "Maintenance blockout"
     },
     "calendar": {
       "actions": {
@@ -1074,16 +1115,22 @@ export default interface Resources {
       "availabilityUnavailable": "Availability unavailable",
       "busy": "Busy",
       "date": "Date",
+      "dateControls": "Calendar date controls",
       "datesInRange": "Dates in range",
       "description": "Browse booking events by day, week, or month.",
       "detail": "Bookings for {itemName}",
       "detailLoading": "Loading bookings.",
       "detailUnavailable": "Bookings are unavailable.",
+      "displayControls": "Calendar display controls",
       "event": "Booking event",
       "feed": {
         "booked": "Booked",
         "bookedBy": "Booked by: {0}",
         "busy": "Busy",
+        "createdBy": "Created by: {0}",
+        "itemSummary": "{0} — {1}",
+        "maintenance": "Maintenance blockout",
+        "myBookings": "My RSpace bookings",
         "purpose": "Purpose: {0}"
       },
       "fields": {
@@ -1104,6 +1151,7 @@ export default interface Resources {
       "grid": "Calendar grid",
       "item": "Bookable item",
       "items": "Bookable items",
+      "jumpToDate": "Jump to date",
       "layout": {
         "agenda": "Agenda",
         "legend": "Layout",
@@ -1119,6 +1167,7 @@ export default interface Resources {
         "month": "Month",
         "week": "Week"
       },
+      "periodNavigation": "Calendar period navigation",
       "previousDay": "Previous day",
       "previousPeriod": "Previous {period}",
       "quickFilters": {
@@ -1129,6 +1178,7 @@ export default interface Resources {
       "retry": "Retry",
       "title": "Calendar",
       "today": "Today",
+      "toolbar": "Calendar controls",
       "unavailable": "Booking events are unavailable."
     },
     "dayTimeline": {
@@ -1141,7 +1191,9 @@ export default interface Resources {
       },
       "expanded": {
         "bookedBy": "Booked by",
-        "duration": "{date} · {hours, plural, =0 {} one {# hour } other {# hours }}{minutes, plural, =0 {} one {# minute} other {# minutes}}",
+        "createdBy": "Created by",
+        "dateTime": "{date} · {time}",
+        "duration": "{hours, plural, =0 {} one {# hour } other {# hours }}{minutes, plural, =0 {} one {# minute} other {# minutes}}",
         "item": "Item",
         "notes": "Notes",
         "openItem": "Open inventory record {globalId}",
@@ -1177,6 +1229,7 @@ export default interface Resources {
       "fields": {
         "end": "End",
         "id": "ID",
+        "kind": "Event type",
         "purpose": "Purpose",
         "start": "Start",
         "target": "Bookable item",
@@ -1202,6 +1255,24 @@ export default interface Resources {
         "endOfDay": "End of day (24:00)",
         "legend": "Default availability window",
         "start": "Start time"
+      },
+      "calendarSubscription": {
+        "apple": "Apple",
+        "changeError": "The calendar subscription could not be changed. Try again.",
+        "copied": "Copied",
+        "copy": "Copy link",
+        "copyError": "The link could not be copied. Select and copy it manually.",
+        "copyPrompt": "Calendar subscription link",
+        "create": "Create calendar subscription",
+        "description": "Subscribe to your confirmed RSpace bookings across all bookable items. The private link updates automatically in your calendar app.",
+        "google": "Google Calendar",
+        "loading": "Loading calendar subscription.",
+        "other": "Other",
+        "replace": "Replace private link",
+        "retry": "Retry",
+        "revoke": "Disconnect calendar",
+        "statusError": "The calendar subscription could not be loaded.",
+        "title": "My booking calendar"
       },
       "description": "Choose how Booking dates, times, forms, and availability are displayed. These settings do not change an item's opening hours.",
       "errors": {
@@ -1237,7 +1308,7 @@ export default interface Resources {
       },
       "errors": {
         "buffer": "Enter a whole number from 0 to 10,080.",
-        "granularity": "Choose 1, 5, or 15 minutes.",
+        "granularity": "Choose 1, 5, 10, or 15 minutes.",
         "maximumDuration": "Use 0 or a duration divisible by the selected time increment.",
         "openingHours": "Use an opening start before the end, or select Open all day.",
         "save": "RSpace could not save the booking settings. Try again.",
@@ -4489,6 +4560,18 @@ export default interface Resources {
       "setAsTarget": "Set as Target"
     },
     "instrument": {
+      "booking": {
+        "configured": {
+          "action": "Go to booking page",
+          "description": "Go to Booking to see availability and make a booking.",
+          "title": "This instrument can be booked"
+        },
+        "notConfigured": {
+          "action": "Set up booking",
+          "description": "Set up booking to make this instrument available in Booking.",
+          "title": "Booking has not been set up"
+        }
+      },
       "createOptions": {
         "location": {
           "label": "Location",
@@ -6271,7 +6354,7 @@ export default interface Resources {
             },
             "create": "The booking configuration is invalid.",
             "granularity": {
-              "invalid": "Slot granularity must be 1, 5, or 15 minutes."
+              "invalid": "Slot granularity must be 1, 5, 10, or 15 minutes."
             },
             "maximumDuration": {
               "invalid": "Maximum booking duration must be 0 or a multiple of the slot granularity, up to 527,040 minutes."

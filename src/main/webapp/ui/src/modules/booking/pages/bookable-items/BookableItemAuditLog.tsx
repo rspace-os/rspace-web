@@ -11,6 +11,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/modules/common/ui/alert";
 import { Badge } from "@/modules/common/ui/badge";
 import { Button } from "@/modules/common/ui/button";
 import { InputGroup, InputGroupAddon, InputGroupText } from "@/modules/common/ui/input-group";
+import { UserBadge } from "@/modules/common/ui/user-badge";
 import {
   type AuditDateError,
   type AuditDateField,
@@ -67,12 +68,7 @@ const auditEventConfig = resolveCollectionConfig<AuditRow>({
         width: 190,
         minWidth: 160,
         dependencies: ["fullName"],
-        renderCell: ({ row }) => (
-          <span>
-            <span className="block font-medium">{row.fullName ?? row.username}</span>
-            <span className="text-xs text-muted-foreground">{row.username}</span>
-          </span>
-        ),
+        renderCell: ({ row }) => <UserBadge name={row.fullName ?? row.username} username={row.username} />,
       },
     },
     { name: "fullName", type: "text", labelKey: "booking:bookableItemDetails.audit.fields.fullName" },
@@ -168,6 +164,7 @@ export function BookableItemAuditLog({ configurationId }: { configurationId: num
         token,
         signal,
       }),
+    retry: false,
   });
   const errorKind = audit.isError ? requestError(audit.error) : null;
 

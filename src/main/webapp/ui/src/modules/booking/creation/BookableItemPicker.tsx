@@ -3,6 +3,8 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import * as v from "valibot";
 import useDebounce from "@/hooks/ui/useDebounce";
+import { schedulingSettingsEntries } from "@/modules/booking/configuration/schedulingSettings";
+import { type BookableItemOption, bookableItemOption } from "@/modules/booking/creation/bookableItemOption";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import { v2ListEnvelope } from "@/modules/common/queries/v2Pagination";
 import { serializeRsql } from "@/modules/common/table-list/adapters/apiV2/rsql/serializeRsql";
@@ -16,22 +18,6 @@ import {
   ComboboxList,
 } from "@/modules/common/ui/combobox";
 import { Label } from "@/modules/common/ui/label";
-import { schedulingSettingsEntries } from "../pages/bookable-items/schedulingSettings";
-
-export type BookableItemOption = {
-  configurationId: number;
-  targetId: number;
-  globalId: string;
-  name: string;
-  timezone: string;
-  slotGranularityMinutes: number;
-  openingStart: string;
-  openingEnd: string;
-  bufferBeforeMinutes: number;
-  bufferAfterMinutes: number;
-  maxBookingDurationMinutes: number;
-  allowDoubleBooking: boolean;
-};
 
 const DocumentSchema = v.object({
   id: v.number(),
@@ -57,23 +43,6 @@ const selectors = {
   "target.name": { operators: ["=contains="] as const, wildcards: false },
 };
 type PickerFilterDocument = { enabled: boolean; target: string; "target.name": string };
-
-function toOption(document: v.InferOutput<typeof DocumentSchema>): BookableItemOption {
-  return {
-    configurationId: document.id,
-    targetId: document.target.value.id,
-    globalId: document.target.globalId,
-    name: document.target.value.name,
-    timezone: document.timezone,
-    slotGranularityMinutes: document.slotGranularityMinutes,
-    openingStart: document.openingStart,
-    openingEnd: document.openingEnd,
-    bufferBeforeMinutes: document.bufferBeforeMinutes,
-    bufferAfterMinutes: document.bufferAfterMinutes,
-    maxBookingDurationMinutes: document.maxBookingDurationMinutes,
-    allowDoubleBooking: document.allowDoubleBooking,
-  };
-}
 
 export async function loadBookableItems(
   search: { term?: string; target?: string; page?: number },
@@ -117,7 +86,7 @@ export async function loadBookableItems(
   });
   if (!response.ok) throw new Error(`Bookable item request failed (${response.status})`);
   const page = parseOrThrow(ListSchema, await response.json());
-  return { options: page.docs.map(toOption), totalPages: page.totalPages };
+  return { options: page.docs.map((document) => bookableItemOption(document)), totalPages: page.totalPages };
 }
 
 export function useBookableItem(target: string | undefined, token: string) {
@@ -126,6 +95,7 @@ export function useBookableItem(target: string | undefined, token: string) {
     enabled: Boolean(target && token),
     queryFn: ({ signal }) => loadBookableItems({ target }, token, signal),
     select: (page) => page.options.find((option) => option.globalId === target),
+    retry: false,
   });
 }
 
@@ -135,6 +105,7 @@ export function useBookableItemConfiguration(target: string | undefined, token: 
     enabled: Boolean(target && token),
     queryFn: ({ signal }) => loadBookableItems({ target }, token, signal, true),
     select: (page) => page.options.find((option) => option.globalId === target),
+    retry: false,
   });
 }
 
@@ -187,6 +158,7 @@ export function BookableItemPicker({
       >
         <ComboboxInput
           id="booking-item-search"
+          aria-label={t("bookings.form.item")}
           placeholder={t("bookings.form.itemSearch")}
           triggerLabel={t("bookings.form.itemChoose")}
           disabled={disabled}

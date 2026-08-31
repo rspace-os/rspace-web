@@ -1111,6 +1111,18 @@ public final class CollectionDescription<T> {
         resourceType, entityType, relationships, defaultSort, accessPolicy);
   }
 
+  /** Describes an annotated resource with filters reserved for server-side constraints. */
+  public static <T> CollectionDescription<T> fromApiV2Resource(
+      Class<?> resourceType,
+      Class<T> entityType,
+      List<Relationship<T>> relationships,
+      List<Sort> defaultSort,
+      AccessPolicy accessPolicy,
+      List<InternalFilter> internalFilters) {
+    return AnnotatedCollectionDescriptionFactory.create(
+        resourceType, entityType, relationships, defaultSort, accessPolicy, internalFilters);
+  }
+
   public String resourceName() {
     return resourceName;
   }

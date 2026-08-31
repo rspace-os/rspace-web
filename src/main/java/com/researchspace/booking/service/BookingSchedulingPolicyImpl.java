@@ -25,9 +25,25 @@ public final class BookingSchedulingPolicyImpl implements BookingSchedulingPolic
     requireAligned(endInstant.atZone(zone), configuration.getSlotGranularityMinutes());
     requireMaximumDuration(startInstant, endInstant, configuration.getMaxBookingDurationMinutes());
     requireOpeningCoverage(configuration, startInstant, endInstant, zone);
+    return conflictInterval(configuration, startInstant, endInstant);
+  }
+
+  @Override
+  public ConflictInterval validateMaintenance(
+      BookingConfiguration configuration, Date start, Date end) {
+    ZoneId zone = ZoneId.of(configuration.getTimeZone());
+    Instant startInstant = start.toInstant();
+    Instant endInstant = end.toInstant();
+    requireAligned(startInstant.atZone(zone), configuration.getSlotGranularityMinutes());
+    requireAligned(endInstant.atZone(zone), configuration.getSlotGranularityMinutes());
+    return conflictInterval(configuration, startInstant, endInstant);
+  }
+
+  private static ConflictInterval conflictInterval(
+      BookingConfiguration configuration, Instant start, Instant end) {
     return new ConflictInterval(
-        Date.from(startInstant.minus(configuration.getBufferAfterMinutes(), ChronoUnit.MINUTES)),
-        Date.from(endInstant.plus(configuration.getBufferBeforeMinutes(), ChronoUnit.MINUTES)));
+        Date.from(start.minus(configuration.getBufferAfterMinutes(), ChronoUnit.MINUTES)),
+        Date.from(end.plus(configuration.getBufferBeforeMinutes(), ChronoUnit.MINUTES)));
   }
 
   private static void requireAligned(ZonedDateTime endpoint, long granularityMinutes) {

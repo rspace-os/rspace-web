@@ -4,13 +4,14 @@ import {
   CalendarPlusIcon,
   CheckSquareIcon,
   ChevronRightIcon,
-  LayoutDashboardIcon,
   LibraryBigIcon,
   ListIcon,
   SettingsIcon,
   SlidersHorizontalIcon,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { BookingCreationStoreProvider } from "@/modules/booking/creation/bookingCreationStore";
+import { CompactBookingCreationDialog } from "@/modules/booking/creation/CompactBookingCreationDialog";
 import { todayInTimeZone, useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
 import i18n from "@/modules/common/i18n";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
@@ -29,7 +30,6 @@ import {
 
 const items = (today: string) =>
   [
-    { key: "dashboard", icon: LayoutDashboardIcon },
     {
       key: "calendar",
       icon: CalendarIcon,
@@ -73,7 +73,6 @@ export function BookingSidebar() {
   const preferences = useBookingDisplayPreferences();
   const sidebarItems = items(todayInTimeZone(preferences.timeZone));
   const labels = {
-    dashboard: t("sidebar.dashboard"),
     calendar: t("sidebar.calendar"),
     allItems: t("sidebar.allItems"),
     addBooking: t("sidebar.addBooking"),
@@ -136,9 +135,12 @@ export function BookingSidebar() {
 
 export default function BookingPage() {
   return (
-    <div className="mx-auto w-full max-w-7xl">
-      <Outlet />
-    </div>
+    <BookingCreationStoreProvider>
+      <div className="mx-auto w-full max-w-7xl">
+        <Outlet />
+      </div>
+      <CompactBookingCreationDialog />
+    </BookingCreationStoreProvider>
   );
 }
 

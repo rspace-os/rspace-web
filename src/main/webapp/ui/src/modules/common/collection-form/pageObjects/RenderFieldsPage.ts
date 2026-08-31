@@ -6,6 +6,7 @@ export class RenderFieldsPage {
   readonly relationshipsSection: Locator = page.getByRole("group", { name: /relationships/i });
   readonly title: Locator = page.getByRole("textbox", { name: "Title" });
   readonly notes: Locator = page.getByRole("textbox", { name: "Notes" });
+  readonly notesDescription: Locator = page.getByText("The human-readable name of the record.");
   readonly score: Locator = page.getByRole("spinbutton", { name: "Score" });
   readonly enabled: Locator = page.getByRole("checkbox", { name: "Enabled" });
   readonly modifiedAt: Locator = page.getByLabelText("Modified");

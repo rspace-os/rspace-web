@@ -55,7 +55,10 @@ describe("feature flag queries", () => {
       http.get("/api/v2/feature-flags", () => new HttpResponse(null, { status: 500, statusText: "Server Error" })),
     );
 
-    await expect(getFeatureFlags("token")).rejects.toThrow("500 Server Error");
+    await expect(getFeatureFlags("token")).rejects.toMatchObject({
+      message: "500 Server Error",
+      status: 500,
+    });
   });
 
   test("disables a flag when its document is invalid", async () => {

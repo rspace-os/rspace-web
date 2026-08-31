@@ -50,6 +50,13 @@ public final class ApiV2TimeSlotBookingResource {
                       booking -> booking.getRequester().getId())
                   .withQueryCapabilities(true, false),
               Field.writable(
+                      "kind",
+                      "kind",
+                      CollectionFieldTypes.enumeration(BookingEventKind.class),
+                      TimeSlotBooking::getKind,
+                      TimeSlotBooking::setKind)
+                  .writeOnlyOn(WriteOperation.CREATE),
+              Field.writable(
                       "start",
                       "startTime",
                       CollectionFieldTypes.instant(),
@@ -83,6 +90,13 @@ public final class ApiV2TimeSlotBookingResource {
                       "visibleBookedBy",
                       CollectionFieldTypes.text(),
                       TimeSlotBooking::getVisibleBookedBy)
+                  .allowNull()
+                  .withQueryCapabilities(false, false),
+              Field.readOnly(
+                      "createdBy",
+                      "visibleCreatedBy",
+                      CollectionFieldTypes.text(),
+                      TimeSlotBooking::getVisibleCreatedBy)
                   .allowNull()
                   .withQueryCapabilities(false, false),
               Field.<TimeSlotBooking, String>readOnly(

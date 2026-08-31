@@ -220,7 +220,7 @@ export function CalendarSubscriptionPopover({ configurationId, token }: { config
         initialFocus={headingRef}
         align="end"
         collisionPadding={8}
-        className="w-[min(24rem,calc(100vw-1rem))] max-w-[calc(100vw-1rem)] rounded-2xl"
+        className="w-[min(24rem,calc(100vw-1rem))] max-w-[calc(100vw-1rem)] rounded-sm"
       >
         <PopoverHeader className="relative pr-8">
           <h2 ref={headingRef} id={headingId} tabIndex={-1} className="text-base font-medium outline-none">

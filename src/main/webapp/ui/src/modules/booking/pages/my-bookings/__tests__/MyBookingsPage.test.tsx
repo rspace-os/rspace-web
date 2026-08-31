@@ -94,6 +94,7 @@ describe("My Bookings page", () => {
       request.searchParams.get("where")?.includes("target.name=contains=scope"),
     );
     expect(upcoming?.searchParams.get("where")).toContain("requesterId==84");
+    expect(upcoming?.searchParams.get("where")).toContain("kind==BOOKING");
     expect(upcoming?.searchParams.get("where")).toContain("end=gt=");
     expect(upcoming?.searchParams.get("where")).toContain("confocal");
     await waitFor(() =>
@@ -142,7 +143,7 @@ describe("My Bookings page", () => {
     ).toBe(true);
     await waitFor(() => expect(counts).toHaveLength(1));
     const countWhere = counts[0].searchParams.get("where");
-    expect(countWhere).toMatch(/^requesterId==84;end=gt=.+Z$/);
+    expect(countWhere).toMatch(/^requesterId==84;kind==BOOKING;end=gt=.+Z$/);
     expect(countWhere).not.toContain("confocal");
     expect(countWhere).not.toContain("target.name");
     expect([...counts[0].searchParams.keys()]).toEqual(["where"]);

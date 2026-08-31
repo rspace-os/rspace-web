@@ -75,7 +75,9 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
   @Override
   public Optional<BookingConfiguration> getConfiguration(Long id, User actor) {
     authorizeRead(actor);
-    return bookingConfigurationDao.getSafeNull(id);
+    return bookingConfigurationDao
+        .getSafeNull(id)
+        .filter(configuration -> !configuration.isDeleted());
   }
 
   private void authorizeRead(User actor) {
@@ -124,6 +126,7 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
   private BookingConfiguration configuration(Create create, BookingConfigurationDefaults defaults) {
     BookingConfiguration configuration = new BookingConfiguration();
     configuration.setEnabled(create.enabled());
+    configuration.setDeleted(false);
     configuration.setTimeZone(create.timeZone());
     create
         .schedulingSettings()
@@ -142,6 +145,7 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
     authorizeMutation(subject);
     return bookingConfigurationDao
         .getSafeNull(id)
+        .filter(configuration -> !configuration.isDeleted())
         .map(
             configuration -> {
               if (unchanged(patch)) {
@@ -177,8 +181,11 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
   @Override
   public Optional<BookingConfiguration> removeConfiguration(Long id, User subject, User actor) {
     authorizeMutation(subject);
-    Optional<BookingConfiguration> configuration = bookingConfigurationDao.getSafeNull(id);
-    configuration.ifPresent(ignored -> bookingConfigurationDao.remove(id));
+    Optional<BookingConfiguration> configuration =
+        bookingConfigurationDao
+            .getSafeNull(id)
+            .filter(existing -> !existing.isDeleted())
+            .map(existing -> archive(existing, actor));
     configuration.ifPresent(deleted -> notifyAudit(actor, subject, deleted, AuditAction.DELETE));
     return configuration;
   }
@@ -187,7 +194,8 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
   public List<BookingConfiguration> removeConfigurations(
       ResourceRequest request, User subject, User actor) {
     List<BookingConfiguration> matches = bulkMatches(request, subject);
-    matches.forEach(configuration -> bookingConfigurationDao.remove(configuration.getId()));
+    Date now = new Date();
+    matches.forEach(configuration -> archive(configuration, actor, now));
     matches.forEach(
         configuration -> notifyAudit(actor, subject, configuration, AuditAction.DELETE));
     return matches;
@@ -257,6 +265,18 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
   private static void touchAudit(BookingConfiguration configuration, User actor, Date timestamp) {
     configuration.setUpdatedAt(timestamp);
     configuration.setUpdatedBy(actor);
+  }
+
+  private BookingConfiguration archive(BookingConfiguration configuration, User actor) {
+    return archive(configuration, actor, new Date());
+  }
+
+  private BookingConfiguration archive(
+      BookingConfiguration configuration, User actor, Date timestamp) {
+    configuration.setDeleted(true);
+    configuration.setEnabled(false);
+    touchAudit(configuration, actor, timestamp);
+    return save(configuration);
   }
 
   private void notifyAudit(

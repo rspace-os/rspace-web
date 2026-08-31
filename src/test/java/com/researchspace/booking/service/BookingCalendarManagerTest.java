@@ -18,6 +18,7 @@ import static org.mockito.Mockito.when;
 
 import com.researchspace.booking.dao.BookingCalendarSubscriptionDao;
 import com.researchspace.booking.dao.BookingConfigurationDao;
+import com.researchspace.booking.dao.UserBookingCalendarSubscriptionDao;
 import com.researchspace.booking.service.TimeSlotBookingManager.CalendarSource;
 import com.researchspace.core.util.CryptoUtils;
 import com.researchspace.dao.InstrumentDao;
@@ -26,6 +27,7 @@ import com.researchspace.model.booking.BookableItemCalendarSubscription;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
+import com.researchspace.model.booking.UserBookingCalendarSubscription;
 import com.researchspace.model.collection.RelationshipReadAccess;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRegistry;
@@ -57,6 +59,7 @@ class BookingCalendarManagerTest {
 
   private BookingCalendarSubscriptionDao subscriptionDao;
   private BookingConfigurationDao configurationDao;
+  private UserBookingCalendarSubscriptionDao userSubscriptionDao;
   private TimeSlotBookingManager bookingManager;
   private FeatureFlagManager featureFlags;
   private BookingCalendarFeedGenerator generator;
@@ -69,6 +72,7 @@ class BookingCalendarManagerTest {
   void setUp() {
     subscriptionDao = mock(BookingCalendarSubscriptionDao.class);
     configurationDao = mock(BookingConfigurationDao.class);
+    userSubscriptionDao = mock(UserBookingCalendarSubscriptionDao.class);
     bookingManager = mock(TimeSlotBookingManager.class);
     instrumentDao = mock(InstrumentDao.class);
     featureFlags = mock(FeatureFlagManager.class);
@@ -95,10 +99,13 @@ class BookingCalendarManagerTest {
         .thenReturn(Optional.empty());
     when(subscriptionDao.saveAndFlush(any(BookableItemCalendarSubscription.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
+    when(userSubscriptionDao.saveAndFlush(any(UserBookingCalendarSubscription.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
 
     manager =
         new BookingCalendarManagerImpl(
             subscriptionDao,
+            userSubscriptionDao,
             configurationDao,
             bookingManager,
             instrumentDao,
@@ -154,6 +161,44 @@ class BookingCalendarManagerTest {
     assertFalse(status.active());
     assertNull(status.updatedAt());
     assertNull(status.subscriptionUrl());
+  }
+
+  @Test
+  void userSubscriptionCreatesOnePrivateFeedForAllBookings() {
+    BookingCalendarManager.Created created = manager.createOrRotateUser(owner, owner);
+
+    ArgumentCaptor<UserBookingCalendarSubscription> saved =
+        ArgumentCaptor.forClass(UserBookingCalendarSubscription.class);
+    verify(userSubscriptionDao).saveAndFlush(saved.capture());
+    assertSame(owner, saved.getValue().getUser());
+    assertEquals(RAW_TOKEN, saved.getValue().getRawToken());
+    assertEquals(64, saved.getValue().getTokenHash().length());
+    assertEquals(
+        "https://rspace.example/context/public/booking/calendars/feed.ics?token=" + RAW_TOKEN,
+        created.subscriptionUrl());
+  }
+
+  @Test
+  void userSubscriptionTokenGeneratesTheOwnersCrossItemSource() {
+    UserBookingCalendarSubscription subscription =
+        new UserBookingCalendarSubscription(
+            owner, CryptoUtils.hashToken(RAW_TOKEN), RAW_TOKEN, new java.util.Date());
+    CalendarSource source =
+        new CalendarSource("booking:calendar.feed.myBookings", "UTC", List.of(), true);
+    java.util.Date refreshedAt = new java.util.Date(1234L);
+    when(subscriptionDao.findByTokenHash(any())).thenReturn(Optional.empty());
+    when(userSubscriptionDao.findByTokenHash(any())).thenReturn(Optional.of(subscription));
+    when(bookingManager.getUserCalendarSource(owner, refreshedAt, 100)).thenReturn(source);
+    when(generator.generate(
+            source, URI.create("https://rspace.example/context"), Locale.ENGLISH, 10_000))
+        .thenReturn(new byte[] {4, 5});
+
+    BookingCalendarManager.Available result =
+        assertInstanceOf(
+            BookingCalendarManager.Available.class,
+            manager.feed(RAW_TOKEN, Locale.ENGLISH, refreshedAt));
+
+    assertEquals(2, result.body().length);
   }
 
   @Test

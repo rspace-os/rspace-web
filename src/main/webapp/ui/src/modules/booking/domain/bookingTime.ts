@@ -185,11 +185,32 @@ export function wallClockInstant(
 }
 
 export function formatAgendaPeriod(start: string, end: string, timezone: string, locale = "en-US"): string {
-  const formatter = new Intl.DateTimeFormat(locale, {
+  const timeFormatter = new Intl.DateTimeFormat(locale, {
+    timeZone: timezone,
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  const offsetFormatter = new Intl.DateTimeFormat(locale, {
+    timeZone: timezone,
+    hour: "2-digit",
+    timeZoneName: "shortOffset",
+  });
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+  const offset = (date: Date) =>
+    offsetFormatter.formatToParts(date).find((part) => part.type === "timeZoneName")?.value;
+  const startOffset = offset(startDate);
+  const endOffset = offset(endDate);
+
+  if (startOffset && startOffset === endOffset) {
+    return `${timeFormatter.formatRange(startDate, endDate)} ${startOffset}`;
+  }
+
+  const withOffset = new Intl.DateTimeFormat(locale, {
     timeZone: timezone,
     hour: "2-digit",
     minute: "2-digit",
     timeZoneName: "shortOffset",
   });
-  return `${formatter.format(new Date(start))}–${formatter.format(new Date(end))}`;
+  return `${withOffset.format(startDate)}–${withOffset.format(endDate)}`;
 }

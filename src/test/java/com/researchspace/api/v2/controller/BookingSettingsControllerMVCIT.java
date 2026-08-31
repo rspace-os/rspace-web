@@ -122,6 +122,37 @@ class BookingSettingsControllerMVCIT {
   }
 
   @Test
+  void rejectsAnInvalidCustomTimezone() throws Exception {
+    long version = settingsManager.getDefaults(sysadmin).getConfigurationVersion();
+
+    mockMvc
+        .perform(
+            patch("/api/v2/booking-settings")
+                .header("apiKey", fixture.sysadminKey())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"timezoneMode":"CUSTOM","customTimezone":"Not/A_Timezone",
+                     "configurationVersion":%d}
+                    """
+                        .formatted(version)))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("errors.api.v2.invalidRequest"));
+  }
+
+  @Test
+  void rejectsANegativeConfigurationVersion() throws Exception {
+    mockMvc
+        .perform(
+            patch("/api/v2/booking-settings")
+                .header("apiKey", fixture.sysadminKey())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"configurationVersion\":-1}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("errors.api.v2.invalidRequest"));
+  }
+
+  @Test
   void rejectsAMaximumThatDoesNotAlignWithGranularity() throws Exception {
     long version = settingsManager.getDefaults(sysadmin).getConfigurationVersion();
 

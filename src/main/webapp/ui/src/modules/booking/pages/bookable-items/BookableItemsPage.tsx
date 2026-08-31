@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { EyeIcon, PencilIcon, PlusIcon, Trash2Icon } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { schedulingSettingsFieldNames } from "@/modules/booking/configuration/schedulingSettings";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { useApiV2TableList } from "@/modules/common/table-list/adapters/apiV2/useApiV2TableList";
 import { serializeRsqlExpression } from "@/modules/common/table-list/rsql/rsqlCodec";
@@ -28,13 +29,18 @@ import {
   BookingConfigurationSchema,
   bookingConfigurationConfig,
 } from "./bookingConfiguration";
-import { schedulingSettingsFieldNames } from "./schedulingSettings";
 
 const bookableItemsProjection = {
   fixed: ["id", "target", "enabled", "timezone", ...schedulingSettingsFieldNames, "updatedAt"],
 } as const;
 
 const maximumBookableItemsSelection = 1000;
+const createdByCurrentUserFilter = {
+  kind: "comparison",
+  field: "createdBy.value",
+  operator: "equals",
+  value: "me",
+} as const;
 
 export type BookableItemsBulkAction = "enable" | "disable" | "delete";
 
@@ -301,7 +307,10 @@ export default function BookableItemsPage() {
   const queryClient = useQueryClient();
   const [selectedRowIds, setSelectedRowIds] = useState<ReadonlySet<string>>(new Set());
   const [failedBulkAction, setFailedBulkAction] = useState<BookableItemsBulkAction | null>(null);
-  const request = useMemo(() => ({ token, depth: 1, projection: bookableItemsProjection }), [token]);
+  const request = useMemo(
+    () => ({ token, depth: 1, projection: bookableItemsProjection, baseFilter: createdByCurrentUserFilter }),
+    [token],
+  );
   const table = useApiV2TableList({
     resourceName: "booking-configurations",
     config: bookingConfigurationConfig,

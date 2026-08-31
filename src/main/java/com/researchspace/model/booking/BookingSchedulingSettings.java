@@ -110,7 +110,7 @@ public record BookingSchedulingSettings(
   }
 
   public static boolean isGranularityValid(long minutes) {
-    return minutes == 1 || minutes == 5 || minutes == 15;
+    return minutes == 1 || minutes == 5 || minutes == 10 || minutes == 15;
   }
 
   public static boolean areOpeningHoursValid(String start, String end) {

@@ -12,6 +12,7 @@ import { Suspense } from "react";
 import { OAUTH_TOKEN } from "@/__tests__/mocks/oauthTokenMocks";
 import { bookingDisplayPreferencesQueryKey } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { apiV2CollectionMetadataFromOpenApi } from "@/modules/common/table-list/adapters/apiV2/apiV2CollectionMetadata";
+import BookingPage from "../BookingPage";
 import { bookableItemsOpenApi } from "../bookable-items/mocks/bookableItemsMocks";
 import { createBookableItemRoute } from "../bookable-items/routes";
 import { institutionBookingPreferences } from "../preferences/bookingPreferencesFixtures";
@@ -32,7 +33,7 @@ export function AllBookableItemsStory({ containerWidth = 1500 }: { containerWidt
     apiV2CollectionMetadataFromOpenApi(bookableItemsOpenApi, "booking-configurations"),
   );
   const rootRoute = createRootRoute({ component: Outlet });
-  const bookingRoute = createRoute({ getParentRoute: () => rootRoute, path: "/booking", component: Outlet });
+  const bookingRoute = createRoute({ getParentRoute: () => rootRoute, path: "/booking", component: BookingPage });
   const router = createRouter({
     routeTree: rootRoute.addChildren([
       bookingRoute.addChildren([

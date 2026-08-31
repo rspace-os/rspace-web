@@ -4,6 +4,7 @@ import com.blazebit.persistence.CriteriaBuilderFactory;
 import com.researchspace.dao.GenericDaoHibernate;
 import com.researchspace.dao.query.CollectionQueryExecutor;
 import com.researchspace.model.booking.ApiV2TimeSlotBookingResource;
+import com.researchspace.model.booking.BookingEventKind;
 import com.researchspace.model.booking.BookingState;
 import com.researchspace.model.booking.TimeSlotBooking;
 import com.researchspace.model.collection.CollectionDescription.Operator;
@@ -77,7 +78,12 @@ public class TimeSlotBookingDaoHibernate extends GenericDaoHibernate<TimeSlotBoo
   }
 
   @Override
-  public boolean overlaps(Long configurationId, Date start, Date end, Long excludedBookingId) {
+  public boolean overlaps(
+      Long configurationId,
+      Date start,
+      Date end,
+      Long excludedBookingId,
+      Set<BookingEventKind> includedKinds) {
     String exclusion = excludedBookingId == null ? "" : " and id <> :excludedId";
     var query =
         getSession()
@@ -85,10 +91,12 @@ public class TimeSlotBookingDaoHibernate extends GenericDaoHibernate<TimeSlotBoo
                 "select count(id) from TimeSlotBooking where bookingConfiguration.id = :configId"
                     + " and deleted = false and state = :state and startTime < :end"
                     + " and endTime > :start"
+                    + " and kind in :kinds"
                     + exclusion,
                 Long.class)
             .setParameter("configId", configurationId)
             .setParameter("state", BookingState.CONFIRMED)
+            .setParameter("kinds", includedKinds)
             .setParameter("start", start)
             .setParameter("end", end);
     if (excludedBookingId != null) {
@@ -121,12 +129,33 @@ public class TimeSlotBookingDaoHibernate extends GenericDaoHibernate<TimeSlotBoo
             "select booking from TimeSlotBooking booking"
                 + " join fetch booking.bookingConfiguration"
                 + " join fetch booking.requester"
+                + " left join fetch booking.createdBy"
                 + " where booking.bookingConfiguration.id = :configurationId"
                 + " and booking.deleted = false and booking.state = :state"
                 + " and booking.endTime > :cutoff"
                 + " order by booking.startTime, booking.id",
             TimeSlotBooking.class)
         .setParameter("configurationId", configurationId)
+        .setParameter("state", BookingState.CONFIRMED)
+        .setParameter("cutoff", cutoff)
+        .setMaxResults(maximumRows)
+        .getResultList();
+  }
+
+  @Override
+  public List<TimeSlotBooking> findUserCalendarBookings(Long userId, Date cutoff, int maximumRows) {
+    return getSession()
+        .createQuery(
+            "select booking from TimeSlotBooking booking"
+                + " join fetch booking.bookingConfiguration"
+                + " join fetch booking.requester"
+                + " left join fetch booking.createdBy"
+                + " where booking.requester.id = :userId"
+                + " and booking.deleted = false and booking.state = :state"
+                + " and booking.endTime > :cutoff"
+                + " order by booking.startTime, booking.id",
+            TimeSlotBooking.class)
+        .setParameter("userId", userId)
         .setParameter("state", BookingState.CONFIRMED)
         .setParameter("cutoff", cutoff)
         .setMaxResults(maximumRows)

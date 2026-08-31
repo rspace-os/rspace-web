@@ -1,6 +1,7 @@
 package com.researchspace.booking.dao;
 
 import com.researchspace.dao.CollectionDao;
+import com.researchspace.model.booking.BookingEventKind;
 import com.researchspace.model.booking.TimeSlotBooking;
 import com.researchspace.model.collection.RelationshipReadAccess;
 import com.researchspace.model.collection.ResourcePage;
@@ -25,13 +26,31 @@ public interface TimeSlotBookingDao extends CollectionDao<TimeSlotBooking, Long>
   Optional<TimeSlotBooking> findReadableById(Long id, RelationshipReadAccess targetAccess);
 
   /** Tests a half-open interval against confirmed, non-deleted rows. */
-  boolean overlaps(Long configurationId, Date start, Date end, Long excludedBookingId);
+  boolean overlaps(
+      Long configurationId,
+      Date start,
+      Date end,
+      Long excludedBookingId,
+      Set<BookingEventKind> includedKinds);
+
+  /** Tests an interval against both persisted event kinds. */
+  default boolean overlaps(Long configurationId, Date start, Date end, Long excludedBookingId) {
+    return overlaps(
+        configurationId,
+        start,
+        end,
+        excludedBookingId,
+        Set.of(BookingEventKind.BOOKING, BookingEventKind.MAINTENANCE));
+  }
 
   /** Returns target IDs owned by the actor in one query. */
   Set<Long> findOwnedInstrumentIds(Collection<Long> targetIds, Long actorId);
 
   /** Returns the ordered, fetch-complete rows used to build one calendar feed. */
   List<TimeSlotBooking> findCalendarBookings(Long configurationId, Date cutoff, int maximumRows);
+
+  /** Returns the ordered, fetch-complete rows used to build one user's calendar feed. */
+  List<TimeSlotBooking> findUserCalendarBookings(Long userId, Date cutoff, int maximumRows);
 
   /** Saves and flushes one booking inside its configuration lock transaction. */
   TimeSlotBooking saveAndFlush(TimeSlotBooking booking);

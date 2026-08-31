@@ -9,6 +9,10 @@ import { SectionField } from "./field-types/SectionField";
 import { SelectField } from "./field-types/SelectField";
 import { TextField } from "./field-types/TextField";
 import type { RenderFieldsProps } from "./RenderFields.types";
+import {
+  RESPONSIVE_INLINE_FIELD_CONTAINER_CLASS_NAME,
+  RESPONSIVE_INLINE_FIELD_GRID_CLASS_NAME,
+} from "./responsiveFieldLayout";
 
 export function RenderFields<TDocument extends Record<string, unknown>>({
   fields,
@@ -48,7 +52,7 @@ export function RenderFields<TDocument extends Record<string, unknown>>({
         // A section is a block, not a label/control pair, so inside an inline
         // list it spans both columns instead of sitting in the label one.
         return layout === "inline" ? (
-          <div key={key} className="sm:col-span-2">
+          <div key={key} className="@md:col-span-2">
             {section}
           </div>
         ) : (
@@ -85,7 +89,7 @@ export function RenderFields<TDocument extends Record<string, unknown>>({
         const ui = <Ui key={fieldConfig.name} form={form} disabled={disabled} />;
         // Like a section, a ui block is not a label/control pair, so it spans both columns.
         return layout === "inline" ? (
-          <div key={fieldConfig.name} className="sm:col-span-2">
+          <div key={fieldConfig.name} className="@md:col-span-2">
             {ui}
           </div>
         ) : (
@@ -112,18 +116,13 @@ export function RenderFields<TDocument extends Record<string, unknown>>({
       return null;
     });
 
-  // The label column is sized to the longest label and every control shares the
-  // second column, which is what makes an inline form line up with the
-  // read-out it replaces. Each field joins this grid with `sm:contents`.
+  // Inline fields stack until this component's own container is wide enough
+  // for the shared 12rem label column. Field details stay in the control column.
   return layout === "inline" ? (
-    <div
-      className={cn(
-        "grid gap-x-8 sm:grid-cols-[max-content_1fr]",
-        density === "compact" ? "gap-y-2" : "gap-y-4",
-        className,
-      )}
-    >
-      {renderedFields}
+    <div className={cn(RESPONSIVE_INLINE_FIELD_CONTAINER_CLASS_NAME, className)}>
+      <div className={cn(RESPONSIVE_INLINE_FIELD_GRID_CLASS_NAME, density === "compact" ? "gap-y-2" : "gap-y-4")}>
+        {renderedFields}
+      </div>
     </div>
   ) : (
     <FieldGroup density={density} className={cn(className)}>

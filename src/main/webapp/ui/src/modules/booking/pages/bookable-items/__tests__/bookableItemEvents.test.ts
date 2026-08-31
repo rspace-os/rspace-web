@@ -15,6 +15,7 @@ const booking = {
   start: "2026-08-25T09:00:00Z",
   end: "2026-08-25T10:00:00Z",
   state: "CONFIRMED",
+  kind: "BOOKING",
   privacy: "full",
   purpose: null,
   bookedBy: "Ada Lovelace (ada)",

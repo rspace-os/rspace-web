@@ -7,6 +7,9 @@ const BookingTimestampEntries = {
   end: v.pipe(v.string(), v.isoTimestamp()),
 };
 
+export const BookingEventKindSchema = v.picklist(["BOOKING", "MAINTENANCE"]);
+export type BookingEventKind = v.InferOutput<typeof BookingEventKindSchema>;
+
 function endsAfterStart(booking: { start: string; end: string }): boolean {
   return Date.parse(booking.end) > Date.parse(booking.start);
 }
@@ -38,6 +41,7 @@ function bookingIdentity<TTarget extends v.BaseSchema<unknown, unknown, v.BaseIs
     timezone: v.string(),
     ...BookingTimestampEntries,
     state: v.picklist(["CONFIRMED", "CANCELLED"]),
+    kind: v.optional(BookingEventKindSchema, "BOOKING"),
   };
 }
 
@@ -49,6 +53,7 @@ function bookingSchema<TTarget extends v.BaseSchema<unknown, unknown, v.BaseIssu
       privacy: v.literal("full"),
       purpose: v.nullable(v.string()),
       bookedBy: v.string(),
+      createdBy: v.optional(v.nullable(v.string())),
       canEdit: v.boolean(),
       createdAt: v.string(),
       updatedAt: v.string(),
@@ -58,6 +63,7 @@ function bookingSchema<TTarget extends v.BaseSchema<unknown, unknown, v.BaseIssu
       privacy: v.literal("busy"),
       purpose: v.null(),
       bookedBy: v.null(),
+      createdBy: v.optional(v.nullable(v.string())),
       canEdit: v.literal(false),
       createdAt: v.string(),
       updatedAt: v.string(),
@@ -96,6 +102,7 @@ const BookingListDocumentObjectSchema = v.object({
   requesterId: v.number(),
   purpose: v.nullable(v.string()),
   bookedBy: v.nullable(v.string()),
+  createdBy: v.optional(v.nullable(v.string())),
   privacy: v.picklist(["full", "busy"]),
   canEdit: v.boolean(),
   createdAt: v.string(),
@@ -137,6 +144,7 @@ export const BookingCreateSchema = v.object({
   start: v.string(),
   end: v.string(),
   purpose: v.optional(v.nullable(v.pipe(v.string(), v.maxLength(1000)))),
+  kind: v.optional(BookingEventKindSchema),
 });
 
 export const BookingUpdateSchema = v.partial(
@@ -161,8 +169,12 @@ export class ApiV2ProblemError extends Error {
   }
 }
 
+export function isBookingOverlapError(error: unknown): boolean {
+  return error instanceof ApiV2ProblemError && error.code === "errors.api.v2.booking.overlap";
+}
+
 export const BOOKING_READ_FIELDS =
-  "id,target,timezone,start,end,state,purpose,bookedBy,privacy,canEdit,createdAt,updatedAt";
+  "id,target,timezone,start,end,state,kind,purpose,bookedBy,createdBy,privacy,canEdit,createdAt,updatedAt";
 
 export async function parseApiV2Problem(response: Response): Promise<ApiV2ProblemError> {
   const body: unknown = await response.json().catch(() => null);

@@ -2,6 +2,7 @@ package com.researchspace.model.collection;
 
 import com.researchspace.model.User;
 import com.researchspace.model.collection.CollectionDescription.Field;
+import com.researchspace.model.collection.CollectionDescription.InternalFilter;
 import com.researchspace.model.collection.CollectionDescription.Relationship;
 import com.researchspace.model.collection.CollectionDescription.Sort;
 import com.researchspace.model.collection.CollectionDescription.WriteOperation;
@@ -33,6 +34,16 @@ final class AnnotatedCollectionDescriptionFactory {
       List<Relationship<T>> relationships,
       List<Sort> defaultSort,
       AccessPolicy accessPolicy) {
+    return create(resourceType, entityType, relationships, defaultSort, accessPolicy, List.of());
+  }
+
+  static <T> CollectionDescription<T> create(
+      Class<?> resourceType,
+      Class<T> entityType,
+      List<Relationship<T>> relationships,
+      List<Sort> defaultSort,
+      AccessPolicy accessPolicy,
+      List<InternalFilter> internalFilters) {
     ApiV2ResourceDefinition definition = resourceType.getAnnotation(ApiV2ResourceDefinition.class);
     if (definition == null || !resourceType.isRecord()) {
       throw new IllegalArgumentException(
@@ -54,7 +65,8 @@ final class AnnotatedCollectionDescriptionFactory {
         describedRelationships,
         definition.id(),
         defaultSort,
-        accessPolicy);
+        accessPolicy,
+        internalFilters);
   }
 
   private static <T> List<Field<T, ?>> fieldsFrom(

@@ -9,6 +9,7 @@ import { TableList, type TableListRowActions } from "@/modules/common/table-list
 import { useTableList } from "@/modules/common/table-list/useTableList";
 import { Button, buttonVariants } from "@/modules/common/ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/modules/common/ui/empty";
+import { UserBadge } from "@/modules/common/ui/user-badge";
 import { type BookingEventPeriod, fetchBookableItemEvents } from "./bookableItemEvents";
 
 type BookingEventListProps = {
@@ -67,7 +68,12 @@ function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventL
             labelKey: "booking:bookableItemDetails.events.requester",
             list: {
               width: 220,
-              renderCell: ({ row }) => (row.privacy === "busy" ? t("bookableItemDetails.events.busy") : row.bookedBy),
+              renderCell: ({ row }) =>
+                row.privacy === "busy" || row.bookedBy === null ? (
+                  t("bookableItemDetails.events.busy")
+                ) : (
+                  <UserBadge name={row.bookedBy} />
+                ),
             },
           },
           {

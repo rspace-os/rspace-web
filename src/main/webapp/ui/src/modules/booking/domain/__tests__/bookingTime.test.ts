@@ -4,6 +4,7 @@ import {
   broadUtcEnvelope,
   currentWallClock,
   displayInterval,
+  formatAgendaPeriod,
   instantToWallClockMinute,
   isPlainDate,
   resolveWallClock,
@@ -90,5 +91,11 @@ describe("bookingTime", () => {
     expect(
       wallClockInstant(resolveWallClock(draft.startDate, draft.startTime, "Europe/Berlin"), draft.startOccurrence),
     ).toBe("2026-10-25T01:30:00Z");
+  });
+
+  test("shows a shared timezone only once in an agenda period", () => {
+    const period = formatAgendaPeriod("2026-08-18T08:00:00Z", "2026-08-18T09:00:00Z", "Europe/Berlin", "en-GB");
+
+    expect(period.match(/GMT\+2/g)).toHaveLength(1);
   });
 });

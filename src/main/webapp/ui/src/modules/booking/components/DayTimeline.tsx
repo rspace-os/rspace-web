@@ -1,6 +1,7 @@
 import { ChevronRight, LockKeyhole, Minus, Plus, Wrench, X } from "lucide-react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
+import { addCalendarDays } from "@/modules/booking/domain/bookingTime";
 import { Button } from "@/modules/common/ui/button";
 import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
 import {
@@ -11,6 +12,7 @@ import {
   PopoverTitle,
   PopoverTrigger,
 } from "@/modules/common/ui/popover";
+import { UserBadge } from "@/modules/common/ui/user-badge";
 import { cn } from "@/modules/common/utils/cn";
 
 const DAY_MINUTES = 24 * 60;
@@ -18,6 +20,9 @@ const MINIMUM_VISUAL_DURATION = 15;
 const BASE_HOUR_WIDTH = 80;
 const DENSITY_WIDTH_STEP = 12;
 const EVENTS_PER_BASE_HOUR = 4;
+const EVENT_CARD_HEIGHT = 72;
+const EVENT_LANE_GAP = 8;
+const EVENT_LANE_PITCH = EVENT_CARD_HEIGHT + EVENT_LANE_GAP;
 
 type BaseEvent = {
   id: string;
@@ -49,6 +54,7 @@ export type DayTimelineEvent =
       kind: "blockout";
       title: string;
       item: DayTimelineItem;
+      createdBy?: string;
       notes?: string;
     });
 
@@ -60,6 +66,8 @@ export type DayTimelineViewState = {
   zoom: number;
   centerMinute: number;
 };
+
+export type DayTimelineRange = Readonly<{ startMinute: number; endMinute: number }>;
 
 type PositionedEvent = {
   event: DayTimelineEvent;
@@ -74,8 +82,30 @@ function formatMinute(minute: number) {
   return `${String(Math.floor(wrapped / 60)).padStart(2, "0")}:${String(wrapped % 60).padStart(2, "0")}`;
 }
 
+function dayOffset(minute: number) {
+  return Math.floor(minute / DAY_MINUTES);
+}
+
+function formatDayOffset(offset: number) {
+  return `(${offset > 0 ? "+" : ""}${offset})`;
+}
+
+function dateForMinute(date: string, minute: number) {
+  return addCalendarDays(date, dayOffset(minute));
+}
+
+function formatDayDate(date: string) {
+  const [year, month, day] = date.split("-");
+  return `${day}-${month}-${year}`;
+}
+
+function formatMinuteWithDayOffset(minute: number) {
+  const offset = dayOffset(minute);
+  return `${formatMinute(minute)}${offset === 0 ? "" : ` ${formatDayOffset(offset)}`}`;
+}
+
 function period(event: DayTimelineEvent) {
-  return `${formatMinute(event.startMinute)}–${formatMinute(event.endMinute)}`;
+  return `${formatMinuteWithDayOffset(event.startMinute)}–${formatMinuteWithDayOffset(event.endMinute)}`;
 }
 
 function positionEvents(events: ReadonlyArray<DayTimelineEvent>): Array<PositionedEvent> {
@@ -119,19 +149,23 @@ function ExpandedEventCard({
   event,
   exactPeriod,
   renderEventActions,
+  renderBlockoutActions,
 }: {
   date: string;
   event: DetailedDayTimelineEvent;
   exactPeriod: string;
   renderEventActions?: (event: Extract<DayTimelineEvent, { kind: "booking" }>, period: string) => React.ReactNode;
+  renderBlockoutActions?: (event: Extract<DayTimelineEvent, { kind: "blockout" }>, period: string) => React.ReactNode;
 }) {
-  const { t, i18n } = useTranslation("booking");
+  const { t } = useTranslation("booking");
   const isBlockout = event.kind === "blockout";
-  const formattedDate = new Intl.DateTimeFormat(i18n.language, { dateStyle: "full", timeZone: "UTC" }).format(
-    new Date(`${date}T12:00:00Z`),
-  );
+  const startDate = dateForMinute(date, event.startMinute);
+  const endDate = dateForMinute(date, event.endMinute);
+  const spansMultipleDates = startDate !== endDate;
+  const labelledTitle = event.kind === "booking" ? `${event.title} · ${event.bookedBy}` : event.title;
   const duration = Math.max(0, event.endMinute - event.startMinute);
-  const actions = event.kind === "booking" ? renderEventActions?.(event, exactPeriod) : null;
+  const actions =
+    event.kind === "booking" ? renderEventActions?.(event, exactPeriod) : renderBlockoutActions?.(event, exactPeriod);
 
   return (
     <>
@@ -149,11 +183,38 @@ function ExpandedEventCard({
             </p>
           ) : null}
           <PopoverTitle className="font-semibold text-lg tabular-nums leading-tight">{exactPeriod}</PopoverTitle>
-          <PopoverDescription
-            className={cn("mt-0.5 truncate text-xs", isBlockout ? "text-amber-800" : "text-primary-foreground")}
-          >
+          {spansMultipleDates ? (
+            <dl className="mt-1.5 grid grid-cols-[2.5rem_minmax(0,1fr)] gap-x-2 gap-y-0.5 text-xs leading-4">
+              <dt className={cn(isBlockout ? "text-amber-800" : "text-primary-foreground")}>
+                {t("bookings.form.start")}
+              </dt>
+              <dd>
+                <time dateTime={`${startDate}T${formatMinute(event.startMinute)}`}>
+                  {t("dayTimeline.expanded.dateTime", {
+                    date: formatDayDate(startDate),
+                    time: formatMinuteWithDayOffset(event.startMinute),
+                  })}
+                </time>
+              </dd>
+              <dt className={cn(isBlockout ? "text-amber-800" : "text-primary-foreground")}>
+                {t("bookings.form.end")}
+              </dt>
+              <dd>
+                <time dateTime={`${endDate}T${formatMinute(event.endMinute)}`}>
+                  {t("dayTimeline.expanded.dateTime", {
+                    date: formatDayDate(endDate),
+                    time: formatMinuteWithDayOffset(event.endMinute),
+                  })}
+                </time>
+              </dd>
+            </dl>
+          ) : (
+            <time dateTime={startDate} className="mt-1.5 block text-xs leading-4">
+              {formatDayDate(startDate)}
+            </time>
+          )}
+          <PopoverDescription className={cn("mt-1 text-xs", isBlockout ? "text-amber-800" : "text-primary-foreground")}>
             {t("dayTimeline.expanded.duration", {
-              date: formattedDate,
               hours: Math.floor(duration / 60),
               minutes: duration % 60,
             })}
@@ -161,9 +222,9 @@ function ExpandedEventCard({
         </div>
         <PopoverClose
           type="button"
-          aria-label={t("dayTimeline.event.hideDetails", { title: event.title, period: exactPeriod })}
+          aria-label={t("dayTimeline.event.hideDetails", { title: labelledTitle, period: exactPeriod })}
           className={cn(
-            "-mr-1 grid size-7 shrink-0 place-items-center rounded-md outline-none focus-visible:ring-3 focus-visible:ring-ring/40",
+            "-mr-1 grid size-7 shrink-0 place-items-center rounded-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/40",
             isBlockout ? "hover:bg-amber-200" : "hover:bg-primary-foreground/15",
           )}
         >
@@ -192,7 +253,16 @@ function ExpandedEventCard({
         {event.kind === "booking" ? (
           <div className="grid grid-cols-[4.5rem_1fr] gap-2 py-2">
             <dt className="text-muted-foreground text-xs">{t("dayTimeline.expanded.bookedBy")}</dt>
-            <dd className="truncate font-medium">{event.bookedBy}</dd>
+            <dd className="min-w-0">
+              <UserBadge name={event.bookedBy} />
+            </dd>
+          </div>
+        ) : event.createdBy ? (
+          <div className="grid grid-cols-[4.5rem_1fr] gap-2 py-2">
+            <dt className="text-muted-foreground text-xs">{t("dayTimeline.expanded.createdBy")}</dt>
+            <dd className="min-w-0">
+              <UserBadge name={event.createdBy} />
+            </dd>
           </div>
         ) : null}
         <div className="grid grid-cols-[4.5rem_1fr] gap-2 py-2">
@@ -216,7 +286,9 @@ export function DayTimelineEventCard({
   expanded,
   onExpandedChange,
   collisionBoundary,
+  expandedCardClassName,
   renderEventActions,
+  renderBlockoutActions,
 }: {
   event: DayTimelineEvent;
   date: string;
@@ -225,29 +297,54 @@ export function DayTimelineEventCard({
   expanded?: boolean;
   onExpandedChange?: (expanded: boolean) => void;
   collisionBoundary?: HTMLElement | null;
+  expandedCardClassName?: string;
   renderEventActions?: (event: Extract<DayTimelineEvent, { kind: "booking" }>, period: string) => React.ReactNode;
+  renderBlockoutActions?: (event: Extract<DayTimelineEvent, { kind: "blockout" }>, period: string) => React.ReactNode;
 }) {
   const { t } = useTranslation("booking");
   const detailsId = `${React.useId()}-details`;
   const [internalExpanded, setInternalExpanded] = React.useState(false);
+  const compactCardRef = React.useRef<HTMLElement>(null);
   const isExpanded = expanded ?? internalExpanded;
   const setExpanded = onExpandedChange ?? setInternalExpanded;
   const title = event.kind === "blockout" || event.privacy === "full" ? event.title : t("dayTimeline.event.busy");
+  const labelledTitle = event.kind === "booking" && event.privacy === "full" ? `${title} · ${event.bookedBy}` : title;
   const notes = event.kind === "booking" && event.privacy === "busy" ? undefined : event.notes;
   const exactPeriod = period(event);
   const accessibleLabel = notes
-    ? t("dayTimeline.event.labelWithNotes", { title, period: exactPeriod, notes })
-    : t("dayTimeline.event.label", { title, period: exactPeriod });
+    ? t("dayTimeline.event.labelWithNotes", { title: labelledTitle, period: exactPeriod, notes })
+    : t("dayTimeline.event.label", { title: labelledTitle, period: exactPeriod });
   const isBlockout = event.kind === "blockout";
   const isBusy = event.kind === "booking" && event.privacy === "busy";
   const timeline = variant === "timeline";
   const expandsInPlace = isBusy && isExpanded;
+  const startDate = dateForMinute(date, event.startMinute);
+  const endDate = dateForMinute(date, event.endMinute);
+  const compactDate =
+    startDate === endDate ? formatDayDate(startDate) : `${formatDayDate(startDate)} - ${formatDayDate(endDate)}`;
+  const compactPeriod = `${formatMinuteWithDayOffset(event.startMinute)} - ${formatMinuteWithDayOffset(event.endMinute)}`;
+  const toggleLabel = isExpanded
+    ? t("dayTimeline.event.hideDetails", { title: labelledTitle, period: exactPeriod })
+    : t("dayTimeline.event.showDetails", { title: labelledTitle, period: exactPeriod });
+
+  React.useEffect(() => {
+    if (!isBusy || !isExpanded) return;
+    const closeOnOutsidePointer = (pointerEvent: PointerEvent) => {
+      if (pointerEvent.target instanceof Node && !compactCardRef.current?.contains(pointerEvent.target)) {
+        setExpanded(false);
+      }
+    };
+    document.addEventListener("pointerdown", closeOnOutsidePointer);
+    return () => document.removeEventListener("pointerdown", closeOnOutsidePointer);
+  }, [isBusy, isExpanded, setExpanded]);
 
   const compactCard = (
     <article
+      ref={compactCardRef}
       aria-label={accessibleLabel}
+      title={title}
       className={cn(
-        "group flex w-full flex-col items-stretch justify-center gap-0 overflow-hidden rounded-sm border px-1.5 text-xs shadow-sm",
+        "group flex w-full cursor-pointer flex-col items-stretch justify-start gap-0 overflow-hidden rounded-sm border px-1.5 py-1 text-xs leading-tight shadow-sm",
         timeline ? "absolute inset-y-0 left-0" : "relative min-h-12",
         !isBlockout && !isBusy && "border-blue-700 bg-blue-600 text-white",
         isBlockout && "border-amber-600 bg-amber-100 text-amber-950",
@@ -256,56 +353,69 @@ export function DayTimelineEventCard({
         expandsInPlace && timeline && "w-72",
       )}
     >
-      <span className={cn("flex min-w-0 items-center gap-1", (expandsInPlace || !compactCards) && "pr-7")}>
-        <EventIcon event={event} />
-        <span className="truncate font-semibold">{title}</span>
-      </span>
+      <div className="min-w-0 pr-7">
+        <span className="flex min-w-0 items-center gap-1">
+          <EventIcon event={event} />
+          <span className="min-w-0 flex-1 truncate font-semibold">{title}</span>
+        </span>
+        {event.kind === "booking" && event.privacy === "full" ? (
+          <UserBadge
+            name={event.bookedBy}
+            density="compact"
+            className="mt-0.5 max-w-full border-current/30 bg-background/90 text-foreground"
+          />
+        ) : null}
+      </div>
       <time
-        dateTime={formatMinute(event.startMinute)}
+        dateTime={`${startDate}T${formatMinute(event.startMinute)}`}
+        title={compactCards ? `${compactDate}; ${compactPeriod}` : exactPeriod}
         hidden={expandsInPlace}
         data-event-time
-        className="truncate text-[10px] leading-none"
+        className="mt-auto min-w-0 font-medium tabular-nums leading-tight"
       >
-        {compactCards ? formatMinute(event.startMinute) : exactPeriod}
+        {compactCards ? (
+          <>
+            <span className="block truncate text-[10px]" data-event-date>
+              {compactDate}
+            </span>
+            <span className="block truncate text-[11px]" data-event-time-range>
+              {compactPeriod}
+            </span>
+          </>
+        ) : (
+          <span className="block truncate text-[11px]">{exactPeriod}</span>
+        )}
       </time>
       {isBusy ? (
         <button
           type="button"
           aria-controls={detailsId}
           aria-expanded={isExpanded}
-          aria-label={
-            isExpanded
-              ? t("dayTimeline.event.hideDetails", { title, period: exactPeriod })
-              : t("dayTimeline.event.showDetails", { title, period: exactPeriod })
-          }
-          className={cn(
-            "absolute top-1/2 right-1 z-10 flex size-6 -translate-y-1/2 items-center justify-center rounded-full border border-current/20 bg-background/90 text-foreground opacity-0 shadow-sm outline-none hover:bg-background focus:opacity-100 focus-visible:ring-3 focus-visible:ring-ring/40 group-hover:opacity-100 group-focus-within:opacity-100",
-            !compactCards && "opacity-100",
-            isExpanded && "top-2 translate-y-0 opacity-100",
-          )}
+          aria-label={toggleLabel}
+          className="absolute inset-0 z-10 rounded-sm bg-transparent outline-none focus-visible:ring-3 focus-visible:ring-inset focus-visible:ring-ring/60"
           onClick={() => setExpanded(!isExpanded)}
-        >
-          <ChevronRight className={cn("size-3.5 transition-transform", isExpanded && "rotate-90")} aria-hidden="true" />
-        </button>
+        />
       ) : (
         <PopoverTrigger
           aria-controls={detailsId}
           aria-expanded={isExpanded}
-          aria-label={
-            isExpanded
-              ? t("dayTimeline.event.hideDetails", { title, period: exactPeriod })
-              : t("dayTimeline.event.showDetails", { title, period: exactPeriod })
-          }
-          className={cn(
-            "absolute top-1/2 right-1 z-10 flex size-6 -translate-y-1/2 items-center justify-center rounded-full border border-current/20 bg-background/90 text-foreground opacity-0 shadow-sm outline-none hover:bg-background focus:opacity-100 focus-visible:ring-3 focus-visible:ring-ring/40 group-hover:opacity-100 group-focus-within:opacity-100",
-            !compactCards && "opacity-100",
-          )}
-        >
-          <ChevronRight className={cn("size-3.5 transition-transform", isExpanded && "rotate-90")} aria-hidden="true" />
-        </PopoverTrigger>
+          aria-label={toggleLabel}
+          className="absolute inset-0 z-10 rounded-sm bg-transparent outline-none focus-visible:ring-3 focus-visible:ring-inset focus-visible:ring-ring/60"
+        />
       )}
+      <span
+        aria-hidden="true"
+        className={cn(
+          "pointer-events-none absolute top-1 right-1 z-20 flex size-6 items-center justify-center rounded-full border border-current/20 bg-background/90 text-foreground opacity-0 shadow-sm transition-opacity group-hover:opacity-100 group-focus-within:opacity-100",
+          !compactCards && "opacity-100",
+          isExpanded && "opacity-100",
+        )}
+        data-event-expand-indicator
+      >
+        <ChevronRight className={cn("size-3.5 transition-transform", isExpanded && "rotate-90")} />
+      </span>
       {isBusy ? (
-        <div id={detailsId} hidden={!isExpanded} className="space-y-1 pt-1">
+        <div id={detailsId} hidden={!isExpanded} className="relative z-20 space-y-1 pt-1">
           <time className="block font-medium">{exactPeriod}</time>
           {isExpanded ? renderEventActions?.(event, exactPeriod) : null}
         </div>
@@ -320,17 +430,7 @@ export function DayTimelineEventCard({
   if (event.kind === "booking" && event.privacy === "busy") return compactCard;
 
   return (
-    <Popover
-      open={isExpanded}
-      onOpenChange={(nextExpanded, eventDetails) => {
-        if (!nextExpanded && (eventDetails.reason === "outside-press" || eventDetails.reason === "focus-out")) {
-          eventDetails.cancel();
-          return;
-        }
-        setExpanded(nextExpanded);
-      }}
-      modal={false}
-    >
+    <Popover open={isExpanded} onOpenChange={setExpanded} modal={false}>
       {compactCard}
       <PopoverContent
         id={detailsId}
@@ -341,7 +441,8 @@ export function DayTimelineEventCard({
         collisionBoundary={collisionBoundary ?? undefined}
         sticky
         className={cn(
-          "w-[min(22rem,var(--available-width))] max-w-none gap-0 overflow-hidden rounded-lg border p-0 shadow-xl ring-4",
+          "w-[min(22rem,var(--available-width))] max-w-none gap-0 overflow-hidden rounded-sm border p-0 shadow-xl ring-4",
+          expandedCardClassName,
           isBlockout ? "border-amber-600 ring-amber-500/15" : "border-primary ring-ring/20",
         )}
       >
@@ -350,6 +451,7 @@ export function DayTimelineEventCard({
           event={event}
           exactPeriod={exactPeriod}
           renderEventActions={renderEventActions}
+          renderBlockoutActions={renderBlockoutActions}
         />
       </PopoverContent>
     </Popover>
@@ -399,7 +501,12 @@ export function DayTimeline({
   compactCards = true,
   variant = "detail",
   itemName,
+  expandedCardClassName,
   renderEventActions,
+  renderBlockoutActions,
+  snapIncrementMinutes = 5,
+  creationDisabled = false,
+  onRangeSelect,
 }: {
   date: string;
   timezone: string;
@@ -415,11 +522,17 @@ export function DayTimeline({
   compactCards?: boolean;
   variant?: "detail" | "table-row";
   itemName?: string;
+  expandedCardClassName?: string | ((event: DayTimelineEvent) => string | undefined);
   renderEventActions?: (event: Extract<DayTimelineEvent, { kind: "booking" }>, period: string) => React.ReactNode;
+  renderBlockoutActions?: (event: Extract<DayTimelineEvent, { kind: "blockout" }>, period: string) => React.ReactNode;
+  snapIncrementMinutes?: number;
+  creationDisabled?: boolean;
+  onRangeSelect?: (range: DayTimelineRange, trigger: HTMLElement) => void;
 }) {
   const { t, i18n } = useTranslation("booking");
   const scrollerRef = React.useRef<HTMLElement>(null);
   const [collisionBoundary, setCollisionBoundary] = React.useState<HTMLElement | null>(null);
+  const [dragRange, setDragRange] = React.useState<{ from: number; to: number } | null>(null);
   const instanceId = React.useId();
   const headingId = `${instanceId}-heading`;
   const [internalViewState, setInternalViewState] = React.useState<DayTimelineViewState>({
@@ -483,6 +596,14 @@ export function DayTimeline({
     scrollerRef.current = node;
     setCollisionBoundary(node);
   }, []);
+  const snapMinute = (minute: number) =>
+    Math.min(DAY_MINUTES, Math.max(0, Math.round(minute / snapIncrementMinutes) * snapIncrementMinutes));
+  const minuteAt = (clientX: number, canvas: HTMLElement) => {
+    const box = canvas.getBoundingClientRect();
+    return snapMinute(((clientX - box.left) / box.width) * DAY_MINUTES);
+  };
+  const freeCanvas = (target: EventTarget | null) =>
+    target instanceof HTMLElement && !target.closest("article, button, a");
 
   return (
     <section aria-labelledby={headingId} className={cn("text-foreground", tableRow ? "space-y-0" : "space-y-4")}>
@@ -540,14 +661,37 @@ export function DayTimeline({
           tabIndex={0}
         >
           <div
-            className="relative"
+            className={cn("relative select-none touch-none", onRangeSelect && !creationDisabled && "cursor-crosshair")}
             style={{
               width: `${(DAY_MINUTES / visibleMinutes) * 100 * zoom}%`,
               minWidth: densityHourWidth * 24 * zoom,
-              height: eventAreaTop + 16 + laneCount * 44 + (positionedEvents.length === 0 ? 0 : 80),
+              height: eventAreaTop + 16 + laneCount * EVENT_LANE_PITCH + (positionedEvents.length === 0 ? 0 : 80),
             }}
             data-testid="day-timeline-canvas"
             data-hour-width={densityHourWidth}
+            data-creation-disabled={creationDisabled || undefined}
+            onPointerDown={(event) => {
+              if (!onRangeSelect || creationDisabled || !freeCanvas(event.target)) return;
+              const from = Math.min(DAY_MINUTES - snapIncrementMinutes, minuteAt(event.clientX, event.currentTarget));
+              if (event.nativeEvent.isTrusted) event.currentTarget.setPointerCapture(event.pointerId);
+              setDragRange({ from, to: from + snapIncrementMinutes });
+            }}
+            onPointerMove={(event) => {
+              if (!dragRange || creationDisabled) return;
+              setDragRange({ ...dragRange, to: minuteAt(event.clientX, event.currentTarget) });
+            }}
+            onPointerUp={(event) => {
+              if (!dragRange || !onRangeSelect || creationDisabled) {
+                setDragRange(null);
+                return;
+              }
+              const startMinute = Math.min(dragRange.from, dragRange.to);
+              const endMinute = Math.max(dragRange.from, dragRange.to);
+              setDragRange(null);
+              if (endMinute - startMinute < snapIncrementMinutes) return;
+              onRangeSelect({ startMinute, endMinute }, scrollerRef.current ?? event.currentTarget);
+            }}
+            onPointerCancel={() => setDragRange(null)}
           >
             <div
               className="pointer-events-none absolute inset-0 grid grid-cols-[repeat(24,minmax(0,1fr))]"
@@ -566,11 +710,12 @@ export function DayTimeline({
                 return (
                   <li
                     key={event.id}
-                    className="absolute z-10 h-9"
+                    className="absolute z-10"
                     style={{
                       left: `${(startMinute / DAY_MINUTES) * 100}%`,
                       width: `${((visualEndMinute - startMinute) / DAY_MINUTES) * 100}%`,
-                      top: eventAreaTop + lane * 44,
+                      top: eventAreaTop + lane * EVENT_LANE_PITCH,
+                      height: EVENT_CARD_HEIGHT,
                     }}
                     data-event-id={event.id}
                     data-lane={lane}
@@ -581,12 +726,30 @@ export function DayTimeline({
                       compactCards={compactCards}
                       variant="timeline"
                       collisionBoundary={collisionBoundary}
+                      expandedCardClassName={
+                        typeof expandedCardClassName === "function"
+                          ? expandedCardClassName(event)
+                          : expandedCardClassName
+                      }
                       renderEventActions={renderEventActions}
+                      renderBlockoutActions={renderBlockoutActions}
                     />
                   </li>
                 );
               })}
             </ol>
+            {dragRange ? (
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute z-40 rounded-sm border-2 border-primary bg-primary/20"
+                style={{
+                  top: eventAreaTop,
+                  bottom: 0,
+                  left: `${(Math.min(dragRange.from, dragRange.to) / DAY_MINUTES) * 100}%`,
+                  width: `${(Math.abs(dragRange.to - dragRange.from) / DAY_MINUTES) * 100}%`,
+                }}
+              />
+            ) : null}
             {nowMinute !== undefined && nowEdge === "inside" && nowLabel && (
               <NowMarker minute={nowMinute} edge="inside" label={nowLabel} />
             )}

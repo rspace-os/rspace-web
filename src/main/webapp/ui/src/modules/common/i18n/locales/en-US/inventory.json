@@ -1428,6 +1428,18 @@
     "setAsTarget": "Set as Target"
   },
   "instrument": {
+    "booking": {
+      "configured": {
+        "action": "Go to booking page",
+        "description": "Go to Booking to see availability and make a booking.",
+        "title": "This instrument can be booked"
+      },
+      "notConfigured": {
+        "action": "Set up booking",
+        "description": "Set up booking to make this instrument available in Booking.",
+        "title": "Booking has not been set up"
+      }
+    },
     "createOptions": {
       "location": {
         "label": "Location",

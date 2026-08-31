@@ -5,6 +5,12 @@ import { defineConfig, type Plugin } from "vite";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const bookingPageOptimizeDeps = [
+  "@base-ui/react/tabs",
+  "@fortawesome/free-brands-svg-icons/faApple",
+  "@fortawesome/free-brands-svg-icons/faGoogle",
+  "@fortawesome/react-fontawesome",
+];
 
 /**
  * `@storybook/tanstack-react` forces `@tanstack/react-store` and
@@ -26,7 +32,7 @@ const __dirname = path.dirname(__filename);
 export const nestTransitiveOptimizeDeps = (): Plugin => ({
   name: "rspace:nest-transitive-optimize-deps",
   configResolved(config) {
-    config.optimizeDeps.include = (config.optimizeDeps.include ?? [])
+    const nested = (config.optimizeDeps.include ?? [])
       // The preset already includes `@tanstack/react-router > @tanstack/react-store`.
       .filter((dep) => dep !== "@tanstack/react-store")
       .map((dep) =>
@@ -34,6 +40,7 @@ export const nestTransitiveOptimizeDeps = (): Plugin => ({
           ? `@tanstack/react-router > @tanstack/react-store > ${dep}`
           : dep,
       );
+    config.optimizeDeps.include = [...new Set([...nested, ...bookingPageOptimizeDeps])];
   },
 });
 

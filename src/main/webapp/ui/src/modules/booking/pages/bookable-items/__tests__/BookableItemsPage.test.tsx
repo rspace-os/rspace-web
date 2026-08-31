@@ -106,6 +106,11 @@ const openApi = {
               maximumNesting: 10,
               maximumArguments: 1000,
               selectors: {
+                "createdBy.value": {
+                  schema: { type: "integer", format: "int64" },
+                  operators: ["==", "!=", "=in=", "=out="],
+                  wildcards: false,
+                },
                 enabled: { operators: ["==", "!=", "=out="], wildcards: false },
                 timezone: { operators: ["==", "!=", "=contains="], wildcards: true },
                 updatedAt: { operators: ["==", "=gt=", "=lt="], wildcards: false },
@@ -240,7 +245,9 @@ describe("BookableItemsPage", () => {
     ).toHaveAttribute("href", "/globalId/IN123");
     expect(screen.getByRole("heading", { name: "booking:bookableItems.plural" })).toBeVisible();
     expect(collectionRequest?.headers.get("Authorization")).toBe("Bearer new-token");
-    expect(new URL(collectionRequest?.url ?? "http://localhost").searchParams.get("depth")).toBe("1");
+    const requestParameters = new URL(collectionRequest?.url ?? "http://localhost").searchParams;
+    expect(requestParameters.get("depth")).toBe("1");
+    expect(requestParameters.get("where")).toBe("createdBy.value==me");
     expect(screen.getByRole("link", { name: "booking:bookableItems.actions.add" })).toHaveAttribute(
       "href",
       "/booking/config/bookable-items/add",
@@ -327,7 +334,9 @@ describe("BookableItemsPage", () => {
     await user.type(await screen.findByRole("textbox", { name: "common:tableList.search.label" }), "confocal");
 
     await waitFor(() => expect(new URLSearchParams(window.location.search).get("bookable-items.q")).toBe("confocal"));
-    await waitFor(() => expect(searchRequests).toEqual(["target.name=contains=confocal"]));
+    await waitFor(() =>
+      expect(searchRequests).toEqual(["createdBy.value==me", "(target.name=contains=confocal);createdBy.value==me"]),
+    );
   });
 
   it("hides a column locally when the table uses a fixed projection", async () => {

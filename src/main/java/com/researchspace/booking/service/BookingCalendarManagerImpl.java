@@ -4,6 +4,7 @@ import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
 
 import com.researchspace.booking.dao.BookingCalendarSubscriptionDao;
 import com.researchspace.booking.dao.BookingConfigurationDao;
+import com.researchspace.booking.dao.UserBookingCalendarSubscriptionDao;
 import com.researchspace.booking.service.BookingCalendarFeedGenerator.CalendarGenerationException;
 import com.researchspace.booking.service.BookingCalendarFeedGenerator.CalendarTooLargeException;
 import com.researchspace.booking.service.TimeSlotBookingManager.CalendarEvent;
@@ -20,6 +21,7 @@ import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.BookingState;
 import com.researchspace.model.booking.TimeSlotBooking;
+import com.researchspace.model.booking.UserBookingCalendarSubscription;
 import com.researchspace.model.collection.CollectionDescription.Operator;
 import com.researchspace.model.collection.FieldSelection;
 import com.researchspace.model.collection.FilterExpression;
@@ -58,6 +60,7 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
   private static final Logger SECURITY_LOG = LoggerFactory.getLogger(SecurityLogger.class);
 
   private final BookingCalendarSubscriptionDao subscriptionDao;
+  private final UserBookingCalendarSubscriptionDao userSubscriptionDao;
   private final BookingConfigurationDao configurationDao;
   private final TimeSlotBookingManager bookingManager;
   private final InstrumentDao instrumentDao;
@@ -72,6 +75,8 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
   @Autowired
   public BookingCalendarManagerImpl(
       @Qualifier("bookingCalendarSubscriptionDao") BookingCalendarSubscriptionDao subscriptionDao,
+      @Qualifier("userBookingCalendarSubscriptionDao")
+          UserBookingCalendarSubscriptionDao userSubscriptionDao,
       @Qualifier("bookingConfigurationDao") BookingConfigurationDao configurationDao,
       TimeSlotBookingManager bookingManager,
       InstrumentDao instrumentDao,
@@ -82,6 +87,7 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
       IPropertyHolder properties) {
     this(
         subscriptionDao,
+        userSubscriptionDao,
         configurationDao,
         bookingManager,
         instrumentDao,
@@ -95,6 +101,7 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
 
   BookingCalendarManagerImpl(
       BookingCalendarSubscriptionDao subscriptionDao,
+      UserBookingCalendarSubscriptionDao userSubscriptionDao,
       BookingConfigurationDao configurationDao,
       TimeSlotBookingManager bookingManager,
       InstrumentDao instrumentDao,
@@ -105,6 +112,7 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
       IPropertyHolder properties,
       Supplier<String> tokenSupplier) {
     this.subscriptionDao = subscriptionDao;
+    this.userSubscriptionDao = userSubscriptionDao;
     this.configurationDao = configurationDao;
     this.bookingManager = bookingManager;
     this.instrumentDao = instrumentDao;
@@ -204,6 +212,69 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
   }
 
   @Override
+  public Status userStatus(User subject, User actor) {
+    requirePersonalCaller(subject, actor);
+    requireFeature(subject);
+    return userSubscriptionDao
+        .findByUserId(subject.getId())
+        .map(
+            subscription ->
+                new Status(
+                    true, subscription.getUpdatedAt(), subscriptionUrl(subscription.getRawToken())))
+        .orElseGet(() -> new Status(false, null, null));
+  }
+
+  @Override
+  public Created createOrRotateUser(User subject, User actor) {
+    requirePersonalCaller(subject, actor);
+    requireFeature(subject);
+    Optional<UserBookingCalendarSubscription> existing =
+        userSubscriptionDao.findByUserId(subject.getId());
+    String rawToken = tokenSupplier.get();
+    Date updatedAt = new Date();
+    UserBookingCalendarSubscription subscription;
+    String action;
+    if (existing.isPresent()) {
+      subscription = existing.get();
+      subscription.setTokenHash(CryptoUtils.hashToken(rawToken));
+      subscription.setRawToken(rawToken);
+      subscription.setUpdatedAt(updatedAt);
+      action = "replaced";
+    } else {
+      subscription =
+          new UserBookingCalendarSubscription(
+              subject, CryptoUtils.hashToken(rawToken), rawToken, updatedAt);
+      action = "created";
+    }
+    UserBookingCalendarSubscription saved = userSubscriptionDao.saveAndFlush(subscription);
+    SECURITY_LOG.info(
+        "User booking calendar subscription {} by actor [{}] for subject [{}], subscription [{}]",
+        action,
+        actor.getUsername(),
+        subject.getUsername(),
+        saved.getId());
+    String url = subscriptionUrl(rawToken);
+    return new Created(new Status(true, saved.getUpdatedAt(), url), url);
+  }
+
+  @Override
+  public void revokeUser(User subject, User actor) {
+    requirePersonalCaller(subject, actor);
+    requireFeature(subject);
+    Optional<UserBookingCalendarSubscription> existing =
+        userSubscriptionDao.findByUserId(subject.getId());
+    userSubscriptionDao.removeForUser(subject.getId());
+    existing.ifPresent(
+        subscription ->
+            SECURITY_LOG.info(
+                "User booking calendar subscription revoked by actor [{}] for subject [{}],"
+                    + " subscription [{}]",
+                actor.getUsername(),
+                subject.getUsername(),
+                subscription.getId()));
+  }
+
+  @Override
   public int resetForConfiguration(Long configurationId, User subject, User actor) {
     requirePersonalCaller(subject, actor);
     requireFeature(subject);
@@ -236,6 +307,8 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
       return Optional.of(
           new Download(generator.generate(source.get(), serverBaseUrl, locale, limits.maxBytes())));
     } catch (CalendarTooLargeException | CalendarGenerationException ex) {
+      SECURITY_LOG.warn(
+          "Booking calendar download generation failed for booking [{}]", bookingId, ex);
       return Optional.empty();
     }
   }
@@ -250,46 +323,76 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
     try {
       Optional<BookableItemCalendarSubscription> subscription =
           subscriptionDao.findByTokenHash(CryptoUtils.hashToken(rawToken));
-      if (subscription.isEmpty()) {
+      if (subscription.isPresent()) {
+        BookableItemCalendarSubscription value = subscription.get();
+        User owner = value.getUser();
+        if (!active(owner) || !featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, owner)) {
+          SECURITY_LOG.debug(
+              "Booking calendar subscription [{}] is currently unavailable", value.getId());
+          return new NotFound();
+        }
+        Optional<CalendarSource> source =
+            bookingManager.getCalendarSource(
+                value.getBookingConfiguration().getId(), owner, refreshedAt, limits.maxEvents());
+        if (source.isEmpty()) {
+          SECURITY_LOG.debug(
+              "Booking calendar subscription [{}] is currently unavailable", value.getId());
+          return new NotFound();
+        }
+        try {
+          return new Available(
+              generator.generate(source.get(), serverBaseUrl, locale, limits.maxBytes()));
+        } catch (CalendarTooLargeException | CalendarSourceTooLargeException ex) {
+          SECURITY_LOG.warn(
+              "Booking calendar feed exceeds a safety limit for configuration [{}], subscription"
+                  + " [{}]",
+              value.getBookingConfiguration().getId(),
+              value.getId(),
+              ex);
+          return new Oversized();
+        } catch (CalendarGenerationException ex) {
+          SECURITY_LOG.warn(
+              "Booking calendar feed generation failed for configuration [{}], subscription [{}]",
+              value.getBookingConfiguration().getId(),
+              value.getId(),
+              ex);
+          return new Oversized();
+        }
+      }
+      Optional<UserBookingCalendarSubscription> userSubscription =
+          userSubscriptionDao.findByTokenHash(CryptoUtils.hashToken(rawToken));
+      if (userSubscription.isEmpty()) {
         return new NotFound();
       }
-      BookableItemCalendarSubscription value = subscription.get();
+      UserBookingCalendarSubscription value = userSubscription.get();
       User owner = value.getUser();
       if (!active(owner) || !featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, owner)) {
         SECURITY_LOG.debug(
-            "Booking calendar subscription [{}] is currently unavailable", value.getId());
+            "User booking calendar subscription [{}] is currently unavailable", value.getId());
         return new NotFound();
       }
-      Optional<CalendarSource> source =
-          bookingManager.getCalendarSource(
-              value.getBookingConfiguration().getId(), owner, refreshedAt, limits.maxEvents());
-      if (source.isEmpty()) {
-        SECURITY_LOG.debug(
-            "Booking calendar subscription [{}] is currently unavailable", value.getId());
-        return new NotFound();
-      }
+      CalendarSource source =
+          bookingManager.getUserCalendarSource(owner, refreshedAt, limits.maxEvents());
       try {
-        return new Available(
-            generator.generate(source.get(), serverBaseUrl, locale, limits.maxBytes()));
+        return new Available(generator.generate(source, serverBaseUrl, locale, limits.maxBytes()));
       } catch (CalendarTooLargeException | CalendarSourceTooLargeException ex) {
         SECURITY_LOG.warn(
-            "Booking calendar feed exceeds a safety limit for configuration [{}], subscription"
-                + " [{}]",
-            value.getBookingConfiguration().getId(),
-            value.getId());
+            "User booking calendar feed exceeds a safety limit for subscription [{}]",
+            value.getId(),
+            ex);
         return new Oversized();
       } catch (CalendarGenerationException ex) {
         SECURITY_LOG.warn(
-            "Booking calendar feed generation failed for configuration [{}], subscription [{}]",
-            value.getBookingConfiguration().getId(),
-            value.getId());
+            "User booking calendar feed generation failed for subscription [{}]",
+            value.getId(),
+            ex);
         return new Oversized();
       }
     } catch (CalendarSourceTooLargeException ex) {
+      SECURITY_LOG.warn("Booking calendar feed source exceeds the configured event limit", ex);
       return new Oversized();
     } catch (RuntimeException ex) {
-      SECURITY_LOG.warn(
-          "Booking calendar feed unavailable due to [{}]", ex.getClass().getSimpleName());
+      SECURITY_LOG.warn("Booking calendar feed is unavailable", ex);
       return new Oversized();
     } finally {
       generationSlots.release();
@@ -298,6 +401,9 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
 
   private Optional<CalendarSource> downloadSource(TimeSlotBooking booking, User subject) {
     BookingConfiguration configuration = booking.getBookingConfiguration();
+    if (configuration.isDeleted()) {
+      return Optional.empty();
+    }
     BookableTargetReference target = configuration.getTarget();
     if (target == null || target.type() != BookableTargetType.INSTRUMENT) {
       return Optional.empty();
@@ -319,8 +425,10 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
             booking.getEndTime(),
             booking.getCreatedAt(),
             booking.getUpdatedAt(),
+            booking.getKind(),
             booking.getPrivacy(),
             booking.getVisibleBookedBy(),
+            booking.getVisibleCreatedBy(),
             booking.getVisiblePurpose(),
             booking.isCanEdit());
     return Optional.of(

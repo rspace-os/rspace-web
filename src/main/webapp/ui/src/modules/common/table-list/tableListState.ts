@@ -195,6 +195,8 @@ export type TableListProps<TDocument extends Record<string, unknown>> = {
   onCreate?: () => void;
   createAction?: ReactNode;
   createLabel?: string;
+  /** Page-owned controls rendered directly below the collection heading. */
+  headerContent?: ReactNode;
   uiColumns?: readonly TableListUiColumn<TDocument>[];
   rowActions?: TableListRowActions<TDocument>;
   selection?: TableListSelection<TDocument>;

@@ -12,6 +12,20 @@ export type AvailabilitySegment = {
   state: AvailabilityState;
 };
 
+export type AvailabilitySource = {
+  id: string;
+  startsAt: Date;
+  endsAt: Date;
+};
+
+export type SourcedAvailabilityInterval = AvailabilityInterval & {
+  source: AvailabilitySource;
+};
+
+export type AvailabilitySlice<T extends AvailabilityInterval = AvailabilityInterval> = AvailabilitySegment & {
+  intervals: readonly T[];
+};
+
 export type CurrentDayAvailability = "available-now" | "free-later-today" | "unavailable-today";
 
 type TimestampInterval = Omit<AvailabilitySegment, "state">;
@@ -34,11 +48,11 @@ function mergeIntervals(intervals: readonly TimestampInterval[]): TimestampInter
   return merged;
 }
 
-export function buildAvailabilitySegments(
-  intervals: readonly AvailabilityInterval[],
+function buildTimeline<T extends AvailabilityInterval>(
+  intervals: readonly T[],
   periodStart: Date,
   periodEnd: Date,
-): AvailabilitySegment[] {
+): { clipped: T[]; segments: AvailabilitySegment[] } {
   const start = timestamp(periodStart, "periodStart");
   const end = timestamp(periodEnd, "periodEnd");
   if (end <= start) throw new RangeError("periodEnd must be after periodStart");
@@ -47,10 +61,21 @@ export function buildAvailabilitySegments(
     const endsAt = timestamp(interval.endsAt, "interval endsAt");
     if (endsAt <= startsAt) throw new RangeError("interval endsAt must be after startsAt");
     if (endsAt <= start || startsAt >= end) return [];
-    return [{ kind: interval.kind, startsAt: Math.max(startsAt, start), endsAt: Math.min(endsAt, end) }];
+    return [
+      {
+        ...interval,
+        startsAt: new Date(Math.max(startsAt, start)),
+        endsAt: new Date(Math.min(endsAt, end)),
+      },
+    ];
   });
-  const bookings = mergeIntervals(clipped.filter(({ kind }) => kind === "booking"));
-  const blockouts = mergeIntervals(clipped.filter(({ kind }) => kind === "blockout"));
+  const timestampIntervals = clipped.map(({ kind, startsAt, endsAt }) => ({
+    kind,
+    startsAt: startsAt.getTime(),
+    endsAt: endsAt.getTime(),
+  }));
+  const bookings = mergeIntervals(timestampIntervals.filter(({ kind }) => kind === "booking"));
+  const blockouts = mergeIntervals(timestampIntervals.filter(({ kind }) => kind === "blockout"));
   const boundaries = [
     ...new Set([
       start,
@@ -60,7 +85,7 @@ export function buildAvailabilitySegments(
     ]),
   ].toSorted((left, right) => left - right);
 
-  return boundaries.slice(0, -1).map((startsAt, index) => {
+  const segments: AvailabilitySegment[] = boundaries.slice(0, -1).map((startsAt, index) => {
     const endsAt = boundaries[index + 1];
     const booked = bookings.some((interval) => interval.startsAt < endsAt && interval.endsAt > startsAt);
     const blocked = blockouts.some((interval) => interval.startsAt < endsAt && interval.endsAt > startsAt);
@@ -70,6 +95,32 @@ export function buildAvailabilitySegments(
       state: booked && blocked ? "overlap" : booked ? "booking" : blocked ? "blockout" : "available",
     };
   });
+  return { clipped, segments };
+}
+
+export function buildAvailabilitySegments(
+  intervals: readonly AvailabilityInterval[],
+  periodStart: Date,
+  periodEnd: Date,
+): AvailabilitySegment[] {
+  return buildTimeline(intervals, periodStart, periodEnd).segments;
+}
+
+export function buildAvailabilitySlices<T extends AvailabilityInterval>(
+  intervals: readonly T[],
+  periodStart: Date,
+  periodEnd: Date,
+): AvailabilitySlice<T>[] {
+  const { clipped, segments } = buildTimeline(intervals, periodStart, periodEnd);
+  return segments.map((segment) => ({
+    ...segment,
+    intervals:
+      segment.state === "available"
+        ? []
+        : clipped.filter(
+            (interval) => interval.startsAt.getTime() < segment.endsAt && interval.endsAt.getTime() > segment.startsAt,
+          ),
+  }));
 }
 
 export function classifyCurrentDayAvailability(

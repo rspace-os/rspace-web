@@ -57,7 +57,7 @@
             "invalid": "Booking buffers must be between 0 and 10,080 minutes."
           },
           "granularity": {
-            "invalid": "Slot granularity must be 1, 5, or 15 minutes."
+            "invalid": "Slot granularity must be 1, 5, 10, or 15 minutes."
           },
           "maximumDuration": {
             "invalid": "Maximum booking duration must be 0 or a multiple of the slot granularity, up to 527,040 minutes."

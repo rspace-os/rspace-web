@@ -1,6 +1,9 @@
 import { HttpResponse, http, type RequestHandler } from "msw";
+import {
+  DEFAULT_SCHEDULING_SETTINGS,
+  schedulingSettingsFieldNames,
+} from "@/modules/booking/configuration/schedulingSettings";
 import { BOOKING_READ_FIELDS } from "@/modules/booking/domain/booking";
-import { DEFAULT_SCHEDULING_SETTINGS, schedulingSettingsFieldNames } from "../schedulingSettings";
 
 export const bookableItemsOpenApi = {
   paths: {
@@ -144,6 +147,8 @@ export const bookableItemFixtures = [
     enabled: true,
     timezone: "Europe/Berlin",
     ...DEFAULT_SCHEDULING_SETTINGS,
+    openingStart: "08:00",
+    openingEnd: "17:00",
     updatedAt: "2026-08-10T10:00:00Z",
     "target.customFields": { SF152: "BSL-2", SF160: "yes" },
   },

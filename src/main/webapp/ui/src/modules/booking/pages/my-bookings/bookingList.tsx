@@ -32,6 +32,13 @@ export function bookingListConfig(timeZone: string): CollectionConfig<BookingLis
     fields: [
       { name: "id", type: "number", labelKey: "booking:myBookings.fields.id", list: false },
       {
+        name: "kind",
+        type: "select",
+        options: ["BOOKING", "MAINTENANCE"],
+        labelKey: "booking:myBookings.fields.kind",
+        list: false,
+      },
+      {
         name: "target",
         type: "relationship",
         relationTo: "instruments",

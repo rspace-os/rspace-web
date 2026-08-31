@@ -41,11 +41,16 @@ class BookingCalendarFeedGeneratorTest {
         .thenReturn("Booked");
     when(messages.getMessageForLocale("booking:calendar.feed.busy", Locale.ENGLISH))
         .thenReturn("Busy");
+    when(messages.getMessageForLocale("booking:calendar.feed.myBookings", Locale.ENGLISH))
+        .thenReturn("My RSpace bookings");
     when(messages.getMessage(anyString(), any(Object[].class), any(Locale.class)))
         .thenAnswer(
             invocation -> {
               String key = invocation.getArgument(0);
               Object[] arguments = invocation.getArgument(1);
+              if (key.endsWith("itemSummary")) {
+                return arguments[0] + " — " + arguments[1];
+              }
               return (key.endsWith("bookedBy") ? "Booked by: " : "Purpose: ") + arguments[0];
             });
   }
@@ -108,6 +113,42 @@ class BookingCalendarFeedGeneratorTest {
     assertThrows(
         CalendarTooLargeException.class,
         () -> generator.generate(source, SERVER, Locale.ENGLISH, bytes.length - 1));
+  }
+
+  @Test
+  void localizesAUserCalendarNameAndIdentifiesEachBookableItem() throws Exception {
+    CalendarEvent event =
+        new CalendarEvent(
+            7L,
+            date("2026-08-25T10:00:00Z"),
+            date("2026-08-25T11:00:00Z"),
+            date("2026-08-20T12:00:00Z"),
+            date("2026-08-24T12:00:00Z"),
+            com.researchspace.model.booking.BookingEventKind.BOOKING,
+            BookingPrivacy.FULL,
+            "Ada (ada)",
+            "Ada (ada)",
+            null,
+            true,
+            "Confocal microscope");
+    CalendarSource source =
+        new CalendarSource("booking:calendar.feed.myBookings", "UTC", List.of(event), true);
+
+    Calendar parsed =
+        new CalendarBuilder()
+            .build(
+                new ByteArrayInputStream(
+                    generator.generate(source, SERVER, Locale.ENGLISH, 100_000)));
+
+    assertEquals("My RSpace bookings", parsed.getProperty("X-WR-CALNAME").orElseThrow().getValue());
+    assertEquals(
+        "Confocal microscope — Booked",
+        parsed
+            .<VEvent>getComponents(Component.VEVENT)
+            .get(0)
+            .getProperty(Property.SUMMARY)
+            .orElseThrow()
+            .getValue());
   }
 
   @Test

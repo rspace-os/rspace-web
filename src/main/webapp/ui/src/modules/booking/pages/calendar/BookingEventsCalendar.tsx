@@ -1,31 +1,37 @@
 import { Link } from "@tanstack/react-router";
-import { CalendarCheck2Icon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+import { CalendarCheck2Icon } from "lucide-react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
+import {
+  BookingDateControls,
+  BookingTimeZoneBadge,
+  bookingToolbarClassName,
+} from "@/modules/booking/components/BookingToolbar";
 import {
   DayTimeline,
   type DayTimelineEvent,
   DayTimelineEventCard,
   type DayTimelineViewState,
 } from "@/modules/booking/components/DayTimeline";
+import type { BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import { todayInTimeZone } from "@/modules/booking/domain/bookingDisplayPreferences";
-import { sliceAcrossWallClockDay, zonedDayBounds } from "@/modules/booking/domain/bookingTime";
+import { addCalendarDays, sliceAcrossWallClockDay, zonedDayBounds } from "@/modules/booking/domain/bookingTime";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
-import { TableList } from "@/modules/common/table-list/TableList";
+import i18n from "@/modules/common/i18n";
+import { TableList, type TableListProps } from "@/modules/common/table-list/TableList";
 import { useTableList } from "@/modules/common/table-list/useTableList";
 import { Badge } from "@/modules/common/ui/badge";
 import { Button, buttonVariants } from "@/modules/common/ui/button";
-import { Input } from "@/modules/common/ui/input";
 import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
-import { Label } from "@/modules/common/ui/label";
 import { cn } from "@/modules/common/utils/cn";
-import { addCalendarDays } from "../all-bookable-items/calendarDate";
+import type { BookingConfigurationRow } from "../bookable-items/bookingConfiguration";
 
 export const calendarLayouts = ["time-grid", "resources", "agenda"] as const;
 export type CalendarLayout = (typeof calendarLayouts)[number];
 export const calendarViews = ["day", "week", "month"] as const;
 export type CalendarView = (typeof calendarViews)[number];
+export type BookingCalendarResource = BookingListDocument["target"];
 
 const bookingEventListConfig = resolveCollectionConfig<BookingListDocument>({
   slug: "booking-events-calendar",
@@ -36,7 +42,6 @@ const bookingEventListConfig = resolveCollectionConfig<BookingListDocument>({
   labels: {
     singularKey: "booking:calendar.event",
     pluralKey: "booking:calendar.title",
-    descriptionKey: "booking:calendar.description",
   },
   fields: [
     { name: "id", type: "number", labelKey: "booking:calendar.fields.id", list: false },
@@ -156,11 +161,22 @@ function toTimelineEvent(event: BookingListDocument, date: string, timezone: str
           globalId: event.target.value.parentContainerGlobalId,
         }
       : undefined;
+  if (event.kind === "MAINTENANCE") {
+    return {
+      id: String(event.id),
+      kind: "blockout",
+      title: i18n.t("booking:bookings.maintenanceLabel"),
+      item: { name: event.target.value.name, globalId: event.target.globalId, location },
+      createdBy: event.createdBy ?? undefined,
+      notes: event.purpose ?? undefined,
+      ...slice,
+    };
+  }
   return {
     id: String(event.id),
     kind: "booking",
     privacy: "full",
-    title: event.bookedBy ? `${event.target.value.name} · ${event.bookedBy}` : event.target.value.name,
+    title: event.target.value.name,
     bookedBy: event.bookedBy ?? "",
     item: {
       name: event.target.value.name,
@@ -193,9 +209,10 @@ function EventCard({
       compactCards={compact}
       variant={overlay ? "timeline" : "flow"}
       renderEventActions={() => <BookingActions event={event} date={date} />}
+      renderBlockoutActions={() => <BookingActions event={event} date={date} />}
     />
   );
-  return overlay ? <div className="relative min-h-12">{card}</div> : card;
+  return overlay ? <div className={cn("relative", compact ? "min-h-18" : "min-h-14")}>{card}</div> : card;
 }
 
 function BookingActions({ event, date }: { event: BookingListDocument; date: string }) {
@@ -235,7 +252,51 @@ function actionsFor(events: readonly BookingListDocument[], date: string) {
   };
 }
 
-function CalendarControls({
+function blockoutActionsFor(events: readonly BookingListDocument[], date: string) {
+  return (timelineEvent: Extract<DayTimelineEvent, { kind: "blockout" }>) => {
+    const event = events.find(({ id }) => String(id) === timelineEvent.id);
+    return event ? <BookingActions event={event} date={date} /> : null;
+  };
+}
+
+function SegmentedControl<Option extends string>({
+  legend,
+  options,
+  value,
+  isDisabled,
+  optionLabel,
+  onChange,
+}: {
+  legend: string;
+  options: readonly Option[];
+  value: Option;
+  isDisabled?: (option: Option) => boolean;
+  optionLabel: (option: Option) => string;
+  onChange: (option: Option) => void;
+}) {
+  return (
+    <fieldset>
+      <legend className="sr-only">{legend}</legend>
+      <div className="flex w-fit rounded-sm border bg-background p-1">
+        {options.map((option) => (
+          <Button
+            key={option}
+            type="button"
+            size="sm"
+            variant={value === option ? "secondary" : "ghost"}
+            aria-pressed={value === option}
+            disabled={isDisabled?.(option)}
+            onClick={() => onChange(option)}
+          >
+            {optionLabel(option)}
+          </Button>
+        ))}
+      </div>
+    </fieldset>
+  );
+}
+
+export function CalendarTopBar({
   date,
   view,
   layout,
@@ -257,79 +318,45 @@ function CalendarControls({
   const { t } = useTranslation("booking");
   const periodLabel = t(`calendar.period.${view}`).toLocaleLowerCase();
   return (
-    <div className="flex flex-col gap-4 border-b bg-muted/20 p-3 lg:flex-row lg:items-end lg:justify-between">
-      <div className="flex flex-wrap items-end gap-2">
-        <div className="space-y-1.5">
-          <Label htmlFor="booking-events-calendar-date">{t("calendar.date")}</Label>
-          <Input
-            id="booking-events-calendar-date"
-            className="w-auto bg-background"
-            type="date"
-            value={date}
-            onChange={(event) => onDateChange(event.currentTarget.value)}
+    <div role="toolbar" aria-label={t("calendar.toolbar")} className={bookingToolbarClassName}>
+      <BookingDateControls
+        date={date}
+        today={today}
+        timeZone={timezone}
+        controlsLabel={t("calendar.dateControls")}
+        navigationLabel={t("calendar.periodNavigation")}
+        previousLabel={t("calendar.previousPeriod", { period: periodLabel })}
+        todayLabel={t("calendar.today")}
+        nextLabel={t("calendar.nextPeriod", { period: periodLabel })}
+        jumpToDateLabel={t("calendar.jumpToDate")}
+        onPrevious={() => onDateChange(shiftDate(date, view, -1))}
+        onNext={() => onDateChange(shiftDate(date, view, 1))}
+        onDateChange={onDateChange}
+      />
+      <fieldset className="min-w-0 overflow-x-auto xl:ml-auto xl:shrink-0 xl:overflow-visible">
+        <legend className="sr-only">{t("calendar.displayControls")}</legend>
+        <div className="flex w-max items-center gap-2">
+          <BookingTimeZoneBadge timeZone={timezone} label={t("availabilityBar.timezone", { timezone })} />
+          <SegmentedControl
+            legend={t("calendar.layout.legend")}
+            options={calendarLayouts}
+            value={layout}
+            optionLabel={(option) => t(`calendar.layout.${option}`)}
+            onChange={(option) => {
+              if (option === "resources" && view === "month") onViewChange("week");
+              onLayoutChange(option);
+            }}
+          />
+          <SegmentedControl
+            legend={t("calendar.period.legend")}
+            options={calendarViews}
+            value={view}
+            isDisabled={(option) => layout === "resources" && option === "month"}
+            optionLabel={(option) => t(`calendar.period.${option}`)}
+            onChange={onViewChange}
           />
         </div>
-        <Button
-          type="button"
-          size="icon"
-          variant="outline"
-          aria-label={t("calendar.previousPeriod", { period: periodLabel })}
-          onClick={() => onDateChange(shiftDate(date, view, -1))}
-        >
-          <ChevronLeftIcon />
-        </Button>
-        <Button type="button" variant="outline" onClick={() => onDateChange(today)}>
-          {t("calendar.today")}
-        </Button>
-        <Button
-          type="button"
-          size="icon"
-          variant="outline"
-          aria-label={t("calendar.nextPeriod", { period: periodLabel })}
-          onClick={() => onDateChange(shiftDate(date, view, 1))}
-        >
-          <ChevronRightIcon />
-        </Button>
-        <Badge variant="outline" className="h-8 bg-background px-2">
-          {timezone}
-        </Badge>
-      </div>
-      <div className="flex flex-wrap gap-3">
-        <fieldset>
-          <legend className="mb-1.5 text-sm font-medium">{t("calendar.layout.legend")}</legend>
-          <div className="flex w-fit rounded-sm border bg-background p-1">
-            {calendarLayouts.map((option) => (
-              <Button
-                key={option}
-                type="button"
-                size="sm"
-                variant={layout === option ? "secondary" : "ghost"}
-                aria-pressed={layout === option}
-                onClick={() => onLayoutChange(option)}
-              >
-                {t(`calendar.layout.${option}`)}
-              </Button>
-            ))}
-          </div>
-        </fieldset>
-        <fieldset>
-          <legend className="mb-1.5 text-sm font-medium">{t("calendar.period.legend")}</legend>
-          <div className="flex w-fit rounded-sm border bg-background p-1">
-            {calendarViews.map((option) => (
-              <Button
-                key={option}
-                type="button"
-                size="sm"
-                variant={view === option ? "secondary" : "ghost"}
-                aria-pressed={view === option}
-                onClick={() => onViewChange(option)}
-              >
-                {t(`calendar.period.${option}`)}
-              </Button>
-            ))}
-          </div>
-        </fieldset>
-      </div>
+      </fieldset>
     </div>
   );
 }
@@ -366,6 +393,7 @@ function TimeGrid({
           endWindow={availabilityEndMinute}
           showZoomControls={false}
           renderEventActions={actionsFor(events, date)}
+          renderBlockoutActions={blockoutActionsFor(events, date)}
         />
       ) : (
         <section
@@ -384,12 +412,12 @@ function TimeGrid({
                 aria-label={formatDate(day, { dateStyle: "full" })}
                 className={cn(
                   "min-h-44 border-r border-b p-1.5 last:border-r-0",
-                  view === "month" && !day.startsWith(month) && "bg-muted/40 text-muted-foreground",
+                  view === "month" && !day.startsWith(month) && "bg-muted/40 text-foreground",
                 )}
               >
-                <h3 className="mb-2 text-xs font-semibold">
+                <h2 className="mb-2 text-xs font-semibold">
                   <time dateTime={day}>{formatDate(day, { weekday: "short", day: "numeric" })}</time>
-                </h3>
+                </h2>
                 <div className="space-y-1">
                   {eventsOn(events, day, timezone).map((event) => (
                     <EventCard
@@ -415,29 +443,64 @@ function ResourceSchedule({
   date,
   view,
   events,
+  resources,
   timezone,
   today,
   availabilityStartMinute,
   availabilityEndMinute,
+  resourceConfigurations,
+  creationDisabled,
+  onResourceRangeSelect,
 }: {
   date: string;
   view: CalendarView;
   events: readonly BookingListDocument[];
+  resources?: readonly BookingCalendarResource[];
   timezone: string;
   today: string;
   availabilityStartMinute: number;
   availabilityEndMinute: number;
+  resourceConfigurations?: readonly BookableItemOption[];
+  creationDisabled: boolean;
+  onResourceRangeSelect?: (
+    resource: BookableItemOption,
+    range: { startMinute: number; endMinute: number },
+    trigger: HTMLElement,
+  ) => void;
 }) {
   const { t } = useTranslation("booking");
   const [timelineViewState, setTimelineViewState] = React.useState<DayTimelineViewState>({
     zoom: 1,
     centerMinute: 13 * 60,
   });
-  const dates = periodDates(date, view);
-  const eventsByDate = new Map(dates.map((day) => [day, eventsOn(events, day, timezone)]));
+  const dates = React.useMemo(() => periodDates(date, view), [date, view]);
+  const eventsByResourceAndDate = React.useMemo(() => {
+    const index = new Map<string, BookingListDocument[]>();
+    for (const event of events) {
+      for (const day of dates) {
+        if (!occursOn(event, day, timezone)) continue;
+        const key = `${event.target.globalId}|${day}`;
+        const rows = index.get(key) ?? [];
+        rows.push(event);
+        index.set(key, rows);
+      }
+    }
+    for (const rows of index.values()) rows.sort((left, right) => left.start.localeCompare(right.start));
+    return index;
+  }, [dates, events, timezone]);
   const calendarRef = useScrollToToday(date, view, today);
-  const resources = [...new Map(events.map((event) => [event.target.globalId, event.target])).values()].toSorted(
-    (left, right) => left.value.name.localeCompare(right.value.name),
+  const resourceRows = React.useMemo(
+    () =>
+      [
+        ...new Map(
+          (resources ?? events.map((event) => event.target)).map((resource) => [resource.globalId, resource]),
+        ).values(),
+      ].toSorted((left, right) => left.value.name.localeCompare(right.value.name)),
+    [events, resources],
+  );
+  const configurationByTarget = React.useMemo(
+    () => new Map(resourceConfigurations?.map((configuration) => [configuration.globalId, configuration])),
+    [resourceConfigurations],
   );
   return (
     <section aria-label={t("calendar.layout.resources")} className="p-3">
@@ -451,8 +514,9 @@ function ResourceSchedule({
       >
         {view === "day" ? (
           <div className="min-w-225 divide-y">
-            {resources.map((resource, index) => {
-              const resourceEvents = events.filter((event) => event.target.globalId === resource.globalId);
+            {resourceRows.map((resource, index) => {
+              const resourceEvents = eventsByResourceAndDate.get(`${resource.globalId}|${date}`) ?? [];
+              const configuration = configurationByTarget.get(resource.globalId);
               return (
                 <section key={resource.globalId} className="grid grid-cols-[12rem_minmax(0,1fr)]">
                   <header className="border-r bg-muted/30 p-1">
@@ -474,8 +538,16 @@ function ResourceSchedule({
                     itemName={resource.value.name}
                     viewState={timelineViewState}
                     onViewStateChange={setTimelineViewState}
-                    showScrollbar={index === resources.length - 1}
+                    showScrollbar={index === resourceRows.length - 1}
                     renderEventActions={actionsFor(resourceEvents, date)}
+                    renderBlockoutActions={blockoutActionsFor(resourceEvents, date)}
+                    snapIncrementMinutes={configuration?.slotGranularityMinutes}
+                    creationDisabled={creationDisabled || !configuration}
+                    onRangeSelect={
+                      configuration && onResourceRangeSelect
+                        ? (range, trigger) => onResourceRangeSelect(configuration, range, trigger)
+                        : undefined
+                    }
                   />
                 </section>
               );
@@ -500,7 +572,7 @@ function ResourceSchedule({
                 <time dateTime={day}>{formatDate(day, { month: "short", day: "numeric" })}</time>
               </div>
             ))}
-            {resources.map((resource) => (
+            {resourceRows.map((resource) => (
               <React.Fragment key={resource.globalId}>
                 <div className="sticky left-0 z-10 border-r border-b bg-background p-1">
                   <InventoryItem name={resource.value.name} globalId={resource.globalId} size="xs">
@@ -512,11 +584,9 @@ function ResourceSchedule({
                 </div>
                 {dates.map((day) => (
                   <div key={day} className="min-h-20 space-y-1 border-r border-b p-1">
-                    {(eventsByDate.get(day) ?? [])
-                      .filter((event) => event.target.globalId === resource.globalId)
-                      .map((event) => (
-                        <EventCard key={event.id} event={event} date={day} timezone={timezone} compact overlay />
-                      ))}
+                    {(eventsByResourceAndDate.get(`${resource.globalId}|${day}`) ?? []).map((event) => (
+                      <EventCard key={event.id} event={event} date={day} timezone={timezone} compact overlay />
+                    ))}
                   </div>
                 ))}
               </React.Fragment>
@@ -608,6 +678,7 @@ export function BookingEventsCalendar({
   availabilityStartMinute = 7 * 60,
   availabilityEndMinute = 19 * 60,
   events,
+  resources,
   currentUserId,
   isLoading,
   isError,
@@ -615,6 +686,12 @@ export function BookingEventsCalendar({
   onDateChange,
   onViewChange,
   onLayoutChange,
+  controls,
+  creationAction,
+  resourceConfigurations,
+  resourceTableProps,
+  creationDisabled = false,
+  onResourceRangeSelect,
 }: {
   date: string;
   view: CalendarView;
@@ -623,6 +700,8 @@ export function BookingEventsCalendar({
   availabilityStartMinute?: number;
   availabilityEndMinute?: number;
   events: readonly BookingListDocument[];
+  /** Enabled configurations to render as resource rows, including resources with no events. */
+  resources?: readonly BookingCalendarResource[];
   currentUserId: number;
   isLoading: boolean;
   isError: boolean;
@@ -630,6 +709,18 @@ export function BookingEventsCalendar({
   onDateChange: (date: string) => void;
   onViewChange: (view: CalendarView) => void;
   onLayoutChange: (layout: CalendarLayout) => void;
+  /** Replaces the default top bar. Used by the top-bar prototypes; production leaves it unset. */
+  controls?: React.ReactNode;
+  /** Production creation action rendered without replacing the calendar controls. */
+  creationAction?: React.ReactNode;
+  resourceConfigurations?: readonly BookableItemOption[];
+  resourceTableProps?: TableListProps<BookingConfigurationRow>;
+  creationDisabled?: boolean;
+  onResourceRangeSelect?: (
+    resource: BookableItemOption,
+    range: { startMinute: number; endMinute: number },
+    trigger: HTMLElement,
+  ) => void;
 }) {
   const { t } = useTranslation("booking");
   const todayValue = todayInTimeZone(timezone);
@@ -652,21 +743,26 @@ export function BookingEventsCalendar({
           </Button>
         </div>
       )}
-      <div className="overflow-hidden rounded-sm border bg-card">
-        <CalendarControls
-          date={date}
-          view={view}
-          layout={layout}
-          timezone={timezone}
-          today={todayValue}
-          onDateChange={onDateChange}
-          onViewChange={onViewChange}
-          onLayoutChange={onLayoutChange}
-        />
-      </div>
       {!isLoading && !isError && (
         <TableList
           {...table.tableProps}
+          createAction={creationAction}
+          headerContent={
+            <div className="overflow-hidden rounded-sm border bg-card">
+              {controls ?? (
+                <CalendarTopBar
+                  date={date}
+                  view={view}
+                  layout={layout}
+                  timezone={timezone}
+                  today={todayValue}
+                  onDateChange={onDateChange}
+                  onViewChange={onViewChange}
+                  onLayoutChange={onLayoutChange}
+                />
+              )}
+            </div>
+          }
           filterButtons={{
             legend: t("calendar.quickFilters.legend"),
             buttons: [
@@ -694,17 +790,43 @@ export function BookingEventsCalendar({
                   availabilityEndMinute={availabilityEndMinute}
                 />
               )}
-              {layout === "resources" && (
-                <ResourceSchedule
-                  date={date}
-                  view={view}
-                  events={filteredEvents}
-                  timezone={timezone}
-                  today={todayValue}
-                  availabilityStartMinute={availabilityStartMinute}
-                  availabilityEndMinute={availabilityEndMinute}
-                />
-              )}
+              {layout === "resources" &&
+                (resourceTableProps ? (
+                  <TableList
+                    {...resourceTableProps}
+                    hideHeader
+                    variant="transparent"
+                    renderRows={() => (
+                      <ResourceSchedule
+                        date={date}
+                        view={view}
+                        events={filteredEvents}
+                        resources={resources}
+                        timezone={timezone}
+                        today={todayValue}
+                        availabilityStartMinute={availabilityStartMinute}
+                        availabilityEndMinute={availabilityEndMinute}
+                        resourceConfigurations={resourceConfigurations}
+                        creationDisabled={creationDisabled}
+                        onResourceRangeSelect={onResourceRangeSelect}
+                      />
+                    )}
+                  />
+                ) : (
+                  <ResourceSchedule
+                    date={date}
+                    view={view}
+                    events={filteredEvents}
+                    resources={resources}
+                    timezone={timezone}
+                    today={todayValue}
+                    availabilityStartMinute={availabilityStartMinute}
+                    availabilityEndMinute={availabilityEndMinute}
+                    resourceConfigurations={resourceConfigurations}
+                    creationDisabled={creationDisabled}
+                    onResourceRangeSelect={onResourceRangeSelect}
+                  />
+                ))}
               {layout === "agenda" && (
                 <Agenda date={date} view={view} events={filteredEvents} timezone={timezone} today={todayValue} />
               )}

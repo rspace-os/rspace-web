@@ -1,13 +1,13 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { Suspense } from "react";
 import { describe, expect, it } from "vitest";
 import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
+import { validMaximumBookingDuration, validOpeningHours } from "@/modules/booking/configuration/schedulingSettings";
 import BookingSettingsPage from "../BookingSettingsPage";
-import { validMaximumBookingDuration, validOpeningHours } from "../schedulingSettings";
 
 const settings = {
   slotGranularityMinutes: 5,
@@ -46,6 +46,23 @@ describe("BookingSettingsPage", () => {
     expect(validMaximumBookingDuration(0, 5)).toBe(true);
     expect(validMaximumBookingDuration(60, 5)).toBe(true);
     expect(validMaximumBookingDuration(7, 5)).toBe(false);
+  });
+
+  it("offers every supported time increment", async () => {
+    server.use(
+      oauthTokenHandler(),
+      http.get("/api/v2/booking-settings", () => HttpResponse.json(settings)),
+    );
+    renderPage();
+
+    const granularity = await screen.findByRole("combobox", {
+      name: "booking:settings.fields.granularity",
+    });
+    expect(
+      within(granularity)
+        .getAllByRole("option")
+        .map((option) => option.getAttribute("value")),
+    ).toEqual(["1", "5", "10", "15"]);
   });
 
   it("does not submit an invalid maximum duration", async () => {

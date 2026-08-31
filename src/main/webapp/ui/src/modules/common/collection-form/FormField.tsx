@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import type { FieldConditionContext, ResolvedFieldConfig } from "@/modules/common/collection/collectionConfig";
 import { Field, FieldContent, FieldDescription, FieldError, FieldLabel } from "@/modules/common/ui/field";
 import type { ControlProps, FieldLayout, RelationshipOptions } from "./RenderFields.types";
+import { RESPONSIVE_INLINE_FIELD_ROW_CLASS_NAME } from "./responsiveFieldLayout";
 
 function messageOf(error: unknown): string {
   if (typeof error === "string") return error;
@@ -94,7 +95,11 @@ export function FormField<TDocument extends Record<string, unknown>>({
   // label and one for the control, whichever order the field type prefers.
   if (layout === "inline") {
     return (
-      <Field className="grid gap-1 sm:contents" data-disabled={disabled || fieldConfig.readOnly} data-invalid={invalid}>
+      <Field
+        className={RESPONSIVE_INLINE_FIELD_ROW_CLASS_NAME}
+        data-disabled={disabled || fieldConfig.readOnly}
+        data-invalid={invalid}
+      >
         <FieldLabel htmlFor={id}>
           {label}
           {fieldConfig.required ? <span aria-hidden="true">{"*"}</span> : null}

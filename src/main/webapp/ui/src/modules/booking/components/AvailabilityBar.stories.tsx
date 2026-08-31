@@ -1,25 +1,26 @@
 import type { Meta, StoryObj } from "@storybook/tanstack-react";
+import type { SourcedAvailabilityInterval } from "@/modules/booking/domain/availability";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
-import { AvailabilityBar, type AvailabilityInterval } from "./AvailabilityBar";
+import { AvailabilityBar } from "./AvailabilityBar";
 
 const periodStart = new Date("2026-08-12T00:00:00.000Z");
 
-const typicalIntervals: Array<AvailabilityInterval> = [
-  {
-    kind: "booking",
-    startsAt: new Date("2026-08-12T08:30:00.000Z"),
-    endsAt: new Date("2026-08-12T10:00:00.000Z"),
-  },
-  {
-    kind: "booking",
-    startsAt: new Date("2026-08-12T09:45:00.000Z"),
-    endsAt: new Date("2026-08-12T11:30:00.000Z"),
-  },
-  {
-    kind: "blockout",
-    startsAt: new Date("2026-08-12T14:00:00.000Z"),
-    endsAt: new Date("2026-08-12T15:30:00.000Z"),
-  },
+const sourced = (
+  id: string,
+  kind: SourcedAvailabilityInterval["kind"],
+  startsAt: string,
+  endsAt: string,
+): SourcedAvailabilityInterval => ({
+  kind,
+  startsAt: new Date(startsAt),
+  endsAt: new Date(endsAt),
+  source: { id, startsAt: new Date(startsAt), endsAt: new Date(endsAt) },
+});
+
+const typicalIntervals: Array<SourcedAvailabilityInterval> = [
+  sourced("booking:1", "booking", "2026-08-12T08:30:00.000Z", "2026-08-12T10:00:00.000Z"),
+  sourced("booking:2", "booking", "2026-08-12T09:45:00.000Z", "2026-08-12T11:30:00.000Z"),
+  sourced("opening-hours:1", "blockout", "2026-08-12T14:00:00.000Z", "2026-08-12T15:30:00.000Z"),
 ];
 
 const meta = {
@@ -73,16 +74,8 @@ export const DenseAndOverlapping: Story = {
   args: {
     intervals: [
       ...typicalIntervals,
-      {
-        kind: "booking",
-        startsAt: new Date("2026-08-12T11:30:00.000Z"),
-        endsAt: new Date("2026-08-12T16:00:00.000Z"),
-      },
-      {
-        kind: "blockout",
-        startsAt: new Date("2026-08-12T10:30:00.000Z"),
-        endsAt: new Date("2026-08-12T13:00:00.000Z"),
-      },
+      sourced("booking:3", "booking", "2026-08-12T11:30:00.000Z", "2026-08-12T16:00:00.000Z"),
+      sourced("opening-hours:2", "blockout", "2026-08-12T10:30:00.000Z", "2026-08-12T13:00:00.000Z"),
     ],
   },
 };
@@ -92,11 +85,7 @@ export const ThreeDayPeriod: Story = {
     periodEnd: new Date("2026-08-15T00:00:00.000Z"),
     intervals: [
       ...typicalIntervals,
-      {
-        kind: "booking",
-        startsAt: new Date("2026-08-14T08:00:00.000Z"),
-        endsAt: new Date("2026-08-14T18:00:00.000Z"),
-      },
+      sourced("booking:4", "booking", "2026-08-14T08:00:00.000Z", "2026-08-14T18:00:00.000Z"),
     ],
   },
 };
@@ -111,4 +100,10 @@ export const NarrowItemCard: Story = {
       <AvailabilityBar {...args} />
     </div>
   ),
+};
+
+export const SourceFreeCompatibility: Story = {
+  args: {
+    intervals: typicalIntervals.map(({ kind, startsAt, endsAt }) => ({ kind, startsAt, endsAt })),
+  },
 };

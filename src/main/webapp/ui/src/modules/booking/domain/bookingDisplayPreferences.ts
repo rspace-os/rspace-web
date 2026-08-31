@@ -147,6 +147,7 @@ export function useBookingDisplayPreferences(): ResolvedBookingDisplayPreference
   const document = useSuspenseQuery({
     queryKey: bookingDisplayPreferencesQueryKey,
     queryFn: ({ signal }) => fetchBookingDisplayPreferences(token, signal),
+    staleTime: Infinity,
   }).data;
   return resolveBookingDisplayPreferences(document);
 }

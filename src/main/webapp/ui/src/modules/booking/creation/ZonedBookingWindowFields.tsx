@@ -10,6 +10,7 @@ import {
 import { FieldError, FieldLegend, FieldSet } from "@/modules/common/ui/field";
 import { Input } from "@/modules/common/ui/input";
 import { Label } from "@/modules/common/ui/label";
+import { cn } from "@/modules/common/utils/cn";
 
 export type ResolvedBookingWindow = { start: string; end: string };
 
@@ -56,6 +57,7 @@ export function ZonedBookingWindowFields({
   onResolved,
   allowPolicyMismatch = false,
   disabled = false,
+  density = "comfortable",
 }: {
   displayTimezone?: string;
   schedulingTimezone?: string;
@@ -70,6 +72,7 @@ export function ZonedBookingWindowFields({
   onResolved: (value: ResolvedBookingWindow | undefined) => void;
   allowPolicyMismatch?: boolean;
   disabled?: boolean;
+  density?: "comfortable" | "compact";
 }) {
   const { t } = useTranslation("booking");
   const resolvedDisplayTimezone = displayTimezone ?? timezone ?? "UTC";
@@ -114,11 +117,12 @@ export function ZonedBookingWindowFields({
     return (
       <FieldSet>
         <FieldLegend>{t(`bookings.form.${name}`)}</FieldLegend>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className={cn("grid sm:grid-cols-2", density === "compact" ? "gap-2" : "gap-4")}>
           <div className="space-y-2">
             <Label htmlFor={`booking-${name}-date`}>{t("bookings.form.date")}</Label>
             <Input
               id={`booking-${name}-date`}
+              aria-label={t(`bookings.form.${name}Date`)}
               type="date"
               required
               disabled={disabled}
@@ -130,6 +134,7 @@ export function ZonedBookingWindowFields({
             <Label htmlFor={`booking-${name}-time`}>{t("bookings.form.time")}</Label>
             <Input
               id={`booking-${name}-time`}
+              aria-label={t(`bookings.form.${name}Time`)}
               type="time"
               step={slotGranularityMinutes * 60}
               required
@@ -165,7 +170,7 @@ export function ZonedBookingWindowFields({
   };
 
   return (
-    <div className="space-y-6">
+    <div className={density === "compact" ? "space-y-4" : "space-y-6"}>
       <p className="text-sm text-muted-foreground">
         {t("bookings.form.timezone", { timezone: resolvedDisplayTimezone })}
       </p>

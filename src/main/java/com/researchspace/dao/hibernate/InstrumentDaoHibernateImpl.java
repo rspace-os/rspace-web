@@ -135,6 +135,21 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
         .collect(Collectors.toMap(InstrumentReadSummary::id, summary -> summary));
   }
 
+  @Override
+  public Map<Long, String> getNamesByIds(Set<Long> instrumentIds) {
+    if (instrumentIds.isEmpty()) {
+      return Map.of();
+    }
+    return getSession()
+        .createQuery(
+            "select instrument.id, instrument.editInfo.name from Instrument instrument"
+                + " where instrument.id in (:instrumentIds)",
+            Object[].class)
+        .setParameter("instrumentIds", instrumentIds)
+        .getResultStream()
+        .collect(Collectors.toMap(row -> (Long) row[0], row -> (String) row[1]));
+  }
+
   private ResourceRequest narrowed(ResourceRequest request) {
     return IndexedTextNarrowing.apply(request, ApiV2InstrumentResource.DESCRIPTION, textSearch);
   }

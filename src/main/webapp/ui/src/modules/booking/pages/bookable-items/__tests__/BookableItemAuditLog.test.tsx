@@ -75,7 +75,7 @@ describe("BookableItemAuditLog", () => {
     );
     const { container } = renderAudit();
 
-    expect((await screen.findAllByText("Ada Lovelace")).length).toBeGreaterThanOrEqual(2);
+    expect((await screen.findAllByText("Ada Lovelace (ada)")).length).toBeGreaterThanOrEqual(2);
     const parameters = new URL(request?.url ?? "http://invalid").searchParams;
     expect(parameters.get("page")).toBe("1");
     expect(parameters.has("snapshotDate")).toBe(false);
@@ -96,7 +96,7 @@ describe("BookableItemAuditLog", () => {
       }),
     );
     renderAudit();
-    await screen.findAllByText("Ada Lovelace");
+    await screen.findAllByText("Ada Lovelace (ada)");
 
     await user.click(screen.getAllByRole("button", { name: "booking:bookableItemDetails.audit.lastDays" })[0]);
     await waitFor(() => expect(requests).toHaveLength(2));
@@ -116,7 +116,7 @@ describe("BookableItemAuditLog", () => {
       }),
     );
     const { container } = renderAudit();
-    await screen.findAllByText("Ada Lovelace");
+    await screen.findAllByText("Ada Lovelace (ada)");
     const from = screen.getByLabelText("booking:bookableItemDetails.audit.from");
 
     await user.clear(from);
@@ -148,7 +148,7 @@ describe("BookableItemAuditLog", () => {
       }),
     );
     renderAudit();
-    await screen.findAllByText("Ada Lovelace");
+    await screen.findAllByText("Ada Lovelace (ada)");
 
     await user.click(screen.getByRole("button", { name: "booking:bookableItemDetails.audit.nextPage" }));
     await waitFor(() => expect(requests).toHaveLength(2));
@@ -178,7 +178,7 @@ describe("BookableItemAuditLog", () => {
       }),
     );
     renderAudit();
-    await screen.findAllByText("Ada Lovelace");
+    await screen.findAllByText("Ada Lovelace (ada)");
     await user.click(screen.getByRole("button", { name: "booking:bookableItemDetails.audit.nextPage" }));
     await waitFor(() => expect(requests).toHaveLength(2));
     const refresh = screen.getByRole("button", { name: "booking:bookableItemDetails.audit.refresh" });
@@ -207,7 +207,7 @@ describe("BookableItemAuditLog", () => {
       }),
     );
     renderAudit();
-    await screen.findAllByText("Ada Lovelace");
+    await screen.findAllByText("Ada Lovelace (ada)");
     await user.click(screen.getByRole("button", { name: "booking:bookableItemDetails.audit.nextPage" }));
 
     const alert = await screen.findByRole("alert");

@@ -30,7 +30,7 @@ describe("calendar events", () => {
       "start<2026-08-23T22:00:00Z;end>2026-08-16T22:00:00Z;state==CONFIRMED",
     );
     expect(requests[0].searchParams.get("fields[bookings]")).toBe(
-      "id,target,requesterId,timezone,start,end,state,purpose,bookedBy,privacy,canEdit,createdAt,updatedAt",
+      "id,target,requesterId,timezone,start,end,state,kind,purpose,bookedBy,createdBy,privacy,canEdit,createdAt,updatedAt",
     );
   });
 

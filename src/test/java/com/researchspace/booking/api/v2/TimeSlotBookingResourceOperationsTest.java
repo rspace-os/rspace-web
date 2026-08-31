@@ -18,6 +18,7 @@ import com.researchspace.model.booking.ApiV2TimeSlotBookingResource;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
+import com.researchspace.model.booking.BookingEventKind;
 import com.researchspace.model.booking.BookingState;
 import com.researchspace.model.booking.TimeSlotBooking;
 import com.researchspace.model.collection.CollectionDescription.WriteOperation;
@@ -70,7 +71,17 @@ class TimeSlotBookingResourceOperationsTest {
     ParsedDocument create =
         new ParsedDocument(
             WriteOperation.CREATE,
-            Map.of("target", target, "start", start(), "end", end(), "purpose", "Image plate 4"));
+            Map.of(
+                "target",
+                target,
+                "start",
+                start(),
+                "end",
+                end(),
+                "purpose",
+                "Image plate 4",
+                "kind",
+                BookingEventKind.MAINTENANCE));
     TimeSlotBooking booking = new TimeSlotBooking();
     TimeSlotBookingManager.Create command =
         new TimeSlotBookingManager.Create(
@@ -79,7 +90,8 @@ class TimeSlotBookingResourceOperationsTest {
                 target.entityAs(Instrument.class)),
             start(),
             end(),
-            "Image plate 4");
+            "Image plate 4",
+            BookingEventKind.MAINTENANCE);
     when(manager.createBooking(command, actor, actor)).thenReturn(booking);
 
     assertEquals(booking, operations.create(create, ApiV2Caller.direct(actor)));

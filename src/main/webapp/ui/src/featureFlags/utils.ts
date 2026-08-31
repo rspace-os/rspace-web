@@ -5,5 +5,14 @@ export const featureFlagRequestHeaders = (token?: string | null): Record<string,
   ...(token ? { Authorization: `Bearer ${token}` } : {}),
 });
 
-export const toFeatureFlagRequestError = (response: Response): Error =>
-  new Error(`${response.status} ${response.statusText}`.trim());
+export class FeatureFlagRequestError extends Error {
+  constructor(
+    readonly status: number,
+    statusText: string,
+  ) {
+    super(`${status} ${statusText}`.trim());
+  }
+}
+
+export const toFeatureFlagRequestError = (response: Response): FeatureFlagRequestError =>
+  new FeatureFlagRequestError(response.status, response.statusText);

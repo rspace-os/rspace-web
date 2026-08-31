@@ -10,6 +10,7 @@ import {
 import { NuqsAdapter } from "nuqs/adapters/react";
 import { Suspense } from "react";
 import { OAUTH_TOKEN } from "@/__tests__/mocks/oauthTokenMocks";
+import { BookingCreationStoreProvider } from "@/modules/booking/creation/bookingCreationStore";
 import { bookingDisplayPreferencesQueryKey } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { type CurrentUser, currentUserQueryKeys } from "@/modules/common/queries/currentUser";
 import { inheritedBrowserBookingPreferences } from "../preferences/bookingPreferencesFixtures";
@@ -58,9 +59,11 @@ export function BookableItemPageStory({ hasSysAdminRole = true }: { hasSysAdminR
   return (
     <QueryClientProvider client={queryClient}>
       <NuqsAdapter>
-        <Suspense fallback={null}>
-          <RouterProvider router={router as never} />
-        </Suspense>
+        <BookingCreationStoreProvider>
+          <Suspense fallback={null}>
+            <RouterProvider router={router as never} />
+          </Suspense>
+        </BookingCreationStoreProvider>
       </NuqsAdapter>
     </QueryClientProvider>
   );

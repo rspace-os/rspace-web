@@ -6,7 +6,7 @@ import {
   createRouter,
   RouterProvider,
 } from "@tanstack/react-router";
-import { act, render, screen, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { type ReactNode, Suspense } from "react";
@@ -41,6 +41,7 @@ const editableBooking = {
   start: "2026-10-25T01:30:00Z",
   end: "2026-10-25T02:30:00Z",
   state: "CONFIRMED",
+  kind: "BOOKING",
   privacy: "full",
   purpose: "Imaging",
   bookedBy: "Ada Lovelace (ada)",
@@ -154,6 +155,7 @@ describe("BookingForm", () => {
     renderForm(
       <BookingForm
         mode="add"
+        eventKind="BOOKING"
         initialTarget={target}
         initialDate="2026-08-17"
         token="token"
@@ -176,9 +178,111 @@ describe("BookingForm", () => {
     expect(submit).not.toHaveBeenCalled();
   });
 
+  it.each([
+    [1, "60"],
+    [5, "300"],
+    [10, "600"],
+    [15, "900"],
+  ])("uses the configured %i-minute increment", async (increment, step) => {
+    server.use(http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([]))));
+    renderForm(
+      <BookingForm
+        mode="add"
+        eventKind="BOOKING"
+        initialTarget={{ ...target, slotGranularityMinutes: increment }}
+        initialDate="2026-08-17"
+        token="token"
+        pending={false}
+        onSubmit={vi.fn()}
+      />,
+    );
+
+    const start = await screen.findByRole("group", { name: "booking:bookings.form.start" });
+    const end = screen.getByRole("group", { name: "booking:bookings.form.end" });
+    expect(within(start).getByLabelText("booking:bookings.form.time")).toHaveAttribute("step", step);
+    expect(within(end).getByLabelText("booking:bookings.form.time")).toHaveAttribute("step", step);
+  });
+
+  it("rejects typed times that are off the configured grid", async () => {
+    const user = userEvent.setup();
+    const submit = vi.fn<(submission: BookingFormSubmission) => Promise<void>>().mockResolvedValue();
+    server.use(http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([]))));
+    renderForm(
+      <BookingForm
+        mode="add"
+        eventKind="BOOKING"
+        initialTarget={{ ...target, slotGranularityMinutes: 10 }}
+        initialDate="2026-08-17"
+        token="token"
+        pending={false}
+        onSubmit={submit}
+      />,
+    );
+
+    const start = await screen.findByRole("group", { name: "booking:bookings.form.start" });
+    const end = screen.getByRole("group", { name: "booking:bookings.form.end" });
+    await user.type(within(start).getByLabelText("booking:bookings.form.time"), "09:07");
+    await user.type(within(end).getByLabelText("booking:bookings.form.time"), "10:00");
+
+    expect(screen.getByText("booking:bookings.errors.granularity")).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "booking:bookings.form.submit" }));
+    expect(submit).not.toHaveBeenCalled();
+  });
+
+  it("supports a compact dialog with an initial window, dirty state, and controlled cancellation", async () => {
+    const user = userEvent.setup();
+    const cancel = vi.fn();
+    const stateChanged = vi.fn();
+    server.use(http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([]))));
+
+    renderForm(
+      <BookingForm
+        mode="add"
+        eventKind="BOOKING"
+        density="compact"
+        initialTarget={{ ...target, slotGranularityMinutes: 10 }}
+        initialWindow={{
+          startDate: "2026-08-17",
+          startTime: "09:00",
+          endDate: "2026-08-17",
+          endTime: "10:00",
+        }}
+        token="token"
+        pending={false}
+        onCancel={cancel}
+        onStateChange={stateChanged}
+        onSubmit={vi.fn()}
+      />,
+    );
+
+    const start = await screen.findByRole("group", { name: "booking:bookings.form.start" });
+    const end = screen.getByRole("group", { name: "booking:bookings.form.end" });
+    expect(within(start).getByLabelText("booking:bookings.form.date")).toHaveValue("2026-08-17");
+    expect(within(start).getByLabelText("booking:bookings.form.time")).toHaveValue("09:00");
+    expect(within(start).getByLabelText("booking:bookings.form.time")).toHaveAttribute("step", "600");
+    expect(within(end).getByLabelText("booking:bookings.form.time")).toHaveValue("10:00");
+    await waitFor(() => expect(stateChanged).toHaveBeenLastCalledWith(expect.objectContaining({ dirty: false })));
+
+    await user.type(screen.getByRole("textbox", { name: "booking:bookings.form.purpose" }), "Imaging");
+    await waitFor(() =>
+      expect(stateChanged).toHaveBeenLastCalledWith(expect.objectContaining({ dirty: true, purpose: "Imaging" })),
+    );
+    await user.click(screen.getByRole("button", { name: "booking:bookings.form.cancel" }));
+    expect(cancel).toHaveBeenCalledOnce();
+  });
+
   it("uses today in the selected item timezone when no Calendar date exists", async () => {
     server.use(http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([]))));
-    renderForm(<BookingForm mode="add" initialTarget={target} token="token" pending={false} onSubmit={vi.fn()} />);
+    renderForm(
+      <BookingForm
+        mode="add"
+        eventKind="BOOKING"
+        initialTarget={target}
+        token="token"
+        pending={false}
+        onSubmit={vi.fn()}
+      />,
+    );
     const expected = currentWallClock(new Date().toISOString(), target.timezone).date;
     const start = await screen.findByRole("group", { name: "booking:bookings.form.start" });
     const end = screen.getByRole("group", { name: "booking:bookings.form.end" });
@@ -233,6 +337,7 @@ describe("BookingForm", () => {
     renderForm(
       <BookingForm
         mode="add"
+        eventKind="BOOKING"
         initialTarget={target}
         initialDate="2026-10-25"
         token="token"
@@ -268,6 +373,7 @@ describe("BookingForm", () => {
     renderForm(
       <BookingForm
         mode="add"
+        eventKind="BOOKING"
         initialTarget={target}
         initialDate="2026-08-17"
         token="token"
@@ -296,6 +402,7 @@ describe("BookingForm", () => {
     renderForm(
       <BookingForm
         mode="add"
+        eventKind="BOOKING"
         initialTarget={{ ...target, maxBookingDurationMinutes: 60 }}
         initialDate="2026-08-17"
         token="token"

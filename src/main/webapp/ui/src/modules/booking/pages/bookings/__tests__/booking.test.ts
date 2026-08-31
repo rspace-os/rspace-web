@@ -80,7 +80,7 @@ describe("booking API", () => {
     });
     expect(requests[2].body).toEqual({ start: document.start, end: document.end, purpose: "Plate" });
     expect(requests[0].url.searchParams.get("fields[bookings]")).toBe(
-      "id,target,timezone,start,end,state,purpose,bookedBy,privacy,canEdit,createdAt,updatedAt",
+      "id,target,timezone,start,end,state,kind,purpose,bookedBy,createdBy,privacy,canEdit,createdAt,updatedAt",
     );
   });
 

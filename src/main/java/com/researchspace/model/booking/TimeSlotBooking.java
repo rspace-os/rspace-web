@@ -15,6 +15,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Transient;
+import jakarta.persistence.Version;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Date;
@@ -53,6 +54,15 @@ public class TimeSlotBooking implements Serializable {
   @Setter
   private User requester;
 
+  @Getter(
+      onMethod_ = {
+        @Enumerated(EnumType.STRING),
+        @Column(nullable = false, length = 32),
+        @AuditTrailProperty(name = "kind")
+      })
+  @Setter
+  private BookingEventKind kind = BookingEventKind.BOOKING;
+
   private Date startTime;
   private Date endTime;
 
@@ -70,6 +80,10 @@ public class TimeSlotBooking implements Serializable {
 
   private Date createdAt;
   private Date updatedAt;
+
+  @Getter(onMethod_ = {@Version, @Column(nullable = false)})
+  @Setter
+  private long version;
 
   @Getter(
       onMethod_ = {
@@ -176,6 +190,15 @@ public class TimeSlotBooking implements Serializable {
       return null;
     }
     return requester.getFullName() + " (" + requester.getUsername() + ")";
+  }
+
+  /** Returns the actual creator's non-sensitive display label. */
+  @Transient
+  public String getVisibleCreatedBy() {
+    if (createdBy == null) {
+      return null;
+    }
+    return createdBy.getFullName() + " (" + createdBy.getUsername() + ")";
   }
 
   private static Date copy(Date value) {

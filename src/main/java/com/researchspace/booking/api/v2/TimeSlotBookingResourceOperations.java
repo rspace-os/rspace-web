@@ -8,6 +8,7 @@ import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
 import com.researchspace.api.v2.resource.OpenApiOperationDocumentation;
 import com.researchspace.api.v2.resource.ResourceOperation;
 import com.researchspace.api.v2.resource.ResourceOperations;
+import com.researchspace.booking.service.BookingConcurrentModificationException;
 import com.researchspace.booking.service.BookingDurationException;
 import com.researchspace.booking.service.BookingOverlapException;
 import com.researchspace.booking.service.BookingStateTransitionException;
@@ -20,6 +21,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.booking.ApiV2TimeSlotBookingResource;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
+import com.researchspace.model.booking.BookingEventKind;
 import com.researchspace.model.booking.BookingState;
 import com.researchspace.model.booking.ResolvedBookableTarget;
 import com.researchspace.model.booking.TimeSlotBooking;
@@ -95,7 +97,12 @@ public final class TimeSlotBookingResourceOperations
                         BookingStateTransitionException.class,
                         HttpStatus.CONFLICT,
                         "errors.api.v2.booking.state.transition",
-                        "The requested state transition is invalid.")))
+                        "The requested state transition is invalid."),
+                    mapping(
+                        BookingConcurrentModificationException.class,
+                        HttpStatus.CONFLICT,
+                        "errors.api.v2.booking.concurrentModification",
+                        "The event changed while it was being edited.")))
             .toList();
     return new ApiV2ResourceSpec<>(
         ApiV2TimeSlotBookingResource.DESCRIPTION,
@@ -161,7 +168,8 @@ public final class TimeSlotBookingResourceOperations
         target(document),
         value(document, "start", Date.class),
         value(document, "end", Date.class),
-        value(document, "purpose", String.class));
+        value(document, "purpose", String.class),
+        value(document, "kind", BookingEventKind.class));
   }
 
   private static Patch patchCommand(ParsedDocument document) {

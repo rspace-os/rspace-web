@@ -228,6 +228,11 @@ class BookingConfigurationManagerTest {
 
   @Test
   void validatesMaximumDurationAgainstTheSystemCapAndGranularity() {
+    assertTrue(BookingSchedulingSettings.isGranularityValid(1));
+    assertTrue(BookingSchedulingSettings.isGranularityValid(5));
+    assertTrue(BookingSchedulingSettings.isGranularityValid(10));
+    assertTrue(BookingSchedulingSettings.isGranularityValid(15));
+    assertFalse(BookingSchedulingSettings.isGranularityValid(7));
     assertTrue(BookingSchedulingSettings.isMaximumDurationValid(0, 5));
     assertTrue(BookingSchedulingSettings.isMaximumDurationValid(5, 5));
     assertTrue(BookingSchedulingSettings.isMaximumDurationValid(527_040, 15));
@@ -370,6 +375,63 @@ class BookingConfigurationManagerTest {
 
     verify(dao, never()).save(any());
     verify(dao, never()).remove(any());
+  }
+
+  @Test
+  void archivesAConfigurationInsteadOfDeletingItsReferencedRow() {
+    BookingConfiguration configuration = configuration(42L, 12L);
+    configuration.setEnabled(true);
+    when(dao.getSafeNull(42L)).thenReturn(Optional.of(configuration));
+    when(dao.saveAndFlush(configuration)).thenReturn(configuration);
+
+    BookingConfiguration removed = manager.removeConfiguration(42L, actor, actor).orElseThrow();
+
+    assertSame(configuration, removed);
+    assertTrue(removed.isDeleted());
+    assertFalse(removed.isEnabled());
+    assertSame(actor, removed.getUpdatedBy());
+    assertTrue(removed.getUpdatedAt() != null);
+    verify(dao).saveAndFlush(configuration);
+    verify(dao, never()).remove(any());
+    verify(events).publishEvent(any(BookingConfigurationAuditEvent.class));
+  }
+
+  @Test
+  void treatsAnArchivedConfigurationAsAbsent() {
+    BookingConfiguration configuration = configuration(42L, 12L);
+    configuration.setDeleted(true);
+    when(dao.getSafeNull(42L)).thenReturn(Optional.of(configuration));
+
+    assertTrue(manager.getConfiguration(42L, actor).isEmpty());
+    assertTrue(manager.updateConfiguration(42L, new Patch(true, null), actor, actor).isEmpty());
+    assertTrue(manager.removeConfiguration(42L, actor, actor).isEmpty());
+
+    verify(dao, never()).saveAndFlush(any());
+    verify(dao, never()).remove(any());
+  }
+
+  @Test
+  void bulkRemovalArchivesEveryMatchedConfiguration() {
+    ResourceRequest request =
+        ResourceRequest.unpaged(
+            new FilterExpression.Comparison("id", Operator.IN, List.of(41L, 42L), false));
+    BookingConfiguration first = configuration(41L, 11L);
+    BookingConfiguration second = configuration(42L, 12L);
+    first.setEnabled(true);
+    second.setEnabled(true);
+    int limit = ApiV2BookingConfigurationResource.MUTATION_LIMITS.maxBulkUpdateDeleteRows() + 1;
+    when(dao.getResources(eq(request), eq(limit), any())).thenReturn(List.of(first, second));
+    when(dao.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+    List<BookingConfiguration> removed = manager.removeConfigurations(request, actor, actor);
+
+    assertEquals(List.of(first, second), removed);
+    assertTrue(removed.stream().allMatch(BookingConfiguration::isDeleted));
+    assertTrue(removed.stream().noneMatch(BookingConfiguration::isEnabled));
+    assertTrue(removed.stream().allMatch(configuration -> configuration.getUpdatedBy() == actor));
+    verify(dao, times(2)).saveAndFlush(any());
+    verify(dao, never()).remove(any());
+    verify(events, times(2)).publishEvent(any(BookingConfigurationAuditEvent.class));
   }
 
   @Test

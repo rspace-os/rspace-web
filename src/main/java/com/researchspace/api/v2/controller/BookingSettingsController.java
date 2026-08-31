@@ -13,11 +13,15 @@ import com.researchspace.service.FeatureFlagManager;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import java.time.Clock;
+import java.time.DateTimeException;
+import java.time.ZoneId;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -98,8 +102,26 @@ public final class BookingSettingsController {
               message = "{errors.api.v2.bookingDisplayPreferences.availabilityWindow.invalid}")
           String availabilityWindowEnd,
       BookingTimezoneMode timezoneMode,
-      String customTimezone,
-      @NotNull Long configurationVersion) {
+      @Size(max = 255, message = "{errors.api.v2.bookingDisplayPreferences.timeZone.invalid}")
+          String customTimezone,
+      @NotNull @Min(value = 0, message = "{errors.api.v2.invalidRequest}")
+          Long configurationVersion) {
+
+    @AssertTrue(message = "{errors.api.v2.bookingDisplayPreferences.timeZone.invalid}")
+    public boolean isCustomTimezoneValid() {
+      if (customTimezone == null) {
+        return true;
+      }
+      if (customTimezone.isBlank()) {
+        return false;
+      }
+      try {
+        ZoneId.of(customTimezone);
+        return true;
+      } catch (DateTimeException ex) {
+        return false;
+      }
+    }
 
     BookingSchedulingSettings.Patch schedulingPatch() {
       return new BookingSchedulingSettings.Patch(

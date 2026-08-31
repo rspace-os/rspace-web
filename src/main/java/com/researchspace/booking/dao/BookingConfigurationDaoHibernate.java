@@ -7,6 +7,8 @@ import com.researchspace.dao.query.IndexedTextNarrowing;
 import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookingConfiguration;
+import com.researchspace.model.collection.CollectionDescription.Operator;
+import com.researchspace.model.collection.FilterExpression;
 import com.researchspace.model.collection.RelationshipReadAccess;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
@@ -29,6 +31,9 @@ public class BookingConfigurationDaoHibernate
           ApiV2BookingConfigurationResource.DESCRIPTION,
           "bookingConfiguration");
 
+  private static final FilterExpression ACTIVE =
+      new FilterExpression.Comparison("deleted", Operator.EQUAL, List.of(false), false);
+
   private final CriteriaBuilderFactory criteriaBuilderFactory;
 
   @Autowired(required = false)
@@ -45,7 +50,11 @@ public class BookingConfigurationDaoHibernate
       ResourceRequest request, RelationshipReadAccess targetAccess) {
     try {
       return COLLECTION_QUERY.page(
-          criteriaBuilderFactory, getSession(), narrowed(request), null, targetAccess);
+          criteriaBuilderFactory,
+          getSession(),
+          narrowed(request.restrict(ACTIVE)),
+          null,
+          targetAccess);
     } catch (IndexedTextNarrowing.NoMatch noMatch) {
       return new ResourcePage<>(List.of(), 0);
     }
@@ -55,7 +64,11 @@ public class BookingConfigurationDaoHibernate
   public long countResources(ResourceRequest request, RelationshipReadAccess targetAccess) {
     try {
       return COLLECTION_QUERY.count(
-          criteriaBuilderFactory, getSession(), narrowed(request), null, targetAccess);
+          criteriaBuilderFactory,
+          getSession(),
+          narrowed(request.restrict(ACTIVE)),
+          null,
+          targetAccess);
     } catch (IndexedTextNarrowing.NoMatch noMatch) {
       return 0;
     }
@@ -66,7 +79,11 @@ public class BookingConfigurationDaoHibernate
       ResourceRequest request, int limit, RelationshipReadAccess targetAccess) {
     try {
       return COLLECTION_QUERY.listById(
-          criteriaBuilderFactory, getSession(), narrowed(request), limit, targetAccess);
+          criteriaBuilderFactory,
+          getSession(),
+          narrowed(request.restrict(ACTIVE)),
+          limit,
+          targetAccess);
     } catch (IndexedTextNarrowing.NoMatch noMatch) {
       return List.of();
     }
@@ -81,7 +98,8 @@ public class BookingConfigurationDaoHibernate
   public Optional<BookingConfiguration> findByTarget(BookableTargetReference target) {
     return getSession()
         .createQuery(
-            "from BookingConfiguration where target.type = :type and target.id = :id",
+            "from BookingConfiguration where target.type = :type and target.id = :id"
+                + " and deleted = false",
             BookingConfiguration.class)
         .setParameter("type", target.type())
         .setParameter("id", target.id())
@@ -92,7 +110,8 @@ public class BookingConfigurationDaoHibernate
   public Optional<BookingConfiguration> lockByTarget(BookableTargetReference target) {
     return getSession()
         .createQuery(
-            "from BookingConfiguration where target.type = :type and target.id = :id",
+            "from BookingConfiguration where target.type = :type and target.id = :id"
+                + " and deleted = false",
             BookingConfiguration.class)
         .setParameter("type", target.type())
         .setParameter("id", target.id())
@@ -103,7 +122,9 @@ public class BookingConfigurationDaoHibernate
   @Override
   public Optional<BookingConfiguration> lockById(Long id) {
     return getSession()
-        .createQuery("from BookingConfiguration where id = :id", BookingConfiguration.class)
+        .createQuery(
+            "from BookingConfiguration where id = :id and deleted = false",
+            BookingConfiguration.class)
         .setParameter("id", id)
         .setLockMode(LockModeType.PESSIMISTIC_WRITE)
         .uniqueResultOptional();

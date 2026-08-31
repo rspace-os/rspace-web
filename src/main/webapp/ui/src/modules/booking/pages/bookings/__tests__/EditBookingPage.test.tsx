@@ -119,7 +119,7 @@ describe("EditBookingPage", () => {
 
     expect(await screen.findByRole("heading", { name: "Calendar destination" })).toBeVisible();
     expect(selectedFields).toBe(
-      "id,target,timezone,start,end,state,purpose,bookedBy,privacy,canEdit,createdAt,updatedAt",
+      "id,target,timezone,start,end,state,kind,purpose,bookedBy,createdBy,privacy,canEdit,createdAt,updatedAt",
     );
     expect(body).toEqual({ purpose: null });
     expect(router.state.location.search).toMatchObject({ date: "2026-10-25", target: "IN123" });

@@ -1,32 +1,24 @@
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
-import {
-  CalendarClockIcon,
-  CalendarPlusIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  Clock3Icon,
-  EyeIcon,
-} from "lucide-react";
+import { CalendarClockIcon, CalendarPlusIcon, Clock3Icon, EyeIcon } from "lucide-react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { AvailabilityBar } from "@/modules/booking/components/AvailabilityBar";
+import {
+  BookingDateControls,
+  BookingTimeZoneBadge,
+  bookingToolbarClassName,
+} from "@/modules/booking/components/BookingToolbar";
+import { schedulingSettingsFieldNames } from "@/modules/booking/configuration/schedulingSettings";
 import { todayInTimeZone, useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
-import { displayInterval } from "@/modules/booking/domain/bookingTime";
+import { addCalendarDays, displayInterval } from "@/modules/booking/domain/bookingTime";
 import type { CollectionConfig } from "@/modules/common/collection/collectionConfig";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import i18n from "@/modules/common/i18n";
 import { useApiV2TableList } from "@/modules/common/table-list/adapters/apiV2/useApiV2TableList";
-import {
-  TableList,
-  type TableListFilterButtons,
-  type TableListRowActions,
-} from "@/modules/common/table-list/TableList";
+import { TableList, type TableListRowActions } from "@/modules/common/table-list/TableList";
 import type { FilterExpression } from "@/modules/common/table-list/tableListState";
-import { Badge } from "@/modules/common/ui/badge";
 import { Button, buttonVariants } from "@/modules/common/ui/button";
-import { Input } from "@/modules/common/ui/input";
 import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
-import { Label } from "@/modules/common/ui/label";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/modules/common/ui/tooltip";
 import { UnknownItem } from "@/modules/common/ui/unknown-item";
 import {
@@ -35,10 +27,8 @@ import {
   BookingConfigurationSchema,
   bookingConfigurationConfig,
 } from "../bookable-items/bookingConfiguration";
-import { schedulingSettingsFieldNames } from "../bookable-items/schedulingSettings";
 import { calendarAvailabilityRow, useCalendarAvailability } from "../calendar/calendarAvailability";
 import { type AvailabilityQuickFilter, useAvailabilityQuickFilterIndex } from "./availabilityQuickFilters";
-import { addCalendarDays } from "./calendarDate";
 
 const requestProjection = { fixed: ["id", "target", "enabled", "timezone", ...schedulingSettingsFieldNames] } as const;
 const baseFilter = {
@@ -147,7 +137,7 @@ export default function AllBookableItemsPage({
     config: allBookableItemsConfig,
     documentSchema: BookingConfigurationSchema,
     request,
-    query: { keepPreviousData: true },
+    query: { keepPreviousData: true, staleTime: 30_000 },
     table: {
       initialState: {
         visibleFields: ["target"],
@@ -229,7 +219,7 @@ export default function AllBookableItemsPage({
     [quickIndex.data, selectedDate, t],
   );
 
-  const quickFilterButtons: TableListFilterButtons = {
+  const quickFilterButtons = {
     legend: t("allBookableItems.quickFilters.legend"),
     buttons: (["available-now", "free-later-today"] as const).map((mode) => ({
       id: mode,
@@ -244,54 +234,65 @@ export default function AllBookableItemsPage({
         : undefined,
       onClick: () => setQuickMode(quickMode === mode ? undefined : mode),
     })),
-    onReset: () => setQuickMode(undefined),
   };
 
   return (
     <main className="space-y-5 p-4 sm:p-8">
-      {!quickMode ? (
-        <div className="flex flex-wrap items-end gap-2">
-          <div className="space-y-2">
-            <Label htmlFor="all-bookable-items-date">{t("allBookableItems.date")}</Label>
-            <Input
-              id="all-bookable-items-date"
-              className="w-auto"
-              type="date"
-              value={selectedDate}
-              onChange={(event) => setDate(event.currentTarget.value)}
+      <div className="overflow-hidden rounded-sm border bg-card">
+        <div role="toolbar" aria-label={t("allBookableItems.toolbar")} className={bookingToolbarClassName}>
+          {!quickMode ? (
+            <BookingDateControls
+              date={selectedDate}
+              today={userToday}
+              timeZone={preferences.timeZone}
+              controlsLabel={t("allBookableItems.dateControls")}
+              navigationLabel={t("allBookableItems.dateNavigation")}
+              previousLabel={t("allBookableItems.actions.previousDay")}
+              todayLabel={t("allBookableItems.actions.today")}
+              nextLabel={t("allBookableItems.actions.nextDay")}
+              jumpToDateLabel={t("allBookableItems.jumpToDate")}
+              onPrevious={() => setDate(addCalendarDays(selectedDate, -1))}
+              onNext={() => setDate(addCalendarDays(selectedDate, 1))}
+              onDateChange={setDate}
             />
+          ) : (
+            <p className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
+              <CalendarClockIcon aria-hidden="true" />
+              {t("allBookableItems.quickFilters.scope")}
+            </p>
+          )}
+          <div className="flex min-w-0 flex-wrap items-center gap-2 xl:ml-auto xl:flex-nowrap">
+            <BookingTimeZoneBadge
+              timeZone={preferences.timeZone}
+              label={t("availabilityBar.timezone", { timezone: preferences.timeZone })}
+            />
+            <fieldset className="flex min-w-0 flex-wrap items-center gap-2">
+              <legend className="sr-only">{quickFilterButtons.legend}</legend>
+              {quickFilterButtons.buttons.map((button) => (
+                <Button
+                  key={button.id}
+                  type="button"
+                  size="sm"
+                  aria-pressed={button.pressed}
+                  variant={button.pressed ? "secondary" : "outline"}
+                  onClick={button.onClick}
+                >
+                  {button.icon}
+                  {button.label}
+                  {button.count === undefined ? null : (
+                    <span
+                      aria-hidden="true"
+                      className="ml-0.5 rounded-sm bg-foreground px-1 text-[10px] text-background"
+                    >
+                      {button.count}
+                    </span>
+                  )}
+                </Button>
+              ))}
+            </fieldset>
           </div>
-          <Button
-            type="button"
-            size="icon"
-            variant="outline"
-            aria-label={t("allBookableItems.actions.previousDay")}
-            onClick={() => setDate(addCalendarDays(selectedDate, -1))}
-          >
-            <ChevronLeftIcon />
-          </Button>
-          <Button type="button" variant="outline" onClick={() => setDate(userToday)}>
-            {t("allBookableItems.actions.today")}
-          </Button>
-          <Button
-            type="button"
-            size="icon"
-            variant="outline"
-            aria-label={t("allBookableItems.actions.nextDay")}
-            onClick={() => setDate(addCalendarDays(selectedDate, 1))}
-          >
-            <ChevronRightIcon />
-          </Button>
         </div>
-      ) : (
-        <p className="flex items-center gap-2 text-sm text-muted-foreground">
-          <CalendarClockIcon aria-hidden="true" />
-          {t("allBookableItems.quickFilters.scope")}
-        </p>
-      )}
-      <Badge variant="outline" className="w-fit">
-        {preferences.timeZone}
-      </Badge>
+      </div>
       {quickIndex.isPending ? <p role="status">{t("allBookableItems.quickFilters.loading")}</p> : null}
       {quickIndex.isError ? (
         <div role="alert" className="flex items-center gap-3">
@@ -304,7 +305,6 @@ export default function AllBookableItemsPage({
       <TableList
         {...table.tableProps}
         rows={quickIndex.isPending || quickIndex.isError ? [] : table.tableProps.rows}
-        filterButtons={quickFilterButtons}
         presentations={{ table: "wide", cards: "narrow" }}
         uiColumns={[
           {

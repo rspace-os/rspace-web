@@ -6,9 +6,13 @@ import {
   calendarApplicationUrls,
   calendarSubscriptionQueryKey,
   createOrReplaceCalendarSubscription,
+  createOrReplaceUserCalendarSubscription,
   fetchCalendarSubscriptionStatus,
+  fetchUserCalendarSubscriptionStatus,
   revokeCalendarSubscription,
+  revokeUserCalendarSubscription,
   toWebcalUrl,
+  userCalendarSubscriptionQueryKey,
 } from "../bookableItemCalendarSubscription";
 
 const path = "/api/v2/booking-configurations/7/calendar-subscription";
@@ -120,5 +124,37 @@ describe("calendar application URLs", () => {
       google: `https://calendar.google.com/calendar/r?cid=${encodeURIComponent(webcal)}`,
       other: webcal,
     });
+  });
+});
+
+describe("user booking calendar subscription client", () => {
+  const userPath = "/api/v2/users/me/booking-calendar-subscription";
+
+  it("uses the user-scoped endpoint for status, creation, and revocation", async () => {
+    const methods: string[] = [];
+    server.use(
+      http.get(userPath, ({ request }) => {
+        methods.push(request.method);
+        return HttpResponse.json({ active: false, updatedAt: null, subscriptionUrl: null });
+      }),
+      http.post(userPath, ({ request }) => {
+        methods.push(request.method);
+        return HttpResponse.json({
+          active: true,
+          updatedAt: timestamp,
+          subscriptionUrl: "https://example.test/feed.ics?token=user",
+        });
+      }),
+      http.delete(userPath, ({ request }) => {
+        methods.push(request.method);
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+
+    expect(userCalendarSubscriptionQueryKey).toEqual(["api-v2", "users", "me", "booking-calendar-subscription"]);
+    await expect(fetchUserCalendarSubscriptionStatus("secret")).resolves.toMatchObject({ active: false });
+    await expect(createOrReplaceUserCalendarSubscription("secret")).resolves.toMatchObject({ active: true });
+    await expect(revokeUserCalendarSubscription("secret")).resolves.toBeUndefined();
+    expect(methods).toEqual(["GET", "POST", "DELETE"]);
   });
 });

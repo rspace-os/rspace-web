@@ -1,4 +1,4 @@
-import { type Locator, page } from "vitest/browser";
+import { type Locator, page, userEvent } from "vitest/browser";
 
 function css(selector: string): Locator {
   const root = page.elementLocator(document.body) as unknown as { locator: (value: string) => Locator };
@@ -17,6 +17,14 @@ export class AllBookableItemsPage {
 
   get heading(): Locator {
     return page.getByRole("heading", { name: "All Bookable Items" });
+  }
+
+  get toolbar(): Locator {
+    return page.getByRole("toolbar", { name: "All Bookable Items controls" });
+  }
+
+  get dateControls(): Locator {
+    return page.getByRole("group", { name: "Availability date controls" });
   }
 
   get tableElement(): Locator {
@@ -67,6 +75,42 @@ export class AllBookableItemsPage {
     return page.getByRole("img", { name: "Flow cytometer availability" });
   }
 
+  availabilitySlice(itemName: string, contributorCount: number, state = ".*"): Locator {
+    return page.getByRole("button", {
+      name: new RegExp(
+        `^${itemName}, ${state}, .*, ${contributorCount} constituent event${contributorCount === 1 ? "" : "s"}$`,
+      ),
+    });
+  }
+
+  get availabilityDetails(): Locator {
+    return page.getByRole("dialog");
+  }
+
+  get availabilityBookingRows(): Locator {
+    return this.availabilityDetails.getByText("Booking", { exact: true });
+  }
+
+  focusAvailabilitySlice(itemName: string, contributorCount: number): void {
+    this.availabilitySlice(itemName, contributorCount).element().focus();
+  }
+
+  async pressEscape(): Promise<void> {
+    await userEvent.keyboard("{Escape}");
+  }
+
+  sliceBorderRadius(itemName: string, contributorCount: number): string {
+    return window.getComputedStyle(this.availabilitySlice(itemName, contributorCount).element()).borderRadius;
+  }
+
+  sliceHeight(itemName: string, contributorCount: number): number {
+    return this.availabilitySlice(itemName, contributorCount).element().getBoundingClientRect().height;
+  }
+
+  availabilityDetailsRect(): DOMRect {
+    return this.availabilityDetails.element().getBoundingClientRect();
+  }
+
   parentContainer(name: string): Locator {
     return this.table.getByRole("link", { name, exact: true });
   }
@@ -83,8 +127,8 @@ export class AllBookableItemsPage {
     return page.getByText("UTC", { exact: true });
   }
 
-  get date(): Locator {
-    return page.getByLabelText("Date");
+  get datePicker(): Locator {
+    return page.getByRole("button", { name: "Jump to date" });
   }
 
   get availableNow(): Locator {

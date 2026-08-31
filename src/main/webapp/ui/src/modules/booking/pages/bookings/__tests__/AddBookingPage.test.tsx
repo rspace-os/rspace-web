@@ -71,6 +71,7 @@ const createdBooking = {
   start: "2026-08-17T07:00:00Z",
   end: "2026-08-17T08:00:00Z",
   state: "CONFIRMED",
+  kind: "BOOKING",
   privacy: "full",
   purpose: null,
   bookedBy: "Ada Lovelace (ada)",
@@ -166,9 +167,10 @@ describe("AddBookingPage", () => {
       start: "2026-08-17T07:00:00Z",
       end: "2026-08-17T08:00:00Z",
       purpose: null,
+      kind: "BOOKING",
     });
     expect(router.state.location.search).toMatchObject({ date: "2026-08-17", target: "IN123" });
-    expect(invalidate).toHaveBeenCalledWith({ queryKey: ["api-v2", "bookings"] });
+    expect(invalidate).not.toHaveBeenCalledWith({ queryKey: ["api-v2", "bookings"] });
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ["api-v2", "bookings", 41] });
   });
 
@@ -193,9 +195,17 @@ describe("AddBookingPage", () => {
     expect(screen.queryByText("private server detail")).not.toBeInTheDocument();
     const start = screen.getByRole("group", { name: "booking:bookings.form.start" });
     expect(within(start).getByLabelText("booking:bookings.form.time")).toHaveValue("09:00");
+    const submit = screen.getByRole("button", { name: "booking:bookings.form.submit" });
+    expect(submit).toBeDisabled();
+
+    await user.clear(within(start).getByLabelText("booking:bookings.form.time"));
+    await user.type(within(start).getByLabelText("booking:bookings.form.time"), "09:05");
+
+    expect(screen.queryByText("booking:bookings.errors.overlap")).not.toBeInTheDocument();
+    expect(submit).not.toBeDisabled();
   });
 
-  it("offers the booking type to a sysadmin and keeps it out of the create payload", async () => {
+  it("keeps the full-page add route booking-only for a sysadmin", async () => {
     const user = userEvent.setup();
     let body: unknown;
     server.use(
@@ -208,10 +218,9 @@ describe("AddBookingPage", () => {
     );
     renderPage(true);
 
-    const blockout = await screen.findByRole("radio", { name: "booking:bookings.form.typeBlockout" });
-    expect(screen.getByRole("radio", { name: "booking:bookings.form.typeBooking" })).toBeChecked();
-    await user.click(blockout);
-    expect(await screen.findByText("booking:bookings.form.typeBlockoutPending")).toBeVisible();
+    expect(await screen.findByText("booking:bookings.form.timezone")).toBeVisible();
+    expect(screen.queryByRole("group", { name: "booking:bookings.form.type" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("radio", { name: "booking:bookings.form.typeBlockout" })).not.toBeInTheDocument();
 
     await fillWindow(user);
     await user.click(screen.getByRole("button", { name: "booking:bookings.form.submit" }));
@@ -222,6 +231,7 @@ describe("AddBookingPage", () => {
       start: "2026-08-17T07:00:00Z",
       end: "2026-08-17T08:00:00Z",
       purpose: null,
+      kind: "BOOKING",
     });
   });
 

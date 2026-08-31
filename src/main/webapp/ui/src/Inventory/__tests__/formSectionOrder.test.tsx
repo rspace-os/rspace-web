@@ -82,6 +82,9 @@ vi.mock("../../stores/stores/getRootStore", () => ({
     searchStore: {
       savedSearches: [{ name: "Dummy saved search", query: "foo" }],
     },
+    peopleStore: {
+      currentUser: null,
+    },
     uiStore: {
       addAlert: () => {},
     },

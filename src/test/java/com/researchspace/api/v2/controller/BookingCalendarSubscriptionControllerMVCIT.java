@@ -38,6 +38,9 @@ import org.springframework.web.context.WebApplicationContext;
 @ApiV2WebIntegrationTest
 class BookingCalendarSubscriptionControllerMVCIT {
 
+  private static final String USER_SUBSCRIPTION_PATH =
+      "/api/v2/users/me/booking-calendar-subscription";
+
   @Autowired private WebApplicationContext context;
   @Autowired private BookingCalendarSubscriptionDao subscriptionDao;
   @Autowired private BookingConfigurationDao configurationDao;
@@ -63,6 +66,67 @@ class BookingCalendarSubscriptionControllerMVCIT {
   @Test
   void managementRequiresAuthentication() throws Exception {
     mockMvc.perform(get(path(1))).andExpect(status().isUnauthorized());
+    mockMvc.perform(get(USER_SUBSCRIPTION_PATH)).andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  void userCalendarManagementLifecycle() throws Exception {
+    String apiKey = fixture.userKey();
+
+    mockMvc
+        .perform(get(USER_SUBSCRIPTION_PATH).header("apiKey", apiKey))
+        .andExpect(status().isOk())
+        .andExpect(header().string("Cache-Control", containsString("no-store")))
+        .andExpect(header().string("Cache-Control", containsString("private")))
+        .andExpect(jsonPath("$.active").value(false))
+        .andExpect(jsonPath("$.subscriptionUrl").value((Object) null));
+
+    MvcResult created =
+        mockMvc
+            .perform(post(USER_SUBSCRIPTION_PATH).header("apiKey", apiKey))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.active").value(true))
+            .andExpect(jsonPath("$.updatedAt").isString())
+            .andExpect(jsonPath("$.subscriptionUrl").isNotEmpty())
+            .andReturn();
+    String subscriptionUrl =
+        objectMapper
+            .readTree(created.getResponse().getContentAsByteArray())
+            .path("subscriptionUrl")
+            .textValue();
+
+    mockMvc
+        .perform(get(USER_SUBSCRIPTION_PATH).header("apiKey", apiKey))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.active").value(true))
+        .andExpect(jsonPath("$.subscriptionUrl").value(subscriptionUrl));
+
+    mockMvc
+        .perform(delete(USER_SUBSCRIPTION_PATH).header("apiKey", apiKey))
+        .andExpect(status().isNoContent());
+    mockMvc
+        .perform(get(USER_SUBSCRIPTION_PATH).header("apiKey", apiKey))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.active").value(false))
+        .andExpect(jsonPath("$.subscriptionUrl").value((Object) null));
+  }
+
+  @Test
+  void managementRejectsNonPositiveConfigurationIds() throws Exception {
+    String apiKey = fixture.userKey();
+
+    mockMvc
+        .perform(get(path(0)).header("apiKey", apiKey))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("errors.api.v2.invalidRequest"));
+    mockMvc
+        .perform(post(path(-1)).header("apiKey", apiKey))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("errors.api.v2.invalidRequest"));
+    mockMvc
+        .perform(delete(path(0)).header("apiKey", apiKey))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("errors.api.v2.invalidRequest"));
   }
 
   @Test

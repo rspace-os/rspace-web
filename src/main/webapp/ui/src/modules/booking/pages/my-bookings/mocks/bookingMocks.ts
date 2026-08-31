@@ -28,6 +28,11 @@ export const bookingsOpenApi = {
                   operators: ["==", "!=", "=gt=", "=ge=", "=lt=", "=le=", "=in=", "=out="],
                   wildcards: false,
                 },
+                kind: {
+                  schema: { type: "string", enum: ["BOOKING", "MAINTENANCE"] },
+                  operators: ["==", "!=", "=in=", "=out="],
+                  wildcards: false,
+                },
                 start: {
                   schema: { type: "string", format: "date-time" },
                   operators: ["==", "!=", "=gt=", "=ge=", "=lt=", "=le="],
@@ -62,6 +67,7 @@ export const bookingsOpenApi = {
               bookings: [
                 "id",
                 "requesterId",
+                "kind",
                 "target",
                 "timezone",
                 "start",
@@ -90,6 +96,7 @@ const target = (id: number, name: string) => ({
 
 export const upcomingBooking = {
   id: 41,
+  kind: "BOOKING",
   target: target(123, "Confocal microscope"),
   timezone: "Pacific/Auckland",
   start: "2020-08-23T09:00:00Z",
@@ -99,6 +106,7 @@ export const upcomingBooking = {
 
 export const pastBooking = {
   id: 42,
+  kind: "BOOKING",
   target: target(124, "Electron microscope"),
   timezone: "UTC",
   start: "2020-08-23T09:00:00Z",

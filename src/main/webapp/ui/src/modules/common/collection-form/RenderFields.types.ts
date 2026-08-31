@@ -38,9 +38,9 @@ export type RelationshipOptions = Readonly<Record<string, readonly RelationshipO
 export type RelationshipOptionAvailability = Readonly<Record<string, RelationshipOptionAvailabilitySource | undefined>>;
 
 /**
- * `stacked` puts each label above its control. `inline` lays the fields out as
- * a two-column grid, label beside control, so an edit form lines up with the
- * read-out it replaces. Inline expects a flat field list.
+ * `stacked` puts each label above its control. `inline` stacks in narrow
+ * containers, then uses a shared 12rem label column with descriptions and
+ * errors beneath the controls. Inline expects a flat field list.
  */
 export type FieldLayout = "stacked" | "inline";
 

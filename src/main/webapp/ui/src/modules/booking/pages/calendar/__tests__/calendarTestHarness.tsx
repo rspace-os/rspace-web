@@ -15,34 +15,12 @@ import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import { bookingDisplayPreferencesQueryKey } from "@/modules/booking/domain/bookingDisplayPreferences";
 import bookingEnglish from "@/modules/common/i18n/locales/en-US/booking.json";
 import commonEnglish from "@/modules/common/i18n/locales/en-US/common.json";
-import type { CurrentUser } from "@/modules/common/queries/currentUser";
+import BookingPage from "../../BookingPage";
 import { createAddBookingRoute, createEditBookingRoute } from "../../bookings/routes";
 import { inheritedBrowserBookingPreferences } from "../../preferences/bookingPreferencesFixtures";
 import { createCalendarRoute } from "../routes";
 
-export const currentUser: CurrentUser = {
-  id: 1,
-  username: "ada",
-  email: "ada@example.com",
-  firstName: "Ada",
-  lastName: "Lovelace",
-  homeFolderId: 2,
-  workbenchId: 3,
-  hasPiRole: false,
-  hasSysAdminRole: false,
-  profileImageUrl: null,
-  profileImageApiUrl: null,
-  orcid: { available: false, id: null },
-  capabilities: { canUseInventory: true, canPublish: false, canViewSystem: false },
-  livechat: { enabled: false, serverKey: null },
-  session: {
-    operatedAs: false,
-    lastSession: null,
-    canUseDevtools: false,
-    canOverrideFeatureFlags: false,
-    canChangeFeatureFlagBaselines: false,
-  },
-};
+export { currentUser } from "../calendarFixtures";
 
 const target = (id: number, name: string, location?: { name: string; globalId: string } | null) => ({
   relationTo: "instruments" as const,
@@ -56,7 +34,11 @@ const target = (id: number, name: string, location?: { name: string; globalId: s
   },
 });
 
-const timestamps = { createdAt: "2026-08-01T09:00:00Z", updatedAt: "2026-08-01T09:00:00Z" };
+const timestamps = {
+  kind: "BOOKING" as const,
+  createdAt: "2026-08-01T09:00:00Z",
+  updatedAt: "2026-08-01T09:00:00Z",
+};
 
 export const ownBooking: BookingListDocument = {
   id: 41,
@@ -138,7 +120,7 @@ export async function renderCalendar(initialEntry = "/booking/calendar?date=2026
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   queryClient.setQueryData(bookingDisplayPreferencesQueryKey, inheritedBrowserBookingPreferences);
   const root = createRootRoute({ component: Outlet });
-  const booking = createRoute({ getParentRoute: () => root, path: "/booking", component: Outlet });
+  const booking = createRoute({ getParentRoute: () => root, path: "/booking", component: BookingPage });
   const router = createRouter({
     routeTree: root.addChildren([
       booking.addChildren([

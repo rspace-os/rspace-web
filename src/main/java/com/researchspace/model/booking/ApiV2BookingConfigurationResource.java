@@ -6,6 +6,7 @@ import com.researchspace.model.collection.AccessPolicy;
 import com.researchspace.model.collection.ApiV2ResourceDefinition;
 import com.researchspace.model.collection.ApiV2ResourceField;
 import com.researchspace.model.collection.CollectionDescription;
+import com.researchspace.model.collection.CollectionDescription.InternalFilter;
 import com.researchspace.model.collection.CollectionDescription.Sort;
 import com.researchspace.model.collection.CollectionDescription.WriteOperation;
 import com.researchspace.model.collection.CollectionFieldTypes;
@@ -104,5 +105,6 @@ public record ApiV2BookingConfigurationResource(
           BookingConfiguration.class,
           List.of(TARGET),
           List.of(new Sort("id", true)),
-          ACCESS);
+          ACCESS,
+          List.of(new InternalFilter("deleted", "deleted", CollectionFieldTypes.bool())));
 }

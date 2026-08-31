@@ -28,14 +28,14 @@ class ApiV2TimeSlotBookingResourceTest {
   @Test
   void definesTheFirstSliceWireAndQueryContract() {
     assertEquals(
-        List.of("start", "end", "purpose", "target"),
+        List.of("kind", "start", "end", "purpose", "target"),
         List.copyOf(
             ApiV2TimeSlotBookingResource.DESCRIPTION.writableFields(WriteOperation.CREATE)));
     assertEquals(
         List.of("start", "end", "state", "purpose"),
         List.copyOf(
             ApiV2TimeSlotBookingResource.DESCRIPTION.writableFields(WriteOperation.UPDATE)));
-    for (String privateField : List.of("purpose", "bookedBy", "privacy", "canEdit")) {
+    for (String privateField : List.of("purpose", "bookedBy", "createdBy", "privacy", "canEdit")) {
       assertFalse(ApiV2TimeSlotBookingResource.DESCRIPTION.requireField(privateField).sortable());
       assertFalse(
           ApiV2TimeSlotBookingResource.DESCRIPTION
@@ -66,6 +66,7 @@ class ApiV2TimeSlotBookingResourceTest {
                   "target": {"relationTo": "instruments", "value": 12},
                   "start": "2026-10-25T00:30:00Z",
                   "end": "2026-10-25T02:30:00Z",
+                  "kind": "MAINTENANCE",
                   "purpose": "Plate 4"
                 }
                 """),
@@ -78,6 +79,7 @@ class ApiV2TimeSlotBookingResourceTest {
         new com.researchspace.model.collection.ResourceReference<>(
             BookableTargetType.INSTRUMENT, 12L),
         create.values().get("target"));
+    assertEquals(BookingEventKind.MAINTENANCE, create.values().get("kind"));
     assertThrows(
         DocumentValidationException.class,
         () ->
@@ -101,6 +103,15 @@ class ApiV2TimeSlotBookingResourceTest {
                 WriteOperation.UPDATE,
                 "errors.api.v2.booking.patch",
                 new AccessContext(null, Operation.UPDATE, "bookings", 41L)));
+    assertThrows(
+        DocumentValidationException.class,
+        () ->
+            ApiV2DocumentParser.parse(
+                mapper.readTree("{\"kind\":\"MAINTENANCE\"}"),
+                ApiV2TimeSlotBookingResource.DESCRIPTION,
+                WriteOperation.UPDATE,
+                "errors.api.v2.booking.patch",
+                new AccessContext(null, Operation.UPDATE, "bookings", 41L)));
   }
 
   @Test
@@ -109,6 +120,7 @@ class ApiV2TimeSlotBookingResourceTest {
     requester.setFirstName("Ada");
     requester.setLastName("Lovelace");
     TimeSlotBooking booking = booking(requester);
+    booking.setCreatedBy(requester);
 
     Map<String, Object> busy = ApiV2TimeSlotBookingResource.DESCRIPTION.toDocument(booking);
     assertEquals("busy", busy.get("privacy"));
@@ -121,6 +133,8 @@ class ApiV2TimeSlotBookingResourceTest {
     assertEquals("full", full.get("privacy"));
     assertEquals("Secret", full.get("purpose"));
     assertEquals("Ada Lovelace (ada)", full.get("bookedBy"));
+    assertEquals("Ada Lovelace (ada)", full.get("createdBy"));
+    assertEquals("BOOKING", full.get("kind"));
     assertEquals(true, full.get("canEdit"));
   }
 

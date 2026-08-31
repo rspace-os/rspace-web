@@ -40,7 +40,9 @@ export async function fetchUpcomingBookingCount(
   token: string,
   signal?: AbortSignal,
 ): Promise<number> {
-  const parameters = new URLSearchParams({ where: `requesterId==${requesterId};end=gt=${asOf.toISOString()}` });
+  const parameters = new URLSearchParams({
+    where: `requesterId==${requesterId};kind==BOOKING;end=gt=${asOf.toISOString()}`,
+  });
   const response = await fetch(`/api/v2/bookings/count?${parameters}`, {
     headers: bookingApiV2Headers(token),
     signal,
@@ -62,6 +64,7 @@ export function UserBookingsPage({ requesterId, title, period, onPeriodChange }:
       kind: "and",
       children: [
         { kind: "comparison", field: "requesterId", operator: "equals", value: requesterId },
+        { kind: "comparison", field: "kind", operator: "equals", value: "BOOKING" },
         {
           kind: "comparison",
           field: "end",

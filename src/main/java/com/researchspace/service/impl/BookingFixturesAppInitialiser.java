@@ -15,6 +15,7 @@ import com.researchspace.dao.UserDao;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookingConfiguration;
+import com.researchspace.model.booking.BookingSchedulingSettings;
 import com.researchspace.model.booking.ResolvedBookableTarget;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Instrument;
@@ -44,6 +45,8 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
   private static final String FIXTURE_DESCRIPTION_KEY = "bookingFixtures.description";
   private static final ZoneId FIXTURE_DATE_ZONE = ZoneId.of("Europe/Berlin");
   private static final Locale FIXTURE_LOCALE = Locale.forLanguageTag("en-US");
+  private static final BookingSchedulingSettings.Patch BLOCKOUT_FIXTURE_SETTINGS =
+      new BookingSchedulingSettings.Patch(null, "08:00", "17:00", null, null, null, null);
 
   @Value("${default.user.password}")
   private String devUserPassword;
@@ -166,7 +169,8 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
       login(new UsernamePasswordToken(SYSADMIN_UNAME, SYSADMIN_PWD, false));
       configurations =
           List.of(
-              ensureConfiguration(instruments.get(0), "Europe/Berlin", sysadmin),
+              ensureConfiguration(
+                  instruments.get(0), "Europe/Berlin", BLOCKOUT_FIXTURE_SETTINGS, sysadmin),
               ensureConfiguration(instruments.get(1), "America/New_York", sysadmin),
               ensureConfiguration(instruments.get(2), "UTC", sysadmin),
               ensureConfiguration(instruments.get(3), "Asia/Singapore", sysadmin),
@@ -303,15 +307,35 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
 
   private BookingConfiguration ensureConfiguration(
       Instrument instrument, String timeZone, User sysadmin) {
+    return ensureConfiguration(
+        instrument, timeZone, BookingSchedulingSettings.Patch.empty(), sysadmin);
+  }
+
+  private BookingConfiguration ensureConfiguration(
+      Instrument instrument,
+      String timeZone,
+      BookingSchedulingSettings.Patch schedulingSettings,
+      User sysadmin) {
     ResolvedBookableTarget target = target(instrument);
-    return configurationDao
-        .findByTarget(target.reference())
-        .orElseGet(
-            () ->
-                configurationManager.createConfiguration(
-                    new BookingConfigurationManager.Create(true, timeZone, target),
-                    sysadmin,
-                    sysadmin));
+    BookingConfiguration configuration =
+        configurationDao.findByTarget(target.reference()).orElse(null);
+    if (configuration == null) {
+      return configurationManager.createConfiguration(
+          new BookingConfigurationManager.Create(true, timeZone, target, schedulingSettings),
+          sysadmin,
+          sysadmin);
+    }
+    BookingSchedulingSettings current = BookingSchedulingSettings.from(configuration);
+    if (schedulingSettings.merge(current).equals(current)) {
+      return configuration;
+    }
+    return configurationManager
+        .updateConfiguration(
+            configuration.getId(),
+            new BookingConfigurationManager.Patch(null, null, schedulingSettings),
+            sysadmin,
+            sysadmin)
+        .orElseThrow();
   }
 
   private void ensureBooking(

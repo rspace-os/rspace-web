@@ -8,7 +8,9 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class ApiV2AuditConfig {
 
-  @Bean
+  public static final String AUDIT_CLOCK = "apiV2AuditClock";
+
+  @Bean(AUDIT_CLOCK)
   Clock apiV2AuditClock() {
     return Clock.systemUTC();
   }

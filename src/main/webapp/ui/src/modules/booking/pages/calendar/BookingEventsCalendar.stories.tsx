@@ -11,7 +11,11 @@ const target = (id: number, name: string) => ({
   value: { id, name, deleted: false },
 });
 
-const timestamps = { createdAt: "2026-08-01T09:00:00Z", updatedAt: "2026-08-01T09:00:00Z" };
+const timestamps = {
+  kind: "BOOKING" as const,
+  createdAt: "2026-08-01T09:00:00Z",
+  updatedAt: "2026-08-01T09:00:00Z",
+};
 const storyEvents: readonly BookingListDocument[] = [
   {
     id: 41,
@@ -121,8 +125,12 @@ export const Interactive: Story = {
     expect(canvas.queryByRole("button", { name: /Show details for Confocal microscope/ })).not.toBeInTheDocument();
     expect(canvas.getByRole("button", { name: /Show details for Electron microscope/ })).toBeVisible();
     await userEvent.click(canvas.getByRole("button", { name: "Clear search" }));
+    await userEvent.click(canvas.getByRole("button", { name: "Month" }));
+    expect(canvas.getByRole("button", { name: "Month" })).toHaveAttribute("aria-pressed", "true");
     await userEvent.click(canvas.getByRole("button", { name: "Resources" }));
     expect(canvas.getByRole("region", { name: "Resources" })).toBeVisible();
+    expect(canvas.getByRole("button", { name: "Month" })).toBeDisabled();
+    expect(canvas.getByRole("button", { name: "Week" })).toHaveAttribute("aria-pressed", "true");
     await userEvent.click(canvas.getByRole("button", { name: "Day" }));
     expect(canvas.getAllByTestId("day-timeline-scroller")).toHaveLength(3);
     await userEvent.click(canvas.getByRole("button", { name: "My calendar" }));

@@ -3,7 +3,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { Suspense } from "react";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
 import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
@@ -24,6 +24,14 @@ function renderPage() {
 }
 
 describe("BookingPreferencesPage", () => {
+  beforeEach(() => {
+    server.use(
+      http.get("/api/v2/users/me/booking-calendar-subscription", () =>
+        HttpResponse.json({ active: false, updatedAt: null, subscriptionUrl: null }),
+      ),
+    );
+  });
+
   it("saves one complete preference and replaces the shared query cache", async () => {
     let body: unknown;
     server.use(
@@ -117,5 +125,31 @@ describe("BookingPreferencesPage", () => {
     await user.click(screen.getByRole("button", { name: "booking:preferences.actions.save" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("booking:preferences.errors.save");
     expect(writes).toBe(1);
+  });
+
+  it("creates a user-wide calendar subscription from Booking preferences", async () => {
+    let creates = 0;
+    server.use(
+      oauthTokenHandler(),
+      http.get("/api/v2/users/me/booking-preferences", () => HttpResponse.json(inheritedBrowserBookingPreferences)),
+      http.post("/api/v2/users/me/booking-calendar-subscription", () => {
+        creates += 1;
+        return HttpResponse.json({
+          active: true,
+          updatedAt: "2026-08-30T12:00:00.000Z",
+          subscriptionUrl: "https://example.test/public/booking/calendars/feed.ics?token=user",
+        });
+      }),
+    );
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(await screen.findByRole("button", { name: "booking:preferences.calendarSubscription.create" }));
+
+    expect(creates).toBe(1);
+    expect(screen.getByLabelText("booking:preferences.calendarSubscription.copyPrompt")).toHaveValue(
+      "https://example.test/public/booking/calendars/feed.ics?token=user",
+    );
+    expect(screen.getByRole("link", { name: "booking:preferences.calendarSubscription.google" })).toBeVisible();
   });
 });

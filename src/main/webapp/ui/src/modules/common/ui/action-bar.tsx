@@ -34,7 +34,7 @@ const MAXIMUM_ACTIONS = 5;
  * one track to its content, so the row is a flex line: actions grow, More keeps a square 44px
  * touch target and gives everything else back.
  */
-const ACTION_CLASS = "h-11 min-w-0 flex-1 basis-0 rounded-none text-sm";
+const ACTION_CLASS = "h-11 min-w-0 flex-1 basis-0 rounded-none bg-clip-border text-sm";
 
 const MORE_CLASS =
   "flex h-11 w-11 shrink-0 items-center justify-center rounded-none outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/30";

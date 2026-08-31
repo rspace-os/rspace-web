@@ -16,6 +16,7 @@ import { Button } from "@/modules/common/ui/button";
 import { Separator } from "@/modules/common/ui/separator";
 import { Heading } from "@/modules/common/ui/typography";
 import { BookingDisplaySettingsFields } from "./BookingDisplaySettingsFields";
+import { UserCalendarSubscription } from "./UserCalendarSubscription";
 
 function inputFrom(document: {
   availabilityWindowStart: string;
@@ -99,6 +100,8 @@ export default function BookingPreferencesPage() {
           </Button>
         </div>
       </form>
+      <Separator />
+      <UserCalendarSubscription token={token} />
     </main>
   );
 }

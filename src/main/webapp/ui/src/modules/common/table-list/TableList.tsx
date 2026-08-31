@@ -32,6 +32,7 @@ function TableListContent<TDocument extends Record<string, unknown>>({
   onCreate,
   createAction,
   createLabel,
+  headerContent,
   uiColumns,
   rowActions,
   selection,
@@ -79,6 +80,7 @@ function TableListContent<TDocument extends Record<string, unknown>>({
               createLabel={createLabel}
               divided={variant === "transparent"}
             />
+            {headerContent ? <div className="mt-5">{headerContent}</div> : null}
           </div>
         )}
         <div className={cn(variant === "card" && "rounded-sm border bg-card px-3")}>

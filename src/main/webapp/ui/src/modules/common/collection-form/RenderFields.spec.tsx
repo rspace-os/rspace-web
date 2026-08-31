@@ -6,6 +6,12 @@ import { CardSelectStory, RenderFieldsStory } from "./RenderFields.story";
 
 const form = new RenderFieldsPage();
 
+function labelBounds(control: Element): DOMRect {
+  const label = (control as HTMLInputElement).labels?.item(0);
+  if (!label) throw new Error("Expected the control to have an associated label");
+  return label.getBoundingClientRect();
+}
+
 afterEach(() => {
   cleanup();
 });
@@ -85,6 +91,55 @@ describe("RenderFields", () => {
     await expect.element(form.status).toBeDisabled();
     await expect.element(form.owner).toBeDisabled();
     await expect.element(form.collaborators).toBeDisabled();
+  });
+
+  test("uses a wider label column and keeps descriptions beneath inline controls", async () => {
+    render(
+      <div style={{ width: 900 }}>
+        <RenderFieldsStory presentation="item-details" />
+      </div>,
+    );
+
+    await expect
+      .poll(() => {
+        const title = form.title.element().getBoundingClientRect();
+        const titleLabel = labelBounds(form.title.element());
+        const notes = form.notes.element().getBoundingClientRect();
+        const description = form.notesDescription.element().getBoundingClientRect();
+        return {
+          descriptionAlignedWithControl: Math.abs(description.left - notes.left) < 1,
+          descriptionBelowControl: description.top >= notes.bottom,
+          labelBesideControl: titleLabel.right <= title.left,
+          wideLabelColumn: title.left - titleLabel.left >= 220,
+        };
+      })
+      .toEqual({
+        descriptionAlignedWithControl: true,
+        descriptionBelowControl: true,
+        labelBesideControl: true,
+        wideLabelColumn: true,
+      });
+    await expect.element(form.notes).toHaveAccessibleDescription("The human-readable name of the record.");
+    await expectNoAxeViolations();
+  });
+
+  test("stacks inline fields when their container is narrow", async () => {
+    render(
+      <div style={{ width: 420 }}>
+        <RenderFieldsStory presentation="item-details" />
+      </div>,
+    );
+
+    await expect
+      .poll(() => {
+        const title = form.title.element().getBoundingClientRect();
+        const titleLabel = labelBounds(form.title.element());
+        return {
+          aligned: Math.abs(titleLabel.left - title.left) < 1,
+          stacked: titleLabel.bottom <= title.top,
+        };
+      })
+      .toEqual({ aligned: true, stacked: true });
   });
 });
 

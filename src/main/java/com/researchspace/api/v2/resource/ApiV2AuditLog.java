@@ -1,6 +1,7 @@
 package com.researchspace.api.v2.resource;
 
 import com.researchspace.api.v2.auth.ApiV2AuthenticationException;
+import com.researchspace.api.v2.config.ApiV2AuditConfig;
 import com.researchspace.api.v2.controller.ApiV2AuditSnapshotConflictException;
 import com.researchspace.api.v2.controller.ApiV2AuditUnavailableException;
 import com.researchspace.api.v2.controller.ApiV2BadRequestException;
@@ -48,6 +49,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -68,7 +70,7 @@ public final class ApiV2AuditLog {
 
   public ApiV2AuditLog(
       ApiV2AuditStrictSearch strictSearch,
-      Clock clock,
+      @Qualifier(ApiV2AuditConfig.AUDIT_CLOCK) Clock clock,
       @Value("${api.v2.audit.resultCeiling:1000}") int resultCeiling) {
     if (resultCeiling < 1) {
       throw new IllegalArgumentException("REST API v2 audit result ceiling must be positive");

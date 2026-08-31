@@ -62,6 +62,20 @@ class ApiV2AuditStrictSearchTest {
   }
 
   @Test
+  void unrelatedApplicationLinesInTheMixedLogAreIgnored() throws IOException {
+    write(
+        "RSLogs.txt",
+        "01 Jan 2026 09:00:00,000 - [/app/workspace] from 127.0.0.1 made by: [alice]\n"
+            + event("01 Jan 2026 12:00:00,000", "BC1")
+            + "\n"
+            + "02 Jan 2026 15:00:00,000 - [FOLDER CREATE id=42&name=notes] alice(Alice Example)\n");
+
+    List<AuditTrailSearchResult> results = search(ReadObserver.NONE, 10).search(request(10));
+
+    assertEquals(1, results.size());
+  }
+
+  @Test
   void emptyActiveFileIsACompleteSnapshotWithNoEvents() throws IOException {
     write("RSLogs.txt", "");
 
@@ -73,11 +87,12 @@ class ApiV2AuditStrictSearchTest {
   @Test
   void malformedFirstMiddleAndLastLinesAreFatalWithoutPartialResults() throws IOException {
     String valid = event("01 Jan 2026 12:00:00,000", "BC1");
+    String malformedAudit = "01 Jan 2026 11:00:00,000 - domain:UNKNOWN action:CREATE broken";
     for (String body :
         List.of(
-            "not an audit event\n" + valid + "\n",
-            valid + "\nnot an audit event\n" + valid + "\n",
-            valid + "\nnot an audit event\n")) {
+            malformedAudit + "\n" + valid + "\n",
+            valid + "\n" + malformedAudit + "\n" + valid + "\n",
+            valid + "\n" + malformedAudit + "\n")) {
       write("RSLogs.txt", body);
 
       assertThrows(
@@ -151,6 +166,24 @@ class ApiV2AuditStrictSearchTest {
         };
 
     List<AuditTrailSearchResult> results = search(appendAfterBoundary, 10).search(request(10));
+
+    assertEquals(1, results.size());
+  }
+
+  @Test
+  void unrelatedApplicationAppendKeepsTheAttemptValid() throws IOException {
+    Path log = write("RSLogs.txt", event("01 Jan 2026 12:00:00,000", "BC1") + "\n");
+    ReadObserver appendAfterRead =
+        new ReadObserver() {
+          @Override
+          public void afterRead(int attempt, List<FileManifest> manifest) {
+            append(
+                log,
+                "02 Jan 2026 13:00:00,000 - [/app/workspace] from 127.0.0.1 made by: [alice]\n");
+          }
+        };
+
+    List<AuditTrailSearchResult> results = search(appendAfterRead, 10).search(request(10));
 
     assertEquals(1, results.size());
   }

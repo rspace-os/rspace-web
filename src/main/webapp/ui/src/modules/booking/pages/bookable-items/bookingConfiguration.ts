@@ -1,5 +1,10 @@
 import { createElement } from "react";
 import * as v from "valibot";
+import {
+  schedulingSettingsEntries,
+  validMaximumBookingDuration,
+  validOpeningHours,
+} from "@/modules/booking/configuration/schedulingSettings";
 import { bookingApiV2Headers } from "@/modules/booking/domain/apiV2";
 import type { CollectionConfig, CollectionRow } from "@/modules/common/collection/collectionConfig";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
@@ -9,7 +14,6 @@ import { v2ListEnvelope } from "@/modules/common/queries/v2Pagination";
 import { serializeRsqlExpression } from "@/modules/common/table-list/rsql/rsqlCodec";
 import { InventoryItem } from "@/modules/common/ui/inventory-item";
 import { UnknownItem } from "@/modules/common/ui/unknown-item";
-import { schedulingSettingsEntries, validMaximumBookingDuration, validOpeningHours } from "./schedulingSettings";
 
 export const BookingConfigurationSchema = v.pipe(
   v.object({
@@ -32,6 +36,12 @@ export const BookingConfigurationSchema = v.pipe(
     ...schedulingSettingsEntries,
     // Fixed-projection consumers, such as Calendar, deliberately omit this field.
     updatedAt: v.optional(v.nullable(v.pipe(v.string(), v.isoTimestamp()))),
+    createdBy: v.optional(
+      v.object({
+        relationTo: v.literal("users"),
+        value: v.number(),
+      }),
+    ),
   }),
   v.forward(
     v.check((configuration) => validOpeningHours(configuration.openingStart, configuration.openingEnd)),

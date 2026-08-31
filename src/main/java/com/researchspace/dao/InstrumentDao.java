@@ -47,6 +47,9 @@ public interface InstrumentDao extends InstrumentEntityDao<Instrument> {
   /** Returns readable active instrument scalars for relationship expansion. */
   Map<Long, InstrumentReadSummary> getReadableSummaries(Set<Long> instrumentIds, User user);
 
+  /** Returns names for the requested instruments without applying current read permissions. */
+  Map<Long, String> getNamesByIds(Set<Long> instrumentIds);
+
   /** Returns all instruments whose image or thumbnail is the given file property. */
   List<Instrument> getAllUsingImage(FileProperty fileProperty);
 

@@ -59,6 +59,8 @@ public final class ApiV2AuditStrictSearch {
       Pattern.compile(
           "^(.*?)- domain:(\\w+)\\s+action:(\\w+)\\s+\\[(.+)]\\s+"
               + "([A-Za-z0-9@.\\->]+)\\((.+)\\)\\s*(?:description:\\[(.*)])?$");
+  private static final Pattern AUDIT_PREFIX = Pattern.compile("^.*?-\\s+domain:");
+  private static final Pattern LOG_LINE_TIMESTAMP = Pattern.compile("^(.*?)-");
   private static final DateTimeFormatter TIMESTAMP_FORMAT =
       new DateTimeFormatterBuilder()
           .parseCaseSensitive()
@@ -103,7 +105,7 @@ public final class ApiV2AuditStrictSearch {
    * Returns at most {@code ceiling + 1} authorized events from one consistent file-manifest
    * attempt. A second inconsistent attempt fails without returning accumulated results.
    */
-  public List<AuditTrailSearchResult> search(Request request) {
+  public synchronized List<AuditTrailSearchResult> search(Request request) {
     Objects.requireNonNull(request, "Audit search request");
     AuditTrailSearchElement restricted =
         actorVisibility.restrict(new VisibilityConfig(request), request.actor());
@@ -186,10 +188,10 @@ public final class ApiV2AuditStrictSearch {
     if (firstBoundary.isEmpty()) {
       return false;
     }
-    ParsedLine first = parseBoundary(firstBoundary.get(), file);
-    ParsedLine last = parseBoundary(lastNonblankLine(file), file);
-    return last.timestamp().compareTo(request.fromInclusive()) >= 0
-        && first.timestamp().compareTo(request.toExclusive()) < 0;
+    Instant first = parseBoundaryTimestamp(firstBoundary.get(), file);
+    Instant last = parseBoundaryTimestamp(lastNonblankLine(file), file);
+    return last.compareTo(request.fromInclusive()) >= 0
+        && first.compareTo(request.toExclusive()) < 0;
   }
 
   private Optional<BoundaryLine> firstNonblankLine(FileManifest file) {
@@ -290,8 +292,16 @@ public final class ApiV2AuditStrictSearch {
     return one.array()[0];
   }
 
-  private ParsedLine parseBoundary(BoundaryLine boundary, FileManifest file) {
-    return parse(boundary.content(), file, boundary.lineNumber());
+  private Instant parseBoundaryTimestamp(BoundaryLine boundary, FileManifest file) {
+    Matcher matcher = LOG_LINE_TIMESTAMP.matcher(boundary.content());
+    if (!matcher.find()) {
+      throw failure(file, boundary.lineNumber());
+    }
+    try {
+      return timestamp(matcher.group(1));
+    } catch (DateTimeException ex) {
+      throw failure(file, boundary.lineNumber(), ex);
+    }
   }
 
   private void scan(
@@ -310,9 +320,9 @@ public final class ApiV2AuditStrictSearch {
         if (line.isBlank()) {
           continue;
         }
-        ParsedLine parsed = parse(line, file, lineNumber);
-        if (matches(parsed, request, restricted)) {
-          results.add(parsed.result());
+        Optional<ParsedLine> parsed = parseAuditLine(line, file, lineNumber);
+        if (parsed.isPresent() && matches(parsed.get(), request, restricted)) {
+          results.add(parsed.get().result());
           if (results.size() > request.ceiling()) {
             return;
           }
@@ -325,16 +335,16 @@ public final class ApiV2AuditStrictSearch {
     }
   }
 
-  private ParsedLine parse(String line, FileManifest file, int lineNumber) {
+  private Optional<ParsedLine> parseAuditLine(String line, FileManifest file, int lineNumber) {
     Matcher matcher = AUDIT_LINE.matcher(line);
     if (!matcher.matches()) {
-      throw failure(file, lineNumber);
+      if (AUDIT_PREFIX.matcher(line).find()) {
+        throw failure(file, lineNumber);
+      }
+      return Optional.empty();
     }
     try {
-      Instant timestamp =
-          LocalDateTime.parse(matcher.group(1).trim(), TIMESTAMP_FORMAT)
-              .atZone(logZone)
-              .toInstant();
+      Instant timestamp = timestamp(matcher.group(1));
       AuditDomain domain = AuditDomain.valueOf(matcher.group(2));
       String actionValue =
           "COPY".equalsIgnoreCase(matcher.group(3)) ? "DUPLICATE" : matcher.group(3);
@@ -349,16 +359,21 @@ public final class ApiV2AuditStrictSearch {
       if (matcher.group(7) != null) {
         event.setDescription(matcher.group(7));
       }
-      return new ParsedLine(
-          timestamp,
-          domain,
-          action,
-          matcher.group(4),
-          matcher.group(5),
-          new AuditTrailSearchResult(event, timestamp.toEpochMilli()));
+      return Optional.of(
+          new ParsedLine(
+              timestamp,
+              domain,
+              action,
+              matcher.group(4),
+              matcher.group(5),
+              new AuditTrailSearchResult(event, timestamp.toEpochMilli())));
     } catch (DateTimeException | IllegalArgumentException ex) {
       throw failure(file, lineNumber, ex);
     }
+  }
+
+  private Instant timestamp(String value) {
+    return LocalDateTime.parse(value.trim(), TIMESTAMP_FORMAT).atZone(logZone).toInstant();
   }
 
   private static boolean matches(
@@ -422,8 +437,8 @@ public final class ApiV2AuditStrictSearch {
           if (line.isBlank()) {
             continue;
           }
-          ParsedLine parsed = parse(line, after, lineNumber);
-          if (parsed.timestamp().isBefore(request.toExclusive())) {
+          Optional<ParsedLine> parsed = parseAuditLine(line, after, lineNumber);
+          if (parsed.isPresent() && parsed.get().timestamp().isBefore(request.toExclusive())) {
             throw failure(after, lineNumber);
           }
         }

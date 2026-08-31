@@ -24,7 +24,7 @@ const quieterDays: Array<ReadonlyArray<DayTimelineEvent>> = [
       id: "morning-booking",
       kind: "booking",
       privacy: "full",
-      title: "Confocal microscope · ada.lovelace",
+      title: "Confocal microscope",
       bookedBy: "ada.lovelace",
       item: { name: "Confocal microscope", globalId: "IN123" },
       canEdit: false,
@@ -129,7 +129,22 @@ export const Sub15MinuteEvents: Story = {
     const canvas = within(canvasElement);
     const timelineCanvas = await canvas.findByTestId("day-timeline-canvas");
     const eventBars = Array.from(canvasElement.querySelectorAll<HTMLElement>("[data-event-id]"));
-    for (const eventBar of eventBars) expect(eventBar.getBoundingClientRect().width).toBeCloseTo(44, 0);
+    for (const eventBar of eventBars) {
+      expect(eventBar.getBoundingClientRect().width).toBeCloseTo(44, 0);
+      const card = eventBar.querySelector<HTMLElement>("article");
+      const time = eventBar.querySelector<HTMLElement>("[data-event-time]");
+      const eventDate = eventBar.querySelector<HTMLElement>("[data-event-date]");
+      const timeRange = eventBar.querySelector<HTMLElement>("[data-event-time-range]");
+      expect(card).not.toBeNull();
+      expect(time).not.toBeNull();
+      expect(eventDate).toHaveTextContent("22-07-2026");
+      expect(timeRange).toHaveTextContent(/\d{2}:\d{2} - \d{2}:\d{2}/);
+      if (!card || !time || !eventDate || !timeRange) throw new Error("Timeline card content is missing");
+      expect(card).toHaveAttribute("title");
+      expect(time.getBoundingClientRect().top).toBeGreaterThan(card.getBoundingClientRect().top);
+      expect(time.getBoundingClientRect().bottom).toBeLessThanOrEqual(card.getBoundingClientRect().bottom);
+      expect(Number.parseFloat(getComputedStyle(time).lineHeight)).toBeGreaterThanOrEqual(12);
+    }
     const heightBeforeOpening = timelineCanvas.getBoundingClientRect().height;
     const firstDetails = canvas.getByRole("button", {
       name: /show details for Confocal microscope · researcher\.01, 09:00–09:05/i,
@@ -140,6 +155,9 @@ export const Sub15MinuteEvents: Story = {
     const popover = within(document.body);
     expect(popover.getByText("09:00–09:05")).toBeInTheDocument();
     expect(popover.getByText("Sample check 1.")).toBeInTheDocument();
+    await userEvent.click(firstDetails);
+    expect(firstDetails).toHaveAttribute("aria-expanded", "false");
+    await waitFor(() => expect(popover.queryByRole("dialog", { name: "09:00–09:05" })).not.toBeInTheDocument());
   },
 };
 

@@ -9,7 +9,12 @@ import {
   type FeatureFlagResponse,
   featureFlagsFromDocuments,
 } from "./schema";
-import { FEATURE_FLAGS_API_BASE_URL, featureFlagRequestHeaders, toFeatureFlagRequestError } from "./utils";
+import {
+  FEATURE_FLAGS_API_BASE_URL,
+  FeatureFlagRequestError,
+  featureFlagRequestHeaders,
+  toFeatureFlagRequestError,
+} from "./utils";
 
 export const featureFlagQueryKeys = {
   all: ["rspace.featureFlags"] as const,
@@ -38,13 +43,15 @@ export async function getFeatureFlags(token: string): Promise<FeatureFlagRespons
 }
 
 export function useFeatureFlags() {
-  const { data: token } = useOauthTokenQuery();
+  const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
   return useQuery({
     queryKey: featureFlagQueryKeys.flags(),
     queryFn: () => getFeatureFlags(token),
     placeholderData: disabledFeatureFlags,
     staleTime: Infinity,
     gcTime: Infinity,
+    retry: (failureCount, error) =>
+      !(error instanceof FeatureFlagRequestError && error.status >= 400 && error.status < 500) && failureCount < 2,
   });
 }
 

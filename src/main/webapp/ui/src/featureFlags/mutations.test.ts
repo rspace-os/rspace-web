@@ -33,6 +33,9 @@ describe("feature flag mutations", () => {
 
     await expect(
       patchFeatureFlag({ flagName: FEATURE_FLAGS.bookingEnabled, document: { overrideValue: true } }, "token"),
-    ).rejects.toThrow("403 Forbidden");
+    ).rejects.toMatchObject({
+      message: "403 Forbidden",
+      status: 403,
+    });
   });
 });

@@ -241,11 +241,16 @@ describe("BookableItemPage", () => {
     await expect
       .poll(() =>
         page
-          .getByText("Ada Lovelace", { exact: true })
+          .getByText("Ada Lovelace (ada)", { exact: true })
           .all()
           .some((candidate) => candidate.element().getClientRects().length > 0),
       )
       .toBe(true);
+    const visibleActor = page
+      .getByText("Ada Lovelace (ada)", { exact: true })
+      .all()
+      .find((candidate) => candidate.element().getClientRects().length > 0);
+    expect(visibleActor?.element().closest('[data-slot="user-badge"]')).not.toBeNull();
     await expect.element(page.getByText("Results through Aug 25, 2026", { exact: true }).first()).toBeVisible();
     await expect.poll(() => auditRequests).toBe(1);
     await expect.poll(() => new URLSearchParams(window.location.search).get("tab")).toBe("audit");
@@ -337,7 +342,7 @@ describe("BookableItemPage", () => {
     const alert = page.getByRole("alert");
     await expect.element(alert).toHaveTextContent("The audit results changed");
     await expect.element(alert).toHaveFocus();
-    await expect.element(page.getByText("Ada Lovelace", { exact: true })).not.toBeInTheDocument();
+    await expect.element(page.getByText("Ada Lovelace (ada)", { exact: true })).not.toBeInTheDocument();
     await page.getByRole("button", { name: "Restart from first page" }).click();
 
     await expect.poll(() => requests.length).toBe(3);
@@ -362,7 +367,7 @@ describe("BookableItemPage", () => {
     const alert = page.getByRole("alert");
     await expect.element(alert).toHaveTextContent(title);
     await expect.element(alert).not.toHaveTextContent("Do not display");
-    await expect.element(page.getByText("Ada Lovelace", { exact: true })).not.toBeInTheDocument();
+    await expect.element(page.getByText("Ada Lovelace (ada)", { exact: true })).not.toBeInTheDocument();
     await expectNoAxeViolations();
   });
 

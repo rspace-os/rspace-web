@@ -10,6 +10,7 @@ import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
+import com.researchspace.model.booking.BookingEventKind;
 import com.researchspace.model.booking.BookingPrivacy;
 import com.researchspace.model.booking.BookingState;
 import com.researchspace.model.booking.ResolvedBookableTarget;
@@ -24,11 +25,13 @@ import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
+import jakarta.persistence.OptimisticLockException;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -36,6 +39,7 @@ import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 
 /** Transactional policy module for one-off time-slot bookings. */
@@ -46,6 +50,7 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
   private final BookingConfigurationDao configurationDao;
   private final InventoryPermissionUtils inventoryPermissions;
   private final BookingSchedulingPolicy schedulingPolicy;
+  private final BookingMaintenancePolicy maintenancePolicy;
   private final InstrumentDao instrumentDao;
   private final ObjectProvider<ResourceRegistry> resourceRegistry;
   private final ApplicationEventPublisher events;
@@ -55,6 +60,7 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
       @Qualifier("bookingConfigurationDao") BookingConfigurationDao configurationDao,
       InventoryPermissionUtils inventoryPermissions,
       BookingSchedulingPolicy schedulingPolicy,
+      BookingMaintenancePolicy maintenancePolicy,
       InstrumentDao instrumentDao,
       ObjectProvider<ResourceRegistry> resourceRegistry,
       ApplicationEventPublisher events) {
@@ -62,6 +68,7 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
     this.configurationDao = configurationDao;
     this.inventoryPermissions = inventoryPermissions;
     this.schedulingPolicy = schedulingPolicy;
+    this.maintenancePolicy = maintenancePolicy;
     this.instrumentDao = instrumentDao;
     this.resourceRegistry = resourceRegistry;
     this.events = events;
@@ -136,14 +143,66 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
                         booking.getEndTime(),
                         booking.getCreatedAt(),
                         booking.getUpdatedAt(),
+                        booking.getKind(),
                         booking.getPrivacy(),
                         booking.getVisibleBookedBy(),
+                        booking.getVisibleCreatedBy(),
                         booking.getVisiblePurpose(),
                         booking.isCanEdit()))
             .toList();
     return Optional.of(
         new CalendarSource(
             instrument.get().getName(), configuration.get().getTimeZone(), calendarEvents));
+  }
+
+  @Override
+  public CalendarSource getUserCalendarSource(User actor, Date refreshedAt, int maxEvents) {
+    requireAuthenticated(actor);
+    Objects.requireNonNull(refreshedAt, "Calendar refresh time");
+    if (maxEvents < 1) {
+      throw new IllegalArgumentException("Calendar event limit must be positive");
+    }
+    Date cutoff = Date.from(refreshedAt.toInstant().minus(30, ChronoUnit.DAYS));
+    List<TimeSlotBooking> bookings =
+        bookingDao.findUserCalendarBookings(actor.getId(), cutoff, maxEvents + 1);
+    if (bookings.size() > maxEvents) {
+      throw new CalendarSourceTooLargeException();
+    }
+    prepare(bookings, actor);
+    Set<Long> targetIds =
+        bookings.stream()
+            .map(TimeSlotBooking::getBookingConfiguration)
+            .map(BookingConfiguration::getTarget)
+            .filter(Objects::nonNull)
+            .filter(target -> target.type() == BookableTargetType.INSTRUMENT)
+            .map(BookableTargetReference::id)
+            .collect(java.util.stream.Collectors.toSet());
+    Map<Long, String> itemNames = instrumentDao.getNamesByIds(targetIds);
+    List<CalendarEvent> calendarEvents =
+        bookings.stream()
+            .map(
+                booking -> {
+                  BookableTargetReference target = booking.getBookingConfiguration().getTarget();
+                  String itemName =
+                      target == null || target.type() != BookableTargetType.INSTRUMENT
+                          ? null
+                          : itemNames.get(target.id());
+                  return new CalendarEvent(
+                      booking.getId(),
+                      booking.getStartTime(),
+                      booking.getEndTime(),
+                      booking.getCreatedAt(),
+                      booking.getUpdatedAt(),
+                      booking.getKind(),
+                      booking.getPrivacy(),
+                      booking.getVisibleBookedBy(),
+                      booking.getVisibleCreatedBy(),
+                      booking.getVisiblePurpose(),
+                      booking.isCanEdit(),
+                      itemName);
+                })
+            .toList();
+    return new CalendarSource("booking:calendar.feed.myBookings", "UTC", calendarEvents, true);
   }
 
   @Override
@@ -154,6 +213,10 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
     if (!inventoryPermissions.canUserReadInventoryRecord(instrument, subject)) {
       throw new AuthorizationException("errors.api.v2.forbidden");
     }
+    if (create.kind() == BookingEventKind.MAINTENANCE
+        && !maintenancePolicy.canManageMaintenance(create.target().reference(), subject, actor)) {
+      throw new AuthorizationException("errors.api.v2.forbidden");
+    }
     validateWindow(create.start(), create.end());
     validatePurpose(create.purpose());
     BookingConfiguration configuration =
@@ -162,15 +225,19 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
             .filter(BookingConfiguration::isEnabled)
             .orElseThrow(BookingTargetUnavailableException::new);
     BookingSchedulingPolicy.ConflictInterval conflict =
-        schedulingPolicy.validate(configuration, create.start(), create.end());
-    if (!configuration.isAllowDoubleBooking()) {
-      requireNoOverlap(configuration.getId(), conflict.start(), conflict.end(), null);
-    }
+        validateScheduling(configuration, create.kind(), create.start(), create.end());
+    requireNoOverlap(
+        configuration.getId(),
+        conflict.start(),
+        conflict.end(),
+        null,
+        conflictingKinds(configuration, create.kind()));
 
     Date now = new Date();
     TimeSlotBooking booking = new TimeSlotBooking();
     booking.setBookingConfiguration(configuration);
     booking.setRequester(subject);
+    booking.setKind(create.kind());
     booking.setStartTime(create.start());
     booking.setEndTime(create.end());
     booking.setState(BookingState.CONFIRMED);
@@ -180,7 +247,7 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
     booking.setUpdatedAt(now);
     booking.setCreatedBy(actor);
     booking.setUpdatedBy(actor);
-    TimeSlotBooking saved = bookingDao.saveAndFlush(booking);
+    TimeSlotBooking saved = save(booking);
     events.publishEvent(new TimeSlotBookingAuditEvent(actor, subject, saved, AuditAction.CREATE));
     prepare(List.of(saved), subject);
     return saved;
@@ -191,10 +258,10 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
     requireAuthenticated(subject);
     Objects.requireNonNull(patch, "Patch booking command");
     return bookingDao
-        .getSafeNull(id)
+        .findReadableById(id, targetAccess(subject))
         .map(
             booking -> {
-              requireCanEdit(booking, subject);
+              requireCanEdit(booking, subject, actor);
               if (booking.getState() != BookingState.CONFIRMED) {
                 throw new BookingStateTransitionException();
               }
@@ -214,11 +281,13 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
                   throw new BookingTargetUnavailableException();
                 }
                 BookingSchedulingPolicy.ConflictInterval conflict =
-                    schedulingPolicy.validate(configuration, start, end);
-                if (!configuration.isAllowDoubleBooking()) {
-                  requireNoOverlap(
-                      configuration.getId(), conflict.start(), conflict.end(), booking.getId());
-                }
+                    validateScheduling(configuration, booking.getKind(), start, end);
+                requireNoOverlap(
+                    configuration.getId(),
+                    conflict.start(),
+                    conflict.end(),
+                    booking.getId(),
+                    conflictingKinds(configuration, booking.getKind()));
               }
               if (patch.purposeSupplied()) {
                 validatePurpose(patch.purpose());
@@ -236,7 +305,7 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
               booking.setEndTime(end);
               booking.setUpdatedAt(new Date());
               booking.setUpdatedBy(actor);
-              TimeSlotBooking saved = bookingDao.saveAndFlush(booking);
+              TimeSlotBooking saved = save(booking);
               AuditAction action =
                   saved.getState() == BookingState.CANCELLED
                       ? AuditAction.DELETE
@@ -259,12 +328,20 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
     return instrument;
   }
 
-  private void requireCanEdit(TimeSlotBooking booking, User actor) {
+  private void requireCanEdit(TimeSlotBooking booking, User subject, User actor) {
     BookableTargetReference target = booking.getBookingConfiguration().getTarget();
-    boolean requester = actor.equals(booking.getRequester());
+    if (booking.getKind() == BookingEventKind.MAINTENANCE) {
+      if (!maintenancePolicy.canManageMaintenance(target, subject, actor)) {
+        throw new AuthorizationException("errors.api.v2.forbidden");
+      }
+      return;
+    }
+    boolean requester = subject.equals(booking.getRequester());
     boolean owner =
-        bookingDao.findOwnedInstrumentIds(Set.of(target.id()), actor.getId()).contains(target.id());
-    if (!requester && !owner && !actor.hasSysadminRole()) {
+        bookingDao
+            .findOwnedInstrumentIds(Set.of(target.id()), subject.getId())
+            .contains(target.id());
+    if (!requester && !owner && !subject.hasSysadminRole()) {
       throw new AuthorizationException("errors.api.v2.forbidden");
     }
   }
@@ -278,18 +355,57 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
     for (TimeSlotBooking booking : bookings) {
       booking.getRequester().getUsername();
       booking.getRequester().getFullName();
+      if (booking.getCreatedBy() != null) {
+        booking.getCreatedBy().getUsername();
+        booking.getCreatedBy().getFullName();
+      }
       Long targetId = booking.getBookingConfiguration().getTarget().id();
-      boolean canEdit =
-          actor.hasSysadminRole()
-              || actor.equals(booking.getRequester())
-              || owned.contains(targetId);
-      booking.prepareView(canEdit ? BookingPrivacy.FULL : BookingPrivacy.BUSY, canEdit);
+      boolean canEdit;
+      if (booking.getKind() == BookingEventKind.MAINTENANCE) {
+        canEdit =
+            maintenancePolicy.canManageMaintenance(
+                booking.getBookingConfiguration().getTarget(), actor, actor);
+      } else {
+        canEdit =
+            actor.hasSysadminRole()
+                || actor.equals(booking.getRequester())
+                || owned.contains(targetId);
+      }
+      booking.prepareView(BookingPrivacy.FULL, canEdit);
     }
   }
 
-  private void requireNoOverlap(Long configurationId, Date start, Date end, Long excludedId) {
-    if (bookingDao.overlaps(configurationId, start, end, excludedId)) {
+  private void requireNoOverlap(
+      Long configurationId,
+      Date start,
+      Date end,
+      Long excludedId,
+      Set<BookingEventKind> includedKinds) {
+    if (bookingDao.overlaps(configurationId, start, end, excludedId, includedKinds)) {
       throw new BookingOverlapException();
+    }
+  }
+
+  private BookingSchedulingPolicy.ConflictInterval validateScheduling(
+      BookingConfiguration configuration, BookingEventKind kind, Date start, Date end) {
+    return kind == BookingEventKind.MAINTENANCE
+        ? schedulingPolicy.validateMaintenance(configuration, start, end)
+        : schedulingPolicy.validate(configuration, start, end);
+  }
+
+  private static Set<BookingEventKind> conflictingKinds(
+      BookingConfiguration configuration, BookingEventKind kind) {
+    if (kind == BookingEventKind.BOOKING && configuration.isAllowDoubleBooking()) {
+      return Set.of(BookingEventKind.MAINTENANCE);
+    }
+    return Set.of(BookingEventKind.BOOKING, BookingEventKind.MAINTENANCE);
+  }
+
+  private TimeSlotBooking save(TimeSlotBooking booking) {
+    try {
+      return bookingDao.saveAndFlush(booking);
+    } catch (OptimisticLockException | ObjectOptimisticLockingFailureException exception) {
+      throw new BookingConcurrentModificationException();
     }
   }
 

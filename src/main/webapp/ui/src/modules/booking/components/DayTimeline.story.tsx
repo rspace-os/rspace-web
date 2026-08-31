@@ -27,7 +27,7 @@ const events: ReadonlyArray<DayTimelineEvent> = [
     id: "readonly",
     kind: "booking",
     privacy: "full",
-    title: "Electron microscope · Grace Hopper",
+    title: "Electron microscope",
     bookedBy: "Grace Hopper",
     item: { name: "Electron microscope", globalId: "IN124" },
     canEdit: false,

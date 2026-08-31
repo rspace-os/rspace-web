@@ -15,7 +15,7 @@ import { apiV2CollectionMetadataFromOpenApi } from "@/modules/common/table-list/
 import AllBookableItemsPage from "../all-bookable-items/AllBookableItemsPage";
 import { createAllBookableItemsRoute } from "../all-bookable-items/routes";
 import { bookableItemsOpenApi } from "../bookable-items/mocks/bookableItemsMocks";
-import { currentUser } from "../calendar/__tests__/calendarTestHarness";
+import { currentUser } from "../calendar/calendarFixtures";
 import { createCalendarRoute } from "../calendar/routes";
 import { createBookingPreferencesRoute } from "./routes";
 

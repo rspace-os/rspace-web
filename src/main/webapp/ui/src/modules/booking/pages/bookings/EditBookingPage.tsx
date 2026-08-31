@@ -1,20 +1,22 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useParams, useSearch } from "@tanstack/react-router";
+import { useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { useBookableItemConfiguration } from "@/modules/booking/components/BookableItemPicker";
+import { useBookableItemConfiguration } from "@/modules/booking/creation/BookableItemPicker";
+import { BookingForm, type BookingFormSubmission, type EditableBooking } from "@/modules/booking/creation/BookingForm";
 import {
   ApiV2ProblemError,
   type Booking,
   type BookingUpdate,
   fetchBooking,
+  isBookingOverlapError,
   updateBooking,
 } from "@/modules/booking/domain/booking";
 import { todayInTimeZone, useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { currentWallClock, formatAgendaPeriod } from "@/modules/booking/domain/bookingTime";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
-import { buttonVariants } from "@/modules/common/ui/button";
+import { Button, buttonVariants } from "@/modules/common/ui/button";
 import { Heading } from "@/modules/common/ui/typography";
-import { BookingForm, type BookingFormSubmission, type EditableBooking } from "./BookingForm";
 import { DeleteBookingDialog } from "./DeleteBookingDialog";
 
 function isEditableBooking(value: Booking): value is EditableBooking {
@@ -48,18 +50,23 @@ function errorKey(
 }
 
 export default function EditBookingPage() {
-  const { t } = useTranslation("booking");
+  const { t } = useTranslation(["booking", "common"]);
   const { id } = useParams({ from: "/booking/calendar/bookings/$id" });
   const search = useSearch({ from: "/booking/calendar/bookings/$id" });
   const navigate = useNavigate({ from: "/booking/calendar/bookings/$id" });
   const bookingId = Number(id);
+  const validBookingId = Number.isSafeInteger(bookingId) && bookingId > 0;
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
   const queryClient = useQueryClient();
   const preferences = useBookingDisplayPreferences();
   const booking = useQuery({
     queryKey: ["api-v2", "bookings", bookingId],
-    enabled: Number.isSafeInteger(bookingId) && bookingId > 0 && Boolean(token),
+    enabled: validBookingId && Boolean(token),
     queryFn: ({ signal }) => fetchBooking(bookingId, token, signal),
+    retry: (failureCount, error) => {
+      if (error instanceof ApiV2ProblemError && error.status >= 400 && error.status < 500) return false;
+      return failureCount < 2;
+    },
   });
   const configuration = useBookableItemConfiguration(booking.data?.target.globalId, token);
   const mutation = useMutation({
@@ -95,6 +102,14 @@ export default function EditBookingPage() {
       }
     },
   });
+  const mutationHasError = useRef(false);
+  mutationHasError.current = mutation.isError;
+  const resetMutation = mutation.reset;
+  const clearMutationErrorOnChange = useCallback(() => {
+    if (!mutationHasError.current) return;
+    mutationHasError.current = false;
+    resetMutation();
+  }, [resetMutation]);
   const returnLink = (
     returnDate = search.date ?? todayInTimeZone(preferences.timeZone),
     returnTarget = search.target,
@@ -107,6 +122,13 @@ export default function EditBookingPage() {
       {t("bookings.form.returnToCalendar")}
     </Link>
   );
+  if (!validBookingId)
+    return (
+      <main className="space-y-4 p-8">
+        <p role="alert">{t("bookings.errors.notFound")}</p>
+        {returnLink()}
+      </main>
+    );
   if (booking.isPending)
     return (
       <main className="p-8">
@@ -116,7 +138,16 @@ export default function EditBookingPage() {
   if (booking.isError || !booking.data)
     return (
       <main className="space-y-4 p-8">
-        <p role="alert">{t("bookings.errors.notFound")}</p>
+        <p role="alert">
+          {booking.error instanceof ApiV2ProblemError && booking.error.status >= 400 && booking.error.status < 500
+            ? t("bookings.errors.notFound")
+            : t("bookings.errors.load")}
+        </p>
+        {!(booking.error instanceof ApiV2ProblemError) || booking.error.status >= 500 ? (
+          <Button type="button" variant="outline" onClick={() => void booking.refetch()}>
+            {t("common:actions.retry")}
+          </Button>
+        ) : null}
         {returnLink()}
       </main>
     );
@@ -153,6 +184,9 @@ export default function EditBookingPage() {
     return (
       <main className="space-y-4 p-8">
         <p role="alert">{t("bookings.errors.targetUnavailable")}</p>
+        <Button type="button" variant="outline" onClick={() => void configuration.refetch()}>
+          {t("common:actions.retry")}
+        </Button>
         {returnLink(
           search.date ?? currentWallClock(booking.data.start, preferences.timeZone).date,
           booking.data.target.globalId,
@@ -188,6 +222,8 @@ export default function EditBookingPage() {
         token={token}
         pending={mutation.isPending}
         error={mutation.error ? t(errorKey(mutation.error)) : undefined}
+        submissionBlocked={isBookingOverlapError(mutation.error)}
+        onStateChange={clearMutationErrorOnChange}
         onSubmit={(submission) => mutation.mutateAsync(submission)}
       />
     </main>

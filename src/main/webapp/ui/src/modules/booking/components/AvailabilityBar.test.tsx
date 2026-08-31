@@ -1,4 +1,5 @@
-import { screen } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
 
@@ -29,11 +30,43 @@ const resources = {
         blockout: "Blocked out: {ranges}.",
         overlap: "Booked and blocked out: {ranges}.",
       },
+      slice: {
+        count: "{count, plural, one {# constituent event} other {# constituent events}}",
+        sources: {
+          booking: "Booking",
+          openingHours: "Outside opening hours",
+        },
+        states: {
+          booking: "Booked",
+          blockout: "Outside opening hours",
+          overlap: "Booked and outside opening hours",
+        },
+        trigger:
+          "{itemName}, {state}, {period}, {count, plural, one {# constituent event} other {# constituent events}}",
+      },
     },
   },
 };
 
 const periodStart = new Date("2026-08-12T00:00:00.000Z");
+
+const sourced = (
+  id: string,
+  startsAt: string,
+  endsAt: string,
+  kind: "booking" | "blockout" = "booking",
+  sourceStartsAt = startsAt,
+  sourceEndsAt = endsAt,
+) => ({
+  kind,
+  startsAt: new Date(startsAt),
+  endsAt: new Date(endsAt),
+  source: {
+    id,
+    startsAt: new Date(sourceStartsAt),
+    endsAt: new Date(sourceEndsAt),
+  },
+});
 
 async function renderAvailabilityBar(props: Partial<React.ComponentProps<typeof AvailabilityBar>> = {}) {
   return renderWithRealI18n(
@@ -120,6 +153,90 @@ describe("AvailabilityBar", () => {
       /Booked and blocked out: Aug 12, 2026, 10:00 UTC–Aug 12, 2026, 11:00 UTC\./,
     );
     expect(graphic).toHaveAccessibleDescription(/Blocked out: Aug 12, 2026, 11:00 UTC–Aug 12, 2026, 12:00 UTC\./);
+  });
+
+  it("creates named buttons only for sourced occupied slices", async () => {
+    await renderAvailabilityBar({
+      intervals: [
+        sourced("booking:1", "2026-08-12T09:00:00.000Z", "2026-08-12T10:00:00.000Z"),
+        sourced("booking:2", "2026-08-12T11:00:00.000Z", "2026-08-12T12:00:00.000Z"),
+      ],
+    });
+
+    expect(screen.getAllByRole("button")).toHaveLength(2);
+    expect(
+      screen.getByRole("button", {
+        name: /Confocal microscope, Booked, Aug 12, 2026, 09:00 UTC–Aug 12, 2026, 10:00 UTC, 1 constituent event/,
+      }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("button", {
+        name: /Confocal microscope, Booked, Aug 12, 2026, 11:00 UTC–Aug 12, 2026, 12:00 UTC, 1 constituent event/,
+      }),
+    ).toBeVisible();
+  });
+
+  it("does not expose a partial card for mixed sourced and unsourced contributors", async () => {
+    await renderAvailabilityBar({
+      intervals: [
+        sourced("booking:1", "2026-08-12T09:00:00.000Z", "2026-08-12T11:00:00.000Z"),
+        {
+          kind: "booking",
+          startsAt: new Date("2026-08-12T10:00:00.000Z"),
+          endsAt: new Date("2026-08-12T12:00:00.000Z"),
+        },
+      ],
+    });
+
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Confocal microscope availability" })).toHaveAccessibleDescription(
+      /Booked: Aug 12, 2026, 09:00 UTC–Aug 12, 2026, 12:00 UTC/,
+    );
+  });
+
+  it("keeps source-free inputs non-interactive", async () => {
+    await renderAvailabilityBar({
+      intervals: [
+        {
+          kind: "booking",
+          startsAt: new Date("2026-08-12T09:00:00.000Z"),
+          endsAt: new Date("2026-08-12T10:00:00.000Z"),
+        },
+      ],
+    });
+
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Confocal microscope availability" })).toBeVisible();
+  });
+
+  it("shows neutral constituent details without rendering source IDs", async () => {
+    const user = userEvent.setup();
+    await renderAvailabilityBar({
+      intervals: [
+        sourced(
+          "booking:Sensitive purpose",
+          "2026-08-12T08:50:00.000Z",
+          "2026-08-12T10:10:00.000Z",
+          "booking",
+          "2026-08-12T09:00:00.000Z",
+          "2026-08-12T10:00:00.000Z",
+        ),
+        sourced("opening-hours:secret", "2026-08-12T09:30:00.000Z", "2026-08-12T11:00:00.000Z", "blockout"),
+      ],
+    });
+
+    await user.click(screen.getAllByRole("button")[1]);
+
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText("Booking")).toBeVisible();
+    expect(within(dialog).getByText("Outside opening hours")).toBeVisible();
+    expect(within(dialog).getByText("09:30–10:10")).toBeVisible();
+    expect(within(dialog).getByText("09:00–10:00")).toBeVisible();
+    expect(within(dialog).queryByText("Booked and outside opening hours")).not.toBeInTheDocument();
+    expect(dialog).not.toHaveTextContent("Aug 12, 2026");
+    expect(dialog).not.toHaveTextContent("Sensitive purpose");
+    expect(dialog).not.toHaveTextContent("opening-hours:secret");
+    await expectAccessible(dialog);
   });
 
   it("uses an explicitly supplied arbitrary period", async () => {

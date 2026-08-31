@@ -7,6 +7,11 @@ import {
   type BookingDisplayPreferencesInput,
   BookingDisplayPreferencesInputSchema,
 } from "@/modules/booking/domain/bookingDisplayPreferences";
+import {
+  RESPONSIVE_INLINE_FIELD_CONTAINER_CLASS_NAME,
+  RESPONSIVE_INLINE_FIELD_GRID_CLASS_NAME,
+  RESPONSIVE_INLINE_FIELD_ROW_CLASS_NAME,
+} from "@/modules/common/collection-form/responsiveFieldLayout";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import { Checkbox } from "@/modules/common/ui/checkbox";
 import { Field, FieldDescription, FieldError, FieldLabel } from "@/modules/common/ui/field";
@@ -26,7 +31,7 @@ export const schedulingSettingsFieldNames = [
 const WALL_TIME = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
 
 export const schedulingSettingsEntries = {
-  slotGranularityMinutes: v.picklist([1, 5, 15]),
+  slotGranularityMinutes: v.picklist([1, 5, 10, 15]),
   openingStart: v.pipe(v.string(), v.regex(WALL_TIME)),
   openingEnd: v.union([v.pipe(v.string(), v.regex(WALL_TIME)), v.literal("24:00")]),
   bufferBeforeMinutes: v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(MAX_BUFFER_MINUTES)),
@@ -184,186 +189,192 @@ export function SchedulingSettingsFields({
     const openingEndInvalid = openingInvalid || Boolean(openingEnd.errors?.length);
 
     return (
-      <fieldset className="grid gap-x-8 gap-y-4 sm:col-span-2 sm:grid-cols-subgrid">
-        <legend className="sr-only">{t("settings.fields.legend")}</legend>
+      <div className={RESPONSIVE_INLINE_FIELD_CONTAINER_CLASS_NAME}>
+        <fieldset className={`${RESPONSIVE_INLINE_FIELD_GRID_CLASS_NAME} gap-y-4`}>
+          <legend className="sr-only">{t("settings.fields.legend")}</legend>
 
-        <div className="grid gap-1 sm:contents">
-          <FieldLabel htmlFor={`${id}-opening-start`}>{t("bookableItemDetails.fields.openingHours")}</FieldLabel>
-          <div className="space-y-3">
-            <Field orientation="horizontal">
-              <Checkbox
-                id={`${id}-full-day`}
-                checked={fullDay}
-                disabled={disabled}
-                onCheckedChange={(checked) => {
-                  openingStart.onChange(checked ? "00:00" : "08:00");
-                  openingEnd.onChange(checked ? "24:00" : "18:00");
-                }}
-              />
-              <FieldLabel htmlFor={`${id}-full-day`}>{t("settings.fields.fullDay")}</FieldLabel>
-            </Field>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Field>
-                <FieldLabel htmlFor={`${id}-opening-start`}>{t("settings.fields.openingStart")}</FieldLabel>
-                <Input
-                  id={`${id}-opening-start`}
-                  type="time"
-                  step={60}
-                  required
-                  disabled={disabled || fullDay}
-                  value={typeof openingStart.input === "string" ? openingStart.input : ""}
-                  ref={openingStart.props.ref}
-                  onFocus={openingStart.props.onFocus}
-                  onBlur={openingStart.props.onBlur}
-                  aria-invalid={openingStartInvalid || undefined}
-                  aria-describedby={openingStartInvalid ? openingErrorId : undefined}
-                  onChange={(event) => openingStart.onChange(event.currentTarget.value)}
+          <div className={RESPONSIVE_INLINE_FIELD_ROW_CLASS_NAME}>
+            <FieldLabel htmlFor={`${id}-opening-start`}>{t("bookableItemDetails.fields.openingHours")}</FieldLabel>
+            <div className="space-y-3">
+              <Field orientation="horizontal">
+                <Checkbox
+                  id={`${id}-full-day`}
+                  checked={fullDay}
+                  disabled={disabled}
+                  onCheckedChange={(checked) => {
+                    openingStart.onChange(checked ? "00:00" : "08:00");
+                    openingEnd.onChange(checked ? "24:00" : "18:00");
+                  }}
                 />
+                <FieldLabel htmlFor={`${id}-full-day`}>{t("settings.fields.fullDay")}</FieldLabel>
               </Field>
-              <Field>
-                <FieldLabel htmlFor={`${id}-opening-end`}>{t("settings.fields.openingEnd")}</FieldLabel>
-                <Input
-                  id={`${id}-opening-end`}
-                  type="time"
-                  step={60}
-                  required
-                  disabled={disabled || fullDay}
-                  value={fullDay ? "" : typeof openingEnd.input === "string" ? openingEnd.input : ""}
-                  ref={openingEnd.props.ref}
-                  onFocus={openingEnd.props.onFocus}
-                  onBlur={openingEnd.props.onBlur}
-                  aria-invalid={openingEndInvalid || undefined}
-                  aria-describedby={openingEndInvalid ? openingErrorId : undefined}
-                  onChange={(event) => openingEnd.onChange(event.currentTarget.value)}
-                />
-              </Field>
+              <div className="grid gap-3 @sm:grid-cols-2">
+                <Field>
+                  <FieldLabel htmlFor={`${id}-opening-start`}>{t("settings.fields.openingStart")}</FieldLabel>
+                  <Input
+                    id={`${id}-opening-start`}
+                    type="time"
+                    step={60}
+                    required
+                    disabled={disabled || fullDay}
+                    value={typeof openingStart.input === "string" ? openingStart.input : ""}
+                    ref={openingStart.props.ref}
+                    onFocus={openingStart.props.onFocus}
+                    onBlur={openingStart.props.onBlur}
+                    aria-invalid={openingStartInvalid || undefined}
+                    aria-describedby={openingStartInvalid ? openingErrorId : undefined}
+                    onChange={(event) => openingStart.onChange(event.currentTarget.value)}
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor={`${id}-opening-end`}>{t("settings.fields.openingEnd")}</FieldLabel>
+                  <Input
+                    id={`${id}-opening-end`}
+                    type="time"
+                    step={60}
+                    required
+                    disabled={disabled || fullDay}
+                    value={fullDay ? "" : typeof openingEnd.input === "string" ? openingEnd.input : ""}
+                    ref={openingEnd.props.ref}
+                    onFocus={openingEnd.props.onFocus}
+                    onBlur={openingEnd.props.onBlur}
+                    aria-invalid={openingEndInvalid || undefined}
+                    aria-describedby={openingEndInvalid ? openingErrorId : undefined}
+                    onChange={(event) => openingEnd.onChange(event.currentTarget.value)}
+                  />
+                </Field>
+              </div>
+              {openingStartInvalid || openingEndInvalid ? (
+                <FieldError id={openingErrorId}>{t("settings.errors.openingHours")}</FieldError>
+              ) : null}
             </div>
-            {openingStartInvalid || openingEndInvalid ? (
-              <FieldError id={openingErrorId}>{t("settings.errors.openingHours")}</FieldError>
-            ) : null}
           </div>
-        </div>
 
-        <div className="grid gap-1 sm:contents">
-          <FieldLabel htmlFor={`${id}-granularity`}>{t("bookableItemDetails.fields.granularity")}</FieldLabel>
-          <Field>
-            <select
-              id={`${id}-granularity`}
-              className="h-9 w-full rounded-sm bg-input/50 px-3 text-sm"
-              value={numberInput(granularity.input) ?? ""}
-              disabled={disabled}
-              ref={granularity.props.ref}
-              onFocus={granularity.props.onFocus}
-              onBlur={granularity.props.onBlur}
-              aria-invalid={granularityInvalid || undefined}
-              aria-describedby={granularityInvalid ? granularityErrorId : undefined}
-              onChange={(event) => granularity.onChange(Number(event.currentTarget.value))}
-            >
-              {[1, 5, 15].map((minutes) => (
-                <option key={minutes} value={minutes}>
-                  {t("settings.fields.granularityOption", { count: minutes })}
-                </option>
-              ))}
-            </select>
-            {granularityInvalid ? (
-              <FieldError id={granularityErrorId}>{t("settings.errors.granularity")}</FieldError>
-            ) : null}
-          </Field>
-        </div>
-
-        <div className="grid gap-1 sm:contents">
-          <FieldLabel htmlFor={`${id}-maximum-duration`}>{t("bookableItemDetails.fields.maximumDuration")}</FieldLabel>
-          <Field>
-            <Input
-              id={`${id}-maximum-duration`}
-              type="number"
-              min={0}
-              max={MAX_BOOKING_DURATION_MINUTES}
-              step={numberInput(granularity.input) ?? 1}
-              required
-              disabled={disabled}
-              value={numberInput(maximumDuration.input) ?? ""}
-              ref={maximumDuration.props.ref}
-              onFocus={maximumDuration.props.onFocus}
-              onBlur={maximumDuration.props.onBlur}
-              aria-invalid={maximumDurationInvalid || undefined}
-              aria-describedby={
-                maximumDurationInvalid
-                  ? `${maximumDurationDescriptionId} ${maximumDurationErrorId}`
-                  : maximumDurationDescriptionId
-              }
-              onChange={(event) => maximumDuration.onChange(event.currentTarget.valueAsNumber)}
-            />
-            <FieldDescription id={maximumDurationDescriptionId}>
-              {t("settings.fields.maximumDurationDescription")}
-            </FieldDescription>
-            {maximumDurationInvalid ? (
-              <FieldError id={maximumDurationErrorId}>{t("settings.errors.maximumDuration")}</FieldError>
-            ) : null}
-          </Field>
-        </div>
-
-        <div className="grid gap-1 sm:contents">
-          <FieldLabel htmlFor={`${id}-buffer-before`}>{t("bookableItemDetails.fields.bufferBefore")}</FieldLabel>
-          <Field>
-            <Input
-              id={`${id}-buffer-before`}
-              type="number"
-              min={0}
-              max={MAX_BUFFER_MINUTES}
-              step={1}
-              required
-              disabled={disabled}
-              value={numberInput(bufferBefore.input) ?? ""}
-              ref={bufferBefore.props.ref}
-              onFocus={bufferBefore.props.onFocus}
-              onBlur={bufferBefore.props.onBlur}
-              aria-invalid={bufferBeforeInvalid || undefined}
-              aria-describedby={bufferBeforeInvalid ? bufferBeforeErrorId : undefined}
-              onChange={(event) => bufferBefore.onChange(event.currentTarget.valueAsNumber)}
-            />
-            {bufferBeforeInvalid ? (
-              <FieldError id={bufferBeforeErrorId}>{t("settings.errors.buffer")}</FieldError>
-            ) : null}
-          </Field>
-        </div>
-
-        <div className="grid gap-1 sm:contents">
-          <FieldLabel htmlFor={`${id}-buffer-after`}>{t("bookableItemDetails.fields.bufferAfter")}</FieldLabel>
-          <Field>
-            <Input
-              id={`${id}-buffer-after`}
-              type="number"
-              min={0}
-              max={MAX_BUFFER_MINUTES}
-              step={1}
-              required
-              disabled={disabled}
-              value={numberInput(bufferAfter.input) ?? ""}
-              ref={bufferAfter.props.ref}
-              onFocus={bufferAfter.props.onFocus}
-              onBlur={bufferAfter.props.onBlur}
-              aria-invalid={bufferAfterInvalid || undefined}
-              aria-describedby={bufferAfterInvalid ? bufferAfterErrorId : undefined}
-              onChange={(event) => bufferAfter.onChange(event.currentTarget.valueAsNumber)}
-            />
-            {bufferAfterInvalid ? <FieldError id={bufferAfterErrorId}>{t("settings.errors.buffer")}</FieldError> : null}
-          </Field>
-        </div>
-
-        <div className="grid gap-1 sm:contents">
-          <FieldLabel htmlFor={`${id}-double-booking`}>{t("bookableItemDetails.fields.doubleBooking")}</FieldLabel>
-          <div className="flex min-h-9 items-center">
-            <Checkbox
-              id={`${id}-double-booking`}
-              checked={allowDoubleBooking.input === true}
-              disabled={disabled}
-              inputRef={allowDoubleBooking.props.ref}
-              onCheckedChange={(checked) => allowDoubleBooking.onChange(checked)}
-            />
+          <div className={RESPONSIVE_INLINE_FIELD_ROW_CLASS_NAME}>
+            <FieldLabel htmlFor={`${id}-granularity`}>{t("bookableItemDetails.fields.granularity")}</FieldLabel>
+            <Field>
+              <select
+                id={`${id}-granularity`}
+                className="h-9 w-full rounded-sm bg-input/50 px-3 text-sm"
+                value={numberInput(granularity.input) ?? ""}
+                disabled={disabled}
+                ref={granularity.props.ref}
+                onFocus={granularity.props.onFocus}
+                onBlur={granularity.props.onBlur}
+                aria-invalid={granularityInvalid || undefined}
+                aria-describedby={granularityInvalid ? granularityErrorId : undefined}
+                onChange={(event) => granularity.onChange(Number(event.currentTarget.value))}
+              >
+                {[1, 5, 10, 15].map((minutes) => (
+                  <option key={minutes} value={minutes}>
+                    {t("settings.fields.granularityOption", { count: minutes })}
+                  </option>
+                ))}
+              </select>
+              {granularityInvalid ? (
+                <FieldError id={granularityErrorId}>{t("settings.errors.granularity")}</FieldError>
+              ) : null}
+            </Field>
           </div>
-        </div>
-      </fieldset>
+
+          <div className={RESPONSIVE_INLINE_FIELD_ROW_CLASS_NAME}>
+            <FieldLabel htmlFor={`${id}-maximum-duration`}>
+              {t("bookableItemDetails.fields.maximumDuration")}
+            </FieldLabel>
+            <Field>
+              <Input
+                id={`${id}-maximum-duration`}
+                type="number"
+                min={0}
+                max={MAX_BOOKING_DURATION_MINUTES}
+                step={numberInput(granularity.input) ?? 1}
+                required
+                disabled={disabled}
+                value={numberInput(maximumDuration.input) ?? ""}
+                ref={maximumDuration.props.ref}
+                onFocus={maximumDuration.props.onFocus}
+                onBlur={maximumDuration.props.onBlur}
+                aria-invalid={maximumDurationInvalid || undefined}
+                aria-describedby={
+                  maximumDurationInvalid
+                    ? `${maximumDurationDescriptionId} ${maximumDurationErrorId}`
+                    : maximumDurationDescriptionId
+                }
+                onChange={(event) => maximumDuration.onChange(event.currentTarget.valueAsNumber)}
+              />
+              <FieldDescription id={maximumDurationDescriptionId}>
+                {t("settings.fields.maximumDurationDescription")}
+              </FieldDescription>
+              {maximumDurationInvalid ? (
+                <FieldError id={maximumDurationErrorId}>{t("settings.errors.maximumDuration")}</FieldError>
+              ) : null}
+            </Field>
+          </div>
+
+          <div className={RESPONSIVE_INLINE_FIELD_ROW_CLASS_NAME}>
+            <FieldLabel htmlFor={`${id}-buffer-before`}>{t("bookableItemDetails.fields.bufferBefore")}</FieldLabel>
+            <Field>
+              <Input
+                id={`${id}-buffer-before`}
+                type="number"
+                min={0}
+                max={MAX_BUFFER_MINUTES}
+                step={1}
+                required
+                disabled={disabled}
+                value={numberInput(bufferBefore.input) ?? ""}
+                ref={bufferBefore.props.ref}
+                onFocus={bufferBefore.props.onFocus}
+                onBlur={bufferBefore.props.onBlur}
+                aria-invalid={bufferBeforeInvalid || undefined}
+                aria-describedby={bufferBeforeInvalid ? bufferBeforeErrorId : undefined}
+                onChange={(event) => bufferBefore.onChange(event.currentTarget.valueAsNumber)}
+              />
+              {bufferBeforeInvalid ? (
+                <FieldError id={bufferBeforeErrorId}>{t("settings.errors.buffer")}</FieldError>
+              ) : null}
+            </Field>
+          </div>
+
+          <div className={RESPONSIVE_INLINE_FIELD_ROW_CLASS_NAME}>
+            <FieldLabel htmlFor={`${id}-buffer-after`}>{t("bookableItemDetails.fields.bufferAfter")}</FieldLabel>
+            <Field>
+              <Input
+                id={`${id}-buffer-after`}
+                type="number"
+                min={0}
+                max={MAX_BUFFER_MINUTES}
+                step={1}
+                required
+                disabled={disabled}
+                value={numberInput(bufferAfter.input) ?? ""}
+                ref={bufferAfter.props.ref}
+                onFocus={bufferAfter.props.onFocus}
+                onBlur={bufferAfter.props.onBlur}
+                aria-invalid={bufferAfterInvalid || undefined}
+                aria-describedby={bufferAfterInvalid ? bufferAfterErrorId : undefined}
+                onChange={(event) => bufferAfter.onChange(event.currentTarget.valueAsNumber)}
+              />
+              {bufferAfterInvalid ? (
+                <FieldError id={bufferAfterErrorId}>{t("settings.errors.buffer")}</FieldError>
+              ) : null}
+            </Field>
+          </div>
+
+          <div className={RESPONSIVE_INLINE_FIELD_ROW_CLASS_NAME}>
+            <FieldLabel htmlFor={`${id}-double-booking`}>{t("bookableItemDetails.fields.doubleBooking")}</FieldLabel>
+            <div className="flex min-h-9 items-center">
+              <Checkbox
+                id={`${id}-double-booking`}
+                checked={allowDoubleBooking.input === true}
+                disabled={disabled}
+                inputRef={allowDoubleBooking.props.ref}
+                onCheckedChange={(checked) => allowDoubleBooking.onChange(checked)}
+              />
+            </div>
+          </div>
+        </fieldset>
+      </div>
     );
   }
 
@@ -382,7 +393,7 @@ export function SchedulingSettingsFields({
           onBlur={granularity.props.onBlur}
           onChange={(event) => granularity.onChange(Number(event.currentTarget.value))}
         >
-          {[1, 5, 15].map((minutes) => (
+          {[1, 5, 10, 15].map((minutes) => (
             <option key={minutes} value={minutes}>
               {t("settings.fields.granularityOption", { count: minutes })}
             </option>

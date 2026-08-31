@@ -148,6 +148,15 @@ const primaryFormFields = exampleFields("title", "notes", "enabled");
 const metadataFormFields = exampleFields("score", "modifiedAt", "status");
 const relationshipFormFields = exampleFields("ownerId", "collaboratorIds");
 const presentationFormFields = exampleFields("title", "score", "status", "enabled", "ownerId", "collaboratorIds");
+const itemDetailsFormFields = exampleFields(
+  "title",
+  "notes",
+  "score",
+  "status",
+  "enabled",
+  "ownerId",
+  "collaboratorIds",
+);
 
 const presentationDescriptions: Record<keyof ExampleDocument, string> = {
   id: "The permanent identifier for this record.",
@@ -357,9 +366,7 @@ export function RenderFieldsStory({
       );
       break;
     // Mirrors the "Booking rules" card on the View Bookable Item page
-    // (BookableItemPage.tsx): the labels keep the read-out's max-content column
-    // and the controls take the value column, so switching a card from read-out
-    // to form moves nothing.
+    // (BookableItemPage.tsx), including its responsive inline form layout.
     case "item-details":
       fields = (
         <Card>
@@ -367,7 +374,7 @@ export function RenderFieldsStory({
             <CardTitle>{t("collectionForm.examples.recordDetails")}</CardTitle>
           </CardHeader>
           <CardContent>
-            <RenderFields {...fieldProps} fields={presentationFormFields} layout="inline" />
+            <RenderFields {...fieldProps} fields={itemDetailsFormFields} layout="inline" />
           </CardContent>
         </Card>
       );

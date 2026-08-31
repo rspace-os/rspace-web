@@ -15,9 +15,9 @@ import { Suspense } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
 import { server } from "@/__tests__/mswServer";
+import { DEFAULT_SCHEDULING_SETTINGS } from "@/modules/booking/configuration/schedulingSettings";
 import { createBookingRoute } from "@/modules/booking/pages/BookingPage";
 import { createBookableItemRoute } from "@/modules/booking/pages/bookable-items/routes";
-import { DEFAULT_SCHEDULING_SETTINGS } from "@/modules/booking/pages/bookable-items/schedulingSettings";
 import { inheritedBrowserBookingPreferences } from "@/modules/booking/pages/preferences/bookingPreferencesFixtures";
 import { getSidebarRenderer } from "@/modules/common/app/AppShell";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
@@ -102,9 +102,10 @@ describe("booking sidebar", () => {
     const { container } = renderAt("/booking");
 
     // i18next runs in cimode under vitest, so t() renders "<namespace>:<key>"
-    for (const key of ["dashboard", "administration", "approvalQueue"]) {
+    for (const key of ["administration", "approvalQueue"]) {
       expect(await screen.findByRole("button", { name: `booking:sidebar.${key}` })).toBeInTheDocument();
     }
+    expect(screen.queryByRole("button", { name: "booking:sidebar.dashboard" })).not.toBeInTheDocument();
 
     expect(await screen.findByRole("link", { name: "booking:sidebar.myBookings" })).toHaveAttribute(
       "href",
@@ -155,7 +156,7 @@ describe("booking sidebar", () => {
   it("hides Administration from users who are not sysadmins", async () => {
     renderAt("/booking", false);
 
-    expect(await screen.findByRole("button", { name: "booking:sidebar.dashboard" })).toBeInTheDocument();
+    expect(await screen.findByRole("link", { name: "booking:sidebar.calendar" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "booking:sidebar.administration" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "booking:sidebar.bookableItems" })).not.toBeInTheDocument();
   });
@@ -206,7 +207,7 @@ describe("booking sidebar", () => {
     );
     renderAt("/booking/bookable-items/IN123?tab=details&edit=true");
 
-    expect(await screen.findByRole("button", { name: "booking:sidebar.dashboard" })).toBeInTheDocument();
+    expect(await screen.findByRole("link", { name: "booking:sidebar.calendar" })).toBeInTheDocument();
     // The bookable item itself is the page heading; "Bookable item" is now the
     // eyebrow label above it.
     expect(await screen.findByRole("heading", { level: 1, name: "Confocal microscope" })).toBeVisible();

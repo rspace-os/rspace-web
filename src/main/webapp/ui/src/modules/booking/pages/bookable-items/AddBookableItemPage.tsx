@@ -3,6 +3,7 @@ import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-q
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import * as v from "valibot";
+import { loadBookingSettings, SchedulingSettingsFields } from "@/modules/booking/configuration/schedulingSettings";
 import { bookingApiV2JsonHeaders } from "@/modules/booking/domain/apiV2";
 import { RenderFields } from "@/modules/common/collection-form/RenderFields";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
@@ -15,7 +16,6 @@ import {
   BookingConfigurationInputSchema,
   bookingConfigurationFields,
 } from "./bookingConfiguration";
-import { loadBookingSettings, SchedulingSettingsFields } from "./schedulingSettings";
 
 const TARGET_CONFLICT = "errors.api.v2.bookingConfiguration.target.conflict";
 const targetFields = bookingConfigurationFields.filter((field) => field.name === "target");

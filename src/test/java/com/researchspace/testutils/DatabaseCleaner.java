@@ -116,6 +116,7 @@ public class DatabaseCleaner {
     List<String> toDelete =
         Arrays.asList(
             "BookableItemCalendarSubscription",
+            "UserBookingCalendarSubscription",
             "TimeSlotBooking",
             "BookingConfiguration",
             "RecordAttachment",

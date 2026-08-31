@@ -8,6 +8,11 @@ import { nestTransitiveOptimizeDeps } from "./vite.config.ts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+type PlaywrightBrowser = "chromium" | "firefox" | "webkit";
+const browsers = (process.env.VITEST_BROWSERS ?? "chromium")
+  .split(",")
+  .map((name) => name.trim())
+  .filter(Boolean) as PlaywrightBrowser[];
 
 export default defineConfig({
   plugins: [tailwindcss(), storybookTest({ configDir: path.resolve(__dirname) }), nestTransitiveOptimizeDeps()],
@@ -24,7 +29,7 @@ export default defineConfig({
       provider: playwright(),
       headless: true,
       screenshotFailures: false,
-      instances: [{ browser: "chromium" }],
+      instances: browsers.map((browser) => ({ browser })),
     },
   },
 });

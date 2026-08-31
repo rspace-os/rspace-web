@@ -3,6 +3,14 @@ import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-q
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import * as v from "valibot";
+import {
+  type BookingSettingsInput,
+  loadBookingSettings,
+  type SchedulingSettings,
+  SchedulingSettingsFields,
+  SchedulingSettingsSchema,
+  saveBookingSettings,
+} from "@/modules/booking/configuration/schedulingSettings";
 import { ApiV2ProblemError } from "@/modules/booking/domain/booking";
 import {
   type BookingDisplayPreferencesInput,
@@ -16,14 +24,6 @@ import { FieldError } from "@/modules/common/ui/field";
 import { Separator } from "@/modules/common/ui/separator";
 import { Heading } from "@/modules/common/ui/typography";
 import { BookingDisplaySettingsFields } from "../preferences/BookingDisplaySettingsFields";
-import {
-  type BookingSettingsInput,
-  loadBookingSettings,
-  type SchedulingSettings,
-  SchedulingSettingsFields,
-  SchedulingSettingsSchema,
-  saveBookingSettings,
-} from "./schedulingSettings";
 
 export default function BookingSettingsPage() {
   const { t } = useTranslation("booking");

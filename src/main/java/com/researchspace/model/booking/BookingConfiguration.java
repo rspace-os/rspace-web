@@ -47,6 +47,10 @@ public class BookingConfiguration implements Serializable {
   @Setter
   private boolean enabled;
 
+  @Getter(onMethod_ = {@Column(nullable = false), @AuditTrailProperty(name = "deleted")})
+  @Setter
+  private boolean deleted;
+
   @Getter(
       onMethod_ = {
         @Column(nullable = false),

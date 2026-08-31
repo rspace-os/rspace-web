@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
-import { DEFAULT_SCHEDULING_SETTINGS } from "../../pages/bookable-items/schedulingSettings";
+import { DEFAULT_SCHEDULING_SETTINGS } from "@/modules/booking/configuration/schedulingSettings";
 import { BookableItemPicker, loadBookableItems } from "../BookableItemPicker";
 
 function envelope(docs: unknown[], page = 1, totalPages = 1) {

@@ -40,6 +40,27 @@ const schedule = {
   allowDoubleBooking: false,
 };
 
+const sourced = (
+  id: string,
+  kind: "booking" | "blockout",
+  startsAt: string,
+  endsAt: string,
+  sourceStartsAt = startsAt,
+  sourceEndsAt = endsAt,
+) => ({
+  kind,
+  startsAt: new Date(startsAt),
+  endsAt: new Date(endsAt),
+  source: {
+    id,
+    startsAt: new Date(sourceStartsAt),
+    endsAt: new Date(sourceEndsAt),
+  },
+});
+
+const closureId = (globalId: string, startsAt: string, endsAt: string) =>
+  `opening-hours:${globalId}:${new Date(startsAt).toISOString()}:${new Date(endsAt).toISOString()}`;
+
 describe("calendar availability", () => {
   it("uses one minimal batched query and clips results to each row's zoned day", async () => {
     const requests: URL[] = [];
@@ -67,14 +88,10 @@ describe("calendar availability", () => {
 
     expect(requests).toHaveLength(1);
     expect(requests[0].searchParams.get("where")).toContain("target=in=(IN1,IN2)");
-    expect(requests[0].searchParams.get("fields[bookings]")).toBe("id,target,timezone,start,end,state");
+    expect(requests[0].searchParams.get("fields[bookings]")).toBe("id,target,timezone,start,end,state,kind");
     expect(requests[0].searchParams.get("fields[bookings]")).not.toContain("purpose");
     expect(result.get("IN1")).toEqual([
-      {
-        kind: "booking",
-        startsAt: new Date("2026-03-28T23:00:00Z"),
-        endsAt: new Date("2026-03-29T01:00:00Z"),
-      },
+      sourced("booking:1", "booking", "2026-03-28T23:00:00Z", "2026-03-29T01:00:00Z", "2026-03-28T22:00:00Z"),
     ]);
     expect(result.get("IN2")).toHaveLength(1);
     expect([...result.values()].flat().every((interval) => interval.kind === "booking")).toBe(true);
@@ -131,10 +148,10 @@ describe("calendar availability", () => {
     expect(where).toContain("start<2026-08-18T15:00:00Z");
     expect(where).toContain("end>2026-08-17T07:00:00Z");
     expect(result.get("IN1")).toEqual([
-      { kind: "booking", startsAt: new Date("2026-08-17T22:00:00Z"), endsAt: new Date("2026-08-18T02:00:00Z") },
+      sourced("booking:1", "booking", "2026-08-17T22:00:00Z", "2026-08-18T02:00:00Z"),
     ]);
     expect(result.get("IN2")).toEqual([
-      { kind: "booking", startsAt: new Date("2026-08-18T03:00:00Z"), endsAt: new Date("2026-08-18T06:00:00Z") },
+      sourced("booking:2", "booking", "2026-08-18T03:00:00Z", "2026-08-18T06:00:00Z"),
     ]);
   });
 
@@ -161,9 +178,27 @@ describe("calendar availability", () => {
 
     expect(interval).toMatchObject({ start: "2026-08-17T12:00:00Z", end: "2026-08-18T12:00:00Z" });
     expect(result.get("IN1")).toEqual([
-      { kind: "blockout", startsAt: new Date("2026-08-17T12:00:00Z"), endsAt: new Date("2026-08-17T15:00:00Z") },
-      { kind: "blockout", startsAt: new Date("2026-08-18T01:00:00Z"), endsAt: new Date("2026-08-18T07:00:00Z") },
-      { kind: "blockout", startsAt: new Date("2026-08-18T07:00:00Z"), endsAt: new Date("2026-08-18T12:00:00Z") },
+      sourced(
+        closureId("IN1", "2026-08-17T07:00:00Z", "2026-08-17T15:00:00Z"),
+        "blockout",
+        "2026-08-17T12:00:00Z",
+        "2026-08-17T15:00:00Z",
+        "2026-08-17T07:00:00Z",
+      ),
+      sourced(
+        closureId("IN1", "2026-08-18T01:00:00Z", "2026-08-18T07:00:00Z"),
+        "blockout",
+        "2026-08-18T01:00:00Z",
+        "2026-08-18T07:00:00Z",
+      ),
+      sourced(
+        closureId("IN1", "2026-08-18T07:00:00Z", "2026-08-18T15:00:00Z"),
+        "blockout",
+        "2026-08-18T07:00:00Z",
+        "2026-08-18T12:00:00Z",
+        "2026-08-18T07:00:00Z",
+        "2026-08-18T15:00:00Z",
+      ),
     ]);
   });
 
@@ -190,21 +225,26 @@ describe("calendar availability", () => {
       new AbortController().signal,
     );
     expect(unavailable.get("IN1")).toEqual([
-      {
-        kind: "blockout",
-        startsAt: new Date("2026-08-17T00:00:00Z"),
-        endsAt: new Date("2026-08-17T08:00:00Z"),
-      },
-      {
-        kind: "blockout",
-        startsAt: new Date("2026-08-17T18:00:00Z"),
-        endsAt: new Date("2026-08-18T00:00:00Z"),
-      },
-      {
-        kind: "booking",
-        startsAt: new Date("2026-08-17T09:50:00Z"),
-        endsAt: new Date("2026-08-17T11:20:00Z"),
-      },
+      sourced(
+        closureId("IN1", "2026-08-17T00:00:00Z", "2026-08-17T08:00:00Z"),
+        "blockout",
+        "2026-08-17T00:00:00Z",
+        "2026-08-17T08:00:00Z",
+      ),
+      sourced(
+        closureId("IN1", "2026-08-17T18:00:00Z", "2026-08-18T00:00:00Z"),
+        "blockout",
+        "2026-08-17T18:00:00Z",
+        "2026-08-18T00:00:00Z",
+      ),
+      sourced(
+        "booking:1",
+        "booking",
+        "2026-08-17T09:50:00Z",
+        "2026-08-17T11:20:00Z",
+        "2026-08-17T10:00:00Z",
+        "2026-08-17T11:00:00Z",
+      ),
     ]);
 
     const available = await loadCalendarAvailability(
