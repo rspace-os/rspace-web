@@ -110,23 +110,9 @@ test.describe(`Inventory CSV Import`, { tag: [tags.INVENTORY, tags.MOBILE] }, ()
     await expect(importPage.importButton).toBeEnabled();
   });
 
-  test(`As a user, I can import an instruments CSV file creating a new template`, async ({ pageInventory, page }) => {
-    await pageInventory.open();
-    await pageInventory.isLoaded();
-
-    const importPage = await pageInventory.openCsvImport("INSTRUMENTS");
-    await importPage.uploadCsv(INSTRUMENTS_CSV);
-    await importPage.setColumnChecked("Parent Container (Global ID)", false);
-    await importPage.clickImport();
-
-    await page.goto("/inventory/search?resultType=INSTRUMENT");
-    await pageInventory.isLoaded();
-    await pageInventory.searchPanel.search("Instrument01");
-    await expect(pageInventory.searchPanel.row("Instrument01")).toBeVisible();
-  });
-
-  test(`As a user, I can see the Instruments tab and template selection section in the CSV import wizard`, async ({
+  test(`As a user, I can go to the Instruments tab and import an instruments CSV file creating a new template`, async ({
     pageInventory,
+    page,
   }) => {
     await pageInventory.open();
     await pageInventory.isLoaded();
@@ -142,5 +128,16 @@ test.describe(`Inventory CSV Import`, { tag: [tags.INVENTORY, tags.MOBILE] }, ()
 
     await importPage.chooseExistingTemplate();
     await expect(importPage.importButton).toBeDisabled();
+
+    await importPage.chooseNewTemplate();
+    await expect(importPage.importButton).toBeEnabled();
+
+    await importPage.setColumnChecked("Parent Container (Global ID)", false);
+    await importPage.clickImport();
+
+    await page.goto("/inventory/search?resultType=INSTRUMENT");
+    await pageInventory.isLoaded();
+    await pageInventory.searchPanel.search("Instrument01");
+    await expect(pageInventory.searchPanel.row("Instrument01")).toBeVisible();
   });
 });
