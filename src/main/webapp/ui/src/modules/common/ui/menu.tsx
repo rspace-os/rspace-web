@@ -24,7 +24,7 @@ function MenuContent({
         <MenuPrimitive.Popup
           data-slot="menu-content"
           className={cn(
-            "w-72 rounded-md border bg-popover p-2 text-popover-foreground shadow-lg outline-none",
+            "w-72 rounded-sm border bg-popover p-2 text-popover-foreground shadow-lg outline-none",
             className,
           )}
           {...props}
