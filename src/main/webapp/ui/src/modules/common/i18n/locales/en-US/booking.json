@@ -1,0 +1,38 @@
+{
+  "dayTimeline": {
+    "event": {
+      "busy": "Busy",
+      "hideDetails": "Hide details for {title}, {period}",
+      "label": "{title}, {period}",
+      "labelWithNotes": "{title}, {period}. {notes}",
+      "showDetails": "Show details for {title}, {period}"
+    },
+    "now": {
+      "afterWindow": "Now {time}, after visible window",
+      "current": "Now {time}"
+    },
+    "scrollLabel": "24-hour calendar for {date} in {timezone}",
+    "zoom": {
+      "in": "Zoom in",
+      "legend": "Timeline zoom",
+      "out": "Zoom out"
+    }
+  },
+  "sample": {
+    "check": "Sample check {number}.",
+    "maintenance": {
+      "notes": "Laser alignment and safety inspection.",
+      "title": "Scheduled maintenance"
+    }
+  },
+  "sidebar": {
+    "administration": "Administration",
+    "approvalQueue": "Approval Queue",
+    "bookableItems": "Bookable Items",
+    "calendar": "Calendar",
+    "dashboard": "Dashboard",
+    "label": "Booking",
+    "myBookings": "My Bookings",
+    "settings": "Settings"
+  }
+}

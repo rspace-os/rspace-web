@@ -2,7 +2,11 @@
 export default interface Resources {
   "about": {
     "copyright": "© 2026 ResearchSpace",
-    "license": "RSpace is open-source under AGPL, and powered by open-source libraries.",
+    "description": "RSpace is open-source software for collaborative research data management, built around electronic lab notebooks, inventory, and external integrations.",
+    "license": "RSpace is powered by open-source libraries and distributed under the AGPL.",
+    "licensing": {
+      "heading": "Licensing"
+    },
     "links": {
       "changelog": "Changelog",
       "sourceCode": "Source Code",
@@ -12,11 +16,14 @@ export default interface Resources {
       "alt": "RSpace Logo"
     },
     "support": {
-      "accountLabel": "For account and group queries, email:",
-      "generalLabel": "For general support, email:"
+      "accountsLink": "Accounts and groups",
+      "generalLink": "General support",
+      "heading": "Support"
     },
+    "tagline": "RSpace - Research Data Platform",
     "title": "About RSpace",
     "version": {
+      "label": "Version {version}",
       "loading": "Loading version...",
       "unavailable": "Version unavailable"
     }
@@ -753,6 +760,44 @@ export default interface Resources {
       "insertButton": "Insert"
     }
   },
+  "booking": {
+    "dayTimeline": {
+      "event": {
+        "busy": "Busy",
+        "hideDetails": "Hide details for {title}, {period}",
+        "label": "{title}, {period}",
+        "labelWithNotes": "{title}, {period}. {notes}",
+        "showDetails": "Show details for {title}, {period}"
+      },
+      "now": {
+        "afterWindow": "Now {time}, after visible window",
+        "current": "Now {time}"
+      },
+      "scrollLabel": "24-hour calendar for {date} in {timezone}",
+      "zoom": {
+        "in": "Zoom in",
+        "legend": "Timeline zoom",
+        "out": "Zoom out"
+      }
+    },
+    "sample": {
+      "check": "Sample check {number}.",
+      "maintenance": {
+        "notes": "Laser alignment and safety inspection.",
+        "title": "Scheduled maintenance"
+      }
+    },
+    "sidebar": {
+      "administration": "Administration",
+      "approvalQueue": "Approval Queue",
+      "bookableItems": "Bookable Items",
+      "calendar": "Calendar",
+      "dashboard": "Dashboard",
+      "label": "Booking",
+      "myBookings": "My Bookings",
+      "settings": "Settings"
+    }
+  },
   "common": {
     "accessibilityTips": {
       "buttonLabel": "Accessibility tips",
@@ -821,6 +866,7 @@ export default interface Resources {
       "none": "None",
       "ok": "OK",
       "open": "Open",
+      "previous": "Previous",
       "publish": "Publish",
       "remove": "Remove",
       "republish": "Republish",
@@ -854,9 +900,11 @@ export default interface Resources {
       "warningTitle": "Could not authenticate via API"
     },
     "apiDocs": {
+      "pageTitle": "RSpace API Documentation | ResearchSpace",
       "sources": {
         "eln": "RSpace ELN",
-        "inventory": "RSpace Inventory"
+        "inventory": "RSpace Inventory",
+        "v2": "RSpace v2 (beta)"
       }
     },
     "apiErrors": {
@@ -898,6 +946,7 @@ export default interface Resources {
       "dialogHeader": "dialog header",
       "errorLoadingDetails": "Error loading your details",
       "goTo": "Go to...",
+      "logIn": "Log In",
       "logOut": "Log Out",
       "mainLinks": "main links",
       "mainNavigation": "Main Navigation",
@@ -912,6 +961,10 @@ export default interface Resources {
       "published": "Published",
       "release": "Release",
       "sections": {
+        "booking": {
+          "subheader": "Reserve instruments and equipment",
+          "title": "Booking"
+        },
         "gallery": {
           "subheader": "Your files in RSpace and connected filestores",
           "title": "Gallery"
@@ -932,6 +985,38 @@ export default interface Resources {
           "subheader": "Notebooks and documents",
           "title": "Workspace"
         }
+      },
+      "switchSection": "Switch section",
+      "userIdentity": "{fullName} ({username})"
+    },
+    "collectionForm": {
+      "actions": {
+        "clear": "Clear {field}",
+        "openOptions": "Show options for {field}"
+      },
+      "examples": {
+        "fields": {
+          "collaborators": "Collaborators",
+          "enabled": "Enabled",
+          "id": "ID",
+          "modified": "Modified",
+          "notes": "Notes",
+          "owner": "Owner",
+          "score": "Score",
+          "status": "Status",
+          "title": "Title",
+          "titleDescription": "The human-readable name of the record."
+        },
+        "inventoryItem": "Inventory item",
+        "record": "Research record",
+        "recordDetails": "Record details",
+        "records": "Research records",
+        "relationships": "Relationships"
+      },
+      "relationship": {
+        "empty": "No options found",
+        "remove": "Remove {item} from {field}",
+        "search": "Search {field}"
       }
     },
     "confirmationDialog": {
@@ -1051,6 +1136,7 @@ export default interface Resources {
       "zenodo": "8i37k8kjqz-zenodo-integration"
     },
     "helpDocs": {
+      "brand": "Support",
       "chatWithUs": "Chat with us",
       "documentation": "RSpace Documentation",
       "openHelp": "Open Help",
@@ -1126,6 +1212,23 @@ export default interface Resources {
       "viewerTitle": "Ketcher Chemical Viewer (Read-Only)"
     },
     "loading": "Loading",
+    "maintenanceMode": {
+      "description": "Scheduled maintenance is in progress now. Please try again later.",
+      "heading": "Maintenance mode",
+      "recheckNotice": "This page rechecks automatically every 30 seconds, or you can <internalLink to=\"/login\">check the status now</internalLink>."
+    },
+    "notFound": {
+      "message": "Page not found"
+    },
+    "pageTitles": {
+      "withProduct": "{pageTitle} | RSpace"
+    },
+    "pagination": {
+      "label": "Pagination",
+      "morePages": "More pages",
+      "nextPage": "Go to next page",
+      "previousPage": "Go to previous page"
+    },
     "profile": {
       "accountActivity": {
         "action": "Action",
@@ -1374,6 +1477,18 @@ export default interface Resources {
         "singular": "Record"
       }
     },
+    "relationshipPicker": {
+      "availabilityChecking": "Checking whether this item can be added.",
+      "availabilityFailed": "RSpace could not check this item. Search again.",
+      "clear": "Clear the selection",
+      "empty": "No matching records found",
+      "enterSearchTerm": "Enter a search term",
+      "failed": "Search is unavailable. Try again.",
+      "openOptions": "Show matching records",
+      "openRecord": "Open record {globalId}",
+      "remove": "Remove {item}",
+      "search": "Search by name or global ID"
+    },
     "search": {
       "clearTooltip": "Clear search",
       "placeholder": "Search..."
@@ -1446,6 +1561,11 @@ export default interface Resources {
       "titleSingle": "Share <strong>{name}</strong>",
       "unknownFolder": "Unknown folder",
       "updatedSuccessfully": "Shares updated successfully."
+    },
+    "sidebar": {
+      "description": "Displays the mobile sidebar.",
+      "title": "Sidebar",
+      "toggle": "Toggle sidebar"
     },
     "stoichiometry": {
       "addReagent": {
@@ -1689,7 +1809,8 @@ export default interface Resources {
     "values": {
       "noValue": "No Value",
       "none": "None",
-      "unknown": "Unknown"
+      "unknown": "Unknown",
+      "unknownItem": "Unknown item"
     },
     "versionLockPicker": {
       "columns": {
@@ -5395,6 +5516,12 @@ export default interface Resources {
           }
         },
         "v2": {
+          "audit": {
+            "range": {
+              "inverted": "The audit search start date must not be after its end date.",
+              "tooWide": "The audit search range must not exceed {0} days."
+            }
+          },
           "authenticationRequired": "Authentication is required.",
           "bookingConfiguration": {
             "create": "The booking configuration is invalid.",
@@ -5446,6 +5573,20 @@ export default interface Resources {
             "value": "The query contains an invalid value."
           },
           "requestRejected": "The request could not be processed.",
+          "runtimeFields": {
+            "ids": {
+              "limit": "A request must not name more than {0} custom fields."
+            },
+            "page": {
+              "invalid": "The page number is out of range."
+            },
+            "projection": {
+              "limit": "A request must not select more than {0} custom field values."
+            },
+            "query": {
+              "invalid": "The custom field request is invalid. The page size must be between 1 and {0}."
+            }
+          },
           "select": {
             "mode": "Select cannot mix inclusive and exclusive fields."
           },

@@ -14,6 +14,7 @@ export default defineConfig({
       "**/*.test.*",
       "**/*.spec.*",
       "**/*.story.*",
+      "**/*.stories.*",
       "src/test-stubs/**",
       "src/__tests__/**",
       "src/modules/common/i18n/**",
@@ -37,6 +38,6 @@ export default defineConfig({
     resourcesFile: "src/modules/common/i18n/resources.d.ts",
   },
   lint: {
-    ignore: ["**/__tests__/**", "**/*.test.*", "**/*.spec.*", "**/*.story.*", "src/test-stubs/**"],
+    ignore: ["**/__tests__/**", "**/*.test.*", "**/*.spec.*", "**/*.story.*", "**/*.stories.*", "src/test-stubs/**"],
   },
 });
