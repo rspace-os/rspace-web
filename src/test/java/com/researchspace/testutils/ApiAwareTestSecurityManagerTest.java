@@ -1,5 +1,6 @@
 package com.researchspace.testutils;
 
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -7,8 +8,10 @@ import static org.mockito.Mockito.when;
 
 import com.researchspace.auth.ApiAwareWebSecurityManager;
 import java.util.List;
+import org.apache.shiro.authc.AuthenticationToken;
 import org.apache.shiro.session.Session;
 import org.apache.shiro.subject.SimplePrincipalCollection;
+import org.apache.shiro.subject.Subject;
 import org.apache.shiro.subject.support.DelegatingSubject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,8 +40,17 @@ public class ApiAwareTestSecurityManagerTest {
 
   @Test
   public void statelessApiLoginLeavesSessionUntouched() {
-    ApiAwareWebSecurityManager.doStatelessLogin(
-        () -> securityManager.beforeSuccessfulLogin(subjectWithSession()));
+    Subject loginSubject = mock(Subject.class);
+    AuthenticationToken token = mock(AuthenticationToken.class);
+    doAnswer(
+            invocation -> {
+              securityManager.beforeSuccessfulLogin(subjectWithSession());
+              return null;
+            })
+        .when(loginSubject)
+        .login(token);
+
+    ApiAwareWebSecurityManager.doStatelessLogin(loginSubject, token);
 
     verifyNoInteractions(session);
   }

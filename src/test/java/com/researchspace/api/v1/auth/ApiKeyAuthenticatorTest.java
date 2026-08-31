@@ -10,6 +10,7 @@ import com.researchspace.testutils.TestFactory;
 import java.util.Optional;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.UnavailableSecurityManagerException;
+import org.apache.shiro.subject.Subject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -33,17 +34,26 @@ public class ApiKeyAuthenticatorTest {
 
   // replaces real shiro login with boolean test spy
   static class ApiKeyAuthenticatorTSS_Spy extends ApiKeyAuthenticator {
+    boolean loginOK = false;
+    boolean statelessScopeActive = false;
+    private final Subject subject =
+        Mockito.mock(
+            Subject.class,
+            invocation -> {
+              if (invocation.getMethod().getName().equals("login")) {
+                loginOK = true;
+                statelessScopeActive = ApiAwareWebSecurityManager.isStatelessApiLogin();
+              }
+              return Mockito.RETURNS_DEFAULTS.answer(invocation);
+            });
+
     public ApiKeyAuthenticatorTSS_Spy(UserApiKeyManager apiMgr) {
       super(apiMgr);
     }
 
-    boolean loginOK = false;
-    boolean statelessScopeActive = false;
-
     @Override
-    void doLogin(String apiKey, User u) {
-      loginOK = true;
-      statelessScopeActive = ApiAwareWebSecurityManager.isStatelessApiLogin();
+    Subject getSubject() {
+      return subject;
     }
   }
 

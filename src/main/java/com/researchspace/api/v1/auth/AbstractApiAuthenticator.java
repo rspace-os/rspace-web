@@ -84,7 +84,7 @@ abstract class AbstractApiAuthenticator implements ApiAuthenticator {
 
     // this login must not disturb any session that arrived with the request (for example a
     // browser session cookie sent alongside the API key); see ApiAwareWebSecurityManager
-    ApiAwareWebSecurityManager.doStatelessLogin(() -> doLogin(accessToken, targetUser));
+    doLogin(accessToken, targetUser);
     return targetUser;
   }
 
@@ -97,7 +97,12 @@ abstract class AbstractApiAuthenticator implements ApiAuthenticator {
    * Package scoped for testing
    */
   void doLogin(String apiKey, User u) {
-    SecurityUtils.getSubject().login(new ApiKeyAuthenticationToken(u.getUsername(), apiKey));
+    ApiAwareWebSecurityManager.doStatelessLogin(
+        getSubject(), new ApiKeyAuthenticationToken(u.getUsername(), apiKey));
+  }
+
+  Subject getSubject() {
+    return SecurityUtils.getSubject();
   }
 
   @Override
