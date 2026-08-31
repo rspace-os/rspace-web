@@ -134,7 +134,7 @@ mvn clean test                                 # unit + Spring tests; needs DB
 mvn clean verify -Denvironment=drop-recreate-db # includes *IT; resets DB
 ```
 
-All tests use JUnit 5 (Jupiter). Import only from `org.junit.jupiter`.
+All tests use JUnit 6 (Jupiter). Import only from `org.junit.jupiter`.
 
 Name test classes so surefire can find them. `Test*`, `*Test`, `*Tests` and
 `*TestCase` are surefire's defaults and run in the `test` phase; `*IT` is not a
