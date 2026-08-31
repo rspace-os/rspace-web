@@ -19,6 +19,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.web.client.RestTemplate;
 
+// The following tests run nightly and assert that the Argos API has not
+// changed in such a way that our integration no longer works correctly
 @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
 public class ArgosApiRealConnectionTest {
 
@@ -38,8 +40,6 @@ public class ArgosApiRealConnectionTest {
     this.argosClient.setRestTemplate(restTemplate);
   }
 
-  // The following tests run nightly and assert that the Argos API has not
-  // changed in such a way that our integration no longer works correctly
   @Test
   public void listPlansTest() {
     try {
