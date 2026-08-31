@@ -115,4 +115,3 @@ Read individual reference files for detailed explanations and code examples:
 |------|-------------|
 | [references/_sections.md](references/_sections.md) | Category definitions and ordering |
 | [assets/templates/_template.md](assets/templates/_template.md) | Template for new rules |
-| [metadata.json](metadata.json) | Version and reference information |
