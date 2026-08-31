@@ -67,6 +67,9 @@ importers:
       '@intercom/messenger-js-sdk':
         specifier: 0.0.20
         version: 0.0.20
+      '@js-temporal/polyfill':
+        specifier: 0.5.1
+        version: 0.5.1
       '@jupyter-kit/core':
         specifier: 3.0.0
         version: 3.0.0(@codemirror/language@6.12.4)(@codemirror/legacy-modes@6.5.3)(@codemirror/state@6.7.1)(@lezer/javascript@1.5.4)(supports-color@7.2.0)
@@ -1301,6 +1304,10 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
+
+  '@js-temporal/polyfill@0.5.1':
+    resolution: {integrity: sha512-hloP58zRVCRSpgDxmqCWJNlizAlUgJFqG2ypq79DCvyv9tHjRYMDOcPFjzfl/A1/YxDvRCZz8wvZvmapQnKwFQ==}
+    engines: {node: '>=12'}
 
   '@jupyter-kit/comm@3.0.0':
     resolution: {integrity: sha512-bqZLRlbdy0p3dh9rz3kzficLGmYnR3w9RgGh/IpE0on0fZqr+qR9ya3mzmeWOPilsh1+SCDbOuBoz1FFGUpW2w==}
@@ -4742,6 +4749,9 @@ packages:
   js-tokens@9.0.1:
     resolution: {integrity: sha512-mxa9E9ITFOt0ban3j6L5MpjwegGz6lBQmM1IJkWeBZGcMxto50+eWdjC/52xDbS2vy0k7vIMK0Fe2wfL9OQSpQ==}
 
+  jsbi@4.3.2:
+    resolution: {integrity: sha512-9fqMSQbhJykSeii05nxKl4m6Eqn2P6rOlYiS+C5Dr/HPIU/7yZxu5qzbs40tgaFORiw2Amd0mirjxatXYMkIew==}
+
   jsdom@29.1.1:
     resolution: {integrity: sha512-ECi4Fi2f7BdJtUKTflYRTiaMxIB0O6zfR1fX0GXpUrf6flp8QIYn1UT20YQqdSOfk2dfkCwS8LAFoJDEppNK5Q==}
     engines: {node: ^20.19.0 || ^22.13.0 || >=24.0.0}
@@ -7804,6 +7814,10 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
+
+  '@js-temporal/polyfill@0.5.1':
+    dependencies:
+      jsbi: 4.3.2
 
   '@jupyter-kit/comm@3.0.0': {}
 
@@ -11453,6 +11467,8 @@ snapshots:
   js-tokens@4.0.0: {}
 
   js-tokens@9.0.1: {}
+
+  jsbi@4.3.2: {}
 
   jsdom@29.1.1(canvas@3.2.3):
     dependencies:

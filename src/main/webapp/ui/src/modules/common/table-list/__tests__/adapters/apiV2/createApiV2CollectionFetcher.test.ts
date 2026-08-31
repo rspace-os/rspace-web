@@ -41,6 +41,42 @@ const adapter = createApiV2CollectionAdapter({
 });
 
 describe("createApiV2CollectionFetcher", () => {
+  it("rejects a parsed page when row validation fails", async () => {
+    server.use(
+      http.get("/api/v2/records", () =>
+        HttpResponse.json({
+          docs: [{ id: "1", title: "Invalid" }],
+          totalDocs: 1,
+          limit: 2,
+          page: 1,
+          pagingCounter: 1,
+          totalPages: 1,
+          hasPrevPage: false,
+          hasNextPage: false,
+          prevPage: null,
+          nextPage: null,
+        }),
+      ),
+    );
+    const fetchCollection = createApiV2CollectionFetcher<TestRecord>(adapter, {
+      validateRows: () => {
+        throw new Error("Invalid row interval");
+      },
+    });
+
+    await expect(
+      fetchCollection(
+        {
+          filters: { search: "", expression: null },
+          sorting: [],
+          page: { pageIndex: 0, pageSize: 2 },
+          visibleFields: ["title"],
+        },
+        { signal: new AbortController().signal },
+      ),
+    ).rejects.toThrow("Invalid row interval");
+  });
+
   it("sends the standard request and parses the response", async () => {
     server.use(
       http.get("/api/v2/records", ({ request }) => {
@@ -194,5 +230,55 @@ describe("createApiV2CollectionFetcher", () => {
       rows: [{ id: "one", title: "One", score: 1 }],
       rowCount: 1,
     });
+  });
+
+  it("always ANDs the non-removable base filter with user filters", async () => {
+    const baseFilter = {
+      kind: "comparison",
+      field: "owner",
+      operator: "contains",
+      value: "ada",
+    } as const;
+    const state = {
+      filters: {
+        search: "",
+        expression: { kind: "comparison", field: "title", operator: "contains", value: "scope" } as const,
+      },
+      sorting: [],
+      page: { pageIndex: 0, pageSize: 2 },
+      visibleFields: ["title"],
+    } satisfies Parameters<ReturnType<typeof createApiV2CollectionFetcher<TestRecord>>>[0];
+    server.use(
+      http.get("/api/v2/records", ({ request }) => {
+        expect(new URL(request.url).searchParams.get("where")).toContain("owner=contains=ada");
+        expect(new URL(request.url).searchParams.get("where")).toContain("title=contains=scope");
+        return HttpResponse.json({
+          docs: [],
+          totalDocs: 0,
+          limit: 2,
+          page: 1,
+          pagingCounter: 1,
+          totalPages: 0,
+          hasPrevPage: false,
+          hasNextPage: false,
+          prevPage: null,
+          nextPage: null,
+        });
+      }),
+    );
+
+    await createApiV2CollectionFetcher(adapter, { baseFilter })(state, {
+      signal: new AbortController().signal,
+    });
+
+    expect(
+      apiV2CollectionRequestParams(
+        adapter,
+        { ...state, filters: { search: "", expression: null } },
+        undefined,
+        "visible",
+        baseFilter,
+      ).get("where"),
+    ).toContain("owner=contains=ada");
   });
 });

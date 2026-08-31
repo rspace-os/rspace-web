@@ -61,6 +61,11 @@ export type FieldListConfig<TDocument> = {
   renderHeader?: HeaderRenderer<TDocument>;
   renderCell?: CellRenderer<TDocument>;
   dependencies?: readonly FieldName<TDocument>[];
+  /** Card-presentation layout for this field. */
+  card?: {
+    /** Stack the label above the value and span the complete card body. */
+    fullWidth?: boolean;
+  };
 };
 
 export type FieldConditionContext<TDocument> = {
@@ -149,7 +154,7 @@ type BaseFieldConfig<
 };
 
 export type FieldConfig<TDocument> =
-  | (BaseFieldConfig<TDocument, "text" | "textarea"> & {
+  | (BaseFieldConfig<TDocument, "text" | "textarea" | "time"> & {
       type: "text";
       maximumLength?: number;
     })

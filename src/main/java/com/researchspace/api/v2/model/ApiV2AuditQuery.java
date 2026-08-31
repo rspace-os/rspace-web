@@ -22,4 +22,8 @@ public final class ApiV2AuditQuery extends ApiV2PaginationCriteria implements Da
   private Date dateTo;
 
   private Set<AuditAction> actions = new HashSet<>();
+
+  private String snapshotDate;
+
+  private String snapshotFingerprint;
 }

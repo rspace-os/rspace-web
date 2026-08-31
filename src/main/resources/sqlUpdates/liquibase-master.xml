@@ -67,6 +67,11 @@
     <include relativeToChangelogFile="true" file="changeLog-rsdev-444.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-scheduledmaintenance-nullable-stopuserlogindate.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1187-booking-configuration.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-1187-time-slot-booking.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-1187-booking-settings.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-1187-booking-calendar-subscriptions.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-1187-booking-calendar-subscription-links.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-1187-booking-display-preferences.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1225.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-custom-field-index.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-extra-field-index.xml"/>

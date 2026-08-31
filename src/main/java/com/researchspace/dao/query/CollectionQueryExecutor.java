@@ -24,6 +24,7 @@ public final class CollectionQueryExecutor<T> {
   private final RsqlCollectionQuery filterQuery;
   private final RsqlCollectionQuery constraintQuery;
   private final RsqlCollectionQuery requestConstraintQuery;
+  private final RsqlCollectionQuery relationshipConstraintQuery;
 
   public CollectionQueryExecutor(
       Class<T> entityType, CollectionDescription<T> description, String alias) {
@@ -36,6 +37,8 @@ public final class CollectionQueryExecutor<T> {
     filterQuery = new RsqlCollectionQuery(description, alias);
     constraintQuery = new RsqlCollectionQuery(description, alias, "rsqlAccess");
     requestConstraintQuery = new RsqlCollectionQuery(description, alias, "rsqlRequestAccess");
+    relationshipConstraintQuery =
+        new RsqlCollectionQuery(description, alias, "rsqlRelationshipAccess");
   }
 
   public String alias() {
@@ -52,6 +55,12 @@ public final class CollectionQueryExecutor<T> {
    */
   public Predicate compileConstraint(FilterExpression constraint) {
     return constraintQuery.translateTrusted(constraint);
+  }
+
+  /** Compiles the target read rule for one relationship against this collection's alias. */
+  public Predicate compileReadableRelationship(
+      String relationshipName, RelationshipReadAccess targets) {
+    return relationshipConstraintQuery.compileReadableRelationship(relationshipName, targets);
   }
 
   public ResourcePage<T> page(
@@ -82,8 +91,20 @@ public final class CollectionQueryExecutor<T> {
       ResourceRequest request,
       Predicate restriction,
       RelationshipReadAccess targets) {
+    return page(factory, session, request, restriction, targets, List.of());
+  }
+
+  /** As {@link #page}, fetch-joining entity paths without adding them to the count query. */
+  public ResourcePage<T> page(
+      CriteriaBuilderFactory factory,
+      Session session,
+      ResourceRequest request,
+      Predicate restriction,
+      RelationshipReadAccess targets,
+      List<String> fetchPaths) {
     long firstResult = (long) (request.page().number() - 1) * request.page().size();
     CriteriaBuilder<T> query = query(factory, session, request, restriction, targets);
+    fetchPaths.forEach(path -> query.fetch(alias + "." + path));
     if (firstResult > Integer.MAX_VALUE) {
       return new ResourcePage<>(List.of(), totalMatching(query));
     }

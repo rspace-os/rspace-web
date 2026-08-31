@@ -1,7 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/tanstack-react";
-import { MapPinIcon } from "lucide-react";
 import { expect, within } from "storybook/test";
-import { InventoryItem } from "./inventory-item";
+import { InventoryItem, InventoryLocationLink } from "./inventory-item";
 import { ItemGroup } from "./item";
 
 const meta = {
@@ -33,12 +32,7 @@ export const IdInTitle: Story = {
     ...confocal,
     idPlacement: "title",
     variant: "outline",
-    children: (
-      <>
-        <MapPinIcon aria-hidden="true" className="size-3.5 shrink-0" />
-        Lab 2.14
-      </>
-    ),
+    children: <InventoryLocationLink name="Lab 2.14" globalId="IC456" />,
   },
   render: (args) => (
     <ItemGroup style={{ width: "420px" }}>
@@ -51,7 +45,9 @@ export const IdInTitle: Story = {
       name: "Open inventory record IC-LSM900",
     });
     expect(link).toHaveAttribute("href", "/inventory/IC-LSM900");
-    expect(canvas.getByText("Lab 2.14")).toBeInTheDocument();
+    const locationLink = canvas.getByRole("link", { name: "Lab 2.14" });
+    expect(locationLink).toHaveAttribute("href", "/globalId/IC456");
+    expect(locationLink.querySelector(".lucide-external-link")).toBeInTheDocument();
 
     const title = canvasElement.querySelector('[data-slot="item-title"]');
     expect(title).toContainElement(link);
@@ -62,12 +58,7 @@ export const IdInDescription: Story = {
   args: {
     ...confocal,
     variant: "outline",
-    children: (
-      <>
-        <MapPinIcon aria-hidden="true" className="size-3.5 shrink-0" />
-        Lab 2.14
-      </>
-    ),
+    children: <InventoryLocationLink name="Lab 2.14" globalId="IC456" />,
   },
   render: (args) => (
     <ItemGroup style={{ width: "420px" }}>
@@ -93,12 +84,7 @@ export const Compact: Story = {
     ...confocal,
     compact: true,
     variant: "outline",
-    children: (
-      <>
-        <MapPinIcon aria-hidden="true" className="size-3.5 shrink-0" />
-        Lab 2.14
-      </>
-    ),
+    children: <InventoryLocationLink name="Lab 2.14" globalId="IC456" />,
   },
   render: (args) => (
     <ItemGroup style={{ width: "420px" }}>
@@ -124,12 +110,7 @@ export const WithBackground: Story = {
   args: {
     ...confocal,
     variant: "filled",
-    children: (
-      <>
-        <MapPinIcon aria-hidden="true" className="size-3.5 shrink-0" />
-        Lab 2.14
-      </>
-    ),
+    children: <InventoryLocationLink name="Lab 2.14" globalId="IC456" />,
   },
   parameters: {
     docs: {
@@ -150,12 +131,7 @@ export const IconAndBadgeBackground: Story = {
   args: {
     ...confocal,
     variant: "accented",
-    children: (
-      <>
-        <MapPinIcon aria-hidden="true" className="size-3.5 shrink-0" />
-        Lab 2.14
-      </>
-    ),
+    children: <InventoryLocationLink name="Lab 2.14" globalId="IC456" />,
   },
   parameters: {
     docs: {
@@ -177,22 +153,18 @@ export const VariantComparison: Story = {
     <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
       <ItemGroup style={{ width: "420px" }}>
         <InventoryItem {...confocal} idPlacement="title" variant="outline">
-          <MapPinIcon aria-hidden="true" className="size-3.5 shrink-0" />
-          Lab 2.14
+          <InventoryLocationLink name="Lab 2.14" globalId="IC456" />
         </InventoryItem>
         <InventoryItem {...freezer} idPlacement="title" variant="outline">
-          <MapPinIcon aria-hidden="true" className="size-3.5 shrink-0" />
-          Biobank freezer F-2
+          <InventoryLocationLink name="Biobank freezer F-2" globalId="IC457" />
         </InventoryItem>
       </ItemGroup>
       <ItemGroup style={{ width: "420px" }}>
         <InventoryItem {...confocal} variant="outline">
-          <MapPinIcon aria-hidden="true" className="size-3.5 shrink-0" />
-          Lab 2.14
+          <InventoryLocationLink name="Lab 2.14" globalId="IC456" />
         </InventoryItem>
         <InventoryItem {...freezer} variant="outline">
-          <MapPinIcon aria-hidden="true" className="size-3.5 shrink-0" />
-          Biobank freezer F-2
+          <InventoryLocationLink name="Biobank freezer F-2" globalId="IC457" />
         </InventoryItem>
       </ItemGroup>
     </div>
@@ -203,18 +175,42 @@ export const VariantComparison: Story = {
   },
 };
 
+export const LocationFixtures: Story = {
+  args: confocal,
+  render: () => (
+    <ItemGroup style={{ width: "420px" }}>
+      <InventoryItem {...confocal} variant="outline">
+        <InventoryLocationLink name="Imaging lab" globalId="IC456" />
+      </InventoryItem>
+      <InventoryItem {...freezer} variant="outline">
+        <InventoryLocationLink name={null} globalId={null} />
+      </InventoryItem>
+      <InventoryItem
+        {...confocal}
+        name="Flow cytometer"
+        globalId="IN126"
+        idLinkLabel="Open inventory record IN126"
+        variant="outline"
+      >
+        <InventoryLocationLink name="Cell analysis facility with a deliberately long location name" globalId="IC458" />
+      </InventoryItem>
+    </ItemGroup>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    expect(canvas.getByRole("link", { name: "Imaging lab" })).toHaveAttribute("href", "/globalId/IC456");
+    expect(canvas.getByRole("link", { name: /Cell analysis facility/ })).toHaveAttribute("href", "/globalId/IC458");
+    expect(canvas.getAllByRole("listitem")).toHaveLength(3);
+  },
+};
+
 export const LongName: Story = {
   args: {
     ...confocal,
     name: "Zeiss LSM 900 confocal with Airyscan 2 detector and environmental chamber",
     idPlacement: "title",
     variant: "outline",
-    children: (
-      <>
-        <MapPinIcon aria-hidden="true" className="size-3.5 shrink-0" />
-        Imaging suite 1.02
-      </>
-    ),
+    children: <InventoryLocationLink name="Imaging suite 1.02" globalId="IC458" />,
   },
   render: (args) => (
     <ItemGroup style={{ width: "420px" }}>

@@ -29,11 +29,36 @@ public record ApiV2BookingConfigurationResource(
         boolean enabled,
     @ApiV2ResourceField(
             property = "timeZone",
-            requiredOnCreate = true,
+            createAccess = NEVER,
+            updateAccess = NEVER,
             maxLength = 255,
-            description = "IANA time-zone identifier used for booking windows.",
+            description =
+                "Read-only scheduling timezone used for opening hours and booking policy.",
             example = "Europe/Berlin")
         String timezone,
+    @ApiV2ResourceField(
+            description = "Allowed wall-clock booking increment in minutes.",
+            example = "5")
+        long slotGranularityMinutes,
+    @ApiV2ResourceField(
+            description = "Inclusive daily opening time in the configured time zone.",
+            example = "08:00")
+        String openingStart,
+    @ApiV2ResourceField(
+            description = "Daily closing time, where 24:00 means the next local midnight.",
+            example = "18:00")
+        String openingEnd,
+    @ApiV2ResourceField(description = "Unavailable minutes before a booking.", example = "15")
+        long bufferBeforeMinutes,
+    @ApiV2ResourceField(description = "Unavailable minutes after a booking.", example = "15")
+        long bufferAfterMinutes,
+    @ApiV2ResourceField(
+            description =
+                "Maximum elapsed minutes for one booking, where 0 disables the item limit.",
+            example = "120")
+        long maxBookingDurationMinutes,
+    @ApiV2ResourceField(description = "Whether overlapping bookings are permitted.")
+        boolean allowDoubleBooking,
     @ApiV2ResourceField(
             createAccess = NEVER,
             updateAccess = NEVER,
@@ -61,7 +86,7 @@ public record ApiV2BookingConfigurationResource(
                   "target.type",
                   "target.id"))
           .required()
-          .acceptGlobalIdOn(WriteOperation.UPDATE)
+          .writeOnlyOn(WriteOperation.CREATE)
           .documented(
               new OpenApiSchemaDocumentation(
                   "Booking target",

@@ -220,12 +220,10 @@ public record ApiV2ResourceSpec<T, ID>(
         .getOrDefault(operation, List.of())
         .forEach(
             mapping -> {
-              OpenApiOperationDocumentation.Response existing =
-                  responses.putIfAbsent(mapping.status().value(), mapping.documentedResponse());
-              if (existing != null && !existing.equals(mapping.documentedResponse())) {
-                throw new IllegalArgumentException(
-                    "Conflicting resource error mappings for status " + mapping.status().value());
-              }
+              responses.merge(
+                  mapping.status().value(),
+                  mapping.documentedResponse(),
+                  OpenApiOperationDocumentation.Response::merge);
             });
     return documentation
         .getOrDefault(operation, OpenApiOperationDocumentation.EMPTY)

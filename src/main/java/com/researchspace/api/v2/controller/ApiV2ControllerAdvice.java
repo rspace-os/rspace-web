@@ -4,6 +4,11 @@ import com.ibm.icu.text.ListFormatter;
 import com.researchspace.api.v2.auth.ApiV2AuthenticationException;
 import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.api.v2.resource.ApiV2ResourceException;
+import com.researchspace.booking.service.BookingCalendarManagerImpl.BookingCalendarNotFoundException;
+import com.researchspace.booking.service.BookingPolicyException;
+import com.researchspace.booking.service.InvalidBookingDisplaySettingsException;
+import com.researchspace.booking.service.InvalidBookingSchedulingSettingsException;
+import com.researchspace.booking.service.StaleBookingSettingsException;
 import com.researchspace.core.util.throttling.ThrottlingException;
 import com.researchspace.model.collection.CollectionQueryException;
 import com.researchspace.model.collection.DocumentValidationException;
@@ -119,6 +124,11 @@ public class ApiV2ControllerAdvice {
     return problem(HttpStatus.NOT_FOUND, "errors.api.v2.notFound");
   }
 
+  @ExceptionHandler(BookingCalendarNotFoundException.class)
+  public ResponseEntity<ApiV2Problem> handleBookingCalendarNotFound() {
+    return problem(HttpStatus.NOT_FOUND, "errors.api.v2.notFound");
+  }
+
   @ExceptionHandler(ThrottlingException.class)
   public ResponseEntity<ApiV2Problem> handleThrottling() {
     return problem(HttpStatus.TOO_MANY_REQUESTS, "errors.api.v2.tooManyRequests");
@@ -128,6 +138,39 @@ public class ApiV2ControllerAdvice {
   public ResponseEntity<ApiV2Problem> handleBadRequest(ApiV2BadRequestException ex) {
     String detail = messages.getMessage(ex.getErrorCode(), ex.getArgs());
     return ApiV2Problem.response(HttpStatus.BAD_REQUEST, detail, ex.getErrorCode(), detail);
+  }
+
+  @ExceptionHandler(ApiV2AuditSnapshotConflictException.class)
+  public ResponseEntity<ApiV2Problem> handleAuditSnapshotConflict() {
+    return problem(HttpStatus.CONFLICT, "errors.api.v2.audit.snapshot.changed");
+  }
+
+  @ExceptionHandler(ApiV2AuditUnavailableException.class)
+  public ResponseEntity<ApiV2Problem> handleAuditUnavailable(ApiV2AuditUnavailableException ex) {
+    log.error("REST API v2 audit snapshot is unavailable", ex.getCause());
+    return problem(HttpStatus.SERVICE_UNAVAILABLE, "errors.api.v2.audit.unavailable");
+  }
+
+  @ExceptionHandler(InvalidBookingSchedulingSettingsException.class)
+  public ResponseEntity<ApiV2Problem> handleInvalidBookingSettings(
+      InvalidBookingSchedulingSettingsException ex) {
+    return problem(HttpStatus.BAD_REQUEST, ex.reason().errorCode());
+  }
+
+  @ExceptionHandler(InvalidBookingDisplaySettingsException.class)
+  public ResponseEntity<ApiV2Problem> handleInvalidBookingDisplaySettings(
+      InvalidBookingDisplaySettingsException ex) {
+    return problem(HttpStatus.BAD_REQUEST, ex.reason().errorCode());
+  }
+
+  @ExceptionHandler(BookingPolicyException.class)
+  public ResponseEntity<ApiV2Problem> handleBookingPolicy(BookingPolicyException ex) {
+    return problem(HttpStatus.BAD_REQUEST, ex.reason().errorCode());
+  }
+
+  @ExceptionHandler(StaleBookingSettingsException.class)
+  public ResponseEntity<ApiV2Problem> handleStaleBookingSettings() {
+    return problem(HttpStatus.CONFLICT, "errors.api.v2.bookingConfiguration.stale");
   }
 
   @ExceptionHandler(ApiV2ResourceException.class)

@@ -2,6 +2,7 @@ package com.researchspace.booking.service;
 
 import com.researchspace.model.User;
 import com.researchspace.model.booking.BookingConfiguration;
+import com.researchspace.model.booking.BookingSchedulingSettings;
 import com.researchspace.model.booking.ResolvedBookableTarget;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
@@ -12,10 +13,37 @@ import java.util.Optional;
 public interface BookingConfigurationManager {
 
   /** Values accepted when creating a booking configuration. */
-  record Create(boolean enabled, String timeZone, ResolvedBookableTarget target) {}
+  record Create(
+      boolean enabled,
+      String timeZone,
+      ResolvedBookableTarget target,
+      BookingSchedulingSettings.Patch schedulingSettings) {
+
+    public Create(boolean enabled, String timeZone, ResolvedBookableTarget target) {
+      this(enabled, timeZone, target, BookingSchedulingSettings.Patch.empty());
+    }
+
+    public Create {
+      if (schedulingSettings == null) {
+        schedulingSettings = BookingSchedulingSettings.Patch.empty();
+      }
+    }
+  }
 
   /** Values accepted when changing a booking configuration; {@code null} means unchanged. */
-  record Patch(Boolean enabled, String timeZone, ResolvedBookableTarget target) {}
+  record Patch(
+      Boolean enabled, String timeZone, BookingSchedulingSettings.Patch schedulingSettings) {
+
+    public Patch(Boolean enabled, String timeZone) {
+      this(enabled, timeZone, BookingSchedulingSettings.Patch.empty());
+    }
+
+    public Patch {
+      if (schedulingSettings == null) {
+        schedulingSettings = BookingSchedulingSettings.Patch.empty();
+      }
+    }
+  }
 
   /** Returns one page selected by a parsed collection request. */
   ResourcePage<BookingConfiguration> getConfigurations(ResourceRequest request, User actor);

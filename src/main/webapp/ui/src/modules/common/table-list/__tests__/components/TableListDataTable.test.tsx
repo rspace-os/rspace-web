@@ -2,6 +2,7 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
+import { expectAccessible } from "@/__tests__/accessibility";
 import { renderWithRealI18n } from "@/__tests__/helpers/realI18n";
 import type { CollectionConfig } from "@/modules/common/collection/collectionConfig";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
@@ -10,6 +11,151 @@ import { TableList } from "../../TableList";
 import { config, firstPage, records, type TestRecord } from "../fixtures/tableListFixtures";
 
 describe("TableList data table", () => {
+  it("keeps cards opt-in", () => {
+    render(
+      <TableList
+        queryString={false}
+        config={config}
+        rows={[records[0]]}
+        getRowId={(row) => row.id}
+        features={{ filtering: false, sorting: false, pagination: false, columns: false }}
+      />,
+    );
+
+    expect(screen.getByRole("table")).toBeVisible();
+    expect(screen.queryByRole("region", { name: "common:tableList.cardView" })).not.toBeInTheDocument();
+  });
+
+  it("renders a standardized card-only presentation with full-width custom fields and footer actions", async () => {
+    const { container } = render(
+      <TableList
+        queryString={false}
+        config={config}
+        rows={[records[0]]}
+        getRowId={(row) => row.id}
+        presentations={{ table: false, cards: "all" }}
+        uiColumns={[
+          {
+            id: "summary",
+            label: "Summary",
+            card: { fullWidth: true },
+            renderCell: (row) => <p>{`${row.owner} scored ${row.score}`}</p>,
+          },
+        ]}
+        rowActions={{
+          id: "actions",
+          label: "Actions",
+          renderCell: ({ row }) => <button type="button">{`Open ${row.title}`}</button>,
+          renderInteraction: () => null,
+        }}
+        features={{ filtering: false, sorting: false, pagination: false, columns: false }}
+      />,
+    );
+
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+    const cardView = screen.getByRole("region", { name: "common:tableList.cardView" });
+    const card = within(cardView).getByRole("article", { name: "Alpha" });
+    expect(within(card).getByText("Ada scored 8").closest("dd")?.parentElement).toHaveClass("col-span-full");
+    expect(within(card).getByRole("button", { name: "Open Alpha" }).closest("footer")).toBeInTheDocument();
+    await expectAccessible(container);
+  });
+
+  it("uses the same filtered, sorted, and paginated row model for cards", () => {
+    render(
+      <TableList
+        queryString={false}
+        config={config}
+        rows={records}
+        getRowId={(row) => row.id}
+        clientSide
+        presentations={{ table: false, cards: "all" }}
+        features={{
+          filtering: {
+            value: {
+              search: "ada",
+              expression: { kind: "comparison", field: "enabled", operator: "equals", value: true },
+            },
+            onChange: vi.fn(),
+          },
+          sorting: { value: [{ field: "modifiedAt", direction: "desc" }], onChange: vi.fn() },
+          pagination: { value: { pageIndex: 0, pageSize: 1 }, rowCount: records.length, onChange: vi.fn() },
+          columns: false,
+        }}
+      />,
+    );
+
+    expect(screen.getByRole("article", { name: "Gamma" })).toBeVisible();
+    expect(screen.queryByRole("article", { name: "Alpha" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("article", { name: "Beta" })).not.toBeInTheDocument();
+  });
+
+  it("supplies the filtered, sorted, and paginated row model to a custom presentation", () => {
+    render(
+      <TableList
+        queryString={false}
+        config={config}
+        rows={records}
+        getRowId={(row) => row.id}
+        clientSide
+        renderRows={(visibleRows) => (
+          <ol aria-label="Calendar rows">
+            {visibleRows.map((row) => (
+              <li key={row.id}>{row.title}</li>
+            ))}
+          </ol>
+        )}
+        features={{
+          filtering: {
+            value: {
+              search: "ada",
+              expression: { kind: "comparison", field: "enabled", operator: "equals", value: true },
+            },
+            onChange: vi.fn(),
+          },
+          sorting: { value: [{ field: "modifiedAt", direction: "desc" }], onChange: vi.fn() },
+          pagination: { value: { pageIndex: 0, pageSize: 1 }, rowCount: records.length, onChange: vi.fn() },
+          columns: false,
+        }}
+      />,
+    );
+
+    const calendar = screen.getByRole("list", { name: "Calendar rows" });
+    expect(within(calendar).getByRole("listitem")).toHaveTextContent("Gamma");
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+  });
+
+  it("supports row and current-page selection from cards", async () => {
+    const user = userEvent.setup();
+
+    function Harness() {
+      const [selectedRowIds, setSelectedRowIds] = useState<ReadonlySet<string>>(new Set(["3"]));
+      return (
+        <TableList
+          queryString={false}
+          config={config}
+          rows={records.slice(0, 2)}
+          getRowId={(row) => row.id}
+          presentations={{ table: false, cards: "all" }}
+          features={{ filtering: false, sorting: false, pagination: false, columns: false }}
+          selection={{
+            value: selectedRowIds,
+            onChange: setSelectedRowIds,
+            maximumCount: 1000,
+            getRowLabel: (row) => row.title,
+            renderActions: ({ selectedRowIds: ids }) => <span>{Array.from(ids).sort().join(",")}</span>,
+          }}
+        />
+      );
+    }
+
+    render(<Harness />);
+    await user.click(within(screen.getByRole("article", { name: "Alpha" })).getByRole("checkbox"));
+    expect(screen.getByText("1,3")).toBeVisible();
+
+    await user.click(screen.getByRole("checkbox", { name: "common:tableList.selection.selectAllPage" }));
+    expect(screen.getByText("1,2,3")).toBeVisible();
+  });
+
   it("uses the shared rows-per-page options by default", () => {
     render(
       <TableList

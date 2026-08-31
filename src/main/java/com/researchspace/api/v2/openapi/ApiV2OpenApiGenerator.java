@@ -97,6 +97,7 @@ public final class ApiV2OpenApiGenerator {
             .collect(Collectors.toUnmodifiableSet());
 
     addStandardSchemas(schemas);
+    addCalendarSubscriptionSchemas(schemas);
 
     catalog
         .allSchemas()
@@ -110,6 +111,7 @@ public final class ApiV2OpenApiGenerator {
     catalog
         .routableResources()
         .forEach(resource -> addPaths(paths, resource, componentNames, resourceSchemas));
+    addCalendarSubscriptionPath(paths);
 
     Map<String, Object> components = new LinkedHashMap<>();
     components.put("schemas", schemas);
@@ -127,6 +129,10 @@ public final class ApiV2OpenApiGenerator {
                         .name(resource.resourceName())
                         .description(
                             "Operations on the " + resource.resourceName() + " collection.")));
+    tags.add(
+        new Tag()
+            .name("booking-calendar-subscriptions")
+            .description("Manage one caller's bookable-item calendar subscription."));
     return new OpenAPI()
         .openapi("3.1.0")
         .info(
@@ -144,6 +150,164 @@ public final class ApiV2OpenApiGenerator {
         .tags(tags)
         .paths(Json31.mapper().convertValue(paths, Paths.class))
         .components(Json31.mapper().convertValue(components, Components.class));
+  }
+
+  private static void addCalendarSubscriptionSchemas(Map<String, Object> schemas) {
+    Map<String, Object> statusProperties =
+        ordered(
+            "active",
+            ordered("type", "boolean"),
+            "updatedAt",
+            ordered("type", List.of("string", "null"), "format", "date-time"),
+            "subscriptionUrl",
+            ordered(
+                "type",
+                List.of("string", "null"),
+                "format",
+                "uri",
+                "description",
+                "The current subscription URL, or null when inactive or awaiting migration."));
+    schemas.put(
+        "BookingCalendarSubscriptionStatus",
+        ordered(
+            "type",
+            "object",
+            "additionalProperties",
+            false,
+            "required",
+            List.of("active", "updatedAt", "subscriptionUrl"),
+            "properties",
+            statusProperties));
+    Map<String, Object> createdProperties = new LinkedHashMap<>(statusProperties);
+    createdProperties.put(
+        "subscriptionUrl",
+        ordered(
+            "type",
+            "string",
+            "format",
+            "uri",
+            "description",
+            "The newly issued subscription URL."));
+    schemas.put(
+        "BookingCalendarSubscriptionCreated",
+        ordered(
+            "type",
+            "object",
+            "additionalProperties",
+            false,
+            "required",
+            List.of("active", "updatedAt", "subscriptionUrl"),
+            "properties",
+            createdProperties));
+  }
+
+  private static void addCalendarSubscriptionPath(Map<String, Object> paths) {
+    String path = "/api/v2/booking-configurations/{configurationId}/calendar-subscription";
+    paths.put(
+        path,
+        ordered(
+            "get",
+            calendarSubscriptionOperation("get"),
+            "post",
+            calendarSubscriptionOperation("post"),
+            "delete",
+            calendarSubscriptionOperation("delete")));
+  }
+
+  private static Map<String, Object> calendarSubscriptionOperation(String method) {
+    boolean get = "get".equals(method);
+    boolean post = "post".equals(method);
+    Map<String, Object> operation = new LinkedHashMap<>();
+    operation.put(
+        "operationId",
+        get
+            ? "getBookingCalendarSubscription"
+            : post
+                ? "createOrReplaceBookingCalendarSubscription"
+                : "revokeBookingCalendarSubscription");
+    operation.put(
+        "summary",
+        get
+            ? "Get calendar subscription status"
+            : post
+                ? "Create or replace a calendar subscription"
+                : "Revoke a calendar subscription");
+    operation.put(
+        "description",
+        get
+            ? "Returns the caller's current subscription URL when one exists."
+            : post
+                ? "Replaces any active credential and returns the new subscription URL."
+                : "Revokes only the caller's subscription for this bookable item.");
+    operation.put("tags", List.of("booking-calendar-subscriptions"));
+    operation.put(
+        "security", List.of(Map.of("apiKey", List.of()), Map.of("bearerAuth", List.of())));
+    operation.put(
+        "x-rspace-access",
+        ordered(
+            "description",
+            "Authenticated active callers with Booking enabled; status and creation also require"
+                + " read access to the bookable item.",
+            "denialReasonCodes",
+            List.of(AccessPolicy.AUTHENTICATION_REQUIRED, AccessPolicy.FORBIDDEN)));
+    operation.put(
+        "parameters",
+        List.of(
+            parameter(
+                "configurationId",
+                "path",
+                true,
+                ordered("type", "integer", "format", "int64"),
+                "Booking configuration identifier.")));
+    operation.put("responses", calendarSubscriptionResponses(get, post));
+    operation.put(
+        "x-rspace-operation",
+        get ? "CALENDAR_STATUS" : post ? "CALENDAR_CREATE" : "CALENDAR_REVOKE");
+    return operation;
+  }
+
+  private static Map<String, Object> calendarSubscriptionResponses(boolean get, boolean post) {
+    Map<String, Object> responses = new LinkedHashMap<>();
+    if (get || post) {
+      responses.put(
+          "200",
+          ordered(
+              "description",
+              get ? "Current subscription status and URL." : "New subscription URL.",
+              "headers",
+              privateNoStoreHeaders(),
+              "content",
+              Map.of(
+                  JSON,
+                  ordered(
+                      "schema",
+                      ref(
+                          get
+                              ? "BookingCalendarSubscriptionStatus"
+                              : "BookingCalendarSubscriptionCreated")))));
+    } else {
+      responses.put(
+          "204",
+          ordered(
+              "description", "The subscription is inactive.", "headers", privateNoStoreHeaders()));
+    }
+    responses.put("401", responseRef("Unauthenticated"));
+    responses.put("403", responseRef("Forbidden"));
+    responses.put("404", responseRef("NotFound"));
+    responses.put("406", responseRef("NotAcceptable"));
+    responses.put("429", responseRef("TooManyRequests"));
+    responses.put("500", responseRef("UnexpectedError"));
+    return responses;
+  }
+
+  private static Map<String, Object> privateNoStoreHeaders() {
+    return ordered(
+        "Cache-Control",
+        ordered(
+            "description",
+            "Prevents storage of caller-specific subscription state.",
+            "schema",
+            ordered("type", "string", "const", "private, no-store")));
   }
 
   private void addPaths(
@@ -196,7 +360,14 @@ public final class ApiV2OpenApiGenerator {
         "description",
         "Returns events from the existing RSpace audit trail. The caller must be authenticated "
             + "and must be able to read the resource. A resource without audit metadata returns "
-            + "an empty result. The search range is limited to 183 days.");
+            + "an empty result. The search range is limited to 183 elapsed days. List requests "
+            + "use one-based pagination and a daily bounded-consistency snapshot over the exact "
+            + "half-open interval from dateFrom through midnight after snapshotDate in UTC. The "
+            + "first page selects the latest completed UTC day. Send snapshotDate and "
+            + "snapshotFingerprint together on every later page. A 409 means the result set "
+            + "changed and pagination must restart; a 503 means the server refused to return "
+            + "partial audit data. eventId is deterministic response identity, not a source-log "
+            + "signature.");
     result.put("tags", List.of(resource.resourceName()));
     result.put("security", List.of(Map.of("apiKey", List.of()), Map.of("bearerAuth", List.of())));
     result.put(
@@ -252,6 +423,23 @@ public final class ApiV2OpenApiGenerator {
     if (!count) {
       parameters.add(
           parameter(
+              "snapshotDate",
+              "query",
+              false,
+              ordered("type", "string", "format", "date"),
+              "Completed UTC snapshot day returned by page one. Supply it together with"
+                  + " snapshotFingerprint on later pages."));
+      parameters.add(
+          parameter(
+              "snapshotFingerprint",
+              "query",
+              false,
+              ordered(
+                  "type", "string", "pattern", "^[0-9a-f]{64}$", "minLength", 64, "maxLength", 64),
+              "Fingerprint returned by page one. Supply it unchanged together with snapshotDate"
+                  + " on later pages."));
+      parameters.add(
+          parameter(
               "page",
               "query",
               false,
@@ -290,14 +478,39 @@ public final class ApiV2OpenApiGenerator {
                 JSON,
                 ordered(
                     "schema",
-                    count ? ref("ApiV2CountResult") : listResult(ref("ApiV2AuditEvent"))))));
-    responses.put("400", responseRef("BadRequest"));
+                    count ? ref("ApiV2CountResult") : auditPage(ref("ApiV2AuditEvent"))))));
+    responses.put(
+        "400",
+        count
+            ? responseRef("BadRequest")
+            : problemResponse(
+                "The range or snapshot parameters are invalid, or the result exceeds the"
+                    + " configured ceiling and requires a narrower date range.",
+                400,
+                "errors.api.v2.audit.results.tooMany"));
     responses.put("401", responseRef("Unauthenticated"));
     responses.put("403", responseRef("Forbidden"));
     responses.put("404", responseRef("NotFound"));
     responses.put("406", responseRef("NotAcceptable"));
+    if (!count) {
+      responses.put(
+          "409",
+          problemResponse(
+              "The bounded audit result changed; restart pagination.",
+              409,
+              "errors.api.v2.audit.snapshot.changed"));
+    }
     responses.put("429", responseRef("TooManyRequests"));
     responses.put("500", responseRef("UnexpectedError"));
+    if (!count) {
+      responses.put(
+          "503",
+          problemResponse(
+              "The server could not read a consistent audit snapshot and returned no partial"
+                  + " data.",
+              503,
+              "errors.api.v2.audit.unavailable"));
+    }
     return responses;
   }
 
@@ -901,7 +1114,7 @@ public final class ApiV2OpenApiGenerator {
                 .getOrDefault(
                     Integer.valueOf(successStatus),
                     new OpenApiOperationDocumentation.Response(
-                        "Successful " + operation.name().toLowerCase(Locale.ROOT) + ".", null))
+                        "Successful " + operation.name().toLowerCase(Locale.ROOT) + ".", Map.of()))
                 .description(),
             "headers",
             rateLimitHeaders(),
@@ -928,7 +1141,7 @@ public final class ApiV2OpenApiGenerator {
     responses.put("429", responseRef("TooManyRequests"));
     responses.put("500", responseRef("UnexpectedError"));
     documentation.responses().entrySet().stream()
-        .filter(entry -> entry.getValue().errorCode() != null)
+        .filter(entry -> !entry.getValue().errors().isEmpty())
         .forEach(
             entry ->
                 responses.put(
@@ -936,7 +1149,7 @@ public final class ApiV2OpenApiGenerator {
                     problemResponse(
                         entry.getValue().description(),
                         entry.getKey(),
-                        entry.getValue().errorCode())));
+                        entry.getValue().errors())));
     documentation
         .responses()
         .forEach(
@@ -1291,6 +1504,21 @@ public final class ApiV2OpenApiGenerator {
             ordered("type", List.of("integer", "null"))));
   }
 
+  private static Map<String, Object> auditPage(Map<String, Object> item) {
+    Map<String, Object> page = listResult(item);
+    List<String> required =
+        ((List<?>) page.get("required")).stream().map(String::valueOf).collect(Collectors.toList());
+    required.add("snapshotDate");
+    required.add("snapshotFingerprint");
+    page.put("required", required);
+    Map<String, Object> properties = mutableObjectMap(page.get("properties"));
+    properties.put("snapshotDate", ordered("type", "string", "format", "date"));
+    properties.put(
+        "snapshotFingerprint",
+        ordered("type", "string", "pattern", "^[0-9a-f]{64}$", "minLength", 64, "maxLength", 64));
+    return page;
+  }
+
   private static Map<String, Object> bulkResult(Map<String, Object> item) {
     return ordered(
         "type",
@@ -1329,6 +1557,37 @@ public final class ApiV2OpenApiGenerator {
   private static Map<String, Object> problemResponse(String description, int status, String code) {
     return ordered(
         "description", description, "content", problemContent(description, status, code));
+  }
+
+  private static Map<String, Object> problemResponse(
+      String description, int status, Map<String, String> errors) {
+    if (errors.size() == 1) {
+      Map.Entry<String, String> error = errors.entrySet().iterator().next();
+      return problemResponse(description, status, error.getKey());
+    }
+    Map<String, Object> examples = new LinkedHashMap<>();
+    errors.forEach(
+        (code, errorDescription) ->
+            examples.put(
+                code,
+                ordered(
+                    "summary",
+                    errorDescription,
+                    "value",
+                    ordered(
+                        "title",
+                        errorDescription,
+                        "status",
+                        status,
+                        "code",
+                        code,
+                        "detail",
+                        errorDescription))));
+    return ordered(
+        "description",
+        description,
+        "content",
+        Map.of(PROBLEM_JSON, ordered("schema", ref("ApiV2Problem"), "examples", examples)));
   }
 
   private static Map<String, Object> problemContent(String description, int status, String code) {

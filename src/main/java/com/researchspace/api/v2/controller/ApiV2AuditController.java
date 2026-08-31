@@ -2,9 +2,9 @@ package com.researchspace.api.v2.controller;
 
 import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.api.v2.model.ApiV2AuditEvent;
+import com.researchspace.api.v2.model.ApiV2AuditPage;
 import com.researchspace.api.v2.model.ApiV2AuditQuery;
 import com.researchspace.api.v2.model.ApiV2CountResult;
-import com.researchspace.api.v2.model.ApiV2ListResult;
 import com.researchspace.api.v2.resource.ApiV2AuditLog;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
 import com.researchspace.api.v2.resource.ApiV2ResourceRegistration;
@@ -40,7 +40,7 @@ public final class ApiV2AuditController {
   }
 
   @GetMapping("/{resource}/{id}/audit")
-  public ApiV2ListResult<ApiV2AuditEvent> list(
+  public ApiV2AuditPage<ApiV2AuditEvent> list(
       @PathVariable String resource,
       @PathVariable String id,
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE, required = false) ApiV2Caller caller,

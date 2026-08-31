@@ -92,6 +92,26 @@ export const PrototypePromptCards: Story = {
   },
 };
 
+// Mirrors the "Booking rules" details card on the View Bookable Item page.
+export const PrototypeItemDetails: Story = {
+  args: { presentation: "item-details" },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const label = await canvas.findByText("Title", { selector: "label" });
+    const control = await canvas.findByRole("textbox", { name: "Title" });
+    await expect(label.getBoundingClientRect().right).toBeLessThan(control.getBoundingClientRect().left);
+    // One shared label column and one shared control column, across field types.
+    const toggleLabel = await canvas.findByText("Enabled", { selector: "label" });
+    const toggle = await canvas.findByRole("checkbox", { name: "Enabled" });
+    await expect(Math.round(toggleLabel.getBoundingClientRect().left)).toBe(
+      Math.round(label.getBoundingClientRect().left),
+    );
+    await expect(Math.round(toggle.getBoundingClientRect().left)).toBe(
+      Math.round(control.getBoundingClientRect().left),
+    );
+  },
+};
+
 export const Disabled: Story = {
   args: { disabled: true },
 };

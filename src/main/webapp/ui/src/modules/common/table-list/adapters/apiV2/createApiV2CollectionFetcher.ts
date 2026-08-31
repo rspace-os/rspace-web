@@ -1,5 +1,5 @@
 import type { FieldName } from "@/modules/common/collection/collectionConfig";
-import type { CollectionFetcher, CollectionQueryState } from "../../tableListState";
+import type { CollectionFetcher, CollectionQueryState, FilterExpression } from "../../tableListState";
 import type { ApiV2CollectionAdapter } from "./createApiV2CollectionAdapter";
 
 export type ApiV2CollectionProjection<TDocument> = "visible" | { fixed: readonly FieldName<TDocument>[] };
@@ -11,6 +11,8 @@ export type ApiV2CollectionFetchOptions<TDocument> = {
   headers?: HeadersInit | (() => HeadersInit | Promise<HeadersInit>);
   fetch?: typeof globalThis.fetch;
   projection?: ApiV2CollectionProjection<TDocument>;
+  baseFilter?: FilterExpression<TDocument>;
+  validateRows?: (rows: readonly TDocument[]) => void;
 };
 
 async function resolveValue<T>(value: T | (() => T | Promise<T>) | undefined): Promise<T | undefined> {
@@ -32,8 +34,14 @@ export function apiV2CollectionRequestParams<TDocument>(
   state: CollectionQueryState<TDocument>,
   depth?: number,
   projection: ApiV2CollectionProjection<TDocument> = "visible",
+  baseFilter?: FilterExpression<TDocument>,
 ): URLSearchParams {
-  const requestState = projectedState(adapter, state, projection);
+  const expression =
+    baseFilter && state.filters.expression
+      ? ({ kind: "and", children: [baseFilter, state.filters.expression] } satisfies FilterExpression<TDocument>)
+      : (baseFilter ?? state.filters.expression);
+  const filteredState = { ...state, filters: { ...state.filters, expression } };
+  const requestState = projectedState(adapter, filteredState, projection);
   const parameters = adapter.toSearchParams(requestState);
   const requiredDepth = adapter.requiredDepth(requestState);
   if (depth !== undefined || requiredDepth > 0) parameters.set("depth", String(Math.max(depth ?? 0, requiredDepth)));
@@ -53,7 +61,13 @@ export function createApiV2CollectionFetcher<TDocument>(
     if (token) headers.set("Authorization", `Bearer ${token}`);
     const requestState = projectedState(adapter, state, options.projection ?? "visible");
     const selected = adapter.selectedFields(requestState);
-    const parameters = apiV2CollectionRequestParams(adapter, requestState, options.depth);
+    const parameters = apiV2CollectionRequestParams(
+      adapter,
+      requestState,
+      options.depth,
+      "visible",
+      options.baseFilter,
+    );
     const response = await request(`${endpoint}?${parameters}`, {
       method: "GET",
       headers,
@@ -61,6 +75,8 @@ export function createApiV2CollectionFetcher<TDocument>(
     });
     if (!response.ok) throw new Error(`API V2 collection request failed with status ${response.status}`);
     const body: unknown = await response.json();
-    return adapter.parseResponse(body, selected);
+    const page = adapter.parseResponse(body, selected);
+    options.validateRows?.(page.rows);
+    return page;
   };
 }

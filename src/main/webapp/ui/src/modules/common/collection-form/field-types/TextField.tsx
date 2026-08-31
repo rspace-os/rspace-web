@@ -16,6 +16,22 @@ function TextFieldControl<TDocument>(props: TextFieldControlProps<TDocument>) {
     fieldApi.onChange(nextValue === "" && fieldConfig.nullable ? null : nextValue);
   const common = controlAttributes(props);
 
+  if (fieldConfig.form && fieldConfig.form.widget === "time") {
+    return (
+      <Input
+        {...common}
+        className="rounded-sm"
+        type="time"
+        value={value}
+        readOnly={fieldConfig.readOnly}
+        ref={fieldApi.props.ref}
+        onFocus={fieldApi.props.onFocus}
+        onBlur={fieldApi.props.onBlur}
+        onChange={(event) => onChange(event.currentTarget.value)}
+      />
+    );
+  }
+
   return fieldConfig.form && fieldConfig.form.widget === "textarea" ? (
     <Textarea
       {...common}

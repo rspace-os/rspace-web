@@ -140,6 +140,8 @@ export default defineConfig({
       "@mui/material/utils",
       // Imported by SidebarPage to inspect the MUI modal stacking root.
       "@mui/material/Modal",
+      // Used by the booking calendar-subscription dialog.
+      "@fortawesome/free-brands-svg-icons/faApple",
       // TinyMCE React wrapper: discovered lazily the first time a component
       // mounts a TinyMCE editor, causing a mid-run optimizer reload that
       // makes the Vitest runner warn and can cause flakiness.

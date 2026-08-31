@@ -115,6 +115,7 @@
     "@fortawesome/free-solid-svg-icons": "7.3.1",
     "@fortawesome/react-fontawesome": "3.5.0",
     "@intercom/messenger-js-sdk": "0.0.20",
+    "@js-temporal/polyfill": "0.5.1",
     "@jupyter-kit/core": "3.0.0",
     "@jupyter-kit/katex": "3.0.0",
     "@jupyter-kit/react": "3.0.0",

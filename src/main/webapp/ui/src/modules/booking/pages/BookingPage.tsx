@@ -1,14 +1,17 @@
-import { type AnyRoute, createRoute, Outlet } from "@tanstack/react-router";
+import { type AnyRoute, createRoute, Link, linkOptions, Outlet } from "@tanstack/react-router";
 import {
   CalendarIcon,
+  CalendarPlusIcon,
   CheckSquareIcon,
   ChevronRightIcon,
   LayoutDashboardIcon,
+  LibraryBigIcon,
   ListIcon,
-  type LucideIcon,
   SettingsIcon,
+  SlidersHorizontalIcon,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { todayInTimeZone, useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
 import i18n from "@/modules/common/i18n";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/modules/common/ui/collapsible";
@@ -24,36 +27,66 @@ import {
   SidebarMenuSubItem,
 } from "@/modules/common/ui/sidebar";
 
-const items = [
-  { key: "dashboard", icon: LayoutDashboardIcon },
-  { key: "calendar", icon: CalendarIcon },
-  { key: "myBookings", icon: ListIcon },
-  {
-    key: "administration",
-    icon: SettingsIcon,
-    children: [{ key: "settings" }, { key: "bookableItems" }],
-  },
-  { key: "approvalQueue", icon: CheckSquareIcon },
-] as const satisfies ReadonlyArray<{
-  key: string;
-  icon: LucideIcon;
-  children?: ReadonlyArray<{ key: string }>;
-}>;
+const items = (today: string) =>
+  [
+    { key: "dashboard", icon: LayoutDashboardIcon },
+    {
+      key: "calendar",
+      icon: CalendarIcon,
+      link: <Link {...linkOptions({ to: "/booking/calendar", search: () => ({ date: today }) })} />,
+    },
+    {
+      key: "allItems",
+      icon: LibraryBigIcon,
+      link: <Link {...linkOptions({ to: "/booking/all-items", search: () => ({ date: today }) })} />,
+    },
+    {
+      key: "addBooking",
+      icon: CalendarPlusIcon,
+      link: <Link {...linkOptions({ to: "/booking/calendar/bookings/add", search: () => ({ date: today }) })} />,
+    },
+    {
+      key: "myBookings",
+      icon: ListIcon,
+      link: <Link {...linkOptions({ to: "/booking/my-bookings", search: { period: "upcoming" } })} />,
+    },
+    {
+      key: "preferences",
+      icon: SlidersHorizontalIcon,
+      link: <Link {...linkOptions({ to: "/booking/preferences" })} />,
+    },
+    {
+      key: "administration",
+      icon: SettingsIcon,
+      children: [
+        { key: "settings", link: <Link {...linkOptions({ to: "/booking/config/settings" })} /> },
+        { key: "bookableItems", link: <Link {...linkOptions({ to: "/booking/config/bookable-items" })} /> },
+      ],
+    },
+    { key: "approvalQueue", icon: CheckSquareIcon },
+  ] as const;
 
 /** Content for the shared AppShell sidebar. The shell owns the surrounding layout. */
 export function BookingSidebar() {
   const { t } = useTranslation("booking");
   const { data: currentUser } = useCurrentUserQuery();
+  const preferences = useBookingDisplayPreferences();
+  const sidebarItems = items(todayInTimeZone(preferences.timeZone));
   const labels = {
     dashboard: t("sidebar.dashboard"),
     calendar: t("sidebar.calendar"),
+    allItems: t("sidebar.allItems"),
+    addBooking: t("sidebar.addBooking"),
     myBookings: t("sidebar.myBookings"),
+    preferences: t("sidebar.preferences"),
     administration: t("sidebar.administration"),
     settings: t("sidebar.settings"),
     bookableItems: t("sidebar.bookableItems"),
     approvalQueue: t("sidebar.approvalQueue"),
   };
-  const visibleItems = currentUser.hasSysAdminRole ? items : items.filter((item) => item.key !== "administration");
+  const visibleItems = currentUser.hasSysAdminRole
+    ? sidebarItems
+    : sidebarItems.filter((item) => item.key !== "administration");
 
   return (
     <SidebarGroup>
@@ -74,7 +107,8 @@ export function BookingSidebar() {
                   <SidebarMenuSub>
                     {item.children.map((child) => (
                       <SidebarMenuSubItem key={child.key}>
-                        <SidebarMenuSubButton render={<button type="button" />}>
+                        {/* an <a> without href has no role, so unrouted sub-items render as buttons */}
+                        <SidebarMenuSubButton render={"link" in child ? child.link : <button type="button" />}>
                           <span>{labels[child.key]}</span>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
@@ -84,8 +118,10 @@ export function BookingSidebar() {
               </Collapsible>
             ) : (
               <SidebarMenuItem key={item.key}>
-                {/* ponytail: no sub-routes exist yet; wire `render={<Link .../>}` when they do */}
-                <SidebarMenuButton tooltip={labels[item.key]}>
+                <SidebarMenuButton
+                  tooltip={labels[item.key]}
+                  render={"link" in item ? item.link : <button type="button" />}
+                >
                   <item.icon />
                   <span>{labels[item.key]}</span>
                 </SidebarMenuButton>

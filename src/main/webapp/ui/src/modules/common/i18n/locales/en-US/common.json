@@ -960,6 +960,7 @@
       "resizeColumn": "Resize column",
       "sortBy": "Sort by {column}"
     },
+    "cardView": "{collection} cards",
     "columns": {
       "customised": "Columns, {count} of {total} shown",
       "hidden": "Hidden",

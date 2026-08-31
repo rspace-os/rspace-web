@@ -11,6 +11,7 @@ import com.researchspace.model.collection.RelationshipReadAccess;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.search.customfield.RuntimeFieldTextSearch;
+import jakarta.persistence.LockModeType;
 import java.util.List;
 import java.util.Optional;
 import org.hibernate.SessionFactory;
@@ -84,6 +85,27 @@ public class BookingConfigurationDaoHibernate
             BookingConfiguration.class)
         .setParameter("type", target.type())
         .setParameter("id", target.id())
+        .uniqueResultOptional();
+  }
+
+  @Override
+  public Optional<BookingConfiguration> lockByTarget(BookableTargetReference target) {
+    return getSession()
+        .createQuery(
+            "from BookingConfiguration where target.type = :type and target.id = :id",
+            BookingConfiguration.class)
+        .setParameter("type", target.type())
+        .setParameter("id", target.id())
+        .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+        .uniqueResultOptional();
+  }
+
+  @Override
+  public Optional<BookingConfiguration> lockById(Long id) {
+    return getSession()
+        .createQuery("from BookingConfiguration where id = :id", BookingConfiguration.class)
+        .setParameter("id", id)
+        .setLockMode(LockModeType.PESSIMISTIC_WRITE)
         .uniqueResultOptional();
   }
 

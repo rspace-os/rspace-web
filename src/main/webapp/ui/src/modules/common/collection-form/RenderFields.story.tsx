@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import * as v from "valibot";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
+import { Card, CardContent, CardHeader, CardTitle } from "@/modules/common/ui/card";
 import { InventoryItem } from "@/modules/common/ui/inventory-item";
 import { Switch } from "@/modules/common/ui/switch";
 import { RenderFields } from "./RenderFields";
@@ -222,7 +223,15 @@ export function RenderFieldsStory({
   sectionVariant,
 }: {
   disabled?: boolean;
-  presentation?: "sectioned" | "compact" | "split" | "progressive" | "settings" | "aligned" | "prompt-cards";
+  presentation?:
+    | "sectioned"
+    | "compact"
+    | "split"
+    | "progressive"
+    | "settings"
+    | "aligned"
+    | "prompt-cards"
+    | "item-details";
   sectionVariant?: "card" | "transparent";
 }) {
   const { t } = useTranslation("common");
@@ -345,6 +354,22 @@ export function RenderFieldsStory({
             </div>
           ))}
         </div>
+      );
+      break;
+    // Mirrors the "Booking rules" card on the View Bookable Item page
+    // (BookableItemPage.tsx): the labels keep the read-out's max-content column
+    // and the controls take the value column, so switching a card from read-out
+    // to form moves nothing.
+    case "item-details":
+      fields = (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("collectionForm.examples.recordDetails")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <RenderFields {...fieldProps} fields={presentationFormFields} layout="inline" />
+          </CardContent>
+        </Card>
       );
       break;
     case "prompt-cards":
