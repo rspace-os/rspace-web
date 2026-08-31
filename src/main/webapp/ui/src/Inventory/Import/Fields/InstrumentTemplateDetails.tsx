@@ -9,23 +9,25 @@ import RadioGroup from "@mui/material/RadioGroup";
 import { observer } from "mobx-react-lite";
 import { type ReactNode, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import type TemplateModel from "../../../stores/models/TemplateModel";
+import type InstrumentTemplateModel from "../../../stores/models/InstrumentTemplateModel";
 import useStores from "../../../stores/use-stores";
-import * as Parsers from "../../../util/parsers";
-import TemplatePicker from "../../components/Picker/TemplatePicker";
-import SummaryInfo from "../../Template/SummaryInfo";
+import InstrumentTemplatePicker from "../../components/Picker/InstrumentTemplatePicker";
+import InstrumentTemplateSummaryInfo from "../../InstrumentTemplate/SummaryInfo";
 import TemplateName from "./TemplateName";
 
-function TemplateDetails(): ReactNode {
+function InstrumentTemplateDetails(): ReactNode {
   const { t } = useTranslation("inventory");
   const { importStore } = useStores();
   const importData = importStore.importData;
 
+  const createNewTemplate = importData?.instrumentCreateNewTemplate ?? true;
+  const templateName = importData?.instrumentTemplateName ?? "";
+  const selectedTemplate = importData?.instrumentTemplate ?? null;
+
   const handleSetTemplate = useCallback(
-    (tmpl: TemplateModel) => {
-      importData?.setTemplate(tmpl);
-      importData?.setCreateNewTemplate(false);
-      importData?.setDefaultUnitId(tmpl.defaultUnitId);
+    (tmpl: InstrumentTemplateModel) => {
+      importData?.setInstrumentTemplate(tmpl);
+      importData?.setInstrumentCreateNewTemplate(false);
     },
     [importData],
   );
@@ -33,14 +35,12 @@ function TemplateDetails(): ReactNode {
   return (
     <RadioGroup
       name="newOrExisting"
-      value={importStore.importData?.createNewTemplate.toString()}
+      value={createNewTemplate.toString()}
       onChange={(event, value) => {
         if (event.target.name === "newOrExisting") {
-          importStore.importData?.setCreateNewTemplate(Parsers.parseBoolean(value as "true" | "false").elseThrow());
-          if (Parsers.parseBoolean(value as "true" | "false").elseThrow()) {
-            importStore.importData?.setTemplate(null);
-            importStore.importData?.setDefaultUnitId();
-          }
+          const isNew = value === "true";
+          importData?.setInstrumentCreateNewTemplate(isNew);
+          if (isNew) importData?.setInstrumentTemplate(null);
         }
       }}
     >
@@ -53,13 +53,10 @@ function TemplateDetails(): ReactNode {
         <FormControl component="fieldset" fullWidth>
           <FormGroup sx={{ maxWidth: 660 }}>
             <TemplateName
-              disabled={importStore.importData?.createNewTemplate === false}
-              value={importStore.importData?.templateName ?? ""}
-              onChange={(v) => importStore.importData?.setTemplateName(v)}
-              error={
-                (importStore.importData?.createNewTemplate ?? false) &&
-                !(importStore.importData?.validTemplateName ?? true)
-              }
+              disabled={!createNewTemplate}
+              value={templateName}
+              onChange={(v) => importData?.setInstrumentTemplateName(v)}
+              error={createNewTemplate && !(importData?.validInstrumentTemplateName ?? true)}
             />
           </FormGroup>
         </FormControl>
@@ -70,17 +67,17 @@ function TemplateDetails(): ReactNode {
         label={t("import.templateDetails.chooseExistingTemplate")}
       />
       <Box sx={{ ml: 4 }}>
-        <SummaryInfo template={importStore.importData?.template ?? null} />
+        <InstrumentTemplateSummaryInfo template={selectedTemplate} />
         <Box sx={{ mb: 1 }}>
           <Divider />
         </Box>
-        <TemplatePicker setTemplate={handleSetTemplate} selectedTemplate={importStore.importData?.template ?? null} />
-        {!importStore.importData?.createNewTemplate && !importStore.importData?.template ? (
-          <Alert severity="info">{t("import.templateDetails.selectTemplate")}</Alert>
+        <InstrumentTemplatePicker setTemplate={handleSetTemplate} selectedTemplate={selectedTemplate} />
+        {!createNewTemplate && !selectedTemplate ? (
+          <Alert severity="info">{t("import.templateDetails.selectInstrumentTemplate")}</Alert>
         ) : null}
       </Box>
     </RadioGroup>
   );
 }
 
-export default observer(TemplateDetails);
+export default observer(InstrumentTemplateDetails);

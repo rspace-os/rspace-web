@@ -1,6 +1,5 @@
 package com.researchspace.service.inventory.csvimport;
 
-import com.researchspace.api.v1.model.ApiContainerInfo;
 import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInstrumentTemplate;
 import com.researchspace.api.v1.model.ApiInstrumentTemplatePost;
@@ -192,9 +191,10 @@ public class CsvInstrumentImporter extends InventoryItemCsvImporter {
                 GlobalIdentifier parentOid = new GlobalIdentifier(value);
                 csvProcessingResult.addResultNumberWithParentContainerGlobalId(
                     resultCount, parentOid);
-                ApiContainerInfo apiParent = new ApiContainerInfo();
-                apiParent.setId(parentOid.getDbId());
-                apiInstrument.setParentContainer(apiParent);
+              }
+            } else if ("parent container import id".equalsIgnoreCase(fieldName)) {
+              if (!StringUtils.isBlank(value)) {
+                csvProcessingResult.addResultNumberWithParentContainerImportId(resultCount, value);
               }
             } else {
               setInstrumentFieldFromMappedColumn(apiInstrument, fieldName, value, user);

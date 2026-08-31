@@ -2654,7 +2654,9 @@ export default interface Resources {
       }
     },
     "createNew": {
-      "csvImport": "CSV Import",
+      "csvImport": "Import",
+      "fromCsv": "From CSV",
+      "fromCsvDescription": "Samples, Subsamples, Containers and Instruments",
       "helpTitles": {
         "container": "Info on creating containers.",
         "instrument": "Info on creating instruments.",
@@ -3681,6 +3683,7 @@ export default interface Resources {
       "templateDetails": {
         "chooseExistingTemplate": "Choose existing template.",
         "createNewTemplate": "Create new template.",
+        "selectInstrumentTemplate": "Select a template from which these imported instruments will be created.",
         "selectTemplate": "Select a template from which these imported samples will be created."
       },
       "title": "IMPORT"
@@ -3729,7 +3732,7 @@ export default interface Resources {
         "explanation": "If you select an instrument template below, initial metadata and custom fields will be automatically generated.",
         "fetchError": "Could not fetch instrument template details.",
         "label": "Instrument Template",
-        "noTemplate": "No template",
+        "noTemplate": "No Template",
         "noTemplateTitle": "No Template",
         "unknownReason": "Unknown reason.",
         "version": "Version {version}"
