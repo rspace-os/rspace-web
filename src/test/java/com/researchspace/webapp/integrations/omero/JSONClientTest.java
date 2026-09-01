@@ -17,9 +17,8 @@ import static com.researchspace.webapp.integrations.omero.OmeroJsonTestMother.ur
 import static com.researchspace.webapp.integrations.omero.OmeroJsonTestMother.versionJson;
 import static com.researchspace.webapp.integrations.omero.OmeroJsonTestMother.wellsForPlateJson;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockserver.model.HttpRequest.request;
-import static org.mockserver.model.HttpResponse.response;
 
+import com.researchspace.testutils.StubHttpServer;
 import jakarta.json.JsonObject;
 import java.util.Collection;
 import java.util.List;
@@ -28,20 +27,17 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockserver.client.MockServerClient;
-import org.mockserver.integration.ClientAndServer;
-import org.mockserver.matchers.Times;
 
 public class JSONClientTest {
-  private static ClientAndServer mockServer;
+  private static StubHttpServer mockServer;
   private static String baseUrl;
   private JSONClient jsonClient;
 
-  private MockServerClient client;
+  private StubHttpServer client;
 
   @BeforeAll
-  public static void startServer() {
-    mockServer = ClientAndServer.startClientAndServer();
+  public static void startServer() throws java.io.IOException {
+    mockServer = new StubHttpServer();
     baseUrl = "http://localhost:" + mockServer.getPort();
   }
 
@@ -59,14 +55,10 @@ public class JSONClientTest {
   @SneakyThrows
   @BeforeEach
   public void setUp() {
-    client = new MockServerClient("localhost", mockServer.getPort());
+    client = mockServer;
     client.reset();
-    client
-        .when(request().withMethod("GET").withPath("/api"), Times.exactly(1))
-        .respond(response().withBody(withPort(versionJson)));
-    client
-        .when(request().withMethod("GET").withPath("/api/v0"))
-        .respond(response().withBody(withPort(urlsJson)));
+    client.get("/api").once().respond(withPort(versionJson));
+    client.get("/api/v0").respond(withPort(urlsJson));
     jsonClient = new JSONClient(baseUrl);
   }
 
@@ -79,13 +71,10 @@ public class JSONClientTest {
   @Test
   public void testListProjects() {
     client
-        .when(
-            request()
-                .withMethod("GET")
-                .withPath("/api/v0/m/projects/")
-                .withQueryStringParameter("childCount", "true")
-                .withQueryStringParameter("offset", "0"))
-        .respond(response().withBody(projectsJson));
+        .get("/api/v0/m/projects/")
+        .query("childCount", "true")
+        .query("offset", "0")
+        .respond(projectsJson);
     Collection<JsonObject> projects = jsonClient.listProjects();
     assertEquals(113, projects.size());
   }
@@ -94,13 +83,10 @@ public class JSONClientTest {
   @Test
   public void testListScreens() {
     client
-        .when(
-            request()
-                .withMethod("GET")
-                .withPath("/api/v0/m/screens/")
-                .withQueryStringParameter("childCount", "true")
-                .withQueryStringParameter("offset", "0"))
-        .respond(response().withBody(screensJson));
+        .get("/api/v0/m/screens/")
+        .query("childCount", "true")
+        .query("offset", "0")
+        .respond(screensJson);
     Collection<JsonObject> screens = jsonClient.listScreens();
     assertEquals(97, screens.size());
   }
@@ -108,17 +94,12 @@ public class JSONClientTest {
   @SneakyThrows
   @Test
   public void testListDatasetsForProject() {
+    client.get("/api/v0/m/projects/51").respond(projectJson);
     client
-        .when(request().withMethod("GET").withPath("/api/v0/m/projects/51"))
-        .respond(response().withBody(projectJson));
-    client
-        .when(
-            request()
-                .withMethod("GET")
-                .withPath("/webclient/api/datasets/")
-                .withQueryStringParameter("id", "51")
-                .withQueryStringParameter("page", "0"))
-        .respond(response().withBody(datasetsForProjectJson));
+        .get("/webclient/api/datasets/")
+        .query("id", "51")
+        .query("page", "0")
+        .respond(datasetsForProjectJson);
     JsonObject project = jsonClient.getProjectWithId(51L);
     Collection<JsonObject> datasets = jsonClient.listDatasetsForProject(project);
     assertEquals(10, datasets.size());
@@ -127,16 +108,8 @@ public class JSONClientTest {
   @SneakyThrows
   @Test
   public void testListImagesForDataset() {
-    client
-        .when(request().withMethod("GET").withPath("/api/v0/m/datasets/51"))
-        .respond(response().withBody(withPort(datasetJson)));
-    client
-        .when(
-            request()
-                .withMethod("GET")
-                .withPath("/api/v0/m/datasets/51/images/")
-                .withQueryStringParameter("offset", "0"))
-        .respond(response().withBody(imagesForDatasetJson));
+    client.get("/api/v0/m/datasets/51").respond(withPort(datasetJson));
+    client.get("/api/v0/m/datasets/51/images/").query("offset", "0").respond(imagesForDatasetJson);
     JsonObject dataset = jsonClient.getDataSetWithId("51");
     Collection<JsonObject> images = jsonClient.listImagesForDataset(dataset);
     assertEquals(33, images.size());
@@ -145,20 +118,11 @@ public class JSONClientTest {
   @SneakyThrows
   @Test // plate has no actual plate acquisition, so we create a fake
   public void testWellsForFakePlateAcquisition() {
+    client.get("/api/v0/m/plates/422").query("childCount", "true").respond(withPort(plateJson));
     client
-        .when(
-            request()
-                .withMethod("GET")
-                .withPath("/api/v0/m/plates/422")
-                .withQueryStringParameter("childCount", "true"))
-        .respond(response().withBody(withPort(plateJson)));
-    client
-        .when(
-            request()
-                .withMethod("GET")
-                .withPath("/api/v0/m/plates/422/wellsampleindex/0/wells/")
-                .withQueryStringParameter("offset", "0"))
-        .respond(response().withBody(wellsForPlateJson));
+        .get("/api/v0/m/plates/422/wellsampleindex/0/wells/")
+        .query("offset", "0")
+        .respond(wellsForPlateJson);
     JsonObject plate = jsonClient.getPlateWithId("422");
     Collection<JsonObject> wells = jsonClient.listWellsForPlateAcquisition(plate, 422L, 0);
     assertEquals(96, wells.size());
@@ -167,17 +131,12 @@ public class JSONClientTest {
   @SneakyThrows
   @Test
   public void testPlatesForScreen() {
+    client.get("/api/v0/m/screens/51").respond(screenJson);
     client
-        .when(request().withMethod("GET").withPath("/api/v0/m/screens/51"))
-        .respond(response().withBody(screenJson));
-    client
-        .when(
-            request()
-                .withMethod("GET")
-                .withPath("/webclient/api/plates/")
-                .withQueryStringParameter("id", "51")
-                .withQueryStringParameter("page", "0"))
-        .respond(response().withBody(platesForScreenJson));
+        .get("/webclient/api/plates/")
+        .query("id", "51")
+        .query("page", "0")
+        .respond(platesForScreenJson);
     JsonObject screen = jsonClient.getScreenWithId(51L);
     Collection<JsonObject> plates = jsonClient.listPlatesForScreen(screen);
     assertEquals(85, plates.size());
@@ -189,29 +148,20 @@ public class JSONClientTest {
   @Test
   public void testListLargeData() {
     client
-        .when(
-            request()
-                .withMethod("GET")
-                .withPath("/api/v0/m/projects/")
-                .withQueryStringParameter("childCount", "true")
-                .withQueryStringParameter("offset", "0"))
-        .respond(response().withBody(large_data_1_json));
+        .get("/api/v0/m/projects/")
+        .query("childCount", "true")
+        .query("offset", "0")
+        .respond(large_data_1_json);
     client
-        .when(
-            request()
-                .withMethod("GET")
-                .withPath("/api/v0/m/projects/")
-                .withQueryStringParameter("childCount", "true")
-                .withQueryStringParameter("offset", "200"))
-        .respond(response().withBody(large_data_2_json));
+        .get("/api/v0/m/projects/")
+        .query("childCount", "true")
+        .query("offset", "200")
+        .respond(large_data_2_json);
     client
-        .when(
-            request()
-                .withMethod("GET")
-                .withPath("/api/v0/m/projects/")
-                .withQueryStringParameter("childCount", "true")
-                .withQueryStringParameter("offset", "400"))
-        .respond(response().withBody(large_data_3_json));
+        .get("/api/v0/m/projects/")
+        .query("childCount", "true")
+        .query("offset", "400")
+        .respond(large_data_3_json);
     Collection<JsonObject> projects = jsonClient.listProjects();
     assertEquals(410, projects.size());
   }
@@ -219,13 +169,7 @@ public class JSONClientTest {
   @SneakyThrows
   @Test
   public void testGetAnnotations() {
-    client
-        .when(
-            request()
-                .withMethod("GET")
-                .withPath("/webclient/api/annotations/")
-                .withQueryStringParameter("screen", "102"))
-        .respond(response().withBody(screenAnnotationsJson));
+    client.get("/webclient/api/annotations/").query("screen", "102").respond(screenAnnotationsJson);
     List<String> annotations = jsonClient.getAnnotations(baseUrl, "screen", 102L);
     assertEquals(18, annotations.size());
     List<String> expected =

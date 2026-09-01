@@ -22,8 +22,6 @@ import static com.researchspace.webapp.integrations.omero.OmeroJsonTestMother.ur
 import static com.researchspace.webapp.integrations.omero.OmeroJsonTestMother.versionJson;
 import static com.researchspace.webapp.integrations.omero.OmeroJsonTestMother.wellsForPlateJson;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockserver.model.HttpRequest.request;
-import static org.mockserver.model.HttpResponse.response;
 
 import com.researchspace.integrations.omero.client.OmeroClientImpl;
 import com.researchspace.integrations.omero.model.DataSetRSpaceView;
@@ -34,26 +32,25 @@ import com.researchspace.integrations.omero.model.PlateRSpaceView;
 import com.researchspace.integrations.omero.model.ProjectRSpaceView;
 import com.researchspace.integrations.omero.model.ScreenRSpaceView;
 import com.researchspace.integrations.omero.model.WellRSpaceView;
+import com.researchspace.testutils.StubHttpServer;
 import java.util.List;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockserver.client.MockServerClient;
-import org.mockserver.integration.ClientAndServer;
 import org.springframework.test.util.ReflectionTestUtils;
 
 public class OmeroServiceTest {
-  private static ClientAndServer mockServer;
+  private static StubHttpServer mockServer;
   private static String baseUrl;
   private OmeroClientImpl omeroClient = new OmeroClientImpl();
   private OmeroServiceImpl service = new OmeroServiceImpl(omeroClient);
-  private MockServerClient client;
+  private StubHttpServer client;
 
   @BeforeAll
-  public static void startServer() {
-    mockServer = ClientAndServer.startClientAndServer();
+  public static void startServer() throws java.io.IOException {
+    mockServer = new StubHttpServer();
     baseUrl = "http://localhost:" + mockServer.getPort() + "/";
   }
 
@@ -68,7 +65,8 @@ public class OmeroServiceTest {
     mockServer = null;
   }
 
-  // These tests do not require a real login to Omero as we use canned responses from MockServer and
+  // These tests do not require a real login to Omero as we use canned responses from the stub
+  // server and
   // no authentication is required.
   // Token requests and login POST request are mocked just to prevent null pointers in JsonClient
   // code.
@@ -77,36 +75,23 @@ public class OmeroServiceTest {
   public void setUp() {
     ReflectionTestUtils.setField(omeroClient, "omeroApiUrl", baseUrl);
     ReflectionTestUtils.setField(omeroClient, "omeroServerName", "omero");
-    client = new MockServerClient("localhost", mockServer.getPort());
+    client = mockServer;
     client.reset();
-    client
-        .when(request().withMethod("GET").withPath("/api"))
-        .respond(response().withBody(withPort(versionJson)));
-    client
-        .when(request().withMethod("GET").withPath("/api/v0"))
-        .respond(response().withBody(withPort(urlsJson)));
-    client
-        .when(request().withMethod("GET").withPath("/api/v0/servers/"))
-        .respond(response().withBody(serversJson));
-    client
-        .when(request().withMethod("GET").withPath("/api/v0/token/"))
-        .respond(response().withBody(tokenJson));
-    client
-        .when(request().withMethod("POST").withPath("/api/v0/login/"))
-        .respond(response().withBody(fakeLoginResponseJson));
+    client.get("/api").respond(withPort(versionJson));
+    client.get("/api/v0").respond(withPort(urlsJson));
+    client.get("/api/v0/servers/").respond(serversJson);
+    client.get("/api/v0/token/").respond(tokenJson);
+    client.post("/api/v0/login/").respond(fakeLoginResponseJson);
   }
 
   @SneakyThrows
   @Test
   public void testListProjects() {
     client
-        .when(
-            request()
-                .withMethod("GET")
-                .withPath("/api/v0/m/projects/")
-                .withQueryStringParameter("childCount", "true")
-                .withQueryStringParameter("offset", "0"))
-        .respond(response().withBody(projectsJson));
+        .get("/api/v0/m/projects/")
+        .query("childCount", "true")
+        .query("offset", "0")
+        .respond(projectsJson);
     List<? extends OmeroRSpaceView> projects =
         service.getProjectsAndScreens("public_,_public", "Projects");
     assertEquals(113, projects.size());
@@ -124,13 +109,10 @@ public class OmeroServiceTest {
   @Test
   public void testListScreens() {
     client
-        .when(
-            request()
-                .withMethod("GET")
-                .withPath("/api/v0/m/screens/")
-                .withQueryStringParameter("childCount", "true")
-                .withQueryStringParameter("offset", "0"))
-        .respond(response().withBody(screensJson));
+        .get("/api/v0/m/screens/")
+        .query("childCount", "true")
+        .query("offset", "0")
+        .respond(screensJson);
     List<? extends OmeroRSpaceView> screens =
         service.getProjectsAndScreens("public_,_public", "Screens");
     assertEquals(97, screens.size());
@@ -152,17 +134,12 @@ public class OmeroServiceTest {
   @SneakyThrows
   @Test
   public void testListDatasetsForProject() {
+    client.get("/api/v0/m/projects/51").respond(projectJson);
     client
-        .when(request().withMethod("GET").withPath("/api/v0/m/projects/51"))
-        .respond(response().withBody(projectJson));
-    client
-        .when(
-            request()
-                .withMethod("GET")
-                .withPath("/webclient/api/datasets/")
-                .withQueryStringParameter("id", "51")
-                .withQueryStringParameter("page", "0"))
-        .respond(response().withBody(datasetsForProjectJson));
+        .get("/webclient/api/datasets/")
+        .query("id", "51")
+        .query("page", "0")
+        .respond(datasetsForProjectJson);
     List<DataSetRSpaceView> datasets = service.getDataSets("public_,_public", 51L);
     DataSetRSpaceView aDataSet = datasets.get(0);
     assertEquals("CDK5RAP2-C", aDataSet.getName());
@@ -173,17 +150,12 @@ public class OmeroServiceTest {
   @SneakyThrows
   @Test
   public void testListPlatesForScreen() {
+    client.get("/api/v0/m/screens/51").respond(screenJson);
     client
-        .when(request().withMethod("GET").withPath("/api/v0/m/screens/51"))
-        .respond(response().withBody(screenJson));
-    client
-        .when(
-            request()
-                .withMethod("GET")
-                .withPath("/webclient/api/plates/")
-                .withQueryStringParameter("id", "51")
-                .withQueryStringParameter("page", "0"))
-        .respond(response().withBody(platesForScreenJson));
+        .get("/webclient/api/plates/")
+        .query("id", "51")
+        .query("page", "0")
+        .respond(platesForScreenJson);
     List<PlateRSpaceView> plates = service.getPlates("public_,_public", 51L);
     PlateRSpaceView aPlate = plates.get(0);
     assertEquals("DTT p1", aPlate.getName());
@@ -196,20 +168,11 @@ public class OmeroServiceTest {
   @SneakyThrows
   @Test
   public void testGetPlateAcquisitions() {
+    client.get("/api/v0/m/plates/422").query("childCount", "true").respond(withPort(plateJson));
     client
-        .when(
-            request()
-                .withMethod("GET")
-                .withPath("/api/v0/m/plates/422")
-                .withQueryStringParameter("childCount", "true"))
-        .respond(response().withBody(withPort(plateJson)));
-    client
-        .when(
-            request()
-                .withMethod("GET")
-                .withPath("/api/v0/m/plates/422/plateacquisitions/")
-                .withQueryStringParameter("offset", "0"))
-        .respond(response().withBody(plateAcquisitionsJson));
+        .get("/api/v0/m/plates/422/plateacquisitions/")
+        .query("offset", "0")
+        .respond(plateAcquisitionsJson);
 
     List<PlateAcquisitionRSpaceView> plates = service.getPlateAcquisitions("public_,_public", 422L);
     PlateAcquisitionRSpaceView aPlateAcquisition = plates.get(0);
@@ -229,13 +192,7 @@ public class OmeroServiceTest {
   @SneakyThrows
   @Test
   public void testGetAnnotations() {
-    client
-        .when(
-            request()
-                .withMethod("GET")
-                .withPath("/webclient/api/annotations/")
-                .withQueryStringParameter("screen", "102"))
-        .respond(response().withBody(screenAnnotationsJson));
+    client.get("/webclient/api/annotations/").query("screen", "102").respond(screenAnnotationsJson);
     List<String> annotations = service.getAnnotations("public_,_public", 102L, "screen");
     assertEquals(18, annotations.size());
     List<String> expected =
@@ -268,28 +225,17 @@ public class OmeroServiceTest {
   @SneakyThrows
   @Test
   public void testListImagesForDataset() {
+    client.get("/api/v0/m/datasets/51").respond(withPort(datasetJson));
+    client.get("/api/v0/m/datasets/51/images/").query("offset", "0").respond(imagesForDatasetJson);
     client
-        .when(request().withMethod("GET").withPath("/api/v0/m/datasets/51"))
-        .respond(response().withBody(withPort(datasetJson)));
-    client
-        .when(
-            request()
-                .withMethod("GET")
-                .withPath("/api/v0/m/datasets/51/images/")
-                .withQueryStringParameter("offset", "0"))
-        .respond(response().withBody(imagesForDatasetJson));
-    client
-        .when(
-            request()
-                .withMethod("GET")
-                .withPath("/webclient/get_thumbnails/")
-                .withQueryStringParameter(
-                    "id", "1884807", "1884808", "1884809", "1884810", "1884811", "1884812",
-                    "1884813", "1884814", "1884815", "1884816", "1884817", "1884818", "1884819",
-                    "1884820", "1884821", "1884822", "1884823", "1884824", "1884825", "1884826",
-                    "1884827", "1884828", "1884829", "1884830", "1884831", "1884832", "1884833",
-                    "1884834", "1884835", "1884836", "1884837", "1884838", "1884839"))
-        .respond(response().withBody(imagesThumbNailsJson));
+        .get("/webclient/get_thumbnails/")
+        .query(
+            "id", "1884807", "1884808", "1884809", "1884810", "1884811", "1884812", "1884813",
+            "1884814", "1884815", "1884816", "1884817", "1884818", "1884819", "1884820", "1884821",
+            "1884822", "1884823", "1884824", "1884825", "1884826", "1884827", "1884828", "1884829",
+            "1884830", "1884831", "1884832", "1884833", "1884834", "1884835", "1884836", "1884837",
+            "1884838", "1884839")
+        .respond(imagesThumbNailsJson);
     List<ImageRSpaceView> images = service.getImages("public_,_public", 51L, false);
     ImageRSpaceView anImage = images.get(0);
     assertEquals("Centrin_PCNT_Cep215_20110506_Fri-1545_0_SIR_PRJ.dv", anImage.getName());
@@ -305,12 +251,8 @@ public class OmeroServiceTest {
   @Test
   public void testGetImage() {
     byte[] fakeRenderedImage = new String("abnbnbn").getBytes();
-    client
-        .when(request().withMethod("GET").withPath("/api/v0/m/images/1884838"))
-        .respond(response().withBody(singleImageJson));
-    client
-        .when(request().withMethod("GET").withPath("/webgateway/render_thumbnail/1884838/400/"))
-        .respond(response().withBody(fakeRenderedImage));
+    client.get("/api/v0/m/images/1884838").respond(singleImageJson);
+    client.get("/webgateway/render_thumbnail/1884838/400/").respond(fakeRenderedImage);
     ImageRSpaceView anImage = service.getImage("public_,_public", 1884838L, 51L, false);
     assertEquals("siControl_N20_Cep215_I_20110411_Mon-1503_0_SIR_PRJ.dv", anImage.getName());
     assertEquals(1884838, anImage.getId().longValue());
@@ -320,34 +262,19 @@ public class OmeroServiceTest {
   @SneakyThrows
   @Test
   public void testGetWells() {
+    client.get("/api/v0/m/plates/422").query("childCount", "true").respond(withPort(plateJson));
     client
-        .when(
-            request()
-                .withMethod("GET")
-                .withPath("/api/v0/m/plates/422")
-                .withQueryStringParameter("childCount", "true"))
-        .respond(response().withBody(withPort(plateJson)));
+        .get("/api/v0/m/plates/422/wellsampleindex/0/wells/")
+        .query("offset", "0")
+        .respond(wellsForPlateJson);
     client
-        .when(
-            request()
-                .withMethod("GET")
-                .withPath("/api/v0/m/plates/422/wellsampleindex/0/wells/")
-                .withQueryStringParameter("offset", "0"))
-        .respond(response().withBody(wellsForPlateJson));
+        .get("/webclient/get_thumbnails/")
+        .query("id", "179713")
+        .respond(imagesThumbNailsRun422Part1Json);
     client
-        .when(
-            request()
-                .withMethod("GET")
-                .withPath("/webclient/get_thumbnails/")
-                .withQueryStringParameter("id", "179713"))
-        .respond(response().withBody(imagesThumbNailsRun422Part1Json));
-    client
-        .when(
-            request()
-                .withMethod("GET")
-                .withPath("/webclient/get_thumbnails/")
-                .withQueryStringParameter("id", "179712"))
-        .respond(response().withBody(imagesThumbNailsRun422Part2Json));
+        .get("/webclient/get_thumbnails/")
+        .query("id", "179712")
+        .respond(imagesThumbNailsRun422Part2Json);
     List<WellRSpaceView> wells = service.getWells("public_,_public", 422L, 422L, false, 0);
     WellRSpaceView aWell = wells.get(0);
     ImageRSpaceView wellImage = (ImageRSpaceView) aWell.getChildren().get(0).getChildren().get(0);
