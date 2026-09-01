@@ -79,9 +79,11 @@
       <dependency>
         <groupId>net.bytebuddy</groupId>
         <artifactId>byte-buddy</artifactId>
-        <!-- Keep >= the version Hibernate ORM ships (6.4.4 ships 1.14.11); pinned here for
-             dependencyConvergence between Hibernate and Mockito -->
-        <version>1.14.11</version>
+        <!-- Keep >= the version Hibernate ORM ships (6.4.4 ships 1.14.11) and the version
+             Mockito 5 ships (5.23.0 ships 1.17.7); pinned here for dependencyConvergence
+             between Hibernate and Mockito. byte-buddy-agent comes from mockito-core, so this
+             must track it or the two halves of byte-buddy skew apart. -->
+        <version>1.17.7</version>
       </dependency>
       <dependency>
         <groupId>commons-io</groupId>
@@ -2652,6 +2654,10 @@
     <hibernate.logLevel>ERROR</hibernate.logLevel>
 
     <javax.cache.version>1.1.1</javax.cache.version>
+
+    <!-- TEMPORARY: rspace-parent 3.2.0 still manages Mockito 3.7.7. Parent 3.3.0 carries
+         5.23.0, so delete this override once the pinned parent version is bumped. -->
+    <mockito.version>5.23.0</mockito.version>
 
     <hibernate.search.index>FTsearchIndices</hibernate.search.index>
     <lucene.attachment.searchIndex>LuceneFTsearchIndices</lucene.attachment.searchIndex>
