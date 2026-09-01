@@ -4,7 +4,6 @@ import com.researchspace.dao.DigitalObjectIdentifierDao;
 import com.researchspace.dao.GenericDaoHibernate;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.DigitalObjectIdentifier;
-import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
 import java.util.List;
 import java.util.Optional;
 import org.hibernate.envers.AuditReader;
@@ -43,9 +42,9 @@ public class DigitalObjectIdentifierDaoHibernate
     Long id = latestDoiOptional.get().getId();
 
     /*
-     * Newest revision first, so both rules below can be read off one ordered list. Envers gives no
-     * ordering guarantee of its own, so it is asked for explicitly rather than inferred from the
-     * order rows happen to come back in.
+     * Newest revision first: it is the only one this reads. Envers gives no ordering guarantee of
+     * its own, so it is asked for explicitly rather than inferred from the order rows happen to
+     * come back in.
      */
     List<Object> revisions =
         ar.createQuery()
@@ -67,36 +66,25 @@ public class DigitalObjectIdentifierDaoHibernate
     }
 
     /*
-     * B2INST serves the newest revision. Identifier-row changes made while published (the
-     * customFieldsOnPublicPage toggle, a refresh re-persisting "accepted") must reach the page, and
-     * a B2INST identifier has no republish operation to push them out with (RSDEV-1260).
-     */
-    // when it is "B2inst" Provider then
-    if (IdentifierType.PIDINST_B2INST.equals(latestDoiOptional.get().getType())) {
-      return Optional.of(newestDoi);
-    }
-
-    /*
-     * DataCite keeps the publication-time snapshot: the oldest revision of the trailing published
-     * run. Envers resolves the linked record as of that revision, so edits made after publishing
-     * stay private until the user deliberately republishes. Walking back from the newest revision
-     * and stopping at the first unpublished one is what picks that revision out; an order and a row
-     * limit cannot, because the oldest revision overall is the draft the identifier started as.
+     * Both providers serve the newest revision.
      *
-     * A null type lands here too, which is right: identifiers persisted before the type column was
-     * populated load with a null type and predate PIDINST, so they are IGSN (the same default
-     * InventoryIdentifierApiManagerImpl.settingTypeFor applies).
+     * Envers resolves the linked record as of the revision an identifier snapshot came from, so
+     * returning the newest one shows the record as it stood at the last change to the IDENTIFIER
+     * row. Identifier-row changes made while published - the customFieldsOnPublicPage toggle, a
+     * refresh re-persisting "accepted" - therefore reach the page, which B2INST needs because it
+     * has no republish operation to push them out with (RSDEV-1260).
+     *
+     * DataCite used to differ: it served the oldest revision of the trailing published run, holding
+     * the page at the publication-time snapshot, picked out by walking back from the newest revision
+     * until the first unpublished one. That distinction is gone deliberately - both providers now
+     * serve the newest revision, so this needs neither the walk-back nor the provider test that
+     * chose between them.
+     *
+     * A null type is covered by the same rule, which is right either way: identifiers persisted
+     * before the type column was populated load with a null type and predate PIDINST, so they are
+     * IGSN (the same default InventoryIdentifierApiManagerImpl.settingTypeFor applies).
      */
-    // when it is "DataCite" Provider then
-    DigitalObjectIdentifier firstOfPublishedRun = newestDoi;
-    for (int i = 1; i < revisions.size(); i++) {
-      DigitalObjectIdentifier candidate = doiOf(revisions.get(i));
-      if (!DigitalObjectIdentifier.isPublishedState(candidate.getState())) {
-        break;
-      }
-      firstOfPublishedRun = candidate;
-    }
-    return Optional.of(firstOfPublishedRun);
+    return Optional.of(newestDoi);
   }
 
   /** The entity out of an Envers revision row, whose first element is the entity itself. */
