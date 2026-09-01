@@ -300,7 +300,7 @@ public class HTMLStringGeneratorTest {
         documentData
             .getDocumentAsHtml()
             .contains(
-                "iframe: \n"
+                "iframe:\n"
                     + "  <p><i>&lt;embedded code from <a"
                     + " href=\"https://dummy.source/a?b=c&amp;d=e\">"
                     + "https://dummy.source/a?b=c&amp;d=e</a>&gt;</i></p>"),
