@@ -102,14 +102,21 @@ anything that is not accepted, so an identifier really can be sitting in
    transfer left the registered record naming the previous owner. A corrected
    owner is one of the three examples this ticket opens with.
 
-   That push cannot fire yet. Transferring an instrument currently loses its
-   identifier altogether - verified by
-   `InstrumentExternalMetadataUpdateMVCIT.changingTheOwnerCurrentlyLosesTheIdentifierSoNothingReachesTheProvider`,
-   which sees one identifier before the transfer and none after, in the response
-   and in a fresh read alike. That is a pre-existing defect on the transfer path
-   (the identifiers collection is mapped `orphanRemoval = true`), outside this
-   decision's scope; the seam is wired now so that fixing it is all that is
-   needed, and that MVCIT is written to fail and prompt inversion when it is.
+   That push does not fire yet, for a reason worth recording because it looks
+   like data loss and is not. The identifier survives a transfer untouched - the
+   row stays attached, `deleted = false`, with a single Envers revision - and the
+   NEW owner sees it. What changes is the caller's view: transferring drops the
+   previous owner to `LIMITED_READ`, and `clearPropertiesForLimitedView` blanks
+   the DTO's lists, identifiers included. The transfer response is built for the
+   user giving the instrument away, so it carries none, and the push reads its
+   candidates from that response.
+
+   The fix is for the push to take its candidates from the record's own
+   identifiers rather than from the caller's permission-filtered view of them.
+   That is the right shape anyway: the service already re-reads the instrument
+   entity to rebuild the payload, so the identifiers should come from the same
+   place. Pinned meanwhile by
+   `InstrumentExternalMetadataUpdateMVCIT.aTransferLeavesTheIdentifierIntactButOutOfTheTransferringUsersView`.
 
 ## Consequences
 
