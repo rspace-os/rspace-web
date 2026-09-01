@@ -151,13 +151,12 @@ resolved during design. This file is a glossary only — no implementation detai
   provider record is reported too, naming the state, rather than passed over in
   silence; an identifier belonging to a provider whose integration is switched
   off is passed over silently, because there is nothing to act on. Saving an
-  instrument and transferring one both push, though a transfer does not reach the
-  provider yet: the push takes its candidates from the response, and a transfer
-  leaves the transferring user with a limited view of the instrument that carries
-  no identifiers. The identifier itself is unaffected and the new owner still
-  sees it. Template sync, restore, duplicate and delete do not push, and edits to
-  samples, subsamples and containers do not (their draft-DOI metadata still
-  drifts).
+  instrument and transferring one both push. A transfer is told apart from an
+  instrument with no identifiers by reading the record, because the response a
+  departing owner receives is a limited view that lists none either way; the
+  outcome is then reported only to a caller who can still see the identifier.
+  Template sync, restore, duplicate and delete do not push, and edits to samples,
+  subsamples and containers do not (their draft-DOI metadata still drifts).
   (RSDEV-1251)
 - **Registered landing page** — the LandingPage value RSpace sends to a PID
   provider when registering an instrument identifier: the Landing page field

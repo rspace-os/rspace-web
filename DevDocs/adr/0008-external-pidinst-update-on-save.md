@@ -102,21 +102,22 @@ anything that is not accepted, so an identifier really can be sitting in
    transfer left the registered record naming the previous owner. A corrected
    owner is one of the three examples this ticket opens with.
 
-   That push does not fire yet, for a reason worth recording because it looks
-   like data loss and is not. The identifier survives a transfer untouched - the
-   row stays attached, `deleted = false`, with a single Envers revision - and the
-   NEW owner sees it. What changes is the caller's view: transferring drops the
-   previous owner to `LIMITED_READ`, and `clearPropertiesForLimitedView` blanks
-   the DTO's lists, identifiers included. The transfer response is built for the
-   user giving the instrument away, so it carries none, and the push reads its
-   candidates from that response.
+   That transfer is also why the push takes its candidates from the **record**
+   rather than from the response it decorates. A transfer leaves the departing
+   owner with `LIMITED_READ`, and `clearPropertiesForLimitedView` blanks that
+   response's lists, identifiers included, so a response-driven push found
+   nothing and skipped silently. Worth recording that this was never data loss:
+   the identifier survives untouched - the row stays attached, `deleted = false`,
+   with a single Envers revision - and the new owner sees it.
 
-   The fix is for the push to take its candidates from the record's own
-   identifiers rather than from the caller's permission-filtered view of them.
-   That is the right shape anyway: the service already re-reads the instrument
-   entity to rebuild the payload, so the identifiers should come from the same
-   place. Pinned meanwhile by
-   `InstrumentExternalMetadataUpdateMVCIT.aTransferLeavesTheIdentifierIntactButOutOfTheTransferringUsersView`.
+   So the response's list is now believed only when it is non-empty, which can
+   only come from an unfiltered view since filtering blanks the list rather than
+   trimming it. An empty list is ambiguous and the record is read instead, unless
+   the view is known to be unfiltered, which keeps the ordinary save free of an
+   extra read. Outcomes are reported onto the caller's own copy of an identifier
+   where they have one; a caller with a limited view is told nothing, which is
+   correct, since they can no longer see the identifier at all. The push still
+   happens and is still audited.
 
 ## Consequences
 

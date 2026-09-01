@@ -119,14 +119,20 @@ public class InventoryIdentifierExternalUpdateService {
       B2instDoi b2instPayload,
       DataCiteDoi dataCitePayload) {}
 
+  /** Everything the read-only transaction works out, carried back out to the push. */
+  private record Rebuilt(
+      List<PendingUpdate> pending,
+      List<ApiInventoryDOI> frozenByState,
+      List<ApiInventoryDOI> failedToBuild) {}
+
   /**
-   * Rebuilds and pushes the metadata of every identifier of {@code saved} whose provider record can
-   * still be rewritten, then records the outcome on that identifier's DTO so the response carries
-   * it.
+   * Rebuilds and pushes the metadata of every identifier of the instrument whose provider record
+   * can still be rewritten, then records the outcome on the caller's copy of that identifier so the
+   * response carries it.
    *
    * <p>Must be called after the update transaction has committed, from a non-transactional caller.
    *
-   * <p>Every identifier the instrument carries ends up in one of three places. One whose provider
+   * <p>Every identifier the record carries ends up in one of three places. One whose provider
    * record is writable is pushed and the result reported. One whose record is frozen by its own
    * state is not pushed but is still reported, because "nothing was sent, and here is why" is the
    * answer the acceptance criteria ask for and silence is not. One this deployment could not push
@@ -134,35 +140,114 @@ public class InventoryIdentifierExternalUpdateService {
    * switched off - is passed over in silence, because there is nothing the user could act on and a
    * sentence on every save would be noise.
    *
-   * @param saved the instrument as saved and about to be returned; its identifier DTOs are the ones
-   *     decorated, and a push is attempted for every writable one
+   * @param saved the instrument as saved and about to be returned. Its identifier DTOs are the ones
+   *     decorated, but they are not what decides who gets pushed - see {@link
+   *     #attachedIdentifiers(ApiInstrument, InstrumentEntity)}.
    */
   public void pushMetadataUpdates(ApiInstrument saved, User user) {
-    List<ApiInventoryDOI> candidates = candidateIdentifiers(saved);
-    if (candidates.isEmpty()) {
+    if (saved == null || saved.getId() == null || nothingCouldBeAttached(saved)) {
       return;
     }
-    List<ApiInventoryDOI> writable = new ArrayList<>();
-    for (ApiInventoryDOI doi : candidates) {
-      if (isUpdatable(doi)) {
-        writable.add(doi);
-      } else {
-        doi.setExternalMetadataUpdate(notWritableOutcome(doi));
-      }
-    }
-    if (writable.isEmpty()) {
+    Rebuilt rebuilt = readOnlyTx.execute(status -> rebuild(saved));
+    if (rebuilt == null) {
       return;
     }
-    for (PendingUpdate pending : buildPayloads(saved.getId(), writable)) {
+    for (ApiInventoryDOI frozen : rebuilt.frozenByState()) {
+      report(saved, frozen, notWritableOutcome(frozen));
+    }
+    for (ApiInventoryDOI failed : rebuilt.failedToBuild()) {
+      report(saved, failed, failedOutcome(failed));
+    }
+    for (PendingUpdate pending : rebuilt.pending()) {
       ApiExternalMetadataUpdate outcome = push(pending);
-      pending.identifier().setExternalMetadataUpdate(outcome);
+      report(saved, pending.identifier(), outcome);
       audit(pending.instrument(), user, outcome);
     }
   }
 
   /**
-   * The identifiers this deployment could push at all: attached, carrying a provider record id and
-   * a state, of a PIDINST type, and belonging to a provider whose integration is switched on.
+   * Whether the response can be believed when it lists no identifiers, letting the record read
+   * below be skipped. An unfiltered view lists every identifier the record has, so an empty list
+   * there really does mean there is nothing to push - the ordinary case, and the reason an
+   * instrument without identifiers costs no extra read. A filtered view lists none whatever the
+   * record holds, so it says nothing and has to be checked against the record.
+   */
+  private static boolean nothingCouldBeAttached(ApiInstrument saved) {
+    boolean listsSome = saved.getIdentifiers() != null && !saved.getIdentifiers().isEmpty();
+    boolean viewMayHideThem = saved.isLimitedReadItem() || saved.isPublicReadItem();
+    return !listsSome && !viewMayHideThem;
+  }
+
+  /**
+   * Sorts the record's identifiers into pushable, frozen and failed, inside a read-only transaction
+   * because the mapping adapter demands one and walks lazy associations.
+   *
+   * <p>The transaction ends when this method returns, so every provider call is made outside it and
+   * cannot pin a pooled JDBC connection for the length of an HTTP exchange.
+   *
+   * <p>One identifier's mapping failure is confined to that identifier and the others still go,
+   * matching the per-identifier isolation the push itself has. Letting it propagate would discard
+   * the pushes for every other identifier of the same instrument and tell the user nothing at all.
+   *
+   * <p>If the instrument itself cannot be read back, {@code getIfExists} throws {@code
+   * NotFoundException} and it propagates to the controller's guard, which logs it and leaves the
+   * response unannotated. That is a save racing a deletion, not something a user can act on.
+   */
+  private Rebuilt rebuild(ApiInstrument saved) {
+    InstrumentEntity instrument = instrumentApiMgr.getIfExists(saved.getId());
+    List<PendingUpdate> pending = new ArrayList<>();
+    List<ApiInventoryDOI> frozen = new ArrayList<>();
+    List<ApiInventoryDOI> failed = new ArrayList<>();
+    for (ApiInventoryDOI doi : attachedIdentifiers(saved, instrument)) {
+      if (!isPushable(doi)) {
+        continue;
+      }
+      if (!isUpdatable(doi)) {
+        frozen.add(doi);
+        continue;
+      }
+      try {
+        pending.add(buildPayload(doi, instrument));
+      } catch (RuntimeException e) {
+        log.warn(
+            "Could not rebuild the {} payload for identifier {}: {}",
+            providerName(typeOf(doi)),
+            doi.getDoi(),
+            e.getMessage());
+        failed.add(doi);
+      }
+    }
+    return new Rebuilt(pending, frozen, failed);
+  }
+
+  /**
+   * The identifiers the record actually has, which is what decides who gets pushed.
+   *
+   * <p>The response's own list is used when it has one. That is the ordinary save, where the list
+   * is already built from the record, so nothing extra is read. It cannot be trusted when empty,
+   * though: a permission-filtered response carries no identifiers whatever the record holds,
+   * because {@code ApiInventoryRecordInfo.clearPropertiesForLimitedView} blanks its lists. That is
+   * exactly the owner-transfer case - the caller is the owner giving the instrument away, left with
+   * {@code LIMITED_READ} - and reading candidates from there skipped the push silently while the
+   * registered record kept the previous owner's contact address. An empty list is therefore
+   * ambiguous and the record is asked instead. A non-empty one can only have come from an
+   * unfiltered view, since filtering blanks the list entirely rather than trimming it, so it is
+   * safe to take.
+   */
+  private List<ApiInventoryDOI> attachedIdentifiers(
+      ApiInstrument saved, InstrumentEntity instrument) {
+    if (saved.getIdentifiers() != null && !saved.getIdentifiers().isEmpty()) {
+      return saved.getIdentifiers().stream().filter(Objects::nonNull).toList();
+    }
+    return instrument.getActiveIdentifiers().stream()
+        .filter(Objects::nonNull)
+        .map(ApiInventoryDOI::new)
+        .toList();
+  }
+
+  /**
+   * Whether this deployment could push this identifier at all: it carries a provider record id and
+   * a state, and belongs to a PIDINST provider whose integration is switched on.
    *
    * <p>The enablement check is what every other identifier operation does first (see {@code
    * ApiAvailabilityHandler}), and it matters more here because this push is not something the user
@@ -171,16 +256,30 @@ public class InventoryIdentifierExternalUpdateService {
    * every instrument still holding a draft, and audit a write each time, with nothing the user
    * could do to stop it.
    */
-  private List<ApiInventoryDOI> candidateIdentifiers(ApiInstrument saved) {
-    if (saved == null || saved.getId() == null || saved.getIdentifiers() == null) {
-      return List.of();
+  private boolean isPushable(ApiInventoryDOI doi) {
+    return isNotBlank(doi.getDoi())
+        && isNotBlank(doi.getState())
+        && isEnabledPidinstProvider(typeOf(doi));
+  }
+
+  /**
+   * Records an outcome on the caller's own copy of the identifier, matched by id, when they have
+   * one.
+   *
+   * <p>A caller left with a limited view has none, and is told nothing. That is correct rather than
+   * a shortcoming: they can no longer see the identifier, so there is nowhere to put the outcome
+   * and nothing they could do with it. The push still happened, and is still audited.
+   */
+  private void report(
+      ApiInstrument saved, ApiInventoryDOI source, ApiExternalMetadataUpdate outcome) {
+    if (saved.getIdentifiers() == null || source.getId() == null) {
+      return;
     }
-    return saved.getIdentifiers().stream()
+    saved.getIdentifiers().stream()
         .filter(Objects::nonNull)
-        .filter(doi -> isNotBlank(doi.getDoi()))
-        .filter(doi -> isNotBlank(doi.getState()))
-        .filter(doi -> isEnabledPidinstProvider(typeOf(doi)))
-        .toList();
+        .filter(candidate -> source.getId().equals(candidate.getId()))
+        .findFirst()
+        .ifPresent(candidate -> candidate.setExternalMetadataUpdate(outcome));
   }
 
   /**
@@ -239,49 +338,12 @@ public class InventoryIdentifierExternalUpdateService {
             doi.getState().trim()));
   }
 
-  /**
-   * Remaps the instrument's current fields into one payload per writable identifier, inside a
-   * read-only transaction because the mapping adapter demands one and walks lazy associations.
-   *
-   * <p>The transaction ends when this method returns, so every provider call is made outside it and
-   * cannot pin a pooled JDBC connection for the length of an HTTP exchange.
-   *
-   * <p>One identifier's mapping failure is reported on that identifier and the others still go,
-   * matching the per-identifier isolation the push itself has. Letting it propagate would discard
-   * the pushes for every other identifier of the same instrument and tell the user nothing at all.
-   *
-   * <p>If the instrument itself cannot be read back, {@code getIfExists} throws {@code
-   * NotFoundException} and it propagates to the controller's guard, which logs it and leaves the
-   * response unannotated. That is a save racing a deletion, not something a user can act on.
-   */
-  private List<PendingUpdate> buildPayloads(Long instrumentId, List<ApiInventoryDOI> writable) {
-    List<PendingUpdate> built =
-        readOnlyTx.execute(
-            status -> {
-              InstrumentEntity instrument = instrumentApiMgr.getIfExists(instrumentId);
-              return writable.stream()
-                  .map(doi -> buildPayloadOrReport(doi, instrument))
-                  .filter(Objects::nonNull)
-                  .toList();
-            });
-    return built == null ? List.of() : built;
-  }
-
-  private PendingUpdate buildPayloadOrReport(ApiInventoryDOI doi, InstrumentEntity instrument) {
-    try {
-      return buildPayload(doi, instrument);
-    } catch (RuntimeException e) {
-      String provider = providerName(typeOf(doi));
-      log.warn(
-          "Could not rebuild the {} payload for identifier {}: {}",
-          provider,
-          doi.getDoi(),
-          e.getMessage());
-      doi.setExternalMetadataUpdate(
-          new ApiExternalMetadataUpdate(
-              false, message("errors.inventory.identifier.externalUpdateFailed", provider, null)));
-      return null;
-    }
+  /** A mapping failure, reported like a push failure. Not audited: nothing was sent. */
+  private ApiExternalMetadataUpdate failedOutcome(ApiInventoryDOI doi) {
+    return new ApiExternalMetadataUpdate(
+        false,
+        message(
+            "errors.inventory.identifier.externalUpdateFailed", providerName(typeOf(doi)), null));
   }
 
   private PendingUpdate buildPayload(ApiInventoryDOI doi, InstrumentEntity instrument) {

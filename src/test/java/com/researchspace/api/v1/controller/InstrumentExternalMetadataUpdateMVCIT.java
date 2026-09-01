@@ -261,28 +261,25 @@ public class InstrumentExternalMetadataUpdateMVCIT extends API_MVC_InventoryTest
   }
 
   /**
-   * An owner transfer <em>should</em> push, and the controller calls the push on that endpoint:
-   * {@code RspaceToExternalProviderAdapterImpl.ownerOf} maps {@code ownerContact} from the record
-   * owner's email unconditionally, so an unpushed transfer leaves the registered record naming the
-   * previous owner - one of the three examples RSDEV-1251 opens with.
+   * An owner transfer pushes, because it changes what the provider holds: {@code
+   * RspaceToExternalProviderAdapterImpl.ownerOf} maps {@code ownerContact} from the record owner's
+   * email unconditionally, and {@code ownerName} from the same owner unless the Owner field
+   * overrides it. Unpushed, the registered record kept naming the previous owner - one of the three
+   * drifts RSDEV-1251 exists to stop.
    *
-   * <p>It does not push today, and the reason is worth stating precisely because it looks like data
-   * loss and is not. The identifier survives a transfer untouched: the row is still there, still
-   * attached to the instrument, still {@code deleted = false}, with a single Envers revision (the
-   * original insert), and the NEW owner sees it through the API. What changes is the caller's view.
-   * Transferring drops the previous owner to {@code LIMITED_READ}, and {@code
-   * InventoryApiManagerImpl.setOtherFieldsForOutgoingApiInventoryRecord} then applies {@code
-   * clearPropertiesForLimitedView}, which blanks the DTO's lists - identifiers included.
+   * <p>This case is also why the push takes its candidates from the record rather than from the
+   * response it decorates. A transfer leaves the departing owner with {@code LIMITED_READ}, and
+   * {@code clearPropertiesForLimitedView} blanks that response's lists, identifiers included, so a
+   * response-driven push found nothing and skipped silently. Worth being precise that this was
+   * never data loss: the identifier survives untouched and the new owner sees it, as asserted
+   * below.
    *
-   * <p>So the transfer response, built for the user giving the instrument away, carries no
-   * identifiers, and the push reads its candidates from that response. The push therefore finds
-   * nothing to do. The fix is for the push to take the record's own identifiers rather than the
-   * caller's permission-filtered view of them; until it does, this test pins the behaviour and the
-   * reason, so nobody re-diagnoses it as a deletion.
+   * <p>Nothing is reported back to the departing owner, and that is correct rather than a gap: they
+   * can no longer see the identifier, so there is nowhere to put an outcome and nothing they could
+   * do with one. The push still happened and is still audited.
    */
   @Test
-  public void aTransferLeavesTheIdentifierIntactButOutOfTheTransferringUsersView()
-      throws Exception {
+  public void changingTheOwnerPushesTheNewOwnerToTheProvider() throws Exception {
     User owner = createInitAndLoginAnyUser();
     String ownerKey = createNewApiKeyForUser(owner);
     ApiInstrument instrument = createBasicInstrumentForUser(owner, "owner-change");
@@ -313,29 +310,21 @@ public class InstrumentExternalMetadataUpdateMVCIT extends API_MVC_InventoryTest
         transferred.path("owner").path("username").asText(),
         "precondition: the transfer itself must have happened");
 
-    // the identifier is NOT lost: the new owner still sees it
+    // the new owner's contact address reached the provider
+    B2instDoi pushed = b2instDummy.getDoiUpdateSentToB2inst();
+    assertNotNull(pushed, "an owner transfer must reach the provider");
+    assertEquals(newOwner.getEmail(), pushed.getMetadata().getOwner().get(0).getOwnerContact());
+
+    // the identifier was never lost, it simply left the departing owner's view
+    assertEquals(
+        0,
+        transferred.path("identifiers").size(),
+        "the transfer response is the departing owner's limited view, so it carries none");
     logoutAndLoginAs(newOwner);
     assertEquals(
         1,
         identifierCountOf(newOwnerKey, newOwner, instrument.getId()),
-        "the identifier survives the transfer and belongs to the new owner's view");
-
-    // it is only the transferring user's own view that no longer carries it, because a transfer
-    // leaves them with LIMITED_READ and the limited view blanks the DTO's lists
-    logoutAndLoginAs(owner);
-    assertEquals(
-        0,
-        transferred.path("identifiers").size(),
-        "the transfer response is the previous owner's limited view, so it carries no identifiers");
-    assertEquals(
-        0,
-        identifierCountOf(ownerKey, owner, instrument.getId()),
-        "and the same limited view applies to their later reads");
-
-    // and that is why nothing was pushed: the push reads the caller's view of the identifiers
-    assertNull(
-        b2instDummy.getDoiUpdateSentToB2inst(),
-        "no push yet: the candidates come from the transfer response, which is limited");
+        "the identifier survives the transfer and is visible to the new owner");
   }
 
   private int identifierCountOf(String apiKey, User user, Long instrumentId) throws Exception {

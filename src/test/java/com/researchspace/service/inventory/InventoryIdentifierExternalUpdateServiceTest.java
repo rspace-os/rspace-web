@@ -20,6 +20,7 @@ import static org.mockito.Mockito.when;
 import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInventoryDOI;
 import com.researchspace.api.v1.model.ApiInventoryDOI.ApiExternalMetadataUpdate;
+import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiInventorySystemSettings.InventorySettingType;
 import com.researchspace.b2inst.model.request.B2instDoi;
 import com.researchspace.datacite.model.DataCiteConnectionException;
@@ -29,6 +30,7 @@ import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.audittrail.AuditTrailService;
 import com.researchspace.model.audittrail.GenericEvent;
 import com.researchspace.model.audittrail.HistoricalEvent;
+import com.researchspace.model.inventory.DigitalObjectIdentifier;
 import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.properties.IPropertyHolder;
@@ -155,6 +157,70 @@ class InventoryIdentifierExternalUpdateServiceTest {
    * rollback-only, losing the instrument save to {@code UnexpectedRollbackException}. Asserting the
    * demanded definition rather than the field keeps this true however the demarcation is written.
    */
+  /** An identifier as the record itself carries it, which is where candidates must come from. */
+  private DigitalObjectIdentifier entityIdentifier(
+      IdentifierType type, String state, String providerRecordId) {
+    DigitalObjectIdentifier doi =
+        new DigitalObjectIdentifier(providerRecordId, "a title", "aPublicSuffix");
+    doi.setId(7L);
+    doi.setType(type);
+    doi.setState(state);
+    return doi;
+  }
+
+  /** The response a caller left with only LIMITED_READ gets: lists blanked, id intact. */
+  private ApiInstrument limitedViewOf(Long instrumentId) {
+    ApiInstrument limited = new ApiInstrument();
+    limited.setId(instrumentId);
+    limited.setPermittedActions(
+        List.of(ApiInventoryRecordInfo.ApiInventoryRecordPermittedAction.LIMITED_READ));
+    limited.setIdentifiers(null);
+    return limited;
+  }
+
+  /**
+   * The owner-transfer case, and the reason the push has to read the record rather than the
+   * response. A transfer leaves the departing owner with LIMITED_READ, and {@code
+   * clearPropertiesForLimitedView} blanks that response's lists, identifiers included. Taking
+   * candidates from the response therefore skipped the push silently, and the registered record
+   * kept the previous owner's contact address - one of the three drifts RSDEV-1251 exists to stop.
+   */
+  @Test
+  void pushesFromTheRecordWhenTheCallersOwnViewCarriesNoIdentifiers() {
+    expectPayloadBuildAndMessages();
+    expectServerUrl();
+    when(rspaceToExternalProviderAdapter.buildB2instDoi(eq(instrument), anyString()))
+        .thenReturn(new B2instDoi());
+    when(instrument.getActiveIdentifiers())
+        .thenReturn(List.of(entityIdentifier(IdentifierType.PIDINST_B2INST, "draft", RID)));
+
+    service.pushMetadataUpdates(limitedViewOf(INSTRUMENT_ID), user);
+
+    verify(b2instConnector).updateDraftDoi(eq(RID), any(B2instDoi.class));
+    verify(auditer).notify(any());
+  }
+
+  /**
+   * And nothing is reported back to that caller, which is correct rather than a shortcoming: they
+   * can no longer see the identifier at all, so there is nowhere to put an outcome and nothing they
+   * could do with one.
+   */
+  @Test
+  void reportsNothingToACallerWhoseViewHasNoIdentifierToDecorate() {
+    expectPayloadBuildAndMessages();
+    expectServerUrl();
+    when(rspaceToExternalProviderAdapter.buildB2instDoi(eq(instrument), anyString()))
+        .thenReturn(new B2instDoi());
+    when(instrument.getActiveIdentifiers())
+        .thenReturn(List.of(entityIdentifier(IdentifierType.PIDINST_B2INST, "draft", RID)));
+    ApiInstrument limited = limitedViewOf(INSTRUMENT_ID);
+
+    service.pushMetadataUpdates(limited, user);
+
+    verify(b2instConnector).updateDraftDoi(eq(RID), any(B2instDoi.class));
+    assertNull(limited.getIdentifiers());
+  }
+
   @Test
   void theMetadataRebuildDemandsItsOwnReadOnlyTransaction() {
     PlatformTransactionManager txManager = mock(PlatformTransactionManager.class);
@@ -289,12 +355,14 @@ class InventoryIdentifierExternalUpdateServiceTest {
   @Test
   void saysNothingWhenTheB2instIntegrationIsSwitchedOff() {
     when(b2instConnector.isConfiguredAndEnabled()).thenReturn(false);
+    when(instrumentApiMgr.getIfExists(INSTRUMENT_ID)).thenReturn(instrument);
     ApiInventoryDOI doi = identifier(IdentifierType.PIDINST_B2INST, "draft", RID);
 
     service.pushMetadataUpdates(savedInstrumentWith(doi), user);
 
     verify(b2instConnector, never()).updateDraftDoi(anyString(), any(B2instDoi.class));
-    verifyNoInteractions(instrumentApiMgr, rspaceToExternalProviderAdapter, auditer);
+    // the record is read before the provider is consulted, so only the push must not happen
+    verifyNoInteractions(rspaceToExternalProviderAdapter, auditer);
     assertNull(doi.getExternalMetadataUpdate());
   }
 
@@ -302,12 +370,13 @@ class InventoryIdentifierExternalUpdateServiceTest {
   void saysNothingWhenTheDataCiteIntegrationIsSwitchedOff() {
     when(dataCiteConnector.isDataCiteConfiguredAndEnabled(InventorySettingType.PIDINST))
         .thenReturn(false);
+    when(instrumentApiMgr.getIfExists(INSTRUMENT_ID)).thenReturn(instrument);
     ApiInventoryDOI doi = identifier(IdentifierType.PIDINST_DATACITE, "draft", DOI);
 
     service.pushMetadataUpdates(savedInstrumentWith(doi), user);
 
     verify(dataCiteConnector, never()).updateDoi(any(DataCiteDoi.class), any());
-    verifyNoInteractions(instrumentApiMgr, rspaceToExternalProviderAdapter, auditer);
+    verifyNoInteractions(rspaceToExternalProviderAdapter, auditer);
     assertNull(doi.getExternalMetadataUpdate());
   }
 
@@ -497,9 +566,16 @@ class InventoryIdentifierExternalUpdateServiceTest {
     verifyNoInteractions(b2instConnector, rspaceToExternalProviderAdapter);
   }
 
-  /** Nothing to push must be a quiet return, not an NPE on the way out of a successful save. */
+  /**
+   * Nothing to push must be a quiet return, not an NPE on the way out of a successful save. These
+   * views carry no permitted actions, so they could be filtered ones and the record is consulted;
+   * it has nothing either.
+   */
   @Test
   void toleratesAnInstrumentWithNothingToPush() {
+    when(instrumentApiMgr.getIfExists(INSTRUMENT_ID)).thenReturn(instrument);
+    when(instrument.getActiveIdentifiers()).thenReturn(List.of());
+
     service.pushMetadataUpdates(savedInstrumentWith(), user);
 
     ApiInstrument noIdentifiersAtAll = new ApiInstrument();
@@ -507,8 +583,31 @@ class InventoryIdentifierExternalUpdateServiceTest {
     noIdentifiersAtAll.setIdentifiers(null);
     service.pushMetadataUpdates(noIdentifiersAtAll, user);
 
+    verifyNoInteractions(b2instConnector, dataCiteConnector, rspaceToExternalProviderAdapter);
+  }
+
+  /**
+   * The ordinary save must not pay for the transfer fix. A caller who can see the whole record is
+   * shown every identifier it has, so an empty list there is conclusive and the record is not read.
+   */
+  @Test
+  void doesNotReadTheRecordWhenAnUnfilteredViewAlreadyShowsNoIdentifiers() {
+    ApiInstrument fullView = new ApiInstrument();
+    fullView.setId(INSTRUMENT_ID);
+    fullView.setPermittedActions(
+        List.of(
+            ApiInventoryRecordInfo.ApiInventoryRecordPermittedAction.READ,
+            ApiInventoryRecordInfo.ApiInventoryRecordPermittedAction.UPDATE));
+    fullView.setIdentifiers(List.of());
+
+    service.pushMetadataUpdates(fullView, user);
+
     verifyNoInteractions(
-        instrumentApiMgr, b2instConnector, dataCiteConnector, rspaceToExternalProviderAdapter);
+        instrumentApiMgr,
+        b2instConnector,
+        dataCiteConnector,
+        rspaceToExternalProviderAdapter,
+        auditer);
   }
 
   /**
