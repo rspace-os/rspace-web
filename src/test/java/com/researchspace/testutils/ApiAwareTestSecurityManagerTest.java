@@ -6,7 +6,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import com.researchspace.auth.ApiAwareWebSecurityManager;
+import com.researchspace.auth.StatelessApiLogin;
 import java.util.List;
 import org.apache.shiro.authc.AuthenticationToken;
 import org.apache.shiro.session.Session;
@@ -58,7 +58,7 @@ public class ApiAwareTestSecurityManagerTest {
         .when(loginSubject)
         .login(token);
 
-    ApiAwareWebSecurityManager.doStatelessLogin(loginSubject, token);
+    StatelessApiLogin.login(loginSubject, token);
 
     verifyNoInteractions(session);
   }

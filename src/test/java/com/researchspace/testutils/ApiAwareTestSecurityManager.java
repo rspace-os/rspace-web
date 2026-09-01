@@ -1,6 +1,7 @@
 package com.researchspace.testutils;
 
 import com.researchspace.auth.ApiAwareWebSecurityManager;
+import com.researchspace.auth.StatelessApiLogin;
 import org.apache.shiro.mgt.DefaultSecurityManager;
 import org.apache.shiro.subject.Subject;
 
@@ -15,7 +16,7 @@ public class ApiAwareTestSecurityManager extends DefaultSecurityManager {
 
   @Override
   protected void beforeSuccessfulLogin(Subject subject) {
-    if (ApiAwareWebSecurityManager.isStatelessApiLogin()) {
+    if (StatelessApiLogin.isInProgress()) {
       return;
     }
     super.beforeSuccessfulLogin(subject);

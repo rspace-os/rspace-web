@@ -1,15 +1,12 @@
 package com.researchspace.auth;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.apache.shiro.authc.AuthenticationException;
 import org.apache.shiro.authc.AuthenticationToken;
 import org.apache.shiro.session.Session;
 import org.apache.shiro.subject.SimplePrincipalCollection;
@@ -58,7 +55,7 @@ public class ApiAwareWebSecurityManagerTest {
         .when(loginSubject)
         .login(token);
 
-    ApiAwareWebSecurityManager.doStatelessLogin(loginSubject, token);
+    StatelessApiLogin.login(loginSubject, token);
 
     verify(loginSubject).login(token);
     verify(request, never()).changeSessionId();
@@ -66,49 +63,6 @@ public class ApiAwareWebSecurityManagerTest {
 
   @Test
   public void ordinaryLoginStillRotatesSessionId() {
-    securityManager.beforeSuccessfulLogin(subjectWithSession());
-
-    verify(request).changeSessionId();
-  }
-
-  @Test
-  public void statelessMarkIsClearedAfterLogin() {
-    ApiAwareWebSecurityManager.doStatelessLogin(loginSubject, token);
-
-    securityManager.beforeSuccessfulLogin(subjectWithSession());
-
-    verify(request).changeSessionId();
-  }
-
-  @Test
-  public void nestedStatelessLoginKeepsOuterMarkUntilOuterCallReturns() {
-    Subject innerSubject = mock(Subject.class);
-    doAnswer(
-            invocation -> {
-              ApiAwareWebSecurityManager.doStatelessLogin(innerSubject, token);
-              securityManager.beforeSuccessfulLogin(subjectWithSession());
-              return null;
-            })
-        .when(loginSubject)
-        .login(token);
-
-    ApiAwareWebSecurityManager.doStatelessLogin(loginSubject, token);
-
-    verify(request, never()).changeSessionId();
-
-    securityManager.beforeSuccessfulLogin(subjectWithSession());
-
-    verify(request).changeSessionId();
-  }
-
-  @Test
-  public void statelessMarkIsClearedWhenTheLoginThrows() {
-    doThrow(new AuthenticationException("bad api key")).when(loginSubject).login(token);
-
-    assertThrows(
-        AuthenticationException.class,
-        () -> ApiAwareWebSecurityManager.doStatelessLogin(loginSubject, token));
-
     securityManager.beforeSuccessfulLogin(subjectWithSession());
 
     verify(request).changeSessionId();

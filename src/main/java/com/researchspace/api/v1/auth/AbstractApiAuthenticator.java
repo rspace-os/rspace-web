@@ -2,8 +2,8 @@ package com.researchspace.api.v1.auth;
 
 import static com.researchspace.core.util.StringAbbreviationUtils.abbreviate;
 
-import com.researchspace.auth.ApiAwareWebSecurityManager;
 import com.researchspace.auth.ApiKeyAuthenticationToken;
+import com.researchspace.auth.StatelessApiLogin;
 import com.researchspace.model.User;
 import com.researchspace.model.UserAuthenticationMethod;
 import com.researchspace.model.permissions.IUserPermissionUtils;
@@ -83,7 +83,7 @@ abstract class AbstractApiAuthenticator implements ApiAuthenticator {
     }
 
     // this login must not disturb any session that arrived with the request (for example a
-    // browser session cookie sent alongside the API key); see ApiAwareWebSecurityManager
+    // browser session cookie sent alongside the API key); see StatelessApiLogin
     doLogin(accessToken, targetUser);
     return targetUser;
   }
@@ -97,8 +97,7 @@ abstract class AbstractApiAuthenticator implements ApiAuthenticator {
    * Package scoped for testing
    */
   void doLogin(String apiKey, User u) {
-    ApiAwareWebSecurityManager.doStatelessLogin(
-        getSubject(), new ApiKeyAuthenticationToken(u.getUsername(), apiKey));
+    StatelessApiLogin.login(getSubject(), new ApiKeyAuthenticationToken(u.getUsername(), apiKey));
   }
 
   Subject getSubject() {

@@ -3,7 +3,7 @@ package com.researchspace.api.v1.auth;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import com.researchspace.auth.ApiAwareWebSecurityManager;
+import com.researchspace.auth.StatelessApiLogin;
 import com.researchspace.model.User;
 import com.researchspace.service.UserApiKeyManager;
 import com.researchspace.testutils.TestFactory;
@@ -42,7 +42,7 @@ public class ApiKeyAuthenticatorTest {
             invocation -> {
               if (invocation.getMethod().getName().equals("login")) {
                 loginOK = true;
-                statelessScopeActive = ApiAwareWebSecurityManager.isStatelessApiLogin();
+                statelessScopeActive = StatelessApiLogin.isInProgress();
               }
               return Mockito.RETURNS_DEFAULTS.answer(invocation);
             });
@@ -87,7 +87,7 @@ public class ApiKeyAuthenticatorTest {
     shiroAPIKeyAuthoriser.authenticate(mockRequest);
 
     assertTrue(shiroAPIKeyAuthoriser.statelessScopeActive);
-    assertFalse(ApiAwareWebSecurityManager.isStatelessApiLogin());
+    assertFalse(StatelessApiLogin.isInProgress());
   }
 
   @Test(expected = ApiAuthenticationException.class)
