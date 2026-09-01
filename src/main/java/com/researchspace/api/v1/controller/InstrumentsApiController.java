@@ -159,7 +159,7 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
     instrumentApiMgr.assertUserCanEditInstrument(id, user);
 
     ApiInstrument updated = instrumentApiMgr.updateApiInstrument(incomingInstrument, user);
-    pushExternalMetadataUpdates(updated, incomingInstrument, user);
+    pushExternalMetadataUpdates(updated, user);
     buildAndAddInventoryRecordLinks(updated);
     return updated;
   }
@@ -168,10 +168,10 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
    * Sends the instrument's remapped PIDINST metadata to any provider record registered for it
    * (RSDEV-1251, ADR 0008).
    *
-   * <p>Here, and only here: the manager is transactional and this controller is not, so by this
-   * point the edit has committed and the provider call runs outside any transaction. It is also the
-   * one place an ordinary user save passes through. Every identifier operation that updates an
-   * instrument internally - register, publish, retract, refresh, template sync, bulk owner change -
+   * <p>Called from the two controller methods that change what a provider holds, and nowhere else:
+   * the manager is transactional and this controller is not, so by this point the edit has
+   * committed and the provider call runs outside any transaction. Every identifier operation that
+   * updates an instrument internally - register, publish, retract, refresh, template sync -
    * re-enters {@code updateApiInstrument} at the manager level, below this seam, so none of them
    * can trigger a push, let alone a recursive one.
    *
@@ -179,10 +179,9 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
    * outage or a bug in the push must not turn that into an error response. The failure is reported
    * on the identifier in the response body by the service itself.
    */
-  private void pushExternalMetadataUpdates(
-      ApiInstrument updated, ApiInstrument incomingInstrument, User user) {
+  private void pushExternalMetadataUpdates(ApiInstrument updated, User user) {
     try {
-      externalUpdateService.pushMetadataUpdates(updated, incomingInstrument, user);
+      externalUpdateService.pushMetadataUpdates(updated, user);
     } catch (RuntimeException e) {
       log.error(
           "Could not update the external PIDINST metadata of instrument {}", updated.getId(), e);
@@ -231,6 +230,11 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
     instrumentApiMgr.assertUserCanTransferInstrument(id, user);
 
     ApiInstrument updated = instrumentApiMgr.changeApiInstrumentOwner(incomingInstrument, user);
+    // A transfer really does change what the provider holds: RspaceToExternalProviderAdapterImpl
+    // maps ownerContact from the record owner's email unconditionally, and ownerName from the same
+    // owner unless the Owner field overrides it. Left unpushed, the registered record keeps the
+    // previous owner's address, which is exactly the drift this ticket exists to stop.
+    pushExternalMetadataUpdates(updated, user);
     buildAndAddInventoryRecordLinks(updated);
     return updated;
   }

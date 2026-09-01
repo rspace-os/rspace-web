@@ -833,8 +833,41 @@ class RspaceToExternalProviderAdapterImplTest {
     assertEquals(SERVER + "/globalId/IN115", related.get(1).getRelatedIdentifier());
     assertEquals("URL", related.get(1).getRelatedIdentifierType());
     assertEquals("Calibration", related.get(1).getRelationTypeInformation());
-    // the base conversion still happened
-    assertEquals("Nico-PIDINST", result.getAttributes().getTitles().get(0).getTitle());
+    // the base conversion still happened, with the instrument's own current name as the title
+    assertEquals("Microscope X", result.getAttributes().getTitles().get(0).getTitle());
+  }
+
+  /**
+   * A rename has to reach the provider. The stored identifier title is written once, at register or
+   * assign time, and never refreshed afterwards, so taking the title from the DTO shipped the name
+   * the instrument had back then on every later push and left the registered record drifting - the
+   * exact complaint RSDEV-1251 opens with. For an instrument, the instrument's own current name is
+   * the source of truth.
+   */
+  @Test
+  void dataCiteDoiTakesItsTitleFromTheInstrumentsCurrentName() {
+    Instrument instrument = templateShapedInstrument();
+    instrument.setName("Renamed after it was registered");
+    ApiInventoryDOI doi = new ApiInventoryDOI();
+    doi.setDoi("10.82316/abc");
+    doi.setTitle("The name it carried at registration");
+
+    DataCiteDoi result = adapter.buildDataCiteDoi(doi, instrument);
+
+    assertEquals(
+        "Renamed after it was registered", result.getAttributes().getTitles().get(0).getTitle());
+  }
+
+  /** Only instruments: a sample's IGSN title is not this mapping's business. */
+  @Test
+  void dataCiteDoiKeepsTheStoredTitleForNonInstruments() {
+    ApiInventoryDOI doi = new ApiInventoryDOI();
+    doi.setDoi("10.82316/abc");
+    doi.setTitle("a sample");
+
+    assertEquals(
+        "a sample",
+        adapter.buildDataCiteDoi(doi, new Sample()).getAttributes().getTitles().get(0).getTitle());
   }
 
   @Test

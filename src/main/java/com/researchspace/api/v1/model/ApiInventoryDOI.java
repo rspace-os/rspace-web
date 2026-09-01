@@ -148,7 +148,21 @@ public class ApiInventoryDOI extends LinkableApiObject {
   @JsonProperty("doiType")
   private String doiType;
 
-  @JsonProperty("doi")
+  /**
+   * The provider's own record id: a B2INST draft RID, or a DataCite DOI. Owned by the server.
+   *
+   * <p>{@link JsonProperty.Access#READ_ONLY} for the same reason as {@link #state}, {@link #url},
+   * {@link #publicUrl} and {@link #providerUrl}, and it is this class's only field that names a
+   * record at the provider. The on-save external metadata update (RSDEV-1251, ADR 0008) sends the
+   * instrument's metadata to whatever record this value addresses, using the deployment's provider
+   * credentials. {@link #applyChangesToDatabaseDOI(DigitalObjectIdentifier)} copies it straight
+   * onto the entity, and the id check in {@code
+   * ApiInventoryRecordInfo#applyChangesToDatabaseIdentifiers} only stops a client naming another
+   * record's identifier row, not a client retargeting its own row: without this, one instrument PUT
+   * carrying a foreign RID or DOI would overwrite that external record. It is set in Java from the
+   * provider's registration response, which this annotation does not affect.
+   */
+  @JsonProperty(value = "doi", access = JsonProperty.Access.READ_ONLY)
   private String doi;
 
   @JsonProperty("associatedGlobalId")

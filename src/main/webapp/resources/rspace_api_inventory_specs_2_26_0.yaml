@@ -160,7 +160,9 @@ paths:
         `succeeded` | `true` when the provider accepted the metadata
         `reason` | A sentence for the user: what was updated, or why it was not, including the provider's own wording for a rejection
 
-        The property is absent entirely when no push was attempted, which is the case for an instrument with no identifier, an identifier in a state that cannot be rewritten, and an identifier created, assigned or delete-requested by this same request. Nothing about the attempt is persisted, so a later read of the same identifier does not carry it: every qualifying save pushes again regardless of what changed, which makes retrying a failed push simply a matter of saving again.
+        An identifier whose provider record its own state has frozen still gets the object, with `succeeded` false and a `reason` naming that state, so "nothing was sent, and here is why" is never confused with having no identifier at all. The property is absent entirely only where there was nothing to attempt and nothing to act on: an instrument with no identifier, an identifier carrying no provider record id or no state, an IGSN, and an identifier whose provider integration is currently switched off. Nothing about the attempt is persisted, so a later read of the same identifier does not carry it: every qualifying save pushes again regardless of what changed, which makes retrying a failed push simply a matter of saving again.
+
+        `/instruments/{instrumentId}/actions/changeOwner` pushes on the same terms, because the transferred owner's name and email are themselves mapped PIDINST properties.
 
         ## Examples of the request body
 

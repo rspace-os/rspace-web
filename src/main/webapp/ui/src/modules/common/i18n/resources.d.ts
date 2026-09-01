@@ -6799,6 +6799,7 @@ export default interface Resources {
           "deleteNotOwner": "You can only delete an identifier that you own.",
           "deleteWrongState": "You can only delete identifiers in \"draft\" state, or B2INST instrument PIDs whose community review was declined, cancelled or expired.",
           "externalUpdateFailed": "Could not update the instrument metadata held by {0}. The instrument itself was saved, so saving it again will try the update once more. {1}",
+          "externalUpdateNotPossible": "The instrument metadata held by {0} could not be updated because its identifier is in the \"{1}\" state, which no longer has a record open for changes. The instrument itself was saved.",
           "integrationNotEnabled": "{0} integration is not enabled on this RSpace instance.",
           "mintingUnsupportedType": "unsupported type for minting: {0}",
           "refreshNoIdentifier": "This item has no identifier to refresh. Register an identifier before refreshing its status.",

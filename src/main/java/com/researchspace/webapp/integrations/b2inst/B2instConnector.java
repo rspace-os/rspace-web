@@ -23,10 +23,13 @@ public interface B2instConnector {
   /**
    * Full-replace update of a record's draft metadata, returning the updated draft.
    *
-   * <p>InvenioRDM keeps a draft writable both while it is a plain {@code draft} and while its
-   * community review is open ({@code submitted}), which is what makes an on-save external metadata
-   * update possible for those two states (RSDEV-1251, ADR 0008). An accepted record has no writable
-   * draft and B2INST rejects the call.
+   * <p>InvenioRDM keeps a draft writable in every review state except {@code accepted}: as a plain
+   * {@code draft}, while a community review is open ({@code submitted}), and equally while the
+   * review sits at {@code created}, {@code cancelled}, {@code declined} or {@code expired}. That
+   * exclusion rule, rather than the narrower draft-and-submitted pair originally assumed, is what
+   * the on-save external metadata update is built on (RSDEV-1251, ADR 0008), and it was verified
+   * against b2inst-test.gwdg.de in August 2026. Acceptance publishes the record and removes its
+   * draft, so an accepted record has nothing writable left and B2INST rejects the call.
    *
    * <p>The body is the same register-shaped payload {@link #registerDoi(B2instDoi)} sends, rebuilt
    * from the instrument's current fields: the endpoint replaces the metadata block wholesale, so a

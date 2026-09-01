@@ -9,8 +9,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -34,6 +36,7 @@ import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.webapp.integrations.b2inst.B2instConnectionException;
 import com.researchspace.webapp.integrations.b2inst.B2instConnector;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnector;
+import jakarta.ws.rs.NotFoundException;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -96,6 +99,14 @@ class InventoryIdentifierExternalUpdateServiceTest {
   @BeforeEach
   void setUp() {
     service.setTransactionManager(new NoOpTransactionManager());
+    // The enablement gate sits in front of every push, so it is a precondition of almost every test
+    // here rather than the subject of one. Lenient because the tests that never reach the gate (a
+    // blank record id or state is filtered before it) would otherwise fail as unnecessary stubbing.
+    // The gate itself is asserted by the two tests that switch a provider off.
+    lenient().when(b2instConnector.isConfiguredAndEnabled()).thenReturn(true);
+    lenient()
+        .when(dataCiteConnector.isDataCiteConfiguredAndEnabled(InventorySettingType.PIDINST))
+        .thenReturn(true);
   }
 
   /**
@@ -135,11 +146,36 @@ class InventoryIdentifierExternalUpdateServiceTest {
     return doi;
   }
 
-  private ApiInstrument requestMarking(ApiInventoryDOI marker) {
-    ApiInstrument incoming = new ApiInstrument();
-    incoming.setId(INSTRUMENT_ID);
-    incoming.setIdentifiers(List.of(marker));
-    return incoming;
+  /**
+   * The class's whole safety argument holds only if this transaction is the service's own. Under
+   * the default {@code PROPAGATION_REQUIRED} the template silently joins a caller's transaction
+   * instead: {@code setReadOnly} is then ignored, the boundary never closes so the provider HTTP
+   * exchange pins a pooled JDBC connection for its whole duration, and because the mapping adapter
+   * is {@code @Transactional(propagation = MANDATORY)} a build failure marks that outer transaction
+   * rollback-only, losing the instrument save to {@code UnexpectedRollbackException}. Asserting the
+   * demanded definition rather than the field keeps this true however the demarcation is written.
+   */
+  @Test
+  void theMetadataRebuildDemandsItsOwnReadOnlyTransaction() {
+    PlatformTransactionManager txManager = mock(PlatformTransactionManager.class);
+    when(txManager.getTransaction(any())).thenReturn(new SimpleTransactionStatus());
+    service.setTransactionManager(txManager);
+    expectPayloadBuildAndMessages();
+    expectServerUrl();
+    when(rspaceToExternalProviderAdapter.buildB2instDoi(eq(instrument), anyString()))
+        .thenReturn(new B2instDoi());
+
+    service.pushMetadataUpdates(
+        savedInstrumentWith(identifier(IdentifierType.PIDINST_B2INST, "draft", RID)), user);
+
+    ArgumentCaptor<TransactionDefinition> definition =
+        ArgumentCaptor.forClass(TransactionDefinition.class);
+    verify(txManager).getTransaction(definition.capture());
+    assertTrue(definition.getValue().isReadOnly(), "nothing in the rebuild may write");
+    assertEquals(
+        TransactionDefinition.PROPAGATION_REQUIRES_NEW,
+        definition.getValue().getPropagationBehavior(),
+        "must suspend a caller's transaction rather than join it");
   }
 
   @Test
@@ -151,7 +187,7 @@ class InventoryIdentifierExternalUpdateServiceTest {
         .thenReturn(rebuilt);
     ApiInventoryDOI doi = identifier(IdentifierType.PIDINST_B2INST, "draft", RID);
 
-    service.pushMetadataUpdates(savedInstrumentWith(doi), new ApiInstrument(), user);
+    service.pushMetadataUpdates(savedInstrumentWith(doi), user);
 
     verify(b2instConnector).updateDraftDoi(RID, rebuilt);
     ApiExternalMetadataUpdate outcome = doi.getExternalMetadataUpdate();
@@ -169,7 +205,7 @@ class InventoryIdentifierExternalUpdateServiceTest {
         .thenReturn(new B2instDoi());
     ApiInventoryDOI doi = identifier(IdentifierType.PIDINST_B2INST, "submitted", RID);
 
-    service.pushMetadataUpdates(savedInstrumentWith(doi), new ApiInstrument(), user);
+    service.pushMetadataUpdates(savedInstrumentWith(doi), user);
 
     verify(b2instConnector).updateDraftDoi(eq(RID), any(B2instDoi.class));
     assertTrue(doi.getExternalMetadataUpdate().isSucceeded());
@@ -184,7 +220,7 @@ class InventoryIdentifierExternalUpdateServiceTest {
         .thenReturn(rebuilt);
     ApiInventoryDOI doi = identifier(IdentifierType.PIDINST_DATACITE, "draft", DOI);
 
-    service.pushMetadataUpdates(savedInstrumentWith(doi), new ApiInstrument(), user);
+    service.pushMetadataUpdates(savedInstrumentWith(doi), user);
 
     verify(dataCiteConnector).updateDoi(rebuilt, InventorySettingType.PIDINST);
     verifyNoInteractions(b2instConnector);
@@ -192,9 +228,10 @@ class InventoryIdentifierExternalUpdateServiceTest {
   }
 
   /**
-   * The whole type x state matrix that must NOT be pushed. A published record cannot be rewritten
-   * in place at either provider, and an IGSN has no business on an instrument at all, so it is
-   * skipped defensively rather than mapped through the instrument adapter.
+   * The type x state matrix that must not be pushed, and must say so. A record frozen by its own
+   * state (an accepted B2INST review, a DataCite DOI past draft) still gets an outcome, because the
+   * acceptance criteria ask for a plain explanation of why nothing happened rather than silence
+   * that is indistinguishable from having no identifier at all.
    *
    * <p>The B2INST review states that are NOT here - created, cancelled, declined, expired - all
    * still have a writable draft, and are covered as positive cases below.
@@ -205,16 +242,72 @@ class InventoryIdentifierExternalUpdateServiceTest {
     "PIDINST_B2INST,ACCEPTED",
     "PIDINST_DATACITE,submitted",
     "PIDINST_DATACITE,findable",
-    "PIDINST_DATACITE,registered",
-    "IGSN_DATACITE,draft",
-    "IGSN_DATACITE,findable"
+    "PIDINST_DATACITE,registered"
   })
-  void skipsAnIdentifierThatIsNotInAnUpdatableState(String type, String state) {
+  void explainsWhyAnIdentifierFrozenByItsStateWasNotPushed(String type, String state) {
+    when(messages.getMessage(anyString(), any(Object[].class)))
+        .thenAnswer(
+            invocation ->
+                invocation.getArgument(0)
+                    + " "
+                    + Arrays.toString(invocation.getArgument(1, Object[].class)));
     ApiInventoryDOI doi = identifier(IdentifierType.valueOf(type), state, RID);
 
-    service.pushMetadataUpdates(savedInstrumentWith(doi), new ApiInstrument(), user);
+    service.pushMetadataUpdates(savedInstrumentWith(doi), user);
 
-    verifyNoInteractions(b2instConnector, dataCiteConnector, rspaceToExternalProviderAdapter);
+    verify(b2instConnector, never()).updateDraftDoi(anyString(), any(B2instDoi.class));
+    verify(dataCiteConnector, never()).updateDoi(any(DataCiteDoi.class), any());
+    verifyNoInteractions(rspaceToExternalProviderAdapter, auditer);
+    ApiExternalMetadataUpdate outcome = doi.getExternalMetadataUpdate();
+    assertNotNull(outcome, "a frozen record must still be explained");
+    assertFalse(outcome.isSucceeded());
+    assertTrue(outcome.getReason().contains("externalUpdateNotPossible"), outcome.getReason());
+    assertTrue(outcome.getReason().contains(state.trim()), outcome.getReason());
+  }
+
+  /**
+   * An IGSN is the one exception: it stays silent. An instrument should never carry one, so there
+   * is nothing for a user to act on and no PIDINST record the sentence could be about.
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"draft", "findable"})
+  void skipsAnIgsnWithoutSayingAnything(String state) {
+    ApiInventoryDOI doi = identifier(IdentifierType.IGSN_DATACITE, state, RID);
+
+    service.pushMetadataUpdates(savedInstrumentWith(doi), user);
+
+    verifyNoInteractions(rspaceToExternalProviderAdapter, auditer);
+    assertNull(doi.getExternalMetadataUpdate());
+  }
+
+  /**
+   * The push rides on an ordinary save, so a switched-off integration must be silent rather than
+   * put a failure on every save of every instrument that still holds a draft. Switching PIDINST
+   * provider disables the sibling automatically, which is what makes this routine rather than
+   * exotic.
+   */
+  @Test
+  void saysNothingWhenTheB2instIntegrationIsSwitchedOff() {
+    when(b2instConnector.isConfiguredAndEnabled()).thenReturn(false);
+    ApiInventoryDOI doi = identifier(IdentifierType.PIDINST_B2INST, "draft", RID);
+
+    service.pushMetadataUpdates(savedInstrumentWith(doi), user);
+
+    verify(b2instConnector, never()).updateDraftDoi(anyString(), any(B2instDoi.class));
+    verifyNoInteractions(instrumentApiMgr, rspaceToExternalProviderAdapter, auditer);
+    assertNull(doi.getExternalMetadataUpdate());
+  }
+
+  @Test
+  void saysNothingWhenTheDataCiteIntegrationIsSwitchedOff() {
+    when(dataCiteConnector.isDataCiteConfiguredAndEnabled(InventorySettingType.PIDINST))
+        .thenReturn(false);
+    ApiInventoryDOI doi = identifier(IdentifierType.PIDINST_DATACITE, "draft", DOI);
+
+    service.pushMetadataUpdates(savedInstrumentWith(doi), user);
+
+    verify(dataCiteConnector, never()).updateDoi(any(DataCiteDoi.class), any());
+    verifyNoInteractions(instrumentApiMgr, rspaceToExternalProviderAdapter, auditer);
     assertNull(doi.getExternalMetadataUpdate());
   }
 
@@ -234,7 +327,7 @@ class InventoryIdentifierExternalUpdateServiceTest {
         .thenReturn(new B2instDoi());
     ApiInventoryDOI doi = identifier(IdentifierType.PIDINST_B2INST, state, RID);
 
-    service.pushMetadataUpdates(savedInstrumentWith(doi), new ApiInstrument(), user);
+    service.pushMetadataUpdates(savedInstrumentWith(doi), user);
 
     verify(b2instConnector).updateDraftDoi(eq(RID), any(B2instDoi.class));
     assertTrue(doi.getExternalMetadataUpdate().isSucceeded());
@@ -254,66 +347,37 @@ class InventoryIdentifierExternalUpdateServiceTest {
         .thenReturn(new B2instDoi());
 
     service.pushMetadataUpdates(
-        savedInstrumentWith(identifier(IdentifierType.PIDINST_B2INST, state, RID)),
-        new ApiInstrument(),
-        user);
+        savedInstrumentWith(identifier(IdentifierType.PIDINST_B2INST, state, RID)), user);
 
     verify(b2instConnector).updateDraftDoi(eq(RID), any(B2instDoi.class));
-  }
-
-  @Test
-  void skipsAnIdentifierTheSameSaveAssigned() {
-    ApiInventoryDOI doi = identifier(IdentifierType.PIDINST_B2INST, "draft", RID);
-    ApiInventoryDOI marker = identifier(IdentifierType.PIDINST_B2INST, "draft", RID);
-    marker.setAssignIdentifierRequest(true);
-
-    service.pushMetadataUpdates(savedInstrumentWith(doi), requestMarking(marker), user);
-
-    verifyNoInteractions(b2instConnector, rspaceToExternalProviderAdapter);
-    assertNull(doi.getExternalMetadataUpdate());
-  }
-
-  @Test
-  void skipsAnIdentifierTheSameSaveRequestedTheDeletionOf() {
-    ApiInventoryDOI doi = identifier(IdentifierType.PIDINST_B2INST, "draft", RID);
-    ApiInventoryDOI marker = identifier(IdentifierType.PIDINST_B2INST, "draft", RID);
-    marker.setDeleteIdentifierRequest(true);
-
-    service.pushMetadataUpdates(savedInstrumentWith(doi), requestMarking(marker), user);
-
-    verifyNoInteractions(b2instConnector, rspaceToExternalProviderAdapter);
-  }
-
-  @Test
-  void skipsAnIdentifierTheSameSaveRegistered() {
-    ApiInventoryDOI doi = identifier(IdentifierType.PIDINST_B2INST, "draft", RID);
-    ApiInventoryDOI marker = identifier(IdentifierType.PIDINST_B2INST, "draft", RID);
-    marker.setRegisterIdentifierRequest(true);
-
-    service.pushMetadataUpdates(savedInstrumentWith(doi), requestMarking(marker), user);
-
-    verifyNoInteractions(b2instConnector, rspaceToExternalProviderAdapter);
   }
 
   @Test
   void skipsAnIdentifierWithNoProviderRecordId() {
     ApiInventoryDOI doi = identifier(IdentifierType.PIDINST_B2INST, "draft", null);
 
-    service.pushMetadataUpdates(savedInstrumentWith(doi), new ApiInstrument(), user);
+    service.pushMetadataUpdates(savedInstrumentWith(doi), user);
 
     verifyNoInteractions(b2instConnector, rspaceToExternalProviderAdapter);
   }
 
+  /**
+   * {@code getIfExists} throws rather than returning null, so a save racing a deletion propagates
+   * to the controller's guard, which logs it and returns the instrument unannotated. Pinned here
+   * because the service used to carry an unreachable null branch that claimed otherwise.
+   */
   @Test
-  void doesNothingWhenTheInstrumentIsNoLongerReadable() {
-    when(instrumentApiMgr.getIfExists(INSTRUMENT_ID)).thenReturn(null);
+  void anInstrumentDeletedUnderTheSavePropagatesToTheGuardingCaller() {
+    when(instrumentApiMgr.getIfExists(INSTRUMENT_ID))
+        .thenThrow(new NotFoundException("No Instrument or InstrumentTemplate found with id: 1"));
+    ApiInstrument saved =
+        savedInstrumentWith(identifier(IdentifierType.PIDINST_B2INST, "draft", RID));
 
-    service.pushMetadataUpdates(
-        savedInstrumentWith(identifier(IdentifierType.PIDINST_B2INST, "draft", RID)),
-        new ApiInstrument(),
-        user);
+    assertThrows(NotFoundException.class, () -> service.pushMetadataUpdates(saved, user));
 
-    verifyNoInteractions(b2instConnector, rspaceToExternalProviderAdapter);
+    // not verifyNoInteractions: the enablement gate legitimately asks the connector first
+    verify(b2instConnector, never()).updateDraftDoi(anyString(), any(B2instDoi.class));
+    verifyNoInteractions(auditer);
   }
 
   /**
@@ -329,9 +393,7 @@ class InventoryIdentifierExternalUpdateServiceTest {
         .thenReturn(new B2instDoi());
 
     service.pushMetadataUpdates(
-        savedInstrumentWith(identifier(IdentifierType.PIDINST_B2INST, "draft", RID)),
-        new ApiInstrument(),
-        user);
+        savedInstrumentWith(identifier(IdentifierType.PIDINST_B2INST, "draft", RID)), user);
 
     ArgumentCaptor<String> landingPage = ArgumentCaptor.forClass(String.class);
     verify(rspaceToExternalProviderAdapter).buildB2instDoi(eq(instrument), landingPage.capture());
@@ -355,7 +417,7 @@ class InventoryIdentifierExternalUpdateServiceTest {
                 "Error updating B2INST draft record: internal detail", "Record is not editable."));
     ApiInventoryDOI doi = identifier(IdentifierType.PIDINST_B2INST, "draft", RID);
 
-    service.pushMetadataUpdates(savedInstrumentWith(doi), new ApiInstrument(), user);
+    service.pushMetadataUpdates(savedInstrumentWith(doi), user);
 
     ApiExternalMetadataUpdate outcome = doi.getExternalMetadataUpdate();
     assertFalse(outcome.isSucceeded());
@@ -382,7 +444,7 @@ class InventoryIdentifierExternalUpdateServiceTest {
                 null));
     ApiInventoryDOI doi = identifier(IdentifierType.PIDINST_DATACITE, "draft", DOI);
 
-    service.pushMetadataUpdates(savedInstrumentWith(doi), new ApiInstrument(), user);
+    service.pushMetadataUpdates(savedInstrumentWith(doi), user);
 
     ApiExternalMetadataUpdate outcome = doi.getExternalMetadataUpdate();
     assertFalse(outcome.isSucceeded());
@@ -399,9 +461,7 @@ class InventoryIdentifierExternalUpdateServiceTest {
         .thenThrow(new B2instConnectionException("dev detail", "Record is not editable."));
 
     service.pushMetadataUpdates(
-        savedInstrumentWith(identifier(IdentifierType.PIDINST_B2INST, "draft", RID)),
-        new ApiInstrument(),
-        user);
+        savedInstrumentWith(identifier(IdentifierType.PIDINST_B2INST, "draft", RID)), user);
 
     ArgumentCaptor<HistoricalEvent> event = ArgumentCaptor.forClass(HistoricalEvent.class);
     verify(auditer).notify(event.capture());
@@ -422,7 +482,7 @@ class InventoryIdentifierExternalUpdateServiceTest {
     ApiInventoryDOI doi = identifier(IdentifierType.PIDINST_B2INST, "draft", RID);
     doi.setDoiType(doiType);
 
-    service.pushMetadataUpdates(savedInstrumentWith(doi), new ApiInstrument(), user);
+    service.pushMetadataUpdates(savedInstrumentWith(doi), user);
 
     verifyNoInteractions(b2instConnector, dataCiteConnector, rspaceToExternalProviderAdapter);
     assertNull(doi.getExternalMetadataUpdate());
@@ -432,7 +492,7 @@ class InventoryIdentifierExternalUpdateServiceTest {
   void skipsAnIdentifierWithNoState() {
     ApiInventoryDOI doi = identifier(IdentifierType.PIDINST_B2INST, null, RID);
 
-    service.pushMetadataUpdates(savedInstrumentWith(doi), new ApiInstrument(), user);
+    service.pushMetadataUpdates(savedInstrumentWith(doi), user);
 
     verifyNoInteractions(b2instConnector, rspaceToExternalProviderAdapter);
   }
@@ -440,12 +500,12 @@ class InventoryIdentifierExternalUpdateServiceTest {
   /** Nothing to push must be a quiet return, not an NPE on the way out of a successful save. */
   @Test
   void toleratesAnInstrumentWithNothingToPush() {
-    service.pushMetadataUpdates(savedInstrumentWith(), new ApiInstrument(), user);
+    service.pushMetadataUpdates(savedInstrumentWith(), user);
 
     ApiInstrument noIdentifiersAtAll = new ApiInstrument();
     noIdentifiersAtAll.setId(INSTRUMENT_ID);
     noIdentifiersAtAll.setIdentifiers(null);
-    service.pushMetadataUpdates(noIdentifiersAtAll, null, user);
+    service.pushMetadataUpdates(noIdentifiersAtAll, user);
 
     verifyNoInteractions(
         instrumentApiMgr, b2instConnector, dataCiteConnector, rspaceToExternalProviderAdapter);
@@ -465,11 +525,11 @@ class InventoryIdentifierExternalUpdateServiceTest {
     accepted.setId(8L);
     ApiInventoryDOI draft = identifier(IdentifierType.PIDINST_B2INST, "draft", RID);
 
-    service.pushMetadataUpdates(savedInstrumentWith(accepted, draft), new ApiInstrument(), user);
+    service.pushMetadataUpdates(savedInstrumentWith(accepted, draft), user);
 
     verify(b2instConnector).updateDraftDoi(eq(RID), any(B2instDoi.class));
     verify(b2instConnector, never()).updateDraftDoi(eq("acc-ept01"), any(B2instDoi.class));
-    assertNull(accepted.getExternalMetadataUpdate());
+    assertFalse(accepted.getExternalMetadataUpdate().isSucceeded());
     assertTrue(draft.getExternalMetadataUpdate().isSucceeded());
   }
 
@@ -482,9 +542,7 @@ class InventoryIdentifierExternalUpdateServiceTest {
         .thenReturn(new B2instDoi());
 
     service.pushMetadataUpdates(
-        savedInstrumentWith(identifier(IdentifierType.PIDINST_B2INST, "draft", RID)),
-        new ApiInstrument(),
-        user);
+        savedInstrumentWith(identifier(IdentifierType.PIDINST_B2INST, "draft", RID)), user);
 
     ArgumentCaptor<HistoricalEvent> event = ArgumentCaptor.forClass(HistoricalEvent.class);
     verify(auditer).notify(event.capture());
@@ -508,7 +566,7 @@ class InventoryIdentifierExternalUpdateServiceTest {
         .thenThrow(new B2instConnectionException("dev detail", "Record is\n\nnot   editable.\n"));
     ApiInventoryDOI doi = identifier(IdentifierType.PIDINST_B2INST, "draft", RID);
 
-    service.pushMetadataUpdates(savedInstrumentWith(doi), new ApiInstrument(), user);
+    service.pushMetadataUpdates(savedInstrumentWith(doi), user);
 
     String reason = doi.getExternalMetadataUpdate().getReason();
     assertFalse(reason.contains("\n"), reason);
@@ -517,34 +575,37 @@ class InventoryIdentifierExternalUpdateServiceTest {
   }
 
   /**
-   * A payload rebuild that blows up is deliberately NOT swallowed here. The mapping adapter runs
-   * inside the transaction and a failure there means the push never happened for any identifier, so
-   * the caller must see it; {@code InstrumentsApiController} is the guard that keeps it out of the
-   * response, which {@code InstrumentsApiControllerTest} pins.
+   * A mapping failure is isolated to its own identifier, matching the push. The other identifiers
+   * of the same instrument still go, and the failed one carries a reason instead of the whole batch
+   * vanishing with nothing said. Not audited: nothing was sent.
    */
   @Test
-  void aPayloadRebuildFailurePropagatesToTheGuardingCaller() {
-    when(instrumentApiMgr.getIfExists(INSTRUMENT_ID)).thenReturn(instrument);
+  void aPayloadRebuildFailureIsReportedOnItsOwnIdentifierAndTheRestStillGo() {
+    expectPayloadBuildAndMessages();
     expectServerUrl();
+    ApiInventoryDOI broken = identifier(IdentifierType.PIDINST_B2INST, "draft", "br-oken01");
+    broken.setId(9L);
+    ApiInventoryDOI good = identifier(IdentifierType.PIDINST_B2INST, "draft", RID);
     when(rspaceToExternalProviderAdapter.buildB2instDoi(eq(instrument), anyString()))
-        .thenThrow(new IllegalStateException("PIDINST providers accept only Instrument records"));
-    ApiInventoryDOI doi = identifier(IdentifierType.PIDINST_B2INST, "draft", RID);
-    ApiInstrument saved = savedInstrumentWith(doi);
+        .thenThrow(new IllegalStateException("PIDINST providers accept only Instrument records"))
+        .thenReturn(new B2instDoi());
 
-    assertThrows(
-        IllegalStateException.class,
-        () -> service.pushMetadataUpdates(saved, new ApiInstrument(), user));
+    service.pushMetadataUpdates(savedInstrumentWith(broken, good), user);
 
-    verifyNoInteractions(b2instConnector, auditer);
-    assertNull(doi.getExternalMetadataUpdate());
+    verify(b2instConnector).updateDraftDoi(eq(RID), any(B2instDoi.class));
+    verify(b2instConnector, never()).updateDraftDoi(eq("br-oken01"), any(B2instDoi.class));
+    assertFalse(broken.getExternalMetadataUpdate().isSucceeded());
+    assertTrue(
+        broken.getExternalMetadataUpdate().getReason().contains("externalUpdateFailed"),
+        broken.getExternalMetadataUpdate().getReason());
+    assertTrue(good.getExternalMetadataUpdate().isSucceeded());
+    verify(auditer, times(1)).notify(any());
   }
 
   @Test
   void auditsNothingWhenNothingWasEligible() {
     service.pushMetadataUpdates(
-        savedInstrumentWith(identifier(IdentifierType.PIDINST_B2INST, "accepted", RID)),
-        new ApiInstrument(),
-        user);
+        savedInstrumentWith(identifier(IdentifierType.PIDINST_B2INST, "accepted", RID)), user);
 
     verify(auditer, never()).notify(any());
   }

@@ -27,8 +27,11 @@ assumed: `PUT /dois/{id}` with no `event` rewrote a draft DOI's metadata and
 left it `draft`, bumping DataCite's own `metadataVersion` and leaving `created`,
 `source`, `prefix`, `suffix` and `doi` untouched. It also ignored the
 server-owned attributes RSpace puts on the wire (`isActive`, `state`,
-`metadataVersion`, the counters, null `created`/`registered`), which it has no
-choice but to send because `DataCiteDoiAttributes` carries no `@JsonInclude`.
+`metadataVersion`, the counters). At the time of the probe it also ignored
+explicit null `created`/`registered`, which the client had no choice but to send
+because `DataCiteDoiAttributes` carried no `@JsonInclude`; that is no longer the
+case, and the fix is described under Consequences below - primitives are still
+always sent, but null object properties are now omitted entirely.
 `InstrumentExternalMetadataUpdateDataCiteMVCIT` pins this against the real test
 API, nightly.
 
@@ -56,6 +59,17 @@ anything that is not accepted, so an identifier really can be sitting in
    declared path for a findable DOI and a retracted (`registered`) DOI is left
    alone by choice rather than by provider refusal. Accepted B2INST records stay
    out of scope (updating one means a new draft-and-review round).
+
+   Two qualifications, both added after review. A push is only attempted for a
+   provider whose integration is **currently enabled**, which is what every
+   other identifier operation checks first: this one rides on an ordinary save
+   rather than a button, so a disabled or switched-away provider would otherwise
+   put a failure on every later save of every instrument still holding a draft.
+   That case is silent, because there is nothing the user can act on. An
+   identifier frozen by its own **state**, in contrast, is reported rather than
+   skipped silently: "nothing was sent, and here is why, naming the state" is
+   what the acceptance criteria ask for, and silence is indistinguishable from
+   having no identifier at all.
 2. **The push never blocks the save.** The instrument edit commits first; the
    provider call runs after the write transaction, synchronously in the same
    request, and its outcome (success or user-readable failure reason) is
@@ -77,7 +91,16 @@ anything that is not accepted, so an identifier really can be sitting in
    surface; nothing is persisted. The push seam is the instruments controller,
    after the manager returns, so identifier operations that re-enter the
    instrument update internally (publish, retract, refresh bookkeeping,
-   template sync, bulk owner change) can never trigger a recursive push.
+   template sync) can never trigger a recursive push.
+
+   Two controller methods sit on that seam, not one: `updateInstrument` and
+   `changeInstrumentOwner`. The transfer was excluded originally on the premise
+   that the mapped Owner comes from the instrument's own field, so a transfer
+   changed nothing the provider holds. That premise was wrong - `ownerOf` maps
+   `ownerContact` from the record owner's email unconditionally, and `ownerName`
+   from the same owner unless the Owner field overrides it - so an unpushed
+   transfer left the registered record naming the previous owner. A corrected
+   owner is one of the three examples this ticket opens with.
 
 ## Consequences
 
@@ -88,6 +111,18 @@ anything that is not accepted, so an identifier really can be sitting in
   response says so each time.
 - Sample, subsample and container draft DOIs still drift (out of scope), as do
   instrument changes made by template sync until the next ordinary save.
+- The DataCite title is taken from the instrument's **current name**, not from
+  the title stored on the identifier. That stored title is written once, at
+  register or assign time, and nothing refreshes it on a rename, so reading it
+  here sent the old name on every later push and left the record drifting under
+  exactly the conditions this decision exists to remove. Because the mapping is
+  shared, publish and retract of an instrument DOI now carry the current name
+  too, which is the same correction.
+- Failures are isolated per identifier on both halves of the operation. A
+  mapping failure for one identifier is reported on that identifier and the
+  others are still pushed, matching what the push itself already did; letting it
+  propagate discarded the pushes for every other identifier of the same
+  instrument and told the user nothing.
 - Payload rebuild must run inside a (read-only) transaction because the mapping
   adapter demands one, while the HTTP call runs outside; the orchestrating
   service therefore cannot be a `*Manager` bean (whose every method is

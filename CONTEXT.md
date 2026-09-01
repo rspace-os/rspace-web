@@ -143,13 +143,17 @@ resolved during design. This file is a glossary only — no implementation detai
   explicit user action, there is no separate "update external PIDINST" button.
   A failed push never blocks or reverts the save: the instrument edit is
   persisted regardless, the identifier's own state is left untouched, and the
-  failure is reported to the user. Every qualifying save pushes, whether or not
-  a mapped field changed, so retrying a failed push is just saving again.
-  Only the ordinary instrument save pushes: template sync, owner change,
-  restore, duplicate and delete do not, edits to samples, subsamples and
-  containers do not (their draft-DOI metadata still drifts), and identifiers
-  created, assigned or delete-requested within the same save are excluded,
-  because registration and publish own their own metadata moments.
+  failure is reported on the identifier in the API response. Surfacing that in
+  the Inventory UI is a separate, still-outstanding piece of work, so today an
+  API client sees the reason and a user of the web interface does not. Every
+  qualifying save pushes, whether or not a mapped field changed, so retrying a
+  failed push is just saving again. An identifier whose state has frozen its
+  provider record is reported too, naming the state, rather than passed over in
+  silence; an identifier belonging to a provider whose integration is switched
+  off is passed over silently, because there is nothing to act on. Saving an
+  instrument and transferring one push; template sync, restore, duplicate and
+  delete do not, and edits to samples, subsamples and containers do not (their
+  draft-DOI metadata still drifts).
   (RSDEV-1251)
 - **Registered landing page** — the LandingPage value RSpace sends to a PID
   provider when registering an instrument identifier: the Landing page field

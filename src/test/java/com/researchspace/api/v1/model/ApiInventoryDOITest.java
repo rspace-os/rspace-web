@@ -30,7 +30,7 @@ class ApiInventoryDOITest {
   @Test
   void serverOwnedUrlsCannotBeSetFromAnIncomingPayload() throws Exception {
     String incoming =
-        "{\"id\":1,\"doi\":\"k2j9p-7yh21\","
+        "{\"id\":1,\"creatorName\":\"Jane Bloggs\","
             + "\"providerUrl\":\"https://attacker.example/evil\","
             + "\"publicUrl\":\"https://attacker.example/citable\","
             + "\"url\":\"https://attacker.example/target\"}";
@@ -40,7 +40,8 @@ class ApiInventoryDOITest {
     assertNull(deserialized.getProviderUrl(), "providerUrl must be ignored on deserialization");
     assertNull(deserialized.getPublicUrl(), "publicUrl must be ignored on deserialization");
     assertNull(deserialized.getUrl(), "url must be ignored on deserialization");
-    assertEquals("k2j9p-7yh21", deserialized.getDoi(), "control: writable fields still bind");
+    assertEquals(
+        "Jane Bloggs", deserialized.getCreatorName(), "control: writable fields still bind");
   }
 
   /** READ_ONLY must block only the inbound direction; the client still needs to read both. */
@@ -57,6 +58,41 @@ class ApiInventoryDOITest {
         json.contains("\"providerUrl\":\"https://b2inst-test.gwdg.de/uploads/k2j9p-7yh21\""));
     assertTrue(json.contains("\"publicUrl\":\"https://doi.org/10.1234/abc\""));
     assertTrue(json.contains("\"url\":\"https://rspace.example.com/globalId/IN5\""));
+  }
+
+  /**
+   * The provider record id is the address of the external record RSpace writes to, so a client must
+   * not be able to choose it. It is set in Java from the provider's own response - the B2INST draft
+   * RID in {@code InventoryIdentifierApiManagerImpl}, the DataCite id in this class's own {@code
+   * DataCiteDoi} constructor - and never bound from a request, so READ_ONLY costs the API nothing.
+   *
+   * <p>Without this, the RSDEV-1251 on-save push turns the field into a write primitive. The id
+   * check in {@code applyChangesToDatabaseIdentifiers} stops a client naming someone else's
+   * identifier row, but not a client retargeting its own row at someone else's external record: a
+   * single instrument PUT carrying a foreign RID or DOI would have RSpace overwrite that record
+   * with this instrument's metadata, under the deployment's own provider credentials.
+   */
+  @Test
+  void providerRecordIdCannotBeSetFromAnIncomingPayload() throws Exception {
+    String incoming = "{\"id\":1,\"doi\":\"someone-elses-record-id\"}";
+
+    ApiInventoryDOI deserialized = new ObjectMapper().readValue(incoming, ApiInventoryDOI.class);
+
+    assertNull(deserialized.getDoi(), "doi must be ignored on deserialization");
+  }
+
+  /**
+   * READ_ONLY must block only the inbound direction here too: the identifier value is what the
+   * Inventory UI and the public landing page display, and what API clients cite.
+   */
+  @Test
+  void providerRecordIdIsStillSerializedOutbound() throws Exception {
+    ApiInventoryDOI doi = new ApiInventoryDOI();
+    doi.setDoi("10.82316/khma-em96");
+
+    String json = new ObjectMapper().writeValueAsString(doi);
+
+    assertTrue(json.contains("\"doi\":\"10.82316/khma-em96\""));
   }
 
   @Test

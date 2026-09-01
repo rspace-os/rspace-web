@@ -58,6 +58,7 @@ public class InstrumentExternalMetadataUpdateMVCIT extends API_MVC_InventoryTest
   private Object realConnectorOnManager;
   private Object realConnectorOnUpdateService;
   private ApiInventorySystemSettings.IdentifierSettings originalB2instSettings;
+  private ApiInventorySystemSettings.IdentifierSettings originalPidinstDataCiteSettings;
 
   @Before
   public void setup() throws Exception {
@@ -70,13 +71,29 @@ public class InstrumentExternalMetadataUpdateMVCIT extends API_MVC_InventoryTest
     // these are system properties in the shared dev database, so put them back afterwards
     originalB2instSettings =
         captureIdentifierSettings(settingsController, IdentifierType.PIDINST_B2INST);
+    // DataCite too: enabling one PIDINST provider disables the other, so turning B2INST on below
+    // switches the DataCite PIDINST provider off as a side effect and it has to be put back
+    originalPidinstDataCiteSettings =
+        captureIdentifierSettings(settingsController, IdentifierType.PIDINST_DATACITE);
     setB2instEnabled("true");
   }
 
   @After
   public void teardown() throws Exception {
+    /*
+     * Both providers, and in this order. Enabling a PIDINST provider disables its sibling (see
+     * updateInventorySettings), so this test switched the DataCite PIDINST provider off on the way
+     * in and must switch it back. B2INST goes first because restoring it is what leaves the enabled
+     * flag free for DataCite to reclaim.
+     *
+     * Leaving DataCite off is not a harmless default: this is the shared dev database, and the
+     * developer who owns it would find their instrument PIDs quietly going to the wrong provider,
+     * or nowhere, with nothing in the diff to explain it.
+     */
     restoreIdentifierSettings(
         settingsController, IdentifierType.PIDINST_B2INST, originalB2instSettings);
+    restoreIdentifierSettings(
+        settingsController, IdentifierType.PIDINST_DATACITE, originalPidinstDataCiteSettings);
     // both beans are singletons in a Spring context cached across test classes, so the dummy has to
     // be swapped back out or later MVC tests silently run against it
     ReflectionTestUtils.setField(identifierApiManager, "b2instConnector", realConnectorOnManager);
@@ -244,12 +261,16 @@ public class InstrumentExternalMetadataUpdateMVCIT extends API_MVC_InventoryTest
   }
 
   /**
-   * Owner change is its own endpoint and deliberately not a push trigger (ADR 0008): the mapped
-   * Owner property comes from the instrument's own field, not from the RSpace record owner, so a
-   * transfer changes nothing the provider holds.
+   * Owner change IS a push trigger, and the reason it was originally excluded was wrong. The
+   * premise was that the mapped Owner comes from the instrument's own field, so a transfer changes
+   * nothing the provider holds. It does: {@code RspaceToExternalProviderAdapterImpl.ownerOf} sets
+   * {@code ownerContact} from the record owner's email unconditionally, and {@code ownerName} from
+   * the same owner unless the Owner field overrides it. Unpushed, the registered record kept the
+   * previous owner's address - a corrected owner is one of the three examples RSDEV-1251 opens
+   * with.
    */
   @Test
-  public void changingTheOwnerDoesNotPush() throws Exception {
+  public void changingTheOwnerPushesTheNewOwnerToTheProvider() throws Exception {
     User owner = createInitAndLoginAnyUser();
     String ownerKey = createNewApiKeyForUser(owner);
     ApiInstrument instrument = createBasicInstrumentForUser(owner, "owner-change");
@@ -268,7 +289,9 @@ public class InstrumentExternalMetadataUpdateMVCIT extends API_MVC_InventoryTest
             .andReturn();
     assertNull(result.getResolvedException());
 
-    assertNull(b2instDummy.getDoiUpdateSentToB2inst());
+    B2instDoi pushed = b2instDummy.getDoiUpdateSentToB2inst();
+    assertNotNull(pushed, "an owner transfer must reach the provider");
+    assertEquals(newOwner.getEmail(), pushed.getMetadata().getOwner().get(0).getOwnerContact());
   }
 
   private Long identifierIdOf(User user, String apiKey, Long instrumentId) throws Exception {

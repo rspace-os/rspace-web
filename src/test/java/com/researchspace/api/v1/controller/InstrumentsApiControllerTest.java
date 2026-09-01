@@ -157,7 +157,7 @@ public class InstrumentsApiControllerTest extends SpringTransactionalTest {
         "externalUpdateService",
         new InventoryIdentifierExternalUpdateService() {
           @Override
-          public void pushMetadataUpdates(ApiInstrument saved, ApiInstrument incoming, User user) {
+          public void pushMetadataUpdates(ApiInstrument saved, User user) {
             throw new IllegalStateException("boom");
           }
         });

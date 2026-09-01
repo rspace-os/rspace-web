@@ -364,6 +364,17 @@ public class RspaceToExternalProviderAdapterImpl implements RspaceToExternalProv
       return dataCiteDoi;
     }
     InstrumentEntity instrument = (InstrumentEntity) associatedRecord;
+    /*
+     * The instrument's CURRENT name, not the one stored on the identifier. That stored title is
+     * written once, by updateNewAssociatedDoi at register time and by ApiIdentifiersHelper on
+     * assign, and nothing refreshes it on a rename - so reading it here sent the old name on every
+     * later push and left the registered record drifting, which is the drift RSDEV-1251 exists to
+     * stop. Set before the environment guard below returns, because a deployment with no usable
+     * server URL still has a correct name to send.
+     */
+    dataCiteDoi
+        .getAttributes()
+        .setTitles(List.of(new DataCiteDoiAttributes.Title(instrument.getName())));
     if (!PidinstFields.isResolvableAddress(properties.getServerUrl())) {
       /*
        * Environment failure, not data: with no usable server URL no address can be built for ANY

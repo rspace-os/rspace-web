@@ -19,17 +19,18 @@ import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.webapp.integrations.b2inst.B2instConnectionException;
 import com.researchspace.webapp.integrations.b2inst.B2instConnector;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnector;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 
 /**
@@ -98,6 +99,12 @@ public class InventoryIdentifierExternalUpdateService {
   public void setTransactionManager(PlatformTransactionManager transactionManager) {
     this.readOnlyTx = new TransactionTemplate(transactionManager);
     this.readOnlyTx.setReadOnly(true);
+    // REQUIRES_NEW, not the default REQUIRED: this class's contract is that the push happens
+    // outside any transaction, and REQUIRED would silently join a caller's instead of enforcing
+    // that. Joined, setReadOnly above is ignored, the boundary never closes so the provider HTTP
+    // exchange holds a pooled JDBC connection, and a build failure would mark the caller's
+    // transaction rollback-only and lose the instrument save the push is meant not to affect.
+    this.readOnlyTx.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
   }
 
   /**
@@ -113,22 +120,40 @@ public class InventoryIdentifierExternalUpdateService {
       DataCiteDoi dataCitePayload) {}
 
   /**
-   * Rebuilds and pushes the metadata of every identifier of {@code saved} that is in an updatable
-   * state, then records the outcome on that identifier's DTO so the response carries it.
+   * Rebuilds and pushes the metadata of every identifier of {@code saved} whose provider record can
+   * still be rewritten, then records the outcome on that identifier's DTO so the response carries
+   * it.
    *
    * <p>Must be called after the update transaction has committed, from a non-transactional caller.
    *
+   * <p>Every identifier the instrument carries ends up in one of three places. One whose provider
+   * record is writable is pushed and the result reported. One whose record is frozen by its own
+   * state is not pushed but is still reported, because "nothing was sent, and here is why" is the
+   * answer the acceptance criteria ask for and silence is not. One this deployment could not push
+   * in any case - no provider record id, no state, an IGSN, or a provider integration that is
+   * switched off - is passed over in silence, because there is nothing the user could act on and a
+   * sentence on every save would be noise.
+   *
    * @param saved the instrument as saved and about to be returned; its identifier DTOs are the ones
-   *     decorated, and a push is attempted for every eligible one
-   * @param incoming the request body, read only for the assign/delete/register markers that say an
-   *     identifier was itself mutated by this same save and so must not be pushed
+   *     decorated, and a push is attempted for every writable one
    */
-  public void pushMetadataUpdates(ApiInstrument saved, ApiInstrument incoming, User user) {
-    List<ApiInventoryDOI> eligible = eligibleIdentifiers(saved, incoming);
-    if (eligible.isEmpty()) {
+  public void pushMetadataUpdates(ApiInstrument saved, User user) {
+    List<ApiInventoryDOI> candidates = candidateIdentifiers(saved);
+    if (candidates.isEmpty()) {
       return;
     }
-    for (PendingUpdate pending : buildPayloads(saved.getId(), eligible)) {
+    List<ApiInventoryDOI> writable = new ArrayList<>();
+    for (ApiInventoryDOI doi : candidates) {
+      if (isUpdatable(doi)) {
+        writable.add(doi);
+      } else {
+        doi.setExternalMetadataUpdate(notWritableOutcome(doi));
+      }
+    }
+    if (writable.isEmpty()) {
+      return;
+    }
+    for (PendingUpdate pending : buildPayloads(saved.getId(), writable)) {
       ApiExternalMetadataUpdate outcome = push(pending);
       pending.identifier().setExternalMetadataUpdate(outcome);
       audit(pending.instrument(), user, outcome);
@@ -136,83 +161,131 @@ public class InventoryIdentifierExternalUpdateService {
   }
 
   /**
-   * The identifiers this save should push: attached, carrying a provider record id, in an updatable
-   * state for their provider, and not created, assigned or delete-requested by this same save.
+   * The identifiers this deployment could push at all: attached, carrying a provider record id and
+   * a state, of a PIDINST type, and belonging to a provider whose integration is switched on.
    *
-   * <p>An identifier the request mutated is excluded because its metadata was just registered or
-   * just detached; a delete-requested one is gone from {@code saved} anyway, so the marker check
-   * matters for the assign and register cases.
+   * <p>The enablement check is what every other identifier operation does first (see {@code
+   * ApiAvailabilityHandler}), and it matters more here because this push is not something the user
+   * asked for: it rides on an ordinary save. Without it, disabling PIDINST - or switching provider,
+   * which disables the sibling automatically - would put a failure sentence on every later save of
+   * every instrument still holding a draft, and audit a write each time, with nothing the user
+   * could do to stop it.
    */
-  private List<ApiInventoryDOI> eligibleIdentifiers(ApiInstrument saved, ApiInstrument incoming) {
+  private List<ApiInventoryDOI> candidateIdentifiers(ApiInstrument saved) {
     if (saved == null || saved.getId() == null || saved.getIdentifiers() == null) {
       return List.of();
     }
-    Set<Long> mutatedByThisSave = idsMutatedByThisSave(incoming);
     return saved.getIdentifiers().stream()
         .filter(Objects::nonNull)
-        .filter(doi -> doi.getId() == null || !mutatedByThisSave.contains(doi.getId()))
         .filter(doi -> isNotBlank(doi.getDoi()))
-        .filter(InventoryIdentifierExternalUpdateService::isUpdatable)
+        .filter(doi -> isNotBlank(doi.getState()))
+        .filter(doi -> isEnabledPidinstProvider(typeOf(doi)))
         .toList();
   }
 
-  private Set<Long> idsMutatedByThisSave(ApiInstrument incoming) {
-    if (incoming == null || incoming.getIdentifiers() == null) {
-      return Set.of();
+  /**
+   * Whether this identifier belongs to a PIDINST provider that is enabled right now. An IGSN is
+   * refused here rather than by the state rules: an instrument should never carry one, and mapping
+   * it through the instrument adapter would build PIDINST metadata for a sample identifier.
+   */
+  private boolean isEnabledPidinstProvider(IdentifierType type) {
+    if (type == null) {
+      return false;
     }
-    return incoming.getIdentifiers().stream()
-        .filter(Objects::nonNull)
-        .filter(
-            doi ->
-                doi.isDeleteIdentifierRequest()
-                    || doi.isAssignIdentifierRequest()
-                    || doi.isRegisterIdentifierRequest())
-        .map(ApiInventoryDOI::getId)
-        .filter(Objects::nonNull)
-        .collect(Collectors.toSet());
+    return switch (type) {
+      case PIDINST_B2INST -> b2instConnector.isConfiguredAndEnabled();
+      case PIDINST_DATACITE ->
+          dataCiteConnector.isDataCiteConfiguredAndEnabled(InventorySettingType.PIDINST);
+      case IGSN_DATACITE -> false;
+    };
   }
 
+  private static IdentifierType typeOf(ApiInventoryDOI doi) {
+    return EnumUtils.getEnum(IdentifierType.class, doi.getDoiType());
+  }
+
+  /**
+   * Whether the provider record behind this identifier can still be rewritten in place. Everything
+   * reaching here is already a known PIDINST type with a non-blank state.
+   */
   private static boolean isUpdatable(ApiInventoryDOI doi) {
-    IdentifierType type = EnumUtils.getEnum(IdentifierType.class, doi.getDoiType());
-    if (type == null || StringUtils.isBlank(doi.getState())) {
+    IdentifierType type = typeOf(doi);
+    if (type == null) {
       return false;
     }
     String state = doi.getState().trim().toLowerCase(Locale.ROOT);
     return switch (type) {
       case PIDINST_B2INST -> !B2INST_PUBLISHED_STATES.contains(state);
       case PIDINST_DATACITE -> DATACITE_UPDATABLE_STATES.contains(state);
-      // an instrument should never carry an IGSN; skipped rather than mapped through the
-      // instrument adapter, which would build PIDINST metadata for a sample identifier
       case IGSN_DATACITE -> false;
     };
   }
 
   /**
-   * Remaps the instrument's current fields into one payload per eligible identifier, inside a
+   * The "nothing was sent, and here is why" outcome, for a record its own state has frozen: a
+   * B2INST record whose community review was accepted, or a DataCite DOI past draft.
+   *
+   * <p>Names the state rather than refusing generically, because that is the same word the user
+   * already sees against the identifier on the record, and it is the difference between the plain
+   * explanation the acceptance criteria ask for and a dead end. Not audited: nothing was sent and
+   * nothing changed, so there is no synchronisation to record.
+   */
+  private ApiExternalMetadataUpdate notWritableOutcome(ApiInventoryDOI doi) {
+    return new ApiExternalMetadataUpdate(
+        false,
+        message(
+            "errors.inventory.identifier.externalUpdateNotPossible",
+            providerName(typeOf(doi)),
+            doi.getState().trim()));
+  }
+
+  /**
+   * Remaps the instrument's current fields into one payload per writable identifier, inside a
    * read-only transaction because the mapping adapter demands one and walks lazy associations.
    *
    * <p>The transaction ends when this method returns, so every provider call is made outside it and
    * cannot pin a pooled JDBC connection for the length of an HTTP exchange.
+   *
+   * <p>One identifier's mapping failure is reported on that identifier and the others still go,
+   * matching the per-identifier isolation the push itself has. Letting it propagate would discard
+   * the pushes for every other identifier of the same instrument and tell the user nothing at all.
+   *
+   * <p>If the instrument itself cannot be read back, {@code getIfExists} throws {@code
+   * NotFoundException} and it propagates to the controller's guard, which logs it and leaves the
+   * response unannotated. That is a save racing a deletion, not something a user can act on.
    */
-  private List<PendingUpdate> buildPayloads(Long instrumentId, List<ApiInventoryDOI> eligible) {
+  private List<PendingUpdate> buildPayloads(Long instrumentId, List<ApiInventoryDOI> writable) {
     List<PendingUpdate> built =
         readOnlyTx.execute(
             status -> {
               InstrumentEntity instrument = instrumentApiMgr.getIfExists(instrumentId);
-              if (instrument == null) {
-                log.warn(
-                    "Skipping the external metadata update of instrument {}: it could not be read"
-                        + " back after the save.",
-                    instrumentId);
-                return List.<PendingUpdate>of();
-              }
-              return eligible.stream().map(doi -> buildPayload(doi, instrument)).toList();
+              return writable.stream()
+                  .map(doi -> buildPayloadOrReport(doi, instrument))
+                  .filter(Objects::nonNull)
+                  .toList();
             });
     return built == null ? List.of() : built;
   }
 
+  private PendingUpdate buildPayloadOrReport(ApiInventoryDOI doi, InstrumentEntity instrument) {
+    try {
+      return buildPayload(doi, instrument);
+    } catch (RuntimeException e) {
+      String provider = providerName(typeOf(doi));
+      log.warn(
+          "Could not rebuild the {} payload for identifier {}: {}",
+          provider,
+          doi.getDoi(),
+          e.getMessage());
+      doi.setExternalMetadataUpdate(
+          new ApiExternalMetadataUpdate(
+              false, message("errors.inventory.identifier.externalUpdateFailed", provider, null)));
+      return null;
+    }
+  }
+
   private PendingUpdate buildPayload(ApiInventoryDOI doi, InstrumentEntity instrument) {
-    IdentifierType type = EnumUtils.getEnum(IdentifierType.class, doi.getDoiType());
+    IdentifierType type = typeOf(doi);
     if (IdentifierType.PIDINST_B2INST.equals(type)) {
       return new PendingUpdate(
           doi,
@@ -258,12 +331,14 @@ public class InventoryIdentifierExternalUpdateService {
       return new ApiExternalMetadataUpdate(
           true, message("inventory.identifier.externalUpdated", provider, null));
     } catch (RuntimeException e) {
+      // e.getMessage() only, never the throwable: B2instConnectorImpl redacts the bearer token at
+      // a single exit, and in Spring 6 RestClientResponseException.getMessage() embeds the raw
+      // response body, so printing the cause chain would put the unredacted body in the log.
       log.warn(
           "External metadata update of {} record {} failed: {}",
           provider,
           pending.providerRecordId(),
-          e.getMessage(),
-          e);
+          e.getMessage());
       return new ApiExternalMetadataUpdate(
           false,
           message("errors.inventory.identifier.externalUpdateFailed", provider, userSafeDetail(e)));
