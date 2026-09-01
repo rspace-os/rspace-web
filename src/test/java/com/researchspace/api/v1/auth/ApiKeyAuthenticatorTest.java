@@ -8,9 +8,8 @@ import com.researchspace.model.User;
 import com.researchspace.service.UserApiKeyManager;
 import com.researchspace.testutils.TestFactory;
 import java.util.Optional;
-import org.apache.shiro.SecurityUtils;
-import org.apache.shiro.UnavailableSecurityManagerException;
 import org.apache.shiro.subject.Subject;
+import org.apache.shiro.util.ThreadContext;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -26,17 +25,20 @@ public class ApiKeyAuthenticatorTest {
 
   public @Rule MockitoRule rule = MockitoJUnit.rule();
   @Mock UserApiKeyManager apiMgr;
-  @InjectMocks ApiKeyAuthenticatorTSS_Spy shiroAPIKeyAuthoriser;
+  @InjectMocks ApiKeyAuthenticator shiroAPIKeyAuthoriser;
 
   final String apiKey = "abcde";
 
   MockHttpServletRequest mockRequest;
 
-  // replaces real shiro login with boolean test spy
-  static class ApiKeyAuthenticatorTSS_Spy extends ApiKeyAuthenticator {
-    boolean loginOK = false;
-    boolean statelessScopeActive = false;
-    private final Subject subject =
+  boolean loginOK = false;
+  boolean statelessScopeActive = false;
+
+  @Before
+  public void setUp() throws Exception {
+    mockRequest = new MockHttpServletRequest();
+
+    Subject subject =
         Mockito.mock(
             Subject.class,
             invocation -> {
@@ -47,36 +49,23 @@ public class ApiKeyAuthenticatorTest {
               return Mockito.RETURNS_DEFAULTS.answer(invocation);
             });
 
-    public ApiKeyAuthenticatorTSS_Spy(UserApiKeyManager apiMgr) {
-      super(apiMgr);
-    }
-
-    @Override
-    Subject getSubject() {
-      return subject;
-    }
-  }
-
-  @Before
-  public void setUp() throws Exception {
-    mockRequest = new MockHttpServletRequest();
-
-    // When running all tests, stale SecurityUtils sometimes make into these tests
-    try {
-      SecurityUtils.getSubject().logout();
-    } catch (UnavailableSecurityManagerException ignored) {
-    }
+    // replace any stale thread state from other tests with a spy subject, so
+    // SecurityUtils.getSubject() inside the authenticator resolves to it
+    ThreadContext.remove();
+    ThreadContext.bind(subject);
   }
 
   @After
-  public void tearDown() throws Exception {}
+  public void tearDown() throws Exception {
+    ThreadContext.remove();
+  }
 
   @Test
   public void testAuthoriseOK() {
     User enabled = TestFactory.createAnyUser("any");
     setUpExpectations(enabled);
     shiroAPIKeyAuthoriser.authenticate(mockRequest);
-    assertTrue(shiroAPIKeyAuthoriser.loginOK);
+    assertTrue(loginOK);
   }
 
   @Test
@@ -86,7 +75,7 @@ public class ApiKeyAuthenticatorTest {
 
     shiroAPIKeyAuthoriser.authenticate(mockRequest);
 
-    assertTrue(shiroAPIKeyAuthoriser.statelessScopeActive);
+    assertTrue(statelessScopeActive);
     assertFalse(StatelessApiLogin.isInProgress());
   }
 

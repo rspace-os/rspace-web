@@ -97,11 +97,8 @@ abstract class AbstractApiAuthenticator implements ApiAuthenticator {
    * Package scoped for testing
    */
   void doLogin(String apiKey, User u) {
-    StatelessApiLogin.login(getSubject(), new ApiKeyAuthenticationToken(u.getUsername(), apiKey));
-  }
-
-  Subject getSubject() {
-    return SecurityUtils.getSubject();
+    StatelessApiLogin.login(
+        SecurityUtils.getSubject(), new ApiKeyAuthenticationToken(u.getUsername(), apiKey));
   }
 
   @Override
