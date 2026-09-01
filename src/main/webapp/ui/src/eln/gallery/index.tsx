@@ -635,7 +635,7 @@ window.addEventListener("load", () => {
     const root = createRoot(domContainer);
     root.render(
       <React.StrictMode>
-        <I18nRoot namespaces={["gallery", "common", "about"]} fallback={<LoaderCircular />}>
+        <I18nRoot namespaces={["gallery", "common", "about", "inventory"]} fallback={<LoaderCircular />}>
           <BrowserRouter>
             <Gallery />
           </BrowserRouter>

@@ -1959,6 +1959,7 @@ export default interface Resources {
         "name": "Name"
       },
       "heading": "Linked Documents",
+      "loadFailed": "Error loading linked documents.",
       "noRows": "No Linked Documents"
     },
     "listing": {
@@ -2108,7 +2109,8 @@ export default interface Resources {
       "viewLatest": "View the latest version"
     },
     "referencingInventoryItems": {
-      "loadFailed": "Error loading related inventory items."
+      "loadFailed": "Error loading related inventory items.",
+      "noRows": "No related inventory items"
     },
     "s3": {
       "errors": {
@@ -3275,7 +3277,8 @@ export default interface Resources {
             "relation": "Relation"
           },
           "loading": "Loading...",
-          "none": "No Inventory items link to this {recordTypeName}.",
+          "none": "{recordType, select, document {No Inventory items link to this document.} notebook {No Inventory items link to this notebook.} galleryFile {No Inventory items link to this gallery file.} other {No Inventory items link to this record.}}",
+          "row": "<globalId>{globalId}</globalId>: {name}{relationKind, select, attachment { <relation>(Attachment)</relation>} relation { <relation>({relationType})</relation>} other {}}",
           "title": "Related inventory items"
         },
         "targetBrowser": {
