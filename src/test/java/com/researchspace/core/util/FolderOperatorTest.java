@@ -1,8 +1,6 @@
 package com.researchspace.core.util;
 
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -31,12 +29,12 @@ public class FolderOperatorTest {
     // after construction, base and root dir are set based on runtime values
     assertNotNull(folderOps.getBaseDir());
     assertNotNull(folderOps.getFileRoot());
-    assertThat(
-        folderOps.getBaseDir().getAbsolutePath(),
-        containsString(FolderOperator.FILE_STORE_DIR_NAME));
-    assertThat(
-        folderOps.getFileRoot().getAbsolutePath(),
-        not(containsString(FolderOperator.FILE_STORE_DIR_NAME)));
+    assertTrue(
+        folderOps.getBaseDir().getAbsolutePath().contains(FolderOperator.FILE_STORE_DIR_NAME),
+        folderOps.getBaseDir().getAbsolutePath());
+    assertFalse(
+        folderOps.getFileRoot().getAbsolutePath().contains(FolderOperator.FILE_STORE_DIR_NAME),
+        folderOps.getFileRoot().getAbsolutePath());
   }
 
   @Test
@@ -46,12 +44,12 @@ public class FolderOperatorTest {
     assertNotNull(folderOps.getFileRoot());
     String baseDir = folderOps.getBaseDir().getAbsolutePath();
     String rootDir = folderOps.getFileRoot().getAbsolutePath();
-    assertThat(baseDir, containsString(FolderOperator.FILE_STORE_DIR_NAME));
-    assertThat(
-        folderOps.getFileRoot().getAbsolutePath(),
-        not(containsString(FolderOperator.FILE_STORE_DIR_NAME)));
-    assertThat(baseDir, containsString(rootDir));
-    assertThat(baseDir, containsString(fStoreRoot.getName()));
+    assertTrue(baseDir.contains(FolderOperator.FILE_STORE_DIR_NAME), baseDir);
+    assertFalse(
+        folderOps.getFileRoot().getAbsolutePath().contains(FolderOperator.FILE_STORE_DIR_NAME),
+        folderOps.getFileRoot().getAbsolutePath());
+    assertTrue(baseDir.contains(rootDir), baseDir);
+    assertTrue(baseDir.contains(fStoreRoot.getName()), baseDir);
   }
 
   @Test
@@ -59,8 +57,8 @@ public class FolderOperatorTest {
     folderOps = new FolderOperator();
     folderOps.setFileStoreRootDir(fStoreRootToSet.getAbsolutePath());
     String baseDir = folderOps.getBaseDir().getAbsolutePath();
-    assertThat(baseDir, containsString(fStoreRootToSet.getName()));
-    assertThat(baseDir, not(containsString(fStoreRoot.getName())));
+    assertTrue(baseDir.contains(fStoreRootToSet.getName()), baseDir);
+    assertFalse(baseDir.contains(fStoreRoot.getName()), baseDir);
   }
 
   @Test

@@ -1,7 +1,5 @@
 package com.researchspace.webapp.controller;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -15,7 +13,6 @@ import com.researchspace.properties.PropertyHolder;
 import com.researchspace.service.LicenseService;
 import com.researchspace.service.UserEnablementUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
-import org.hamcrest.Matcher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -64,14 +61,13 @@ public class SysAdminControllerSpringTest extends SpringTransactionalTest {
     String customMessage = "hello-from-custom-message";
     props.setLicenseExceededCustomMessage(customMessage);
     try {
-      Matcher<String> matcher = containsString(customMessage);
       Long userId = user.getId();
-      assertThat(
+      String message =
           assertThrows(
                   LicenseExceededException.class,
                   () -> sysCtrller.setUserAccountEnablement(userId, true))
-              .getMessage(),
-          matcher);
+              .getMessage();
+      assertTrue(message.contains(customMessage), message);
     } finally {
       sysCtrller.setLicenseService(licenseService);
       props.setLicenseExceededCustomMessage(defaultMessage);

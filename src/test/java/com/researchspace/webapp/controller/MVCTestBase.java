@@ -1,5 +1,9 @@
 package com.researchspace.webapp.controller;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -27,9 +31,11 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.ResultMatcher;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
+import org.springframework.web.servlet.ModelAndView;
 
 /**
  * Base class for Spring MVC tests, which are the most extensive integration tests, as they cover
@@ -258,5 +264,56 @@ public abstract class MVCTestBase extends RealTransactionSpringTestBase {
       body = JacksonUtil.toJson(toPost);
     }
     return body;
+  }
+
+  /**
+   * Typed replacements for the Hamcrest matcher overloads of Spring's MockMvc result matchers.
+   * Spring's model()/view()/header() matcher overloads are Hamcrest-typed, so these keep the fluent
+   * andExpect(..) style without putting Hamcrest back on the test classpath.
+   */
+  protected static ResultMatcher viewNameContains(String expected) {
+    return result -> {
+      ModelAndView mav = result.getModelAndView();
+      String name = mav == null ? null : mav.getViewName();
+      assertTrue(name != null && name.contains(expected), "view name was " + name);
+    };
+  }
+
+  protected static ResultMatcher modelAttributeContains(String attribute, String expected) {
+    return result -> {
+      Object value = modelAttribute(result, attribute);
+      assertTrue(value != null && value.toString().contains(expected), attribute + " was " + value);
+    };
+  }
+
+  protected static ResultMatcher modelAttributeDoesNotContain(String attribute, String expected) {
+    return result -> {
+      Object value = modelAttribute(result, attribute);
+      assertFalse(
+          value != null && value.toString().contains(expected), attribute + " was " + value);
+    };
+  }
+
+  protected static ResultMatcher modelAttributeIsNull(String attribute, boolean expectNull) {
+    return result -> {
+      Object value = modelAttribute(result, attribute);
+      if (expectNull) {
+        assertNull(value, attribute + " was " + value);
+      } else {
+        assertNotNull(value, attribute + " was null");
+      }
+    };
+  }
+
+  protected static ResultMatcher headerContains(String header, String expected) {
+    return result -> {
+      String value = result.getResponse().getHeader(header);
+      assertTrue(value != null && value.contains(expected), header + " was " + value);
+    };
+  }
+
+  private static Object modelAttribute(MvcResult result, String attribute) {
+    ModelAndView mav = result.getModelAndView();
+    return mav == null ? null : mav.getModel().get(attribute);
   }
 }

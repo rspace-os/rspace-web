@@ -1,9 +1,7 @@
 package com.researchspace.archive;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.model.core.IRSpaceDoc;
@@ -28,6 +26,6 @@ public class ArchiveFileNameDataTest {
     when(record.isStructuredDocument()).thenReturn(true);
     ArchiveFileNameData fname = new ArchiveFileNameData(record, null);
     assertEquals(53, fname.toFileName().length());
-    assertThat(fname.toFileName(), not(containsString("."))); // ellipses truncated
+    assertFalse(fname.toFileName().contains("."), fname.toFileName()); // ellipses truncated
   }
 }

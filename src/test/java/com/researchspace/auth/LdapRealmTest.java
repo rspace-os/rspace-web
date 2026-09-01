@@ -1,11 +1,10 @@
 package com.researchspace.auth;
 
 import static com.researchspace.testutils.TestFactory.createAnyUser;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -79,10 +78,12 @@ public class LdapRealmTest {
     ldapRealm.doGetAuthenticationInfo(token);
     // ... but with sid verification enabled expect exception if sid doesn't match
     when(userManager.getUserByUsername(testUsername)).thenReturn(user1sid1);
-    assertThat(
+    assertTrue(
         assertThrows(AuthenticationException.class, () -> ldapRealm.doGetAuthenticationInfo(token))
-            .getMessage(),
-        containsString("SID values are not matching"));
+            .getMessage()
+            .contains("SID values are not matching"),
+        assertThrows(AuthenticationException.class, () -> ldapRealm.doGetAuthenticationInfo(token))
+            .getMessage());
   }
 
   @Test

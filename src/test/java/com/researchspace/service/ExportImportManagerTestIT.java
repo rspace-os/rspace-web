@@ -14,9 +14,6 @@ import static com.researchspace.testutils.ArchiveTestUtils.assertPredicateOnHtml
 import static com.researchspace.testutils.ArchiveTestUtils.getAllHTMLFilesInArchive;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.join;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -333,9 +330,9 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
         exportImportMgr
             .asyncExportGroupToArchive(cfg, labAdmin, group.getId(), anyURI(), standardPostExport)
             .get();
-    assertThat(archive.getArchivedRecords(), hasItem(publicUserDocument));
-    assertThat(archive.getArchivedRecords(), hasItem(publicLabAdminDocument));
-    assertThat(archive.getArchivedRecords(), not(hasItem(privatePIDocument)));
+    assertTrue(archive.getArchivedRecords().contains(publicUserDocument));
+    assertTrue(archive.getArchivedRecords().contains(publicLabAdminDocument));
+    assertFalse(archive.getArchivedRecords().contains(privatePIDocument));
   }
 
   private ISearchResults<BaseRecord> searchByNameAndOwner(String name, User owner)

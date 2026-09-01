@@ -5,9 +5,6 @@ import static com.axiope.search.SearchConstants.RECORDS_SEARCH_OPTION;
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static com.researchspace.core.util.TransformerUtils.toList;
 import static com.researchspace.testutils.SearchTestUtils.createSimpleNameSearchCfg;
-import static com.researchspace.testutils.matchers.TotalSearchResults.totalSearchResults;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -20,7 +17,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.MockitoAnnotations.openMocks;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -1942,7 +1938,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
                     .param("target", moveTarget.getId() + "")
                     .principal(pi::getUsername))
             .andReturn();
-    assertThat(getSearchResultsFromMvcResult(moveResult), totalSearchResults(2));
+    assertEquals(2, getSearchResultsFromMvcResult(moveResult).getTotalHits().intValue());
     // now, stay with favorites filter, but delete 1, we should get 1 favourite returned, i.e.
     // filter is still applied.
     // RSPAC-749
@@ -1956,7 +1952,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
                     .principal(pi::getUsername))
             .andReturn();
 
-    assertThat(getSearchResultsFromMvcResult(deleteResult), totalSearchResults(1));
+    assertEquals(1, getSearchResultsFromMvcResult(deleteResult).getTotalHits().intValue());
   }
 
   @Test
@@ -1980,7 +1976,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
             .andReturn();
     ISearchResults<BaseRecord> results = getSearchResultsFromMvcResult(copyResult);
     // after copy we now have 1 more results.
-    assertThat(results, totalSearchResults(initialRecordCount + 1));
+    assertEquals(initialRecordCount + 1, results.getTotalHits().intValue());
     verify(auditService).notify(any(DuplicateAuditEvent.class));
     verify(auditService).notify(any(CreateAuditEvent.class));
   }
@@ -2045,7 +2041,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
         mockMvc
             .perform(get("/workspace/getEcatMediaFile/{id}", image.getId()).principal(principal))
             .andExpect(status().isOk())
-            .andExpect(header().string("Content-Disposition", containsString(image.getFileName())))
+            .andExpect(headerContains("Content-Disposition", image.getFileName()))
             .andReturn();
     assertNull(result.getResolvedException());
   }

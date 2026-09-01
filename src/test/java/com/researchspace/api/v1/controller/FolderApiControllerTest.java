@@ -4,10 +4,6 @@ import static com.researchspace.api.v1.controller.BaseApiController.DOCUMENTS_EN
 import static com.researchspace.api.v1.controller.BaseApiController.FOLDERS_ENDPOINT;
 import static com.researchspace.api.v1.controller.BaseApiController.FOLDER_TREE_ENDPOINT;
 import static com.researchspace.core.util.TransformerUtils.toSet;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.hasItems;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -298,12 +294,16 @@ public class FolderApiControllerTest {
     RecordTypeFilter actualFilter = controller.generateRecordFilter(Collections.emptySet());
     assertEquals(EnumSet.allOf(RecordType.class), actualFilter.getWantedTypes());
     actualFilter = controller.generateRecordFilter(toSet("notebook"));
-    assertThat(actualFilter.getWantedTypes(), hasItem(RecordType.NOTEBOOK));
-    assertThat(actualFilter.getExcludedTypes(), hasItems(RecordType.NORMAL, RecordType.FOLDER));
+    assertTrue(actualFilter.getWantedTypes().contains(RecordType.NOTEBOOK));
+    assertTrue(
+        actualFilter.getExcludedTypes().contains(RecordType.NORMAL)
+            && actualFilter.getExcludedTypes().contains(RecordType.FOLDER));
 
     actualFilter = controller.generateRecordFilter(toSet("document", "folder"));
-    assertThat(actualFilter.getWantedTypes(), hasItems(RecordType.NORMAL, RecordType.FOLDER));
-    assertThat(actualFilter.getExcludedTypes(), hasItems(RecordType.NOTEBOOK));
+    assertTrue(
+        actualFilter.getWantedTypes().contains(RecordType.NORMAL)
+            && actualFilter.getWantedTypes().contains(RecordType.FOLDER));
+    assertTrue(actualFilter.getExcludedTypes().contains(RecordType.NOTEBOOK));
   }
 
   @Test
@@ -311,12 +311,16 @@ public class FolderApiControllerTest {
     RecordTypeFilter actualFilter = controller.generateRecordFilter(Collections.emptySet());
     assertEquals(EnumSet.allOf(RecordType.class), actualFilter.getWantedTypes());
     actualFilter = controller.generateRecordFilter(toSet("folder"));
-    assertThat(actualFilter.getWantedTypes(), hasItem(RecordType.FOLDER));
-    assertThat(actualFilter.getExcludedTypes(), hasItems(RecordType.NORMAL, RecordType.MEDIA_FILE));
+    assertTrue(actualFilter.getWantedTypes().contains(RecordType.FOLDER));
+    assertTrue(
+        actualFilter.getExcludedTypes().contains(RecordType.NORMAL)
+            && actualFilter.getExcludedTypes().contains(RecordType.MEDIA_FILE));
 
     actualFilter = controller.generateRecordFilter(toSet("document", "folder"));
-    assertThat(actualFilter.getWantedTypes(), hasItems(RecordType.MEDIA_FILE, RecordType.FOLDER));
-    assertThat(actualFilter.getExcludedTypes(), hasItems(RecordType.NOTEBOOK));
+    assertTrue(
+        actualFilter.getWantedTypes().contains(RecordType.MEDIA_FILE)
+            && actualFilter.getWantedTypes().contains(RecordType.FOLDER));
+    assertTrue(actualFilter.getExcludedTypes().contains(RecordType.NOTEBOOK));
   }
 
   @Test
@@ -428,7 +432,9 @@ public class FolderApiControllerTest {
   }
 
   private void assertSelfLink(String expectedPathMatch, LinkableApiObject nbInfo) {
-    assertThat(nbInfo.getLinks().get(0).getLink(), containsString(expectedPathMatch));
+    assertTrue(
+        nbInfo.getLinks().get(0).getLink().contains(expectedPathMatch),
+        nbInfo.getLinks().get(0).getLink());
   }
 
   private RecordTreeItemInfo findResultById(final Long docId, ApiRecordTreeItemListing listing) {

@@ -2,7 +2,6 @@ package com.researchspace.webapp.controller;
 
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static com.researchspace.testutils.TestGroup.LABADMIN_PREFIX;
-import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -335,7 +334,7 @@ public class GroupControllerMVCIT extends MVCTestBase {
     return mockMvc
         .perform(postCreateNewGroup(piOfNewGroup, user, groupDisplayName, principalName))
         .andExpect(model().hasNoErrors())
-        .andExpect(view().name(containsString("redirect:/groups/view/")))
+        .andExpect(viewNameContains("redirect:/groups/view/"))
         .andReturn();
   }
 
@@ -549,7 +548,7 @@ public class GroupControllerMVCIT extends MVCTestBase {
     // pi without group
     mockMvc
         .perform(get("/groups/viewPIGroup").principal(pi1::getUsername))
-        .andExpect(view().name(containsString("redirect:/userform")))
+        .andExpect(viewNameContains("redirect:/userform"))
         .andReturn();
 
     // regular user
@@ -557,7 +556,7 @@ public class GroupControllerMVCIT extends MVCTestBase {
     logoutAndLoginAs(user1);
     mockMvc
         .perform(get("/groups/viewPIGroup").principal(pi1::getUsername))
-        .andExpect(view().name(containsString("redirect:/userform")))
+        .andExpect(viewNameContains("redirect:/userform"))
         .andReturn();
 
     // pi with group
@@ -566,7 +565,7 @@ public class GroupControllerMVCIT extends MVCTestBase {
     createGroupForUsers(pi1, pi1.getUsername(), "", pi1);
     mockMvc
         .perform(get("/groups/viewPIGroup").principal(pi1::getUsername))
-        .andExpect(view().name(containsString("redirect:/groups/view/")))
+        .andExpect(viewNameContains("redirect:/groups/view/"))
         .andReturn();
   }
 
@@ -584,7 +583,7 @@ public class GroupControllerMVCIT extends MVCTestBase {
                 .param("groupType", "PROJECT_GROUP")
                 .principal(sysadmin::getUsername))
         // Spring 6: model attributes not propagated on redirect; redirect URL confirms success
-        .andExpect(view().name(containsString("redirect:/groups/view/")));
+        .andExpect(viewNameContains("redirect:/groups/view/"));
   }
 
   @Test

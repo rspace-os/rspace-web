@@ -1,6 +1,7 @@
 package com.researchspace.dao.hibernate;
 
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.axiope.search.IFileIndexer;
 import com.axiope.search.SearchConstants;
@@ -25,7 +26,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.hamcrest.collection.IsIterableContainingInAnyOrder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -305,7 +305,7 @@ public class WithinRecordsSearchTest extends SearchSpringTestBase {
             PaginationCriteria.createDefaultForClass(BaseRecord.class), options, terms, -1L, true);
 
     List<BaseRecord> results = searchMgr.searchWorkspaceRecords(cfg, userSearching).getResults();
-    assertThat(
-        results, IsIterableContainingInAnyOrder.containsInAnyOrder(recordsToExpect.toArray()));
+    assertEquals(recordsToExpect.size(), results.size());
+    assertTrue(results.containsAll(recordsToExpect));
   }
 }
