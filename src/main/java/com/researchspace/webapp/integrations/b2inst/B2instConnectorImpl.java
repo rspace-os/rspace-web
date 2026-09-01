@@ -114,7 +114,7 @@ public class B2instConnectorImpl implements B2instConnector {
     } catch (RestClientException e) {
       String reason = describeFailure(e);
       throw new B2instConnectionException(
-          "Error creating B2INST draft record: " + reason, reason, e);
+          "Error creating B2INST draft record: " + developerDetail(e), reason, e);
     }
   }
 
@@ -131,7 +131,7 @@ public class B2instConnectorImpl implements B2instConnector {
     } catch (RestClientException e) {
       String reason = describeFailure(e);
       throw new B2instConnectionException(
-          "Error updating B2INST draft record " + rid + ": " + reason, reason, e);
+          "Error updating B2INST draft record " + rid + ": " + developerDetail(e), reason, e);
     }
   }
 
@@ -143,7 +143,7 @@ public class B2instConnectorImpl implements B2instConnector {
     } catch (RestClientException e) {
       String reason = describeFailure(e);
       throw new B2instConnectionException(
-          "Error deleting B2INST draft record " + rid + ": " + reason, reason, e);
+          "Error deleting B2INST draft record " + rid + ": " + developerDetail(e), reason, e);
     }
   }
 
@@ -180,7 +180,9 @@ public class B2instConnectorImpl implements B2instConnector {
     } catch (RestClientException e) {
       String reason = describeFailure(e);
       throw new B2instConnectionException(
-          "Error submitting B2INST record " + rid + " for community review: " + reason, reason, e);
+          "Error submitting B2INST record " + rid + " for community review: " + developerDetail(e),
+          reason,
+          e);
     }
   }
 
@@ -209,14 +211,31 @@ public class B2instConnectorImpl implements B2instConnector {
    * without a response (transport error) falls back to the client exception message, or the
    * exception type when even that is blank.
    */
+  /**
+   * The user-safe reason. Redacted at a single exit, deliberately: this is interpolated into
+   * user-facing localized text and into the audit trail at five call sites, so every branch below
+   * is a path to a user rather than only to the log, and redacting here instead of at each return
+   * means a branch added later cannot skip it.
+   */
   private String describeFailure(RestClientException e) {
-    /*
-     * Redacted at a single exit, deliberately. This value is the exception's reason, and since the
-     * reason/message split it is interpolated into user-facing localized text at three call sites, so
-     * every branch below is a path to a user rather than only to the log. Redacting here instead of
-     * at each return means a branch added later cannot skip it.
-     */
     return redactToken(describeFailureText(e));
+  }
+
+  /**
+   * The developer-facing detail, for the exception message and so the log.
+   *
+   * <p>Identical to the reason for an HTTP failure, deliberately: B2INST's parsed description, or
+   * the status when the body explains nothing, is the most readable thing for both audiences, and
+   * Spring's own message for those puts the whole response body in the sentence.
+   *
+   * <p>It diverges for a transport failure, the one case where the two audiences want different
+   * things. A developer needs Spring's message, which names the request URL and the cause; a user
+   * must not be shown it, so the reason is a fixed sentence instead. Redacted all the same.
+   */
+  private String developerDetail(RestClientException e) {
+    return e instanceof RestClientResponseException
+        ? describeFailure(e)
+        : redactToken(StringUtils.defaultIfBlank(e.getMessage(), e.getClass().getSimpleName()));
   }
 
   private String describeFailureText(RestClientException e) {
@@ -233,12 +252,25 @@ public class B2instConnectorImpl implements B2instConnector {
           "No usable failure reason in B2INST error response (HTTP {}): {}",
           restError.getRawStatusCode(),
           StringUtils.abbreviate(redactToken(body), 500));
+      // Also RSpace's own words, though the status and its text come from B2INST. Kept because a
+      // status is genuinely actionable (404 means the record is gone, 403 a credentials problem),
+      // and it is the only thing left when the body explains nothing.
       return "B2INST returned HTTP "
           + restError.getRawStatusCode()
           + " "
           + restError.getStatusText();
     }
-    return StringUtils.defaultIfBlank(e.getMessage(), e.getClass().getSimpleName());
+    /*
+     * RSpace's own fixed sentence, not the exception's message. Spring's message for a transport
+     * failure carries the full request URL, the deployment's B2INST host included, and the fallback
+     * when it was blank was the exception's class name ("ResourceAccessException"). Both reached the
+     * user through the reason and were written into the audit trail, and neither is anything a user
+     * can act on. The detail belongs in the log, which is where it now goes - it was not logged at
+     * all before.
+     */
+    log.warn(
+        "Could not reach B2INST: {}", redactToken(StringUtils.defaultString(e.getMessage())), e);
+    return "B2INST could not be reached.";
   }
 
   /**
@@ -314,7 +346,7 @@ public class B2instConnectorImpl implements B2instConnector {
     } catch (RestClientException e) {
       String reason = describeFailure(e);
       throw new B2instConnectionException(
-          "Error reading B2INST review of record " + rid + ": " + reason, reason, e);
+          "Error reading B2INST review of record " + rid + ": " + developerDetail(e), reason, e);
     }
   }
 
@@ -336,7 +368,7 @@ public class B2instConnectorImpl implements B2instConnector {
     } catch (RestClientException e) {
       String reason = describeFailure(e);
       throw new B2instConnectionException(
-          "Error reading B2INST record " + rid + ": " + reason, reason, e);
+          "Error reading B2INST record " + rid + ": " + developerDetail(e), reason, e);
     }
   }
 

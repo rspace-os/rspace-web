@@ -542,6 +542,7 @@ class B2instConnectorImplTest {
     server.verify();
   }
 
+  /** The developer message keeps the transport detail; the user-facing reason does not (below). */
   @Test
   void publishDoiKeepsTransportErrorMessageWhenNoResponse() {
     connector.reloadClient();
@@ -631,16 +632,26 @@ class B2instConnectorImplTest {
     assertTrue(warning.contains("***"));
   }
 
+  /**
+   * The two descriptions are deliberately different, and this is the seam where that is decided.
+   * The developer one keeps whatever the exception had, falling back to its type when the message
+   * is blank, because that is what a log reader needs. The user-facing reason never does: it would
+   * put a class name, or Spring's message with the request URL and host in it, into a localized
+   * sentence and into the audit trail.
+   */
   @Test
-  void describeFailureFallsBackToExceptionTypeWhenMessageMissing() throws Exception {
+  void theDeveloperDetailKeepsTheExceptionTypeButTheReasonNeverDoes() throws Exception {
     connector.reloadClient();
+    Method developerDetail =
+        B2instConnectorImpl.class.getDeclaredMethod("developerDetail", RestClientException.class);
+    developerDetail.setAccessible(true);
     Method describeFailure =
         B2instConnectorImpl.class.getDeclaredMethod("describeFailure", RestClientException.class);
     describeFailure.setAccessible(true);
+    RestClientException blank = new RestClientException((String) null);
 
-    Object description = describeFailure.invoke(connector, new RestClientException((String) null));
-
-    assertEquals("RestClientException", description);
+    assertEquals("RestClientException", developerDetail.invoke(connector, blank));
+    assertEquals("B2INST could not be reached.", describeFailure.invoke(connector, blank));
   }
 
   @Test
@@ -896,6 +907,36 @@ class B2instConnectorImplTest {
             () -> connector.updateDraftDoi("k2j9p-7yh21", draftWithName("X")));
 
     assertNotNull(thrown.getReason());
+  }
+
+  /**
+   * A transport failure's reason is shown to a user and interpolated into the audit trail, so it
+   * must not be the underlying exception. Spring's own message for one of these carries the full
+   * request URL, host included, and the fallback when it is blank was the exception's class name -
+   * neither is anything a user can act on, and the host is a deployment detail. The reason is
+   * RSpace's own fixed sentence instead, and the detail goes to the log.
+   */
+  @Test
+  void updateDraftDoiKeepsTransportDetailOutOfTheUserFacingReason() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    server
+        .expect(requestTo(DRAFT_URL))
+        .andRespond(withException(new IOException("read timed out")));
+
+    B2instConnectionException thrown =
+        assertThrows(
+            B2instConnectionException.class,
+            () -> connector.updateDraftDoi("k2j9p-7yh21", draftWithName("X")));
+
+    String reason = thrown.getReason();
+    assertNotNull(reason);
+    assertFalse(reason.contains("b2inst-test.gwdg.de"), reason);
+    assertFalse(reason.contains("Exception"), reason);
+    assertFalse(reason.contains("I/O error"), reason);
+    // the developer detail is still available, on the message that goes to the log
+    assertTrue(thrown.getMessage().contains("k2j9p-7yh21"), thrown.getMessage());
   }
 
   /**
