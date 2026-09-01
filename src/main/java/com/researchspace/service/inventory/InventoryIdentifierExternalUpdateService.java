@@ -31,6 +31,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 /**
@@ -119,11 +120,8 @@ public class InventoryIdentifierExternalUpdateService {
       B2instDoi b2instPayload,
       DataCiteDoi dataCitePayload) {}
 
-  /** Everything the read-only transaction works out, carried back out to the push. */
-  private record Rebuilt(
-      List<PendingUpdate> pending,
-      List<ApiInventoryDOI> frozenByState,
-      List<ApiInventoryDOI> failedToBuild) {}
+  /** How the record's identifiers divide up, worked out in one read-only transaction. */
+  private record Classified(List<ApiInventoryDOI> pushable, List<ApiInventoryDOI> frozenByState) {}
 
   /**
    * Rebuilds and pushes the metadata of every identifier of the instrument whose provider record
@@ -131,6 +129,7 @@ public class InventoryIdentifierExternalUpdateService {
    * response carries it.
    *
    * <p>Must be called after the update transaction has committed, from a non-transactional caller.
+   * That is now enforced rather than merely asked for: see the guard below.
    *
    * <p>Every identifier the record carries ends up in one of three places. One whose provider
    * record is writable is pushed and the result reported. One whose record is frozen by its own
@@ -148,17 +147,43 @@ public class InventoryIdentifierExternalUpdateService {
     if (saved == null || saved.getId() == null || nothingCouldBeAttached(saved)) {
       return;
     }
-    Rebuilt rebuilt = readOnlyTx.execute(status -> rebuild(saved));
-    if (rebuilt == null) {
+    /*
+     * The contract of this class is a caller with no transaction open, and it really is reachable
+     * with one: bulk CHANGE_OWNER with rollbackOnError runs the whole batch inside a single
+     * transaction (InventoryBulkOperationApiManager) and calls back into
+     * InstrumentsApiController.changeInstrumentOwner, which pushes.
+     *
+     * Pushing from there would be wrong in the one direction always-push cannot heal. A later record
+     * in the batch fails, the owner change rolls back locally, and the provider is left holding an
+     * owner RSpace no longer has - the mirror image of the failure this design accepts, and not
+     * self-correcting, because there is no later save to retry from. It would also defeat the
+     * boundary: REQUIRES_NEW would suspend the caller's transaction and hold its connection for the
+     * length of the provider exchange.
+     *
+     * So decline. The metadata drifts until the next ordinary save of that instrument, which is the
+     * recoverable direction and exactly what a failed push already leaves behind.
+     */
+    if (TransactionSynchronizationManager.isActualTransactionActive()) {
+      log.warn(
+          "Skipping the external metadata update of instrument {}: a transaction is already open,"
+              + " so the provider call would run inside it and a rollback would leave the provider"
+              + " ahead of RSpace. The next ordinary save of this instrument will push.",
+          saved.getId());
       return;
     }
-    for (ApiInventoryDOI frozen : rebuilt.frozenByState()) {
+    Classified classified = readOnlyTx.execute(status -> classify(saved));
+    if (classified == null) {
+      return;
+    }
+    for (ApiInventoryDOI frozen : classified.frozenByState()) {
       report(saved, frozen, notWritableOutcome(frozen));
     }
-    for (ApiInventoryDOI failed : rebuilt.failedToBuild()) {
-      report(saved, failed, failedOutcome(failed));
-    }
-    for (PendingUpdate pending : rebuilt.pending()) {
+    for (ApiInventoryDOI doi : classified.pushable()) {
+      PendingUpdate pending = buildInItsOwnTransaction(saved.getId(), doi);
+      if (pending == null) {
+        report(saved, doi, failedOutcome(doi));
+        continue;
+      }
       ApiExternalMetadataUpdate outcome = push(pending);
       report(saved, pending.identifier(), outcome);
       audit(pending.instrument(), user, outcome);
@@ -179,45 +204,62 @@ public class InventoryIdentifierExternalUpdateService {
   }
 
   /**
-   * Sorts the record's identifiers into pushable, frozen and failed, inside a read-only transaction
-   * because the mapping adapter demands one and walks lazy associations.
+   * Divides the record's identifiers into the ones to push and the ones frozen by their own state,
+   * inside a read-only transaction because reading them off the record needs a session.
    *
-   * <p>The transaction ends when this method returns, so every provider call is made outside it and
-   * cannot pin a pooled JDBC connection for the length of an HTTP exchange.
-   *
-   * <p>One identifier's mapping failure is confined to that identifier and the others still go,
-   * matching the per-identifier isolation the push itself has. Letting it propagate would discard
-   * the pushes for every other identifier of the same instrument and tell the user nothing at all.
+   * <p>Deliberately does no mapping. The mapping adapter is {@code Propagation.MANDATORY}, so an
+   * exception from it marks this transaction rollback-only, and anything else decided in the same
+   * boundary would be lost with it - see {@link #buildInItsOwnTransaction(Long, ApiInventoryDOI)}.
    *
    * <p>If the instrument itself cannot be read back, {@code getIfExists} throws {@code
    * NotFoundException} and it propagates to the controller's guard, which logs it and leaves the
    * response unannotated. That is a save racing a deletion, not something a user can act on.
    */
-  private Rebuilt rebuild(ApiInstrument saved) {
+  private Classified classify(ApiInstrument saved) {
     InstrumentEntity instrument = instrumentApiMgr.getIfExists(saved.getId());
-    List<PendingUpdate> pending = new ArrayList<>();
+    List<ApiInventoryDOI> pushable = new ArrayList<>();
     List<ApiInventoryDOI> frozen = new ArrayList<>();
-    List<ApiInventoryDOI> failed = new ArrayList<>();
     for (ApiInventoryDOI doi : attachedIdentifiers(saved, instrument)) {
       if (!isPushable(doi)) {
         continue;
       }
-      if (!isUpdatable(doi)) {
+      if (isUpdatable(doi)) {
+        pushable.add(doi);
+      } else {
         frozen.add(doi);
-        continue;
-      }
-      try {
-        pending.add(buildPayload(doi, instrument));
-      } catch (RuntimeException e) {
-        log.warn(
-            "Could not rebuild the {} payload for identifier {}: {}",
-            providerName(typeOf(doi)),
-            doi.getDoi(),
-            e.getMessage());
-        failed.add(doi);
       }
     }
-    return new Rebuilt(pending, frozen, failed);
+    return new Classified(pushable, frozen);
+  }
+
+  /**
+   * Remaps one identifier's payload in a transaction of its own, returning null if it could not be
+   * built.
+   *
+   * <p>One boundary per identifier, and the catch outside it, is what actually isolates a mapping
+   * failure. The adapter is {@code Propagation.MANDATORY}, so an exception escaping it marks the
+   * surrounding transaction rollback-only ({@code globalRollbackOnParticipationFailure} defaults to
+   * true) and the commit throws {@code UnexpectedRollbackException} however carefully the call
+   * itself was wrapped - the hazard the adapter's own javadoc predicts. Catching inside a shared
+   * boundary therefore discarded every other identifier's push, report and audit for that
+   * instrument, which is the opposite of what ADR 0008 promises. An instrument realistically
+   * carries one identifier, so the extra boundaries cost nothing.
+   *
+   * <p>The transaction closes before this returns, so the provider call the caller makes next is
+   * outside it and cannot pin a pooled JDBC connection for the length of an HTTP exchange.
+   */
+  private PendingUpdate buildInItsOwnTransaction(Long instrumentId, ApiInventoryDOI doi) {
+    try {
+      return readOnlyTx.execute(
+          status -> buildPayload(doi, instrumentApiMgr.getIfExists(instrumentId)));
+    } catch (RuntimeException e) {
+      log.warn(
+          "Could not rebuild the {} payload for identifier {}: {}",
+          providerName(typeOf(doi)),
+          doi.getDoi(),
+          e.getMessage());
+      return null;
+    }
   }
 
   /**
@@ -321,21 +363,29 @@ public class InventoryIdentifierExternalUpdateService {
   }
 
   /**
-   * The "nothing was sent, and here is why" outcome, for a record its own state has frozen: a
-   * B2INST record whose community review was accepted, or a DataCite DOI past draft.
+   * The "nothing was sent, and here is why" outcome, for a record its own state has frozen.
    *
-   * <p>Names the state rather than refusing generically, because that is the same word the user
-   * already sees against the identifier on the record, and it is the difference between the plain
-   * explanation the acceptance criteria ask for and a dead end. Not audited: nothing was sent and
-   * nothing changed, so there is no synchronisation to record.
+   * <p>One message per provider, because the two are frozen for different reasons and a single
+   * sentence could only be right about one of them. B2INST really has nothing writable left once a
+   * community review is accepted. A DataCite DOI past draft is a decision of record, not a provider
+   * refusal (see {@link #DATACITE_UPDATABLE_STATES}), and it has a next step the user can take, so
+   * saying "no record open for changes" there would be both wrong and a dead end. The split follows
+   * the {@code b2instRegisterNoDraft} / {@code dataCiteRegisterNoDraft} pair already in this
+   * catalogue.
+   *
+   * <p>The state itself is deliberately not interpolated. It is free-form text written by the
+   * provider, so it would ship untranslated inside a translated sentence, and it would not even
+   * match what the user is shown: the UI maps every state to its own catalogue label.
+   *
+   * <p>Not audited: nothing was sent and nothing changed, so there is no synchronisation to record.
    */
   private ApiExternalMetadataUpdate notWritableOutcome(ApiInventoryDOI doi) {
-    return new ApiExternalMetadataUpdate(
-        false,
-        message(
-            "errors.inventory.identifier.externalUpdateNotPossible",
-            providerName(typeOf(doi)),
-            doi.getState().trim()));
+    IdentifierType type = typeOf(doi);
+    String key =
+        IdentifierType.PIDINST_B2INST.equals(type)
+            ? "errors.inventory.identifier.externalUpdateNotPossibleB2inst"
+            : "errors.inventory.identifier.externalUpdateNotPossibleDataCite";
+    return new ApiExternalMetadataUpdate(false, message(key, providerName(type), null));
   }
 
   /** A mapping failure, reported like a push failure. Not audited: nothing was sent. */

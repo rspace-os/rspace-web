@@ -52,12 +52,22 @@ B2INST draft metadata (`RelatedIdentifier`) and the DataCite attributes
   target being deleted or redacted. What a qualifying entry still discloses publicly is the
   bare globalId plus a fixed label, never a name or content, and the address resolves only
   for signed-in users who pass the target's own checks.
-- B2INST receives the entries at draft-register time (its only metadata write). DataCite
-  receives them on publish and again on retract, because both resend full metadata and
-  the entries are computed from the instrument, not persisted on the DOI.
+- B2INST receives the entries at draft-register time. DataCite receives them on publish and
+  again on retract, because both resend full metadata and the entries are computed from the
+  instrument, not persisted on the DOI.
+
+  **Amended by ADR 0008 (RSDEV-1251).** Register and publish/retract are no longer the only
+  metadata writes: an ordinary instrument save now also pushes to a writable provider record,
+  through `B2instConnector.updateDraftDoi` and `DataCiteConnector.updateDoi`, so both providers
+  receive the entries on that path too.
 - For DataCite the list is sent **unconditionally, the empty list included**. DataCite
   replaces the whole property with what the payload carries and clears it only on an
-  explicit empty array; an absent or null property leaves the registered value alone. An
+  explicit empty array; an absent property leaves the registered value alone.
+
+  **Corrected by ADR 0008.** An explicit `null` does *not* leave the value alone: it clears it
+  exactly as `[]` does, and only a key absent from the payload preserves it (verified against
+  api.test.datacite.org, August 2026). That is why `DataCiteDoiAttributes` is now serialized
+  `@JsonInclude(NON_NULL)`, so a null property becomes an absent key. An
   instrument whose link fields were all cleared after registration therefore has to send
   `[]`, or the entries registered beforehand stay attached to a findable DOI with no way to
   withdraw them. The one exception is an **environment failure**: when no usable http(s)

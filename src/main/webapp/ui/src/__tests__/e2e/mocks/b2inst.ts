@@ -26,20 +26,22 @@ export const b2instHandlers = [
   // The on-save external metadata update (RSDEV-1251): a full-replace PUT of the draft. Without
   // this handler the mock server answers 404 and every instrument save that carries a B2INST draft
   // silently reports a failed push, which no assertion would catch because the toast is generic.
-  // Mirrors the create-draft response and bumps revisionId, as the real B2INST does.
-  http.put("/api/records/:rid/draft", ({ params }) =>
-    HttpResponse.json({
-      id: params.rid,
-      isDraft: true,
-      isPublished: false,
+  // Field names are InvenioRDM's own snake_case, which is what B2instDraftRecord maps; the
+  // create-draft handler above predates that and uses camelCase, so those keys deserialize to null.
+  http.put("/api/records/:rid/draft", ({ params }) => {
+    const rid = String(params.rid);
+    return HttpResponse.json({
+      id: rid,
+      is_draft: true,
+      is_published: false,
       status: "draft",
-      revisionId: 2,
+      revision_id: 2,
       links: {
-        self: `/api/records/${params.rid as string}/draft`,
-        self_html: `/uploads/${params.rid as string}`,
+        self: `/api/records/${rid}/draft`,
+        self_html: `/uploads/${rid}`,
       },
-    }),
-  ),
+    });
+  }),
 
   http.delete("/api/records/:rid/draft", () => new HttpResponse(null, { status: 204 })),
 

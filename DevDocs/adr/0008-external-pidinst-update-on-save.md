@@ -140,6 +140,29 @@ anything that is not accepted, so an identifier really can be sitting in
   others are still pushed, matching what the push itself already did; letting it
   propagate discarded the pushes for every other identifier of the same
   instrument and told the user nothing.
+
+  That isolation needs a transaction boundary per identifier, not just a
+  try/catch. The mapping adapter is `Propagation.MANDATORY`, so an exception
+  escaping it marks the surrounding transaction rollback-only and the commit
+  throws `UnexpectedRollbackException` however carefully the call was wrapped -
+  the hazard the adapter's own javadoc predicts. Catching inside one shared
+  boundary therefore discarded every other identifier's work anyway. An
+  instrument realistically carries one identifier, so the extra boundaries cost
+  nothing.
+- The push declines outright when a transaction is already open, rather than
+  trusting its callers. It is reachable with one: bulk `CHANGE_OWNER` with
+  rollback-on-error runs the whole batch in a single transaction and calls back
+  into the instruments controller. Pushing from there would fail in the one
+  direction always-push cannot heal - a later record fails, the owner change
+  rolls back, and the provider keeps an owner RSpace no longer has - and would
+  hold the caller's connection for the length of the provider exchange. Those
+  instruments drift until their next ordinary save.
+- The unauthenticated landing page now serves the record as of the newest
+  identifier revision for both providers (see CONTEXT.md, "Public landing page").
+  Record edits made after publishing therefore become public as soon as anything
+  writes the identifier row, rather than waiting for a deliberate republish. That
+  is a deliberate change to what an anonymous page exposes, not a side effect of
+  the push.
 - Payload rebuild must run inside a (read-only) transaction because the mapping
   adapter demands one, while the HTTP call runs outside; the orchestrating
   service therefore cannot be a `*Manager` bean (whose every method is

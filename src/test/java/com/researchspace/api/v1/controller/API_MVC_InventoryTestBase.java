@@ -54,10 +54,13 @@ public class API_MVC_InventoryTestBase extends API_MVC_TestBase {
   }
 
   /**
-   * Puts back what {@link #captureIdentifierSettings} read. A null argument means the provider had
-   * no settings at all, which cannot be expressed through the update endpoint (it skips null
-   * fields), so the enabled flag is cleared and the rest is left as the test set it - the honest
-   * best effort, and enough to stop a dummy provider being live.
+   * Puts back what {@link #captureIdentifierSettings} read.
+   *
+   * <p>Restores only the fields that had a value. {@code getCurrentSettings} always returns all
+   * three providers, so the captured settings are never null, but an individual field comes back
+   * null when its system property row is absent, and the update endpoint skips nulls. A field the
+   * test wrote over a previously unset property therefore stays as the test left it - send an empty
+   * string rather than relying on this if that ever matters.
    */
   protected void restoreIdentifierSettings(
       SystemSettingsApiController settingsController,
@@ -65,14 +68,9 @@ public class API_MVC_InventoryTestBase extends API_MVC_TestBase {
       ApiInventorySystemSettings.IdentifierSettings original)
       throws Exception {
     User sysadmin = logoutAndLoginAsSysAdmin();
-    ApiInventorySystemSettings.IdentifierSettings restore =
-        original != null ? original : new ApiInventorySystemSettings.IdentifierSettings();
-    restore.setProvider(provider);
-    if (original == null) {
-      restore.setEnabled("false");
-    }
+    original.setProvider(provider);
     settingsController.updateInventorySettings(
-        new MockHttpServletRequest(), restore, mock(BindingResult.class), sysadmin);
+        new MockHttpServletRequest(), original, mock(BindingResult.class), sysadmin);
   }
 
   protected MockHttpServletRequestBuilder getSampleById(User user, String apiKey, Long sampleId) {

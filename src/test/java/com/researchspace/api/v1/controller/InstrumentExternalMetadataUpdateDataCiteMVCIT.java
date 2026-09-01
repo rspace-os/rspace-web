@@ -39,10 +39,10 @@ import org.springframework.validation.BindingResult;
  * <p>Everything else about that path is mocked somewhere. {@code
  * InventoryIdentifierExternalUpdateServiceTest} proves the routing, and the B2INST MVCIT proves the
  * transaction boundary; neither sends the real serialized payload anywhere. {@code
- * DataCiteDoiAttributes} carries no {@code @JsonInclude}, so that payload puts every field on the
- * wire including the server-owned ones ({@code isActive}, {@code state}, {@code metadataVersion},
- * {@code viewCount}, null {@code created}/{@code registered}). This test is what says DataCite
- * ignores them rather than acting on them.
+ * DataCiteDoiAttributes} is serialized {@code @JsonInclude(NON_NULL)} (see ADR 0008), so null
+ * object properties are omitted entirely, but the primitives are always on the wire, server-owned
+ * ones included ({@code isActive}, {@code state}, {@code metadataVersion}, the counters). This test
+ * is what says DataCite ignores those rather than acting on them.
  *
  * <p>Verified by hand against api.test.datacite.org in August 2026 before being written, so the
  * assertions describe observed behaviour: the DOI stayed {@code draft}, the titles, publisher and

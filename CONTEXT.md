@@ -121,6 +121,16 @@ resolved during design. This file is a glossary only — no implementation detai
   (which needs an RSpace sign-in). The address exists from the moment
   registration begins; the page itself resolves only once the identifier is
   published.
+
+  The page serves the record *as of the newest revision of the identifier row*,
+  for both providers. Two consequences worth knowing. Changes to the identifier
+  row itself reach the page without a republish, which B2INST needs because it
+  has no republish operation. And because the record snapshot moves with that
+  revision, record edits made after publishing become public as soon as anything
+  writes the identifier row — the `customFieldsOnPublicPage` toggle, an
+  identifier metadata edit, a B2INST status refresh — rather than staying private
+  until a deliberate republish. DataCite used to be held at the publication-time
+  snapshot instead; that difference was removed deliberately.
 - **Updatable identifier state** — an identifier state in which the provider's
   copy of the metadata can be rewritten in place by RSpace. The two providers
   express it from opposite ends. For B2INST it is every state *except*
@@ -157,6 +167,10 @@ resolved during design. This file is a glossary only — no implementation detai
   outcome is then reported only to a caller who can still see the identifier.
   Template sync, restore, duplicate and delete do not push, and edits to samples,
   subsamples and containers do not (their draft-DOI metadata still drifts).
+  Neither does a *bulk* change of owner run with rollback-on-error: that runs the
+  whole batch in one transaction, and pushing from inside it could leave the
+  provider holding an owner a later rollback took away. Those instruments drift
+  until their next ordinary save, which is the recoverable direction.
   (RSDEV-1251)
 - **Registered landing page** — the LandingPage value RSpace sends to a PID
   provider when registering an instrument identifier: the Landing page field

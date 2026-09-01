@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -55,6 +56,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.SimpleTransactionStatus;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /**
  * Unit tests for the on-save external PIDINST metadata update (RSDEV-1251, ADR 0008): which
@@ -148,15 +150,6 @@ class InventoryIdentifierExternalUpdateServiceTest {
     return doi;
   }
 
-  /**
-   * The class's whole safety argument holds only if this transaction is the service's own. Under
-   * the default {@code PROPAGATION_REQUIRED} the template silently joins a caller's transaction
-   * instead: {@code setReadOnly} is then ignored, the boundary never closes so the provider HTTP
-   * exchange pins a pooled JDBC connection for its whole duration, and because the mapping adapter
-   * is {@code @Transactional(propagation = MANDATORY)} a build failure marks that outer transaction
-   * rollback-only, losing the instrument save to {@code UnexpectedRollbackException}. Asserting the
-   * demanded definition rather than the field keeps this true however the demarcation is written.
-   */
   /** An identifier as the record itself carries it, which is where candidates must come from. */
   private DigitalObjectIdentifier entityIdentifier(
       IdentifierType type, String state, String providerRecordId) {
@@ -174,7 +167,9 @@ class InventoryIdentifierExternalUpdateServiceTest {
     limited.setId(instrumentId);
     limited.setPermittedActions(
         List.of(ApiInventoryRecordInfo.ApiInventoryRecordPermittedAction.LIMITED_READ));
-    limited.setIdentifiers(null);
+    // an empty list, not null: clearPropertiesForLimitedView copies over a fresh instance whose
+    // identifiers field already defaults to an empty ArrayList, so this is production's real shape
+    limited.setIdentifiers(new java.util.ArrayList<>());
     return limited;
   }
 
@@ -218,9 +213,18 @@ class InventoryIdentifierExternalUpdateServiceTest {
     service.pushMetadataUpdates(limited, user);
 
     verify(b2instConnector).updateDraftDoi(eq(RID), any(B2instDoi.class));
-    assertNull(limited.getIdentifiers());
+    assertTrue(limited.getIdentifiers().isEmpty(), "no outcome can be attached to a blanked list");
   }
 
+  /**
+   * The class's whole safety argument holds only if this transaction is the service's own. Under
+   * the default {@code PROPAGATION_REQUIRED} the template silently joins a caller's transaction
+   * instead: {@code setReadOnly} is then ignored, the boundary never closes so the provider HTTP
+   * exchange pins a pooled JDBC connection for its whole duration, and because the mapping adapter
+   * is {@code @Transactional(propagation = MANDATORY)} a build failure marks that outer transaction
+   * rollback-only, losing the instrument save to {@code UnexpectedRollbackException}. Asserting the
+   * demanded definition rather than the field keeps this true however the demarcation is written.
+   */
   @Test
   void theMetadataRebuildDemandsItsOwnReadOnlyTransaction() {
     PlatformTransactionManager txManager = mock(PlatformTransactionManager.class);
@@ -234,14 +238,46 @@ class InventoryIdentifierExternalUpdateServiceTest {
     service.pushMetadataUpdates(
         savedInstrumentWith(identifier(IdentifierType.PIDINST_B2INST, "draft", RID)), user);
 
+    // Several boundaries are opened now - one to classify, then one per identifier build - and the
+    // argument applies to every one of them, so assert all of them rather than the first.
     ArgumentCaptor<TransactionDefinition> definition =
         ArgumentCaptor.forClass(TransactionDefinition.class);
-    verify(txManager).getTransaction(definition.capture());
-    assertTrue(definition.getValue().isReadOnly(), "nothing in the rebuild may write");
-    assertEquals(
-        TransactionDefinition.PROPAGATION_REQUIRES_NEW,
-        definition.getValue().getPropagationBehavior(),
-        "must suspend a caller's transaction rather than join it");
+    verify(txManager, atLeastOnce()).getTransaction(definition.capture());
+    assertFalse(definition.getAllValues().isEmpty(), "a boundary must actually be opened");
+    for (TransactionDefinition opened : definition.getAllValues()) {
+      assertTrue(opened.isReadOnly(), "nothing in the rebuild may write");
+      assertEquals(
+          TransactionDefinition.PROPAGATION_REQUIRES_NEW,
+          opened.getPropagationBehavior(),
+          "must suspend a caller's transaction rather than join it");
+    }
+  }
+
+  /**
+   * The class's contract is that it is called with no transaction open, and until now that was only
+   * documented. It is reachable with one open: bulk {@code CHANGE_OWNER} with {@code
+   * rollbackOnError} runs the whole batch in one transaction ({@code
+   * InventoryBulkOperationApiManager}) and calls back into {@code
+   * InstrumentsApiController.changeInstrumentOwner}, which pushes.
+   *
+   * <p>Pushing from there would be wrong in a way always-push cannot heal: a later record in the
+   * batch fails, the owner change rolls back locally, and the provider is left holding an owner
+   * RSpace no longer has. It would also make the provider exchange hold the caller's connection
+   * while REQUIRES_NEW suspends it. So the push declines rather than trying, and the metadata
+   * drifts until the next ordinary save, which is the recoverable direction.
+   */
+  @Test
+  void declinesToPushWhenTheCallerAlreadyHasATransactionOpen() {
+    TransactionSynchronizationManager.setActualTransactionActive(true);
+    try {
+      service.pushMetadataUpdates(
+          savedInstrumentWith(identifier(IdentifierType.PIDINST_B2INST, "draft", RID)), user);
+    } finally {
+      TransactionSynchronizationManager.setActualTransactionActive(false);
+    }
+
+    verify(b2instConnector, never()).updateDraftDoi(anyString(), any(B2instDoi.class));
+    verifyNoInteractions(instrumentApiMgr, rspaceToExternalProviderAdapter, auditer);
   }
 
   @Test
@@ -256,6 +292,8 @@ class InventoryIdentifierExternalUpdateServiceTest {
     service.pushMetadataUpdates(savedInstrumentWith(doi), user);
 
     verify(b2instConnector).updateDraftDoi(RID, rebuilt);
+    // the fast path: a populated response list is complete, so the record's own list is not read
+    verify(instrument, never()).getActiveIdentifiers();
     ApiExternalMetadataUpdate outcome = doi.getExternalMetadataUpdate();
     assertNotNull(outcome);
     assertTrue(outcome.isSucceeded());
@@ -327,8 +365,20 @@ class InventoryIdentifierExternalUpdateServiceTest {
     ApiExternalMetadataUpdate outcome = doi.getExternalMetadataUpdate();
     assertNotNull(outcome, "a frozen record must still be explained");
     assertFalse(outcome.isSucceeded());
-    assertTrue(outcome.getReason().contains("externalUpdateNotPossible"), outcome.getReason());
-    assertTrue(outcome.getReason().contains(state.trim()), outcome.getReason());
+    // the message is provider-specific, because the two are frozen for different reasons: B2INST
+    // has
+    // no draft left, whereas a DataCite DOI past draft is our own decision and has Republish as its
+    // next step. The raw provider state is deliberately NOT interpolated, so it is not asserted.
+    String expectedKey =
+        IdentifierType.PIDINST_B2INST.name().equals(type)
+            ? "externalUpdateNotPossibleB2inst"
+            : "externalUpdateNotPossibleDataCite";
+    assertTrue(outcome.getReason().contains(expectedKey), outcome.getReason());
+    assertTrue(outcome.getReason().contains(providerNameFor(type)), outcome.getReason());
+  }
+
+  private String providerNameFor(String type) {
+    return IdentifierType.PIDINST_B2INST.name().equals(type) ? "B2INST" : "DataCite";
   }
 
   /**

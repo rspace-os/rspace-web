@@ -39,12 +39,13 @@ import org.springframework.validation.BindingResult;
  * ADR 0008). A {@link B2instConnectorDummy} stands in for B2INST at both seams: the identifier
  * manager (which registers the draft) and the update service (which pushes to it).
  *
- * <p>The "identifier mutated by this same save" exclusion is deliberately not exercised here: the
+ * <p>There is no "identifier mutated by this same save" exclusion any more, and none is needed. The
  * register, assign and delete markers on {@code ApiInventoryDOI} are {@code @JsonIgnore}, so no
- * request body can set them. They are only ever set in Java, by the identifier manager, which
- * re-enters {@code updateApiInstrument} below this controller seam - which is why those operations
- * cannot push at all. The filter itself is covered by {@code
- * InventoryIdentifierExternalUpdateServiceTest}.
+ * request body can set them, and they are only ever set in Java by the identifier manager, which
+ * re-enters {@code updateApiInstrument} below this controller seam. Those operations therefore
+ * cannot push at all, which is what {@code registeringAnIdentifierDoesNotPush} and {@code
+ * publishingAnIdentifierDoesNotPush} pin; the filter that used to guard it was unreachable and was
+ * removed.
  */
 @WebAppConfiguration
 public class InstrumentExternalMetadataUpdateMVCIT extends API_MVC_InventoryTestBase {
