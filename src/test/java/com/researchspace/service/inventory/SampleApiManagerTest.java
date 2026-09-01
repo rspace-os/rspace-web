@@ -404,11 +404,21 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     assertEquals("ResearchSpace", createdIdentifier.getPublisher());
     assertNull(createdIdentifier.getDoi());
 
-    // update pre-existing identifier
+    /*
+     * Update the pre-existing identifier. Descriptive fields are editable; the provider record id
+     * is NOT, and this used to assert that it was (RSDEV-1251). That value is the address of the
+     * record at the provider, so a payload that could change it let a client point its own
+     * identifier at someone else's record, which the on-save external metadata update would then
+     * write to using the deployment's credentials. It is now applied only while the identifier is
+     * still being created, set in Java from the provider's own registration response - which is why
+     * nothing legitimate needs to change it afterwards, and why the null here is an artefact of
+     * this test registering without a provider rather than a state production can reach.
+     */
     sampleUpdates = new ApiSample();
     sampleUpdates.setId(retrievedSample.getId());
     ApiInventoryDOI identifierUpdate = new ApiInventoryDOI();
     identifierUpdate.setId(createdIdentifier.getId());
+    identifierUpdate.setTitle("an edited title");
     identifierUpdate.setDoi("abcDOI");
     sampleUpdates.getIdentifiers().add(identifierUpdate);
 
@@ -418,9 +428,11 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     assertEquals(1, retrievedSample.getIdentifiers().size());
     ApiInventoryDOI updatedIdentifier = retrievedSample.getIdentifiers().get(0);
     assertEquals(createdIdentifier.getId(), updatedIdentifier.getId());
-    assertEquals("testDOItitle", updatedIdentifier.getTitle());
+    assertEquals("an edited title", updatedIdentifier.getTitle());
     assertEquals("ResearchSpace", updatedIdentifier.getPublisher());
-    assertEquals("abcDOI", updatedIdentifier.getDoi());
+    assertNull(
+        updatedIdentifier.getDoi(),
+        "an existing identifier's provider record id must not be changed by a payload");
   }
 
   @Test
