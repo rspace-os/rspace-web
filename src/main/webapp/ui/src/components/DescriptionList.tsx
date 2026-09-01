@@ -69,8 +69,8 @@ function DescriptionList({ content, dividers = false, sx }: DescriptionListArgs)
               alignSelf: "center",
               ...(reducedPadding
                 ? {
-                    marginTop: `-${theme.spacing(1)}`,
-                    marginBottom: `-${theme.spacing(1)}`,
+                    marginTop: `-${theme.spacing(0.5)}`,
+                    marginBottom: `-${theme.spacing(0.5)}`,
                   }
                 : {}),
             }}
@@ -85,8 +85,8 @@ function DescriptionList({ content, dividers = false, sx }: DescriptionListArgs)
               justifySelf: "end",
               ...(reducedPadding
                 ? {
-                    marginTop: `-${theme.spacing(1)}`,
-                    marginBottom: `-${theme.spacing(1)}`,
+                    marginTop: `-${theme.spacing(0.5)}`,
+                    marginBottom: `-${theme.spacing(0.5)}`,
                   }
                 : {}),
               ...(below

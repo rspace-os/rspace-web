@@ -39,7 +39,7 @@ function RecordDetails({ record, hideName = false }: RecordDetailsArgs): ReactNo
       }}
     >
       {record.thumbnail && (
-        <Grid>
+        <Grid sx={{ flexShrink: 0 }}>
           <Avatar
             src={record.thumbnail}
             sx={{
@@ -111,6 +111,7 @@ function RecordDetails({ record, hideName = false }: RecordDetailsArgs): ReactNo
                         }}
                       ></span>
                     ),
+                    below: true,
                   },
                 ]
               : []),
@@ -193,6 +194,17 @@ function RecordDetails({ record, hideName = false }: RecordDetailsArgs): ReactNo
               : []),
           ]}
           dividers
+          sx={{
+            "& dd.below": {
+              width: "100%",
+              wordBreak: "break-word",
+              overflowWrap: "anywhere",
+            },
+            "& dd.below img": {
+              maxWidth: "100%",
+              height: "auto",
+            },
+          }}
         />
       </Grid>
     </Grid>
