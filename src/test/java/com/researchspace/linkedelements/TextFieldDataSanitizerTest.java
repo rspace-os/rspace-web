@@ -149,7 +149,7 @@ public class TextFieldDataSanitizerTest extends SpringTransactionalTest {
             + " style=\"border: 0\" width=\"800\" height=\"600\" frameborder=\"0\""
             + " scrolling=\"no\"></iframe></div>";
     String cleaned = fieldDataSanitizer.cleanData(randomIframeHtml);
-    assertEquals("<p>text</p><img src=\"/image/123\" />", cleaned);
+    assertEquals("<p>text</p>\n<img src=\"/image/123\" />", cleaned);
 
     // embed iframe from youtube is allowed
     String youtubeEmbedHtml =

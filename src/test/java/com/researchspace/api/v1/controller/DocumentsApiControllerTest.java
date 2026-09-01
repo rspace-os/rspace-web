@@ -424,7 +424,7 @@ public class DocumentsApiControllerTest extends SpringTransactionalTest {
     // upload image to Gallery, refer to it in text field content
     EcatImage image = addImageToGallery(testUser);
     String apiFieldContent = "attached image: <fileId=" + image.getId() + ">";
-    String expectedSavedContentStart = "attached image: \n<p><img id=\"";
+    String expectedSavedContentStart = "attached image:\n<p><img id=\"";
 
     ApiDocument apiDoc = new ApiDocument();
     ApiDocumentField apiField = new ApiDocumentField();

@@ -127,7 +127,7 @@ public class TextFieldEmbedIframeHandlerTest extends SpringTransactionalTest {
             + " data-frameborder=\"0\" data-allow=\"accelerometer; autoplay; clipboard-write;"
             + " encrypted-media; gyroscope; picture-in-picture\" data-allowfullscreen=\"\"></p>";
 
-    String htmlFragmentFormat = "<p>start</p>\n%s <img src=\"123\" />\n%s\n<p>end</p>";
+    String htmlFragmentFormat = "<p>start</p>\n%s\n<img src=\"123\" />\n%s\n<p>end</p>";
     String htmlFragment = String.format(htmlFragmentFormat, youtubeEmbed, youtubePrivacyModeEmbed);
     String expectedConvertedHtml =
         String.format(
@@ -142,8 +142,8 @@ public class TextFieldEmbedIframeHandlerTest extends SpringTransactionalTest {
     String restoredHtmlAdjustedForEqualsAssertion =
         restoredHtml
             .replaceAll("/p> <iframe", "/p>\n<iframe")
+            .replaceAll("</iframe> <img", "</iframe>\n<img")
             .replaceAll("/> <iframe", "/>\n<iframe")
-            .replaceAll("> </iframe>", "></iframe>")
             .replaceAll("allowfullscreen=\"\"", "allowfullscreen");
     assertEquals(htmlFragment, restoredHtmlAdjustedForEqualsAssertion);
   }
@@ -184,7 +184,7 @@ public class TextFieldEmbedIframeHandlerTest extends SpringTransactionalTest {
             + " data-allowfullscreen=\"\""
             + " data-referrerpolicy=\"strict-origin-when-cross-origin\"></p>";
 
-    String htmlFragmentFormat = "<p>start</p>\n%s <img src=\"123\" />\n%s\n<p>end</p>";
+    String htmlFragmentFormat = "<p>start</p>\n%s\n<img src=\"123\" />\n%s\n<p>end</p>";
     String htmlFragment = String.format(htmlFragmentFormat, youtubeEmbed, youtubePrivacyModeEmbed);
     String expectedConvertedHtml =
         String.format(
@@ -199,8 +199,8 @@ public class TextFieldEmbedIframeHandlerTest extends SpringTransactionalTest {
     String restoredHtmlAdjustedForEqualsAssertion =
         restoredHtml
             .replaceAll("/p> <iframe", "/p>\n<iframe")
+            .replaceAll("</iframe> <img", "</iframe>\n<img")
             .replaceAll("/> <iframe", "/>\n<iframe")
-            .replaceAll("> </iframe>", "></iframe>")
             .replaceAll("allowfullscreen=\"\"", "allowfullscreen");
     assertEquals(htmlFragment, restoredHtmlAdjustedForEqualsAssertion);
   }
@@ -231,9 +231,9 @@ public class TextFieldEmbedIframeHandlerTest extends SpringTransactionalTest {
             + " src=\"https://www.jove.com/embed/player?id=54239&amp;t=1&amp;s=1&amp;fpv=1\""
             + " border=\"0\" frameborder=\"0\" marginwheight=\"0\" marginwidth=\"0\""
             + " allow=\"encrypted-media *\" allowfullscreen=\"\" allowtransparency=\"true\""
-            + " scrolling=\"no\"> </iframe>";
+            + " scrolling=\"no\"></iframe>";
 
-    String htmlFragmentFormat = "<p>start</p>\n%s <img src=\"123\" />\n<p>end</p>";
+    String htmlFragmentFormat = "<p>start</p>\n%s\n<img src=\"123\" />\n<p>end</p>";
     String htmlFragment = String.format(htmlFragmentFormat, joveEmbed);
     String expectedConvertedHtml = String.format(htmlFragmentFormat, expectedConvertedJoveEmbed);
 
@@ -242,7 +242,9 @@ public class TextFieldEmbedIframeHandlerTest extends SpringTransactionalTest {
 
     String restoredHtml = iframeHandler.decodeKnownIframesFromParagraphs(convertedHtml);
     String restoredHtmlAdjustedForEqualsAssertion =
-        restoredHtml.replaceAll("/p> <iframe", "/p>\n<iframe");
+        restoredHtml
+            .replaceAll("/p> <iframe", "/p>\n<iframe")
+            .replaceAll("</iframe> <img", "</iframe>\n<img");
     String expectedRestoredHtml = String.format(htmlFragmentFormat, expectedRestoredJoveEmbed);
     assertEquals(expectedRestoredHtml, restoredHtmlAdjustedForEqualsAssertion);
   }
@@ -268,9 +270,9 @@ public class TextFieldEmbedIframeHandlerTest extends SpringTransactionalTest {
             + " src=\"https://app.jove.com/embed/player?id=2359&amp;t=1&amp;s=1&amp;fpv=1\""
             + " border=\"0\" frameborder=\"0\" marginwheight=\"0\" marginwidth=\"0\""
             + " allow=\"encrypted-media *\" allowfullscreen=\"\" allowtransparency=\"true\""
-            + " scrolling=\"no\"> </iframe>";
+            + " scrolling=\"no\"></iframe>";
 
-    String htmlFragmentFormat = "<p>start</p>\n%s <img src=\"123\" />\n<p>end</p>";
+    String htmlFragmentFormat = "<p>start</p>\n%s\n<img src=\"123\" />\n<p>end</p>";
     String htmlFragment = String.format(htmlFragmentFormat, joveEmbed);
     String expectedConvertedHtml = String.format(htmlFragmentFormat, expectedConvertedJoveEmbed);
 
@@ -279,7 +281,9 @@ public class TextFieldEmbedIframeHandlerTest extends SpringTransactionalTest {
 
     String restoredHtml = iframeHandler.decodeKnownIframesFromParagraphs(convertedHtml);
     String restoredHtmlAdjustedForEqualsAssertion =
-        restoredHtml.replaceAll("/p> <iframe", "/p>\n<iframe");
+        restoredHtml
+            .replaceAll("/p> <iframe", "/p>\n<iframe")
+            .replaceAll("</iframe> <img", "</iframe>\n<img");
     String expectedRestoredHtml = String.format(htmlFragmentFormat, expectedRestoredJoveEmbed);
     assertEquals(expectedRestoredHtml, restoredHtmlAdjustedForEqualsAssertion);
   }
@@ -296,10 +300,10 @@ public class TextFieldEmbedIframeHandlerTest extends SpringTransactionalTest {
             + "data-src=\"https://av.tib.eu/player/70488\" "
             + "data-width=\"560\" data-allow=\"fullscreen\"></p>";
     String expectedRestoredAvportalEmbed =
-        "<iframe width=\"560\" src=\"https://av.tib.eu/player/70488\" allow=\"fullscreen\"> "
+        "<iframe width=\"560\" src=\"https://av.tib.eu/player/70488\" allow=\"fullscreen\">"
             + "</iframe>";
 
-    String htmlFragmentFormat = "<p>start</p>\n%s <img src=\"123\" />\n<p>end</p>";
+    String htmlFragmentFormat = "<p>start</p>\n%s\n<img src=\"123\" />\n<p>end</p>";
     String htmlFragment = String.format(htmlFragmentFormat, avportalEmbed);
     String expectedConvertedHtml =
         String.format(htmlFragmentFormat, expectedConvertedAvportalEmbed);
@@ -309,7 +313,9 @@ public class TextFieldEmbedIframeHandlerTest extends SpringTransactionalTest {
 
     String restoredHtml = iframeHandler.decodeKnownIframesFromParagraphs(convertedHtml);
     String restoredHtmlAdjustedForEqualsAssertion =
-        restoredHtml.replaceAll("/p> <iframe", "/p>\n<iframe");
+        restoredHtml
+            .replaceAll("/p> <iframe", "/p>\n<iframe")
+            .replaceAll("</iframe> <img", "</iframe>\n<img");
     String expectedRestoredHtml = String.format(htmlFragmentFormat, expectedRestoredAvportalEmbed);
     assertEquals(expectedRestoredHtml, restoredHtmlAdjustedForEqualsAssertion);
   }
@@ -329,7 +335,7 @@ public class TextFieldEmbedIframeHandlerTest extends SpringTransactionalTest {
             + "data-src=\"https://www.youtube.com/embed/YkRldqVfTJo\" "
             + "data-title=\"YouTube video player\"></p>";
 
-    String htmlFragmentFormat = "<p>start</p> <img src=\"123\" />\n%s\n<p>end</p>";
+    String htmlFragmentFormat = "<p>start</p>\n<img src=\"123\" />\n%s\n<p>end</p>";
     String htmlFragment = String.format(htmlFragmentFormat, youtubeEmbed);
     String expectedConvertedHtml = String.format(htmlFragmentFormat, expectedConvertedYoutubeEmbed);
 
