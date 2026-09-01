@@ -7,6 +7,7 @@ import * as v from "valibot";
 import { bookingApiV2Headers } from "@/modules/booking/domain/apiV2";
 import { type BookingListDocument, BookingListDocumentTableValidation } from "@/modules/booking/domain/booking";
 import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { formatAgendaPeriod } from "@/modules/booking/domain/bookingTime";
 import { useAlignedMinute } from "@/modules/booking/hooks/useAlignedMinute";
 import type { CollectionRow } from "@/modules/common/collection/collectionConfig";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
@@ -17,12 +18,25 @@ import { TableList, type TableListRowActions } from "@/modules/common/table-list
 import type { FilterExpression } from "@/modules/common/table-list/tableListState";
 import { Badge } from "@/modules/common/ui/badge";
 import { Button, buttonVariants } from "@/modules/common/ui/button";
+import { DeleteBookingDialog } from "../bookings/DeleteBookingDialog";
 import { bookingListConfig } from "./bookingList";
 import { type MyBookingsPeriod, myBookingsPeriodParser } from "./routes";
 
 const UpcomingCountSchema = v.object({ totalDocs: v.number() });
 const projection = {
-  fixed: ["id", "target", "canViewConfiguration", "timezone", "start", "end", "purpose"],
+  fixed: [
+    "id",
+    "version",
+    "target",
+    "canViewConfiguration",
+    "timezone",
+    "start",
+    "end",
+    "state",
+    "purpose",
+    "canEdit",
+    "canCancel",
+  ],
 } as const;
 const emptyDescriptionKeys = {
   upcoming: "myBookings.empty.upcoming",
@@ -107,19 +121,45 @@ export function UserBookingsPage({ requesterId, title, period, onPeriodChange }:
     () => ({
       id: "actions",
       label: t("myBookings.actions.label"),
-      width: 120,
-      renderCell: ({ row }) =>
-        row.canViewConfiguration ? (
-          <Link
-            className={buttonVariants({ size: "sm", variant: "outline" })}
-            to="/booking/bookable-items/$globalId"
-            params={{ globalId: row.target.globalId }}
-          >
-            {t("myBookings.actions.viewDetails")}
-          </Link>
-        ) : (
-          <span className="text-sm text-muted-foreground">{t("myBookings.roleLoss.readOnly")}</span>
-        ),
+      width: 280,
+      renderCell: ({ row }) => (
+        <div className="flex flex-wrap gap-2">
+          {row.canViewConfiguration ? (
+            <Link
+              className={buttonVariants({ size: "sm", variant: "outline" })}
+              to="/booking/bookable-items/$globalId"
+              params={{ globalId: row.target.globalId }}
+            >
+              {t("myBookings.actions.viewDetails")}
+            </Link>
+          ) : null}
+          {row.canEdit ? (
+            <Link
+              className={buttonVariants({ size: "sm", variant: "outline" })}
+              to="/booking/calendar/bookings/$id"
+              params={{ id: String(row.id) }}
+              search={{ returnTo: "my-bookings" }}
+            >
+              {t("myBookings.actions.edit")}
+            </Link>
+          ) : null}
+          {row.canCancel ? (
+            <DeleteBookingDialog
+              bookingId={row.id}
+              bookingVersion={row.version ?? 0}
+              itemName={row.target.value.name}
+              period={formatAgendaPeriod(row.start ?? "", row.end ?? "", preferences.timeZone)}
+              token={token}
+              onDeleted={async () => {
+                await table.refetch();
+              }}
+            />
+          ) : null}
+          {!row.canViewConfiguration && !row.canEdit && !row.canCancel ? (
+            <span className="text-sm text-muted-foreground">{t("myBookings.roleLoss.readOnly")}</span>
+          ) : null}
+        </div>
+      ),
       renderInteraction: () => null,
     }),
     [t],
@@ -136,6 +176,7 @@ export function UserBookingsPage({ requesterId, title, period, onPeriodChange }:
       <header className="space-y-1">
         <h1 className="text-2xl font-semibold">{title}</h1>
         <p className="text-sm text-muted-foreground">{t("myBookings.description")}</p>
+        <p className="text-sm text-muted-foreground">{t("myBookings.timezone", { timezone: preferences.timeZone })}</p>
       </header>
       <div className="space-y-2">
         <fieldset>

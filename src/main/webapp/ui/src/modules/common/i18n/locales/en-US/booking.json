@@ -11,6 +11,10 @@
         "description": "Can manage configuration, events, and non-owner access.",
         "label": "Manager"
       },
+      "noAccess": {
+        "description": "Does not grant public access. Direct user and group access still applies.",
+        "label": "No access"
+      },
       "owner": {
         "description": "Full control, including Owners and archiving.",
         "label": "Owner"
@@ -37,6 +41,10 @@
     "fields": {
       "actions": "Actions"
     },
+    "filters": {
+      "location": "Location",
+      "locationOption": "{name} ({globalId})"
+    },
     "jumpToDate": "Jump to date",
     "plural": "All Bookable Items",
     "quickFilters": {
@@ -51,6 +59,17 @@
     "singular": "Bookable item",
     "title": "All Bookable Items",
     "toolbar": "All Bookable Items controls"
+  },
+  "archived": {
+    "description": "This booking configuration is archived. New bookings, edits, access changes, and calendar links are unavailable until it is restored.",
+    "error": "This archived booking configuration is not available.",
+    "futureBookings": "Future bookings",
+    "loading": "Loading archived booking configuration.",
+    "noFutureBookings": "There are no future bookings to manage.",
+    "subscriptionInactive": "The item calendar subscription is inactive.",
+    "unarchive": "Unarchive",
+    "unarchiveError": "The configuration could not be unarchived. Refresh and try again.",
+    "unknownItem": "Archived booking configuration"
   },
   "availabilityBar": {
     "current": {
@@ -87,6 +106,17 @@
     "timezone": "Time zone: {timezone}"
   },
   "bookableItemDetails": {
+    "actions": {
+      "archive": "Archive bookable item",
+      "createBooking": "Create booking",
+      "leave": "Leave configuration"
+    },
+    "archiveDialog": {
+      "confirm": "Archive",
+      "description": "Archive {item}? Existing bookings remain in the audit history.",
+      "error": "Could not archive this bookable item. Try again.",
+      "title": "Archive bookable item?"
+    },
     "audit": {
       "apply": "Load audit events",
       "conflict": {
@@ -201,6 +231,11 @@
       "timezone": "Timezone",
       "updatedAt": "Last updated"
     },
+    "leaveDialog": {
+      "description": "Your direct access will be removed. Access inherited through a group or All users is not affected.",
+      "error": "Could not leave this configuration.",
+      "title": "Leave this booking configuration?"
+    },
     "loading": "Loading bookable item.",
     "minutes": "{count, plural, one {# minute} other {# minutes}}",
     "no": "No",
@@ -225,9 +260,11 @@
   },
   "bookableItems": {
     "actions": {
+      "access": "Manage access for {item}",
       "add": "Add",
       "delete": "Delete {item}",
       "edit": "Edit {item}",
+      "repairAccess": "Repair access for {item}",
       "save": "Save changes",
       "submit": "Submit",
       "viewDetails": "View details for {item}",
@@ -276,10 +313,15 @@
       "updatedAt": "Last updated"
     },
     "ownerHealth": {
+      "error": "Could not find bookable items needing an owner.",
+      "filter": "Owner attention needed",
+      "filters": "Owner health filters",
+      "loading": "Finding bookable items needing an owner…",
       "needsOwner": "Owner needed"
     },
     "plural": "Bookable Items",
     "singular": "Bookable item",
+    "staleEdit": "This configuration changed while you were editing. Your draft is preserved; review the server-changed fields below before saving again.",
     "targetSearch": {
       "error": "Eligible instruments could not be searched.",
       "label": "Instrument",
@@ -289,6 +331,7 @@
   },
   "bookings": {
     "actions": {
+      "cancel": "Cancel booking",
       "createEvent": "Create calendar event",
       "delete": "Delete booking",
       "edit": "Edit",
@@ -297,6 +340,10 @@
       "newMaintenance": "New Maintenance Event"
     },
     "addTitle": "Add Booking",
+    "cancelDialog": {
+      "description": "Cancel the {itemName} booking for {period}? The cancelled event remains in the audit history.",
+      "title": "Cancel booking?"
+    },
     "compact": {
       "bookingDescription": "Choose a bookable item and time for the new booking.",
       "bookingTitle": "New Booking",
@@ -314,9 +361,9 @@
     "editTitle": "Edit Booking",
     "errors": {
       "concurrentModification": "This event changed while you were editing it. Review the latest details and try again.",
-      "deleteForbidden": "You no longer have permission to delete this booking.",
-      "deleteGeneric": "RSpace could not delete the booking. Try again.",
-      "deleteStale": "This booking is no longer editable.",
+      "deleteForbidden": "You no longer have permission to cancel this booking.",
+      "deleteGeneric": "RSpace could not cancel the booking. Try again.",
+      "deleteStale": "This booking can no longer be cancelled.",
       "duration": "Bookings may not exceed 366 days.",
       "endAfterStart": "The end must be after the start.",
       "forbidden": "You cannot edit this booking.",
@@ -346,19 +393,23 @@
       "itemChoose": "Choose a bookable item",
       "itemNone": "No bookable items found",
       "itemOption": "{name} ({globalId}) — {timezone}",
+      "itemPage": "Page {page, number} of {total, number}",
       "itemResults": "Bookable item results",
       "itemSearch": "Search bookable items",
       "laterOccurrence": "Later occurrence ({offset})",
       "maximumDuration": "Maximum booking duration: {count, number} minutes",
       "moreOptions": "More options",
+      "nextItems": "Next",
       "notes": "Notes",
       "notesCount": "{count, number}/1,000 characters",
       "occurrence": "Repeated local time",
       "openingHours": "Opening hours: {start}–{end}",
       "openItem": "Open {globalId}",
+      "previousItems": "Previous",
       "purpose": "Purpose",
       "purposeCount": "{count, number}/1,000 characters",
       "returnToCalendar": "Return to Calendar",
+      "returnToMyBookings": "Return to My Bookings",
       "save": "Save changes",
       "schedulingTimezone": "Opening hours are enforced in {timezone}.",
       "start": "Start",
@@ -492,6 +543,7 @@
   },
   "myBookings": {
     "actions": {
+      "edit": "Edit",
       "label": "Actions",
       "viewDetails": "View details"
     },
@@ -524,6 +576,7 @@
       "readOnly": "Read-only: you no longer have access to this item."
     },
     "singular": "Booking",
+    "timezone": "Times are shown in {timezone}.",
     "title": "My Bookings"
   },
   "preferences": {
@@ -587,6 +640,9 @@
       "addNamed": "Add {name}",
       "addUserOrGroup": "Add user or group",
       "description": "New bookable items grant the Booker role using this choice. Existing items are unchanged.",
+      "error": "Users and groups could not be searched.",
+      "loading": "Searching users and groups…",
+      "noResults": "No matching users or groups.",
       "options": {
         "ALL_USERS": {
           "description": "Everyone, including future users, can create bookings.",

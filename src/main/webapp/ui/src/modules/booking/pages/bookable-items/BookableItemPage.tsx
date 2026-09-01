@@ -1,8 +1,8 @@
 import { Tabs } from "@base-ui/react/tabs";
-import { Form, reset, useForm } from "@formisch/react";
+import { Form, isDirty, reset, useForm } from "@formisch/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, useSearch } from "@tanstack/react-router";
-import { PencilIcon } from "lucide-react";
+import { ArchiveIcon, PencilIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -10,6 +10,7 @@ import { SchedulingSettingsFields } from "@/modules/booking/configuration/schedu
 import { BookingCreationButtonGroup } from "@/modules/booking/creation/BookingCreationButtonGroup";
 import { bookableItemOption } from "@/modules/booking/creation/bookableItemOption";
 import { bookingApiV2JsonHeaders } from "@/modules/booking/domain/apiV2";
+import { parseApiV2Problem } from "@/modules/booking/domain/booking";
 import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { RenderFields } from "@/modules/common/collection-form/RenderFields";
 import {
@@ -18,7 +19,19 @@ import {
   RESPONSIVE_INLINE_FIELD_ROW_CLASS_NAME,
 } from "@/modules/common/collection-form/responsiveFieldLayout";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
+import { DirtyNavigationGuard } from "@/modules/common/navigation/DirtyNavigationGuard";
 import { ResourceAccessEditor } from "@/modules/common/resource-access/ResourceAccessEditor";
+import { leaveResource } from "@/modules/common/resource-access/resourceAccess";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/modules/common/ui/alert-dialog";
 import { Badge } from "@/modules/common/ui/badge";
 import { Button } from "@/modules/common/ui/button";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/modules/common/ui/card";
@@ -42,6 +55,7 @@ type BookableItemTab = "bookings" | "details" | "audit" | "access";
 
 async function updateBookingConfiguration(
   id: number,
+  version: number,
   input: BookingConfigurationUpdateInput,
   token: string,
 ): Promise<void> {
@@ -51,10 +65,21 @@ async function updateBookingConfiguration(
   });
   const response = await fetch(`/api/v2/booking-configurations/${id}?${search}`, {
     method: "PATCH",
-    headers: bookingApiV2JsonHeaders(token),
+    headers: { ...bookingApiV2JsonHeaders(token), "If-Match": `"${version}"` },
     body: JSON.stringify(input),
   });
-  if (!response.ok) throw new Error(`Booking configuration update failed with status ${response.status}`);
+  if (!response.ok) throw await parseApiV2Problem(response);
+}
+
+async function archiveBookingConfiguration(id: number, token: string): Promise<void> {
+  const response = await fetch(`/api/v2/booking-configurations/${id}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "X-Requested-With": "XMLHttpRequest",
+    },
+  });
+  if (!response.ok) throw new Error(`Booking configuration archive failed with status ${response.status}`);
 }
 
 function configurationInput(configuration: BookingConfiguration): BookingConfigurationUpdateInput {
@@ -185,12 +210,16 @@ function LoadedBookableItemPage({
   token: string;
 }) {
   const { t } = useTranslation("booking");
+  const { t: commonT } = useTranslation("common");
   const preferences = useBookingDisplayPreferences();
   const { tab = "bookings", edit = false } = useSearch({ from: "/booking/bookable-items/$globalId" });
   const navigate = useNavigate({ from: "/booking/bookable-items/$globalId" });
   const queryClient = useQueryClient();
   const [cutoff] = useState(() => new Date().toISOString());
   const [saveAnnouncement, setSaveAnnouncement] = useState<"saved" | null>(null);
+  const [staleBase, setStaleBase] = useState<BookingConfigurationUpdateInput | null>(null);
+  const [archiveOpen, setArchiveOpen] = useState(false);
+  const [leaveOpen, setLeaveOpen] = useState(false);
   const formId = `bookable-item-details-${useId()}`;
   const editButtonRef = useRef<HTMLButtonElement>(null);
   const saveButtonRef = useRef<HTMLButtonElement>(null);
@@ -216,12 +245,40 @@ function LoadedBookableItemPage({
     });
 
   const updateMutation = useMutation({
-    mutationFn: (input: BookingConfigurationUpdateInput) => updateBookingConfiguration(configuration.id, input, token),
+    mutationFn: (input: BookingConfigurationUpdateInput) =>
+      updateBookingConfiguration(configuration.id, configuration.configurationVersion, input, token),
     onMutate: () => setSaveAnnouncement(null),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] });
       setSaveAnnouncement("saved");
+      setStaleBase(null);
       setSearch({ edit: false });
+    },
+    onError: async (error) => {
+      if (typeof error === "object" && error !== null && "status" in error && error.status === 412) {
+        setStaleBase(configurationInput(configuration));
+        await queryClient.refetchQueries({
+          queryKey: ["api-v2", "booking-configurations", "target", globalId],
+        });
+      }
+    },
+  });
+  const archiveMutation = useMutation({
+    mutationFn: () => archiveBookingConfiguration(configuration.id, token),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] });
+      void navigate({
+        to: "/booking/bookable-items/archived/$id",
+        params: { id: String(configuration.id) },
+        ignoreBlocker: true,
+      });
+    },
+  });
+  const leaveMutation = useMutation({
+    mutationFn: () => leaveResource("booking-configurations", configuration.id, token),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] });
+      void navigate({ to: "/booking", ignoreBlocker: true });
     },
   });
 
@@ -252,11 +309,13 @@ function LoadedBookableItemPage({
   const cancelEdit = () => {
     reset(form, { initialInput: configurationInput(configuration) });
     setSaveAnnouncement(null);
+    setStaleBase(null);
     setSearch({ edit: false });
   };
 
   return (
     <main className="mx-auto max-w-5xl space-y-6 p-4 sm:p-8">
+      <DirtyNavigationGuard dirty={editing && isDirty(form)} />
       <Tabs.Root
         value={tab}
         onValueChange={(value) => {
@@ -281,6 +340,17 @@ function LoadedBookableItemPage({
               ) : null}
               {configuration.capabilities.canSubscribeCalendar ? (
                 <CalendarSubscriptionPopover configurationId={configuration.id} token={token} />
+              ) : null}
+              {configuration.capabilities.canLeaveConfiguration ? (
+                <Button type="button" variant="outline" onClick={() => setLeaveOpen(true)}>
+                  {t("bookableItemDetails.actions.leave")}
+                </Button>
+              ) : null}
+              {configuration.capabilities.canArchiveConfiguration ? (
+                <Button type="button" variant="destructive" onClick={() => setArchiveOpen(true)}>
+                  <ArchiveIcon aria-hidden="true" />
+                  {t("bookableItemDetails.actions.archive")}
+                </Button>
               ) : null}
             </>
           }
@@ -375,15 +445,24 @@ function LoadedBookableItemPage({
                   onSubmit={(input) => updateMutation.mutateAsync(input)}
                 >
                   <RenderFields
-                    fields={bookingConfigurationFields.filter(
-                      (field) => field.name !== "target" && field.name !== "enabled",
-                    )}
+                    fields={bookingConfigurationFields.filter((field) => field.name !== "target")}
                     form={form}
                     disabled={updateMutation.isPending}
                     layout="inline"
                   />
                   <SchedulingSettingsFields form={form} disabled={updateMutation.isPending} layout="inline" />
-                  {updateMutation.isError ? (
+                  {staleBase !== null ? (
+                    <div role="alert" className="space-y-1 text-sm text-destructive">
+                      <p>{t("bookableItems.staleEdit")}</p>
+                      <ul className="list-inside list-disc">
+                        {Object.entries(configurationInput(configuration)).flatMap(([field, value]) =>
+                          staleBase[field as keyof BookingConfigurationUpdateInput] === value
+                            ? []
+                            : [<li key={field}>{field}</li>],
+                        )}
+                      </ul>
+                    </div>
+                  ) : updateMutation.isError ? (
                     <p role="alert" className="text-sm text-destructive">
                       {t("bookableItems.editError")}
                     </p>
@@ -411,13 +490,64 @@ function LoadedBookableItemPage({
                   resourceId={configuration.id}
                   token={token}
                   adapter={bookingResourceAccessAdapter(t)}
-                  onLeave={() => void navigate({ to: "/booking" })}
+                  onLeave={() => void navigate({ to: "/booking", ignoreBlocker: true })}
                 />
               </CardContent>
             </Card>
           </Tabs.Panel>
         ) : null}
       </Tabs.Root>
+
+      <AlertDialog open={archiveOpen} onOpenChange={(open) => !archiveMutation.isPending && setArchiveOpen(open)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("bookableItemDetails.archiveDialog.title")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("bookableItemDetails.archiveDialog.description", { item: target.value.name })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {archiveMutation.isError ? (
+            <p role="alert" className="text-sm text-destructive">
+              {t("bookableItemDetails.archiveDialog.error")}
+            </p>
+          ) : null}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={archiveMutation.isPending}>{commonT("actions.cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={archiveMutation.isPending}
+              aria-busy={archiveMutation.isPending}
+              onClick={() => archiveMutation.mutate()}
+            >
+              {t("bookableItemDetails.archiveDialog.confirm")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog open={leaveOpen} onOpenChange={(open) => !leaveMutation.isPending && setLeaveOpen(open)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("bookableItemDetails.leaveDialog.title")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("bookableItemDetails.leaveDialog.description")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          {leaveMutation.isError ? (
+            <p role="alert" className="text-sm text-destructive">
+              {t("bookableItemDetails.leaveDialog.error")}
+            </p>
+          ) : null}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={leaveMutation.isPending}>{commonT("actions.cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={leaveMutation.isPending}
+              aria-busy={leaveMutation.isPending}
+              onClick={() => leaveMutation.mutate()}
+            >
+              {t("bookableItemDetails.actions.leave")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <p role="status" aria-live="polite" className="sr-only">
         {updateMutation.isPending

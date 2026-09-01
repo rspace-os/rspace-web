@@ -6,6 +6,7 @@ import { worker } from "@/__tests__/browserSetup";
 import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { expectNoAxeViolations } from "@/__tests__/pageObjects/accessibility";
 import type { BookingDisplayPreferencesDocument } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { CALENDAR_BOOKING_FIELDS } from "@/modules/booking/pages/calendar/calendarEvents";
 import {
   bookableItemDetailsHandlers,
   bookableItemsHandlers,
@@ -23,9 +24,7 @@ import { inheritedBrowserBookingPreferences } from "./bookingPreferencesFixtures
 import { BookingPreferencesPage } from "./pageObjects/BookingPreferencesPage";
 
 const preferences = new BookingPreferencesPage();
-const availabilityBookingFields = "id,target,timezone,start,end,state";
-const calendarBookingFields =
-  "id,target,requesterId,timezone,start,end,state,purpose,bookedBy,privacy,canEdit,createdAt,updatedAt";
+const availabilityBookingFields = "id,target,timezone,start,end,state,kind";
 let stored: BookingDisplayPreferencesDocument;
 
 function registerHandlers() {
@@ -49,7 +48,7 @@ function registerHandlers() {
     ...bookableItemsHandlers(() => undefined),
     http.get("/api/v2/bookings", ({ request }) => {
       const fields = new URL(request.url).searchParams.get("fields[bookings]");
-      if (fields === calendarBookingFields) {
+      if (fields === CALENDAR_BOOKING_FIELDS) {
         return HttpResponse.json(collectionResponse([ownBooking, otherBooking, busyBooking]));
       }
       if (fields === availabilityBookingFields) {

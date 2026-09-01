@@ -91,6 +91,7 @@ public final class ApiV2Fixture {
   private User otherUser;
   private String otherUserKey;
   private User thirdUser;
+  private String thirdUserKey;
 
   private ApiV2Fixture() {}
 
@@ -182,6 +183,13 @@ public final class ApiV2Fixture {
       thirdUser = createUser();
     }
     return thirdUser;
+  }
+
+  public String thirdUserKey() {
+    if (thirdUserKey == null) {
+      thirdUserKey = keyFor(thirdUser());
+    }
+    return thirdUserKey;
   }
 
   /** Makes {@code owner}'s records role-visible to {@code viewer} through a temporary lab group. */
@@ -323,7 +331,8 @@ public final class ApiV2Fixture {
     return userManager.getUserByUsername(AbstractAppInitializor.SYSADMIN_UNAME);
   }
 
-  private void enableBookings() {
+  /** Enables Booking for this fixture and restores the previous baseline during cleanup. */
+  public void enableBookings() {
     if (bookingFlagEnabled) {
       return;
     }

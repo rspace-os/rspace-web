@@ -8,7 +8,11 @@ import java.util.Optional;
 /** Manages item-scoped calendar credentials, feeds, and individual downloads. */
 public interface BookingCalendarManager {
 
-  record Status(boolean active, Date updatedAt, String subscriptionUrl) {
+  record Status(boolean active, Date updatedAt, String subscriptionUrl, String etag) {
+
+    public Status(boolean active, Date updatedAt, String subscriptionUrl) {
+      this(active, updatedAt, subscriptionUrl, null);
+    }
 
     public Status {
       updatedAt = copy(updatedAt);
@@ -71,7 +75,7 @@ public interface BookingCalendarManager {
   Status userStatus(User subject, User actor);
 
   /** Creates or replaces the caller's user-wide booking calendar credential. */
-  Created createOrRotateUser(User subject, User actor);
+  Created createOrRotateUser(User subject, User actor, String expectedEtag);
 
   /** Revokes the caller's user-wide booking calendar credential. */
   void revokeUser(User subject, User actor);

@@ -12,10 +12,10 @@ import {
   otherBooking,
   ownBooking,
 } from "@/modules/booking/pages/calendar/__tests__/calendarTestHarness";
+import { CALENDAR_BOOKING_FIELDS } from "@/modules/booking/pages/calendar/calendarEvents";
 
 export const availabilityBookingFields = "id,target,timezone,start,end,state,kind";
-export const calendarBookingFields =
-  "id,target,requesterId,timezone,start,end,state,kind,purpose,bookedBy,createdBy,privacy,canEdit,createdAt,updatedAt";
+export const calendarBookingFields = CALENDAR_BOOKING_FIELDS;
 
 export const bookingPageRequests: {
   collectionQueries: string[];
@@ -93,6 +93,7 @@ export function bookingPagesHandlers(): RequestHandler[] {
       const target = targetId === 124 ? sampleBookingEvents[2].target : sampleBookingEvents[0].target;
       return HttpResponse.json({
         id: 900 + bookingPageRequests.createdPayloads.length,
+        version: 0,
         target,
         timezone: "Europe/Berlin",
         start: payload.start,
@@ -104,6 +105,7 @@ export function bookingPagesHandlers(): RequestHandler[] {
         createdBy: "Ada Lovelace (ada)",
         privacy: "full",
         canEdit: true,
+        canCancel: true,
         createdAt: "2026-08-17T08:00:00Z",
         updatedAt: "2026-08-17T08:00:00Z",
       });

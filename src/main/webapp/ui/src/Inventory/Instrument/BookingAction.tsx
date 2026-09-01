@@ -4,10 +4,11 @@ import Button from "@mui/material/Button";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { FEATURE_FLAGS } from "@/featureFlags/generatedFeatureFlags";
 import { useIsFeatureFlagEnabled } from "@/featureFlags/queries";
-import { useSelectedBookableItemAvailability } from "@/modules/booking/pages/bookable-items/bookableItemAvailability";
+import { findBookingConfigurationByTarget } from "@/modules/booking/pages/bookable-items/bookingConfiguration";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 
 type BookingActionProps = {
@@ -15,14 +16,21 @@ type BookingActionProps = {
   isOwner: boolean;
 };
 
-function EnabledBookingAction({ globalId }: { globalId: string }) {
+function EnabledBookingAction({ globalId, isOwner }: { globalId: string; isOwner: boolean }) {
   const { t } = useTranslation("inventory");
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
-  const availability = useSelectedBookableItemAvailability(globalId, token);
+  const configuration = useQuery({
+    queryKey: ["api-v2", "booking-configurations", "inventory-action", globalId],
+    queryFn: ({ signal }) => findBookingConfigurationByTarget(globalId, token, signal),
+  });
 
-  if (!availability.isSuccess) return null;
+  if (!configuration.isSuccess) return null;
 
-  const configured = availability.data !== null;
+  const current = configuration.data;
+  const configured = current !== null;
+  const canBook = current?.enabled === true && current.capabilities.canCreateBooking;
+  if (!configured && !isOwner) return null;
+  const action = configured ? (canBook ? "book" : "open") : "setup";
   return (
     <Paper variant="outlined" sx={{ p: 2 }}>
       <Stack direction={{ xs: "column", sm: "row" }} sx={{ alignItems: { sm: "center" }, gap: 2 }}>
@@ -53,26 +61,34 @@ function EnabledBookingAction({ globalId }: { globalId: string }) {
         <Button
           component="a"
           href={
-            configured
+            action === "book"
               ? `/booking/calendar/bookings/add?target=${encodeURIComponent(globalId)}`
-              : "/booking/config/bookable-items/add"
+              : action === "open"
+                ? `/booking/bookable-items/${encodeURIComponent(globalId)}`
+                : `/booking/bookable-items/add?target=${encodeURIComponent(globalId)}`
           }
           variant="contained"
           startIcon={<CalendarMonthIcon />}
           sx={{ flex: "0 0 auto", alignSelf: { xs: "stretch", sm: "center" } }}
         >
-          {t(configured ? "instrument.booking.configured.action" : "instrument.booking.notConfigured.action")}
+          {t(
+            action === "book"
+              ? "instrument.booking.configured.book"
+              : action === "open"
+                ? "instrument.booking.configured.open"
+                : "instrument.booking.notConfigured.action",
+          )}
         </Button>
       </Stack>
     </Paper>
   );
 }
 
-function OwnerBookingAction({ globalId }: { globalId: string }) {
+function BookingActionWhenEnabled({ globalId, isOwner }: { globalId: string; isOwner: boolean }) {
   const bookingEnabled = useIsFeatureFlagEnabled(FEATURE_FLAGS.bookingEnabled);
-  return bookingEnabled ? <EnabledBookingAction globalId={globalId} /> : null;
+  return bookingEnabled ? <EnabledBookingAction globalId={globalId} isOwner={isOwner} /> : null;
 }
 
 export default function BookingAction({ globalId, isOwner }: BookingActionProps) {
-  return isOwner && globalId ? <OwnerBookingAction globalId={globalId} /> : null;
+  return globalId ? <BookingActionWhenEnabled globalId={globalId} isOwner={isOwner} /> : null;
 }

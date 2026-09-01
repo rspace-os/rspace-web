@@ -305,6 +305,8 @@ export function DayTimelineEventCard({
   const detailsId = `${React.useId()}-details`;
   const [internalExpanded, setInternalExpanded] = React.useState(false);
   const compactCardRef = React.useRef<HTMLElement>(null);
+  const triggerRef = React.useRef<HTMLButtonElement>(null);
+  const restoreFocusOnCloseRef = React.useRef(true);
   const isExpanded = expanded ?? internalExpanded;
   const setExpanded = onExpandedChange ?? setInternalExpanded;
   const title = event.kind === "blockout" || event.privacy === "full" ? event.title : t("dayTimeline.event.busy");
@@ -332,6 +334,11 @@ export function DayTimelineEventCard({
     const closeOnOutsidePointer = (pointerEvent: PointerEvent) => {
       if (pointerEvent.target instanceof Node && !compactCardRef.current?.contains(pointerEvent.target)) {
         setExpanded(false);
+        const openingAnother =
+          pointerEvent.target instanceof Element && pointerEvent.target.closest("[data-event-id]") !== null;
+        if (!openingAnother) {
+          requestAnimationFrame(() => triggerRef.current?.focus());
+        }
       }
     };
     document.addEventListener("pointerdown", closeOnOutsidePointer);
@@ -388,15 +395,23 @@ export function DayTimelineEventCard({
       </time>
       {isBusy ? (
         <button
+          ref={triggerRef}
           type="button"
           aria-controls={detailsId}
           aria-expanded={isExpanded}
           aria-label={toggleLabel}
           className="absolute inset-0 z-10 rounded-sm bg-transparent outline-none focus-visible:ring-3 focus-visible:ring-inset focus-visible:ring-ring/60"
           onClick={() => setExpanded(!isExpanded)}
+          onKeyDown={(keyboardEvent) => {
+            if (keyboardEvent.key !== "Escape" || !isExpanded) return;
+            keyboardEvent.preventDefault();
+            setExpanded(false);
+            keyboardEvent.currentTarget.focus();
+          }}
         />
       ) : (
         <PopoverTrigger
+          ref={triggerRef}
           aria-controls={detailsId}
           aria-expanded={isExpanded}
           aria-label={toggleLabel}
@@ -430,7 +445,22 @@ export function DayTimelineEventCard({
   if (event.kind === "booking" && event.privacy === "busy") return compactCard;
 
   return (
-    <Popover open={isExpanded} onOpenChange={setExpanded} modal={false}>
+    <Popover
+      open={isExpanded}
+      onOpenChange={(nextOpen, eventDetails) => {
+        if (!nextOpen) {
+          const destination =
+            eventDetails.event instanceof FocusEvent ? eventDetails.event.relatedTarget : eventDetails.event.target;
+          restoreFocusOnCloseRef.current =
+            !(destination instanceof Element) || destination.closest("[data-event-id]") === null;
+        }
+        setExpanded(nextOpen);
+      }}
+      onOpenChangeComplete={(open) => {
+        if (!open && restoreFocusOnCloseRef.current) triggerRef.current?.focus();
+      }}
+      modal={false}
+    >
       {compactCard}
       <PopoverContent
         id={detailsId}
@@ -440,6 +470,7 @@ export function DayTimelineEventCard({
         collisionPadding={0}
         collisionBoundary={collisionBoundary ?? undefined}
         sticky
+        finalFocus={false}
         className={cn(
           "w-[min(22rem,var(--available-width))] max-w-none gap-0 overflow-hidden rounded-sm border p-0 shadow-xl ring-4",
           expandedCardClassName,
@@ -533,6 +564,7 @@ export function DayTimeline({
   const scrollerRef = React.useRef<HTMLElement>(null);
   const [collisionBoundary, setCollisionBoundary] = React.useState<HTMLElement | null>(null);
   const [dragRange, setDragRange] = React.useState<{ from: number; to: number } | null>(null);
+  const [expandedEventId, setExpandedEventId] = React.useState<string | null>(null);
   const instanceId = React.useId();
   const headingId = `${instanceId}-heading`;
   const [internalViewState, setInternalViewState] = React.useState<DayTimelineViewState>({
@@ -725,6 +757,10 @@ export function DayTimeline({
                       date={date}
                       compactCards={compactCards}
                       variant="timeline"
+                      expanded={expandedEventId === event.id}
+                      onExpandedChange={(expanded) =>
+                        setExpandedEventId((current) => (expanded ? event.id : current === event.id ? null : current))
+                      }
                       collisionBoundary={collisionBoundary}
                       expandedCardClassName={
                         typeof expandedCardClassName === "function"

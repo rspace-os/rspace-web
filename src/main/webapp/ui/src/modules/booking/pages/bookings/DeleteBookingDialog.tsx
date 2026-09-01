@@ -17,6 +17,7 @@ import { Button } from "@/modules/common/ui/button";
 
 type DeleteBookingDialogProps = {
   bookingId: number;
+  bookingVersion: number;
   itemName: string;
   period: string;
   token: string;
@@ -34,12 +35,18 @@ function deleteErrorKey(error: unknown): DeleteErrorKey {
   if (error.status === 403 || error.code === "errors.api.v2.forbidden") {
     return "bookings.errors.deleteForbidden";
   }
-  if (error.code === "errors.api.v2.booking.state.transition") return "bookings.errors.deleteStale";
+  if (
+    error.status === 412 ||
+    error.code === "errors.api.v2.booking.concurrentModification" ||
+    error.code === "errors.api.v2.booking.state.transition"
+  )
+    return "bookings.errors.deleteStale";
   return "bookings.errors.deleteGeneric";
 }
 
 export function DeleteBookingDialog({
   bookingId,
+  bookingVersion,
   itemName,
   period,
   token,
@@ -64,7 +71,7 @@ export function DeleteBookingDialog({
     setIsDeleting(true);
     setErrorKey(null);
     try {
-      await cancelBooking(bookingId, token);
+      await cancelBooking(bookingId, bookingVersion, token);
       await invalidateBookingQueries();
       await onDeleted();
       setOpen(false);
@@ -90,13 +97,13 @@ export function DeleteBookingDialog({
         disabled={disabled || isDeleting}
         render={<Button type="button" size="sm" variant="destructive" />}
       >
-        {t("bookings.actions.delete")}
+        {t("bookings.actions.cancel")}
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>{t("bookings.deleteDialog.title")}</AlertDialogTitle>
+          <AlertDialogTitle>{t("bookings.cancelDialog.title")}</AlertDialogTitle>
           <AlertDialogDescription>
-            {t("bookings.deleteDialog.description", { itemName, period })}
+            {t("bookings.cancelDialog.description", { itemName, period })}
           </AlertDialogDescription>
         </AlertDialogHeader>
         {errorKey && (
@@ -113,7 +120,7 @@ export function DeleteBookingDialog({
             aria-busy={isDeleting}
             onClick={() => void handleDelete()}
           >
-            {t("common:actions.delete")}
+            {t("bookings.actions.cancel")}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

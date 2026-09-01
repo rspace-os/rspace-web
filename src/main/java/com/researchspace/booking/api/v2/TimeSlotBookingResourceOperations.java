@@ -108,7 +108,7 @@ public final class TimeSlotBookingResourceOperations
                         "The requested state transition is invalid."),
                     mapping(
                         BookingConcurrentModificationException.class,
-                        HttpStatus.CONFLICT,
+                        HttpStatus.PRECONDITION_FAILED,
                         "errors.api.v2.booking.concurrentModification",
                         "The event changed while it was being edited.")))
             .toList();
@@ -158,6 +158,16 @@ public final class TimeSlotBookingResourceOperations
   }
 
   @Override
+  public Optional<TimeSlotBooking> findByIdForAudit(Long id, User subject) {
+    return enabled(subject) ? manager.getBookingForAudit(id, subject) : Optional.empty();
+  }
+
+  @Override
+  public void requireAuditAccess(TimeSlotBooking booking, User subject) {
+    manager.requireCanViewAudit(booking, subject);
+  }
+
+  @Override
   public TimeSlotBooking create(ParsedDocument document, ApiV2Caller caller) {
     requireEnabled(caller.subject());
     return manager.createBooking(createCommand(document), caller.subject(), caller.actor());
@@ -166,9 +176,31 @@ public final class TimeSlotBookingResourceOperations
   @Override
   public Optional<TimeSlotBooking> update(Long id, ParsedDocument document, ApiV2Caller caller) {
     if (!enabled(caller.subject())) {
-      return Optional.empty();
+      throw new AuthorizationException("errors.api.v2.forbidden");
     }
     return manager.updateBooking(id, patchCommand(document), caller.subject(), caller.actor());
+  }
+
+  @Override
+  public Optional<TimeSlotBooking> update(
+      Long id, ParsedDocument document, Long expectedVersion, ApiV2Caller caller) {
+    requireEnabled(caller.subject());
+    return manager.updateBooking(
+        id,
+        patchCommand(document),
+        java.util.Objects.requireNonNull(expectedVersion, "Expected booking version"),
+        caller.subject(),
+        caller.actor());
+  }
+
+  @Override
+  public Optional<String> versionField() {
+    return Optional.of("version");
+  }
+
+  @Override
+  public Optional<String> ifMatchRequiredCode() {
+    return Optional.of("errors.api.v2.booking.ifMatchRequired");
   }
 
   private Create createCommand(ParsedDocument document) {

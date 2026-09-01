@@ -25,6 +25,10 @@ public interface TimeSlotBookingDao extends CollectionDao<TimeSlotBooking, Long>
   /** Returns one readable, non-deleted booking. */
   Optional<TimeSlotBooking> findReadableById(Long id, RelationshipReadAccess targetAccess);
 
+  /** Returns one readable booking for audit, including a soft-deleted cancellation. */
+  Optional<TimeSlotBooking> findReadableForAuditById(
+      ResourceRequest authorizedRequest, RelationshipReadAccess targetAccess);
+
   /** Tests a half-open interval against confirmed, non-deleted rows. */
   boolean overlaps(
       Long configurationId,
@@ -51,6 +55,9 @@ public interface TimeSlotBookingDao extends CollectionDao<TimeSlotBooking, Long>
 
   /** Returns the ordered, fetch-complete rows used to build one user's calendar feed. */
   List<TimeSlotBooking> findUserCalendarBookings(Long userId, Date cutoff, int maximumRows);
+
+  /** Future confirmed rows exposed by an authorised archived summary. */
+  List<TimeSlotBooking> findFutureConfirmedByConfiguration(Long configurationId, Date now);
 
   /** Saves and flushes one booking inside its configuration lock transaction. */
   TimeSlotBooking saveAndFlush(TimeSlotBooking booking);

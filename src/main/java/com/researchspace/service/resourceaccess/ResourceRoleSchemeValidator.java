@@ -22,7 +22,30 @@ final class ResourceRoleSchemeValidator {
     validateRoleOrdering(roles);
     validateRequiredPersistedRoles(scheme, roles);
     validateRoleDefinitions(scheme, roles);
+    validateFixedAudiences(scheme, roles);
     validateMonotonicCapabilities(scheme, roles);
+  }
+
+  private static void validateFixedAudiences(ResourceRoleScheme scheme, List<ResourceRole> roles) {
+    Set<String> roleKeys =
+        roles.stream().map(ResourceRole::key).collect(java.util.stream.Collectors.toSet());
+    scheme
+        .fixedAudienceRoles()
+        .forEach(
+            (audience, allowedRoles) -> {
+              Objects.requireNonNull(audience, "fixed audience");
+              if (allowedRoles == null
+                  || allowedRoles.isEmpty()
+                  || !roleKeys.containsAll(allowedRoles)) {
+                throw new IllegalArgumentException("Fixed audience roles must be declared roles");
+              }
+              for (String role : allowedRoles) {
+                if (!scheme.allowedGranteeKinds(role).contains(ResourceGranteeKind.AUDIENCE)) {
+                  throw new IllegalArgumentException(
+                      "Fixed audience role must allow AUDIENCE grantees: " + role);
+                }
+              }
+            });
   }
 
   private static void validateRoleOrdering(List<ResourceRole> roles) {

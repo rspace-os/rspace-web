@@ -69,33 +69,22 @@ describe("DayTimeline expanded cards", () => {
     );
   });
 
-  test("keeps overlapping popups independent and restores focus when one closes", async () => {
+  test("keeps only one overlapping popup open and restores focus when it closes", async () => {
     render(<DayTimelineStory />);
     await timeline.open(LONG_ITEM_NAME);
-    await timeline.open("Electron microscope · Grace Hopper");
-
     await expect.element(timeline.popup("09:30–10:30")).toBeVisible();
+
+    await timeline.openWithKeyboard("Electron microscope · Grace Hopper");
+
+    await expect.element(timeline.popup("09:30–10:30")).not.toBeInTheDocument();
     await expect.element(timeline.popup("09:45–10:45")).toBeVisible();
-    await expect
-      .poll(() => {
-        const first = bounds(timeline.popup("09:30–10:30"));
-        const second = bounds(timeline.popup("09:45–10:45"));
-        return (
-          first.left < second.right &&
-          first.right > second.left &&
-          first.top < second.bottom &&
-          first.bottom > second.top
-        );
-      })
-      .toBe(true);
 
     await timeline.close("09:45–10:45", "Electron microscope · Grace Hopper");
     await expect.element(timeline.popup("09:45–10:45")).not.toBeInTheDocument();
-    await expect.element(timeline.popup("09:30–10:30")).toBeVisible();
     await expect.element(timeline.trigger("Electron microscope · Grace Hopper")).toHaveFocus();
   });
 
-  test("ignores outside press and focus-out while preserving event privacy rules", async () => {
+  test("closes on outside press and Escape while preserving event privacy rules", async () => {
     render(<DayTimelineStory />);
     await timeline.open(LONG_ITEM_NAME);
     const booking = timeline.popup("09:30–10:30");
@@ -105,15 +94,17 @@ describe("DayTimeline expanded cards", () => {
     await expect.element(booking.getByRole("link", { name: "Edit" })).toBeVisible();
 
     await timeline.outsideButton.click();
-    await expect.element(booking).toBeVisible();
-    await timeline.close("09:30–10:30", LONG_ITEM_NAME);
+    await expect.element(booking).not.toBeInTheDocument();
+    await expect.element(timeline.trigger(LONG_ITEM_NAME)).toHaveFocus();
 
     await timeline.open("Scheduled maintenance");
     const blockout = timeline.popup("11:00–12:00");
     await expect.element(blockout.getByText("Laser alignment and inspection.")).toBeVisible();
     await expect.element(blockout.getByText("Booked by")).not.toBeInTheDocument();
     await expect.element(blockout.getByRole("link", { name: "View details" })).not.toBeInTheDocument();
-    await timeline.close("11:00–12:00", "Scheduled maintenance");
+    await timeline.pressEscape();
+    await expect.element(blockout).not.toBeInTheDocument();
+    await expect.element(timeline.trigger("Scheduled maintenance")).toHaveFocus();
 
     await timeline.open("Busy");
     await expect.element(page.getByText("Booked by")).not.toBeInTheDocument();
@@ -121,10 +112,9 @@ describe("DayTimeline expanded cards", () => {
     await expect.element(page.getByText("Read-only booking purpose.")).not.toBeInTheDocument();
   });
 
-  test("has no accessibility violations with two non-modal popups open", async () => {
+  test("has no accessibility violations with an expanded event", async () => {
     render(<DayTimelineStory />);
     await timeline.open(LONG_ITEM_NAME);
-    await timeline.open("Electron microscope · Grace Hopper");
 
     await expect.element(timeline.scroller).not.toHaveAttribute("aria-hidden");
     await expectNoAxeViolations();

@@ -44,6 +44,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -211,7 +212,7 @@ public class ApiV2CrudController {
   }
 
   @GetMapping("/{resource}/{id}")
-  public Map<String, Object> get(
+  public ResponseEntity<Map<String, Object>> get(
       @PathVariable String resource,
       @PathVariable String id,
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE, required = false) ApiV2Caller caller,
@@ -222,15 +223,19 @@ public class ApiV2CrudController {
     throwBindExceptionIfErrors(fieldsetErrors);
     ApiV2ResourceRegistration<?, ?> registration =
         requireResource(resource, ResourceOperation.READ);
-    return registration.get(
-        id,
-        ApiV2ResourceRequestParser.item(
-            depth,
-            fieldsets,
-            registration.description(),
-            registration.registry(),
-            registration.runtimeFieldContext(subject(caller), this::runtimeFieldsOf)),
-        subject(caller));
+    Map<String, Object> document =
+        registration.get(
+            id,
+            ApiV2ResourceRequestParser.item(
+                depth,
+                fieldsets,
+                registration.description(),
+                registration.registry(),
+                registration.runtimeFieldContext(subject(caller), this::runtimeFieldsOf)),
+            subject(caller));
+    ResponseEntity.BodyBuilder response = ResponseEntity.ok();
+    registration.documentEtag(document).ifPresent(response::eTag);
+    return response.body(document);
   }
 
   @PostMapping("/{resource}")
@@ -254,13 +259,25 @@ public class ApiV2CrudController {
   }
 
   @PatchMapping("/{resource}/{id}")
-  public Map<String, Object> update(
+  public ResponseEntity<Map<String, Object>> update(
       @PathVariable String resource,
       @PathVariable String id,
+      @RequestHeader(name = org.springframework.http.HttpHeaders.IF_MATCH, required = false)
+          String ifMatch,
       @RequestBody JsonNode body,
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE, required = false)
           ApiV2Caller caller) {
-    return requireResource(resource, ResourceOperation.UPDATE).update(id, body, caller);
+    ApiV2ResourceRegistration<?, ?> registration =
+        requireResource(resource, ResourceOperation.UPDATE);
+    Long expectedVersion =
+        registration
+            .ifMatchRequiredCode()
+            .map(code -> ApiV2ConditionalRequest.parseVersion(ifMatch, code))
+            .orElse(null);
+    Map<String, Object> document = registration.update(id, body, expectedVersion, caller);
+    ResponseEntity.BodyBuilder response = ResponseEntity.ok();
+    registration.documentEtag(document).ifPresent(response::eTag);
+    return response.body(document);
   }
 
   @PatchMapping("/{resource}")

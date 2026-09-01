@@ -17,6 +17,7 @@ export const AuditEventSchema = v.object({
   action: v.string(),
   description: v.nullish(v.string()),
   payload: v.record(v.string(), v.unknown()),
+  target: v.nullish(v.string()),
 });
 
 export type AuditEvent = v.InferOutput<typeof AuditEventSchema>;

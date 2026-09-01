@@ -7,6 +7,7 @@ export function bookingFormSearch(search: Record<string, unknown>) {
   return {
     ...(typeof search.date === "string" && isPlainDate(search.date) ? { date: search.date } : {}),
     ...(typeof search.target === "string" && /^IN\d+$/.test(search.target) ? { target: search.target } : {}),
+    ...(search.returnTo === "my-bookings" ? { returnTo: "my-bookings" as const } : {}),
   };
 }
 

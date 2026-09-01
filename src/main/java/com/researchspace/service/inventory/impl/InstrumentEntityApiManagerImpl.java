@@ -553,8 +553,11 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
           instrumentDao
               .lockById(dbInstrument.getId())
               .orElseThrow(() -> new NotFoundException("Instrument not found"));
-      assertUserCanTransferInstrument(dbInstrument.getId(), subject);
       User originalOwner = dbInstrument.getOwner();
+      boolean hasCurrentGroupAuthority =
+          instrumentDao.hasLockedTransferAuthority(subject, originalOwner);
+      invPermissions.assertUserCanTransferInventoryRecord(
+          dbInstrument, subject, hasCurrentGroupAuthority);
       String newOwnerUsername = apiInstrument.getOwner().getUsername();
       if (!originalOwner.getUsername().equals(newOwnerUsername)) {
         Validate.isTrue(

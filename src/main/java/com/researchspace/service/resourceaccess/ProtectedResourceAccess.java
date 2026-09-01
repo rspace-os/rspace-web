@@ -7,6 +7,11 @@ import java.util.Optional;
 /** Service-level adapter from a protected domain resource to its access aggregate and hooks. */
 public interface ProtectedResourceAccess<T, ID> {
 
+  /** Whether the resource family is currently available to this subject. */
+  default boolean featureEnabled(User subject) {
+    return true;
+  }
+
   Optional<T> find(ID id);
 
   Optional<T> lock(ID id);

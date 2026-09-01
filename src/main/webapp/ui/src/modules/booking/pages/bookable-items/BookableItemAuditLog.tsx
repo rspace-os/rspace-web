@@ -41,6 +41,11 @@ function RecordedValues({ row }: { row: AuditRow }) {
   );
 }
 
+function bookingId(target: string | null | undefined): string | null {
+  const match = target?.match(/^bookings:(\d+)$/);
+  return match?.[1] ?? null;
+}
+
 const auditEventConfig = resolveCollectionConfig<AuditRow>({
   slug: "booking-configuration-audit",
   idField: "rowId",
@@ -49,7 +54,7 @@ const auditEventConfig = resolveCollectionConfig<AuditRow>({
     pluralKey: "booking:bookableItemDetails.audit.plural",
   },
   useAsTitle: "timestamp",
-  defaultColumns: ["timestamp", "username", "action", "payload"],
+  defaultColumns: ["timestamp", "username", "action", "target", "payload"],
   listSearchableFields: ["username", "fullName", "action", "description"],
   fields: [
     { name: "rowId", type: "text", labelKey: "booking:bookableItemDetails.audit.fields.rowId", list: false },
@@ -92,6 +97,26 @@ const auditEventConfig = resolveCollectionConfig<AuditRow>({
     },
     { name: "description", type: "text", labelKey: "booking:bookableItemDetails.audit.fields.description" },
     { name: "domain", type: "text", labelKey: "booking:bookableItemDetails.audit.fields.domain", list: false },
+    {
+      name: "target",
+      type: "text",
+      labelKey: "booking:bookableItems.fields.id",
+      list: {
+        width: 120,
+        minWidth: 100,
+        dependencies: ["payload"],
+        renderCell: ({ row }) => {
+          const id = bookingId(row.target);
+          return id === null ? (
+            <span>{row.target ?? "—"}</span>
+          ) : (
+            <a className="underline" href={`/booking/calendar/bookings/${id}`}>
+              {row.target}
+            </a>
+          );
+        },
+      },
+    },
     {
       name: "payload",
       type: "text",

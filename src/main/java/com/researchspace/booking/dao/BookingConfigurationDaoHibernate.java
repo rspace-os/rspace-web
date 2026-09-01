@@ -4,7 +4,9 @@ import com.blazebit.persistence.CriteriaBuilderFactory;
 import com.researchspace.dao.GenericDaoHibernate;
 import com.researchspace.dao.query.CollectionQueryExecutor;
 import com.researchspace.dao.query.IndexedTextNarrowing;
+import com.researchspace.model.User;
 import com.researchspace.model.booking.BookableTargetReference;
+import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.CollectionDescription.Operator;
@@ -12,10 +14,13 @@ import com.researchspace.model.collection.FilterExpression;
 import com.researchspace.model.collection.RelationshipReadAccess;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
+import com.researchspace.model.resourceaccess.ResourceAudience;
 import com.researchspace.search.customfield.RuntimeFieldTextSearch;
 import jakarta.persistence.LockModeType;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.hibernate.SessionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -124,6 +129,19 @@ public class BookingConfigurationDaoHibernate
   }
 
   @Override
+  public Optional<BookingConfiguration> lockByTargetIncludingArchived(
+      BookableTargetReference target) {
+    return getSession()
+        .createQuery(
+            "from BookingConfiguration where target.type = :type and target.id = :id",
+            BookingConfiguration.class)
+        .setParameter("type", target.type())
+        .setParameter("id", target.id())
+        .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+        .uniqueResultOptional();
+  }
+
+  @Override
   public Optional<BookingConfiguration> lockById(Long id) {
     return getSession()
         .createQuery(
@@ -135,9 +153,74 @@ public class BookingConfigurationDaoHibernate
   }
 
   @Override
+  public Optional<BookingConfiguration> findArchivedById(Long id) {
+    return getSession()
+        .createQuery(
+            "from BookingConfiguration where id = :id and deleted = true",
+            BookingConfiguration.class)
+        .setParameter("id", id)
+        .uniqueResultOptional();
+  }
+
+  @Override
+  public Optional<BookingConfiguration> lockArchivedById(Long id) {
+    return getSession()
+        .createQuery(
+            "from BookingConfiguration where id = :id and deleted = true",
+            BookingConfiguration.class)
+        .setParameter("id", id)
+        .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+        .uniqueResultOptional();
+  }
+
+  @Override
+  public List<BookingConfiguration> lockResources(
+      ResourceRequest request, int limit, RelationshipReadAccess relationshipAccess) {
+    try {
+      return collectionQuery.listByIdForUpdate(
+          criteriaBuilderFactory,
+          getSession(),
+          narrowed(request.restrict(ACTIVE)),
+          limit,
+          relationshipAccess);
+    } catch (IndexedTextNarrowing.NoMatch noMatch) {
+      return List.of();
+    }
+  }
+
+  @Override
   public BookingConfiguration saveAndFlush(BookingConfiguration configuration) {
     BookingConfiguration saved = save(configuration);
     getSession().flush();
     return saved;
+  }
+
+  @Override
+  public Set<Long> findBookableInstrumentIds(User caller, Set<String> readableRoleKeys) {
+    if (readableRoleKeys.isEmpty()) {
+      return Set.of();
+    }
+    Set<Long> groupIds =
+        caller.getGroups().stream().map(group -> group.getId()).collect(Collectors.toSet());
+    if (groupIds.isEmpty()) {
+      groupIds = Set.of(-1L);
+    }
+    return Set.copyOf(
+        getSession()
+            .createQuery(
+                "select distinct configuration.target.id from BookingConfiguration configuration"
+                    + " join configuration.resourceAccess.assignments assignment"
+                    + " where configuration.deleted = false and configuration.enabled = true"
+                    + " and configuration.target.type = :targetType"
+                    + " and assignment.roleKey in :readableRoleKeys"
+                    + " and (assignment.user.id = :userId or assignment.group.id in :groupIds"
+                    + " or assignment.audienceKey = :audience)",
+                Long.class)
+            .setParameter("targetType", BookableTargetType.INSTRUMENT)
+            .setParameterList("readableRoleKeys", readableRoleKeys)
+            .setParameter("userId", caller.getId())
+            .setParameterList("groupIds", groupIds)
+            .setParameter("audience", ResourceAudience.ALL_USERS)
+            .getResultList());
   }
 }

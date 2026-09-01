@@ -186,7 +186,7 @@ describe("BookableItemPage", () => {
     await expect
       .element(page.getByRole("alert"))
       .toHaveTextContent("Calendar subscription status could not be loaded.");
-    await page.getByRole("button", { name: "Retry" }).click();
+    await pageObj.calendarDialog.getByRole("button", { name: "Retry" }).click();
 
     await expect.element(page.getByRole("alert")).toHaveTextContent("The calendar link could not be generated.");
     await expect.element(pageObj.calendarDialog).toBeVisible();
@@ -457,18 +457,20 @@ describe("BookableItemPage", () => {
       expect(pageObj.accessTab.element().getAttribute("aria-controls")).toBe(pageObj.accessPanel.element().id);
       expect(pageObj.accessPanel.element().getAttribute("aria-labelledby")).toBe(pageObj.accessTab.element().id);
 
-      const search = page.getByRole("textbox", { name: "Add user or group" });
+      // Picking a grantee from the finder stages it straight away; the role is then a menu.
+      const search = page.getByRole("combobox", { name: "Add user or group" });
       await userEvent.fill(search, "gr");
-      await userEvent.keyboard("{Enter}");
-      const addGrace = page.getByRole("button", { name: "Add Grace Hopper" });
-      await expect.element(addGrace).toBeVisible();
-      await addGrace.click();
-      const graceRole = page.getByRole("combobox", { name: "Direct role for Grace Hopper" });
-      await expect.element(graceRole).toHaveValue("BOOKER");
-      await graceRole.selectOptions("VIEWER");
-      await expect.element(graceRole).toHaveValue("VIEWER");
-      await page.getByRole("button", { name: "Remove All users" }).click();
-      await expect.element(page.getByText("Access changes are not yet saved.", { exact: true })).toBeVisible();
+      const graceOption = page.getByRole("option", { name: /Grace Hopper/ });
+      await expect.element(graceOption).toBeVisible();
+      await graceOption.click();
+      const graceRole = page.getByRole("button", { name: "Direct role for Grace Hopper" });
+      await expect.element(graceRole).toHaveTextContent("Booker");
+      await graceRole.click();
+      await page.getByRole("menuitem", { name: "Viewer" }).click();
+      await expect.element(graceRole).toHaveTextContent("Viewer");
+      // The audience row carries no remove action; the staged role change is what makes this dirty.
+      await expect.element(page.getByRole("button", { name: "Remove All users" })).not.toBeInTheDocument();
+      await expect.element(page.getByText("Unsaved changes", { exact: true })).toBeVisible();
 
       await page.getByRole("button", { name: "Cancel" }).click();
       const assignments = page.getByRole("list", { name: "Access assignments" });
@@ -477,8 +479,7 @@ describe("BookableItemPage", () => {
       await expect.element(page.getByText("Unsaved access changes were cancelled.", { exact: true })).toBeVisible();
 
       await userEvent.fill(search, "gr");
-      await userEvent.keyboard("{Enter}");
-      await page.getByRole("button", { name: "Add Grace Hopper" }).click();
+      await page.getByRole("option", { name: /Grace Hopper/ }).click();
       await page.getByRole("button", { name: "Save changes" }).click();
       const savedStatus = page.getByText("Access changes saved.", { exact: true });
       await expect.element(savedStatus).toBeVisible();

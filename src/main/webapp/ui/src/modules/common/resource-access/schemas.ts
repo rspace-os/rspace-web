@@ -16,16 +16,22 @@ export const RoleSourceSchema = v.object({
   grantee: v.optional(v.nullable(SourceGranteeSchema)),
 });
 
-export const ResourceGranteeSchema = v.object({
-  kind: GranteeKindSchema,
-  id: v.union([v.number(), v.string()]),
-  key: v.string(),
-  name: v.string(),
-  detail: v.optional(v.nullable(v.string())),
-  available: v.boolean(),
-  effectiveRole: v.optional(v.nullable(v.string())),
-  roleSources: v.optional(v.array(RoleSourceSchema), []),
-});
+export const ResourceGranteeSchema = v.pipe(
+  v.object({
+    kind: GranteeKindSchema,
+    id: v.nullable(v.union([v.number(), v.string()])),
+    key: v.string(),
+    name: v.string(),
+    detail: v.optional(v.nullable(v.string())),
+    available: v.boolean(),
+    effectiveRole: v.optional(v.nullable(v.string())),
+    roleSources: v.optional(v.array(RoleSourceSchema), []),
+  }),
+  v.check(
+    (grantee) => grantee.id !== null || (!grantee.available && (grantee.kind === "USER" || grantee.kind === "GROUP")),
+    "Only unavailable users and groups may omit their current identifier.",
+  ),
+);
 
 export const ResourceAccessAssignmentSchema = v.object({
   grantee: ResourceGranteeSchema,
@@ -39,6 +45,8 @@ export const ResourceAccessDocumentSchema = v.object({
   caller: v.object({
     effectiveRole: v.optional(v.nullable(v.string())),
     roleSources: v.optional(v.array(RoleSourceSchema), []),
+    /** The caller's own grantee key, so their row can carry the leave action. */
+    granteeKey: v.optional(v.nullable(v.string())),
     capabilities: v.object({
       canManageAssignments: v.boolean(),
       canManageOwners: v.boolean(),
@@ -55,6 +63,7 @@ export const ResourceGranteeDirectoryEntrySchema = v.object({
   detail: v.optional(v.nullable(v.string())),
 });
 
+export type ResourceGrantee = v.InferOutput<typeof ResourceGranteeSchema>;
 export type ResourceAccessDocument = v.InferOutput<typeof ResourceAccessDocumentSchema>;
 export type ResourceAccessAssignment = v.InferOutput<typeof ResourceAccessAssignmentSchema>;
 export type ResourceGranteeDirectoryEntry = v.InferOutput<typeof ResourceGranteeDirectoryEntrySchema>;

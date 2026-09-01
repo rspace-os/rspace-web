@@ -84,6 +84,7 @@ describe("AllBookableItemsPage", () => {
     const bookingDocs = [
       {
         id: 41,
+        version: 0,
         target: {
           relationTo: "booking-instruments",
           value: { id: 123, name: "Confocal microscope", deleted: false },
@@ -114,6 +115,7 @@ describe("AllBookableItemsPage", () => {
     const { container, unmount } = await renderPage();
 
     expect(await screen.findByRole("heading", { name: "All Bookable Items" })).toBeVisible();
+    expect(screen.getByRole("link", { name: "Add" })).toHaveAttribute("href", "/booking/bookable-items/add");
     await waitFor(() =>
       expect(
         within(screen.getByRole("table", { name: "All Bookable Items table" })).getByText("Confocal microscope"),
@@ -139,12 +141,10 @@ describe("AllBookableItemsPage", () => {
       expect(marker.style.left).toBe(markers[0].style.left);
     }
     expect(within(table).queryByText(/^Time zone:/)).not.toBeInTheDocument();
-    const where = new URL(collectionRequest?.url ?? "http://localhost").searchParams.get("where") ?? "";
-    expect(where).toContain("enabled==true");
-    expect(where).toContain("target.deleted==false");
-    expect(
-      new URL(collectionRequest?.url ?? "http://localhost").searchParams.get("fields[booking-configurations]"),
-    ).toContain("capabilities");
+    const catalogueUrl = new URL(collectionRequest?.url ?? "http://localhost");
+    expect(catalogueUrl.pathname).toBe("/api/v2/booking-catalogue");
+    expect(catalogueUrl.searchParams.get("page")).toBe("1");
+    expect(catalogueUrl.searchParams.get("limit")).toBe("20");
 
     const bookLink = within(within(table).getByRole("row", { name: /Confocal microscope/ })).getByRole("link", {
       name: "Book",
@@ -210,7 +210,7 @@ describe("AllBookableItemsPage", () => {
     await act(async () => release?.());
   });
 
-  it("retries a failed index and uses an impossible server filter for no matches", async () => {
+  it("retries a failed index and hides catalogue rows that do not match", async () => {
     let candidateRequests = 0;
     const collectionRequests: URL[] = [];
     server.use(
@@ -225,7 +225,7 @@ describe("AllBookableItemsPage", () => {
         return HttpResponse.json(collectionPage([]));
       }),
       http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
-      ...bookableItemsHandlers(() => undefined),
+      ...bookableItemsHandlers((request) => collectionRequests.push(new URL(request.url))),
       http.get("/api/v2/bookings", () => HttpResponse.json({ ...collectionPage([]), hasNextPage: false })),
     );
     const { router } = await renderPage("/booking/all-items?date=2026-08-17&availability=free-later-today");
@@ -233,9 +233,7 @@ describe("AllBookableItemsPage", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("Could not find available items.");
     await userEvent.click(screen.getByRole("button", { name: "Retry" }));
     await waitFor(() => expect(candidateRequests).toBe(2));
-    await waitFor(() =>
-      expect(collectionRequests.some((url) => decodeURIComponent(url.search).includes("id==-1"))).toBe(true),
-    );
+    expect(collectionRequests.some((url) => url.pathname === "/api/v2/booking-catalogue")).toBe(true);
     expect(screen.queryByText("Confocal microscope")).not.toBeInTheDocument();
     expect(router.state.location.search.availability).toBe("free-later-today");
   });

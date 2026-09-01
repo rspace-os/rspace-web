@@ -5,13 +5,17 @@ import { tags } from "@/__tests__/e2e/tags";
 import { uniqueName } from "@/__tests__/e2e/testData";
 import { SYSADMIN } from "@/__tests__/e2e/users";
 import { BookingPermissionsPage } from "./pageObjects/BookingPermissionsPage";
+import { CreateBookingPage } from "./pageObjects/CreateBookingPage";
+import { MyBookingsPage } from "./pageObjects/MyBookingsPage";
 
 type BookingConfiguration = { id: number };
 type Booking = {
   id: number;
+  version: number;
   purpose: string | null;
   privacy: "full" | "busy";
   canEdit: boolean;
+  canCancel: boolean;
   canViewConfiguration: boolean;
 };
 type BookingPage = { docs: Booking[] };
@@ -20,7 +24,32 @@ type AccessDocument = {
 };
 
 const bookingFields =
-  "id,target,canViewConfiguration,timezone,start,end,state,purpose,bookedBy,privacy,canEdit,createdAt,updatedAt";
+  "id,version,target,canViewConfiguration,timezone,start,end,state,purpose,bookedBy,privacy,canEdit,canCancel,createdAt,updatedAt";
+
+/** Narrows the permanent audience row without removing it. */
+async function disableAllUsersAccess(
+  apiContext: APIRequestContext,
+  apiKey: string,
+  configurationId: number,
+): Promise<void> {
+  const path = `/api/v2/booking-configurations/${configurationId}/access`;
+  const current = await apiContext.get(path, { headers: { apiKey } });
+  expect(current.ok(), await current.text()).toBe(true);
+  const etag = current.headers().etag;
+  const document = (await current.json()) as {
+    assignments: Array<{ grantee: { key: string }; role: string }>;
+  };
+  const response = await apiContext.put(path, {
+    headers: { apiKey, "If-Match": etag },
+    data: {
+      assignments: document.assignments.map(({ grantee, role }) => ({
+        granteeKey: grantee.key,
+        role: grantee.key === "audience:all-users" ? "NO_ACCESS" : role,
+      })),
+    },
+  });
+  expect(response.ok(), await response.text()).toBe(true);
+}
 
 async function createBookingConfiguration(
   apiContext: APIRequestContext,
@@ -111,9 +140,10 @@ test.describe
       const configuration = await createBookingConfiguration(apiContext, appUser.apiKey, instrument.id);
 
       await test.step("the owner narrows default access and grants Booker and Viewer", async () => {
+        await disableAllUsersAccess(apiContext, appUser.apiKey, configuration.id);
         await pageBookableItem.openRecord(instrument.globalId);
         await pageBookableItem.openAccess();
-        await pageBookableItem.removeAssignment("All users", "All users");
+        await expect(pageBookableItem.assignment("All users")).toContainText("No access");
         await pageBookableItem.addUser(booker.username, "E2E BookingBooker", "BOOKER");
         await pageBookableItem.addUser(viewer.username, "E2E BookingViewer", "VIEWER");
       });
@@ -122,7 +152,7 @@ test.describe
       await test.step("the Booker creates a booking through the live UI", async () => {
         const session = await loginInNewContext(browser, browserContextOptions, booker);
         try {
-          bookerBooking = await new BookingPermissionsPage(session.page).createBooking({
+          bookerBooking = await new CreateBookingPage(session.page).create({
             globalId: instrument.globalId,
             date,
             startTime: "10:00",
@@ -181,6 +211,7 @@ test.describe
           purpose: bookerPurpose,
           privacy: "full",
           canEdit: false,
+          canCancel: false,
           canViewConfiguration: false,
         });
         expect(ownRows.docs.some(({ id }) => id === ownerBooking.id)).toBe(false);
@@ -197,8 +228,8 @@ test.describe
 
         const session = await loginInNewContext(browser, browserContextOptions, booker);
         try {
-          const bookingPage = new BookingPermissionsPage(session.page);
-          await bookingPage.openMyBookings();
+          const bookingPage = new MyBookingsPage(session.page);
+          await bookingPage.open();
           await expect(session.page.getByText(bookerPurpose, { exact: true })).toBeVisible();
           await expect(session.page.getByText("Read-only: you no longer have access to this item.")).toBeVisible();
           await expect(session.page.getByRole("link", { name: "View details" })).toHaveCount(0);

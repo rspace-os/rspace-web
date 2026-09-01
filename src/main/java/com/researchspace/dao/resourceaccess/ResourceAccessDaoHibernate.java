@@ -77,7 +77,8 @@ public class ResourceAccessDaoHibernate implements ResourceAccessDao {
   }
 
   @Override
-  public ResourceRoleAssignment resolveAvailable(String granteeKey, String roleKey) {
+  public ResourceRoleAssignment resolveAvailable(
+      String granteeKey, String roleKey, String audienceNameSnapshot) {
     if (granteeKey == null || roleKey == null) {
       return null;
     }
@@ -105,9 +106,14 @@ public class ResourceAccessDaoHibernate implements ResourceAccessDao {
       Group group = enabledMembers > 0 ? session.find(Group.class, id) : null;
       return group == null ? null : ResourceRoleAssignment.forGroup(roleKey, group);
     }
-    return ALL_USERS_KEY.equals(granteeKey)
-        ? ResourceRoleAssignment.forAudience(roleKey, ResourceAudience.ALL_USERS)
-        : null;
+    if (!ALL_USERS_KEY.equals(granteeKey)) {
+      return null;
+    }
+    if (audienceNameSnapshot == null || audienceNameSnapshot.isBlank()) {
+      throw new IllegalArgumentException("Audience display name is required");
+    }
+    return ResourceRoleAssignment.forAudience(
+        roleKey, ResourceAudience.ALL_USERS, audienceNameSnapshot);
   }
 
   @Override

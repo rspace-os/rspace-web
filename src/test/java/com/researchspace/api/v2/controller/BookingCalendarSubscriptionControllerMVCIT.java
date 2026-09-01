@@ -74,20 +74,29 @@ class BookingCalendarSubscriptionControllerMVCIT {
 
   @Test
   void userCalendarManagementLifecycle() throws Exception {
+    fixture.enableBookings();
     String apiKey = fixture.userKey();
 
-    mockMvc
-        .perform(get(USER_SUBSCRIPTION_PATH).header("apiKey", apiKey))
-        .andExpect(status().isOk())
-        .andExpect(header().string("Cache-Control", containsString("no-store")))
-        .andExpect(header().string("Cache-Control", containsString("private")))
-        .andExpect(jsonPath("$.active").value(false))
-        .andExpect(jsonPath("$.subscriptionUrl").value((Object) null));
+    MvcResult inactive =
+        mockMvc
+            .perform(get(USER_SUBSCRIPTION_PATH).header("apiKey", apiKey))
+            .andExpect(status().isOk())
+            .andExpect(header().string(HttpHeaders.ETAG, "\"inactive\""))
+            .andExpect(header().string("Cache-Control", containsString("no-store")))
+            .andExpect(header().string("Cache-Control", containsString("private")))
+            .andExpect(jsonPath("$.active").value(false))
+            .andExpect(jsonPath("$.subscriptionUrl").value((Object) null))
+            .andReturn();
 
     MvcResult created =
         mockMvc
-            .perform(post(USER_SUBSCRIPTION_PATH).header("apiKey", apiKey))
+            .perform(
+                post(USER_SUBSCRIPTION_PATH)
+                    .header("apiKey", apiKey)
+                    .header(
+                        HttpHeaders.IF_MATCH, inactive.getResponse().getHeader(HttpHeaders.ETAG)))
             .andExpect(status().isOk())
+            .andExpect(header().exists(HttpHeaders.ETAG))
             .andExpect(jsonPath("$.active").value(true))
             .andExpect(jsonPath("$.updatedAt").isString())
             .andExpect(jsonPath("$.subscriptionUrl").isNotEmpty())
@@ -101,6 +110,8 @@ class BookingCalendarSubscriptionControllerMVCIT {
     mockMvc
         .perform(get(USER_SUBSCRIPTION_PATH).header("apiKey", apiKey))
         .andExpect(status().isOk())
+        .andExpect(
+            header().string(HttpHeaders.ETAG, created.getResponse().getHeader(HttpHeaders.ETAG)))
         .andExpect(jsonPath("$.active").value(true))
         .andExpect(jsonPath("$.subscriptionUrl").value(subscriptionUrl));
 
@@ -112,6 +123,31 @@ class BookingCalendarSubscriptionControllerMVCIT {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.active").value(false))
         .andExpect(jsonPath("$.subscriptionUrl").value((Object) null));
+  }
+
+  @Test
+  void userCalendarCreateRequiresTheExactCurrentEtag() throws Exception {
+    fixture.enableBookings();
+    String apiKey = fixture.userKey();
+
+    mockMvc
+        .perform(post(USER_SUBSCRIPTION_PATH).header("apiKey", apiKey))
+        .andExpect(status().isPreconditionRequired())
+        .andExpect(jsonPath("$.code").value("errors.api.v2.bookingCalendar.ifMatchRequired"));
+    mockMvc
+        .perform(
+            post(USER_SUBSCRIPTION_PATH)
+                .header("apiKey", apiKey)
+                .header(HttpHeaders.IF_MATCH, "inactive"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("errors.api.v2.invalidRequest"));
+    mockMvc
+        .perform(
+            post(USER_SUBSCRIPTION_PATH)
+                .header("apiKey", apiKey)
+                .header(HttpHeaders.IF_MATCH, "\"subscription-99\""))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.code").value("errors.api.v2.bookingCalendar.subscriptionConflict"));
   }
 
   @Test
@@ -241,7 +277,7 @@ class BookingCalendarSubscriptionControllerMVCIT {
     try {
       mockMvc
           .perform(get(path(configurationId)).header("apiKey", fixture.userKey()))
-          .andExpect(status().isForbidden());
+          .andExpect(status().isNotFound());
     } finally {
       setBookingEnabled(true);
     }
@@ -267,7 +303,10 @@ class BookingCalendarSubscriptionControllerMVCIT {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """
-                    {"assignments":[{"granteeKey":"user:%d","role":"OWNER"}]}
+                    {"assignments":[
+                      {"granteeKey":"user:%d","role":"OWNER"},
+                      {"granteeKey":"audience:all-users","role":"NO_ACCESS"}
+                    ]}
                     """
                         .formatted(fixture.user().getId())))
         .andExpect(status().isOk());

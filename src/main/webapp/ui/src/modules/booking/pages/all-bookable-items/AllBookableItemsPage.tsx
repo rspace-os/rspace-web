@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import {
   CalendarClockIcon,
@@ -5,6 +6,7 @@ import {
   Clock3Icon,
   EyeIcon,
   KeyRoundIcon,
+  PlusIcon,
   SettingsIcon,
 } from "lucide-react";
 import { useMemo } from "react";
@@ -15,49 +17,27 @@ import {
   BookingTimeZoneBadge,
   bookingToolbarClassName,
 } from "@/modules/booking/components/BookingToolbar";
-import { schedulingSettingsFieldNames } from "@/modules/booking/configuration/schedulingSettings";
+import {
+  catalogueItemAsConfiguration,
+  fetchBookingCatalogue,
+  fetchBookingCatalogueLocations,
+} from "@/modules/booking/domain/bookingCatalogue";
 import { todayInTimeZone, useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { addCalendarDays, displayInterval } from "@/modules/booking/domain/bookingTime";
 import type { CollectionConfig } from "@/modules/common/collection/collectionConfig";
+import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
-import { useApiV2TableList } from "@/modules/common/table-list/adapters/apiV2/useApiV2TableList";
-import { TableList, type TableListRowActions } from "@/modules/common/table-list/TableList";
-import type { FilterExpression } from "@/modules/common/table-list/tableListState";
+import { TableList, type TableListProps, type TableListRowActions } from "@/modules/common/table-list/TableList";
 import { Button, buttonVariants } from "@/modules/common/ui/button";
 import { InventoryItem } from "@/modules/common/ui/inventory-item";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/modules/common/ui/tooltip";
 import { UnknownItem } from "@/modules/common/ui/unknown-item";
-import {
-  type BookingConfiguration,
-  type BookingConfigurationRow,
-  BookingConfigurationSchema,
-  bookingConfigurationConfig,
-} from "../bookable-items/bookingConfiguration";
+import { cn } from "@/modules/common/utils/cn";
+import { type BookingConfiguration, bookingConfigurationConfig } from "../bookable-items/bookingConfiguration";
 import { calendarAvailabilityRow, useCalendarAvailability } from "../calendar/calendarAvailability";
 import { type AvailabilityQuickFilter, useAvailabilityQuickFilterIndex } from "./availabilityQuickFilters";
 
-const requestProjection = {
-  fixed: [
-    "id",
-    "target",
-    "enabled",
-    "timezone",
-    ...schedulingSettingsFieldNames,
-    "effectiveRole",
-    "roleSources",
-    "capabilities",
-    "ownerHealth",
-  ],
-} as const;
-const baseFilter = {
-  kind: "and",
-  children: [
-    { kind: "comparison", field: "enabled", operator: "equals", value: true },
-    { kind: "comparison", field: "target.deleted", operator: "equals", value: false },
-  ],
-} as const;
-
-const allBookableItemsConfig: CollectionConfig<BookingConfiguration> = {
+const allBookableItemsConfig = resolveCollectionConfig({
   ...bookingConfigurationConfig,
   slug: "all-bookable-items",
   labels: {
@@ -83,7 +63,7 @@ const allBookableItemsConfig: CollectionConfig<BookingConfiguration> = {
         }
       : field,
   ),
-} as const;
+} as const satisfies CollectionConfig<BookingConfiguration>);
 
 const currentDate = () => new Date();
 
@@ -96,7 +76,7 @@ export default function AllBookableItemsPage({
   userTimeZone?: string;
 } = {}) {
   const { t } = useTranslation("booking");
-  const { date, availability: quickMode } = useSearch({ from: "/booking/all-items" });
+  const { date, availability: quickMode, locations = [], q, page = 1 } = useSearch({ from: "/booking/all-items" });
   const navigate = useNavigate({ from: "/booking/all-items" });
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
   const preferences = useBookingDisplayPreferences();
@@ -127,36 +107,18 @@ export default function AllBookableItemsPage({
         : [],
     [quickIndex.data, quickMode],
   );
-  const requestBaseFilter = useMemo<FilterExpression<BookingConfiguration>>(() => {
-    if (!quickMode) return baseFilter;
-    const quickFilter: FilterExpression<BookingConfiguration> =
-      matchingIds.length > 0
-        ? { kind: "comparison", field: "target", operator: "in", value: matchingIds }
-        : { kind: "comparison", field: "id", operator: "equals", value: -1 };
-    return { kind: "and", children: [...baseFilter.children, quickFilter] };
-  }, [matchingIds, quickMode]);
-  const request = useMemo(
-    () => ({ token, depth: 1, projection: requestProjection, baseFilter: requestBaseFilter }),
-    [requestBaseFilter, token],
-  );
-  const table = useApiV2TableList({
-    resourceName: "booking-configurations",
-    config: allBookableItemsConfig,
-    documentSchema: BookingConfigurationSchema,
-    request,
-    query: { keepPreviousData: true, staleTime: 30_000 },
-    table: {
-      initialState: {
-        visibleFields: ["target"],
-      },
-      features: { sorting: false, columns: false },
-      queryString: {
-        parameterPrefix: "all-bookable-items",
-        tableId: "booking-all-bookable-items",
-      },
-    },
+  const catalogue = useQuery({
+    queryKey: ["api-v2", "booking-catalogue", "all-items", token, q, locations, page],
+    queryFn: ({ signal }) => fetchBookingCatalogue({ q, locations, page, pageSize: 20 }, token, signal),
+    placeholderData: (previous) => previous,
+    staleTime: 30_000,
   });
-  const rows = table.tableProps.rows as readonly BookingConfigurationRow[];
+  const locationOptions = useQuery({
+    queryKey: ["api-v2", "booking-catalogue", "locations", token],
+    queryFn: ({ signal }) => fetchBookingCatalogueLocations({ pageSize: 100 }, token, signal),
+  });
+  const rows = (catalogue.data?.items ?? []).map(catalogueItemAsConfiguration);
+  const visibleRows = quickMode ? rows.filter((row) => row.target && matchingIds.includes(row.target.globalId)) : rows;
   const availabilityRows = rows.flatMap((row) => {
     if (!row.target) return [];
     const availabilityRow = calendarAvailabilityRow({ globalId: row.target.globalId, ...row });
@@ -168,8 +130,54 @@ export default function AllBookableItemsPage({
     void navigate({ search: (current) => ({ ...current, date: nextDate }), replace: true });
   const setQuickMode = (mode: AvailabilityQuickFilter | undefined) =>
     void navigate({ search: (current) => ({ ...current, availability: mode }), replace: true });
+  const setLocations = (nextLocations: readonly string[]) => {
+    void navigate({
+      search: (current) => ({
+        ...current,
+        locations: nextLocations.length > 0 ? [...nextLocations] : undefined,
+        page: undefined,
+      }),
+      replace: true,
+    });
+  };
+  const tableProps: TableListProps<BookingConfiguration> = {
+    config: allBookableItemsConfig,
+    rows,
+    getRowId: (row) => String(row.id),
+    clientSide: false,
+    status: catalogue.isError
+      ? "error"
+      : catalogue.isPending
+        ? "loading"
+        : catalogue.isFetching
+          ? "refreshing"
+          : "idle",
+    error: catalogue.error,
+    queryString: false,
+    features: {
+      filtering: {
+        value: { search: q ?? "", expression: null },
+        onChange: (filters) =>
+          void navigate({
+            search: (current) => ({ ...current, q: filters.search || undefined, page: undefined }),
+            replace: true,
+          }),
+      },
+      sorting: false,
+      columns: false,
+      pagination: {
+        value: { pageIndex: page - 1, pageSize: 20 },
+        rowCount: catalogue.data?.total ?? 0,
+        onChange: (nextPage) =>
+          void navigate({
+            search: (current) => ({ ...current, page: nextPage.pageIndex > 0 ? nextPage.pageIndex + 1 : undefined }),
+            replace: true,
+          }),
+      },
+    },
+  };
 
-  const rowActions = useMemo<TableListRowActions<BookingConfigurationRow>>(
+  const rowActions = useMemo<TableListRowActions<BookingConfiguration>>(
     () => ({
       id: "actions",
       label: t("allBookableItems.fields.actions"),
@@ -353,9 +361,36 @@ export default function AllBookableItemsPage({
           </Button>
         </div>
       ) : null}
+      {locationOptions.data && locationOptions.data.items.length > 0 ? (
+        <fieldset className="flex flex-wrap gap-2">
+          <legend className="mb-2 text-sm font-medium">{t("allBookableItems.filters.location")}</legend>
+          {locationOptions.data.items.map((location) => (
+            <label
+              key={location.globalId}
+              className="inline-flex min-h-6 items-center gap-2 rounded-sm border px-2 py-1 text-sm"
+            >
+              <input
+                type="checkbox"
+                checked={locations.includes(location.globalId)}
+                onChange={(event) =>
+                  setLocations(
+                    event.currentTarget.checked
+                      ? [...locations, location.globalId]
+                      : locations.filter((value) => value !== location.globalId),
+                  )
+                }
+              />
+              {t("allBookableItems.filters.locationOption", {
+                name: location.name,
+                globalId: location.globalId,
+              })}
+            </label>
+          ))}
+        </fieldset>
+      ) : null}
       <TableList
-        {...table.tableProps}
-        rows={quickIndex.isPending || quickIndex.isError ? [] : table.tableProps.rows}
+        {...tableProps}
+        rows={quickIndex.isPending || quickIndex.isError ? [] : visibleRows}
         presentations={{ table: "wide", cards: "narrow" }}
         uiColumns={[
           {
@@ -402,6 +437,12 @@ export default function AllBookableItemsPage({
           },
         ]}
         rowActions={rowActions}
+        createAction={
+          <Link to="/booking/bookable-items/add" className={cn(buttonVariants(), "rounded-sm")} data-slot="button">
+            <PlusIcon aria-hidden="true" data-icon="inline-start" />
+            {t("bookableItems.actions.add")}
+          </Link>
+        }
       />
     </main>
   );

@@ -51,6 +51,12 @@ public class BookingConfigurationDefaultsManagerImpl
   @Override
   public BookingConfigurationDefaults getDefaults(User actor) {
     requireAuthenticated(actor);
+    return requiredDefaults();
+  }
+
+  @Override
+  public BookingConfigurationDefaults getAdminDefaults(User actor) {
+    requireSysadmin(actor);
     return initializeSelectedGrantees(requiredDefaults());
   }
 

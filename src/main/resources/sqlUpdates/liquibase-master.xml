@@ -73,6 +73,7 @@
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1187-booking-calendar-subscriptions.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1187-booking-calendar-subscription-links.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1187-user-booking-calendar-subscriptions.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-1187-user-booking-calendar-subscription-version.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1187-booking-display-preferences.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1187-booking-configuration-soft-delete.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1187-resource-access.xml"/>

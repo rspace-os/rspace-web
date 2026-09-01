@@ -1,11 +1,11 @@
-import { Form, useForm } from "@formisch/react";
+import { Form, isDirty, reset, useForm } from "@formisch/react";
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import * as v from "valibot";
 import {
   type BookingSettingsInput,
-  loadBookingSettings,
+  loadBookingAdminSettings,
   type SchedulingSettings,
   SchedulingSettingsFields,
   SchedulingSettingsSchema,
@@ -19,6 +19,7 @@ import {
   browserTimeZone,
 } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
+import { DirtyNavigationGuard } from "@/modules/common/navigation/DirtyNavigationGuard";
 import { searchBookingSettingsGrantees } from "@/modules/common/resource-access/resourceAccess";
 import type { ResourceGranteeDirectoryEntry } from "@/modules/common/resource-access/schemas";
 import { Button } from "@/modules/common/ui/button";
@@ -33,8 +34,8 @@ export default function BookingSettingsPage() {
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
   const queryClient = useQueryClient();
   const settings = useSuspenseQuery({
-    queryKey: ["api-v2", "booking-settings"],
-    queryFn: ({ signal }) => loadBookingSettings(token, signal),
+    queryKey: ["api-v2", "booking-settings", "admin"],
+    queryFn: ({ signal }) => loadBookingAdminSettings(token, signal),
   }).data;
   const [displaySettings, setDisplaySettings] = useState<BookingDisplayPreferencesInput>({
     availabilityWindowStart: settings.availabilityWindowStart,
@@ -67,15 +68,43 @@ export default function BookingSettingsPage() {
         token,
       ),
     onSuccess: async (saved) => {
-      queryClient.setQueryData(["api-v2", "booking-settings"], saved);
+      queryClient.setQueryData(["api-v2", "booking-settings", "admin"], saved);
+      reset(form, { initialInput: saved });
+      setDisplaySettings({
+        availabilityWindowStart: saved.availabilityWindowStart,
+        availabilityWindowEnd: saved.availabilityWindowEnd,
+        timezoneMode: saved.timezoneMode,
+        customTimezone: saved.customTimezone,
+      });
+      setDefaultSharedWith(saved.defaultSharedWith);
+      setSelectedGrantees(saved.selectedAccessGrantees);
       await queryClient.invalidateQueries({ queryKey: bookingDisplayPreferencesQueryKey });
     },
   });
   const displaySettingsValid = v.safeParse(BookingDisplayPreferencesInputSchema, displaySettings).success;
   const sharingValid = defaultSharedWith !== "SELECTED" || selectedGrantees.length > 0;
+  const dirty =
+    isDirty(form) ||
+    JSON.stringify(displaySettings) !==
+      JSON.stringify({
+        availabilityWindowStart: settings.availabilityWindowStart,
+        availabilityWindowEnd: settings.availabilityWindowEnd,
+        timezoneMode: settings.timezoneMode,
+        customTimezone: settings.customTimezone,
+      }) ||
+    defaultSharedWith !== settings.defaultSharedWith ||
+    selectedGrantees
+      .map(({ key }) => key)
+      .toSorted()
+      .join("\0") !==
+      settings.selectedAccessGrantees
+        .map(({ key }) => key)
+        .toSorted()
+        .join("\0");
 
   return (
     <main className="p-4 sm:p-8">
+      <DirtyNavigationGuard dirty={dirty} />
       <Heading level={2} as="h1" className="mb-2">
         {t("settings.title")}
       </Heading>
@@ -168,6 +197,11 @@ export default function BookingSettingsPage() {
                     ))}
                 </ul>
               ) : null}
+              {grantees.isFetching ? <p role="status">{t("settings.defaultSharing.loading")}</p> : null}
+              {grantees.isError ? <p role="alert">{t("settings.defaultSharing.error")}</p> : null}
+              {grantees.isSuccess && grantees.data.length === 0 ? (
+                <p>{t("settings.defaultSharing.noResults")}</p>
+              ) : null}
               <ul aria-label={t("settings.defaultSharing.selected")} className="grid gap-2">
                 {selectedGrantees.map((grantee) => (
                   <li
@@ -205,10 +239,10 @@ export default function BookingSettingsPage() {
             )}
           </FieldError>
         ) : null}
-        {mutation.isSuccess ? <p role="status">{t("settings.saved")}</p> : null}
+        {mutation.isSuccess && !dirty ? <p role="status">{t("settings.saved")}</p> : null}
         <Button
           type="submit"
-          disabled={mutation.isPending || !displaySettingsValid || !sharingValid}
+          disabled={mutation.isPending || !dirty || !displaySettingsValid || !sharingValid}
           aria-busy={mutation.isPending}
         >
           {t("settings.actions.save")}

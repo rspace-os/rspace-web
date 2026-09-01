@@ -19,7 +19,8 @@ const event = {
   domain: "RECORD",
   action: "WRITE",
   description: "Updated booking configuration IN123",
-  payload: { enabled: true },
+  payload: { enabled: true, bookingConfigurationId: "booking-configurations:7" },
+  target: "bookings:41",
 };
 
 function page(docs = [event]) {
@@ -76,6 +77,7 @@ describe("fetchBookingConfigurationAudit", () => {
       hasNextPage: false,
       snapshotDate: "2026-08-25",
       snapshotFingerprint: fingerprint,
+      rows: [expect.objectContaining({ target: "bookings:41" })],
     });
   });
 

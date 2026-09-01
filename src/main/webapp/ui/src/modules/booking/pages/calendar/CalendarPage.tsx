@@ -1,42 +1,25 @@
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import * as React from "react";
-import { schedulingSettingsFieldNames } from "@/modules/booking/configuration/schedulingSettings";
 import { BookingCreationButtonGroup } from "@/modules/booking/creation/BookingCreationButtonGroup";
 import { bookableItemOption } from "@/modules/booking/creation/bookableItemOption";
 import { useBookingCreationStore } from "@/modules/booking/creation/bookingCreationStore";
+import { catalogueItemAsConfiguration, fetchBookingCatalogue } from "@/modules/booking/domain/bookingCatalogue";
 import { todayInTimeZone, useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { addCalendarDays } from "@/modules/booking/domain/bookingTime";
+import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
-import { useApiV2TableList } from "@/modules/common/table-list/adapters/apiV2/useApiV2TableList";
-import type { FilterExpression } from "@/modules/common/table-list/tableListState";
-import {
-  type BookingConfiguration,
-  type BookingConfigurationRow,
-  BookingConfigurationSchema,
-  bookingConfigurationConfig,
-} from "../bookable-items/bookingConfiguration";
+import { useTableList } from "@/modules/common/table-list/useTableList";
+import { type BookingConfiguration, bookingConfigurationConfig } from "../bookable-items/bookingConfiguration";
 import { BookingEventsCalendar, type CalendarLayout, type CalendarView, calendarDates } from "./BookingEventsCalendar";
 import { useCalendarEvents } from "./calendarEvents";
 
-const calendarResourceConfig = {
+const calendarResourceConfig = resolveCollectionConfig({
   ...bookingConfigurationConfig,
   slug: "calendar-resources",
   defaultColumns: ["target"],
-  pagination: { defaultLimit: 20, maximumLimit: 100, limits: [10, 20, 30, 40, 50] },
-} as const;
-
-const calendarResourceFilter = {
-  kind: "and",
-  children: [
-    { kind: "comparison", field: "enabled", operator: "equals", value: true },
-    { kind: "comparison", field: "target.deleted", operator: "equals", value: false },
-  ],
-} as const satisfies FilterExpression<BookingConfiguration>;
-
-const calendarResourceProjection = {
-  fixed: ["id", "target", "enabled", "timezone", ...schedulingSettingsFieldNames],
-} as const;
+  pagination: { defaultLimit: 20, limits: [10, 20, 30, 40, 50] },
+} as const);
 
 export default function CalendarPage() {
   const { date } = useSearch({ from: "/booking/calendar" });
@@ -50,30 +33,35 @@ export default function CalendarPage() {
   const creationActive = useBookingCreationStore((state) => state.activeCreation !== null);
   const selectedDate = date ?? todayInTimeZone(preferences.timeZone);
   const dates = calendarDates(selectedDate, view);
-  const resourceRequest = React.useMemo(
-    () => ({
-      token,
-      depth: 1,
-      projection: calendarResourceProjection,
-      baseFilter: calendarResourceFilter,
-    }),
-    [token],
-  );
-  const resourceTable = useApiV2TableList({
-    resourceName: "booking-configurations",
+  const resourceTable = useTableList<BookingConfiguration>({
     config: calendarResourceConfig,
-    documentSchema: BookingConfigurationSchema,
-    request: resourceRequest,
-    query: { keepPreviousData: true },
-    table: {
-      initialState: { visibleFields: ["target"] },
-      features: { filtering: false, sorting: false, columns: false },
-      queryString: { parameterPrefix: "calendar-resources", tableId: "booking-calendar-resources" },
+    dataSource: {
+      type: "remote",
+      queryKey: (state) => ["api-v2", "booking-catalogue", "calendar", token, state],
+      keepPreviousData: true,
+      fetch: async (state, { signal }) => {
+        const result = await fetchBookingCatalogue(
+          {
+            q: state.filters.search,
+            page: state.page.pageIndex + 1,
+            pageSize: state.page.pageSize,
+          },
+          token,
+          signal,
+        );
+        return {
+          rows: result.items.map(catalogueItemAsConfiguration),
+          rowCount: result.total,
+        };
+      },
     },
+    initialState: { visibleFields: ["target"] },
+    features: { sorting: false, columns: false },
+    queryString: { parameterPrefix: "calendar-resources", tableId: "booking-calendar-resources" },
   });
   const resourceConfigurations = React.useMemo(
     () =>
-      (resourceTable.tableProps.rows as readonly BookingConfigurationRow[]).flatMap((row) => {
+      resourceTable.tableProps.rows.flatMap((row) => {
         const option = bookableItemOption(row);
         return option ? [option] : [];
       }),
@@ -90,12 +78,9 @@ export default function CalendarPage() {
     token,
     layout === "resources" ? resourceTargetIds : undefined,
     layout !== "resources" ||
-      resourceTable.tableProps.status === "idle" ||
-      resourceTable.tableProps.status === "refreshing",
+      (resourceTable.tableProps.status !== "loading" && resourceTable.tableProps.status !== "refreshing"),
   );
-  const resourceTargets = (resourceTable.tableProps.rows as readonly BookingConfigurationRow[]).flatMap((row) =>
-    row.target ? [row.target] : [],
-  );
+  const resourceTargets = resourceTable.tableProps.rows.flatMap((row) => (row.target ? [row.target] : []));
 
   const draftPart = (minute: number) => {
     const dayOffset = Math.floor(minute / (24 * 60));

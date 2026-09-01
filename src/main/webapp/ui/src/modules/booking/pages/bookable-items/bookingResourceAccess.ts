@@ -30,7 +30,13 @@ export const bookingResourceAccessAdapter = (t: TFunction<"booking">): ResourceA
       key: "VIEWER",
       label: t("access.roles.viewer.label"),
       description: t("access.roles.viewer.description"),
-      allowedGranteeKinds: ["USER", "GROUP", "AUDIENCE"],
+      allowedGranteeKinds: ["USER", "GROUP"],
+    },
+    {
+      key: "NO_ACCESS",
+      label: t("access.roles.noAccess.label"),
+      description: t("access.roles.noAccess.description"),
+      allowedGranteeKinds: ["AUDIENCE"],
     },
   ],
 });

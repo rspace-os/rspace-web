@@ -6,6 +6,8 @@ import com.researchspace.model.resourceaccess.ResourceAccess;
 import com.researchspace.model.resourceaccess.ResourceAudience;
 import com.researchspace.model.resourceaccess.ResourceGranteeKind;
 import com.researchspace.model.resourceaccess.ResourceRoleAssignment;
+import com.researchspace.model.resourceaccess.ResourceRoleSource;
+import com.researchspace.model.resourceaccess.ResourceRoleSourceKind;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;

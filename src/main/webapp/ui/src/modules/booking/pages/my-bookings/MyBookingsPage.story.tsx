@@ -10,6 +10,7 @@ import {
 import { NuqsAdapter } from "nuqs/adapters/react";
 import { Suspense } from "react";
 import { OAUTH_TOKEN } from "@/__tests__/mocks/oauthTokenMocks";
+import { BookingCreationStoreProvider } from "@/modules/booking/creation/bookingCreationStore";
 import { bookingDisplayPreferencesQueryKey } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { apiV2CollectionMetadataFromOpenApi } from "@/modules/common/table-list/adapters/apiV2/apiV2CollectionMetadata";
 import { createBookableItemRoute } from "../bookable-items/routes";
@@ -49,11 +50,13 @@ export function MyBookingsPageStory() {
   });
   return (
     <QueryClientProvider client={queryClient}>
-      <Suspense fallback={null}>
-        <NuqsAdapter>
-          <RouterProvider router={router as never} />
-        </NuqsAdapter>
-      </Suspense>
+      <NuqsAdapter>
+        <BookingCreationStoreProvider>
+          <Suspense fallback={null}>
+            <RouterProvider router={router as never} />
+          </Suspense>
+        </BookingCreationStoreProvider>
+      </NuqsAdapter>
     </QueryClientProvider>
   );
 }

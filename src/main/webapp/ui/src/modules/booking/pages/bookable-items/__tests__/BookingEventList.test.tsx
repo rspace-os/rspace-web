@@ -21,6 +21,7 @@ vi.mock("@/modules/common/hooks/auth", () => ({ useOauthTokenQuery: vi.fn() }));
 
 const fullBooking = {
   id: 41,
+  version: 0,
   target: {
     relationTo: "booking-instruments",
     value: { id: 12, name: "Scope", deleted: false },
@@ -34,6 +35,7 @@ const fullBooking = {
   purpose: "Cell imaging",
   bookedBy: "Ada Lovelace (ada)",
   canEdit: true,
+  canCancel: true,
   createdAt: "2026-08-17T00:00:00Z",
   updatedAt: "2026-08-17T00:00:00Z",
 };
@@ -44,6 +46,7 @@ const busyBooking = {
   purpose: null,
   bookedBy: null,
   canEdit: false,
+  canCancel: false,
 };
 const maintenance = {
   ...fullBooking,

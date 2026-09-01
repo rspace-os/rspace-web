@@ -8,11 +8,16 @@ import java.util.Map;
 /** Generic role resolution and transactional assignment management for protected resources. */
 public interface ResourceAccessManager {
 
+  int MAX_NAMED_ASSIGNMENTS = 100;
+
   /** Resolves one aggregate for the represented subject. */
   ResolvedResourceAccess resolve(ResourceAccess access, User subject);
 
   /** Resolves a bounded collection without ambient-session identity. */
   Map<Long, ResolvedResourceAccess> resolveAll(Collection<ResourceAccess> accesses, User subject);
+
+  /** Returns whether the subject may remove their direct assignment without breaking the scheme. */
+  boolean canLeave(ResourceAccess access, User subject);
 
   /** Reads an access document when the subject has the adapter's view capability. */
   <T, ID> ResourceAccessDocument get(ProtectedResourceAccess<T, ID> resource, ID id, User subject);

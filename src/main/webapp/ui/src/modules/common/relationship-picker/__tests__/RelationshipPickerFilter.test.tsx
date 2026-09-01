@@ -3,10 +3,15 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
+import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { RelationshipPicker } from "@/modules/common/relationship-picker/RelationshipPicker";
-import { relationshipSources } from "@/modules/common/relationship-picker/relationshipSources";
+import {
+  granteeRelationshipSource,
+  type RelationshipSource,
+  relationshipSources,
+} from "@/modules/common/relationship-picker/relationshipSources";
 
 vi.mock("@/modules/common/hooks/auth", () => ({
   useOauthTokenQuery: () => ({ data: "test-token" }),
@@ -46,7 +51,65 @@ function renderPicker(onChange: (value: string) => void) {
   );
 }
 
+function MultiSourcePicker({ sources }: { sources: readonly RelationshipSource[] }) {
+  const [value, setValue] = useState("");
+  return <RelationshipPicker sources={sources} value={value} onChange={setValue} ariaLabel="Relationships" multiple />;
+}
+
 describe("relationship picker search", () => {
+  it("keeps grantee search scoped to the resource endpoint", async () => {
+    let requested: URL | undefined;
+    server.use(
+      http.get("/api/v2/bookings/42/access/grantees", ({ request }) => {
+        requested = new URL(request.url);
+        return HttpResponse.json([{ kind: "USER", id: 7, key: "user:7", name: "Ada", detail: null }]);
+      }),
+    );
+
+    const source = granteeRelationshipSource("bookings", 42);
+    await expect(source.search("Ada", "test-token", new AbortController().signal)).resolves.toHaveLength(1);
+    expect(requested?.pathname).toBe("/api/v2/bookings/42/access/grantees");
+    expect(requested?.searchParams.get("query")).toBe("Ada");
+    expect(requested?.searchParams.get("limit")).toBe("20");
+    expect(source.ownsValue("user:7")).toBe(true);
+    expect(source.ownsValue("audience:all-users")).toBe(false);
+  });
+
+  it("searches and merges multiple source collections without collapsing equal values", async () => {
+    const user = userEvent.setup();
+    const calls: string[] = [];
+    const source = (id: string, label: string) => ({
+      id,
+      search: async (term: string) => {
+        calls.push(`${id}:${term}`);
+        return [{ id: 1, name: label }];
+      },
+      ownsValue: (value: string) => value === `${id}:1`,
+      toOption: (document: unknown) => {
+        const item = document as { name: string };
+        return { value: `${id}:1`, label: item.name };
+      },
+    });
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MultiSourcePicker sources={[source("users", "Alice"), source("groups", "Editors")]} />
+      </QueryClientProvider>,
+    );
+
+    await user.type(screen.getByRole("combobox", { name: "Relationships" }), "al");
+    expect(await screen.findByRole("option", { name: "Alice" })).toBeInTheDocument();
+    expect(await screen.findByRole("option", { name: "Editors" })).toBeInTheDocument();
+    expect(calls).toEqual(expect.arrayContaining(["users:al", "groups:al"]));
+
+    await user.click(screen.getByRole("option", { name: "Alice" }));
+    await user.type(screen.getByRole("combobox", { name: "Relationships" }), "al");
+    await screen.findByRole("option", { name: "Editors" });
+    await user.click(screen.getByRole("option", { name: "Editors" }));
+    expect(screen.getByText("Alice")).toBeInTheDocument();
+    expect(screen.getByText("Editors")).toBeInTheDocument();
+  });
+
   it("prompts for a search term before requesting options", async () => {
     const user = userEvent.setup();
     const requests: URL[] = [];

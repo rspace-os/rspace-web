@@ -32,9 +32,6 @@ const settings = {
   timezoneMode: "BROWSER",
   customTimezone: null,
   institutionTimezone: "UTC",
-  defaultSharedWith: "ALL_USERS" as const,
-  selectedAccessGrantees: [],
-  configurationVersion: 0,
 };
 
 function collectionPage(docs: readonly unknown[]) {

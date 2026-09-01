@@ -37,7 +37,7 @@ public final class ApiV2BookingInstrumentResource {
                       documentation("Name", "Display name of the instrument.", "Microscope")),
               Field.readOnly(
                       "deleted", "deleted", CollectionFieldTypes.bool(), Instrument::isDeleted)
-                  .withQueryCapabilities(false, false)
+                  .withQueryCapabilities(true, false)
                   .documented(
                       documentation(
                           "Deleted", "True when the instrument is in the trash.", "false"))),

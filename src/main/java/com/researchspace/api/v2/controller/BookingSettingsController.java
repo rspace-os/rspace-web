@@ -12,6 +12,8 @@ import com.researchspace.model.booking.BookingDisplaySettings;
 import com.researchspace.model.booking.BookingSchedulingSettings;
 import com.researchspace.model.booking.BookingTimezoneMode;
 import com.researchspace.service.FeatureFlagManager;
+import com.researchspace.service.resourceaccess.ResourceAccessDirectoryManager;
+import com.researchspace.service.resourceaccess.ResourceGranteeDirectoryEntry;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
@@ -21,6 +23,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import jakarta.ws.rs.NotFoundException;
 import java.time.Clock;
 import java.time.DateTimeException;
 import java.time.ZoneId;
@@ -76,13 +79,45 @@ public final class BookingSettingsController {
       String availabilityWindowEnd,
       BookingTimezoneMode timezoneMode,
       String customTimezone,
+      String institutionTimezone) {
+
+    static SettingsDocument from(BookingConfigurationDefaults defaults, Clock institutionClock) {
+      return new SettingsDocument(
+          defaults.getSlotGranularityMinutes(),
+          defaults.getOpeningStart(),
+          defaults.getOpeningEnd(),
+          defaults.getBufferBeforeMinutes(),
+          defaults.getBufferAfterMinutes(),
+          defaults.getMaxBookingDurationMinutes(),
+          defaults.isAllowDoubleBooking(),
+          defaults.getAvailabilityWindowStart(),
+          defaults.getAvailabilityWindowEnd(),
+          defaults.getTimezoneMode(),
+          defaults.getCustomTimezone(),
+          institutionClock.getZone().getId());
+    }
+  }
+
+  public record AdminSettingsDocument(
+      long slotGranularityMinutes,
+      String openingStart,
+      String openingEnd,
+      long bufferBeforeMinutes,
+      long bufferAfterMinutes,
+      long maxBookingDurationMinutes,
+      boolean allowDoubleBooking,
+      String availabilityWindowStart,
+      String availabilityWindowEnd,
+      BookingTimezoneMode timezoneMode,
+      String customTimezone,
       String institutionTimezone,
       BookingDefaultSharedWith defaultSharedWith,
       List<SelectedAccessGrantee> selectedAccessGrantees,
       long configurationVersion) {
 
-    static SettingsDocument from(BookingConfigurationDefaults defaults, Clock institutionClock) {
-      return new SettingsDocument(
+    static AdminSettingsDocument from(
+        BookingConfigurationDefaults defaults, Clock institutionClock) {
+      return new AdminSettingsDocument(
           defaults.getSlotGranularityMinutes(),
           defaults.getOpeningStart(),
           defaults.getOpeningEnd(),
@@ -176,14 +211,17 @@ public final class BookingSettingsController {
 
   private final BookingConfigurationDefaultsManager manager;
   private final FeatureFlagManager featureFlags;
+  private final ResourceAccessDirectoryManager directoryManager;
   private final Clock institutionClock;
 
   public BookingSettingsController(
       BookingConfigurationDefaultsManager manager,
       FeatureFlagManager featureFlags,
+      ResourceAccessDirectoryManager directoryManager,
       @Qualifier(BookingTimeConfig.INSTITUTION_CLOCK) Clock institutionClock) {
     this.manager = manager;
     this.featureFlags = featureFlags;
+    this.directoryManager = directoryManager;
     this.institutionClock = institutionClock;
   }
 
@@ -196,17 +234,47 @@ public final class BookingSettingsController {
       responses = {
         @ApiResponse(responseCode = "200", description = "Current booking defaults."),
         @ApiResponse(responseCode = "401", description = "Authentication is required."),
-        @ApiResponse(responseCode = "403", description = "Booking is unavailable.")
+        @ApiResponse(responseCode = "404", description = "Booking is unavailable.")
       })
   public SettingsDocument get(
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
-    requireEnabled(caller.subject());
+    requireEnabledRead(caller.subject());
     return SettingsDocument.from(manager.getDefaults(caller.subject()), institutionClock);
   }
 
-  @PatchMapping
+  @GetMapping("/admin")
   @Operation(
-      operationId = "patchBookingSettings",
+      operationId = "getAdminBookingSettings",
+      summary = "Get global Booking administration settings",
+      responses = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Current Booking administration settings."),
+        @ApiResponse(responseCode = "401", description = "Authentication is required."),
+        @ApiResponse(responseCode = "403", description = "Sysadmin access is required."),
+        @ApiResponse(responseCode = "404", description = "Booking is unavailable.")
+      })
+  public AdminSettingsDocument getAdmin(
+      @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
+    requireEnabledRead(caller.subject());
+    return AdminSettingsDocument.from(manager.getAdminDefaults(caller.subject()), institutionClock);
+  }
+
+  @GetMapping("/access-grantees")
+  public List<ResourceGranteeDirectoryEntry> accessGrantees(
+      @org.springframework.web.bind.annotation.RequestParam String query,
+      @org.springframework.web.bind.annotation.RequestParam(defaultValue = "20") int limit,
+      @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
+    requireEnabledRead(caller.subject());
+    return directoryManager.searchForSettings(
+        ResourceAccessController.validateQuery(query),
+        ResourceAccessController.validateLimit(limit),
+        caller.subject());
+  }
+
+  @PatchMapping("/admin")
+  @Operation(
+      operationId = "patchAdminBookingSettings",
       summary = "Patch global Booking defaults",
       description =
           "Changes scheduling defaults for future items and display fallbacks for users without"
@@ -219,11 +287,11 @@ public final class BookingSettingsController {
             description = "The settings changed since they were read."),
         @ApiResponse(responseCode = "403", description = "Sysadmin access is required.")
       })
-  public SettingsDocument patch(
+  public AdminSettingsDocument patchAdmin(
       @Valid @RequestBody SettingsPatch patch,
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
-    requireEnabled(caller.subject());
-    return SettingsDocument.from(
+    requireEnabledMutation(caller.subject());
+    return AdminSettingsDocument.from(
         manager.updateDefaults(
             patch.schedulingPatch(),
             patch.displayPatch(),
@@ -235,7 +303,13 @@ public final class BookingSettingsController {
         institutionClock);
   }
 
-  private void requireEnabled(com.researchspace.model.User actor) {
+  private void requireEnabledRead(com.researchspace.model.User actor) {
+    if (!featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, actor)) {
+      throw new NotFoundException();
+    }
+  }
+
+  private void requireEnabledMutation(com.researchspace.model.User actor) {
     if (!featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, actor)) {
       throw new AuthorizationException("errors.api.v2.forbidden");
     }

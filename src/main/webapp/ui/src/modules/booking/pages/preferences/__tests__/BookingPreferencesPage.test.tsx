@@ -27,7 +27,10 @@ describe("BookingPreferencesPage", () => {
   beforeEach(() => {
     server.use(
       http.get("/api/v2/users/me/booking-calendar-subscription", () =>
-        HttpResponse.json({ active: false, updatedAt: null, subscriptionUrl: null }),
+        HttpResponse.json(
+          { active: false, updatedAt: null, subscriptionUrl: null },
+          { headers: { ETag: '"inactive"' } },
+        ),
       ),
     );
   });
@@ -132,13 +135,17 @@ describe("BookingPreferencesPage", () => {
     server.use(
       oauthTokenHandler(),
       http.get("/api/v2/users/me/booking-preferences", () => HttpResponse.json(inheritedBrowserBookingPreferences)),
-      http.post("/api/v2/users/me/booking-calendar-subscription", () => {
+      http.post("/api/v2/users/me/booking-calendar-subscription", ({ request }) => {
         creates += 1;
-        return HttpResponse.json({
-          active: true,
-          updatedAt: "2026-08-30T12:00:00.000Z",
-          subscriptionUrl: "https://example.test/public/booking/calendars/feed.ics?token=user",
-        });
+        expect(request.headers.get("If-Match")).toBe('"inactive"');
+        return HttpResponse.json(
+          {
+            active: true,
+            updatedAt: "2026-08-30T12:00:00.000Z",
+            subscriptionUrl: "https://example.test/public/booking/calendars/feed.ics?token=user",
+          },
+          { headers: { ETag: '"subscription-0"' } },
+        );
       }),
     );
     const user = userEvent.setup();

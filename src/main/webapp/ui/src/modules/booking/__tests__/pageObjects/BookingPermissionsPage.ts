@@ -5,18 +5,17 @@ export class BookingPermissionsPage extends BasePage {
   readonly path = "/booking/bookable-items";
 
   readonly accessTab: Locator;
+  /** The wide-screen presentation. A narrow viewport shows the same rows as cards instead. */
   readonly assignments: Locator;
   readonly addUserOrGroup: Locator;
-  readonly search: Locator;
   readonly saveChanges: Locator;
   readonly savedStatus: Locator;
 
   constructor(page: Page) {
     super(page);
     this.accessTab = page.getByRole("tab", { name: "Access" });
-    this.assignments = page.getByRole("list", { name: "Access assignments" });
-    this.addUserOrGroup = page.getByRole("textbox", { name: "Add user or group" });
-    this.search = page.getByRole("button", { name: "Search" });
+    this.assignments = page.getByRole("table", { name: "Access assignments" });
+    this.addUserOrGroup = page.getByRole("combobox", { name: "Add user or group" });
     this.saveChanges = page.getByRole("button", { name: "Save changes" });
     this.savedStatus = page.getByText("Access changes saved.", { exact: true });
   }
@@ -26,7 +25,7 @@ export class BookingPermissionsPage extends BasePage {
   }
 
   assignment(detail: string): Locator {
-    return this.assignments.getByRole("listitem").filter({ hasText: detail });
+    return this.assignments.getByRole("row").filter({ hasText: detail });
   }
 
   async openRecord(globalId: string): Promise<void> {
@@ -36,60 +35,41 @@ export class BookingPermissionsPage extends BasePage {
 
   async openAccess(): Promise<void> {
     await this.accessTab.click();
-    await this.addUserOrGroup.waitFor();
+    await this.assignments.waitFor();
   }
 
   async addUser(username: string, displayName: string, role: string): Promise<void> {
     await this.addUserOrGroup.fill(username);
-    await this.search.click();
-    const add = this.page.getByRole("button", { name: `Add ${displayName}` });
-    await add.waitFor({ timeout: 15_000 });
-    await add.click();
-    const assignment = this.assignment(username);
+    const option = this.page.getByRole("option", { name: new RegExp(displayName) });
+    await option.waitFor({ timeout: 15_000 });
+    await option.click();
+    const assignment = this.assignment(displayName);
     await assignment.waitFor({ timeout: 15_000 });
-    await assignment.getByRole("combobox", { name: `Direct role for ${displayName}` }).selectOption(role);
+    await this.chooseRole(displayName, role);
     await this.save();
   }
 
-  async removeAssignment(detail: string, displayName: string): Promise<void> {
-    await this.assignment(detail)
+  /**
+   * Opens the row's role menu and picks one option. Callers pass the role key ("BOOKER"), which the
+   * menu renders as its translated label ("Booker"), so the match is case-insensitive.
+   */
+  async chooseRole(displayName: string, role: string): Promise<void> {
+    await this.assignment(displayName)
+      .getByRole("button", { name: `Direct role for ${displayName}` })
+      .click();
+    await this.page.getByRole("menuitem", { name: new RegExp(`^${role}$`, "i") }).click();
+  }
+
+  async removeAssignment(_detail: string, displayName: string): Promise<void> {
+    await this.assignment(displayName)
       .getByRole("button", { name: `Remove ${displayName}` })
       .click();
     await this.save();
   }
 
-  async createBooking(input: {
-    globalId: string;
-    date: string;
-    startTime: string;
-    endTime: string;
-    purpose: string;
-  }): Promise<{ id: number }> {
-    const query = new URLSearchParams({ date: input.date, target: input.globalId });
-    await this.page.goto(`/booking/calendar/bookings/add?${query}`);
-    await this.page.getByRole("heading", { level: 1, name: "Add Booking" }).waitFor();
-    const start = this.page.getByRole("group", { name: "Start" });
-    const end = this.page.getByRole("group", { name: "End" });
-    await start.getByLabel("Date").fill(input.date);
-    await start.getByLabel("Time").fill(input.startTime);
-    await end.getByLabel("Date").fill(input.date);
-    await end.getByLabel("Time").fill(input.endTime);
-    await this.page.getByLabel("Purpose").fill(input.purpose);
-    const responsePromise = this.page.waitForResponse(
-      (response) => response.request().method() === "POST" && response.url().endsWith("/api/v2/bookings?depth=1"),
-    );
-    await this.page.getByRole("button", { name: "Book", exact: true }).click();
-    const response = await responsePromise;
-    if (!response.ok()) {
-      throw new Error(`Creating a booking failed with status ${response.status()}: ${await response.text()}`);
-    }
-    await this.page.waitForURL((url) => url.pathname === "/booking/calendar");
-    return response.json() as Promise<{ id: number }>;
-  }
-
-  async openMyBookings(): Promise<void> {
-    await this.page.goto("/booking/my-bookings");
-    await this.page.getByRole("heading", { level: 1, name: "My Bookings" }).waitFor();
+  /** The staged-change marker a row carries before the draft is saved. */
+  stagedMarker(detail: string): Locator {
+    return this.assignment(detail).locator('[title^="Staged"]');
   }
 
   private async save(): Promise<void> {

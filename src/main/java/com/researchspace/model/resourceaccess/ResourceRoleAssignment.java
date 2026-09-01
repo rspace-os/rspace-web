@@ -111,7 +111,8 @@ public class ResourceRoleAssignment implements Serializable {
         group.getUniqueName());
   }
 
-  public static ResourceRoleAssignment forAudience(String roleKey, ResourceAudience audience) {
+  public static ResourceRoleAssignment forAudience(
+      String roleKey, ResourceAudience audience, String nameSnapshot) {
     Objects.requireNonNull(audience, "audience");
     return new ResourceRoleAssignment(
         roleKey,
@@ -120,7 +121,7 @@ public class ResourceRoleAssignment implements Serializable {
         null,
         null,
         audience,
-        audience.displayName(),
+        nameSnapshot,
         null);
   }
 

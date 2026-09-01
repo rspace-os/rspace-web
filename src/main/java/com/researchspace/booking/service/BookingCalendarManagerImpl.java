@@ -21,19 +21,12 @@ import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.BookingState;
 import com.researchspace.model.booking.TimeSlotBooking;
 import com.researchspace.model.booking.UserBookingCalendarSubscription;
-import com.researchspace.model.collection.CollectionDescription.Operator;
-import com.researchspace.model.collection.FieldSelection;
-import com.researchspace.model.collection.FilterExpression;
-import com.researchspace.model.collection.IncludeTree;
-import com.researchspace.model.collection.RelationshipReadAccess;
-import com.researchspace.model.collection.ResourceRegistry;
-import com.researchspace.model.collection.ResourceRequest;
-import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.permissions.SecurityLogger;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.resourceaccess.ResolvedResourceAccess;
 import com.researchspace.service.resourceaccess.ResourceAccessManager;
+import jakarta.persistence.OptimisticLockException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -45,10 +38,15 @@ import java.util.Optional;
 import java.util.concurrent.Semaphore;
 import java.util.function.Supplier;
 import org.apache.shiro.authz.AuthorizationException;
+import org.hibernate.StaleObjectStateException;
+import org.hibernate.exception.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.orm.hibernate5.HibernateJdbcException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -58,6 +56,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class BookingCalendarManagerImpl implements BookingCalendarManager {
 
   private static final Logger SECURITY_LOG = LoggerFactory.getLogger(SecurityLogger.class);
+  private static final String INACTIVE_USER_ETAG = "\"inactive\"";
 
   private final BookingCalendarSubscriptionDao subscriptionDao;
   private final UserBookingCalendarSubscriptionDao userSubscriptionDao;
@@ -128,7 +127,7 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
   @Override
   public Status status(Long configurationId, User subject, User actor) {
     requirePersonalCaller(subject, actor);
-    requireFeature(subject);
+    requireFeatureRead(subject);
     requireReadableConfiguration(configurationId, subject);
     return subscriptionDao
         .findByUserIdAndConfigurationId(subject.getId(), configurationId)
@@ -146,7 +145,7 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
   @Override
   public Created createOrRotate(Long configurationId, User subject, User actor) {
     requirePersonalCaller(subject, actor);
-    requireFeature(subject);
+    requireFeatureMutation(subject);
     BookingConfiguration configuration =
         configurationDao
             .lockById(configurationId)
@@ -196,8 +195,12 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
   @Override
   public void revoke(Long configurationId, User subject, User actor) {
     requirePersonalCaller(subject, actor);
-    requireFeature(subject);
-    configurationDao.lockById(configurationId).orElseThrow(BookingCalendarNotFoundException::new);
+    requireFeatureMutation(subject);
+    BookingConfiguration configuration =
+        configurationDao
+            .lockById(configurationId)
+            .orElseThrow(BookingCalendarNotFoundException::new);
+    requireCapability(configuration, subject, BookingResourceRoleScheme.READ_RESOURCE);
     Optional<BookableItemCalendarSubscription> existing =
         subscriptionDao.findByUserIdAndConfigurationId(subject.getId(), configurationId);
     subscriptionDao.removeForUserAndConfiguration(subject.getId(), configurationId);
@@ -215,22 +218,34 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
   @Override
   public Status userStatus(User subject, User actor) {
     requirePersonalCaller(subject, actor);
-    requireFeature(subject);
+    requireFeatureRead(subject);
     return userSubscriptionDao
         .findByUserId(subject.getId())
         .map(
             subscription ->
                 new Status(
-                    true, subscription.getUpdatedAt(), subscriptionUrl(subscription.getRawToken())))
-        .orElseGet(() -> new Status(false, null, null));
+                    true,
+                    subscription.getUpdatedAt(),
+                    subscriptionUrl(subscription.getRawToken()),
+                    userEtag(subscription)))
+        .orElseGet(() -> new Status(false, null, null, INACTIVE_USER_ETAG));
   }
 
   @Override
-  public Created createOrRotateUser(User subject, User actor) {
+  public Created createOrRotateUser(User subject, User actor, String expectedEtag) {
     requirePersonalCaller(subject, actor);
-    requireFeature(subject);
+    requireFeatureMutation(subject);
+    User lockedUser = userSubscriptionDao.lockUser(subject.getId());
+    if (lockedUser == null) {
+      throw new AuthorizationException("Active personal caller is required");
+    }
     Optional<UserBookingCalendarSubscription> existing =
         userSubscriptionDao.findByUserId(subject.getId());
+    String currentEtag =
+        existing.map(BookingCalendarManagerImpl::userEtag).orElse(INACTIVE_USER_ETAG);
+    if (!Objects.equals(expectedEtag, currentEtag)) {
+      throw new UserSubscriptionConflictException();
+    }
     String rawToken = tokenSupplier.get();
     Date updatedAt = new Date();
     UserBookingCalendarSubscription subscription;
@@ -244,10 +259,20 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
     } else {
       subscription =
           new UserBookingCalendarSubscription(
-              subject, CryptoUtils.hashToken(rawToken), rawToken, updatedAt);
+              lockedUser, CryptoUtils.hashToken(rawToken), rawToken, updatedAt);
       action = "created";
     }
-    UserBookingCalendarSubscription saved = userSubscriptionDao.saveAndFlush(subscription);
+    UserBookingCalendarSubscription saved;
+    try {
+      saved = userSubscriptionDao.saveAndFlush(subscription);
+    } catch (OptimisticLockException
+        | StaleObjectStateException
+        | ConstraintViolationException
+        | DataIntegrityViolationException
+        | OptimisticLockingFailureException
+        | HibernateJdbcException ex) {
+      throw new UserSubscriptionConflictException(ex);
+    }
     SECURITY_LOG.info(
         "User booking calendar subscription {} by actor [{}] for subject [{}], subscription [{}]",
         action,
@@ -255,13 +280,14 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
         subject.getUsername(),
         saved.getId());
     String url = subscriptionUrl(rawToken);
-    return new Created(new Status(true, saved.getUpdatedAt(), url), url);
+    return new Created(new Status(true, saved.getUpdatedAt(), url, userEtag(saved)), url);
   }
 
   @Override
   public void revokeUser(User subject, User actor) {
     requirePersonalCaller(subject, actor);
-    requireFeature(subject);
+    requireFeatureMutation(subject);
+    userSubscriptionDao.lockUser(subject.getId());
     Optional<UserBookingCalendarSubscription> existing =
         userSubscriptionDao.findByUserId(subject.getId());
     userSubscriptionDao.removeForUser(subject.getId());
@@ -275,10 +301,24 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
                 subscription.getId()));
   }
 
+  private static String userEtag(UserBookingCalendarSubscription subscription) {
+    return "\"subscription-" + subscription.getVersion() + "\"";
+  }
+
+  /** A user subscription changed after the caller read its status. */
+  public static class UserSubscriptionConflictException extends RuntimeException {
+
+    public UserSubscriptionConflictException() {}
+
+    UserSubscriptionConflictException(Throwable cause) {
+      super(cause);
+    }
+  }
+
   @Override
   public int resetForConfiguration(Long configurationId, User subject, User actor) {
     requirePersonalCaller(subject, actor);
-    requireFeature(subject);
+    requireFeatureMutation(subject);
     BookingConfiguration configuration =
         configurationDao
             .lockById(configurationId)
@@ -296,7 +336,7 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
   @Override
   public Optional<Download> download(Long bookingId, User subject, Locale locale) {
     requireActiveUser(subject);
-    requireFeature(subject);
+    requireFeatureRead(subject);
     Optional<TimeSlotBooking> booking = bookingManager.getBooking(bookingId, subject);
     if (booking.isEmpty() || booking.get().getState() != BookingState.CONFIRMED) {
       return Optional.empty();
@@ -468,7 +508,14 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
     }
   }
 
-  private void requireFeature(User subject) {
+  private void requireFeatureRead(User subject) {
+    requireActiveUser(subject);
+    if (!featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, subject)) {
+      throw new BookingCalendarNotFoundException();
+    }
+  }
+
+  private void requireFeatureMutation(User subject) {
     requireActiveUser(subject);
     if (!featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, subject)) {
       throw new AuthorizationException("errors.api.v2.forbidden");

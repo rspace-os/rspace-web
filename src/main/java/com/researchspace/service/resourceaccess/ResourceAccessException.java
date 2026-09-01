@@ -11,6 +11,7 @@ public class ResourceAccessException extends RuntimeException {
     INVALID_GRANTEE,
     INVALID_ROLE,
     DUPLICATE_GRANTEE,
+    ASSIGNMENT_LIMIT,
     SELF_REMOVAL_REQUIRES_LEAVE
   }
 

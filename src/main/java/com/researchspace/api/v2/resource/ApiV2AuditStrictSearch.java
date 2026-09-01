@@ -108,8 +108,12 @@ public final class ApiV2AuditStrictSearch {
   public synchronized List<AuditTrailSearchResult> search(Request request) {
     Objects.requireNonNull(request, "Audit search request");
     AuditTrailSearchElement restricted =
-        actorVisibility.restrict(new VisibilityConfig(request), request.actor());
-    if (restricted.getUsernames().isEmpty() && !actorVisibility.isSysAdmin(request.actor())) {
+        request.bypassActorDirectory()
+            ? new AuditTrailSearchElement(new VisibilityConfig(request))
+            : actorVisibility.restrict(new VisibilityConfig(request), request.actor());
+    if (!request.bypassActorDirectory()
+        && restricted.getUsernames().isEmpty()
+        && !actorVisibility.isSysAdmin(request.actor())) {
       return List.of();
     }
 
@@ -494,7 +498,29 @@ public final class ApiV2AuditStrictSearch {
       String oid,
       Set<String> requestedUsernames,
       User actor,
-      int ceiling) {
+      int ceiling,
+      boolean bypassActorDirectory) {
+
+    public Request(
+        Instant fromInclusive,
+        Instant toExclusive,
+        Set<AuditDomain> domains,
+        Set<AuditAction> actions,
+        String oid,
+        Set<String> requestedUsernames,
+        User actor,
+        int ceiling) {
+      this(
+          fromInclusive,
+          toExclusive,
+          domains,
+          actions,
+          oid,
+          requestedUsernames,
+          actor,
+          ceiling,
+          false);
+    }
 
     public Request {
       Objects.requireNonNull(fromInclusive, "Audit start");

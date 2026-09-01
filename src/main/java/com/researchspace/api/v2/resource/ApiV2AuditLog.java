@@ -114,7 +114,7 @@ public final class ApiV2AuditLog {
             .sorted(
                 Comparator.comparing(ApiV2AuditEvent::timestamp)
                     .reversed()
-                    .thenComparing(ApiV2AuditEvent::eventId))
+                    .thenComparing(ApiV2AuditEvent::eventId, Comparator.reverseOrder()))
             .toList();
     String fingerprint = snapshotFingerprint(ordered);
     if (query.getSnapshotFingerprint() != null
@@ -160,9 +160,16 @@ public final class ApiV2AuditLog {
                   target.identifier(),
                   Set.of(),
                   actor,
-                  resultCeiling))
+                  resultCeiling,
+                  resource.auditBypassesActorDirectory()))
           .stream()
-          .map(result -> event(result, target.readableFields(), resource.description()))
+          .map(
+              result ->
+                  event(
+                      result,
+                      target.readableFields(),
+                      resource.description(),
+                      resource.relatedAuditFields()))
           .toList();
     } catch (ApiV2AuditStrictSearch.StrictReadException ex) {
       throw new ApiV2AuditUnavailableException(ex);
@@ -281,7 +288,8 @@ public final class ApiV2AuditLog {
   private static ApiV2AuditEvent event(
       AuditTrailSearchResult result,
       FieldSelection readableFields,
-      CollectionDescription<?> description) {
+      CollectionDescription<?> description,
+      Set<String> relatedAuditFields) {
     HistoricData source = result.getEvent();
     Map<String, Object> payload = new LinkedHashMap<>();
     Set<String> publicNames = new LinkedHashSet<>();
@@ -293,11 +301,13 @@ public final class ApiV2AuditLog {
         .forEach(
             (name, value) -> {
               if (!description.idField().equals(name)
-                  && publicNames.contains(name)
-                  && readableFields.includes(name, description.idField())) {
+                  && ((publicNames.contains(name)
+                          && readableFields.includes(name, description.idField()))
+                      || relatedAuditFields.contains(name))) {
                 payload.put(name, value);
               }
             });
+    Object targetValue = source.getData().getData().get(description.idField());
     ApiV2AuditEvent withoutId =
         new ApiV2AuditEvent(
             null,
@@ -307,7 +317,8 @@ public final class ApiV2AuditLog {
             source.getDomain(),
             source.getAction(),
             source.getDescription(),
-            Collections.unmodifiableMap(payload));
+            Collections.unmodifiableMap(payload),
+            targetValue == null ? null : targetValue.toString());
     return new ApiV2AuditEvent(
         eventId(withoutId),
         withoutId.timestamp(),
@@ -316,7 +327,8 @@ public final class ApiV2AuditLog {
         withoutId.domain(),
         withoutId.action(),
         withoutId.description(),
-        withoutId.payload());
+        withoutId.payload(),
+        withoutId.target());
   }
 
   static String eventId(ApiV2AuditEvent event) {

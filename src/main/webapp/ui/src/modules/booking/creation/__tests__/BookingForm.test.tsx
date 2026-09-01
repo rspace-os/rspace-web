@@ -10,7 +10,7 @@ import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { type ReactNode, Suspense } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { currentWallClock } from "@/modules/booking/domain/bookingTime";
 import { BookingForm, type BookingFormSubmission, type EditableBooking } from "../BookingForm";
@@ -32,6 +32,7 @@ const target = {
 
 const editableBooking = {
   id: 41,
+  version: 0,
   target: {
     relationTo: "booking-instruments",
     globalId: "IN123",
@@ -46,22 +47,38 @@ const editableBooking = {
   purpose: "Imaging",
   bookedBy: "Ada Lovelace (ada)",
   canEdit: true,
+  canCancel: true,
   createdAt: "2026-08-12T10:00:00Z",
   updatedAt: "2026-08-12T10:00:00Z",
 } satisfies EditableBooking;
 
-function collectionPage(docs: readonly unknown[]) {
+function cataloguePage(options: readonly (typeof target)[]) {
   return {
-    docs,
-    totalDocs: docs.length,
-    limit: 20,
+    items: options.map((option) => ({
+      ...option,
+      configurationVersion: 0,
+      targetType: "INSTRUMENT",
+      effectiveRole: "BOOKER",
+      capabilities: {
+        canEditConfiguration: false,
+        canArchiveConfiguration: false,
+        canViewAudit: false,
+        canViewAccess: false,
+        canManageAssignments: false,
+        canManageOwners: false,
+        canCreateBooking: true,
+        canManageOwnBookings: true,
+        canManageAllEvents: false,
+        canCreateBlockout: false,
+        canSubscribeCalendar: true,
+        canLeaveConfiguration: false,
+      },
+      location: null,
+    })),
     page: 1,
-    pagingCounter: 1,
-    totalPages: docs.length ? 1 : 0,
-    hasPrevPage: false,
-    hasNextPage: false,
-    prevPage: null,
-    nextPage: null,
+    pageSize: 20,
+    total: options.length,
+    facets: { types: ["INSTRUMENT"] },
   };
 }
 
@@ -88,6 +105,10 @@ function renderForm(node: ReactNode) {
 }
 
 describe("BookingForm", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("round-trips an editable repeated-hour booking and renders a read-only item", async () => {
     const user = userEvent.setup();
     const submit = vi.fn<(submission: BookingFormSubmission) => Promise<void>>().mockResolvedValue();
@@ -150,7 +171,7 @@ describe("BookingForm", () => {
   it("prefills only the Calendar date and reports the missing window", async () => {
     const user = userEvent.setup();
     const submit = vi.fn<(submission: BookingFormSubmission) => Promise<void>>().mockResolvedValue();
-    server.use(http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([]))));
+    server.use(http.get("/api/v2/booking-catalogue", () => HttpResponse.json(cataloguePage([]))));
 
     renderForm(
       <BookingForm
@@ -184,7 +205,7 @@ describe("BookingForm", () => {
     [10, "600"],
     [15, "900"],
   ])("uses the configured %i-minute increment", async (increment, step) => {
-    server.use(http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([]))));
+    server.use(http.get("/api/v2/booking-catalogue", () => HttpResponse.json(cataloguePage([]))));
     renderForm(
       <BookingForm
         mode="add"
@@ -206,7 +227,7 @@ describe("BookingForm", () => {
   it("rejects typed times that are off the configured grid", async () => {
     const user = userEvent.setup();
     const submit = vi.fn<(submission: BookingFormSubmission) => Promise<void>>().mockResolvedValue();
-    server.use(http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([]))));
+    server.use(http.get("/api/v2/booking-catalogue", () => HttpResponse.json(cataloguePage([]))));
     renderForm(
       <BookingForm
         mode="add"
@@ -224,8 +245,8 @@ describe("BookingForm", () => {
     await user.type(within(start).getByLabelText("booking:bookings.form.time"), "09:07");
     await user.type(within(end).getByLabelText("booking:bookings.form.time"), "10:00");
 
-    expect(screen.getByText("booking:bookings.errors.granularity")).toBeVisible();
     await user.click(screen.getByRole("button", { name: "booking:bookings.form.submit" }));
+    expect(screen.getByText("booking:bookings.errors.granularity")).toBeVisible();
     expect(submit).not.toHaveBeenCalled();
   });
 
@@ -233,7 +254,7 @@ describe("BookingForm", () => {
     const user = userEvent.setup();
     const cancel = vi.fn();
     const stateChanged = vi.fn();
-    server.use(http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([]))));
+    server.use(http.get("/api/v2/booking-catalogue", () => HttpResponse.json(cataloguePage([]))));
 
     renderForm(
       <BookingForm
@@ -272,7 +293,7 @@ describe("BookingForm", () => {
   });
 
   it("uses today in the selected item timezone when no Calendar date exists", async () => {
-    server.use(http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([]))));
+    server.use(http.get("/api/v2/booking-catalogue", () => HttpResponse.json(cataloguePage([]))));
     renderForm(
       <BookingForm
         mode="add"
@@ -294,46 +315,7 @@ describe("BookingForm", () => {
   it("clears repeated-hour choices when the item timezone changes", async () => {
     const user = userEvent.setup();
     const paris = { ...target, configurationId: 8, targetId: 124, globalId: "IN124", timezone: "Europe/Paris" };
-    server.use(
-      http.get("/api/v2/booking-configurations", () =>
-        HttpResponse.json(
-          collectionPage([
-            {
-              id: target.configurationId,
-              target: {
-                relationTo: "booking-instruments",
-                globalId: target.globalId,
-                value: { id: target.targetId, name: target.name, deleted: false },
-              },
-              timezone: target.timezone,
-              slotGranularityMinutes: target.slotGranularityMinutes,
-              openingStart: target.openingStart,
-              openingEnd: target.openingEnd,
-              bufferBeforeMinutes: target.bufferBeforeMinutes,
-              bufferAfterMinutes: target.bufferAfterMinutes,
-              maxBookingDurationMinutes: target.maxBookingDurationMinutes,
-              allowDoubleBooking: target.allowDoubleBooking,
-            },
-            {
-              id: paris.configurationId,
-              target: {
-                relationTo: "booking-instruments",
-                globalId: paris.globalId,
-                value: { id: paris.targetId, name: paris.name, deleted: false },
-              },
-              timezone: paris.timezone,
-              slotGranularityMinutes: paris.slotGranularityMinutes,
-              openingStart: paris.openingStart,
-              openingEnd: paris.openingEnd,
-              bufferBeforeMinutes: paris.bufferBeforeMinutes,
-              bufferAfterMinutes: paris.bufferAfterMinutes,
-              maxBookingDurationMinutes: paris.maxBookingDurationMinutes,
-              allowDoubleBooking: paris.allowDoubleBooking,
-            },
-          ]),
-        ),
-      ),
-    );
+    server.use(http.get("/api/v2/booking-catalogue", () => HttpResponse.json(cataloguePage([target, paris]))));
     renderForm(
       <BookingForm
         mode="add"
@@ -357,6 +339,7 @@ describe("BookingForm", () => {
     await user.click(options[1]);
 
     expect(screen.getByRole("radio", { name: "booking:bookings.form.earlierOccurrence" })).not.toBeChecked();
+    await user.click(screen.getByRole("button", { name: "booking:bookings.form.submit" }));
     expect(screen.getByText("booking:bookings.errors.occurrenceRequired")).toBeVisible();
   });
 
@@ -369,7 +352,7 @@ describe("BookingForm", () => {
           release = resolve;
         }),
     );
-    server.use(http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([]))));
+    server.use(http.get("/api/v2/booking-catalogue", () => HttpResponse.json(cataloguePage([]))));
     renderForm(
       <BookingForm
         mode="add"
@@ -398,7 +381,7 @@ describe("BookingForm", () => {
   it("shows the maximum and blocks an over-limit booking", async () => {
     const user = userEvent.setup();
     const submit = vi.fn<(submission: BookingFormSubmission) => Promise<void>>().mockResolvedValue();
-    server.use(http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([]))));
+    server.use(http.get("/api/v2/booking-catalogue", () => HttpResponse.json(cataloguePage([]))));
     renderForm(
       <BookingForm
         mode="add"
@@ -416,12 +399,14 @@ describe("BookingForm", () => {
     await user.type(within(start).getByLabelText("booking:bookings.form.time"), "09:00");
     await user.type(within(end).getByLabelText("booking:bookings.form.time"), "10:05");
 
-    expect(screen.getByText("booking:bookings.errors.maximumDuration")).toBeVisible();
     await user.click(screen.getByRole("button", { name: "booking:bookings.form.submit" }));
+    expect(screen.getByText("booking:bookings.errors.maximumDuration")).toBeVisible();
     expect(submit).not.toHaveBeenCalled();
   });
 
   it("warns about a past booking without blocking submission", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-08-17T12:00:00Z"));
     const user = userEvent.setup();
     const submit = vi.fn<(submission: BookingFormSubmission) => Promise<void>>().mockResolvedValue();
     const stateChanged = vi.fn();
@@ -431,7 +416,7 @@ describe("BookingForm", () => {
     const end = currentWallClock(pastEnd.toISOString(), "UTC");
     const clockTime = ({ minute }: { minute: number }) =>
       `${String(Math.floor(minute / 60)).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}`;
-    server.use(http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([]))));
+    server.use(http.get("/api/v2/booking-catalogue", () => HttpResponse.json(cataloguePage([]))));
 
     renderForm(
       <BookingForm
@@ -463,7 +448,7 @@ describe("BookingForm", () => {
   it("allows maintenance to span local dates", async () => {
     const user = userEvent.setup();
     const submit = vi.fn<(submission: BookingFormSubmission) => Promise<void>>().mockResolvedValue();
-    server.use(http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([]))));
+    server.use(http.get("/api/v2/booking-catalogue", () => HttpResponse.json(cataloguePage([]))));
 
     renderForm(
       <BookingForm

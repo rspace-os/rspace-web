@@ -10,6 +10,7 @@ import { DeleteBookingDialog } from "../DeleteBookingDialog";
 
 const cancelledBooking = {
   id: 41,
+  version: 1,
   target: {
     relationTo: "booking-instruments",
     value: { id: 12, name: "Scope", deleted: false },
@@ -23,6 +24,7 @@ const cancelledBooking = {
   purpose: null,
   bookedBy: "Ada Lovelace (ada)",
   canEdit: true,
+  canCancel: false,
   createdAt: "2026-08-17T00:00:00Z",
   updatedAt: "2026-08-17T00:00:00Z",
 } as const;
@@ -33,6 +35,7 @@ function renderDialog(onDeleted = vi.fn()) {
   const result = render(
     <DeleteBookingDialog
       bookingId={41}
+      bookingVersion={0}
       itemName="Confocal microscope"
       period="08:00–09:00"
       token="token"
@@ -59,7 +62,7 @@ describe("DeleteBookingDialog", () => {
     );
     renderDialog();
 
-    const trigger = screen.getByRole("button", { name: "booking:bookings.actions.delete" });
+    const trigger = screen.getByRole("button", { name: "booking:bookings.actions.cancel" });
     await user.click(trigger);
     await user.click(screen.getByRole("button", { name: "common:actions.cancel" }));
 
@@ -83,8 +86,8 @@ describe("DeleteBookingDialog", () => {
       }),
     );
     const { invalidate, onDeleted } = renderDialog();
-    await user.click(screen.getByRole("button", { name: "booking:bookings.actions.delete" }));
-    const confirm = screen.getByRole("button", { name: "common:actions.delete" });
+    await user.click(screen.getByRole("button", { name: "booking:bookings.actions.cancel" }));
+    const confirm = screen.getByRole("button", { name: "booking:bookings.actions.cancel" });
     const cancel = screen.getByRole("button", { name: "common:actions.cancel" });
     await user.click(confirm);
 
@@ -95,10 +98,11 @@ describe("DeleteBookingDialog", () => {
     expect(requests).toHaveLength(1);
 
     resolveRequest?.();
-    await screen.findByRole("button", { name: "booking:bookings.actions.delete" });
+    await screen.findByRole("button", { name: "booking:bookings.actions.cancel" });
     expect(await requests[0].json()).toEqual({ state: "CANCELLED" });
     expect(requests[0].method).toBe("PATCH");
     expect(requests[0].headers.get("Authorization")).toBe("Bearer token");
+    expect(requests[0].headers.get("If-Match")).toBe('"0"');
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ["api-v2", "bookings"] });
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ["api-v2", "bookings", 41] });
     expect(onDeleted).toHaveBeenCalledOnce();
@@ -107,6 +111,7 @@ describe("DeleteBookingDialog", () => {
   it.each([
     [403, "errors.api.v2.forbidden", "booking:bookings.errors.deleteForbidden"],
     [409, "errors.api.v2.booking.state.transition", "booking:bookings.errors.deleteStale"],
+    [412, "errors.api.v2.booking.concurrentModification", "booking:bookings.errors.deleteStale"],
   ])("shows local text for a %s cancellation failure", async (status, code, message) => {
     const user = userEvent.setup();
     server.use(
@@ -114,22 +119,26 @@ describe("DeleteBookingDialog", () => {
         HttpResponse.json({ status, code, detail: "Do not display this" }, { status }),
       ),
     );
-    renderDialog();
-    await user.click(screen.getByRole("button", { name: "booking:bookings.actions.delete" }));
-    await user.click(screen.getByRole("button", { name: "common:actions.delete" }));
+    const { invalidate } = renderDialog();
+    await user.click(screen.getByRole("button", { name: "booking:bookings.actions.cancel" }));
+    await user.click(screen.getByRole("button", { name: "booking:bookings.actions.cancel" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent(message);
     expect(screen.getByRole("alert")).not.toHaveTextContent("Do not display this");
     expect(screen.getByRole("alertdialog")).toBeVisible();
+    if (status !== 403) {
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: ["api-v2", "bookings"] });
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: ["api-v2", "bookings", 41] });
+    }
   });
 
   it("keeps an accessible dialog open after an unknown failure", async () => {
     const user = userEvent.setup();
     server.use(http.patch("/api/v2/bookings/41", () => HttpResponse.error()));
     renderDialog();
-    await user.click(screen.getByRole("button", { name: "booking:bookings.actions.delete" }));
+    await user.click(screen.getByRole("button", { name: "booking:bookings.actions.cancel" }));
     await expectAccessible(document.body);
-    await user.click(screen.getByRole("button", { name: "common:actions.delete" }));
+    await user.click(screen.getByRole("button", { name: "booking:bookings.actions.cancel" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("booking:bookings.errors.deleteGeneric");
     expect(screen.getByRole("alertdialog")).toBeVisible();

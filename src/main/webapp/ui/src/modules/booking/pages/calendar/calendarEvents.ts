@@ -11,6 +11,9 @@ const PageSchema = v.object({
   totalPages: v.number(),
 });
 
+export const CALENDAR_BOOKING_FIELDS =
+  "id,target,requesterId,canViewConfiguration,timezone,start,end,state,kind,purpose,bookedBy,createdBy,privacy,canEdit,createdAt,updatedAt";
+
 async function fetchPage(
   start: string,
   end: string,
@@ -26,8 +29,7 @@ async function fetchPage(
     page: String(page),
     limit: "100",
     depth: "1",
-    "fields[bookings]":
-      "id,target,requesterId,timezone,start,end,state,kind,purpose,bookedBy,createdBy,privacy,canEdit,createdAt,updatedAt",
+    "fields[bookings]": CALENDAR_BOOKING_FIELDS,
   });
   const response = await fetch(`/api/v2/bookings?${parameters}`, {
     headers: { Authorization: `Bearer ${token}`, "X-Requested-With": "XMLHttpRequest" },

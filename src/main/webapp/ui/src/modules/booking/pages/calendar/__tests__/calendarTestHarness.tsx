@@ -35,9 +35,11 @@ const target = (id: number, name: string, location?: { name: string; globalId: s
 });
 
 const timestamps = {
+  version: 0,
   kind: "BOOKING" as const,
   createdAt: "2026-08-01T09:00:00Z",
   updatedAt: "2026-08-01T09:00:00Z",
+  canCancel: false,
 };
 
 export const ownBooking: BookingListDocument = {

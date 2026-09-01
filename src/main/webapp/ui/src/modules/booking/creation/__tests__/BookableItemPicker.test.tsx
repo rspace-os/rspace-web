@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { describe, expect, it } from "vitest";
@@ -7,31 +7,42 @@ import { server } from "@/__tests__/mswServer";
 import { DEFAULT_SCHEDULING_SETTINGS } from "@/modules/booking/configuration/schedulingSettings";
 import { BookableItemPicker, loadBookableItems } from "../BookableItemPicker";
 
-function envelope(docs: unknown[], page = 1, totalPages = 1) {
+function cataloguePage(items: unknown[], page = 1, total = items.length) {
   return {
-    docs,
-    totalDocs: totalPages > 1 ? 21 : docs.length,
-    limit: 20,
+    items,
     page,
-    pagingCounter: (page - 1) * 20 + 1,
-    totalPages,
-    hasPrevPage: page > 1,
-    hasNextPage: page < totalPages,
-    prevPage: page > 1 ? page - 1 : null,
-    nextPage: page < totalPages ? page + 1 : null,
+    pageSize: 20,
+    total,
+    facets: { types: ["INSTRUMENT"] },
   };
 }
 
 function configuration(id: number, name: string) {
   return {
-    id,
-    target: {
-      relationTo: "booking-instruments",
-      globalId: `IN${id}`,
-      value: { id, name, deleted: false },
-    },
+    configurationId: id,
+    configurationVersion: 0,
+    targetType: "INSTRUMENT",
+    targetId: id,
+    globalId: `IN${id}`,
+    name,
     timezone: "Europe/Berlin",
     ...DEFAULT_SCHEDULING_SETTINGS,
+    effectiveRole: "BOOKER",
+    capabilities: {
+      canEditConfiguration: false,
+      canArchiveConfiguration: false,
+      canViewAudit: false,
+      canViewAccess: false,
+      canManageAssignments: false,
+      canManageOwners: false,
+      canCreateBooking: true,
+      canManageOwnBookings: true,
+      canManageAllEvents: false,
+      canCreateBlockout: false,
+      canSubscribeCalendar: true,
+      canLeaveConfiguration: false,
+    },
+    location: null,
   };
 }
 
@@ -48,18 +59,17 @@ describe("BookableItemPicker", () => {
   it("always applies enabled and resolves an exact global ID", async () => {
     let requestUrl: URL | undefined;
     server.use(
-      http.get("/api/v2/booking-configurations", ({ request }) => {
+      http.get("/api/v2/booking-catalogue", ({ request }) => {
         requestUrl = new URL(request.url);
-        return HttpResponse.json(envelope([configuration(12, "Scope")]));
+        return HttpResponse.json(cataloguePage([configuration(12, "Scope")]));
       }),
     );
 
     const page = await loadBookableItems({ target: "IN12" }, "token", new AbortController().signal);
 
-    expect(requestUrl?.searchParams.get("where")).toBe("enabled==true;target==IN12");
-    expect(requestUrl?.searchParams.get("fields[booking-configurations]")).toBe(
-      "id,target,timezone,slotGranularityMinutes,openingStart,openingEnd,bufferBeforeMinutes,bufferAfterMinutes,maxBookingDurationMinutes,allowDoubleBooking",
-    );
+    expect(requestUrl?.searchParams.get("target")).toBe("IN12");
+    expect(requestUrl?.searchParams.get("page")).toBe("1");
+    expect(requestUrl?.searchParams.get("limit")).toBe("20");
     expect(page.options[0]).toEqual({
       configurationId: 12,
       targetId: 12,
@@ -70,19 +80,19 @@ describe("BookableItemPicker", () => {
     });
   });
 
-  it("debounces search and loads every result page", async () => {
+  it("debounces search and pages through results on demand", async () => {
     const pages: string[] = [];
     server.use(
-      http.get("/api/v2/booking-configurations", ({ request }) => {
+      http.get("/api/v2/booking-catalogue", ({ request }) => {
         const url = new URL(request.url);
         const page = url.searchParams.get("page") ?? "1";
-        const where = url.searchParams.get("where") ?? "";
-        if (!where.includes("confocal")) return HttpResponse.json(envelope([]));
+        const query = url.searchParams.get("q") ?? "";
+        if (query !== "confocal") return HttpResponse.json(cataloguePage([]));
         pages.push(page);
         return HttpResponse.json(
           page === "1"
-            ? envelope([configuration(1, "Confocal A")], 1, 2)
-            : envelope([configuration(2, "Confocal B")], 2, 2),
+            ? cataloguePage([configuration(1, "Confocal A")], 1, 21)
+            : cataloguePage([configuration(2, "Confocal B")], 2, 21),
         );
       }),
     );
@@ -91,13 +101,13 @@ describe("BookableItemPicker", () => {
 
     await user.type(screen.getByRole("combobox", { name: "booking:bookings.form.item" }), "confocal");
 
-    const options = await screen.findAllByRole("option", { name: "booking:bookings.form.itemOption" });
-    expect(options).toHaveLength(2);
-    expect(pages).toEqual(["1", "2"]);
+    expect(await screen.findByRole("option", { name: "booking:bookings.form.itemOption" })).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "booking:bookings.form.nextItems" }));
+    await waitFor(() => expect(pages).toEqual(["1", "2"]));
   });
 
   it("shows failure without inventing an option and honors cancellation", async () => {
-    server.use(http.get("/api/v2/booking-configurations", () => HttpResponse.json({}, { status: 500 })));
+    server.use(http.get("/api/v2/booking-catalogue", () => HttpResponse.json({}, { status: 500 })));
     const user = userEvent.setup();
     renderPicker();
     await user.click(screen.getByRole("button", { name: "booking:bookings.form.itemChoose" }));
@@ -109,7 +119,7 @@ describe("BookableItemPicker", () => {
   });
 
   it("shows a localized empty state", async () => {
-    server.use(http.get("/api/v2/booking-configurations", () => HttpResponse.json(envelope([]))));
+    server.use(http.get("/api/v2/booking-catalogue", () => HttpResponse.json(cataloguePage([]))));
     const user = userEvent.setup();
     renderPicker();
 
@@ -123,9 +133,9 @@ describe("BookableItemPicker", () => {
       finishRequest = resolve;
     });
     server.use(
-      http.get("/api/v2/booking-configurations", async () => {
+      http.get("/api/v2/booking-catalogue", async () => {
         await requestPending;
-        return HttpResponse.json(envelope([]));
+        return HttpResponse.json(cataloguePage([]));
       }),
     );
     renderPicker();

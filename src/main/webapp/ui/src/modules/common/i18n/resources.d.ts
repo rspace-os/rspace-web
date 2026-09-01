@@ -773,6 +773,10 @@ export default interface Resources {
           "description": "Can manage configuration, events, and non-owner access.",
           "label": "Manager"
         },
+        "noAccess": {
+          "description": "Does not grant public access. Direct user and group access still applies.",
+          "label": "No access"
+        },
         "owner": {
           "description": "Full control, including Owners and archiving.",
           "label": "Owner"
@@ -799,6 +803,10 @@ export default interface Resources {
       "fields": {
         "actions": "Actions"
       },
+      "filters": {
+        "location": "Location",
+        "locationOption": "{name} ({globalId})"
+      },
       "jumpToDate": "Jump to date",
       "plural": "All Bookable Items",
       "quickFilters": {
@@ -813,6 +821,17 @@ export default interface Resources {
       "singular": "Bookable item",
       "title": "All Bookable Items",
       "toolbar": "All Bookable Items controls"
+    },
+    "archived": {
+      "description": "This booking configuration is archived. New bookings, edits, access changes, and calendar links are unavailable until it is restored.",
+      "error": "This archived booking configuration is not available.",
+      "futureBookings": "Future bookings",
+      "loading": "Loading archived booking configuration.",
+      "noFutureBookings": "There are no future bookings to manage.",
+      "subscriptionInactive": "The item calendar subscription is inactive.",
+      "unarchive": "Unarchive",
+      "unarchiveError": "The configuration could not be unarchived. Refresh and try again.",
+      "unknownItem": "Archived booking configuration"
     },
     "availabilityBar": {
       "current": {
@@ -849,6 +868,17 @@ export default interface Resources {
       "timezone": "Time zone: {timezone}"
     },
     "bookableItemDetails": {
+      "actions": {
+        "archive": "Archive bookable item",
+        "createBooking": "Create booking",
+        "leave": "Leave configuration"
+      },
+      "archiveDialog": {
+        "confirm": "Archive",
+        "description": "Archive {item}? Existing bookings remain in the audit history.",
+        "error": "Could not archive this bookable item. Try again.",
+        "title": "Archive bookable item?"
+      },
       "audit": {
         "apply": "Load audit events",
         "conflict": {
@@ -963,6 +993,11 @@ export default interface Resources {
         "timezone": "Timezone",
         "updatedAt": "Last updated"
       },
+      "leaveDialog": {
+        "description": "Your direct access will be removed. Access inherited through a group or All users is not affected.",
+        "error": "Could not leave this configuration.",
+        "title": "Leave this booking configuration?"
+      },
       "loading": "Loading bookable item.",
       "minutes": "{count, plural, one {# minute} other {# minutes}}",
       "no": "No",
@@ -987,9 +1022,11 @@ export default interface Resources {
     },
     "bookableItems": {
       "actions": {
+        "access": "Manage access for {item}",
         "add": "Add",
         "delete": "Delete {item}",
         "edit": "Edit {item}",
+        "repairAccess": "Repair access for {item}",
         "save": "Save changes",
         "submit": "Submit",
         "viewDetails": "View details for {item}",
@@ -1038,10 +1075,15 @@ export default interface Resources {
         "updatedAt": "Last updated"
       },
       "ownerHealth": {
+        "error": "Could not find bookable items needing an owner.",
+        "filter": "Owner attention needed",
+        "filters": "Owner health filters",
+        "loading": "Finding bookable items needing an owner…",
         "needsOwner": "Owner needed"
       },
       "plural": "Bookable Items",
       "singular": "Bookable item",
+      "staleEdit": "This configuration changed while you were editing. Your draft is preserved; review the server-changed fields below before saving again.",
       "targetSearch": {
         "error": "Eligible instruments could not be searched.",
         "label": "Instrument",
@@ -1051,6 +1093,7 @@ export default interface Resources {
     },
     "bookings": {
       "actions": {
+        "cancel": "Cancel booking",
         "createEvent": "Create calendar event",
         "delete": "Delete booking",
         "edit": "Edit",
@@ -1059,6 +1102,10 @@ export default interface Resources {
         "newMaintenance": "New Maintenance Event"
       },
       "addTitle": "Add Booking",
+      "cancelDialog": {
+        "description": "Cancel the {itemName} booking for {period}? The cancelled event remains in the audit history.",
+        "title": "Cancel booking?"
+      },
       "compact": {
         "bookingDescription": "Choose a bookable item and time for the new booking.",
         "bookingTitle": "New Booking",
@@ -1076,9 +1123,9 @@ export default interface Resources {
       "editTitle": "Edit Booking",
       "errors": {
         "concurrentModification": "This event changed while you were editing it. Review the latest details and try again.",
-        "deleteForbidden": "You no longer have permission to delete this booking.",
-        "deleteGeneric": "RSpace could not delete the booking. Try again.",
-        "deleteStale": "This booking is no longer editable.",
+        "deleteForbidden": "You no longer have permission to cancel this booking.",
+        "deleteGeneric": "RSpace could not cancel the booking. Try again.",
+        "deleteStale": "This booking can no longer be cancelled.",
         "duration": "Bookings may not exceed 366 days.",
         "endAfterStart": "The end must be after the start.",
         "forbidden": "You cannot edit this booking.",
@@ -1108,19 +1155,23 @@ export default interface Resources {
         "itemChoose": "Choose a bookable item",
         "itemNone": "No bookable items found",
         "itemOption": "{name} ({globalId}) — {timezone}",
+        "itemPage": "Page {page, number} of {total, number}",
         "itemResults": "Bookable item results",
         "itemSearch": "Search bookable items",
         "laterOccurrence": "Later occurrence ({offset})",
         "maximumDuration": "Maximum booking duration: {count, number} minutes",
         "moreOptions": "More options",
+        "nextItems": "Next",
         "notes": "Notes",
         "notesCount": "{count, number}/1,000 characters",
         "occurrence": "Repeated local time",
         "openItem": "Open {globalId}",
         "openingHours": "Opening hours: {start}–{end}",
+        "previousItems": "Previous",
         "purpose": "Purpose",
         "purposeCount": "{count, number}/1,000 characters",
         "returnToCalendar": "Return to Calendar",
+        "returnToMyBookings": "Return to My Bookings",
         "save": "Save changes",
         "schedulingTimezone": "Opening hours are enforced in {timezone}.",
         "start": "Start",
@@ -1254,6 +1305,7 @@ export default interface Resources {
     },
     "myBookings": {
       "actions": {
+        "edit": "Edit",
         "label": "Actions",
         "viewDetails": "View details"
       },
@@ -1286,6 +1338,7 @@ export default interface Resources {
         "readOnly": "Read-only: you no longer have access to this item."
       },
       "singular": "Booking",
+      "timezone": "Times are shown in {timezone}.",
       "title": "My Bookings"
     },
     "preferences": {
@@ -1349,6 +1402,9 @@ export default interface Resources {
         "addNamed": "Add {name}",
         "addUserOrGroup": "Add user or group",
         "description": "New bookable items grant the Booker role using this choice. Existing items are unchanged.",
+        "error": "Users and groups could not be searched.",
+        "loading": "Searching users and groups…",
+        "noResults": "No matching users or groups.",
         "options": {
           "ALL_USERS": {
             "description": "Everyone, including future users, can create bookings.",
@@ -2134,17 +2190,40 @@ export default interface Resources {
       "search": "Search by name or global ID"
     },
     "resourceAccess": {
+      "actions": "Actions",
       "addNamed": "Add {name}",
       "addUserOrGroup": "Add user or group",
+      "assignmentCount": "{count, number} of {limit, number} named assignments",
+      "assignmentLimitError": "This resource already has the maximum of 100 named assignments.",
       "assignments": "Access assignments",
       "cancelled": "Unsaved access changes were cancelled.",
       "conflict": "Access changed elsewhere. Your draft has been kept. Review the latest assignments before saving again.",
+      "conflictCount": "Access changed elsewhere. Resolve {count, plural, one {this conflict} other {these # conflicts}} before saving.",
+      "conflictMerged": "Independent access changes were merged into your draft. Review and save again.",
+      "conflictRefreshError": "The latest access could not be loaded. Try again before reviewing your draft.",
       "conflictTitle": "Access changed",
       "directRole": "Direct role",
+      "keepMine": "Keep mine",
+      "kind": {
+        "group": "Group",
+        "user": "User"
+      },
+      "lastOwner": "Add another {role} first.",
+      "latestSaved": "Latest saved access",
+      "leaveConfirm": "You will lose access to this resource. Access you inherit through a group or audience is not affected.",
       "leaveError": "Could not leave this resource.",
+      "leaveSelf": "Leave: remove your own access",
       "loadError": "Access could not be loaded.",
       "loading": "Loading access.",
+      "noGrantees": "No matching user or group.",
+      "ownerInvariant": "At least one {role} must remain.",
+      "ownerOnly": "Only an {role} can change this.",
+      "refreshingLatest": "Loading latest access…",
+      "remove": "Remove",
       "removeNamed": "Remove {name}",
+      "restore": "Restore",
+      "restoreNamed": "Restore {name}",
+      "retryLatest": "Retry loading latest",
       "reviewLatest": "Review latest",
       "roleFor": "Direct role for {name}",
       "saveChanges": "Save changes",
@@ -2152,11 +2231,29 @@ export default interface Resources {
       "saved": "Access changes saved.",
       "saving": "Saving access changes.",
       "search": "Search",
+      "searchAssigned": "Search assigned users and groups",
       "searchError": "Users and groups could not be searched.",
+      "searchHint": "Type at least {count} characters.",
+      "searchPlaceholder": "Search users and groups…",
       "searchResults": "User and group search results",
+      "searching": "Searching…",
+      "showGrantees": "Show matching users and groups",
+      "staged": {
+        "added": "Staged: added as {role}",
+        "changed": "Staged: {from} to {to}",
+        "removed": "Staged: removal"
+      },
       "stagedAdd": "Added {name} to the access draft.",
       "unavailable": "Unavailable",
-      "unsaved": "Access changes are not yet saved."
+      "unavailableGroup": "Unavailable group",
+      "unavailableUser": "Unavailable user",
+      "unsaved": "Access changes are not yet saved.",
+      "unsavedChanges": "Unsaved changes",
+      "useLatest": "Use latest",
+      "userOrGroup": "User/Group",
+      "viewOnly": "View only.",
+      "you": "You",
+      "yourDraft": "Your draft"
     },
     "search": {
       "clearTooltip": "Clear search",
@@ -4658,9 +4755,10 @@ export default interface Resources {
     "instrument": {
       "booking": {
         "configured": {
-          "action": "Go to booking page",
-          "description": "Go to Booking to see availability and make a booking.",
-          "title": "This instrument can be booked"
+          "book": "Book",
+          "description": "Open Booking to view this instrument's calendar and booking configuration.",
+          "open": "Open booking page",
+          "title": "Booking configured"
         },
         "notConfigured": {
           "action": "Set up booking",
@@ -5261,6 +5359,12 @@ export default interface Resources {
         }
       },
       "controls": {
+        "bookable": {
+          "any": "Any",
+          "label": "Bookable",
+          "no": "Not bookable",
+          "yes": "Bookable"
+        },
         "nameDialog": {
           "duplicateName": "This name is already taken. Please modify it.",
           "helperText": "Please enter a unique name, no longer than 32 characters.",
@@ -5360,6 +5464,7 @@ export default interface Resources {
       "parameterChips": {
         "basket": "Basket: {basket}",
         "benchOwner": "Bench Owner: {owner}",
+        "bookable": "Bookable: {value}",
         "contentsOf": "Contents of: {globalId}",
         "owner": "Owner: {owner}",
         "status": "Status: {status}",
@@ -6445,6 +6550,10 @@ export default interface Resources {
             },
             "window": "End time must be after start time."
           },
+          "bookingCalendar": {
+            "ifMatchRequired": "The current calendar subscription version is required.",
+            "subscriptionConflict": "The calendar subscription changed. Refresh it and try again."
+          },
           "bookingConfiguration": {
             "buffer": {
               "invalid": "Booking buffers must be between 0 and 10,080 minutes."
@@ -6520,6 +6629,7 @@ export default interface Resources {
           },
           "requestRejected": "The request could not be processed.",
           "resourceAccess": {
+            "assignmentLimit": "A resource can have at most 100 named user or group assignments.",
             "duplicateGrantee": "Each user or group can have only one direct role.",
             "forbidden": "You do not have permission to manage access to this resource.",
             "ifMatchRequired": "The current access version is required.",
@@ -6800,6 +6910,11 @@ export default interface Resources {
     "requestType": {
       "passwordReminder": "password reminder",
       "usernameReminder": "username reminder"
+    },
+    "resourceAccess": {
+      "audiences": {
+        "allUsers": "All users"
+      }
     },
     "resourceType": {
       "community": "Community",

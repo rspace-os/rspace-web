@@ -28,10 +28,6 @@ import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.UserBookingCalendarSubscription;
-import com.researchspace.model.collection.RelationshipReadAccess;
-import com.researchspace.model.collection.ResourcePage;
-import com.researchspace.model.collection.ResourceRegistry;
-import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.resourceaccess.ResourceAccess;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.FeatureFlagManager;
@@ -101,6 +97,7 @@ class BookingCalendarManagerTest {
         .thenAnswer(invocation -> invocation.getArgument(0));
     when(userSubscriptionDao.saveAndFlush(any(UserBookingCalendarSubscription.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
+    when(userSubscriptionDao.lockUser(owner.getId())).thenReturn(owner);
 
     manager =
         new BookingCalendarManagerImpl(
@@ -165,7 +162,8 @@ class BookingCalendarManagerTest {
 
   @Test
   void userSubscriptionCreatesOnePrivateFeedForAllBookings() {
-    BookingCalendarManager.Created created = manager.createOrRotateUser(owner, owner);
+    BookingCalendarManager.Created created =
+        manager.createOrRotateUser(owner, owner, "\"inactive\"");
 
     ArgumentCaptor<UserBookingCalendarSubscription> saved =
         ArgumentCaptor.forClass(UserBookingCalendarSubscription.class);
@@ -265,6 +263,18 @@ class BookingCalendarManagerTest {
     verify(subscriptionDao, times(2))
         .removeForUserAndConfiguration(owner.getId(), CONFIGURATION_ID);
     verify(subscriptionDao, never()).deleteByConfigurationId(any());
+  }
+
+  @Test
+  void revokeConcealsAConfigurationTheCallerCannotRead() {
+    when(accessManager.resolve(configuration.getResourceAccess(), owner))
+        .thenReturn(ResolvedResourceAccess.none());
+
+    assertThrows(
+        BookingCalendarManagerImpl.BookingCalendarNotFoundException.class,
+        () -> manager.revoke(CONFIGURATION_ID, owner, owner));
+
+    verify(subscriptionDao, never()).removeForUserAndConfiguration(owner.getId(), CONFIGURATION_ID);
   }
 
   @Test

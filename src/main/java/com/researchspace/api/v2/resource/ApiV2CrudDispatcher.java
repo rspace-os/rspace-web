@@ -217,12 +217,16 @@ public final class ApiV2CrudDispatcher<T, ID> {
   }
 
   public Map<String, Object> update(
-      ID id, ParsedDocument document, ApiV2Caller caller, FieldSelection selection) {
+      ID id,
+      ParsedDocument document,
+      Long expectedVersion,
+      ApiV2Caller caller,
+      FieldSelection selection) {
     return invoke(
         ResourceOperation.UPDATE,
         () ->
             operations
-                .update(id, document, caller)
+                .update(id, document, expectedVersion, caller)
                 .map(resource -> document(resource, selection, targetResolver(caller.subject())))
                 .orElseThrow(NotFoundException::new));
   }

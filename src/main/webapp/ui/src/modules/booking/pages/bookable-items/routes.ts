@@ -1,6 +1,7 @@
 import { type AnyRoute, createRoute } from "@tanstack/react-router";
 import { createLoader, parseAsBoolean, parseAsStringLiteral } from "nuqs";
 import AddBookableItemPage from "./AddBookableItemPage";
+import ArchivedBookableItemPage from "./ArchivedBookableItemPage";
 import BookableItemPage from "./BookableItemPage";
 import BookableItemsPage from "./BookableItemsPage";
 import BookingSettingsPage from "./BookingSettingsPage";
@@ -25,6 +26,9 @@ export function createAddBookableItemRoute<TParentRoute extends AnyRoute>(bookin
   return createRoute({
     getParentRoute: () => bookingRoute,
     path: "/bookable-items/add",
+    validateSearch: (search: Record<string, unknown>): { target?: string } => ({
+      ...(typeof search.target === "string" && /^IN\d+$/.test(search.target) ? { target: search.target } : {}),
+    }),
     component: AddBookableItemPage,
   });
 }
@@ -63,5 +67,13 @@ export function createBookableItemRoute<TParentRoute extends AnyRoute>(bookingRo
     path: "/bookable-items/$globalId",
     validateSearch: bookableItemSearch,
     component: BookableItemPage,
+  });
+}
+
+export function createArchivedBookableItemRoute<TParentRoute extends AnyRoute>(bookingRoute: TParentRoute) {
+  return createRoute({
+    getParentRoute: () => bookingRoute,
+    path: "/bookable-items/archived/$id",
+    component: ArchivedBookableItemPage,
   });
 }

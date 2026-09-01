@@ -1,6 +1,5 @@
 package com.researchspace.service.resourceaccess;
 
-import com.researchspace.dao.resourceaccess.ResourceAccessDirectoryDao;
 import com.researchspace.model.User;
 import com.researchspace.model.resourceaccess.ResourceAccess;
 import java.util.List;
@@ -13,11 +12,11 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class ResourceAccessDirectoryManagerImpl implements ResourceAccessDirectoryManager {
 
-  private final ResourceAccessDirectoryDao directory;
+  private final ResourceAccessDirectoryPolicy directory;
   private final ResourceAccessManager accessManager;
 
   public ResourceAccessDirectoryManagerImpl(
-      ResourceAccessDirectoryDao directory, ResourceAccessManager accessManager) {
+      ResourceAccessDirectoryPolicy directory, ResourceAccessManager accessManager) {
     this.directory = directory;
     this.accessManager = accessManager;
   }
@@ -25,6 +24,9 @@ public class ResourceAccessDirectoryManagerImpl implements ResourceAccessDirecto
   @Override
   public <T, ID> List<ResourceGranteeDirectoryEntry> searchForResource(
       ProtectedResourceAccess<T, ID> resource, ID id, String query, int limit, User subject) {
+    if (!resource.featureEnabled(subject)) {
+      throw new ResourceAccessException(ResourceAccessException.Reason.NOT_FOUND);
+    }
     T protectedEntity =
         resource
             .find(id)

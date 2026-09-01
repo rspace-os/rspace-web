@@ -13,6 +13,7 @@ import {
 
 const document = {
   id: 41,
+  version: 0,
   target: {
     relationTo: "booking-instruments",
     value: { id: 12, name: "Scope", deleted: false },
@@ -26,6 +27,7 @@ const document = {
   purpose: null,
   bookedBy: "Ada Lovelace (ada)",
   canEdit: true,
+  canCancel: true,
   createdAt: "2026-08-17T00:00:00Z",
   updatedAt: "2026-08-17T00:00:00Z",
 };
@@ -63,7 +65,7 @@ describe("booking API", () => {
       },
       "token",
     );
-    await updateBooking(41, { start: document.start, end: document.end, purpose: "Plate" }, "token");
+    await updateBooking(41, 0, { start: document.start, end: document.end, purpose: "Plate" }, "token");
 
     expect(
       requests.map((request) => [request.method, request.url.pathname, request.url.searchParams.get("depth")]),
@@ -80,12 +82,13 @@ describe("booking API", () => {
     });
     expect(requests[2].body).toEqual({ start: document.start, end: document.end, purpose: "Plate" });
     expect(requests[0].url.searchParams.get("fields[bookings]")).toBe(
-      "id,target,timezone,start,end,state,kind,purpose,bookedBy,createdBy,privacy,canEdit,createdAt,updatedAt",
+      "id,version,target,canViewConfiguration,timezone,start,end,state,kind,purpose,bookedBy,createdBy,privacy,canEdit,canCancel,createdAt,updatedAt",
     );
+    expect(requests[2].url.pathname).toBe("/api/v2/bookings/41");
   });
 
   it("rejects malformed success data and exposes stable problem codes", async () => {
-    server.use(http.get("/api/v2/bookings/41", () => HttpResponse.json({ ...document, bookedBy: null })));
+    server.use(http.get("/api/v2/bookings/41", () => HttpResponse.json({ ...document, target: null })));
     await expect(fetchBooking(41, "token")).rejects.toThrow();
 
     server.use(
@@ -128,13 +131,14 @@ describe("booking API", () => {
       }),
     );
 
-    const result = await cancelBooking(41, "token");
+    const result = await cancelBooking(41, 0, "token");
 
     expect(request?.method).toBe("PATCH");
     expect(new URL(request?.url ?? "http://localhost").searchParams.get("depth")).toBe("1");
     expect(await request?.json()).toEqual({ state: "CANCELLED" });
     expect(request?.headers.get("Authorization")).toBe("Bearer token");
     expect(request?.headers.get("X-Requested-With")).toBe("XMLHttpRequest");
+    expect(request?.headers.get("If-Match")).toBe('"0"');
     expect(result.state).toBe("CANCELLED");
   });
 
@@ -148,7 +152,7 @@ describe("booking API", () => {
       ),
     );
 
-    await expect(cancelBooking(41, "token")).rejects.toEqual(
+    await expect(cancelBooking(41, 0, "token")).rejects.toEqual(
       expect.objectContaining({ status: 409, code: "errors.api.v2.booking.state.transition" }),
     );
   });

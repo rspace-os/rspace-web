@@ -1,5 +1,5 @@
 import { Temporal } from "@js-temporal/polyfill";
-import { useEffect, useMemo } from "react";
+import { useEffect, useId, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
   type BookingWindowDraft,
@@ -59,6 +59,7 @@ export function ZonedBookingWindowFields({
   allowPolicyMismatch = false,
   disabled = false,
   density = "comfortable",
+  showErrors = true,
 }: {
   displayTimezone?: string;
   schedulingTimezone?: string;
@@ -75,8 +76,11 @@ export function ZonedBookingWindowFields({
   allowPolicyMismatch?: boolean;
   disabled?: boolean;
   density?: "comfortable" | "compact";
+  showErrors?: boolean;
 }) {
   const { t } = useTranslation("booking");
+  const fieldId = `booking-window-${useId()}`;
+  const windowErrorId = `${fieldId}-errors`;
   const resolvedDisplayTimezone = displayTimezone ?? timezone ?? "UTC";
   const resolvedSchedulingTimezone = schedulingTimezone ?? timezone ?? resolvedDisplayTimezone;
   const result = useMemo(() => resolveBookingWindow(value, resolvedDisplayTimezone), [resolvedDisplayTimezone, value]);
@@ -117,37 +121,52 @@ export function ZonedBookingWindowFields({
     const dateKey = `${name}Date` as const;
     const timeKey = `${name}Time` as const;
     const occurrenceKey = `${name}Occurrence` as const;
+    const endpointInvalid =
+      endpointResolution?.kind === "nonexistent" ||
+      (endpointResolution?.kind === "ambiguous" && !occurrence) ||
+      (name === "end" && result.orderInvalid) ||
+      policyInvalid;
+    const endpointErrorId = `${fieldId}-${name}-error`;
+    const dateId = `${fieldId}-${name}-date`;
+    const timeId = `${fieldId}-${name}-time`;
+    const describedBy = showErrors && endpointInvalid ? `${endpointErrorId} ${windowErrorId}` : undefined;
     return (
       <FieldSet>
         <FieldLegend>{t(`bookings.form.${name}`)}</FieldLegend>
         <div className={cn("grid sm:grid-cols-2", density === "compact" ? "gap-2" : "gap-4")}>
           <div className="space-y-2">
-            <Label htmlFor={`booking-${name}-date`}>{t("bookings.form.date")}</Label>
+            <Label htmlFor={dateId}>{t("bookings.form.date")}</Label>
             <Input
-              id={`booking-${name}-date`}
+              id={dateId}
               aria-label={t(`bookings.form.${name}Date`)}
               type="date"
               required
+              aria-invalid={showErrors && endpointInvalid ? true : undefined}
+              aria-describedby={describedBy}
               disabled={disabled}
               value={value[dateKey]}
               onChange={(event) => change({ [dateKey]: event.currentTarget.value, [occurrenceKey]: undefined })}
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor={`booking-${name}-time`}>{t("bookings.form.time")}</Label>
+            <Label htmlFor={timeId}>{t("bookings.form.time")}</Label>
             <Input
-              id={`booking-${name}-time`}
+              id={timeId}
               aria-label={t(`bookings.form.${name}Time`)}
               type="time"
               step={slotGranularityMinutes * 60}
               required
+              aria-invalid={showErrors && endpointInvalid ? true : undefined}
+              aria-describedby={describedBy}
               disabled={disabled}
               value={value[timeKey]}
               onChange={(event) => change({ [timeKey]: event.currentTarget.value, [occurrenceKey]: undefined })}
             />
           </div>
         </div>
-        {endpointResolution?.kind === "nonexistent" && <FieldError>{t("bookings.errors.nonexistentTime")}</FieldError>}
+        {showErrors && endpointResolution?.kind === "nonexistent" && (
+          <FieldError id={endpointErrorId}>{t("bookings.errors.nonexistentTime")}</FieldError>
+        )}
         {endpointResolution?.kind === "ambiguous" && (
           <fieldset className="space-y-2">
             <legend className="text-sm font-medium">{t("bookings.form.occurrence")}</legend>
@@ -155,9 +174,11 @@ export function ZonedBookingWindowFields({
               <Label key={choice} className="flex items-center gap-2">
                 <input
                   type="radio"
-                  name={`booking-${name}-occurrence`}
+                  name={`${fieldId}-${name}-occurrence`}
                   disabled={disabled}
                   checked={occurrence === choice}
+                  aria-invalid={showErrors && !occurrence ? true : undefined}
+                  aria-describedby={showErrors && !occurrence ? endpointErrorId : undefined}
                   onChange={() => change({ [occurrenceKey]: choice })}
                 />
                 {t(`bookings.form.${choice}Occurrence`, {
@@ -165,7 +186,9 @@ export function ZonedBookingWindowFields({
                 })}
               </Label>
             ))}
-            {!occurrence && <FieldError>{t("bookings.errors.occurrenceRequired")}</FieldError>}
+            {showErrors && !occurrence && (
+              <FieldError id={endpointErrorId}>{t("bookings.errors.occurrenceRequired")}</FieldError>
+            )}
           </fieldset>
         )}
       </FieldSet>
@@ -184,12 +207,16 @@ export function ZonedBookingWindowFields({
       )}
       {endpoint("start", result.start, value.startOccurrence)}
       {endpoint("end", result.end, value.endOccurrence)}
-      {result.orderInvalid && <FieldError>{t("bookings.errors.endAfterStart")}</FieldError>}
-      {granularityInvalid && !allowPolicyMismatch && <FieldError>{t("bookings.errors.granularity")}</FieldError>}
-      {openingInvalid && !allowPolicyMismatch && <FieldError>{t("bookings.errors.openingHours")}</FieldError>}
-      {maximumDurationInvalid && !allowPolicyMismatch && (
-        <FieldError>{t("bookings.errors.maximumDuration")}</FieldError>
-      )}
+      {showErrors ? (
+        <div id={windowErrorId}>
+          {result.orderInvalid && <FieldError>{t("bookings.errors.endAfterStart")}</FieldError>}
+          {granularityInvalid && !allowPolicyMismatch && <FieldError>{t("bookings.errors.granularity")}</FieldError>}
+          {openingInvalid && !allowPolicyMismatch && <FieldError>{t("bookings.errors.openingHours")}</FieldError>}
+          {maximumDurationInvalid && !allowPolicyMismatch && (
+            <FieldError>{t("bookings.errors.maximumDuration")}</FieldError>
+          )}
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -232,13 +232,13 @@ export function AvailabilityBar({
           <time dateTime={new Date(end).toISOString()}>{timeFormatter.format(end)}</time>
         </div>
       )}
-      <div className="relative min-h-4 w-full">
+      <div className="relative min-h-6 w-full">
         <div
           role="img"
           aria-label={t("availabilityBar.label", { itemName })}
           aria-describedby={descriptionId}
           data-slot="availability-bar"
-          className="relative min-h-4 w-full"
+          className="relative min-h-6 w-full"
         >
           <div
             aria-hidden="true"

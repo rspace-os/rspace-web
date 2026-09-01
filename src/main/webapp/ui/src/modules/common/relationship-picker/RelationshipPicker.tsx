@@ -1,9 +1,6 @@
 import { type FocusEventHandler, type Ref, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type {
-  RelationshipOption,
-  RelationshipOptionAvailabilitySource,
-} from "@/modules/common/collection-form/RenderFields.types";
+import type { RelationshipOptionAvailabilitySource } from "@/modules/common/collection-form/RenderFields.types";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import {
   Combobox,
@@ -24,7 +21,7 @@ import {
   useRelationshipOptions,
   useSelectedRelationshipOptions,
 } from "./relationshipOptionQueries";
-import type { RelationshipSource } from "./relationshipSources";
+import type { RelationshipOptionWithSource, RelationshipSource } from "./relationshipSources";
 
 // Matches the h-8 / text-xs controls a filter row uses. The inner input needs its own rules because
 // `Input` hard-codes h-9 and md:text-sm, which a class on the wrapper cannot override.
@@ -38,21 +35,24 @@ function splitValue(value: string): readonly string[] {
     .filter(Boolean);
 }
 
-function sameOption(option: RelationshipOption, other: RelationshipOption) {
-  return option.value === other.value;
+function sameOption(option: RelationshipOptionWithSource, other: RelationshipOptionWithSource) {
+  return option.sourceId === other.sourceId && option.value === other.value;
 }
 
 /**
- * Selects related entities from one backend collection, by name or by global ID.
+ * Selects related entities from one or more source adapters, by name or by source-owned value.
  *
  * The value is the comma-separated global ID list the REST API v2 relationship filter accepts, so
  * a caller stores and restores exactly what it sends.
  */
 export function RelationshipPicker({
   source,
+  sources,
   availabilitySource,
   value,
   onChange,
+  onOptionChange,
+  onOptionsChange,
   multiple = false,
   compact = false,
   disabled = false,
@@ -69,10 +69,17 @@ export function RelationshipPicker({
   onBlur,
   showClear = true,
 }: {
-  source: RelationshipSource;
+  /** One source, retained as a compatibility alias. */
+  source?: RelationshipSource;
+  /** Sources searched in parallel and merged in declaration order. */
+  sources?: readonly RelationshipSource[];
   availabilitySource?: RelationshipOptionAvailabilitySource;
   value: string;
   onChange: (value: string) => void;
+  /** Receives the selected option for consumers that need its display metadata. */
+  onOptionChange?: (option: RelationshipOptionWithSource | null) => void;
+  /** Receives all selected options in multiple mode. */
+  onOptionsChange?: (options: readonly RelationshipOptionWithSource[]) => void;
   multiple?: boolean;
   /** Shrinks the control to the h-8 / text-xs sizing a filter row uses, and lets it shrink to its column. */
   compact?: boolean;
@@ -94,21 +101,37 @@ export function RelationshipPicker({
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
   const anchor = useComboboxAnchor();
   const [term, setTerm] = useState("");
+  const sourceList = sources ?? (source === undefined ? [] : [source]);
   const hasSearchTerm = term.trim() !== "";
   const labels = useMemo(
     () => ({ idLinkLabel: (globalId: string) => t("relationshipPicker.openRecord", { globalId }), compact }),
     [t, compact],
   );
 
-  const selected = useSelectedRelationshipOptions({ source, globalIds: splitValue(value), token, labels });
+  const selected = useSelectedRelationshipOptions({
+    sources: sourceList,
+    values: splitValue(value),
+    token,
+    labels,
+  });
   const { options, failed } = useRelationshipOptions({
-    source,
+    sources: sourceList,
     term,
     token,
     labels,
     enabled: hasSearchTerm,
   });
-  const availability = useRelationshipOptionAvailability({ source, options, availabilitySource, token });
+  const availability = useRelationshipOptionAvailability({
+    source: sourceList[0] ?? {
+      id: "none",
+      ownsValue: () => false,
+      search: async () => [],
+      toOption: () => ({ value: "", label: "" }),
+    },
+    options,
+    availabilitySource,
+    token,
+  });
   // Keeps the selected options selectable while a fresh search is in flight, so a chip never
   // disappears from the list mid-typing.
   const items = useMemo(() => {
@@ -127,11 +150,11 @@ export function RelationshipPicker({
     if (reason === "input-change") setTerm(nextTerm);
     if (reason === "input-clear" || reason === "clear-press" || reason === "item-press") setTerm("");
   };
-  const unavailableStatus = (option: RelationshipOption) => availability.unavailable[String(option.value)];
-  const optionIsDisabled = (option: RelationshipOption) =>
+  const unavailableStatus = (option: RelationshipOptionWithSource) => availability.unavailable[String(option.value)];
+  const optionIsDisabled = (option: RelationshipOptionWithSource) =>
     availabilitySource !== undefined &&
     (availability.checking || availability.failed || unavailableStatus(option) !== undefined);
-  const optionContent = (option: RelationshipOption) => {
+  const optionContent = (option: RelationshipOptionWithSource) => {
     const status = unavailableStatus(option);
     const details = availability.checking
       ? t("relationshipPicker.availabilityChecking")
@@ -155,7 +178,7 @@ export function RelationshipPicker({
           return status === undefined
             ? []
             : [
-                <div key={option.value} className="text-xs">
+                <div key={`${option.sourceId}:${option.value}`} className="text-xs">
                   {availabilitySource.renderAction?.(option, status)}
                 </div>,
               ];
@@ -182,17 +205,22 @@ export function RelationshipPicker({
     return (
       <>
         {actionRegion}
-        <Combobox
+        <Combobox<RelationshipOptionWithSource>
           items={items}
           filter={null}
           value={selected[0] ?? null}
           disabled={disabled}
           onInputValueChange={handleInputValueChange}
           isItemEqualToValue={sameOption}
-          itemToStringLabel={(option: RelationshipOption) => option.label}
-          onValueChange={(option: RelationshipOption | null) => {
-            if (option === null) onChange("");
-            else if (!optionIsDisabled(option)) onChange(String(option.value));
+          itemToStringLabel={(option: RelationshipOptionWithSource) => option.label}
+          onValueChange={(option: RelationshipOptionWithSource | null) => {
+            if (option === null) {
+              onChange("");
+              onOptionChange?.(null);
+            } else if (!optionIsDisabled(option)) {
+              onChange(String(option.value));
+              onOptionChange?.(option);
+            }
           }}
         >
           <ComboboxInput
@@ -204,9 +232,9 @@ export function RelationshipPicker({
           />
           <ComboboxContent>
             <ComboboxList>
-              {(option: RelationshipOption) => (
+              {(option: RelationshipOptionWithSource) => (
                 <ComboboxItem
-                  key={option.value}
+                  key={`${option.sourceId}:${option.value}`}
                   value={option}
                   disabled={optionIsDisabled(option)}
                   className="py-1.5 pr-7 pl-2"
@@ -225,7 +253,7 @@ export function RelationshipPicker({
   return (
     <>
       {actionRegion}
-      <Combobox
+      <Combobox<RelationshipOptionWithSource, true>
         items={items}
         filter={null}
         multiple
@@ -233,17 +261,23 @@ export function RelationshipPicker({
         disabled={disabled}
         onInputValueChange={handleInputValueChange}
         isItemEqualToValue={sameOption}
-        itemToStringLabel={(option: RelationshipOption) => option.label}
-        onValueChange={(next: RelationshipOption[]) => {
-          if (!next.some(optionIsDisabled)) onChange(next.map((option) => String(option.value)).join(","));
+        itemToStringLabel={(option: RelationshipOptionWithSource) => option.label}
+        onValueChange={(next: RelationshipOptionWithSource[]) => {
+          if (!next.some(optionIsDisabled)) {
+            onChange(next.map((option) => String(option.value)).join(","));
+            onOptionsChange?.(next);
+          }
         }}
       >
         <ComboboxChips ref={anchor} className={cn(compact && compactChipsClasses, className)}>
           <ComboboxValue>
-            {(shown: RelationshipOption[] | null) =>
+            {(shown: RelationshipOptionWithSource[] | null) =>
               // base-ui passes null while the multiple value is empty
               (shown ?? []).map((option) => (
-                <ComboboxChip key={option.value} removeLabel={t("relationshipPicker.remove", { item: option.label })}>
+                <ComboboxChip
+                  key={`${option.sourceId}:${option.value}`}
+                  removeLabel={t("relationshipPicker.remove", { item: option.label })}
+                >
                   {option.label}
                 </ComboboxChip>
               ))
@@ -253,9 +287,9 @@ export function RelationshipPicker({
         </ComboboxChips>
         <ComboboxContent anchor={anchor}>
           <ComboboxList>
-            {(option: RelationshipOption) => (
+            {(option: RelationshipOptionWithSource) => (
               <ComboboxItem
-                key={option.value}
+                key={`${option.sourceId}:${option.value}`}
                 value={option}
                 disabled={optionIsDisabled(option)}
                 className="py-1.5 pr-7 pl-2"

@@ -36,6 +36,29 @@ public interface ResourceOperations<T, ID> {
   Optional<T> findById(ID id, User subject);
 
   /**
+   * Finds one resource for its audit endpoint. Implementations may include lifecycle-hidden rows,
+   * but must retain the resource's ordinary row-level readability boundary.
+   */
+  default Optional<T> findByIdForAudit(ID id, User subject) {
+    return findById(id, subject);
+  }
+
+  /** Audit-only authorization hook, deliberately independent of generic access-document routes. */
+  default void requireAuditAccess(T resource, User subject) {}
+
+  /** Extra safe payload fields admitted for related events in a resource lifecycle audit. */
+  default Set<String> relatedAuditFields() {
+    return Set.of();
+  }
+
+  /**
+   * Whether this already-authorised resource audit may include actors outside the user directory.
+   */
+  default boolean auditBypassesActorDirectory() {
+    return false;
+  }
+
+  /**
    * Supplies caller-specific field values after an entity is read.
    *
    * <p>The outer map uses resource identifiers. The inner map contains only fields whose rendered
@@ -71,6 +94,22 @@ public interface ResourceOperations<T, ID> {
 
   default Optional<T> update(ID id, ParsedDocument document, ApiV2Caller caller) {
     throw readOnly("update");
+  }
+
+  /** Version-aware singular update; unversioned resources retain their existing implementation. */
+  default Optional<T> update(
+      ID id, ParsedDocument document, Long expectedVersion, ApiV2Caller caller) {
+    return update(id, document, caller);
+  }
+
+  /** Read-document field used for a strong ETag, or empty for an unversioned resource. */
+  default Optional<String> versionField() {
+    return Optional.empty();
+  }
+
+  /** Problem code used when a versioned singular update omits {@code If-Match}. */
+  default Optional<String> ifMatchRequiredCode() {
+    return Optional.empty();
   }
 
   default List<T> updateMany(ResourceRequest request, ParsedDocument document, ApiV2Caller caller) {

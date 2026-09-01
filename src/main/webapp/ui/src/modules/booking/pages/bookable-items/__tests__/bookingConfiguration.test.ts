@@ -10,6 +10,7 @@ import {
 
 const configuration = {
   id: 7,
+  configurationVersion: 0,
   target: {
     relationTo: "booking-instruments",
     value: { id: 123, name: "Confocal microscope", deleted: false },

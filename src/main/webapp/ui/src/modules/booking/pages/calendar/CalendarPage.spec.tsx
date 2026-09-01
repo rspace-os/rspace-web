@@ -331,7 +331,7 @@ describe("Calendar page", () => {
 
     await expect.poll(() => bookingPageRequests.createdPayloads.length).toBe(1);
     expect(bookingPageRequests.createdPayloads[0]).toMatchObject({
-      target: { relationTo: "instruments", value: 123 },
+      target: { relationTo: "booking-instruments", value: 123 },
       kind: "BOOKING",
       purpose: "Live-stack-shaped booking",
     });
@@ -404,9 +404,7 @@ describe("Calendar page", () => {
     await expect.element(purpose).toHaveValue("Preserve this draft");
     await expect.element(submit).toBeDisabled();
 
-    await startTime.fill("10:00");
-    await endTime.fill("11:00");
-    await expect.element(submit).toBeEnabled();
+    await dialog.getByRole("group", { name: "End" }).getByLabelText("Time").fill("10:30");
     code = "errors.api.v2.booking.concurrentModification";
     await submit.click();
     await expect

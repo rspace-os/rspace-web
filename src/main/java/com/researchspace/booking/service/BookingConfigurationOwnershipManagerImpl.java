@@ -5,6 +5,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.service.resourceaccess.ResourceAccessManager;
+import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
@@ -32,15 +33,19 @@ public class BookingConfigurationOwnershipManagerImpl
     BookableTargetReference target =
         new BookableTargetReference(BookableTargetType.INSTRUMENT, instrumentId);
     configurationDao
-        .findByTarget(target)
+        .lockByTargetIncludingArchived(target)
         .ifPresent(
-            configuration ->
-                accessManager.transferDirectOwnership(
-                    protectedAccess,
-                    configuration.getId(),
-                    outgoingOwner,
-                    incomingOwner,
-                    subject,
-                    actor));
+            configuration -> {
+              if (configuration.isDeleted()) {
+                throw new AuthorizationException("errors.api.v2.forbidden");
+              }
+              accessManager.transferDirectOwnership(
+                  protectedAccess,
+                  configuration.getId(),
+                  outgoingOwner,
+                  incomingOwner,
+                  subject,
+                  actor);
+            });
   }
 }

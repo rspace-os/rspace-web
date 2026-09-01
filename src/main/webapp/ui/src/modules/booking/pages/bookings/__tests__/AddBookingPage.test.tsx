@@ -15,6 +15,7 @@ import { describe, expect, it, vi } from "vitest";
 import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
 import { bookingDisplayPreferencesQueryKey } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { bookerBookingAccess } from "@/modules/booking/pages/bookable-items/mocks/bookableItemsMocks";
 import type { CurrentUser } from "@/modules/common/queries/currentUser";
 import { inheritedBrowserBookingPreferences } from "../../preferences/bookingPreferencesFixtures";
 import { createAddBookingRoute } from "../routes";
@@ -49,6 +50,7 @@ function currentUserHandler(hasSysAdminRole: boolean) {
 
 const optionDocument = {
   id: 7,
+  configurationVersion: 0,
   target: {
     relationTo: "booking-instruments",
     globalId: "IN123",
@@ -66,6 +68,7 @@ const optionDocument = {
 
 const createdBooking = {
   id: 41,
+  version: 0,
   target: optionDocument.target,
   timezone: optionDocument.timezone,
   start: "2026-08-17T07:00:00Z",
@@ -76,22 +79,38 @@ const createdBooking = {
   purpose: null,
   bookedBy: "Ada Lovelace (ada)",
   canEdit: true,
+  canCancel: true,
   createdAt: "2026-08-17T06:00:00Z",
   updatedAt: "2026-08-17T06:00:00Z",
 };
 
-function page(docs: readonly unknown[]) {
+const catalogueOption = {
+  configurationId: optionDocument.id,
+  configurationVersion: optionDocument.configurationVersion,
+  targetType: "INSTRUMENT",
+  targetId: optionDocument.target.value.id,
+  globalId: optionDocument.target.globalId,
+  name: optionDocument.target.value.name,
+  timezone: optionDocument.timezone,
+  slotGranularityMinutes: optionDocument.slotGranularityMinutes,
+  openingStart: optionDocument.openingStart,
+  openingEnd: optionDocument.openingEnd,
+  bufferBeforeMinutes: optionDocument.bufferBeforeMinutes,
+  bufferAfterMinutes: optionDocument.bufferAfterMinutes,
+  maxBookingDurationMinutes: optionDocument.maxBookingDurationMinutes,
+  allowDoubleBooking: optionDocument.allowDoubleBooking,
+  effectiveRole: bookerBookingAccess.effectiveRole,
+  capabilities: bookerBookingAccess.capabilities,
+  location: null,
+};
+
+function page(items: readonly unknown[]) {
   return {
-    docs,
-    totalDocs: docs.length,
-    limit: 20,
+    items,
     page: 1,
-    pagingCounter: 1,
-    totalPages: docs.length ? 1 : 0,
-    hasPrevPage: false,
-    hasNextPage: false,
-    prevPage: null,
-    nextPage: null,
+    pageSize: 20,
+    total: items.length,
+    facets: { types: ["INSTRUMENT"] },
   };
 }
 
@@ -133,7 +152,7 @@ describe("AddBookingPage", () => {
   it("keeps the picker active when the URL target is unavailable", async () => {
     server.use(
       oauthTokenHandler(),
-      http.get("/api/v2/booking-configurations", () => HttpResponse.json(page([]))),
+      http.get("/api/v2/booking-catalogue", () => HttpResponse.json(page([]))),
     );
     renderPage();
 
@@ -147,7 +166,7 @@ describe("AddBookingPage", () => {
     let body: unknown;
     server.use(
       oauthTokenHandler(),
-      http.get("/api/v2/booking-configurations", () => HttpResponse.json(page([optionDocument]))),
+      http.get("/api/v2/booking-catalogue", () => HttpResponse.json(page([catalogueOption]))),
       http.post("/api/v2/bookings", async ({ request }) => {
         body = await request.json();
         return HttpResponse.json(createdBooking, { status: 201 });
@@ -178,7 +197,7 @@ describe("AddBookingPage", () => {
     const user = userEvent.setup();
     server.use(
       oauthTokenHandler(),
-      http.get("/api/v2/booking-configurations", () => HttpResponse.json(page([optionDocument]))),
+      http.get("/api/v2/booking-catalogue", () => HttpResponse.json(page([catalogueOption]))),
       http.post("/api/v2/bookings", () =>
         HttpResponse.json(
           { status: 409, code: "errors.api.v2.booking.overlap", detail: "private server detail" },
@@ -210,7 +229,7 @@ describe("AddBookingPage", () => {
     let body: unknown;
     server.use(
       oauthTokenHandler(),
-      http.get("/api/v2/booking-configurations", () => HttpResponse.json(page([optionDocument]))),
+      http.get("/api/v2/booking-catalogue", () => HttpResponse.json(page([catalogueOption]))),
       http.post("/api/v2/bookings", async ({ request }) => {
         body = await request.json();
         return HttpResponse.json(createdBooking, { status: 201 });
@@ -238,7 +257,7 @@ describe("AddBookingPage", () => {
   it("hides the booking type from users who are not sysadmins", async () => {
     server.use(
       oauthTokenHandler(),
-      http.get("/api/v2/booking-configurations", () => HttpResponse.json(page([optionDocument]))),
+      http.get("/api/v2/booking-catalogue", () => HttpResponse.json(page([catalogueOption]))),
     );
     renderPage();
 
@@ -251,7 +270,7 @@ describe("AddBookingPage", () => {
     const user = userEvent.setup();
     server.use(
       oauthTokenHandler(),
-      http.get("/api/v2/booking-configurations", () => HttpResponse.json(page([optionDocument]))),
+      http.get("/api/v2/booking-catalogue", () => HttpResponse.json(page([catalogueOption]))),
       http.post("/api/v2/bookings", () =>
         HttpResponse.json(
           { status: 400, code: "errors.api.v2.booking.maximumDuration", detail: "private server detail" },

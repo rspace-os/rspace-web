@@ -20,6 +20,7 @@ import { createEditBookingRoute } from "../routes";
 
 const booking = {
   id: 41,
+  version: 0,
   target: {
     relationTo: "booking-instruments",
     globalId: "IN123",
@@ -33,13 +34,16 @@ const booking = {
   purpose: "Imaging",
   bookedBy: "Ada Lovelace (ada)",
   canEdit: true,
+  canCancel: true,
   createdAt: "2026-08-17T06:00:00Z",
   updatedAt: "2026-08-17T06:00:00Z",
 } as const;
 
 const configuration = {
   id: 7,
+  configurationVersion: 0,
   target: booking.target,
+  enabled: true,
   timezone: booking.timezone,
   slotGranularityMinutes: 5,
   openingStart: "08:00",
@@ -119,7 +123,7 @@ describe("EditBookingPage", () => {
 
     expect(await screen.findByRole("heading", { name: "Calendar destination" })).toBeVisible();
     expect(selectedFields).toBe(
-      "id,target,timezone,start,end,state,kind,purpose,bookedBy,createdBy,privacy,canEdit,createdAt,updatedAt",
+      "id,version,target,canViewConfiguration,timezone,start,end,state,kind,purpose,bookedBy,createdBy,privacy,canEdit,canCancel,createdAt,updatedAt",
     );
     expect(body).toEqual({ purpose: null });
     expect(router.state.location.search).toMatchObject({ date: "2026-10-25", target: "IN123" });
@@ -130,7 +134,7 @@ describe("EditBookingPage", () => {
   it.each([
     [
       "busy",
-      { ...booking, privacy: "busy", purpose: null, bookedBy: null, canEdit: false },
+      { ...booking, privacy: "busy", purpose: null, bookedBy: null, canEdit: false, canCancel: false },
       "booking:bookings.errors.forbidden",
     ],
     ["cancelled", { ...booking, state: "CANCELLED" }, "booking:bookings.errors.noLongerEditable"],
@@ -143,7 +147,7 @@ describe("EditBookingPage", () => {
 
     expect(await screen.findByRole("alert")).toHaveTextContent(message);
     expect(screen.queryByRole("button", { name: "booking:bookings.form.save" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "booking:bookings.actions.delete" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "booking:bookings.actions.cancel" })).not.toBeInTheDocument();
   });
 
   it("cancels with the shared dialog and returns to the booking date and target", async () => {
@@ -159,27 +163,27 @@ describe("EditBookingPage", () => {
     );
     const { router } = renderPage("/booking/calendar/bookings/41");
 
-    await user.click(await screen.findByRole("button", { name: "booking:bookings.actions.delete" }));
-    await user.click(screen.getByRole("button", { name: "common:actions.delete" }));
+    await user.click(await screen.findByRole("button", { name: "booking:bookings.actions.cancel" }));
+    await user.click(screen.getByRole("button", { name: "booking:bookings.actions.cancel" }));
 
     expect(await screen.findByRole("heading", { name: "Calendar destination" })).toBeVisible();
     expect(body).toEqual({ state: "CANCELLED" });
     expect(router.state.location.search).toMatchObject({ date: "2026-10-25", target: "IN123" });
   });
 
-  it("refetches a stale booking and replaces the form after a state-transition conflict", async () => {
+  it("refetches a stale booking while preserving the local draft", async () => {
     const user = userEvent.setup();
     let reads = 0;
     server.use(
       oauthTokenHandler(),
       http.get("/api/v2/bookings/41", () => {
         reads += 1;
-        return HttpResponse.json(reads === 1 ? booking : { ...booking, state: "CANCELLED" });
+        return HttpResponse.json(reads === 1 ? booking : { ...booking, version: 1, purpose: "Server edit" });
       }),
       http.patch("/api/v2/bookings/41", () =>
         HttpResponse.json(
-          { status: 409, code: "errors.api.v2.booking.state.transition", detail: "stale" },
-          { status: 409 },
+          { status: 412, code: "errors.api.v2.booking.concurrentModification", detail: "stale" },
+          { status: 412 },
         ),
       ),
     );
@@ -190,7 +194,9 @@ describe("EditBookingPage", () => {
 
     await user.click(screen.getByRole("button", { name: "booking:bookings.form.save" }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("booking:bookings.errors.noLongerEditable");
+    expect((await screen.findAllByText("booking:bookings.errors.concurrentModification")).length).toBeGreaterThan(0);
+    expect(screen.getByLabelText("booking:bookings.form.purpose")).toHaveValue("Imaging changed");
+    expect(screen.getByText("booking:calendar.fields.purpose")).toBeVisible();
     expect(reads).toBeGreaterThan(1);
   });
 

@@ -7,6 +7,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.model.User;
+import com.researchspace.model.resourceaccess.ResourceAudience;
 import com.researchspace.model.resourceaccess.ResourceGranteeKind;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
@@ -60,7 +61,7 @@ class BookingResourceRoleSchemeTest {
   }
 
   @Test
-  void allUsersAudienceIsLimitedToBookerAndViewer() {
+  void allUsersAudienceIsLimitedToBookerAndNoAccess() {
     assertEquals(
         Set.of(ResourceGranteeKind.USER, ResourceGranteeKind.GROUP),
         scheme.allowedGranteeKinds(BookingResourceRoleScheme.OWNER));
@@ -71,10 +72,17 @@ class BookingResourceRoleSchemeTest {
         scheme
             .allowedGranteeKinds(BookingResourceRoleScheme.BOOKER)
             .contains(ResourceGranteeKind.AUDIENCE));
-    assertTrue(
+    assertFalse(
         scheme
             .allowedGranteeKinds(BookingResourceRoleScheme.VIEWER)
             .contains(ResourceGranteeKind.AUDIENCE));
+    assertEquals(
+        Set.of(ResourceGranteeKind.AUDIENCE),
+        scheme.allowedGranteeKinds(BookingResourceRoleScheme.NO_ACCESS));
+    assertEquals(Set.of(), scheme.capabilities(BookingResourceRoleScheme.NO_ACCESS));
+    assertEquals(
+        Set.of(BookingResourceRoleScheme.BOOKER, BookingResourceRoleScheme.NO_ACCESS),
+        scheme.fixedAudienceRoles().get(ResourceAudience.ALL_USERS));
   }
 
   @Test

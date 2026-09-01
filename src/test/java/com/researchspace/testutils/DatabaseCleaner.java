@@ -119,8 +119,6 @@ public class DatabaseCleaner {
     // This is a list of tables that are audited
     List<String> toDelete =
         Arrays.asList(
-            "BookableItemCalendarSubscription",
-            "UserBookingCalendarSubscription",
             "TimeSlotBooking",
             "BookingConfiguration",
             "ResourceRoleAssignment",
@@ -190,6 +188,8 @@ public class DatabaseCleaner {
     jdbcTemplate.update("delete from FormUserMenu");
     jdbcTemplate.update("delete from UserPreference");
     jdbcTemplate.update("delete from UserApiKey");
+    jdbcTemplate.update("delete from BookableItemCalendarSubscription");
+    jdbcTemplate.update("delete from UserBookingCalendarSubscription");
     jdbcTemplate.update("delete from ArchivalCheckSum");
     jdbcTemplate.update("delete from InventoryChoiceFieldDef");
     jdbcTemplate.update("delete from InventoryRadioFieldDef");

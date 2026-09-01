@@ -1,6 +1,7 @@
 package com.researchspace.booking.service;
 
 import com.researchspace.model.User;
+import com.researchspace.model.resourceaccess.ResourceAudience;
 import com.researchspace.model.resourceaccess.ResourceGranteeKind;
 import com.researchspace.service.resourceaccess.ResourceRole;
 import com.researchspace.service.resourceaccess.ResourceRoleScheme;
@@ -20,6 +21,7 @@ public final class BookingResourceRoleScheme implements ResourceRoleScheme {
   public static final String MANAGER = MANAGER_ROLE;
   public static final String BOOKER = "BOOKER";
   public static final String VIEWER = "VIEWER";
+  public static final String NO_ACCESS = "NO_ACCESS";
 
   public static final String READ_RESOURCE = READ_RESOURCE_CAPABILITY;
   public static final String CREATE_CALENDAR_SUBSCRIPTION = "CREATE_CALENDAR_SUBSCRIPTION";
@@ -38,7 +40,8 @@ public final class BookingResourceRoleScheme implements ResourceRoleScheme {
           new ResourceRole(OWNER, 40),
           new ResourceRole(MANAGER, 30),
           new ResourceRole(BOOKER, 20),
-          new ResourceRole(VIEWER, 10));
+          new ResourceRole(VIEWER, 10),
+          new ResourceRole(NO_ACCESS, 0));
 
   private static final Set<String> VIEWER_CAPABILITIES =
       Set.of(READ_RESOURCE, CREATE_CALENDAR_SUBSCRIPTION);
@@ -74,12 +77,15 @@ public final class BookingResourceRoleScheme implements ResourceRoleScheme {
           OWNER, OWNER_CAPABILITIES,
           MANAGER, MANAGER_CAPABILITIES,
           BOOKER, BOOKER_CAPABILITIES,
-          VIEWER, VIEWER_CAPABILITIES);
+          VIEWER, VIEWER_CAPABILITIES,
+          NO_ACCESS, Set.of());
 
   private static final Set<ResourceGranteeKind> ACCOUNTABLE_GRANTEES =
       Set.of(ResourceGranteeKind.USER, ResourceGranteeKind.GROUP);
-  private static final Set<ResourceGranteeKind> SHARE_GRANTEES =
+  private static final Set<ResourceGranteeKind> BOOKING_GRANTEES =
       Set.of(ResourceGranteeKind.USER, ResourceGranteeKind.GROUP, ResourceGranteeKind.AUDIENCE);
+  private static final Set<ResourceGranteeKind> AUDIENCE_GRANTEES =
+      Set.of(ResourceGranteeKind.AUDIENCE);
 
   @Override
   public String key() {
@@ -105,10 +111,21 @@ public final class BookingResourceRoleScheme implements ResourceRoleScheme {
     if (OWNER.equals(roleKey) || MANAGER.equals(roleKey)) {
       return ACCOUNTABLE_GRANTEES;
     }
-    if (BOOKER.equals(roleKey) || VIEWER.equals(roleKey)) {
-      return SHARE_GRANTEES;
+    if (BOOKER.equals(roleKey)) {
+      return BOOKING_GRANTEES;
+    }
+    if (VIEWER.equals(roleKey)) {
+      return ACCOUNTABLE_GRANTEES;
+    }
+    if (NO_ACCESS.equals(roleKey)) {
+      return AUDIENCE_GRANTEES;
     }
     throw new IllegalArgumentException("Unknown Booking role: " + roleKey);
+  }
+
+  @Override
+  public Map<ResourceAudience, Set<String>> fixedAudienceRoles() {
+    return Map.of(ResourceAudience.ALL_USERS, Set.of(BOOKER, NO_ACCESS));
   }
 
   @Override

@@ -178,7 +178,13 @@ export function BookingForm(props: BookingFormProps) {
   };
   const submit = async (input: PurposeInput) => {
     setAttempted(true);
-    if (!target || !window || submittingRef.current) return;
+    if (!target || !window || submittingRef.current) {
+      requestAnimationFrame(() => {
+        const formElement = document.querySelector<HTMLElement>("form[aria-busy]");
+        formElement?.querySelector<HTMLElement>("[aria-invalid='true'], #booking-item-search")?.focus();
+      });
+      return;
+    }
     submittingRef.current = true;
     setSubmitting(true);
     try {
@@ -254,6 +260,7 @@ export function BookingForm(props: BookingFormProps) {
               allowPolicyMismatch={Boolean(originalDraft && sameWindowDraft(draft, originalDraft))}
               disabled={busy}
               density={props.density}
+              showErrors={attempted}
             />
             {bookingInPast && (
               <p role="status" className="text-sm text-amber-800 dark:text-amber-200">

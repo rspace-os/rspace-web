@@ -1,8 +1,12 @@
 package com.researchspace.booking.service;
 
+import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
+
 import com.researchspace.booking.dao.BookingConfigurationDao;
+import com.researchspace.model.User;
 import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.resourceaccess.ResourceAccess;
+import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.resourceaccess.ProtectedResourceAccess;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -14,15 +18,23 @@ public class BookingConfigurationProtectedResourceAccess
     implements ProtectedResourceAccess<BookingConfiguration, Long> {
 
   private final BookingConfigurationDao configurationDao;
+  private final FeatureFlagManager featureFlags;
 
   public BookingConfigurationProtectedResourceAccess(
-      @Qualifier("bookingConfigurationDao") BookingConfigurationDao configurationDao) {
+      @Qualifier("bookingConfigurationDao") BookingConfigurationDao configurationDao,
+      FeatureFlagManager featureFlags) {
     this.configurationDao = configurationDao;
+    this.featureFlags = featureFlags;
+  }
+
+  @Override
+  public boolean featureEnabled(User subject) {
+    return subject != null && featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, subject);
   }
 
   @Override
   public Optional<BookingConfiguration> find(Long id) {
-    return configurationDao.getSafeNull(id);
+    return configurationDao.getSafeNull(id).filter(configuration -> !configuration.isDeleted());
   }
 
   @Override

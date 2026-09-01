@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CalendarIcon, CheckIcon, CopyIcon } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { ApiV2ProblemError } from "@/modules/booking/domain/booking";
 import {
   calendarApplicationUrls,
   createOrReplaceUserCalendarSubscription,
@@ -26,13 +27,21 @@ export function UserCalendarSubscription({ token }: { token: string }) {
     retry: false,
   });
   const create = useMutation({
-    mutationFn: () => createOrReplaceUserCalendarSubscription(token),
+    mutationFn: () => {
+      if (status.data === undefined) throw new Error("Calendar subscription status is unavailable");
+      return createOrReplaceUserCalendarSubscription(token, status.data.etag);
+    },
     retry: false,
     onMutate: () => {
       setCopied(false);
       setClipboardError(false);
     },
     onSuccess: (created) => queryClient.setQueryData(userCalendarSubscriptionQueryKey, created),
+    onError: (error) => {
+      if (error instanceof ApiV2ProblemError && error.status === 409) {
+        void queryClient.invalidateQueries({ queryKey: userCalendarSubscriptionQueryKey });
+      }
+    },
   });
   const revoke = useMutation({
     mutationFn: () => revokeUserCalendarSubscription(token),
@@ -40,11 +49,7 @@ export function UserCalendarSubscription({ token }: { token: string }) {
     onSuccess: () => {
       setCopied(false);
       setClipboardError(false);
-      queryClient.setQueryData(userCalendarSubscriptionQueryKey, {
-        active: false,
-        updatedAt: null,
-        subscriptionUrl: null,
-      });
+      void queryClient.invalidateQueries({ queryKey: userCalendarSubscriptionQueryKey });
     },
   });
   const subscriptionUrl = status.data?.subscriptionUrl ?? null;

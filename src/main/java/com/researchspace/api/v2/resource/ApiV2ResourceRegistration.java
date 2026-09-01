@@ -133,6 +133,14 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
     return spec.resourceAccess();
   }
 
+  Set<String> relatedAuditFields() {
+    return operations.relatedAuditFields();
+  }
+
+  boolean auditBypassesActorDirectory() {
+    return operations.auditBypassesActorDirectory();
+  }
+
   public ID parseResourceId(String rawId) {
     return parseId(rawId);
   }
@@ -316,6 +324,19 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
     return crud.get(id, narrowed, caller, runtimeValues(narrowed, caller));
   }
 
+  public Optional<String> documentEtag(Map<String, Object> document) {
+    return operations
+        .versionField()
+        .map(document::get)
+        .filter(Number.class::isInstance)
+        .map(Number.class::cast)
+        .map(version -> '"' + Long.toString(version.longValue()) + '"');
+  }
+
+  public Optional<String> ifMatchRequiredCode() {
+    return operations.ifMatchRequiredCode();
+  }
+
   public Map<String, Object> create(JsonNode body, ApiV2Caller caller) {
     User subject = subject(caller);
     requireDocumentedAuthentication(Operation.CREATE, subject);
@@ -350,7 +371,8 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
         narrowFields(context, FieldSelection.all()));
   }
 
-  public Map<String, Object> update(String rawId, JsonNode body, ApiV2Caller caller) {
+  public Map<String, Object> update(
+      String rawId, JsonNode body, Long expectedVersion, ApiV2Caller caller) {
     User subject = subject(caller);
     ID id = parseId(rawId);
     AccessContext context = authorizeWrite(Operation.UPDATE, subject, id);
@@ -358,7 +380,12 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
         ApiV2DocumentParser.parse(
             body, description, WriteOperation.UPDATE, spec.updateErrorKey(), context);
     document = resolve(document, subject, context, spec.updateErrorKey(), false);
-    return crud.update(id, document, caller, narrowFields(context, FieldSelection.all()));
+    return crud.update(
+        id, document, expectedVersion, caller, narrowFields(context, FieldSelection.all()));
+  }
+
+  Map<String, Object> update(String rawId, JsonNode body, ApiV2Caller caller) {
+    return update(rawId, body, null, caller);
   }
 
   public ApiV2BulkResult<Map<String, Object>> updateMany(
@@ -392,16 +419,20 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
   /** Finds one readable entity for the default audit endpoints. */
   ResolvedTarget requireReadableForAudit(
       String rawId, User actor, ResourceAccessManager accessManager) {
-    ResolvedTarget target =
-        resolveReadable(parseId(rawId), actor).orElseThrow(NotFoundException::new);
+    ID id = parseId(rawId);
+    AccessContext context =
+        new AccessContext(actor, Operation.READ, description.resourceName(), id);
+    decide(context, Operation.READ);
+    T entity = operations.findByIdForAudit(id, actor).orElseThrow(NotFoundException::new);
+    operations.requireAuditAccess(entity, actor);
+    ResolvedTarget target = new ResolvedTarget(entity, narrowFields(context, FieldSelection.all()));
     spec.resourceAccess()
         .ifPresent(
             access -> {
-              T entity = description.entityType().cast(target.entity());
               var resolved =
                   accessManager.resolve(access.protectedResource().access(entity), actor);
               if (!resolved.hasCapability(access.protectedResource().viewAuditCapability())) {
-                throw new NotFoundException();
+                throw new AuthorizationException("errors.api.v2.forbidden");
               }
             });
     return target;

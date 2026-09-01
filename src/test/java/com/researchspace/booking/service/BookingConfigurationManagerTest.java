@@ -17,10 +17,12 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.booking.dao.BookingCalendarSubscriptionDao;
 import com.researchspace.booking.dao.BookingConfigurationDao;
 import com.researchspace.booking.dao.BookingConfigurationDefaultsDao;
 import com.researchspace.booking.service.BookingConfigurationManager.Create;
 import com.researchspace.booking.service.BookingConfigurationManager.Patch;
+import com.researchspace.dao.InstrumentDao;
 import com.researchspace.inventory.model.ApiV2InstrumentResource;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
@@ -29,6 +31,8 @@ import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.BookingConfigurationDefaults;
+import com.researchspace.model.booking.BookingDefaultAccessGrantee;
+import com.researchspace.model.booking.BookingDefaultSharedWith;
 import com.researchspace.model.booking.BookingSchedulingSettings;
 import com.researchspace.model.booking.ResolvedBookableTarget;
 import com.researchspace.model.collection.ApiV2UserResource;
@@ -44,7 +48,9 @@ import com.researchspace.model.resourceaccess.ResourceAccess;
 import com.researchspace.model.resourceaccess.ResourceRoleAssignment;
 import com.researchspace.service.CollectionMutationException;
 import com.researchspace.service.JsonMessageSource;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.resourceaccess.ResolvedResourceAccess;
+import com.researchspace.service.resourceaccess.ResourceAccessException;
 import com.researchspace.service.resourceaccess.ResourceAccessManager;
 import jakarta.validation.ConstraintViolationException;
 import java.util.Collections;
@@ -67,6 +73,9 @@ class BookingConfigurationManagerTest {
   private final BookingConfigurationDao dao = mock(BookingConfigurationDao.class);
   private final BookingConfigurationDefaultsDao defaultsDao =
       mock(BookingConfigurationDefaultsDao.class);
+  private final InstrumentDao instrumentDao = mock(InstrumentDao.class);
+  private final BookingCalendarSubscriptionDao calendarSubscriptions =
+      mock(BookingCalendarSubscriptionDao.class);
 
   private final User actor = mock(User.class);
   private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
@@ -77,11 +86,14 @@ class BookingConfigurationManagerTest {
       new BookingConfigurationManagerImpl(
           dao,
           defaultsDao,
+          instrumentDao,
           validator,
           events,
           resourceRegistry,
           ApiV2BookingConfigurationResource.DESCRIPTION,
-          accessManager);
+          accessManager,
+          new MessageSourceUtils(new JsonMessageSource()),
+          calendarSubscriptions);
 
   @BeforeEach
   void setUp() {
@@ -92,6 +104,8 @@ class BookingConfigurationManagerTest {
     when(actor.getUsername()).thenReturn("sysadmin");
     when(defaultsDao.getSafeNull(BookingConfigurationDefaults.SINGLETON_ID))
         .thenReturn(Optional.of(defaults(5, "00:00", "24:00", 0, 0, 0, false)));
+    when(instrumentDao.lockById(any()))
+        .thenAnswer(invocation -> Optional.of(instrument(invocation.getArgument(0), actor)));
     when(resourceRegistry.getObject())
         .thenReturn(
             new ResourceRegistry(
@@ -355,6 +369,9 @@ class BookingConfigurationManagerTest {
 
   @Test
   void rejectsUnauthorizedAndInvalidDirectServiceWritesBeforeSaving() {
+    User owner = mock(User.class);
+    when(owner.getId()).thenReturn(2L);
+    when(instrumentDao.lockById(12L)).thenReturn(Optional.of(instrument(12L, owner)));
     when(actor.hasSysadminRole()).thenReturn(false);
     assertThrows(
         AuthorizationException.class,
@@ -368,6 +385,35 @@ class BookingConfigurationManagerTest {
         () ->
             manager.createConfiguration(new Create(true, "Not/A_Zone", target(12L)), actor, actor));
 
+    verify(dao, never()).saveAndFlush(any());
+  }
+
+  @Test
+  void rechecksTargetOwnershipFromTheLockedInstrument() {
+    User formerOwner = mock(User.class);
+    User currentOwner = mock(User.class);
+    when(formerOwner.getId()).thenReturn(1L);
+    when(formerOwner.isEnabled()).thenReturn(true);
+    when(formerOwner.hasSysadminRole()).thenReturn(false);
+    when(currentOwner.getId()).thenReturn(2L);
+    Instrument staleRelationshipTarget = instrument(12L, formerOwner);
+    Instrument lockedTarget = instrument(12L, currentOwner);
+    when(instrumentDao.lockById(12L)).thenReturn(Optional.of(lockedTarget));
+
+    assertThrows(
+        AuthorizationException.class,
+        () ->
+            manager.createConfiguration(
+                new Create(
+                    true,
+                    "UTC",
+                    new ResolvedBookableTarget(
+                        new BookableTargetReference(BookableTargetType.INSTRUMENT, 12L),
+                        staleRelationshipTarget)),
+                formerOwner,
+                formerOwner));
+
+    verify(instrumentDao).lockById(12L);
     verify(dao, never()).saveAndFlush(any());
   }
 
@@ -420,7 +466,7 @@ class BookingConfigurationManagerTest {
   void archivesAConfigurationInsteadOfDeletingItsReferencedRow() {
     BookingConfiguration configuration = configuration(42L, 12L);
     configuration.setEnabled(true);
-    when(dao.getSafeNull(42L)).thenReturn(Optional.of(configuration));
+    when(dao.lockById(42L)).thenReturn(Optional.of(configuration));
     when(dao.saveAndFlush(configuration)).thenReturn(configuration);
 
     BookingConfiguration removed = manager.removeConfiguration(42L, actor, actor).orElseThrow();
@@ -432,6 +478,7 @@ class BookingConfigurationManagerTest {
     assertTrue(removed.getUpdatedAt() != null);
     verify(dao).saveAndFlush(configuration);
     verify(dao, never()).remove(any());
+    verify(calendarSubscriptions).deleteByConfigurationId(42L);
     verify(events).publishEvent(any(BookingConfigurationAuditEvent.class));
   }
 
@@ -439,7 +486,7 @@ class BookingConfigurationManagerTest {
   void treatsAnArchivedConfigurationAsAbsent() {
     BookingConfiguration configuration = configuration(42L, 12L);
     configuration.setDeleted(true);
-    when(dao.getSafeNull(42L)).thenReturn(Optional.of(configuration));
+    when(dao.lockById(42L)).thenReturn(Optional.of(configuration));
 
     assertTrue(manager.getConfiguration(42L, actor).isEmpty());
     assertTrue(manager.updateConfiguration(42L, new Patch(true, null), actor, actor).isEmpty());
@@ -459,7 +506,7 @@ class BookingConfigurationManagerTest {
     first.setEnabled(true);
     second.setEnabled(true);
     int limit = ApiV2BookingConfigurationResource.MUTATION_LIMITS.maxBulkUpdateDeleteRows() + 1;
-    when(dao.getResources(eq(request), eq(limit), any())).thenReturn(List.of(first, second));
+    when(dao.lockResources(eq(request), eq(limit), any())).thenReturn(List.of(first, second));
     when(dao.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
     List<BookingConfiguration> removed = manager.removeConfigurations(request, actor, actor);
@@ -483,13 +530,13 @@ class BookingConfigurationManagerTest {
     assertThrows(
         AuthorizationException.class,
         () -> manager.updateConfigurations(request, new Patch(true, null), actor, actor));
-    verify(dao, never()).getResources(any(ResourceRequest.class), anyInt(), any());
+    verify(dao, never()).lockResources(any(ResourceRequest.class), anyInt(), any());
 
     when(actor.hasSysadminRole()).thenReturn(true);
     BookingConfiguration configuration = new BookingConfiguration();
     int oversizedBatch =
         ApiV2BookingConfigurationResource.MUTATION_LIMITS.maxBulkUpdateDeleteRows() + 1;
-    when(dao.getResources(eq(request), eq(oversizedBatch), any()))
+    when(dao.lockResources(eq(request), eq(oversizedBatch), any()))
         .thenReturn(Collections.nCopies(oversizedBatch, configuration));
 
     assertThrows(
@@ -507,11 +554,11 @@ class BookingConfigurationManagerTest {
     int limit = ApiV2BookingConfigurationResource.MUTATION_LIMITS.maxBulkUpdateDeleteRows() + 1;
     ArgumentCaptor<RelationshipReadAccess> access =
         ArgumentCaptor.forClass(RelationshipReadAccess.class);
-    when(dao.getResources(eq(request), eq(limit), any())).thenReturn(List.of());
+    when(dao.lockResources(eq(request), eq(limit), any())).thenReturn(List.of());
 
     manager.removeConfigurations(request, actor, actor);
 
-    verify(dao).getResources(eq(request), eq(limit), access.capture());
+    verify(dao).lockResources(eq(request), eq(limit), access.capture());
     assertFalse(access.getValue().result("booking-instruments").isDenied());
     assertTrue(access.getValue().result("booking-instruments").constraintOrEmpty().isEmpty());
   }
@@ -521,6 +568,7 @@ class BookingConfigurationManagerTest {
     Instrument deleted = new Instrument();
     deleted.setId(12L);
     deleted.setRecordDeleted(true);
+    when(instrumentDao.lockById(12L)).thenReturn(Optional.of(deleted));
     ResolvedBookableTarget target =
         new ResolvedBookableTarget(
             new BookableTargetReference(BookableTargetType.INSTRUMENT, 12L), deleted);
@@ -528,6 +576,29 @@ class BookingConfigurationManagerTest {
     assertThrows(
         InvalidBookableTargetException.class,
         () -> manager.createConfiguration(new Create(true, "UTC", target), actor, actor));
+    verify(dao, never()).saveAndFlush(any());
+  }
+
+  @Test
+  void selectedDefaultsCannotCreateMoreThanOneHundredNamedAssignments() {
+    BookingConfigurationDefaults defaults = defaults(5, "00:00", "24:00", 0, 0, 0, false);
+    defaults.setDefaultSharedWith(BookingDefaultSharedWith.SELECTED);
+    for (long id = 2; id <= 101; id++) {
+      User selected = mock(User.class);
+      when(selected.getId()).thenReturn(id);
+      when(selected.getDisplayName()).thenReturn("Selected " + id);
+      when(selected.getUsername()).thenReturn("selected-" + id);
+      defaults.addSelectedAccessGrantee(BookingDefaultAccessGrantee.forUser(selected));
+    }
+    when(defaultsDao.getSafeNull(BookingConfigurationDefaults.SINGLETON_ID))
+        .thenReturn(Optional.of(defaults));
+
+    ResourceAccessException error =
+        assertThrows(
+            ResourceAccessException.class,
+            () -> manager.createConfiguration(new Create(true, "UTC", target(12L)), actor, actor));
+
+    assertEquals(ResourceAccessException.Reason.ASSIGNMENT_LIMIT, error.reason());
     verify(dao, never()).saveAndFlush(any());
   }
 
@@ -554,10 +625,16 @@ class BookingConfigurationManagerTest {
   }
 
   private static ResolvedBookableTarget target(long id) {
-    Instrument instrument = new Instrument();
-    instrument.setId(id);
+    Instrument instrument = instrument(id, null);
     return new ResolvedBookableTarget(
         new BookableTargetReference(BookableTargetType.INSTRUMENT, id), instrument);
+  }
+
+  private static Instrument instrument(long id, User owner) {
+    Instrument instrument = new Instrument();
+    instrument.setId(id);
+    instrument.setOwner(owner);
+    return instrument;
   }
 
   private BookingConfiguration configuration(long id, long targetId) {

@@ -147,9 +147,9 @@ class TimeSlotBookingResourceOperationsTest {
         () ->
             operations.create(
                 new ParsedDocument(WriteOperation.CREATE, Map.of()), ApiV2Caller.direct(actor)));
-    assertEquals(
-        Optional.empty(),
-        operations.update(1L, ParsedDocument.update(Map.of()), ApiV2Caller.direct(actor)));
+    assertThrows(
+        AuthorizationException.class,
+        () -> operations.update(1L, ParsedDocument.update(Map.of()), ApiV2Caller.direct(actor)));
     verifyNoInteractions(manager);
   }
 

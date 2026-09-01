@@ -1,9 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useParams, useSearch } from "@tanstack/react-router";
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useBookableItemConfiguration } from "@/modules/booking/creation/BookableItemPicker";
-import { BookingForm, type BookingFormSubmission, type EditableBooking } from "@/modules/booking/creation/BookingForm";
+import {
+  BookingForm,
+  type BookingFormState,
+  type BookingFormSubmission,
+  type EditableBooking,
+} from "@/modules/booking/creation/BookingForm";
 import {
   ApiV2ProblemError,
   type Booking,
@@ -15,6 +20,7 @@ import {
 import { todayInTimeZone, useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { currentWallClock, formatAgendaPeriod } from "@/modules/booking/domain/bookingTime";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
+import { DirtyNavigationGuard } from "@/modules/common/navigation/DirtyNavigationGuard";
 import { Button, buttonVariants } from "@/modules/common/ui/button";
 import { Heading } from "@/modules/common/ui/typography";
 import { DeleteBookingDialog } from "./DeleteBookingDialog";
@@ -35,6 +41,7 @@ function errorKey(
   | "bookings.errors.openingHours"
   | "bookings.errors.targetUnavailable"
   | "bookings.errors.forbidden"
+  | "bookings.errors.concurrentModification"
   | "bookings.errors.noLongerEditable" {
   if (!(error instanceof ApiV2ProblemError)) return "bookings.errors.generic";
   if (error.code === "errors.api.v2.booking.window") return "bookings.errors.endAfterStart";
@@ -45,6 +52,9 @@ function errorKey(
   if (error.code === "errors.api.v2.booking.openingHours") return "bookings.errors.openingHours";
   if (error.code === "errors.api.v2.booking.target.unavailable") return "bookings.errors.targetUnavailable";
   if (error.code === "errors.api.v2.forbidden") return "bookings.errors.forbidden";
+  if (error.status === 412 || error.code === "errors.api.v2.booking.concurrentModification") {
+    return "bookings.errors.concurrentModification";
+  }
   if (error.code === "errors.api.v2.booking.state.transition") return "bookings.errors.noLongerEditable";
   return "bookings.errors.generic";
 }
@@ -59,6 +69,8 @@ export default function EditBookingPage() {
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
   const queryClient = useQueryClient();
   const preferences = useBookingDisplayPreferences();
+  const [staleBase, setStaleBase] = useState<Booking | null>(null);
+  const [formDirty, setFormDirty] = useState(false);
   const booking = useQuery({
     queryKey: ["api-v2", "bookings", bookingId],
     enabled: validBookingId && Boolean(token),
@@ -77,18 +89,26 @@ export default function EditBookingPage() {
         ...(submission.window.end !== booking.data.end ? { end: submission.window.end } : {}),
         ...(submission.purpose !== booking.data.purpose ? { purpose: submission.purpose } : {}),
       };
-      return Object.keys(patch).length === 0 ? Promise.resolve(booking.data) : updateBooking(bookingId, patch, token);
+      return Object.keys(patch).length === 0
+        ? Promise.resolve(booking.data)
+        : updateBooking(bookingId, booking.data.version, patch, token);
     },
     onSuccess: async (updated, submission) => {
       await queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] });
       await queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings", bookingId] });
-      await navigate({
-        to: "/booking/calendar",
-        search: {
-          date: search.date ?? submission.returnDate,
-          target: updated.target.globalId,
-        },
-      });
+      setStaleBase(null);
+      if (search.returnTo === "my-bookings") {
+        await navigate({ to: "/booking/my-bookings", search: { period: "upcoming" }, ignoreBlocker: true });
+      } else {
+        await navigate({
+          to: "/booking/calendar",
+          search: {
+            date: search.date ?? submission.returnDate,
+            target: updated.target.globalId,
+          },
+          ignoreBlocker: true,
+        });
+      }
     },
     onError: async (error) => {
       if (
@@ -96,6 +116,10 @@ export default function EditBookingPage() {
         (error.code === "errors.api.v2.forbidden" || error.code === "errors.api.v2.booking.state.transition")
       ) {
         await queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings", bookingId] });
+      }
+      if (error instanceof ApiV2ProblemError && error.status === 412 && booking.data) {
+        setStaleBase(booking.data);
+        await booking.refetch();
       }
       if (error instanceof ApiV2ProblemError && error.code === "errors.api.v2.booking.target.unavailable") {
         await queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] });
@@ -110,18 +134,39 @@ export default function EditBookingPage() {
     mutationHasError.current = false;
     resetMutation();
   }, [resetMutation]);
+  const previousFormState = useRef<string | null>(null);
+  const handleFormStateChange = useCallback(
+    (state: BookingFormState) => {
+      setFormDirty(state.dirty);
+      const serialized = JSON.stringify(state);
+      if (previousFormState.current !== null && serialized !== previousFormState.current) {
+        clearMutationErrorOnChange();
+      }
+      previousFormState.current = serialized;
+    },
+    [clearMutationErrorOnChange],
+  );
   const returnLink = (
     returnDate = search.date ?? todayInTimeZone(preferences.timeZone),
     returnTarget = search.target,
-  ) => (
-    <Link
-      className={buttonVariants({ variant: "outline" })}
-      to="/booking/calendar"
-      search={{ date: returnDate, target: returnTarget }}
-    >
-      {t("bookings.form.returnToCalendar")}
-    </Link>
-  );
+  ) =>
+    search.returnTo === "my-bookings" ? (
+      <Link
+        className={buttonVariants({ variant: "outline" })}
+        to="/booking/my-bookings"
+        search={{ period: "upcoming" }}
+      >
+        {t("bookings.form.returnToMyBookings")}
+      </Link>
+    ) : (
+      <Link
+        className={buttonVariants({ variant: "outline" })}
+        to="/booking/calendar"
+        search={{ date: returnDate, target: returnTarget }}
+      >
+        {t("bookings.form.returnToCalendar")}
+      </Link>
+    );
   if (!validBookingId)
     return (
       <main className="space-y-4 p-8">
@@ -196,21 +241,26 @@ export default function EditBookingPage() {
   const returnDate = search.date ?? currentWallClock(booking.data.start, preferences.timeZone).date;
   return (
     <main className="space-y-6 p-4 sm:p-8">
+      <DirtyNavigationGuard dirty={formDirty} />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Heading level={2} as="h1">
           {t("bookings.editTitle")}
         </Heading>
         <DeleteBookingDialog
           bookingId={booking.data.id}
+          bookingVersion={booking.data.version}
           itemName={booking.data.target.value.name}
           period={formatAgendaPeriod(booking.data.start, booking.data.end, preferences.timeZone)}
           token={token}
           disabled={mutation.isPending}
           onDeleted={() =>
-            navigate({
-              to: "/booking/calendar",
-              search: { date: returnDate, target: booking.data.target.globalId },
-            })
+            search.returnTo === "my-bookings"
+              ? navigate({ to: "/booking/my-bookings", search: { period: "upcoming" }, ignoreBlocker: true })
+              : navigate({
+                  to: "/booking/calendar",
+                  search: { date: returnDate, target: booking.data.target.globalId },
+                  ignoreBlocker: true,
+                })
           }
         />
       </div>
@@ -223,9 +273,19 @@ export default function EditBookingPage() {
         pending={mutation.isPending}
         error={mutation.error ? t(errorKey(mutation.error)) : undefined}
         submissionBlocked={isBookingOverlapError(mutation.error)}
-        onStateChange={clearMutationErrorOnChange}
+        onStateChange={handleFormStateChange}
         onSubmit={(submission) => mutation.mutateAsync(submission)}
       />
+      {staleBase && booking.data.version !== staleBase.version ? (
+        <div role="alert" className="space-y-1 text-sm text-destructive">
+          <p>{t("bookings.errors.concurrentModification")}</p>
+          <ul className="list-inside list-disc">
+            {(["start", "end", "purpose", "state"] as const).flatMap((field) =>
+              staleBase[field] === booking.data[field] ? [] : [<li key={field}>{t(`calendar.fields.${field}`)}</li>],
+            )}
+          </ul>
+        </div>
+      ) : null}
     </main>
   );
 }

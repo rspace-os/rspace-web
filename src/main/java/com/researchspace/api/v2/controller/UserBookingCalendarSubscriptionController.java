@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestAttribute;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -58,9 +59,10 @@ public class UserBookingCalendarSubscriptionController {
         @ApiResponse(responseCode = "401", description = "Authentication is required."),
         @ApiResponse(responseCode = "403", description = "Booking is unavailable.")
       })
-  public StatusDocument get(
+  public ResponseEntity<StatusDocument> get(
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
-    return StatusDocument.from(manager.userStatus(caller.subject(), caller.actor()));
+    BookingCalendarManager.Status status = manager.userStatus(caller.subject(), caller.actor());
+    return ResponseEntity.ok().eTag(status.etag()).body(StatusDocument.from(status));
   }
 
   @PostMapping
@@ -72,9 +74,15 @@ public class UserBookingCalendarSubscriptionController {
         @ApiResponse(responseCode = "401", description = "Authentication is required."),
         @ApiResponse(responseCode = "403", description = "Booking is unavailable.")
       })
-  public CreatedDocument createOrReplace(
+  public ResponseEntity<CreatedDocument> createOrReplace(
+      @RequestHeader(name = "If-Match", required = false) String ifMatch,
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
-    return CreatedDocument.from(manager.createOrRotateUser(caller.subject(), caller.actor()));
+    String expectedEtag =
+        ApiV2ConditionalRequest.parseStrongEtag(
+            ifMatch, "errors.api.v2.bookingCalendar.ifMatchRequired");
+    BookingCalendarManager.Created created =
+        manager.createOrRotateUser(caller.subject(), caller.actor(), expectedEtag);
+    return ResponseEntity.ok().eTag(created.status().etag()).body(CreatedDocument.from(created));
   }
 
   @DeleteMapping

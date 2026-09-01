@@ -66,6 +66,7 @@ export const bookingsOpenApi = {
             "x-rspace-allowed-fields": {
               bookings: [
                 "id",
+                "version",
                 "requesterId",
                 "kind",
                 "target",
@@ -78,6 +79,7 @@ export const bookingsOpenApi = {
                 "bookedBy",
                 "privacy",
                 "canEdit",
+                "canCancel",
                 "createdAt",
                 "updatedAt",
               ],
@@ -97,30 +99,50 @@ const target = (id: number, name: string) => ({
 
 export const upcomingBooking = {
   id: 41,
+  version: 0,
+  requesterId: 84,
   kind: "BOOKING",
   target: target(123, "Confocal microscope"),
   canViewConfiguration: true,
   timezone: "Pacific/Auckland",
   start: "2020-08-23T09:00:00Z",
   end: "2030-08-23T10:00:00Z",
+  state: "CONFIRMED",
   purpose: "Scope training",
+  bookedBy: "Test User (testuser)",
+  privacy: "full",
+  canEdit: true,
+  canCancel: true,
+  createdAt: "2020-08-01T09:00:00Z",
+  updatedAt: "2020-08-01T09:00:00Z",
 };
 
 export const pastBooking = {
   id: 42,
+  version: 0,
+  requesterId: 84,
   kind: "BOOKING",
   target: target(124, "Electron microscope"),
   canViewConfiguration: true,
   timezone: "UTC",
   start: "2020-08-23T09:00:00Z",
   end: "2020-08-23T10:00:00Z",
+  state: "CONFIRMED",
   purpose: "Completed run",
+  bookedBy: "Test User (testuser)",
+  privacy: "full",
+  canEdit: false,
+  canCancel: false,
+  createdAt: "2020-08-01T09:00:00Z",
+  updatedAt: "2020-08-01T09:00:00Z",
 };
 
 export const roleLostBooking = {
   ...upcomingBooking,
   id: 43,
   canViewConfiguration: false,
+  canEdit: false,
+  canCancel: false,
   purpose: "Retained requester details",
 };
 

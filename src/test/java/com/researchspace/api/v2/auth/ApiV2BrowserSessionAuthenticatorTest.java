@@ -3,6 +3,7 @@ package com.researchspace.api.v2.auth;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
@@ -38,21 +39,24 @@ class ApiV2BrowserSessionAuthenticatorTest {
   }
 
   @Test
-  void returnsTheUserFromAnAuthenticatedExistingSession() {
+  void reloadsTheCurrentPrincipalInsteadOfUsingStaleSessionAuthorizationFacts() {
     MockHttpServletRequest request = new MockHttpServletRequest();
     request.getSession(true);
     Subject subject = mock(Subject.class);
     Session session = mock(Session.class);
-    User user = mock(User.class);
+    User staleSessionUser = mock(User.class);
+    User currentUser = mock(User.class);
     when(subject.isAuthenticated()).thenReturn(true);
     when(subject.getSession(false)).thenReturn(session);
-    when(session.getAttribute(SessionAttributeUtils.USER)).thenReturn(user);
+    when(subject.getPrincipal()).thenReturn("user1");
+    when(session.getAttribute(SessionAttributeUtils.USER)).thenReturn(staleSessionUser);
+    when(userManager.getUserByUsername("user1", true)).thenReturn(currentUser);
     ThreadContext.bind(subject);
 
     ApiV2Caller caller = authenticator.authenticateIfPresent(request).orElseThrow();
-    assertSame(user, caller.subject());
-    assertSame(user, caller.actor());
-    verifyNoInteractions(userManager);
+    assertSame(currentUser, caller.subject());
+    assertSame(currentUser, caller.actor());
+    verify(userManager).getUserByUsername("user1", true);
   }
 
   @Test
@@ -73,8 +77,8 @@ class ApiV2BrowserSessionAuthenticatorTest {
     when(previousPrincipals.getPrimaryPrincipal()).thenReturn("sysadmin1");
     when(session.getAttribute(SessionAttributeUtils.USER)).thenReturn(staleSessionUser);
     when(session.getAttribute(SessionAttributeUtils.IS_RUN_AS)).thenReturn(Boolean.TRUE);
-    when(userManager.getUserByUsername("target1")).thenReturn(target);
-    when(userManager.getUserByUsername("sysadmin1")).thenReturn(actor);
+    when(userManager.getUserByUsername("target1", true)).thenReturn(target);
+    when(userManager.getUserByUsername("sysadmin1", true)).thenReturn(actor);
     ThreadContext.bind(subject);
 
     ApiV2Caller caller = authenticator.authenticateIfPresent(request).orElseThrow();

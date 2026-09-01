@@ -36,30 +36,19 @@ public class ApiV2BrowserSessionAuthenticator {
       throw new ApiV2AuthenticationException();
     }
 
-    User authenticatedUser;
-    if (sessionSaysRunAs) {
-      Object principal = subject.getPrincipal();
-      if (!(principal instanceof String username)) {
+    Object principal = subject.getPrincipal();
+    if (!(principal instanceof String username)) {
+      if (sessionSaysRunAs) {
         throw new ApiV2AuthenticationException();
       }
-      authenticatedUser = userManager.getUserByUsername(username);
-      if (authenticatedUser == null) {
+      return Optional.empty();
+    }
+    User authenticatedUser = userManager.getUserByUsername(username, true);
+    if (authenticatedUser == null) {
+      if (sessionSaysRunAs) {
         throw new ApiV2AuthenticationException();
       }
-    } else {
-      Object sessionUser = session.getAttribute(SessionAttributeUtils.USER);
-      if (sessionUser instanceof User user) {
-        authenticatedUser = user;
-      } else {
-        Object principal = subject.getPrincipal();
-        if (!(principal instanceof String username)) {
-          return Optional.empty();
-        }
-        authenticatedUser = userManager.getUserByUsername(username);
-        if (authenticatedUser == null) {
-          return Optional.empty();
-        }
-      }
+      return Optional.empty();
     }
 
     if (!sessionSaysRunAs) {
@@ -70,7 +59,7 @@ public class ApiV2BrowserSessionAuthenticator {
     if (!(previousPrincipal instanceof String actorUsername)) {
       throw new ApiV2AuthenticationException();
     }
-    User actor = userManager.getUserByUsername(actorUsername);
+    User actor = userManager.getUserByUsername(actorUsername, true);
     if (actor == null) {
       throw new ApiV2AuthenticationException();
     }

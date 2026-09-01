@@ -33,6 +33,8 @@ export const CalendarSubscriptionCreatedSchema = v.strictObject({
 
 export type CalendarSubscriptionStatus = v.InferOutput<typeof CalendarSubscriptionStatusSchema>;
 export type CalendarSubscriptionCreated = v.InferOutput<typeof CalendarSubscriptionCreatedSchema>;
+export type UserCalendarSubscriptionStatus = CalendarSubscriptionStatus & { etag: string };
+export type UserCalendarSubscriptionCreated = CalendarSubscriptionCreated & { etag: string };
 
 export const calendarSubscriptionQueryKey = (configurationId: number) =>
   ["api-v2", "booking-configurations", configurationId, "calendar-subscription"] as const;
@@ -48,6 +50,12 @@ export const userCalendarSubscriptionQueryKey = ["api-v2", "users", "me", "booki
 async function requireSuccess(response: Response): Promise<Response> {
   if (!response.ok) throw await parseApiV2Problem(response);
   return response;
+}
+
+function requireEtag(response: Response): string {
+  const etag = response.headers.get("ETag");
+  if (etag === null) throw new Error("Calendar subscription response did not include an ETag");
+  return etag;
 }
 
 export async function fetchCalendarSubscriptionStatus(
@@ -88,24 +96,29 @@ export async function revokeCalendarSubscription(configurationId: number, token:
 export async function fetchUserCalendarSubscriptionStatus(
   token: string,
   signal?: AbortSignal,
-): Promise<CalendarSubscriptionStatus> {
+): Promise<UserCalendarSubscriptionStatus> {
   const response = await requireSuccess(
     await fetch(userCalendarSubscriptionPath, {
       headers: bookingApiV2Headers(token),
       signal,
     }),
   );
-  return parseOrThrow(CalendarSubscriptionStatusSchema, (await response.json()) as unknown);
+  const status = parseOrThrow(CalendarSubscriptionStatusSchema, (await response.json()) as unknown);
+  return { ...status, etag: requireEtag(response) };
 }
 
-export async function createOrReplaceUserCalendarSubscription(token: string): Promise<CalendarSubscriptionCreated> {
+export async function createOrReplaceUserCalendarSubscription(
+  token: string,
+  etag: string,
+): Promise<UserCalendarSubscriptionCreated> {
   const response = await requireSuccess(
     await fetch(userCalendarSubscriptionPath, {
       method: "POST",
-      headers: bookingApiV2Headers(token),
+      headers: { ...bookingApiV2Headers(token), "If-Match": etag },
     }),
   );
-  return parseOrThrow(CalendarSubscriptionCreatedSchema, (await response.json()) as unknown);
+  const created = parseOrThrow(CalendarSubscriptionCreatedSchema, (await response.json()) as unknown);
+  return { ...created, etag: requireEtag(response) };
 }
 
 export async function revokeUserCalendarSubscription(token: string): Promise<void> {

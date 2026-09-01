@@ -1,7 +1,7 @@
 import { HttpResponse, http } from "msw";
 import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
-import { loadCalendarEvents } from "../calendarEvents";
+import { CALENDAR_BOOKING_FIELDS, loadCalendarEvents } from "../calendarEvents";
 import { collectionResponse, otherBooking, ownBooking } from "./calendarTestHarness";
 
 describe("calendar events", () => {
@@ -29,9 +29,9 @@ describe("calendar events", () => {
     expect(requests[0].searchParams.get("where")).toBe(
       "start<2026-08-23T22:00:00Z;end>2026-08-16T22:00:00Z;state==CONFIRMED",
     );
-    expect(requests[0].searchParams.get("fields[bookings]")).toBe(
-      "id,target,requesterId,timezone,start,end,state,kind,purpose,bookedBy,createdBy,privacy,canEdit,createdAt,updatedAt",
-    );
+    const selectedFields = requests[0].searchParams.get("fields[bookings]");
+    expect(selectedFields).toBe(CALENDAR_BOOKING_FIELDS);
+    expect(selectedFields?.split(",")).toContain("canViewConfiguration");
   });
 
   it("rejects unsuccessful responses", async () => {

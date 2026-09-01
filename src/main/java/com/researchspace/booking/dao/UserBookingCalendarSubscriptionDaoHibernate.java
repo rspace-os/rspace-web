@@ -1,7 +1,9 @@
 package com.researchspace.booking.dao;
 
 import com.researchspace.dao.GenericDaoHibernate;
+import com.researchspace.model.User;
 import com.researchspace.model.booking.UserBookingCalendarSubscription;
+import jakarta.persistence.LockModeType;
 import java.util.Optional;
 import org.hibernate.SessionFactory;
 import org.springframework.stereotype.Repository;
@@ -35,6 +37,11 @@ public class UserBookingCalendarSubscriptionDaoHibernate
             UserBookingCalendarSubscription.class)
         .setParameter("tokenHash", tokenHash)
         .uniqueResultOptional();
+  }
+
+  @Override
+  public User lockUser(Long userId) {
+    return getSession().find(User.class, userId, LockModeType.PESSIMISTIC_WRITE);
   }
 
   @Override

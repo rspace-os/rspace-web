@@ -10,7 +10,10 @@ import com.researchspace.inventory.model.ApiV2InstrumentResource;
 import com.researchspace.model.FileProperty;
 import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
+import com.researchspace.model.RoleInGroup;
 import com.researchspace.model.User;
+import com.researchspace.model.UserGroup;
+import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.collection.AccessResult;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
@@ -18,6 +21,7 @@ import com.researchspace.model.inventory.Container.ContainerType;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InstrumentParentLocationSummary;
 import com.researchspace.model.inventory.InstrumentReadSummary;
+import com.researchspace.model.resourceaccess.ResourceAudience;
 import com.researchspace.search.customfield.RuntimeFieldTextSearch;
 import jakarta.persistence.LockModeType;
 import java.util.ArrayList;
@@ -66,6 +70,39 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
   }
 
   @Override
+  public boolean hasLockedTransferAuthority(User subject, User owner) {
+    List<UserGroup> subjectMemberships =
+        getSession()
+            .createQuery(
+                "from UserGroup membership "
+                    + "where membership.user.id = :subjectId "
+                    + "and membership.roleInGroup in :transferRoles",
+                UserGroup.class)
+            .setParameter("subjectId", subject.getId())
+            .setParameterList("transferRoles", List.of(RoleInGroup.PI, RoleInGroup.RS_LAB_ADMIN))
+            .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+            .getResultList();
+    if (subjectMemberships.isEmpty()) {
+      return false;
+    }
+    Set<Long> subjectGroupIds =
+        subjectMemberships.stream()
+            .map(membership -> membership.getGroup().getId())
+            .collect(Collectors.toSet());
+    List<UserGroup> ownerMemberships =
+        getSession()
+            .createQuery(
+                "from UserGroup membership "
+                    + "where membership.user.id = :ownerId and membership.group.id in :groupIds",
+                UserGroup.class)
+            .setParameter("ownerId", owner.getId())
+            .setParameterList("groupIds", subjectGroupIds)
+            .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+            .getResultList();
+    return !ownerMemberships.isEmpty();
+  }
+
+  @Override
   public ResourcePage<Instrument> getReadableResources(
       ResourceRequest request, AccessResult access) {
     try {
@@ -107,6 +144,179 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
                 row ->
                     new InstrumentParentLocationSummary(
                         (Long) row[1], (String) row[2], (ContainerType) row[3])));
+  }
+
+  @Override
+  public Map<Long, InstrumentParentLocationSummary> getReadableParentLocationSummaries(
+      Set<Long> instrumentIds, User caller) {
+    if (instrumentIds.isEmpty()) {
+      return Map.of();
+    }
+    List<String> groupMembers =
+        invPermissionUtils.getUsernameOfUserAndAllMembersOfTheirGroups(caller);
+    List<String> groupNames = caller.getGroups().stream().map(Group::getUniqueName).toList();
+    List<String> visibleOwners = invPermissionUtils.getOwnersVisibleWithUserRole(caller);
+    String hql =
+        "select instrument.id, parent.id, parent.editInfo.name, parent.containerType"
+            + " from Instrument instrument join instrument.parentLocation location"
+            + " join location.container parent where instrument.id in (:instrumentIds)"
+            + " and location.storedInstrument.id = instrument.id and parent.deleted = false and "
+            + readableContainerPredicate(caller, groupMembers, groupNames, visibleOwners, "parent");
+    Query<Object[]> query = getSession().createQuery(hql, Object[].class);
+    query.setParameterList("instrumentIds", instrumentIds);
+    addQueryParams(null, caller, query, visibleOwners, groupMembers, groupNames);
+    return query
+        .getResultStream()
+        .collect(
+            Collectors.toMap(
+                row -> (Long) row[0],
+                row ->
+                    new InstrumentParentLocationSummary(
+                        (Long) row[1], (String) row[2], (ContainerType) row[3])));
+  }
+
+  @Override
+  public ResourcePage<InstrumentParentLocationSummary> getBookingCatalogueLocations(
+      String query, int page, int limit, User caller, Set<String> readableRoleKeys) {
+    if (!caller.hasSysadminRole() && readableRoleKeys.isEmpty()) {
+      return new ResourcePage<>(List.of(), 0);
+    }
+    List<String> groupMembers =
+        invPermissionUtils.getUsernameOfUserAndAllMembersOfTheirGroups(caller);
+    List<String> groupNames = caller.getGroups().stream().map(Group::getUniqueName).toList();
+    List<String> visibleOwners = invPermissionUtils.getOwnersVisibleWithUserRole(caller);
+    Set<Long> bookingGroupIds =
+        caller.getGroups().stream().map(Group::getId).collect(Collectors.toSet());
+    if (bookingGroupIds.isEmpty()) bookingGroupIds = Set.of(-1L);
+
+    String bookingAccess =
+        caller.hasSysadminRole()
+            ? "1=1"
+            : "exists (select assignment.id from ResourceRoleAssignment assignment where"
+                + " assignment.resourceAccess=configuration.resourceAccess and assignment.roleKey"
+                + " in (:readableRoleKeys) and (assignment.user.id=:bookingUserId or"
+                + " assignment.group.id in (:bookingGroupIds) or"
+                + " assignment.audienceKey=:bookingAudience))";
+    String containerAccess =
+        readableContainerPredicate(caller, groupMembers, groupNames, visibleOwners, "parent");
+    String nameFilter =
+        query == null || query.isBlank()
+            ? ""
+            : " and lower(parent.editInfo.name) like :locationQuery escape '\\'";
+    String fromAndWhere =
+        " from BookingConfiguration configuration, Instrument instrument "
+            + "join instrument.parentLocation location join location.container parent "
+            + "where type(instrument)=Instrument and instrument.deleted=false "
+            + "and configuration.deleted=false and configuration.enabled=true "
+            + "and configuration.target.type=:targetType and configuration.target.id=instrument.id "
+            + "and location.storedInstrument.id=instrument.id and parent.deleted=false and "
+            + bookingAccess
+            + " and "
+            + containerAccess
+            + nameFilter;
+
+    Query<Long> countQuery =
+        getSession().createQuery("select count(distinct parent.id)" + fromAndWhere, Long.class);
+    Query<Object[]> pageQuery =
+        getSession()
+            .createQuery(
+                "select parent.id, parent.editInfo.name, parent.containerType"
+                    + fromAndWhere
+                    + " group by parent.id, parent.editInfo.name, parent.containerType"
+                    + " order by lower(parent.editInfo.name), parent.id",
+                Object[].class)
+            .setFirstResult((page - 1) * limit)
+            .setMaxResults(limit);
+    setBookingCatalogueLocationParameters(
+        countQuery,
+        caller,
+        readableRoleKeys,
+        bookingGroupIds,
+        groupMembers,
+        groupNames,
+        visibleOwners,
+        query);
+    setBookingCatalogueLocationParameters(
+        pageQuery,
+        caller,
+        readableRoleKeys,
+        bookingGroupIds,
+        groupMembers,
+        groupNames,
+        visibleOwners,
+        query);
+    long total = countQuery.getSingleResult();
+    List<InstrumentParentLocationSummary> locations =
+        pageQuery
+            .getResultStream()
+            .map(
+                row ->
+                    new InstrumentParentLocationSummary(
+                        (Long) row[0], (String) row[1], (ContainerType) row[2]))
+            .toList();
+    return new ResourcePage<>(locations, total);
+  }
+
+  private String readableContainerPredicate(
+      User caller,
+      List<String> groupMembers,
+      List<String> groupNames,
+      List<String> visibleOwners,
+      String alias) {
+    String direct =
+        getInventoryReadPermissionSqlPredicate(
+            caller, groupMembers, groupNames, visibleOwners, alias + ".");
+    String childContainer =
+        getInventoryReadPermissionSqlPredicate(
+            caller, groupMembers, groupNames, List.of(), "childContainer.");
+    String childInstrument =
+        getInventoryReadPermissionSqlPredicate(
+            caller, groupMembers, groupNames, List.of(), "childInstrument.");
+    String childSubSample =
+        getInventoryReadPermissionSqlPredicate(
+            caller, groupMembers, groupNames, List.of(), "childSubSample.sample.");
+    return "("
+        + direct
+        + " or exists (select childLocation.id from ContainerLocation childLocation "
+        + "join childLocation.storedContainer childContainer where childLocation.container="
+        + alias
+        + " and childContainer.deleted=false and "
+        + childContainer
+        + ") or exists (select childLocation.id from ContainerLocation childLocation "
+        + "join childLocation.storedInstrument childInstrument where childLocation.container="
+        + alias
+        + " and childInstrument.deleted=false and "
+        + childInstrument
+        + ") or exists (select childLocation.id from ContainerLocation childLocation "
+        + "join childLocation.storedSubSample childSubSample where childLocation.container="
+        + alias
+        + " and childSubSample.deleted=false and "
+        + childSubSample
+        + "))";
+  }
+
+  private <T> void setBookingCatalogueLocationParameters(
+      Query<T> query,
+      User caller,
+      Set<String> readableRoleKeys,
+      Set<Long> bookingGroupIds,
+      List<String> groupMembers,
+      List<String> groupNames,
+      List<String> visibleOwners,
+      String locationQuery) {
+    query.setParameter("targetType", BookableTargetType.INSTRUMENT);
+    if (!caller.hasSysadminRole()) {
+      query
+          .setParameterList("readableRoleKeys", readableRoleKeys)
+          .setParameter("bookingUserId", caller.getId())
+          .setParameterList("bookingGroupIds", bookingGroupIds)
+          .setParameter("bookingAudience", ResourceAudience.ALL_USERS);
+    }
+    addQueryParams(null, caller, query, visibleOwners, groupMembers, groupNames);
+    if (locationQuery != null && !locationQuery.isBlank()) {
+      query.setParameter(
+          "locationQuery", "%" + escapeLike(locationQuery.trim().toLowerCase(Locale.ROOT)) + "%");
+    }
   }
 
   @Override
@@ -222,6 +432,38 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
       targetQuery.setParameter("subjectId", subject.getId());
     }
     return targetQuery.getResultList();
+  }
+
+  @Override
+  public Set<Long> findByReadableImmediateParentIds(
+      Set<Long> containerIds, Set<Long> workbenchIds, User caller) {
+    if (containerIds.isEmpty() && workbenchIds.isEmpty()) {
+      return Set.of();
+    }
+    List<String> groupMembers =
+        invPermissionUtils.getUsernameOfUserAndAllMembersOfTheirGroups(caller);
+    List<String> groupNames = caller.getGroups().stream().map(Group::getUniqueName).toList();
+    List<String> visibleOwners = invPermissionUtils.getOwnersVisibleWithUserRole(caller);
+    String parentType =
+        "((parent.id in (:containerIds) and parent.containerType <> :workbenchType)"
+            + " or (parent.id in (:workbenchIds) and parent.containerType = :workbenchType))";
+    String hql =
+        "select distinct instrument.id from Instrument instrument"
+            + " join instrument.parentLocation location"
+            + " join location.container parent"
+            + " where type(instrument) = Instrument and instrument.deleted = false"
+            + " and location.storedInstrument.id = instrument.id and parent.deleted = false"
+            + " and "
+            + parentType
+            + " and "
+            + readableContainerPredicate(caller, groupMembers, groupNames, visibleOwners, "parent");
+    Query<Long> query = getSession().createQuery(hql, Long.class);
+    query
+        .setParameterList("containerIds", containerIds.isEmpty() ? Set.of(-1L) : containerIds)
+        .setParameterList("workbenchIds", workbenchIds.isEmpty() ? Set.of(-1L) : workbenchIds)
+        .setParameter("workbenchType", ContainerType.WORKBENCH);
+    addQueryParams(null, caller, query, visibleOwners, groupMembers, groupNames);
+    return Set.copyOf(query.getResultList());
   }
 
   private static String escapeLike(String value) {

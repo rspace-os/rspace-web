@@ -10,6 +10,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -179,8 +180,6 @@ class TimeSlotBookingManagerTest {
   void directSysadminCreatesMaintenanceOutsideOpeningHoursAndConfiguredMaximum() {
     when(actor.hasSysadminRole()).thenReturn(true);
     ResolvedBookableTarget target = target(12L);
-    when(permissions.canUserReadInventoryRecord((Instrument) target.entity(), actor))
-        .thenReturn(true);
     BookingConfiguration configuration = configuration(4L, 12L, true);
     configuration.setTimeZone("UTC");
     configuration.setOpeningStart("08:00");
@@ -192,8 +191,8 @@ class TimeSlotBookingManagerTest {
         manager.createBooking(
             new TimeSlotBookingManager.Create(
                 target,
-                instant("2026-08-17T22:00:00Z"),
-                instant("2026-08-18T02:00:00Z"),
+                instant("2026-10-26T22:00:00Z"),
+                instant("2026-10-27T02:00:00Z"),
                 "Service optics",
                 BookingEventKind.MAINTENANCE),
             actor,
@@ -205,17 +204,19 @@ class TimeSlotBookingManagerTest {
     verify(bookingDao)
         .overlaps(
             4L,
-            instant("2026-08-17T22:00:00Z"),
-            instant("2026-08-18T02:00:00Z"),
+            instant("2026-10-26T22:00:00Z"),
+            instant("2026-10-27T02:00:00Z"),
             null,
             Set.of(BookingEventKind.BOOKING, BookingEventKind.MAINTENANCE));
   }
 
   @Test
-  void rejectsOrdinaryAndDelegatedMaintenanceBeforeTakingTheConfigurationLock() {
+  void rejectsMaintenanceForABookerRegardlessOfTheAuditActor() {
     ResolvedBookableTarget target = target(12L);
-    when(permissions.canUserReadInventoryRecord((Instrument) target.entity(), actor))
-        .thenReturn(true);
+    BookingConfiguration configuration = configuration(4L, 12L, true);
+    when(configurationDao.lockByTarget(target.reference())).thenReturn(Optional.of(configuration));
+    when(accessManager.resolve(configuration.getResourceAccess(), actor))
+        .thenReturn(bookerAccess());
     TimeSlotBookingManager.Create maintenance =
         new TimeSlotBookingManager.Create(
             target, start(), end(), null, BookingEventKind.MAINTENANCE);
@@ -223,15 +224,13 @@ class TimeSlotBookingManagerTest {
     assertThrows(
         AuthorizationException.class, () -> manager.createBooking(maintenance, actor, actor));
 
-    User delegatedActor = mock(User.class);
-    when(actor.hasSysadminRole()).thenReturn(true);
-    when(delegatedActor.hasSysadminRole()).thenReturn(true);
-    when(delegatedActor.getId()).thenReturn(2L);
+    User sysadminAuditActor = mock(User.class);
+    when(sysadminAuditActor.hasSysadminRole()).thenReturn(true);
     assertThrows(
         AuthorizationException.class,
-        () -> manager.createBooking(maintenance, actor, delegatedActor));
+        () -> manager.createBooking(maintenance, actor, sysadminAuditActor));
 
-    verify(configurationDao, never()).lockByTarget(any());
+    verify(configurationDao, org.mockito.Mockito.times(2)).lockByTarget(target.reference());
   }
 
   @Test
@@ -489,6 +488,7 @@ class TimeSlotBookingManagerTest {
   void requesterCanCancelButCannotReinstate() {
     TimeSlotBooking existing = booking(41L, 12L, actor);
     when(bookingDao.findReadableById(eq(41L), any())).thenReturn(Optional.of(existing));
+    when(bookingDao.findReadableForAuditById(any(), any())).thenReturn(Optional.of(existing));
     when(configurationDao.lockById(4L)).thenReturn(Optional.of(existing.getBookingConfiguration()));
 
     TimeSlotBooking cancelled =
@@ -547,6 +547,7 @@ class TimeSlotBookingManagerTest {
     maintenance.setKind(BookingEventKind.MAINTENANCE);
     maintenance.setCreatedBy(actor);
     when(bookingDao.findReadableById(eq(41L), any())).thenReturn(Optional.of(maintenance));
+    when(bookingDao.findReadableForAuditById(any(), any())).thenReturn(Optional.of(maintenance));
     when(configurationDao.lockById(4L))
         .thenReturn(Optional.of(maintenance.getBookingConfiguration()));
 
@@ -572,10 +573,14 @@ class TimeSlotBookingManagerTest {
   }
 
   @Test
-  void ordinaryAndRunAsSysadminsCannotMutateMaintenance() {
+  void bookerCannotMutateMaintenanceRegardlessOfTheAuditActor() {
     TimeSlotBooking maintenance = booking(41L, 12L, actor);
     maintenance.setKind(BookingEventKind.MAINTENANCE);
     when(bookingDao.findReadableById(eq(41L), any())).thenReturn(Optional.of(maintenance));
+    when(configurationDao.lockById(4L))
+        .thenReturn(Optional.of(maintenance.getBookingConfiguration()));
+    when(accessManager.resolve(maintenance.getBookingConfiguration().getResourceAccess(), actor))
+        .thenReturn(bookerAccess());
 
     assertThrows(
         AuthorizationException.class,
@@ -586,19 +591,17 @@ class TimeSlotBookingManagerTest {
                 actor,
                 actor));
 
-    User runAsSubject = mock(User.class);
-    when(runAsSubject.getId()).thenReturn(2L);
-    when(runAsSubject.hasSysadminRole()).thenReturn(true);
-    when(actor.hasSysadminRole()).thenReturn(true);
+    User sysadminAuditActor = mock(User.class);
+    when(sysadminAuditActor.hasSysadminRole()).thenReturn(true);
     assertThrows(
         AuthorizationException.class,
         () ->
             manager.updateBooking(
                 41L,
                 new TimeSlotBookingManager.Patch(null, null, true, "Changed", null),
-                runAsSubject,
-                actor));
-    verify(configurationDao, never()).lockById(any());
+                actor,
+                sysadminAuditActor));
+    verify(configurationDao, times(2)).lockById(4L);
   }
 
   @Test
@@ -651,6 +654,7 @@ class TimeSlotBookingManagerTest {
         Set.of(
             BookingResourceRoleScheme.READ_RESOURCE,
             BookingResourceRoleScheme.CREATE_BOOKING,
+            BookingResourceRoleScheme.CREATE_BLOCKOUT,
             BookingResourceRoleScheme.MANAGE_OWN_BOOKINGS,
             BookingResourceRoleScheme.MANAGE_ALL_EVENTS),
         List.of());
@@ -658,6 +662,16 @@ class TimeSlotBookingManagerTest {
 
   private static ResolvedResourceAccess noAccess() {
     return new ResolvedResourceAccess(Optional.empty(), Set.of(), List.of());
+  }
+
+  private static ResolvedResourceAccess bookerAccess() {
+    return new ResolvedResourceAccess(
+        Optional.of(BookingResourceRoleScheme.BOOKER),
+        Set.of(
+            BookingResourceRoleScheme.READ_RESOURCE,
+            BookingResourceRoleScheme.CREATE_BOOKING,
+            BookingResourceRoleScheme.MANAGE_OWN_BOOKINGS),
+        List.of());
   }
 
   private static ResolvedResourceAccess viewerAccess() {

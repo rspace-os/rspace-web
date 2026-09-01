@@ -56,16 +56,16 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
     Setup setup = persistConfiguration(owner, created.getId(), false, 10, 20);
     ResolvedBookableTarget target = new ResolvedBookableTarget(setup.target(), setup.instrument());
 
-    create(target, owner, "2026-08-17T10:00:00Z", "2026-08-17T11:00:00Z");
+    create(target, owner, "2026-10-17T10:00:00Z", "2026-10-17T11:00:00Z");
 
     assertThrows(
         BookingOverlapException.class,
-        () -> create(target, owner, "2026-08-17T11:15:00Z", "2026-08-17T12:00:00Z"));
+        () -> create(target, owner, "2026-10-17T11:15:00Z", "2026-10-17T12:00:00Z"));
     assertThrows(
         BookingOverlapException.class,
-        () -> create(target, owner, "2026-08-17T09:00:00Z", "2026-08-17T09:55:00Z"));
-    create(target, owner, "2026-08-17T11:20:00Z", "2026-08-17T12:00:00Z");
-    create(target, owner, "2026-08-17T09:00:00Z", "2026-08-17T09:50:00Z");
+        () -> create(target, owner, "2026-10-17T09:00:00Z", "2026-10-17T09:55:00Z"));
+    create(target, owner, "2026-10-17T11:20:00Z", "2026-10-17T12:00:00Z");
+    create(target, owner, "2026-10-17T09:00:00Z", "2026-10-17T09:50:00Z");
   }
 
   private void assertConcurrentOverlappingCreates(
@@ -95,8 +95,8 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
       var create =
           new TimeSlotBookingManager.Create(
               new ResolvedBookableTarget(setup.target(), setup.instrument()),
-              Date.from(Instant.parse("2026-08-17T10:00:00Z")),
-              Date.from(Instant.parse("2026-08-17T11:00:00Z")),
+              Date.from(Instant.parse("2026-10-17T10:00:00Z")),
+              Date.from(Instant.parse("2026-10-17T11:00:00Z")),
               "Concurrent test");
       Future<Throwable> first =
           pool.submit(() -> attemptCreate(create, owner, contendersStarted, startContenders));

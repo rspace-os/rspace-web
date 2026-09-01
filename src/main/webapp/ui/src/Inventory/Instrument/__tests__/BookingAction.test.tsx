@@ -56,33 +56,55 @@ function renderAction({ isOwner = true }: { isOwner?: boolean } = {}) {
   );
 }
 
-function bookingHandlers({ enabled, configured }: { enabled: boolean; configured: boolean }) {
+function configuration({ canBook = true, enabled = true }: { canBook?: boolean; enabled?: boolean } = {}) {
+  return {
+    id: 456,
+    configurationVersion: 0,
+    target: {
+      relationTo: "booking-instruments",
+      value: { id: 123, name: "Confocal microscope", deleted: false },
+      globalId,
+    },
+    enabled,
+    timezone: "UTC",
+    slotGranularityMinutes: 5,
+    openingStart: "00:00",
+    openingEnd: "24:00",
+    bufferBeforeMinutes: 0,
+    bufferAfterMinutes: 0,
+    maxBookingDurationMinutes: 0,
+    allowDoubleBooking: false,
+    capabilities: {
+      canEditConfiguration: false,
+      canArchiveConfiguration: false,
+      canViewAudit: false,
+      canViewAccess: false,
+      canManageAssignments: false,
+      canManageOwners: false,
+      canCreateBooking: canBook,
+      canManageOwnBookings: canBook,
+      canManageAllEvents: false,
+      canCreateBlockout: false,
+      canSubscribeCalendar: false,
+      canLeaveConfiguration: false,
+    },
+  };
+}
+
+function bookingHandlers({ enabled, docs }: { enabled: boolean; docs: readonly unknown[] }) {
   return [
     http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "test-token" })),
     http.get("/api/v2/feature-flags", () => HttpResponse.json(featureFlagPage(enabled))),
-    http.get("/api/v2/booking-configurations", () =>
-      HttpResponse.json(
-        collectionPage(
-          configured
-            ? [
-                {
-                  id: 456,
-                  target: { relationTo: "instruments", value: 123, globalId },
-                },
-              ]
-            : [],
-        ),
-      ),
-    ),
+    http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage(docs))),
   ];
 }
 
 describe("Inventory instrument booking action", () => {
   test("links an owner to booking creation when booking is configured", async () => {
-    server.use(...bookingHandlers({ enabled: true, configured: true }));
+    server.use(...bookingHandlers({ enabled: true, docs: [configuration()] }));
     const { container } = renderAction();
 
-    const link = await screen.findByRole("link", { name: "inventory:instrument.booking.configured.action" });
+    const link = await screen.findByRole("link", { name: "inventory:instrument.booking.configured.book" });
 
     expect(screen.getAllByRole("link")).toHaveLength(1);
     expect(link).toHaveAttribute("href", "/booking/calendar/bookings/add?target=IN123");
@@ -91,13 +113,13 @@ describe("Inventory instrument booking action", () => {
   });
 
   test("links an owner to booking setup when booking is not configured", async () => {
-    server.use(...bookingHandlers({ enabled: true, configured: false }));
+    server.use(...bookingHandlers({ enabled: true, docs: [] }));
     const { container } = renderAction();
 
     const link = await screen.findByRole("link", { name: "inventory:instrument.booking.notConfigured.action" });
 
     expect(screen.getAllByRole("link")).toHaveLength(1);
-    expect(link).toHaveAttribute("href", "/booking/config/bookable-items/add");
+    expect(link).toHaveAttribute("href", "/booking/bookable-items/add?target=IN123");
     expect(screen.getByText("inventory:instrument.booking.notConfigured.title")).toBeInTheDocument();
     await expectAccessible(container);
   });
@@ -123,9 +145,28 @@ describe("Inventory instrument booking action", () => {
     expect(configurationRequests).toBe(0);
   });
 
-  test("shows no booking UI when the viewer is not the owner", () => {
+  test("opens the booking page for a viewer without offering booking", async () => {
+    server.use(...bookingHandlers({ enabled: true, docs: [configuration({ canBook: false })] }));
     renderAction({ isOwner: false });
 
-    expect(screen.queryByRole("link")).not.toBeInTheDocument();
+    expect(await screen.findByRole("link", { name: "inventory:instrument.booking.configured.open" })).toHaveAttribute(
+      "href",
+      "/booking/bookable-items/IN123",
+    );
+  });
+
+  test("does not request availability data", async () => {
+    let availabilityRequests = 0;
+    server.use(
+      ...bookingHandlers({ enabled: true, docs: [configuration()] }),
+      http.get("/api/v2/booking-availability", () => {
+        availabilityRequests += 1;
+        return HttpResponse.json({});
+      }),
+    );
+    renderAction();
+
+    await screen.findByRole("link", { name: "inventory:instrument.booking.configured.book" });
+    expect(availabilityRequests).toBe(0);
   });
 });

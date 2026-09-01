@@ -77,6 +77,22 @@ public class TimeSlotBookingDaoHibernate extends GenericDaoHibernate<TimeSlotBoo
   }
 
   @Override
+  public Optional<TimeSlotBooking> findReadableForAuditById(
+      ResourceRequest authorizedRequest, RelationshipReadAccess targetAccess) {
+    return collectionQuery
+        .page(
+            criteriaBuilderFactory,
+            getSession(),
+            authorizedRequest,
+            null,
+            targetAccess,
+            List.of("bookingConfiguration", "requester"))
+        .resources()
+        .stream()
+        .findFirst();
+  }
+
+  @Override
   public boolean overlaps(
       Long configurationId,
       Date start,
@@ -150,6 +166,7 @@ public class TimeSlotBookingDaoHibernate extends GenericDaoHibernate<TimeSlotBoo
                 + " join fetch booking.requester"
                 + " left join fetch booking.createdBy"
                 + " where booking.requester.id = :userId"
+                + " and booking.bookingConfiguration.deleted = false"
                 + " and booking.deleted = false and booking.state = :state"
                 + " and booking.endTime > :cutoff"
                 + " order by booking.startTime, booking.id",
@@ -158,6 +175,23 @@ public class TimeSlotBookingDaoHibernate extends GenericDaoHibernate<TimeSlotBoo
         .setParameter("state", BookingState.CONFIRMED)
         .setParameter("cutoff", cutoff)
         .setMaxResults(maximumRows)
+        .getResultList();
+  }
+
+  @Override
+  public List<TimeSlotBooking> findFutureConfirmedByConfiguration(Long configurationId, Date now) {
+    return getSession()
+        .createQuery(
+            "select booking from TimeSlotBooking booking"
+                + " join fetch booking.requester"
+                + " where booking.bookingConfiguration.id = :configurationId"
+                + " and booking.deleted = false and booking.state = :state"
+                + " and booking.startTime > :now"
+                + " order by booking.startTime, booking.id",
+            TimeSlotBooking.class)
+        .setParameter("configurationId", configurationId)
+        .setParameter("state", BookingState.CONFIRMED)
+        .setParameter("now", now)
         .getResultList();
   }
 

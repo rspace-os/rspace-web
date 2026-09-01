@@ -37,6 +37,7 @@ export const DEFAULT_SEARCH = {
   ownedBy: null,
   owner: null,
   deletedItems: "EXCLUDE" as const,
+  bookable: null,
   permalink: null,
   benchOwner: null,
 };
@@ -82,12 +83,15 @@ export const parseCoreFetcherArgsFromUrl = (searchParams: URLSearchParams): Core
     searchParams.get("deletedItems"),
     new Error(`Search parameter "deletedItems" is missing`),
   ).flatMap(parseDeletedItems);
+  const bookableParameter = searchParams.get("bookable");
+  const bookable = bookableParameter === "true" ? true : bookableParameter === "false" ? false : null;
   return {
     ...(query ? { query } : {}),
     ...(orderBy ? { orderBy } : {}),
     ...(ownedBy ? { ownedBy } : {}),
     ...(parentGlobalId ? { parentGlobalId } : {}),
     ...deletedItems.map((dItems) => ({ deletedItems: dItems })).orElse({}),
+    ...(bookable === null ? {} : { bookable }),
     ...order.map((o) => ({ order: o })).orElse({}),
     ...pageNumber.map((pNumber) => ({ pageNumber: pNumber })).orElse({}),
     ...pageSize.map((pSize) => ({ pageSize: pSize })).orElse({}),
@@ -154,6 +158,8 @@ export default class CoreFetcher {
   // @ts-expect-error set by passing DEFAULT_SEARCH to setAttributes
   deletedItems: DeletedItems;
   // @ts-expect-error set by passing DEFAULT_SEARCH to setAttributes
+  bookable: boolean | null;
+  // @ts-expect-error set by passing DEFAULT_SEARCH to setAttributes
   benchOwner: Person | null;
   /**
    * Set when a permalink fetch fails, so that the UI can show a specific
@@ -187,6 +193,7 @@ export default class CoreFetcher {
       ownedBy: observable,
       owner: observable,
       deletedItems: observable,
+      bookable: observable,
       benchOwner: observable,
       permalinkNotFound: observable,
       setAttributes: action,
@@ -205,6 +212,7 @@ export default class CoreFetcher {
       replaceResult: action,
       resetSearch: action,
       setDeletedItems: action,
+      setBookable: action,
       setParentGlobalId: action,
       setOwner: action,
       setBenchOwner: action,
@@ -497,7 +505,7 @@ export default class CoreFetcher {
       (acc, [k, v]) => ({
         // biome-ignore lint/performance/noAccumulatingSpread: initial biome migration
         ...acc,
-        [k]: acc[k] || this[k] || v,
+        [k]: Object.hasOwn(acc, k) ? acc[k] : (this[k] ?? v),
       }),
       params,
     );
@@ -610,6 +618,10 @@ export default class CoreFetcher {
 
   setDeletedItems(value: DeletedItems) {
     this.deletedItems = value;
+  }
+
+  setBookable(value: boolean | null) {
+    this.bookable = value;
   }
 
   setResultType(resultType: ResultType) {

@@ -12,6 +12,7 @@ import {
   useResetBookingDisplayPreferences,
 } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
+import { DirtyNavigationGuard } from "@/modules/common/navigation/DirtyNavigationGuard";
 import { Button } from "@/modules/common/ui/button";
 import { Separator } from "@/modules/common/ui/separator";
 import { Heading } from "@/modules/common/ui/typography";
@@ -52,6 +53,7 @@ export default function BookingPreferencesPage() {
 
   return (
     <main className="space-y-6 p-4 sm:p-8">
+      <DirtyNavigationGuard dirty={dirty} />
       <div>
         <Heading level={2} as="h1" className="mb-2">
           {t("preferences.title")}
@@ -83,8 +85,8 @@ export default function BookingPreferencesPage() {
             {t("preferences.errors.save")}
           </p>
         ) : null}
-        {replace.isSuccess ? <p role="status">{t("preferences.saved")}</p> : null}
-        {reset.isSuccess ? <p role="status">{t("preferences.resetComplete")}</p> : null}
+        {replace.isSuccess && !dirty ? <p role="status">{t("preferences.saved")}</p> : null}
+        {reset.isSuccess && !dirty ? <p role="status">{t("preferences.resetComplete")}</p> : null}
         <div className="flex flex-wrap gap-3">
           <Button type="submit" disabled={pending || !dirty || !valid} aria-busy={replace.isPending}>
             {t("preferences.actions.save")}

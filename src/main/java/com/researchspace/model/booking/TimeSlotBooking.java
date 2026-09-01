@@ -105,6 +105,7 @@ public class TimeSlotBooking implements Serializable {
 
   private transient BookingPrivacy preparedPrivacy = BookingPrivacy.BUSY;
   private transient boolean preparedCanEdit;
+  private transient boolean preparedCanCancel;
   private transient boolean preparedCanViewConfiguration;
 
   public TimeSlotBooking() {}
@@ -114,6 +115,13 @@ public class TimeSlotBooking implements Serializable {
   @AuditTrailIdentifier
   public String getAuditTrailIdentifier() {
     return id == null ? null : "bookings:" + id;
+  }
+
+  /** Parent identifier copied into every audit payload for direct lifecycle aggregation. */
+  @Transient
+  @AuditTrailProperty(name = "bookingConfigurationId")
+  public String getAuditBookingConfigurationId() {
+    return bookingConfiguration == null ? null : bookingConfiguration.getAuditTrailIdentifier();
   }
 
   @Column(nullable = false)
@@ -155,10 +163,17 @@ public class TimeSlotBooking implements Serializable {
   }
 
   /** Prepares the safe response values for the current actor without changing persisted data. */
-  public void prepareView(BookingPrivacy privacy, boolean canEdit, boolean canViewConfiguration) {
+  public void prepareView(
+      BookingPrivacy privacy, boolean canEdit, boolean canCancel, boolean canViewConfiguration) {
     preparedPrivacy = privacy == null ? BookingPrivacy.BUSY : privacy;
     preparedCanEdit = preparedPrivacy == BookingPrivacy.FULL && canEdit;
+    preparedCanCancel = preparedPrivacy == BookingPrivacy.FULL && canCancel;
     preparedCanViewConfiguration = canViewConfiguration;
+  }
+
+  /** Backward-compatible preparation for callers that use the same eligibility for both actions. */
+  public void prepareView(BookingPrivacy privacy, boolean canEdit, boolean canViewConfiguration) {
+    prepareView(privacy, canEdit, canEdit, canViewConfiguration);
   }
 
   /** Returns the detail level prepared by the manager for this response. */
@@ -171,6 +186,12 @@ public class TimeSlotBooking implements Serializable {
   @Transient
   public boolean isCanEdit() {
     return preparedCanEdit;
+  }
+
+  /** Returns whether the current actor may cancel this booking. */
+  @Transient
+  public boolean isCanCancel() {
+    return preparedCanCancel;
   }
 
   /** Returns whether the current actor may navigate to the parent Booking configuration. */

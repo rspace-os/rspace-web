@@ -9,10 +9,22 @@ import {
 
 export class ResourceAccessRequestError extends Error {
   readonly status: number;
+  readonly code: string | null;
 
-  constructor(status: number) {
+  constructor(status: number, code: string | null = null) {
     super(`Resource access request failed with status ${status}`);
     this.status = status;
+    this.code = code;
+  }
+}
+
+async function requestError(response: Response): Promise<ResourceAccessRequestError> {
+  try {
+    const body = (await response.json()) as { code?: unknown; errorCode?: unknown };
+    const code = typeof body.code === "string" ? body.code : body.errorCode;
+    return new ResourceAccessRequestError(response.status, typeof code === "string" ? code : null);
+  } catch {
+    return new ResourceAccessRequestError(response.status);
   }
 }
 
@@ -30,7 +42,7 @@ export async function fetchResourceAccess(
   signal?: AbortSignal,
 ): Promise<ResourceAccessDocument> {
   const response = await fetch(`/api/v2/${resource}/${id}/access`, { headers: headers(token), signal });
-  if (!response.ok) throw new ResourceAccessRequestError(response.status);
+  if (!response.ok) throw await requestError(response);
   return parseOrThrow(ResourceAccessDocumentSchema, (await response.json()) as unknown);
 }
 
@@ -46,7 +58,7 @@ export async function replaceResourceAccess(
     headers: { ...headers(token, true), "If-Match": `"${version}"` },
     body: JSON.stringify({ assignments }),
   });
-  if (!response.ok) throw new ResourceAccessRequestError(response.status);
+  if (!response.ok) throw await requestError(response);
   return parseOrThrow(ResourceAccessDocumentSchema, (await response.json()) as unknown);
 }
 

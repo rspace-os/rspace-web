@@ -10,6 +10,7 @@ import com.researchspace.api.v2.resource.ResourceAccessSpec;
 import com.researchspace.api.v2.resource.ResourceOperation;
 import com.researchspace.api.v2.resource.ResourceOperations;
 import com.researchspace.booking.config.BookingTimeConfig;
+import com.researchspace.booking.service.BookingConcurrentModificationException;
 import com.researchspace.booking.service.BookingConfigurationManager;
 import com.researchspace.booking.service.BookingConfigurationManager.Create;
 import com.researchspace.booking.service.BookingConfigurationManager.Patch;
@@ -37,6 +38,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -84,6 +86,16 @@ public final class BookingConfigurationResourceOperations
                 HttpStatus.CONFLICT,
                 "errors.api.v2.bookingConfiguration.target.conflict",
                 "The instrument already has a booking configuration."));
+    List<ApiV2ErrorMapping> updateErrors =
+        java.util.stream.Stream.concat(
+                writeErrors.stream(),
+                java.util.stream.Stream.of(
+                    ApiV2ErrorMapping.of(
+                        BookingConcurrentModificationException.class,
+                        HttpStatus.PRECONDITION_FAILED,
+                        "errors.api.v2.bookingConfiguration.concurrentModification",
+                        "The configuration changed while it was being edited.")))
+            .toList();
     return new ApiV2ResourceSpec<>(
         description,
         this,
@@ -124,7 +136,7 @@ public final class BookingConfigurationResourceOperations
             ResourceOperation.BULK_CREATE,
             writeErrors,
             ResourceOperation.UPDATE,
-            writeErrors,
+            updateErrors,
             ResourceOperation.BULK_UPDATE,
             writeErrors),
         ApiV2BookingConfigurationResource.MUTATION_LIMITS,
@@ -161,6 +173,16 @@ public final class BookingConfigurationResourceOperations
   }
 
   @Override
+  public Set<String> relatedAuditFields() {
+    return Set.of("bookingConfigurationId", "start", "end", "kind", "state", "purpose", "deleted");
+  }
+
+  @Override
+  public boolean auditBypassesActorDirectory() {
+    return true;
+  }
+
+  @Override
   public BookingConfiguration create(ParsedDocument document, ApiV2Caller caller) {
     if (!enabled(caller.subject())) {
       throw new AuthorizationException();
@@ -181,16 +203,40 @@ public final class BookingConfigurationResourceOperations
   public Optional<BookingConfiguration> update(
       Long id, ParsedDocument document, ApiV2Caller caller) {
     if (!enabled(caller.subject())) {
-      return Optional.empty();
+      throw new AuthorizationException("errors.api.v2.forbidden");
     }
     return manager.updateConfiguration(id, patch(document), caller.subject(), caller.actor());
+  }
+
+  @Override
+  public Optional<BookingConfiguration> update(
+      Long id, ParsedDocument document, Long expectedVersion, ApiV2Caller caller) {
+    if (!enabled(caller.subject())) {
+      throw new AuthorizationException();
+    }
+    return manager.updateConfiguration(
+        id,
+        patch(document),
+        java.util.Objects.requireNonNull(expectedVersion, "Expected configuration version"),
+        caller.subject(),
+        caller.actor());
+  }
+
+  @Override
+  public Optional<String> versionField() {
+    return Optional.of("configurationVersion");
+  }
+
+  @Override
+  public Optional<String> ifMatchRequiredCode() {
+    return Optional.of("errors.api.v2.bookingConfiguration.ifMatchRequired");
   }
 
   @Override
   public List<BookingConfiguration> updateMany(
       ResourceRequest request, ParsedDocument document, ApiV2Caller caller) {
     if (!enabled(caller.subject())) {
-      return List.of();
+      throw new AuthorizationException("errors.api.v2.forbidden");
     }
     return manager.updateConfigurations(request, patch(document), caller.subject(), caller.actor());
   }
@@ -198,7 +244,7 @@ public final class BookingConfigurationResourceOperations
   @Override
   public Optional<BookingConfiguration> delete(Long id, ApiV2Caller caller) {
     if (!enabled(caller.subject())) {
-      return Optional.empty();
+      throw new AuthorizationException("errors.api.v2.forbidden");
     }
     return manager.removeConfiguration(id, caller.subject(), caller.actor());
   }
@@ -206,7 +252,7 @@ public final class BookingConfigurationResourceOperations
   @Override
   public List<BookingConfiguration> deleteMany(ResourceRequest request, ApiV2Caller caller) {
     if (!enabled(caller.subject())) {
-      return List.of();
+      throw new AuthorizationException("errors.api.v2.forbidden");
     }
     return manager.removeConfigurations(request, caller.subject(), caller.actor());
   }

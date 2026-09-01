@@ -64,7 +64,7 @@ class ResourceAccessDaoTest extends SpringTransactionalTest {
     assertEquals(
         "audience:all-users",
         resourceAccessDao
-            .resolveAvailable("audience:all-users", BookingResourceRoleScheme.VIEWER)
+            .resolveAvailable("audience:all-users", BookingResourceRoleScheme.VIEWER, "All users")
             .getGranteeKey());
     assertNull(
         resourceAccessDao.resolveAvailable("user:not-an-id", BookingResourceRoleScheme.BOOKER));

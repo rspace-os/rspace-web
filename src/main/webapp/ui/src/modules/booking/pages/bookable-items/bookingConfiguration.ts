@@ -35,6 +35,7 @@ const NO_BOOKING_CAPABILITIES = {
 export const BookingConfigurationSchema = v.pipe(
   v.object({
     id: v.number(),
+    configurationVersion: v.number(),
     target: v.nullable(
       v.object({
         relationTo: v.literal("booking-instruments"),
@@ -135,7 +136,7 @@ export const BookingConfigurationUpdateInputSchema = v.pipe(
 export type BookingConfigurationUpdateInput = v.InferOutput<typeof BookingConfigurationUpdateInputSchema>;
 
 export const BOOKING_CONFIGURATION_READ_FIELDS =
-  "id,target,enabled,timezone,slotGranularityMinutes,openingStart,openingEnd,bufferBeforeMinutes,bufferAfterMinutes,maxBookingDurationMinutes,allowDoubleBooking,updatedAt,effectiveRole,roleSources,capabilities,ownerHealth";
+  "id,configurationVersion,target,enabled,timezone,slotGranularityMinutes,openingStart,openingEnd,bufferBeforeMinutes,bufferAfterMinutes,maxBookingDurationMinutes,allowDoubleBooking,updatedAt,effectiveRole,roleSources,capabilities,ownerHealth";
 
 export async function fetchBookingConfiguration(
   id: number,
@@ -184,6 +185,37 @@ export async function fetchBookingConfigurationByTarget(
     throw new Error(`Expected exactly one booking configuration for ${globalId}`);
   }
   return configurations[0];
+}
+
+/** Returns a readable configuration for one Inventory target, or null when none is visible. */
+export async function findBookingConfigurationByTarget(
+  globalId: string,
+  token: string,
+  signal?: AbortSignal,
+): Promise<BookingConfiguration | null> {
+  const where = serializeRsqlExpression<BookingConfiguration>({
+    kind: "comparison",
+    field: "target",
+    operator: "equals",
+    value: globalId,
+  });
+  const parameters = new URLSearchParams({
+    depth: "1",
+    limit: "2",
+    where,
+    "fields[booking-configurations]": BOOKING_CONFIGURATION_READ_FIELDS,
+  });
+  const response = await fetch(`/api/v2/booking-configurations?${parameters}`, {
+    headers: bookingApiV2Headers(token),
+    signal,
+  });
+  if (!response.ok) throw new Error(`Booking configuration request failed with status ${response.status}`);
+  const configurations = parseOrThrow(
+    v2ListEnvelope(BookingConfigurationSchema),
+    (await response.json()) as unknown,
+  ).docs;
+  if (configurations.length > 1) throw new Error(`Expected at most one booking configuration for ${globalId}`);
+  return configurations[0] ?? null;
 }
 
 /** Returns the readable Booking configurations for a bounded set of Instrument global IDs. */

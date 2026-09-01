@@ -51,7 +51,11 @@
             "invalid": "Choose Browser, Institution, or a valid custom IANA time zone."
           }
         },
-        "bookingConfiguration": {
+      "bookingCalendar": {
+        "ifMatchRequired": "The current calendar subscription version is required.",
+        "subscriptionConflict": "The calendar subscription changed. Refresh it and try again."
+      },
+      "bookingConfiguration": {
           "create": "The booking configuration is invalid.",
           "defaultSharing": {
             "invalid": "Choose at least one available user or group when sharing with selected people, and do not include selected people for other sharing options."
@@ -80,6 +84,7 @@
           }
         },
         "resourceAccess": {
+          "assignmentLimit": "A resource can have at most 100 named user or group assignments.",
           "duplicateGrantee": "Each user or group can have only one direct role.",
           "forbidden": "You do not have permission to manage access to this resource.",
           "ifMatchRequired": "The current access version is required.",
@@ -449,6 +454,11 @@
     "dataverseConfiguration": "Dataverse configuration",
     "exportPlan": "Export plan",
     "property": "Property"
+  },
+  "resourceAccess": {
+    "audiences": {
+      "allUsers": "All users"
+    }
   },
   "validation": {
     "errors": {

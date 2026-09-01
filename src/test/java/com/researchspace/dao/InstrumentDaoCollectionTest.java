@@ -1,8 +1,10 @@
 package com.researchspace.dao;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import com.researchspace.model.Group;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.AccessContext;
 import com.researchspace.model.collection.AccessContext.Operation;
@@ -139,5 +141,18 @@ public class InstrumentDaoCollectionTest extends SpringTransactionalTest {
     assertTrue(
         instrumentDao.getReadableResources(request, readAccess(owner)).resources().isEmpty());
     assertEquals(0, instrumentDao.countReadableResources(request, readAccess(owner)));
+  }
+
+  @Test
+  public void locksAndReadsCurrentGroupTransferAuthority() {
+    User pi = createAndSaveUserIfNotExists(getRandomAlphabeticString("pi"), "ROLE_PI");
+    User owner = createAndSaveUserIfNotExists(getRandomAlphabeticString("owner"));
+    User ordinaryMember = createAndSaveUserIfNotExists(getRandomAlphabeticString("member"));
+    initialiseContentWithEmptyContent(pi, owner, ordinaryMember);
+    Group group = createGroup(getRandomAlphabeticString("transferGroup"), pi);
+    addUsersToGroup(pi, group, owner, ordinaryMember);
+
+    assertTrue(instrumentDao.hasLockedTransferAuthority(pi, owner));
+    assertFalse(instrumentDao.hasLockedTransferAuthority(ordinaryMember, owner));
   }
 }

@@ -11,6 +11,8 @@ import com.researchspace.model.resourceaccess.ResourceAccess;
 import com.researchspace.model.resourceaccess.ResourceAudience;
 import com.researchspace.model.resourceaccess.ResourceGranteeKind;
 import com.researchspace.model.resourceaccess.ResourceRoleAssignment;
+import com.researchspace.model.resourceaccess.ResourceRoleSource;
+import com.researchspace.model.resourceaccess.ResourceRoleSourceKind;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -47,7 +49,8 @@ class ResourceAccessResolverTest {
     access.addAssignment(ResourceRoleAssignment.forUser(READER, subject));
     access.addAssignment(ResourceRoleAssignment.forGroup(CONTRIBUTOR, contributorGroup));
     access.addAssignment(ResourceRoleAssignment.forGroup(MANAGER, managerGroup));
-    access.addAssignment(ResourceRoleAssignment.forAudience(READER, ResourceAudience.ALL_USERS));
+    access.addAssignment(
+        ResourceRoleAssignment.forAudience(READER, ResourceAudience.ALL_USERS, "All users"));
 
     ResolvedResourceAccess resolved = resolver.resolve(access, subject);
 
@@ -73,7 +76,8 @@ class ResourceAccessResolverTest {
     access.addAssignment(ResourceRoleAssignment.forUser(OWNER, disabledDirect));
     access.addAssignment(ResourceRoleAssignment.forGroup(MANAGER, emptyGroup));
     access.addAssignment(ResourceRoleAssignment.forGroup(CONTRIBUTOR, unrelatedGroup));
-    access.addAssignment(ResourceRoleAssignment.forAudience(READER, ResourceAudience.ALL_USERS));
+    access.addAssignment(
+        ResourceRoleAssignment.forAudience(READER, ResourceAudience.ALL_USERS, "All users"));
 
     ResolvedResourceAccess resolved = resolver.resolve(access, subject);
 
@@ -87,7 +91,8 @@ class ResourceAccessResolverTest {
     User disabledSysadmin = user(12L, "Disabled", false);
     when(disabledSysadmin.hasSysadminRole()).thenReturn(true);
     access.addAssignment(ResourceRoleAssignment.forUser(OWNER, disabledSysadmin));
-    access.addAssignment(ResourceRoleAssignment.forAudience(READER, ResourceAudience.ALL_USERS));
+    access.addAssignment(
+        ResourceRoleAssignment.forAudience(READER, ResourceAudience.ALL_USERS, "All users"));
 
     ResolvedResourceAccess resolved = resolver.resolve(access, disabledSysadmin);
 

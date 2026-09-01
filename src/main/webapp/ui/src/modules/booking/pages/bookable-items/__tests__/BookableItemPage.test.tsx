@@ -8,7 +8,7 @@ import {
   Outlet,
   RouterProvider,
 } from "@tanstack/react-router";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { Suspense } from "react";
@@ -28,6 +28,7 @@ vi.mock("@/modules/common/queries/currentUser", () => ({ useCurrentUserQuery: vi
 
 const configuration = {
   id: 7,
+  configurationVersion: 0,
   target: {
     relationTo: "booking-instruments",
     value: {
@@ -53,6 +54,7 @@ const configuration = {
 };
 const booking = {
   id: 41,
+  version: 0,
   target: configuration.target,
   timezone: "UTC",
   start: "2026-08-25T09:00:00Z",
@@ -62,6 +64,7 @@ const booking = {
   purpose: null,
   bookedBy: "Ada Lovelace (ada)",
   canEdit: false,
+  canCancel: false,
   createdAt: "2026-08-17T00:00:00Z",
   updatedAt: "2026-08-17T00:00:00Z",
 };
@@ -132,6 +135,8 @@ describe("BookableItemPage", () => {
     expect(
       screen.getByRole("button", { name: "booking:bookableItemDetails.calendarSubscription.trigger" }),
     ).toBeVisible();
+    expect(screen.getByRole("button", { name: "booking:bookings.actions.newBooking" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "booking:bookableItemDetails.actions.archive" })).toBeVisible();
     expect(screen.getAllByText("UTC").length).toBeGreaterThan(0);
     expect(screen.getByRole("tab", { name: "booking:bookableItemDetails.tabs.bookings" })).toHaveAttribute(
       "aria-selected",
@@ -155,6 +160,29 @@ describe("BookableItemPage", () => {
     expect(boundaries[0]).toBeTruthy();
     expect(boundaries[0]).toBe(boundaries[1]);
     await expectAccessible(container);
+  });
+
+  it("archives an owned configuration after confirmation", async () => {
+    let deleteRequest: Request | undefined;
+    server.use(
+      http.get("/api/v2/booking-configurations", () => HttpResponse.json(envelope([configuration], 2))),
+      http.get("/api/v2/bookings", () => HttpResponse.json(envelope([], 10))),
+      http.delete("/api/v2/booking-configurations/7", ({ request }) => {
+        deleteRequest = request;
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+    const user = userEvent.setup();
+    const { router } = renderPage();
+
+    await user.click(await screen.findByRole("button", { name: "booking:bookableItemDetails.actions.archive" }));
+    const dialog = screen.getByRole("alertdialog", { name: "booking:bookableItemDetails.archiveDialog.title" });
+    await expectAccessible(dialog);
+    await user.click(within(dialog).getByRole("button", { name: "booking:bookableItemDetails.archiveDialog.confirm" }));
+
+    await waitFor(() => expect(deleteRequest).toBeDefined());
+    expect(deleteRequest?.headers.get("Authorization")).toBe("Bearer token");
+    await waitFor(() => expect(router.state.location.pathname).toBe("/booking/bookable-items/archived/7"));
   });
 
   it("saves booking rules in place and returns to the read-out", async () => {
@@ -324,6 +352,9 @@ describe("BookableItemPage", () => {
     expect(await screen.findByText("booking:bookableItemDetails.unlimited")).toBeVisible();
     expect(screen.queryByRole("button", { name: "booking:bookableItems.actions.save" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "booking:bookableItemDetails.edit" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "booking:bookableItemDetails.actions.archive" }),
+    ).not.toBeInTheDocument();
   });
 
   it("loads the audit trail only once its tab is opened", async () => {
@@ -365,7 +396,7 @@ describe("BookableItemPage", () => {
     // TableList keeps both the table and card presentations mounted and picks
     // between them with container queries, which jsdom does not evaluate, so
     // every cell matches twice.
-    expect((await screen.findAllByText("Morgan Ellis"))[0]).toBeVisible();
+    expect((await screen.findAllByText("Morgan Ellis (morgan.ellis)"))[0]).toBeVisible();
     expect(screen.getAllByText("WRITE")[0]).toBeVisible();
     expect(screen.getAllByText("maxBookingDurationMinutes")[0]).toBeVisible();
     await waitFor(() => expect(auditRequests).toBe(1));

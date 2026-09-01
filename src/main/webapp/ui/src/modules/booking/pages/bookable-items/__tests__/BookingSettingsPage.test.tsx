@@ -53,7 +53,7 @@ describe("BookingSettingsPage", () => {
   it("offers every supported time increment", async () => {
     server.use(
       oauthTokenHandler(),
-      http.get("/api/v2/booking-settings", () => HttpResponse.json(settings)),
+      http.get("/api/v2/booking-settings/admin", () => HttpResponse.json(settings)),
     );
     renderPage();
 
@@ -72,8 +72,8 @@ describe("BookingSettingsPage", () => {
     let patches = 0;
     server.use(
       oauthTokenHandler(),
-      http.get("/api/v2/booking-settings", () => HttpResponse.json(settings)),
-      http.patch("/api/v2/booking-settings", () => {
+      http.get("/api/v2/booking-settings/admin", () => HttpResponse.json(settings)),
+      http.patch("/api/v2/booking-settings/admin", () => {
         patches += 1;
         return HttpResponse.json(settings);
       }),
@@ -97,8 +97,8 @@ describe("BookingSettingsPage", () => {
     let body: unknown;
     server.use(
       oauthTokenHandler(),
-      http.get("/api/v2/booking-settings", () => HttpResponse.json(settings)),
-      http.patch("/api/v2/booking-settings", async ({ request }) => {
+      http.get("/api/v2/booking-settings/admin", () => HttpResponse.json(settings)),
+      http.patch("/api/v2/booking-settings/admin", async ({ request }) => {
         body = await request.json();
         return HttpResponse.json({ ...settings, allowDoubleBooking: true, configurationVersion: 1 });
       }),
@@ -138,8 +138,8 @@ describe("BookingSettingsPage", () => {
     let body: Record<string, unknown> | undefined;
     server.use(
       oauthTokenHandler(),
-      http.get("/api/v2/booking-settings", () => HttpResponse.json(settings)),
-      http.patch("/api/v2/booking-settings", async ({ request }) => {
+      http.get("/api/v2/booking-settings/admin", () => HttpResponse.json(settings)),
+      http.patch("/api/v2/booking-settings/admin", async ({ request }) => {
         body = (await request.json()) as Record<string, unknown>;
         return HttpResponse.json({ ...settings, ...body, configurationVersion: 1 });
       }),
@@ -161,8 +161,8 @@ describe("BookingSettingsPage", () => {
     const user = userEvent.setup();
     server.use(
       oauthTokenHandler(),
-      http.get("/api/v2/booking-settings", () => HttpResponse.json(settings)),
-      http.patch("/api/v2/booking-settings", () =>
+      http.get("/api/v2/booking-settings/admin", () => HttpResponse.json(settings)),
+      http.patch("/api/v2/booking-settings/admin", () =>
         HttpResponse.json(
           {
             status: 409,

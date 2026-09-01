@@ -64,6 +64,10 @@ public interface BookingConfigurationManager {
   Optional<BookingConfiguration> updateConfiguration(
       Long id, Patch patch, User subject, User actor);
 
+  /** Version-checked singular update used by conditional HTTP requests. */
+  Optional<BookingConfiguration> updateConfiguration(
+      Long id, Patch patch, long expectedVersion, User subject, User actor);
+
   /** Bulk-updates as {@code subject}, retaining the originating {@code actor} for audit. */
   List<BookingConfiguration> updateConfigurations(
       ResourceRequest request, Patch patch, User subject, User actor);

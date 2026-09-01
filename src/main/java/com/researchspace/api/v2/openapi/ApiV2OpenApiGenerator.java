@@ -30,10 +30,10 @@ import com.researchspace.model.collection.RelationshipInputForm;
 import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.model.collection.RuntimeCollectionFields;
 import com.researchspace.model.collection.RuntimeFieldCatalogQuery;
+import com.researchspace.model.resourceaccess.ResourceRoleSource;
 import com.researchspace.service.resourceaccess.ResourceAccessDocument;
 import com.researchspace.service.resourceaccess.ResourceAccessGrant;
 import com.researchspace.service.resourceaccess.ResourceGranteeDirectoryEntry;
-import com.researchspace.service.resourceaccess.ResourceRoleSource;
 import io.swagger.v3.core.util.Json31;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -501,35 +501,26 @@ public final class ApiV2OpenApiGenerator {
         root,
         ordered(
             "get",
-            resourceAccessOperation(resource, component, "get"),
+            resourceAccessOperation(resource, component, ResourceAccessOperation.READ),
             "put",
-            resourceAccessOperation(resource, component, "put")));
+            resourceAccessOperation(resource, component, ResourceAccessOperation.REPLACE)));
     paths.put(
-        root + "/me", ordered("delete", resourceAccessOperation(resource, component, "delete")));
+        root + "/me",
+        ordered(
+            "delete", resourceAccessOperation(resource, component, ResourceAccessOperation.LEAVE)));
     paths.put(
-        root + "/grantees", ordered("get", resourceAccessOperation(resource, component, "search")));
+        root + "/grantees",
+        ordered(
+            "get", resourceAccessOperation(resource, component, ResourceAccessOperation.SEARCH)));
   }
 
   private Map<String, Object> resourceAccessOperation(
-      ApiV2ResourceRegistration<?, ?> resource, String component, String operationKind) {
-    boolean replace = "put".equals(operationKind);
-    boolean leave = "delete".equals(operationKind);
-    boolean search = "search".equals(operationKind);
+      ApiV2ResourceRegistration<?, ?> resource,
+      String component,
+      ResourceAccessOperation operationKind) {
     Map<String, Object> operation = new LinkedHashMap<>();
-    operation.put(
-        "operationId",
-        search
-            ? "search" + component + "AccessGrantees"
-            : leave
-                ? "leave" + component
-                : replace ? "replace" + component + "Access" : "get" + component + "Access");
-    operation.put(
-        "summary",
-        search
-            ? "Search eligible access grantees"
-            : leave
-                ? "Remove the caller's direct assignment"
-                : replace ? "Replace direct access assignments" : "Get direct access assignments");
+    operation.put("operationId", operationKind.operationId(component));
+    operation.put("summary", operationKind.summary());
     operation.put("tags", List.of(resource.resourceName()));
     operation.put(
         "security", List.of(Map.of("apiKey", List.of()), Map.of("bearerAuth", List.of())));
@@ -537,7 +528,7 @@ public final class ApiV2OpenApiGenerator {
         "x-rspace-access",
         ordered(
             "description",
-            search || replace
+            operationKind.managesAssignments()
                 ? "Authenticated callers with the registered assignment-management capability."
                 : "Authenticated callers authorized by the registered protected resource.",
             "denialReasonCodes",
@@ -547,7 +538,7 @@ public final class ApiV2OpenApiGenerator {
         field(resource.description().schema(), resource.description().schema().idField());
     parameters.add(
         parameter("id", "path", true, scalarSchema(id.type(), false), "Resource identifier."));
-    if (replace) {
+    if (operationKind == ResourceAccessOperation.REPLACE) {
       parameters.add(
           parameter(
               "If-Match",
@@ -563,7 +554,7 @@ public final class ApiV2OpenApiGenerator {
               "content",
               Map.of(JSON, ordered("schema", ref("ResourceAccessReplacement")))));
     }
-    if (search) {
+    if (operationKind == ResourceAccessOperation.SEARCH) {
       parameters.add(
           parameter(
               "query",
@@ -580,34 +571,30 @@ public final class ApiV2OpenApiGenerator {
               "Maximum grantees to return."));
     }
     operation.put("parameters", parameters);
-    operation.put("responses", resourceAccessResponses(replace, leave, search));
-    operation.put(
-        "x-rspace-operation",
-        search
-            ? "ACCESS_GRANTEE_SEARCH"
-            : leave ? "ACCESS_LEAVE" : replace ? "ACCESS_REPLACE" : "ACCESS_READ");
+    operation.put("responses", resourceAccessResponses(operationKind));
+    operation.put("x-rspace-operation", operationKind.extensionValue());
     return operation;
   }
 
   private static Map<String, Object> resourceAccessResponses(
-      boolean replace, boolean leave, boolean search) {
+      ResourceAccessOperation operationKind) {
     Map<String, Object> responses = new LinkedHashMap<>();
-    if (leave) {
+    if (operationKind == ResourceAccessOperation.LEAVE) {
       responses.put("204", ordered("description", "The direct assignment is absent."));
     } else {
       Map<String, Object> schema =
-          search
+          operationKind == ResourceAccessOperation.SEARCH
               ? ordered("type", "array", "items", ref("ResourceGranteeDirectoryEntry"))
               : ref("ResourceAccessDocument");
       Map<String, Object> success =
           ordered(
               "description",
-              search
+              operationKind == ResourceAccessOperation.SEARCH
                   ? "Eligible users and groups."
                   : "Current direct assignments and caller capabilities.",
               "content",
               Map.of(JSON, ordered("schema", schema)));
-      if (!search) {
+      if (operationKind != ResourceAccessOperation.SEARCH) {
         success.put("headers", ordered("ETag", headerRef("ETag")));
       }
       responses.put("200", success);
@@ -617,7 +604,7 @@ public final class ApiV2OpenApiGenerator {
     responses.put("403", responseRef("Forbidden"));
     responses.put("404", responseRef("NotFound"));
     responses.put("406", responseRef("NotAcceptable"));
-    if (replace || leave) {
+    if (operationKind.changesAssignments()) {
       responses.put(
           "409",
           problemResponse(
@@ -625,7 +612,7 @@ public final class ApiV2OpenApiGenerator {
               409,
               "errors.api.v2.resourceAccess.ownerRequired"));
     }
-    if (replace) {
+    if (operationKind == ResourceAccessOperation.REPLACE) {
       responses.put(
           "412",
           problemResponse(
@@ -643,6 +630,46 @@ public final class ApiV2OpenApiGenerator {
     responses.put("429", responseRef("TooManyRequests"));
     responses.put("500", responseRef("UnexpectedError"));
     return responses;
+  }
+
+  private enum ResourceAccessOperation {
+    READ("get", "Access", "Get direct access assignments", "ACCESS_READ"),
+    REPLACE("replace", "Access", "Replace direct access assignments", "ACCESS_REPLACE"),
+    LEAVE("leave", "", "Remove the caller's direct assignment", "ACCESS_LEAVE"),
+    SEARCH("search", "AccessGrantees", "Search eligible access grantees", "ACCESS_GRANTEE_SEARCH");
+
+    private final String operationPrefix;
+    private final String operationSuffix;
+    private final String summary;
+    private final String extensionValue;
+
+    ResourceAccessOperation(
+        String operationPrefix, String operationSuffix, String summary, String extensionValue) {
+      this.operationPrefix = operationPrefix;
+      this.operationSuffix = operationSuffix;
+      this.summary = summary;
+      this.extensionValue = extensionValue;
+    }
+
+    String operationId(String component) {
+      return operationPrefix + component + operationSuffix;
+    }
+
+    String summary() {
+      return summary;
+    }
+
+    String extensionValue() {
+      return extensionValue;
+    }
+
+    boolean managesAssignments() {
+      return this == REPLACE || this == SEARCH;
+    }
+
+    boolean changesAssignments() {
+      return this == REPLACE || this == LEAVE;
+    }
   }
 
   private void addAuditPaths(

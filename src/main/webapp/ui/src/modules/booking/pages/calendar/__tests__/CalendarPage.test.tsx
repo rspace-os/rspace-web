@@ -6,6 +6,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vites
 import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
 import { bookableItemsHandlers } from "../../bookable-items/mocks/bookableItemsMocks";
+import { CALENDAR_BOOKING_FIELDS } from "../calendarEvents";
 import {
   busyBooking,
   collectionResponse,
@@ -17,8 +18,6 @@ import {
   renderCalendar,
 } from "./calendarTestHarness";
 
-const bookingFields =
-  "id,target,requesterId,timezone,start,end,state,kind,purpose,bookedBy,createdBy,privacy,canEdit,createdAt,updatedAt";
 const scrollToDescriptor = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "scrollTo");
 
 beforeAll(() => {
@@ -53,7 +52,7 @@ describe("CalendarPage", () => {
     expect(screen.getByRole("article", { name: /Confocal microscope · Ada Lovelace/ })).toBeVisible();
     expect(screen.getByRole("article", { name: /^Busy,/ })).toBeVisible();
     expect(screen.queryByText("private server detail")).not.toBeInTheDocument();
-    expect(requests[0].searchParams.get("fields[bookings]")).toBe(bookingFields);
+    expect(requests[0].searchParams.get("fields[bookings]")).toBe(CALENDAR_BOOKING_FIELDS);
     expect(requests[0].searchParams.get("where")).toContain("state==CONFIRMED");
 
     await user.click(screen.getByRole("button", { name: /Show details for Busy/ }));
@@ -96,7 +95,7 @@ describe("CalendarPage", () => {
     await user.click(screen.getByRole("button", { name: "Month" }));
     expect(screen.getByRole("button", { name: "Month" })).toHaveAttribute("aria-pressed", "true");
     await user.click(screen.getByRole("button", { name: "Resources" }));
-    expect(screen.getByRole("region", { name: "Resources" })).toBeVisible();
+    expect(await screen.findByRole("region", { name: "Resources" })).toBeVisible();
     expect(screen.getByRole("button", { name: "Month" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Week" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("region", { name: "Resource booking schedule" })).toBeVisible();

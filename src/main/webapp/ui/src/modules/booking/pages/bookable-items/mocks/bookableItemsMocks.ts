@@ -176,6 +176,7 @@ export const bookableItemsOpenApi = {
 export const bookableItemFixtures = [
   {
     id: 7,
+    configurationVersion: 0,
     ...ownerBookingAccess,
     target: {
       relationTo: "booking-instruments",
@@ -198,6 +199,7 @@ export const bookableItemFixtures = [
   },
   {
     id: 8,
+    configurationVersion: 0,
     ...ownerBookingAccess,
     target: {
       relationTo: "booking-instruments",
@@ -217,6 +219,7 @@ export const bookableItemFixtures = [
   },
   {
     id: 9,
+    configurationVersion: 0,
     ...ownerBookingAccess,
     target: {
       relationTo: "booking-instruments",
@@ -236,6 +239,7 @@ export const bookableItemFixtures = [
   },
   {
     id: 10,
+    configurationVersion: 0,
     ...ownerBookingAccess,
     target: {
       relationTo: "booking-instruments",
@@ -257,6 +261,7 @@ export const bookableItemFixtures = [
   },
   {
     id: 11,
+    configurationVersion: 0,
     ...ownerBookingAccess,
     target: {
       relationTo: "booking-instruments",
@@ -279,6 +284,7 @@ export const bookableItemFixtures = [
 export const sampleBookingEvents = [
   {
     id: 41,
+    version: 0,
     target: bookableItemFixtures[0].target,
     timezone: bookableItemFixtures[0].timezone,
     start: "2026-08-17T06:00:00Z",
@@ -290,6 +296,7 @@ export const sampleBookingEvents = [
   },
   {
     id: 42,
+    version: 0,
     target: bookableItemFixtures[0].target,
     timezone: bookableItemFixtures[0].timezone,
     start: "2026-08-17T12:00:00Z",
@@ -301,6 +308,7 @@ export const sampleBookingEvents = [
   },
   {
     id: 43,
+    version: 0,
     target: bookableItemFixtures[1].target,
     timezone: bookableItemFixtures[1].timezone,
     start: "2026-08-17T08:00:00Z",
@@ -312,6 +320,7 @@ export const sampleBookingEvents = [
   },
   {
     id: 44,
+    version: 0,
     target: bookableItemFixtures[2].target,
     timezone: bookableItemFixtures[2].timezone,
     start: "2026-08-17T00:00:00Z",
@@ -323,6 +332,7 @@ export const sampleBookingEvents = [
   },
   {
     id: 45,
+    version: 0,
     target: bookableItemFixtures[3].target,
     timezone: bookableItemFixtures[3].timezone,
     start: "2026-08-17T02:00:00Z",
@@ -334,6 +344,7 @@ export const sampleBookingEvents = [
   },
   {
     id: 46,
+    version: 0,
     target: bookableItemFixtures[0].target,
     timezone: bookableItemFixtures[0].timezone,
     start: "2026-08-16T21:30:00Z",
@@ -417,6 +428,78 @@ export function bookableItemsHandlers(onCollectionRequest: (request: Request) =>
             ? bookableItemFixtures.filter((fixture) => targetIds.includes(fixture.target.globalId))
             : bookableItemFixtures;
       return HttpResponse.json(collectionPage(docs));
+    }),
+    http.get("/api/v2/booking-catalogue", ({ request }) => {
+      onCollectionRequest(request);
+      const url = new URL(request.url);
+      const query = (url.searchParams.get("q") ?? "").toLocaleLowerCase();
+      const target = url.searchParams.get("target");
+      const locations = url.searchParams.getAll("location");
+      const page = Number(url.searchParams.get("page") ?? "1");
+      const pageSize = Number(url.searchParams.get("limit") ?? "20");
+      const matching = bookableItemFixtures.filter(
+        (fixture) =>
+          (!query ||
+            fixture.target.value.name.toLocaleLowerCase().includes(query) ||
+            fixture.target.globalId.toLocaleLowerCase().includes(query)) &&
+          (!target || fixture.target.globalId === target) &&
+          (locations.length === 0 ||
+            (fixture.target.value.parentContainerGlobalId !== null &&
+              locations.includes(fixture.target.value.parentContainerGlobalId))),
+      );
+      const start = (page - 1) * pageSize;
+      return HttpResponse.json({
+        items: matching.slice(start, start + pageSize).map((fixture) => ({
+          configurationId: fixture.id,
+          configurationVersion: fixture.configurationVersion,
+          targetType: "INSTRUMENT",
+          targetId: fixture.target.value.id,
+          globalId: fixture.target.globalId,
+          name: fixture.target.value.name,
+          timezone: fixture.timezone,
+          slotGranularityMinutes: fixture.slotGranularityMinutes,
+          openingStart: fixture.openingStart,
+          openingEnd: fixture.openingEnd,
+          bufferBeforeMinutes: fixture.bufferBeforeMinutes,
+          bufferAfterMinutes: fixture.bufferAfterMinutes,
+          maxBookingDurationMinutes: fixture.maxBookingDurationMinutes,
+          allowDoubleBooking: fixture.allowDoubleBooking,
+          effectiveRole: fixture.effectiveRole,
+          capabilities: fixture.capabilities,
+          location:
+            fixture.target.value.parentContainerName && fixture.target.value.parentContainerGlobalId
+              ? {
+                  name: fixture.target.value.parentContainerName,
+                  globalId: fixture.target.value.parentContainerGlobalId,
+                }
+              : null,
+        })),
+        page,
+        pageSize,
+        total: matching.length,
+        facets: { types: ["INSTRUMENT"] },
+      });
+    }),
+    http.get("/api/v2/booking-catalogue/locations", ({ request }) => {
+      const url = new URL(request.url);
+      const page = Number(url.searchParams.get("page") ?? "1");
+      const pageSize = Number(url.searchParams.get("limit") ?? "20");
+      const locations = Array.from(
+        new Map(
+          bookableItemFixtures.flatMap((fixture) => {
+            const globalId = fixture.target.value.parentContainerGlobalId;
+            const name = fixture.target.value.parentContainerName;
+            return globalId && name ? [[globalId, { globalId, name }] as const] : [];
+          }),
+        ).values(),
+      );
+      const start = (page - 1) * pageSize;
+      return HttpResponse.json({
+        items: locations.slice(start, start + pageSize),
+        page,
+        pageSize,
+        total: locations.length,
+      });
     }),
     http.get("/api/v2/instruments", () => HttpResponse.json(collectionPage([]))),
     http.get("/api/v2/instruments/fields/customFields", ({ request }) => {

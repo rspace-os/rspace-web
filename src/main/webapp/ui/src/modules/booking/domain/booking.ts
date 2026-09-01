@@ -37,6 +37,7 @@ const MutationTargetSchema = v.object({
 function bookingIdentity<TTarget extends v.BaseSchema<unknown, unknown, v.BaseIssue<unknown>>>(target: TTarget) {
   return {
     id: v.number(),
+    version: v.number(),
     target,
     timezone: v.string(),
     ...BookingTimestampEntries,
@@ -44,6 +45,15 @@ function bookingIdentity<TTarget extends v.BaseSchema<unknown, unknown, v.BaseIs
     kind: v.optional(BookingEventKindSchema, "BOOKING"),
   };
 }
+
+const BookingAvailabilityIdentitySchema = {
+  id: v.number(),
+  target: BookingTargetSchema,
+  timezone: v.string(),
+  ...BookingTimestampEntries,
+  state: v.picklist(["CONFIRMED", "CANCELLED"]),
+  kind: v.optional(BookingEventKindSchema, "BOOKING"),
+};
 
 function bookingSchema<TTarget extends v.BaseSchema<unknown, unknown, v.BaseIssue<unknown>>>(target: TTarget) {
   const identity = bookingIdentity(target);
@@ -55,6 +65,7 @@ function bookingSchema<TTarget extends v.BaseSchema<unknown, unknown, v.BaseIssu
       bookedBy: v.nullable(v.string()),
       createdBy: v.optional(v.nullable(v.string())),
       canEdit: v.boolean(),
+      canCancel: v.boolean(),
       createdAt: v.string(),
       updatedAt: v.string(),
     }),
@@ -65,6 +76,7 @@ function bookingSchema<TTarget extends v.BaseSchema<unknown, unknown, v.BaseIssu
       bookedBy: v.null(),
       createdBy: v.optional(v.nullable(v.string())),
       canEdit: v.literal(false),
+      canCancel: v.literal(false),
       createdAt: v.string(),
       updatedAt: v.string(),
     }),
@@ -74,7 +86,7 @@ function bookingSchema<TTarget extends v.BaseSchema<unknown, unknown, v.BaseIssu
 const BookingIdentitySchema = bookingIdentity(BookingTargetSchema);
 
 export const BookingSummarySchema = v.pipe(
-  v.object(BookingIdentitySchema),
+  v.object(BookingAvailabilityIdentitySchema),
   v.forward(
     v.check((booking) => endsAfterStart(booking)),
     ["end"],
@@ -106,6 +118,7 @@ const BookingListDocumentObjectSchema = v.object({
   createdBy: v.optional(v.nullable(v.string())),
   privacy: v.picklist(["full", "busy"]),
   canEdit: v.boolean(),
+  canCancel: v.boolean(),
   createdAt: v.string(),
   updatedAt: v.string(),
 });
@@ -175,7 +188,7 @@ export function isBookingOverlapError(error: unknown): boolean {
 }
 
 export const BOOKING_READ_FIELDS =
-  "id,target,canViewConfiguration,timezone,start,end,state,kind,purpose,bookedBy,createdBy,privacy,canEdit,createdAt,updatedAt";
+  "id,version,target,canViewConfiguration,timezone,start,end,state,kind,purpose,bookedBy,createdBy,privacy,canEdit,canCancel,createdAt,updatedAt";
 
 export async function parseApiV2Problem(response: Response): Promise<ApiV2ProblemError> {
   const body: unknown = await response.json().catch(() => null);
@@ -223,13 +236,19 @@ export function createBooking(input: BookingCreate, token: string): Promise<Book
   });
 }
 
-export function updateBooking(id: number, input: BookingUpdate, token: string): Promise<BookingMutation> {
+export function updateBooking(
+  id: number,
+  version: number,
+  input: BookingUpdate,
+  token: string,
+): Promise<BookingMutation> {
   return requestBooking(`/api/v2/bookings/${id}?depth=1`, token, BookingMutationSchema, {
     method: "PATCH",
+    headers: { "If-Match": `"${version}"` },
     body: JSON.stringify(parseOrThrow(BookingUpdateSchema, input)),
   });
 }
 
-export function cancelBooking(id: number, token: string): Promise<BookingMutation> {
-  return updateBooking(id, { state: "CANCELLED" }, token);
+export function cancelBooking(id: number, version: number, token: string): Promise<BookingMutation> {
+  return updateBooking(id, version, { state: "CANCELLED" }, token);
 }

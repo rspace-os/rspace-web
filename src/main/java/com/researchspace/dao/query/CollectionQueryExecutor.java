@@ -12,6 +12,7 @@ import com.researchspace.model.collection.QueryConstraint;
 import com.researchspace.model.collection.RelationshipReadAccess;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
+import jakarta.persistence.LockModeType;
 import java.util.List;
 import java.util.Objects;
 import org.hibernate.Session;
@@ -156,6 +157,19 @@ public final class CollectionQueryExecutor<T> {
     orderById(query);
     query.setMaxResults(limit);
     return query.getResultList();
+  }
+
+  /** As {@link #listById}, locking every selected row for an atomic server-side command. */
+  public List<T> listByIdForUpdate(
+      CriteriaBuilderFactory factory,
+      Session session,
+      ResourceRequest request,
+      int limit,
+      RelationshipReadAccess targets) {
+    CriteriaBuilder<T> query = query(factory, session, request, null, targets);
+    orderById(query);
+    query.setMaxResults(limit);
+    return query.getQuery().setLockMode(LockModeType.PESSIMISTIC_WRITE).getResultList();
   }
 
   /** Returns every matching row in the caller-requested stable sort order. */

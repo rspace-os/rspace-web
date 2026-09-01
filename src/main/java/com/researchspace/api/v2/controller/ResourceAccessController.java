@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.researchspace.api.v2.auth.ApiV2AuthenticationException;
 import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
-import com.researchspace.api.v2.resource.ApiV2ResourceException;
 import com.researchspace.api.v2.resource.ApiV2ResourceRegistration;
 import com.researchspace.service.resourceaccess.ResourceAccessDirectoryManager;
 import com.researchspace.service.resourceaccess.ResourceAccessDocument;
@@ -16,7 +15,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -36,6 +34,7 @@ public class ResourceAccessController {
 
   private static final Set<String> ROOT_FIELDS = Set.of("assignments");
   private static final Set<String> GRANT_FIELDS = Set.of("granteeKey", "role");
+  static final int MAX_ASSIGNMENTS = ResourceAccessManager.MAX_NAMED_ASSIGNMENTS;
 
   private final ApiV2ResourceCatalog resources;
   private final ResourceAccessManager accessManager;
@@ -103,16 +102,6 @@ public class ResourceAccessController {
         registration, id, validateQuery(query), validateLimit(limit), requireCaller(caller));
   }
 
-  @GetMapping("/booking-settings/access-grantees")
-  public List<ResourceGranteeDirectoryEntry> bookingSettingsGrantees(
-      @RequestParam String query,
-      @RequestParam(defaultValue = "20") int limit,
-      @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE, required = false)
-          ApiV2Caller caller) {
-    return directoryManager.searchForSettings(
-        validateQuery(query), validateLimit(limit), requireCaller(caller).subject());
-  }
-
   private <T, ID> List<ResourceGranteeDirectoryEntry> search(
       ApiV2ResourceRegistration<T, ID> registration,
       String rawId,
@@ -128,7 +117,7 @@ public class ResourceAccessController {
         caller.subject());
   }
 
-  private static String validateQuery(String query) {
+  static String validateQuery(String query) {
     String trimmed = query == null ? "" : query.trim();
     if (trimmed.length() < 2) {
       throw new ApiV2BadRequestException("errors.api.v2.invalidRequest");
@@ -136,7 +125,7 @@ public class ResourceAccessController {
     return trimmed;
   }
 
-  private static int validateLimit(int limit) {
+  static int validateLimit(int limit) {
     if (limit < 1 || limit > 50) {
       throw new ApiV2BadRequestException("errors.api.v2.invalidRequest");
     }
@@ -158,22 +147,8 @@ public class ResourceAccessController {
   }
 
   private static long parseIfMatch(String value) {
-    if (value == null) {
-      throw ApiV2ResourceException.of(
-          HttpStatus.PRECONDITION_REQUIRED, "errors.api.v2.resourceAccess.ifMatchRequired");
-    }
-    if (value.length() < 3 || value.charAt(0) != '"' || value.charAt(value.length() - 1) != '"') {
-      throw new ApiV2BadRequestException("errors.api.v2.invalidRequest");
-    }
-    try {
-      long version = Long.parseLong(value.substring(1, value.length() - 1));
-      if (version < 0) {
-        throw new NumberFormatException();
-      }
-      return version;
-    } catch (NumberFormatException ex) {
-      throw new ApiV2BadRequestException("errors.api.v2.invalidRequest");
-    }
+    return ApiV2ConditionalRequest.parseVersion(
+        value, "errors.api.v2.resourceAccess.ifMatchRequired");
   }
 
   private static List<ResourceAccessGrant> parseAssignments(JsonNode body) {
@@ -199,6 +174,11 @@ public class ResourceAccessController {
       } catch (IllegalArgumentException ex) {
         throw new ApiV2BadRequestException("errors.api.v2.invalidRequest");
       }
+    }
+    long namedAssignments =
+        grants.stream().filter(grant -> !"audience:all-users".equals(grant.granteeKey())).count();
+    if (namedAssignments > MAX_ASSIGNMENTS) {
+      throw new ApiV2BadRequestException("errors.api.v2.resourceAccess.assignmentLimit");
     }
     return List.copyOf(grants);
   }

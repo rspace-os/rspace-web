@@ -13,6 +13,9 @@ public interface BookingConfigurationDefaultsManager {
   /** Returns the required singleton row for any authenticated actor. */
   BookingConfigurationDefaults getDefaults(User actor);
 
+  /** Returns the singleton row with selected grantee identities for a system administrator. */
+  BookingConfigurationDefaults getAdminDefaults(User actor);
+
   /** Applies one versioned patch as a sysadmin and publishes an audit event. */
   BookingConfigurationDefaults updateDefaults(
       BookingSchedulingSettings.Patch schedulingPatch,

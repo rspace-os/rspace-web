@@ -12,6 +12,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.Version;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.io.Serial;
@@ -53,6 +54,10 @@ public class UserBookingCalendarSubscription implements Serializable {
   @Column(nullable = false)
   @NotNull
   private Date updatedAt;
+
+  @Version
+  @Column(nullable = false)
+  private long version;
 
   protected UserBookingCalendarSubscription() {}
 
@@ -96,5 +101,9 @@ public class UserBookingCalendarSubscription implements Serializable {
 
   public void setUpdatedAt(Date updatedAt) {
     this.updatedAt = updatedAt == null ? null : new Date(updatedAt.getTime());
+  }
+
+  public long getVersion() {
+    return version;
   }
 }

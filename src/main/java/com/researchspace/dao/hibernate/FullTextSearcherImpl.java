@@ -417,6 +417,7 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
             .filter(this::isNotSubSampleOfTemplate)
             .filter(this::isNotWorkbench)
             .filter(rec -> isMatchingTemplateOption(rec, srchConfigInput.getSearchType()))
+            .filter(rec -> isMatchingBookableOption(rec, srchConfigInput))
             .collect(Collectors.toList());
     finalHits = limitToRecordsWithGlobalId(finalHits, srchConfigInput.getLimitResultsToGlobalIds());
 
@@ -426,6 +427,17 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
             srchConfig.getPaginationCriteria().getPageNumber().intValue(),
             finalHits.size());
     return repaginateResults(srchConfig, searchResults);
+  }
+
+  private boolean isMatchingBookableOption(
+      InventoryRecord record, InventorySearchConfig searchConfig) {
+    if (searchConfig.getBookable() == null) {
+      return true;
+    }
+    boolean bookable =
+        record instanceof com.researchspace.model.inventory.Instrument
+            && searchConfig.getBookableInstrumentIds().contains(record.getId());
+    return searchConfig.getBookable() == bookable;
   }
 
   @Autowired private InventoryRecordRetriever invRecRetriever;

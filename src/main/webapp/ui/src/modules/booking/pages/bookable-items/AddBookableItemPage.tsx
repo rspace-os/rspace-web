@@ -1,13 +1,14 @@
-import { Form, useField, useForm } from "@formisch/react";
+import { Form, isDirty, useField, useForm } from "@formisch/react";
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { Link, useNavigate, useSearch } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import * as v from "valibot";
 import { loadBookingSettings, SchedulingSettingsFields } from "@/modules/booking/configuration/schedulingSettings";
 import { bookingApiV2JsonHeaders } from "@/modules/booking/domain/apiV2";
 import { RenderFields } from "@/modules/common/collection-form/RenderFields";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
+import { DirtyNavigationGuard } from "@/modules/common/navigation/DirtyNavigationGuard";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import { Button } from "@/modules/common/ui/button";
 import { FieldError } from "@/modules/common/ui/field";
@@ -103,6 +104,7 @@ export default function AddBookableItemPage() {
   }).data;
   const queryClient = useQueryClient();
   const navigate = useNavigate({ from: "/booking/bookable-items/add" });
+  const search = useSearch({ from: "/booking/bookable-items/add" });
   const form = useForm({
     schema: BookingConfigurationInputSchema,
     initialInput: {
@@ -118,19 +120,24 @@ export default function AddBookableItemPage() {
   });
   const targetField = useField(form, { path: ["target"] });
   const target = targetSelection(targetField.input);
-  const [targetSearch, setTargetSearch] = useState("");
-  const [submittedTargetSearch, setSubmittedTargetSearch] = useState("");
+  const [targetSearch, setTargetSearch] = useState(search.target ?? "");
+  const [submittedTargetSearch, setSubmittedTargetSearch] = useState(search.target ?? "");
   const targetResults = useQuery({
     queryKey: ["api-v2", "booking-configuration-targets", submittedTargetSearch],
     queryFn: ({ signal }) => searchBookingTargets(submittedTargetSearch, token, signal),
     enabled: submittedTargetSearch.length >= 2,
   });
   const selectedTargetId = target.type === "instrument" ? target.id : undefined;
+  useEffect(() => {
+    if (selectedTargetId !== undefined || search.target === undefined || !targetResults.data) return;
+    const match = targetResults.data.find((option) => option.globalId === search.target);
+    if (match) targetField.onChange({ relationTo: "booking-instruments", value: match.id });
+  }, [search.target, selectedTargetId, targetField, targetResults.data]);
   const createMutation = useMutation({
     mutationFn: (input: BookingConfigurationInput) => createBookingConfiguration(input, token),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] });
-      await navigate({ to: "/booking/config/bookable-items" });
+      await navigate({ to: "/booking/config/bookable-items", ignoreBlocker: true });
     },
     onError: async (error) => {
       if (error instanceof BookingConfigurationCreateError && error.code === TARGET_CONFLICT) {
@@ -153,6 +160,7 @@ export default function AddBookableItemPage() {
 
   return (
     <main className="p-4 sm:p-8">
+      <DirtyNavigationGuard dirty={isDirty(form) && !createMutation.isSuccess} />
       <Heading level={2} as="h1" className="mb-5">
         {t("bookableItems.addTitle")}
       </Heading>
@@ -188,6 +196,7 @@ export default function AddBookableItemPage() {
                   <Button
                     type="button"
                     variant={selectedTargetId === option.id ? "default" : "outline"}
+                    aria-pressed={selectedTargetId === option.id}
                     className="w-full justify-start"
                     onClick={() => targetField.onChange({ relationTo: "booking-instruments", value: option.id })}
                   >

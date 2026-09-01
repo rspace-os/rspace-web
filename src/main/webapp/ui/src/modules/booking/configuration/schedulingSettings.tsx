@@ -62,6 +62,27 @@ export const BookingSettingsSchema = v.pipe(
     timezoneMode: v.picklist(["BROWSER", "INSTITUTION", "CUSTOM"]),
     customTimezone: v.nullable(v.string()),
     institutionTimezone: v.string(),
+  }),
+  v.forward(
+    v.check((settings) => validOpeningHours(settings.openingStart, settings.openingEnd)),
+    ["openingEnd"],
+  ),
+  v.forward(
+    v.check((settings) =>
+      validMaximumBookingDuration(settings.maxBookingDurationMinutes, settings.slotGranularityMinutes),
+    ),
+    ["maxBookingDurationMinutes"],
+  ),
+);
+
+export const BookingAdminSettingsSchema = v.pipe(
+  v.object({
+    ...schedulingSettingsEntries,
+    availabilityWindowStart: v.string(),
+    availabilityWindowEnd: v.string(),
+    timezoneMode: v.picklist(["BROWSER", "INSTITUTION", "CUSTOM"]),
+    customTimezone: v.nullable(v.string()),
+    institutionTimezone: v.string(),
     defaultSharedWith: v.picklist(["ALL_USERS", "SELECTED", "ONLY_ME"]),
     selectedAccessGrantees: v.array(
       v.object({
@@ -89,6 +110,7 @@ export const BookingSettingsSchema = v.pipe(
 
 export type SchedulingSettings = v.InferOutput<typeof SchedulingSettingsSchema>;
 export type BookingSettings = v.InferOutput<typeof BookingSettingsSchema>;
+export type BookingAdminSettings = v.InferOutput<typeof BookingAdminSettingsSchema>;
 export type BookingSettingsInput = SchedulingSettings &
   BookingDisplayPreferencesInput & {
     defaultSharedWith: "ALL_USERS" | "SELECTED" | "ONLY_ME";
@@ -131,11 +153,20 @@ export async function loadBookingSettings(token: string, signal?: AbortSignal): 
   return parseOrThrow(BookingSettingsSchema, await response.json());
 }
 
+export async function loadBookingAdminSettings(token: string, signal?: AbortSignal): Promise<BookingAdminSettings> {
+  const response = await fetch("/api/v2/booking-settings/admin", {
+    headers: { Authorization: `Bearer ${token}`, "X-Requested-With": "XMLHttpRequest" },
+    signal,
+  });
+  if (!response.ok) throw new Error(`Booking admin settings request failed with status ${response.status}`);
+  return parseOrThrow(BookingAdminSettingsSchema, await response.json());
+}
+
 export async function saveBookingSettings(
   input: BookingSettingsInput,
   configurationVersion: number,
   token: string,
-): Promise<BookingSettings> {
+): Promise<BookingAdminSettings> {
   const scheduling = parseOrThrow(SchedulingSettingsSchema, input);
   const display = parseOrThrow(BookingDisplayPreferencesInputSchema, {
     availabilityWindowStart: input.availabilityWindowStart,
@@ -143,7 +174,7 @@ export async function saveBookingSettings(
     timezoneMode: input.timezoneMode,
     customTimezone: input.customTimezone,
   });
-  const response = await fetch("/api/v2/booking-settings", {
+  const response = await fetch("/api/v2/booking-settings/admin", {
     method: "PATCH",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -159,7 +190,7 @@ export async function saveBookingSettings(
     }),
   });
   if (!response.ok) throw await parseApiV2Problem(response);
-  return parseOrThrow(BookingSettingsSchema, await response.json());
+  return parseOrThrow(BookingAdminSettingsSchema, await response.json());
 }
 
 function numberInput(value: unknown): number | undefined {

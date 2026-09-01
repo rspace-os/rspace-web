@@ -89,7 +89,7 @@ function RelationshipFieldControl<TDocument extends Record<string, unknown>>({
         <RelationshipPicker
           source={source}
           availabilitySource={relationshipOptionAvailability[fieldConfig.relationTo]}
-          value={relationshipGlobalId(fieldApi.input, source.globalIdPrefix)}
+          value={source.globalIdPrefix ? relationshipGlobalId(fieldApi.input, source.globalIdPrefix) : ""}
           onChange={(globalId) => {
             const id = databaseId(source, globalId);
             fieldApi.onChange(

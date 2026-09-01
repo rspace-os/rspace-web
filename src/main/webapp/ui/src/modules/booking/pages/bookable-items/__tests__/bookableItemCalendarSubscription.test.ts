@@ -135,15 +135,22 @@ describe("user booking calendar subscription client", () => {
     server.use(
       http.get(userPath, ({ request }) => {
         methods.push(request.method);
-        return HttpResponse.json({ active: false, updatedAt: null, subscriptionUrl: null });
+        return HttpResponse.json(
+          { active: false, updatedAt: null, subscriptionUrl: null },
+          { headers: { ETag: '"inactive"' } },
+        );
       }),
       http.post(userPath, ({ request }) => {
         methods.push(request.method);
-        return HttpResponse.json({
-          active: true,
-          updatedAt: timestamp,
-          subscriptionUrl: "https://example.test/feed.ics?token=user",
-        });
+        expect(request.headers.get("If-Match")).toBe('"inactive"');
+        return HttpResponse.json(
+          {
+            active: true,
+            updatedAt: timestamp,
+            subscriptionUrl: "https://example.test/feed.ics?token=user",
+          },
+          { headers: { ETag: '"subscription-0"' } },
+        );
       }),
       http.delete(userPath, ({ request }) => {
         methods.push(request.method);
@@ -152,8 +159,14 @@ describe("user booking calendar subscription client", () => {
     );
 
     expect(userCalendarSubscriptionQueryKey).toEqual(["api-v2", "users", "me", "booking-calendar-subscription"]);
-    await expect(fetchUserCalendarSubscriptionStatus("secret")).resolves.toMatchObject({ active: false });
-    await expect(createOrReplaceUserCalendarSubscription("secret")).resolves.toMatchObject({ active: true });
+    await expect(fetchUserCalendarSubscriptionStatus("secret")).resolves.toMatchObject({
+      active: false,
+      etag: '"inactive"',
+    });
+    await expect(createOrReplaceUserCalendarSubscription("secret", '"inactive"')).resolves.toMatchObject({
+      active: true,
+      etag: '"subscription-0"',
+    });
     await expect(revokeUserCalendarSubscription("secret")).resolves.toBeUndefined();
     expect(methods).toEqual(["GET", "POST", "DELETE"]);
   });

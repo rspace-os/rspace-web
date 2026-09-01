@@ -1,4 +1,4 @@
-package com.researchspace.service.resourceaccess;
+package com.researchspace.model.resourceaccess;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;

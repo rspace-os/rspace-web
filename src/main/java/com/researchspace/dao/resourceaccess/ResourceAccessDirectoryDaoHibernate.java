@@ -4,11 +4,14 @@ import com.researchspace.model.Group;
 import com.researchspace.model.User;
 import com.researchspace.model.resourceaccess.ResourceGranteeKeys;
 import com.researchspace.model.resourceaccess.ResourceGranteeKind;
-import com.researchspace.service.resourceaccess.ResourceGranteeDirectoryEntry;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.springframework.stereotype.Repository;
@@ -24,7 +27,7 @@ public class ResourceAccessDirectoryDaoHibernate implements ResourceAccessDirect
   }
 
   @Override
-  public List<ResourceGranteeDirectoryEntry> search(String query, int limit, User subject) {
+  public List<ResourceAccessDirectoryRow> search(String query, int limit, User subject) {
     String pattern = "%" + escapeLike(query.toLowerCase(Locale.ROOT)) + "%";
     Session session = sessionFactory.getCurrentSession();
     boolean sysadmin = subject.hasSysadminRole();
@@ -75,7 +78,7 @@ public class ResourceAccessDirectoryDaoHibernate implements ResourceAccessDirect
       groups.setParameter("subjectId", subject.getId());
     }
 
-    List<ResourceGranteeDirectoryEntry> result = new ArrayList<>();
+    List<ResourceAccessDirectoryRow> result = new ArrayList<>();
     users.getResultList().stream()
         .map(ResourceAccessDirectoryDaoHibernate::user)
         .forEach(result::add);
@@ -84,14 +87,101 @@ public class ResourceAccessDirectoryDaoHibernate implements ResourceAccessDirect
         .forEach(result::add);
     return result.stream()
         .sorted(
-            Comparator.comparing(
-                ResourceGranteeDirectoryEntry::name, String.CASE_INSENSITIVE_ORDER))
+            Comparator.comparing(ResourceAccessDirectoryRow::name, String.CASE_INSENSITIVE_ORDER))
         .limit(limit)
         .toList();
   }
 
-  private static ResourceGranteeDirectoryEntry user(User user) {
-    return new ResourceGranteeDirectoryEntry(
+  @Override
+  public Map<String, ResourceAccessDirectoryRow> resolveAssignable(Set<String> keys, User subject) {
+    if (keys.isEmpty() || subject == null || !subject.isEnabled()) {
+      return Map.of();
+    }
+    Set<Long> userIds = ids(keys, "user:");
+    Set<Long> groupIds = ids(keys, "group:");
+    boolean sysadmin = subject.hasSysadminRole();
+    Session session = sessionFactory.getCurrentSession();
+    List<User> users =
+        userIds.isEmpty()
+            ? List.of()
+            : assignableUsers(session, userIds, subject.getId(), sysadmin);
+    List<Group> groups =
+        groupIds.isEmpty()
+            ? List.of()
+            : assignableGroups(session, groupIds, subject.getId(), sysadmin);
+    Map<String, ResourceAccessDirectoryRow> resolved = new LinkedHashMap<>();
+    users.stream()
+        .map(ResourceAccessDirectoryDaoHibernate::user)
+        .forEach(entry -> resolved.put(entry.key(), entry));
+    groups.stream()
+        .map(ResourceAccessDirectoryDaoHibernate::group)
+        .forEach(entry -> resolved.put(entry.key(), entry));
+    return Map.copyOf(resolved);
+  }
+
+  private static List<User> assignableUsers(
+      Session session, Set<Long> ids, Long subjectId, boolean sysadmin) {
+    String scope =
+        sysadmin
+            ? ""
+            : " and exists (select candidateMembership.id from UserGroup candidateMembership "
+                + "where candidateMembership.user.id = user.id and candidateMembership.group.id "
+                + "in (select ownMembership.group.id from UserGroup ownMembership "
+                + "where ownMembership.user.id = :subjectId))";
+    var query =
+        session.createQuery(
+            "select user from User user where user.id in :ids and user.enabled = true" + scope,
+            User.class);
+    query.setParameter("ids", ids);
+    if (!sysadmin) {
+      query.setParameter("subjectId", subjectId);
+    }
+    return query.getResultList();
+  }
+
+  private static List<Group> assignableGroups(
+      Session session, Set<Long> ids, Long subjectId, boolean sysadmin) {
+    String scope =
+        sysadmin
+            ? ""
+            : " and exists (select membership.id from UserGroup membership "
+                + "where membership.group.id = accessGroup.id "
+                + "and membership.user.id = :subjectId)";
+    var query =
+        session.createQuery(
+            "select accessGroup from Group accessGroup where accessGroup.id in :ids "
+                + "and exists (select enabledMembership.id from UserGroup enabledMembership "
+                + "where enabledMembership.group.id = accessGroup.id "
+                + "and enabledMembership.user.enabled = true)"
+                + scope,
+            Group.class);
+    query.setParameter("ids", ids);
+    if (!sysadmin) {
+      query.setParameter("subjectId", subjectId);
+    }
+    return query.getResultList();
+  }
+
+  private static Set<Long> ids(Set<String> keys, String prefix) {
+    Set<Long> ids = new LinkedHashSet<>();
+    for (String key : keys) {
+      if (key == null || !key.startsWith(prefix)) {
+        continue;
+      }
+      try {
+        long id = Long.parseLong(key.substring(prefix.length()));
+        if (id > 0) {
+          ids.add(id);
+        }
+      } catch (NumberFormatException ignored) {
+        // Invalid keys remain unresolved and receive the same response as out-of-scope keys.
+      }
+    }
+    return ids;
+  }
+
+  private static ResourceAccessDirectoryRow user(User user) {
+    return new ResourceAccessDirectoryRow(
         ResourceGranteeKind.USER,
         user.getId(),
         ResourceGranteeKeys.user(user.getId()),
@@ -99,8 +189,8 @@ public class ResourceAccessDirectoryDaoHibernate implements ResourceAccessDirect
         user.getUsername());
   }
 
-  private static ResourceGranteeDirectoryEntry group(Group group) {
-    return new ResourceGranteeDirectoryEntry(
+  private static ResourceAccessDirectoryRow group(Group group) {
+    return new ResourceAccessDirectoryRow(
         ResourceGranteeKind.GROUP,
         group.getId(),
         ResourceGranteeKeys.group(group.getId()),

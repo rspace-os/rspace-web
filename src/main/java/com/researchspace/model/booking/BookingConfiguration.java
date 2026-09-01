@@ -152,7 +152,7 @@ public class BookingConfiguration implements Serializable {
   private boolean allowDoubleBooking = BookingSchedulingSettings.DEFAULT_ALLOW_DOUBLE_BOOKING;
 
   @Transient private String effectiveRole;
-  @Transient private List<com.researchspace.service.resourceaccess.ResourceRoleSource> roleSources;
+  @Transient private List<com.researchspace.model.resourceaccess.ResourceRoleSource> roleSources;
   @Transient private BookingConfigurationCapabilities capabilities;
   @Transient private BookingOwnerHealth ownerHealth;
 
@@ -164,7 +164,7 @@ public class BookingConfiguration implements Serializable {
   }
 
   @Transient
-  public List<com.researchspace.service.resourceaccess.ResourceRoleSource> getRoleSources() {
+  public List<com.researchspace.model.resourceaccess.ResourceRoleSource> getRoleSources() {
     return roleSources == null ? List.of() : roleSources;
   }
 
@@ -198,7 +198,7 @@ public class BookingConfiguration implements Serializable {
   /** Sets caller-specific response fields after role resolution inside the read transaction. */
   public void prepareAccessProjection(
       String effectiveRole,
-      List<com.researchspace.service.resourceaccess.ResourceRoleSource> roleSources,
+      List<com.researchspace.model.resourceaccess.ResourceRoleSource> roleSources,
       BookingConfigurationCapabilities capabilities,
       BookingOwnerHealth ownerHealth) {
     this.effectiveRole = effectiveRole;

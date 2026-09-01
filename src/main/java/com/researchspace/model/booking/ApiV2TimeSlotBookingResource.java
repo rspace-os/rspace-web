@@ -45,6 +45,12 @@ public final class ApiV2TimeSlotBookingResource {
         List.<Field<TimeSlotBooking, ?>>of(
             Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), TimeSlotBooking::getId),
             Field.readOnly(
+                    "version",
+                    "version",
+                    CollectionFieldTypes.longNumber(),
+                    TimeSlotBooking::getVersion)
+                .withQueryCapabilities(false, false),
+            Field.readOnly(
                     "timezone",
                     "timeZone",
                     CollectionFieldTypes.text(255),
@@ -114,6 +120,12 @@ public final class ApiV2TimeSlotBookingResource {
                 .withQueryCapabilities(false, false),
             Field.readOnly(
                     "canEdit", "canEdit", CollectionFieldTypes.bool(), TimeSlotBooking::isCanEdit)
+                .withQueryCapabilities(false, false),
+            Field.readOnly(
+                    "canCancel",
+                    "canCancel",
+                    CollectionFieldTypes.bool(),
+                    TimeSlotBooking::isCanCancel)
                 .withQueryCapabilities(false, false),
             Field.readOnly(
                     "canViewConfiguration",

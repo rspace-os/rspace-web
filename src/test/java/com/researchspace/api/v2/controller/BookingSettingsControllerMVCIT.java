@@ -89,7 +89,7 @@ class BookingSettingsControllerMVCIT {
 
     mockMvc
         .perform(
-            patch("/api/v2/booking-settings")
+            patch("/api/v2/booking-settings/admin")
                 .header("apiKey", fixture.userKey())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(body(version, true)))
@@ -101,7 +101,7 @@ class BookingSettingsControllerMVCIT {
     setBookingEnabled(false);
     mockMvc
         .perform(get("/api/v2/booking-settings").header("apiKey", fixture.userKey()))
-        .andExpect(status().isForbidden());
+        .andExpect(status().isNotFound());
   }
 
   @Test
@@ -110,7 +110,7 @@ class BookingSettingsControllerMVCIT {
 
     mockMvc
         .perform(
-            patch("/api/v2/booking-settings")
+            patch("/api/v2/booking-settings/admin")
                 .header("apiKey", fixture.sysadminKey())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
@@ -128,7 +128,7 @@ class BookingSettingsControllerMVCIT {
 
     mockMvc
         .perform(
-            patch("/api/v2/booking-settings")
+            patch("/api/v2/booking-settings/admin")
                 .header("apiKey", fixture.sysadminKey())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
@@ -145,7 +145,7 @@ class BookingSettingsControllerMVCIT {
   void rejectsANegativeConfigurationVersion() throws Exception {
     mockMvc
         .perform(
-            patch("/api/v2/booking-settings")
+            patch("/api/v2/booking-settings/admin")
                 .header("apiKey", fixture.sysadminKey())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"configurationVersion\":-1}"))
@@ -159,7 +159,7 @@ class BookingSettingsControllerMVCIT {
 
     mockMvc
         .perform(
-            patch("/api/v2/booking-settings")
+            patch("/api/v2/booking-settings/admin")
                 .header("apiKey", fixture.sysadminKey())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
@@ -176,7 +176,7 @@ class BookingSettingsControllerMVCIT {
   void rejectsAnUnreadableRequestBody() throws Exception {
     mockMvc
         .perform(
-            patch("/api/v2/booking-settings")
+            patch("/api/v2/booking-settings/admin")
                 .header("apiKey", fixture.sysadminKey())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{"))
@@ -192,7 +192,7 @@ class BookingSettingsControllerMVCIT {
 
     mockMvc
         .perform(
-            patch("/api/v2/booking-settings")
+            patch("/api/v2/booking-settings/admin")
                 .header("apiKey", fixture.sysadminKey())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(body(version, requested)))
@@ -211,7 +211,7 @@ class BookingSettingsControllerMVCIT {
 
     mockMvc
         .perform(
-            patch("/api/v2/booking-settings")
+            patch("/api/v2/booking-settings/admin")
                 .header("apiKey", fixture.sysadminKey())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
@@ -236,11 +236,21 @@ class BookingSettingsControllerMVCIT {
         .andExpect(jsonPath("$.availabilityWindowStart").isString())
         .andExpect(jsonPath("$.availabilityWindowEnd").isString())
         .andExpect(jsonPath("$.timezoneMode").isString())
-        .andExpect(jsonPath("$.institutionTimezone").isString());
+        .andExpect(jsonPath("$.institutionTimezone").isString())
+        .andExpect(jsonPath("$.defaultSharedWith").doesNotExist())
+        .andExpect(jsonPath("$.selectedAccessGrantees").doesNotExist())
+        .andExpect(jsonPath("$.configurationVersion").doesNotExist());
+
+    mockMvc
+        .perform(get("/api/v2/booking-settings/admin").header("apiKey", fixture.sysadminKey()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.defaultSharedWith").isString())
+        .andExpect(jsonPath("$.selectedAccessGrantees").isArray())
+        .andExpect(jsonPath("$.configurationVersion").isNumber());
 
     mockMvc
         .perform(
-            patch("/api/v2/booking-settings")
+            patch("/api/v2/booking-settings/admin")
                 .header("apiKey", fixture.sysadminKey())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
@@ -272,7 +282,7 @@ class BookingSettingsControllerMVCIT {
 
     mockMvc
         .perform(
-            patch("/api/v2/booking-settings")
+            patch("/api/v2/booking-settings/admin")
                 .header("apiKey", fixture.sysadminKey())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(body(version, !before.isAllowDoubleBooking())))
@@ -280,7 +290,7 @@ class BookingSettingsControllerMVCIT {
 
     mockMvc
         .perform(
-            patch("/api/v2/booking-settings")
+            patch("/api/v2/booking-settings/admin")
                 .header("apiKey", fixture.sysadminKey())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(body(version, before.isAllowDoubleBooking())))

@@ -160,10 +160,11 @@ class BookingConfigurationResourceOperationsTest {
     assertThrows(AuthorizationException.class, () -> operations.create(document, caller));
     assertThrows(
         AuthorizationException.class, () -> operations.createMany(List.of(document), caller));
-    assertEquals(Optional.empty(), operations.update(42L, document, caller));
-    assertEquals(List.of(), operations.updateMany(request, document, caller));
-    assertEquals(Optional.empty(), operations.delete(42L, caller));
-    assertEquals(List.of(), operations.deleteMany(request, caller));
+    assertThrows(AuthorizationException.class, () -> operations.update(42L, document, caller));
+    assertThrows(
+        AuthorizationException.class, () -> operations.updateMany(request, document, caller));
+    assertThrows(AuthorizationException.class, () -> operations.delete(42L, caller));
+    assertThrows(AuthorizationException.class, () -> operations.deleteMany(request, caller));
     verifyNoInteractions(manager);
   }
 

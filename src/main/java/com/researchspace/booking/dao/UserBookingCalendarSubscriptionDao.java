@@ -1,6 +1,7 @@
 package com.researchspace.booking.dao;
 
 import com.researchspace.dao.GenericDao;
+import com.researchspace.model.User;
 import com.researchspace.model.booking.UserBookingCalendarSubscription;
 import java.util.Optional;
 
@@ -13,6 +14,9 @@ public interface UserBookingCalendarSubscriptionDao
 
   /** Finds a subscription by its one-way token hash. */
   Optional<UserBookingCalendarSubscription> findByTokenHash(String tokenHash);
+
+  /** Locks the durable owner row to serialize optional-subscription state transitions. */
+  User lockUser(Long userId);
 
   /** Saves and flushes a subscription so uniqueness failures occur inside the manager call. */
   UserBookingCalendarSubscription saveAndFlush(UserBookingCalendarSubscription subscription);

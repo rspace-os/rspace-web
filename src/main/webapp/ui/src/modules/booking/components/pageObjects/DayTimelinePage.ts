@@ -25,6 +25,11 @@ export class DayTimelinePage {
     await this.trigger(title).click();
   }
 
+  async openWithKeyboard(title: string): Promise<void> {
+    this.trigger(title).element().focus();
+    await userEvent.keyboard("{Enter}");
+  }
+
   async close(period: string, title: string): Promise<void> {
     await this.hideButton(period, title).click();
   }

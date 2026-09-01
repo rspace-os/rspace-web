@@ -1,6 +1,7 @@
 package com.researchspace.service.resourceaccess;
 
 import com.researchspace.model.resourceaccess.ResourceGranteeKind;
+import com.researchspace.model.resourceaccess.ResourceRoleSource;
 import java.util.List;
 import java.util.Optional;
 

@@ -1,7 +1,9 @@
 package com.researchspace.booking.service;
 
+import com.researchspace.booking.dao.BookingCalendarSubscriptionDao;
 import com.researchspace.booking.dao.BookingConfigurationDao;
 import com.researchspace.booking.dao.BookingConfigurationDefaultsDao;
+import com.researchspace.dao.InstrumentDao;
 import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
@@ -33,7 +35,9 @@ import com.researchspace.model.resourceaccess.ResourceGranteeKeys;
 import com.researchspace.model.resourceaccess.ResourceGranteeKind;
 import com.researchspace.model.resourceaccess.ResourceRoleAssignment;
 import com.researchspace.service.CollectionMutationException;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.resourceaccess.ResolvedResourceAccess;
+import com.researchspace.service.resourceaccess.ResourceAccessException;
 import com.researchspace.service.resourceaccess.ResourceAccessManager;
 import com.researchspace.service.resourceaccess.ResourceRoleScheme;
 import jakarta.validation.ConstraintViolation;
@@ -58,15 +62,19 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
 
   private final BookingConfigurationDao bookingConfigurationDao;
   private final BookingConfigurationDefaultsDao defaultsDao;
+  private final InstrumentDao instrumentDao;
   private final Validator validator;
   private final ApplicationEventPublisher events;
   private final ObjectProvider<ResourceRegistry> resourceRegistry;
   private final CollectionDescription<BookingConfiguration> description;
   private final ResourceAccessManager accessManager;
+  private final MessageSourceUtils messages;
+  private final BookingCalendarSubscriptionDao calendarSubscriptions;
 
   public BookingConfigurationManagerImpl(
       @Qualifier("bookingConfigurationDao") BookingConfigurationDao bookingConfigurationDao,
       @Qualifier("bookingConfigurationDefaultsDao") BookingConfigurationDefaultsDao defaultsDao,
+      InstrumentDao instrumentDao,
       Validator validator,
       ApplicationEventPublisher events,
       ObjectProvider<ResourceRegistry> resourceRegistry,
@@ -74,14 +82,20 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
               com.researchspace.booking.config.BookingResourceAccessConfiguration
                   .BOOKING_CONFIGURATION_DESCRIPTION)
           CollectionDescription<BookingConfiguration> description,
-      ResourceAccessManager accessManager) {
+      ResourceAccessManager accessManager,
+      MessageSourceUtils messages,
+      @Qualifier("bookingCalendarSubscriptionDao")
+          BookingCalendarSubscriptionDao calendarSubscriptions) {
     this.bookingConfigurationDao = bookingConfigurationDao;
     this.defaultsDao = defaultsDao;
+    this.instrumentDao = instrumentDao;
     this.validator = validator;
     this.events = events;
     this.resourceRegistry = resourceRegistry;
     this.description = description;
     this.accessManager = accessManager;
+    this.messages = messages;
+    this.calendarSubscriptions = calendarSubscriptions;
   }
 
   /** Returns one page selected by a parsed collection request. */
@@ -180,7 +194,10 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
         .merge(BookingSchedulingSettings.from(defaults))
         .applyTo(configuration);
     BookableTargetReference target = validateTarget(create.target());
-    requireCanCreateFor((Instrument) create.target().entity(), subject);
+    Instrument instrument =
+        instrumentDao.lockById(target.id()).orElseThrow(InvalidBookableTargetException::new);
+    validateLockedTarget(target, instrument);
+    requireCanCreateFor(instrument, subject);
     configuration.replaceTarget(target);
     configuration.setResourceAccess(initialAccess(defaults, subject, actor, timestamp));
     validateSettings(configuration);
@@ -188,17 +205,21 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
     return configuration;
   }
 
-  private static ResourceAccess initialAccess(
+  private ResourceAccess initialAccess(
       BookingConfigurationDefaults defaults, User subject, User actor, Date timestamp) {
     ResourceAccess access =
         new ResourceAccess(BookingResourceRoleScheme.SCHEME_KEY, actor, timestamp);
     access.addAssignment(ResourceRoleAssignment.forUser(BookingResourceRoleScheme.OWNER, subject));
 
-    if (defaults.getDefaultSharedWith() == BookingDefaultSharedWith.ALL_USERS) {
-      access.addAssignment(
-          ResourceRoleAssignment.forAudience(
-              BookingResourceRoleScheme.BOOKER, ResourceAudience.ALL_USERS));
-    } else if (defaults.getDefaultSharedWith() == BookingDefaultSharedWith.SELECTED) {
+    access.addAssignment(
+        ResourceRoleAssignment.forAudience(
+            defaults.getDefaultSharedWith() == BookingDefaultSharedWith.ALL_USERS
+                ? BookingResourceRoleScheme.BOOKER
+                : BookingResourceRoleScheme.NO_ACCESS,
+            ResourceAudience.ALL_USERS,
+            messages.getMessage(ResourceAudience.ALL_USERS.messageKey())));
+
+    if (defaults.getDefaultSharedWith() == BookingDefaultSharedWith.SELECTED) {
       defaults.getSelectedAccessGrantees().stream()
           .map(BookingConfigurationManagerImpl::selectedDefaultAssignment)
           .flatMap(Optional::stream)
@@ -206,6 +227,13 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
               assignment ->
                   !assignment.getGranteeKey().equals(ResourceGranteeKeys.user(subject.getId())))
           .forEach(access::addAssignment);
+    }
+    long namedAssignments =
+        access.getAssignments().stream()
+            .filter(assignment -> assignment.getGranteeKind() != ResourceGranteeKind.AUDIENCE)
+            .count();
+    if (namedAssignments > ResourceAccessManager.MAX_NAMED_ASSIGNMENTS) {
+      throw new ResourceAccessException(ResourceAccessException.Reason.ASSIGNMENT_LIMIT);
     }
     return access;
   }
@@ -226,6 +254,17 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
   @Override
   public Optional<BookingConfiguration> updateConfiguration(
       Long id, Patch patch, User subject, User actor) {
+    return updateConfiguration(id, patch, null, subject, actor);
+  }
+
+  @Override
+  public Optional<BookingConfiguration> updateConfiguration(
+      Long id, Patch patch, long expectedVersion, User subject, User actor) {
+    return updateConfiguration(id, patch, Long.valueOf(expectedVersion), subject, actor);
+  }
+
+  private Optional<BookingConfiguration> updateConfiguration(
+      Long id, Patch patch, Long expectedVersion, User subject, User actor) {
     requireAuthenticated(subject);
     Optional<BookingConfiguration> updated =
         bookingConfigurationDao
@@ -233,6 +272,10 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
             .filter(configuration -> !configuration.isDeleted() && canRead(configuration, subject))
             .map(
                 configuration -> {
+                  if (expectedVersion != null
+                      && configuration.getConfigurationVersion() != expectedVersion) {
+                    throw new BookingConcurrentModificationException();
+                  }
                   requireCapability(
                       configuration, subject, BookingResourceRoleScheme.EDIT_CONFIGURATION);
                   if (unchanged(patch)) {
@@ -319,7 +362,7 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
       throw new CollectionMutationException(CollectionMutationException.Reason.FILTER_REQUIRED);
     }
     List<BookingConfiguration> matches =
-        bookingConfigurationDao.getResources(
+        bookingConfigurationDao.lockResources(
             request,
             ApiV2BookingConfigurationResource.MUTATION_LIMITS.maxBulkUpdateDeleteRows() + 1,
             RelationshipReadAccess.unrestricted(resourceRegistry.getObject()));
@@ -374,6 +417,7 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
       BookingConfiguration configuration, User actor, Date timestamp) {
     configuration.setDeleted(true);
     configuration.setEnabled(false);
+    calendarSubscriptions.deleteByConfigurationId(configuration.getId());
     touchAudit(configuration, actor, timestamp);
     return save(configuration);
   }
@@ -393,6 +437,14 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
       throw new InvalidBookableTargetException();
     }
     return target.reference();
+  }
+
+  private static void validateLockedTarget(BookableTargetReference target, Instrument instrument) {
+    if (instrument.isTemplate()
+        || instrument.isDeleted()
+        || !target.id().equals(instrument.getId())) {
+      throw new InvalidBookableTargetException();
+    }
   }
 
   private static void requireCanCreateFor(Instrument instrument, User subject) {
@@ -447,7 +499,7 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
         });
   }
 
-  private static BookingConfigurationCapabilities capabilities(
+  private BookingConfigurationCapabilities capabilities(
       ResourceAccess aggregate, User subject, ResolvedResourceAccess resolved) {
     return new BookingConfigurationCapabilities(
         resolved.hasCapability(BookingResourceRoleScheme.EDIT_CONFIGURATION),
@@ -461,30 +513,7 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
         resolved.hasCapability(BookingResourceRoleScheme.MANAGE_ALL_EVENTS),
         resolved.hasCapability(BookingResourceRoleScheme.CREATE_BLOCKOUT),
         resolved.hasCapability(BookingResourceRoleScheme.CREATE_CALENDAR_SUBSCRIPTION),
-        canLeave(aggregate, subject));
-  }
-
-  private static boolean canLeave(ResourceAccess aggregate, User subject) {
-    if (subject == null || subject.getId() == null) {
-      return false;
-    }
-    String subjectKey = ResourceGranteeKeys.user(subject.getId());
-    boolean direct =
-        aggregate.getAssignments().stream()
-            .anyMatch(assignment -> assignment.getGranteeKey().equals(subjectKey));
-    boolean ownerRemains =
-        aggregate.getAssignments().stream()
-            .anyMatch(
-                assignment ->
-                    !assignment.getGranteeKey().equals(subjectKey)
-                        && assignment.getRoleKey().equals(BookingResourceRoleScheme.OWNER));
-    boolean directIsOwner =
-        aggregate.getAssignments().stream()
-            .anyMatch(
-                assignment ->
-                    assignment.getGranteeKey().equals(subjectKey)
-                        && assignment.getRoleKey().equals(BookingResourceRoleScheme.OWNER));
-    return direct && (!directIsOwner || ownerRemains);
+        accessManager.canLeave(aggregate, subject));
   }
 
   private static boolean hasEffectiveOwner(ResourceAccess aggregate) {

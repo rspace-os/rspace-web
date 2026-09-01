@@ -25,7 +25,7 @@ import { Badge } from "@/modules/common/ui/badge";
 import { Button, buttonVariants } from "@/modules/common/ui/button";
 import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
 import { cn } from "@/modules/common/utils/cn";
-import type { BookingConfigurationRow } from "../bookable-items/bookingConfiguration";
+import type { BookingConfiguration } from "../bookable-items/bookingConfiguration";
 
 export const calendarLayouts = ["time-grid", "resources", "agenda"] as const;
 export type CalendarLayout = (typeof calendarLayouts)[number];
@@ -759,7 +759,7 @@ export function BookingEventsCalendar({
   /** Production creation action rendered without replacing the calendar controls. */
   creationAction?: React.ReactNode;
   resourceConfigurations?: readonly BookableItemOption[];
-  resourceTableProps?: TableListProps<BookingConfigurationRow>;
+  resourceTableProps?: TableListProps<BookingConfiguration>;
   creationDisabled?: boolean;
   onResourceRangeSelect?: (
     resource: BookableItemOption,

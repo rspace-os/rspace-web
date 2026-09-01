@@ -5,6 +5,7 @@ import com.researchspace.api.v2.auth.ApiV2AuthenticationException;
 import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.api.v2.resource.ApiV2ResourceException;
 import com.researchspace.booking.service.BookingCalendarManagerImpl.BookingCalendarNotFoundException;
+import com.researchspace.booking.service.BookingCalendarManagerImpl.UserSubscriptionConflictException;
 import com.researchspace.booking.service.BookingPolicyException;
 import com.researchspace.booking.service.InvalidBookingDefaultSharingException;
 import com.researchspace.booking.service.InvalidBookingDisplaySettingsException;
@@ -131,6 +132,11 @@ public class ApiV2ControllerAdvice {
     return problem(HttpStatus.NOT_FOUND, "errors.api.v2.notFound");
   }
 
+  @ExceptionHandler(UserSubscriptionConflictException.class)
+  public ResponseEntity<ApiV2Problem> handleUserSubscriptionConflict() {
+    return problem(HttpStatus.CONFLICT, "errors.api.v2.bookingCalendar.subscriptionConflict");
+  }
+
   @ExceptionHandler(ThrottlingException.class)
   public ResponseEntity<ApiV2Problem> handleThrottling() {
     return problem(HttpStatus.TOO_MANY_REQUESTS, "errors.api.v2.tooManyRequests");
@@ -188,7 +194,20 @@ public class ApiV2ControllerAdvice {
   }
 
   @ExceptionHandler(ResourceAccessException.class)
-  public ResponseEntity<ApiV2Problem> handleResourceAccess(ResourceAccessException ex) {
+  public ResponseEntity<ApiV2Problem> handleResourceAccess(
+      ResourceAccessException ex, HttpServletRequest request) {
+    if (ex.reason() == ResourceAccessException.Reason.FORBIDDEN
+        && ("PUT".equals(request.getMethod()) || "DELETE".equals(request.getMethod()))) {
+      ApiV2Caller caller = ApiV2Caller.from(request);
+      SECURITY_LOG.warn(
+          "resource_access_mutation_denied actor_id=[{}] subject_id=[{}] resource=[{}]"
+              + " action=[{}] outcome=[DENIED] reason=[{}]",
+          caller == null ? null : caller.actor().getId(),
+          caller == null ? null : caller.subject().getId(),
+          request.getRequestURI(),
+          request.getMethod(),
+          ex.reason());
+    }
     return switch (ex.reason()) {
       case NOT_FOUND -> problem(HttpStatus.NOT_FOUND, "errors.api.v2.notFound");
       case FORBIDDEN -> problem(HttpStatus.FORBIDDEN, "errors.api.v2.resourceAccess.forbidden");
@@ -201,6 +220,8 @@ public class ApiV2ControllerAdvice {
           problem(HttpStatus.BAD_REQUEST, "errors.api.v2.resourceAccess.invalidRole");
       case DUPLICATE_GRANTEE ->
           problem(HttpStatus.BAD_REQUEST, "errors.api.v2.resourceAccess.duplicateGrantee");
+      case ASSIGNMENT_LIMIT ->
+          problem(HttpStatus.BAD_REQUEST, "errors.api.v2.resourceAccess.assignmentLimit");
       case SELF_REMOVAL_REQUIRES_LEAVE ->
           problem(HttpStatus.CONFLICT, "errors.api.v2.resourceAccess.selfRemovalRequiresLeave");
     };

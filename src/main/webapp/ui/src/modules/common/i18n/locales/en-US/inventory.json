@@ -1431,9 +1431,10 @@
   "instrument": {
     "booking": {
       "configured": {
-        "action": "Go to booking page",
-        "description": "Go to Booking to see availability and make a booking.",
-        "title": "This instrument can be booked"
+        "book": "Book",
+        "description": "Open Booking to view this instrument's calendar and booking configuration.",
+        "open": "Open booking page",
+        "title": "Booking configured"
       },
       "notConfigured": {
         "action": "Set up booking",
@@ -2034,6 +2035,12 @@
       }
     },
     "controls": {
+      "bookable": {
+        "any": "Any",
+        "label": "Bookable",
+        "no": "Not bookable",
+        "yes": "Bookable"
+      },
       "nameDialog": {
         "duplicateName": "This name is already taken. Please modify it.",
         "helperText": "Please enter a unique name, no longer than 32 characters.",
@@ -2133,6 +2140,7 @@
     "parameterChips": {
       "basket": "Basket: {basket}",
       "benchOwner": "Bench Owner: {owner}",
+      "bookable": "Bookable: {value}",
       "contentsOf": "Contents of: {globalId}",
       "owner": "Owner: {owner}",
       "status": "Status: {status}",

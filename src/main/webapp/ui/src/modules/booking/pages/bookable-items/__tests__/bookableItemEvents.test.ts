@@ -6,6 +6,7 @@ import { fetchBookableItemEvents } from "../bookableItemEvents";
 
 const booking = {
   id: 41,
+  version: 0,
   target: {
     relationTo: "booking-instruments",
     value: { id: 12, name: "Scope", deleted: false },
@@ -20,6 +21,7 @@ const booking = {
   purpose: null,
   bookedBy: "Ada Lovelace (ada)",
   canEdit: true,
+  canCancel: true,
   createdAt: "2026-08-17T00:00:00Z",
   updatedAt: "2026-08-17T00:00:00Z",
 };
@@ -81,6 +83,7 @@ describe("bookable item events", () => {
       purpose: null,
       bookedBy: null,
       canEdit: false,
+      canCancel: false,
     };
     server.use(http.get("/api/v2/bookings", () => HttpResponse.json(envelope([booking, busy]))));
 

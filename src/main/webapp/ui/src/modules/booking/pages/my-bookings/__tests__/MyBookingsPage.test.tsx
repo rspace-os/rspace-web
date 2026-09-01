@@ -167,14 +167,16 @@ describe("My Bookings page", () => {
     expect(await screen.findByText(expectedStart)).toBeVisible();
   });
 
-  it("keeps a role-lost requester's target label but removes item navigation", async () => {
+  it("keeps a role-lost requester's target label read-only without item navigation", async () => {
     renderPage(initialPath, 84, undefined, undefined, [roleLostBooking]);
 
     expect(await screen.findByText("Confocal microscope")).toBeVisible();
     expect(screen.getByText("IN123", { exact: true })).toBeVisible();
     expect(screen.queryByRole("link", { name: "booking:myBookings.actions.viewDetails" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "common:tableList.filters.openRecord" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "booking:myBookings.actions.edit" })).not.toBeInTheDocument();
     expect(screen.getByText("booking:myBookings.roleLoss.readOnly")).toBeVisible();
+    expect(screen.queryByRole("button", { name: "booking:bookings.actions.cancel" })).not.toBeInTheDocument();
   });
 
   it("shows period-specific empty states", async () => {

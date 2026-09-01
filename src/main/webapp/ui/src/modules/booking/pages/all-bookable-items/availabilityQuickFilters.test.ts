@@ -14,6 +14,7 @@ import {
 
 const candidate = (id: number, globalId: string, timezone: string): BookingConfiguration => ({
   id,
+  configurationVersion: 0,
   target: {
     relationTo: "booking-instruments",
     value: { id, name: globalId, deleted: false },
@@ -93,6 +94,7 @@ describe("availability quick filters", () => {
           docs: [
             {
               id: 1,
+              version: 0,
               target: candidate(1, "IN1", "UTC").target,
               timezone: "UTC",
               start: "2026-08-17T08:00:00Z",

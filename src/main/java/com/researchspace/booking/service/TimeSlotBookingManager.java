@@ -152,6 +152,12 @@ public interface TimeSlotBookingManager {
   /** Finds one readable booking and prepares its safe response view. */
   Optional<TimeSlotBooking> getBooking(Long id, User actor);
 
+  /** Finds an ordinarily readable booking for audit, including a cancelled row. */
+  Optional<TimeSlotBooking> getBookingForAudit(Long id, User actor);
+
+  /** Requires the parent configuration's audit capability for an already readable booking. */
+  void requireCanViewAudit(TimeSlotBooking booking, User actor);
+
   /** Returns one readable item's privacy-shaped calendar source or empty when unavailable. */
   Optional<CalendarSource> getCalendarSource(
       Long configurationId, User actor, Date refreshedAt, int maxEvents);
@@ -164,4 +170,8 @@ public interface TimeSlotBookingManager {
 
   /** Updates one booking as subject and retains the originating actor for audit. */
   Optional<TimeSlotBooking> updateBooking(Long id, Patch patch, User subject, User actor);
+
+  /** Version-checked singular edit or cancellation. */
+  Optional<TimeSlotBooking> updateBooking(
+      Long id, Patch patch, long expectedVersion, User subject, User actor);
 }

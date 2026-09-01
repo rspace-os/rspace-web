@@ -1,5 +1,6 @@
 package com.researchspace.booking.service;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -12,6 +13,7 @@ import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.service.resourceaccess.ResourceAccessManager;
 import java.util.Optional;
+import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.Test;
 
 class BookingConfigurationOwnershipManagerTest {
@@ -32,7 +34,7 @@ class BookingConfigurationOwnershipManagerTest {
   void unconfiguredInstrumentNeedsNoBookingMutation() {
     BookableTargetReference target =
         new BookableTargetReference(BookableTargetType.INSTRUMENT, 17L);
-    when(configurationDao.findByTarget(target)).thenReturn(Optional.empty());
+    when(configurationDao.lockByTargetIncludingArchived(target)).thenReturn(Optional.empty());
 
     manager.transferInstrumentOwnership(17L, outgoing, incoming, subject, actor);
 
@@ -46,11 +48,29 @@ class BookingConfigurationOwnershipManagerTest {
         new BookableTargetReference(BookableTargetType.INSTRUMENT, 17L);
     BookingConfiguration configuration = mock(BookingConfiguration.class);
     when(configuration.getId()).thenReturn(9L);
-    when(configurationDao.findByTarget(target)).thenReturn(Optional.of(configuration));
+    when(configurationDao.lockByTargetIncludingArchived(target))
+        .thenReturn(Optional.of(configuration));
 
     manager.transferInstrumentOwnership(17L, outgoing, incoming, subject, actor);
 
     verify(accessManager)
+        .transferDirectOwnership(protectedAccess, 9L, outgoing, incoming, subject, actor);
+  }
+
+  @Test
+  void archivedConfigurationAbortsTheCoordinatedTransfer() {
+    BookableTargetReference target =
+        new BookableTargetReference(BookableTargetType.INSTRUMENT, 17L);
+    BookingConfiguration configuration = mock(BookingConfiguration.class);
+    when(configuration.isDeleted()).thenReturn(true);
+    when(configurationDao.lockByTargetIncludingArchived(target))
+        .thenReturn(Optional.of(configuration));
+
+    assertThrows(
+        AuthorizationException.class,
+        () -> manager.transferInstrumentOwnership(17L, outgoing, incoming, subject, actor));
+
+    verify(accessManager, never())
         .transferDirectOwnership(protectedAccess, 9L, outgoing, incoming, subject, actor);
   }
 }
