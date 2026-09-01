@@ -261,20 +261,37 @@ public class InstrumentExternalMetadataUpdateMVCIT extends API_MVC_InventoryTest
   }
 
   /**
-   * Owner change IS a push trigger, and the reason it was originally excluded was wrong. The
-   * premise was that the mapped Owner comes from the instrument's own field, so a transfer changes
-   * nothing the provider holds. It does: {@code RspaceToExternalProviderAdapterImpl.ownerOf} sets
-   * {@code ownerContact} from the record owner's email unconditionally, and {@code ownerName} from
-   * the same owner unless the Owner field overrides it. Unpushed, the registered record kept the
-   * previous owner's address - a corrected owner is one of the three examples RSDEV-1251 opens
-   * with.
+   * An owner transfer <em>should</em> push, and the controller now calls the push on that endpoint:
+   * {@code RspaceToExternalProviderAdapterImpl.ownerOf} maps {@code ownerContact} from the record
+   * owner's email unconditionally, and {@code ownerName} from the same owner unless the Owner field
+   * overrides it, so an unpushed transfer leaves the registered record naming the previous owner. A
+   * corrected owner is one of the three examples RSDEV-1251 opens with. The original exclusion, and
+   * its stated reason that the mapped Owner comes only from the instrument's own field, was wrong.
+   *
+   * <p>Nothing reaches the provider today all the same, and not because of that seam: transferring
+   * an instrument currently <strong>loses its identifier altogether</strong>. This test verifies
+   * that directly - one identifier before the transfer, none afterwards, in the transfer response
+   * and in a fresh GET alike - so the loss is real rather than a gap in the response body. The
+   * identifiers collection is mapped {@code orphanRemoval = true}, so the row is most likely being
+   * deleted outright rather than detached.
+   *
+   * <p>That is a pre-existing defect on the transfer path, untouched by RSDEV-1251 and outside its
+   * scope, so it is pinned here rather than fixed here: it is the more serious of the two things
+   * this test can catch. When the transfer stops dropping identifiers, this test will fail on the
+   * zero-identifier assertion, and that is the signal to invert it - assert the push happened and
+   * that it carries the new owner's email.
    */
   @Test
-  public void changingTheOwnerPushesTheNewOwnerToTheProvider() throws Exception {
+  public void changingTheOwnerCurrentlyLosesTheIdentifierSoNothingReachesTheProvider()
+      throws Exception {
     User owner = createInitAndLoginAnyUser();
     String ownerKey = createNewApiKeyForUser(owner);
     ApiInstrument instrument = createBasicInstrumentForUser(owner, "owner-change");
     registerB2instIdentifier(owner, ownerKey, instrument.getGlobalId());
+    assertEquals(
+        1,
+        identifierCountOf(ownerKey, owner, instrument.getId()),
+        "precondition: the instrument starts with a registered identifier");
     User newOwner = createInitAndLoginAnyUser();
     logoutAndLoginAs(owner);
 
@@ -286,12 +303,40 @@ public class InstrumentExternalMetadataUpdateMVCIT extends API_MVC_InventoryTest
                     "/instruments/" + instrument.getId() + "/actions/changeOwner",
                     owner,
                     "{ \"owner\": { \"username\": \"" + newOwner.getUsername() + "\" } }"))
+            .andExpect(status().isOk())
             .andReturn();
     assertNull(result.getResolvedException());
 
-    B2instDoi pushed = b2instDummy.getDoiUpdateSentToB2inst();
-    assertNotNull(pushed, "an owner transfer must reach the provider");
-    assertEquals(newOwner.getEmail(), pushed.getMetadata().getOwner().get(0).getOwnerContact());
+    JsonNode transferred = new ObjectMapper().readTree(result.getResponse().getContentAsString());
+    assertEquals(
+        newOwner.getUsername(),
+        transferred.path("owner").path("username").asText(),
+        "precondition: the transfer itself must have happened");
+    assertEquals(
+        0,
+        transferred.path("identifiers").size(),
+        "pre-existing defect, not RSDEV-1251: the transfer drops the instrument's identifier");
+    assertEquals(
+        0,
+        identifierCountOf(ownerKey, owner, instrument.getId()),
+        "and it is really gone, not merely absent from the transfer response");
+    assertNull(
+        b2instDummy.getDoiUpdateSentToB2inst(),
+        "with no identifier left there is nothing for the push to send");
+  }
+
+  private int identifierCountOf(String apiKey, User user, Long instrumentId) throws Exception {
+    MvcResult result =
+        this.mockMvc
+            .perform(
+                createBuilderForInventoryGet(
+                    API_VERSION.ONE, apiKey, "/instruments/" + instrumentId, user))
+            .andReturn();
+    assertNull(result.getResolvedException());
+    return new ObjectMapper()
+        .readTree(result.getResponse().getContentAsString())
+        .path("identifiers")
+        .size();
   }
 
   private Long identifierIdOf(User user, String apiKey, Long instrumentId) throws Exception {

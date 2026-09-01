@@ -151,9 +151,12 @@ resolved during design. This file is a glossary only — no implementation detai
   provider record is reported too, naming the state, rather than passed over in
   silence; an identifier belonging to a provider whose integration is switched
   off is passed over silently, because there is nothing to act on. Saving an
-  instrument and transferring one push; template sync, restore, duplicate and
-  delete do not, and edits to samples, subsamples and containers do not (their
-  draft-DOI metadata still drifts).
+  instrument and transferring one both push, though a transfer cannot reach the
+  provider today because transferring an instrument currently loses its
+  identifier outright - a separate, pre-existing defect on the transfer path.
+  Template sync, restore, duplicate and delete do not push, and edits to
+  samples, subsamples and containers do not (their draft-DOI metadata still
+  drifts).
   (RSDEV-1251)
 - **Registered landing page** — the LandingPage value RSpace sends to a PID
   provider when registering an instrument identifier: the Landing page field

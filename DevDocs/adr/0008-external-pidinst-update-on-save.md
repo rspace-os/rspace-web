@@ -102,6 +102,15 @@ anything that is not accepted, so an identifier really can be sitting in
    transfer left the registered record naming the previous owner. A corrected
    owner is one of the three examples this ticket opens with.
 
+   That push cannot fire yet. Transferring an instrument currently loses its
+   identifier altogether - verified by
+   `InstrumentExternalMetadataUpdateMVCIT.changingTheOwnerCurrentlyLosesTheIdentifierSoNothingReachesTheProvider`,
+   which sees one identifier before the transfer and none after, in the response
+   and in a fresh read alike. That is a pre-existing defect on the transfer path
+   (the identifiers collection is mapped `orphanRemoval = true`), outside this
+   decision's scope; the seam is wired now so that fixing it is all that is
+   needed, and that MVCIT is written to fail and prompt inversion when it is.
+
 ## Consequences
 
 - Saving an instrument with an updatable identifier gains the latency of one

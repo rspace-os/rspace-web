@@ -110,7 +110,7 @@ public class DigitalObjectIdentifier extends InventoryRecordConnectedEntity
    * record). Gates the public landing page, so both providers' published states must be here.
    */
   public static boolean isPublishedState(String state) {
-    return "findable".equals(state) || "accepted".equals(state);
+    return "findable".equalsIgnoreCase(state) || "accepted".equalsIgnoreCase(state);
   }
 
   /**

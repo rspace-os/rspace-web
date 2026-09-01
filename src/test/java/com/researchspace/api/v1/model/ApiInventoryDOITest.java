@@ -30,7 +30,7 @@ class ApiInventoryDOITest {
   @Test
   void serverOwnedUrlsCannotBeSetFromAnIncomingPayload() throws Exception {
     String incoming =
-        "{\"id\":1,\"creatorName\":\"Jane Bloggs\","
+        "{\"id\":1,\"doi\":\"k2j9p-7yh21\","
             + "\"providerUrl\":\"https://attacker.example/evil\","
             + "\"publicUrl\":\"https://attacker.example/citable\","
             + "\"url\":\"https://attacker.example/target\"}";
@@ -40,8 +40,7 @@ class ApiInventoryDOITest {
     assertNull(deserialized.getProviderUrl(), "providerUrl must be ignored on deserialization");
     assertNull(deserialized.getPublicUrl(), "publicUrl must be ignored on deserialization");
     assertNull(deserialized.getUrl(), "url must be ignored on deserialization");
-    assertEquals(
-        "Jane Bloggs", deserialized.getCreatorName(), "control: writable fields still bind");
+    assertEquals("k2j9p-7yh21", deserialized.getDoi(), "control: writable fields still bind");
   }
 
   /** READ_ONLY must block only the inbound direction; the client still needs to read both. */
@@ -61,38 +60,47 @@ class ApiInventoryDOITest {
   }
 
   /**
-   * The provider record id is the address of the external record RSpace writes to, so a client must
-   * not be able to choose it. It is set in Java from the provider's own response - the B2INST draft
-   * RID in {@code InventoryIdentifierApiManagerImpl}, the DataCite id in this class's own {@code
-   * DataCiteDoi} constructor - and never bound from a request, so READ_ONLY costs the API nothing.
+   * The provider record id is the ADDRESS of the external record RSpace writes to, so an existing
+   * identifier must not be retargeted by a payload. The id check in {@code
+   * ApiInventoryRecordInfo.applyChangesToDatabaseIdentifiers} stops a client naming someone else's
+   * identifier row, but not a client pointing its OWN row at someone else's record: without this
+   * guard, one instrument PUT carrying a foreign RID or DOI made the RSDEV-1251 on-save push
+   * overwrite that record with this instrument's metadata, under the deployment's own provider
+   * credentials.
    *
-   * <p>Without this, the RSDEV-1251 on-save push turns the field into a write primitive. The id
-   * check in {@code applyChangesToDatabaseIdentifiers} stops a client naming someone else's
-   * identifier row, but not a client retargeting its own row at someone else's external record: a
-   * single instrument PUT carrying a foreign RID or DOI would have RSpace overwrite that record
-   * with this instrument's metadata, under the deployment's own provider credentials.
+   * <p>Guarded here rather than with {@code Access.READ_ONLY} on the field, because the value is
+   * part of every identifier response and READ_ONLY would also stop a Java client reading it back
+   * out of one.
    */
   @Test
-  void providerRecordIdCannotBeSetFromAnIncomingPayload() throws Exception {
-    String incoming = "{\"id\":1,\"doi\":\"someone-elses-record-id\"}";
+  void providerRecordIdNotMutatedOnExistingIdentifier() {
+    DigitalObjectIdentifier existing = new DigitalObjectIdentifier("10.12345/ours-1234", "t");
+    existing.setId(1L);
 
-    ApiInventoryDOI deserialized = new ObjectMapper().readValue(incoming, ApiInventoryDOI.class);
+    ApiInventoryDOI apiDoi = new ApiInventoryDOI();
+    apiDoi.setDoi("10.12345/someone-elses");
 
-    assertNull(deserialized.getDoi(), "doi must be ignored on deserialization");
+    boolean changed = apiDoi.applyChangesToDatabaseDOI(existing);
+
+    assertEquals(
+        "10.12345/ours-1234",
+        existing.getIdentifier(),
+        "an existing identifier must not be retargeted at another provider record");
+    assertFalse(changed);
   }
 
-  /**
-   * READ_ONLY must block only the inbound direction here too: the identifier value is what the
-   * Inventory UI and the public landing page display, and what API clients cite.
-   */
+  /** Registration must still work: it applies the provider's own response to a new identifier. */
   @Test
-  void providerRecordIdIsStillSerializedOutbound() throws Exception {
-    ApiInventoryDOI doi = new ApiInventoryDOI();
-    doi.setDoi("10.82316/khma-em96");
+  void providerRecordIdIsAppliedWhileTheIdentifierIsStillBeingCreated() {
+    DigitalObjectIdentifier brandNew = new DigitalObjectIdentifier(null, null, "aSuffix");
 
-    String json = new ObjectMapper().writeValueAsString(doi);
+    ApiInventoryDOI apiDoi = new ApiInventoryDOI();
+    apiDoi.setDoi("10.12345/minted-by-the-provider");
 
-    assertTrue(json.contains("\"doi\":\"10.82316/khma-em96\""));
+    boolean changed = apiDoi.applyChangesToDatabaseDOI(brandNew);
+
+    assertEquals("10.12345/minted-by-the-provider", brandNew.getIdentifier());
+    assertTrue(changed);
   }
 
   @Test

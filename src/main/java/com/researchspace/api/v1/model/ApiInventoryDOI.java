@@ -149,20 +149,16 @@ public class ApiInventoryDOI extends LinkableApiObject {
   private String doiType;
 
   /**
-   * The provider's own record id: a B2INST draft RID, or a DataCite DOI. Owned by the server.
+   * The provider's own record id: a B2INST draft RID, or a DataCite DOI.
    *
-   * <p>{@link JsonProperty.Access#READ_ONLY} for the same reason as {@link #state}, {@link #url},
-   * {@link #publicUrl} and {@link #providerUrl}, and it is this class's only field that names a
-   * record at the provider. The on-save external metadata update (RSDEV-1251, ADR 0008) sends the
-   * instrument's metadata to whatever record this value addresses, using the deployment's provider
-   * credentials. {@link #applyChangesToDatabaseDOI(DigitalObjectIdentifier)} copies it straight
-   * onto the entity, and the id check in {@code
-   * ApiInventoryRecordInfo#applyChangesToDatabaseIdentifiers} only stops a client naming another
-   * record's identifier row, not a client retargeting its own row: without this, one instrument PUT
-   * carrying a foreign RID or DOI would overwrite that external record. It is set in Java from the
-   * provider's registration response, which this annotation does not affect.
+   * <p>Writable on the way in, but only ever applied to a <em>new</em> identifier - see the
+   * immutability guard in {@link #applyChangesToDatabaseDOI(DigitalObjectIdentifier)}, which is
+   * what stops a client retargeting an existing identifier at someone else's provider record.
+   * Deliberately not {@code Access.READ_ONLY} like {@link #state} and the URL properties: this
+   * value is part of every identifier response, and READ_ONLY would stop a Java client (our own
+   * MVCITs included) reading it back out of one.
    */
-  @JsonProperty(value = "doi", access = JsonProperty.Access.READ_ONLY)
+  @JsonProperty("doi")
   private String doi;
 
   @JsonProperty("associatedGlobalId")
@@ -432,7 +428,17 @@ public class ApiInventoryDOI extends LinkableApiObject {
       dbIdentifier.setType(incomingType);
       contentChanged = true;
     }
-    if (getDoi() != null) {
+    /*
+     * Only while creating, exactly as with the type above. This value is the ADDRESS of the record
+     * at the provider, and the on-save external metadata update (RSDEV-1251, ADR 0008) sends the
+     * instrument's metadata to whatever record it names, using the deployment's own credentials.
+     * The id check in ApiInventoryRecordInfo.applyChangesToDatabaseIdentifiers stops a client
+     * naming ANOTHER record's identifier row, but not a client retargeting its OWN row: without
+     * this guard, one instrument PUT carrying a foreign RID or DOI would overwrite that external
+     * record. Registration is unaffected - it applies to a transient entity, having taken the id
+     * from the provider's own response.
+     */
+    if (dbIdentifier.getId() == null && getDoi() != null) {
       if (!getDoi().equals(dbIdentifier.getIdentifier())) {
         dbIdentifier.setIdentifier(getDoi());
         contentChanged = true;
