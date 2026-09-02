@@ -1,10 +1,10 @@
 package msgRecipientFac;
 
 import static com.researchspace.core.util.TransformerUtils.toSet;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.User;
 import com.researchspace.model.comms.CommunicationTarget;
@@ -19,9 +19,8 @@ import jakarta.mail.internet.MimeMessage;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class MessageRecipientFactoryTest {
   MessageRecipientFactory fac = null;
@@ -29,13 +28,10 @@ public class MessageRecipientFactoryTest {
   User recip1 = TestFactory.createAnyUser("u2");
   User recip2 = TestFactory.createAnyUser("u3");
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     fac = new MessageRecipientFactory();
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void testPopulateRecipientsForGlobalMsgSendsBCC()

@@ -1,10 +1,10 @@
 package com.researchspace.service;
 
 import static com.researchspace.core.util.MediaUtils.IMAGES_MEDIA_FLDER_NAME;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.EcatImage;
@@ -21,8 +21,8 @@ import com.researchspace.session.UserSessionTracker;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.testutils.TestGroup;
 import java.util.List;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockHttpSession;
 
@@ -32,7 +32,7 @@ public class DetailedRecordInformationProviderTest extends SpringTransactionalTe
   UserSessionTracker userTracker;
   private @Autowired RecordSigningManager signingManager;
 
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     super.setUp();
     userTracker = new UserSessionTracker();

@@ -220,7 +220,7 @@ class RspaceToExternalProviderAdapterImplTest {
 
   /**
    * A hand-typed address with no scheme is not something a resolver can follow, and the field's own
-   * validation does not catch it: core-model's InventoryUriField only checks that {@code new URI()}
+   * validation does not catch it: {@code InventoryUriField} only checks that {@code new URI()}
    * parses, which a bare host or a relative path does. The code refuses to emit a site-relative
    * address of its own, so accepting a typed one would be inconsistent. Fall back to the
    * identifier's public page, which does resolve.
@@ -575,9 +575,8 @@ class RspaceToExternalProviderAdapterImplTest {
 
   /**
    * Pins the outbound key of every property this adapter can emit. Every other test in this class
-   * asserts through getters, which bypasses Jackson entirely, so a renamed {@code @JsonProperty} in
-   * the pinned rspace-core-model would leave them all green while B2INST silently dropped the
-   * property.
+   * asserts through getters, which bypasses Jackson entirely, so a renamed {@code @JsonProperty} on
+   * an emitted model class would leave them all green while B2INST silently dropped the property.
    */
   @Test
   void wireFormatNamesEveryEmittedProperty() throws Exception {

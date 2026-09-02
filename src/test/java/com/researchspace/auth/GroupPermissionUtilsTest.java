@@ -1,26 +1,22 @@
 package com.researchspace.auth;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.permissions.IGroupPermissionUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.testutils.TestGroup;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class GroupPermissionUtilsTest extends SpringTransactionalTest {
   private @Autowired IGroupPermissionUtils grpPermUtils;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void testSetReadOrEditAllPermissionsForPi() {

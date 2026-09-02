@@ -1,23 +1,24 @@
 package com.axiope.webapp.taglib;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.lenient;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import jakarta.servlet.ServletContext;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.jsp.JspException;
 import jakarta.servlet.jsp.JspWriter;
 import jakarta.servlet.jsp.PageContext;
 import jakarta.servlet.jsp.tagext.TagSupport;
 import java.io.ByteArrayInputStream;
+import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -25,27 +26,26 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockJspWriter;
+import org.springframework.mock.web.MockServletContext;
 
+@ExtendWith(MockitoExtension.class)
 public class BundleTagTest {
 
-  @Rule public MockitoRule mockito = MockitoJUnit.rule();
-
-  @Mock private HttpServletRequest request;
   @Mock private PageContext pageContext;
-  @Mock private ServletContext servletContext;
-  @Mock private JspWriter writer;
 
-  private final StringBuilder output = new StringBuilder();
-  private final Map<String, Object> requestAttributes = new LinkedHashMap<>();
-  private final Map<String, Object> servletContextAttributes = new LinkedHashMap<>();
+  private final StringWriter output = new StringWriter();
   private final Set<String> renderedAssets = new LinkedHashSet<>();
+  private MockHttpServletRequest request;
+  private MockServletContext servletContext;
+  private JspWriter writer;
   private BundleTag.ChunkManifest manifest;
   private TestBundleTag tag;
   private String originalReactDevModeProperty;
@@ -62,74 +62,21 @@ public class BundleTagTest {
     }
   }
 
-  @Before
-  public void setUp() throws Exception {
+  @BeforeEach
+  public void setUp() {
     originalReactDevModeProperty = System.getProperty(FrontendCacheVersion.REACT_DEV_MODE_PROPERTY);
     System.clearProperty(FrontendCacheVersion.REACT_DEV_MODE_PROPERTY);
     manifest = BundleTag.ChunkManifest.fromBundles(new LinkedHashMap<>());
+    output.getBuffer().setLength(0);
+    renderedAssets.clear();
+    servletContext = spy(new MockServletContext());
+    request = new MockHttpServletRequest(servletContext);
+    writer = new MockJspWriter(output);
     tag = new TestBundleTag();
     tag.setPageContext(pageContext);
-    output.setLength(0);
-    requestAttributes.clear();
-    servletContextAttributes.clear();
-    renderedAssets.clear();
-
-    lenient().when(pageContext.getRequest()).thenReturn(request);
-    lenient().when(pageContext.getOut()).thenReturn(writer);
-    lenient().when(pageContext.getServletContext()).thenReturn(servletContext);
-    lenient()
-        .when(servletContext.getAttribute(anyString()))
-        .thenAnswer(
-            invocation -> servletContextAttributes.get(invocation.getArgument(0, String.class)));
-    lenient()
-        .doAnswer(
-            invocation -> {
-              servletContextAttributes.put(
-                  invocation.getArgument(0, String.class), invocation.getArgument(1));
-              return null;
-            })
-        .when(servletContext)
-        .setAttribute(anyString(), org.mockito.ArgumentMatchers.any());
-    lenient()
-        .doAnswer(
-            invocation -> {
-              servletContextAttributes.remove(invocation.getArgument(0, String.class));
-              return null;
-            })
-        .when(servletContext)
-        .removeAttribute(anyString());
-    lenient()
-        .when(request.getAttribute(anyString()))
-        .thenAnswer(invocation -> requestAttributes.get(invocation.getArgument(0, String.class)));
-    lenient()
-        .doAnswer(
-            invocation -> {
-              requestAttributes.put(
-                  invocation.getArgument(0, String.class), invocation.getArgument(1));
-              return null;
-            })
-        .when(request)
-        .setAttribute(anyString(), org.mockito.ArgumentMatchers.any());
-    lenient()
-        .doAnswer(
-            invocation -> {
-              requestAttributes.remove(invocation.getArgument(0, String.class));
-              return null;
-            })
-        .when(request)
-        .removeAttribute(anyString());
-
-    lenient()
-        .doAnswer(
-            invocation -> {
-              output.append(invocation.getArgument(0, String.class));
-              return null;
-            })
-        .when(writer)
-        .write(anyString());
   }
 
-  @After
+  @AfterEach
   public void tearDown() {
     if (originalReactDevModeProperty == null) {
       System.clearProperty(FrontendCacheVersion.REACT_DEV_MODE_PROPERTY);
@@ -139,8 +86,22 @@ public class BundleTagTest {
     }
   }
 
+  private void stubRequest() {
+    when(pageContext.getRequest()).thenReturn(request);
+  }
+
+  private void stubServletContext() {
+    when(pageContext.getServletContext()).thenReturn(servletContext);
+  }
+
+  private void stubWriter() {
+    when(pageContext.getOut()).thenReturn(writer);
+  }
+
   @Test
   public void rendersManifestBackedAssets() throws JspException {
+    stubServletContext();
+    stubWriter();
     manifest =
         BundleTag.ChunkManifest.fromBundles(
             Collections.singletonMap(
@@ -162,6 +123,9 @@ public class BundleTagTest {
 
   @Test
   public void i18nMessagesTagRendersClassicViteBundle() throws JspException {
+    stubRequest();
+    stubServletContext();
+    stubWriter();
     manifest =
         BundleTag.ChunkManifest.fromBundles(
             Collections.singletonMap(
@@ -192,6 +156,8 @@ public class BundleTagTest {
 
   @Test
   public void i18nMessagesTagCacheBustsTheCatalogueUrl() throws JspException {
+    stubRequest();
+    stubServletContext();
     servletContext.setAttribute(FrontendCacheVersion.CACHE_VERSION_ATTR, "1.2.3");
     I18nMessagesTag i18nTag =
         new I18nMessagesTag() {
@@ -212,6 +178,9 @@ public class BundleTagTest {
 
   @Test
   public void i18nMessagesTagRendersClassicEntrypointInHmrMode() throws JspException {
+    stubRequest();
+    stubServletContext();
+    stubWriter();
     I18nMessagesTag i18nTag =
         new I18nMessagesTag() {
           @Override
@@ -241,6 +210,8 @@ public class BundleTagTest {
 
   @Test
   public void renderingSameBundleTwiceDeduplicatesAssets() throws JspException {
+    stubServletContext();
+    stubWriter();
     manifest =
         BundleTag.ChunkManifest.fromBundles(
             Collections.singletonMap(
@@ -259,16 +230,21 @@ public class BundleTagTest {
 
   @Test
   public void missingBundleThrowsJspException() {
+    stubRequest();
+    stubServletContext();
     tag.setBundle("apps");
 
-    JspException error = assertThrows(JspException.class, () -> tag.doStartTag());
-    assertTrue(error.getMessage().contains("No bundle manifest entry found for bundle: apps"));
+    assertTrue(
+        assertThrows(JspException.class, () -> tag.doStartTag())
+            .getMessage()
+            .contains("No bundle manifest entry found for bundle: apps"));
   }
 
   @Test
   public void loadsManifestFromDistPath() {
     when(servletContext.getResourceAsStream(BundleTag.VITE_MANIFEST_PATH))
         .thenReturn(manifestStream("appBar", "appBar-abc123.js"));
+    clearInvocations(servletContext);
 
     BundleTag.ChunkManifest loadedManifest = BundleTag.ChunkManifest.load(servletContext);
 
@@ -288,6 +264,7 @@ public class BundleTagTest {
   public void loadsEntrypointsFromJsonPath() {
     when(servletContext.getResourceAsStream(BundleTag.VITE_ENTRYPOINTS_PATH))
         .thenReturn(entrypointsStream());
+    clearInvocations(servletContext);
 
     Map<String, String> entrypoints = BundleTag.loadEntrypoints(servletContext);
 
@@ -297,10 +274,13 @@ public class BundleTagTest {
 
   @Test
   public void getManifestCacheDoesNotCacheEmptyManifest() {
+    stubRequest();
+    stubServletContext();
+    servletContext.setAttribute(FrontendCacheVersion.DEV_MODE_CACHE_ATTR, Boolean.FALSE);
     BundleTag realTag = new BundleTag();
     realTag.setPageContext(pageContext);
-    when(servletContext.getAttribute(BundleTag.MANIFEST_CACHE_ATTR)).thenReturn(null);
     when(servletContext.getResourceAsStream(BundleTag.VITE_MANIFEST_PATH)).thenReturn(null);
+    clearInvocations(servletContext);
 
     BundleTag.ChunkManifest loadedManifest = realTag.getManifestCache();
 
@@ -313,12 +293,13 @@ public class BundleTagTest {
   public void preWarmManifestCacheCachesParsedManifestForNonDevMode() {
     when(servletContext.getResourceAsStream(BundleTag.VITE_MANIFEST_PATH))
         .thenReturn(manifestStream("appBar", "appBar-abc123.js"));
+    clearInvocations(servletContext);
 
     BundleTag.preWarmManifestCache(servletContext, false);
 
     assertEquals(
-        Boolean.FALSE, servletContextAttributes.get(FrontendCacheVersion.DEV_MODE_CACHE_ATTR));
-    Object cachedManifest = servletContextAttributes.get(BundleTag.MANIFEST_CACHE_ATTR);
+        Boolean.FALSE, servletContext.getAttribute(FrontendCacheVersion.DEV_MODE_CACHE_ATTR));
+    Object cachedManifest = servletContext.getAttribute(BundleTag.MANIFEST_CACHE_ATTR);
     assertTrue(cachedManifest instanceof BundleTag.ChunkManifest);
     assertEquals(
         List.of("/ui/dist/appBar-abc123.js"),
@@ -330,14 +311,17 @@ public class BundleTagTest {
     BundleTag.preWarmManifestCache(servletContext, true);
 
     assertEquals(
-        Boolean.TRUE, servletContextAttributes.get(FrontendCacheVersion.DEV_MODE_CACHE_ATTR));
-    assertTrue(!servletContextAttributes.containsKey(BundleTag.MANIFEST_CACHE_ATTR));
+        Boolean.TRUE, servletContext.getAttribute(FrontendCacheVersion.DEV_MODE_CACHE_ATTR));
+    assertNull(servletContext.getAttribute(BundleTag.MANIFEST_CACHE_ATTR));
     verify(servletContext, never()).getResourceAsStream(BundleTag.VITE_MANIFEST_PATH);
     verify(servletContext).removeAttribute(BundleTag.MANIFEST_CACHE_ATTR);
   }
 
   @Test
   public void missingBundleRefreshesManifestCacheBeforeThrowing() throws JspException {
+    stubRequest();
+    stubServletContext();
+    stubWriter();
     BundleTag realTag =
         new BundleTag() {
           @Override
@@ -352,22 +336,26 @@ public class BundleTagTest {
                 "toastMessage",
                 new BundleTag.ChunkManifest.BundleAssets(
                     List.of(), List.of(), List.of("/ui/dist/toastMessage-abc123.js"))));
-    doReturn(staleManifest).when(servletContext).getAttribute(BundleTag.MANIFEST_CACHE_ATTR);
+    servletContext.setAttribute(FrontendCacheVersion.DEV_MODE_CACHE_ATTR, Boolean.FALSE);
+    servletContext.setAttribute(BundleTag.MANIFEST_CACHE_ATTR, staleManifest);
+    clearInvocations(servletContext);
     when(servletContext.getResourceAsStream(BundleTag.VITE_MANIFEST_PATH))
         .thenReturn(manifestStream("appBar", "appBar-abc123.js"));
+    clearInvocations(servletContext);
 
     realTag.setBundle("appBar");
 
     assertEquals(TagSupport.SKIP_BODY, realTag.doStartTag());
     assertTrue(output.toString().contains("type=\"module\" src=\"/ui/dist/appBar-abc123.js\""));
     verify(servletContext)
-        .setAttribute(
-            org.mockito.ArgumentMatchers.eq(BundleTag.MANIFEST_CACHE_ATTR),
-            org.mockito.ArgumentMatchers.any(BundleTag.ChunkManifest.class));
+        .setAttribute(eq(BundleTag.MANIFEST_CACHE_ATTR), any(BundleTag.ChunkManifest.class));
   }
 
   @Test
   public void devModeRefreshesManifestOncePerRequest() throws JspException {
+    stubRequest();
+    stubServletContext();
+    stubWriter();
     class DevModeBundleTag extends BundleTag {
       private final List<ChunkManifest> manifests =
           List.of(
@@ -392,7 +380,7 @@ public class BundleTagTest {
       ChunkManifest refreshManifestCache() {
         ChunkManifest nextManifest = manifests.get(refreshCount);
         refreshCount++;
-        requestAttributes.remove(REQUEST_MANIFEST_CACHE_ATTR);
+        request.removeAttribute(REQUEST_MANIFEST_CACHE_ATTR);
         return nextManifest;
       }
     }
@@ -405,8 +393,8 @@ public class BundleTagTest {
     assertTrue(output.toString().contains("src=\"/ui/dist/appBar-first.js\""));
     assertEquals(1, realTag.refreshCount);
 
-    output.setLength(0);
-    requestAttributes.clear();
+    output.getBuffer().setLength(0);
+    request.clearAttributes();
     assertEquals(TagSupport.SKIP_BODY, realTag.doStartTag());
     assertTrue(output.toString().contains("src=\"/ui/dist/appBar-second.js\""));
     assertEquals(2, realTag.refreshCount);
@@ -414,6 +402,7 @@ public class BundleTagTest {
 
   @Test
   public void hmrModeRendersSameOriginViteClientAndEntrypointScripts() throws JspException {
+    stubWriter();
     BundleTag realTag =
         new BundleTag() {
           @Override
@@ -449,6 +438,7 @@ public class BundleTagTest {
 
   @Test
   public void devModeReusesRefreshedManifestWithinSingleRequest() {
+    stubRequest();
     class DevModeBundleTag extends BundleTag {
       private int refreshCount;
 
@@ -460,7 +450,7 @@ public class BundleTagTest {
       @Override
       ChunkManifest refreshManifestCache() {
         refreshCount++;
-        requestAttributes.remove(REQUEST_MANIFEST_CACHE_ATTR);
+        request.removeAttribute(REQUEST_MANIFEST_CACHE_ATTR);
         return ChunkManifest.fromBundles(
             Collections.singletonMap(
                 "appBar",

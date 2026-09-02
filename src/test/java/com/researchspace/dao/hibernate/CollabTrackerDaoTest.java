@@ -1,6 +1,6 @@
 package com.researchspace.dao.hibernate;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.researchspace.dao.CollaborationGroupTrackerDao;
 import com.researchspace.dao.CommunicationDao;
@@ -9,9 +9,8 @@ import com.researchspace.model.User;
 import com.researchspace.model.comms.MessageOrRequest;
 import com.researchspace.model.comms.MessageType;
 import com.researchspace.testutils.SpringTransactionalTest;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class CollabTrackerDaoTest extends SpringTransactionalTest {
@@ -20,10 +19,7 @@ public class CollabTrackerDaoTest extends SpringTransactionalTest {
 
   @Autowired CommunicationDao commDao;
 
-  @Before
-  public void setUp() throws Exception {}
-
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }

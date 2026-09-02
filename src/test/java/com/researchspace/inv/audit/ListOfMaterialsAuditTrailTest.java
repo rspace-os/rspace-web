@@ -18,21 +18,19 @@ import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.testutils.TestFactory;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+@ExtendWith(MockitoExtension.class)
 public class ListOfMaterialsAuditTrailTest {
-
-  @Rule public MockitoRule mockito = MockitoJUnit.rule();
 
   @Captor ArgumentCaptor<GenericEvent> eventArgumentCaptor;
 
@@ -41,7 +39,7 @@ public class ListOfMaterialsAuditTrailTest {
 
   User anyUser = TestFactory.createAnyUser("any");
 
-  @Before
+  @BeforeEach
   public void setUpMessages() {
     ReflectionTestUtils.setField(
         listener, "messages", new MessageSourceUtils(new JsonMessageSource()));

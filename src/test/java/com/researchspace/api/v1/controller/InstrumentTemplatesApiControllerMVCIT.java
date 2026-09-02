@@ -18,8 +18,8 @@ import com.researchspace.api.v1.model.ApiLinkItem;
 import com.researchspace.apiutils.ApiError;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MvcResult;
@@ -30,7 +30,7 @@ public class InstrumentTemplatesApiControllerMVCIT extends API_MVC_InventoryTest
   User anyUser;
   String apiKey;
 
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     super.setUp();
     anyUser = createInitAndLoginAnyUser();

@@ -54,8 +54,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.context.ApplicationEventPublisher;
 
@@ -65,7 +65,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
 
   private User testUser;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
 
@@ -185,6 +185,26 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     assertEquals(sampleUpdates.getStorageTempMin(), userSample.getStorageTempMin());
     assertEquals(sampleUpdates.getStorageTempMax(), userSample.getStorageTempMax());
     Mockito.verifyNoMoreInteractions(mockPublisher);
+  }
+
+  @Test
+  public void twoSampleUpdatesInOneTransactionBumpVersionOnce() {
+    // RSDEV-1319: Envers writes one revision per entity per transaction, so a second update in
+    // the same transaction must not advance the version past the single revision carrying it
+    ApiSampleWithFullSubSamples newSample = createBasicSampleForUser(testUser);
+
+    ApiSample firstUpdate = new ApiSample();
+    firstUpdate.setId(newSample.getId());
+    firstUpdate.setName("first rename");
+    sampleApiMgr.updateApiSample(firstUpdate, testUser);
+
+    ApiSample secondUpdate = new ApiSample();
+    secondUpdate.setId(newSample.getId());
+    secondUpdate.setName("second rename");
+    ApiSample updatedSample = sampleApiMgr.updateApiSample(secondUpdate, testUser);
+
+    assertEquals("second rename", updatedSample.getName());
+    assertEquals(2, updatedSample.getVersion());
   }
 
   private ApiSampleSearchResult getUserSamples(boolean includeDeleted) {

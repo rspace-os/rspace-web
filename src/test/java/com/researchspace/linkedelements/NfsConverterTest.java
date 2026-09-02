@@ -1,17 +1,16 @@
 package com.researchspace.linkedelements;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.netfiles.NfsElement;
 import java.util.Optional;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class NfsConverterTest extends AbstractParserTest {
 
@@ -21,14 +20,11 @@ public class NfsConverterTest extends AbstractParserTest {
 
   NfsConverter nfsConverter;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     nfsConverter = new NfsConverter();
     super.setUp();
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void jsoup2NfsLinkableElement() {
@@ -58,7 +54,7 @@ public class NfsConverterTest extends AbstractParserTest {
     return Jsoup.parse("<html>" + nfsLink + "</html>").select("a").first();
   }
 
-  @Test()
+  @Test
   public void jsoup2NfsLinkableElementMissingRelElementHandled() {
     String nfsLink = "<a class=\"nfs_file mceNonEditable\" data-linktype=\"file\" href=\"#\">";
     Element jsoup = createJSoupNfsLink(nfsLink);
@@ -67,7 +63,7 @@ public class NfsConverterTest extends AbstractParserTest {
     assertNoElement(fieldContents, fieldElement);
   }
 
-  @Test()
+  @Test
   public void jsoup2NfsLinkableElementRelElementHandled() {
     String nfsLink =
         "<a class=\"nfs_file mceNonEditable\" data-linktype=\"file\" rel=\"wrong:/readme.txt\""

@@ -1,7 +1,7 @@
 package com.researchspace.webapp.filter;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.auth.MaintenanceLoginAuthorizer;
 import com.researchspace.core.testutil.CoreTestUtils;
@@ -14,9 +14,9 @@ import java.util.Date;
 import java.util.List;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.subject.Subject;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
@@ -51,7 +51,7 @@ public class BaseShiroFormAuthFilterExtTest extends SpringTransactionalTest {
         public void removeScheduledMaintenance(Long id, User user) {}
       };
 
-  @Before
+  @BeforeEach
   public void setUp() {
     filter = new BaseShiroFormAuthFilterExt();
     filter.setUserMgr(userMgr);
@@ -72,7 +72,7 @@ public class BaseShiroFormAuthFilterExtTest extends SpringTransactionalTest {
     resp = new MockHttpServletResponse();
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }
@@ -82,13 +82,13 @@ public class BaseShiroFormAuthFilterExtTest extends SpringTransactionalTest {
 
     assertFalse(filter.isAccessAllowed(req, resp, null));
     assertTrue(
-        "should be redirected to maintenance, but no location header",
-        resp.containsHeader("Location"));
+        resp.containsHeader("Location"),
+        "should be redirected to maintenance, but no location header");
     assertTrue(
-        "should be redirected to maintenance, but location was " + resp.getHeaderValue("Location"),
         resp.getHeaderValue("Location")
             .toString()
-            .contains(MaintenanceLoginAuthorizer.REDIRECT_FOR_MAINTENANCE));
+            .contains(MaintenanceLoginAuthorizer.REDIRECT_FOR_MAINTENANCE),
+        "should be redirected to maintenance, but location was " + resp.getHeaderValue("Location"));
 
     Subject subject = SecurityUtils.getSubject();
     assertFalse(subject.isAuthenticated());
@@ -102,9 +102,9 @@ public class BaseShiroFormAuthFilterExtTest extends SpringTransactionalTest {
 
     assertTrue(filter.isAccessAllowed(req, resp, null));
     assertFalse(
+        resp.containsHeader("Location"),
         "authenticated user should not be redirected, but location header is set to "
-            + resp.getHeaderValue("Location"),
-        resp.containsHeader("Location"));
+            + resp.getHeaderValue("Location"));
 
     RSpaceTestUtils.logout();
   }
@@ -114,22 +114,22 @@ public class BaseShiroFormAuthFilterExtTest extends SpringTransactionalTest {
 
     assertFalse(filter.isAccessAllowed(req, resp, null));
     assertTrue(
-        "should be redirected to maintenance, but no location header",
-        resp.containsHeader("Location"));
+        resp.containsHeader("Location"),
+        "should be redirected to maintenance, but no location header");
     assertTrue(
-        "should be redirected to maintenance, but location was " + resp.getHeaderValue("Location"),
         resp.getHeaderValue("Location")
             .toString()
-            .contains(MaintenanceLoginAuthorizer.REDIRECT_FOR_MAINTENANCE));
+            .contains(MaintenanceLoginAuthorizer.REDIRECT_FOR_MAINTENANCE),
+        "should be redirected to maintenance, but location was " + resp.getHeaderValue("Location"));
 
     initHttpReqAndResp();
     req.addParameter(MaintenanceLoginAuthorizer.MAINTENANCE_LOGIN_REQUEST_PARAM, "");
 
     assertFalse(filter.isAccessAllowed(req, resp, null));
     assertFalse(
+        resp.containsHeader("Location"),
         "when providing maintenanceLogin request param user should not be redirected, but location"
             + " is "
-            + resp.getHeaderValue("Location"),
-        resp.containsHeader("Location"));
+            + resp.getHeaderValue("Location"));
   }
 }

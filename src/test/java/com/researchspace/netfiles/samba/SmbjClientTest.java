@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.testutils.RSpaceTestUtils;
 import java.net.MalformedURLException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class SmbjClientTest {
 

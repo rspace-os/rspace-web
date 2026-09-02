@@ -1,25 +1,26 @@
 package com.researchspace.model.record;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import com.researchspace.model.User;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class CycleSafeIteratorTest {
 
   User u = TestFactory.createAnyUser("any");
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {}
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {}
 
   @Test
@@ -124,10 +125,14 @@ public class CycleSafeIteratorTest {
     fail("expected no such elemetn exception");
   }
 
-  @Test(expected = UnsupportedOperationException.class)
+  @Test
   public void testRemoeOperationUnsupported() {
-    Folder f1 = TestFactory.createAFolder("f1", u);
-    Iterator<Folder> cycleIt = new CycleSafeIterator(f1);
-    cycleIt.remove();
+    assertThrows(
+        UnsupportedOperationException.class,
+        () -> {
+          Folder f1 = TestFactory.createAFolder("f1", u);
+          Iterator<Folder> cycleIt = new CycleSafeIterator(f1);
+          cycleIt.remove();
+        });
   }
 }

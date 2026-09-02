@@ -1,9 +1,9 @@
 package com.researchspace.service.impl;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
@@ -38,13 +38,13 @@ import com.researchspace.service.inventory.SubSampleApiManager;
 import jakarta.ws.rs.NotFoundException;
 import java.math.BigDecimal;
 import java.util.List;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class StoichiometryInventoryLinkManagerImplTest {
 
   @Mock private StoichiometryInventoryLinkDao linkDao;
@@ -61,7 +61,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
   private SubSample invSubSample;
   private StructuredDocument owningRecord;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     manager =
         new StoichiometryInventoryLinkManagerImpl(
@@ -110,9 +110,10 @@ public class StoichiometryInventoryLinkManagerImplTest {
 
     when(moleculeManager.getById(10L)).thenReturn(molecule);
 
-    IllegalArgumentException ex =
-        assertThrows(IllegalArgumentException.class, () -> manager.createLink(10L, req, user));
-    assertEquals("Stoichiometry molecule already has an inventory link", ex.getMessage());
+    assertEquals(
+        "Stoichiometry molecule already has an inventory link",
+        assertThrows(IllegalArgumentException.class, () -> manager.createLink(10L, req, user))
+            .getMessage());
   }
 
   @Test
@@ -127,12 +128,11 @@ public class StoichiometryInventoryLinkManagerImplTest {
     when(invPerms.assertUserCanEditInventoryRecord(any(GlobalIdentifier.class), eq(user)))
         .thenReturn(invSampleTemplate);
 
-    IllegalArgumentException ex =
-        assertThrows(IllegalArgumentException.class, () -> manager.createLink(10L, req, user));
     assertEquals(
         "IT200 is a sample template. Only Containers, Samples and Subsamples are valid for"
             + " linking.",
-        ex.getMessage());
+        assertThrows(IllegalArgumentException.class, () -> manager.createLink(10L, req, user))
+            .getMessage());
   }
 
   @Test
@@ -178,9 +178,6 @@ public class StoichiometryInventoryLinkManagerImplTest {
     when(linkDao.getSafeNull(321L)).thenReturn(java.util.Optional.of(original));
     when(moleculeManager.getDocContainingMolecule(molecule)).thenReturn(owningRecord);
     when(elnPerms.isPermitted(owningRecord, PermissionType.WRITE, user)).thenReturn(true);
-    doNothing()
-        .when(invPerms)
-        .assertUserCanEditInventoryRecord(original.getInventoryRecord(), user);
 
     StockDeductionResult result = manager.deductStock(stoichiometryId, List.of(321L), user);
 
@@ -189,6 +186,43 @@ public class StoichiometryInventoryLinkManagerImplTest {
     assertEquals(Long.valueOf(stoichiometryId), result.getStoichiometryId());
     assertTrue(original.isStockDeducted());
     verify(linkDao).save(original);
+  }
+
+  @Test
+  public void repeatedLinkIdIsDeductedOnce() {
+    StoichiometryInventoryLink original = new StoichiometryInventoryLink();
+    original.setId(321L);
+    long stoichiometryId = 55L;
+    molecule.getStoichiometry().setId(stoichiometryId);
+    molecule.setActualAmount(10.0);
+    original.setStoichiometryMolecule(molecule);
+    original.setInventoryRecord(invSubSample);
+
+    invSubSample.setQuantity(new QuantityInfo(BigDecimal.valueOf(100), RSUnitDef.GRAM.getId()));
+
+    when(linkDao.getSafeNull(321L)).thenReturn(java.util.Optional.of(original));
+    when(moleculeManager.getDocContainingMolecule(molecule)).thenReturn(owningRecord);
+    when(elnPerms.isPermitted(owningRecord, PermissionType.WRITE, user)).thenReturn(true);
+    doNothing()
+        .when(invPerms)
+        .assertUserCanEditInventoryRecord(original.getInventoryRecord(), user);
+
+    StockDeductionResult result =
+        manager.deductStock(stoichiometryId, List.of(321L, 321L, 321L), user);
+
+    // the repeat is dropped before any stock is touched, so the amount comes off once (RSDEV-1319)
+    verify(subSampleMgr)
+        .registerApiSubSampleUsage(eq(invSubSample.getId()), any(QuantityInfo.class), eq(user));
+    // but the public API contract is one result row per submitted entry, so the response
+    // cardinality is unchanged: three rows, all reporting the single deduction's outcome
+    assertEquals(3, result.getResults().size());
+    result
+        .getResults()
+        .forEach(
+            row -> {
+              assertEquals(321L, row.getLinkId().longValue());
+              assertTrue(row.isSuccess());
+            });
   }
 
   @Test
@@ -207,9 +241,6 @@ public class StoichiometryInventoryLinkManagerImplTest {
     when(linkDao.getSafeNull(321L)).thenReturn(java.util.Optional.of(original));
     when(moleculeManager.getDocContainingMolecule(molecule)).thenReturn(owningRecord);
     when(elnPerms.isPermitted(owningRecord, PermissionType.WRITE, user)).thenReturn(true);
-    doNothing()
-        .when(invPerms)
-        .assertUserCanEditInventoryRecord(original.getInventoryRecord(), user);
 
     StockDeductionResult result = manager.deductStock(stoichiometryId, List.of(321L), user);
 

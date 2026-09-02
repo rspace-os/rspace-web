@@ -1,7 +1,7 @@
 package com.researchspace.dao;
 
-import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.api.v1.model.ApiInventoryDOI;
@@ -13,9 +13,8 @@ import com.researchspace.testutils.SpringTransactionalTest;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import org.apache.commons.io.IOUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class DigitalObjectIdentifierDaoTest extends SpringTransactionalTest {
@@ -23,13 +22,10 @@ public class DigitalObjectIdentifierDaoTest extends SpringTransactionalTest {
   @Autowired private DigitalObjectIdentifierDao daoUnderTest;
   @Autowired private ApiIdentifiersHelper doiHelper;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void testGetActiveByStateAndCreator() throws IOException {

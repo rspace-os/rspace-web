@@ -12,8 +12,8 @@ import com.researchspace.service.OAuthAppManager;
 import com.researchspace.testutils.SSOTestContext;
 import com.researchspace.webapp.filter.RemoteUserRetrievalPolicy;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.web.servlet.ResultActions;
 
@@ -26,7 +26,7 @@ public class OAuthClientSSOControllerMVCIT extends MVCTestBase {
    * This test disables API and OAuth access mid-method, and the system property outlives the test,
    * so without this every later API test is unauthorised.
    */
-  @After
+  @AfterEach
   public void restoreApiAccess() {
     enableGlobalApiAccess();
     enableApiOAuthAuthentication();

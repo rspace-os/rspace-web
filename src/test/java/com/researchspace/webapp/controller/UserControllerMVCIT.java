@@ -1,7 +1,7 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
@@ -10,8 +10,8 @@ import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.model.User;
 import org.apache.shiro.authz.AuthorizationException;
 import org.hibernate.SessionFactory;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
@@ -26,7 +26,7 @@ public class UserControllerMVCIT extends MVCTestBase {
   @Autowired private WebApplicationContext wac;
   @Autowired SessionFactory sf;
 
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     this.mockMvc = MockMvcBuilders.webAppContextSetup(this.wac).build();
     super.setUp();

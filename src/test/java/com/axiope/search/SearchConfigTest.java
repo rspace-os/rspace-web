@@ -1,25 +1,27 @@
 package com.axiope.search;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import com.researchspace.testutils.TestFactory;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class SearchConfigTest {
 
   SearchConfig srchCfg;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     srchCfg = new WorkspaceSearchConfig(TestFactory.createAnyUser("aa"));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testSetPageNumberNotNegative() {
-    srchCfg.setPageNumber(-2);
+    assertThrows(IllegalArgumentException.class, () -> srchCfg.setPageNumber(-2));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testSetPageSizeNotNegative() {
-    srchCfg.setPageSize(-3);
+    assertThrows(IllegalArgumentException.class, () -> srchCfg.setPageSize(-3));
   }
 }

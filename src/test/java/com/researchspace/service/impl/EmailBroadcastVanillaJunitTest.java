@@ -1,9 +1,9 @@
 package com.researchspace.service.impl;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.comms.Communication;
 import com.researchspace.service.EmailBroadcast;
@@ -21,10 +21,10 @@ import java.util.Date;
 import java.util.List;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.scheduling.annotation.Async;
 
-public class EmailBroadcastVanillaJunit {
+public class EmailBroadcastVanillaJunitTest {
   // this oracle comes from the library class whose function we are testing.
   // a little circular but will detect regressions.
   static final FastDateFormat EMAIL_DATE_FORMAT = DateFormatUtils.SMTP_DATETIME_FORMAT;
@@ -46,7 +46,7 @@ public class EmailBroadcastVanillaJunit {
   public void createMessagePart() throws MessagingException, ParseException, IOException {
     EmailBroadcastImpl.EmailConfig plainTextConfig =
         new EmailBroadcastImpl.EmailConfig(
-            List.of(), new EmailContent("subject", "<html>hello</html", "hello"), null);
+            List.of(), new EmailContent("subject", "<html>hello</html>", "hello"), null);
     Multipart multi = emailerBroadcastImpl.generateMultipartContent(plainTextConfig);
     assertTrue(multi.getBodyPart(0).getContentType().startsWith("text/plain"));
     assertEquals("text/html; charset=UTF-8", multi.getBodyPart(1).getContentType());

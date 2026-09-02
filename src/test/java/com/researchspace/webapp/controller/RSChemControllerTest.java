@@ -1,8 +1,8 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -14,7 +14,6 @@ import com.researchspace.model.dtos.chemistry.ChemConversionInputDto;
 import com.researchspace.model.dtos.chemistry.ChemicalSearchRequestDTO;
 import com.researchspace.model.dtos.chemistry.ConvertedStructureDto;
 import com.researchspace.model.field.ErrorList;
-import com.researchspace.model.record.Folder;
 import com.researchspace.service.ChemistryService;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.RSChemElementManager;
@@ -28,22 +27,20 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import org.apache.commons.io.IOUtils;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
 
+@ExtendWith(MockitoExtension.class)
 public class RSChemControllerTest {
-
-  @Rule public MockitoRule mockery = MockitoJUnit.rule();
   String chemElementMolString = "";
   RSChemElement chem = null;
   String imageInBase64 = "";
@@ -56,7 +53,7 @@ public class RSChemControllerTest {
   private Principal mockPrincipal;
   private User user;
 
-  @Before
+  @BeforeEach
   public void setUp() throws IOException {
     user = TestFactory.createAnyUser("user");
     mockPrincipal = () -> user.getUsername();
@@ -72,11 +69,9 @@ public class RSChemControllerTest {
 
   @Test
   public void testSearchChemElement() {
-    final Folder rootFolder = TestFactory.createAFolder("root", user);
     final ChemicalSearchResults hits = new ChemicalSearchResults();
     String smile = "CCC(C1)";
     when(userMgr.getAuthenticatedUserInSession()).thenReturn(user);
-    when(folderManager.getRootFolderForUser(user)).thenReturn(rootFolder);
     when(chemicalService.searchChemicals(smile, "SUBSTRUCTURE", 0, 10, user)).thenReturn(hits);
 
     ChemSearchResultsPage resultsPage =

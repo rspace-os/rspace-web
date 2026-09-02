@@ -7,3 +7,8 @@ export function uniqueName(prefix: string): string {
 export function alphaNumericUnique(prefix: string): string {
   return uniqueName(prefix).replaceAll("-", "");
 }
+
+export const TINY_PNG = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+  "base64",
+);

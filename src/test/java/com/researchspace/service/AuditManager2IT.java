@@ -1,11 +1,11 @@
 package com.researchspace.service;
 
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SortOrder;
@@ -38,10 +38,10 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.stream.IntStream;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -55,12 +55,12 @@ public class AuditManager2IT extends RealTransactionSpringTestBase {
 
   private @Autowired AuditManager auditMgr;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }
@@ -330,17 +330,11 @@ public class AuditManager2IT extends RealTransactionSpringTestBase {
 
     // make 2 revisions
     IntStream.range(0, doc.getFieldCount())
-        .forEach(
-            i -> {
-              doc.getFields().get(i).setFieldData(i + "Rev2");
-            });
+        .forEach(i -> doc.getFields().get(i).setFieldData(i + "Rev2"));
     recordMgr.save(doc, piUser);
 
     IntStream.range(0, doc.getFieldCount())
-        .forEach(
-            i -> {
-              doc.getFields().get(i).setFieldData(i + "Rev3");
-            });
+        .forEach(i -> doc.getFields().get(i).setFieldData(i + "Rev3"));
     recordMgr.save(doc, piUser);
     final Number originalRevision = getNthRevisionForDocument(doc, 1);
     StructuredDocument restoredFirstRevisionDoc =
@@ -819,7 +813,7 @@ public class AuditManager2IT extends RealTransactionSpringTestBase {
   }
 
   @Test
-  @Ignore // ignoring as this won't work in current open-source version
+  @Disabled // ignoring as this won't work in current open-source version
   public void testRestoreRevisionAsCurrentWithChemistryFile() throws Exception {
     // Create structured document and login
     StructuredDocument doc = setUpLoginAsPIUserAndCreateADocument();

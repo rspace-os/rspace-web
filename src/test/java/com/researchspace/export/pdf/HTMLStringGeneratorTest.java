@@ -4,10 +4,10 @@ import static com.researchspace.testutils.NetFilesTestFactory.createAnyNfsFileSt
 import static com.researchspace.testutils.TestFactory.createAnySD;
 import static com.researchspace.testutils.TestFactory.createAnySDWithText;
 import static com.researchspace.testutils.TestFactory.createAnyUser;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -44,19 +44,18 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.velocity.app.VelocityEngine;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class HTMLStringGeneratorTest {
 
   private static final String OrcidId = "1234-5678";
-  @Rule public MockitoRule rule = MockitoJUnit.rule();
   private @Mock EcatCommentManager commentMgr;
   private @Mock AuditManager auditManager;
   private @Mock NfsManager netFileManager;
@@ -75,7 +74,7 @@ public class HTMLStringGeneratorTest {
           + " table-cell;\">P.2</td></tr><tr> <td colspan=\"\" rowspan=\"\" style=\"display:"
           + " table-cell;\">P.2</td></tr></tbody></table>";
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     ExportFormat.valueOf("WORD");
 
@@ -86,17 +85,28 @@ public class HTMLStringGeneratorTest {
     VelocityEngine vel =
         VelocityTestUtils.setupVelocity("src/main/resources/velocityTemplates/textFieldElements");
     rtu.setVelocity(vel);
-    // empty nfs elements by default
+  }
+
+  private void stubEmptyNfsElements() {
     when(fieldParser.findFieldElementsInContentForCssClass(
             Mockito.any(FieldContents.class), Mockito.anyString(), Mockito.anyString()))
         .thenReturn(new FieldContents());
+  }
+
+  private void stubNoExternalId() {
     when(resolver.getExternalIdForUser(
             Mockito.any(User.class), Mockito.any(IdentifierScheme.class)))
         .thenReturn(Optional.empty());
   }
 
+  private void stubDefaults() {
+    stubEmptyNfsElements();
+    stubNoExternalId();
+  }
+
   @Test
   public void testGetNfsElements() {
+    stubNoExternalId();
     // given a document with an NfsLink
     final long fileStoreId = 21L;
     final String relativeFilePath = "/file.txt";
@@ -134,6 +144,7 @@ public class HTMLStringGeneratorTest {
 
   @Test
   public void testGetComments() {
+    stubDefaults();
     String commentStr = rtu.generateURLStringForCommentLink("1");
     StructuredDocument anyDoc = createAnySDWithText(commentStr);
     anyDoc.setId(1L);
@@ -163,6 +174,7 @@ public class HTMLStringGeneratorTest {
 
   @Test
   public void testMakeLinksAbsolute() {
+    stubDefaults();
     EcatDocumentFile doc = TestFactory.createEcatDocument(2L, createAnyUser("any"));
     String attachmentHTML = rtu.generateURLString(doc);
     StructuredDocument anydoc = TestFactory.createAnySDWithText(attachmentHTML);
@@ -180,8 +192,8 @@ public class HTMLStringGeneratorTest {
     anydoc.setId(1L);
     documentData = htmlGenerator.extractHtmlStr(anydoc, cfg);
     assertTrue(
-        documentData.getDocumentAsHtml(),
-        documentData.getDocumentAsHtml().contains("http://demo.researchspace.com/globalId/SD3"));
+        documentData.getDocumentAsHtml().contains("http://demo.researchspace.com/globalId/SD3"),
+        documentData.getDocumentAsHtml());
 
     String externalLink = rtu.generateAnyURLStringForExternalDocLink();
     anydoc = TestFactory.createAnySDWithText(externalLink);
@@ -194,13 +206,14 @@ public class HTMLStringGeneratorTest {
     assertEquals(EXPECTED_FIXED_META_COUNT, htmlDoc.getElementsByTag("meta").size());
 
     assertEquals(
-        documentAsHtml,
         2,
-        StringUtils.countMatches(documentAsHtml, "http://externanalLink.com/someId"));
+        StringUtils.countMatches(documentAsHtml, "http://externanalLink.com/someId"),
+        documentAsHtml);
   }
 
   @Test
   public void testIncludeMetaInformation() {
+    stubEmptyNfsElements();
     when(resolver.getExternalIdForUser(
             Mockito.any(User.class), Mockito.any(IdentifierScheme.class)))
         .thenReturn(Optional.of(new ExternalId(IdentifierScheme.ORCID, OrcidId)));
@@ -222,6 +235,7 @@ public class HTMLStringGeneratorTest {
 
   @Test
   public void testIncludeListOfMaterials() {
+    stubDefaults();
     User anyUser = createAnyUser("any");
 
     // create a doc with list of materials
@@ -237,14 +251,15 @@ public class HTMLStringGeneratorTest {
 
     ExportProcessorInput input = htmlGenerator.extractHtmlStr(anyDoc, cfg);
     String documentAsHtml = input.getDocumentAsHtml();
-    assertTrue(documentAsHtml, documentAsHtml.contains("test lom"));
-    assertTrue(documentAsHtml, documentAsHtml.contains("SAMPLE"));
-    assertTrue(documentAsHtml, documentAsHtml.contains("SUBSAMPLE"));
-    assertFalse(documentAsHtml, documentAsHtml.contains("CONTAINER"));
+    assertTrue(documentAsHtml.contains("test lom"), documentAsHtml);
+    assertTrue(documentAsHtml.contains("SAMPLE"), documentAsHtml);
+    assertTrue(documentAsHtml.contains("SUBSAMPLE"), documentAsHtml);
+    assertFalse(documentAsHtml.contains("CONTAINER"), documentAsHtml);
   }
 
   @Test
   public void testIncludeInstrumentInListOfMaterials() {
+    stubDefaults();
     // a document whose list of materials references an instrument (RSDEV-1032) must render the
     // instrument's name, identifier and a link to the RSpace entity in PDF/Word exports
     StructuredDocument anyDoc = createAnySDWithText("any");
@@ -260,14 +275,15 @@ public class HTMLStringGeneratorTest {
     ExportProcessorInput input = htmlGenerator.extractHtmlStr(anyDoc, cfg);
     String documentAsHtml = input.getDocumentAsHtml();
 
-    assertTrue(documentAsHtml, documentAsHtml.contains("instrument lom"));
-    assertTrue(documentAsHtml, documentAsHtml.contains("INSTRUMENT"));
-    assertTrue(documentAsHtml, documentAsHtml.contains("Confocal Microscope"));
-    assertTrue(documentAsHtml, documentAsHtml.contains("http://test.com/globalId/IN42"));
+    assertTrue(documentAsHtml.contains("instrument lom"), documentAsHtml);
+    assertTrue(documentAsHtml.contains("INSTRUMENT"), documentAsHtml);
+    assertTrue(documentAsHtml.contains("Confocal Microscope"), documentAsHtml);
+    assertTrue(documentAsHtml.contains("http://test.com/globalId/IN42"), documentAsHtml);
   }
 
   @Test
   public void testScaleImages() {
+    stubDefaults();
     String html = "<img width ='1000' height = '1000'/>";
     StructuredDocument anydoc = TestFactory.createAnySDWithText(html);
     anydoc.setId(1L);
@@ -287,25 +303,27 @@ public class HTMLStringGeneratorTest {
 
   @Test
   public void testEmbedIframeFragment() {
+    stubDefaults();
     String html = "iframe: <iframe src='https://dummy.source/a?b=c&d=e'/>";
     StructuredDocument anydoc = TestFactory.createAnySDWithText(html);
     anydoc.setId(1L);
     ExportToFileConfig cfg = makeConfig();
     ExportProcessorInput documentData = htmlGenerator.extractHtmlStr(anydoc, cfg);
     assertTrue(
-        "unexpected content: " + documentData.getDocumentAsHtml(),
         documentData
             .getDocumentAsHtml()
             .contains(
-                "iframe: \n"
+                "iframe:\n"
                     + "  <p><i>&lt;embedded code from <a"
                     + " href=\"https://dummy.source/a?b=c&amp;d=e\">"
-                    + "https://dummy.source/a?b=c&amp;d=e</a>&gt;</i></p>"));
+                    + "https://dummy.source/a?b=c&amp;d=e</a>&gt;</i></p>"),
+        "unexpected content: " + documentData.getDocumentAsHtml());
   }
 
   /** Tests that XSS doesn't work in the document's name & field names on export / preview */
   @Test
   public void testHtmlEscaping() {
+    stubDefaults();
     RSForm form = new RSForm("form", "desc", createAnyUser("user"));
     TextFieldForm fieldForm = new TextFieldForm();
     fieldForm.setName("<img src='' onerror='alert(1);'>");
@@ -325,7 +343,7 @@ public class HTMLStringGeneratorTest {
     // html chars in name escaped
     assertFalse(data.contains("special html chars &∅∈∌"));
     assertTrue(
-        "unexpected:" + data, data.contains("special html chars &amp;amp;&amp;empty;&amp;isin;∌"));
+        data.contains("special html chars &amp;amp;&amp;empty;&amp;isin;∌"), "unexpected:" + data);
   }
 
   @Test
@@ -346,6 +364,7 @@ public class HTMLStringGeneratorTest {
 
   @Test
   public void choiceFieldsPrintCorrectly() {
+    stubDefaults();
     ChoiceFieldForm choiceFieldForm = new ChoiceFieldForm();
     choiceFieldForm.setName("A choice name");
     choiceFieldForm.setChoiceOptions("fieldChoices=a&fieldChoices=b&fieldChoices=c");
@@ -362,14 +381,14 @@ public class HTMLStringGeneratorTest {
     String html = exportProcessorInput.getDocumentAsHtml();
 
     assertTrue(
-        "html doesn't contain selected choices 'a, b'. html is: " + html,
-        html.contains("<p>a, b</p>"));
+        html.contains("<p>a, b</p>"),
+        "html doesn't contain selected choices 'a, b'. html is: " + html);
     assertFalse(
+        html.contains("fieldSelectedChoices="),
         "html incorrectly contains 'fieldSelectedChoices=' which should be stripped. html is: "
-            + html,
-        html.contains("fieldSelectedChoices="));
+            + html);
     assertFalse(
-        "html incorrectly contains 'fieldChoices=' which should be stripped. html is: " + html,
-        html.contains("fieldChoices="));
+        html.contains("fieldChoices="),
+        "html incorrectly contains 'fieldChoices=' which should be stripped. html is: " + html);
   }
 }

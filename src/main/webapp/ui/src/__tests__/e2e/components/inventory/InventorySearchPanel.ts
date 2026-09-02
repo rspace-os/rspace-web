@@ -96,14 +96,14 @@ export class InventorySearchPanel {
     return this.table.row(name, options);
   }
 
-  async open(name: string): Promise<void> {
-    await this.table.open(name);
+  async open(name: string, options: { exact?: boolean } = {}): Promise<void> {
+    await this.table.open(name, options);
     await this.activeDetailsHeading.filter({ hasText: name }).waitFor({ state: "visible" });
   }
 
   async openFirstResult(): Promise<void> {
     const row = this.resultsTable.locator("tbody").getByRole("row").first();
-    await row.dispatchEvent("click");
+    await row.locator("td").nth(1).click();
     await this.activeDetailsHeading.waitFor({ state: "visible" });
   }
 

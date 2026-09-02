@@ -18,7 +18,7 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.inventory.InventoryLinkManager;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.List;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class InventoryLinkManagerImplTest extends SpringTransactionalTest {

@@ -1,13 +1,13 @@
 package com.researchspace.comms;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.model.User;
 import com.researchspace.model.comms.MessageType;
 import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.Set;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 

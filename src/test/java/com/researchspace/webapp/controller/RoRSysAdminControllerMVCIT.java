@@ -1,8 +1,8 @@
 package com.researchspace.webapp.controller;
 
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -13,14 +13,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.researchspace.model.User;
 import com.researchspace.service.SystemPropertyManager;
 import com.researchspace.service.SystemPropertyName;
-import com.researchspace.service.impl.ConditionalTestRunner;
-import com.researchspace.service.impl.RunIfSystemPropertyDefined;
 import java.util.ArrayList;
 import java.util.stream.Collectors;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.web.WebAppConfiguration;
@@ -29,7 +27,6 @@ import org.springframework.test.web.servlet.MvcResult;
 @WebAppConfiguration
 @TestPropertySource(properties = "ror.api.url=https://api.ror.org/v2/organizations")
 // tests marked as NIGHLTY are contacting the REAL ROR API
-@RunWith(ConditionalTestRunner.class)
 public class RoRSysAdminControllerMVCIT extends MVCTestBase {
 
   private static final String rorSysadminUrl = "/system/ror/";
@@ -45,13 +42,13 @@ public class RoRSysAdminControllerMVCIT extends MVCTestBase {
   public static final String ROR_NAME = "Research Space (United Kingdom)";
   @Autowired private SystemPropertyManager systemPropertyManager;
 
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     super.setUp();
     systemPropertyManager.save(SystemPropertyName.RSPACE_ROR, "", getSysAdminUser());
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }
@@ -97,7 +94,7 @@ public class RoRSysAdminControllerMVCIT extends MVCTestBase {
   }
 
   @Test
-  @RunIfSystemPropertyDefined(value = "nightly")
+  @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
   public void testSearchForValidRor() throws Exception {
     // There are 3 versions of a valid ROR ID
     mockMvc
@@ -139,7 +136,7 @@ public class RoRSysAdminControllerMVCIT extends MVCTestBase {
   }
 
   @Test
-  @RunIfSystemPropertyDefined(value = "nightly")
+  @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
   public void testUpdateRorAsSysadmin() throws Exception {
     logoutAndLoginAsSysAdmin();
     mockMvc

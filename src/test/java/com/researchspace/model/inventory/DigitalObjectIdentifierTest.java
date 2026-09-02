@@ -1,7 +1,9 @@
 package com.researchspace.model.inventory;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
 import jakarta.persistence.EnumType;
@@ -64,6 +66,16 @@ public class DigitalObjectIdentifierTest {
     DigitalObjectIdentifier doi =
         new DigitalObjectIdentifier("10.12345/test", "test title", "  abc123XYZ_-456789\t\n");
     assertEquals("abc123XYZ_-456789", doi.getPublicLink());
+  }
+
+  @Test
+  public void isPublishedStateCoversDataCiteFindableAndB2instAccepted() {
+    assertTrue(DigitalObjectIdentifier.isPublishedState("findable"));
+    assertTrue(DigitalObjectIdentifier.isPublishedState("accepted"));
+    assertFalse(DigitalObjectIdentifier.isPublishedState("draft"));
+    assertFalse(DigitalObjectIdentifier.isPublishedState("submitted"));
+    assertFalse(DigitalObjectIdentifier.isPublishedState("declined"));
+    assertFalse(DigitalObjectIdentifier.isPublishedState(null));
   }
 
   @Test

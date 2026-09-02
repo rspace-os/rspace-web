@@ -1,7 +1,7 @@
 package com.researchspace.service;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.dao.InternalLinkDao;
 import com.researchspace.model.InternalLink;
@@ -10,7 +10,7 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.List;
 import org.apache.shiro.authz.AuthorizationException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class InternalLinkManagerSpringTest extends SpringTransactionalTest {

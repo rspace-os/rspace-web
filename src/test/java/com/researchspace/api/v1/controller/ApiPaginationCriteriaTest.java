@@ -1,22 +1,23 @@
 package com.researchspace.api.v1.controller;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.researchspace.core.testutil.JakartaValidatorTest;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class ApiPaginationCriteriaTest extends JakartaValidatorTest {
 
   DocumentApiPaginationCriteria pgCrit;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     pgCrit = new DocumentApiPaginationCriteria();
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {}
 
   @Test
@@ -58,10 +59,14 @@ public class ApiPaginationCriteriaTest extends JakartaValidatorTest {
     assertEquals(1, pgCrit.previousPageNumber());
   }
 
-  @Test(expected = IllegalStateException.class)
+  @Test
   public void firstPageHasNoPreviousPageNumber() {
-    pgCrit.setPageNumber(0);
+    assertThrows(
+        IllegalStateException.class,
+        () -> {
+          pgCrit.setPageNumber(0);
 
-    pgCrit.previousPageNumber();
+          pgCrit.previousPageNumber();
+        });
   }
 }

@@ -1,20 +1,20 @@
 package com.researchspace.dao.customliquibaseupdates.v27;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.dao.NfsDao;
 import com.researchspace.model.netfiles.NfsFileSystem;
 import java.util.ArrayList;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class NfsFileStoreToFileSystemLinker0_27Test {
 
   private NfsFileStoreToFileSystemLinker nfsLinker;
 
-  @Before
+  @BeforeEach
   public void before() {
     nfsLinker = new NfsFileStoreToFileSystemLinker();
   }

@@ -63,7 +63,7 @@
         <async-supported>true</async-supported>
         <init-param>
             <param-name>urlsAllowedForAnonymousAccess</param-name>
-            <param-value>/login,/public,/styles,/ssoinfo,/scripts,/resources,/wopi,/api,/oauth</param-value>
+            <param-value>/login,/public,/styles,/ssoinfo,/scripts,/resources,/ui/dist,/wopi,/api,/oauth</param-value>
         </init-param>
     </filter>
     <filter>

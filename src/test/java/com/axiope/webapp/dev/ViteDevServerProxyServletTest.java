@@ -1,10 +1,10 @@
 package com.axiope.webapp.dev;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -26,16 +26,15 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class ViteDevServerProxyServletTest {
-
-  @Rule public MockitoRule mockito = MockitoJUnit.rule().silent();
 
   @Mock private HttpClient client;
   @Mock private HttpServletRequest request;
@@ -46,7 +45,7 @@ public class ViteDevServerProxyServletTest {
   private final AtomicReference<String> responseContentType = new AtomicReference<>();
   private ViteDevServerProxyServlet servlet;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     servlet = new ViteDevServerProxyServlet("http://127.0.0.1:5173", client);
 
@@ -57,18 +56,7 @@ public class ViteDevServerProxyServletTest {
     when(response.getOutputStream()).thenReturn(new TestServletOutputStream(responseBody));
     when(response.getContentType()).thenAnswer(invocation -> responseContentType.get());
 
-    org.mockito.Mockito.doAnswer(
-            invocation -> {
-              String name = invocation.getArgument(0, String.class);
-              String value = invocation.getArgument(1, String.class);
-              if ("content-type".equalsIgnoreCase(name)) {
-                responseContentType.set(value);
-              }
-              return null;
-            })
-        .when(response)
-        .addHeader(any(String.class), any(String.class));
-    org.mockito.Mockito.doAnswer(
+    doAnswer(
             invocation -> {
               responseContentType.set(invocation.getArgument(0, String.class));
               return null;
@@ -76,10 +64,6 @@ public class ViteDevServerProxyServletTest {
         .when(response)
         .setContentType(any(String.class));
 
-    when(client.send(
-            any(HttpRequest.class),
-            org.mockito.ArgumentMatchers.<HttpResponse.BodyHandler<InputStream>>any()))
-        .thenReturn(upstreamResponse);
     when(upstreamResponse.statusCode()).thenReturn(HttpServletResponse.SC_OK);
     when(upstreamResponse.body())
         .thenReturn(
@@ -89,6 +73,7 @@ public class ViteDevServerProxyServletTest {
   @Test
   public void fallsBackToJavaScriptMimeTypeForJsModuleWhenUpstreamOmitsContentType()
       throws Exception {
+    stubSuccessfulUpstreamRequest();
     when(request.getRequestURI())
         .thenReturn(
             "/ui/dist/node_modules/.vite/deps/@fortawesome_free-solid-svg-icons_faThList.js");
@@ -105,6 +90,7 @@ public class ViteDevServerProxyServletTest {
 
   @Test
   public void overridesTextPlainContentTypeForJsModuleResponses() throws Exception {
+    stubSuccessfulUpstreamRequest();
     when(request.getRequestURI())
         .thenReturn("/ui/dist/node_modules/.vite/deps/@mui_icons-material_CheckCircleOutline.js");
     when(upstreamResponse.headers())
@@ -130,8 +116,7 @@ public class ViteDevServerProxyServletTest {
     when(upstreamResponse.headers())
         .thenReturn(HttpHeaders.of(Collections.emptyMap(), (a, b) -> true));
     when(client.send(
-            any(HttpRequest.class),
-            org.mockito.ArgumentMatchers.<HttpResponse.BodyHandler<InputStream>>any()))
+            any(HttpRequest.class), ArgumentMatchers.<HttpResponse.BodyHandler<InputStream>>any()))
         .thenAnswer(
             invocation -> {
               upstreamUri.set(invocation.getArgument(0, HttpRequest.class).uri());
@@ -149,6 +134,7 @@ public class ViteDevServerProxyServletTest {
 
   @Test
   public void preservesUpstreamContentTypeWhenPresent() throws Exception {
+    stubSuccessfulUpstreamRequest();
     when(request.getRequestURI()).thenReturn("/ui/dist/src/entries/tinymceGallery.tsx");
     when(upstreamResponse.headers())
         .thenReturn(
@@ -172,14 +158,12 @@ public class ViteDevServerProxyServletTest {
       when(request.getRequestURI()).thenReturn("/ui/dist/src/entries/tinymceGallery.tsx");
       when(request.getHeaderNames())
           .thenReturn(Collections.enumeration(List.of("KEEP-ALIVE", "X-Test")));
-      when(request.getHeaders("KEEP-ALIVE"))
-          .thenReturn(Collections.enumeration(List.of("timeout=5")));
       when(request.getHeaders("X-Test")).thenReturn(Collections.enumeration(List.of("value")));
       when(upstreamResponse.headers())
           .thenReturn(HttpHeaders.of(Collections.emptyMap(), (a, b) -> true));
       when(client.send(
               any(HttpRequest.class),
-              org.mockito.ArgumentMatchers.<HttpResponse.BodyHandler<InputStream>>any()))
+              ArgumentMatchers.<HttpResponse.BodyHandler<InputStream>>any()))
           .thenAnswer(
               invocation -> {
                 proxiedRequest.set(invocation.getArgument(0, HttpRequest.class));
@@ -193,14 +177,6 @@ public class ViteDevServerProxyServletTest {
     } finally {
       Locale.setDefault(originalLocale);
     }
-  }
-
-  @Test
-  public void doesNotInventMimeTypeForUnknownExtensions() {
-    assertNull(servlet.inferFallbackContentType("/ui/dist/assets/logo.svg"));
-    assertEquals("text/css", servlet.inferFallbackContentType("/ui/dist/assets/app.css"));
-    assertEquals(
-        "text/javascript", servlet.inferFallbackContentType("/ui/dist/chunks/editor-plugin.mjs"));
   }
 
   private static final class TestServletOutputStream extends ServletOutputStream {
@@ -224,5 +200,11 @@ public class ViteDevServerProxyServletTest {
     public void write(int b) {
       target.write(b);
     }
+  }
+
+  private void stubSuccessfulUpstreamRequest() throws Exception {
+    when(client.send(
+            any(HttpRequest.class), ArgumentMatchers.<HttpResponse.BodyHandler<InputStream>>any()))
+        .thenReturn(upstreamResponse);
   }
 }

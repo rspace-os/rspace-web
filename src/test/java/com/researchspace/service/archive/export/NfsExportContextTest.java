@@ -40,8 +40,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import org.apache.commons.io.FileUtils;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class NfsExportContextTest {
 
@@ -73,7 +73,7 @@ public class NfsExportContextTest {
   private NfsFolderDetails testFolderDetails;
   private NfsFolderDetails testSubfolderDetails;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
 
     // mock nfs manager returning test filestore/filesystem

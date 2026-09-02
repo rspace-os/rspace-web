@@ -17,6 +17,7 @@ import com.researchspace.webapp.integrations.datacite.DataCiteConnector;
 import jakarta.ws.rs.InternalServerErrorException;
 import jakarta.ws.rs.NotFoundException;
 import java.util.List;
+import java.util.Set;
 import javax.naming.InvalidNameException;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -122,6 +123,22 @@ public class InventoryIdentifiersApiController extends BaseApiInventoryControlle
     return result.getIdentifiers().get(0);
   }
 
+  /**
+   * B2INST review states whose review is closed without publication. The record is still only a
+   * draft on the provider side, so the identifier can be deleted, which is how the user clears a
+   * failed submission to register a new one (RSDEV-1260). An open ("submitted") review stays
+   * undeletable: the decision rests with the community curator, and B2INST refuses to delete a
+   * draft with an open review.
+   */
+  private static final Set<String> CLOSED_B2INST_REVIEW_STATES =
+      Set.of("declined", "cancelled", "expired");
+
+  private boolean isDeletableState(ApiInventoryDOI identifier) {
+    return "draft".equals(identifier.getState())
+        || (IdentifierType.PIDINST_B2INST.name().equals(identifier.getDoiType())
+            && CLOSED_B2INST_REVIEW_STATES.contains(identifier.getState()));
+  }
+
   @Override
   public boolean deleteIdentifier(
       @PathVariable Long identifierId, @RequestAttribute(name = "user") User user) {
@@ -130,8 +147,8 @@ public class InventoryIdentifiersApiController extends BaseApiInventoryControlle
     apiHandler.assertInventoryAndIdentifierTypeEnabled(
         user, settingTypeForDoiType(identifier.getDoiType()));
     Validate.isTrue(
-        identifier.getState().equals("draft"),
-        "you can only delete identifiers " + "in \"draft\" status");
+        isDeletableState(identifier),
+        messages.getMessage("errors.inventory.identifier.deleteWrongState"));
     if (identifier.isAssociated()) {
       InventoryRecord invRec = retrieveInvRecByIdentifierId(identifierId, user);
       result =
@@ -161,6 +178,15 @@ public class InventoryIdentifiersApiController extends BaseApiInventoryControlle
 
     InventoryRecord invRec = retrieveInvRecByIdentifierId(identifierId, user);
     return identifierMgr.retractIdentifier(invRec.getOid(), user).getIdentifiers().get(0);
+  }
+
+  @Override
+  public ApiInventoryDOI refreshIdentifier(
+      @PathVariable Long identifierId, @RequestAttribute(name = "user") User user) {
+    assertInventoryAndIdentifierEnabledForId(identifierId, user);
+
+    InventoryRecord invRec = retrieveInvRecByIdentifierId(identifierId, user);
+    return identifierMgr.refreshIdentifier(invRec.getOid(), user).getIdentifiers().get(0);
   }
 
   @Override

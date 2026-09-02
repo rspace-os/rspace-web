@@ -18,7 +18,7 @@ import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.service.inventory.impl.InstrumentEntityApiManagerImpl;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class InstrumentEntityApiManagerIT extends RealTransactionSpringTestBase {
 

@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -33,25 +32,19 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import org.apache.shiro.authz.AuthorizationException;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoJUnitRunner;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.ObjectError;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class SelfServiceLabGroupControllerTest {
-
-  public @Rule MockitoRule mockito = MockitoJUnit.rule();
   @InjectMocks private SelfServiceLabGroupController controller;
   @Mock private CloudGroupManager cloudGroupManager;
   @Mock private GroupManager groupManager;
@@ -72,8 +65,7 @@ public class SelfServiceLabGroupControllerTest {
   @Mock private MessageSourceUtils messages;
   private Long newLabGroupID = 10L;
 
-  @Before
-  public void setUp() throws Exception {
+  private void stubValidGroupCreation() {
     when(createCloudGroup.getEmails()).thenReturn(new String[] {""});
     when(createCloudGroup.getGroupName()).thenReturn("grpName");
     when(userManager.getAuthenticatedUserInSession()).thenReturn(piUser);
@@ -85,6 +77,7 @@ public class SelfServiceLabGroupControllerTest {
 
   @Test
   public void shouldValidate() {
+    stubValidGroupCreation();
     controller.createSelfServiceLabGroup(createCloudGroup, bindingResult, request);
     verify(validator, times(1)).validate(any(), eq(bindingResult));
   }
@@ -105,6 +98,7 @@ public class SelfServiceLabGroupControllerTest {
 
   @Test
   public void shouldCreateAndSaveSelfServiceLabGroup() {
+    stubValidGroupCreation();
     AjaxReturnObject response =
         controller.createSelfServiceLabGroup(createCloudGroup, bindingResult, request);
     assertNull(response.getErrorMsg());
@@ -115,6 +109,8 @@ public class SelfServiceLabGroupControllerTest {
 
   @Test
   public void shouldReturnErrorWhenDuplicateNameForSelfServiceLabGroup() {
+    when(createCloudGroup.getGroupName()).thenReturn("grpName");
+    when(userManager.getAuthenticatedUserInSession()).thenReturn(piUser);
     BindingResult errorsEx = new BeanPropertyBindingResult(createCloudGroup, "");
     when(createCloudGroup.getGroupName()).thenReturn("grpName");
     Group existingWithSameDisplayName = new Group();
@@ -144,6 +140,7 @@ public class SelfServiceLabGroupControllerTest {
     when(cloudGroupManager.createAndSaveGroup(
             eq(true), eq("grpName"), eq(piUser), eq(piUser), eq(GroupType.LAB_GROUP), eq(piUser)))
         .thenReturn(newLabGroup);
+    when(newLabGroup.getId()).thenReturn(newLabGroupID);
     when(cloudUserManager.createInvitedUserList(eq(Arrays.asList(emails))))
         .thenReturn(invitedUsers);
     controller.createSelfServiceLabGroup(createCloudGroup, bindingResult, request);
@@ -157,23 +154,13 @@ public class SelfServiceLabGroupControllerTest {
 
   @Test
   public void shouldNotSendJoinGroupRequestsIfNoUsersInvitedToJoin() {
-    String[] emails = new String[] {"email1@com", "email2@com"};
-    List<User> invitedUsers = List.of(invitedUser1, invitedUser2);
-    lenient().when(createCloudGroup.getGroupName()).thenReturn("grpName");
-    lenient().when(userManager.getAuthenticatedUserInSession()).thenReturn(piUser);
-    lenient()
-        .when(
-            cloudGroupManager.createAndSaveGroup(
-                eq(true),
-                eq("grpName"),
-                eq(piUser),
-                eq(piUser),
-                eq(GroupType.LAB_GROUP),
-                eq(piUser)))
+    when(createCloudGroup.getEmails()).thenReturn(new String[] {""});
+    when(createCloudGroup.getGroupName()).thenReturn("grpName");
+    when(userManager.getAuthenticatedUserInSession()).thenReturn(piUser);
+    when(cloudGroupManager.createAndSaveGroup(
+            eq(true), eq("grpName"), eq(piUser), eq(piUser), eq(GroupType.LAB_GROUP), eq(piUser)))
         .thenReturn(newLabGroup);
-    lenient()
-        .when(cloudUserManager.createInvitedUserList(eq(Arrays.asList(emails))))
-        .thenReturn(invitedUsers);
+    when(newLabGroup.getId()).thenReturn(newLabGroupID);
     controller.createSelfServiceLabGroup(createCloudGroup, bindingResult, request);
     verify(permissionUtils, never()).refreshCache();
     verify(cloudNotificationManager, never()).sendJoinGroupRequest(eq(piUser), eq(newLabGroup));
@@ -196,12 +183,13 @@ public class SelfServiceLabGroupControllerTest {
   }
 
   @Test
-  public void shouldNotDeleteLabGroupWhenNotSelfServiceEVenWhenPIisCreator() {
+  public void shouldNotDeleteLabGroupWhenNotSelfServiceEvenWhenPIIsCreator() {
     Long groupID = 1L;
+    Group nonSelfServiceLabGroup = new Group();
+    nonSelfServiceLabGroup.setOwner(piUser);
+    nonSelfServiceLabGroup.setSelfService(false);
     when(userManager.getAuthenticatedUserInSession()).thenReturn(piUser);
-    when(groupManager.getGroup(eq(groupID))).thenReturn(newLabGroup);
-    lenient().when(newLabGroup.isSelfService()).thenReturn(false);
-    lenient().when(newLabGroup.getOwner()).thenReturn(piUser);
+    when(groupManager.getGroup(eq(groupID))).thenReturn(nonSelfServiceLabGroup);
     // Note that the redirect is actually handled by JS code.
     assertThrows(AuthorizationException.class, () -> controller.removeGroup(groupID));
   }

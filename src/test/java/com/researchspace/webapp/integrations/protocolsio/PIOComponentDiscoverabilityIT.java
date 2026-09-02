@@ -4,8 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.researchspace.service.impl.ConditionalTestRunner;
-import com.researchspace.service.impl.RunIfSystemPropertyDefined;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.SneakyThrows;
@@ -15,30 +13,28 @@ import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
-import org.springframework.test.context.ContextConfiguration;
 import org.springframework.web.client.RestTemplate;
 
-@ContextConfiguration(classes = PIOComponentDiscoverabilityIT.class)
 @Slf4j
-@RunWith(ConditionalTestRunner.class)
+@EnabledIfSystemProperty(named = "weekly", matches = "(|true)")
 public class PIOComponentDiscoverabilityIT {
 
-  private final String PIO_API_KEY =
+  private static final String PIO_API_KEY =
       "586bc6074e8672fb12cbb7ddc85af7e5d50b45c51562cc12675e9b25431fc308";
 
   private RestTemplate restTemplate;
   private ObjectMapper objectMapper;
 
-  @Before
-  public void setUp() throws Exception {
+  @BeforeEach
+  public void setUp() {
     objectMapper = new ObjectMapper();
     objectMapper.enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
 
@@ -54,7 +50,6 @@ public class PIOComponentDiscoverabilityIT {
    */
   @Test
   @SneakyThrows
-  @RunIfSystemPropertyDefined("weekly")
   public void testForUnknownPIOObjects() {
     String basePIOApiUrl = "https://www.protocols.io/api/v3/protocols?filter=public&key=*";
     HttpHeaders headers = new HttpHeaders();

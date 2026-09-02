@@ -1,9 +1,9 @@
 package com.researchspace.dao.customliquibaseupdates.v47;
 
 import static com.researchspace.dao.customliquibaseupdates.v47.UpdateInternalLinksInFieldContent.OLD_LINK_MATCHER;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.dao.customliquibaseupdates.AbstractDBHelpers;
 import com.researchspace.model.InternalLink;
@@ -19,8 +19,8 @@ import java.io.IOException;
 import java.util.List;
 import liquibase.exception.CustomChangeException;
 import liquibase.exception.SetupException;
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class UpdateInternalLinksInFieldContentIT extends AbstractDBHelpers {
@@ -31,7 +31,7 @@ public class UpdateInternalLinksInFieldContentIT extends AbstractDBHelpers {
   private UpdateInternalLinksInFieldContent updater;
   private User user;
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }
@@ -117,15 +117,15 @@ public class UpdateInternalLinksInFieldContentIT extends AbstractDBHelpers {
   }
 
   private void assertOldStyleLink(String fieldContent, Long targetDocId) {
-    assertFalse(fieldContent, fieldContent.contains("data-globalid"));
-    assertTrue(fieldContent, fieldContent.contains("class=\"linkedRecord\""));
+    assertFalse(fieldContent.contains("data-globalid"), fieldContent);
+    assertTrue(fieldContent.contains("class=\"linkedRecord\""), fieldContent);
     assertTrue(
-        fieldContent, fieldContent.contains("/workspace/editor/structuredDocument/" + targetDocId));
+        fieldContent.contains("/workspace/editor/structuredDocument/" + targetDocId), fieldContent);
   }
 
   private void assertNewStyleLink(String fieldContent, Long targetDocId) {
-    assertTrue(fieldContent, fieldContent.contains("data-globalid=\"SD" + targetDocId + "\""));
-    assertTrue(fieldContent, fieldContent.contains("class=\"linkedRecord mceNonEditable\""));
-    assertTrue(fieldContent, fieldContent.contains("href=\"/globalId/SD" + targetDocId + "\""));
+    assertTrue(fieldContent.contains("data-globalid=\"SD" + targetDocId + "\""), fieldContent);
+    assertTrue(fieldContent.contains("class=\"linkedRecord mceNonEditable\""), fieldContent);
+    assertTrue(fieldContent.contains("href=\"/globalId/SD" + targetDocId + "\""), fieldContent);
   }
 }

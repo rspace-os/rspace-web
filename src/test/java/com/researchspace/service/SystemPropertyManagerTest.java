@@ -1,18 +1,19 @@
 package com.researchspace.service;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.sameInstance;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.researchspace.model.User;
 import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 
@@ -40,18 +41,20 @@ public class SystemPropertyManagerTest extends SpringTransactionalTest {
     assertEquals("zzz", spv.getValue());
   }
 
-  @Test(expected = DataAccessException.class)
+  @Test
   public void saveByIdFailsIfNotExist() {
     User sysadmin = logoutAndLoginAsSysAdmin();
-    sysPropMgr.save(-200L, "any", sysadmin);
+    assertThrows(DataAccessException.class, () -> sysPropMgr.save(-200L, "any", sysadmin));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void saveWrongDataTypeFails() {
     User sysadmin = logoutAndLoginAsSysAdmin();
     SystemPropertyValue spv = sysPropMgr.save("numeric.property", "123", sysadmin);
     assertEquals(123 + "", spv.getValue());
-    sysPropMgr.save("numeric.property", "not numeric", sysadmin);
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> sysPropMgr.save("numeric.property", "not numeric", sysadmin));
   }
 
   @Test

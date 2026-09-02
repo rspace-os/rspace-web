@@ -1,8 +1,8 @@
 package com.researchspace.linkedelements;
 
 import static com.researchspace.core.util.FieldParserConstants.IMAGE_DROPPED_CLASS_NAME;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.researchspace.dao.EcatImageAnnotationDao;
 import com.researchspace.dao.EcatImageDao;
@@ -15,8 +15,8 @@ import com.researchspace.testutils.TestFactory;
 import java.util.Optional;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -29,7 +29,7 @@ public class ImageConverterTest extends AbstractParserTest {
 
   @InjectMocks private ImageConverter imageConverter;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
   }

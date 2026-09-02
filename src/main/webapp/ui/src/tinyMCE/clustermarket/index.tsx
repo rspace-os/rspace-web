@@ -1,11 +1,7 @@
 import { createRoot } from "react-dom/client";
 import Analytics from "../../components/Analytics";
-import i18n from "../../modules/common/i18n";
 import I18nRoot from "../../modules/common/i18n/I18nRoot";
-import { getSorting } from "../../util/table";
-import type { Order } from "../../util/types";
-// eslint-disable-next-line no-duplicate-imports
-import Clustermarket, { getHeaders, getOrder, getOrderBy, getSelectedBookings } from "./Clustermarket";
+import Clustermarket from "./Clustermarket";
 
 document.addEventListener("DOMContentLoaded", () => {
   const domContainer = document.getElementById("tinymce-clustermarket");
@@ -24,80 +20,4 @@ document.addEventListener("DOMContentLoaded", () => {
       </Analytics>
     </I18nRoot>,
   );
-});
-
-function createTinyMceTable() {
-  const clustermarketTable = document.createElement("table");
-  clustermarketTable.setAttribute("data-tableSource", "clustermarket");
-
-  const tableHeader = document.createElement("tr");
-  const headers = getHeaders();
-  const headersWithNotes = headers
-    .slice(0, 4)
-    .concat(
-      [
-        { id: "notes", numeric: false, label: i18n.t("workspace:tinymce.clustermarket.columns.notes") },
-      ] as unknown as typeof headers,
-      headers.slice(4),
-    );
-  headersWithNotes.forEach((cell) => {
-    const columnName = document.createElement("th");
-    columnName.textContent = cell.label;
-    tableHeader.appendChild(columnName);
-  });
-  clustermarketTable.appendChild(tableHeader);
-  getSelectedBookings()
-    .toSorted(getSorting(getOrder() as Order, getOrderBy()))
-    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-    .forEach((booking: any) => {
-      const row = document.createElement("tr");
-
-      headersWithNotes.forEach((headerCell) => {
-        const cell = document.createElement("td");
-
-        const textContent = booking[headerCell.id];
-        if (headerCell.id === "bookingID") {
-          const link = document.createElement("a");
-          link.href =
-            // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-            (parent.tinymce.activeEditor as any)?.settings.clustermarket_web_url +
-            "accounts/" +
-            booking.labID +
-            "/my_bookings/" +
-            booking[headerCell.id];
-          link.target = "_blank";
-          link.text = booking[headerCell.id];
-          cell.appendChild(link);
-        } else if (headerCell.id === "equipmentName") {
-          const link = document.createElement("a");
-          link.href =
-            // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-            (parent.tinymce.activeEditor as any)?.settings.clustermarket_web_url +
-            "accounts/" +
-            booking.labID +
-            "/equipment/" +
-            booking.equipmentID;
-          link.target = "_blank";
-          link.text = booking[headerCell.id];
-          cell.appendChild(link);
-        } else if (textContent) cell.textContent = textContent;
-
-        row.appendChild(cell);
-      });
-
-      clustermarketTable.appendChild(row);
-    });
-  return clustermarketTable;
-}
-
-parent.tinymce.activeEditor?.on("clustermarket-insert", () => {
-  if (parent?.tinymce) {
-    const ed = parent.tinymce.activeEditor;
-
-    if (getSelectedBookings().length > 0) {
-      const clustermarketTable = createTinyMceTable();
-      ed?.execCommand("mceInsertContent", false, clustermarketTable.outerHTML);
-    }
-    ed?.windowManager.close();
-  }
 });

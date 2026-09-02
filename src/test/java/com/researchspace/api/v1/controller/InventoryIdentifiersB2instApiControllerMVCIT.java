@@ -21,9 +21,9 @@ import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
 import com.researchspace.service.inventory.InventoryIdentifierApiManager;
 import com.researchspace.webapp.integrations.b2inst.B2instConnectorDummy;
 import java.util.List;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.test.context.web.WebAppConfiguration;
@@ -54,7 +54,7 @@ public class InventoryIdentifiersB2instApiControllerMVCIT extends API_MVC_Invent
   private final BindingResult mockBindingResult = mock(BindingResult.class);
   private Object realB2instConnector;
 
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     realB2instConnector = ReflectionTestUtils.getField(identifierApiManager, "b2instConnector");
     ReflectionTestUtils.setField(identifierApiManager, "b2instConnector", b2instDummy);
@@ -62,7 +62,7 @@ public class InventoryIdentifiersB2instApiControllerMVCIT extends API_MVC_Invent
     setB2instEnabled("true");
   }
 
-  @After
+  @AfterEach
   public void teardown() throws Exception {
     setB2instEnabled("false");
     // identifierApiManager is a singleton in a Spring context cached across test classes, so the
@@ -90,7 +90,7 @@ public class InventoryIdentifiersB2instApiControllerMVCIT extends API_MVC_Invent
 
   /*
    * Mirrors the private helper in InventoryIdentifiersApiControllerMVCIT, but returns the raw result
-   * rather than a deserialized DTO. providerUrl and publicUrl are @JsonProperty READ_ONLY on
+   * rather than a deserialized DTO. state, providerUrl and publicUrl are @JsonProperty READ_ONLY on
    * ApiInventoryDOI, so Jackson emits them but ignores them on the way in; getFromJsonResponseBody is
    * a plain readValue, so reading them off a deserialized DTO would silently yield null and the
    * assertion would pass vacuously. The response JSON is the only place they can be observed.
@@ -179,13 +179,16 @@ public class InventoryIdentifiersB2instApiControllerMVCIT extends API_MVC_Invent
 
     assertNotNull(registeredDoi);
     assertEquals(B2instConnectorDummy.DUMMY_RID, registeredDoi.getDoi());
-    assertEquals("draft", registeredDoi.getState());
     /*
-     * The B2INST record page is captured from the create-draft response and persisted, so the UI can
-     * link a PIDINST identifier from registration onwards, not only once it is published. Asserted on
-     * the response JSON, not the DTO: see registerNewIdentifier for why the DTO cannot show these two.
+     * state and the two URLs are asserted on the response JSON, not the DTO: state is READ_ONLY
+     * since the parallel review (a record update carrying "state" could otherwise open the public
+     * page), so it too would deserialize to null. See registerNewIdentifier.
+     *
+     * The B2INST record page is captured from the create-draft response and persisted, so the UI
+     * can link a PIDINST identifier from registration onwards, not only once it is published.
      */
     JsonNode doiJson = new ObjectMapper().readTree(doiResult.getResponse().getContentAsString());
+    assertEquals("draft", doiJson.path("state").asText());
     assertEquals(B2instConnectorDummy.DUMMY_SELF_HTML, doiJson.path("providerUrl").asText());
     assertTrue(
         doiJson.path("publicUrl").isNull() || doiJson.path("publicUrl").isMissingNode(),

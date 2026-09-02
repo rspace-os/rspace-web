@@ -317,6 +317,7 @@ public class InventoryImportManagerImpl implements InventoryImportManager {
         if (templateRetrieved) {
           instrumentCsvImporter.readCsvIntoImportResult(
               instrumentsIS, fieldMappings, csvResult, user);
+          prevalidateInstruments(csvResult);
         }
       }
     }
@@ -500,6 +501,41 @@ public class InventoryImportManagerImpl implements InventoryImportManager {
           InventoryBulkOperationStatus.PREVALIDATION_ERROR);
     } else {
       subSampleCsvResult.setStatus(InventoryBulkOperationStatus.PREVALIDATED);
+    }
+  }
+
+  void prevalidateInstruments(ApiInventoryImportResult csvResult) {
+
+    ApiInventoryImportInstrumentImportResult instrumentCsvResult = csvResult.getInstrumentResult();
+    ApiInventoryImportPartialResult containerCsvResult = csvResult.getContainerResult();
+
+    int resultNumber = 0;
+    for (ApiInventoryBulkOperationRecordResult instrumentResult :
+        instrumentCsvResult.getResults()) {
+      if (instrumentResult.getRecord() != null) {
+        ApiInstrument instrument = (ApiInstrument) instrumentResult.getRecord();
+        BindException recordErrors = new BindException(instrument, "record");
+
+        prevalidateParentContainerIds(
+            instrumentCsvResult,
+            containerCsvResult,
+            resultNumber,
+            recordErrors,
+            csvResult.getCurrentUser());
+
+        if (recordErrors.hasErrors()) {
+          instrumentCsvResult.changeIntoErrorResult(
+              instrumentResult, apiControllerAdvice.getApiErrorFromBindException(recordErrors));
+        }
+      }
+      resultNumber++;
+    }
+
+    if (instrumentCsvResult.getErrorCount() > 0) {
+      instrumentCsvResult.setErrorStatusAndResetSuccessCount(
+          InventoryBulkOperationStatus.PREVALIDATION_ERROR);
+    } else {
+      instrumentCsvResult.setStatus(InventoryBulkOperationStatus.PREVALIDATED);
     }
   }
 
@@ -988,6 +1024,52 @@ public class InventoryImportManagerImpl implements InventoryImportManager {
         throw new InventoryImportException(error, importResult);
       }
       instrumentCount++;
+    }
+
+    // move each instrument into its requested parent container, or into the default bench container
+    for (int i = 0; i < instrumentImportResult.getSuccessCount(); i++) {
+      ApiInventoryBulkOperationRecordResult importedRecordResult =
+          instrumentImportResult.getResults().get(i);
+      ApiInstrument importedInstrument = (ApiInstrument) importedRecordResult.getRecord();
+
+      String parentContainerImportId =
+          instrumentCsvResult.getParentContainerImportIdForResultNumber(i);
+      GlobalIdentifier parentContainerGlobalId =
+          instrumentCsvResult.getParentContainerGlobalIdForResultNumber(i);
+
+      ApiContainer targetParent = null;
+      if (parentContainerImportId != null) {
+        ApiInventoryBulkOperationRecordResult importedParentResult =
+            importResult.getContainerResult().getResultForImportId(parentContainerImportId);
+        targetParent =
+            importedParentResult != null ? (ApiContainer) importedParentResult.getRecord() : null;
+      } else if (parentContainerGlobalId != null) {
+        targetParent = new ApiContainer(); // permissions checked during prevalidation
+        targetParent.setId(parentContainerGlobalId.getDbId());
+      }
+      if (targetParent == null) {
+        targetParent = getDefaultContainerForImportedItems(importResult, csvResult);
+      }
+
+      try {
+        ApiInstrument moveRequest = new ApiInstrument();
+        moveRequest.setId(importedInstrument.getId());
+        moveRequest.setParentContainer(targetParent);
+        ApiInstrument updatedInstrument =
+            instrumentApiMgr.updateApiInstrument(moveRequest, importResult.getCurrentUser());
+        importedRecordResult.setRecord(updatedInstrument);
+      } catch (Exception e) {
+        log.warn(
+            "Error on moving instrument ["
+                + importedInstrument.getName()
+                + "] into parent container ["
+                + (targetParent != null ? targetParent.getName() : null)
+                + "]",
+            e);
+        ApiError error = bulkOperationHandler.convertExceptionToApiError(e);
+        instrumentImportResult.changeIntoErrorResult(importedRecordResult, error);
+        throw new InventoryImportException(error, importResult);
+      }
     }
   }
 

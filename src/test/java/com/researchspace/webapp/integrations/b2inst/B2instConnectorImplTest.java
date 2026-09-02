@@ -20,6 +20,7 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 import com.researchspace.b2inst.model.metadata.B2instInstrumentMetadata;
 import com.researchspace.b2inst.model.request.B2instDoi;
 import com.researchspace.b2inst.model.response.B2instDraftRecord;
+import com.researchspace.b2inst.model.response.B2instRequestResponse;
 import com.researchspace.model.system.SystemProperty;
 import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.service.SystemPropertyManager;
@@ -29,6 +30,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.appender.AbstractAppender;
@@ -36,6 +38,8 @@ import org.apache.logging.log4j.core.config.Property;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -53,6 +57,8 @@ class B2instConnectorImplTest {
 
   private static final String REVIEW_URL =
       "https://b2inst-test.gwdg.de/api/records/k2j9p-7yh21/draft/review";
+  private static final String RECORD_URL = "https://b2inst-test.gwdg.de/api/records/k2j9p-7yh21";
+  private static final String DRAFT_URL = RECORD_URL + "/draft";
 
   @Mock private SystemPropertyManager mockSysPropMgr;
   @InjectMocks private B2instConnectorImpl connector;
@@ -157,10 +163,10 @@ class B2instConnectorImplTest {
 
     assertEquals("k2j9p-7yh21", created.getId());
     /*
-     * The whole providerUrl feature hangs off @JsonProperty("self_html") on B2instRecordLinks, which
-     * lives in rspace-core-model. Nothing else parses it: without this assertion a rename there (or a
-     * key change at B2INST) would leave providerUrl silently null with every test, including the
-     * MVCIT, still green, because the MVCIT's connector dummy fabricates the value by hand.
+     * The whole providerUrl feature hangs off @JsonProperty("self_html") on B2instRecordLinks.
+     * Nothing else parses it: without this assertion a rename there (or a key change at B2INST)
+     * would leave providerUrl silently null with every test, including the MVCIT, still green,
+     * because the MVCIT's connector dummy fabricates the value by hand.
      */
     assertNotNull(created.getLinks());
     assertEquals(
@@ -642,5 +648,168 @@ class B2instConnectorImplTest {
     connector.reloadClient();
 
     assertThrows(UnsupportedOperationException.class, () -> connector.retractDoi("k2j9p-7yh21"));
+  }
+
+  @Test
+  void getReviewOfReturnsReviewWhateverItsStatus() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    server
+        .expect(requestTo(REVIEW_URL))
+        .andExpect(method(HttpMethod.GET))
+        .andRespond(
+            withSuccess(
+                "{\"status\":\"declined\",\"is_open\":false,\"is_closed\":true}",
+                MediaType.APPLICATION_JSON));
+
+    Optional<B2instRequestResponse> review = connector.getReviewOf("k2j9p-7yh21");
+
+    assertTrue(review.isPresent());
+    assertEquals("declined", review.get().getStatus());
+    server.verify();
+  }
+
+  @Test
+  void getReviewOfReturnsEmptyOn404() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    server
+        .expect(requestTo(REVIEW_URL))
+        .andExpect(method(HttpMethod.GET))
+        .andRespond(withStatus(HttpStatus.NOT_FOUND));
+
+    assertTrue(connector.getReviewOf("k2j9p-7yh21").isEmpty());
+    server.verify();
+  }
+
+  @Test
+  void getPublishedRecordReturnsRecordWithPidsAndLinks() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    server
+        .expect(requestTo(RECORD_URL))
+        .andExpect(method(HttpMethod.GET))
+        .andRespond(
+            withSuccess(
+                "{\"id\":\"k2j9p-7yh21\",\"is_published\":true,"
+                    + "\"pids\":{\"epic\":{\"identifier\":\"http://hdl.handle.net/21.T11975/k2j9p-7yh21\"}},"
+                    + "\"links\":{\"self_html\":\"https://b2inst-test.gwdg.de/records/k2j9p-7yh21\"}}",
+                MediaType.APPLICATION_JSON));
+
+    Optional<B2instDraftRecord> record = connector.getPublishedRecord("k2j9p-7yh21");
+
+    assertTrue(record.isPresent());
+    assertEquals(
+        "https://b2inst-test.gwdg.de/records/k2j9p-7yh21", record.get().getLinks().getSelfHtml());
+    assertTrue(record.get().getPids().containsKey("epic"));
+    server.verify();
+  }
+
+  @Test
+  void getPublishedRecordAndDraftReturnEmptyOn404() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    server
+        .expect(requestTo(RECORD_URL))
+        .andExpect(method(HttpMethod.GET))
+        .andRespond(withStatus(HttpStatus.NOT_FOUND));
+    server
+        .expect(requestTo(DRAFT_URL))
+        .andExpect(method(HttpMethod.GET))
+        .andRespond(withStatus(HttpStatus.NOT_FOUND));
+
+    assertTrue(connector.getPublishedRecord("k2j9p-7yh21").isEmpty());
+    assertTrue(connector.getDraftRecord("k2j9p-7yh21").isEmpty());
+    server.verify();
+  }
+
+  @Test
+  void getReviewOfWrapsTransportErrors() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    server
+        .expect(requestTo(REVIEW_URL))
+        .andRespond(withException(new IOException("connection reset")));
+
+    assertThrows(B2instConnectionException.class, () -> connector.getReviewOf("k2j9p-7yh21"));
+  }
+
+  /**
+   * The record id reaches the connector from {@code DigitalObjectIdentifier.identifier}, which a
+   * record update can write, so a crafted value must never redirect these calls - and the bearer
+   * token they carry - to another path on the provider host. Refused before any request goes out;
+   * the URLs built for a legitimate id are pinned by the read tests above (parallel review, PR
+   * 1066).
+   */
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "../../admin",
+        "..",
+        ".",
+        "k2j9p-7yh21/../../admin",
+        "k2j9p-7yh21?x=1",
+        "k2j9p-7yh21#f",
+        "k2j9p 7yh21",
+        "http://elsewhere.example.org/",
+        ""
+      })
+  void recordCallsRefuseARecordIdRSpaceCouldNotHaveMinted(String craftedRid) {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+
+    assertThrows(B2instConnectionException.class, () -> connector.getReviewOf(craftedRid));
+    assertThrows(B2instConnectionException.class, () -> connector.getPublishedRecord(craftedRid));
+    assertThrows(B2instConnectionException.class, () -> connector.getDraftRecord(craftedRid));
+    assertThrows(B2instConnectionException.class, () -> connector.deleteDoi(craftedRid));
+
+    // no expectations were set, so verify() passing means nothing was sent
+    server.verify();
+  }
+
+  /**
+   * A review that exists but was never submitted reports {@code is_open: false} (verified against
+   * b2inst-test.gwdg.de, July 2026), so it must not short-circuit: pressing Publish again has to
+   * re-PUT, which is what returns the submit link, and then post it. Without this the record would
+   * sit in {@code created} for good, which is what the UI keeps Publish enabled for.
+   *
+   * <p>Pins the behaviour rather than changing it - a Copilot review read the short-circuit as
+   * catching this case too (PR 1066).
+   */
+  @Test
+  void publishDoiResubmitsAReviewThatWasCreatedButNeverSubmitted() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    String submitUrl = "https://b2inst-test.gwdg.de/api/requests/REQ-1/actions/submit";
+    server
+        .expect(requestTo(REVIEW_URL))
+        .andExpect(method(HttpMethod.GET))
+        .andRespond(
+            withSuccess(
+                "{\"id\":\"REQ-1\",\"status\":\"created\",\"is_open\":false}",
+                MediaType.APPLICATION_JSON));
+    server
+        .expect(requestTo(REVIEW_URL))
+        .andExpect(method(HttpMethod.PUT))
+        .andRespond(
+            withSuccess(
+                "{\"id\":\"REQ-1\",\"status\":\"created\",\"links\":{\"actions\":{\"submit\":\""
+                    + submitUrl
+                    + "\"}}}",
+                MediaType.APPLICATION_JSON));
+    server
+        .expect(requestTo(submitUrl))
+        .andExpect(method(HttpMethod.POST))
+        .andRespond(withSuccess("{\"status\":\"submitted\"}", MediaType.APPLICATION_JSON));
+
+    assertEquals("submitted", connector.publishDoi("k2j9p-7yh21").getStatus());
+    server.verify();
   }
 }

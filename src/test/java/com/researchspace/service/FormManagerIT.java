@@ -2,9 +2,10 @@ package com.researchspace.service;
 
 import static com.researchspace.model.dtos.AbstractFormFieldDTO.MAX_NAME_LENGTH;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.ChoiceFieldDTO;
 import com.researchspace.model.dtos.ChoiceFieldDTOValidatorTest;
@@ -21,21 +22,21 @@ import com.researchspace.model.field.TextFieldForm;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import jakarta.validation.ConstraintViolationException;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class FormManagerIT extends RealTransactionSpringTestBase {
 
   private @Autowired FormManager formMgr;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }
@@ -49,30 +50,38 @@ public class FormManagerIT extends RealTransactionSpringTestBase {
 
     ChoiceFieldDTO<ChoiceFieldForm> invalidChoice = ChoiceFieldDTOValidatorTest.createValid();
     invalidChoice.setChoiceValues(null);
-    CoreTestUtils.assertExceptionThrown(
-        () -> formMgr.createFieldForm(invalidChoice, form.getId(), user),
-        ConstraintViolationException.class,
+    assertThat(
+        assertThrows(
+                ConstraintViolationException.class,
+                () -> formMgr.createFieldForm(invalidChoice, form.getId(), user))
+            .getMessage(),
         containsString("choice options is a required field"));
 
     DateFieldDTO<DateFieldForm> invalidDate = DateFieldDTOValidatorTest.createValid();
     invalidDate.setDateFormat("");
-    CoreTestUtils.assertExceptionThrown(
-        () -> formMgr.createFieldForm(invalidDate, form.getId(), user),
-        ConstraintViolationException.class,
+    assertThat(
+        assertThrows(
+                ConstraintViolationException.class,
+                () -> formMgr.createFieldForm(invalidDate, form.getId(), user))
+            .getMessage(),
         containsString("format is a required field"));
 
     RadioFieldDTO<RadioFieldForm> invalidRadio = RadioFieldDTOValidatorTest.createValid();
     invalidRadio.setRadioValues("   ");
-    CoreTestUtils.assertExceptionThrown(
-        () -> formMgr.createFieldForm(invalidRadio, form.getId(), user),
-        ConstraintViolationException.class,
+    assertThat(
+        assertThrows(
+                ConstraintViolationException.class,
+                () -> formMgr.createFieldForm(invalidRadio, form.getId(), user))
+            .getMessage(),
         containsString("radio options is a required field"));
 
     TextFieldDTO<TextFieldForm> invalidText = TextFieldDTOValidatorTest.createValid();
     invalidText.setName(randomAlphabetic(MAX_NAME_LENGTH + 1));
-    CoreTestUtils.assertExceptionThrown(
-        () -> formMgr.createFieldForm(invalidText, form.getId(), user),
-        ConstraintViolationException.class,
+    assertThat(
+        assertThrows(
+                ConstraintViolationException.class,
+                () -> formMgr.createFieldForm(invalidText, form.getId(), user))
+            .getMessage(),
         containsString("size must be between"));
   }
 }

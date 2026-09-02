@@ -21,7 +21,7 @@ import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import java.util.List;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class SamplesApiManagerIT extends RealTransactionSpringTestBase {
 

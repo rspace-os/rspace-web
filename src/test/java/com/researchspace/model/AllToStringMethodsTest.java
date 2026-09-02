@@ -1,11 +1,11 @@
 package com.researchspace.model;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.regex.Pattern;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -15,10 +15,10 @@ import org.springframework.core.type.filter.RegexPatternTypeFilter;
 public class AllToStringMethodsTest {
   Logger logger = LoggerFactory.getLogger(AllToStringMethodsTest.class);
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {}
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {}
 
   @Test
@@ -28,7 +28,7 @@ public class AllToStringMethodsTest {
     StringBuffer sb = new StringBuffer();
     callToStrings("com.axiope", sb);
     callToStrings("com.researchspace", sb);
-    assertTrue("Failed classes: " + sb, sb.length() == 0);
+    assertTrue(sb.length() == 0, "Failed classes: " + sb);
   }
 
   private void callToStrings(String packageRoot, StringBuffer sb) {

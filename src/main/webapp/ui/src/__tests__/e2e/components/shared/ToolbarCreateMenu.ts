@@ -3,6 +3,7 @@ import { expect, type Locator, type Page } from "@playwright/test";
 export type CreateMenuItem =
   | "Folder"
   | "Notebook"
+  | "New entry"
   | "From Form"
   | "From Template"
   | "From Evernote"
@@ -12,6 +13,7 @@ export type CreateMenuItem =
 const CREATE_ACCESSIBLE_NAME: Record<CreateMenuItem, string> = {
   Folder: "Folder",
   Notebook: "Notebook",
+  "New entry": "New entry",
   "From Form": "From Form",
   "From Template": "From Template",
   "From Evernote": "From Evernote",

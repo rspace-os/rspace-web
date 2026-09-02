@@ -1,10 +1,10 @@
 package com.researchspace.service;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.core.util.MediaUtils;
 import com.researchspace.dao.EcatImageAnnotationDao;
@@ -33,9 +33,9 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import org.apache.commons.io.IOUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class DocumentCopyManagerTestIT extends SpringTransactionalTest {
@@ -48,7 +48,7 @@ public class DocumentCopyManagerTestIT extends SpringTransactionalTest {
   @Autowired private RSMathDao mathDao;
   @Autowired private DocumentCopyManager documentCopyManager;
 
-  @Before
+  @BeforeEach
   public void setUp() throws IllegalAddChildOperation {
     user = createAndSaveUserIfNotExists(getRandomAlphabeticString("any"));
     flushDatabaseState();
@@ -57,7 +57,7 @@ public class DocumentCopyManagerTestIT extends SpringTransactionalTest {
     logoutAndLoginAs(user);
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }

@@ -1,7 +1,8 @@
 package com.researchspace.api.v1.auth;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.auth.StatelessApiLogin;
 import com.researchspace.model.User;
@@ -10,20 +11,18 @@ import com.researchspace.testutils.TestFactory;
 import java.util.Optional;
 import org.apache.shiro.subject.Subject;
 import org.apache.shiro.util.ThreadContext;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
 
+@ExtendWith(MockitoExtension.class)
 public class ApiKeyAuthenticatorTest {
-
-  public @Rule MockitoRule rule = MockitoJUnit.rule();
   @Mock UserApiKeyManager apiMgr;
   @InjectMocks ApiKeyAuthenticator shiroAPIKeyAuthoriser;
 
@@ -34,7 +33,7 @@ public class ApiKeyAuthenticatorTest {
   boolean loginOK = false;
   boolean statelessScopeActive = false;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     mockRequest = new MockHttpServletRequest();
 
@@ -55,7 +54,7 @@ public class ApiKeyAuthenticatorTest {
     ThreadContext.bind(subject);
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     ThreadContext.remove();
   }
@@ -79,28 +78,31 @@ public class ApiKeyAuthenticatorTest {
     assertFalse(StatelessApiLogin.isInProgress());
   }
 
-  @Test(expected = ApiAuthenticationException.class)
+  @Test
   public void testAuthoriseFailsIfUserDisabled() {
     User disabled = TestFactory.createAnyUser("any");
     disabled.setEnabled(false);
     setUpExpectations(disabled);
-    shiroAPIKeyAuthoriser.authenticate(mockRequest);
+    assertThrows(
+        ApiAuthenticationException.class, () -> shiroAPIKeyAuthoriser.authenticate(mockRequest));
   }
 
-  @Test(expected = ApiAuthenticationException.class)
+  @Test
   public void testAuthoriseFailsIfUserLocked() {
     User locked = TestFactory.createAnyUser("any");
     locked.setAccountLocked(true);
     setUpExpectations(locked);
-    shiroAPIKeyAuthoriser.authenticate(mockRequest);
+    assertThrows(
+        ApiAuthenticationException.class, () -> shiroAPIKeyAuthoriser.authenticate(mockRequest));
   }
 
-  @Test(expected = ApiAuthenticationException.class)
+  @Test
   public void nonMatchingKeyThrowsAuthException() {
     User enabled = TestFactory.createAnyUser("any");
     setApiKeyHeader();
     Mockito.when(apiMgr.findUserByKey(apiKey)).thenReturn(Optional.ofNullable(null));
-    shiroAPIKeyAuthoriser.authenticate(mockRequest);
+    assertThrows(
+        ApiAuthenticationException.class, () -> shiroAPIKeyAuthoriser.authenticate(mockRequest));
   }
 
   private void setUpExpectations(User user) {

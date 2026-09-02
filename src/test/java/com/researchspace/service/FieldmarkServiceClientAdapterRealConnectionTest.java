@@ -2,7 +2,7 @@ package com.researchspace.service;
 
 import static com.researchspace.service.IntegrationsHandler.FIELDMARK_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.PROVIDER_USER_ID;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.researchspace.fieldmark.model.FieldmarkNotebook;
 import com.researchspace.model.User;
@@ -16,12 +16,12 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.util.List;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
-@Ignore("We leave the test Disabled so we can potentially run it manually by the bearer token")
+@Disabled("We leave the test Disabled so we can potentially run it manually by the bearer token")
 public class FieldmarkServiceClientAdapterRealConnectionTest extends SpringTransactionalTest {
 
   @Autowired private FieldmarkServiceClientAdapter fieldmarkServiceClientAdapter;
@@ -32,7 +32,7 @@ public class FieldmarkServiceClientAdapterRealConnectionTest extends SpringTrans
   private static final String NOTEBOOK_ID = "1726126204618-rspace-igsn-demo";
   private static final String ACCESS_TOKEN = "_______PASTE_TOKEN_HERE________";
 
-  @Before
+  @BeforeEach
   public void setUp() throws IllegalAddChildOperation {
     user = createAndSaveRandomUser();
     UserConnection actualConnection = new UserConnection();

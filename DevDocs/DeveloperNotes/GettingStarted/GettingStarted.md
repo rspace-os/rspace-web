@@ -81,8 +81,6 @@ To bypass the hooks for a single commit (e.g. a work-in-progress), set
 
 Current location of the codebase is https://github.com/rspace-os/rspace-web
 
-(if you are a member of ResearchSpace Dev Team, please clone our fork of the codebase located at https://github.com/ResearchSpace-ELN/rspace-web)
-
 We recommend using a Git client to download and update the source code.
 
 #### Create your local deployment.properties

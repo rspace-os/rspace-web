@@ -1,8 +1,8 @@
 package com.researchspace.service;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.model.User;
@@ -13,8 +13,8 @@ import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.testutils.SpringTransactionalTest;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class RecordFavoritesManagerTest extends SpringTransactionalTest {
@@ -23,7 +23,7 @@ public class RecordFavoritesManagerTest extends SpringTransactionalTest {
   private @Autowired RecordManager recordManager;
   private User user;
 
-  @Before
+  @BeforeEach
   public void setUp() throws IllegalAddChildOperation {
     user = createAndSaveRandomUser();
     initialiseContentWithExampleContent(user);

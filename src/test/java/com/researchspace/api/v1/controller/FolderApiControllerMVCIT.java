@@ -2,8 +2,13 @@ package com.researchspace.api.v1.controller;
 
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static java.util.stream.Collectors.toList;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.researchspace.api.v1.model.*;
@@ -15,22 +20,18 @@ import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.testutils.TestGroup;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
 public class FolderApiControllerMVCIT extends API_MVC_TestBase {
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void folderPostGetAndDelete() throws Exception {
@@ -192,7 +193,7 @@ public class FolderApiControllerMVCIT extends API_MVC_TestBase {
     assertEquals(1, listing.getLinks().size());
     String selfLink = listing.getLinks().get(0).getLink();
     assertTrue(
-        selfLink, selfLink.endsWith(BaseApiController.FOLDER_TREE_ENDPOINT + "?pageNumber=0"));
+        selfLink.endsWith(BaseApiController.FOLDER_TREE_ENDPOINT + "?pageNumber=0"), selfLink);
     assertEquals(anyUser.getRootFolder().getId(), listing.getFolderId());
 
     final int expectedDocumentCount = 1;
@@ -335,9 +336,9 @@ public class FolderApiControllerMVCIT extends API_MVC_TestBase {
     assertEquals(1, sharedFolderListing.getLinks().size());
     String selfLink = sharedFolderListing.getLinks().get(0).getLink();
     assertTrue(
-        selfLink,
         selfLink.endsWith(
-            BaseApiController.FOLDER_TREE_ENDPOINT + "/" + groupSharedFolderId + "?pageNumber=0"));
+            BaseApiController.FOLDER_TREE_ENDPOINT + "/" + groupSharedFolderId + "?pageNumber=0"),
+        selfLink);
     assertEquals(groupSharedFolderId, sharedFolderListing.getFolderId());
   }
 

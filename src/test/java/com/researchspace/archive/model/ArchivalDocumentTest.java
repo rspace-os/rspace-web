@@ -1,25 +1,21 @@
 package com.researchspace.archive.model;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.archive.ArchivalDocument;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.testutils.ArchiveTestUtils;
 import com.researchspace.testutils.TestFactory;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class ArchivalDocumentTest {
   ArchiveModelFactory fac;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     fac = new ArchiveModelFactory();
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void testArchivalDocumentToFromXMLRoundTrip() throws Exception {
@@ -28,7 +24,7 @@ public class ArchivalDocumentTest {
     ArchivalDocument fromXML =
         ArchiveTestUtils.writeToXMLAndReadFromXML(original, ArchivalDocument.class);
     assertTrue(
-        "Original and from XML have different properties",
-        ArchiveTestUtils.areEquals(original, fromXML));
+        ArchiveTestUtils.areEquals(original, fromXML),
+        "Original and from XML have different properties");
   }
 }

@@ -1,7 +1,7 @@
 package com.axiope.model.record.init;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 
 import com.researchspace.linkedelements.RichTextUpdater;
@@ -15,18 +15,16 @@ import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.Set;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.reflections.Reflections;
 
+@ExtendWith(MockitoExtension.class)
 public class BuiltInsCreatedProperlyTest {
-
-  @Rule public MockitoRule mockito = MockitoJUnit.rule();
 
   @Mock IBuiltInPersistor persistor;
 
@@ -35,7 +33,7 @@ public class BuiltInsCreatedProperlyTest {
   User user = TestFactory.createAnyUser("anyuser");
   ResourceBundle bundle = null;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     bundle = BuiltinContentMessages.forLocale(Locale.forLanguageTag("en-US"));
   }
