@@ -100,6 +100,7 @@
         "instrumentCsvLineUnexpectedColumnCount": "Unexpected CSV line field count: expected {0, plural, one {# value} other {# values}}, but found {1, plural, one {# value} other {# values}}.",
         "instrumentTemplateIdAndTemplateInfoConflict": "Provide either ''templateId'' to use an existing instrument template or ''templateInfo'' to create a new one, but not both.",
         "instrumentUnrecognizedFieldMapping": "Unrecognized field mapping for instrument import: {0}",
+        "linkValueInvalid": "Link value ''{0}'' must be a DataCite relation type followed by a link URL on this server, for example ''IsDerivedFrom https://your-rspace/globalId/SA123v2''",
         "parentContainerImportIdWithGlobalId": "Parent container should be set via either 'Parent Container Import ID' or 'Parent Container Global ID', but not both at the same time",
         "parentContainerNotEditable": "Parent container with global id ''{0}'' doesn''t exist, or user has no permission to move items into it",
         "parentContainerNotFound": "Parent container with import id ''{0}'' could not be found",

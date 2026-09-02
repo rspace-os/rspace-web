@@ -350,3 +350,27 @@ describe("setFile", () => {
     expect(model.instrumentTemplateName).not.toBe(initialName);
   });
 });
+
+describe("link-typed columns", () => {
+  test("a column the backend suggests as link defaults to Link and submits as type link", () => {
+    const model = new ImportModel("INSTRUMENTS");
+    const linkMapping = makeMapping(model, "INSTRUMENTS", {
+      field: Fields.custom,
+      fieldName: "Calibrated by",
+      columnName: "Calibrated by",
+      fieldType: FieldTypes.link,
+    });
+    expect(linkMapping.chosenFieldType).toBe(FieldTypes.link);
+    expect(linkMapping.allValidTypes).toContain(FieldTypes.link);
+    runInAction(() => {
+      model.instrumentTemplateInfo = {
+        name: "template",
+        fields: [{ name: "Calibrated by", type: "link" }],
+      };
+      model.instrumentTemplateName = "Links";
+      model.instrumentsMappings = [linkMapping];
+    });
+    const result = model.transformInstrumentTemplateInfoForSubmission();
+    expect((result.fields[0] as { type: string }).type).toBe("link");
+  });
+});

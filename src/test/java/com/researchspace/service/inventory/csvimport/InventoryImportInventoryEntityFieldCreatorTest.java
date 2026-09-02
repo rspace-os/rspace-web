@@ -3,20 +3,48 @@ package com.researchspace.service.inventory.csvimport;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.inventory.field.InventoryRadioField;
 import com.researchspace.model.units.RSUnitDef;
+import com.researchspace.properties.IPropertyHolder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class InventoryImportInventoryEntityFieldCreatorTest {
 
   InventoryImportSampleFieldCreator helper = new InventoryImportSampleFieldCreator();
+
+  @BeforeEach
+  void wireLinkParser() {
+    CsvLinkValueParser linkParser = new CsvLinkValueParser();
+    IPropertyHolder properties = mock(IPropertyHolder.class);
+    when(properties.getServerUrl()).thenReturn("https://rspace.example.com");
+    linkParser.properties = properties;
+    helper.linkParser = linkParser;
+  }
+
+  @Test
+  public void linkSuggestedOnlyWhenEveryValueIsALinkCell() {
+    List<String> values = new ArrayList<>();
+    values.add("IsDerivedFrom https://rspace.example.com/globalId/SA1v2");
+    values.add("");
+    values.add("Cites https://rspace.example.com/globalId/SD9");
+    InventoryEntityField field = helper.getSuggestedSampleFieldForNameAndValues("links", values);
+    assertEquals(FieldType.LINK, field.getType());
+    assertEquals("links", field.getName());
+
+    values.add("Cites https://elsewhere.example.com/globalId/SD9");
+    field = helper.getSuggestedSampleFieldForNameAndValues("links", values);
+    assertEquals(FieldType.STRING, field.getType());
+  }
 
   @Test
   public void testColumnTypeRecognition() {
