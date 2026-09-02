@@ -1,14 +1,17 @@
 package com.researchspace.api.v1.auth;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.researchspace.auth.StatelessApiLogin;
 import com.researchspace.model.User;
 import com.researchspace.service.UserApiKeyManager;
 import com.researchspace.testutils.TestFactory;
 import java.util.Optional;
-import org.apache.shiro.SecurityUtils;
-import org.apache.shiro.UnavailableSecurityManagerException;
+import org.apache.shiro.subject.Subject;
+import org.apache.shiro.util.ThreadContext;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,35 +24,39 @@ import org.springframework.mock.web.MockHttpServletRequest;
 @ExtendWith(MockitoExtension.class)
 public class ApiKeyAuthenticatorTest {
   @Mock UserApiKeyManager apiMgr;
-  @InjectMocks ApiKeyAuthenticatorTSS_Spy shiroAPIKeyAuthoriser;
+  @InjectMocks ApiKeyAuthenticator shiroAPIKeyAuthoriser;
 
   final String apiKey = "abcde";
 
   MockHttpServletRequest mockRequest;
 
-  // replaces real shiro login with boolean test spy
-  static class ApiKeyAuthenticatorTSS_Spy extends ApiKeyAuthenticator {
-    public ApiKeyAuthenticatorTSS_Spy(UserApiKeyManager apiMgr) {
-      super(apiMgr);
-    }
-
-    boolean loginOK = false;
-
-    @Override
-    void doLogin(String apiKey, User u) {
-      loginOK = true;
-    }
-  }
+  boolean loginOK = false;
+  boolean statelessScopeActive = false;
 
   @BeforeEach
   public void setUp() throws Exception {
     mockRequest = new MockHttpServletRequest();
 
-    // When running all tests, stale SecurityUtils sometimes make into these tests
-    try {
-      SecurityUtils.getSubject().logout();
-    } catch (UnavailableSecurityManagerException ignored) {
-    }
+    Subject subject =
+        Mockito.mock(
+            Subject.class,
+            invocation -> {
+              if (invocation.getMethod().getName().equals("login")) {
+                loginOK = true;
+                statelessScopeActive = StatelessApiLogin.isInProgress();
+              }
+              return Mockito.RETURNS_DEFAULTS.answer(invocation);
+            });
+
+    // replace any stale thread state from other tests with a spy subject, so
+    // SecurityUtils.getSubject() inside the authenticator resolves to it
+    ThreadContext.remove();
+    ThreadContext.bind(subject);
+  }
+
+  @AfterEach
+  public void tearDown() throws Exception {
+    ThreadContext.remove();
   }
 
   @Test
@@ -57,7 +64,18 @@ public class ApiKeyAuthenticatorTest {
     User enabled = TestFactory.createAnyUser("any");
     setUpExpectations(enabled);
     shiroAPIKeyAuthoriser.authenticate(mockRequest);
-    assertTrue(shiroAPIKeyAuthoriser.loginOK);
+    assertTrue(loginOK);
+  }
+
+  @Test
+  public void loginRunsInsideTheStatelessScope() {
+    User enabled = TestFactory.createAnyUser("any");
+    setUpExpectations(enabled);
+
+    shiroAPIKeyAuthoriser.authenticate(mockRequest);
+
+    assertTrue(statelessScopeActive);
+    assertFalse(StatelessApiLogin.isInProgress());
   }
 
   @Test
