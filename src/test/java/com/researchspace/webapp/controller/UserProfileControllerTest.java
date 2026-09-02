@@ -2,8 +2,6 @@ package com.researchspace.webapp.controller;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
 import static com.researchspace.testutils.TestFactory.createOAuthTokenForUI;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -119,7 +117,9 @@ public class UserProfileControllerTest {
     // then
     assertNull(aro.getData());
     assertNotNull(aro.getError());
-    assertThat(aro.getErrorMsg().getErrorMessages(), containsInAnyOrder("failed-message"));
+    assertEquals(1, aro.getErrorMsg().getErrorMessages().size());
+    assertTrue(
+        aro.getErrorMsg().getErrorMessages().containsAll(java.util.List.of("failed-message")));
   }
 
   @Test
@@ -138,7 +138,9 @@ public class UserProfileControllerTest {
     verify(oAuthAppManager, never()).removeApp(sessionUser, clientId);
     assertNull(aro.getData());
     assertNotNull(aro.getError());
-    assertThat(aro.getErrorMsg().getErrorMessages(), containsInAnyOrder("failed-message"));
+    assertEquals(1, aro.getErrorMsg().getErrorMessages().size());
+    assertTrue(
+        aro.getErrorMsg().getErrorMessages().containsAll(java.util.List.of("failed-message")));
   }
 
   @Test
@@ -157,7 +159,8 @@ public class UserProfileControllerTest {
     verify(oAuthAppManager).removeApp(sessionUser, clientId);
     assertNull(aro.getData());
     assertNotNull(aro.getError());
-    assertThat(aro.getErrorMsg().getErrorMessages(), containsInAnyOrder("succeeded"));
+    assertEquals(1, aro.getErrorMsg().getErrorMessages().size());
+    assertTrue(aro.getErrorMsg().getErrorMessages().containsAll(java.util.List.of("succeeded")));
   }
 
   @Test

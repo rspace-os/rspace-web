@@ -1,8 +1,6 @@
 package com.researchspace.api.v1.controller;
 
 import static com.researchspace.core.util.DateUtil.localDateToDateUTC;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -243,7 +241,7 @@ public class SysadminApiControllerGroupDeletionTest extends SysadminApiControlle
               + recentlyActive.getUsername()
               + " has lastLogin within the last year, but no exception was thrown");
     } catch (IllegalArgumentException expected) {
-      assertThat(expected.getMessage(), containsString("within the last year"));
+      assertTrue(expected.getMessage().contains("within the last year"), expected.getMessage());
       assertFalse(
           expected.getMessage().contains(recentlyActive.getUsername()),
           "response must not leak the offending member's username");

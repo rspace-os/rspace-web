@@ -1,10 +1,9 @@
 package com.researchspace.webapp.integrations.github;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasItems;
-import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.jsonPath;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
@@ -80,9 +79,9 @@ public class GitHubControllerMVCIT extends MVCTestBase {
 
     server
         .expect(requestTo("https://github.com/login/oauth/access_token"))
-        .andExpect(jsonPath("$.code", is(authorizationCode)))
-        .andExpect(jsonPath("$.client_id", is(githubClientId)))
-        .andExpect(jsonPath("$.client_secret", is(githubSecret)))
+        .andExpect(jsonPath("$.code").value(authorizationCode))
+        .andExpect(jsonPath("$.client_id").value(githubClientId))
+        .andExpect(jsonPath("$.client_secret").value(githubSecret))
         .andRespond(
             withSuccess(
                 "{\"access_token\":\""
@@ -110,7 +109,7 @@ public class GitHubControllerMVCIT extends MVCTestBase {
             .andExpect(status().isOk())
             .andExpect(view().name("connect/connected"))
             .andReturn();
-    assertThat(result.getModelAndView().getModel().get("connectionToken"), is(GITHUB_ACCESS_TOKEN));
+    assertEquals(GITHUB_ACCESS_TOKEN, result.getModelAndView().getModel().get("connectionToken"));
   }
 
   @Test
@@ -174,7 +173,7 @@ public class GitHubControllerMVCIT extends MVCTestBase {
     List<GitHubController.TreeNode> nodes =
         (List<TreeNode>) result.getModelAndView().getModel().get("treeNodes");
 
-    assertThat(nodes.size(), is(2));
+    assertEquals(2, nodes.size());
 
     // Initialize expected node 1
     TreeNode expectedNode1 = new TreeNode();
@@ -191,7 +190,7 @@ public class GitHubControllerMVCIT extends MVCTestBase {
     expectedNode2.setSha("main");
     expectedNode2.setType("tree");
 
-    assertThat(nodes, hasItems(expectedNode1, expectedNode2));
+    assertTrue(nodes.contains(expectedNode1) && nodes.contains(expectedNode2));
   }
 
   @Test
@@ -228,7 +227,7 @@ public class GitHubControllerMVCIT extends MVCTestBase {
     List<GitHubController.TreeNode> nodes =
         (List<TreeNode>) result.getModelAndView().getModel().get("treeNodes");
 
-    assertThat(nodes.size(), is(1));
+    assertEquals(1, nodes.size());
 
     // Initialize expected node 1
     TreeNode expectedNode1 = new TreeNode();
@@ -238,6 +237,6 @@ public class GitHubControllerMVCIT extends MVCTestBase {
     expectedNode1.setSha("3afd81aae1693c6782a2a4329516045bc6708592");
     expectedNode1.setType("blob");
 
-    assertThat(nodes, hasItems(expectedNode1));
+    assertTrue(nodes.contains(expectedNode1));
   }
 }

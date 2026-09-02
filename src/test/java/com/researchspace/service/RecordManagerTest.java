@@ -7,8 +7,6 @@ import static com.researchspace.core.util.TransformerUtils.toSet;
 import static com.researchspace.model.record.BaseRecord.DEFAULT_VARCHAR_LENGTH;
 import static com.researchspace.testutils.RSpaceTestUtils.login;
 import static com.researchspace.testutils.RSpaceTestUtils.logoutCurrUserAndLoginAs;
-import static com.researchspace.testutils.matchers.TotalSearchResults.totalSearchResults;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -198,7 +196,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
     long totalRecordNumber = defPag + 4 + numb4InDB;
     ISearchResults<BaseRecord> res =
         recordMgr.listFolderRecords(root.getId(), DEFAULT_RECORD_PAGINATION);
-    assertThat(res, totalSearchResults((int) totalRecordNumber));
+    assertEquals((int) totalRecordNumber, res.getTotalHits().intValue());
 
     assertEquals(IPagination.DEFAULT_RESULTS_PERPAGE, res.getResults().size());
     assertEquals((res.getTotalHits().intValue() / defPag) + 1, res.getTotalPages().intValue());
@@ -233,7 +231,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
 
     ISearchResults<BaseRecord> res2 =
         recordMgr.listFolderRecords(root.getId(), pgCrit, foldersOnlyFilter);
-    assertThat(res2, totalSearchResults((int) (numFolders4InDB + numFolders)));
+    assertEquals((int) (numFolders4InDB + numFolders), res2.getTotalHits().intValue());
 
     ISearchResults<BaseRecord> res3 =
         recordMgr.listFolderRecords(root.getId(), pgCrit, recordsOnlyFilter);

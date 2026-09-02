@@ -3,12 +3,6 @@ package com.researchspace.webapp.controller;
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static com.researchspace.session.SessionAttributeUtils.USER_INFO;
 import static com.researchspace.webapp.controller.UserProfileController.API_KEY_IS_ACTIVE;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.nullValue;
-import static org.hamcrest.beans.HasPropertyWithValue.hasProperty;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -21,7 +15,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.researchspace.Constants;
@@ -39,6 +32,7 @@ import com.researchspace.model.UserProfile;
 import com.researchspace.model.comms.CommunicationTarget;
 import com.researchspace.model.comms.Notification;
 import com.researchspace.model.dto.MiniProfile;
+import com.researchspace.model.dto.UserPublicInfo;
 import com.researchspace.model.dtos.PreferencesCommand;
 import com.researchspace.model.events.AccountEventType;
 import com.researchspace.model.events.UserAccountEvent;
@@ -66,7 +60,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.IntStream;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -107,7 +100,7 @@ public class UserProfileControllerMVCIT extends MVCTestBase {
             .andExpect(model().attribute("canEditPassword", true))
             .andExpect(model().attribute("canEditVerificationPassword", false))
             .andExpect(model().attributeExists("preferences"))
-            .andExpect(model().attribute("showLastLoginDate", Matchers.notNullValue(Long.class)))
+            .andExpect(modelAttributeIsNull("showLastLoginDate", false))
             .andReturn();
     ModelMap map = result.getModelAndView().getModelMap();
     PreferencesCommand comm = (PreferencesCommand) map.get("preferences");
@@ -133,7 +126,7 @@ public class UserProfileControllerMVCIT extends MVCTestBase {
             .andExpect(model().attribute("canEdit", false))
             .andExpect(model().attribute("canEditEmail", false))
             .andExpect(model().attribute("canEditPassword", false))
-            .andExpect(model().attribute("showLastLoginDate", notNullValue(Long.class)))
+            .andExpect(modelAttributeIsNull("showLastLoginDate", false))
             .andReturn();
     ModelMap map2 = result2.getModelAndView().getModelMap();
     // can't see preferences of another user.
@@ -143,7 +136,7 @@ public class UserProfileControllerMVCIT extends MVCTestBase {
     denyPublicLastLogin();
     mockMvc
         .perform(get("/userform").param("userId", other.getId() + "").principal(user::getUsername))
-        .andExpect(model().attribute("showLastLoginDate", nullValue(Long.class)));
+        .andExpect(modelAttributeIsNull("showLastLoginDate", true));
   }
 
   @Test
@@ -321,12 +314,9 @@ public class UserProfileControllerMVCIT extends MVCTestBase {
                     .param("newEmailConfirm", newEmail)
                     .param("emailPasswordInput", TESTPASSWD)
                     .principal(new MockPrincipal(user.getUsername())))
-            .andExpect(
-                request()
-                    .sessionAttribute(
-                        USER_INFO, hasProperty("email", Matchers.equalTo(newEmail)))) // RSPAC-436
             .andExpect(status().isOk())
             .andReturn();
+    assertEquals(newEmail, sessionUserInfo(result).getEmail()); // RSPAC-436
 
     Map json = parseJSONObjectFromResponseStream(result);
     assertEquals("SUCCESS", json.get("data"));
@@ -378,19 +368,10 @@ public class UserProfileControllerMVCIT extends MVCTestBase {
     String newfirstNAme = CoreTestUtils.getRandomName(8);
     String newLastNAme = CoreTestUtils.getRandomName(8);
     MvcResult result =
-        postProfileUpdate(user, newfirstNAme, newLastNAme)
-            .andExpect(status().isOk())
-            .andExpect(
-                request()
-                    .sessionAttribute(
-                        USER_INFO,
-                        hasProperty("firstName", Matchers.equalTo(newfirstNAme)))) // RSPAC-436
-            .andExpect(
-                request()
-                    .sessionAttribute(
-                        USER_INFO,
-                        hasProperty("lastName", Matchers.equalTo(newLastNAme)))) // RSPAC-436
-            .andReturn();
+        postProfileUpdate(user, newfirstNAme, newLastNAme).andExpect(status().isOk()).andReturn();
+    // RSPAC-436
+    assertEquals(newfirstNAme, sessionUserInfo(result).getFirstName());
+    assertEquals(newLastNAme, sessionUserInfo(result).getLastName());
 
     Map resp = parseJSONObjectFromResponseStream(result);
     assertNotNull(resp.get("data"));
@@ -459,10 +440,12 @@ public class UserProfileControllerMVCIT extends MVCTestBase {
                         Preference.NOTIFICATION_DOCUMENT_EDITED_PREF.toString()))
             .andReturn();
 
-    assertThat(
-        result.getResponse().getContentAsString(),
-        containsString(
-            getMsgFromResourceBundler("userProfile.messageSettingsChanged.confirmation")));
+    assertTrue(
+        result
+            .getResponse()
+            .getContentAsString()
+            .contains(getMsgFromResourceBundler("userProfile.messageSettingsChanged.confirmation")),
+        result.getResponse().getContentAsString());
 
     Set<UserPreference> prefs = userMgr.getUserAndPreferencesForUser(piUser.getUsername());
 
@@ -478,9 +461,9 @@ public class UserProfileControllerMVCIT extends MVCTestBase {
             .andReturn();
 
     Set<UserPreference> allPrefs = userMgr.getUserAndPreferencesForUser(piUser.getUsername());
-    assertThat(
-        allPrefs.stream().filter(this::isMessagePref).noneMatch(UserPreference::getValueAsBoolean),
-        is(true));
+    assertEquals(
+        true,
+        allPrefs.stream().filter(this::isMessagePref).noneMatch(UserPreference::getValueAsBoolean));
   }
 
   boolean isMessagePref(UserPreference userPref) {
@@ -742,8 +725,9 @@ public class UserProfileControllerMVCIT extends MVCTestBase {
             .andExpect(status().is2xxSuccessful())
             .andReturn();
     // check ISO-8601 with timezone
-    assertThat(
-        getJsonPathValue(validPrefGetResult, "$.data.lastLogin").toString(), containsString("Z"));
+    assertTrue(
+        getJsonPathValue(validPrefGetResult, "$.data.lastLogin").toString().contains("Z"),
+        getJsonPathValue(validPrefGetResult, "$.data.lastLogin").toString());
     MiniProfile miniProfile = getFromJsonAjaxReturnObject(validPrefGetResult, MiniProfile.class);
     assertEquals(g1.getPi().getEmail(), miniProfile.getEmail());
     assertNotNull(miniProfile.getProfileImageLink());
@@ -755,7 +739,7 @@ public class UserProfileControllerMVCIT extends MVCTestBase {
             .perform(get("/userform/ajax/miniprofile/{id}", g1.u1().getId()))
             .andExpect(status().is2xxSuccessful())
             .andReturn();
-    assertThat(getJsonPathValue(validPrefGetResult2, "$.data.lastLogin"), nullValue());
+    assertNull(getJsonPathValue(validPrefGetResult2, "$.data.lastLogin"));
   }
 
   @Test
@@ -1054,7 +1038,7 @@ public class UserProfileControllerMVCIT extends MVCTestBase {
         mockMvc
             .perform(post("/userform/ajax/selfDeclareAsPi").principal(user::getUsername))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.data", is(false)))
+            .andExpect(jsonPath("$.data").value(false))
             .andReturn();
     ErrorList errorList = getErrorListFromAjaxReturnObject(result);
     assertNotNull(errorList);
@@ -1067,7 +1051,7 @@ public class UserProfileControllerMVCIT extends MVCTestBase {
         mockMvc
             .perform(post("/userform/ajax/selfDeclareAsPi").principal(user::getUsername))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.data", is(false)))
+            .andExpect(jsonPath("$.data").value(false))
             .andReturn();
     errorList = getErrorListFromAjaxReturnObject(result);
     assertNotNull(errorList);
@@ -1087,7 +1071,7 @@ public class UserProfileControllerMVCIT extends MVCTestBase {
     mockMvc
         .perform(post("/userform/ajax/selfDeclareAsPi").principal(user::getUsername))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.data", is(true)))
+        .andExpect(jsonPath("$.data").value(true))
         .andReturn();
     user = userMgr.getUserByUsername(user.getUsername(), true);
     assertTrue(user.isPI());
@@ -1104,7 +1088,7 @@ public class UserProfileControllerMVCIT extends MVCTestBase {
         mockMvc
             .perform(post("/userform/ajax/selfDeclareAsRegularUser").principal(user::getUsername))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.data", is(false)))
+            .andExpect(jsonPath("$.data").value(false))
             .andReturn();
     errorList = getErrorListFromAjaxReturnObject(result);
     assertNotNull(errorList);
@@ -1132,7 +1116,7 @@ public class UserProfileControllerMVCIT extends MVCTestBase {
         mockMvc
             .perform(post("/userform/ajax/selfDeclareAsRegularUser").principal(user::getUsername))
             .andExpect(status().isOk())
-            // .andExpect(jsonPath("$.data", is(true)))
+            // .andExpect(jsonPath("$.data").value(true))
             .andReturn();
     errorList = getErrorListFromAjaxReturnObject(result);
     assertNull(errorList);
@@ -1141,5 +1125,10 @@ public class UserProfileControllerMVCIT extends MVCTestBase {
     user = userMgr.getUserByUsername(user.getUsername(), true);
     assertFalse(user.isPI());
     assertFalse(user.isPIOfLabGroup());
+  }
+
+  /** The controller stores user.toPublicInfo() under the USER_INFO session attribute. */
+  private UserPublicInfo sessionUserInfo(MvcResult result) {
+    return (UserPublicInfo) result.getRequest().getSession().getAttribute(USER_INFO);
   }
 }

@@ -162,9 +162,17 @@ did not.
 To assert on an exception message, nest the call rather than introducing a local:
 
 ```java
-assertThat(assertThrows(IllegalStateException.class, () -> foo()).getMessage(),
-    containsString("expected text"));
+assertTrue(
+    assertThrows(IllegalStateException.class, () -> foo()).getMessage()
+        .contains("expected text"));
 ```
+
+Assertions come from `org.junit.jupiter.api.Assertions` only; Hamcrest is not on
+the test classpath. Spring's MockMvc matcher overloads that take a Hamcrest
+`Matcher` (`view().name(..)`, `model().attribute(..)`, `header().string(..)`)
+have typed replacements on `MVCTestBase`: `viewNameContains`,
+`modelAttributeContains`, `modelAttributeDoesNotContain`, `modelAttributeIsNull`
+and `headerContains`.
 
 Spring test subclasses can also use the inherited `assertExceptionThrown`,
 `assertAuthorisationExceptionThrown` and `assertLazyInitializationExceptionThrown`

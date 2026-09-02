@@ -2,11 +2,9 @@ package com.researchspace.api.v1.controller;
 
 import static com.researchspace.core.util.DateUtil.localDateToDateUTC;
 import static com.researchspace.testutils.MockAndStubUtils.modifyUserCreationDate;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.anyOf;
-import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -163,12 +161,12 @@ public class SysadminApiControllerUserDeletionTest extends SysadminApiController
               + toDelete.getUsername()
               + " holds a non-deletable group role, but no exception was thrown");
     } catch (IllegalArgumentException expected) {
-      assertThat(
-          expected.getMessage(),
-          anyOf(
-              containsString("only admin or PI"),
-              containsString("owner of a labgroup"),
-              containsString("only group owner")));
+      String message = expected.getMessage();
+      assertTrue(
+          message.contains("only admin or PI")
+              || message.contains("owner of a labgroup")
+              || message.contains("only group owner"),
+          message);
     }
   }
 }

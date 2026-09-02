@@ -2,8 +2,6 @@ package com.researchspace.service;
 
 import static com.researchspace.testutils.RSpaceTestUtils.logout;
 import static com.researchspace.testutils.RSpaceTestUtils.logoutCurrUserAndLoginAs;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -868,7 +866,7 @@ public class FormManagerTest extends SpringTransactionalTest {
     User anyUser = createInitAndLoginAnyUser();
     FormMenu menu = formMgr.generateFormMenu(anyUser);
     assertEquals(1, menu.getMenuToAdd().size());
-    assertThat(menu.getMenuToAdd().get(0), is(formDao.getBasicDocumentForm()));
+    assertEquals(formDao.getBasicDocumentForm(), menu.getMenuToAdd().get(0));
   }
 
   @Test

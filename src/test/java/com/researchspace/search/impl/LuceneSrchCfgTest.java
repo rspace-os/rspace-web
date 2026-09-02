@@ -2,7 +2,6 @@ package com.researchspace.search.impl;
 
 import static com.axiope.search.SearchConstants.RECORDS_SEARCH_OPTION;
 import static com.researchspace.testutils.TestFactory.createNRecords;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -10,7 +9,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.Collections;
 import java.util.Set;
 import org.apache.lucene.search.BooleanQuery;
-import org.hamcrest.collection.IsIterableContainingInAnyOrder;
 import org.junit.jupiter.api.Test;
 
 public class LuceneSrchCfgTest extends LuceneSrchCfgTestBase {
@@ -43,8 +41,8 @@ public class LuceneSrchCfgTest extends LuceneSrchCfgTestBase {
     luceneCfg = new LuceneSrchCfg(mutableCfg, termListFactory);
 
     Set<Long> records = luceneCfg.getSelectedRecordIds();
-    assertThat(
-        records, IsIterableContainingInAnyOrder.containsInAnyOrder(159L, 160L, 161L, 162L, 163L));
+    assertEquals(5, records.size());
+    assertTrue(records.containsAll(java.util.List.of(159L, 160L, 161L, 162L, 163L)));
     assertEquals(5, records.size()); // duplicate entries removed
   }
 }
