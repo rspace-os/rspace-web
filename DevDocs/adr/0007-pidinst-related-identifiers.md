@@ -90,8 +90,11 @@ field keeps the two registries recognisably in step.
 
 ## Consequences
 
-- `datacite-java-client` >= 1.1.0 is required (`relatedIdentifiers` on
-  `DataCiteDoiAttributes`).
+- `datacite-java-client` >= 1.2.0 is required. 1.1.0 adds `relatedIdentifiers` to
+  `DataCiteDoiAttributes`, but serializes a null property as an explicit null, which
+  DataCite treats as "clear it". The mapping below leaves `relatedIdentifiers` null when
+  it cannot build the addresses, meaning "leave the registered entries alone", so against
+  1.1.0 that strips them from a findable DOI. 1.2.0 omits a null property instead.
 - The registered entries reflect the link fields at register/publish time; editing a
   link afterwards updates nothing at the provider (B2INST has no metadata-update call;
   DataCite would refresh on the next publish/retract).
