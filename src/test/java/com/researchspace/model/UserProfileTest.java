@@ -36,20 +36,13 @@ public class UserProfileTest {
 
   @Test
   public void testUserProfileUserThrowsIAEIfNullUser() {
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> {
-          new UserProfile(null);
-        });
+    assertThrows(IllegalArgumentException.class, () -> new UserProfile(null));
   }
 
   @Test
   public void testSetOwner() {
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> {
-          UserProfile profile = new UserProfile(user);
-          profile.setOwner(null);
-        });
+    UserProfile profile = new UserProfile(user);
+
+    assertThrows(IllegalArgumentException.class, () -> profile.setOwner(null));
   }
 }

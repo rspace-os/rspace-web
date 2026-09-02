@@ -874,9 +874,10 @@ public class RecordManagerTest extends SpringTransactionalTest {
   public void addStructuredDocumentArgumentCheckingNoNulls() {
     user.getRootFolder();
     flushDatabaseState();
+    Long userId = user.getId();
     assertThrows(
         NullPointerException.class,
-        () -> recordMgr.createNewStructuredDocument(user.getId(), null, null));
+        () -> recordMgr.createNewStructuredDocument(userId, null, null));
   }
 
   @Test

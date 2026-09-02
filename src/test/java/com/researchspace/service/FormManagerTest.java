@@ -103,7 +103,8 @@ public class FormManagerTest extends SpringTransactionalTest {
     // this user does not have rights to share the template.
     logoutCurrUserAndLoginAs(USER1A, USER1APWD);
     User u = userDao.getUserByUsername(USER1A);
-    assertThrows(AuthorizationException.class, () -> formMgr.publish(form.getId(), true, null, u));
+    Long formId = form.getId();
+    assertThrows(AuthorizationException.class, () -> formMgr.publish(formId, true, null, u));
   }
 
   @Test
@@ -151,8 +152,9 @@ public class FormManagerTest extends SpringTransactionalTest {
     DateFieldForm dft = formMgr.createFieldForm(dto, form.getId(), user);
     logoutCurrUserAndLoginAs(USER1A, USER1APWD);
     User imposter = userDao.getUserByUsername(USER1A);
+    Long fieldId = dft.getId();
     assertThrows(
-        AuthorizationException.class, () -> formMgr.updateFieldForm(dto2, dft.getId(), imposter));
+        AuthorizationException.class, () -> formMgr.updateFieldForm(dto2, fieldId, imposter));
   }
 
   @Test
@@ -200,8 +202,9 @@ public class FormManagerTest extends SpringTransactionalTest {
     NumberFieldDTO<NumberFieldForm> dto = createAnyNumberFieldDTO();
     logoutCurrUserAndLoginAs(USER1A, USER1APWD);
     User imposter = userDao.getUserByUsername(USER1A);
+    Long formId = form.getId();
     assertThrows(
-        AuthorizationException.class, () -> formMgr.createFieldForm(dto, form.getId(), imposter));
+        AuthorizationException.class, () -> formMgr.createFieldForm(dto, formId, imposter));
   }
 
   private NumberFieldDTO<NumberFieldForm> createAnyNumberFieldDTO() {

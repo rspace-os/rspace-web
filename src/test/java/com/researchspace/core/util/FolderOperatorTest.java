@@ -65,12 +65,10 @@ public class FolderOperatorTest {
 
   @Test
   public void testCreateNullPathThrowsNPE() throws IOException {
-    assertThrows(
-        NullPointerException.class,
-        () -> {
-          folderOps = new FolderOperator(fStoreRoot.getAbsolutePath());
-          folderOps.createPath(null);
-        });
+    String fileStoreRoot = fStoreRoot.getAbsolutePath();
+    folderOps = new FolderOperator(fileStoreRoot);
+
+    assertThrows(NullPointerException.class, () -> folderOps.createPath(null));
   }
 
   @Test

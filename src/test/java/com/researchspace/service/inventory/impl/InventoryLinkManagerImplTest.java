@@ -131,11 +131,12 @@ public class InventoryLinkManagerImplTest extends SpringTransactionalTest {
     User owner = createInitAndLoginAnyUser();
     ApiSampleWithFullSubSamples target = createBasicSampleForUser(owner);
     User stranger = createInitAndLoginAnyUser();
+    String targetGlobalId = target.getGlobalId();
 
     // same error as a missing record, so the response does not confirm the target exists
     assertThrows(
         ApiRuntimeException.class,
-        () -> linkManager.findReferencingItems(target.getGlobalId(), stranger));
+        () -> linkManager.findReferencingItems(targetGlobalId, stranger));
   }
 
   @Test

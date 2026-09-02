@@ -685,9 +685,9 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
 
     // read permission required to duplicate
     User otherUser = createAndSaveUserIfNotExists(getRandomAlphabeticString("api"));
+    Long sampleId = newSample.getId();
     NotFoundException nfe =
-        assertThrows(
-            NotFoundException.class, () -> sampleApiMgr.duplicate(newSample.getId(), otherUser));
+        assertThrows(NotFoundException.class, () -> sampleApiMgr.duplicate(sampleId, otherUser));
     assertTrue(
         nfe.getMessage().contains("does not exist, or you do not have permission to access it"));
 
@@ -1089,10 +1089,11 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     assertTrue(iae.getMessage().startsWith("Item is currently edited by another user ("));
 
     // try delete by testUser
+    Long sampleId = testSample.getId();
     iae =
         assertThrows(
             IllegalArgumentException.class,
-            () -> sampleApiMgr.markSampleAsDeleted(testSample.getId(), false, testUser));
+            () -> sampleApiMgr.markSampleAsDeleted(sampleId, false, testUser));
     assertTrue(iae.getMessage().startsWith("Item is currently edited by another user ("));
 
     // try transfer by testUser

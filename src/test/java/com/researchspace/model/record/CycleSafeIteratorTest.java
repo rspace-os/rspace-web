@@ -127,12 +127,9 @@ public class CycleSafeIteratorTest {
 
   @Test
   public void testRemoeOperationUnsupported() {
-    assertThrows(
-        UnsupportedOperationException.class,
-        () -> {
-          Folder f1 = TestFactory.createAFolder("f1", u);
-          Iterator<Folder> cycleIt = new CycleSafeIterator(f1);
-          cycleIt.remove();
-        });
+    Folder f1 = TestFactory.createAFolder("f1", u);
+    Iterator<Folder> cycleIt = new CycleSafeIterator(f1);
+
+    assertThrows(UnsupportedOperationException.class, () -> cycleIt.remove());
   }
 }

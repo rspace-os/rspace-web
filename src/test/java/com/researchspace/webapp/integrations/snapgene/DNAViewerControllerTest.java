@@ -152,9 +152,8 @@ public class DNAViewerControllerTest {
   public void permissionFailureOccursBeforeWSCall() throws Exception {
     setupPngMocks(false);
     when(perms.isRecordAccessPermitted(user, edf, PermissionType.READ)).thenReturn(false);
-    assertThrows(
-        AuthorizationException.class,
-        () -> dnaController.getPngView(1L, GeneratePngMapConfig.builder().build()));
+    GeneratePngMapConfig config = GeneratePngMapConfig.builder().build();
+    assertThrows(AuthorizationException.class, () -> dnaController.getPngView(1L, config));
     verifyNoInteractions(wsClient);
   }
 
@@ -162,9 +161,8 @@ public class DNAViewerControllerTest {
   public void rejectTooBigFileBeforeWsCall() throws Exception {
     setupPngMocks(false);
     edf.setSize(DNAViewerController.MAX_SNAPGENE_FILE_SIZE + 1);
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> dnaController.getPngView(1L, GeneratePngMapConfig.builder().build()));
+    GeneratePngMapConfig config = GeneratePngMapConfig.builder().build();
+    assertThrows(IllegalArgumentException.class, () -> dnaController.getPngView(1L, config));
     verifyNoInteractions(wsClient);
   }
 
@@ -172,9 +170,8 @@ public class DNAViewerControllerTest {
   public void rejectUnsupportedFileTypeBeforeWsCall() throws Exception {
     setupPngMocks(false);
     edf.setExtension("xyzz");
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> dnaController.getPngView(1L, GeneratePngMapConfig.builder().build()));
+    GeneratePngMapConfig config = GeneratePngMapConfig.builder().build();
+    assertThrows(IllegalArgumentException.class, () -> dnaController.getPngView(1L, config));
     verifyNoInteractions(wsClient);
   }
 

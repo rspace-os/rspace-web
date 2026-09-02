@@ -379,11 +379,13 @@ public class SDocController2IT extends RealTransactionSpringTestBase {
     initUser(other);
     createGroupForUsersWithDefaultPi(piUser, other);
     logoutCurrUserAndLoginAs(other.getUsername(), TESTPASSWD);
+    Long documentId = sd.getId();
+    MockPrincipal otherPrincipal = new MockPrincipal(other.getUsername());
     assertThrows(
         RecordAccessDeniedException.class,
         () ->
             controller.openDocument(
-                sd.getId(), "", false, false, null, modelTss, mockHttpSession, other::getUsername));
+                documentId, "", false, false, null, modelTss, mockHttpSession, otherPrincipal));
   }
 
   @Test

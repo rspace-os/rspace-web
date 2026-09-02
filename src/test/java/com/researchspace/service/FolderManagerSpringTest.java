@@ -185,20 +185,20 @@ public class FolderManagerSpringTest extends SpringTransactionalTest {
   public void folderCreationRequireActiveLicense() {
     aspect.setLicenseService(new InactiveLicenseTestService());
     logoutAndLoginAs(user);
+    Long rootFolderId = user.getRootFolder().getId();
     assertThrows(
-        LicenseExpiredException.class,
-        () -> folderMgr.createNewFolder(user.getRootFolder().getId(), "any", user));
+        LicenseExpiredException.class, () -> folderMgr.createNewFolder(rootFolderId, "any", user));
   }
 
   @Test
   public void notebookCreationRequireActiveLicense() {
     aspect.setLicenseService(new InactiveLicenseTestService());
     logoutAndLoginAs(user);
+    Long rootFolderId = user.getRootFolder().getId();
+    DefaultRecordContext context = new DefaultRecordContext();
     assertThrows(
         LicenseExpiredException.class,
-        () ->
-            folderMgr.createNewNotebook(
-                user.getRootFolder().getId(), "any", new DefaultRecordContext(), user));
+        () -> folderMgr.createNewNotebook(rootFolderId, "any", context, user));
   }
 
   @Test

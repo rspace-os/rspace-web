@@ -1347,12 +1347,11 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
     // attempt to import into other user's bench
     ApiInventoryImportResult importResult = new ApiInventoryImportResult(testUser);
     importResult.setSubSampleResult(csvProcessingResult.getSubSampleResult());
+    var subSampleResult = csvProcessingResult.getSubSampleResult();
     InventoryImportException iie =
         assertThrows(
             InventoryImportException.class,
-            () ->
-                importMgr.importSubSamplesIntoPreexistingSamples(
-                    importResult, csvProcessingResult.getSubSampleResult()));
+            () -> importMgr.importSubSamplesIntoPreexistingSamples(importResult, subSampleResult));
     assertTrue(
         iie.getMessage()
             .startsWith(

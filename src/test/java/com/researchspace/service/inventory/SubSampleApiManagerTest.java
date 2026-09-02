@@ -675,9 +675,10 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
     moveSubSampleIntoListContainer(apiSubSample.getId(), apiContainer.getId(), testUser);
 
     QuantityInfo usage = QuantityInfo.of(BigDecimal.ONE, RSUnitDef.GRAM);
+    Long subSampleId = apiSubSample.getId();
     assertThrows(
         RuntimeException.class,
-        () -> subSampleApiMgr.registerApiSubSampleUsage(apiSubSample.getId(), usage, otherUser));
+        () -> subSampleApiMgr.registerApiSubSampleUsage(subSampleId, usage, otherUser));
 
     // the owner's subsample is untouched
     ApiSubSample retrieved = subSampleApiMgr.getApiSubSampleById(apiSubSample.getId(), testUser);
@@ -1077,10 +1078,10 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
     assertEquals("0.002 pg", retrievedSample.getQuantity().toQuantityInfo().toPlainString());
 
     // try split into 5 subsamples
+    SubSampleDuplicateConfig splitConfig = SubSampleDuplicateConfig.split(subSampleId, 5);
     IllegalArgumentException iae =
         assertThrows(
-            IllegalArgumentException.class,
-            () -> subSampleApiMgr.split(SubSampleDuplicateConfig.split(subSampleId, 5), testUser));
+            IllegalArgumentException.class, () -> subSampleApiMgr.split(splitConfig, testUser));
     assertEquals(
         "Can't split 0.002 pg into 5 subsamples: resulting subsamples would have quantity equal to"
             + " 0.",
@@ -1126,10 +1127,11 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
     assertTrue(iae.getMessage().startsWith("Item is currently edited by another user ("));
 
     // try delete by testUser
+    Long subSampleId = apiSubSample.getId();
     iae =
         assertThrows(
             IllegalArgumentException.class,
-            () -> subSampleApiMgr.markSubSampleAsDeleted(apiSubSample.getId(), testUser, false));
+            () -> subSampleApiMgr.markSubSampleAsDeleted(subSampleId, testUser, false));
     assertTrue(iae.getMessage().startsWith("Item is currently edited by another user ("));
 
     // pi can edit fine

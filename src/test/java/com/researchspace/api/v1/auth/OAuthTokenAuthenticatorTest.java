@@ -11,11 +11,11 @@ class OAuthTokenAuthenticatorTest {
   @Test
   void missingAuthorizationHeaderProducesAuthenticationError() {
     OAuthTokenAuthenticator authenticator = new OAuthTokenAuthenticator();
+    MockHttpServletRequest request = new MockHttpServletRequest();
 
     ApiAuthenticationException exception =
         assertThrows(
-            ApiAuthenticationException.class,
-            () -> authenticator.retrieveTokenFromHeader(new MockHttpServletRequest()));
+            ApiAuthenticationException.class, () -> authenticator.retrieveTokenFromHeader(request));
 
     assertEquals("api.errors.authentication.oauthHeaderInvalid", exception.getMessageKey());
   }

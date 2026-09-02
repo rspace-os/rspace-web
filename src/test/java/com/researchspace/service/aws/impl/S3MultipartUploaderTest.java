@@ -38,9 +38,8 @@ public class S3MultipartUploaderTest {
 
   @Test
   public void rejectChunkedUploadIfFileTooSmall() throws Exception {
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> uploader.apply(RSpaceTestUtils.getResource("adrenaline.smiles")));
+    File resource = RSpaceTestUtils.getResource("adrenaline.smiles");
+    assertThrows(IllegalArgumentException.class, () -> uploader.apply(resource));
   }
 
   @Test

@@ -213,8 +213,9 @@ public class ExportApiSpringBatchHandlerTest {
     exe = MetaDataInstanceFactory.createJobExecution("exportJob", 1L, 2L, params);
     Mockito.when(jobExplorer.findRunningJobExecutions(ExportTasklet.EXPORT_JOB_NAME))
         .thenReturn(TransformerUtils.toSet(exe));
-    assertThrows(
-        TooManyRequestsException.class, () -> exportHandler.export(otherUserToHtml(user), user));
+    ExportApiConfig cfg = otherUserToHtml(user);
+
+    assertThrows(TooManyRequestsException.class, () -> exportHandler.export(cfg, user));
   }
 
   private void mockgetGroup() {

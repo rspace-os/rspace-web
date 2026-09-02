@@ -183,7 +183,8 @@ class B2instConnectorImplTest {
         .expect(requestTo("https://b2inst-test.gwdg.de/api/records"))
         .andRespond(withServerError());
 
-    assertThrows(B2instConnectionException.class, () -> connector.registerDoi(draftWithName("X")));
+    var draft = draftWithName("X");
+    assertThrows(B2instConnectionException.class, () -> connector.registerDoi(draft));
   }
 
   @Test
@@ -355,10 +356,10 @@ class B2instConnectorImplTest {
             withStatus(HttpStatus.BAD_REQUEST)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("{\"status\":400,\"message\":\"rejected Authorization: Bearer TOK123\"}"));
+    var draft = draftWithName("X");
 
     B2instConnectionException thrown =
-        assertThrows(
-            B2instConnectionException.class, () -> connector.registerDoi(draftWithName("X")));
+        assertThrows(B2instConnectionException.class, () -> connector.registerDoi(draft));
 
     assertFalse(thrown.getReason().contains("TOK123"), "the token must not reach the reason");
     assertTrue(thrown.getReason().contains("***"), "it should be redacted, not dropped");
@@ -373,10 +374,10 @@ class B2instConnectorImplTest {
     server
         .expect(requestTo("https://b2inst-test.gwdg.de/api/records"))
         .andRespond(withException(new IOException("proxy echoed Bearer TOK123")));
+    var draft = draftWithName("X");
 
     B2instConnectionException thrown =
-        assertThrows(
-            B2instConnectionException.class, () -> connector.registerDoi(draftWithName("X")));
+        assertThrows(B2instConnectionException.class, () -> connector.registerDoi(draft));
 
     assertFalse(thrown.getReason().contains("TOK123"));
   }
@@ -577,10 +578,10 @@ class B2instConnectorImplTest {
                     "{\"status\":400,\"message\":\"A validation error occurred.\",\"errors\":"
                         + "[{\"field\":\"community\",\"messages\":[\"Missing data for required"
                         + " field.\"]}]}"));
+    var draft = draftWithName("X");
 
     B2instConnectionException ex =
-        assertThrows(
-            B2instConnectionException.class, () -> connector.registerDoi(draftWithName("X")));
+        assertThrows(B2instConnectionException.class, () -> connector.registerDoi(draft));
 
     assertEquals(
         "Error creating B2INST draft record: community: Missing data for required field.",

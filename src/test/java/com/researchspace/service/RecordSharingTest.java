@@ -421,13 +421,13 @@ public class RecordSharingTest extends SpringTransactionalTest {
     ShareConfigElement indivCommand = new ShareConfigElement(other.getId(), "write");
     indivCommand.setUserId(other.getId());
     ShareConfigElement[] indivSharingCfgElem = new ShareConfigElement[] {indivCommand};
+    User persistedUser = userDao.get(user.getId());
+    Long documentId = testDoc.getId();
 
     AuthorizationException authorizationException =
         assertThrows(
             AuthorizationException.class,
-            () ->
-                sharingMgr.shareRecord(
-                    userDao.get(user.getId()), testDoc.getId(), indivSharingCfgElem));
+            () -> sharingMgr.shareRecord(persistedUser, documentId, indivSharingCfgElem));
     assertEquals(
         "Unauthorized attempt by ["
             + user.getUsername()
@@ -443,9 +443,7 @@ public class RecordSharingTest extends SpringTransactionalTest {
     authorizationException =
         assertThrows(
             AuthorizationException.class,
-            () ->
-                sharingMgr.shareRecord(
-                    userDao.get(user.getId()), testDoc.getId(), groupSharingCfgElem));
+            () -> sharingMgr.shareRecord(persistedUser, documentId, groupSharingCfgElem));
     assertEquals(
         "Unauthorized attempt by ["
             + user.getUsername()

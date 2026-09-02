@@ -179,10 +179,9 @@ public class SampleTemplateTest {
   @Test
   @DisplayName("Direct addAttachedFile on a template throws IllegalArgumentException")
   public void directAttachmentOnTemplateThrows() {
+    InventoryFile attachment = new InventoryFile(null, null);
     IllegalArgumentException iae =
-        assertThrows(
-            IllegalArgumentException.class,
-            () -> template.addAttachedFile(new InventoryFile(null, null)));
+        assertThrows(IllegalArgumentException.class, () -> template.addAttachedFile(attachment));
     assertEquals("Sample Templates don't support file attachments yet", iae.getMessage());
   }
 

@@ -125,9 +125,10 @@ class FigshareOAuthControllerTest {
         () -> {
           throw new IllegalArgumentException();
         };
+    ExtendedModelMap model = new ExtendedModelMap();
     assertThrows(
         IllegalArgumentException.class,
-        () -> figOauthCtrllerTSS.onAuthorization(params, new ExtendedModelMap(), mockRequest));
+        () -> figOauthCtrllerTSS.onAuthorization(params, model, mockRequest));
     verify(userConnectionManager, never()).save(Mockito.any(UserConnection.class));
   }
 

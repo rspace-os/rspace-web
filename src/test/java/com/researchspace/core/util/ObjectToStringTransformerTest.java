@@ -94,14 +94,13 @@ public class ObjectToStringTransformerTest {
 
   @Test
   public void testTransformThrowsIAEIfPropertyNotFound() {
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> {
-          TestObject f1 = new TestObject("u1", "1234");
-          TestObject f2 = new TestObject("u12", "5678");
-          List<TestObject> list = Arrays.asList(new TestObject[] {f1, f2});
-          transformer = new ObjectToStringPropertyTransformer<>("uXXXXs");
-          list.stream().map(transformer).collect(Collectors.toList());
-        });
+    TestObject f1 = new TestObject("u1", "1234");
+    TestObject f2 = new TestObject("u12", "5678");
+    List<TestObject> list = Arrays.asList(new TestObject[] {f1, f2});
+    transformer = new ObjectToStringPropertyTransformer<>("uXXXXs");
+    var transformed = list.stream().map(transformer);
+    var collector = Collectors.<String>toList();
+
+    assertThrows(IllegalArgumentException.class, () -> transformed.collect(collector));
   }
 }

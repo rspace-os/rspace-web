@@ -85,9 +85,11 @@ public class CommunicationManagerIT extends RealTransactionSpringTestBase {
         reqCreateMgr.createRequest(config, piUser.getUsername(), createUserSet(other), null, null);
 
     // rspac-2264, unauthorised user can't cancel
+    String otherUsername = other.getUsername();
+    Long requestId = mor.getId();
     assertThrows(
         AuthorizationException.class,
-        () -> communicationMgr.cancelRequest(other.getUsername(), mor.getId(), false));
+        () -> communicationMgr.cancelRequest(otherUsername, requestId, false));
     communicationMgr.cancelRequest(piUser.getUsername(), mor.getId(), false);
     // assert is notified that request was cancelled
     assertEquals(1, getNewNotificationCountForUser(other));
@@ -365,13 +367,13 @@ public class CommunicationManagerIT extends RealTransactionSpringTestBase {
     // other now replies to User; this creates a new message
     reqUpdateMgr.replyToMessage(other.getUsername(), comm.getId(), "A reply form other");
     // rspac2264:
+    String maliciousUsername = maliciousMike.getUsername();
+    Long communicationId = comm.getId();
     assertThrows(
         AuthorizationException.class,
         () ->
             reqUpdateMgr.replyToMessage(
-                maliciousMike.getUsername(),
-                comm.getId(),
-                "Reply from malicious Mike not allowed"));
+                maliciousUsername, communicationId, "Reply from malicious Mike not allowed"));
 
     Thread.sleep(1000);
 
@@ -422,14 +424,13 @@ public class CommunicationManagerIT extends RealTransactionSpringTestBase {
     // other dismisses the message
     try {
       openTransaction();
+      String maliciousUsername = maliciousMike.getUsername();
+      Long communicationId = comm.getId();
       assertThrows(
           AuthorizationException.class,
           () ->
               reqUpdateMgr.updateStatus(
-                  maliciousMike.getUsername(),
-                  CommunicationStatus.COMPLETED,
-                  comm.getId(),
-                  "updated"));
+                  maliciousUsername, CommunicationStatus.COMPLETED, communicationId, "updated"));
       commitTransaction();
     } catch (UnexpectedRollbackException e) {
       // expected

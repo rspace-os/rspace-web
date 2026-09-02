@@ -78,9 +78,10 @@ public class EmailSenderTest {
   @Test
   public void rateLimiterRejectsExcessBatches() {
     CountingSenderStub sender = countingSenderWithRateLimit(Duration.ofMillis(1));
+    EmailContent htmlBody = anyHtmlBody();
+    List<String> recipients = addresses(7);
 
-    assertThrows(
-        RequestNotPermitted.class, () -> sender.sendEmail(anyHtmlBody(), addresses(7), null));
+    assertThrows(RequestNotPermitted.class, () -> sender.sendEmail(htmlBody, recipients, null));
   }
 
   @Test

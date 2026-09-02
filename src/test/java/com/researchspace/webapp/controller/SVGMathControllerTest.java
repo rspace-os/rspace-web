@@ -62,14 +62,10 @@ public class SVGMathControllerTest {
 
   @Test
   public void testSaveSvg2ValidatLatexTooLong() {
+    String overlongLatex = randomAlphabetic(RSMath.LATEX_COLUMN_SIZE + 1);
     assertThrows(
         IllegalArgumentException.class,
-        () ->
-            svg.saveSvg(
-                VALID_SVG,
-                ANY_FIELD_ID,
-                randomAlphabetic(RSMath.LATEX_COLUMN_SIZE + 1),
-                ANY_MATH_ELEMENT_ID));
+        () -> svg.saveSvg(VALID_SVG, ANY_FIELD_ID, overlongLatex, ANY_MATH_ELEMENT_ID));
   }
 
   @Test

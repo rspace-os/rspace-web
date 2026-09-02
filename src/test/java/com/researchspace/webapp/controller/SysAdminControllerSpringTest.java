@@ -65,10 +65,11 @@ public class SysAdminControllerSpringTest extends SpringTransactionalTest {
     props.setLicenseExceededCustomMessage(customMessage);
     try {
       Matcher<String> matcher = containsString(customMessage);
+      Long userId = user.getId();
       assertThat(
           assertThrows(
                   LicenseExceededException.class,
-                  () -> sysCtrller.setUserAccountEnablement(user.getId(), true))
+                  () -> sysCtrller.setUserAccountEnablement(userId, true))
               .getMessage(),
           matcher);
     } finally {

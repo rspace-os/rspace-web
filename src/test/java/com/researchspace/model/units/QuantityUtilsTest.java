@@ -63,7 +63,8 @@ public class QuantityUtilsTest {
 
   @Test
   public void sumValidation() {
-    assertThrows(IllegalArgumentException.class, () -> qUtils.sum(Collections.emptyList()));
+    var emptyQuantities = Collections.<Quantifiable>emptyList();
+    assertThrows(IllegalArgumentException.class, () -> qUtils.sum(emptyQuantities));
   }
 
   @Test
@@ -161,10 +162,8 @@ public class QuantityUtilsTest {
 
     SomeQuantifiableThing zeroQuantity =
         new SomeQuantifiableThing(BigDecimal.valueOf(0), RSUnitDef.MICRO_GRAM);
-    iae =
-        assertThrows(
-            IllegalArgumentException.class,
-            () -> qUtils.divide(zeroQuantity, zeroQuantity.getNumericValue()));
+    BigDecimal zero = zeroQuantity.getNumericValue();
+    iae = assertThrows(IllegalArgumentException.class, () -> qUtils.divide(zeroQuantity, zero));
     assertEquals(
         "divide method requires dividend quantity and non-zero divisor as parameters",
         iae.getMessage());
