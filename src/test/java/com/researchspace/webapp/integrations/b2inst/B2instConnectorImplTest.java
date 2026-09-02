@@ -6,6 +6,10 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.content;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
@@ -23,6 +27,7 @@ import com.researchspace.b2inst.model.response.B2instDraftRecord;
 import com.researchspace.b2inst.model.response.B2instRequestResponse;
 import com.researchspace.model.system.SystemProperty;
 import com.researchspace.model.system.SystemPropertyValue;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.SystemPropertyManager;
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -61,6 +66,7 @@ class B2instConnectorImplTest {
   private static final String DRAFT_URL = RECORD_URL + "/draft";
 
   @Mock private SystemPropertyManager mockSysPropMgr;
+  @Mock private MessageSourceUtils messages;
   @InjectMocks private B2instConnectorImpl connector;
 
   private Map<String, SystemPropertyValue> props;
@@ -73,6 +79,12 @@ class B2instConnectorImplTest {
     addProperty("pidinst.b2inst.community.id", "2cd7e6c2-comm");
     addProperty("pidinst.b2inst.token", "TOK123");
     when(mockSysPropMgr.getAllSysadminPropertiesAsMap()).thenReturn(props);
+    // Lenient: most tests never reach a reason RSpace authors. Echoing the code back is what lets
+    // the assertions below pin which message was asked for rather than today's English.
+    lenient().when(messages.getMessage(anyString())).thenAnswer(code -> code.getArgument(0));
+    lenient()
+        .when(messages.getMessage(anyString(), any(Object[].class)))
+        .thenAnswer(code -> code.getArgument(0));
   }
 
   private void addProperty(String name, String value) {
@@ -651,7 +663,10 @@ class B2instConnectorImplTest {
     RestClientException blank = new RestClientException((String) null);
 
     assertEquals("RestClientException", developerDetail.invoke(connector, blank));
-    assertEquals("B2INST could not be reached.", describeFailure.invoke(connector, blank));
+    assertEquals(
+        "errors.inventory.identifier.b2instUnreachable",
+        describeFailure.invoke(connector, blank),
+        "the user-facing reason must come from the catalogue, not an English literal");
   }
 
   @Test
@@ -889,7 +904,11 @@ class B2instConnectorImplTest {
             B2instConnectionException.class,
             () -> connector.updateDraftDoi("k2j9p-7yh21", draftWithName("X")));
 
-    assertTrue(thrown.getReason().contains("404"), thrown.getReason());
+    assertEquals("errors.inventory.identifier.b2instHttpStatus", thrown.getReason());
+    // the status is still what a user is told, it just arrives as arguments to a localized string
+    verify(messages)
+        .getMessage(
+            "errors.inventory.identifier.b2instHttpStatus", new Object[] {404, "Not Found"});
   }
 
   @Test

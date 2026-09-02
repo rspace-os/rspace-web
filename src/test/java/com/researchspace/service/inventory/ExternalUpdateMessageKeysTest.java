@@ -35,7 +35,13 @@ class ExternalUpdateMessageKeysTest {
         "inventory.identifier.externalUpdated",
         "errors.inventory.identifier.externalUpdateFailed",
         "errors.inventory.identifier.externalUpdateNotPossibleB2inst",
-        "errors.inventory.identifier.externalUpdateNotPossibleDataCite"
+        "errors.inventory.identifier.externalUpdateNotPossibleDataCite",
+        // asked for by B2instConnectorImpl, but they reach a user only by being interpolated into
+        // externalUpdateFailed above, so a missing one shows up in the same place
+        "errors.inventory.identifier.b2instHttpStatus",
+        "errors.inventory.identifier.b2instUnreachable",
+        "errors.inventory.identifier.b2instNoCommunity",
+        "errors.inventory.identifier.b2instNoSubmitAction"
       })
   void everyCodeTheServiceAsksForResolves(String code) throws IOException {
     JsonNode node = new ObjectMapper().readTree(CATALOGUE);

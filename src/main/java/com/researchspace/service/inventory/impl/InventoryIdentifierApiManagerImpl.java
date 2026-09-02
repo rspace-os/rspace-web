@@ -453,7 +453,7 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
               + "If the problem persists, please contact your System Admin",
           dcException);
     }
-    if (createdDoi == null || !"draft".equals(createdDoi.getAttributes().getState())) {
+    if (createdDoi == null || !"draft".equalsIgnoreCase(createdDoi.getAttributes().getState())) {
       throw new IllegalStateException(
           messages.getMessage("errors.inventory.identifier.dataCiteRegisterNoDraft"));
     }
@@ -720,7 +720,7 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
               .map(B2instRequestResponse::getStatus)
               .filter(status -> isNotBlank(status))
               .orElse(null);
-      if (reviewStatus != null && !"accepted".equals(reviewStatus)) {
+      if (reviewStatus != null && !"accepted".equalsIgnoreCase(reviewStatus)) {
         refreshUpdate.setState(reviewStatus);
         return refreshUpdate;
       }
@@ -734,7 +734,7 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
         setLandingPageUrl(refreshUpdate, doi, landingPageOf(published.get()));
         return refreshUpdate;
       }
-      if ("accepted".equals(reviewStatus)) {
+      if ("accepted".equalsIgnoreCase(reviewStatus)) {
         /*
          * The review says accepted but the record it published is not readable, so the minted
          * Handle cannot be named. Storing "accepted" would open the unauthenticated public page

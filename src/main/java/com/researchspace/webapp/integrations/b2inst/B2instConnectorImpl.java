@@ -7,6 +7,7 @@ import com.researchspace.b2inst.model.response.B2instDraftRecord;
 import com.researchspace.b2inst.model.response.B2instRequestResponse;
 import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.model.system.SystemPropertyValue;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.SystemPropertyManager;
 import com.researchspace.service.SystemPropertyName;
 import jakarta.annotation.PostConstruct;
@@ -55,6 +56,7 @@ public class B2instConnectorImpl implements B2instConnector {
   private static final Duration READ_TIMEOUT = Duration.ofSeconds(30);
 
   @Autowired private SystemPropertyManager sysPropertyMgr;
+  @Autowired private MessageSourceUtils messages;
 
   private boolean enabled;
   private String serverUrl;
@@ -153,7 +155,7 @@ public class B2instConnectorImpl implements B2instConnector {
       throw new B2instConnectionException(
           "No B2INST community configured (pidinst.b2inst.community.id); cannot submit " + rid,
           // deliberately omits the property name: this reason is shown to an ordinary user
-          "B2INST is not fully configured for publishing, because no community has been set.");
+          messages.getMessage("errors.inventory.identifier.b2instNoCommunity"));
     }
     try {
       B2instRequestResponse alreadySubmitted = openReviewOf(rid);
@@ -174,7 +176,7 @@ public class B2instConnectorImpl implements B2instConnector {
       if (submitUrl == null) {
         throw new B2instConnectionException(
             "B2INST review did not return a submit action for record " + rid,
-            "B2INST did not offer a submit action for this record.");
+            messages.getMessage("errors.inventory.identifier.b2instNoSubmitAction"));
       }
       return restTemplate.postForObject(submitUrl, emptyJsonBody(), B2instRequestResponse.class);
     } catch (RestClientException e) {
@@ -218,59 +220,56 @@ public class B2instConnectorImpl implements B2instConnector {
    * means a branch added later cannot skip it.
    */
   private String describeFailure(RestClientException e) {
-    return redactToken(describeFailureText(e));
+    if (e instanceof RestClientResponseException restError) {
+      String parsed = providerDescription(restError);
+      if (parsed != null) {
+        return redactToken(parsed);
+      }
+      log.warn(
+          "No usable failure reason in B2INST error response (HTTP {}): {}",
+          restError.getRawStatusCode(),
+          StringUtils.abbreviate(redactToken(restError.getResponseBodyAsString()), 500));
+      return messages.getMessage(
+          "errors.inventory.identifier.b2instHttpStatus",
+          new Object[] {restError.getRawStatusCode(), restError.getStatusText()});
+    }
+    log.warn(
+        "Could not reach B2INST: {}", redactToken(StringUtils.defaultString(e.getMessage())), e);
+    return messages.getMessage("errors.inventory.identifier.b2instUnreachable");
   }
 
   /**
    * The developer-facing detail, for the exception message and so the log.
    *
-   * <p>Identical to the reason for an HTTP failure, deliberately: B2INST's parsed description, or
-   * the status when the body explains nothing, is the most readable thing for both audiences, and
-   * Spring's own message for those puts the whole response body in the sentence.
+   * <p>Same as the reason while B2INST explained itself: its own parsed description is the most
+   * readable thing for both audiences, and Spring's own message for an HTTP failure puts the whole
+   * response body in the sentence.
    *
-   * <p>It diverges for a transport failure, the one case where the two audiences want different
-   * things. A developer needs Spring's message, which names the request URL and the cause; a user
-   * must not be shown it, so the reason is a fixed sentence instead. Redacted all the same.
+   * <p>It diverges wherever the sentence is RSpace's own. A developer wants fixed English and, for
+   * a transport failure, Spring's message naming the request URL and the cause; a user must be
+   * shown neither, and gets localized text instead. Redacted all the same.
    */
   private String developerDetail(RestClientException e) {
-    return e instanceof RestClientResponseException
-        ? describeFailure(e)
-        : redactToken(StringUtils.defaultIfBlank(e.getMessage(), e.getClass().getSimpleName()));
+    if (e instanceof RestClientResponseException restError) {
+      String parsed = providerDescription(restError);
+      // Deliberately English and unlocalized, unlike the reason: this goes to the log, where a
+      // translated sentence would be worse than a fixed one. The status is kept because it is the
+      // only thing left when the body explains nothing (404 the record is gone, 403 credentials).
+      return parsed != null
+          ? redactToken(parsed)
+          : "B2INST returned HTTP "
+              + restError.getRawStatusCode()
+              + " "
+              + restError.getStatusText();
+    }
+    return redactToken(StringUtils.defaultIfBlank(e.getMessage(), e.getClass().getSimpleName()));
   }
 
-  private String describeFailureText(RestClientException e) {
-    if (e instanceof RestClientResponseException restError) {
-      String body = restError.getResponseBodyAsString();
-      String parsedDescription =
-          JacksonUtil.fromJsonOpt(body, B2instErrorResponse.class)
-              .map(B2instErrorResponse::describe)
-              .orElse(null);
-      if (parsedDescription != null) {
-        return parsedDescription;
-      }
-      log.warn(
-          "No usable failure reason in B2INST error response (HTTP {}): {}",
-          restError.getRawStatusCode(),
-          StringUtils.abbreviate(redactToken(body), 500));
-      // Also RSpace's own words, though the status and its text come from B2INST. Kept because a
-      // status is genuinely actionable (404 means the record is gone, 403 a credentials problem),
-      // and it is the only thing left when the body explains nothing.
-      return "B2INST returned HTTP "
-          + restError.getRawStatusCode()
-          + " "
-          + restError.getStatusText();
-    }
-    /*
-     * RSpace's own fixed sentence, not the exception's message. Spring's message for a transport
-     * failure carries the full request URL, the deployment's B2INST host included, and the fallback
-     * when it was blank was the exception's class name ("ResourceAccessException"). Both reached the
-     * user through the reason and were written into the audit trail, and neither is anything a user
-     * can act on. The detail belongs in the log, which is where it now goes - it was not logged at
-     * all before.
-     */
-    log.warn(
-        "Could not reach B2INST: {}", redactToken(StringUtils.defaultString(e.getMessage())), e);
-    return "B2INST could not be reached.";
+  /** B2INST's own description of the failure, or null when its response body carried none. */
+  private String providerDescription(RestClientResponseException restError) {
+    return JacksonUtil.fromJsonOpt(restError.getResponseBodyAsString(), B2instErrorResponse.class)
+        .map(B2instErrorResponse::describe)
+        .orElse(null);
   }
 
   /**

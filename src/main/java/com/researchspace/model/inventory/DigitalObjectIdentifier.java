@@ -214,6 +214,6 @@ public class DigitalObjectIdentifier extends InventoryRecordConnectedEntity
 
   @Transient
   public boolean canBeAssigned() {
-    return !this.isDeleted() && !this.isAssociated() && "draft".equals(this.getState());
+    return !this.isDeleted() && !this.isAssociated() && "draft".equalsIgnoreCase(this.getState());
   }
 }

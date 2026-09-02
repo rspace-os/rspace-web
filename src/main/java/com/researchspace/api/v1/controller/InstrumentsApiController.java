@@ -168,18 +168,24 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
    * Sends the instrument's remapped PIDINST metadata to any provider record registered for it
    * (RSDEV-1251, ADR 0008).
    *
-   * <p>Called from the two controller methods that change what a provider holds, and nowhere else:
-   * the manager is transactional and this controller is not, so by this point the edit has
-   * committed and the provider call runs outside any transaction. Every identifier operation that
-   * updates an instrument internally - register, publish, retract, refresh, template sync -
-   * re-enters {@code updateApiInstrument} at the manager level, below this seam, so none of them
-   * can trigger a push, let alone a recursive one.
+   * <p>Called from the two controller methods that change what a provider holds, and from {@link
+   * InventoryBulkOperationsApiController} once a single-transaction batch of those operations has
+   * committed. Nowhere else: every identifier operation that updates an instrument internally -
+   * register, publish, retract, refresh, template sync - re-enters {@code updateApiInstrument} at
+   * the manager level, below this seam, so none of them can trigger a push, let alone a recursive
+   * one.
+   *
+   * <p>Package-private for that bulk caller. The manager is transactional and a controller is not,
+   * so on a single-record request the edit has committed by this point and the provider call runs
+   * outside any transaction. That does <strong>not</strong> hold when a bulk batch re-enters these
+   * methods with rollbackOnError, which runs the whole batch in one transaction; the service
+   * declines a push from inside one, and the bulk controller pushes after it commits instead.
    *
    * <p>Guarded rather than allowed to propagate: the instrument is already saved, and a provider
    * outage or a bug in the push must not turn that into an error response. The failure is reported
    * on the identifier in the response body by the service itself.
    */
-  private void pushExternalMetadataUpdates(ApiInstrument updated, User user) {
+  void pushExternalMetadataUpdates(ApiInstrument updated, User user) {
     try {
       externalUpdateService.pushMetadataUpdates(updated, user);
     } catch (RuntimeException e) {

@@ -18,20 +18,15 @@ package com.researchspace.webapp.integrations.b2inst;
  * string with no compile error and no failing test. A new provider-failure throw site must now
  * state its reason or fail to compile.
  *
- * <p>Where a reason comes from, and what that costs. Only one of the three shapes is B2INST's own
- * words: the description parsed out of a B2INST error body, which is the useful case and cannot be
- * translated. The other two are RSpace's own fixed English - the HTTP status when the body explains
- * nothing, and a "could not be reached" sentence for a transport failure. Both are deliberately
- * fixed strings rather than the underlying exception, because Spring's message for a transport
- * failure carries the request URL and host and its blank-message fallback was the exception class
- * name, and callers interpolate this value into localized text and into the audit trail.
- *
- * <p>Those two therefore ship untranslated inside an otherwise translated sentence. That is the
- * accepted trade-off rather than an oversight: localizing them would need a message source in the
- * connector, and the service package already imports this one, so injecting it back would close a
- * package cycle. If it becomes worth fixing, the better shape is for this exception to carry the
- * status and the failure kind as data and let each caller - all of which already hold a message
- * source - compose the sentence.
+ * <p>Where a reason comes from. One shape is B2INST's own words: the description parsed out of a
+ * B2INST error body, which is the useful case and cannot be translated. Every other shape is
+ * RSpace's own sentence, and those are resolved from the message catalogue by the connector, not
+ * written into it as literals - the caller interpolates this value into localized text and into the
+ * audit trail, so an English literal here would ship untranslated inside an otherwise translated
+ * sentence. They are also deliberately not the underlying exception's message: Spring's message for
+ * a transport failure carries the request URL and host, and its blank-message fallback was the
+ * exception class name. That detail belongs in the developer-facing message, which is where it now
+ * goes.
  */
 public class B2instConnectionException extends RuntimeException {
 

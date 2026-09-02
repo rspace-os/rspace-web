@@ -158,8 +158,9 @@ resolved during design. This file is a glossary only — no implementation detai
   API client sees the reason and a user of the web interface does not. Every
   qualifying save pushes, whether or not a mapped field changed, so retrying a
   failed push is just saving again. An identifier whose state has frozen its
-  provider record is reported too, naming the state, rather than passed over in
-  silence; an identifier belonging to a provider whose integration is switched
+  provider record is reported too, rather than passed over in silence, in a
+  message that explains why in words without echoing the provider's own state
+  token; an identifier belonging to a provider whose integration is switched
   off is passed over silently, because there is nothing to act on. Saving an
   instrument and transferring one both push. A transfer is told apart from an
   instrument with no identifiers by reading the record, because the response a
