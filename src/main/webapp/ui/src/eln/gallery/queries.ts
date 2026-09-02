@@ -76,35 +76,36 @@ class LinkableDocument implements LinkableRecord {
 export async function getLinkedDocuments(fileId: string): Promise<ReadonlyArray<Document>> {
   const { data } = await axios.get<unknown>(`/gallery/ajax/getLinkedDocuments/${fileId}`);
 
-  return Parsers.objectPath(["data"], data)
-    .flatMap(Parsers.isArray)
-    .flatMap((docs) =>
-      Result.all(
-        ...docs.map((doc) =>
-          Parsers.isObject(doc)
-            .flatMap(Parsers.isNotNull)
-            .map((obj) => {
-              const id = Parsers.getValueWithKey("id")(obj).flatMap(Parsers.isNumber).elseThrow();
-              const globalId = Parsers.getValueWithKey("oid")(obj)
-                .flatMap(Parsers.isObject)
-                .flatMap(Parsers.isNotNull)
-                .flatMap(Parsers.getValueWithKey("idString"))
-                .flatMap(Parsers.isString)
-                .elseThrow();
-              const name = Parsers.getValueWithKey("name")(obj).flatMap(Parsers.isString).elseThrow();
-
-              return {
-                id,
-                globalId,
-                name,
-                permalinkHref: `/globalId/${globalId}`,
-                linkableRecord: new LinkableDocument({ id, globalId, name }),
-              };
-            }),
-        ),
-      ),
-    )
-    .elseThrow();
+  const docs = Parsers.objectPath(["data"], data).flatMap(Parsers.isArray).elseThrow();
+  const documents: Array<Document> = [];
+  docs.forEach((doc) => {
+    const parsed = Parsers.isObject(doc)
+      .flatMap(Parsers.isNotNull)
+      .flatMap((obj) => {
+        const id = Parsers.getValueWithKey("id")(obj).flatMap(Parsers.isNumber);
+        const globalId = Parsers.getValueWithKey("oid")(obj)
+          .flatMap(Parsers.isObject)
+          .flatMap(Parsers.isNotNull)
+          .flatMap(Parsers.getValueWithKey("idString"))
+          .flatMap(Parsers.isString);
+        const name = Parsers.getValueWithKey("name")(obj).flatMap(Parsers.isString);
+        return id.flatMap((parsedId) =>
+          globalId.flatMap((parsedGlobalId) =>
+            name.map((parsedName) => [parsedId, parsedGlobalId, parsedName] as const),
+          ),
+        );
+      });
+    parsed
+      .map(([id, globalId, name]) => ({
+        id,
+        globalId,
+        name,
+        permalinkHref: `/globalId/${globalId}`,
+        linkableRecord: new LinkableDocument({ id, globalId, name }),
+      }))
+      .do((document) => documents.push(document));
+  });
+  return documents;
 }
 
 export function useLinkedDocumentsQuery(fileId: string) {
