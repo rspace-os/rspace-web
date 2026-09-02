@@ -33,7 +33,9 @@ public class InventoryLinkManagerImpl implements InventoryLinkManager {
   @Override
   public InventoryLink createLink(ApiInventoryLink apiLink, User actor) {
     validateForWrite(apiLink);
-    assertTargetExistsAndReadable(apiLink, actor);
+    if (!apiLink.isSkipTargetCheck()) {
+      assertTargetExistsAndReadable(apiLink, actor);
+    }
     InventoryLink entity = new InventoryLink();
     applyApiToEntity(apiLink, entity);
     return linkDao.save(entity);

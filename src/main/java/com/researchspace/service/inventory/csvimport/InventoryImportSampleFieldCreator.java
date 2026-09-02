@@ -4,6 +4,7 @@ import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.field.InventoryDateField;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.inventory.field.InventoryIdentifierField;
+import com.researchspace.model.inventory.field.InventoryLinkField;
 import com.researchspace.model.inventory.field.InventoryNumberField;
 import com.researchspace.model.inventory.field.InventoryRadioField;
 import com.researchspace.model.inventory.field.InventoryRadioFieldDef;
@@ -24,6 +25,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /** Recognise potential sample field type from provided values. */
@@ -35,6 +37,8 @@ public class InventoryImportSampleFieldCreator {
 
   /** Maximum number of distinct values for which field type 'radio' will be suggested */
   public static final int MAX_RADIO_OPTIONS = 20;
+
+  @Autowired CsvLinkValueParser linkParser;
 
   /** Ratio of distinct values to all values below which the radio type is suggested. */
   public static final double RADIO_REPEATING_OPTIONS_RATIO = 0.76;
@@ -67,6 +71,9 @@ public class InventoryImportSampleFieldCreator {
     // uri
     if (isSuggestedFieldForValues(valueSet, new InventoryUriField())) {
       return new InventoryUriField(name);
+    }
+    if (valueSet.stream().allMatch(linkParser::isParseable)) {
+      return new InventoryLinkField(name);
     }
     // time
     if (isSuggestedFieldForValues(valueSet, new InventoryTimeField())) {
