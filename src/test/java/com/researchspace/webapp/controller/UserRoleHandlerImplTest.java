@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -44,13 +43,13 @@ public class UserRoleHandlerImplTest {
   @BeforeEach
   public void setUp() throws Exception {
     admin = TestFactory.createAnyUserWithRole("admin", Role.SYSTEM_ROLE.getName());
-    lenient().when(roleMgr.getRole(Role.PI_ROLE.getName())).thenReturn(Role.PI_ROLE);
     ReflectionTestUtils.setField(
         roleHandler, "messages", new MessageSourceUtils(new JsonMessageSource()));
   }
 
   @Test
   public void grantPiRoleToUser() {
+    stubPiRole();
     User toPromote = TestFactory.createAnyUser("user");
     roleHandler.grantGlobalPiRoleToUser(admin, toPromote);
     verify(userManager).save(toPromote);
@@ -90,6 +89,7 @@ public class UserRoleHandlerImplTest {
 
   @Test
   public void revokePiRole() {
+    stubPiRole();
     User toDemote = createAPi();
     when(userManager.save(toDemote)).thenReturn(toDemote);
     toDemote = roleHandler.revokeGlobalPiRoleFromUser(admin, toDemote);
@@ -131,5 +131,9 @@ public class UserRoleHandlerImplTest {
           verify(userManager, never()).save(toDemote);
           assertTrue(toDemote.hasRole(Role.PI_ROLE));
         });
+  }
+
+  private void stubPiRole() {
+    when(roleMgr.getRole(Role.PI_ROLE.getName())).thenReturn(Role.PI_ROLE);
   }
 }

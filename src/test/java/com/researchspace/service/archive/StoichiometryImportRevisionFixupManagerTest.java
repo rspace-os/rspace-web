@@ -11,6 +11,8 @@ import static org.mockito.Mockito.when;
 import com.researchspace.model.User;
 import com.researchspace.model.audit.AuditedEntity;
 import com.researchspace.model.field.Field;
+import com.researchspace.model.field.TextField;
+import com.researchspace.model.field.TextFieldForm;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.StructuredDocument;
@@ -62,18 +64,9 @@ public class StoichiometryImportRevisionFixupManagerTest {
   }
 
   private Field mockFieldWithData(long id, String fieldData) {
-    Field field = Mockito.mock(Field.class);
-    Mockito.lenient().when(field.getId()).thenReturn(id);
-    final String[] data = {fieldData};
-    when(field.getFieldData()).thenAnswer(inv -> data[0]);
-    Mockito.lenient()
-        .doAnswer(
-            inv -> {
-              data[0] = inv.getArgument(0);
-              return null;
-            })
-        .when(field)
-        .setFieldData(Mockito.anyString());
+    Field field = new TextField(new TextFieldForm());
+    field.setId(id);
+    field.setFieldData(fieldData);
     return field;
   }
 

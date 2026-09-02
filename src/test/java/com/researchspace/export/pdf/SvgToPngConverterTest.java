@@ -20,7 +20,7 @@ public class SvgToPngConverterTest {
   public static final int SIMPLEST_SVG_CONVERTED_LENGTH = 1495;
 
   @BeforeAll
-  public static void BeforeClass() throws Exception {
+  public static void skipFastRuns() throws Exception {
     TestRunnerController.ignoreIfFastRun();
   }
 

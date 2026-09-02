@@ -2,9 +2,9 @@ package com.researchspace.service.impl;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.dao.FolderDao;
@@ -70,6 +70,7 @@ public class MovePermissionCheckerTest {
     target.setSystemFolder(true);
 
     setUpSharedFolderHierarchy();
+    when(fDao.getUserSharedFolder(user)).thenReturn(sharedFolder);
     // move across groups, disallowed
     assertFalse(checker.checkMovePermissions(user, target, toMove));
 
@@ -97,7 +98,6 @@ public class MovePermissionCheckerTest {
     grp1.addChild(target, user);
   }
 
-  // these 2 tests assert that loaading root folder does not trigger unnecessry DB call
   @Test
   public void homeFolderMoveOKDoesNotCallDatabaseMethod() throws IllegalAddChildOperation {
     setUpPermissionsOK(rootFolder);
@@ -106,20 +106,16 @@ public class MovePermissionCheckerTest {
   }
 
   @Test
-  public void someoneElseshomeFolderMoveOKDoesNotCallDatabaseMethod()
+  public void moveToSomeoneElsesHomeFolderIsRejectedWithoutDatabaseLookup()
       throws IllegalAddChildOperation {
-    setUpPermissionsOK(rootFolder);
+    when(permUtil.isPermitted(rootFolder, PermissionType.FOLDER_RECEIVE, other)).thenReturn(false);
+
     assertFalse(checker.checkMovePermissions(other, rootFolder, toMove));
-    verify(fDao, never()).getUserSharedFolder(user);
+    verifyNoInteractions(fDao);
   }
 
   protected void setUpPermissionsOK(Folder target) {
-    // lenient: someoneElseshomeFolderMoveOKDoesNotCallDatabaseMethod deliberately checks a
-    // different user, so these stubbings are not matched by that test
-    lenient()
-        .when(permUtil.isPermitted(target, PermissionType.FOLDER_RECEIVE, user))
-        .thenReturn(true);
-    lenient().when(permUtil.isPermitted(toMove, PermissionType.SEND, user)).thenReturn(true);
-    lenient().when(fDao.getUserSharedFolder(user)).thenReturn(sharedFolder);
+    when(permUtil.isPermitted(target, PermissionType.FOLDER_RECEIVE, user)).thenReturn(true);
+    when(permUtil.isPermitted(toMove, PermissionType.SEND, user)).thenReturn(true);
   }
 }

@@ -75,7 +75,6 @@ public class APIFileUploadThrottlingInterceptorTest {
   public void testPreHandleThrottlerNotCalledIfNotPOST() throws IOException {
     MockMultipartFile mockFile = setUpRequestWithFileUpload();
     request.setMethod("GET");
-    setUpStats();
     assertTrue(interceptor.preHandle(request, response, null));
     assertFileUploadResponseHeadersNotSet();
     // verify was not called
@@ -93,7 +92,7 @@ public class APIFileUploadThrottlingInterceptorTest {
 
   private void setUpStats() {
     Optional<APIFileUploadStats> stats = getStats(100, 50);
-    Mockito.lenient().when(throttler.getStats("any", ThrottleInterval.HOUR)).thenReturn(stats);
+    Mockito.when(throttler.getStats("any", ThrottleInterval.HOUR)).thenReturn(stats);
   }
 
   private MockMultipartFile setUpRequestWithFileUpload() throws IOException {

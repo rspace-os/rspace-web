@@ -1,7 +1,6 @@
 package com.researchspace.service.inventory.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -43,8 +42,8 @@ class SampleApiManagerImplSamplesToUpdateCountTest {
 
   private SampleTemplate templateWith(Long id, Long version) {
     SampleTemplate template = mock(SampleTemplate.class);
-    lenient().when(template.getId()).thenReturn(id);
-    lenient().when(template.getVersion()).thenReturn(version);
+    when(template.getId()).thenReturn(id);
+    when(template.getVersion()).thenReturn(version);
     return template;
   }
 

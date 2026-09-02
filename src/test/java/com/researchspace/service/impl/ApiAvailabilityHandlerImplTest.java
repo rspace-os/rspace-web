@@ -88,7 +88,6 @@ class ApiAvailabilityHandlerImplTest {
 
   @Test
   void testInventoryAndDataciteEnabled() {
-    setSystemProperty(SystemPropertyName.IGSN_DATACITE_ENABLED, Boolean.TRUE);
     setSystemProperty(SystemPropertyName.INVENTORY_AVAILABLE, Boolean.TRUE);
     assertTrue(handler.isInventoryAndDataciteEnabled(anyUser));
     handler.assertInventoryAndDataciteEnabled(anyUser);
@@ -174,9 +173,7 @@ class ApiAvailabilityHandlerImplTest {
   }
 
   private void setSystemProperty(SystemPropertyName apiAvailable, Boolean aTrue) {
-    Mockito.lenient()
-        .when(mockSysPropMgr.isPropertyAllowed(anyUser, apiAvailable))
-        .thenReturn(aTrue);
+    Mockito.when(mockSysPropMgr.isPropertyAllowed(anyUser, apiAvailable)).thenReturn(aTrue);
   }
 
   private void assertApiEnabled() {

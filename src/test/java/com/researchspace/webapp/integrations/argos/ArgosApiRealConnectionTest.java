@@ -3,20 +3,16 @@ package com.researchspace.webapp.integrations.argos;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockito.MockitoAnnotations.openMocks;
 
 import com.researchspace.argos.model.ArgosDMP;
 import com.researchspace.argos.model.ArgosDMPListing;
 import com.researchspace.argos.model.DataTableData;
-import com.researchspace.properties.PropertyHolder;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.springframework.web.client.RestTemplate;
 
 // The following tests run nightly and assert that the Argos API has not
@@ -26,14 +22,10 @@ public class ArgosApiRealConnectionTest {
 
   private RestTemplate restTemplate;
 
-  @Mock private PropertyHolder propertyHolder;
-
-  @InjectMocks private ArgosDMPProvider argosClient;
+  private ArgosDMPProvider argosClient;
 
   @BeforeEach
   public void setUp() throws Exception {
-    openMocks(this);
-
     restTemplate = new RestTemplate();
 
     this.argosClient = new ArgosDMPProvider(new URL("https://devel.opendmp.eu/srv/api/public"));

@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.model.EditStatus;
@@ -79,7 +78,6 @@ public class NotebookEditorControllerTest extends SpringTransactionalTest {
 
   @BeforeEach
   public void setUp() throws Exception {
-    lenient().when(anonymousUser.getUniqueName()).thenReturn(RecordGroupSharing.ANONYMOUS_USER);
     user = createAndSaveUserIfNotExists(getRandomAlphabeticString("nbTestUser"));
     logoutAndLoginAs(user);
 
@@ -182,6 +180,7 @@ public class NotebookEditorControllerTest extends SpringTransactionalTest {
   public void handleRequestWhenPublishedNotebook() throws Exception {
     FolderManagerStub.noteBooksArePublished = true;
     FolderManagerStub.anonymousUser = anonymousUser;
+    when(anonymousUser.getUniqueName()).thenReturn(RecordGroupSharing.ANONYMOUS_USER);
     // when you have permission to edit record
     when(permissionUtils.isPermitted(
             any(BaseRecord.class), any(PermissionType.class), any(User.class)))

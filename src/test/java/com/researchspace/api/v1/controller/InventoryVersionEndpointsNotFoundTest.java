@@ -3,8 +3,6 @@ package com.researchspace.api.v1.controller;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.model.User;
@@ -19,6 +17,9 @@ import com.researchspace.testutils.TestFactory;
 import jakarta.ws.rs.NotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 /**
@@ -26,22 +27,21 @@ import org.springframework.test.util.ReflectionTestUtils;
  * version or revision must surface as 404 (NotFoundException), never a 200 null body. Successful
  * responses are covered by the MVC ITs.
  */
+@ExtendWith(MockitoExtension.class)
 public class InventoryVersionEndpointsNotFoundTest {
 
-  private final InventoryAuditApiManager auditMgr = mock(InventoryAuditApiManager.class);
-  private final SampleApiManager sampleMgr = mock(SampleApiManager.class);
-  private final SubSampleApiManager subSampleMgr = mock(SubSampleApiManager.class);
-  private final ContainerApiManager containerMgr = mock(ContainerApiManager.class);
-  private final InstrumentEntityApiManager instrumentMgr = mock(InstrumentEntityApiManager.class);
-  private final MessageSourceUtils messages = mock(MessageSourceUtils.class);
+  @Mock private InventoryAuditApiManager auditMgr;
+  @Mock private SampleApiManager sampleMgr;
+  @Mock private SubSampleApiManager subSampleMgr;
+  @Mock private ContainerApiManager containerMgr;
+  @Mock private InstrumentEntityApiManager instrumentMgr;
+  @Mock private MessageSourceUtils messages;
 
   private final User user = TestFactory.createAnyUser("notFoundUser");
 
   @BeforeEach
   public void setUp() {
-    lenient()
-        .when(messages.getResourceNotFoundMessage(anyString(), anyLong()))
-        .thenReturn("not found");
+    when(messages.getResourceNotFoundMessage(anyString(), anyLong())).thenReturn("not found");
   }
 
   /** Wires the BaseApiInventoryController/BaseApiController fields every controller inherits. */

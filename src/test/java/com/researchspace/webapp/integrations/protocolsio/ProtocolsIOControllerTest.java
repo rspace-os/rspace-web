@@ -1,7 +1,6 @@
 package com.researchspace.webapp.integrations.protocolsio;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -50,29 +49,25 @@ public class ProtocolsIOControllerTest {
     sharedNotebook.setId(4L);
     workspaceRootFolder.setId(5L);
     when(userMgr.getAuthenticatedUserInSession()).thenReturn(subject);
-    lenient()
-        .when(converter.generateFromProtocol(protocol, subject, importsFolder.getId()))
-        .thenReturn(anyDoc);
-    lenient()
-        .when(converter.generateFromProtocol(protocol, subject, sharedNotebook.getId()))
-        .thenReturn(anyDoc);
     when(folderMgr.getImportsFolder(subject)).thenReturn(importsFolder);
-    lenient().when(folderMgr.getFolder(sharedFolder.getId(), subject)).thenReturn(sharedFolder);
-    lenient().when(folderMgr.getFolder(sharedNotebook.getId(), subject)).thenReturn(sharedNotebook);
-    lenient()
-        .when(folderMgr.getFolder(workspaceRootFolder.getId(), subject))
-        .thenReturn(workspaceRootFolder);
+  }
+
+  private void stubImportIntoImportsFolder() {
+    when(converter.generateFromProtocol(protocol, subject, importsFolder.getId()))
+        .thenReturn(anyDoc);
+  }
+
+  private void stubImportIntoSharedNotebook() {
+    when(converter.generateFromProtocol(protocol, subject, sharedNotebook.getId()))
+        .thenReturn(anyDoc);
   }
 
   @Test
   public void importExternalDataOK() {
+    stubImportIntoImportsFolder();
+    when(folderMgr.getFolder(workspaceRootFolder.getId(), subject)).thenReturn(workspaceRootFolder);
     when(recordManager.isSharedFolderOrSharedNotebookWithoutCreatePermission(
             subject, workspaceRootFolder))
-        .thenReturn(false);
-    lenient()
-        .when(
-            recordManager.isSharedFolderOrSharedNotebookWithoutCreatePermission(
-                subject, importsFolder))
         .thenReturn(false);
     AjaxReturnObject<ProtocolsIOController.PIOResponse> rc =
         ctrller.importExternalData(
@@ -84,6 +79,8 @@ public class ProtocolsIOControllerTest {
 
   @Test
   public void importExternalDataIntoASharedFolder() {
+    stubImportIntoImportsFolder();
+    when(folderMgr.getFolder(sharedFolder.getId(), subject)).thenReturn(sharedFolder);
     when(recordManager.isSharedFolderOrSharedNotebookWithoutCreatePermission(subject, sharedFolder))
         .thenReturn(true);
     AjaxReturnObject<ProtocolsIOController.PIOResponse> rc =
@@ -96,6 +93,8 @@ public class ProtocolsIOControllerTest {
 
   @Test
   public void importExternalData_INTO_OWNED_SharedNotebook() {
+    stubImportIntoSharedNotebook();
+    when(folderMgr.getFolder(sharedNotebook.getId(), subject)).thenReturn(sharedNotebook);
     when(recordManager.isSharedFolderOrSharedNotebookWithoutCreatePermission(
             subject, sharedNotebook))
         .thenReturn(false);
@@ -111,6 +110,8 @@ public class ProtocolsIOControllerTest {
 
   @Test
   public void importExternalData_INTO_NOT_OWNED_SharedNotebook() {
+    stubImportIntoImportsFolder();
+    when(folderMgr.getFolder(sharedNotebook.getId(), subject)).thenReturn(sharedNotebook);
     when(recordManager.isSharedFolderOrSharedNotebookWithoutCreatePermission(
             subject, sharedNotebook))
         .thenReturn(true);
@@ -127,6 +128,7 @@ public class ProtocolsIOControllerTest {
 
   @Test
   public void importExternalDataIntoDocumentEditor() {
+    stubImportIntoImportsFolder();
     AjaxReturnObject<ProtocolsIOController.PIOResponse> rc =
         ctrller.importExternalData(TransformerUtils.toList(protocol));
     assertEquals(anyDoc.getId(), rc.getData().getResults().get(0).getId());

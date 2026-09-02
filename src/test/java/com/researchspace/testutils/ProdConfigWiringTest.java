@@ -57,7 +57,7 @@ public class ProdConfigWiringTest {
   @Autowired private FolderManager folderManager;
 
   @BeforeAll
-  public static void BeforeClass() throws Exception {
+  public static void skipFastRuns() throws Exception {
     TestRunnerController.ignoreIfFastRun();
   }
 
