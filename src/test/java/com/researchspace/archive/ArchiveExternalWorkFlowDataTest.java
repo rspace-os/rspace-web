@@ -10,9 +10,8 @@ import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTest
 import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.WF_EXT_ID;
 import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.WORKFLOWTHATWASUSED;
 import static com.researchspace.model.externalWorkflows.ExternalWorkFlowData.ExternalService.GALAXY;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.initMocks;
 
 import com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlow;
@@ -24,12 +23,16 @@ import com.researchspace.service.archive.export.externalWorkFlow.LinkableExterna
 import java.util.HashSet;
 import java.util.Set;
 import org.jetbrains.annotations.NotNull;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.springframework.test.util.ReflectionTestUtils;
 
 public class ArchiveExternalWorkFlowDataTest {
+
+  private AutoCloseable mocks;
 
   public static final long DATA_ID = 1L;
   public static final long DEFAULT_INVOCATION_ID = 2L;
@@ -39,10 +42,10 @@ public class ArchiveExternalWorkFlowDataTest {
   @Mock private ArchivalField archiveField;
   private Set<ArchiveExternalWorkFlowInvocation> invocations;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     invocations = new HashSet<>();
-    initMocks(this);
+    mocks = MockitoAnnotations.openMocks(this);
     ExternalWorkFlowData data =
         ExternalWorkFlowTestMother.createExternalWorkFlowDataWithInvocations(
             DEFAULT_EXT_CONTAINER_ID, DEFAULT_DATA_EXITID, HISTORY_ID_1, NEW_INVOCATION_STATUS);
@@ -120,5 +123,10 @@ public class ArchiveExternalWorkFlowDataTest {
         new ArchiveExternalWorkFlowData(item, archiveLink, archiveField);
     makeInvocationAssertions();
     makeWorkFlowAssertions(existingInField);
+  }
+
+  @AfterEach
+  void tearDown() throws Exception {
+    mocks.close();
   }
 }

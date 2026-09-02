@@ -21,8 +21,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import org.apache.commons.io.IOUtils;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -34,7 +34,7 @@ public class ApiIdentifiersHelperTest {
   @Mock private User user;
   @InjectMocks private ApiIdentifiersHelper underTest;
 
-  @Before
+  @BeforeEach
   public void setup() {
     MockitoAnnotations.openMocks(this);
     when(properties.getServerUrl()).thenReturn("https://localhost:8080");

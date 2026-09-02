@@ -5,9 +5,9 @@ import static com.researchspace.testutils.MockAndStubUtils.modifyUserCreationDat
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -21,9 +21,9 @@ import com.researchspace.webapp.controller.UserExportHandler;
 import java.time.LocalDate;
 import java.util.Date;
 import java.util.concurrent.Future;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -53,7 +53,7 @@ public class SysadminApiControllerUserDeletionTest extends SysadminApiController
 
   private UserExportHandler mockUserExportHandler;
 
-  @Before
+  @BeforeEach
   public void mockUserExport() throws Exception {
     // Mock the user export so the non-temp deletion path doesn't try to write to the filestore.
     mockUserExportHandler = mock(UserExportHandler.class);
@@ -64,7 +64,7 @@ public class SysadminApiControllerUserDeletionTest extends SysadminApiController
     ReflectionTestUtils.setField(sysadminApiController, "userExportHandler", mockUserExportHandler);
   }
 
-  @After
+  @AfterEach
   public void restoreUserExport() {
     ReflectionTestUtils.setField(
         sysadminApiController, "userExportHandler", originalUserExportHandler);
@@ -150,8 +150,8 @@ public class SysadminApiControllerUserDeletionTest extends SysadminApiController
 
   private void assertUserDeleted(User user) {
     assertFalse(
-        "user " + user.getUsername() + " (" + user.getId() + ") should have been deleted",
-        userDao.exists(user.getId()));
+        userDao.exists(user.getId()),
+        "user " + user.getUsername() + " (" + user.getId() + ") should have been deleted");
   }
 
   private void assertDeleteAnyUserRejectedWithGroupRoleMessage(User toDelete) {

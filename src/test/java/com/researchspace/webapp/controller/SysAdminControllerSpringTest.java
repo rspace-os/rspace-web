@@ -1,11 +1,12 @@
 package com.researchspace.webapp.controller;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.license.InactiveLicenseTestService;
 import com.researchspace.licensews.LicenseExceededException;
 import com.researchspace.model.User;
@@ -14,8 +15,8 @@ import com.researchspace.properties.PropertyHolder;
 import com.researchspace.service.UserEnablementUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
 import org.hamcrest.Matcher;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.ui.ExtendedModelMap;
@@ -29,7 +30,7 @@ public class SysAdminControllerSpringTest extends SpringTransactionalTest {
 
   @Autowired protected UserEnablementUtils userEnablementUtils;
 
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     super.setUp();
   }
@@ -62,9 +63,11 @@ public class SysAdminControllerSpringTest extends SpringTransactionalTest {
     props.setLicenseExceededCustomMessage(customMessage);
     try {
       Matcher<String> matcher = containsString(customMessage);
-      CoreTestUtils.assertExceptionThrown(
-          () -> sysCtrller.setUserAccountEnablement(user.getId(), true),
-          LicenseExceededException.class,
+      assertThat(
+          assertThrows(
+                  LicenseExceededException.class,
+                  () -> sysCtrller.setUserAccountEnablement(user.getId(), true))
+              .getMessage(),
           matcher);
     } finally {
       sysCtrller.setLicenseService(licenseService);

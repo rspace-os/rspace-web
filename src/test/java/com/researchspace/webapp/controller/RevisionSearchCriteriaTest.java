@@ -1,20 +1,12 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.model.dtos.RevisionSearchCriteria;
 import java.lang.reflect.InvocationTargetException;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class RevisionSearchCriteriaTest {
-
-  @Before
-  public void setUp() throws Exception {}
-
-  @After
-  public void tearDown() throws Exception {}
 
   RevisionSearchCriteria ar = new RevisionSearchCriteria();
 

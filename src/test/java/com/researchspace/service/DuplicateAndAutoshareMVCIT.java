@@ -1,8 +1,8 @@
 package com.researchspace.service;
 
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -17,9 +17,9 @@ import com.researchspace.webapp.controller.MVCTestBase;
 import java.security.Principal;
 import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 
@@ -39,7 +39,7 @@ public class DuplicateAndAutoshareMVCIT extends MVCTestBase {
   private Principal sysAdminPrincipal;
   private User sysAdmin;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     sysAdmin = createAndSaveUser(getRandomName(10), Constants.SYSADMIN_ROLE);
@@ -47,7 +47,7 @@ public class DuplicateAndAutoshareMVCIT extends MVCTestBase {
     sysAdminPrincipal = new MockPrincipal(sysAdmin.getUsername());
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }
@@ -127,9 +127,9 @@ public class DuplicateAndAutoshareMVCIT extends MVCTestBase {
 
     // THEN
     assertEquals(
-        "The file has not been autoshared after being duplicated",
         initialSize + 1,
-        recordSharingManager.getSharedRecordsForUser(nikdenik4).size());
+        recordSharingManager.getSharedRecordsForUser(nikdenik4).size(),
+        "The file has not been autoshared after being duplicated");
   }
 
   private void createUsersAndsGroups() throws Exception {

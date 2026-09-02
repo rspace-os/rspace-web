@@ -4,21 +4,17 @@ import static com.researchspace.api.v1.controller.DocumentApiPaginationCriteria.
 import static com.researchspace.api.v1.controller.DocumentApiPaginationCriteria.SHARED_WITH_ME_PARAM;
 
 import com.researchspace.core.testutil.JakartaValidatorTest;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class DocsearchConfigValidationTest extends JakartaValidatorTest {
 
   ApiDocSearchConfig srchConfig;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     srchConfig = new ApiDocSearchConfig();
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void testFilterValidation() {

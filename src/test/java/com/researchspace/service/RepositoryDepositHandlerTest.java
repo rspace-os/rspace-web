@@ -1,10 +1,10 @@
 package com.researchspace.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.model.User;
 import com.researchspace.model.apps.App;
 import com.researchspace.model.apps.UserAppConfig;
@@ -18,20 +18,18 @@ import com.researchspace.testutils.TestFactory;
 import com.researchspace.webapp.controller.repositories.RSpaceRepoConnectionConfig;
 import java.net.MalformedURLException;
 import java.net.URL;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class RepositoryDepositHandlerTest {
   private static final String DATAVERSE_REPOSITORY = "dataverseRepository";
   private static final String FIGSHARE_REPOSITORY = "figshareRepository";
-  @Rule public MockitoRule mockery = MockitoJUnit.rule();
   private @Mock UserManager userManager;
   private @Mock RepositoryFactory repoFactory;
 
@@ -66,16 +64,13 @@ public class RepositoryDepositHandlerTest {
   @InjectMocks RepositoryDepositHandlerImplUnconnectedHandlerTSS unconnectedHandlerTSS;
   private User anyUser;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
 
     handler.setRepoFactory(repoFactory);
     unconnectedHandlerTSS.setRepoFactory(repoFactory);
     anyUser = TestFactory.createAnyUser("any");
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void getConfigInfoHappyCase() throws MalformedURLException {
@@ -129,11 +124,11 @@ public class RepositoryDepositHandlerTest {
         SystemPropertyTestFactory.createAnyAppWithConfigElements(anyUser, App.APP_FIGSHARE);
     App app = appCfg.getApp();
     mockGetSessionUser();
-    CoreTestUtils.assertExceptionThrown(
+    assertThrows(
+        AppNotAuthorisedException.class,
         () ->
             unconnectedHandlerTSS.getDataverseRepoUIConfigInfo(
-                appCfg.getAppConfigElementSets().iterator().next(), anyUser),
-        AppNotAuthorisedException.class);
+                appCfg.getAppConfigElementSets().iterator().next(), anyUser));
   }
 
   @Test

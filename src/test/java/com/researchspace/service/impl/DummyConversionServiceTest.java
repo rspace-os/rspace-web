@@ -1,10 +1,10 @@
 package com.researchspace.service.impl;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class DummyConversionServiceTest extends SpringTransactionalTest {
 

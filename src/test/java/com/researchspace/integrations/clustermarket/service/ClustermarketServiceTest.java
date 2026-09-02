@@ -19,8 +19,8 @@ import com.researchspace.integrations.clustermarket.repository.ClustermarketBook
 import com.researchspace.integrations.clustermarket.repository.ClustermarketEquipmentRepository;
 import com.researchspace.model.User;
 import java.util.List;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
@@ -60,7 +60,7 @@ public class ClustermarketServiceTest {
   private ClustermarketEquipment equipmentFour;
   private List<JsonNode> equipmentResults;
 
-  @Before
+  @BeforeEach
   public void setUp() throws JsonProcessingException {
     openMocks(this);
     ObjectMapper mapper = new ObjectMapper();

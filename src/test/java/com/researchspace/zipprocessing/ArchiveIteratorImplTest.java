@@ -1,6 +1,6 @@
 package com.researchspace.zipprocessing;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -8,9 +8,9 @@ import java.io.IOException;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import org.apache.commons.io.FileUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class ArchiveIteratorImplTest {
 
@@ -38,7 +38,7 @@ public class ArchiveIteratorImplTest {
     }
   }
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     archiveIt = new ArchiveIteratorImpl();
     this.testZip = File.createTempFile("testzip", ".zip");
@@ -47,28 +47,18 @@ public class ArchiveIteratorImplTest {
     entryprocessor = new EntryCounter();
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {}
 
   @Test
   public void testProcessZip() throws FileNotFoundException, ZipException, IOException {
-    archiveIt.processZip(
-        testZip,
-        fileprocessor,
-        f -> {
-          return true;
-        });
+    archiveIt.processZip(testZip, fileprocessor, f -> true);
     assertEquals(4, fileprocessor.count);
   }
 
   @Test
   public void testProcessZipEntry() throws FileNotFoundException, ZipException, IOException {
-    archiveIt.processZipEntry(
-        testZip,
-        entryprocessor,
-        f -> {
-          return true;
-        });
+    archiveIt.processZipEntry(testZip, entryprocessor, f -> true);
     assertEquals(4, entryprocessor.count);
   }
 }

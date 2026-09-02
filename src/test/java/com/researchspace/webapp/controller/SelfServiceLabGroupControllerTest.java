@@ -33,25 +33,20 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import org.apache.shiro.authz.AuthorizationException;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoJUnitRunner;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.ObjectError;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class SelfServiceLabGroupControllerTest {
-
-  public @Rule MockitoRule mockito = MockitoJUnit.rule();
   @InjectMocks private SelfServiceLabGroupController controller;
   @Mock private CloudGroupManager cloudGroupManager;
   @Mock private GroupManager groupManager;
@@ -72,15 +67,22 @@ public class SelfServiceLabGroupControllerTest {
   @Mock private MessageSourceUtils messages;
   private Long newLabGroupID = 10L;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
-    when(createCloudGroup.getEmails()).thenReturn(new String[] {""});
-    when(createCloudGroup.getGroupName()).thenReturn("grpName");
+    lenient().when(createCloudGroup.getEmails()).thenReturn(new String[] {""});
+    lenient().when(createCloudGroup.getGroupName()).thenReturn("grpName");
     when(userManager.getAuthenticatedUserInSession()).thenReturn(piUser);
-    when(cloudGroupManager.createAndSaveGroup(
-            eq(true), eq("grpName"), eq(piUser), eq(piUser), eq(GroupType.LAB_GROUP), eq(piUser)))
+    lenient()
+        .when(
+            cloudGroupManager.createAndSaveGroup(
+                eq(true),
+                eq("grpName"),
+                eq(piUser),
+                eq(piUser),
+                eq(GroupType.LAB_GROUP),
+                eq(piUser)))
         .thenReturn(newLabGroup);
-    when(newLabGroup.getId()).thenReturn(newLabGroupID);
+    lenient().when(newLabGroup.getId()).thenReturn(newLabGroupID);
   }
 
   @Test

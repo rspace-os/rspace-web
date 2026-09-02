@@ -2,7 +2,7 @@ package com.researchspace.service.archive.export;
 
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static com.researchspace.core.util.progress.ProgressMonitor.NULL_MONITOR;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.archive.ArchivalImportConfig;
 import com.researchspace.archive.ArchiveManifest;
@@ -23,6 +23,7 @@ import com.researchspace.service.archive.ImportArchiveReport;
 import com.researchspace.service.archive.ImportStrategy;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -30,9 +31,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
@@ -72,8 +72,8 @@ public class ArchiveImportPreservesAllFieldsIT extends RealTransactionSpringTest
 
   @Autowired private ArchiveExportPlanner archivePlanner;
 
-  @Rule public TemporaryFolder tempExportFolder = new TemporaryFolder();
-  @Rule public TemporaryFolder tempImportFolder = new TemporaryFolder();
+  @TempDir public File tempExportFolder;
+  @TempDir public File tempImportFolder;
 
   @Test
   public void everyFieldOfEveryDocumentSurvivesRepeatedImportInOrder() throws Exception {
@@ -131,12 +131,12 @@ public class ArchiveImportPreservesAllFieldsIT extends RealTransactionSpringTest
 
     // Export all documents into one archive.
     ArchiveManifest manifest = new ArchiveManifest();
-    ArchiveExportConfig expCfg = createDefaultArchiveConfig(user, tempExportFolder.getRoot());
+    ArchiveExportConfig expCfg = createDefaultArchiveConfig(user, tempExportFolder);
     expCfg.setExportScope(ExportScope.SELECTION);
     archivePlanner.updateExportListWithLinkedRecords(exportList, expCfg);
     String zipName =
         archiveService.exportArchive(manifest, exportList, expCfg).getExportFile().getName();
-    File zipFile = new File(tempExportFolder.getRoot(), zipName);
+    File zipFile = new File(tempExportFolder, zipName);
 
     // Re-import repeatedly in this JVM; assert every field of every document survives, in order.
     List<String> failures = new ArrayList<>();
@@ -144,7 +144,7 @@ public class ArchiveImportPreservesAllFieldsIT extends RealTransactionSpringTest
       try {
         ArchivalImportConfig iconfig =
             createDefaultArchiveImportConfig(
-                user, tempImportFolder.newFolder("import-" + iteration));
+                user, newFolder(tempImportFolder, "import-" + iteration));
         ImportArchiveReport report =
             importer.importArchive(zipFile, iconfig, NULL_MONITOR, importStrategy::doImport);
         if (!report.isSuccessful()) {
@@ -187,6 +187,7 @@ public class ArchiveImportPreservesAllFieldsIT extends RealTransactionSpringTest
     }
 
     assertTrue(
+        failures.isEmpty(),
         String.format(
             "RSDEV-1140: archive import dropped or reordered field content on %d check(s) across %d"
                 + " imports of %d documents (%d fields each). Failures:%n%s",
@@ -194,8 +195,7 @@ public class ArchiveImportPreservesAllFieldsIT extends RealTransactionSpringTest
             IMPORT_ITERATIONS,
             NUM_FORMS,
             FIELDS_PER_FORM,
-            String.join("\n", failures)),
-        failures.isEmpty());
+            String.join("\n", failures)));
   }
 
   private StructuredDocument findImportedDoc(ImportArchiveReport report, String name, User user) {
@@ -207,5 +207,14 @@ public class ArchiveImportPreservesAllFieldsIT extends RealTransactionSpringTest
       }
     }
     throw new IllegalStateException("imported document '" + name + "' not found in report");
+  }
+
+  private static File newFolder(File root, String... subDirs) throws IOException {
+    String subFolder = String.join("/", subDirs);
+    File result = new File(root, subFolder);
+    if (!result.mkdirs()) {
+      throw new IOException("Couldn't create folders " + root);
+    }
+    return result;
   }
 }

@@ -1,6 +1,6 @@
 package com.researchspace.export.pdf;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.model.User;
@@ -9,17 +9,15 @@ import com.researchspace.model.preference.ExportPageSize;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.service.UserManager;
 import com.researchspace.testutils.TestFactory;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.stubbing.OngoingStubbing;
 
+@ExtendWith(MockitoExtension.class)
 public class PDFExportConfigurerTest {
-
-  @Rule public MockitoRule rule = MockitoJUnit.rule();
 
   @Mock private UserManager userMgr;
 
@@ -27,7 +25,7 @@ public class PDFExportConfigurerTest {
   private User anyUser;
   private UserPreference notset;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     pdfConfigurer = new ExportConfigurerImpl();
     pdfConfigurer.setUserManager(userMgr);

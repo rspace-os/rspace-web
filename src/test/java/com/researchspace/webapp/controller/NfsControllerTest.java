@@ -2,13 +2,12 @@ package com.researchspace.webapp.controller;
 
 import static com.researchspace.model.netfiles.NfsFileSystemOption.USER_DIRS_REQUIRED;
 import static com.researchspace.webapp.controller.NfsController.NEED_LOG_IN_MSG;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
-import static org.mockito.ArgumentMatchers.anyObject;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -38,8 +37,9 @@ import java.util.HashMap;
 import java.util.Map;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.shiro.authz.AuthorizationException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -75,7 +75,7 @@ public class NfsControllerTest extends SpringTransactionalTest {
   private NfsManager nfsManagerMock;
   private NfsClient nfsClientMock;
 
-  @Before
+  @BeforeEach
   public void setUp() throws IllegalAddChildOperation {
 
     model = new ExtendedModelMap();
@@ -152,7 +152,7 @@ public class NfsControllerTest extends SpringTransactionalTest {
             eq("username"),
             eq("password"),
             anyMap(),
-            anyObject(),
+            any(),
             eq("target_dir")))
         .thenReturn("logged.as.username");
     loginResult =
@@ -200,15 +200,15 @@ public class NfsControllerTest extends SpringTransactionalTest {
 
     File tempFile = new File(downloadPath);
     File tempParentFolder = tempFile.getParentFile();
-    assertTrue("download path should point to temp file", tempFile.exists());
+    assertTrue(tempFile.exists(), "download path should point to temp file");
     assertEquals(testDownlodaFileName, tempFile.getName());
 
     controller.downloadNfsFile(request, response);
     assertEquals("application/octet-stream", response.getContentType());
     assertEquals(testDownloadFileContent, response.getContentAsString());
 
-    assertFalse("after download file should be deleted", tempFile.exists());
-    assertFalse("temp parent folder should be deleted", tempParentFolder.exists());
+    assertFalse(tempFile.exists(), "after download file should be deleted");
+    assertFalse(tempParentFolder.exists(), "temp parent folder should be deleted");
   }
 
   @Test
@@ -223,7 +223,7 @@ public class NfsControllerTest extends SpringTransactionalTest {
         new NfsController.NfsLoginData(TEST_FILE_SYSTEM_ID, "u", "p", null);
     try {
       controller.loginToNfsWithJson(data, request, principalStub);
-      org.junit.Assert.fail("expected AuthorizationException");
+      Assertions.fail("expected AuthorizationException");
     } catch (AuthorizationException expected) {
       // expected
     }

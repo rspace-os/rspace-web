@@ -2,9 +2,11 @@ package com.researchspace.webapp.controller;
 
 import static com.researchspace.testutils.TestFactory.createAnyGroup;
 import static com.researchspace.testutils.TestFactory.createAnyUser;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -20,18 +22,17 @@ import com.researchspace.service.RoleManager;
 import com.researchspace.service.UserManager;
 import com.researchspace.testutils.TestFactory;
 import org.apache.shiro.authz.AuthorizationException;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+@ExtendWith(MockitoExtension.class)
 public class UserRoleHandlerImplTest {
-  @Rule public MockitoRule mockery = MockitoJUnit.rule();
   @Mock UserManager userManager;
   @Mock UserPermissionUtils userPermUtils;
   @Mock IPermissionUtils permUtils;
@@ -40,10 +41,10 @@ public class UserRoleHandlerImplTest {
   @InjectMocks UserRoleHandlerImpl roleHandler;
   User admin;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     admin = TestFactory.createAnyUserWithRole("admin", Role.SYSTEM_ROLE.getName());
-    when(roleMgr.getRole(Role.PI_ROLE.getName())).thenReturn(Role.PI_ROLE);
+    lenient().when(roleMgr.getRole(Role.PI_ROLE.getName())).thenReturn(Role.PI_ROLE);
     ReflectionTestUtils.setField(
         roleHandler, "messages", new MessageSourceUtils(new JsonMessageSource()));
   }
@@ -68,12 +69,16 @@ public class UserRoleHandlerImplTest {
     return u;
   }
 
-  @Test(expected = AuthorizationException.class)
+  @Test
   public void grantPiRoleRequiresAuth() {
-    User toPromote = TestFactory.createAnyUser("user");
-    setUpThrowAuthException(toPromote);
-    roleHandler.grantGlobalPiRoleToUser(admin, toPromote);
-    verify(userManager, never()).save(toPromote);
+    assertThrows(
+        AuthorizationException.class,
+        () -> {
+          User toPromote = TestFactory.createAnyUser("user");
+          setUpThrowAuthException(toPromote);
+          roleHandler.grantGlobalPiRoleToUser(admin, toPromote);
+          verify(userManager, never()).save(toPromote);
+        });
   }
 
   private void setUpThrowAuthException(User target) {
@@ -103,20 +108,28 @@ public class UserRoleHandlerImplTest {
     assertTrue(user.hasRole(Role.USER_ROLE));
   }
 
-  @Test(expected = IllegalStateException.class)
+  @Test
   public void revokePiRoleFailsIfPiIsPiOfGroup() {
-    User toDemote = createAPi();
-    createAnyGroup(toDemote, (User[]) null);
-    roleHandler.revokeGlobalPiRoleFromUser(admin, toDemote);
+    assertThrows(
+        IllegalStateException.class,
+        () -> {
+          User toDemote = createAPi();
+          createAnyGroup(toDemote, (User[]) null);
+          roleHandler.revokeGlobalPiRoleFromUser(admin, toDemote);
+        });
   }
 
-  @Test(expected = AuthorizationException.class)
+  @Test
   public void revokePiRoleRequiresAuth() {
-    User toDemote = createAPi();
-    toDemote.addRole(Role.USER_ROLE); // pi's always have user role too
-    setUpThrowAuthException(toDemote);
-    toDemote = roleHandler.revokeGlobalPiRoleFromUser(admin, toDemote);
-    verify(userManager, never()).save(toDemote);
-    assertTrue(toDemote.hasRole(Role.PI_ROLE));
+    assertThrows(
+        AuthorizationException.class,
+        () -> {
+          User toDemote = createAPi();
+          toDemote.addRole(Role.USER_ROLE); // pi's always have user role too
+          setUpThrowAuthException(toDemote);
+          toDemote = roleHandler.revokeGlobalPiRoleFromUser(admin, toDemote);
+          verify(userManager, never()).save(toDemote);
+          assertTrue(toDemote.hasRole(Role.PI_ROLE));
+        });
   }
 }

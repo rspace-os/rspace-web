@@ -1,7 +1,7 @@
 package com.researchspace.archive.model;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.core.util.XMLReadWriteUtils;
@@ -17,32 +17,27 @@ import jakarta.xml.bind.JAXBException;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 public class ArchiveMessagesTest {
 
   private MessageArchiveDataHandler archiver;
   int counter = 0;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     archiver = new MessageArchiveDataHandler();
   }
 
-  @Rule public TemporaryFolder tempExportFolder = new TemporaryFolder();
-
-  @After
-  public void tearDown() throws Exception {}
+  @TempDir public File tempExportFolder;
 
   @Test
   public void testMessagesXML() throws JAXBException, IOException, Exception {
     // check empty lists are handled OK
     ArchiveMessages originalMessages =
-        archiver.generateMessagesXML(tempExportFolder.getRoot(), Collections.emptyList());
+        archiver.generateMessagesXML(tempExportFolder, Collections.emptyList());
     assertEquals(0, originalMessages.getMessages().size());
     assertEquals(0, originalMessages.getUsernames().size());
 
@@ -57,13 +52,12 @@ public class ArchiveMessagesTest {
     MessageOrRequest reply2 = replyToMessage(sender, target2, mor);
 
     originalMessages =
-        archiver.generateMessagesXML(
-            tempExportFolder.getRoot(), TransformerUtils.toList(mor, reply, reply2));
+        archiver.generateMessagesXML(tempExportFolder, TransformerUtils.toList(mor, reply, reply2));
     assertEquals(3, originalMessages.getUsernames().size());
     assertEquals(3, originalMessages.getMessages().size());
 
-    File xml = new File(tempExportFolder.getRoot(), ExportImport.MESSAGES);
-    File schema = new File(tempExportFolder.getRoot(), ExportImport.MESSAGES_SCHEMA);
+    File xml = new File(tempExportFolder, ExportImport.MESSAGES);
+    File schema = new File(tempExportFolder, ExportImport.MESSAGES_SCHEMA);
     // now read back in from XML:
     ArchiveMessages fromXML = XMLReadWriteUtils.fromXML(xml, ArchiveMessages.class, schema, null);
     assertTrue(ArchiveTestUtils.areEquals(originalMessages, fromXML));

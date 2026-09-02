@@ -15,8 +15,8 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class OfficeOnlineControllerTest extends SpringTransactionalTest {
@@ -31,7 +31,7 @@ public class OfficeOnlineControllerTest extends SpringTransactionalTest {
 
   private User testUser;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     WopiTestUtilities.setWopiDiscoveryFromExampleFile(
         discoveryServiceHandler, discoveryProcessor, WopiTestUtilities.MSOFFICE_DISCOVERY_XML_FILE);

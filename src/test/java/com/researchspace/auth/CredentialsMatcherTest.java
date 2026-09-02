@@ -1,7 +1,7 @@
 package com.researchspace.auth;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.User;
 import com.researchspace.service.IReauthenticator;
@@ -10,7 +10,7 @@ import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.subject.SimplePrincipalCollection;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class CredentialsMatcherTest extends SpringTransactionalTest {

@@ -13,25 +13,23 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
 
+@ExtendWith(MockitoExtension.class)
 public class SampleApiPostFullValidatorTest extends InventoryRecordValidationTestBase {
-
-  public @Rule MockitoRule rule = MockitoJUnit.rule();
 
   @Autowired
   @Qualifier("sampleApiPostFullValidator")
   private SampleApiPostFullValidator samplePostFullValidator;
 
-  @Before
+  @BeforeEach
   public void setup() {
     validator = samplePostFullValidator;
   }

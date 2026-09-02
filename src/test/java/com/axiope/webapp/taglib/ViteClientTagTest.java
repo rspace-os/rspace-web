@@ -1,8 +1,8 @@
 package com.axiope.webapp.taglib;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
 
@@ -16,17 +16,15 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class ViteClientTagTest {
-
-  @Rule public MockitoRule mockito = MockitoJUnit.rule();
 
   @Mock private HttpServletRequest request;
   @Mock private PageContext pageContext;
@@ -37,7 +35,7 @@ public class ViteClientTagTest {
   private final Map<String, Object> requestAttributes = new LinkedHashMap<>();
   private String originalReactDevModeProperty;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     originalReactDevModeProperty = System.getProperty(FrontendCacheVersion.REACT_DEV_MODE_PROPERTY);
     System.clearProperty(FrontendCacheVersion.REACT_DEV_MODE_PROPERTY);
@@ -69,7 +67,7 @@ public class ViteClientTagTest {
         .write(anyString());
   }
 
-  @After
+  @AfterEach
   public void tearDown() {
     if (originalReactDevModeProperty == null) {
       System.clearProperty(FrontendCacheVersion.REACT_DEV_MODE_PROPERTY);
@@ -92,14 +90,14 @@ public class ViteClientTagTest {
 
     assertEquals(TagSupport.SKIP_BODY, tag.doStartTag());
     assertTrue(
-        "Expected /ui/dist/@vite/client script tag, got: " + output,
-        output.toString().contains("type=\"module\" src=\"/ui/dist/@vite/client\""));
+        output.toString().contains("type=\"module\" src=\"/ui/dist/@vite/client\""),
+        "Expected /ui/dist/@vite/client script tag, got: " + output);
     assertTrue(
-        "Expected React refresh preamble, got: " + output,
-        output.toString().contains("/ui/dist/@react-refresh"));
+        output.toString().contains("/ui/dist/@react-refresh"),
+        "Expected React refresh preamble, got: " + output);
     assertTrue(
-        "Expected React refresh marker, got: " + output,
-        output.toString().contains("window.__vite_plugin_react_preamble_installed__ = true;"));
+        output.toString().contains("window.__vite_plugin_react_preamble_installed__ = true;"),
+        "Expected React refresh marker, got: " + output);
   }
 
   @Test
@@ -135,11 +133,11 @@ public class ViteClientTagTest {
     // Simulate a BundleTag.renderHmrBundle() emitting @vite/client at the same URL — it should be
     // suppressed by the shared dedupe set populated by ViteClientTag above.
     assertFalse(
-        "BundleTag and ViteClientTag must share the dedupe key for @vite/client",
-        sharedDedupe.add("script:module:/ui/dist/@vite/client"));
+        sharedDedupe.add("script:module:/ui/dist/@vite/client"),
+        "BundleTag and ViteClientTag must share the dedupe key for @vite/client");
     assertFalse(
-        "BundleTag and ViteClientTag must share the dedupe key for the React preamble",
-        sharedDedupe.add(BundleTag.REACT_PREAMBLE_DEDUPE_KEY));
+        sharedDedupe.add(BundleTag.REACT_PREAMBLE_DEDUPE_KEY),
+        "BundleTag and ViteClientTag must share the dedupe key for the React preamble");
   }
 
   @Test

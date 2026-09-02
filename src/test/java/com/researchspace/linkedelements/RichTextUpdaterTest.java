@@ -2,10 +2,10 @@ package com.researchspace.linkedelements;
 
 import static com.researchspace.testutils.FieldTestUtils.createTextField;
 import static org.apache.commons.io.FileUtils.readFileToString;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.core.util.FieldParserConstants;
 import com.researchspace.core.util.MediaUtils;
@@ -37,7 +37,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class RichTextUpdaterTest extends SpringTransactionalTest {
@@ -307,13 +307,13 @@ public class RichTextUpdaterTest extends SpringTransactionalTest {
         updater.updateImageIdsAndAnnoIdsInCopy(
             oldFieldId2NewFieldId, oldAnnoId2NewAnnoId, ANNOTATED_IMG_V28);
     assertTrue(
-        "updatedV28: " + updatedV28, updatedV28.startsWith(ANNOTATED_IMG_V28_EXPECTED_START));
+        updatedV28.startsWith(ANNOTATED_IMG_V28_EXPECTED_START), "updatedV28: " + updatedV28);
 
     String updatedV29 =
         updater.updateImageIdsAndAnnoIdsInCopy(
             oldFieldId2NewFieldId, oldAnnoId2NewAnnoId, ANNOTATED_IMG_V29);
     assertTrue(
-        "updatedV29: " + updatedV29, updatedV29.startsWith(ANNOTATED_IMG_V29_EXPECTED_START));
+        updatedV29.startsWith(ANNOTATED_IMG_V29_EXPECTED_START), "updatedV29: " + updatedV29);
   }
 
   @Test
@@ -416,7 +416,7 @@ public class RichTextUpdaterTest extends SpringTransactionalTest {
     fieldUpdated = updater.updateLinksWithRevisions(field, null);
     assertTrue(fieldUpdated);
     String clearedData = field.getData();
-    assertFalse("data still contains 'revision': " + clearedData, clearedData.contains("revision"));
+    assertFalse(clearedData.contains("revision"), "data still contains 'revision': " + clearedData);
     assertEquals(initialData, clearedData);
 
     // let's run the same update again - the field shouldn't be marked as updated
@@ -435,8 +435,8 @@ public class RichTextUpdaterTest extends SpringTransactionalTest {
 
     String newImgStartsWith = "<img id=\"124\" class=\"chem\" src=\"/chemical/getImageChem/124/";
     String newImgEndsWith = " alt=\"image\">";
-    assertTrue(updatedText, updatedText.startsWith(newImgStartsWith));
-    assertTrue(updatedText, updatedText.endsWith(newImgEndsWith));
+    assertTrue(updatedText.startsWith(newImgStartsWith), updatedText);
+    assertTrue(updatedText.endsWith(newImgEndsWith), updatedText);
   }
 
   @Test
@@ -448,11 +448,11 @@ public class RichTextUpdaterTest extends SpringTransactionalTest {
     String updatedText = updater.updateMathIdsInCopy(oldKey2NewKey, original);
     Pattern expected = Pattern.compile("data\\-mathid\\s*=\\s*\"3\"");
     Matcher m = expected.matcher(updatedText);
-    assertTrue("updated data-mathid not found in " + updatedText, m.find());
+    assertTrue(m.find(), "updated data-mathid not found in " + updatedText);
 
     Pattern expectedSvg = Pattern.compile("data=\"/svg/3\"");
     Matcher m2 = expectedSvg.matcher(updatedText);
-    assertTrue("updated object url not found in " + updatedText, m2.find());
+    assertTrue(m2.find(), "updated object url not found in " + updatedText);
   }
 
   @Test
@@ -465,8 +465,8 @@ public class RichTextUpdaterTest extends SpringTransactionalTest {
 
     updater.updateLinksWithRevisions(tf, 23);
     assertTrue(
-        "math object source should contain revision number",
-        tf.getFieldData().contains("data=\"/svg/2?revision=23\""));
+        tf.getFieldData().contains("data=\"/svg/2?revision=23\""),
+        "math object source should contain revision number");
   }
 
   @Test
@@ -476,7 +476,7 @@ public class RichTextUpdaterTest extends SpringTransactionalTest {
         "<p>some content</p><div><img class='videoDropped' id='12-34' src='xxx'/><img"
             + " class='videoDropped' id='12-35' src='xxx'/></div>";
     String replaced = updater.replaceAVTableWithLinkToResource(html, "12-34", "x.mp4", "name");
-    assertTrue(replaced, replaced.contains("x.mp4"));
+    assertTrue(replaced.contains("x.mp4"), replaced);
   }
 
   @Test
@@ -487,8 +487,8 @@ public class RichTextUpdaterTest extends SpringTransactionalTest {
     String appended = updater.insertHrefToChemistryFile(imgToAppendTo, "123", "chem.mol", "name");
     String newImgStartsWith = "<img id=\"123\"";
     String newImgEndsWith = "<p><a href=\"chem.mol\">name</a></p>";
-    assertTrue(appended, appended.startsWith(newImgStartsWith));
-    assertTrue(appended, appended.endsWith(newImgEndsWith));
+    assertTrue(appended.startsWith(newImgStartsWith), appended);
+    assertTrue(appended.endsWith(newImgEndsWith), appended);
   }
 
   @Test
@@ -496,14 +496,14 @@ public class RichTextUpdaterTest extends SpringTransactionalTest {
 
     String original = updater.generateAnyURLStringForExternalDocLink();
     assertVelocityVariablesReplaced(original);
-    assertFalse(original, original.contains(MediaUtils.APP_ICON_FOLDER));
+    assertFalse(original.contains(MediaUtils.APP_ICON_FOLDER), original);
     String ICON_LOCATION = "/images/icons";
 
     Field field = createTextField();
     field.setFieldData(original);
     field = updater.updateAttachmentIcons(field);
-    assertTrue(field.getFieldData(), field.getFieldData().contains(MediaUtils.APP_ICON_FOLDER));
-    assertTrue(field.getFieldData(), field.getFieldData().contains(ICON_LOCATION));
+    assertTrue(field.getFieldData().contains(MediaUtils.APP_ICON_FOLDER), field.getFieldData());
+    assertTrue(field.getFieldData().contains(ICON_LOCATION), field.getFieldData());
     assertFalse(field.getFieldData().contains(RichTextUpdater.DUMMY_ICON_PATH));
   }
 
@@ -526,8 +526,8 @@ public class RichTextUpdaterTest extends SpringTransactionalTest {
     toLinkTo.setName("doc SD515");
     toLinkTo.setId(515L);
     String original = updater.generateURLStringForInternalLink(toLinkTo);
-    assertTrue(original, original.contains("/globalId/SD515"));
-    assertTrue(original, original.contains("SD515: doc SD515"));
+    assertTrue(original.contains("/globalId/SD515"), original);
+    assertTrue(original.contains("SD515: doc SD515"), original);
 
     Field field = FieldTestUtils.createTextField();
     field.setFieldData(original);
@@ -537,10 +537,10 @@ public class RichTextUpdaterTest extends SpringTransactionalTest {
     String updatedFieldData =
         updater.updateLinkedDocument(field.getFieldData(), oldToNew, newLinkIds);
     // link href should be updated
-    assertTrue(updatedFieldData, updatedFieldData.contains("/globalId/SD516"));
+    assertTrue(updatedFieldData.contains("/globalId/SD516"), updatedFieldData);
     // global id at the start of link content should be updated, but the target document name remain
     // unchanged
-    assertTrue(updatedFieldData, updatedFieldData.contains("SD516: doc SD515"));
+    assertTrue(updatedFieldData.contains("SD516: doc SD515"), updatedFieldData);
     assertEquals(1, newLinkIds.size());
     assertEquals(516L, newLinkIds.get(0).longValue());
   }

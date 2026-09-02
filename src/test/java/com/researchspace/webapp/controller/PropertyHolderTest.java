@@ -1,33 +1,27 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.properties.PropertyHolder;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.ResourceLoader;
 
+@ExtendWith(MockitoExtension.class)
 public class PropertyHolderTest {
-
-  public @Rule MockitoRule rule = MockitoJUnit.rule();
   @Mock ResourceLoader mockResourceLoader;
   PropertyHolder holder = new PropertyHolder();
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     holder = new PropertyHolder();
     holder.setResourceLoader(mockResourceLoader);
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void testGetBannerImageName() {

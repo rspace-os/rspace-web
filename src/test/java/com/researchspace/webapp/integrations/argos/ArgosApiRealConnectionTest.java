@@ -9,19 +9,19 @@ import com.researchspace.argos.model.ArgosDMP;
 import com.researchspace.argos.model.ArgosDMPListing;
 import com.researchspace.argos.model.DataTableData;
 import com.researchspace.properties.PropertyHolder;
-import com.researchspace.service.impl.ConditionalTestRunnerNotSpring;
-import com.researchspace.service.impl.RunIfSystemPropertyDefined;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.web.client.RestTemplate;
 
-@RunWith(ConditionalTestRunnerNotSpring.class)
+// The following tests run nightly and assert that the Argos API has not
+// changed in such a way that our integration no longer works correctly
+@EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
 public class ArgosApiRealConnectionTest {
 
   private RestTemplate restTemplate;
@@ -30,7 +30,7 @@ public class ArgosApiRealConnectionTest {
 
   @InjectMocks private ArgosDMPProvider argosClient;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     openMocks(this);
 
@@ -40,9 +40,6 @@ public class ArgosApiRealConnectionTest {
     this.argosClient.setRestTemplate(restTemplate);
   }
 
-  // The following tests run nightly and assert that the Argos API has not
-  // changed in such a way that our integration no longer works correctly
-  @RunIfSystemPropertyDefined("nightly")
   @Test
   public void listPlansTest() {
     try {
@@ -53,7 +50,6 @@ public class ArgosApiRealConnectionTest {
     }
   }
 
-  @RunIfSystemPropertyDefined("nightly")
   @Test
   public void getPlanByIdTest() {
     try {

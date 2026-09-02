@@ -1,17 +1,18 @@
 package com.researchspace.model;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class VersionTest {
   Version v1, v2, v3;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     v1 = null;
     v2 = null;
@@ -19,12 +20,16 @@ public class VersionTest {
     setUpVersions();
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {}
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testNullConstructorThrowsIAE() {
-    new Version(null);
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          new Version(null);
+        });
   }
 
   @Test

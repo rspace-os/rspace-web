@@ -1,10 +1,11 @@
 package com.researchspace.model.record;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.Group;
 import com.researchspace.model.Role;
@@ -20,23 +21,23 @@ import com.researchspace.model.inventory.SubSampleName;
 import com.researchspace.model.inventory.field.ExtraField;
 import com.researchspace.model.inventory.field.ExtraLinkField;
 import com.researchspace.model.units.RSUnitDef;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class RecordFactoryTest {
 
   IRecordFactory factoryAPI;
   private User user, otherUser;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     factoryAPI = new RecordFactory();
     user = TestFactory.createAnyUser("user");
     otherUser = TestFactory.createAnyUser("otherUser");
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {}
 
   @Test
@@ -46,9 +47,9 @@ public class RecordFactoryTest {
     assertEquals(FieldType.LINK, field.getType());
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testCreateRichTextDocumentFailsIfARgsNull() {
-    factoryAPI.createFolder(null, user);
+    assertThrows(IllegalArgumentException.class, () -> factoryAPI.createFolder(null, user));
   }
 
   @Test
@@ -187,9 +188,9 @@ public class RecordFactoryTest {
     assertEquals(otherUser.getUsername(), sample.getModifiedBy());
   }
 
-  @Test(expected = NullPointerException.class)
+  @Test
   public void testCreateSampleFromTemplateRejectsNullTemplate() {
-    factoryAPI.createSample("fail", user, null);
+    assertThrows(NullPointerException.class, () -> factoryAPI.createSample("fail", user, null));
   }
 
   @Test

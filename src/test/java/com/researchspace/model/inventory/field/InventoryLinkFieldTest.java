@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.field.FieldType;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class InventoryLinkFieldTest {
 

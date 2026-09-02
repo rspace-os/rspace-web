@@ -11,7 +11,7 @@ import com.researchspace.service.OAuthAppManager;
 import com.researchspace.testutils.CommunityTestContext;
 import com.researchspace.webapp.filter.RemoteUserRetrievalPolicy;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.web.servlet.ResultActions;
 

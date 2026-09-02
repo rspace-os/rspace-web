@@ -1,6 +1,7 @@
 package com.researchspace.service.impl;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.openMocks;
 
@@ -59,7 +60,9 @@ public class MockFolderStructure {
     setupMockDaos();
     Folder root = utils.setupRootFolder(subject);
     if (!extFolderManagerMockExists) {
-      when(folderManagerMock.getFolder(any(Long.class), any(User.class))).thenReturn(folderMock);
+      lenient()
+          .when(folderManagerMock.getFolder(any(Long.class), any(User.class)))
+          .thenReturn(folderMock);
     }
     DefaultUserFolderCreator folderCreator =
         new DefaultUserFolderCreator(rfac, permFac, folderDao, utils, folderManagerMock);
@@ -73,7 +76,8 @@ public class MockFolderStructure {
             invocation -> {
               return invocation.getArgument(0);
             });
-    when(recordDao.save(any(Record.class)))
+    lenient()
+        .when(recordDao.save(any(Record.class)))
         .thenAnswer(
             invocation -> {
               return invocation.getArgument(0);

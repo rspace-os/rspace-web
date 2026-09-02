@@ -5,14 +5,14 @@ import com.researchspace.model.record.TestFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class RSMathTest {
 
   private RSMath math;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     math = TestFactory.createAMathElement();
     math.setId(2L);

@@ -1,9 +1,9 @@
 package com.researchspace.dao.customliquibaseupdates.v29;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.dao.customliquibaseupdates.AbstractDBHelpers;
 import com.researchspace.model.ChemElementsFormat;
@@ -25,8 +25,8 @@ import java.util.List;
 import liquibase.exception.CustomChangeException;
 import liquibase.exception.SetupException;
 import org.apache.commons.codec.binary.Base64;
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class UpdateReferencesInSnippetAttachments0_29IT extends AbstractDBHelpers {
@@ -46,7 +46,7 @@ public class UpdateReferencesInSnippetAttachments0_29IT extends AbstractDBHelper
   private RSChemElement chem;
   private EcatComment comment;
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }

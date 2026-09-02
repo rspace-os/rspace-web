@@ -1,38 +1,35 @@
 package com.researchspace.api.v1.controller;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.sameInstance;
-import static org.junit.Assert.assertThat;
 
 import com.researchspace.api.v1.model.ApiFile;
 import com.researchspace.model.EcatImage;
 import com.researchspace.model.User;
-import com.researchspace.testutils.DatabaseCleaner;
+import com.researchspace.testutils.DatabaseCleanerLifecycle;
 import com.researchspace.testutils.SpringTransactionalTest;
-import com.researchspace.testutils.TestRunnerController;
 import java.io.IOException;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.Test;
+import javax.sql.DataSource;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.transaction.TestTransaction;
 
-public class FilesAPIHandlerCachingTest extends SpringTransactionalTest {
+public class FilesAPIHandlerCachingTest extends SpringTransactionalTest
+    implements DatabaseCleanerLifecycle {
 
   private @Autowired FilesAPIHandler handler;
+  private @Autowired DataSource dataSource;
 
-  @Before
-  public void setUp() throws Exception {
-    super.setUp();
+  @Override
+  public DataSource getDataSourceForCleanup() {
+    return dataSource;
   }
 
-  @After
-  public void tearDown() throws Exception {}
-
-  @AfterClass
-  public static void after() {
-    if (!TestRunnerController.isFastRun()) DatabaseCleaner.cleanUp();
+  @BeforeEach
+  public void setUp() throws Exception {
+    super.setUp();
   }
 
   @Test

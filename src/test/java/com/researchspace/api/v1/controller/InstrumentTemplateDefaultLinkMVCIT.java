@@ -18,8 +18,8 @@ import com.researchspace.model.inventory.field.InventoryLink;
 import com.researchspace.model.inventory.field.InventoryLinkField;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import java.util.List;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MvcResult;
@@ -44,7 +44,7 @@ public class InstrumentTemplateDefaultLinkMVCIT extends API_MVC_InventoryTestBas
   private User anyUser;
   private String apiKey;
 
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     super.setUp();
     anyUser = createInitAndLoginAnyUser();
