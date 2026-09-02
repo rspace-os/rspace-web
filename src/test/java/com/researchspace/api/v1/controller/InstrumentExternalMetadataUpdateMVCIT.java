@@ -22,9 +22,9 @@ import com.researchspace.service.inventory.InventoryIdentifierExternalUpdateServ
 import com.researchspace.webapp.integrations.b2inst.B2instConnectionException;
 import com.researchspace.webapp.integrations.b2inst.B2instConnectorDummy;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.test.context.web.WebAppConfiguration;
@@ -61,7 +61,7 @@ public class InstrumentExternalMetadataUpdateMVCIT extends API_MVC_InventoryTest
   private ApiInventorySystemSettings.IdentifierSettings originalB2instSettings;
   private ApiInventorySystemSettings.IdentifierSettings originalPidinstDataCiteSettings;
 
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     realConnectorOnManager = ReflectionTestUtils.getField(identifierApiManager, "b2instConnector");
     realConnectorOnUpdateService =
@@ -79,7 +79,7 @@ public class InstrumentExternalMetadataUpdateMVCIT extends API_MVC_InventoryTest
     setB2instEnabled("true");
   }
 
-  @After
+  @AfterEach
   public void teardown() throws Exception {
     /*
      * Both providers, and in this order. Enabling a PIDINST provider disables its sibling (see

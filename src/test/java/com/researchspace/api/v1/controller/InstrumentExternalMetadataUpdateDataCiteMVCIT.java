@@ -15,14 +15,12 @@ import com.researchspace.api.v1.model.ApiInventorySystemSettings;
 import com.researchspace.api.v1.model.ApiInventorySystemSettings.IdentifierSettings;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
-import com.researchspace.service.impl.ConditionalTestRunner;
-import com.researchspace.service.impl.RunIfSystemPropertyDefined;
 import com.researchspace.service.inventory.InventoryIdentifierApiManager;
 import com.researchspace.webapp.integrations.b2inst.B2instConnector;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -53,7 +51,7 @@ import org.springframework.validation.BindingResult;
  * datacite.realConnectionTest.*} credentials and it mints a real test DOI, which it deletes again.
  */
 @WebAppConfiguration
-@RunWith(ConditionalTestRunner.class)
+@EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
 public class InstrumentExternalMetadataUpdateDataCiteMVCIT extends API_MVC_InventoryTestBase {
 
   @Autowired private InventoryIdentifierApiManager identifierApiManager;
@@ -73,7 +71,7 @@ public class InstrumentExternalMetadataUpdateDataCiteMVCIT extends API_MVC_Inven
   private ApiInventorySystemSettings.IdentifierSettings originalPidinstDataCiteSettings;
   private ApiInventorySystemSettings.IdentifierSettings originalB2instSettings;
 
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     /*
      * An instrument takes the B2INST path whenever B2INST is configured AND enabled
@@ -96,7 +94,7 @@ public class InstrumentExternalMetadataUpdateDataCiteMVCIT extends API_MVC_Inven
     setPidinstDataCiteEnabled(true);
   }
 
-  @After
+  @AfterEach
   public void teardown() throws Exception {
     /*
      * Both providers, and in this order. Enabling a PIDINST provider disables its sibling (see
@@ -129,7 +127,6 @@ public class InstrumentExternalMetadataUpdateDataCiteMVCIT extends API_MVC_Inven
   }
 
   @Test
-  @RunIfSystemPropertyDefined("nightly")
   public void realConnectionSavingAnInstrumentRewritesItsDraftDoiAndLeavesItADraft()
       throws Exception {
     User anyUser = createInitAndLoginAnyUser();
