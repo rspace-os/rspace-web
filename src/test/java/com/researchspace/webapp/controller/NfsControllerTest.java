@@ -8,7 +8,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
-import static org.mockito.ArgumentMatchers.anyObject;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -152,7 +151,7 @@ public class NfsControllerTest extends SpringTransactionalTest {
             eq("username"),
             eq("password"),
             anyMap(),
-            anyObject(),
+            any(),
             eq("target_dir")))
         .thenReturn("logged.as.username");
     loginResult =

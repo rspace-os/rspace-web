@@ -9,7 +9,7 @@ import static org.mockito.Mockito.atMost;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.initMocks;
+import static org.mockito.MockitoAnnotations.openMocks;
 
 import com.researchspace.documentconversion.spi.ConversionResult;
 import com.researchspace.documentconversion.spi.Convertible;
@@ -67,7 +67,7 @@ public class MSWordProcessorTest {
 
   @Before
   public void setUp() throws Exception {
-    initMocks(this);
+    openMocks(this);
     cfg = getConfig();
     outfile = File.createTempFile("any", ".doc");
     success = new ConversionResult(outfile, "ms/word");

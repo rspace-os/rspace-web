@@ -43,7 +43,7 @@ public class EmailSenderTest {
     emailSender.init();
     emailSender.sendEmail(anyHtmlBody(), List.of("user@example.com"), new MessageOrRequest());
 
-    verify(logger, times(3)).warn(Mockito.anyString(), new Object[] {Mockito.any()});
+    verify(logger, times(3)).warn(Mockito.anyString(), Mockito.any(Object[].class));
   }
 
   @Test

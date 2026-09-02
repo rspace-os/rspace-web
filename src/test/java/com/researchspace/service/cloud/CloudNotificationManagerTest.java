@@ -21,7 +21,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
@@ -135,16 +135,16 @@ public class CloudNotificationManagerTest extends SpringTransactionalTest {
   private void verifyNoJoinAnalytics() {
     verify(analyticsMgrMock, never())
         .joinGroupInvitationSent(
-            Matchers.any(User.class),
-            Matchers.any(User.class),
-            Matchers.any(HttpServletRequest.class));
+            ArgumentMatchers.any(User.class),
+            ArgumentMatchers.any(User.class),
+            ArgumentMatchers.any(HttpServletRequest.class));
   }
 
   private void verifyNoShareAnalytics() {
     verify(analyticsMgrMock, never())
         .shareDocInvitationSent(
-            Matchers.any(User.class),
-            Matchers.any(User.class),
-            Matchers.any(HttpServletRequest.class));
+            ArgumentMatchers.any(User.class),
+            ArgumentMatchers.any(User.class),
+            ArgumentMatchers.any(HttpServletRequest.class));
   }
 }

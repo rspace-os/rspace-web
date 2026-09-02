@@ -4,9 +4,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.initMocks;
+import static org.mockito.MockitoAnnotations.openMocks;
 
 import com.researchspace.archive.ArchivalField;
 import com.researchspace.archive.ArchivalGalleryMetadata;
@@ -50,7 +50,7 @@ public class StoichiometryImporterTest {
 
   @Before
   public void setUp() throws Exception {
-    initMocks(this);
+    openMocks(this);
     Stoichiometry newStoichIometry = new Stoichiometry();
     newStoichIometry.setId(33L);
     when(oldChemElement.getId()).thenReturn(1L);
@@ -66,14 +66,14 @@ public class StoichiometryImporterTest {
   public void testNoStoichiometries() {
     when(oldField.getStoichiometries()).thenReturn(new ArrayList<>());
     testee.importStoichiometries(oldChemElement, currentChem);
-    verifyZeroInteractions(service);
+    verifyNoInteractions(service);
   }
 
   @Test
   public void testWhenStoichiometriesButNoParentReactionId() {
     when(oldField.getStoichiometries()).thenReturn(List.of(existingStoich));
     testee.importStoichiometries(oldChemElement, currentChem);
-    verifyZeroInteractions(service);
+    verifyNoInteractions(service);
   }
 
   @Test
@@ -81,7 +81,7 @@ public class StoichiometryImporterTest {
     when(oldField.getStoichiometries()).thenReturn(List.of(existingStoich));
     when(existingStoich.getParentReactionId()).thenReturn(123456789L);
     testee.importStoichiometries(oldChemElement, currentChem);
-    verifyZeroInteractions(service);
+    verifyNoInteractions(service);
   }
 
   @Test
@@ -122,7 +122,7 @@ public class StoichiometryImporterTest {
   public void testReactionlessImport_whenEmptyStoichiometriesList_doesNothing() {
     when(oldField.getStoichiometries()).thenReturn(new ArrayList<>());
     testee.importReactionlessStoichiometries(Collections.emptySet());
-    verifyZeroInteractions(service);
+    verifyNoInteractions(service);
   }
 
   @Test

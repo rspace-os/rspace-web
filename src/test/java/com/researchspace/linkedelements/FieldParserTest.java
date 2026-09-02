@@ -50,7 +50,7 @@ public class FieldParserTest {
     FieldContents fieldContents = fieldParser.findFieldElementsInContent("");
     assertNotNull(fieldContents);
     assertNoElements(fieldContents);
-    Mockito.verifyZeroInteractions(converter, converterFactory);
+    Mockito.verifyNoInteractions(converter, converterFactory);
   }
 
   @Test
@@ -61,7 +61,7 @@ public class FieldParserTest {
 
     assertNotNull(fieldContents);
     assertNoElements(fieldContents);
-    Mockito.verifyZeroInteractions(converter, converterFactory);
+    Mockito.verifyNoInteractions(converter, converterFactory);
   }
 
   private void assertNoElements(FieldContents fieldContents) {

@@ -51,7 +51,7 @@ public class ExternalFileServiceTest extends SpringTransactionalTest {
     // getTargetObject(mediaMgr, MediaManagerImpl.class).setFileStore(localFs);
     mediaFile = addDocumentToGallery(anyUser);
     someFile = RSpaceTestUtils.getAnyAttachment();
-    MockitoAnnotations.initMocks(this);
+    MockitoAnnotations.openMocks(this);
     // this stores access token
     uc =
         createAndSaveEgnyteUserConnectionWithAccessToken(

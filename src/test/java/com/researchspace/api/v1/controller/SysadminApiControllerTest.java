@@ -16,7 +16,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.api.v1.controller.SysadminApiController.GroupApiPost;
@@ -405,7 +404,7 @@ public class SysadminApiControllerTest extends JakartaValidatorTest {
         () ->
             controller.createGroup(
                 request, grpApiPost, new BeanPropertyBindingResult(grpApiPost, "bean"), sysadmin));
-    verifyZeroInteractions(grpStrategy);
+    verifyNoInteractions(grpStrategy);
 
     // but with >=1 PI, succeeds
     internalUser.addRole(Role.PI_ROLE);

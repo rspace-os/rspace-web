@@ -1,7 +1,7 @@
 package com.researchspace.service.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.model.User;
@@ -45,7 +45,7 @@ public class OperateAsUserLookupTest {
   public void ifNotRunAsReturnSameUser() {
     when(subject.isRunAs()).thenReturn(false);
     assertEquals(mainUser, lookup.apply(mainUser));
-    verifyZeroInteractions(userMgr);
+    verifyNoInteractions(userMgr);
   }
 
   @Test
