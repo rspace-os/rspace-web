@@ -109,4 +109,18 @@ class ApiInventoryOperationPostBeanValidationTest {
         .addAll(Stream.generate(ApiSubSample::new).limit(100).collect(Collectors.toList()));
     assertTrue(violatedPaths(post).contains("newSample.subSamples"));
   }
+
+  @Test
+  void originsListIsCappedAtBindingNotOnlyInTheValidator() {
+    // InventoryOperationPostValidator.MAX_ORIGINS rejects an over-long list, but only after Jackson
+    // has materialised every element and the @Valid cascade has run bean validation over all of
+    // them. The same ceiling at binding stops that work happening at all (security review).
+    ApiInventoryOperationPost post = minimalPost();
+    post.getOrigins()
+        .addAll(
+            Stream.generate(ApiInventoryOperationOriginUpdate::new)
+                .limit(100)
+                .collect(Collectors.toList()));
+    assertTrue(violatedPaths(post).contains("origins"));
+  }
 }

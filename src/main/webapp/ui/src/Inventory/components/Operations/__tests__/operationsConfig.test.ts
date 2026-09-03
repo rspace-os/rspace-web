@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  amountKeysFor,
   assertEffectReferencesValid,
   type InventoryOperation,
   operationAvailability,
@@ -217,5 +218,16 @@ describe("assertEffectReferencesValid", () => {
       },
     } as unknown as InventoryOperation;
     expect(() => assertEffectReferencesValid([ok])).not.toThrow();
+  });
+
+  it("names exactly the inputs the amounts step owns", () => {
+    // The wizard uses this to decide which inputs belong to the details step; the details step uses
+    // it to decide which it renders under amounts. Derived twice, they could disagree and an input
+    // would render on one step while being gated on the other.
+    expect(amountKeysFor(op("aliquot"))).toEqual(new Set(["count", "eachAmount", "amountTaken"]));
+    // Passage never decrements its origin, so it declares no amount taken.
+    expect(amountKeysFor(op("passage"))).toEqual(new Set(["count", "eachAmount"]));
+    // A terminal operation creates nothing and takes the whole origin, so it declares none of them.
+    expect(amountKeysFor(op("destroy"))).toEqual(new Set());
   });
 });

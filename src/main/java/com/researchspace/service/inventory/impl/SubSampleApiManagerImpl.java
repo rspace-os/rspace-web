@@ -23,6 +23,7 @@ import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.record.IActiveUserStrategy;
 import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.model.units.QuantityUtils;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.inventory.InventoryAuditApiManager;
 import com.researchspace.service.inventory.InventoryFieldNameUniquenessValidator;
 import com.researchspace.service.inventory.InventoryMoveHelper;
@@ -43,6 +44,7 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
     implements SubSampleApiManager {
 
   private @Autowired SubSampleDao subSampleDao;
+  private @Autowired MessageSourceUtils messages;
   private @Autowired InventoryMoveHelper moveHelper;
   private @Autowired InventoryAuditApiManager inventoryAuditMgr;
 
@@ -97,7 +99,8 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
   public SubSample lockSubSampleForEdit(Long id, User user) {
     SubSample subSample = subSampleDao.getForUpdate(id);
     if (subSample == null) {
-      throw new NotFoundException("No SubSample with id: " + id);
+      throw new NotFoundException(
+          messages.getMessage("errors.inventory.subsample.notFound", new Object[] {id}));
     }
     invPermissions.assertUserCanEditInventoryRecord(subSample, user);
     return subSample;

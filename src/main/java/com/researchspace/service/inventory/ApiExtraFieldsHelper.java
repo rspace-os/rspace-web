@@ -232,7 +232,7 @@ public class ApiExtraFieldsHelper implements Validator {
       ExtraLinkField dbLinkField = (ExtraLinkField) dbFieldOpt.get();
       // the controller-layer validator is skipped when the payload omits "type",
       // so the self-link and relation-type rules must also hold on this service-layer path
-      rejectSelfLink(apiLink, dbLinkField);
+      rejectSelfLink(apiLink, dbLinkField.getConnectedRecordGlobalIdentifier());
       assertRelationTypeValid(apiLink);
       InventoryLink dbLink = dbLinkField.getLink();
       if (dbLink == null) {
@@ -246,11 +246,15 @@ public class ApiExtraFieldsHelper implements Validator {
     return changed;
   }
 
-  private void rejectSelfLink(ApiInventoryLink apiLink, ExtraLinkField dbLinkField) {
+  /**
+   * A field may not link to the record it hangs off. Both the update path (which knows the source
+   * from the persisted field) and the create path (which knows it from the persisted parent) must
+   * enforce this against the AUTHORITATIVE source id, never the client-supplied parentGlobalId,
+   * which can be forged or omitted.
+   */
+  private void rejectSelfLink(ApiInventoryLink apiLink, String sourceGlobalId) {
     GlobalIdentifier target = parseTargetOrNull(apiLink.getTargetGlobalId());
-    if (target != null
-        && InventoryLinkValidator.isSelfLink(
-            target, dbLinkField.getConnectedRecordGlobalIdentifier())) {
+    if (target != null && InventoryLinkValidator.isSelfLink(target, sourceGlobalId)) {
       throw new ApiRuntimeException(
           "errors.inventory.field.link.selfLinkForbidden", apiLink.getTargetGlobalId());
     }
@@ -323,17 +327,9 @@ public class ApiExtraFieldsHelper implements Validator {
     linkField.setModifiedBy(user.getUsername());
     ApiInventoryLink apiLink = apiField.getLink();
     if (apiLink != null) {
-      // The self-link rule must hold against the authoritative parent: the controller-layer
-      // validator compares against the payload's parentGlobalId, which is client-supplied and can
-      // be forged (or absent when "type" is omitted). The update path enforces this in
-      // applyExistingLinkFieldChanges; without this the create path persisted a field linking to
-      // its own parent (valid-payload review, finding 1).
-      GlobalIdentifier target = parseTargetOrNull(apiLink.getTargetGlobalId());
-      if (target != null
-          && InventoryLinkValidator.isSelfLink(target, parentInvRec.getGlobalIdentifier())) {
-        throw new ApiRuntimeException(
-            "errors.inventory.field.link.selfLinkForbidden", apiLink.getTargetGlobalId());
-      }
+      // Against the persisted parent, not the payload's parentGlobalId: without this the create
+      // path persisted a field linking to its own parent (valid-payload review, finding 1).
+      rejectSelfLink(apiLink, parentInvRec.getGlobalIdentifier());
       InventoryLink persisted = inventoryLinkManager.createLink(apiLink, user);
       linkField.setLink(persisted);
     }
