@@ -1012,7 +1012,8 @@
           "relation": "Relation"
         },
         "loading": "Loading...",
-        "none": "No Inventory items link to this {recordTypeName}.",
+        "none": "{recordType, select, document {No Inventory items link to this document.} notebook {No Inventory items link to this notebook.} galleryFile {No Inventory items link to this gallery file.} other {No Inventory items link to this record.}}",
+        "row": "<globalId>{globalId}</globalId>: {name}{relationKind, select, attachment { <relation>(Attachment)</relation>} relation { <relation>({relationType})</relation>} other {}}",
         "title": "Related inventory items"
       },
       "targetBrowser": {
