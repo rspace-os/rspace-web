@@ -8,7 +8,7 @@ import {
   Outlet,
   RouterProvider,
 } from "@tanstack/react-router";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { NuqsTestingAdapter, type UrlUpdateEvent } from "nuqs/adapters/testing";
 import { Suspense } from "react";
@@ -55,7 +55,7 @@ function renderPage(
   });
   const detailsRoute = createRoute({
     getParentRoute: () => root,
-    path: "/booking/bookable-items/$globalId",
+    path: "/booking/bookable-items/$globalId/{-$tab}",
     component: Outlet,
   });
   const router = createRouter({
@@ -177,6 +177,32 @@ describe("My Bookings page", () => {
     expect(screen.queryByRole("link", { name: "booking:myBookings.actions.edit" })).not.toBeInTheDocument();
     expect(screen.getByText("booking:myBookings.roleLoss.readOnly")).toBeVisible();
     expect(screen.queryByRole("button", { name: "booking:bookings.actions.cancel" })).not.toBeInTheDocument();
+    // The download endpoint requires the same configuration read the row has lost.
+    expect(screen.queryByRole("button", { name: "booking:calendar.file.accessibleLabel" })).not.toBeInTheDocument();
+  });
+
+  it("offers a calendar file for a confirmed booking the requester can still read", async () => {
+    renderPage();
+
+    expect(await screen.findByRole("button", { name: "booking:calendar.file.accessibleLabel" })).toBeVisible();
+  });
+
+  it("keeps icon-only page actions accessible by name", async () => {
+    renderPage();
+
+    const upcoming = await screen.findByRole("button", { name: "booking:myBookings.period.upcoming" });
+    const past = screen.getByRole("button", { name: "booking:myBookings.period.past" });
+    const viewDetails = (await screen.findAllByRole("link", { name: "booking:myBookings.actions.viewDetails" }))[0];
+    const edit = screen.getByRole("link", { name: "booking:myBookings.actions.edit" });
+    const calendarFile = screen.getByRole("button", { name: "booking:calendar.file.accessibleLabel" });
+    const cancel = screen.getByRole("button", { name: "booking:bookings.actions.cancel" });
+
+    expect(within(upcoming).queryByText("booking:myBookings.period.upcoming")).not.toBeInTheDocument();
+    expect(within(past).queryByText("booking:myBookings.period.past")).not.toBeInTheDocument();
+    expect(within(viewDetails).queryByText("booking:myBookings.actions.viewDetails")).not.toBeInTheDocument();
+    expect(within(edit).queryByText("booking:myBookings.actions.edit")).not.toBeInTheDocument();
+    expect(within(calendarFile).queryByText("booking:calendar.file.label")).not.toBeInTheDocument();
+    expect(within(cancel).queryByText("booking:bookings.actions.cancel")).not.toBeInTheDocument();
   });
 
   it("shows period-specific empty states", async () => {

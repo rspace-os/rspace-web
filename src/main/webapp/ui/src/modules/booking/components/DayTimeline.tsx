@@ -784,7 +784,11 @@ export function DayTimeline({
                   left: `${(Math.min(dragRange.from, dragRange.to) / DAY_MINUTES) * 100}%`,
                   width: `${(Math.abs(dragRange.to - dragRange.from) / DAY_MINUTES) * 100}%`,
                 }}
-              />
+              >
+                <span className="absolute top-1 left-1 rounded-sm bg-primary px-1 text-[10px] font-semibold whitespace-nowrap text-primary-foreground">
+                  {`${formatMinute(Math.min(dragRange.from, dragRange.to))}–${formatMinute(Math.max(dragRange.from, dragRange.to))}`}
+                </span>
+              </div>
             ) : null}
             {nowMinute !== undefined && nowEdge === "inside" && nowLabel && (
               <NowMarker minute={nowMinute} edge="inside" label={nowLabel} />

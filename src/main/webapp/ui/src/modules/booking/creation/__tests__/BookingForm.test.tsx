@@ -61,7 +61,6 @@ function cataloguePage(options: readonly (typeof target)[]) {
       effectiveRole: "BOOKER",
       capabilities: {
         canEditConfiguration: false,
-        canArchiveConfiguration: false,
         canViewAudit: false,
         canViewAccess: false,
         canManageAssignments: false,
@@ -126,6 +125,9 @@ describe("BookingForm", () => {
 
     expect(await screen.findByText("Confocal microscope")).toBeVisible();
     expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
+    expect(screen.getByText("booking:bookings.form.openingHours")).toBeVisible();
+    expect(screen.queryByText("booking:bookings.form.openingHoursDifferentTimezone")).not.toBeInTheDocument();
+    expect(screen.queryByText("booking:bookings.form.timezone")).not.toBeInTheDocument();
     expect(screen.getByRole("radio", { name: "booking:bookings.form.laterOccurrence" })).toBeChecked();
     expect(screen.getByText("booking:bookings.form.purposeCount")).toBeVisible();
 
@@ -157,6 +159,8 @@ describe("BookingForm", () => {
     );
 
     const start = await screen.findByRole("group", { name: "booking:bookings.form.start" });
+    expect(screen.getByText("booking:bookings.form.openingHoursDifferentTimezone")).toBeVisible();
+    expect(screen.queryByText("booking:bookings.form.timezone")).not.toBeInTheDocument();
     expect(within(start).getByLabelText("booking:bookings.form.date")).toHaveValue("2026-10-24");
     expect(within(start).getByLabelText("booking:bookings.form.time")).toHaveValue("21:30");
     await user.click(screen.getByRole("button", { name: "booking:bookings.form.save" }));
@@ -224,7 +228,7 @@ describe("BookingForm", () => {
     expect(within(end).getByLabelText("booking:bookings.form.time")).toHaveAttribute("step", step);
   });
 
-  it("rejects typed times that are off the configured grid", async () => {
+  it("snaps typed add-form times to the nearest configured interval", async () => {
     const user = userEvent.setup();
     const submit = vi.fn<(submission: BookingFormSubmission) => Promise<void>>().mockResolvedValue();
     server.use(http.get("/api/v2/booking-catalogue", () => HttpResponse.json(cataloguePage([]))));
@@ -242,12 +246,61 @@ describe("BookingForm", () => {
 
     const start = await screen.findByRole("group", { name: "booking:bookings.form.start" });
     const end = screen.getByRole("group", { name: "booking:bookings.form.end" });
-    await user.type(within(start).getByLabelText("booking:bookings.form.time"), "09:07");
-    await user.type(within(end).getByLabelText("booking:bookings.form.time"), "10:00");
+    const startTime = within(start).getByLabelText("booking:bookings.form.time");
+    const endTime = within(end).getByLabelText("booking:bookings.form.time");
+    await user.type(startTime, "09:04");
+    await user.tab();
+    expect(startTime).toHaveValue("09:00");
+    await user.type(endTime, "10:06");
+    await user.tab();
+    expect(endTime).toHaveValue("10:10");
 
     await user.click(screen.getByRole("button", { name: "booking:bookings.form.submit" }));
-    expect(screen.getByText("booking:bookings.errors.granularity")).toBeVisible();
-    expect(submit).not.toHaveBeenCalled();
+    expect(screen.queryByText("booking:bookings.errors.granularity")).not.toBeInTheDocument();
+    expect(submit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        window: { start: "2026-08-17T07:00:00Z", end: "2026-08-17T08:10:00Z" },
+      }),
+    );
+  });
+
+  it("snaps typed edit-form times to the nearest configured interval", async () => {
+    const user = userEvent.setup();
+    const submit = vi.fn<(submission: BookingFormSubmission) => Promise<void>>().mockResolvedValue();
+    renderForm(
+      <BookingForm
+        mode="edit"
+        booking={{
+          ...editableBooking,
+          start: "2026-08-17T07:00:00Z",
+          end: "2026-08-17T08:00:00Z",
+        }}
+        configuration={{ ...target, slotGranularityMinutes: 10 }}
+        token="token"
+        pending={false}
+        onSubmit={submit}
+      />,
+    );
+
+    const start = await screen.findByRole("group", { name: "booking:bookings.form.start" });
+    const end = screen.getByRole("group", { name: "booking:bookings.form.end" });
+    const startTime = within(start).getByLabelText("booking:bookings.form.time");
+    const endTime = within(end).getByLabelText("booking:bookings.form.time");
+    await user.clear(startTime);
+    await user.type(startTime, "09:04");
+    await user.tab();
+    expect(startTime).toHaveValue("09:00");
+    await user.clear(endTime);
+    await user.type(endTime, "10:06");
+    await user.tab();
+    expect(endTime).toHaveValue("10:10");
+
+    await user.click(screen.getByRole("button", { name: "booking:bookings.form.save" }));
+    expect(submit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        window: { start: "2026-08-17T07:00:00Z", end: "2026-08-17T08:10:00Z" },
+      }),
+    );
   });
 
   it("supports a compact dialog with an initial window, dirty state, and controlled cancellation", async () => {
@@ -262,6 +315,7 @@ describe("BookingForm", () => {
         eventKind="BOOKING"
         density="compact"
         initialTarget={{ ...target, slotGranularityMinutes: 10 }}
+        lockTarget
         initialWindow={{
           startDate: "2026-08-17",
           startTime: "09:00",
@@ -276,14 +330,24 @@ describe("BookingForm", () => {
       />,
     );
 
-    const start = await screen.findByRole("group", { name: "booking:bookings.form.start" });
-    const end = screen.getByRole("group", { name: "booking:bookings.form.end" });
-    expect(within(start).getByLabelText("booking:bookings.form.date")).toHaveValue("2026-08-17");
-    expect(within(start).getByLabelText("booking:bookings.form.time")).toHaveValue("09:00");
-    expect(within(start).getByLabelText("booking:bookings.form.time")).toHaveAttribute("step", "600");
-    expect(within(end).getByLabelText("booking:bookings.form.time")).toHaveValue("10:00");
+    expect(await screen.findByLabelText("booking:bookings.form.date")).toHaveValue("2026-08-17");
+    expect(screen.queryByText("booking:bookings.form.item")).not.toBeInTheDocument();
+    expect(screen.queryByText("Confocal microscope")).not.toBeInTheDocument();
+    const startTime = screen.getByLabelText("booking:bookings.form.startTime");
+    const endTime = screen.getByLabelText("booking:bookings.form.endTime");
+    expect(startTime).toHaveValue("09:00");
+    expect(startTime).toHaveAttribute("step", "600");
+    expect(endTime).toHaveValue("10:00");
     await waitFor(() => expect(stateChanged).toHaveBeenLastCalledWith(expect.objectContaining({ dirty: false })));
 
+    await user.clear(startTime);
+    await user.type(startTime, "09:04");
+    await user.tab();
+    expect(startTime).toHaveValue("09:00");
+    await user.clear(endTime);
+    await user.type(endTime, "10:06");
+    await user.tab();
+    expect(endTime).toHaveValue("10:10");
     await user.type(screen.getByRole("textbox", { name: "booking:bookings.form.purpose" }), "Imaging");
     await waitFor(() =>
       expect(stateChanged).toHaveBeenLastCalledWith(expect.objectContaining({ dirty: true, purpose: "Imaging" })),

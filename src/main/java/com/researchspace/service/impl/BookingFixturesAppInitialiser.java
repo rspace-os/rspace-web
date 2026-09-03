@@ -15,6 +15,7 @@ import com.researchspace.dao.UserDao;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookingConfiguration;
+import com.researchspace.model.booking.BookingConfigurationState;
 import com.researchspace.model.booking.BookingSchedulingSettings;
 import com.researchspace.model.booking.ResolvedBookableTarget;
 import com.researchspace.model.inventory.Container;
@@ -83,6 +84,7 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
     }
 
     List<Instrument> instruments = new ArrayList<>();
+    List<Instrument> bookingCardInstruments = new ArrayList<>();
     try {
       login(new UsernamePasswordToken(FIXTURE_USER, devUserPassword, false));
       Instrument confocal =
@@ -131,6 +133,15 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
         containerDao.save(deletedParent);
       }
       instruments.add(deletedLocation);
+
+      bookingCardInstruments.add(
+          ensureInstrument(message("bookingFixtures.instruments.bookingCardSetup"), owner));
+      bookingCardInstruments.add(
+          ensureInstrument(message("bookingFixtures.instruments.bookingCardBook"), owner));
+      bookingCardInstruments.add(
+          ensureInstrument(message("bookingFixtures.instruments.bookingCardDisabled"), owner));
+      bookingCardInstruments.add(
+          ensureInstrument(message("bookingFixtures.instruments.bookingCardArchived"), owner));
     } finally {
       logout();
     }
@@ -177,6 +188,13 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
               ensureConfiguration(instruments.get(4), "Europe/Berlin", sysadmin),
               ensureConfiguration(instruments.get(5), "Europe/Berlin", sysadmin),
               ensureConfiguration(instruments.get(6), "Europe/Berlin", sysadmin));
+
+      ensureConfigurationState(
+          bookingCardInstruments.get(1), true, BookingConfigurationState.ACTIVE, sysadmin);
+      ensureConfigurationState(
+          bookingCardInstruments.get(2), false, BookingConfigurationState.ACTIVE, sysadmin);
+      ensureConfigurationState(
+          bookingCardInstruments.get(3), true, BookingConfigurationState.ARCHIVED, sysadmin);
     } finally {
       logout();
     }
@@ -336,6 +354,48 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
             sysadmin,
             sysadmin)
         .orElseThrow();
+  }
+
+  private BookingConfiguration ensureConfigurationState(
+      Instrument instrument, boolean enabled, BookingConfigurationState state, User sysadmin) {
+    BookingConfiguration configuration = ensureConfiguration(instrument, "Europe/Berlin", sysadmin);
+    if (state == BookingConfigurationState.ACTIVE
+        && configuration.getState() == BookingConfigurationState.ARCHIVED) {
+      configuration =
+          configurationManager
+              .updateConfiguration(
+                  configuration.getId(),
+                  new BookingConfigurationManager.Patch(
+                      null,
+                      null,
+                      BookingSchedulingSettings.Patch.empty(),
+                      BookingConfigurationState.ACTIVE),
+                  sysadmin,
+                  sysadmin)
+              .orElseThrow();
+    }
+    if (configuration.isEnabled() != enabled) {
+      configuration =
+          configurationManager
+              .updateConfiguration(
+                  configuration.getId(),
+                  new BookingConfigurationManager.Patch(enabled, null),
+                  sysadmin,
+                  sysadmin)
+              .orElseThrow();
+    }
+    if (state == BookingConfigurationState.ARCHIVED
+        && configuration.getState() == BookingConfigurationState.ACTIVE) {
+      configuration =
+          configurationManager
+              .archiveConfiguration(
+                  configuration.getId(),
+                  configuration.getConfigurationVersion(),
+                  sysadmin,
+                  sysadmin)
+              .orElseThrow();
+    }
+    return configuration;
   }
 
   private void ensureBooking(

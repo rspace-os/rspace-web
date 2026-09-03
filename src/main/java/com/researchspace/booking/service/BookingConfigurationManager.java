@@ -2,6 +2,7 @@ package com.researchspace.booking.service;
 
 import com.researchspace.model.User;
 import com.researchspace.model.booking.BookingConfiguration;
+import com.researchspace.model.booking.BookingConfigurationState;
 import com.researchspace.model.booking.BookingSchedulingSettings;
 import com.researchspace.model.booking.ResolvedBookableTarget;
 import com.researchspace.model.collection.ResourcePage;
@@ -32,10 +33,18 @@ public interface BookingConfigurationManager {
 
   /** Values accepted when changing a booking configuration; {@code null} means unchanged. */
   record Patch(
-      Boolean enabled, String timeZone, BookingSchedulingSettings.Patch schedulingSettings) {
+      Boolean enabled,
+      String timeZone,
+      BookingSchedulingSettings.Patch schedulingSettings,
+      BookingConfigurationState state) {
 
     public Patch(Boolean enabled, String timeZone) {
-      this(enabled, timeZone, BookingSchedulingSettings.Patch.empty());
+      this(enabled, timeZone, BookingSchedulingSettings.Patch.empty(), null);
+    }
+
+    public Patch(
+        Boolean enabled, String timeZone, BookingSchedulingSettings.Patch schedulingSettings) {
+      this(enabled, timeZone, schedulingSettings, null);
     }
 
     public Patch {
@@ -72,10 +81,15 @@ public interface BookingConfigurationManager {
   List<BookingConfiguration> updateConfigurations(
       ResourceRequest request, Patch patch, User subject, User actor);
 
-  /** Removes as {@code subject}, retaining the originating {@code actor} for audit. */
-  Optional<BookingConfiguration> removeConfiguration(Long id, User subject, User actor);
+  /** Archives as {@code subject}, retaining the originating {@code actor} for audit. */
+  Optional<BookingConfiguration> archiveConfiguration(
+      Long id, long expectedVersion, User subject, User actor);
 
-  /** Bulk-removes as {@code subject}, retaining the originating {@code actor} for audit. */
-  List<BookingConfiguration> removeConfigurations(
+  /** Permanently removes a configuration and its live dependants as a direct sysadmin. */
+  Optional<Long> permanentlyDeleteConfiguration(
+      Long id, long expectedVersion, User subject, User actor);
+
+  /** Bulk-archives as {@code subject}, retaining the originating {@code actor} for audit. */
+  List<BookingConfiguration> archiveConfigurations(
       ResourceRequest request, User subject, User actor);
 }

@@ -11,7 +11,6 @@ function stringList(value: unknown, pattern: RegExp): string[] {
 
 export function allBookableItemsSearch(search: Record<string, unknown>) {
   const availability = availabilityModes.find((mode) => mode === search.availability);
-  const locations = stringList(search.locations, /^(?:IC|BE)\d+$/);
   const types = stringList(search.types, /^[A-Z][A-Z0-9_]*$/);
   const page = typeof search.page === "number" ? search.page : Number(search.page);
   return {
@@ -19,7 +18,6 @@ export function allBookableItemsSearch(search: Record<string, unknown>) {
     ...(typeof search.target === "string" && /^IN\d+$/.test(search.target) ? { target: search.target } : {}),
     ...(availability ? { availability } : {}),
     ...(typeof search.q === "string" && search.q.trim() ? { q: search.q.slice(0, 255) } : {}),
-    ...(locations.length > 0 ? { locations } : {}),
     ...(types.length > 0 ? { types } : {}),
     ...(Number.isSafeInteger(page) && page > 1 ? { page } : {}),
   };

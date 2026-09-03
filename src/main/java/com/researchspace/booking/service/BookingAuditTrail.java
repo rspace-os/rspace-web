@@ -31,6 +31,18 @@ public final class BookingAuditTrail {
   }
 
   @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+  public void bookingConfigurationPermanentlyDeleted(
+      BookingConfigurationPermanentDeleteAuditEvent event) {
+    String description = "permanent=true; subject=" + event.subject().getUsername();
+    auditTrail.notify(
+        new GenericEvent(
+            event.actor(),
+            event.snapshot(),
+            com.researchspace.model.audittrail.AuditAction.DELETE,
+            description));
+  }
+
+  @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
   public void bookingConfigurationDefaultsChanged(BookingConfigurationDefaultsAuditEvent event) {
     if (event.actor().equals(event.subject())) {
       auditTrail.notify(new GenericEvent(event.actor(), event.defaults(), event.action()));

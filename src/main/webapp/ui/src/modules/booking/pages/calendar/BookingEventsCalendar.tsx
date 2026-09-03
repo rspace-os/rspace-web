@@ -1,7 +1,9 @@
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { CalendarCheck2Icon, PlusIcon } from "lucide-react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
+import { BookingCalendarFileButton } from "@/modules/booking/components/BookingCalendarFileButton";
 import {
   BookingDateControls,
   BookingTimeZoneBadge,
@@ -13,11 +15,26 @@ import {
   DayTimelineEventCard,
   type DayTimelineViewState,
 } from "@/modules/booking/components/DayTimeline";
+import { useBookableItemConfiguration } from "@/modules/booking/creation/BookableItemPicker";
+import { BookingForm, type BookingFormSubmission, type EditableBooking } from "@/modules/booking/creation/BookingForm";
 import type { BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
-import type { BookingListDocument } from "@/modules/booking/domain/booking";
+import { bookingProblemKey } from "@/modules/booking/creation/useCreateBooking";
+import {
+  ApiV2ProblemError,
+  type BookingListDocument,
+  type BookingUpdate,
+  isBookingOverlapError,
+  updateBooking,
+} from "@/modules/booking/domain/booking";
 import { todayInTimeZone } from "@/modules/booking/domain/bookingDisplayPreferences";
-import { addCalendarDays, sliceAcrossWallClockDay, zonedDayBounds } from "@/modules/booking/domain/bookingTime";
+import {
+  addCalendarDays,
+  formatAgendaPeriod,
+  sliceAcrossWallClockDay,
+  zonedDayBounds,
+} from "@/modules/booking/domain/bookingTime";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
+import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import i18n from "@/modules/common/i18n";
 import { TableList, type TableListProps } from "@/modules/common/table-list/TableList";
 import { useTableList } from "@/modules/common/table-list/useTableList";
@@ -228,54 +245,180 @@ function EventCard({
       date={date}
       compactCards={compact}
       variant={overlay ? "timeline" : "flow"}
-      renderEventActions={() => <BookingActions event={event} date={date} />}
-      renderBlockoutActions={() => <BookingActions event={event} date={date} />}
+      renderEventActions={() => <BookingActions event={event} timezone={timezone} />}
+      renderBlockoutActions={() => <BookingActions event={event} timezone={timezone} />}
     />
   );
   return overlay ? <div className={cn("relative", compact ? "min-h-18" : "min-h-14")}>{card}</div> : card;
 }
 
-function BookingActions({ event, date }: { event: BookingListDocument; date: string }) {
+/** Whole-number grid tracks, kept as literal class strings because Tailwind scans source text. */
+const ACTION_COLUMNS = ["grid-cols-1", "grid-cols-1", "grid-cols-2", "grid-cols-3"];
+
+function isEditableBooking(event: BookingListDocument): event is BookingListDocument & EditableBooking {
+  return event.privacy === "full" && event.canEdit && event.state === "CONFIRMED";
+}
+
+function InlineBookingEditor({
+  event,
+  timezone,
+  token,
+  onClose,
+}: {
+  event: BookingListDocument & EditableBooking;
+  timezone: string;
+  token: string;
+  onClose: () => void;
+}) {
+  const { t } = useTranslation(["booking", "common"]);
+  const queryClient = useQueryClient();
+  const configuration = useBookableItemConfiguration(event.target.globalId, token);
+  const mutation = useMutation({
+    mutationFn: (submission: BookingFormSubmission) => {
+      const patch: BookingUpdate = {
+        ...(submission.window.start !== event.start ? { start: submission.window.start } : {}),
+        ...(submission.window.end !== event.end ? { end: submission.window.end } : {}),
+        ...(submission.purpose !== event.purpose ? { purpose: submission.purpose } : {}),
+      };
+      return Object.keys(patch).length === 0
+        ? Promise.resolve(event)
+        : updateBooking(event.id, event.version, patch, token);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] });
+      onClose();
+    },
+    onError: async (error) => {
+      if (
+        error instanceof ApiV2ProblemError &&
+        (error.status === 412 ||
+          error.code === "errors.api.v2.booking.concurrentModification" ||
+          error.code === "errors.api.v2.forbidden" ||
+          error.code === "errors.api.v2.booking.state.transition")
+      ) {
+        await queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] });
+      }
+      if (error instanceof ApiV2ProblemError && error.code === "errors.api.v2.booking.target.unavailable") {
+        await queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] });
+      }
+    },
+  });
+  const mutationHasError = React.useRef(false);
+  mutationHasError.current = mutation.isError;
+  const resetMutation = mutation.reset;
+  const clearMutationErrorOnChange = React.useCallback(() => {
+    if (!mutationHasError.current) return;
+    mutationHasError.current = false;
+    resetMutation();
+  }, [resetMutation]);
+
+  if (configuration.isPending) {
+    return (
+      <div className="border-border border-t p-4">
+        <p>{t("bookings.loadingConfiguration")}</p>
+      </div>
+    );
+  }
+  if (configuration.isError || !configuration.data) {
+    return (
+      <div className="space-y-3 border-border border-t p-4">
+        <p role="alert">{t("bookings.errors.targetUnavailable")}</p>
+        <div className="flex gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={() => void configuration.refetch()}>
+            {t("common:actions.retry")}
+          </Button>
+          <Button type="button" variant="ghost" size="sm" onClick={onClose}>
+            {t("bookings.form.cancel")}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="flex max-h-[min(22rem,45vh)] flex-col border-border border-t">
+      <BookingForm
+        key={event.version}
+        mode="edit"
+        density="compact"
+        displayTimezone={timezone}
+        booking={event}
+        configuration={configuration.data}
+        token={token}
+        pending={mutation.isPending}
+        error={mutation.error ? t(bookingProblemKey(mutation.error)) : undefined}
+        submissionBlocked={isBookingOverlapError(mutation.error)}
+        onStateChange={clearMutationErrorOnChange}
+        onCancel={() => {
+          mutation.reset();
+          onClose();
+        }}
+        onSubmit={(submission) => mutation.mutateAsync(submission)}
+      />
+    </div>
+  );
+}
+
+function BookingActions({ event, timezone }: { event: BookingListDocument; timezone: string }) {
   const { t } = useTranslation("booking");
+  const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
+  const [editing, setEditing] = React.useState(false);
+  const editable = isEditableBooking(event);
+  if (editing && editable) {
+    return <InlineBookingEditor event={event} timezone={timezone} token={token} onClose={() => setEditing(false)} />;
+  }
+  // The same pair of conditions the download endpoint itself enforces, so the action never 404s.
+  const canDownload = event.canViewConfiguration && event.state === "CONFIRMED";
+  const actionCount = 1 + (editable ? 1 : 0) + (canDownload ? 1 : 0);
   return (
     <div
       className={cn(
         "grid border-border border-t text-xs",
-        event.canEdit ? "grid-cols-2 divide-x divide-border" : "grid-cols-1",
+        ACTION_COLUMNS[actionCount],
+        actionCount > 1 && "divide-x divide-border",
       )}
     >
       <Link
         className={cn(buttonVariants({ variant: "link", size: "xs" }), "h-auto rounded-none py-2")}
-        to="/booking/bookable-items/$globalId"
-        params={{ globalId: event.target.globalId }}
+        to="/booking/bookable-items/$globalId/{-$tab}"
+        params={{ globalId: event.target.globalId, tab: undefined }}
       >
         {t("calendar.actions.viewDetails")}
       </Link>
-      {event.canEdit ? (
-        <Link
+      {editable ? (
+        <button
+          type="button"
           className={cn(buttonVariants({ variant: "link", size: "xs" }), "h-auto rounded-none py-2")}
-          to="/booking/calendar/bookings/$id"
-          params={{ id: String(event.id) }}
-          search={{ date, target: event.target.globalId }}
+          onClick={() => setEditing(true)}
         >
           {t("calendar.actions.edit")}
-        </Link>
+        </button>
+      ) : null}
+      {canDownload ? (
+        <BookingCalendarFileButton
+          bookingId={event.id}
+          itemName={event.target.value.name}
+          period={formatAgendaPeriod(event.start, event.end, timezone)}
+          token={token}
+          size="xs"
+          variant="link"
+          className="h-auto rounded-none py-2"
+        />
       ) : null}
     </div>
   );
 }
 
-function actionsFor(events: readonly BookingListDocument[], date: string) {
+function actionsFor(events: readonly BookingListDocument[], timezone: string) {
   return (timelineEvent: Extract<DayTimelineEvent, { kind: "booking" }>) => {
     const event = events.find(({ id }) => String(id) === timelineEvent.id);
-    return event ? <BookingActions event={event} date={date} /> : null;
+    return event ? <BookingActions event={event} timezone={timezone} /> : null;
   };
 }
 
-function blockoutActionsFor(events: readonly BookingListDocument[], date: string) {
+function blockoutActionsFor(events: readonly BookingListDocument[], timezone: string) {
   return (timelineEvent: Extract<DayTimelineEvent, { kind: "blockout" }>) => {
     const event = events.find(({ id }) => String(id) === timelineEvent.id);
-    return event ? <BookingActions event={event} date={date} /> : null;
+    return event ? <BookingActions event={event} timezone={timezone} /> : null;
   };
 }
 
@@ -412,8 +555,8 @@ function TimeGrid({
           startWindow={availabilityStartMinute}
           endWindow={availabilityEndMinute}
           showZoomControls={false}
-          renderEventActions={actionsFor(events, date)}
-          renderBlockoutActions={blockoutActionsFor(events, date)}
+          renderEventActions={actionsFor(events, timezone)}
+          renderBlockoutActions={blockoutActionsFor(events, timezone)}
         />
       ) : (
         <section
@@ -550,7 +693,13 @@ function ResourceSchedule({
               return (
                 <section key={resource.globalId} className="grid grid-cols-[12rem_minmax(0,1fr)_auto]">
                   <header className="border-r bg-muted/30 p-1">
-                    <InventoryItem name={resource.value.name} globalId={resource.globalId} size="xs">
+                    <InventoryItem
+                      name={resource.value.name}
+                      globalId={resource.globalId}
+                      href={`/globalId/${resource.globalId}`}
+                      idLinkLabel={t("dayTimeline.expanded.openItem", { globalId: resource.globalId })}
+                      size="xs"
+                    >
                       <InventoryLocationLink
                         name={resource.value.parentContainerName}
                         globalId={resource.value.parentContainerGlobalId}
@@ -569,8 +718,8 @@ function ResourceSchedule({
                     viewState={timelineViewState}
                     onViewStateChange={setTimelineViewState}
                     showScrollbar={index === resourceRows.length - 1}
-                    renderEventActions={actionsFor(resourceEvents, date)}
-                    renderBlockoutActions={blockoutActionsFor(resourceEvents, date)}
+                    renderEventActions={actionsFor(resourceEvents, timezone)}
+                    renderBlockoutActions={blockoutActionsFor(resourceEvents, timezone)}
                     snapIncrementMinutes={configuration?.slotGranularityMinutes}
                     creationDisabled={creationDisabled || !configuration}
                     onRangeSelect={
@@ -620,7 +769,13 @@ function ResourceSchedule({
             {resourceRows.map((resource) => (
               <React.Fragment key={resource.globalId}>
                 <div className="sticky left-0 z-10 border-r border-b bg-background p-1">
-                  <InventoryItem name={resource.value.name} globalId={resource.globalId} size="xs">
+                  <InventoryItem
+                    name={resource.value.name}
+                    globalId={resource.globalId}
+                    href={`/globalId/${resource.globalId}`}
+                    idLinkLabel={t("dayTimeline.expanded.openItem", { globalId: resource.globalId })}
+                    size="xs"
+                  >
                     <InventoryLocationLink
                       name={resource.value.parentContainerName}
                       globalId={resource.value.parentContainerGlobalId}
@@ -822,6 +977,7 @@ export function BookingEventsCalendar({
             ],
             onReset: () => setMineOnly(false),
           }}
+          renderRowsWhenEmpty={layout === "resources"}
           renderRows={(filteredEvents) => (
             <>
               {layout === "time-grid" && (
@@ -840,6 +996,9 @@ export function BookingEventsCalendar({
                   <TableList
                     {...resourceTableProps}
                     hideHeader
+                    // The resource fetch honours only the search term, so a filter panel here
+                    // would build an expression nothing reads.
+                    hideFilterPanel
                     variant="transparent"
                     renderRows={() => (
                       <ResourceSchedule

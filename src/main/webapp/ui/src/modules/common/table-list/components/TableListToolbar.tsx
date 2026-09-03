@@ -104,6 +104,7 @@ export function TableListToolbar<TDocument>({
   activePanel,
   filterCount,
   filterButtons,
+  hideFilterPanel = false,
   onPanelChange,
   onReset,
 }: {
@@ -114,6 +115,8 @@ export function TableListToolbar<TDocument>({
   activePanel: TableListControlPanel | null;
   filterCount: number;
   filterButtons?: TableListFilterButtons;
+  /** Hides the filter panel for a data source that only honours free-text search. */
+  hideFilterPanel?: boolean;
   onPanelChange: (panel: TableListControlPanel) => void;
   onReset: () => void;
 }) {
@@ -189,7 +192,7 @@ export function TableListToolbar<TDocument>({
             ))}
           </fieldset>
         ) : null}
-        {features.filtering !== false ? (
+        {features.filtering !== false && !hideFilterPanel ? (
           <Button
             aria-label={
               filterCount

@@ -10,7 +10,6 @@ export const BookingCatalogueLocationSchema = v.object({
 
 const BookingCapabilitiesSchema = v.object({
   canEditConfiguration: v.boolean(),
-  canArchiveConfiguration: v.boolean(),
   canViewAudit: v.boolean(),
   canViewAccess: v.boolean(),
   canManageAssignments: v.boolean(),
@@ -72,6 +71,7 @@ export function catalogueItemAsConfiguration(item: BookingCatalogueItem) {
       globalId: item.globalId,
     },
     enabled: true,
+    state: "ACTIVE" as const,
     timezone: item.timezone,
     slotGranularityMinutes: item.slotGranularityMinutes,
     openingStart: item.openingStart,

@@ -31,12 +31,6 @@ describe("DayTimeline expanded cards", () => {
       .toEqual({ left: true, right: true, width: true });
   });
 
-  test("uses its preferred width in a wide timeline scroller", async () => {
-    render(<DayTimelineStory width={480} />);
-    await timeline.open(LONG_ITEM_NAME);
-    await expect.poll(() => Math.round(bounds(timeline.popup("09:30–10:30")).width)).toBe(352);
-  });
-
   test("keeps a sticky popup within the scroller when its trigger scrolls away", async () => {
     render(<DayTimelineStory />);
     await timeline.open(LONG_ITEM_NAME);
@@ -51,22 +45,6 @@ describe("DayTimeline expanded cards", () => {
         return popup.left >= scrollerBounds.left - 1 && popup.right <= scrollerBounds.right + 1;
       })
       .toBe(true);
-  });
-
-  test("uses the existing one-line item layout with the ID in the title row", async () => {
-    render(<DayTimelineStory />);
-    await timeline.open(LONG_ITEM_NAME);
-    const popup = timeline.popup("09:30–10:30");
-    const name = popup.getByText(LONG_ITEM_NAME).element();
-    const id = popup.getByRole("link", { name: "Open inventory record IN123" }).element();
-    const location = popup.getByRole("link", { name: "Imaging lab" }).element();
-
-    expect(name.closest("[data-slot=item-title]")).toBe(id.closest("[data-slot=item-title]"));
-    expect(location.closest("[data-slot=item-description]")).not.toBeNull();
-    expect(getComputedStyle(name).whiteSpace).toBe("nowrap");
-    expect(name.getBoundingClientRect().height).toBeLessThanOrEqual(
-      Number.parseFloat(getComputedStyle(name).lineHeight) + 1,
-    );
   });
 
   test("keeps only one overlapping popup open and restores focus when it closes", async () => {

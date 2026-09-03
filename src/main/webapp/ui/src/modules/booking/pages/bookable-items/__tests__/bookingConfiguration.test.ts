@@ -2,7 +2,6 @@ import { HttpResponse, http } from "msw";
 import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import {
-  BOOKING_CONFIGURATION_READ_FIELDS,
   fetchBookingConfiguration,
   fetchBookingConfigurationByTarget,
   fetchBookingOwnershipCandidates,
@@ -11,6 +10,7 @@ import {
 const configuration = {
   id: 7,
   configurationVersion: 0,
+  state: "ACTIVE",
   target: {
     relationTo: "booking-instruments",
     value: { id: 123, name: "Confocal microscope", deleted: false },
@@ -59,7 +59,6 @@ describe("booking configuration reads", () => {
 
     const url = new URL(request?.url ?? "http://localhost");
     expect(url.searchParams.get("depth")).toBe("1");
-    expect(url.searchParams.get("fields[booking-configurations]")).toBe(BOOKING_CONFIGURATION_READ_FIELDS);
     expect(request?.headers.get("Authorization")).toBe("Bearer token");
   });
 
@@ -78,7 +77,6 @@ describe("booking configuration reads", () => {
     expect(url.searchParams.get("where")).toBe("target==IN123");
     expect(url.searchParams.get("depth")).toBe("1");
     expect(url.searchParams.get("limit")).toBe("2");
-    expect(url.searchParams.get("fields[booking-configurations]")).toBe(BOOKING_CONFIGURATION_READ_FIELDS);
   });
 
   it("escapes target values through the RSQL serializer", async () => {
@@ -110,7 +108,6 @@ describe("booking configuration reads", () => {
               ...configuration,
               capabilities: {
                 canEditConfiguration: true,
-                canArchiveConfiguration: true,
                 canViewAudit: true,
                 canViewAccess: true,
                 canManageAssignments: true,

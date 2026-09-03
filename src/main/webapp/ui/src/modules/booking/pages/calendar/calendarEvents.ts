@@ -12,7 +12,7 @@ const PageSchema = v.object({
 });
 
 export const CALENDAR_BOOKING_FIELDS =
-  "id,target,requesterId,canViewConfiguration,timezone,start,end,state,kind,purpose,bookedBy,createdBy,privacy,canEdit,createdAt,updatedAt";
+  "id,version,target,requesterId,canViewConfiguration,timezone,start,end,state,kind,purpose,bookedBy,createdBy,privacy,canEdit,canCancel,createdAt,updatedAt";
 
 async function fetchPage(
   start: string,

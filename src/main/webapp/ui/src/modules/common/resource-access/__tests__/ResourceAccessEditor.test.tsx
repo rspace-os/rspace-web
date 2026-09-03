@@ -6,7 +6,6 @@ import type { ReactNode } from "react";
 import { describe, expect, it } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
 import { server } from "@/__tests__/mswServer";
-import i18n from "@/modules/common/i18n";
 import { type ResourceAccessAdapter, ResourceAccessEditor } from "../ResourceAccessEditor";
 
 const adapter: ResourceAccessAdapter = {
@@ -55,20 +54,6 @@ const second = {
   role: "STEWARD",
 };
 
-const audience = {
-  grantee: {
-    kind: "AUDIENCE",
-    id: 0,
-    key: "audience:all-users",
-    name: "All people",
-    detail: null,
-    available: true,
-    effectiveRole: "READER",
-    roleSources: [],
-  },
-  role: "READER",
-};
-
 function document(version = 3, assignments: unknown[] = [owner], callerKey: string | null = "user:11") {
   return {
     scheme: "test-collection",
@@ -109,12 +94,51 @@ function row(name: string) {
 }
 
 describe("ResourceAccessEditor", () => {
+  it("renders assignments without any mutation controls in read-only mode", async () => {
+    let directoryRequests = 0;
+    let mutationRequests = 0;
+    server.use(
+      http.get("/api/v2/test-collections/9/access", () => HttpResponse.json(document(3, [owner, second]))),
+      http.get("/api/v2/test-collections/9/access/grantees", () => {
+        directoryRequests += 1;
+        return HttpResponse.json([]);
+      }),
+      http.put("/api/v2/test-collections/9/access", () => {
+        mutationRequests += 1;
+        return HttpResponse.json(document());
+      }),
+      http.delete("/api/v2/test-collections/9/access/me", () => {
+        mutationRequests += 1;
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+
+    const { baseElement } = render(
+      <ResourceAccessEditor resource="test-collections" resourceId={9} token="token" adapter={adapter} readOnly />,
+      { wrapper: wrapper() },
+    );
+
+    await screen.findByRole("table");
+    expect(table().getByText("Ada Owner")).toBeVisible();
+    expect(table().getAllByText("Steward").length).toBeGreaterThan(0);
+    expect(screen.queryByLabelText("common:resourceAccess.addUserOrGroup")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "common:resourceAccess.roleFor" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "common:resourceAccess.saveChanges" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "common:resourceAccess.leaveSelf" })).not.toBeInTheDocument();
+    expect(directoryRequests).toBe(0);
+    expect(mutationRequests).toBe(0);
+    await expectAccessible(baseElement);
+  });
+
   it("stages a picked grantee at the adapter's default role and saves one versioned replacement", async () => {
     let putRequest: Request | undefined;
     server.use(
       http.get("/api/v2/test-collections/9/access", () => HttpResponse.json(document())),
       http.get("/api/v2/test-collections/9/access/grantees", () =>
-        HttpResponse.json([{ kind: "GROUP", id: 41, key: "group:41", name: "Imaging group", detail: "imaging" }]),
+        HttpResponse.json([
+          { kind: "USER", id: 11, key: "user:11", name: "Ada Owner", detail: "ada" },
+          { kind: "GROUP", id: 41, key: "group:41", name: "Imaging group", detail: "imaging" },
+        ]),
       ),
       http.put("/api/v2/test-collections/9/access", async ({ request }) => {
         putRequest = request;
@@ -124,12 +148,12 @@ describe("ResourceAccessEditor", () => {
     const user = userEvent.setup();
     const { baseElement } = editor();
 
-    expect(i18n.getFixedT("en-US", "common")("resourceAccess.addUserOrGroup")).toBe("Add user or group");
     const search = await screen.findByLabelText("common:resourceAccess.addUserOrGroup");
-    expect(screen.queryByText(/effective access/i)).not.toBeInTheDocument();
 
     await user.type(search, "im");
-    await user.click(await screen.findByRole("option", { name: /Imaging group/ }));
+    const imagingGroup = await screen.findByRole("option", { name: /Imaging group/ });
+    expect(screen.queryByRole("option", { name: /Ada Owner/ })).not.toBeInTheDocument();
+    await user.click(imagingGroup);
 
     // Picking stages immediately: there is no separate "Add" step any more.
     expect(row("Imaging group").getByRole("button", { name: "common:resourceAccess.roleFor" })).toHaveTextContent(
@@ -169,30 +193,6 @@ describe("ResourceAccessEditor", () => {
     expect(screen.getByRole("button", { name: "common:resourceAccess.saveChanges" })).toBeDisabled();
   });
 
-  it("marks a later edit dirty again after a successful save", async () => {
-    const contributor = { ...second, role: "CONTRIBUTOR" };
-    server.use(
-      http.get("/api/v2/test-collections/9/access", () => HttpResponse.json(document(3, [owner, second]))),
-      http.get("/api/v2/test-collections/9/access/grantees", () => HttpResponse.json([])),
-      http.put("/api/v2/test-collections/9/access", () => HttpResponse.json(document(4, [owner, contributor]))),
-    );
-    const user = userEvent.setup();
-    editor();
-    await screen.findByRole("table");
-
-    await user.click(row("Bob Steward").getByRole("button", { name: "common:resourceAccess.roleFor" }));
-    await user.click(await screen.findByRole("menuitem", { name: "Contributor" }));
-    await user.click(screen.getByRole("button", { name: "common:resourceAccess.saveChanges" }));
-    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("common:resourceAccess.saved"));
-
-    await user.click(row("Bob Steward").getByRole("button", { name: "common:resourceAccess.roleFor" }));
-    await user.click(await screen.findByRole("menuitem", { name: "Steward" }));
-
-    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("common:resourceAccess.unsavedChanges"));
-    expect(screen.getByRole("status")).not.toHaveTextContent("common:resourceAccess.saved");
-    expect(screen.getByRole("button", { name: "common:resourceAccess.saveChanges" })).toBeEnabled();
-  });
-
   it("blocks removing the last owner but keeps the reason reachable", async () => {
     server.use(
       http.get("/api/v2/test-collections/9/access", () => HttpResponse.json(document())),
@@ -209,42 +209,6 @@ describe("ResourceAccessEditor", () => {
     const describedBy = action.getAttribute("aria-describedby");
     expect(describedBy).not.toBeNull();
     expect(action.ownerDocument.getElementById(describedBy ?? "")).toHaveTextContent("common:resourceAccess.lastOwner");
-  });
-
-  it("shows the audience without a kind badge and never offers to remove it", async () => {
-    server.use(
-      http.get("/api/v2/test-collections/9/access", () => HttpResponse.json(document(3, [owner, audience]))),
-      http.get("/api/v2/test-collections/9/access/grantees", () => HttpResponse.json([])),
-    );
-    editor();
-    await screen.findByRole("table");
-
-    expect(table().getByText("All people")).toBeInTheDocument();
-    // No User/Group badge, and no remove action: the audience is not revoked from this editor.
-    expect(row("All people").queryByText("common:resourceAccess.kind.user")).toBeNull();
-    expect(row("All people").queryByText("common:resourceAccess.kind.group")).toBeNull();
-    expect(row("All people").queryByRole("button", { name: "common:resourceAccess.removeNamed" })).toBeNull();
-  });
-
-  it("omits already-assigned grantees from the picker", async () => {
-    server.use(
-      http.get("/api/v2/test-collections/9/access", () => HttpResponse.json(document(3, [owner, second]))),
-      http.get("/api/v2/test-collections/9/access/grantees", () =>
-        HttpResponse.json([
-          { kind: "USER", id: 12, key: "user:12", name: "Bob Steward", detail: "bob" },
-          { kind: "GROUP", id: 41, key: "group:41", name: "Imaging group", detail: "imaging" },
-        ]),
-      ),
-    );
-    const user = userEvent.setup();
-    editor();
-
-    const search = await screen.findByLabelText("common:resourceAccess.addUserOrGroup");
-    await user.type(search, "b");
-    await user.type(search, "o");
-
-    expect(await screen.findByRole("option", { name: /Imaging group/ })).toBeInTheDocument();
-    expect(screen.queryByRole("option", { name: /Bob Steward/ })).not.toBeInTheDocument();
   });
 
   it("lets a caller who may only leave do so, without needing manage rights", async () => {

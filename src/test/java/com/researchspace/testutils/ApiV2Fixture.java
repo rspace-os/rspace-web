@@ -278,7 +278,7 @@ public final class ApiV2Fixture {
         """
             .formatted(instrumentId);
     long id = idOf(postJson("/api/v2/booking-configurations", body, apiKey));
-    teardown.add(() -> deleteAsSysadmin("/api/v2/booking-configurations/" + id));
+    teardown.add(() -> deleteBookingConfigurationAsSysadmin(id));
     return id;
   }
 
@@ -343,6 +343,9 @@ public final class ApiV2Fixture {
             .getFeatureFlag(FeatureFlags.BOOKING_ENABLED, target)
             .orElseThrow(
                 () -> new IllegalStateException("bookingEnabled feature flag is not registered"));
+    if (original.isValue()) {
+      return;
+    }
     boolean previousBaseline = original.isBaselineValue();
     featureFlagManager
         .updateFeatureFlag(
@@ -404,6 +407,39 @@ public final class ApiV2Fixture {
     if (status != 404 && (status < 200 || status >= 300)) {
       throw new IllegalStateException(
           "fixture DELETE " + path + " answered " + status + "; the row is still in the database");
+    }
+  }
+
+  /** Permanently removes a versioned booking configuration created by a fixture. */
+  private void deleteBookingConfigurationAsSysadmin(long id) {
+    String path = "/api/v2/booking-configurations/" + id;
+    try {
+      MvcResult current =
+          mockMvc
+              .perform(
+                  org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get(path)
+                      .header("apiKey", sysadminKey()))
+              .andReturn();
+      if (current.getResponse().getStatus() == 404) {
+        return;
+      }
+      String etag = current.getResponse().getHeader(org.springframework.http.HttpHeaders.ETAG);
+      int deleteStatus =
+          mockMvc
+              .perform(
+                  delete(path)
+                      .queryParam("permanent", "true")
+                      .header("apiKey", sysadminKey())
+                      .header(org.springframework.http.HttpHeaders.IF_MATCH, etag))
+              .andReturn()
+              .getResponse()
+              .getStatus();
+      if (deleteStatus != 204) {
+        throw new IllegalStateException(
+            "fixture permanent DELETE " + path + " answered " + deleteStatus);
+      }
+    } catch (Exception e) {
+      throw new IllegalStateException("fixture booking configuration cleanup failed", e);
     }
   }
 

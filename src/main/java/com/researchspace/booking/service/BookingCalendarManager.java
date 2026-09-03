@@ -50,7 +50,8 @@ public interface BookingCalendarManager {
 
   record Oversized() implements FeedResult {}
 
-  record Download(byte[] body) {
+  /** One generated calendar file together with the name a browser should save it under. */
+  record Download(byte[] body, String filename) {
 
     public Download {
       body = body.clone();

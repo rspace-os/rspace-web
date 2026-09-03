@@ -13,15 +13,24 @@ import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { NuqsAdapter } from "nuqs/adapters/react";
 import { type ComponentType, type ReactNode, Suspense } from "react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
 import { createRealI18nWrapper } from "@/__tests__/helpers/realI18n";
 import { server } from "@/__tests__/mswServer";
 import bookingEnglish from "@/modules/common/i18n/locales/en-US/booking.json";
 import commonEnglish from "@/modules/common/i18n/locales/en-US/common.json";
+import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { mutateBookableItems } from "../BookableItemsPage";
 import { ownerBookingAccess } from "../mocks/bookableItemsMocks";
 import { createBookableItemRoute, createBookableItemsRoute } from "../routes";
+
+vi.mock("@/modules/common/queries/currentUser", () => ({ useCurrentUserQuery: vi.fn() }));
+
+beforeEach(() => {
+  vi.mocked(useCurrentUserQuery).mockReturnValue({
+    data: { hasSysAdminRole: true, session: { operatedAs: false } },
+  } as ReturnType<typeof useCurrentUserQuery>);
+});
 
 afterEach(() => {
   window.history.replaceState({}, "", "/");
@@ -30,6 +39,7 @@ afterEach(() => {
 const bookingConfiguration = {
   id: 7,
   configurationVersion: 0,
+  state: "ACTIVE",
   target: {
     relationTo: "booking-instruments",
     value: { id: 123, name: "Confocal microscope", deleted: false },
@@ -178,6 +188,7 @@ const openApi = {
                 "configurationVersion",
                 "target",
                 "enabled",
+                "state",
                 "timezone",
                 "slotGranularityMinutes",
                 "openingStart",
@@ -235,6 +246,7 @@ function realI18nWrapper() {
 
 describe("BookableItemsPage", () => {
   it("lists safe booking targets, owner health, and the Add action", async () => {
+    const user = userEvent.setup();
     const collectionRequests: Request[] = [];
     server.use(
       http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
@@ -263,21 +275,22 @@ describe("BookableItemsPage", () => {
       "/booking/bookable-items/add",
     );
     expect(screen.getByRole("columnheader", { name: "booking:bookableItems.fields.actions" })).toBeVisible();
-    expect(screen.getByRole("link", { name: "booking:bookableItems.actions.edit" })).toHaveAttribute(
-      "href",
-      "/booking/bookable-items/IN123?tab=details&edit=true",
-    );
     expect(screen.getByRole("link", { name: "booking:bookableItems.actions.viewDetails" })).toHaveAttribute(
       "href",
       "/booking/bookable-items/IN123",
     );
-    expect(screen.getByRole("button", { name: "booking:bookableItems.actions.delete" })).toBeVisible();
-    expect(screen.getByRole("link", { name: "booking:bookableItems.actions.repairAccess" })).toHaveAttribute(
-      "href",
-      "/booking/bookable-items/IN123?tab=access",
-    );
+    expect(screen.queryByRole("link", { name: "booking:bookableItems.actions.edit" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "booking:bookableItems.actions.access" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "booking:bookableItems.actions.repairAccess" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "booking:bookableItems.actions.archive" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.menu" }));
+    expect(
+      await screen.findByRole("menuitem", { name: "booking:bookableItems.actions.deletePermanently" }),
+    ).toBeVisible();
+    expect(screen.getByRole("menuitem", { name: "booking:bookableItems.actions.archive" })).toBeVisible();
+    await user.keyboard("{Escape}");
 
-    await userEvent.click(screen.getByRole("button", { name: "booking:bookableItems.ownerHealth.filter" }));
+    await user.click(screen.getByRole("button", { name: "booking:bookableItems.ownerHealth.filter" }));
     await waitFor(() =>
       expect(
         collectionRequests.some((request) =>
@@ -289,6 +302,9 @@ describe("BookableItemsPage", () => {
   });
 
   it("renders an unknown item when the related instrument is unreadable", async () => {
+    vi.mocked(useCurrentUserQuery).mockReturnValue({
+      data: { hasSysAdminRole: false, session: { operatedAs: false } },
+    } as ReturnType<typeof useCurrentUserQuery>);
     server.use(
       http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
       http.get("/api/v2/openapi.json", () => HttpResponse.json(openApi)),
@@ -302,9 +318,13 @@ describe("BookableItemsPage", () => {
     expect(await screen.findByText("common:values.unknownItem")).toBeVisible();
     expect(screen.queryByRole("link", { name: "booking:bookableItems.actions.viewDetails" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "booking:bookableItems.actions.edit" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "booking:bookableItems.actions.archive" })).toBeVisible();
   });
 
-  it("deletes a booking configuration after confirmation", async () => {
+  it("archives a booking configuration after confirmation", async () => {
+    vi.mocked(useCurrentUserQuery).mockReturnValue({
+      data: { hasSysAdminRole: false, session: { operatedAs: false } },
+    } as ReturnType<typeof useCurrentUserQuery>);
     const user = userEvent.setup();
     let deleted = false;
     let deleteRequest: Request | undefined;
@@ -326,17 +346,18 @@ describe("BookableItemsPage", () => {
     );
     renderBookableItemsPage();
 
-    const deleteButtons = await screen.findAllByRole("button", { name: "booking:bookableItems.actions.delete" });
-    expect(deleteButtons).toHaveLength(2);
+    const archiveButtons = await screen.findAllByRole("button", { name: "booking:bookableItems.actions.archive" });
+    expect(archiveButtons).toHaveLength(2);
     expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
-    await user.click(deleteButtons[0]);
-    expect(screen.getAllByRole("alertdialog", { name: "booking:bookableItems.deleteDialog.title" })).toHaveLength(1);
-    await user.click(screen.getByRole("button", { name: "common:actions.delete" }));
+    await user.click(archiveButtons[0]);
+    expect(screen.getAllByRole("alertdialog", { name: "booking:bookableItems.archiveDialog.title" })).toHaveLength(1);
+    await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.archive" }));
 
     expect(await screen.findByText("Electron microscope")).toBeVisible();
     expect(screen.queryByText("Confocal microscope")).not.toBeInTheDocument();
     expect(deleteRequest?.method).toBe("DELETE");
     expect(deleteRequest?.headers.get("Authorization")).toBe("Bearer new-token");
+    expect(deleteRequest?.headers.get("If-Match")).toBe('"0"');
     expect(deleteRequest?.headers.get("X-Requested-With")).toBe("XMLHttpRequest");
   });
 
@@ -417,7 +438,7 @@ describe("BookableItemsPage", () => {
     await waitFor(() => {
       const params = new URL(collectionRequest?.url ?? "http://localhost").searchParams;
       expect(params.get("fields[booking-configurations]")).toBe(
-        "id,target,enabled,timezone,updatedAt,slotGranularityMinutes,openingStart,openingEnd,bufferBeforeMinutes,bufferAfterMinutes,allowDoubleBooking,maxBookingDurationMinutes,configurationVersion,effectiveRole,roleSources,capabilities,ownerHealth",
+        "id,target,enabled,state,timezone,updatedAt,slotGranularityMinutes,openingStart,openingEnd,bufferBeforeMinutes,bufferAfterMinutes,allowDoubleBooking,maxBookingDurationMinutes,configurationVersion,effectiveRole,roleSources,capabilities,ownerHealth",
       );
       expect(params.get("depth")).toBe("1");
     });
@@ -492,7 +513,7 @@ describe("BookableItemsPage", () => {
     expect(requests[0]).toEqual({ where: "id=in=(7,8)", body: { enabled: false } });
   });
 
-  it("confirms the multi-page count and deletes all selected rows with one request", async () => {
+  it("confirms the multi-page count and archives all selected rows with one request", async () => {
     const user = userEvent.setup();
     const deleteRequests: Array<{ where: string | null; body: string; contentType: string | null }> = [];
     server.use(
@@ -518,16 +539,16 @@ describe("BookableItemsPage", () => {
     await user.click(await screen.findByRole("checkbox", { name: "Select Confocal microscope" }));
     await user.click(screen.getByRole("button", { name: "Next page" }));
     await user.click(await screen.findByRole("checkbox", { name: "Select Electron microscope" }));
-    await user.click(screen.getByRole("button", { name: "Delete selected" }));
+    await user.click(screen.getByRole("button", { name: "Archive selected" }));
 
-    let dialog = screen.getByRole("alertdialog", { name: "Delete 2 bookable items?" });
+    let dialog = screen.getByRole("alertdialog", { name: "Archive 2 booking configurations?" });
     await expectAccessible(dialog);
     await user.click(within(dialog).getByRole("button", { name: "Cancel" }));
     expect(screen.getByRole("region", { name: "Selected rows actions" })).toBeVisible();
 
-    await user.click(screen.getByRole("button", { name: "Delete selected" }));
-    dialog = screen.getByRole("alertdialog", { name: "Delete 2 bookable items?" });
-    await user.click(within(dialog).getByRole("button", { name: "Delete" }));
+    await user.click(screen.getByRole("button", { name: "Archive selected" }));
+    dialog = screen.getByRole("alertdialog", { name: "Archive 2 booking configurations?" });
+    await user.click(within(dialog).getByRole("button", { name: "Archive" }));
 
     await waitFor(() => expect(deleteRequests).toHaveLength(1));
     expect(deleteRequests[0]).toEqual({ where: "id=in=(7,8)", body: "", contentType: null });

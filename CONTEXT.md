@@ -345,6 +345,23 @@ _Avoid_: runtime-failing flag, startup blocker
 - **Booking configuration** — the settings that make one inventory instrument
   bookable. It supplies the booking timezone and the lock used to serialize
   overlap checks for that instrument.
+- **Booking configuration state** — the lifecycle condition of a booking
+  configuration, either Active or Archived.
+  _Avoid_: deleted flag, archive flag
+- **Active booking configuration** — a booking configuration that may
+  participate in booking operations. Whether users can create new bookings also
+  depends on whether the configuration is enabled.
+- **Archived booking configuration** — a readable booking configuration that
+  cannot receive settings, access, or booking changes until it is restored.
+- **Archive a booking configuration** — move an Active booking configuration to
+  Archived while retaining its settings, bookings, and audit history. Repeating
+  the archive command leaves it Archived.
+  _Avoid_: delete a booking configuration
+- **Restore a booking configuration** — move an Archived booking configuration
+  back to Active without recreating revoked calendar subscriptions.
+- **Permanently delete a booking configuration** — irreversibly remove an
+  Archived booking configuration and its live operational data. Audit history
+  remains. Only a system administrator acting as themselves may do this.
 - **Bookable-item calendar subscription** — one user's independently revocable,
   read-only external calendar of one booking configuration's full schedule. It
   remains available only while that user has effective permission to view the
@@ -371,10 +388,10 @@ _Avoid_: runtime-failing flag, startup blocker
   through another source.
 - **Booking Owner**: the highest Booking role. A Booking Owner can change the
   configuration, manage every role assignment and calendar event, and archive
-  the configuration, subject to the explicit-owner invariant.
+  or restore the configuration, subject to the explicit-owner invariant.
 - **Booking Manager**: a Booking role that can change the configuration, manage
-  Manager, Booker, and Viewer assignments, and manage every calendar event. It
-  cannot change Owner assignments or archive the configuration.
+  Manager, Booker, and Viewer assignments, manage every calendar event, and
+  archive or restore the configuration. It cannot change Owner assignments.
 - **Booker**: the Booking role whose defining permission is creating a booking.
   A Booker can change or cancel their own bookings but cannot manage another
   requester's bookings or create blockouts.

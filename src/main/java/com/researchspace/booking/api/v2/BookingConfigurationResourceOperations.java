@@ -7,10 +7,13 @@ import com.researchspace.api.v2.resource.ApiV2ErrorMapping;
 import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
 import com.researchspace.api.v2.resource.OpenApiOperationDocumentation;
 import com.researchspace.api.v2.resource.ResourceAccessSpec;
+import com.researchspace.api.v2.resource.ResourceDeleteOptions;
+import com.researchspace.api.v2.resource.ResourceDeleteResult;
 import com.researchspace.api.v2.resource.ResourceOperation;
 import com.researchspace.api.v2.resource.ResourceOperations;
 import com.researchspace.booking.config.BookingTimeConfig;
 import com.researchspace.booking.service.BookingConcurrentModificationException;
+import com.researchspace.booking.service.BookingConfigurationLifecycleException;
 import com.researchspace.booking.service.BookingConfigurationManager;
 import com.researchspace.booking.service.BookingConfigurationManager.Create;
 import com.researchspace.booking.service.BookingConfigurationManager.Patch;
@@ -22,6 +25,7 @@ import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
+import com.researchspace.model.booking.BookingConfigurationState;
 import com.researchspace.model.booking.BookingSchedulingSettings;
 import com.researchspace.model.booking.ResolvedBookableTarget;
 import com.researchspace.model.collection.CollectionDescription;
@@ -94,7 +98,12 @@ public final class BookingConfigurationResourceOperations
                         BookingConcurrentModificationException.class,
                         HttpStatus.PRECONDITION_FAILED,
                         "errors.api.v2.bookingConfiguration.concurrentModification",
-                        "The configuration changed while it was being edited.")))
+                        "The configuration changed while it was being edited."),
+                    ApiV2ErrorMapping.of(
+                        BookingConfigurationLifecycleException.class,
+                        HttpStatus.CONFLICT,
+                        "errors.api.v2.bookingConfiguration.lifecycleConflict",
+                        "Restore an archived configuration before changing it.")))
             .toList();
     return new ApiV2ResourceSpec<>(
         description,
@@ -136,6 +145,8 @@ public final class BookingConfigurationResourceOperations
             ResourceOperation.BULK_CREATE,
             writeErrors,
             ResourceOperation.UPDATE,
+            updateErrors,
+            ResourceOperation.DELETE,
             updateErrors,
             ResourceOperation.BULK_UPDATE,
             writeErrors),
@@ -233,6 +244,21 @@ public final class BookingConfigurationResourceOperations
   }
 
   @Override
+  public boolean deleteRequiresIfMatch() {
+    return true;
+  }
+
+  @Override
+  public boolean deleteIsSoft() {
+    return true;
+  }
+
+  @Override
+  public boolean supportsPermanentDelete() {
+    return true;
+  }
+
+  @Override
   public List<BookingConfiguration> updateMany(
       ResourceRequest request, ParsedDocument document, ApiV2Caller caller) {
     if (!enabled(caller.subject())) {
@@ -242,11 +268,25 @@ public final class BookingConfigurationResourceOperations
   }
 
   @Override
-  public Optional<BookingConfiguration> delete(Long id, ApiV2Caller caller) {
+  public Optional<ResourceDeleteResult<BookingConfiguration>> delete(
+      Long id, ResourceDeleteOptions options, ApiV2Caller caller) {
     if (!enabled(caller.subject())) {
       throw new AuthorizationException("errors.api.v2.forbidden");
     }
-    return manager.removeConfiguration(id, caller.subject(), caller.actor());
+    long expectedVersion =
+        java.util.Objects.requireNonNull(
+            options.expectedVersion(), "Expected configuration version");
+    if (options.permanent()) {
+      if (caller.isDelegated()) {
+        throw new AuthorizationException("errors.api.v2.forbidden");
+      }
+      return manager
+          .permanentlyDeleteConfiguration(id, expectedVersion, caller.subject(), caller.actor())
+          .map(ignored -> ResourceDeleteResult.permanentlyDeleted());
+    }
+    return manager
+        .archiveConfiguration(id, expectedVersion, caller.subject(), caller.actor())
+        .map(ResourceDeleteResult::retained);
   }
 
   @Override
@@ -254,7 +294,7 @@ public final class BookingConfigurationResourceOperations
     if (!enabled(caller.subject())) {
       throw new AuthorizationException("errors.api.v2.forbidden");
     }
-    return manager.removeConfigurations(request, caller.subject(), caller.actor());
+    return manager.archiveConfigurations(request, caller.subject(), caller.actor());
   }
 
   private boolean enabled(User actor) {
@@ -262,12 +302,16 @@ public final class BookingConfigurationResourceOperations
   }
 
   private static Patch patch(ParsedDocument document) {
-    return new Patch(value(document, "enabled", Boolean.class), null, schedulingPatch(document));
+    return new Patch(
+        value(document, "enabled", Boolean.class),
+        null,
+        schedulingPatch(document),
+        value(document, "state", BookingConfigurationState.class));
   }
 
   private Create create(ParsedDocument document) {
     return new Create(
-        (boolean) document.values().getOrDefault("enabled", false),
+        (boolean) document.values().getOrDefault("enabled", true),
         institutionClock.getZone().getId(),
         target(document),
         schedulingPatch(document));

@@ -1,9 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
+import { CalendarClockIcon, EyeIcon, HistoryIcon, PencilIcon, RefreshCwIcon } from "lucide-react";
 import { useQueryState } from "nuqs";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import * as v from "valibot";
+import { BookingCalendarFileButton } from "@/modules/booking/components/BookingCalendarFileButton";
 import { bookingApiV2Headers } from "@/modules/booking/domain/apiV2";
 import { type BookingListDocument, BookingListDocumentTableValidation } from "@/modules/booking/domain/booking";
 import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
@@ -18,6 +20,7 @@ import { TableList, type TableListRowActions } from "@/modules/common/table-list
 import type { FilterExpression } from "@/modules/common/table-list/tableListState";
 import { Badge } from "@/modules/common/ui/badge";
 import { Button, buttonVariants } from "@/modules/common/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/modules/common/ui/tooltip";
 import { DeleteBookingDialog } from "../bookings/DeleteBookingDialog";
 import { bookingListConfig } from "./bookingList";
 import { type MyBookingsPeriod, myBookingsPeriodParser } from "./routes";
@@ -116,53 +119,86 @@ export function UserBookingsPage({ requesterId, title, period, onPeriodChange }:
     queryFn: ({ signal }) => fetchUpcomingBookingCount(requesterId, asOfDate, token, signal),
   });
   const rowActions = useMemo<
-    TableListRowActions<CollectionRow<BookingListDocument, "id" | "target" | "canViewConfiguration">>
+    TableListRowActions<CollectionRow<BookingListDocument, "id" | "target" | "canViewConfiguration" | "state">>
   >(
     () => ({
       id: "actions",
       label: t("myBookings.actions.label"),
-      width: 280,
-      renderCell: ({ row }) => (
-        <div className="flex flex-wrap gap-2">
-          {row.canViewConfiguration ? (
-            <Link
-              className={buttonVariants({ size: "sm", variant: "outline" })}
-              to="/booking/bookable-items/$globalId"
-              params={{ globalId: row.target.globalId }}
-            >
-              {t("myBookings.actions.viewDetails")}
-            </Link>
-          ) : null}
-          {row.canEdit ? (
-            <Link
-              className={buttonVariants({ size: "sm", variant: "outline" })}
-              to="/booking/calendar/bookings/$id"
-              params={{ id: String(row.id) }}
-              search={{ returnTo: "my-bookings" }}
-            >
-              {t("myBookings.actions.edit")}
-            </Link>
-          ) : null}
-          {row.canCancel ? (
-            <DeleteBookingDialog
-              bookingId={row.id}
-              bookingVersion={row.version ?? 0}
-              itemName={row.target.value.name}
-              period={formatAgendaPeriod(row.start ?? "", row.end ?? "", preferences.timeZone)}
-              token={token}
-              onDeleted={async () => {
-                await table.refetch();
-              }}
-            />
-          ) : null}
-          {!row.canViewConfiguration && !row.canEdit && !row.canCancel ? (
-            <span className="text-sm text-muted-foreground">{t("myBookings.roleLoss.readOnly")}</span>
-          ) : null}
-        </div>
-      ),
+      width: 176,
+      minWidth: 176,
+      renderCell: ({ row }) => {
+        const viewDetailsLabel = t("myBookings.actions.viewDetails");
+        const editLabel = t("myBookings.actions.edit");
+        return (
+          <div className="flex gap-1">
+            {row.canViewConfiguration ? (
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Link
+                      aria-label={viewDetailsLabel}
+                      className={buttonVariants({ size: "icon-lg", variant: "outline" })}
+                      data-slot="button"
+                      to="/booking/bookable-items/$globalId/{-$tab}"
+                      params={{ globalId: row.target.globalId, tab: undefined }}
+                    />
+                  }
+                >
+                  <EyeIcon aria-hidden="true" />
+                </TooltipTrigger>
+                <TooltipContent role="tooltip">{viewDetailsLabel}</TooltipContent>
+              </Tooltip>
+            ) : null}
+            {row.canEdit ? (
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Link
+                      aria-label={editLabel}
+                      className={buttonVariants({ size: "icon-lg", variant: "outline" })}
+                      data-slot="button"
+                      to="/booking/calendar/bookings/$id"
+                      params={{ id: String(row.id) }}
+                      search={{ returnTo: "my-bookings" }}
+                    />
+                  }
+                >
+                  <PencilIcon aria-hidden="true" />
+                </TooltipTrigger>
+                <TooltipContent role="tooltip">{editLabel}</TooltipContent>
+              </Tooltip>
+            ) : null}
+            {row.canViewConfiguration && row.state === "CONFIRMED" ? (
+              <BookingCalendarFileButton
+                bookingId={row.id}
+                itemName={row.target.value.name}
+                period={formatAgendaPeriod(row.start ?? "", row.end ?? "", preferences.timeZone)}
+                token={token}
+                iconOnly
+              />
+            ) : null}
+            {row.canCancel ? (
+              <DeleteBookingDialog
+                bookingId={row.id}
+                bookingVersion={row.version ?? 0}
+                itemName={row.target.value.name}
+                period={formatAgendaPeriod(row.start ?? "", row.end ?? "", preferences.timeZone)}
+                token={token}
+                iconOnly
+                onDeleted={async () => {
+                  await table.refetch();
+                }}
+              />
+            ) : null}
+            {!row.canViewConfiguration && !row.canEdit && !row.canCancel ? (
+              <span className="text-sm text-muted-foreground">{t("myBookings.roleLoss.readOnly")}</span>
+            ) : null}
+          </div>
+        );
+      },
       renderInteraction: () => null,
     }),
-    [t],
+    [preferences.timeZone, t, token],
   );
 
   const selectPeriod = (nextPeriod: "upcoming" | "past") => {
@@ -172,61 +208,101 @@ export function UserBookingsPage({ requesterId, title, period, onPeriodChange }:
   };
 
   return (
-    <main className="space-y-6 p-4 sm:p-8">
-      <header className="space-y-1">
-        <h1 className="text-2xl font-semibold">{title}</h1>
-        <p className="text-sm text-muted-foreground">{t("myBookings.description")}</p>
-        <p className="text-sm text-muted-foreground">{t("myBookings.timezone", { timezone: preferences.timeZone })}</p>
-      </header>
-      <div className="space-y-2">
-        <fieldset>
-          <legend className="sr-only">{t("myBookings.period.legend")}</legend>
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              className={period === "upcoming" ? "border-foreground bg-muted text-foreground" : undefined}
-              aria-pressed={period === "upcoming"}
-              onClick={() => selectPeriod("upcoming")}
-            >
-              {t("myBookings.period.upcoming")}
-              {upcomingCount.isSuccess && (
-                <Badge
-                  variant={period === "upcoming" ? "secondary" : "outline"}
-                  aria-label={t("myBookings.count.accessible", { count: upcomingCount.data })}
-                >
-                  {upcomingCount.data}
-                </Badge>
-              )}
-              {upcomingCount.isPending && <span role="status">{t("myBookings.count.loading")}</span>}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              className={period === "past" ? "border-foreground bg-muted text-foreground" : undefined}
-              aria-pressed={period === "past"}
-              onClick={() => selectPeriod("past")}
-            >
-              {t("myBookings.period.past")}
-            </Button>
-          </div>
-        </fieldset>
-        {upcomingCount.isError && (
-          <p className="text-sm text-destructive" role="alert">
-            {t("myBookings.count.error")}{" "}
-            <Button type="button" size="xs" variant="outline" onClick={() => void upcomingCount.refetch()}>
-              {commonT("actions.retry")}
-            </Button>
+    <TooltipProvider delay={250}>
+      <main className="space-y-6 p-4 sm:p-8">
+        <header className="space-y-1">
+          <h1 className="text-2xl font-semibold">{title}</h1>
+          <p className="text-sm text-muted-foreground">{t("myBookings.description")}</p>
+          <p className="text-sm text-muted-foreground">
+            {t("myBookings.timezone", { timezone: preferences.timeZone })}
           </p>
-        )}
-      </div>
-      <TableList
-        {...table.tableProps}
-        variant="transparent"
-        emptyDescription={t(emptyDescriptionKeys[period])}
-        rowActions={rowActions}
-      />
-    </main>
+        </header>
+        <div className="space-y-2">
+          <fieldset>
+            <legend className="sr-only">{t("myBookings.period.legend")}</legend>
+            <div className="flex gap-3">
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="outline"
+                      className={`relative ${period === "upcoming" ? "border-foreground bg-muted text-foreground" : ""}`}
+                      aria-label={t("myBookings.period.upcoming")}
+                      aria-pressed={period === "upcoming"}
+                      onClick={() => selectPeriod("upcoming")}
+                    />
+                  }
+                >
+                  <CalendarClockIcon aria-hidden="true" />
+                  {upcomingCount.isSuccess && (
+                    <Badge
+                      variant={period === "upcoming" ? "secondary" : "outline"}
+                      className="pointer-events-none absolute -top-2 -right-2 min-w-5 px-1"
+                      aria-label={t("myBookings.count.accessible", { count: upcomingCount.data })}
+                    >
+                      {upcomingCount.data}
+                    </Badge>
+                  )}
+                  {upcomingCount.isPending && (
+                    <span role="status" className="sr-only">
+                      {t("myBookings.count.loading")}
+                    </span>
+                  )}
+                </TooltipTrigger>
+                <TooltipContent role="tooltip">{t("myBookings.period.upcoming")}</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="outline"
+                      className={period === "past" ? "border-foreground bg-muted text-foreground" : undefined}
+                      aria-label={t("myBookings.period.past")}
+                      aria-pressed={period === "past"}
+                      onClick={() => selectPeriod("past")}
+                    />
+                  }
+                >
+                  <HistoryIcon aria-hidden="true" />
+                </TooltipTrigger>
+                <TooltipContent role="tooltip">{t("myBookings.period.past")}</TooltipContent>
+              </Tooltip>
+            </div>
+          </fieldset>
+          {upcomingCount.isError && (
+            <div className="flex items-center gap-2 text-sm text-destructive" role="alert">
+              <span>{t("myBookings.count.error")}</span>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      type="button"
+                      size="icon-xs"
+                      variant="outline"
+                      aria-label={commonT("actions.retry")}
+                      onClick={() => void upcomingCount.refetch()}
+                    />
+                  }
+                >
+                  <RefreshCwIcon aria-hidden="true" />
+                </TooltipTrigger>
+                <TooltipContent role="tooltip">{commonT("actions.retry")}</TooltipContent>
+              </Tooltip>
+            </div>
+          )}
+        </div>
+        <TableList
+          {...table.tableProps}
+          variant="transparent"
+          emptyDescription={t(emptyDescriptionKeys[period])}
+          rowActions={rowActions}
+        />
+      </main>
+    </TooltipProvider>
   );
 }
 

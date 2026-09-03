@@ -27,4 +27,10 @@ describe("All Bookable Items route", () => {
       date: "2026-08-17",
     });
   });
+
+  it("drops the removed location filter from the URL", () => {
+    expect(allBookableItemsSearch({ date: "2026-08-17", locations: ["IC456"] })).toEqual({
+      date: "2026-08-17",
+    });
+  });
 });

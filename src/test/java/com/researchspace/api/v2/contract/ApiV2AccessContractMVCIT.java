@@ -339,9 +339,10 @@ class ApiV2AccessContractMVCIT {
   class SoftDelete {
 
     /**
-     * {@code softDeleteAccess} does not replace {@code deleteAccess}, and the two must not share a
-     * route. {@code instruments} hides trashed rows through a row constraint and exposes no delete
-     * route at all, so a client cannot reach either behaviour by guessing.
+     * {@code softDeleteAccess} does not replace {@code deleteAccess}. A resource may explicitly opt
+     * into both commands on its canonical item URI, but a read-only resource opts into neither:
+     * {@code instruments} hides trashed rows through a row constraint and exposes no delete route
+     * at all, so a client cannot reach either behaviour by guessing.
      */
     @Test
     @DisplayName("a read-only collection with soft-deleted rows exposes no delete route")

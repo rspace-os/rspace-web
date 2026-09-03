@@ -24,6 +24,22 @@ export class BookableItemPage {
     return page.getByRole("textbox", { name: "Or copy the calendar link below:" });
   }
 
+  get lifecycleActions(): Locator {
+    return page.getByRole("button", { name: "Actions for Confocal microscope" });
+  }
+
+  get archiveAction(): Locator {
+    return page.getByRole("menuitem", { name: "Archive" });
+  }
+
+  get restoreAction(): Locator {
+    return page.getByRole("menuitem", { name: "Restore" });
+  }
+
+  get permanentDeleteAction(): Locator {
+    return page.getByRole("menuitem", { name: "Delete permanently" });
+  }
+
   get auditFrom(): Locator {
     return page.getByLabelText("From date");
   }

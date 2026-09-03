@@ -37,8 +37,10 @@ function TableListContent<TDocument extends Record<string, unknown>>({
   rowActions,
   selection,
   filterButtons,
+  hideFilterPanel,
   presentations,
   renderRows,
+  renderRowsWhenEmpty,
   emptyDescription,
   variant = "card",
   hideHeader = false,
@@ -92,6 +94,7 @@ function TableListContent<TDocument extends Record<string, unknown>>({
             activePanel={activePanel}
             filterCount={filterCount}
             filterButtons={filterButtons}
+            hideFilterPanel={hideFilterPanel}
             onPanelChange={setActivePanel}
             onReset={() => setActivePanel(null)}
           />
@@ -118,6 +121,7 @@ function TableListContent<TDocument extends Record<string, unknown>>({
             selection={selection}
             presentations={presentations}
             renderRows={renderRows}
+            renderRowsWhenEmpty={renderRowsWhenEmpty}
             emptyDescription={emptyDescription}
           />
         </div>

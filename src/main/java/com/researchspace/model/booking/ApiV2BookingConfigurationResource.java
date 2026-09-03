@@ -8,7 +8,6 @@ import com.researchspace.model.collection.ApiV2ResourceDefinition;
 import com.researchspace.model.collection.ApiV2ResourceField;
 import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.CollectionDescription.Field;
-import com.researchspace.model.collection.CollectionDescription.InternalFilter;
 import com.researchspace.model.collection.CollectionDescription.Sort;
 import com.researchspace.model.collection.CollectionDescription.WriteOperation;
 import com.researchspace.model.collection.CollectionFieldTypes;
@@ -30,6 +29,11 @@ public record ApiV2BookingConfigurationResource(
         Long id,
     @ApiV2ResourceField(description = "Whether bookings are enabled for the target.")
         boolean enabled,
+    @ApiV2ResourceField(
+            createAccess = NEVER,
+            description = "Lifecycle state. Archive with DELETE and restore by PATCHing ACTIVE.",
+            enumValues = {"ACTIVE", "ARCHIVED"})
+        BookingConfigurationState state,
     @ApiV2ResourceField(
             property = "timeZone",
             createAccess = NEVER,
@@ -161,6 +165,6 @@ public record ApiV2BookingConfigurationResource(
         base.idField(),
         base.defaultSort(),
         access,
-        List.of(new InternalFilter("deleted", "deleted", CollectionFieldTypes.bool())));
+        List.of());
   }
 }

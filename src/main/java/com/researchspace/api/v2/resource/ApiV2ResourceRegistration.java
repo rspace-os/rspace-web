@@ -3,6 +3,7 @@ package com.researchspace.api.v2.resource;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.researchspace.api.v2.auth.ApiV2AuthenticationException;
 import com.researchspace.api.v2.auth.ApiV2Caller;
+import com.researchspace.api.v2.controller.ApiV2BadRequestException;
 import com.researchspace.api.v2.model.ApiV2BulkResult;
 import com.researchspace.api.v2.model.ApiV2CountResult;
 import com.researchspace.api.v2.model.ApiV2ListResult;
@@ -337,6 +338,18 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
     return operations.ifMatchRequiredCode();
   }
 
+  public boolean deleteRequiresIfMatch() {
+    return operations.deleteRequiresIfMatch();
+  }
+
+  public boolean supportsPermanentDelete() {
+    return operations.supportsPermanentDelete();
+  }
+
+  public boolean deleteIsSoft() {
+    return operations.deleteIsSoft();
+  }
+
   public Map<String, Object> create(JsonNode body, ApiV2Caller caller) {
     User subject = subject(caller);
     requireDocumentedAuthentication(Operation.CREATE, subject);
@@ -401,18 +414,26 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
     return crud.updateMany(authorized, document, caller);
   }
 
-  public Map<String, Object> delete(String rawId, ApiV2Caller caller) {
+  public ResourceDeleteResult<Map<String, Object>> delete(
+      String rawId, ResourceDeleteOptions options, ApiV2Caller caller) {
+    if (options.permanent() && !operations.supportsPermanentDelete()) {
+      throw new ApiV2BadRequestException("errors.api.v2.delete.permanent.unsupported");
+    }
     User subject = subject(caller);
     ID id = parseId(rawId);
-    AccessContext context = authorizeWrite(Operation.DELETE, subject, id);
-    return crud.delete(id, caller, narrowFields(context, FieldSelection.all()));
+    Operation operation =
+        options.permanent() || !operations.deleteIsSoft()
+            ? Operation.DELETE
+            : Operation.SOFT_DELETE;
+    AccessContext context = authorizeWrite(operation, subject, id);
+    return crud.delete(id, options, caller, narrowFields(context, FieldSelection.all()));
   }
 
   public ApiV2BulkResult<Map<String, Object>> deleteMany(
       ResourceRequest request, ApiV2Caller caller) {
     User subject = subject(caller);
-    AccessContext context =
-        new AccessContext(subject, Operation.DELETE, description.resourceName());
+    Operation operation = operations.deleteIsSoft() ? Operation.SOFT_DELETE : Operation.DELETE;
+    AccessContext context = new AccessContext(subject, operation, description.resourceName());
     return crud.deleteMany(authorizeWith(context, request), caller);
   }
 

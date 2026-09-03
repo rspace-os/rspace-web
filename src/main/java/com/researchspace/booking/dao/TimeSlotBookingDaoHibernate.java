@@ -3,6 +3,7 @@ package com.researchspace.booking.dao;
 import com.blazebit.persistence.CriteriaBuilderFactory;
 import com.researchspace.dao.GenericDaoHibernate;
 import com.researchspace.dao.query.CollectionQueryExecutor;
+import com.researchspace.model.booking.BookingConfigurationState;
 import com.researchspace.model.booking.BookingEventKind;
 import com.researchspace.model.booking.BookingState;
 import com.researchspace.model.booking.TimeSlotBooking;
@@ -19,6 +20,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Repository;
@@ -166,12 +168,13 @@ public class TimeSlotBookingDaoHibernate extends GenericDaoHibernate<TimeSlotBoo
                 + " join fetch booking.requester"
                 + " left join fetch booking.createdBy"
                 + " where booking.requester.id = :userId"
-                + " and booking.bookingConfiguration.deleted = false"
+                + " and booking.bookingConfiguration.state = :configurationState"
                 + " and booking.deleted = false and booking.state = :state"
                 + " and booking.endTime > :cutoff"
                 + " order by booking.startTime, booking.id",
             TimeSlotBooking.class)
         .setParameter("userId", userId)
+        .setParameter("configurationState", BookingConfigurationState.ACTIVE)
         .setParameter("state", BookingState.CONFIRMED)
         .setParameter("cutoff", cutoff)
         .setMaxResults(maximumRows)
@@ -200,6 +203,29 @@ public class TimeSlotBookingDaoHibernate extends GenericDaoHibernate<TimeSlotBoo
     TimeSlotBooking saved = save(booking);
     getSession().flush();
     return saved;
+  }
+
+  @Override
+  public int removeAllByConfigurationId(Long configurationId) {
+    Session session = getSession();
+    int removed = 0;
+    while (true) {
+      List<TimeSlotBooking> batch =
+          session
+              .createQuery(
+                  "from TimeSlotBooking where bookingConfiguration.id = :configurationId"
+                      + " order by id",
+                  TimeSlotBooking.class)
+              .setParameter("configurationId", configurationId)
+              .setMaxResults(100)
+              .getResultList();
+      if (batch.isEmpty()) {
+        return removed;
+      }
+      batch.forEach(session::remove);
+      removed += batch.size();
+      session.flush();
+    }
   }
 
   @Override

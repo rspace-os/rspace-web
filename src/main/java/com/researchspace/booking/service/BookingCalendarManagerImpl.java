@@ -18,6 +18,7 @@ import com.researchspace.model.booking.BookableItemCalendarSubscription;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
+import com.researchspace.model.booking.BookingConfigurationState;
 import com.researchspace.model.booking.BookingState;
 import com.researchspace.model.booking.TimeSlotBooking;
 import com.researchspace.model.booking.UserBookingCalendarSubscription;
@@ -30,6 +31,10 @@ import jakarta.persistence.OptimisticLockException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.DateTimeException;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -57,6 +62,7 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
 
   private static final Logger SECURITY_LOG = LoggerFactory.getLogger(SecurityLogger.class);
   private static final String INACTIVE_USER_ETAG = "\"inactive\"";
+  private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
   private final BookingCalendarSubscriptionDao subscriptionDao;
   private final UserBookingCalendarSubscriptionDao userSubscriptionDao;
@@ -128,7 +134,10 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
   public Status status(Long configurationId, User subject, User actor) {
     requirePersonalCaller(subject, actor);
     requireFeatureRead(subject);
-    requireReadableConfiguration(configurationId, subject);
+    BookingConfiguration configuration = requireReadableConfiguration(configurationId, subject);
+    if (configuration.getState() == BookingConfigurationState.ARCHIVED) {
+      return new Status(false, null, null);
+    }
     return subscriptionDao
         .findByUserIdAndConfigurationId(subject.getId(), configurationId)
         .map(
@@ -150,6 +159,9 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
         configurationDao
             .lockById(configurationId)
             .orElseThrow(BookingCalendarNotFoundException::new);
+    if (configuration.getState() == BookingConfigurationState.ARCHIVED) {
+      throw new BookingConfigurationLifecycleException();
+    }
     requireCapability(
         configuration, subject, BookingResourceRoleScheme.CREATE_CALENDAR_SUBSCRIPTION);
     Optional<BookableItemCalendarSubscription> existing =
@@ -198,7 +210,7 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
     requireFeatureMutation(subject);
     BookingConfiguration configuration =
         configurationDao
-            .lockById(configurationId)
+            .lockActiveById(configurationId)
             .orElseThrow(BookingCalendarNotFoundException::new);
     requireCapability(configuration, subject, BookingResourceRoleScheme.READ_RESOURCE);
     Optional<BookableItemCalendarSubscription> existing =
@@ -321,7 +333,7 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
     requireFeatureMutation(subject);
     BookingConfiguration configuration =
         configurationDao
-            .lockById(configurationId)
+            .lockActiveById(configurationId)
             .orElseThrow(BookingCalendarNotFoundException::new);
     requireMutationCapability(configuration, subject, BookingResourceRoleScheme.MANAGE_ALL_EVENTS);
     int deleted = subscriptionDao.deleteByConfigurationId(configurationId);
@@ -347,7 +359,9 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
     }
     try {
       return Optional.of(
-          new Download(generator.generate(source.get(), serverBaseUrl, locale, limits.maxBytes())));
+          new Download(
+              generator.generate(source.get(), serverBaseUrl, locale, limits.maxBytes()),
+              downloadFilename(source.get(), booking.get())));
     } catch (CalendarTooLargeException | CalendarGenerationException ex) {
       SECURITY_LOG.warn(
           "Booking calendar download generation failed for booking [{}]", bookingId, ex);
@@ -441,10 +455,35 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
     }
   }
 
+  /**
+   * Names one downloaded file after the item, its global identifier, and the local start date, so a
+   * folder of saved bookings sorts and reads sensibly: {@code confocal-microscope-IN12-2026-09-12}.
+   */
+  private static String downloadFilename(CalendarSource source, TimeSlotBooking booking) {
+    String slug =
+        source
+            .itemName()
+            .toLowerCase(Locale.ROOT)
+            .replaceAll("[^a-z0-9]+", "-")
+            .replaceAll("^-|-$", "");
+    BookableTargetReference target = booking.getBookingConfiguration().getTarget();
+    String globalId = "IN" + target.id();
+    String date =
+        DATE_FORMAT.withZone(zone(source.timeZone())).format(booking.getStartTime().toInstant());
+    return (slug.isEmpty() ? "booking" : slug) + "-" + globalId + "-" + date + ".ics";
+  }
+
+  private static ZoneId zone(String timeZone) {
+    try {
+      return ZoneId.of(timeZone);
+    } catch (DateTimeException ex) {
+      return ZoneOffset.UTC;
+    }
+  }
+
   private Optional<CalendarSource> downloadSource(TimeSlotBooking booking, User subject) {
     BookingConfiguration configuration = booking.getBookingConfiguration();
-    if (configuration.isDeleted()
-        || !hasCapability(configuration, subject, BookingResourceRoleScheme.READ_RESOURCE)) {
+    if (!hasCapability(configuration, subject, BookingResourceRoleScheme.READ_RESOURCE)) {
       return Optional.empty();
     }
     BookableTargetReference target = configuration.getTarget();

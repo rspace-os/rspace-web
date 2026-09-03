@@ -875,10 +875,11 @@ export default interface Resources {
       },
       "archiveDialog": {
         "confirm": "Archive",
-        "description": "Archive {item}? Existing bookings remain in the audit history.",
+        "description": "Archive {item}? Existing bookings remain available and can still be cancelled.",
         "error": "Could not archive this bookable item. Try again.",
         "title": "Archive bookable item?"
       },
+      "archived": "Archived",
       "audit": {
         "apply": "Load audit events",
         "conflict": {
@@ -942,6 +943,7 @@ export default interface Resources {
       "calendarSubscription": {
         "appPrompt": "Add to your calendar app:",
         "apple": "Apple",
+        "archivedUnavailable": "New calendar links cannot be generated while this booking configuration is archived.",
         "close": "Close",
         "copied": "Copied",
         "copy": "Copy link",
@@ -998,11 +1000,23 @@ export default interface Resources {
         "error": "Could not leave this configuration.",
         "title": "Leave this booking configuration?"
       },
+      "lifecycleErrors": {
+        "restore": "The booking configuration could not be restored. Refresh and try again.",
+        "stale": "This booking configuration changed after you loaded it. Review the latest version and try again.",
+        "stateChanged": "This booking configuration is no longer in the required state. Review the latest version and try again."
+      },
       "loading": "Loading bookable item.",
       "minutes": "{count, plural, one {# minute} other {# minutes}}",
       "no": "No",
       "notAvailable": "Not available",
       "past": "Past events",
+      "permanentDeleteDialog": {
+        "confirm": "Delete permanently",
+        "confirmationLabel": "Item name",
+        "description": "This permanently deletes the configuration, all bookings, access assignments, and calendar subscription links. This cannot be undone. Type \"{item}\" to confirm.",
+        "error": "The configuration could not be permanently deleted. Refresh and try again.",
+        "title": "Permanently delete configuration?"
+      },
       "rules": "Booking rules",
       "tabs": {
         "access": "Access",
@@ -1014,7 +1028,9 @@ export default interface Resources {
       "unlimited": "Unlimited",
       "upcoming": "Upcoming events",
       "update": {
+        "archived": "Booking configuration archived.",
         "pending": "Saving booking configuration.",
+        "restored": "Booking configuration restored.",
         "saved": "Booking configuration saved."
       },
       "viewInventory": "View {name} in Inventory",
@@ -1024,9 +1040,13 @@ export default interface Resources {
       "actions": {
         "access": "Manage access for {item}",
         "add": "Add",
+        "archive": "Archive",
         "delete": "Delete {item}",
+        "deletePermanently": "Delete permanently",
         "edit": "Edit {item}",
+        "menu": "Actions for {item}",
         "repairAccess": "Repair access for {item}",
+        "restore": "Restore",
         "save": "Save changes",
         "submit": "Submit",
         "viewDetails": "View details for {item}",
@@ -1034,6 +1054,11 @@ export default interface Resources {
       },
       "addError": "Could not add the bookable item. Try again.",
       "addTitle": "Add Bookable Item",
+      "archiveDialog": {
+        "description": "{item} will no longer accept new bookings. Existing bookings remain available.",
+        "error": "{item} could not be archived. Refresh and try again.",
+        "title": "Archive booking configuration?"
+      },
       "availability": {
         "alreadyConfigured": "This inventory item already has a bookable item configuration.",
         "checkFailed": "RSpace could not check whether this instrument can be added. Select it again or try another instrument.",
@@ -1044,15 +1069,21 @@ export default interface Resources {
       },
       "bulk": {
         "actions": {
+          "archive": "Archive selected",
           "delete": "Delete selected",
           "disable": "Disable",
           "enable": "Enable"
+        },
+        "archiveDialog": {
+          "description": "They will no longer accept new bookings. Existing bookings remain available.",
+          "title": "Archive {count, plural, one {# booking configuration} other {# booking configurations}}?"
         },
         "deleteDialog": {
           "description": "This action cannot be undone.",
           "title": "Delete {count, plural, one {# bookable item} other {# bookable items}}?"
         },
         "errors": {
+          "archive": "The selected configurations could not be archived.",
           "delete": "Could not delete the selected rows. No rows changed. Try again.",
           "disable": "Could not disable the selected rows. No rows changed. Try again.",
           "enable": "Could not enable the selected rows. No rows changed. Try again."
@@ -1069,10 +1100,16 @@ export default interface Resources {
         "actions": "Actions",
         "enabled": "Enabled",
         "id": "ID",
+        "state": "State",
         "target": "Bookable item",
         "targetName": "Bookable item name",
         "timezone": "Time zone",
         "updatedAt": "Last updated"
+      },
+      "lifecycleErrors": {
+        "restore": "The booking configuration could not be restored. Refresh and try again.",
+        "stale": "This booking configuration changed after you loaded it. Review the latest version and try again.",
+        "stateChanged": "This booking configuration is no longer in the required state. Review the latest version and try again."
       },
       "ownerHealth": {
         "error": "Could not find bookable items needing an owner.",
@@ -1080,6 +1117,12 @@ export default interface Resources {
         "filters": "Owner health filters",
         "loading": "Finding bookable items needing an owner…",
         "needsOwner": "Owner needed"
+      },
+      "permanentDeleteDialog": {
+        "confirmationLabel": "Item name",
+        "description": "This permanently deletes the configuration, all bookings, access assignments, and calendar subscription links. This cannot be undone. Type \"{item}\" to confirm.",
+        "error": "The configuration could not be permanently deleted. Refresh and try again.",
+        "title": "Permanently delete configuration?"
       },
       "plural": "Bookable Items",
       "singular": "Bookable item",
@@ -1166,21 +1209,20 @@ export default interface Resources {
         "notesCount": "{count, number}/1,000 characters",
         "occurrence": "Repeated local time",
         "openItem": "Open {globalId}",
-        "openingHours": "Opening hours: {start}–{end}",
+        "openingHours": "Open: {start} - {end}",
+        "openingHoursDifferentTimezone": "Open: {start} - {end} ({timezone})",
         "previousItems": "Previous",
         "purpose": "Purpose",
         "purposeCount": "{count, number}/1,000 characters",
         "returnToCalendar": "Return to Calendar",
         "returnToMyBookings": "Return to My Bookings",
         "save": "Save changes",
-        "schedulingTimezone": "Opening hours are enforced in {timezone}.",
         "start": "Start",
         "startDate": "Start date",
         "startTime": "Start time",
         "submit": "Book",
         "submitMaintenance": "Create maintenance event",
         "time": "Time",
-        "timezone": "Time zone: {timezone}",
         "type": "Booking type",
         "typeBlockout": "Maintenance blockout",
         "typeBlockoutPending": "Maintenance blockouts are not stored yet. RSpace saves this as a standard booking.",
@@ -1239,6 +1281,13 @@ export default interface Resources {
         "target": "Bookable item",
         "timezone": "Time zone",
         "updatedAt": "Updated"
+      },
+      "file": {
+        "accessibleLabel": ".ics file for {item}, {period}",
+        "downloaded": "Downloaded {filename}. No subscription was created or changed.",
+        "failed": "The calendar file for {item}, {period} could not be downloaded. Nothing was saved; try again.",
+        "label": ".ics file",
+        "preparing": "Preparing the calendar file for {item}, {period}."
       },
       "grid": "Calendar grid",
       "item": "Bookable item",
@@ -6558,6 +6607,7 @@ export default interface Resources {
             "buffer": {
               "invalid": "Booking buffers must be between 0 and 10,080 minutes."
             },
+            "concurrentModification": "The booking configuration changed. Reload it and try again.",
             "create": "The booking configuration is invalid.",
             "defaultSharing": {
               "invalid": "Choose at least one available user or group when sharing with selected people, and do not include selected people for other sharing options."
@@ -6565,6 +6615,8 @@ export default interface Resources {
             "granularity": {
               "invalid": "Slot granularity must be 1, 5, 10, or 15 minutes."
             },
+            "ifMatchRequired": "The current booking configuration version is required.",
+            "lifecycleConflict": "Restore the archived booking configuration before changing it.",
             "maximumDuration": {
               "invalid": "Maximum booking duration must be 0 or a multiple of the slot granularity, up to 527,040 minutes."
             },
@@ -6595,6 +6647,11 @@ export default interface Resources {
               "required": "A where filter is required for bulk operations."
             },
             "limit": "The bulk operation exceeds the allowed batch size for this operation."
+          },
+          "delete": {
+            "permanent": {
+              "unsupported": "This resource does not support permanent deletion."
+            }
           },
           "depth": {
             "max": "Depth must not exceed {value}.",

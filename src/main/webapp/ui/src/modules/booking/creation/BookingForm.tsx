@@ -85,6 +85,7 @@ type BookingFormProps = BookingFormCommonProps &
         initialTarget?: BookableItemOption;
         initialDate?: string;
         initialWindow?: BookingWindowDraft;
+        initialPurpose?: string;
         eventKind: BookingEventKind;
         lockTarget?: boolean;
       }
@@ -117,6 +118,7 @@ export function BookingForm(props: BookingFormProps) {
   const initialTarget = props.mode === "add" ? props.initialTarget : undefined;
   const initialDate = props.mode === "add" ? props.initialDate : undefined;
   const initialWindow = props.mode === "add" ? props.initialWindow : undefined;
+  const initialPurpose = props.mode === "add" ? (props.initialPurpose ?? "") : (props.booking.purpose ?? "");
   const eventKind = props.mode === "add" ? props.eventKind : props.booking.kind;
   const textFields = useMemo(() => purposeFields(eventKind), [eventKind]);
   const displayTimezone = props.displayTimezone ?? (editing ? fixedTarget?.timezone : initialTarget?.timezone) ?? "UTC";
@@ -135,7 +137,7 @@ export function BookingForm(props: BookingFormProps) {
   const [attempted, setAttempted] = useState(false);
   const form = useForm({
     schema: v.object({ purpose: v.pipe(v.string(), v.maxLength(1000)) }),
-    initialInput: { purpose: editing ? (props.booking.purpose ?? "") : "" },
+    initialInput: { purpose: initialPurpose },
   });
   const purpose = useField(form, { path: ["purpose"] }).input;
   const purposeValue = typeof purpose === "string" ? purpose : "";
@@ -144,7 +146,7 @@ export function BookingForm(props: BookingFormProps) {
   const initialState = useRef({
     targetGlobalId: (editing ? fixedTarget : initialTarget)?.globalId ?? "",
     draft: originalDraft ?? addDraft,
-    purpose: editing ? (props.booking.purpose ?? "") : "",
+    purpose: initialPurpose,
     eventKind,
   });
   const busy = props.pending || submitting;
@@ -215,8 +217,8 @@ export function BookingForm(props: BookingFormProps) {
   return (
     <Form of={form} className={cn("max-w-2xl", compact && "flex min-h-0 flex-col")} aria-busy={busy} onSubmit={submit}>
       <div className={compact ? "min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-3" : "space-y-8"}>
-        {fixedTarget ? (
-          <div className="space-y-2">
+        {fixedTarget && !compact ? (
+          <div className="space-y-1">
             <p className="text-sm font-medium">{t("bookings.form.item")}</p>
             <InventoryItem
               name={fixedTarget?.name ?? ""}
@@ -224,9 +226,10 @@ export function BookingForm(props: BookingFormProps) {
               href={`/globalId/${fixedTarget?.globalId ?? ""}`}
               idLinkLabel={t("bookings.form.openItem", { globalId: fixedTarget?.globalId ?? "" })}
               compact
+              size="xs"
             />
           </div>
-        ) : (
+        ) : fixedTarget ? null : (
           <BookableItemPicker value={target} onChange={selectTarget} token={props.token} disabled={busy} />
         )}
         {attempted && !target && <FieldError>{t("bookings.errors.itemRequired")}</FieldError>}
@@ -235,7 +238,16 @@ export function BookingForm(props: BookingFormProps) {
             {eventKind === "BOOKING" ? (
               <>
                 <p className="text-sm text-muted-foreground">
-                  {t("bookings.form.openingHours", { start: target.openingStart, end: target.openingEnd })}
+                  {t(
+                    target.timezone === displayTimezone
+                      ? "bookings.form.openingHours"
+                      : "bookings.form.openingHoursDifferentTimezone",
+                    {
+                      start: target.openingStart,
+                      end: target.openingEnd,
+                      timezone: target.timezone,
+                    },
+                  )}
                 </p>
                 {target.maxBookingDurationMinutes > 0 ? (
                   <p className="text-sm text-muted-foreground">
@@ -280,7 +292,6 @@ export function BookingForm(props: BookingFormProps) {
       </div>
       {compact ? (
         <ActionBar
-          className="[&>div>button:last-of-type]:!flex"
           actions={[
             ...(props.onMoreOptions ? [{ label: t("bookings.form.moreOptions"), onClick: props.onMoreOptions }] : []),
             {
@@ -291,6 +302,7 @@ export function BookingForm(props: BookingFormProps) {
                   : t("bookings.form.submit"),
               icon: CheckIcon,
               preferred: true,
+              alwaysVisible: true,
               disabled: busy || props.submissionBlocked,
               onClick: () => void submit({ purpose: purposeValue }),
             },

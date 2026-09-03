@@ -1,9 +1,47 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { ZonedBookingWindowFields } from "../ZonedBookingWindowFields";
 
 describe("ZonedBookingWindowFields", () => {
+  it("uses one date for both endpoints in compact mode", () => {
+    const onChange = vi.fn();
+    render(
+      <ZonedBookingWindowFields
+        timezone="Europe/Berlin"
+        slotGranularityMinutes={5}
+        maxBookingDurationMinutes={0}
+        openingStart="00:00"
+        openingEnd="24:00"
+        density="compact"
+        value={{
+          startDate: "2026-08-17",
+          startTime: "09:00",
+          endDate: "2026-08-17",
+          endTime: "10:00",
+        }}
+        onChange={onChange}
+        onResolved={vi.fn()}
+      />,
+    );
+
+    const date = screen.getByLabelText("booking:bookings.form.date");
+    expect(screen.getAllByDisplayValue("2026-08-17")).toHaveLength(1);
+    expect(screen.getByLabelText("booking:bookings.form.startTime")).toBeVisible();
+    expect(screen.getByLabelText("booking:bookings.form.endTime")).toBeVisible();
+
+    fireEvent.change(date, { target: { value: "2026-08-18" } });
+
+    expect(onChange).toHaveBeenLastCalledWith({
+      startDate: "2026-08-18",
+      startTime: "09:00",
+      startOccurrence: undefined,
+      endDate: "2026-08-18",
+      endTime: "10:00",
+      endOccurrence: undefined,
+    });
+  });
+
   it.each([
     ["Europe/Berlin", "America/New_York", "15:00", "16:00", "2026-08-17T13:00:00Z", "2026-08-17T14:00:00Z"],
     ["America/New_York", "Europe/Berlin", "03:00", "04:00", "2026-08-17T07:00:00Z", "2026-08-17T08:00:00Z"],
@@ -26,10 +64,39 @@ describe("ZonedBookingWindowFields", () => {
       );
 
       expect(onResolved).toHaveBeenLastCalledWith({ start, end });
-      expect(screen.getByText("booking:bookings.form.schedulingTimezone")).toBeVisible();
+      expect(screen.queryByText("booking:bookings.form.timezone")).not.toBeInTheDocument();
+      expect(screen.queryByText("booking:bookings.form.schedulingTimezone")).not.toBeInTheDocument();
       expect(screen.queryByText("booking:bookings.errors.openingHours")).not.toBeInTheDocument();
     },
   );
+
+  it("snaps display times to the instrument timezone's interval grid", () => {
+    const onChange = vi.fn();
+    render(
+      <ZonedBookingWindowFields
+        displayTimezone="Europe/Berlin"
+        schedulingTimezone="Asia/Kathmandu"
+        slotGranularityMinutes={10}
+        maxBookingDurationMinutes={0}
+        openingStart="00:00"
+        openingEnd="24:00"
+        value={{
+          startDate: "2026-08-17",
+          startTime: "09:02",
+          endDate: "2026-08-17",
+          endTime: "10:02",
+        }}
+        onChange={onChange}
+        onResolved={vi.fn()}
+      />,
+    );
+
+    fireEvent.blur(screen.getByLabelText("booking:bookings.form.startTime"));
+
+    expect(onChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ startTime: "09:05", startOccurrence: undefined }),
+    );
+  });
 
   it("rejects an interval that crosses the scheduling timezone's local date boundary", () => {
     const onResolved = vi.fn();

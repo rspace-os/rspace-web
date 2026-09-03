@@ -11,9 +11,9 @@ import com.researchspace.model.User;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
+import com.researchspace.model.booking.BookingConfigurationState;
 import com.researchspace.service.resourceaccess.ResourceAccessManager;
 import java.util.Optional;
-import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.Test;
 
 class BookingConfigurationOwnershipManagerTest {
@@ -34,7 +34,7 @@ class BookingConfigurationOwnershipManagerTest {
   void unconfiguredInstrumentNeedsNoBookingMutation() {
     BookableTargetReference target =
         new BookableTargetReference(BookableTargetType.INSTRUMENT, 17L);
-    when(configurationDao.lockByTargetIncludingArchived(target)).thenReturn(Optional.empty());
+    when(configurationDao.lockByTarget(target)).thenReturn(Optional.empty());
 
     manager.transferInstrumentOwnership(17L, outgoing, incoming, subject, actor);
 
@@ -48,8 +48,8 @@ class BookingConfigurationOwnershipManagerTest {
         new BookableTargetReference(BookableTargetType.INSTRUMENT, 17L);
     BookingConfiguration configuration = mock(BookingConfiguration.class);
     when(configuration.getId()).thenReturn(9L);
-    when(configurationDao.lockByTargetIncludingArchived(target))
-        .thenReturn(Optional.of(configuration));
+    when(configuration.getState()).thenReturn(BookingConfigurationState.ACTIVE);
+    when(configurationDao.lockByTarget(target)).thenReturn(Optional.of(configuration));
 
     manager.transferInstrumentOwnership(17L, outgoing, incoming, subject, actor);
 
@@ -62,12 +62,11 @@ class BookingConfigurationOwnershipManagerTest {
     BookableTargetReference target =
         new BookableTargetReference(BookableTargetType.INSTRUMENT, 17L);
     BookingConfiguration configuration = mock(BookingConfiguration.class);
-    when(configuration.isDeleted()).thenReturn(true);
-    when(configurationDao.lockByTargetIncludingArchived(target))
-        .thenReturn(Optional.of(configuration));
+    when(configuration.getState()).thenReturn(BookingConfigurationState.ARCHIVED);
+    when(configurationDao.lockByTarget(target)).thenReturn(Optional.of(configuration));
 
     assertThrows(
-        AuthorizationException.class,
+        BookingConfigurationLifecycleException.class,
         () -> manager.transferInstrumentOwnership(17L, outgoing, incoming, subject, actor));
 
     verify(accessManager, never())

@@ -79,7 +79,8 @@ public class BookingCalendarSubscriptionController {
         @ApiResponse(responseCode = "200", description = "The new subscription URL."),
         @ApiResponse(responseCode = "401", description = "Authentication is required."),
         @ApiResponse(responseCode = "403", description = "Booking is unavailable."),
-        @ApiResponse(responseCode = "404", description = "The bookable item was not found.")
+        @ApiResponse(responseCode = "404", description = "The bookable item was not found."),
+        @ApiResponse(responseCode = "409", description = "The bookable item is archived.")
       })
   public CreatedDocument createOrReplace(
       @PathVariable @Positive(message = "{errors.api.v2.invalidRequest}") Long configurationId,

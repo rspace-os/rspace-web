@@ -1,8 +1,9 @@
-import { useNavigate, useSearch } from "@tanstack/react-router";
+import { useLocation, useNavigate, useSearch } from "@tanstack/react-router";
 import { useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useBookableItem } from "@/modules/booking/creation/BookableItemPicker";
 import { BookingForm, type BookingFormSubmission } from "@/modules/booking/creation/BookingForm";
+import { bookingCreationDraftFromHistoryState } from "@/modules/booking/creation/bookingCreationDraft";
 import { bookingProblemKey, useCreateBooking } from "@/modules/booking/creation/useCreateBooking";
 import { isBookingOverlapError } from "@/modules/booking/domain/booking";
 import { todayInTimeZone, useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
@@ -12,6 +13,9 @@ import { Heading } from "@/modules/common/ui/typography";
 export default function AddBookingPage() {
   const { t } = useTranslation("booking");
   const search = useSearch({ from: "/booking/calendar/bookings/add" });
+  const transferredDraft = useLocation({
+    select: (location) => bookingCreationDraftFromHistoryState(location.state, search.target),
+  });
   const navigate = useNavigate({ from: "/booking/calendar/bookings/add" });
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
   const preferences = useBookingDisplayPreferences();
@@ -45,7 +49,9 @@ export default function AddBookingPage() {
         displayTimezone={preferences.timeZone}
         eventKind="BOOKING"
         initialTarget={initialTarget.data}
-        initialDate={search.date ?? todayInTimeZone(preferences.timeZone)}
+        initialDate={transferredDraft?.window.startDate ?? search.date ?? todayInTimeZone(preferences.timeZone)}
+        initialWindow={transferredDraft?.window}
+        initialPurpose={transferredDraft?.purpose}
         token={token}
         pending={mutation.isPending}
         error={mutation.error ? t(bookingProblemKey(mutation.error)) : undefined}

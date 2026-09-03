@@ -60,6 +60,7 @@ type Props = {
   token: string;
   adapter: ResourceAccessAdapter;
   onLeave?: () => void;
+  readOnly?: boolean;
 };
 
 function sameDraft(left: readonly ResourceAccessAssignment[], right: readonly ResourceAccessAssignment[]) {
@@ -70,7 +71,7 @@ function sameDraft(left: readonly ResourceAccessAssignment[], right: readonly Re
   );
 }
 
-export function ResourceAccessEditor({ resource, resourceId, token, adapter, onLeave }: Props) {
+export function ResourceAccessEditor({ resource, resourceId, token, adapter, onLeave, readOnly = false }: Props) {
   const { t, i18n } = useTranslation("common");
   const queryClient = useQueryClient();
   const queryKey = ["api-v2", resource, resourceId, "access"] as const;
@@ -91,7 +92,7 @@ export function ResourceAccessEditor({ resource, resourceId, token, adapter, onL
     if (access.data && !recoveringConflict) setDraft(access.data.assignments);
   }, [access.data, recoveringConflict]);
 
-  const dirty = access.data ? !sameDraft(draft, access.data.assignments) : false;
+  const dirty = !readOnly && access.data ? !sameDraft(draft, access.data.assignments) : false;
   const ownerCount = draft.filter(({ role }) => role === adapter.ownerRole).length;
   const ownerLabel = adapter.roles.find(({ key }) => key === adapter.ownerRole)?.label ?? adapter.ownerRole;
 
@@ -162,7 +163,7 @@ export function ResourceAccessEditor({ resource, resourceId, token, adapter, onL
 
   const assignedKeys = useMemo(() => new Set(draft.map(({ grantee }) => grantee.key)), [draft]);
   const namedAssignmentCount = draft.filter(({ grantee }) => grantee.kind !== "AUDIENCE").length;
-  const canManage = access.data?.caller.capabilities.canManageAssignments === true;
+  const canManage = !readOnly && access.data?.caller.capabilities.canManageAssignments === true;
 
   const add = (grantee: ResourceGranteeDirectoryEntry, roleKey = adapter.defaultRole) => {
     if (grantee.kind !== "AUDIENCE" && namedAssignmentCount >= 100) {
@@ -245,27 +246,33 @@ export function ResourceAccessEditor({ resource, resourceId, token, adapter, onL
     setConflicts((current) => current.filter(({ key }) => key !== item.key));
   };
 
-  const roleMenuFor = (row: AccessRow) => (
-    <RoleMenu
-      row={row}
-      roles={rolesFor(row)}
-      // A row staged for removal keeps its role visible but frozen until it is restored.
-      disabled={row.status === "removed" || !row.assignment.grantee.available}
-      lockReason={manageBlockedReason(row)}
-      onChange={(role) => setDraft((current) => draftWithRole(current, row.key, role))}
-    />
-  );
+  const roleMenuFor = (row: AccessRow) => {
+    if (readOnly) {
+      return <span>{adapter.roles.find(({ key }) => key === row.assignment.role)?.label ?? row.assignment.role}</span>;
+    }
+    return (
+      <RoleMenu
+        row={row}
+        roles={rolesFor(row)}
+        // A row staged for removal keeps its role visible but frozen until it is restored.
+        disabled={row.status === "removed" || !row.assignment.grantee.available}
+        lockReason={manageBlockedReason(row)}
+        onChange={(role) => setDraft((current) => draftWithRole(current, row.key, role))}
+      />
+    );
+  };
 
-  const actionsFor = (row: AccessRow) => (
-    <RowActions
-      row={row}
-      leaveLabel={adapter.leaveLabel}
-      blockedReason={actionBlockedReason(row)}
-      onRemove={() => setDraft((current) => draftWithout(current, row.key))}
-      onRestore={() => setDraft((current) => draftWithRestored(saved.assignments, current, row.assignment))}
-      onLeave={() => setLeaveOpen(true)}
-    />
-  );
+  const actionsFor = (row: AccessRow) =>
+    readOnly ? null : (
+      <RowActions
+        row={row}
+        leaveLabel={adapter.leaveLabel}
+        blockedReason={actionBlockedReason(row)}
+        onRemove={() => setDraft((current) => draftWithout(current, row.key))}
+        onRestore={() => setDraft((current) => draftWithRestored(saved.assignments, current, row.assignment))}
+        onLeave={() => setLeaveOpen(true)}
+      />
+    );
 
   return (
     <TooltipProvider>

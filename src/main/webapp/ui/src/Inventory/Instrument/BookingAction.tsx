@@ -28,7 +28,7 @@ function EnabledBookingAction({ globalId, isOwner }: { globalId: string; isOwner
 
   const current = configuration.data;
   const configured = current !== null;
-  const canBook = current?.enabled === true && current.capabilities.canCreateBooking;
+  const canBook = current?.state === "ACTIVE" && current.enabled && current.capabilities.canCreateBooking;
   if (!configured && !isOwner) return null;
   const action = configured ? (canBook ? "book" : "open") : "setup";
   return (
@@ -68,6 +68,7 @@ function EnabledBookingAction({ globalId, isOwner }: { globalId: string; isOwner
                 : `/booking/bookable-items/add?target=${encodeURIComponent(globalId)}`
           }
           variant="contained"
+          color="callToAction"
           startIcon={<CalendarMonthIcon />}
           sx={{ flex: "0 0 auto", alignSelf: { xs: "stretch", sm: "center" } }}
         >

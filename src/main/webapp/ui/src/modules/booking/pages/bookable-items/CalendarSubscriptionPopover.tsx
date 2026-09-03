@@ -22,7 +22,15 @@ import {
   fetchCalendarSubscriptionStatus,
 } from "./bookableItemCalendarSubscription";
 
-export function CalendarSubscriptionPopover({ configurationId, token }: { configurationId: number; token: string }) {
+export function CalendarSubscriptionPopover({
+  configurationId,
+  token,
+  archived = false,
+}: {
+  configurationId: number;
+  token: string;
+  archived?: boolean;
+}) {
   const { t } = useTranslation("booking");
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -62,10 +70,10 @@ export function CalendarSubscriptionPopover({ configurationId, token }: { config
   const subscriptionUrl = status.data?.subscriptionUrl ?? null;
 
   useEffect(() => {
-    if (!open || !autoGenerateOnOpenRef.current || status.isFetching || !status.isSuccess) return;
+    if (archived || !open || !autoGenerateOnOpenRef.current || status.isFetching || !status.isSuccess) return;
     autoGenerateOnOpenRef.current = false;
     if (status.data.subscriptionUrl === null) createMutation.mutate();
-  }, [createMutation, open, status.data, status.isFetching, status.isSuccess]);
+  }, [archived, createMutation, open, status.data, status.isFetching, status.isSuccess]);
 
   useEffect(() => {
     if (open) requestAnimationFrame(() => headingRef.current?.focus());
@@ -175,6 +183,13 @@ export function CalendarSubscriptionPopover({ configurationId, token }: { config
         </div>
       );
     }
+    if (archived) {
+      return (
+        <p role="status" className="text-muted-foreground">
+          {t("bookableItemDetails.calendarSubscription.archivedUnavailable")}
+        </p>
+      );
+    }
     if (createMutation.isError) {
       return (
         <div className="space-y-3">
@@ -198,7 +213,7 @@ export function CalendarSubscriptionPopover({ configurationId, token }: { config
       open={open}
       onOpenChange={(nextOpen) => {
         if (nextOpen) {
-          autoGenerateOnOpenRef.current = true;
+          autoGenerateOnOpenRef.current = !archived;
           setOpen(true);
         } else close();
       }}

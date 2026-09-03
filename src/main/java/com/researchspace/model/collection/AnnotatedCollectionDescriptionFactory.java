@@ -353,7 +353,15 @@ final class AnnotatedCollectionDescriptionFactory {
     if (type == Boolean.class || type == boolean.class) {
       return CollectionFieldTypes.bool();
     }
+    if (type.isEnum()) {
+      return enumFieldType(type);
+    }
     throw new IllegalArgumentException("Unsupported resource field type " + type.getName());
+  }
+
+  @SuppressWarnings({"rawtypes", "unchecked"})
+  private static CollectionFieldType<?> enumFieldType(Class<?> type) {
+    return CollectionFieldTypes.enumeration((Class<? extends Enum>) type);
   }
 
   private static void requireCompatibleType(

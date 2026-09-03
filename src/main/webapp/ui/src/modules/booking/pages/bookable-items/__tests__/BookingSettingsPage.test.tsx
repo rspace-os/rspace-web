@@ -25,6 +25,7 @@ const settings = {
   defaultSharedWith: "ALL_USERS" as const,
   selectedAccessGrantees: [],
   configurationVersion: 0,
+  state: "ACTIVE",
 };
 
 function renderPage() {

@@ -56,7 +56,15 @@ function renderAction({ isOwner = true }: { isOwner?: boolean } = {}) {
   );
 }
 
-function configuration({ canBook = true, enabled = true }: { canBook?: boolean; enabled?: boolean } = {}) {
+function configuration({
+  canBook = true,
+  enabled = true,
+  state = "ACTIVE",
+}: {
+  canBook?: boolean;
+  enabled?: boolean;
+  state?: "ACTIVE" | "ARCHIVED";
+} = {}) {
   return {
     id: 456,
     configurationVersion: 0,
@@ -66,6 +74,7 @@ function configuration({ canBook = true, enabled = true }: { canBook?: boolean; 
       globalId,
     },
     enabled,
+    state,
     timezone: "UTC",
     slotGranularityMinutes: 5,
     openingStart: "00:00",
@@ -76,7 +85,6 @@ function configuration({ canBook = true, enabled = true }: { canBook?: boolean; 
     allowDoubleBooking: false,
     capabilities: {
       canEditConfiguration: false,
-      canArchiveConfiguration: false,
       canViewAudit: false,
       canViewAccess: false,
       canManageAssignments: false,
@@ -108,6 +116,7 @@ describe("Inventory instrument booking action", () => {
 
     expect(screen.getAllByRole("link")).toHaveLength(1);
     expect(link).toHaveAttribute("href", "/booking/calendar/bookings/add?target=IN123");
+    expect(link).toHaveClass("MuiButton-colorCallToAction");
     expect(screen.getByText("inventory:instrument.booking.configured.title")).toBeInTheDocument();
     await expectAccessible(container);
   });
@@ -153,6 +162,19 @@ describe("Inventory instrument booking action", () => {
       "href",
       "/booking/bookable-items/IN123",
     );
+  });
+
+  test("opens an archived configuration without offering booking", async () => {
+    server.use(...bookingHandlers({ enabled: true, docs: [configuration({ state: "ARCHIVED" })] }));
+    renderAction();
+
+    expect(await screen.findByRole("link", { name: "inventory:instrument.booking.configured.open" })).toHaveAttribute(
+      "href",
+      "/booking/bookable-items/IN123",
+    );
+    expect(
+      screen.queryByRole("link", { name: "inventory:instrument.booking.configured.book" }),
+    ).not.toBeInTheDocument();
   });
 
   test("does not request availability data", async () => {

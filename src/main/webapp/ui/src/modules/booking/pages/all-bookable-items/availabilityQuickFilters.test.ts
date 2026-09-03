@@ -21,6 +21,7 @@ const candidate = (id: number, globalId: string, timezone: string): BookingConfi
     globalId,
   },
   enabled: true,
+  state: "ACTIVE",
   timezone,
   slotGranularityMinutes: 5,
   openingStart: "00:00",
@@ -33,7 +34,6 @@ const candidate = (id: number, globalId: string, timezone: string): BookingConfi
   roleSources: [],
   capabilities: {
     canEditConfiguration: false,
-    canArchiveConfiguration: false,
     canViewAudit: false,
     canViewAccess: false,
     canManageAssignments: false,

@@ -26,8 +26,8 @@ export default function CalendarPage() {
   const navigate = useNavigate({ from: "/booking/calendar" });
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
   const { data: currentUser } = useCurrentUserQuery();
-  const [view, setView] = React.useState<CalendarView>("week");
-  const [layout, setLayout] = React.useState<CalendarLayout>("time-grid");
+  const [view, setView] = React.useState<CalendarView>("day");
+  const [layout, setLayout] = React.useState<CalendarLayout>("resources");
   const preferences = useBookingDisplayPreferences();
   const beginCreation = useBookingCreationStore((state) => state.beginCreation);
   const creationActive = useBookingCreationStore((state) => state.activeCreation !== null);
@@ -112,7 +112,9 @@ export default function CalendarPage() {
       }
       onViewChange={setView}
       onLayoutChange={setLayout}
-      creationAction={<BookingCreationButtonGroup ownerId="calendar-toolbar" initialDate={selectedDate} />}
+      creationAction={
+        <BookingCreationButtonGroup ownerId="calendar-toolbar" initialDate={selectedDate} size="default" />
+      }
       creationDisabled={creationActive}
       onResourceRangeSelect={(resource, range, trigger) => {
         const start = draftPart(range.startMinute);

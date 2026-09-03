@@ -19,7 +19,6 @@ import { UnknownItem } from "@/modules/common/ui/unknown-item";
 
 const NO_BOOKING_CAPABILITIES = {
   canEditConfiguration: false,
-  canArchiveConfiguration: false,
   canViewAudit: false,
   canViewAccess: false,
   canManageAssignments: false,
@@ -43,11 +42,15 @@ export const BookingConfigurationSchema = v.pipe(
           id: v.number(),
           name: v.string(),
           deleted: v.boolean(),
+          // Supplied by the catalogue adapter; the collection API may omit them.
+          parentContainerName: v.optional(v.nullable(v.string())),
+          parentContainerGlobalId: v.optional(v.nullable(v.string())),
         }),
         globalId: v.string(),
       }),
     ),
     enabled: v.boolean(),
+    state: v.picklist(["ACTIVE", "ARCHIVED"]),
     timezone: v.string(),
     ...schedulingSettingsEntries,
     // Fixed-projection consumers, such as Calendar, deliberately omit this field.
@@ -63,7 +66,6 @@ export const BookingConfigurationSchema = v.pipe(
     capabilities: v.optional(
       v.object({
         canEditConfiguration: v.boolean(),
-        canArchiveConfiguration: v.boolean(),
         canViewAudit: v.boolean(),
         canViewAccess: v.boolean(),
         canManageAssignments: v.boolean(),
@@ -136,7 +138,7 @@ export const BookingConfigurationUpdateInputSchema = v.pipe(
 export type BookingConfigurationUpdateInput = v.InferOutput<typeof BookingConfigurationUpdateInputSchema>;
 
 export const BOOKING_CONFIGURATION_READ_FIELDS =
-  "id,configurationVersion,target,enabled,timezone,slotGranularityMinutes,openingStart,openingEnd,bufferBeforeMinutes,bufferAfterMinutes,maxBookingDurationMinutes,allowDoubleBooking,updatedAt,effectiveRole,roleSources,capabilities,ownerHealth";
+  "id,configurationVersion,target,enabled,state,timezone,slotGranularityMinutes,openingStart,openingEnd,bufferBeforeMinutes,bufferAfterMinutes,maxBookingDurationMinutes,allowDoubleBooking,updatedAt,effectiveRole,roleSources,capabilities,ownerHealth";
 
 export async function fetchBookingConfiguration(
   id: number,
@@ -253,7 +255,7 @@ export const bookingConfigurationConfig = {
     pluralKey: "booking:bookableItems.plural",
   },
   useAsTitle: "target",
-  defaultColumns: ["target", "enabled", "updatedAt"],
+  defaultColumns: ["target", "state", "enabled", "updatedAt"],
   listSearchableFields: ["target.name"],
   fields: [
     { name: "id", type: "number", labelKey: "booking:bookableItems.fields.id", list: false, form: false },
@@ -287,6 +289,13 @@ export const bookingConfigurationConfig = {
       },
     },
     { name: "enabled", type: "boolean", labelKey: "booking:bookableItems.fields.enabled" },
+    {
+      name: "state",
+      type: "select",
+      options: ["ACTIVE", "ARCHIVED"],
+      labelKey: "booking:bookableItems.fields.state",
+      form: false,
+    },
     {
       name: "timezone",
       type: "select",

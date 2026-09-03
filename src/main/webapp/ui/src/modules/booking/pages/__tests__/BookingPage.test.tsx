@@ -176,6 +176,7 @@ describe("booking sidebar", () => {
                 globalId: "IN123",
               },
               enabled: true,
+              state: "ACTIVE",
               timezone: "Europe/Berlin",
               ...DEFAULT_SCHEDULING_SETTINGS,
               updatedAt: null,
@@ -208,7 +209,7 @@ describe("booking sidebar", () => {
         }),
       ),
     );
-    renderAt("/booking/bookable-items/IN123?tab=details&edit=true");
+    renderAt("/booking/bookable-items/IN123/details?edit=true");
 
     expect(await screen.findByRole("link", { name: "booking:sidebar.calendar" })).toBeInTheDocument();
     // The bookable item itself is the page heading; "Bookable item" is now the

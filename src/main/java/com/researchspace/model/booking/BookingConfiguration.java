@@ -11,6 +11,8 @@ import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -52,9 +54,14 @@ public class BookingConfiguration implements Serializable {
   @Setter
   private boolean enabled;
 
-  @Getter(onMethod_ = {@Column(nullable = false), @AuditTrailProperty(name = "deleted")})
+  @Getter(
+      onMethod_ = {
+        @Enumerated(EnumType.STRING),
+        @Column(nullable = false, length = 16),
+        @AuditTrailProperty(name = "state")
+      })
   @Setter
-  private boolean deleted;
+  private BookingConfigurationState state = BookingConfigurationState.ACTIVE;
 
   @Getter(
       onMethod_ = {
@@ -104,7 +111,10 @@ public class BookingConfiguration implements Serializable {
 
   @Getter(
       onMethod_ = {
-        @OneToOne(fetch = FetchType.LAZY, optional = false, cascade = CascadeType.ALL),
+        @OneToOne(
+            fetch = FetchType.LAZY,
+            optional = false,
+            cascade = {CascadeType.PERSIST, CascadeType.MERGE}),
         @JoinColumn(name = "resourceAccess_id", nullable = false, unique = true),
         @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
       })
@@ -175,7 +185,6 @@ public class BookingConfiguration implements Serializable {
     }
     return Map.ofEntries(
         Map.entry("canEditConfiguration", capabilities.canEditConfiguration()),
-        Map.entry("canArchiveConfiguration", capabilities.canArchiveConfiguration()),
         Map.entry("canViewAudit", capabilities.canViewAudit()),
         Map.entry("canViewAccess", capabilities.canViewAccess()),
         Map.entry("canManageAssignments", capabilities.canManageAssignments()),

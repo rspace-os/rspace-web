@@ -61,18 +61,6 @@ export class AllBookableItemsPage {
     return page.getByRole("img", { name: "Confocal microscope availability" });
   }
 
-  get electronAvailability(): Locator {
-    return page.getByRole("img", { name: "Electron microscope availability" });
-  }
-
-  get massSpectrometerAvailability(): Locator {
-    return page.getByRole("img", { name: "Mass spectrometer availability" });
-  }
-
-  get flowCytometerAvailability(): Locator {
-    return page.getByRole("img", { name: "Flow cytometer availability" });
-  }
-
   availabilitySlice(itemName: string, contributorCount: number, state = ".*"): Locator {
     return page.getByRole("button", {
       name: new RegExp(`^${itemName}, ${state}, .*, ${contributorCount} event${contributorCount === 1 ? "" : "s"}$`),
@@ -95,14 +83,6 @@ export class AllBookableItemsPage {
     await userEvent.keyboard("{Escape}");
   }
 
-  sliceBorderRadius(itemName: string, contributorCount: number): string {
-    return window.getComputedStyle(this.availabilitySlice(itemName, contributorCount).element()).borderRadius;
-  }
-
-  sliceHeight(itemName: string, contributorCount: number): number {
-    return this.availabilitySlice(itemName, contributorCount).element().getBoundingClientRect().height;
-  }
-
   availabilityDetailsRect(): DOMRect {
     return this.availabilityDetails.element().getBoundingClientRect();
   }
@@ -113,10 +93,6 @@ export class AllBookableItemsPage {
 
   cardParentContainer(itemName: string, parentName: string): Locator {
     return this.card(itemName).getByRole("link", { name: parentName, exact: true });
-  }
-
-  nowMarker(itemName: string): Locator {
-    return page.getByRole("img", { name: `${itemName} availability` }).getByTitle(/Current time:/);
   }
 
   get effectiveTimeZone(): Locator {
@@ -137,13 +113,6 @@ export class AllBookableItemsPage {
 
   get quickFilterScope(): Locator {
     return page.getByText("Availability uses the selected display date and timezone.");
-  }
-
-  get bookButton(): Locator {
-    return this.table
-      .getByRole("row")
-      .filter({ hasText: "Confocal microscope" })
-      .getByRole("link", { name: "Book", exact: true });
   }
 
   get detailsButton(): Locator {

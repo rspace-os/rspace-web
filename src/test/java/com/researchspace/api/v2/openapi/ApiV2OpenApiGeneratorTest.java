@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.researchspace.api.v2.resource.ApiV2ErrorMapping;
@@ -50,6 +51,11 @@ class ApiV2OpenApiGeneratorTest {
     ResourceOperations<ScheduledMaintenance, Long> maintenanceOperations = operationsMock();
     ResourceOperations<User, Long> userOperations = operationsMock();
     ResourceOperations<BookingConfiguration, Long> bookingOperations = operationsMock();
+    when(bookingOperations.deleteRequiresIfMatch()).thenReturn(true);
+    when(bookingOperations.deleteIsSoft()).thenReturn(true);
+    when(bookingOperations.supportsPermanentDelete()).thenReturn(true);
+    when(bookingOperations.ifMatchRequiredCode())
+        .thenReturn(Optional.of("errors.api.v2.bookingConfiguration.ifMatchRequired"));
     ResourceOperations<TimeSlotBooking, Long> timeSlotBookingOperations = operationsMock();
     ApiV2ResourceSpec<ScheduledMaintenance, Long> maintenance =
         new ApiV2ResourceSpec<>(
@@ -192,6 +198,37 @@ class ApiV2OpenApiGeneratorTest {
     assertEquals(
         "#/components/schemas/ResourceRoleSource",
         objectMap(objectMap(readProperties.get("roleSources")).get("items")).get("$ref"));
+  }
+
+  @Test
+  void documentsVersionedArchiveAndExplicitPermanentDelete() {
+    Map<String, Object> paths = objectMap(document().get("paths"));
+    Map<String, Object> delete =
+        objectMap(objectMap(paths.get("/api/v2/booking-configurations/{id}")).get("delete"));
+    List<Map<String, Object>> parameters = objectMapList(delete.get("parameters"));
+
+    assertEquals("Archive one booking-configurations", delete.get("summary"));
+    assertTrue(
+        parameters.stream()
+            .anyMatch(
+                parameter ->
+                    parameter.get("name").equals("If-Match")
+                        && parameter.get("in").equals("header")
+                        && parameter.get("required").equals(true)));
+    Map<String, Object> permanent =
+        parameters.stream()
+            .filter(parameter -> parameter.get("name").equals("permanent"))
+            .findFirst()
+            .orElseThrow();
+    assertEquals(false, objectMap(permanent.get("schema")).get("default"));
+    assertTrue(objectMap(delete.get("responses")).containsKey("204"));
+
+    Map<String, Object> bulkDelete =
+        objectMap(objectMap(paths.get("/api/v2/booking-configurations")).get("delete"));
+    assertEquals("Archive matching booking-configurations", bulkDelete.get("summary"));
+    assertFalse(
+        objectMapList(bulkDelete.get("parameters")).stream()
+            .anyMatch(parameter -> parameter.get("name").equals("permanent")));
   }
 
   @Test

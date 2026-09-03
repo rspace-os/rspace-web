@@ -27,7 +27,11 @@ import com.researchspace.model.booking.BookableItemCalendarSubscription;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
+import com.researchspace.model.booking.BookingConfigurationState;
+import com.researchspace.model.booking.BookingState;
+import com.researchspace.model.booking.TimeSlotBooking;
 import com.researchspace.model.booking.UserBookingCalendarSubscription;
+import com.researchspace.model.inventory.InstrumentReadSummary;
 import com.researchspace.model.resourceaccess.ResourceAccess;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.FeatureFlagManager;
@@ -37,6 +41,7 @@ import com.researchspace.testutils.TestFactory;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.time.Instant;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -53,6 +58,7 @@ import org.mockito.ArgumentCaptor;
 class BookingCalendarManagerTest {
 
   private static final long CONFIGURATION_ID = 11L;
+  private static final long BOOKING_ID = 42L;
   private static final String RAW_TOKEN = "A".repeat(43);
 
   private BookingCalendarSubscriptionDao subscriptionDao;
@@ -88,6 +94,7 @@ class BookingCalendarManagerTest {
         new ResourceAccess(BookingResourceRoleScheme.SCHEME_KEY, owner, new java.util.Date()));
     when(properties.getServerUrl()).thenReturn("https://rspace.example/context");
     when(featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, owner)).thenReturn(true);
+    when(configurationDao.lockActiveById(CONFIGURATION_ID)).thenReturn(Optional.of(configuration));
     when(configurationDao.lockById(CONFIGURATION_ID)).thenReturn(Optional.of(configuration));
     when(configurationDao.getSafeNull(CONFIGURATION_ID)).thenReturn(Optional.of(configuration));
     when(accessManager.resolve(configuration.getResourceAccess(), owner)).thenReturn(ownerAccess());
@@ -161,6 +168,19 @@ class BookingCalendarManagerTest {
   }
 
   @Test
+  void archivedConfigurationStatusIsInactiveAndCannotCreateALink() {
+    configuration.setState(BookingConfigurationState.ARCHIVED);
+
+    BookingCalendarManager.Status status = manager.status(CONFIGURATION_ID, owner, owner);
+
+    assertFalse(status.active());
+    assertNull(status.subscriptionUrl());
+    assertThrows(
+        BookingConfigurationLifecycleException.class,
+        () -> manager.createOrRotate(CONFIGURATION_ID, owner, owner));
+  }
+
+  @Test
   void userSubscriptionCreatesOnePrivateFeedForAllBookings() {
     BookingCalendarManager.Created created =
         manager.createOrRotateUser(owner, owner, "\"inactive\"");
@@ -215,6 +235,7 @@ class BookingCalendarManagerTest {
   @Test
   void statusAndCreateConcealAMissingOrUnreadableConfiguration() {
     when(configurationDao.getSafeNull(CONFIGURATION_ID)).thenReturn(Optional.empty());
+    when(configurationDao.lockActiveById(CONFIGURATION_ID)).thenReturn(Optional.empty());
     when(configurationDao.lockById(CONFIGURATION_ID)).thenReturn(Optional.empty());
 
     assertThrows(
@@ -376,6 +397,97 @@ class BookingCalendarManagerTest {
         manager.feed(RAW_TOKEN, java.util.Locale.ENGLISH, new java.util.Date());
 
     assertInstanceOf(BookingCalendarManager.Oversized.class, result);
+  }
+
+  @Test
+  void downloadNamesTheFileAfterTheItemGlobalIdAndLocalStartDate() {
+    TimeSlotBooking booking = confirmedBooking();
+    stubDownload(booking, "Confocal Microscope!", "Europe/Berlin");
+    when(generator.generate(
+            any(CalendarSource.class),
+            eq(URI.create("https://rspace.example/context")),
+            eq(Locale.FRENCH),
+            eq(10_000)))
+        .thenReturn(new byte[] {1, 2, 3});
+
+    BookingCalendarManager.Download download =
+        manager.download(BOOKING_ID, owner, Locale.FRENCH).orElseThrow();
+
+    // 23:30 UTC is already the next day in Berlin, so the name follows the item's own timezone.
+    assertEquals("confocal-microscope-IN101-2026-09-13.ics", download.filename());
+    assertEquals(3, download.body().length);
+  }
+
+  @Test
+  void downloadCarriesOnlyTheSingleRequestedBooking() {
+    TimeSlotBooking booking = confirmedBooking();
+    stubDownload(booking, "Microscope", "UTC");
+    ArgumentCaptor<CalendarSource> generated = ArgumentCaptor.forClass(CalendarSource.class);
+    when(generator.generate(any(CalendarSource.class), any(), any(), eq(10_000)))
+        .thenReturn(new byte[] {1});
+
+    manager.download(BOOKING_ID, owner, Locale.ENGLISH).orElseThrow();
+
+    verify(generator).generate(generated.capture(), any(), any(), eq(10_000));
+    assertEquals(1, generated.getValue().events().size());
+    assertEquals(BOOKING_ID, generated.getValue().events().get(0).id());
+    assertEquals("Microscope", generated.getValue().itemName());
+  }
+
+  @Test
+  void downloadIsUnavailableWithoutReadAccessOrForAnUnconfirmedBooking() {
+    TimeSlotBooking booking = confirmedBooking();
+    stubDownload(booking, "Microscope", "UTC");
+    when(accessManager.resolve(configuration.getResourceAccess(), owner))
+        .thenReturn(new ResolvedResourceAccess(Optional.empty(), java.util.Set.of(), List.of()));
+
+    assertTrue(manager.download(BOOKING_ID, owner, Locale.ENGLISH).isEmpty());
+
+    when(accessManager.resolve(configuration.getResourceAccess(), owner)).thenReturn(ownerAccess());
+    booking.setState(BookingState.CANCELLED);
+    assertTrue(manager.download(BOOKING_ID, owner, Locale.ENGLISH).isEmpty());
+
+    booking.setState(BookingState.CONFIRMED);
+    when(bookingManager.getBooking(BOOKING_ID, owner)).thenReturn(Optional.empty());
+    assertTrue(manager.download(BOOKING_ID, owner, Locale.ENGLISH).isEmpty());
+
+    verify(generator, never()).generate(any(), any(), any(), eq(10_000));
+  }
+
+  @Test
+  void downloadRequiresAnActiveUserWithBookingEnabled() {
+    TimeSlotBooking booking = confirmedBooking();
+    stubDownload(booking, "Microscope", "UTC");
+
+    when(featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, owner)).thenReturn(false);
+    assertThrows(
+        BookingCalendarManagerImpl.BookingCalendarNotFoundException.class,
+        () -> manager.download(BOOKING_ID, owner, Locale.ENGLISH));
+
+    when(featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, owner)).thenReturn(true);
+    owner.setEnabled(false);
+    assertThrows(
+        AuthorizationException.class, () -> manager.download(BOOKING_ID, owner, Locale.ENGLISH));
+  }
+
+  private TimeSlotBooking confirmedBooking() {
+    TimeSlotBooking booking = new TimeSlotBooking();
+    booking.setId(BOOKING_ID);
+    booking.setBookingConfiguration(configuration);
+    booking.setRequester(owner);
+    booking.setState(BookingState.CONFIRMED);
+    booking.setStartTime(java.util.Date.from(Instant.parse("2026-09-12T23:30:00Z")));
+    booking.setEndTime(java.util.Date.from(Instant.parse("2026-09-13T01:30:00Z")));
+    return booking;
+  }
+
+  private void stubDownload(TimeSlotBooking booking, String itemName, String timeZone) {
+    configuration.setTimeZone(timeZone);
+    when(bookingManager.getBooking(BOOKING_ID, owner)).thenReturn(Optional.of(booking));
+    when(instrumentDao.getBookingSummaries(java.util.Set.of(101L)))
+        .thenReturn(
+            java.util.Map.of(
+                101L, new InstrumentReadSummary(101L, itemName, false, null, null, null)));
   }
 
   private BookableItemCalendarSubscription subscription() {

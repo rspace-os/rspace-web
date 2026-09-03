@@ -61,4 +61,7 @@ public interface TimeSlotBookingDao extends CollectionDao<TimeSlotBooking, Long>
 
   /** Saves and flushes one booking inside its configuration lock transaction. */
   TimeSlotBooking saveAndFlush(TimeSlotBooking booking);
+
+  /** Removes every live booking for a configuration in bounded audited entity batches. */
+  int removeAllByConfigurationId(Long configurationId);
 }

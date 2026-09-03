@@ -114,7 +114,7 @@ export async function createOrReplaceUserCalendarSubscription(
   const response = await requireSuccess(
     await fetch(userCalendarSubscriptionPath, {
       method: "POST",
-      headers: { ...bookingApiV2Headers(token), "If-Match": etag },
+      headers: bookingApiV2Headers(token, { "If-Match": etag }),
     }),
   );
   const created = parseOrThrow(CalendarSubscriptionCreatedSchema, (await response.json()) as unknown);

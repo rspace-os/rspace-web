@@ -29,7 +29,7 @@ const cancelledBooking = {
   updatedAt: "2026-08-17T00:00:00Z",
 } as const;
 
-function renderDialog(onDeleted = vi.fn()) {
+function renderDialog(onDeleted = vi.fn(), iconOnly = false) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const invalidate = vi.spyOn(queryClient, "invalidateQueries");
   const result = render(
@@ -39,6 +39,7 @@ function renderDialog(onDeleted = vi.fn()) {
       itemName="Confocal microscope"
       period="08:00–09:00"
       token="token"
+      iconOnly={iconOnly}
       onDeleted={onDeleted}
     />,
     {
@@ -51,6 +52,15 @@ function renderDialog(onDeleted = vi.fn()) {
 }
 
 describe("DeleteBookingDialog", () => {
+  it("opens from its icon-only trigger", async () => {
+    const user = userEvent.setup();
+    renderDialog(vi.fn(), true);
+
+    await user.click(screen.getByRole("button", { name: "booking:bookings.actions.cancel" }));
+
+    expect(screen.getByRole("alertdialog")).toBeVisible();
+  });
+
   it("cancels without a request and returns focus to the trigger", async () => {
     const user = userEvent.setup();
     let requests = 0;

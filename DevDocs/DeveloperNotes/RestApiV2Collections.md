@@ -887,12 +887,14 @@ These policy fields are independent:
 | `readAccess` | List, count, read by ID, and relationship resolution. |
 | `createAccess` | Single create and bulk create. |
 | `updateAccess` | Single update and bulk update. |
-| `deleteAccess` | Permanent single delete and bulk delete. |
-| `softDeleteAccess` | A configured change to the deleted state. |
+| `deleteAccess` | A hard delete, including an explicitly selected permanent single delete. |
+| `softDeleteAccess` | A configured soft-delete or archive command, including its bulk form. |
 
 `softDeleteAccess` does not replace `deleteAccess`. A soft-delete operation must use
-`AccessContext.Operation.SOFT_DELETE`. A hard-delete operation must use `DELETE`. Do not use the
-same route for two behaviors that clients cannot distinguish.
+`AccessContext.Operation.SOFT_DELETE`. A hard-delete operation must use `DELETE`. A resource may
+opt into both on the same canonical item URI only when an explicit request option such as
+`permanent=true` selects the hard delete. Never infer a destructive command from the row's current
+state; retrying an ordinary soft-delete request must remain safe.
 
 An access function can return a row constraint. The framework combines the constraint with the
 client filter. It does this for list, count, read by ID, and bulk operations. An unreadable row

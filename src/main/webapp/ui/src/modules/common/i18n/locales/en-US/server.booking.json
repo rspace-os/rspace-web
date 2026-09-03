@@ -8,7 +8,11 @@
       "flowCytometer": "Flow cytometer",
       "noParentCentrifuge": "No-parent centrifuge",
       "deletedLocationSequencer": "Deleted-location sequencer",
-      "restrictedLocationPlateReader": "Restricted-location plate reader"
+      "restrictedLocationPlateReader": "Restricted-location plate reader",
+      "bookingCardSetup": "Booking card: Set up booking",
+      "bookingCardBook": "Booking card: Book",
+      "bookingCardDisabled": "Booking card: Open (disabled)",
+      "bookingCardArchived": "Booking card: Open (archived)"
     },
     "containers": {
       "imagingLab": "Imaging lab",

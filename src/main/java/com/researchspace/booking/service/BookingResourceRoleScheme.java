@@ -33,7 +33,6 @@ public final class BookingResourceRoleScheme implements ResourceRoleScheme {
   public static final String CREATE_BLOCKOUT = "CREATE_BLOCKOUT";
   public static final String MANAGE_ASSIGNMENTS = "MANAGE_ASSIGNMENTS";
   public static final String MANAGE_OWNERS = "MANAGE_OWNERS";
-  public static final String ARCHIVE_CONFIGURATION = "ARCHIVE_CONFIGURATION";
 
   private static final List<ResourceRole> ROLES =
       List.of(
@@ -69,8 +68,7 @@ public final class BookingResourceRoleScheme implements ResourceRoleScheme {
           MANAGE_ALL_EVENTS,
           CREATE_BLOCKOUT,
           MANAGE_ASSIGNMENTS,
-          MANAGE_OWNERS,
-          ARCHIVE_CONFIGURATION);
+          MANAGE_OWNERS);
 
   private static final Map<String, Set<String>> CAPABILITIES =
       Map.of(

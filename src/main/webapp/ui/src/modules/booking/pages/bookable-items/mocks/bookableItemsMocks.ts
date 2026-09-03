@@ -10,7 +10,6 @@ export const ownerBookingAccess = {
   roleSources: [],
   capabilities: {
     canEditConfiguration: true,
-    canArchiveConfiguration: true,
     canViewAudit: true,
     canViewAccess: true,
     canManageAssignments: true,
@@ -30,7 +29,6 @@ export const bookerBookingAccess = {
   roleSources: [],
   capabilities: {
     canEditConfiguration: false,
-    canArchiveConfiguration: false,
     canViewAudit: false,
     canViewAccess: false,
     canManageAssignments: false,
@@ -157,6 +155,7 @@ export const bookableItemsOpenApi = {
                 "id",
                 "target",
                 "enabled",
+                "state",
                 "timezone",
                 ...schedulingSettingsFieldNames,
                 "updatedAt",
@@ -177,6 +176,7 @@ export const bookableItemFixtures = [
   {
     id: 7,
     configurationVersion: 0,
+    state: "ACTIVE",
     ...ownerBookingAccess,
     target: {
       relationTo: "booking-instruments",
@@ -200,6 +200,7 @@ export const bookableItemFixtures = [
   {
     id: 8,
     configurationVersion: 0,
+    state: "ACTIVE",
     ...ownerBookingAccess,
     target: {
       relationTo: "booking-instruments",
@@ -220,6 +221,7 @@ export const bookableItemFixtures = [
   {
     id: 9,
     configurationVersion: 0,
+    state: "ACTIVE",
     ...ownerBookingAccess,
     target: {
       relationTo: "booking-instruments",
@@ -240,6 +242,7 @@ export const bookableItemFixtures = [
   {
     id: 10,
     configurationVersion: 0,
+    state: "ACTIVE",
     ...ownerBookingAccess,
     target: {
       relationTo: "booking-instruments",
@@ -262,6 +265,7 @@ export const bookableItemFixtures = [
   {
     id: 11,
     configurationVersion: 0,
+    state: "ACTIVE",
     ...ownerBookingAccess,
     target: {
       relationTo: "booking-instruments",

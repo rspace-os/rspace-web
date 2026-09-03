@@ -2,7 +2,7 @@ import { Tabs } from "@base-ui/react/tabs";
 import { Form, isDirty, reset, useForm } from "@formisch/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, useSearch } from "@tanstack/react-router";
-import { ArchiveIcon, PencilIcon } from "lucide-react";
+import { PencilIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -10,7 +10,7 @@ import { SchedulingSettingsFields } from "@/modules/booking/configuration/schedu
 import { BookingCreationButtonGroup } from "@/modules/booking/creation/BookingCreationButtonGroup";
 import { bookableItemOption } from "@/modules/booking/creation/bookableItemOption";
 import { bookingApiV2JsonHeaders } from "@/modules/booking/domain/apiV2";
-import { parseApiV2Problem } from "@/modules/booking/domain/booking";
+import { ApiV2ProblemError, parseApiV2Problem } from "@/modules/booking/domain/booking";
 import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { RenderFields } from "@/modules/common/collection-form/RenderFields";
 import {
@@ -20,6 +20,7 @@ import {
 } from "@/modules/common/collection-form/responsiveFieldLayout";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { DirtyNavigationGuard } from "@/modules/common/navigation/DirtyNavigationGuard";
+import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { ResourceAccessEditor } from "@/modules/common/resource-access/ResourceAccessEditor";
 import { leaveResource } from "@/modules/common/resource-access/resourceAccess";
 import {
@@ -36,9 +37,14 @@ import { Badge } from "@/modules/common/ui/badge";
 import { Button } from "@/modules/common/ui/button";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/modules/common/ui/card";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/modules/common/ui/empty";
+import { Input } from "@/modules/common/ui/input";
 import { InventoryItem } from "@/modules/common/ui/inventory-item";
 import { Heading } from "@/modules/common/ui/typography";
 import { BookableItemAuditLog } from "./BookableItemAuditLog";
+import {
+  BookingConfigurationActionsMenu,
+  type BookingConfigurationLifecycleAction,
+} from "./BookingConfigurationActionsMenu";
 import { BookingEventList } from "./BookingEventList";
 import {
   BOOKING_CONFIGURATION_READ_FIELDS,
@@ -53,6 +59,10 @@ import { CalendarSubscriptionPopover } from "./CalendarSubscriptionPopover";
 
 type BookableItemTab = "bookings" | "details" | "audit" | "access";
 
+function bookableItemTab(tab: string | undefined): BookableItemTab {
+  return tab === "details" || tab === "audit" || tab === "access" ? tab : "bookings";
+}
+
 async function updateBookingConfiguration(
   id: number,
   version: number,
@@ -65,21 +75,43 @@ async function updateBookingConfiguration(
   });
   const response = await fetch(`/api/v2/booking-configurations/${id}?${search}`, {
     method: "PATCH",
-    headers: { ...bookingApiV2JsonHeaders(token), "If-Match": `"${version}"` },
+    headers: bookingApiV2JsonHeaders(token, { "If-Match": `"${version}"` }),
     body: JSON.stringify(input),
   });
   if (!response.ok) throw await parseApiV2Problem(response);
 }
 
-async function archiveBookingConfiguration(id: number, token: string): Promise<void> {
+async function archiveBookingConfiguration(id: number, version: number, token: string): Promise<void> {
   const response = await fetch(`/api/v2/booking-configurations/${id}`, {
     method: "DELETE",
     headers: {
       Authorization: `Bearer ${token}`,
+      "If-Match": `"${version}"`,
       "X-Requested-With": "XMLHttpRequest",
     },
   });
-  if (!response.ok) throw new Error(`Booking configuration archive failed with status ${response.status}`);
+  if (!response.ok) throw await parseApiV2Problem(response);
+}
+
+async function restoreBookingConfiguration(id: number, version: number, token: string): Promise<void> {
+  const response = await fetch(`/api/v2/booking-configurations/${id}`, {
+    method: "PATCH",
+    headers: bookingApiV2JsonHeaders(token, { "If-Match": `"${version}"` }),
+    body: JSON.stringify({ state: "ACTIVE" }),
+  });
+  if (!response.ok) throw await parseApiV2Problem(response);
+}
+
+async function permanentlyDeleteBookingConfiguration(id: number, version: number, token: string): Promise<void> {
+  const response = await fetch(`/api/v2/booking-configurations/${id}?permanent=true`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "If-Match": `"${version}"`,
+      "X-Requested-With": "XMLHttpRequest",
+    },
+  });
+  if (!response.ok) throw await parseApiV2Problem(response);
 }
 
 function configurationInput(configuration: BookingConfiguration): BookingConfigurationUpdateInput {
@@ -93,6 +125,22 @@ function configurationInput(configuration: BookingConfiguration): BookingConfigu
     maxBookingDurationMinutes: configuration.maxBookingDurationMinutes,
     allowDoubleBooking: configuration.allowDoubleBooking,
   };
+}
+
+type BookableItemLifecycleErrorKey =
+  | "bookableItemDetails.lifecycleErrors.restore"
+  | "bookableItemDetails.lifecycleErrors.stale"
+  | "bookableItemDetails.lifecycleErrors.stateChanged"
+  | "bookableItemDetails.permanentDeleteDialog.error";
+
+function lifecycleErrorKey(error: unknown, fallback: BookableItemLifecycleErrorKey): BookableItemLifecycleErrorKey {
+  if (error instanceof ApiV2ProblemError && error.status === 412) {
+    return "bookableItemDetails.lifecycleErrors.stale";
+  }
+  if (error instanceof ApiV2ProblemError && error.status === 409) {
+    return "bookableItemDetails.lifecycleErrors.stateChanged";
+  }
+  return fallback;
 }
 
 function SpotlightHeader({
@@ -116,10 +164,16 @@ function SpotlightHeader({
       >
         <span>{configuration.timezone}</span>
       </InventoryItem>
-      <div className="flex w-full min-w-0 flex-wrap items-center gap-3 sm:w-auto sm:shrink-0">
+      <div
+        data-slot="bookable-item-header-actions"
+        className="flex w-full min-w-0 flex-wrap items-center gap-3 sm:w-auto sm:shrink-0 [&_[data-slot=badge]]:h-[30px] [&_button]:h-[30px] [&_button]:min-h-[30px]"
+      >
         <Badge variant={configuration.enabled ? "default" : "secondary"}>
           {configuration.enabled ? t("bookableItemDetails.enabled") : t("bookableItemDetails.disabled")}
         </Badge>
+        {configuration.state === "ARCHIVED" ? (
+          <Badge variant="secondary">{t("bookableItemDetails.archived")}</Badge>
+        ) : null}
         {action}
       </div>
     </section>
@@ -203,45 +257,58 @@ function RulesReadOut({
 function LoadedBookableItemPage({
   configuration,
   globalId,
+  tab,
   token,
 }: {
   configuration: BookingConfiguration;
   globalId: string;
+  tab: BookableItemTab;
   token: string;
 }) {
   const { t } = useTranslation("booking");
   const { t: commonT } = useTranslation("common");
+  const { data: currentUser } = useCurrentUserQuery();
   const preferences = useBookingDisplayPreferences();
-  const { tab = "bookings", edit = false } = useSearch({ from: "/booking/bookable-items/$globalId" });
-  const navigate = useNavigate({ from: "/booking/bookable-items/$globalId" });
+  const { edit = false } = useSearch({ from: "/booking/bookable-items/$globalId/{-$tab}" });
+  const navigate = useNavigate({ from: "/booking/bookable-items/$globalId/{-$tab}" });
   const queryClient = useQueryClient();
   const [cutoff] = useState(() => new Date().toISOString());
-  const [saveAnnouncement, setSaveAnnouncement] = useState<"saved" | null>(null);
+  const [saveAnnouncement, setSaveAnnouncement] = useState<"saved" | "archived" | "restored" | null>(null);
   const [staleBase, setStaleBase] = useState<BookingConfigurationUpdateInput | null>(null);
   const [archiveOpen, setArchiveOpen] = useState(false);
+  const [permanentDeleteOpen, setPermanentDeleteOpen] = useState(false);
+  const [permanentDeleteConfirmation, setPermanentDeleteConfirmation] = useState("");
   const [leaveOpen, setLeaveOpen] = useState(false);
   const formId = `bookable-item-details-${useId()}`;
+  const permanentConfirmationId = `${formId}-permanent-delete-confirmation`;
   const editButtonRef = useRef<HTMLButtonElement>(null);
   const saveButtonRef = useRef<HTMLButtonElement>(null);
+  const actionsButtonRef = useRef<HTMLButtonElement>(null);
   const wasEditing = useRef(false);
   const target = configuration.target;
   const canEdit = configuration.capabilities.canEditConfiguration;
-  const editing = canEdit && edit;
+  const active = configuration.state === "ACTIVE";
+  const editing = active && canEdit && edit;
+  const directSysadmin = currentUser.hasSysAdminRole && !currentUser.session.operatedAs;
   const form = useForm({
     schema: BookingConfigurationUpdateInputSchema,
     initialInput: configurationInput(configuration),
   });
 
-  const setSearch = (next: { tab?: BookableItemTab; edit?: boolean }) =>
+  const setEdit = (next: boolean) =>
     void navigate({
-      search: (current) => {
-        const merged = { ...current, ...next };
-        return {
-          ...(merged.tab === "details" || merged.tab === "audit" || merged.tab === "access" ? { tab: merged.tab } : {}),
-          ...(merged.edit === true ? { edit: true } : {}),
-        };
-      },
+      search: next ? { edit: true } : {},
       replace: true,
+    });
+
+  const setTab = (next: BookableItemTab) =>
+    void navigate({
+      to: "/booking/bookable-items/$globalId/{-$tab}",
+      params: { globalId, tab: next === "bookings" ? undefined : next },
+      search: edit ? { edit: true } : {},
+      replace: true,
+      resetScroll: false,
+      ignoreBlocker: true,
     });
 
   const updateMutation = useMutation({
@@ -252,7 +319,7 @@ function LoadedBookableItemPage({
       await queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] });
       setSaveAnnouncement("saved");
       setStaleBase(null);
-      setSearch({ edit: false });
+      setEdit(false);
     },
     onError: async (error) => {
       if (typeof error === "object" && error !== null && "status" in error && error.status === 412) {
@@ -264,14 +331,55 @@ function LoadedBookableItemPage({
     },
   });
   const archiveMutation = useMutation({
-    mutationFn: () => archiveBookingConfiguration(configuration.id, token),
+    mutationFn: () => archiveBookingConfiguration(configuration.id, configuration.configurationVersion, token),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] });
-      void navigate({
-        to: "/booking/bookable-items/archived/$id",
-        params: { id: String(configuration.id) },
-        ignoreBlocker: true,
-      });
+      setArchiveOpen(false);
+      setSaveAnnouncement("archived");
+      requestAnimationFrame(() => actionsButtonRef.current?.focus());
+    },
+    onError: async (error) => {
+      if (typeof error === "object" && error !== null && "status" in error && error.status === 412) {
+        await queryClient.refetchQueries({
+          queryKey: ["api-v2", "booking-configurations", "target", globalId],
+        });
+      }
+    },
+  });
+  const restoreMutation = useMutation({
+    mutationFn: () => restoreBookingConfiguration(configuration.id, configuration.configurationVersion, token),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] });
+      setSaveAnnouncement("restored");
+      requestAnimationFrame(() => actionsButtonRef.current?.focus());
+    },
+    onError: async (error) => {
+      if (typeof error === "object" && error !== null && "status" in error && error.status === 412) {
+        await queryClient.refetchQueries({
+          queryKey: ["api-v2", "booking-configurations", "target", globalId],
+        });
+      }
+    },
+  });
+  const permanentDeleteMutation = useMutation({
+    mutationFn: () =>
+      permanentlyDeleteBookingConfiguration(configuration.id, configuration.configurationVersion, token),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] });
+      setPermanentDeleteOpen(false);
+      void navigate({ to: "/booking/config/bookable-items", ignoreBlocker: true });
+    },
+    onError: async (error) => {
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        "status" in error &&
+        (error.status === 409 || error.status === 412)
+      ) {
+        await queryClient.refetchQueries({
+          queryKey: ["api-v2", "booking-configurations", "target", globalId],
+        });
+      }
     },
   });
   const leaveMutation = useMutation({
@@ -296,11 +404,15 @@ function LoadedBookableItemPage({
   }, [updateMutation.isError, updateMutation.isPending]);
 
   useEffect(() => {
+    if (!active && edit) setEdit(false);
+  }, [active, edit]);
+
+  useEffect(() => {
     if (
       (tab === "audit" && !configuration.capabilities.canViewAudit) ||
       (tab === "access" && !configuration.capabilities.canViewAccess)
     ) {
-      setSearch({ tab: "bookings" });
+      setTab("bookings");
     }
   }, [configuration.capabilities.canViewAccess, configuration.capabilities.canViewAudit, tab]);
 
@@ -310,7 +422,16 @@ function LoadedBookableItemPage({
     reset(form, { initialInput: configurationInput(configuration) });
     setSaveAnnouncement(null);
     setStaleBase(null);
-    setSearch({ edit: false });
+    setEdit(false);
+  };
+
+  const handleLifecycleAction = (action: BookingConfigurationLifecycleAction) => {
+    if (action === "archive") setArchiveOpen(true);
+    if (action === "restore") restoreMutation.mutate();
+    if (action === "permanent-delete") {
+      setPermanentDeleteConfirmation("");
+      setPermanentDeleteOpen(true);
+    }
   };
 
   return (
@@ -321,16 +442,22 @@ function LoadedBookableItemPage({
         onValueChange={(value) => {
           if (updateMutation.isPending) return;
           const nextTab = value === "details" || value === "audit" || value === "access" ? value : "bookings";
-          setSearch({ tab: nextTab });
+          setTab(nextTab);
         }}
         className="space-y-6"
       >
+        {restoreMutation.isError ? (
+          <p role="alert" className="text-sm text-destructive">
+            {t(lifecycleErrorKey(restoreMutation.error, "bookableItemDetails.lifecycleErrors.restore"))}
+          </p>
+        ) : null}
         <SpotlightHeader
           configuration={configuration}
           target={target}
           action={
             <>
-              {configuration.capabilities.canCreateBooking || configuration.capabilities.canCreateBlockout ? (
+              {active &&
+              (configuration.capabilities.canCreateBooking || configuration.capabilities.canCreateBlockout) ? (
                 <BookingCreationButtonGroup
                   ownerId={`bookable-item-${configuration.id}`}
                   target={bookableItemOption({ ...configuration, target })}
@@ -339,19 +466,21 @@ function LoadedBookableItemPage({
                 />
               ) : null}
               {configuration.capabilities.canSubscribeCalendar ? (
-                <CalendarSubscriptionPopover configurationId={configuration.id} token={token} />
+                <CalendarSubscriptionPopover configurationId={configuration.id} token={token} archived={!active} />
               ) : null}
-              {configuration.capabilities.canLeaveConfiguration ? (
+              {active && configuration.capabilities.canLeaveConfiguration ? (
                 <Button type="button" variant="outline" onClick={() => setLeaveOpen(true)}>
                   {t("bookableItemDetails.actions.leave")}
                 </Button>
               ) : null}
-              {configuration.capabilities.canArchiveConfiguration ? (
-                <Button type="button" variant="destructive" onClick={() => setArchiveOpen(true)}>
-                  <ArchiveIcon aria-hidden="true" />
-                  {t("bookableItemDetails.actions.archive")}
-                </Button>
-              ) : null}
+              <BookingConfigurationActionsMenu
+                configuration={configuration}
+                itemName={target.value.name}
+                directSysadmin={directSysadmin}
+                disabled={archiveMutation.isPending || restoreMutation.isPending || permanentDeleteMutation.isPending}
+                triggerRef={actionsButtonRef}
+                onAction={handleLifecycleAction}
+              />
             </>
           }
         />
@@ -395,7 +524,7 @@ function LoadedBookableItemPage({
           <Card>
             <CardHeader>
               <CardTitle>{t("bookableItemDetails.rules")}</CardTitle>
-              {canEdit ? (
+              {active && canEdit ? (
                 <CardAction className="flex gap-3">
                   {editing ? (
                     <>
@@ -427,7 +556,7 @@ function LoadedBookableItemPage({
                       type="button"
                       size="sm"
                       variant="ghost"
-                      onClick={() => setSearch({ edit: true })}
+                      onClick={() => setEdit(true)}
                     >
                       <PencilIcon aria-hidden="true" />
                       {t("bookableItemDetails.edit")}
@@ -490,6 +619,7 @@ function LoadedBookableItemPage({
                   resourceId={configuration.id}
                   token={token}
                   adapter={bookingResourceAccessAdapter(t)}
+                  readOnly={!active}
                   onLeave={() => void navigate({ to: "/booking", ignoreBlocker: true })}
                 />
               </CardContent>
@@ -524,6 +654,50 @@ function LoadedBookableItemPage({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <AlertDialog
+        open={permanentDeleteOpen}
+        onOpenChange={(open) => {
+          if (permanentDeleteMutation.isPending) return;
+          setPermanentDeleteOpen(open);
+          if (!open) requestAnimationFrame(() => actionsButtonRef.current?.focus());
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("bookableItemDetails.permanentDeleteDialog.title")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("bookableItemDetails.permanentDeleteDialog.description", { item: target.value.name })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <label htmlFor={permanentConfirmationId} className="space-y-2 text-sm">
+            <span>{t("bookableItemDetails.permanentDeleteDialog.confirmationLabel")}</span>
+            <Input
+              id={permanentConfirmationId}
+              value={permanentDeleteConfirmation}
+              onChange={(event) => setPermanentDeleteConfirmation(event.currentTarget.value)}
+              autoComplete="off"
+            />
+          </label>
+          {permanentDeleteMutation.isError ? (
+            <p role="alert" className="text-sm text-destructive">
+              {t(lifecycleErrorKey(permanentDeleteMutation.error, "bookableItemDetails.permanentDeleteDialog.error"))}
+            </p>
+          ) : null}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={permanentDeleteMutation.isPending}>
+              {commonT("actions.cancel")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={permanentDeleteMutation.isPending || permanentDeleteConfirmation !== target.value.name}
+              aria-busy={permanentDeleteMutation.isPending}
+              onClick={() => permanentDeleteMutation.mutate()}
+            >
+              {t("bookableItemDetails.permanentDeleteDialog.confirm")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <AlertDialog open={leaveOpen} onOpenChange={(open) => !leaveMutation.isPending && setLeaveOpen(open)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -554,13 +728,17 @@ function LoadedBookableItemPage({
           ? t("bookableItemDetails.update.pending")
           : saveAnnouncement === "saved"
             ? t("bookableItemDetails.update.saved")
-            : null}
+            : saveAnnouncement === "archived"
+              ? t("bookableItemDetails.update.archived")
+              : saveAnnouncement === "restored"
+                ? t("bookableItemDetails.update.restored")
+                : null}
       </p>
     </main>
   );
 }
 
-function Details({ globalId }: { globalId: string }) {
+function Details({ globalId, tab }: { globalId: string; tab: BookableItemTab }) {
   const { t } = useTranslation("booking");
   const { t: commonT } = useTranslation("common");
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
@@ -594,10 +772,10 @@ function Details({ globalId }: { globalId: string }) {
     );
   }
 
-  return <LoadedBookableItemPage configuration={configuration.data} globalId={globalId} token={token} />;
+  return <LoadedBookableItemPage configuration={configuration.data} globalId={globalId} tab={tab} token={token} />;
 }
 
 export default function BookableItemPage() {
-  const { globalId } = useParams({ from: "/booking/bookable-items/$globalId" });
-  return <Details globalId={globalId} key={globalId} />;
+  const { globalId, tab } = useParams({ from: "/booking/bookable-items/$globalId/{-$tab}" });
+  return <Details globalId={globalId} tab={bookableItemTab(tab)} key={globalId} />;
 }

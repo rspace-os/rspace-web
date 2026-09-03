@@ -32,6 +32,22 @@ export class MyBookingsPageObject {
     return page.getByRole("link", { name: "View details", exact: true }).first();
   }
 
+  get confocalEdit(): Locator {
+    return page.getByRole("link", { name: "Edit", exact: true }).first();
+  }
+
+  get confocalCalendarFile(): Locator {
+    return page.getByRole("button", { name: /^\.ics file for Confocal microscope,/ }).first();
+  }
+
+  get confocalCancel(): Locator {
+    return page.getByRole("button", { name: "Cancel booking", exact: true }).first();
+  }
+
+  tooltip(name: string): Locator {
+    return page.getByRole("tooltip", { name, exact: true });
+  }
+
   get roleLossNotice(): Locator {
     return page.getByText("Read-only: you no longer have access to this item.");
   }

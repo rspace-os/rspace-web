@@ -243,13 +243,23 @@ public final class ApiV2CrudDispatcher<T, ID> {
                     caller.subject())));
   }
 
-  public Map<String, Object> delete(ID id, ApiV2Caller caller, FieldSelection selection) {
+  public ResourceDeleteResult<Map<String, Object>> delete(
+      ID id, ResourceDeleteOptions options, ApiV2Caller caller, FieldSelection selection) {
     return invoke(
         ResourceOperation.DELETE,
         () ->
             operations
-                .delete(id, caller)
-                .map(resource -> document(resource, selection, targetResolver(caller.subject())))
+                .delete(id, options, caller)
+                .map(
+                    result ->
+                        result
+                            .resource()
+                            .map(
+                                resource ->
+                                    ResourceDeleteResult.retained(
+                                        document(
+                                            resource, selection, targetResolver(caller.subject()))))
+                            .orElseGet(ResourceDeleteResult::permanentlyDeleted))
                 .orElseThrow(NotFoundException::new));
   }
 

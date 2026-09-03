@@ -206,11 +206,15 @@ export type TableListProps<TDocument extends Record<string, unknown>> = {
   presentations?: TableListPresentations;
   /** Replace the built-in table/card result area with rows from the same filtered, sorted, and paginated row model. */
   renderRows?: (rows: readonly TDocument[]) => ReactNode;
+  /** Call `renderRows` with an empty array instead of showing the standard empty state. */
+  renderRowsWhenEmpty?: boolean;
   /** Replace the default empty-state guidance while preserving TableList controls. */
   emptyDescription?: ReactNode;
   variant?: TableListVariant;
   /** Hide the collection heading when another page section labels this embedded list. */
   hideHeader?: boolean;
+  /** Hides the filter panel for a data source that only honours free-text search. */
+  hideFilterPanel?: boolean;
   /** Reserve the height of ten data rows for the empty state. Set this to `false` for a compact display. */
   reserveEmptyRows?: boolean;
   /** Persist filters, sorting, and visible columns in the URL and browser storage. Set this to `false` to disable both. */

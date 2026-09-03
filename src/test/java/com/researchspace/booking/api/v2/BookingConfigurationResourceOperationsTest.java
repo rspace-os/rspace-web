@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.api.v2.auth.ApiV2Caller;
+import com.researchspace.api.v2.resource.ResourceDeleteOptions;
 import com.researchspace.booking.service.BookingConfigurationManager;
 import com.researchspace.booking.service.BookingConfigurationManager.Create;
 import com.researchspace.booking.service.BookingConfigurationManager.Patch;
@@ -117,14 +118,21 @@ class BookingConfigurationResourceOperationsTest {
     BookingConfiguration configuration = new BookingConfiguration();
     when(manager.updateConfiguration(42L, new Patch(true, null), actor, actor))
         .thenReturn(Optional.of(configuration));
-    when(manager.removeConfiguration(42L, actor, actor)).thenReturn(Optional.of(configuration));
+    when(manager.archiveConfiguration(42L, 3L, actor, actor))
+        .thenReturn(Optional.of(configuration));
 
     assertEquals(
         configuration, operations.update(42L, document, ApiV2Caller.direct(actor)).orElseThrow());
-    assertEquals(configuration, operations.delete(42L, ApiV2Caller.direct(actor)).orElseThrow());
+    assertEquals(
+        configuration,
+        operations
+            .delete(42L, new ResourceDeleteOptions(3L, false), ApiV2Caller.direct(actor))
+            .orElseThrow()
+            .resource()
+            .orElseThrow());
 
     verify(manager).updateConfiguration(42L, new Patch(true, null), actor, actor);
-    verify(manager).removeConfiguration(42L, actor, actor);
+    verify(manager).archiveConfiguration(42L, 3L, actor, actor);
   }
 
   @Test
@@ -163,7 +171,9 @@ class BookingConfigurationResourceOperationsTest {
     assertThrows(AuthorizationException.class, () -> operations.update(42L, document, caller));
     assertThrows(
         AuthorizationException.class, () -> operations.updateMany(request, document, caller));
-    assertThrows(AuthorizationException.class, () -> operations.delete(42L, caller));
+    assertThrows(
+        AuthorizationException.class,
+        () -> operations.delete(42L, new ResourceDeleteOptions(0L, false), caller));
     assertThrows(AuthorizationException.class, () -> operations.deleteMany(request, caller));
     verifyNoInteractions(manager);
   }

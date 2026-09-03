@@ -112,12 +112,36 @@ public interface ResourceOperations<T, ID> {
     return Optional.empty();
   }
 
+  /** Whether singular DELETE requires the resource's current version in {@code If-Match}. */
+  default boolean deleteRequiresIfMatch() {
+    return false;
+  }
+
+  /** Whether ordinary DELETE transitions lifecycle state instead of removing the live row. */
+  default boolean deleteIsSoft() {
+    return false;
+  }
+
+  /** Whether this resource accepts the explicit permanent-delete option. */
+  default boolean supportsPermanentDelete() {
+    return false;
+  }
+
   default List<T> updateMany(ResourceRequest request, ParsedDocument document, ApiV2Caller caller) {
     throw readOnly("update");
   }
 
   default Optional<T> delete(ID id, ApiV2Caller caller) {
     throw readOnly("delete");
+  }
+
+  /** Version-aware singular delete with an explicit permanent-delete option. */
+  default Optional<ResourceDeleteResult<T>> delete(
+      ID id, ResourceDeleteOptions options, ApiV2Caller caller) {
+    if (options.permanent()) {
+      throw readOnly("permanently delete");
+    }
+    return delete(id, caller).map(ResourceDeleteResult::retained);
   }
 
   default List<T> deleteMany(ResourceRequest request, ApiV2Caller caller) {

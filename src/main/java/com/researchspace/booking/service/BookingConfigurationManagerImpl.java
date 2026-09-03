@@ -3,6 +3,7 @@ package com.researchspace.booking.service;
 import com.researchspace.booking.dao.BookingCalendarSubscriptionDao;
 import com.researchspace.booking.dao.BookingConfigurationDao;
 import com.researchspace.booking.dao.BookingConfigurationDefaultsDao;
+import com.researchspace.booking.dao.TimeSlotBookingDao;
 import com.researchspace.dao.InstrumentDao;
 import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditAction;
@@ -12,6 +13,7 @@ import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.BookingConfigurationCapabilities;
 import com.researchspace.model.booking.BookingConfigurationDefaults;
+import com.researchspace.model.booking.BookingConfigurationState;
 import com.researchspace.model.booking.BookingDefaultAccessGrantee;
 import com.researchspace.model.booking.BookingDefaultSharedWith;
 import com.researchspace.model.booking.BookingOwnerHealth;
@@ -43,6 +45,7 @@ import com.researchspace.service.resourceaccess.ResourceRoleScheme;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Validator;
+import java.time.Instant;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -70,6 +73,7 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
   private final ResourceAccessManager accessManager;
   private final MessageSourceUtils messages;
   private final BookingCalendarSubscriptionDao calendarSubscriptions;
+  private final TimeSlotBookingDao timeSlotBookings;
 
   public BookingConfigurationManagerImpl(
       @Qualifier("bookingConfigurationDao") BookingConfigurationDao bookingConfigurationDao,
@@ -85,7 +89,8 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
       ResourceAccessManager accessManager,
       MessageSourceUtils messages,
       @Qualifier("bookingCalendarSubscriptionDao")
-          BookingCalendarSubscriptionDao calendarSubscriptions) {
+          BookingCalendarSubscriptionDao calendarSubscriptions,
+      @Qualifier("timeSlotBookingDao") TimeSlotBookingDao timeSlotBookings) {
     this.bookingConfigurationDao = bookingConfigurationDao;
     this.defaultsDao = defaultsDao;
     this.instrumentDao = instrumentDao;
@@ -96,6 +101,7 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
     this.accessManager = accessManager;
     this.messages = messages;
     this.calendarSubscriptions = calendarSubscriptions;
+    this.timeSlotBookings = timeSlotBookings;
   }
 
   /** Returns one page selected by a parsed collection request. */
@@ -187,7 +193,7 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
       Date timestamp) {
     BookingConfiguration configuration = new BookingConfiguration();
     configuration.setEnabled(create.enabled());
-    configuration.setDeleted(false);
+    configuration.setState(BookingConfigurationState.ACTIVE);
     configuration.setTimeZone(create.timeZone());
     create
         .schedulingSettings()
@@ -269,7 +275,7 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
     Optional<BookingConfiguration> updated =
         bookingConfigurationDao
             .lockById(id)
-            .filter(configuration -> !configuration.isDeleted() && canRead(configuration, subject))
+            .filter(configuration -> canRead(configuration, subject))
             .map(
                 configuration -> {
                   if (expectedVersion != null
@@ -278,15 +284,18 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
                   }
                   requireCapability(
                       configuration, subject, BookingResourceRoleScheme.EDIT_CONFIGURATION);
-                  if (unchanged(patch)) {
+                  validatePatchForState(patch, configuration);
+                  if (unchanged(patch, configuration)) {
                     return configuration;
                   }
+                  boolean restoring = patch.state() == BookingConfigurationState.ACTIVE;
                   apply(patch, configuration);
                   touchAudit(configuration, actor, new Date());
                   validateSettings(configuration);
                   validate(configuration);
                   BookingConfiguration saved = save(configuration);
-                  notifyAudit(actor, subject, saved, AuditAction.WRITE);
+                  notifyAudit(
+                      actor, subject, saved, restoring ? AuditAction.RESTORE : AuditAction.WRITE);
                   return saved;
                 });
     updated.ifPresent(value -> prepareAccessProjection(List.of(value), subject));
@@ -296,7 +305,14 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
   @Override
   public List<BookingConfiguration> updateConfigurations(
       ResourceRequest request, Patch patch, User subject, User actor) {
+    if (patch.state() != null) {
+      throw new BookingConfigurationLifecycleException();
+    }
     List<BookingConfiguration> matches = bulkMatches(request, subject);
+    if (matches.stream()
+        .anyMatch(configuration -> configuration.getState() != BookingConfigurationState.ACTIVE)) {
+      throw new BookingConfigurationLifecycleException();
+    }
     Date now = new Date();
     matches.forEach(
         configuration -> {
@@ -312,28 +328,80 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
   }
 
   @Override
-  public Optional<BookingConfiguration> removeConfiguration(Long id, User subject, User actor) {
+  public Optional<BookingConfiguration> archiveConfiguration(
+      Long id, long expectedVersion, User subject, User actor) {
     requireAuthenticated(subject);
     Optional<BookingConfiguration> configuration =
-        bookingConfigurationDao
-            .lockById(id)
-            .filter(value -> !value.isDeleted() && canRead(value, subject));
-    configuration.ifPresent(
-        value ->
-            requireCapability(value, subject, BookingResourceRoleScheme.ARCHIVE_CONFIGURATION));
-    configuration = configuration.map(existing -> archive(existing, actor));
-    configuration.ifPresent(deleted -> notifyAudit(actor, subject, deleted, AuditAction.DELETE));
-    return configuration;
+        bookingConfigurationDao.lockById(id).filter(value -> canRead(value, subject));
+    if (configuration.isEmpty()) {
+      return Optional.empty();
+    }
+    BookingConfiguration existing = configuration.orElseThrow();
+    if (existing.getConfigurationVersion() != expectedVersion) {
+      throw new BookingConcurrentModificationException();
+    }
+    requireCapability(existing, subject, BookingResourceRoleScheme.EDIT_CONFIGURATION);
+    if (existing.getState() == BookingConfigurationState.ARCHIVED) {
+      prepareAccessProjection(List.of(existing), subject);
+      return configuration;
+    }
+    BookingConfiguration archived = archive(existing, actor);
+    notifyAudit(actor, subject, archived, AuditAction.DELETE);
+    prepareAccessProjection(List.of(archived), subject);
+    return Optional.of(archived);
   }
 
   @Override
-  public List<BookingConfiguration> removeConfigurations(
+  public Optional<Long> permanentlyDeleteConfiguration(
+      Long id, long expectedVersion, User subject, User actor) {
+    requireAuthenticated(subject);
+    Optional<BookingConfiguration> found = bookingConfigurationDao.lockById(id);
+    if (found.isEmpty()) {
+      return Optional.empty();
+    }
+    BookingConfiguration configuration = found.orElseThrow();
+    if (configuration.getConfigurationVersion() != expectedVersion) {
+      throw new BookingConcurrentModificationException();
+    }
+    requireDirectSysadmin(subject, actor);
+
+    int assignmentCount = configuration.getResourceAccess().getAssignments().size();
+    String targetName =
+        instrumentDao
+            .getSafeNull(configuration.getTarget().id())
+            .map(Instrument::getName)
+            .orElse("Unavailable target");
+    int bookingCount = timeSlotBookings.removeAllByConfigurationId(id);
+    int subscriptionCount = calendarSubscriptions.deleteByConfigurationId(id);
+    BookingConfigurationPermanentDeleteSnapshot snapshot =
+        new BookingConfigurationPermanentDeleteSnapshot(
+            id,
+            configuration.getConfigurationVersion(),
+            configuration.getTarget(),
+            targetName,
+            configuration.getState(),
+            bookingCount,
+            subscriptionCount,
+            assignmentCount,
+            Instant.now());
+    bookingConfigurationDao.removeConfigurationAndAccess(configuration);
+    events.publishEvent(
+        new BookingConfigurationPermanentDeleteAuditEvent(actor, subject, snapshot));
+    return Optional.of(id);
+  }
+
+  @Override
+  public List<BookingConfiguration> archiveConfigurations(
       ResourceRequest request, User subject, User actor) {
     List<BookingConfiguration> matches = bulkMatches(request, subject);
     Date now = new Date();
-    matches.forEach(configuration -> archive(configuration, actor, now));
-    matches.forEach(
-        configuration -> notifyAudit(actor, subject, configuration, AuditAction.DELETE));
+    List<BookingConfiguration> active =
+        matches.stream()
+            .filter(configuration -> configuration.getState() == BookingConfigurationState.ACTIVE)
+            .toList();
+    active.forEach(configuration -> archive(configuration, actor, now));
+    active.forEach(configuration -> notifyAudit(actor, subject, configuration, AuditAction.DELETE));
+    prepareAccessProjection(matches, subject);
     return matches;
   }
 
@@ -345,6 +413,16 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
 
   private static void requireSysadmin(User actor) {
     if (actor == null || !actor.hasSysadminRole()) {
+      throw new AuthorizationException("errors.api.v2.forbidden");
+    }
+  }
+
+  private static void requireDirectSysadmin(User subject, User actor) {
+    if (subject == null
+        || actor == null
+        || !subject.hasSysadminRole()
+        || !actor.hasSysadminRole()
+        || !Objects.equals(subject.getId(), actor.getId())) {
       throw new AuthorizationException("errors.api.v2.forbidden");
     }
   }
@@ -384,12 +462,35 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
         .schedulingSettings()
         .merge(BookingSchedulingSettings.from(configuration))
         .applyTo(configuration);
+    if (patch.state() != null) {
+      configuration.setState(patch.state());
+    }
   }
 
-  private static boolean unchanged(Patch patch) {
+  private static boolean unchanged(Patch patch, BookingConfiguration configuration) {
     return patch.enabled() == null
         && patch.timeZone() == null
-        && patch.schedulingSettings().isEmpty();
+        && patch.schedulingSettings().isEmpty()
+        && (patch.state() == null
+            || (patch.state() == BookingConfigurationState.ACTIVE
+                && configuration.getState() == BookingConfigurationState.ACTIVE));
+  }
+
+  private static void validatePatchForState(Patch patch, BookingConfiguration configuration) {
+    if (patch.state() == BookingConfigurationState.ARCHIVED) {
+      throw new BookingConfigurationLifecycleException();
+    }
+    if (configuration.getState() == BookingConfigurationState.ACTIVE) {
+      return;
+    }
+    boolean stateOnlyRestore =
+        patch.state() == BookingConfigurationState.ACTIVE
+            && patch.enabled() == null
+            && patch.timeZone() == null
+            && patch.schedulingSettings().isEmpty();
+    if (!stateOnlyRestore) {
+      throw new BookingConfigurationLifecycleException();
+    }
   }
 
   private static void validateSettings(BookingConfiguration configuration) {
@@ -415,8 +516,7 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
 
   private BookingConfiguration archive(
       BookingConfiguration configuration, User actor, Date timestamp) {
-    configuration.setDeleted(true);
-    configuration.setEnabled(false);
+    configuration.setState(BookingConfigurationState.ARCHIVED);
     calendarSubscriptions.deleteByConfigurationId(configuration.getId());
     touchAudit(configuration, actor, timestamp);
     return save(configuration);
@@ -503,7 +603,6 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
       ResourceAccess aggregate, User subject, ResolvedResourceAccess resolved) {
     return new BookingConfigurationCapabilities(
         resolved.hasCapability(BookingResourceRoleScheme.EDIT_CONFIGURATION),
-        resolved.hasCapability(BookingResourceRoleScheme.ARCHIVE_CONFIGURATION),
         resolved.hasCapability(BookingResourceRoleScheme.VIEW_AUDIT),
         resolved.hasCapability(BookingResourceRoleScheme.MANAGE_ASSIGNMENTS),
         resolved.hasCapability(BookingResourceRoleScheme.MANAGE_ASSIGNMENTS),

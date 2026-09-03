@@ -17,6 +17,7 @@ export function BookingCreationButtonGroup({
   initialWindow,
   lockTarget = false,
   disabled = false,
+  size = "sm",
 }: {
   ownerId: string;
   target?: BookableItemOption;
@@ -24,6 +25,8 @@ export function BookingCreationButtonGroup({
   initialWindow?: BookingWindowDraft;
   lockTarget?: boolean;
   disabled?: boolean;
+  /** "default" matches the page-heading create action other collection pages render. */
+  size?: "sm" | "default";
 }) {
   const { t } = useTranslation("booking");
   const { data: currentUser } = useCurrentUserQuery();
@@ -35,6 +38,7 @@ export function BookingCreationButtonGroup({
   const maintenanceTriggerId = `${ownerId}-${id}-new-maintenance`;
   const canManageMaintenance = currentUser.hasSysAdminRole && !currentUser.session.operatedAs;
   const unavailable = disabled || creationActive;
+  const iconSize = size === "sm" ? "icon-sm" : "icon";
 
   const begin = (eventKind: BookingEventKind, triggerId: string) => {
     beginCreation({
@@ -53,7 +57,7 @@ export function BookingCreationButtonGroup({
       <Button
         id={bookingTriggerId}
         type="button"
-        size="sm"
+        size={size}
         className="rounded-sm!"
         disabled={unavailable}
         onClick={() => begin("BOOKING", bookingTriggerId)}
@@ -72,7 +76,7 @@ export function BookingCreationButtonGroup({
       <Button
         id={bookingTriggerId}
         type="button"
-        size="sm"
+        size={size}
         disabled={unavailable}
         onClick={() => begin("BOOKING", bookingTriggerId)}
       >
@@ -84,7 +88,7 @@ export function BookingCreationButtonGroup({
           id={maintenanceTriggerId}
           disabled={unavailable}
           render={
-            <Button type="button" size="icon-sm" aria-label={t("bookings.actions.moreCreationOptions")}>
+            <Button type="button" size={iconSize} aria-label={t("bookings.actions.moreCreationOptions")}>
               <ChevronDownIcon aria-hidden="true" className="size-3.5!" />
             </Button>
           }

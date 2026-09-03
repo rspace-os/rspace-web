@@ -1,4 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
+import { CalendarX2Icon } from "lucide-react";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ApiV2ProblemError, cancelBooking } from "@/modules/booking/domain/booking";
@@ -14,6 +15,7 @@ import {
   AlertDialogTrigger,
 } from "@/modules/common/ui/alert-dialog";
 import { Button } from "@/modules/common/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/modules/common/ui/tooltip";
 
 type DeleteBookingDialogProps = {
   bookingId: number;
@@ -22,6 +24,7 @@ type DeleteBookingDialogProps = {
   period: string;
   token: string;
   disabled?: boolean;
+  iconOnly?: boolean;
   onDeleted: () => void | Promise<void>;
 };
 
@@ -51,6 +54,7 @@ export function DeleteBookingDialog({
   period,
   token,
   disabled = false,
+  iconOnly = false,
   onDeleted,
 }: DeleteBookingDialogProps) {
   const { t } = useTranslation(["booking", "common"]);
@@ -59,6 +63,7 @@ export function DeleteBookingDialog({
   const [open, setOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [errorKey, setErrorKey] = useState<DeleteErrorKey | null>(null);
+  const cancelLabel = t("bookings.actions.cancel");
 
   const invalidateBookingQueries = async () => {
     await queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] });
@@ -93,12 +98,26 @@ export function DeleteBookingDialog({
 
   return (
     <AlertDialog open={open} onOpenChange={(nextOpen) => !activeRequest.current && setOpen(nextOpen)}>
-      <AlertDialogTrigger
-        disabled={disabled || isDeleting}
-        render={<Button type="button" size="sm" variant="destructive" />}
-      >
-        {t("bookings.actions.cancel")}
-      </AlertDialogTrigger>
+      {iconOnly ? (
+        <Tooltip>
+          <TooltipTrigger render={<span className="inline-flex" tabIndex={-1} />}>
+            <AlertDialogTrigger
+              disabled={disabled || isDeleting}
+              render={<Button type="button" size="icon-lg" variant="destructive" aria-label={cancelLabel} />}
+            >
+              <CalendarX2Icon aria-hidden="true" />
+            </AlertDialogTrigger>
+          </TooltipTrigger>
+          <TooltipContent role="tooltip">{cancelLabel}</TooltipContent>
+        </Tooltip>
+      ) : (
+        <AlertDialogTrigger
+          disabled={disabled || isDeleting}
+          render={<Button type="button" size="sm" variant="destructive" />}
+        >
+          {cancelLabel}
+        </AlertDialogTrigger>
+      )}
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{t("bookings.cancelDialog.title")}</AlertDialogTitle>

@@ -4,7 +4,7 @@ import { HttpResponse, http } from "msw";
 import { createElement, Suspense } from "react";
 import { beforeEach, describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
-import { fetchToken, useOauthTokenQuery } from "@/modules/common/hooks/auth";
+import { fetchToken, tokenRefreshInterval, useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { getStoredToken, saveStoredToken } from "@/modules/common/utils/auth";
 
 beforeEach(() => {
@@ -79,5 +79,16 @@ describe("fetchToken", () => {
     expect(await screen.findByText("token-for-current-context")).toBeInTheDocument();
     expect(requestCount).toBe(1);
     expect(getStoredToken()).toBe("token-from-previous-run-as-context");
+  });
+});
+
+describe("tokenRefreshInterval", () => {
+  it("schedules a refresh at the expiry buffer instead of only marking the query stale", () => {
+    const nowSeconds = Math.floor(Date.now() / 1000);
+    const payload = btoa(JSON.stringify({ exp: nowSeconds + 600 }));
+
+    expect(tokenRefreshInterval(`header.${payload}.signature`)).toBe(300_000);
+    expect(tokenRefreshInterval()).toBe(false);
+    expect(tokenRefreshInterval("opaque-test-token")).toBe(false);
   });
 });

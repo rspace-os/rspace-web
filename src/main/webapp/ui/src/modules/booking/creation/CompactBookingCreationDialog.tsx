@@ -1,9 +1,10 @@
-import { useBlocker, useNavigate } from "@tanstack/react-router";
+import { useBlocker, useLocation, useNavigate } from "@tanstack/react-router";
 import { XIcon } from "lucide-react";
 import * as React from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { BookingForm, type BookingFormState } from "@/modules/booking/creation/BookingForm";
+import type { BookingCreationDraft } from "@/modules/booking/creation/bookingCreationDraft";
 import { type BookingCreationContext, useBookingCreationStore } from "@/modules/booking/creation/bookingCreationStore";
 import { bookingProblemKey, useCreateBooking } from "@/modules/booking/creation/useCreateBooking";
 import { isBookingOverlapError } from "@/modules/booking/domain/booking";
@@ -50,8 +51,8 @@ function DraftMarker({ creation, draft }: { creation: BookingCreationContext; dr
       data-testid="compact-booking-draft-marker"
       className={
         creation.eventKind === "MAINTENANCE"
-          ? "pointer-events-none absolute inset-y-0 z-40 rounded-sm border-2 border-amber-600 bg-amber-200/60 ring-3 ring-ring/40"
-          : "pointer-events-none absolute inset-y-0 z-40 rounded-sm border-2 border-primary bg-primary/25 ring-3 ring-ring/40"
+          ? "pointer-events-none absolute top-8 bottom-0 z-40 rounded-sm border-2 border-amber-600 bg-amber-200/60 ring-3 ring-ring/40"
+          : "pointer-events-none absolute top-8 bottom-0 z-40 rounded-sm border-2 border-primary bg-primary/25 ring-3 ring-ring/40"
       }
       style={{
         left: `${(visibleStart / (24 * 60)) * 100}%`,
@@ -68,6 +69,7 @@ export function CompactBookingCreationDialog() {
   const navigate = useNavigate();
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
   const preferences = useBookingDisplayPreferences();
+  const pathname = useLocation({ select: (location) => location.pathname });
   const creation = useBookingCreationStore((state) => state.activeCreation);
   const endCreation = useBookingCreationStore((state) => state.endCreation);
   const mutation = useCreateBooking(token);
@@ -77,6 +79,7 @@ export function CompactBookingCreationDialog() {
   const [formState, setFormState] = React.useState<BookingFormState | null>(null);
   const [confirmClose, setConfirmClose] = React.useState(false);
   const [navigationPending, setNavigationPending] = React.useState(false);
+  const previousPathname = React.useRef(pathname);
   const blocker = useBlocker({
     shouldBlockFn: () => creation !== null && dirty,
     withResolver: true,
@@ -99,6 +102,12 @@ export function CompactBookingCreationDialog() {
     endCreation(ownerId);
     window.setTimeout(() => document.getElementById(triggerId)?.focus(), 0);
   }, [creation, endCreation]);
+
+  React.useEffect(() => {
+    const routeChanged = previousPathname.current !== pathname;
+    previousPathname.current = pathname;
+    if (routeChanged && creation && !dirty) finish();
+  }, [creation, dirty, finish, pathname]);
 
   React.useEffect(() => {
     if (blocker.status !== "blocked") return;
@@ -125,12 +134,27 @@ export function CompactBookingCreationDialog() {
 
   const openMoreOptions = () => {
     if (!creation || maintenance) return;
+    const draft: BookingCreationDraft | undefined = formState
+      ? {
+          targetGlobalId: formState.target?.globalId,
+          window: formState.draft,
+          purpose: formState.purpose,
+        }
+      : undefined;
     const search = {
       date: formState?.draft.startDate ?? creation.initialDate,
       target: formState?.target?.globalId ?? creation.target?.globalId,
     };
     endCreation(creation.ownerId);
-    window.setTimeout(() => void navigate({ to: "/booking/calendar/bookings/add", search }), 0);
+    window.setTimeout(
+      () =>
+        void navigate({
+          to: "/booking/calendar/bookings/add",
+          search,
+          ...(draft ? { state: (previous) => ({ ...previous, bookingCreationDraft: draft }) } : {}),
+        }),
+      0,
+    );
   };
 
   const discard = () => {
@@ -201,7 +225,7 @@ export function CompactBookingCreationDialog() {
           className="flex max-h-[calc(100dvh-2rem)] w-[min(42rem,calc(100vw-2rem))] max-w-none flex-col gap-0 overflow-hidden rounded-lg border border-primary p-0 ring-4 ring-ring/20"
           data-testid="compact-booking-dialog"
         >
-          <PopoverHeader className="pr-8">
+          <PopoverHeader className="shrink-0 border-border border-b px-4 py-3 pr-12">
             <PopoverTitle>
               {t(maintenance ? "bookings.compact.maintenanceTitle" : "bookings.compact.bookingTitle")}
             </PopoverTitle>

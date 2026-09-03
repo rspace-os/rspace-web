@@ -1,11 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { EyeIcon, KeyRoundIcon, PencilIcon, PlusIcon, Trash2Icon } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { ArchiveIcon, EyeIcon, PlusIcon } from "lucide-react";
+import { useCallback, useId, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import * as v from "valibot";
 import { schedulingSettingsFieldNames } from "@/modules/booking/configuration/schedulingSettings";
+import { ApiV2ProblemError, parseApiV2Problem } from "@/modules/booking/domain/booking";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
+import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { useApiV2TableList } from "@/modules/common/table-list/adapters/apiV2/useApiV2TableList";
 import { serializeRsqlExpression } from "@/modules/common/table-list/rsql/rsqlCodec";
 import {
@@ -26,7 +28,12 @@ import {
   AlertDialogTitle,
 } from "@/modules/common/ui/alert-dialog";
 import { Button, buttonVariants } from "@/modules/common/ui/button";
+import { Input } from "@/modules/common/ui/input";
 import { cn } from "@/modules/common/utils/cn";
+import {
+  BookingConfigurationActionsMenu,
+  type BookingConfigurationLifecycleAction,
+} from "./BookingConfigurationActionsMenu";
 import {
   type BookingConfigurationRow,
   BookingConfigurationSchema,
@@ -46,6 +53,7 @@ const bookableItemsProjection = {
     "roleSources",
     "capabilities",
     "ownerHealth",
+    "state",
   ],
 } as const;
 
@@ -89,7 +97,7 @@ async function fetchOwnerAttentionIds(token: string, signal: AbortSignal): Promi
   return new Set(documents.flatMap(({ id, ownerHealth }) => (ownerHealth?.hasEffectiveOwner === false ? [id] : [])));
 }
 
-export type BookableItemsBulkAction = "enable" | "disable" | "delete";
+export type BookableItemsBulkAction = "enable" | "disable" | "archive";
 
 type BookableItemsBulkMutation = {
   action: BookableItemsBulkAction;
@@ -113,7 +121,7 @@ export async function mutateBookableItems(
     value: selectedRowIds,
   });
   const search = new URLSearchParams({ where });
-  const isDelete = action === "delete";
+  const isDelete = action === "archive";
   const response = await fetch(`/api/v2/booking-configurations?${search}`, {
     method: isDelete ? "DELETE" : "PATCH",
     headers: {
@@ -126,111 +134,146 @@ export async function mutateBookableItems(
   if (!response.ok) throw new Error(`Bulk booking ${action} failed with status ${response.status}`);
 }
 
-async function deleteBookingConfiguration(id: number, token: string): Promise<void> {
+async function archiveBookingConfiguration(id: number, version: number, token: string): Promise<void> {
   const response = await fetch(`/api/v2/booking-configurations/${id}`, {
     method: "DELETE",
     headers: {
       Authorization: `Bearer ${token}`,
+      "If-Match": `"${version}"`,
       "X-Requested-With": "XMLHttpRequest",
     },
   });
-  if (!response.ok) throw new Error(`Booking configuration delete failed with status ${response.status}`);
+  if (!response.ok) throw await parseApiV2Problem(response);
+}
+
+async function restoreBookingConfiguration(id: number, version: number, token: string): Promise<void> {
+  const response = await fetch(`/api/v2/booking-configurations/${id}`, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+      "If-Match": `"${version}"`,
+      "X-Requested-With": "XMLHttpRequest",
+    },
+    body: JSON.stringify({ state: "ACTIVE" }),
+  });
+  if (!response.ok) throw await parseApiV2Problem(response);
+}
+
+async function permanentlyDeleteBookingConfiguration(id: number, version: number, token: string): Promise<void> {
+  const response = await fetch(`/api/v2/booking-configurations/${id}?permanent=true`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "If-Match": `"${version}"`,
+      "X-Requested-With": "XMLHttpRequest",
+    },
+  });
+  if (!response.ok) throw await parseApiV2Problem(response);
+}
+
+type BookableItemsLifecycleErrorKey =
+  | "bookableItems.lifecycleErrors.restore"
+  | "bookableItems.lifecycleErrors.stale"
+  | "bookableItems.lifecycleErrors.stateChanged"
+  | "bookableItems.permanentDeleteDialog.error";
+
+function lifecycleErrorKey(error: unknown, fallback: BookableItemsLifecycleErrorKey): BookableItemsLifecycleErrorKey {
+  if (error instanceof ApiV2ProblemError && error.status === 412) {
+    return "bookableItems.lifecycleErrors.stale";
+  }
+  if (error instanceof ApiV2ProblemError && error.status === 409) {
+    return "bookableItems.lifecycleErrors.stateChanged";
+  }
+  return fallback;
+}
+
+function requiredVersion(configuration: BookingConfigurationRow): number {
+  if (configuration.configurationVersion === undefined) {
+    throw new Error("The booking configuration version is missing from the table projection");
+  }
+  return configuration.configurationVersion;
 }
 
 function BookableItemActionTriggers({
   configuration,
   activate,
+  directSysadmin,
+  onRestore,
 }: {
   configuration: BookingConfigurationRow;
   activate: (actionId: string) => void;
+  directSysadmin: boolean;
+  onRestore: (configuration: BookingConfigurationRow) => Promise<void>;
 }) {
   const { t } = useTranslation(["booking", "common"]);
   const itemName = configuration.target?.value.name ?? t("common:values.unknownItem");
 
   return (
-    <div className="flex justify-start gap-1">
+    <div className="flex items-center justify-start gap-1">
       {configuration.target === null ? null : (
-        <>
-          <Link
-            to="/booking/bookable-items/$globalId"
-            params={{ globalId: configuration.target.globalId }}
-            aria-label={t("bookableItems.actions.viewDetails", { item: itemName })}
-            className={cn(buttonVariants({ variant: "ghost", size: "icon-xs" }), "rounded-sm")}
-            data-slot="button"
-          >
-            <EyeIcon aria-hidden="true" />
-          </Link>
-          {configuration.capabilities?.canEditConfiguration === true ? (
-            <Link
-              to="/booking/bookable-items/$globalId"
-              params={{ globalId: configuration.target.globalId }}
-              search={{ tab: "details", edit: true }}
-              aria-label={t("bookableItems.actions.edit", { item: itemName })}
-              className={cn(buttonVariants({ variant: "ghost", size: "icon-xs" }), "rounded-sm")}
-              data-slot="button"
-            >
-              <PencilIcon aria-hidden="true" />
-            </Link>
-          ) : null}
-          {configuration.capabilities?.canViewAccess === true ? (
-            <Link
-              to="/booking/bookable-items/$globalId"
-              params={{ globalId: configuration.target.globalId }}
-              search={{ tab: "access" }}
-              aria-label={
-                configuration.ownerHealth?.hasEffectiveOwner === false
-                  ? t("bookableItems.actions.repairAccess", { item: itemName })
-                  : t("bookableItems.actions.access", { item: itemName })
-              }
-              className={cn(buttonVariants({ variant: "ghost", size: "icon-xs" }), "rounded-sm")}
-              data-slot="button"
-            >
-              <KeyRoundIcon aria-hidden="true" />
-            </Link>
-          ) : null}
-        </>
+        <Link
+          to="/booking/bookable-items/$globalId/{-$tab}"
+          params={{ globalId: configuration.target.globalId, tab: undefined }}
+          aria-label={t("bookableItems.actions.viewDetails", { item: itemName })}
+          className={cn(buttonVariants({ variant: "ghost", size: "icon-sm" }), "rounded-sm")}
+          data-slot="button"
+        >
+          <EyeIcon aria-hidden="true" />
+        </Link>
       )}
-      {configuration.capabilities?.canArchiveConfiguration === true ? (
+      {configuration.state === "ACTIVE" && !directSysadmin ? (
         <Button
           type="button"
           variant="ghost"
-          size="icon-xs"
+          size="icon-sm"
           className="rounded-sm text-destructive"
-          aria-label={t("bookableItems.actions.delete", { item: itemName })}
-          onClick={() => activate("delete")}
+          aria-label={t("bookableItems.actions.archive")}
+          onClick={() => activate("archive")}
         >
-          <Trash2Icon aria-hidden="true" />
+          <ArchiveIcon aria-hidden="true" />
         </Button>
-      ) : null}
+      ) : (
+        <BookingConfigurationActionsMenu
+          configuration={configuration}
+          itemName={itemName}
+          directSysadmin={directSysadmin}
+          compact
+          onAction={(action: BookingConfigurationLifecycleAction) => {
+            if (action === "restore") void onRestore(configuration);
+            else activate(action);
+          }}
+        />
+      )}
     </div>
   );
 }
 
-function DeleteBookableItemDialog({
+function ArchiveBookableItemDialog({
   configuration,
   close,
-  onDelete,
-  onDeleted,
+  onArchive,
+  onArchived,
 }: {
   configuration: BookingConfigurationRow;
   close: () => void;
-  onDelete: (id: number) => Promise<void>;
-  onDeleted: () => void;
+  onArchive: (id: number, version: number) => Promise<void>;
+  onArchived: () => void;
 }) {
   const { t } = useTranslation(["booking", "common"]);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [deleteFailed, setDeleteFailed] = useState(false);
+  const [deleteError, setDeleteError] = useState<unknown>(null);
   const itemName = configuration.target?.value.name ?? t("common:values.unknownItem");
 
   const handleDelete = async () => {
     setIsDeleting(true);
-    setDeleteFailed(false);
+    setDeleteError(null);
     try {
-      await onDelete(configuration.id);
+      await onArchive(configuration.id, requiredVersion(configuration));
       close();
-      onDeleted();
-    } catch {
-      setDeleteFailed(true);
+      onArchived();
+    } catch (error) {
+      setDeleteError(error);
     } finally {
       setIsDeleting(false);
     }
@@ -240,14 +283,14 @@ function DeleteBookableItemDialog({
     <AlertDialog open onOpenChange={(open) => !open && close()}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>{t("bookableItems.deleteDialog.title")}</AlertDialogTitle>
+          <AlertDialogTitle>{t("bookableItems.archiveDialog.title")}</AlertDialogTitle>
           <AlertDialogDescription>
-            {t("bookableItems.deleteDialog.description", { item: itemName })}
+            {t("bookableItems.archiveDialog.description", { item: itemName })}
           </AlertDialogDescription>
         </AlertDialogHeader>
-        {deleteFailed ? (
+        {deleteError ? (
           <p role="alert" className="text-sm text-destructive">
-            {t("bookableItems.deleteDialog.error", { item: itemName })}
+            {t("bookableItems.archiveDialog.error", { item: itemName })}
           </p>
         ) : null}
         <AlertDialogFooter>
@@ -258,7 +301,77 @@ function DeleteBookableItemDialog({
             aria-busy={isDeleting}
             onClick={() => void handleDelete()}
           >
-            {t("common:actions.delete")}
+            {t("bookableItems.actions.archive")}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
+function PermanentDeleteBookableItemDialog({
+  configuration,
+  close,
+  onDelete,
+  onDeleted,
+}: {
+  configuration: BookingConfigurationRow;
+  close: () => void;
+  onDelete: (id: number, version: number) => Promise<void>;
+  onDeleted: () => void;
+}) {
+  const { t } = useTranslation(["booking", "common"]);
+  const [confirmation, setConfirmation] = useState("");
+  const confirmationId = useId();
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<unknown>(null);
+  const itemName = configuration.target?.value.name ?? t("common:values.unknownItem");
+
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    setDeleteError(null);
+    try {
+      await onDelete(configuration.id, requiredVersion(configuration));
+      close();
+      onDeleted();
+    } catch (error) {
+      setDeleteError(error);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  return (
+    <AlertDialog open onOpenChange={(open) => !open && !isDeleting && close()}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{t("bookableItems.permanentDeleteDialog.title")}</AlertDialogTitle>
+          <AlertDialogDescription>
+            {t("bookableItems.permanentDeleteDialog.description", { item: itemName })}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <label htmlFor={confirmationId} className="space-y-2 text-sm">
+          <span>{t("bookableItems.permanentDeleteDialog.confirmationLabel")}</span>
+          <Input
+            id={confirmationId}
+            value={confirmation}
+            onChange={(event) => setConfirmation(event.currentTarget.value)}
+          />
+        </label>
+        {deleteError ? (
+          <p role="alert" className="text-sm text-destructive">
+            {t(lifecycleErrorKey(deleteError, "bookableItems.permanentDeleteDialog.error"))}
+          </p>
+        ) : null}
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={isDeleting}>{t("common:actions.cancel")}</AlertDialogCancel>
+          <AlertDialogAction
+            variant="destructive"
+            disabled={isDeleting || confirmation !== itemName}
+            aria-busy={isDeleting}
+            onClick={() => void handleDelete()}
+          >
+            {t("bookableItems.actions.deletePermanently")}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -280,20 +393,20 @@ function BookableItemsBulkActions({
   onAction: (action: BookableItemsBulkAction, selectedRowIds: ReadonlySet<string>) => Promise<void>;
 }) {
   const { t } = useTranslation(["booking", "common"]);
-  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [archiveOpen, setArchiveOpen] = useState(false);
   const error =
     failedAction === "enable"
       ? t("bookableItems.bulk.errors.enable")
       : failedAction === "disable"
         ? t("bookableItems.bulk.errors.disable")
-        : failedAction === "delete"
-          ? t("bookableItems.bulk.errors.delete")
+        : failedAction === "archive"
+          ? t("bookableItems.bulk.errors.archive")
           : null;
 
   const runAction = async (action: BookableItemsBulkAction) => {
     try {
       await onAction(action, selection.selectedRowIds);
-      if (action === "delete") setDeleteOpen(false);
+      if (action === "archive") setArchiveOpen(false);
     } catch {
       // The mutation renders the action-specific error and keeps the selected IDs.
     }
@@ -326,27 +439,25 @@ function BookableItemsBulkActions({
         variant="destructive"
         size="sm"
         disabled={disabled}
-        aria-busy={activeAction === "delete"}
-        onClick={() => setDeleteOpen(true)}
+        aria-busy={activeAction === "archive"}
+        onClick={() => setArchiveOpen(true)}
       >
-        {t("bookableItems.bulk.actions.delete")}
+        {t("bookableItems.bulk.actions.archive")}
       </Button>
-      {error && (!deleteOpen || failedAction !== "delete") ? (
+      {error && (!archiveOpen || failedAction !== "archive") ? (
         <p role="alert" className="basis-full text-sm text-destructive">
           {error}
         </p>
       ) : null}
-      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+      <AlertDialog open={archiveOpen} onOpenChange={setArchiveOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {t("bookableItems.bulk.deleteDialog.title", {
-                count: selection.selectedRowIds.size,
-              })}
+              {t("bookableItems.bulk.archiveDialog.title", { count: selection.selectedRowIds.size })}
             </AlertDialogTitle>
-            <AlertDialogDescription>{t("bookableItems.bulk.deleteDialog.description")}</AlertDialogDescription>
+            <AlertDialogDescription>{t("bookableItems.bulk.archiveDialog.description")}</AlertDialogDescription>
           </AlertDialogHeader>
-          {error && failedAction === "delete" ? (
+          {error && failedAction === "archive" ? (
             <p role="alert" className="text-sm text-destructive">
               {error}
             </p>
@@ -356,10 +467,10 @@ function BookableItemsBulkActions({
             <AlertDialogAction
               variant="destructive"
               disabled={disabled}
-              aria-busy={activeAction === "delete"}
-              onClick={() => void runAction("delete")}
+              aria-busy={activeAction === "archive"}
+              onClick={() => void runAction("archive")}
             >
-              {t("common:actions.delete")}
+              {t("bookableItems.actions.archive")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -371,6 +482,7 @@ function BookableItemsBulkActions({
 export default function BookableItemsPage() {
   const { t } = useTranslation(["booking", "common"]);
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
+  const { data: currentUser } = useCurrentUserQuery();
   const queryClient = useQueryClient();
   const [selectedRowIds, setSelectedRowIds] = useState<ReadonlySet<string>>(new Set());
   const [failedBulkAction, setFailedBulkAction] = useState<BookableItemsBulkAction | null>(null);
@@ -404,11 +516,28 @@ export default function BookableItemsPage() {
     request,
     query: { keepPreviousData: true },
   });
-  const onDelete = useCallback((id: number) => deleteBookingConfiguration(id, token), [token]);
-  const onDeleted = useCallback(
+  const onArchive = useCallback(
+    (id: number, version: number) => archiveBookingConfiguration(id, version, token),
+    [token],
+  );
+  const onPermanentDelete = useCallback(
+    (id: number, version: number) => permanentlyDeleteBookingConfiguration(id, version, token),
+    [token],
+  );
+  const onChanged = useCallback(
     () => void queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] }),
     [queryClient],
   );
+  const restoreMutation = useMutation({
+    mutationFn: (configuration: BookingConfigurationRow) =>
+      restoreBookingConfiguration(configuration.id, requiredVersion(configuration), token),
+    onSuccess: onChanged,
+  });
+  const onRestore = useCallback(
+    (configuration: BookingConfigurationRow) => restoreMutation.mutateAsync(configuration),
+    [restoreMutation],
+  );
+  const directSysadmin = currentUser.hasSysAdminRole && !currentUser.session.operatedAs;
   const bulkMutation = useMutation({
     mutationFn: ({ action, selectedRowIds: mutationRowIds }: BookableItemsBulkMutation) =>
       mutateBookableItems(action, mutationRowIds, token),
@@ -434,15 +563,29 @@ export default function BookableItemsPage() {
     () => ({
       id: "actions",
       label: t("bookableItems.fields.actions"),
-      width: 96,
+      width: 88,
       minWidth: 80,
-      renderCell: ({ row, activate }) => <BookableItemActionTriggers configuration={row} activate={activate} />,
+      renderCell: ({ row, activate }) => (
+        <BookableItemActionTriggers
+          configuration={row}
+          activate={activate}
+          directSysadmin={directSysadmin}
+          onRestore={onRestore}
+        />
+      ),
       renderInteraction: ({ actionId, row, close }) =>
-        actionId === "delete" ? (
-          <DeleteBookableItemDialog configuration={row} close={close} onDelete={onDelete} onDeleted={onDeleted} />
+        actionId === "archive" ? (
+          <ArchiveBookableItemDialog configuration={row} close={close} onArchive={onArchive} onArchived={onChanged} />
+        ) : actionId === "permanent-delete" ? (
+          <PermanentDeleteBookableItemDialog
+            configuration={row}
+            close={close}
+            onDelete={onPermanentDelete}
+            onDeleted={onChanged}
+          />
         ) : null,
     }),
-    [onDelete, onDeleted, t],
+    [directSysadmin, onArchive, onChanged, onPermanentDelete, onRestore, t],
   );
   const ownerAttentionButtons: TableListFilterButtons = {
     legend: t("bookableItems.ownerHealth.filters"),
@@ -477,6 +620,11 @@ export default function BookableItemsPage() {
             {t("common:actions.retry")}
           </Button>
         </div>
+      ) : null}
+      {restoreMutation.isError ? (
+        <p role="alert" className="mb-3 text-sm text-destructive">
+          {t(lifecycleErrorKey(restoreMutation.error, "bookableItems.lifecycleErrors.restore"))}
+        </p>
       ) : null}
       <TableList
         {...table.tableProps}

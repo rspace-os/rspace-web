@@ -321,14 +321,19 @@ class ApiV2ResourceAccessTest {
             AccessPolicy.authenticated());
     Widget saved = new Widget(7L, "hunter2");
     when(operations.create(any(), any())).thenReturn(saved);
-    when(operations.delete(any(), any())).thenReturn(Optional.of(saved));
+    when(operations.delete(any(), any(ResourceDeleteOptions.class), any()))
+        .thenReturn(Optional.of(ResourceDeleteResult.retained(saved)));
     ApiV2ResourceRegistration<Widget, Long> registration = register(widgets);
     User actor = user(true);
 
     Map<String, Object> created =
         registration.create(
             new ObjectMapper().createObjectNode().put("secret", "hunter2"), caller(actor));
-    Map<String, Object> deleted = registration.delete("7", caller(actor));
+    Map<String, Object> deleted =
+        registration
+            .delete("7", new ResourceDeleteOptions(null, false), caller(actor))
+            .resource()
+            .orElseThrow();
 
     // Even a sysadmin must not see it: never() ignores the caller entirely.
     assertFalse(created.containsKey("secret"), "create echoed the secret back: " + created);

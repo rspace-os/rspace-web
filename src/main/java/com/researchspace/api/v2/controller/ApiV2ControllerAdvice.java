@@ -6,6 +6,7 @@ import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.api.v2.resource.ApiV2ResourceException;
 import com.researchspace.booking.service.BookingCalendarManagerImpl.BookingCalendarNotFoundException;
 import com.researchspace.booking.service.BookingCalendarManagerImpl.UserSubscriptionConflictException;
+import com.researchspace.booking.service.BookingConfigurationLifecycleException;
 import com.researchspace.booking.service.BookingPolicyException;
 import com.researchspace.booking.service.InvalidBookingDefaultSharingException;
 import com.researchspace.booking.service.InvalidBookingDisplaySettingsException;
@@ -180,6 +181,11 @@ public class ApiV2ControllerAdvice {
   @ExceptionHandler(BookingPolicyException.class)
   public ResponseEntity<ApiV2Problem> handleBookingPolicy(BookingPolicyException ex) {
     return problem(HttpStatus.BAD_REQUEST, ex.reason().errorCode());
+  }
+
+  @ExceptionHandler(BookingConfigurationLifecycleException.class)
+  public ResponseEntity<ApiV2Problem> handleBookingConfigurationLifecycle() {
+    return problem(HttpStatus.CONFLICT, "errors.api.v2.bookingConfiguration.lifecycleConflict");
   }
 
   @ExceptionHandler(StaleBookingSettingsException.class)

@@ -175,7 +175,7 @@ describe("AddBookingPage", () => {
     const { queryClient, router } = renderPage();
     const invalidate = vi.spyOn(queryClient, "invalidateQueries");
 
-    expect(await screen.findByText("booking:bookings.form.timezone")).toBeVisible();
+    expect(await screen.findByText("booking:bookings.form.openingHours")).toBeVisible();
     expect(screen.getAllByRole("combobox")).toHaveLength(1);
     await fillWindow(user);
     await user.click(screen.getByRole("button", { name: "booking:bookings.form.submit" }));
@@ -237,7 +237,7 @@ describe("AddBookingPage", () => {
     );
     renderPage(true);
 
-    expect(await screen.findByText("booking:bookings.form.timezone")).toBeVisible();
+    expect(await screen.findByText("booking:bookings.form.openingHours")).toBeVisible();
     expect(screen.queryByRole("group", { name: "booking:bookings.form.type" })).not.toBeInTheDocument();
     expect(screen.queryByRole("radio", { name: "booking:bookings.form.typeBlockout" })).not.toBeInTheDocument();
 
@@ -261,7 +261,7 @@ describe("AddBookingPage", () => {
     );
     renderPage();
 
-    expect(await screen.findByText("booking:bookings.form.timezone")).toBeVisible();
+    expect(await screen.findByText("booking:bookings.form.openingHours")).toBeVisible();
     expect(screen.queryByRole("group", { name: "booking:bookings.form.type" })).not.toBeInTheDocument();
     expect(screen.queryByRole("radio", { name: "booking:bookings.form.typeBlockout" })).not.toBeInTheDocument();
   });

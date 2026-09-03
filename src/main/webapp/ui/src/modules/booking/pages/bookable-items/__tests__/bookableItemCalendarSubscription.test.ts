@@ -4,7 +4,6 @@ import { server } from "@/__tests__/mswServer";
 import { ApiV2ProblemError } from "@/modules/booking/domain/booking";
 import {
   calendarApplicationUrls,
-  calendarSubscriptionQueryKey,
   createOrReplaceCalendarSubscription,
   createOrReplaceUserCalendarSubscription,
   fetchCalendarSubscriptionStatus,
@@ -12,17 +11,12 @@ import {
   revokeCalendarSubscription,
   revokeUserCalendarSubscription,
   toWebcalUrl,
-  userCalendarSubscriptionQueryKey,
 } from "../bookableItemCalendarSubscription";
 
 const path = "/api/v2/booking-configurations/7/calendar-subscription";
 const timestamp = "2026-08-27T12:00:00.000Z";
 
 describe("bookable item calendar subscription client", () => {
-  it("uses a stable configuration-specific status key", () => {
-    expect(calendarSubscriptionQueryKey(7)).toEqual(["api-v2", "booking-configurations", 7, "calendar-subscription"]);
-  });
-
   it("gets and validates inactive and active status with the current URL", async () => {
     let request: Request | undefined;
     server.use(
@@ -142,6 +136,7 @@ describe("user booking calendar subscription client", () => {
       }),
       http.post(userPath, ({ request }) => {
         methods.push(request.method);
+        expect(request.headers.get("Authorization")).toBe("Bearer secret");
         expect(request.headers.get("If-Match")).toBe('"inactive"');
         return HttpResponse.json(
           {
@@ -158,7 +153,6 @@ describe("user booking calendar subscription client", () => {
       }),
     );
 
-    expect(userCalendarSubscriptionQueryKey).toEqual(["api-v2", "users", "me", "booking-calendar-subscription"]);
     await expect(fetchUserCalendarSubscriptionStatus("secret")).resolves.toMatchObject({
       active: false,
       etag: '"inactive"',

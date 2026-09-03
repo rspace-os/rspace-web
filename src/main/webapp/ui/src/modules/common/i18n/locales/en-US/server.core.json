@@ -56,6 +56,7 @@
         "subscriptionConflict": "The calendar subscription changed. Refresh it and try again."
       },
       "bookingConfiguration": {
+          "concurrentModification": "The booking configuration changed. Reload it and try again.",
           "create": "The booking configuration is invalid.",
           "defaultSharing": {
             "invalid": "Choose at least one available user or group when sharing with selected people, and do not include selected people for other sharing options."
@@ -66,6 +67,8 @@
           "granularity": {
             "invalid": "Slot granularity must be 1, 5, 10, or 15 minutes."
           },
+          "ifMatchRequired": "The current booking configuration version is required.",
+          "lifecycleConflict": "Restore the archived booking configuration before changing it.",
           "maximumDuration": {
             "invalid": "Maximum booking duration must be 0 or a multiple of the slot granularity, up to 527,040 minutes."
           },
@@ -137,6 +140,11 @@
           "max": "Depth must not exceed {value}.",
           "min": "Depth must be 0 or greater.",
           "range": "Depth must be between 0 and {0}."
+        },
+        "delete": {
+          "permanent": {
+            "unsupported": "This resource does not support permanent deletion."
+          }
         },
         "forbidden": "You do not have permission to perform this action.",
         "invalidRequest": "The request contains an invalid value.",

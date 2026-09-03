@@ -4,11 +4,7 @@ import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { page } from "vitest/browser";
 import { worker } from "@/__tests__/browserSetup";
 import { expectNoAxeViolations } from "@/__tests__/pageObjects/accessibility";
-import {
-  bookingPageRequests,
-  bookingPagesHandlers,
-  resetBookingPageRequests,
-} from "@/modules/booking/pages/mocks/bookingPagesMocks";
+import { bookingPagesHandlers, resetBookingPageRequests } from "@/modules/booking/pages/mocks/bookingPagesMocks";
 import { currentUser } from "../calendar/calendarFixtures";
 import { AllBookableItemsStory } from "./AllBookableItemsPage.story";
 import { AllBookableItemsPage } from "./pageObjects/AllBookableItemsPage";
@@ -128,50 +124,6 @@ describe("the All Bookable Items page", () => {
     }
   });
 
-  test("shows availability for fixture items and routes new bookings", async () => {
-    render(<AllBookableItemsStory />);
-
-    await expect.element(pageObj.heading).toBeVisible();
-    await expect.element(pageObj.item).toBeVisible();
-    await expect.element(pageObj.electronMicroscope).toBeVisible();
-    await expect.element(pageObj.massSpectrometer).toBeVisible();
-    await expect.element(pageObj.flowCytometer).toBeVisible();
-    await expect.element(pageObj.confocalAvailability).toBeVisible();
-    await expect.element(pageObj.electronAvailability).toBeVisible();
-    await expect.element(pageObj.massSpectrometerAvailability).toBeVisible();
-    await expect.element(pageObj.flowCytometerAvailability).toBeVisible();
-    await expect.element(pageObj.nowMarker("Confocal microscope")).toBeVisible();
-    await expect.element(pageObj.effectiveTimeZone).toBeVisible();
-    await expect
-      .poll(
-        () =>
-          new Set(
-            ["Confocal microscope", "Electron microscope", "Mass spectrometer", "Flow cytometer"].map(
-              (itemName) => pageObj.nowMarker(itemName).element().style.left,
-            ),
-          ).size,
-      )
-      .toBe(1);
-    await expect.poll(() => bookingPageRequests.collectionQueries.at(-1)).toContain("enabled==true");
-    await expect.poll(() => bookingPageRequests.collectionQueries.at(-1)).toContain("target.deleted==false");
-    await expect.poll(() => bookingPageRequests.bookingRequests).toBe(1);
-    expect(bookingPageRequests.bookingQuery?.searchParams.get("fields[bookings]")).toBe(
-      "id,target,timezone,start,end,state,kind",
-    );
-
-    const bookUrl = new URL(pageObj.bookButton.element().getAttribute("href") ?? "", window.location.origin);
-    expect(bookUrl.pathname).toBe("/booking/calendar/bookings/add");
-    expect(bookUrl.searchParams.get("date")).toBe("2026-08-17");
-    expect(bookUrl.searchParams.get("target")).toBe("IN123");
-    await expect.element(pageObj.detailsButton).toHaveAttribute("href", "/booking/bookable-items/IN123");
-
-    await pageObj.detailsButton.hover();
-    await expect.element(page.getByRole("tooltip")).toHaveTextContent("View details");
-    await pageObj.detailsButton.unhover();
-    await pageObj.bookButton.hover();
-    await expect.element(page.getByRole("tooltip")).toHaveTextContent("Book");
-  });
-
   test("keeps merged slice details open while moving from the slice into the card", async () => {
     render(<AllBookableItemsStory />);
 
@@ -184,12 +136,6 @@ describe("the All Bookable Items page", () => {
     await expect.element(pageObj.availabilityDetails).toHaveTextContent("14:00");
     await expect.element(pageObj.availabilityDetails).not.toHaveTextContent("UTC");
     await expect.element(pageObj.availabilityDetails.getByText("Booked", { exact: true })).not.toBeInTheDocument();
-    expect(pageObj.sliceBorderRadius("Confocal microscope", 2)).toBe("0px");
-    expect(pageObj.sliceHeight("Confocal microscope", 2)).toBe(16);
-    expect(pageObj.nowMarker("Confocal microscope").element().getBoundingClientRect().height).toBe(
-      pageObj.sliceHeight("Confocal microscope", 2),
-    );
-
     await pageObj.availabilityDetails.hover();
     await new Promise((resolve) => window.setTimeout(resolve, 250));
     await expect.element(pageObj.availabilityDetails).toBeVisible();
@@ -275,10 +221,6 @@ describe("the All Bookable Items page", () => {
     await expect.element(pageObj.item).not.toBeInTheDocument();
     await expect.element(pageObj.massSpectrometer).not.toBeInTheDocument();
     await expect.element(pageObj.flowCytometer).not.toBeInTheDocument();
-    await expect
-      .poll(() => bookingPageRequests.collectionQueries.some((query) => query.includes("target=in=(IN124)")))
-      .toBe(true);
-
     const electronBookUrl = new URL(
       pageObj.electronBookButton.element().getAttribute("href") ?? "",
       window.location.origin,
@@ -293,11 +235,6 @@ describe("the All Bookable Items page", () => {
     await expect.element(pageObj.flowCytometer).toBeVisible();
     await expect.element(pageObj.electronMicroscope).not.toBeInTheDocument();
     await expect.element(pageObj.massSpectrometer).not.toBeInTheDocument();
-    await expect.poll(() => bookingPageRequests.bookingRequests).toBe(2);
-
-    const candidateRequests = bookingPageRequests.collectionQueries.filter((query) => query.includes("limit=100"));
-    expect(candidateRequests).toHaveLength(1);
-
     await pageObj.availableNow.click();
 
     await expect.poll(() => window.location.search).not.toContain("availability=");

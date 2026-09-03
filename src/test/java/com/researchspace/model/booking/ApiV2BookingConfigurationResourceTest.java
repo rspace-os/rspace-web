@@ -17,7 +17,6 @@ import com.researchspace.model.collection.AccessContext;
 import com.researchspace.model.collection.AccessContext.Operation;
 import com.researchspace.model.collection.ApiV2UserResource;
 import com.researchspace.model.collection.CollectionDescription.WriteOperation;
-import com.researchspace.model.collection.CollectionQueryException;
 import com.researchspace.model.collection.DocumentValidationException;
 import com.researchspace.model.collection.FieldSelection;
 import com.researchspace.model.collection.FilterSelector;
@@ -55,6 +54,7 @@ class ApiV2BookingConfigurationResourceTest {
         List.of(
             "id",
             "enabled",
+            "state",
             "timezone",
             "slotGranularityMinutes",
             "openingStart",
@@ -76,6 +76,7 @@ class ApiV2BookingConfigurationResourceTest {
     assertEquals(
         List.of(
             "enabled",
+            "state",
             "slotGranularityMinutes",
             "openingStart",
             "openingEnd",
@@ -126,16 +127,14 @@ class ApiV2BookingConfigurationResourceTest {
   }
 
   @Test
-  void keepsTheDeletedFilterAvailableOnlyToServerConstraints() {
+  void exposesLifecycleStateForFilteringAndSorting() {
     assertInstanceOf(
         FilterSelector.Property.class,
-        ApiV2BookingConfigurationResource.DESCRIPTION.requireFilterSelector("deleted"));
-    assertThrows(
-        CollectionQueryException.class,
-        () -> ApiV2BookingConfigurationResource.DESCRIPTION.requirePublicFilterSelector("deleted"));
-    assertFalse(
+        ApiV2BookingConfigurationResource.DESCRIPTION.requirePublicFilterSelector("state"));
+    assertTrue(
         ApiV2BookingConfigurationResource.DESCRIPTION.schema().filters().stream()
-            .anyMatch(filter -> filter.selector().equals("deleted")));
+            .anyMatch(filter -> filter.selector().equals("state")));
+    assertTrue(ApiV2BookingConfigurationResource.DESCRIPTION.requireField("state").sortable());
   }
 
   @Test
@@ -225,6 +224,7 @@ class ApiV2BookingConfigurationResourceTest {
         List.of(
             "id",
             "enabled",
+            "state",
             "timezone",
             "slotGranularityMinutes",
             "openingStart",
@@ -243,6 +243,7 @@ class ApiV2BookingConfigurationResourceTest {
         List.copyOf(rendered.keySet()));
     assertNull(rendered.get("id"));
     assertEquals(true, rendered.get("enabled"));
+    assertEquals("ACTIVE", rendered.get("state"));
     assertEquals("Europe/Berlin", rendered.get("timezone"));
     assertEquals(15L, rendered.get("slotGranularityMinutes"));
     assertEquals("08:00", rendered.get("openingStart"));

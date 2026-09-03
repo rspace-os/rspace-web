@@ -65,7 +65,8 @@ export function bookingProblemKey(
   | "bookings.errors.openingHours"
   | "bookings.errors.targetUnavailable"
   | "bookings.errors.concurrentModification"
-  | "bookings.errors.forbidden" {
+  | "bookings.errors.forbidden"
+  | "bookings.errors.noLongerEditable" {
   if (!(error instanceof ApiV2ProblemError)) return "bookings.errors.generic";
   if (error.code === "errors.api.v2.booking.window") return "bookings.errors.endAfterStart";
   if (error.code === "errors.api.v2.booking.duration") return "bookings.errors.duration";
@@ -74,8 +75,11 @@ export function bookingProblemKey(
   if (error.code === "errors.api.v2.booking.granularity") return "bookings.errors.granularity";
   if (error.code === "errors.api.v2.booking.openingHours") return "bookings.errors.openingHours";
   if (error.code === "errors.api.v2.booking.target.unavailable") return "bookings.errors.targetUnavailable";
-  if (error.code === "errors.api.v2.booking.concurrentModification") return "bookings.errors.concurrentModification";
+  if (error.status === 412 || error.code === "errors.api.v2.booking.concurrentModification") {
+    return "bookings.errors.concurrentModification";
+  }
   if (error.code === "errors.api.v2.forbidden") return "bookings.errors.forbidden";
+  if (error.code === "errors.api.v2.booking.state.transition") return "bookings.errors.noLongerEditable";
   return "bookings.errors.generic";
 }
 

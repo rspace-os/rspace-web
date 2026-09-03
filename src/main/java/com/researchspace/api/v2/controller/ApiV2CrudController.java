@@ -10,6 +10,8 @@ import com.researchspace.api.v2.model.ApiV2ListResult;
 import com.researchspace.api.v2.query.ApiV2ResourceRequestParser;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
 import com.researchspace.api.v2.resource.ApiV2ResourceRegistration;
+import com.researchspace.api.v2.resource.ResourceDeleteOptions;
+import com.researchspace.api.v2.resource.ResourceDeleteResult;
 import com.researchspace.api.v2.resource.ResourceOperation;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.CollectionDescription.Operator;
@@ -300,12 +302,36 @@ public class ApiV2CrudController {
   }
 
   @DeleteMapping("/{resource}/{id}")
-  public Map<String, Object> delete(
+  public ResponseEntity<Map<String, Object>> delete(
       @PathVariable String resource,
       @PathVariable String id,
+      @RequestHeader(name = org.springframework.http.HttpHeaders.IF_MATCH, required = false)
+          String ifMatch,
+      @RequestParam(defaultValue = "false") boolean permanent,
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE, required = false)
           ApiV2Caller caller) {
-    return requireResource(resource, ResourceOperation.DELETE).delete(id, caller);
+    ApiV2ResourceRegistration<?, ?> registration =
+        requireResource(resource, ResourceOperation.DELETE);
+    Long expectedVersion =
+        registration.deleteRequiresIfMatch()
+            ? ApiV2ConditionalRequest.parseVersion(
+                ifMatch,
+                registration
+                    .ifMatchRequiredCode()
+                    .orElseThrow(
+                        () ->
+                            new IllegalStateException(
+                                "Versioned DELETE requires an If-Match error code")))
+            : null;
+    ResourceDeleteResult<Map<String, Object>> result =
+        registration.delete(id, new ResourceDeleteOptions(expectedVersion, permanent), caller);
+    if (result.isPermanentlyDeleted()) {
+      return ResponseEntity.noContent().build();
+    }
+    Map<String, Object> document = result.resource().orElseThrow(NotFoundException::new);
+    ResponseEntity.BodyBuilder response = ResponseEntity.ok();
+    registration.documentEtag(document).ifPresent(response::eTag);
+    return response.body(document);
   }
 
   @DeleteMapping("/{resource}")

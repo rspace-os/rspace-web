@@ -30,7 +30,6 @@ function configuration(id: number, name: string) {
     effectiveRole: "BOOKER",
     capabilities: {
       canEditConfiguration: false,
-      canArchiveConfiguration: false,
       canViewAudit: false,
       canViewAccess: false,
       canManageAssignments: false,

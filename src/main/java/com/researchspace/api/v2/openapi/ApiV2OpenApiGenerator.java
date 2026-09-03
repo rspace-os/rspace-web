@@ -126,6 +126,7 @@ public final class ApiV2OpenApiGenerator {
         .routableResources()
         .forEach(resource -> addPaths(paths, resource, componentNames, resourceSchemas));
     addCalendarSubscriptionPath(paths);
+    addCalendarFilePath(paths);
     addBookingDirectoryPaths(paths);
 
     Map<String, Object> components = new LinkedHashMap<>();
@@ -303,6 +304,60 @@ public final class ApiV2OpenApiGenerator {
             calendarSubscriptionOperation("post"),
             "delete",
             calendarSubscriptionOperation("delete")));
+  }
+
+  private static void addCalendarFilePath(Map<String, Object> paths) {
+    paths.put(
+        "/api/v2/bookings/{bookingId}/calendar-file", ordered("get", calendarFileOperation()));
+  }
+
+  private static Map<String, Object> calendarFileOperation() {
+    Map<String, Object> operation = new LinkedHashMap<>();
+    operation.put("operationId", "downloadBookingCalendarFile");
+    operation.put("summary", "Download a booking as a calendar file");
+    operation.put(
+        "description",
+        "Returns one confirmed booking as an iCalendar attachment, shaped by the caller's"
+            + " visibility of it. No subscription is created or changed.");
+    operation.put("tags", List.of("booking-calendar-subscriptions"));
+    operation.put(
+        "security", List.of(Map.of("apiKey", List.of()), Map.of("bearerAuth", List.of())));
+    operation.put(
+        "x-rspace-access",
+        ordered(
+            "description",
+            "Authenticated active callers with Booking enabled and read access to the bookable"
+                + " item; the booking must be confirmed.",
+            "denialReasonCodes",
+            List.of(AccessPolicy.AUTHENTICATION_REQUIRED, AccessPolicy.FORBIDDEN)));
+    operation.put(
+        "parameters",
+        List.of(
+            parameter(
+                "bookingId",
+                "path",
+                true,
+                ordered("type", "integer", "format", "int64"),
+                "Booking identifier.")));
+    Map<String, Object> responses = new LinkedHashMap<>();
+    responses.put(
+        "200",
+        ordered(
+            "description",
+            "The generated calendar file.",
+            "headers",
+            privateNoStoreHeaders(),
+            "content",
+            Map.of("text/calendar", ordered("schema", ordered("type", "string")))));
+    responses.put("401", responseRef("Unauthenticated"));
+    responses.put("403", responseRef("Forbidden"));
+    responses.put("404", responseRef("NotFound"));
+    responses.put("406", responseRef("NotAcceptable"));
+    responses.put("429", responseRef("TooManyRequests"));
+    responses.put("500", responseRef("UnexpectedError"));
+    operation.put("responses", responses);
+    operation.put("x-rspace-operation", "CALENDAR_DOWNLOAD");
+    return operation;
   }
 
   private static Map<String, Object> calendarSubscriptionOperation(String method) {
@@ -858,13 +913,11 @@ public final class ApiV2OpenApiGenerator {
     result.put("operationId", operationId(operation, component));
     result.put(
         "summary",
-        documentation.summary() == null
-            ? summary(operation, resource.resourceName())
-            : documentation.summary());
+        documentation.summary() == null ? summary(resource, operation) : documentation.summary());
     result.put(
         "description",
         documentation.description() == null
-            ? description(operation, resource.resourceName())
+            ? description(resource, operation)
             : documentation.description());
     result.put(
         "tags",
@@ -882,6 +935,27 @@ public final class ApiV2OpenApiGenerator {
             resourceSchemas,
             resource.registry(),
             runtimeFieldsExtension(resource));
+    if ((operation == ResourceOperation.UPDATE && resource.ifMatchRequiredCode().isPresent())
+        || (operation == ResourceOperation.DELETE && resource.deleteRequiresIfMatch())) {
+      parameters.add(
+          parameter(
+              "If-Match",
+              "header",
+              true,
+              ordered("type", "string", "pattern", "^\\\"[0-9]+\\\"$"),
+              "Strong entity tag containing the current resource version."));
+    }
+    if (operation == ResourceOperation.DELETE && resource.supportsPermanentDelete()) {
+      parameters.add(
+          parameter(
+              "permanent",
+              "query",
+              false,
+              ordered("type", "boolean", "default", false),
+              "When true, permanently removes the resource. This is restricted to"
+                  + " a direct sysadmin and returns 204. The default false performs the ordinary"
+                  + " retry-safe archive transition."));
+    }
     if (!parameters.isEmpty()) {
       result.put("parameters", parameters);
     }
@@ -1456,6 +1530,15 @@ public final class ApiV2OpenApiGenerator {
             rateLimitHeaders(),
             "content",
             Map.of(JSON, successMedia)));
+    if (operation == ResourceOperation.DELETE && resource.supportsPermanentDelete()) {
+      responses.put(
+          "204",
+          ordered(
+              "description",
+              "The resource and its dependent live data were permanently removed.",
+              "headers",
+              rateLimitHeaders()));
+    }
     responses.put("400", responseRef("BadRequest"));
     responses.put("401", responseRef("Unauthenticated"));
     responses.put("403", responseRef("Forbidden"));
@@ -2064,7 +2147,9 @@ public final class ApiV2OpenApiGenerator {
     return prefix + component;
   }
 
-  private static String summary(ResourceOperation operation, String resource) {
+  private static String summary(
+      ApiV2ResourceRegistration<?, ?> registration, ResourceOperation operation) {
+    String resource = registration.resourceName();
     return switch (operation) {
       case LIST -> "List " + resource;
       case COUNT -> "Count " + resource;
@@ -2073,12 +2158,15 @@ public final class ApiV2OpenApiGenerator {
       case BULK_CREATE -> "Create many " + resource;
       case UPDATE -> "Update one " + resource;
       case BULK_UPDATE -> "Update matching " + resource;
-      case DELETE -> "Delete one " + resource;
-      case BULK_DELETE -> "Delete matching " + resource;
+      case DELETE -> (registration.deleteIsSoft() ? "Archive one " : "Delete one ") + resource;
+      case BULK_DELETE ->
+          (registration.deleteIsSoft() ? "Archive matching " : "Delete matching ") + resource;
     };
   }
 
-  private static String description(ResourceOperation operation, String resource) {
+  private static String description(
+      ApiV2ResourceRegistration<?, ?> registration, ResourceOperation operation) {
+    String resource = registration.resourceName();
     return switch (operation) {
       case LIST ->
           "Returns a paginated view of "
@@ -2102,9 +2190,18 @@ public final class ApiV2OpenApiGenerator {
               + resource
               + " matching the required filter. The operation is handled as one service-layer"
               + " mutation; resource-specific limits are reported with status 422.";
-      case DELETE -> "Deletes one " + resource + " and returns the deleted document.";
+      case DELETE ->
+          registration.deleteIsSoft()
+              ? "Archives one "
+                  + resource
+                  + " and returns the archived document. Repeating ordinary DELETE is a no-op."
+                  + (registration.supportsPermanentDelete()
+                      ? " The explicit permanent=true option permanently removes the resource for"
+                          + " a direct sysadmin and returns no document."
+                      : "")
+              : "Deletes one " + resource + " and returns the deleted document.";
       case BULK_DELETE ->
-          "Deletes every "
+          (registration.deleteIsSoft() ? "Archives every " : "Deletes every ")
               + resource
               + " matching the required filter. The operation is handled as one service-layer"
               + " mutation; resource-specific limits are reported with status 422.";

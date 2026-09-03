@@ -8,12 +8,14 @@ import com.researchspace.model.User;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
+import com.researchspace.model.booking.BookingConfigurationState;
 import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.CollectionDescription.Operator;
 import com.researchspace.model.collection.FilterExpression;
 import com.researchspace.model.collection.RelationshipReadAccess;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
+import com.researchspace.model.resourceaccess.ResourceAccess;
 import com.researchspace.model.resourceaccess.ResourceAudience;
 import com.researchspace.search.customfield.RuntimeFieldTextSearch;
 import jakarta.persistence.LockModeType;
@@ -32,7 +34,8 @@ public class BookingConfigurationDaoHibernate
     extends GenericDaoHibernate<BookingConfiguration, Long> implements BookingConfigurationDao {
 
   private static final FilterExpression ACTIVE =
-      new FilterExpression.Comparison("deleted", Operator.EQUAL, List.of(false), false);
+      new FilterExpression.Comparison(
+          "state", Operator.EQUAL, List.of(BookingConfigurationState.ACTIVE), false);
   private final CriteriaBuilderFactory criteriaBuilderFactory;
   private final CollectionDescription<BookingConfiguration> description;
   private final CollectionQueryExecutor<BookingConfiguration> collectionQuery;
@@ -60,11 +63,7 @@ public class BookingConfigurationDaoHibernate
       ResourceRequest request, RelationshipReadAccess targetAccess) {
     try {
       return collectionQuery.page(
-          criteriaBuilderFactory,
-          getSession(),
-          narrowed(request.restrict(ACTIVE)),
-          null,
-          targetAccess);
+          criteriaBuilderFactory, getSession(), narrowed(request), null, targetAccess);
     } catch (IndexedTextNarrowing.NoMatch noMatch) {
       return new ResourcePage<>(List.of(), 0);
     }
@@ -74,11 +73,7 @@ public class BookingConfigurationDaoHibernate
   public long countResources(ResourceRequest request, RelationshipReadAccess targetAccess) {
     try {
       return collectionQuery.count(
-          criteriaBuilderFactory,
-          getSession(),
-          narrowed(request.restrict(ACTIVE)),
-          null,
-          targetAccess);
+          criteriaBuilderFactory, getSession(), narrowed(request), null, targetAccess);
     } catch (IndexedTextNarrowing.NoMatch noMatch) {
       return 0;
     }
@@ -89,11 +84,7 @@ public class BookingConfigurationDaoHibernate
       ResourceRequest request, int limit, RelationshipReadAccess targetAccess) {
     try {
       return collectionQuery.listById(
-          criteriaBuilderFactory,
-          getSession(),
-          narrowed(request.restrict(ACTIVE)),
-          limit,
-          targetAccess);
+          criteriaBuilderFactory, getSession(), narrowed(request), limit, targetAccess);
     } catch (IndexedTextNarrowing.NoMatch noMatch) {
       return List.of();
     }
@@ -107,8 +98,7 @@ public class BookingConfigurationDaoHibernate
   public Optional<BookingConfiguration> findByTarget(BookableTargetReference target) {
     return getSession()
         .createQuery(
-            "from BookingConfiguration where target.type = :type and target.id = :id"
-                + " and deleted = false",
+            "from BookingConfiguration where target.type = :type and target.id = :id",
             BookingConfiguration.class)
         .setParameter("type", target.type())
         .setParameter("id", target.id())
@@ -116,21 +106,21 @@ public class BookingConfigurationDaoHibernate
   }
 
   @Override
-  public Optional<BookingConfiguration> lockByTarget(BookableTargetReference target) {
+  public Optional<BookingConfiguration> lockActiveByTarget(BookableTargetReference target) {
     return getSession()
         .createQuery(
             "from BookingConfiguration where target.type = :type and target.id = :id"
-                + " and deleted = false",
+                + " and state = :state",
             BookingConfiguration.class)
         .setParameter("type", target.type())
         .setParameter("id", target.id())
+        .setParameter("state", BookingConfigurationState.ACTIVE)
         .setLockMode(LockModeType.PESSIMISTIC_WRITE)
         .uniqueResultOptional();
   }
 
   @Override
-  public Optional<BookingConfiguration> lockByTargetIncludingArchived(
-      BookableTargetReference target) {
+  public Optional<BookingConfiguration> lockByTarget(BookableTargetReference target) {
     return getSession()
         .createQuery(
             "from BookingConfiguration where target.type = :type and target.id = :id",
@@ -144,31 +134,20 @@ public class BookingConfigurationDaoHibernate
   @Override
   public Optional<BookingConfiguration> lockById(Long id) {
     return getSession()
-        .createQuery(
-            "from BookingConfiguration where id = :id and deleted = false",
-            BookingConfiguration.class)
+        .createQuery("from BookingConfiguration where id = :id", BookingConfiguration.class)
         .setParameter("id", id)
         .setLockMode(LockModeType.PESSIMISTIC_WRITE)
         .uniqueResultOptional();
   }
 
   @Override
-  public Optional<BookingConfiguration> findArchivedById(Long id) {
+  public Optional<BookingConfiguration> lockActiveById(Long id) {
     return getSession()
         .createQuery(
-            "from BookingConfiguration where id = :id and deleted = true",
+            "from BookingConfiguration where id = :id and state = :state",
             BookingConfiguration.class)
         .setParameter("id", id)
-        .uniqueResultOptional();
-  }
-
-  @Override
-  public Optional<BookingConfiguration> lockArchivedById(Long id) {
-    return getSession()
-        .createQuery(
-            "from BookingConfiguration where id = :id and deleted = true",
-            BookingConfiguration.class)
-        .setParameter("id", id)
+        .setParameter("state", BookingConfigurationState.ACTIVE)
         .setLockMode(LockModeType.PESSIMISTIC_WRITE)
         .uniqueResultOptional();
   }
@@ -178,11 +157,7 @@ public class BookingConfigurationDaoHibernate
       ResourceRequest request, int limit, RelationshipReadAccess relationshipAccess) {
     try {
       return collectionQuery.listByIdForUpdate(
-          criteriaBuilderFactory,
-          getSession(),
-          narrowed(request.restrict(ACTIVE)),
-          limit,
-          relationshipAccess);
+          criteriaBuilderFactory, getSession(), narrowed(request), limit, relationshipAccess);
     } catch (IndexedTextNarrowing.NoMatch noMatch) {
       return List.of();
     }
@@ -193,6 +168,15 @@ public class BookingConfigurationDaoHibernate
     BookingConfiguration saved = save(configuration);
     getSession().flush();
     return saved;
+  }
+
+  @Override
+  public void removeConfigurationAndAccess(BookingConfiguration configuration) {
+    ResourceAccess access = configuration.getResourceAccess();
+    getSession().remove(configuration);
+    getSession().flush();
+    getSession().remove(access);
+    getSession().flush();
   }
 
   @Override
@@ -210,13 +194,14 @@ public class BookingConfigurationDaoHibernate
             .createQuery(
                 "select distinct configuration.target.id from BookingConfiguration configuration"
                     + " join configuration.resourceAccess.assignments assignment"
-                    + " where configuration.deleted = false and configuration.enabled = true"
+                    + " where configuration.state = :state and configuration.enabled = true"
                     + " and configuration.target.type = :targetType"
                     + " and assignment.roleKey in :readableRoleKeys"
                     + " and (assignment.user.id = :userId or assignment.group.id in :groupIds"
                     + " or assignment.audienceKey = :audience)",
                 Long.class)
             .setParameter("targetType", BookableTargetType.INSTRUMENT)
+            .setParameter("state", BookingConfigurationState.ACTIVE)
             .setParameterList("readableRoleKeys", readableRoleKeys)
             .setParameter("userId", caller.getId())
             .setParameterList("groupIds", groupIds)

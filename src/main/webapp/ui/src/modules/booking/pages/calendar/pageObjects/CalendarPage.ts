@@ -1,4 +1,4 @@
-import { type Locator, page } from "vitest/browser";
+import { type Locator, page, userEvent } from "vitest/browser";
 
 export class CalendarPage {
   readonly bookableItemDetailsHeading: Locator = page.getByRole("heading", { name: "Electron microscope" });
@@ -8,12 +8,14 @@ export class CalendarPage {
   readonly dateControls: Locator = page.getByRole("group", { name: "Calendar date controls" });
   readonly displayControls: Locator = page.getByRole("group", { name: "Calendar display controls" });
   readonly search: Locator = page.getByRole("textbox", { name: "Search Calendar" });
+  readonly timeGridLayout: Locator = page.getByRole("button", { name: "Time grid" });
   readonly timeGrid: Locator = page.getByRole("region", { name: "Time grid" });
   readonly resources: Locator = page.getByRole("button", { name: "Resources" });
   readonly resourceSchedule: Locator = page.getByRole("region", { name: "Resource booking schedule" });
   readonly agenda: Locator = page.getByRole("button", { name: "Agenda" });
   readonly bookingAgenda: Locator = page.getByRole("region", { name: "Booking agenda" });
   readonly day: Locator = page.getByRole("button", { name: "Day", exact: true });
+  readonly week: Locator = page.getByRole("button", { name: "Week", exact: true });
   readonly month: Locator = page.getByRole("button", { name: "Month", exact: true });
   readonly mine: Locator = page.getByRole("button", { name: "My calendar" });
   readonly previous: Locator = page.getByRole("button", { name: /^Previous / });
@@ -34,7 +36,7 @@ export class CalendarPage {
   }
 
   get editBooking(): Locator {
-    return page.getByRole("link", { name: "Edit", exact: true });
+    return page.getByRole("button", { name: "Edit", exact: true });
   }
 
   get bookingDialog(): Locator {
@@ -52,34 +54,13 @@ export class CalendarPage {
     return this.bookingDialog;
   }
 
-  async dragResourceSelection(index: number, from: number, to: number, pointerId: number): Promise<void> {
-    const canvas = this.resourceCanvases[index].element() as HTMLElement;
-    const box = canvas.getBoundingClientRect();
-    canvas.dispatchEvent(
-      new PointerEvent("pointerdown", {
-        bubbles: true,
-        clientX: box.left + box.width * from,
-        pointerId,
-        buttons: 1,
-      }),
-    );
-    await new Promise((resolve) => window.setTimeout(resolve, 0));
-    canvas.dispatchEvent(
-      new PointerEvent("pointermove", {
-        bubbles: true,
-        clientX: box.left + box.width * to,
-        pointerId,
-        buttons: 1,
-      }),
-    );
-    await new Promise((resolve) => window.setTimeout(resolve, 0));
-    canvas.dispatchEvent(
-      new PointerEvent("pointerup", {
-        bubbles: true,
-        clientX: box.left + box.width * to,
-        pointerId,
-      }),
-    );
+  async dragResourceSelection(index: number): Promise<void> {
+    const canvas = this.resourceCanvases[index];
+    const positions = {
+      sourcePosition: { x: 300, y: 60 },
+      targetPosition: { x: 420, y: 60 },
+    };
+    await userEvent.dragAndDrop(canvas, canvas, positions);
   }
 
   async searchFor(value: string): Promise<void> {

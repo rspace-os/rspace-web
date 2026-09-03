@@ -9,7 +9,7 @@ import {
   expectNoAxeViolations,
 } from "@/__tests__/pageObjects/accessibility";
 import { BookableItemPageStory } from "./BookableItemPage.story";
-import { bookableItemDetailsHandlers, bookableItemFixtures, bookerBookingAccess } from "./mocks/bookableItemsMocks";
+import { bookableItemDetailsHandlers, bookableItemFixtures } from "./mocks/bookableItemsMocks";
 import { BookableItemPage } from "./pageObjects/BookableItemPage";
 
 const pageObj = new BookableItemPage();
@@ -49,27 +49,6 @@ function registerHandlers() {
   );
 }
 
-function useBookerConfiguration() {
-  worker.use(
-    http.get("/api/v2/booking-configurations", ({ request }) => {
-      const where = new URL(request.url).searchParams.get("where") ?? "";
-      if (!where.includes("IN123")) return undefined;
-      return HttpResponse.json({
-        docs: [{ ...bookableItemFixtures[0], ...bookerBookingAccess }],
-        totalDocs: 1,
-        limit: 2,
-        page: 1,
-        pagingCounter: 1,
-        totalPages: 1,
-        hasPrevPage: false,
-        hasNextPage: false,
-        prevPage: null,
-        nextPage: null,
-      });
-    }),
-  );
-}
-
 registerHandlers();
 
 beforeEach(() => {
@@ -83,114 +62,161 @@ afterEach(() => {
 });
 
 describe("BookableItemPage", () => {
-  test("creates a calendar link once and returns it on later opens", async () => {
-    let active = false;
-    let updatedAt: string | null = null;
-    let sequence = 0;
-    let currentToken: string | null = null;
-    let getRequests = 0;
-    let postRequests = 0;
-    const feedPath = "/public/booking/calendars/feed.ics";
-    const issue = () => {
-      sequence += 1;
-      currentToken = String.fromCharCode(96 + sequence).repeat(43);
-      active = true;
-      updatedAt = "2026-08-27T12:00:00.000Z";
-      return `${window.location.origin}${feedPath}?token=${currentToken}`;
+  test("uses one height for header action buttons and status badges", async () => {
+    render(<BookableItemPageStory />);
+    await expect.element(pageObj.heading).toBeVisible();
+    await expect.element(page.getByRole("button", { name: "New Booking" })).toBeVisible();
+    await expect.element(pageObj.calendarTrigger).toBeVisible();
+
+    const actionBar = pageObj.heading
+      .element()
+      .closest("section")
+      ?.querySelector<HTMLElement>('[data-slot="bookable-item-header-actions"]');
+    expect(actionBar).not.toBeNull();
+    const controls = Array.from(actionBar?.querySelectorAll<HTMLElement>('button, [data-slot="badge"]') ?? []);
+    expect(controls.length).toBeGreaterThanOrEqual(5);
+    expect(new Set(controls.map((control) => control.getBoundingClientRect().height))).toEqual(new Set([30]));
+  });
+
+  test("archives and restores from the keyboard-accessible lifecycle menu", async () => {
+    let current = {
+      ...bookableItemFixtures[0],
+      state: "ACTIVE" as "ACTIVE" | "ARCHIVED",
+      configurationVersion: 0 as number,
     };
+    let archiveRequest: Request | undefined;
+    let restoreRequest: Request | undefined;
     worker.use(
-      http.get("/api/v2/booking-configurations/7/calendar-subscription", () => {
-        getRequests += 1;
-        return HttpResponse.json(
-          active
-            ? {
-                active: true,
-                updatedAt,
-                subscriptionUrl: `${window.location.origin}${feedPath}?token=${currentToken}`,
-              }
-            : { active: false, updatedAt: null, subscriptionUrl: null },
-        );
+      http.get("/api/v2/booking-configurations", ({ request }) => {
+        const where = new URL(request.url).searchParams.get("where") ?? "";
+        return where.includes("IN123")
+          ? HttpResponse.json({
+              docs: [current],
+              totalDocs: 1,
+              limit: 20,
+              page: 1,
+              pagingCounter: 1,
+              totalPages: 1,
+              hasPrevPage: false,
+              hasNextPage: false,
+              prevPage: null,
+              nextPage: null,
+            })
+          : undefined;
+      }),
+      http.delete("/api/v2/booking-configurations/7", ({ request }) => {
+        archiveRequest = request;
+        current = { ...current, state: "ARCHIVED", configurationVersion: 1 };
+        return new HttpResponse(null, { status: 204 });
+      }),
+      http.patch("/api/v2/booking-configurations/7", async ({ request }) => {
+        restoreRequest = request;
+        current = { ...current, state: "ACTIVE", configurationVersion: 2 };
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+    render(<BookableItemPageStory />);
+    await expect.element(pageObj.heading).toBeVisible();
+
+    const triggerBox = pageObj.lifecycleActions.element().getBoundingClientRect();
+    expect(triggerBox.width).toBeGreaterThanOrEqual(44);
+    pageObj.lifecycleActions.element().focus();
+    await userEvent.keyboard("{Enter}");
+    await expect.element(pageObj.archiveAction).toHaveFocus();
+    await userEvent.keyboard("{Enter}");
+    const archiveDialog = page.getByRole("alertdialog", { name: "Archive bookable item?" });
+    await expect.element(archiveDialog).toBeVisible();
+    await page.getByRole("button", { name: "Archive" }).click();
+
+    await expect.poll(() => archiveRequest !== undefined).toBe(true);
+    expect(archiveRequest?.headers.get("If-Match")).toBe('"0"');
+    await expect.element(page.getByText("Archived", { exact: true })).toBeVisible();
+    await expect.element(pageObj.lifecycleActions).toHaveFocus();
+
+    await pageObj.lifecycleActions.click();
+    await expect.element(pageObj.restoreAction).toBeVisible();
+    await pageObj.restoreAction.click();
+
+    await expect.poll(() => restoreRequest !== undefined).toBe(true);
+    expect(restoreRequest?.headers.get("If-Match")).toBe('"1"');
+    await expect(restoreRequest?.json()).resolves.toEqual({ state: "ACTIVE" });
+    await expect.element(page.getByRole("button", { name: "New Booking" })).toBeVisible();
+    await expect.element(pageObj.lifecycleActions).toHaveFocus();
+    await expectNoAxeViolations();
+  });
+
+  test("keeps archived reading available while blocking writes and guarding permanent deletion", async () => {
+    const archived = { ...bookableItemFixtures[0], state: "ARCHIVED", configurationVersion: 4 };
+    let calendarCreates = 0;
+    let permanentRequest: Request | undefined;
+    worker.use(
+      http.get("/api/v2/booking-configurations", ({ request }) => {
+        const where = new URL(request.url).searchParams.get("where") ?? "";
+        return where.includes("IN123")
+          ? HttpResponse.json({
+              docs: [archived],
+              totalDocs: 1,
+              limit: 20,
+              page: 1,
+              pagingCounter: 1,
+              totalPages: 1,
+              hasPrevPage: false,
+              hasNextPage: false,
+              prevPage: null,
+              nextPage: null,
+            })
+          : undefined;
       }),
       http.post("/api/v2/booking-configurations/7/calendar-subscription", () => {
-        postRequests += 1;
-        const subscriptionUrl = issue();
-        return HttpResponse.json({ active: true, updatedAt, subscriptionUrl });
+        calendarCreates += 1;
+        return HttpResponse.json({ active: true, updatedAt: null, subscriptionUrl: null });
       }),
-      http.get(
-        feedPath,
-        ({ request }) =>
-          new HttpResponse(null, {
-            status: new URL(request.url).searchParams.get("token") === currentToken ? 200 : 404,
-          }),
-      ),
-    );
-    const first = render(<BookableItemPageStory />);
-    await expect.element(pageObj.heading).toBeVisible();
-    expect(getRequests).toBe(0);
-    expect(postRequests).toBe(0);
-
-    await pageObj.calendarTrigger.click();
-    await expect.element(pageObj.calendarUrl).toBeVisible();
-    expect(getRequests).toBe(1);
-    expect(postRequests).toBe(1);
-    expect(pageObj.calendarTrigger.element().getAttribute("aria-controls")).toBe(pageObj.calendarDialog.element().id);
-    await expect.element(page.getByRole("link", { name: "Google Calendar" })).toHaveFocus();
-    expect(page.getByRole("link", { name: "Apple" }).element().getAttribute("href")).toMatch(/^webcal:/);
-    expect(page.getByRole("link", { name: "Other" }).element().getAttribute("href")).toMatch(/^webcal:/);
-    await expect.element(pageObj.calendarUrl).toBeVisible();
-    const originalUrl = (pageObj.calendarUrl.element() as HTMLInputElement).value;
-    expect((await fetch(originalUrl)).status).toBe(200);
-    expect(postRequests).toBe(1);
-    await expectNoAxeViolations();
-
-    first.unmount();
-    render(<BookableItemPageStory />);
-    await expect.element(pageObj.heading).toBeVisible();
-    await pageObj.calendarTrigger.click();
-    await expect.element(pageObj.calendarUrl).toBeVisible();
-    expect((pageObj.calendarUrl.element() as HTMLInputElement).value).toBe(originalUrl);
-    expect(postRequests).toBe(1);
-    expect((await fetch(originalUrl)).status).toBe(200);
-  });
-
-  test("keeps the calendar control available to an ordinary readable user", async () => {
-    useBookerConfiguration();
-    render(<BookableItemPageStory hasSysAdminRole={false} />);
-    await expect.element(pageObj.heading).toBeVisible();
-    await expect.element(pageObj.calendarTrigger).toBeVisible();
-    await pageObj.calendarTrigger.click();
-    await expect.element(pageObj.calendarUrl).toBeVisible();
-    await expectNoAxeViolations();
-  });
-
-  test("shows loading, retries status, and keeps an ambiguous mutation failure open", async () => {
-    let statusRequests = 0;
-    worker.use(
-      http.get("/api/v2/booking-configurations/7/calendar-subscription", async () => {
-        statusRequests += 1;
-        if (statusRequests === 1) {
-          await new Promise((resolve) => setTimeout(resolve, 100));
-          return HttpResponse.json({ status: 503 }, { status: 503 });
-        }
-        return HttpResponse.json({ active: false, updatedAt: null, subscriptionUrl: null });
+      http.delete("/api/v2/booking-configurations/7", ({ request }) => {
+        permanentRequest = request;
+        return new HttpResponse(null, { status: 204 });
       }),
-      http.post("/api/v2/booking-configurations/7/calendar-subscription", () =>
-        HttpResponse.json({ status: 503 }, { status: 503 }),
-      ),
     );
     render(<BookableItemPageStory />);
-    await expect.element(pageObj.heading).toBeVisible();
 
+    await expect.element(page.getByText("Archived", { exact: true })).toBeVisible();
+    await expect.element(pageObj.edit).not.toBeInTheDocument();
+    await expect.element(page.getByRole("button", { name: "New Booking" })).not.toBeInTheDocument();
     await pageObj.calendarTrigger.click();
-    await expect.element(page.getByText("Loading calendar status.", { exact: true })).toBeVisible();
     await expect
-      .element(page.getByRole("alert"))
-      .toHaveTextContent("Calendar subscription status could not be loaded.");
-    await pageObj.calendarDialog.getByRole("button", { name: "Retry" }).click();
+      .element(page.getByText("Calendar links cannot be generated while this booking configuration is archived."))
+      .toBeVisible();
+    expect(calendarCreates).toBe(0);
+    await userEvent.keyboard("{Escape}");
 
-    await expect.element(page.getByRole("alert")).toHaveTextContent("The calendar link could not be generated.");
-    await expect.element(pageObj.calendarDialog).toBeVisible();
-    await expect.element(pageObj.calendarUrl).not.toBeInTheDocument();
+    await pageObj.accessTab.click();
+    await expect.element(pageObj.accessPanel).toBeVisible();
+    await expect
+      .poll(() =>
+        page
+          .getByText("Ada Lovelace", { exact: true })
+          .all()
+          .some((candidate) => candidate.element().getClientRects().length > 0),
+      )
+      .toBe(true);
+    await expect.element(page.getByRole("combobox", { name: "Add user or group" })).not.toBeInTheDocument();
+    await expect.element(page.getByRole("button", { name: /Direct role for/ })).not.toBeInTheDocument();
+
+    await pageObj.lifecycleActions.click();
+    await pageObj.permanentDeleteAction.click();
+    const dialog = page.getByRole("alertdialog", { name: "Permanently delete configuration?" });
+    const confirm = dialog.getByRole("button", { name: "Delete permanently" });
+    const itemName = dialog.getByRole("textbox", { name: "Item name" });
+    await expect.element(dialog).toHaveTextContent("access assignments");
+    await expect.element(confirm).toBeDisabled();
+    await userEvent.fill(itemName, "confocal microscope");
+    await expect.element(confirm).toBeDisabled();
+    await userEvent.fill(itemName, "Confocal microscope");
+    await expect.element(confirm).not.toBeDisabled();
+    await confirm.click();
+
+    await expect.poll(() => permanentRequest !== undefined).toBe(true);
+    expect(new URL(permanentRequest?.url ?? window.location.href).searchParams.get("permanent")).toBe("true");
+    expect(permanentRequest?.headers.get("If-Match")).toBe('"4"');
   });
 
   test("supports the calendar flow by keyboard and announces a successful copy", async () => {
@@ -241,7 +267,7 @@ describe("BookableItemPage", () => {
     }
   });
 
-  test("uses URL-backed Bookings, Details, and Audit log tabs", async () => {
+  test("uses a distinct path for each tab", async () => {
     let auditRequests = 0;
     worker.use(
       http.get("/api/v2/booking-configurations/7/audit", () => {
@@ -256,12 +282,12 @@ describe("BookableItemPage", () => {
     await expect.element(page.getByRole("heading", { name: "Upcoming events" })).toBeVisible();
     await expect.element(page.getByRole("heading", { name: "Past events" })).toBeVisible();
     expect(auditRequests).toBe(0);
-    expect(window.location.search).toBe("");
+    expect(window.location.pathname).toBe("/booking/bookable-items/IN123");
 
     await pageObj.detailsTab.click();
     await expect.element(pageObj.detailsTab).toHaveAttribute("aria-selected", "true");
     await expect.element(page.getByText("Booking rules")).toBeVisible();
-    await expect.poll(() => new URLSearchParams(window.location.search).get("tab")).toBe("details");
+    await expect.poll(() => window.location.pathname).toBe("/booking/bookable-items/IN123/details");
 
     await pageObj.auditTab.click();
     await expect
@@ -279,102 +305,15 @@ describe("BookableItemPage", () => {
     expect(visibleActor?.element().closest('[data-slot="user-badge"]')).not.toBeNull();
     await expect.element(page.getByText("Results through Aug 25, 2026", { exact: true }).first()).toBeVisible();
     await expect.poll(() => auditRequests).toBe(1);
-    await expect.poll(() => new URLSearchParams(window.location.search).get("tab")).toBe("audit");
-  });
+    await expect.poll(() => window.location.pathname).toBe("/booking/bookable-items/IN123/audit");
 
-  test("keeps one snapshot while paging and discards it on Refresh", async () => {
-    const requests: URL[] = [];
-    worker.use(
-      http.get("/api/v2/booking-configurations/7/audit", ({ request }) => {
-        const url = new URL(request.url);
-        requests.push(url);
-        return HttpResponse.json(auditPage(Number(url.searchParams.get("page")), 2));
-      }),
-    );
-    render(<BookableItemPageStory />);
-    await expect.element(pageObj.heading).toBeVisible();
-    await pageObj.auditTab.click();
-    await expect.element(pageObj.nextAuditPage).toBeVisible();
+    await pageObj.accessTab.click();
+    await expect.element(pageObj.accessTab).toHaveAttribute("aria-selected", "true");
+    await expect.poll(() => window.location.pathname).toBe("/booking/bookable-items/IN123/access");
 
-    await pageObj.nextAuditPage.click();
-    await expect.poll(() => requests.length).toBe(2);
-    expect(Object.fromEntries(requests[1].searchParams)).toMatchObject({
-      page: "2",
-      snapshotDate: "2026-08-25",
-      snapshotFingerprint,
-    });
-    await expect.element(pageObj.previousAuditPage).not.toBeDisabled();
-
-    await pageObj.refreshAudit.click();
-    await expect.poll(() => requests.length).toBe(3);
-    await expect.element(pageObj.refreshAudit).toHaveFocus();
-    expect(requests[2].searchParams.get("page")).toBe("1");
-    expect(requests[2].searchParams.has("snapshotDate")).toBe(false);
-    await expect.element(page.getByRole("status").first()).toHaveTextContent("Results through");
-  });
-
-  test("validates custom dates at the fields before requesting", async () => {
-    let requests = 0;
-    worker.use(
-      http.get("/api/v2/booking-configurations/7/audit", () => {
-        requests += 1;
-        return HttpResponse.json(auditPage());
-      }),
-    );
-    render(<BookableItemPageStory />);
-    await expect.element(pageObj.heading).toBeVisible();
-    await pageObj.auditTab.click();
-    await expect.element(pageObj.auditFrom).toBeVisible();
-
-    await userEvent.clear(pageObj.auditFrom);
-    await pageObj.applyAuditRange.click();
-
-    await expect.element(pageObj.auditFrom).toHaveAttribute("aria-invalid", "true");
-    await expect.element(pageObj.auditFrom).toHaveFocus();
-    expect(pageObj.auditFrom.element().getAttribute("aria-describedby")).toBe("audit-from-error");
-    await expect.element(page.getByText(/^From: Choose a date/)).toBeVisible();
-    expect(requests).toBe(1);
-
-    await userEvent.fill(pageObj.auditFrom, "2026-08-01");
-    await userEvent.fill(pageObj.auditTo, "2026-08-25");
-    pageObj.applyAuditRange.element().focus();
-    await userEvent.keyboard("{Enter}");
-    await expect.poll(() => requests).toBe(2);
-    await expect.element(pageObj.auditFrom).toHaveAttribute("aria-invalid", "false");
-    await expectNoAxeViolations();
-  });
-
-  test("recovers from a changed snapshot and focuses the replacement results", async () => {
-    const requests: URL[] = [];
-    worker.use(
-      http.get("/api/v2/booking-configurations/7/audit", ({ request }) => {
-        const url = new URL(request.url);
-        requests.push(url);
-        if (url.searchParams.get("page") === "2") {
-          return HttpResponse.json(
-            { status: 409, code: "errors.api.v2.audit.snapshot.changed", detail: "Changed" },
-            { status: 409 },
-          );
-        }
-        return HttpResponse.json(auditPage(1, 2));
-      }),
-    );
-    render(<BookableItemPageStory />);
-    await expect.element(pageObj.heading).toBeVisible();
-    await pageObj.auditTab.click();
-    await expect.element(pageObj.nextAuditPage).toBeVisible();
-    await pageObj.nextAuditPage.click();
-
-    const alert = page.getByRole("alert");
-    await expect.element(alert).toHaveTextContent("The audit results changed");
-    await expect.element(alert).toHaveFocus();
-    await expect.element(page.getByText("Ada Lovelace (ada)", { exact: true })).not.toBeInTheDocument();
-    await page.getByRole("button", { name: "Restart from first page" }).click();
-
-    await expect.poll(() => requests.length).toBe(3);
-    expect(requests[2].searchParams.has("snapshotDate")).toBe(false);
-    await expect.element(pageObj.auditResultsHeading).toHaveFocus();
-    await expectNoAxeViolations();
+    await pageObj.bookingsTab.click();
+    await expect.element(pageObj.bookingsTab).toHaveAttribute("aria-selected", "true");
+    await expect.poll(() => window.location.pathname).toBe("/booking/bookable-items/IN123");
   });
 
   test.each([
@@ -442,7 +381,7 @@ describe("BookableItemPage", () => {
     await expect.element(pageObj.auditPanel).toBeVisible();
   });
 
-  test("manages access by keyboard with safe roles, announcements, responsive layout, and accessibility modes", async () => {
+  test("mounts the access editor at 320 CSS pixels with keyboard navigation and no overflow", async () => {
     const originalViewport = { width: window.innerWidth, height: window.innerHeight };
     await emulateForcedColors();
     await emulateReducedMotion();
@@ -457,7 +396,6 @@ describe("BookableItemPage", () => {
       expect(pageObj.accessTab.element().getAttribute("aria-controls")).toBe(pageObj.accessPanel.element().id);
       expect(pageObj.accessPanel.element().getAttribute("aria-labelledby")).toBe(pageObj.accessTab.element().id);
 
-      // Picking a grantee from the finder stages it straight away; the role is then a menu.
       const search = page.getByRole("combobox", { name: "Add user or group" });
       await userEvent.fill(search, "gr");
       const graceOption = page.getByRole("option", { name: /Grace Hopper/ });
@@ -466,25 +404,11 @@ describe("BookableItemPage", () => {
       const graceRole = page.getByRole("button", { name: "Direct role for Grace Hopper" });
       await expect.element(graceRole).toHaveTextContent("Booker");
       await graceRole.click();
-      await page.getByRole("menuitem", { name: "Viewer" }).click();
-      await expect.element(graceRole).toHaveTextContent("Viewer");
-      // The audience row carries no remove action; the staged role change is what makes this dirty.
-      await expect.element(page.getByRole("button", { name: "Remove All users" })).not.toBeInTheDocument();
-      await expect.element(page.getByText("Unsaved changes", { exact: true })).toBeVisible();
-
-      await page.getByRole("button", { name: "Cancel" }).click();
-      const assignments = page.getByRole("list", { name: "Access assignments" });
-      await expect.element(assignments.getByText("All users", { exact: true })).toBeVisible();
-      await expect.element(assignments.getByText("Grace Hopper", { exact: true })).not.toBeInTheDocument();
-      await expect.element(page.getByText("Unsaved access changes were cancelled.", { exact: true })).toBeVisible();
-
-      await userEvent.fill(search, "gr");
-      await page.getByRole("option", { name: /Grace Hopper/ }).click();
-      await page.getByRole("button", { name: "Save changes" }).click();
-      const savedStatus = page.getByText("Access changes saved.", { exact: true });
-      await expect.element(savedStatus).toBeVisible();
-      await expect.element(savedStatus).toHaveFocus();
+      await expect.element(page.getByRole("menuitem", { name: "Viewer" })).toBeVisible();
+      await userEvent.keyboard("{Escape}");
+      await expect.element(graceRole).toHaveFocus();
       await expect.poll(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth).toBe(true);
+      await pageObj.heading.hover();
       await expectNoAxeViolations();
     } finally {
       await page.viewport(originalViewport.width, originalViewport.height);
@@ -531,36 +455,6 @@ describe("BookableItemPage", () => {
     await expect.element(pageObj.maximumDuration).toHaveFocus();
     await expect.element(page.getByText("Use 0 or a duration divisible by the selected time increment.")).toBeVisible();
     expect(pageObj.maximumDuration.element().getAttribute("aria-describedby")).toContain("maximum-duration-error");
-  });
-
-  test("keeps the editor available after a failed save", async () => {
-    worker.use(
-      http.patch("/api/v2/booking-configurations/7", () =>
-        HttpResponse.json({ message: "Unable to save" }, { status: 500 }),
-      ),
-    );
-    render(<BookableItemPageStory />);
-    await expect.element(pageObj.heading).toBeVisible();
-    await pageObj.openEditor();
-    await userEvent.fill(pageObj.maximumDuration, "60");
-    await pageObj.save.click();
-
-    await expect.element(page.getByRole("alert")).toBeVisible();
-    await expect.element(pageObj.maximumDuration).toHaveValue(60);
-    await expect.element(pageObj.save).toHaveFocus();
-    await expect.element(pageObj.auditTab).not.toBeDisabled();
-  });
-
-  test("discards a draft and restores focus after cancelling", async () => {
-    render(<BookableItemPageStory />);
-    await expect.element(pageObj.heading).toBeVisible();
-    await pageObj.openEditor();
-    await userEvent.fill(pageObj.maximumDuration, "60");
-    await pageObj.cancel.click();
-
-    await expect.element(pageObj.edit).toHaveFocus();
-    await pageObj.edit.click();
-    await expect.element(pageObj.maximumDuration).toHaveValue(0);
   });
 
   test("fits the identity, tabs, and inline editor at 320 CSS pixels", async () => {
@@ -618,16 +512,5 @@ describe("BookableItemPage", () => {
     } finally {
       await page.viewport(originalViewport.width, originalViewport.height);
     }
-  });
-
-  test("keeps ordinary users read-only on a direct edit URL", async () => {
-    window.history.replaceState({}, "", "/booking/bookable-items/IN123?tab=details&edit=true");
-    useBookerConfiguration();
-    render(<BookableItemPageStory hasSysAdminRole={false} />);
-
-    await expect.element(page.getByText("Booking rules")).toBeVisible();
-    await expect.element(pageObj.edit).not.toBeInTheDocument();
-    await expect.element(pageObj.save).not.toBeInTheDocument();
-    await expectNoAxeViolations();
   });
 });

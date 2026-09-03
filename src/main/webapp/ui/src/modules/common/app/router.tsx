@@ -4,7 +4,6 @@ import { createAllBookableItemsRoute } from "@/modules/booking/pages/all-bookabl
 import { createBookingRoute } from "@/modules/booking/pages/BookingPage";
 import {
   createAddBookableItemRoute,
-  createArchivedBookableItemRoute,
   createBookableItemRoute,
   createBookableItemsRoute,
   createBookingSettingsRoute,
@@ -47,7 +46,6 @@ const bookingRoute = bookingRouteBase.addChildren([
   createBookableItemsRoute(bookingRouteBase),
   createBookingSettingsRoute(bookingRouteBase),
   createAddBookableItemRoute(bookingRouteBase),
-  createArchivedBookableItemRoute(bookingRouteBase),
   createBookableItemRoute(bookingRouteBase),
 ]);
 const aboutRoute = createAboutRoute(rootRoute);
@@ -71,6 +69,8 @@ export const routeTree = rootRoute.addChildren([bookingRoute, aboutRoute, mainte
 export const router = createRouter({
   routeTree,
   defaultPreload: "intent",
+  defaultViewTransition: true,
+  defaultStaleReloadMode: "blocking",
 });
 
 declare module "@tanstack/react-router" {

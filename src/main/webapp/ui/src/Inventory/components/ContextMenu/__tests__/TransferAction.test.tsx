@@ -65,7 +65,6 @@ describe("TransferAction", () => {
               allowDoubleBooking: false,
               capabilities: {
                 canEditConfiguration: true,
-                canArchiveConfiguration: true,
                 canViewAudit: true,
                 canViewAccess: true,
                 canManageAssignments: true,

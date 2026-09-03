@@ -15,12 +15,14 @@ function urlFor(character: string): string {
   return `https://rspace.example/public/booking/calendars/feed.ics?token=${character.repeat(43)}`;
 }
 
-function renderPopover() {
+function renderPopover(archived = false) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const Wrapper = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
-  return render(<CalendarSubscriptionPopover configurationId={7} token="oauth" />, { wrapper: Wrapper });
+  return render(<CalendarSubscriptionPopover configurationId={7} token="oauth" archived={archived} />, {
+    wrapper: Wrapper,
+  });
 }
 
 describe("CalendarSubscriptionPopover", () => {
@@ -91,6 +93,26 @@ describe("CalendarSubscriptionPopover", () => {
     expect(
       await screen.findByRole("textbox", { name: "booking:bookableItemDetails.calendarSubscription.copyPrompt" }),
     ).toHaveValue(urlFor("b"));
+    expect(posts).toBe(0);
+  });
+
+  it("does not generate a missing link while archived", async () => {
+    const user = userEvent.setup();
+    let posts = 0;
+    server.use(
+      http.get(path, () => HttpResponse.json({ active: false, updatedAt: null, subscriptionUrl: null })),
+      http.post(path, () => {
+        posts += 1;
+        return HttpResponse.json({ active: true, updatedAt, subscriptionUrl: urlFor("z") });
+      }),
+    );
+    renderPopover(true);
+
+    await user.click(screen.getByRole("button", { name: "booking:bookableItemDetails.calendarSubscription.trigger" }));
+
+    expect(
+      await screen.findByText("booking:bookableItemDetails.calendarSubscription.archivedUnavailable"),
+    ).toBeVisible();
     expect(posts).toBe(0);
   });
 

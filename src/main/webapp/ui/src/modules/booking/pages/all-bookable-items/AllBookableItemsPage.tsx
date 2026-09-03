@@ -1,14 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
-import {
-  CalendarClockIcon,
-  CalendarPlusIcon,
-  Clock3Icon,
-  EyeIcon,
-  KeyRoundIcon,
-  PlusIcon,
-  SettingsIcon,
-} from "lucide-react";
+import { CalendarClockIcon, CalendarPlusIcon, Clock3Icon, EyeIcon, PlusIcon, SettingsIcon } from "lucide-react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { AvailabilityBar } from "@/modules/booking/components/AvailabilityBar";
@@ -17,19 +9,16 @@ import {
   BookingTimeZoneBadge,
   bookingToolbarClassName,
 } from "@/modules/booking/components/BookingToolbar";
-import {
-  catalogueItemAsConfiguration,
-  fetchBookingCatalogue,
-  fetchBookingCatalogueLocations,
-} from "@/modules/booking/domain/bookingCatalogue";
+import { catalogueItemAsConfiguration, fetchBookingCatalogue } from "@/modules/booking/domain/bookingCatalogue";
 import { todayInTimeZone, useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { addCalendarDays, displayInterval } from "@/modules/booking/domain/bookingTime";
 import type { CollectionConfig } from "@/modules/common/collection/collectionConfig";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
+import i18n from "@/modules/common/i18n";
 import { TableList, type TableListProps, type TableListRowActions } from "@/modules/common/table-list/TableList";
 import { Button, buttonVariants } from "@/modules/common/ui/button";
-import { InventoryItem } from "@/modules/common/ui/inventory-item";
+import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/modules/common/ui/tooltip";
 import { UnknownItem } from "@/modules/common/ui/unknown-item";
 import { cn } from "@/modules/common/utils/cn";
@@ -55,7 +44,18 @@ const allBookableItemsConfig = resolveCollectionConfig({
             minWidth: 240,
             renderCell: ({ row }: { row: BookingConfiguration }) =>
               row.target ? (
-                <InventoryItem name={row.target.value.name} globalId={row.target.globalId} size="xs" />
+                <InventoryItem
+                  name={row.target.value.name}
+                  globalId={row.target.globalId}
+                  href={`/globalId/${row.target.globalId}`}
+                  idLinkLabel={i18n.t("common:tableList.filters.openRecord", { globalId: row.target.globalId })}
+                  size="xs"
+                >
+                  <InventoryLocationLink
+                    name={row.target.value.parentContainerName}
+                    globalId={row.target.value.parentContainerGlobalId}
+                  />
+                </InventoryItem>
               ) : (
                 <UnknownItem size="xs" />
               ),
@@ -76,7 +76,7 @@ export default function AllBookableItemsPage({
   userTimeZone?: string;
 } = {}) {
   const { t } = useTranslation("booking");
-  const { date, availability: quickMode, locations = [], q, page = 1 } = useSearch({ from: "/booking/all-items" });
+  const { date, availability: quickMode, q, page = 1 } = useSearch({ from: "/booking/all-items" });
   const navigate = useNavigate({ from: "/booking/all-items" });
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
   const preferences = useBookingDisplayPreferences();
@@ -108,14 +108,10 @@ export default function AllBookableItemsPage({
     [quickIndex.data, quickMode],
   );
   const catalogue = useQuery({
-    queryKey: ["api-v2", "booking-catalogue", "all-items", token, q, locations, page],
-    queryFn: ({ signal }) => fetchBookingCatalogue({ q, locations, page, pageSize: 20 }, token, signal),
+    queryKey: ["api-v2", "booking-catalogue", "all-items", token, q, page],
+    queryFn: ({ signal }) => fetchBookingCatalogue({ q, page, pageSize: 20 }, token, signal),
     placeholderData: (previous) => previous,
     staleTime: 30_000,
-  });
-  const locationOptions = useQuery({
-    queryKey: ["api-v2", "booking-catalogue", "locations", token],
-    queryFn: ({ signal }) => fetchBookingCatalogueLocations({ pageSize: 100 }, token, signal),
   });
   const rows = (catalogue.data?.items ?? []).map(catalogueItemAsConfiguration);
   const visibleRows = quickMode ? rows.filter((row) => row.target && matchingIds.includes(row.target.globalId)) : rows;
@@ -130,16 +126,6 @@ export default function AllBookableItemsPage({
     void navigate({ search: (current) => ({ ...current, date: nextDate }), replace: true });
   const setQuickMode = (mode: AvailabilityQuickFilter | undefined) =>
     void navigate({ search: (current) => ({ ...current, availability: mode }), replace: true });
-  const setLocations = (nextLocations: readonly string[]) => {
-    void navigate({
-      search: (current) => ({
-        ...current,
-        locations: nextLocations.length > 0 ? [...nextLocations] : undefined,
-        page: undefined,
-      }),
-      replace: true,
-    });
-  };
   const tableProps: TableListProps<BookingConfiguration> = {
     config: allBookableItemsConfig,
     rows,
@@ -195,10 +181,10 @@ export default function AllBookableItemsPage({
                 render={
                   <Link
                     aria-label={detailsLabel}
-                    className={buttonVariants({ variant: "outline", size: "icon-sm" })}
+                    className={buttonVariants({ variant: "outline", size: "icon-lg" })}
                     data-slot="button"
-                    to="/booking/bookable-items/$globalId"
-                    params={{ globalId: row.target.globalId }}
+                    to="/booking/bookable-items/$globalId/{-$tab}"
+                    params={{ globalId: row.target.globalId, tab: undefined }}
                   />
                 }
               >
@@ -214,7 +200,7 @@ export default function AllBookableItemsPage({
                   render={
                     <Link
                       aria-label={bookLabel}
-                      className={buttonVariants({ variant: "outline", size: "icon-sm" })}
+                      className={buttonVariants({ variant: "outline", size: "icon-lg" })}
                       data-slot="button"
                       to="/booking/calendar/bookings/add"
                       search={{ date: rowDate, target: row.target.globalId }}
@@ -234,11 +220,11 @@ export default function AllBookableItemsPage({
                   render={
                     <Link
                       aria-label={t("allBookableItems.actions.settings")}
-                      className={buttonVariants({ variant: "outline", size: "icon-sm" })}
+                      className={buttonVariants({ variant: "outline", size: "icon-lg" })}
                       data-slot="button"
-                      to="/booking/bookable-items/$globalId"
-                      params={{ globalId: row.target.globalId }}
-                      search={{ tab: "details", edit: true }}
+                      to="/booking/bookable-items/$globalId/{-$tab}"
+                      params={{ globalId: row.target.globalId, tab: "details" }}
+                      search={{ edit: true }}
                     />
                   }
                 >
@@ -246,27 +232,6 @@ export default function AllBookableItemsPage({
                 </TooltipTrigger>
                 <TooltipContent role="tooltip" className="rounded-sm">
                   {t("allBookableItems.actions.settings")}
-                </TooltipContent>
-              </Tooltip>
-            ) : null}
-            {row.capabilities?.canViewAccess ? (
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <Link
-                      aria-label={t("allBookableItems.actions.access")}
-                      className={buttonVariants({ variant: "outline", size: "icon-sm" })}
-                      data-slot="button"
-                      to="/booking/bookable-items/$globalId"
-                      params={{ globalId: row.target.globalId }}
-                      search={{ tab: "access" }}
-                    />
-                  }
-                >
-                  <KeyRoundIcon aria-hidden="true" />
-                </TooltipTrigger>
-                <TooltipContent role="tooltip" className="rounded-sm">
-                  {t("allBookableItems.actions.access")}
                 </TooltipContent>
               </Tooltip>
             ) : null}
@@ -297,61 +262,6 @@ export default function AllBookableItemsPage({
 
   return (
     <main className="space-y-5 p-4 sm:p-8">
-      <div className="overflow-hidden rounded-sm border bg-card">
-        <div role="toolbar" aria-label={t("allBookableItems.toolbar")} className={bookingToolbarClassName}>
-          {!quickMode ? (
-            <BookingDateControls
-              date={selectedDate}
-              today={userToday}
-              timeZone={preferences.timeZone}
-              controlsLabel={t("allBookableItems.dateControls")}
-              navigationLabel={t("allBookableItems.dateNavigation")}
-              previousLabel={t("allBookableItems.actions.previousDay")}
-              todayLabel={t("allBookableItems.actions.today")}
-              nextLabel={t("allBookableItems.actions.nextDay")}
-              jumpToDateLabel={t("allBookableItems.jumpToDate")}
-              onPrevious={() => setDate(addCalendarDays(selectedDate, -1))}
-              onNext={() => setDate(addCalendarDays(selectedDate, 1))}
-              onDateChange={setDate}
-            />
-          ) : (
-            <p className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
-              <CalendarClockIcon aria-hidden="true" />
-              {t("allBookableItems.quickFilters.scope")}
-            </p>
-          )}
-          <div className="flex min-w-0 flex-wrap items-center gap-2 xl:ml-auto xl:flex-nowrap">
-            <BookingTimeZoneBadge
-              timeZone={preferences.timeZone}
-              label={t("availabilityBar.timezone", { timezone: preferences.timeZone })}
-            />
-            <fieldset className="flex min-w-0 flex-wrap items-center gap-2">
-              <legend className="sr-only">{quickFilterButtons.legend}</legend>
-              {quickFilterButtons.buttons.map((button) => (
-                <Button
-                  key={button.id}
-                  type="button"
-                  size="sm"
-                  aria-pressed={button.pressed}
-                  variant={button.pressed ? "secondary" : "outline"}
-                  onClick={button.onClick}
-                >
-                  {button.icon}
-                  {button.label}
-                  {button.count === undefined ? null : (
-                    <span
-                      aria-hidden="true"
-                      className="ml-0.5 rounded-sm bg-foreground px-1 text-[10px] text-background"
-                    >
-                      {button.count}
-                    </span>
-                  )}
-                </Button>
-              ))}
-            </fieldset>
-          </div>
-        </div>
-      </div>
       {quickIndex.isPending ? <p role="status">{t("allBookableItems.quickFilters.loading")}</p> : null}
       {quickIndex.isError ? (
         <div role="alert" className="flex items-center gap-3">
@@ -361,35 +271,65 @@ export default function AllBookableItemsPage({
           </Button>
         </div>
       ) : null}
-      {locationOptions.data && locationOptions.data.items.length > 0 ? (
-        <fieldset className="flex flex-wrap gap-2">
-          <legend className="mb-2 text-sm font-medium">{t("allBookableItems.filters.location")}</legend>
-          {locationOptions.data.items.map((location) => (
-            <label
-              key={location.globalId}
-              className="inline-flex min-h-6 items-center gap-2 rounded-sm border px-2 py-1 text-sm"
-            >
-              <input
-                type="checkbox"
-                checked={locations.includes(location.globalId)}
-                onChange={(event) =>
-                  setLocations(
-                    event.currentTarget.checked
-                      ? [...locations, location.globalId]
-                      : locations.filter((value) => value !== location.globalId),
-                  )
-                }
-              />
-              {t("allBookableItems.filters.locationOption", {
-                name: location.name,
-                globalId: location.globalId,
-              })}
-            </label>
-          ))}
-        </fieldset>
-      ) : null}
       <TableList
         {...tableProps}
+        headerContent={
+          <div className="overflow-hidden rounded-sm border bg-card">
+            <div role="toolbar" aria-label={t("allBookableItems.toolbar")} className={bookingToolbarClassName}>
+              {!quickMode ? (
+                <BookingDateControls
+                  date={selectedDate}
+                  today={userToday}
+                  timeZone={preferences.timeZone}
+                  controlsLabel={t("allBookableItems.dateControls")}
+                  navigationLabel={t("allBookableItems.dateNavigation")}
+                  previousLabel={t("allBookableItems.actions.previousDay")}
+                  todayLabel={t("allBookableItems.actions.today")}
+                  nextLabel={t("allBookableItems.actions.nextDay")}
+                  jumpToDateLabel={t("allBookableItems.jumpToDate")}
+                  onPrevious={() => setDate(addCalendarDays(selectedDate, -1))}
+                  onNext={() => setDate(addCalendarDays(selectedDate, 1))}
+                  onDateChange={setDate}
+                />
+              ) : (
+                <p className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
+                  <CalendarClockIcon aria-hidden="true" />
+                  {t("allBookableItems.quickFilters.scope")}
+                </p>
+              )}
+              <div className="flex min-w-0 flex-wrap items-center gap-2 xl:ml-auto xl:flex-nowrap">
+                <BookingTimeZoneBadge
+                  timeZone={preferences.timeZone}
+                  label={t("availabilityBar.timezone", { timezone: preferences.timeZone })}
+                />
+                <fieldset className="flex min-w-0 flex-wrap items-center gap-2">
+                  <legend className="sr-only">{quickFilterButtons.legend}</legend>
+                  {quickFilterButtons.buttons.map((button) => (
+                    <Button
+                      key={button.id}
+                      type="button"
+                      size="sm"
+                      aria-pressed={button.pressed}
+                      variant={button.pressed ? "secondary" : "outline"}
+                      onClick={button.onClick}
+                    >
+                      {button.icon}
+                      {button.label}
+                      {button.count === undefined ? null : (
+                        <span
+                          aria-hidden="true"
+                          className="ml-0.5 rounded-sm bg-foreground px-1 text-[10px] text-background"
+                        >
+                          {button.count}
+                        </span>
+                      )}
+                    </Button>
+                  ))}
+                </fieldset>
+              </div>
+            </div>
+          </div>
+        }
         rows={quickIndex.isPending || quickIndex.isError ? [] : visibleRows}
         presentations={{ table: "wide", cards: "narrow" }}
         uiColumns={[

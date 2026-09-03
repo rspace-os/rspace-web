@@ -239,6 +239,7 @@ describe("DayTimeline table row", () => {
 
     fireEvent.pointerDown(canvas, { clientX: 481, pointerId: 1 });
     fireEvent.pointerMove(canvas, { clientX: 539, pointerId: 1 });
+    expect(screen.getByText("08:00–09:00")).toBeVisible();
     fireEvent.pointerUp(canvas, { clientX: 539, pointerId: 1 });
     expect(onRangeSelect).toHaveBeenCalledWith({ startMinute: 480, endMinute: 540 }, expect.any(HTMLElement));
 

@@ -204,6 +204,7 @@ type TableListDataTableProps<TDocument extends Record<string, unknown>> = Pick<
   | "uiColumns"
   | "presentations"
   | "renderRows"
+  | "renderRowsWhenEmpty"
   | "emptyDescription"
 > & {
   collectionLabel: string;
@@ -224,6 +225,7 @@ export function TableListDataTable<TDocument extends Record<string, unknown>>({
   uiColumns = noUiColumns,
   presentations,
   renderRows,
+  renderRowsWhenEmpty = false,
   emptyDescription,
 }: TableListDataTableProps<TDocument>) {
   if (selection && (!Number.isFinite(selection.maximumCount) || selection.maximumCount < 1)) {
@@ -569,7 +571,7 @@ export function TableListDataTable<TDocument extends Record<string, unknown>>({
                 </EmptyDescription>
               </EmptyHeader>
             </Empty>
-          ) : visibleRows.length === 0 ? (
+          ) : visibleRows.length === 0 && !renderRowsWhenEmpty ? (
             <Empty className="rounded-sm border-0 p-6">
               <EmptyHeader>
                 <EmptyTitle>{t("tableList.empty.title")}</EmptyTitle>

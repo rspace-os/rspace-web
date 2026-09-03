@@ -3,8 +3,10 @@
 // BookingDetailsOnly hosts the action solely on a booking-details card; DetailsAndMyBookings adds
 // it to a My Bookings row-action menu (the production seam is TableList's rowActions — imitated
 // here with a plain table because TableList needs its collection machinery); CalendarEventPopover
-// hosts it inside the production DayTimelineEventCard via its renderEventActions seam, with the
-// details card as fallback. Downloads are simulated in memory with a short delay so progress,
+// hosts it inside the production DayTimelineEventCard via its renderEventActions seam, closing the
+// card with the shared ActionBar, with the details card as fallback. The action reads as an icon
+// plus ".ics file" everywhere, so the three placements differ only in where it sits.
+// Downloads are simulated in memory with a short delay so progress,
 // repeat-activation guarding, and failure recovery are observable; no file is produced and no
 // network runs. The subscription contrast panel is static copy — the real
 // CalendarSubscriptionPopover fetches over React Query and has no MSW wiring in Storybook.
@@ -15,6 +17,7 @@ import * as React from "react";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 import { DayTimelineEventCard } from "@/modules/booking/components/DayTimeline";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
+import { ActionBar } from "@/modules/common/ui/action-bar";
 import { Alert, AlertDescription, AlertTitle } from "@/modules/common/ui/alert";
 import { Badge } from "@/modules/common/ui/badge";
 import { Button } from "@/modules/common/ui/button";
@@ -170,7 +173,9 @@ function DownloadButton({
         type="button"
         variant="outline"
         size={size}
-        aria-label={`Download calendar file for ${fixture.itemName}, ${fixture.dateLabel}`}
+        // The visible label is the whole label, so the accessible name has to open with it
+        // (WCAG 2.5.3); the booking follows it because a page shows several of these.
+        aria-label={`.ics file for ${fixture.itemName}, ${fixture.dateLabel}`}
         aria-disabled={reason === null ? undefined : true}
         aria-describedby={reason === null ? undefined : reasonId}
         className={cn("min-h-8", reason !== null && "cursor-not-allowed opacity-50")}
@@ -182,12 +187,13 @@ function DownloadButton({
           downloads.start(fixture);
         }}
       >
+        {/* The label stays put while pending; only the icon spins, so the row never reflows. */}
         {phase === "pending" ? (
           <Spinner className="size-4" aria-hidden="true" />
         ) : (
           <CalendarArrowDownIcon aria-hidden="true" />
         )}
-        {phase === "pending" ? "Preparing…" : "Download calendar file (.ics)"}
+        .ics file
       </Button>
       {reason !== null ? (
         <span id={reasonId} className="text-xs text-muted-foreground">
@@ -255,7 +261,7 @@ function LanguageContrastCard() {
       </CardHeader>
       <CardContent>
         <ul className="list-disc space-y-1 pl-4 text-xs text-muted-foreground">
-          <li>Download calendar file (.ics): this one booking, saved once. It never updates itself.</li>
+          <li>.ics file: this one booking, saved once. It never updates itself.</li>
           <li>Calendar subscription: a private URL your calendar app checks for changes over time.</li>
           <li>
             Opening the file in Apple Calendar, Google Calendar, or Outlook is up to that app; RSpace does not control
@@ -332,7 +338,7 @@ function MyBookingsImitation({ downloads, allowPastExport }: { downloads: Downlo
                         onClick={() => downloads.start(fixture)}
                       >
                         <CalendarArrowDownIcon aria-hidden="true" />
-                        Download calendar file (.ics)
+                        .ics file
                       </MenuItem>
                     </MenuContent>
                   </Menu>
@@ -343,6 +349,40 @@ function MyBookingsImitation({ downloads, allowPastExport }: { downloads: Downlo
         </Table>
       </CardContent>
     </Card>
+  );
+}
+
+/**
+ * The card view closes with the shared ActionBar rather than a bespoke row, so the export sits
+ * beside the actions the production card already offers and inherits its overflow, hairlines, and
+ * 44 px targets. Two trade-offs the ActionBar API imposes here: the accessible name is the visible
+ * label alone (no per-action aria-label), and a blocked action is truly disabled rather than
+ * aria-disabled, so it drops out of the tab order.
+ */
+function EventCardActions({
+  fixture,
+  downloads,
+  allowPastExport,
+}: {
+  fixture: BookingFixture;
+  downloads: Downloads;
+  allowPastExport: boolean;
+}) {
+  const pending = downloads.phases[fixture.id] === "pending";
+  return (
+    <ActionBar
+      actions={[
+        { label: "View details" },
+        {
+          label: ".ics file",
+          icon: pending ? Spinner : CalendarArrowDownIcon,
+          disabled: pending || blockedReason(fixture, allowPastExport) !== null,
+          // Never overflowed: the placement question is whether the export is findable here.
+          alwaysVisible: true,
+          onClick: () => downloads.start(fixture),
+        },
+      ]}
+    />
   );
 }
 
@@ -375,13 +415,11 @@ function EventPopoverVariant({ downloads, allowPastExport }: { downloads: Downlo
             }}
             date={full.isoDate}
             renderEventActions={(event) => (
-              <div className="border-t p-2">
-                <DownloadButton
-                  fixture={BOOKINGS.find((candidate) => candidate.id === event.id) ?? full}
-                  downloads={downloads}
-                  allowPastExport={allowPastExport}
-                />
-              </div>
+              <EventCardActions
+                fixture={BOOKINGS.find((candidate) => candidate.id === event.id) ?? full}
+                downloads={downloads}
+                allowPastExport={allowPastExport}
+              />
             )}
           />
         </div>
@@ -482,8 +520,10 @@ type Story = StoryObj<typeof meta>;
 
 // --- Acceptance -------------------------------------------------------------------------------------
 
-const downloadName = (fixture: BookingFixture) =>
-  `Download calendar file for ${fixture.itemName}, ${fixture.dateLabel}`;
+const downloadName = (fixture: BookingFixture) => `.ics file for ${fixture.itemName}, ${fixture.dateLabel}`;
+
+/** The card view goes through the shared ActionBar, whose accessible name is the label alone. */
+const CARD_DOWNLOAD_NAME = ".ics file";
 
 const runSharedAcceptance = async (
   canvasElement: HTMLElement,
@@ -562,7 +602,7 @@ const myBookingsAcceptance: NonNullable<Story["play"]> = async ({ canvasElement,
 
   await step("the row action menu names its booking and downloads once", async () => {
     await userEvent.click(canvas.getByRole("button", { name: "Actions for Retired spectrometer, 16 Sep 2026" }));
-    await userEvent.click(await canvas.findByRole("menuitem", { name: /Download calendar file/ }));
+    await userEvent.click(await canvas.findByRole("menuitem", { name: ".ics file" }));
     await waitFor(() =>
       expect(canvas.getByRole("status")).toHaveTextContent("retired-spectrometer-IN077-2026-09-16.ics"),
     );
@@ -576,15 +616,15 @@ const eventPopoverAcceptance: NonNullable<Story["play"]> = async ({ canvasElemen
   await step("the expanded event card hosts the download action", async () => {
     const toggle = await canvas.findByRole("button", { name: /Show details for Laser alignment/ });
     await userEvent.click(toggle);
-    const download = await canvas.findByRole("button", { name: downloadName(BOOKINGS[0]) });
+    const download = await canvas.findByRole("button", { name: CARD_DOWNLOAD_NAME });
+    // The export shares the ActionBar with the card's existing action rather than replacing it.
+    expect(canvas.getByRole("button", { name: "View details" })).toBeInTheDocument();
     await userEvent.click(download);
     await waitFor(() =>
       expect(canvas.getByRole("status")).toHaveTextContent("confocal-microscope-IN123-2026-09-12.ics"),
     );
     await userEvent.keyboard("{Escape}");
-    await waitFor(() =>
-      expect(canvas.queryByRole("button", { name: downloadName(BOOKINGS[0]) })).not.toBeInTheDocument(),
-    );
+    await waitFor(() => expect(canvas.queryByRole("button", { name: CARD_DOWNLOAD_NAME })).not.toBeInTheDocument());
   });
 
   await step("a private event falls back to the details card with the privacy projection", async () => {

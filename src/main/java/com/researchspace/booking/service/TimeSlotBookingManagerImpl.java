@@ -11,6 +11,7 @@ import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
+import com.researchspace.model.booking.BookingConfigurationState;
 import com.researchspace.model.booking.BookingEventKind;
 import com.researchspace.model.booking.BookingPrivacy;
 import com.researchspace.model.booking.BookingState;
@@ -280,7 +281,7 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
     validatePurpose(create.purpose());
     BookingConfiguration configuration =
         configurationDao
-            .lockByTarget(create.target().reference())
+            .lockActiveByTarget(create.target().reference())
             .filter(BookingConfiguration::isEnabled)
             .orElseThrow(BookingTargetUnavailableException::new);
     requireCapability(
@@ -343,7 +344,7 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
               requireExpectedVersion(booking, expectedVersion);
               BookingConfiguration configuration =
                   configurationDao
-                      .lockById(booking.getBookingConfiguration().getId())
+                      .lockActiveById(booking.getBookingConfiguration().getId())
                       .orElseThrow(BookingTargetUnavailableException::new);
               ResolvedResourceAccess access =
                   accessManager.resolve(configuration.getResourceAccess(), subject);
@@ -416,8 +417,7 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
               Long configurationId = booking.getBookingConfiguration().getId();
               BookingConfiguration configuration =
                   configurationDao
-                      .lockArchivedById(configurationId)
-                      .or(() -> configurationDao.lockById(configurationId))
+                      .lockById(configurationId)
                       .orElseThrow(BookingTargetUnavailableException::new);
               ResolvedResourceAccess access =
                   accessManager.resolve(configuration.getResourceAccess(), subject);
@@ -511,7 +511,8 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
       boolean canCancel = mayManage && futureConfirmed;
       booking.prepareView(
           currentRole || ownBooking ? BookingPrivacy.FULL : BookingPrivacy.BUSY,
-          canCancel && !booking.getBookingConfiguration().isDeleted(),
+          canCancel
+              && booking.getBookingConfiguration().getState() == BookingConfigurationState.ACTIVE,
           canCancel,
           currentRole);
     }

@@ -14,6 +14,14 @@ export const queryKeys = {
   oauthToken: (useRestApiV2: boolean) => [...queryKeys.all, "oauthToken", useRestApiV2 ? "v2" : "legacy"] as const,
 };
 
+/** Milliseconds until a token should be refreshed, or false for opaque/test tokens. */
+export function tokenRefreshInterval(token?: string): number | false {
+  if (!token) return false;
+  const secondsUntilRefresh = secondsToExpiry(token) - TOKEN_EXPIRY_BUFFER_SECONDS;
+  if (!Number.isFinite(secondsUntilRefresh)) return false;
+  return Math.max(1_000, secondsUntilRefresh * 1_000);
+}
+
 /**
  * Fetches a new OAuth token from the server.
  * This is used internally by the useOauthTokenQuery hook.
@@ -105,6 +113,10 @@ export function useOauthTokenQuery({ useRestApiV2 = false }: { useRestApiV2?: bo
     },
     // Keep the token in cache indefinitely while the app is open
     gcTime: Infinity,
+    // Stale time alone does not schedule work. Refresh while the page remains open so a mutation
+    // cannot reuse a session-bound token after it expires.
+    refetchInterval: (query) => tokenRefreshInterval(query.state.data),
+    refetchIntervalInBackground: true,
     // Refetch in the background when the token is stale
     refetchOnMount: true,
     refetchOnWindowFocus: true,

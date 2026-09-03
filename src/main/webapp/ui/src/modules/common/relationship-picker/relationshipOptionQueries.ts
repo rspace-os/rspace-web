@@ -99,6 +99,9 @@ export function useSelectedRelationshipOptions({
       return {
         queryKey: ["relationship-option", owner?.id ?? "unknown", token ?? "anonymous", value],
         enabled: owner?.resolve !== undefined,
+        // Search stores the selected source document under this key. Treat it as briefly fresh so
+        // choosing an option does not immediately issue a duplicate resolve request.
+        staleTime: 15_000,
         queryFn: ({ signal }: { signal: AbortSignal }) => owner?.resolve?.(value, token, signal),
       };
     }),

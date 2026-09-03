@@ -6,6 +6,7 @@ import com.researchspace.dao.InstrumentDao;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
+import com.researchspace.model.booking.BookingConfigurationState;
 import com.researchspace.model.collection.CollectionDescription.Operator;
 import com.researchspace.model.collection.FieldSelection;
 import com.researchspace.model.collection.FilterExpression;
@@ -68,6 +69,7 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
 
     List<FilterExpression> filters = new ArrayList<>();
     filters.add(comparison("enabled", Operator.EQUAL, true));
+    filters.add(comparison("state", Operator.EQUAL, BookingConfigurationState.ACTIVE));
     filters.add(comparison("target.deleted", Operator.EQUAL, false));
     if (query != null && !query.isBlank()) {
       filters.add(comparison("target.name", Operator.CONTAINS, query.trim()));

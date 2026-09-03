@@ -5,6 +5,7 @@ import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
 import com.researchspace.booking.dao.BookingConfigurationDao;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.BookingConfiguration;
+import com.researchspace.model.booking.BookingConfigurationState;
 import com.researchspace.model.resourceaccess.ResourceAccess;
 import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.resourceaccess.ProtectedResourceAccess;
@@ -34,12 +35,19 @@ public class BookingConfigurationProtectedResourceAccess
 
   @Override
   public Optional<BookingConfiguration> find(Long id) {
-    return configurationDao.getSafeNull(id).filter(configuration -> !configuration.isDeleted());
+    return configurationDao.getSafeNull(id);
   }
 
   @Override
   public Optional<BookingConfiguration> lock(Long id) {
-    return configurationDao.lockById(id);
+    Optional<BookingConfiguration> configuration = configurationDao.lockById(id);
+    configuration
+        .filter(value -> value.getState() == BookingConfigurationState.ARCHIVED)
+        .ifPresent(
+            ignored -> {
+              throw new BookingConfigurationLifecycleException();
+            });
+    return configuration;
   }
 
   @Override

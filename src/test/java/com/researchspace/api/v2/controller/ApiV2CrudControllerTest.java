@@ -514,6 +514,19 @@ class ApiV2CrudControllerTest {
   }
 
   @Test
+  void rejectsPermanentDeleteForAResourceThatDidNotOptIn() throws Exception {
+    mockMvc
+        .perform(
+            delete(ENDPOINT + "/42")
+                .param("permanent", "true")
+                .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, ApiV2Caller.direct(user)))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("errors.api.v2.delete.permanent.unsupported"));
+
+    verify(maintenanceManager, never()).removeResource(any(), any());
+  }
+
+  @Test
   void bulkCreatesMaintenanceDocumentsInAPayloadEnvelope() throws Exception {
     ScheduledMaintenance first = futureMaintenance(2, "First");
     first.setId(41L);
@@ -720,6 +733,10 @@ class ApiV2CrudControllerTest {
         "errors.api.v2.where.length", Locale.ENGLISH, "Where must not exceed {0} characters.");
     source.addMessage(
         "errors.api.v2.bulk.filter.required", Locale.ENGLISH, "Bulk operations require a filter.");
+    source.addMessage(
+        "errors.api.v2.delete.permanent.unsupported",
+        Locale.ENGLISH,
+        "This resource does not support permanent deletion.");
     return new ApiV2ControllerAdvice(new MessageSourceUtils(source));
   }
 

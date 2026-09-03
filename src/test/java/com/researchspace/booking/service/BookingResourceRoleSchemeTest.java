@@ -57,7 +57,11 @@ class BookingResourceRoleSchemeTest {
     assertTrue(
         scheme
             .capabilities(BookingResourceRoleScheme.OWNER)
-            .contains(BookingResourceRoleScheme.ARCHIVE_CONFIGURATION));
+            .contains(BookingResourceRoleScheme.EDIT_CONFIGURATION));
+    assertTrue(
+        scheme
+            .capabilities(BookingResourceRoleScheme.MANAGER)
+            .contains(BookingResourceRoleScheme.EDIT_CONFIGURATION));
   }
 
   @Test
