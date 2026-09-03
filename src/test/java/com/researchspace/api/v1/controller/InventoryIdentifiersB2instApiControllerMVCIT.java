@@ -14,6 +14,7 @@ import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInstrumentTemplate;
 import com.researchspace.api.v1.model.ApiInstrumentTemplatePost;
 import com.researchspace.api.v1.model.ApiInventoryDOI;
+import com.researchspace.api.v1.model.ApiInventorySystemSettings;
 import com.researchspace.api.v1.model.ApiInventorySystemSettings.IdentifierSettings;
 import com.researchspace.b2inst.model.metadata.B2instInstrumentMetadata;
 import com.researchspace.model.User;
@@ -53,18 +54,40 @@ public class InventoryIdentifiersB2instApiControllerMVCIT extends API_MVC_Invent
   private final B2instConnectorDummy b2instDummy = new B2instConnectorDummy();
   private final BindingResult mockBindingResult = mock(BindingResult.class);
   private Object realB2instConnector;
+  private ApiInventorySystemSettings.IdentifierSettings originalB2instSettings;
+  private ApiInventorySystemSettings.IdentifierSettings originalPidinstDataCiteSettings;
 
   @BeforeEach
   public void setup() throws Exception {
     realB2instConnector = ReflectionTestUtils.getField(identifierApiManager, "b2instConnector");
     ReflectionTestUtils.setField(identifierApiManager, "b2instConnector", b2instDummy);
     super.setUp();
+    // these are system properties in the shared dev database, so put them back afterwards
+    originalB2instSettings =
+        captureIdentifierSettings(settingsController, IdentifierType.PIDINST_B2INST);
+    // DataCite too: enabling one PIDINST provider disables the other, so turning B2INST on below
+    // switches the DataCite PIDINST provider off as a side effect and it has to be put back
+    originalPidinstDataCiteSettings =
+        captureIdentifierSettings(settingsController, IdentifierType.PIDINST_DATACITE);
     setB2instEnabled("true");
   }
 
   @AfterEach
   public void teardown() throws Exception {
-    setB2instEnabled("false");
+    /*
+     * Both providers, and in this order. Enabling a PIDINST provider disables its sibling (see
+     * updateInventorySettings), so this test switched the DataCite PIDINST provider off on the way
+     * in and must switch it back. B2INST goes first because restoring it is what leaves the enabled
+     * flag free for DataCite to reclaim.
+     *
+     * Leaving DataCite off is not a harmless default: this is the shared dev database, and the
+     * developer who owns it would find their instrument PIDs quietly going to the wrong provider,
+     * or nowhere, with nothing in the diff to explain it.
+     */
+    restoreIdentifierSettings(
+        settingsController, IdentifierType.PIDINST_B2INST, originalB2instSettings);
+    restoreIdentifierSettings(
+        settingsController, IdentifierType.PIDINST_DATACITE, originalPidinstDataCiteSettings);
     // identifierApiManager is a singleton in a Spring context cached across test classes, so the
     // dummy has to be swapped back out or later MVC tests silently run against it.
     ReflectionTestUtils.setField(identifierApiManager, "b2instConnector", realB2instConnector);

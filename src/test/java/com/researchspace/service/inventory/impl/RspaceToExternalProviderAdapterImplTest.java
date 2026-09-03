@@ -833,8 +833,41 @@ class RspaceToExternalProviderAdapterImplTest {
     assertEquals(SERVER + "/globalId/IN115", related.get(1).getRelatedIdentifier());
     assertEquals("URL", related.get(1).getRelatedIdentifierType());
     assertEquals("Calibration", related.get(1).getRelationTypeInformation());
-    // the base conversion still happened
-    assertEquals("Nico-PIDINST", result.getAttributes().getTitles().get(0).getTitle());
+    // the base conversion still happened, with the instrument's own current name as the title
+    assertEquals("Microscope X", result.getAttributes().getTitles().get(0).getTitle());
+  }
+
+  /**
+   * A rename has to reach the provider. The stored identifier title is written once, at register or
+   * assign time, and never refreshed afterwards, so taking the title from the DTO shipped the name
+   * the instrument had back then on every later push and left the registered record drifting - the
+   * exact complaint RSDEV-1251 opens with. For an instrument, the instrument's own current name is
+   * the source of truth.
+   */
+  @Test
+  void dataCiteDoiTakesItsTitleFromTheInstrumentsCurrentName() {
+    Instrument instrument = templateShapedInstrument();
+    instrument.setName("Renamed after it was registered");
+    ApiInventoryDOI doi = new ApiInventoryDOI();
+    doi.setDoi("10.82316/abc");
+    doi.setTitle("The name it carried at registration");
+
+    DataCiteDoi result = adapter.buildDataCiteDoi(doi, instrument);
+
+    assertEquals(
+        "Renamed after it was registered", result.getAttributes().getTitles().get(0).getTitle());
+  }
+
+  /** Only instruments: a sample's IGSN title is not this mapping's business. */
+  @Test
+  void dataCiteDoiKeepsTheStoredTitleForNonInstruments() {
+    ApiInventoryDOI doi = new ApiInventoryDOI();
+    doi.setDoi("10.82316/abc");
+    doi.setTitle("a sample");
+
+    assertEquals(
+        "a sample",
+        adapter.buildDataCiteDoi(doi, new Sample()).getAttributes().getTitles().get(0).getTitle());
   }
 
   @Test
@@ -858,6 +891,14 @@ class RspaceToExternalProviderAdapterImplTest {
    * The empty-list clear is a statement about the data, so it must never fire on an environment
    * failure: with no usable server URL nothing can be built for ANY link, and [] would permanently
    * strip entries that are still correct. The property is left untouched instead.
+   *
+   * <p>This assertion reads the Java object, and null there means "untouched" only because
+   * DataCiteDoiAttributes is serialized NON_NULL so the key never reaches DataCite at all. An
+   * explicit null on the wire clears the property exactly as [] does, and a getter assertion cannot
+   * see that difference - which is how the distinction went unnoticed until it was probed against
+   * the real API in August 2026. {@link
+   * #dataCiteWireFormatOmitsRelatedIdentifiersEntirelyWhenNoUsableServerUrlExists} is the half that
+   * checks the wire; the two are only meaningful together.
    */
   @Test
   void dataCiteDoiLeavesRelatedIdentifiersUntouchedWhenNoUsableServerUrlExists() {
@@ -913,5 +954,48 @@ class RspaceToExternalProviderAdapterImplTest {
             .getAttributes()
             .getRelatedIdentifiers(),
         "an instrument with no links must clear the property, not leave it untouched");
+  }
+
+  /**
+   * The wire half of {@link
+   * #dataCiteDoiLeavesRelatedIdentifiersUntouchedWhenNoUsableServerUrlExists}, and the assertion
+   * whose absence let a data-loss bug live on the publish/retract path.
+   *
+   * <p>DataCite separates "leave this property alone" from "clear it" by whether the key is
+   * present: a populated list replaces, an explicit [] clears, an explicit null ALSO clears, and
+   * only an absent key preserves the registered value (verified against api.test.datacite.org,
+   * August 2026). So the environment guard's null is only safe while DataCiteDoiAttributes is
+   * serialized NON_NULL. Before that annotation existed, this same guard put "relatedIdentifiers":
+   * null on the wire and stripped the registered entries it was written to protect.
+   *
+   * <p>The contrast is the point: an environment failure must omit the key, while an instrument
+   * whose links are genuinely gone must send [] so the entries are withdrawn.
+   */
+  @Test
+  void dataCiteWireFormatOmitsRelatedIdentifiersEntirelyWhenNoUsableServerUrlExists()
+      throws Exception {
+    Instrument instrument = templateShapedInstrument();
+    addField(instrument, linkField("Calibration", "IsCalibratedBy", "IN115"));
+    ApiInventoryDOI doi = new ApiInventoryDOI();
+    doi.setDoi("10.82316/abc");
+    doi.setTitle("an instrument");
+
+    when(properties.getServerUrl()).thenReturn("rspace.example.com"); // no scheme
+    JsonNode brokenEnvironment =
+        new ObjectMapper().valueToTree(adapter.buildDataCiteDoi(doi, instrument)).at("/attributes");
+    assertFalse(
+        brokenEnvironment.has("relatedIdentifiers"),
+        "an environment failure must leave the key out entirely; an explicit null would clear the"
+            + " registered entries at DataCite just as [] does");
+
+    when(properties.getServerUrl()).thenReturn(SERVER);
+    JsonNode linksGenuinelyCleared =
+        new ObjectMapper()
+            .valueToTree(adapter.buildDataCiteDoi(doi, templateShapedInstrument()))
+            .at("/attributes");
+    assertTrue(
+        linksGenuinelyCleared.has("relatedIdentifiers"),
+        "a real clear must still reach DataCite, or withdrawn entries stay registered");
+    assertEquals(0, linksGenuinelyCleared.get("relatedIdentifiers").size());
   }
 }

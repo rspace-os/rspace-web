@@ -24,6 +24,33 @@ lifecycle can otherwise miss annotation-driven advisors.
 
 Both mechanisms are set up in `src/main/resources/applicationContext-service.xml`.
 
+A third, rarer mechanism exists: demarcating a transaction **programmatically**
+with Spring's `TransactionTemplate`. Reach for it only when a method has to run
+partly inside a transaction and partly outside one, which neither declarative
+mechanism can express.
+
+`InventoryIdentifierExternalUpdateService` is the worked example (RSDEV-1251,
+ADR 0008). It rebuilds a PIDINST payload inside a short read-only transaction,
+because the mapping adapter is `Propagation.MANDATORY` and walks lazy
+associations, then closes that transaction before making the provider HTTP call,
+so an external exchange never pins a pooled JDBC connection. Two constraints
+come with the pattern and are easy to lose in a later refactor:
+
+- The class must **not** be a `*Manager` and must **not** carry `@Transactional`.
+  Either would wrap the whole method, defeating the point. It follows that
+  `TransactionAdviceStartupCheck` does not cover such a class: the check scans
+  `@Transactional` beans, so a programmatic boundary is invisible to it and a
+  refactor that "tidies" the template into an unadvised annotated method would
+  fail silently rather than at startup.
+- Set the propagation explicitly. `TransactionTemplate` defaults to `REQUIRED`
+  like everything else, so it will silently **join** a caller's transaction, and
+  then `setReadOnly` is ignored, the boundary never closes, and an exception
+  marks the caller's transaction rollback-only. Use `REQUIRES_NEW` when the
+  point of the template is that this work has its own boundary.
+
+Older programmatic uses exist in `AbstractCustomLiquibaseUpdater` and
+`BlobMigrationBase`, which run outside the normal request lifecycle.
+
 ### Transaction behaviour
 
 Uses Spring defaults which is `Transaction.REQUIRED`. This enables service

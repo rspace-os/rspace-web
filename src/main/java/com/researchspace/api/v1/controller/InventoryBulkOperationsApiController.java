@@ -1,9 +1,11 @@
 package com.researchspace.api.v1.controller;
 
 import com.researchspace.api.v1.InventoryBulkOperationsApi;
+import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationPost;
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationPost.BulkApiOperationType;
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult;
+import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult.ApiInventoryBulkOperationRecordResult;
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult.InventoryBulkOperationStatus;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.model.User;
@@ -30,6 +32,8 @@ public class InventoryBulkOperationsApiController extends BaseApiInventoryContro
   @Autowired private InventoryBulkOperationApiManager bulkOperationManager;
 
   @Autowired private InventoryBulkOperationHandler bulkOperationHandler;
+
+  @Autowired private InstrumentsApiController instrumentsApiController;
 
   @Autowired private SmartValidator mvcValidator;
   @Autowired private ApiControllerAdvice apiControllerAdvice;
@@ -110,7 +114,43 @@ public class InventoryBulkOperationsApiController extends BaseApiInventoryContro
       result = boe.getPartialResult();
       result.setErrorStatusAndResetSuccessCount(InventoryBulkOperationStatus.REVERTED_ON_ERROR);
     }
+    pushExternalMetadataUpdates(result, bulkOperationConfig);
     return result;
+  }
+
+  /**
+   * Sends the remapped PIDINST metadata of every instrument this batch changed to its provider
+   * (RSDEV-1251, ADR 0008), once the batch's transaction has committed.
+   *
+   * <p>Here rather than in the controller methods the batch re-enters, because those push from
+   * inside the batch's own transaction and {@code InventoryIdentifierExternalUpdateService}
+   * declines that: a later record failing would roll the change back locally and leave the provider
+   * holding metadata RSpace no longer has. The web interface only ever transfers instruments this
+   * way - {@code Search.transferRecords} sends rollbackOnError true - so without a push out here
+   * the transfer half of the feature never reached a provider from the UI at all.
+   *
+   * <p>The per-record path needs nothing added: it commits each record before the controller
+   * returns, so the push already runs with no transaction open.
+   *
+   * <p>Only the two operations that change what a provider holds, matching the single-record
+   * controllers, and only a batch that committed: a reverted one changed nothing to send.
+   */
+  private void pushExternalMetadataUpdates(
+      ApiInventoryBulkOperationResult result, InventoryBulkOperationConfig config) {
+
+    boolean changesProviderMetadata =
+        config.getOperationType() == BulkApiOperationType.UPDATE
+            || config.getOperationType() == BulkApiOperationType.CHANGE_OWNER;
+    if (!changesProviderMetadata || result.getStatus() != InventoryBulkOperationStatus.COMPLETED) {
+      return;
+    }
+    result.getResults().stream()
+        .map(ApiInventoryBulkOperationRecordResult::getRecord)
+        .filter(ApiInstrument.class::isInstance)
+        .map(ApiInstrument.class::cast)
+        .forEach(
+            instrument ->
+                instrumentsApiController.pushExternalMetadataUpdates(instrument, config.getUser()));
   }
 
   /**

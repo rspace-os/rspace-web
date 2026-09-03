@@ -20,6 +20,19 @@ public interface B2instConnector {
   /** Create a draft record from the given metadata. The returned draft carries the RID. */
   B2instDraftRecord registerDoi(B2instDoi doi);
 
+  /**
+   * Full-replace update of a record's draft metadata, returning the updated draft.
+   *
+   * <p>InvenioRDM keeps a draft writable in every review state except {@code accepted}, which
+   * publishes the record and removes its draft; see {@code
+   * InventoryIdentifierExternalUpdateService.B2INST_PUBLISHED_STATES} for why that is an exclusion
+   * rather than an inclusion list.
+   *
+   * <p>The body is the same register-shaped payload {@link #registerDoi(B2instDoi)} sends: the
+   * endpoint replaces the metadata block wholesale, so a partial body silently drops properties.
+   */
+  B2instDraftRecord updateDraftDoi(String rid, B2instDoi doi);
+
   /** Delete a draft record by its RID. Returns true on success. */
   boolean deleteDoi(String rid);
 

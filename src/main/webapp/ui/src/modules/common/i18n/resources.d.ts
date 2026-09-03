@@ -6798,6 +6798,9 @@ export default interface Resources {
           "dataCiteRetractFailed": "Error when retracting the DOI in DataCite. If the problem persists, please contact your System Admin",
           "deleteNotOwner": "You can only delete an identifier that you own.",
           "deleteWrongState": "You can only delete identifiers in \"draft\" state, or B2INST instrument PIDs whose community review was declined, cancelled or expired.",
+          "externalUpdateFailed": "Could not update the instrument metadata held by {0}. The instrument itself was saved, so saving it again will try the update once more. {1}",
+          "externalUpdateNotPossibleB2inst": "The instrument metadata held by {0} could not be updated because its community review has been accepted, so the record no longer has a draft open for changes. The instrument itself was saved.",
+          "externalUpdateNotPossibleDataCite": "The instrument metadata held by {0} could not be updated because its identifier is no longer a draft. Publishing or republishing the identifier sends its current metadata. The instrument itself was saved.",
           "integrationNotEnabled": "{0} integration is not enabled on this RSpace instance.",
           "mintingUnsupportedType": "unsupported type for minting: {0}",
           "refreshNoIdentifier": "This item has no identifier to refresh. Register an identifier before refreshing its status.",
@@ -6958,6 +6961,9 @@ export default interface Resources {
           "itemsAdded": "Added inventory items: {0}.",
           "itemsRemoved": "Removed inventory items: {0}."
         }
+      },
+      "identifier": {
+        "externalUpdated": "The instrument metadata held by {0} was updated."
       },
       "listOfMaterials": {
         "label": "List of materials"

@@ -137,4 +137,9 @@ public class DataCiteConnectorImpl implements DataCiteConnector {
   public DataCiteDoi retractDoi(DataCiteDoi dataCiteDoi, InventorySettingType settingType) {
     return getClient(settingType).retractDoi(dataCiteDoi);
   }
+
+  @Override
+  public DataCiteDoi updateDoi(DataCiteDoi dataCiteDoi, InventorySettingType settingType) {
+    return getClient(settingType).updateDoi(dataCiteDoi);
+  }
 }
