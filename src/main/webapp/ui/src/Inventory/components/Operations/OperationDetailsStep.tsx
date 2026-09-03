@@ -17,6 +17,7 @@ import { CELSIUS } from "@/stores/definitions/Units";
 import { getUnitId, getValue } from "@/stores/models/HasQuantity";
 import type SubSampleModel from "@/stores/models/SubSampleModel";
 import {
+  amountKeysFor,
   type InventoryOperation,
   type OperationInputConfig,
   resolveProcessName,
@@ -87,7 +88,7 @@ function OperationDetailsStep({
   const label = resolveLabelFrom(t);
   const originUnitId = getUnitId(origin.quantity);
   const { countFrom, eachAmountFrom, amountTakenFrom } = operation.effect;
-  const amountKeys = new Set([countFrom, eachAmountFrom, amountTakenFrom].filter(Boolean));
+  const amountKeys = amountKeysFor(operation);
   const set = (key: string, value: OperationInputValue) => onChange({ ...values, [key]: value });
   const processName = resolveProcessName(operation, values);
   // The derived sample name cannot be built without a process name, so its field is disabled (with a

@@ -229,6 +229,17 @@ export function assertEffectReferencesValid(ops: Array<InventoryOperation>): voi
 }
 
 /**
+ * The inputs the amounts step owns: the count, the each-amount and the amount taken. Everything else
+ * an operation declares (process name, sample name, cryomedium, storage temperature) belongs to the
+ * details step. Derived here once because the wizard and the details step both need it and must
+ * agree, or an input renders on one step while being gated on the other.
+ */
+export function amountKeysFor(operation: InventoryOperation): ReadonlySet<string> {
+  const { countFrom, eachAmountFrom, amountTakenFrom } = operation.effect;
+  return new Set([countFrom, eachAmountFrom, amountTakenFrom].filter((k): k is string => Boolean(k)));
+}
+
+/**
  * Whether the amounts step should offer the per-origin "amount to take" modes for this operation
  * (DevDocs/adr/0007): only a multi-origin operation that actually takes an amount, and only when its config
  * has not opted out (`takeAmountPerSubsample` defaults to true for such operations). Single-origin

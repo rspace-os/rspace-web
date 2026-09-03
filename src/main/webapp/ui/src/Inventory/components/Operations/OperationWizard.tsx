@@ -34,6 +34,7 @@ import OperationDetailsStep from "./OperationDetailsStep";
 import OperationPicker from "./OperationPicker";
 import { fetchOperationsConfig, performOperation, sampleNameAvailable } from "./operationsApi";
 import {
+  amountKeysFor,
   type InventoryOperation,
   resolveDefaultAmountMode,
   resolveProcessName,
@@ -232,13 +233,7 @@ function OperationWizard({
 
   // Count / each-amount / amount-taken live on the "amounts" step; everything else (process name,
   // sample name, cryomedium, storage temperature) on "details". Template is its own step.
-  const amountKeys: ReadonlySet<string> = operation
-    ? new Set(
-        [operation.effect.countFrom, operation.effect.eachAmountFrom, operation.effect.amountTakenFrom].filter(
-          (k): k is string => Boolean(k),
-        ),
-      )
-    : new Set();
+  const amountKeys: ReadonlySet<string> = operation ? amountKeysFor(operation) : new Set();
   const detailKeys: ReadonlySet<string> = operation
     ? new Set(operation.inputs.map((i) => i.key).filter((k) => !amountKeys.has(k)))
     : new Set();
