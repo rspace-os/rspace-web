@@ -1,6 +1,6 @@
 import React from "react";
 import axios from "@/common/axios";
-import { getStoredToken, saveStoredToken, secondsToExpiry } from "@/modules/common/utils/auth";
+import { fetchOauthToken, getStoredToken, saveStoredToken, secondsToExpiry } from "@/modules/common/utils/auth";
 
 const MAX_SET_TIMEOUT_DELAY_MS = 2_147_483_647;
 
@@ -78,7 +78,7 @@ export default function useOauthToken(): { getToken: () => Promise<string> } {
    * token so that subsequent calls to `getToken` will use the new one.
    */
   async function refreshToken(): Promise<void> {
-    const newToken = await fetchToken();
+    const newToken = await fetchOauthToken(fetchToken);
     tokenRef.current = newToken;
     setTimeout(() => {
       void refreshToken();
@@ -98,7 +98,7 @@ export default function useOauthToken(): { getToken: () => Promise<string> } {
      * If this hook has not been previously called then we preferably get the
      * token from session storage or else get it from the API endpoint.
      */
-    const savedToken = getStoredToken() ?? (await fetchToken());
+    const savedToken = getStoredToken() ?? (await fetchOauthToken(fetchToken));
     tokenRef.current = savedToken;
 
     /*
