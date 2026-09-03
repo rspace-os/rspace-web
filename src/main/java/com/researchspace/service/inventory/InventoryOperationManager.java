@@ -36,7 +36,13 @@ public interface InventoryOperationManager {
    * @return the newly created sample (with its subsamples), as returned by the sample-creation
    *     manager, or {@code null} for a terminal operation that creates nothing (noOutput, e.g.
    *     Destroy, which only acts on its origins). See DevDocs/adr/0007.
-   * @throws BindException when a live-state rule is violated; nothing has been mutated.
+   * @throws BindException when a live-state rule is violated. Nothing has been mutated, because
+   *     every live-state check runs before the first write, not because the container rolls back:
+   *     BindException is checked, and the txAdvice this bean is advised by declares no
+   *     rollback-for, so Spring's default rules would COMMIT on it. Any future check added after
+   *     the decrement loop must therefore throw something unchecked, or the partial writes would be
+   *     committed alongside the 400. InventoryOperationManagerImplTest pins the ordering:
+   *     performExpectingRejection asserts none of the mutating collaborators were called.
    */
   ApiSampleWithFullSubSamples performOperation(ApiInventoryOperationPost request, User user)
       throws BindException;
