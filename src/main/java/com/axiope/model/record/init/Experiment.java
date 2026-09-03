@@ -14,7 +14,6 @@ import com.researchspace.service.UserFolderSetup;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.ResourceBundle;
 
 public class Experiment extends BuiltinContent implements IBuiltinContent {
 
@@ -33,34 +32,31 @@ public class Experiment extends BuiltinContent implements IBuiltinContent {
 
   @Override
   protected String getFormName() {
-    ResourceBundle resources = getResourceBundle();
-    return resources.getString("form.experiment.name");
+    return getMessage("form.experiment.name");
   }
 
   public RSForm createForm(User createdBy) {
-    String[] textFieldKeys = {
-      "form.experiment.objectiveFieldName",
-      "form.experiment.methodFieldName",
-      "form.experiment.resultsFieldName",
-      "form.experiment.conclusionFieldName"
+    String[] textFieldNames = {
+      getMessage("form.experiment.objectiveFieldName"),
+      getMessage("form.experiment.methodFieldName"),
+      getMessage("form.experiment.resultsFieldName"),
+      getMessage("form.experiment.conclusionFieldName")
     };
-    ResourceBundle resources = getResourceBundle();
 
     RSForm form =
         new RSForm(
-            resources.getString("form.experiment.name"),
-            resources.getString("form.experiment.description"),
+            getMessage("form.experiment.name"),
+            getMessage("form.experiment.description"),
             createdBy);
     form.setCurrent(true);
 
     int colindex = 1;
-    FieldForm dateField = new DateFieldForm(resources.getString("form.experiment.dateFieldName"));
+    FieldForm dateField = new DateFieldForm(getMessage("form.experiment.dateFieldName"));
     dateField.setColumnIndex(colindex++);
     form.addFieldForm(dateField);
 
     // then text fields
-    for (String resourceKey : textFieldKeys) {
-      String fieldName = resources.getString(resourceKey);
+    for (String fieldName : textFieldNames) {
       FieldForm field = new TextFieldForm(fieldName);
       field.setColumnIndex(colindex++);
       form.addFieldForm(field);
@@ -79,29 +75,27 @@ public class Experiment extends BuiltinContent implements IBuiltinContent {
   }
 
   public List<StructuredDocument> createTemplates(User createdBy) {
-    ResourceBundle resources = getResourceBundle();
     ArrayList<StructuredDocument> templates = new ArrayList<>();
 
     StructuredDocument template =
         recordFactory.createStructuredDocument(
-            resources.getString("form.experimentT1.name"), createdBy, m_form);
+            getMessage("form.experimentT1.name"), createdBy, m_form);
 
     template
-        .getField(resources.getString("form.experiment.dateFieldName"))
-        .setFieldData(resources.getString("form.experimentT1.dateFieldValue"));
+        .getField(getMessage("form.experiment.dateFieldName"))
+        .setFieldData(getMessage("form.experimentT1.dateFieldValue"));
     template
-        .getField(resources.getString("form.experiment.methodFieldName"))
-        .setFieldData(
-            getStartupHTMLData(resources.getString("form.experimentT1.methodFieldValue")));
+        .getField(getMessage("form.experiment.methodFieldName"))
+        .setFieldData(getStartupHTMLData(getMessage("form.experimentT1.methodFieldValue")));
     template
-        .getField(resources.getString("form.experiment.objectiveFieldName"))
-        .setFieldData(resources.getString("form.experimentT1.objectiveFieldValue"));
+        .getField(getMessage("form.experiment.objectiveFieldName"))
+        .setFieldData(getMessage("form.experimentT1.objectiveFieldValue"));
     template
-        .getField(resources.getString("form.experiment.resultsFieldName"))
-        .setFieldData(resources.getString("form.experimentT1.resultsFieldValue"));
+        .getField(getMessage("form.experiment.resultsFieldName"))
+        .setFieldData(getMessage("form.experimentT1.resultsFieldValue"));
     template
-        .getField(resources.getString("form.experiment.conclusionFieldName"))
-        .setFieldData(resources.getString("form.experimentT1.conclusionFieldValue"));
+        .getField(getMessage("form.experiment.conclusionFieldName"))
+        .setFieldData(getMessage("form.experimentT1.conclusionFieldValue"));
     m_initializer.saveRecord(template);
     markAsTemplate(template);
     templates.add(template);
@@ -111,7 +105,6 @@ public class Experiment extends BuiltinContent implements IBuiltinContent {
 
   @Override
   public List<StructuredDocument> createExamples(User createdBy, UserFolderSetup folderSetup) {
-    ResourceBundle resources = getResourceBundle();
     ArrayList<StructuredDocument> examples = new ArrayList<>();
     if (m_form == null) {
       log.warn("Can't create example from form " + getFormName() + " - does not exist!");
@@ -119,48 +112,47 @@ public class Experiment extends BuiltinContent implements IBuiltinContent {
     }
     StructuredDocument example =
         recordFactory.createStructuredDocument(
-            resources.getString("form.experimentE2.name"), createdBy, m_form);
+            getMessage("form.experimentE2.name"), createdBy, m_form);
     example.addType(RecordType.NORMAL);
     example.setDocTag(EXAMPLE_TAG);
 
     m_initializer.saveRecord(example);
     example
-        .getField(resources.getString("form.experiment.dateFieldName"))
-        .setFieldData(resources.getString("form.experimentE2.dateFieldValue"));
-    TextField method =
-        (TextField) example.getField(resources.getString("form.experiment.methodFieldName"));
-    String first = getStartupHTMLData(resources.getString("form.experimentE2.methodFieldValueA"));
+        .getField(getMessage("form.experiment.dateFieldName"))
+        .setFieldData(getMessage("form.experimentE2.dateFieldValue"));
+    TextField method = (TextField) example.getField(getMessage("form.experiment.methodFieldName"));
+    String first = getStartupHTMLData(getMessage("form.experimentE2.methodFieldValueA"));
     String second =
         m_initializer.loadImageReturnTextFieldLink(
             createdBy,
-            "StartUpData/" + resources.getString("form.experimentE2.methodFieldValueB"),
+            "StartUpData/" + getMessage("form.experimentE2.methodFieldValueB"),
             "E2_Picture1.png",
             method.getId(),
             folderSetup,
             251,
             324);
-    String third = getStartupHTMLData(resources.getString("form.experimentE2.methodFieldValueC"));
+    String third = getStartupHTMLData(getMessage("form.experimentE2.methodFieldValueC"));
     method.setFieldData(first + second + third);
     example
-        .getField(resources.getString("form.experiment.objectiveFieldName"))
-        .setFieldData(resources.getString("form.experimentE2.objectiveFieldValue"));
+        .getField(getMessage("form.experiment.objectiveFieldName"))
+        .setFieldData(getMessage("form.experimentE2.objectiveFieldValue"));
     TextField results =
-        (TextField) example.getField(resources.getString("form.experiment.resultsFieldName"));
-    first = getStartupHTMLData(resources.getString("form.experimentE2.resultsFieldValueA"));
+        (TextField) example.getField(getMessage("form.experiment.resultsFieldName"));
+    first = getStartupHTMLData(getMessage("form.experimentE2.resultsFieldValueA"));
     second =
         m_initializer.loadImageReturnTextFieldLink(
             createdBy,
-            "StartUpData/" + resources.getString("form.experimentE2.resultsFieldValueB"),
+            "StartUpData/" + getMessage("form.experimentE2.resultsFieldValueB"),
             "E2_Picture2.png",
             results.getId(),
             folderSetup,
             475,
             322);
-    third = getStartupHTMLData(resources.getString("form.experimentE2.resultsFieldValueC"));
+    third = getStartupHTMLData(getMessage("form.experimentE2.resultsFieldValueC"));
     results.setFieldData(first + second + third);
     example
-        .getField(resources.getString("form.experiment.conclusionFieldName"))
-        .setFieldData(resources.getString("form.experimentE2.conclusionFieldValue"));
+        .getField(getMessage("form.experiment.conclusionFieldName"))
+        .setFieldData(getMessage("form.experimentE2.conclusionFieldValue"));
     m_initializer.saveRecord(example);
     examples.add(example);
 

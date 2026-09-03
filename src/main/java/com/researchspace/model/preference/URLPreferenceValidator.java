@@ -10,17 +10,18 @@ import java.nio.charset.StandardCharsets;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 
 public class URLPreferenceValidator {
 
   protected Logger log = LoggerFactory.getLogger(getClass());
 
   /** error message if can't connect to provided url */
-  protected static final String URL_MALFORMED_MSG = "apps.error.url.malformed.msg";
+  protected static final String URL_MALFORMED_MSG = "apps.urlValidation.errors.malformed";
 
-  protected static final String URL_UNREACHABLE_MSG = "apps.error.url.unreachable.msg";
+  protected static final String URL_UNREACHABLE_MSG = "apps.urlValidation.errors.unreachable";
   protected static final String EXPECTED_FRAGMENT_NOT_FOUND_MSG =
-      "apps.error.expected.fragment.not.found";
+      "apps.urlValidation.errors.expectedFragmentNotFound";
 
   /**
    * Check if the provided urlString is a valid and reachable URL, and (optionally) that the page
@@ -28,9 +29,10 @@ public class URLPreferenceValidator {
    *
    * @param urlString to check, provided by the user
    * @param expectedPageFragment (optional) if provided,
-   * @return error message key, or null if there is no error
+   * @return an error, or null if there is no error
    */
-  public String connectAndReadUrl(String urlString, String expectedPageFragment) {
+  public DefaultMessageSourceResolvable connectAndReadUrl(
+      String urlString, String expectedPageFragment) {
     if (StringUtils.isEmpty(urlString)) {
       return null; // allow setting empty/null URL
     }
@@ -40,7 +42,7 @@ public class URLPreferenceValidator {
       url = new URL(urlString);
     } catch (MalformedURLException e) {
       log.warn("coudn't parse provided URL: " + urlString);
-      return URL_MALFORMED_MSG;
+      return new DefaultMessageSourceResolvable(URL_MALFORMED_MSG);
     }
 
     try (InputStream input = url.openStream()) {
@@ -60,10 +62,10 @@ public class URLPreferenceValidator {
     } catch (IOException ioe) {
       log.warn("coudn't reach provided URL: " + urlString + ", got " + ioe.getMessage());
       log.debug("exception details: ", ioe);
-      return URL_UNREACHABLE_MSG;
+      return new DefaultMessageSourceResolvable(URL_UNREACHABLE_MSG);
     }
 
     log.info("expected fragment: " + expectedPageFragment + " not found at: " + url);
-    return EXPECTED_FRAGMENT_NOT_FOUND_MSG;
+    return new DefaultMessageSourceResolvable(EXPECTED_FRAGMENT_NOT_FOUND_MSG);
   }
 }

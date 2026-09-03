@@ -218,22 +218,22 @@ public class NfsExportContext {
         skipped.add(String.format("%s (%s)", childNameAndError[0], childNameAndError[1]));
       }
     }
-    String downloadSummaryMsg = "";
-    if (included.size() > 0) {
-      downloadSummaryMsg +=
-          messages.getMessage("netFileStores.export.folderIncludedLabel")
-              + ": "
-              + ListFormatUtils.formatList(included)
-              + "; ";
+    if (!included.isEmpty() && !skipped.isEmpty()) {
+      return messages.getMessage(
+          "netFileStores.export.folderIncludedAndSkippedSummary",
+          new Object[] {ListFormatUtils.formatList(included), ListFormatUtils.formatList(skipped)});
     }
-    if (skipped.size() > 0) {
-      downloadSummaryMsg +=
-          messages.getMessage("netFileStores.export.folderSkippedLabel")
-              + ": "
-              + ListFormatUtils.formatList(skipped)
-              + ";";
+    if (!included.isEmpty()) {
+      return messages.getMessage(
+          "netFileStores.export.folderIncludedSummary",
+          new Object[] {ListFormatUtils.formatList(included)});
     }
-    return downloadSummaryMsg;
+    if (!skipped.isEmpty()) {
+      return messages.getMessage(
+          "netFileStores.export.folderSkippedSummary",
+          new Object[] {ListFormatUtils.formatList(skipped)});
+    }
+    return "";
   }
 
   private NfsFileStore getNfsFileStore(Long fileStoreId, FieldExporterSupport support) {

@@ -105,7 +105,7 @@ public class ExternalMessageHandlerImpl implements ExternalMessageHandler {
     } catch (RestClientException e) {
       log.warn("Posting external message failed: {}", e.getMessage());
       return new ServiceOperationResult<ResponseEntity<String>>(
-          null, false, messageSource.getMessage(SEND_FAILED_MSG_KEY));
+          null, false, messageSource.getMessage("external.messaging.send.failedDefault"));
     }
     return new ServiceOperationResult<ResponseEntity<String>>(
         resp, resp.getStatusCode().is2xxSuccessful());

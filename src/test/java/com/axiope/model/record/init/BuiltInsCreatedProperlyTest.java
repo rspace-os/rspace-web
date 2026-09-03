@@ -12,10 +12,7 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.testutils.TestFactory;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
-import java.util.ResourceBundle;
 import java.util.Set;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -31,12 +28,6 @@ public class BuiltInsCreatedProperlyTest {
   RichTextUpdater richTextUpdater = new RichTextUpdater();
 
   User user = TestFactory.createAnyUser("anyuser");
-  ResourceBundle bundle = null;
-
-  @BeforeEach
-  public void setUp() throws Exception {
-    bundle = BuiltinContentMessages.forLocale(Locale.forLanguageTag("en-US"));
-  }
 
   List<BuiltinContent> getBuiltinsInPackage()
       throws InstantiationException, IllegalAccessException {
@@ -71,7 +62,6 @@ public class BuiltInsCreatedProperlyTest {
           || SampleTemplateBuiltIn.class.isAssignableFrom(builtin.getClass())) {
         continue;
       }
-      builtin.setResourceBundle(bundle);
       builtin.setM_initializer(persistor);
 
       assertNotNull(builtin.getFormIconName());

@@ -17,12 +17,15 @@ import com.researchspace.model.netfiles.NfsFileStoreInfo;
 import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.model.netfiles.NfsFileSystemInfo;
 import com.researchspace.model.netfiles.NfsUserPermissions;
+import com.researchspace.netfiles.NfsAuthentication;
 import com.researchspace.netfiles.NfsClient;
 import com.researchspace.netfiles.NfsFactory;
 import com.researchspace.netfiles.NfsRSpaceProvidedAuthentication;
 import com.researchspace.netfiles.s3.S3NfsClient;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.service.NfsManager.LoginResult;
+import com.researchspace.service.NfsManager.LoginStatus;
 import com.researchspace.service.aws.S3Utilities;
 import com.researchspace.testutils.GalleryFilestoreTestUtils;
 import java.util.HashMap;
@@ -33,6 +36,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.test.util.ReflectionTestUtils;
 
 /**
@@ -92,6 +96,20 @@ public class NfsManagerImplTest {
     assertNotNull(loggedAs, "S3 should auto-authenticate on first call");
     assertEquals("(unknown)", loggedAs);
     assertNotNull(nfsClients.get(FILE_SYSTEM_ID), "S3 client should be stored in session map");
+  }
+
+  @Test
+  void loginReturnsTypedLocalizedValidationError() {
+    NfsAuthentication auth = mock(NfsAuthentication.class);
+    when(nfsFactory.getNfsAuthentication(s3FileSystem)).thenReturn(auth);
+    when(auth.validateCredentials(any(), any(), eq(testUser)))
+        .thenReturn(new DefaultMessageSourceResolvable("netFileStores.validation.noUsername"));
+
+    LoginResult result =
+        nfsManager.loginToNfs(FILE_SYSTEM_ID, null, null, new HashMap<>(), testUser, null);
+
+    assertEquals(LoginStatus.ERROR, result.status());
+    assertEquals("Please provide the username", result.response());
   }
 
   @Test

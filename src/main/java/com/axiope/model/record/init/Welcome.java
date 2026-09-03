@@ -6,7 +6,6 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.UserFolderSetup;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.ResourceBundle;
 
 public class Welcome extends BuiltinContent implements IBuiltinContent {
 
@@ -37,16 +36,12 @@ public class Welcome extends BuiltinContent implements IBuiltinContent {
 
   @Override
   public List<StructuredDocument> createExamples(User createdBy, UserFolderSetup folders) {
-    ResourceBundle resources = getResourceBundle();
     List<StructuredDocument> examples = new ArrayList<StructuredDocument>();
 
     StructuredDocument example =
-        recordFactory.createStructuredDocument(
-            resources.getString("form.welcome.name"), createdBy, m_form);
+        recordFactory.createStructuredDocument(getMessage("form.welcome.name"), createdBy, m_form);
 
-    example
-        .getField("Data")
-        .setFieldData(getStartupHTMLData(resources.getString("form.welcome.welcome1")));
+    example.getField("Data").setFieldData(getStartupHTMLData(getMessage("form.welcome.welcome1")));
     m_initializer.saveRecord(example);
     examples.add(example);
 

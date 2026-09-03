@@ -15,6 +15,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
@@ -54,14 +55,19 @@ public class GalleryFilestoresCredentialsStore {
           new ApiNfsCredentials(user, credentials.getUsername(), credentials.getPassword()));
     }
 
-    String credentialValidationError =
+    DefaultMessageSourceResolvable credentialValidationError =
         nfsAuthentication.validateCredentials(
             credentialsMapCache.get(currentUserFilesystemPair).getUsername(),
             credentialsMapCache.get(currentUserFilesystemPair).getPassword(),
             credentialsMapCache.get(currentUserFilesystemPair).getUser());
 
     if (credentialValidationError != null) {
-      errors.addError(new ObjectError("credentials", credentialValidationError));
+      errors.addError(
+          new ObjectError(
+              "credentials",
+              credentialValidationError.getCodes(),
+              credentialValidationError.getArguments(),
+              credentialValidationError.getDefaultMessage()));
       throwBindExceptionIfErrors(errors);
     }
 

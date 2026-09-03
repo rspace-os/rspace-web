@@ -963,6 +963,7 @@
       "errors": {
         "noRecords": "No records to move"
       },
+      "nothingMoved": "Nothing was moved. You may lack permission to move the records from their current location or into the new location.",
       "some": {
         "notMoved": "Some records were not moved. You may lack permissions to move the records from their current location, or into the new location."
       },
