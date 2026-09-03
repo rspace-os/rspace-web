@@ -17,15 +17,20 @@ import com.researchspace.service.archive.export.ExportFailureException;
 import com.researchspace.service.chemistry.ChemistryClientException;
 import com.researchspace.service.chemistry.StoichiometryException;
 import jakarta.ws.rs.NotFoundException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.CannotAcquireLockException;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.hibernate5.HibernateJdbcException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
@@ -40,6 +45,16 @@ import org.springframework.web.context.request.WebRequest;
 public class ApiControllerAdvice extends RestControllerAdvice {
 
   protected @Autowired MessageSourceUtils messages;
+
+  /**
+   * MariaDB/InnoDB error codes seen from two transactions writing the same row(s) at once (RSDEV-
+   * 1231): 1020 is "Record has changed since last read", surfaced via {@link
+   * HibernateJdbcException#getSQLException()} when Hibernate cannot classify the failure more
+   * specifically. A genuine deadlock or lock-wait timeout is already classified by Hibernate itself
+   * and reaches Spring as {@link CannotAcquireLockException} instead, so it needs no code check
+   * here.
+   */
+  private static final Set<Integer> CONCURRENT_WRITE_SQL_ERROR_CODES = Set.of(1020);
 
   // 401
   @ExceptionHandler({AuthorizationException.class, ApiAuthenticationException.class})
@@ -77,6 +92,42 @@ public class ApiControllerAdvice extends RestControllerAdvice {
             HttpStatus.CONFLICT,
             ApiErrorCodes.EDIT_CONFLICT.getCode(),
             ex.getLocalizedMessage(),
+            "");
+    return new ResponseEntity<Object>(apiError, new HttpHeaders(), apiError.getStatus());
+  }
+
+  // 409: Spring's own recognized category for "could not acquire a DB lock" (a deadlock or lock-
+  // wait timeout at commit); Hibernate has already classified it this specifically, so every
+  // occurrence is a conflict worth retrying (RSDEV-1231).
+  @ResponseStatus(HttpStatus.CONFLICT)
+  @ExceptionHandler(CannotAcquireLockException.class)
+  public ResponseEntity<Object> handleCannotAcquireLock(
+      final CannotAcquireLockException ex, final WebRequest request) {
+    return handleConcurrentUpdateConflict(ex);
+  }
+
+  // 409, conditionally: Spring's fallback for a Hibernate JDBC failure it could not classify more
+  // specifically covers far more than concurrency conflicts, so only the known concurrent-write SQL
+  // error codes are treated as a conflict; anything else still falls through as a 500, unchanged
+  // (RSDEV-1231).
+  @ExceptionHandler(HibernateJdbcException.class)
+  public ResponseEntity<Object> handleHibernateJdbcException(
+      final HibernateJdbcException ex, final WebRequest request) {
+    SQLException sqlException = ex.getSQLException();
+    if (sqlException != null
+        && CONCURRENT_WRITE_SQL_ERROR_CODES.contains(sqlException.getErrorCode())) {
+      return handleConcurrentUpdateConflict(ex);
+    }
+    return handle500Error(ex, ApiErrorCodes.GENERAL_ERROR, "General server error");
+  }
+
+  private ResponseEntity<Object> handleConcurrentUpdateConflict(final DataAccessException ex) {
+    logException(ex);
+    final ApiError apiError =
+        new ApiError(
+            HttpStatus.CONFLICT,
+            ApiErrorCodes.EDIT_CONFLICT.getCode(),
+            messages.getMessage("errors.inventory.operation.concurrentUpdate"),
             "");
     return new ResponseEntity<Object>(apiError, new HttpHeaders(), apiError.getStatus());
   }
