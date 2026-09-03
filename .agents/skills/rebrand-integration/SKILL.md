@@ -1,17 +1,16 @@
 ---
 name: rebrand-integration
-description: Rebrand an existing RSpace integration when the third-party service changes its name (e.g. Clustermarket → Calira). Swaps the TinyMCE toolbar icon SVG and the Apps-page logo SVG, updates LOGO_COLOR to match the new logo background, and replaces every user-facing instance of the old brand name with the new one across the frontend, JSPs, TinyMCE plugin, and i18n property bundles. Use when the user asks to rebrand, rename, or migrate an integration's display name and icons (e.g. "rebrand Foo to Bar", "migrate <integration> to <new name>", "we're renaming X"). Do not use this skill to add a new integration (use `rspace-empty-integration`), to rename Java packages/classes/DB tables/URL paths/integration keys, or to make purely cosmetic icon-only changes.
+description: Rename an existing RSpace integration's user-facing name and icons while preserving its code identifiers, paths, keys, and wiring. Use when a third-party service changes its name. Do not use for new integrations or icon-only changes.
 ---
 
-# Rebrand Integration Skill
+# Rebrand an integration
 
-Rebrand an existing integration in-place when the third-party service changes
-its name. Swap the two SVG icons (TinyMCE toolbar + Apps-page logo), update the
-brand colour, and replace every user-facing occurrence of the old brand name
-with the new one. Code identifiers, URLs, file paths, integration keys, event
-names, CSS/HTML IDs, and Java packages/classes are deliberately left unchanged
-so that backend wiring, OAuth redirects, persisted credentials and existing
-documents continue to work.
+When a third-party service changes its name, update the integration in place.
+Replace the TinyMCE toolbar icon, Apps-page logo, brand colour, and every
+user-facing occurrence of the old name. Leave code identifiers, URLs, file
+paths, integration keys, event names, CSS/HTML IDs, and Java packages/classes
+unchanged so backend wiring, OAuth redirects, persisted credentials, and
+existing documents keep working.
 
 ## Inputs to gather from the user
 

@@ -124,16 +124,21 @@ Use a new Liquibase changeset under `src/main/resources/sqlUpdates/`; never edit
 Run relevant focused tests. For frontend changes, run `pnpm tsc` at minimum, plus focused tests for behavioral changes and `pnpm lint` for linted or formatted code. Do not replace focused tests with the full suite unless broad verification is warranted.
 </important>
 
+<important if="you are about to declare a coding round complete">
+
+Invoke `$ponytail` on the final diff before reporting completion. Remove tests that duplicate meaningful coverage and comments that only restate the code. Keep the smallest check that protects non-trivial logic, plus tests and comments required for security, accessibility, data safety, constraints, or explicit requirements.
+</important>
+
 <important if="you are verifying that a feature works in the running application">
 
-Use Browser Automation against this worktree's Docker Dev Stack to exercise the completed user flow. The stack is a throwaway instance, so updating fixtures and application settings during verification is allowed.
+Use both Playwright MCP (`mcp__playwright__browser_*`) and Chrome DevTools MCP (`mcp__chrome_devtools__*`) against this worktree's Docker Dev Stack. Use Playwright to drive repeatable user flows and capture accessibility snapshots. Use Chrome DevTools to inspect console and network errors, layout and reflow behavior, performance traces, and Lighthouse findings. Cover the happy path and likely regressions, then check for unintended issues such as failed requests, accessibility violations, layout shifts, and responsive or performance regressions. If one tool is unavailable, record that limitation and do not claim full browser verification. The stack is a throwaway instance, so updating fixtures and application settings during verification is allowed.
 </important>
 
 <important if="you need to run RSpace locally or reproduce behavior end to end">
 
 Normal Jetty setup is documented in `DevDocs/DeveloperNotes/GettingStarted/GettingStarted.md`.
 
-The per-worktree Docker stack is in `docker/dev/rspace-dev`; read `docker/dev/README.md` and the `rspace-dev-stack` skill first. Start it only when the user explicitly asks, because it launches MariaDB, the JVM, and Node. `down` is reversible. Confirm before `nuke`, which permanently deletes that worktree's local data.
+The per-worktree Docker stack is in `docker/dev/rspace-dev`; read `docker/dev/README.md` and the `rspace-dev-stack` skill first. It launches MariaDB, the JVM, and Node. `down` is reversible. Confirm before `nuke`, which permanently deletes that worktree's local data.
 </important>
 
 <important if="you are using or creating repository skills, or need project workflow references">
@@ -147,4 +152,9 @@ Useful references:
 - Security: `DevDocs/DeveloperNotes/SecurityAndPermissions.md`
 - Logging: `DevDocs/DeveloperNotes/Logging.md`
 - CI: `.github/workflows/lint-and-test.yml` and `Jenkinsfile`
+</important>
+
+<important if="you are using an RSpace skill or producing prose, documentation, or user-facing copy">
+
+Apply `$unslop` before finalizing any text produced by an RSpace skill, including prose, documentation, checklists, messages, and user-facing copy. Preserve commands, code identifiers, integration keys, brand names, URLs, and machine-readable values exactly. Do not apply it to source code or structured data.
 </important>

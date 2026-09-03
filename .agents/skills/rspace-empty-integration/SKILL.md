@@ -1,14 +1,13 @@
 ---
 name: rspace-empty-integration
-description: Scaffold a new "empty" RSpace integration end-to-end (Liquibase migration, sysadmin/user toggles, Apps-page card, TinyMCE toolbar icon opening a blank-bodied dialog with the integration's name as the chrome title). Use when a user asks to add, scaffold, create, or generate a new integration in the rspace-web codebase, mentions an integration name (e.g. "add a Galaxy/Foo/Bar integration"), or refers to "empty integration", "integration skeleton", or "new App". Do not use this skill when the request requires authentication (OAuth/API key), per-user configuration, deployment URLs, or backend Java services — those layers must be added by hand on top of the empty scaffold.
+description: Scaffold an empty RSpace integration with Liquibase toggles, an Apps card, and a TinyMCE button that opens a blank dialog. Use for new integration skeletons. Do not use when authentication, deployment URLs, per-user configuration, or backend services are required.
 ---
 
-# RSpace Empty Integration Skill
+# RSpace empty integration
 
-Scaffold a new RSpace integration with the minimum surface area: database
-toggles, an Apps-page card, and a TinyMCE toolbar icon that opens a blank
-dialog whose title chrome is the integration name. Authentication, deployment
-URLs, and domain logic are out of scope.
+Scaffold a new RSpace integration with database toggles, an Apps-page card, and
+a TinyMCE toolbar icon that opens a blank dialog titled with the integration
+name. Authentication, deployment URLs, and domain logic are out of scope.
 
 ## Quick start
 
@@ -141,4 +140,3 @@ plumbing. If any of these are needed, scaffold the empty integration first,
 then add those layers by hand following
 `DevDocs/DeveloperNotes/CreatingNewIntegration.md` and
 `src/main/webapp/ui/src/eln/apps/AddingANewIntegration.md`.
-
