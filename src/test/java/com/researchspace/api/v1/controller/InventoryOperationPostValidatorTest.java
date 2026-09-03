@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.introspect.BeanPropertyDefinition;
 import com.researchspace.api.v1.model.ApiBarcode;
 import com.researchspace.api.v1.model.ApiContainerLocation;
 import com.researchspace.api.v1.model.ApiExtraField;
@@ -28,7 +30,10 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
@@ -761,6 +766,8 @@ class InventoryOperationPostValidatorTest {
                         new ArrayList<>(
                             List.of(new ApiExtraField(ApiExtraField.ExtraFieldTypeEnum.TEXT))))),
             new Undeclared("description", subSample -> subSample.setDescription("smuggled")),
+            new Undeclared("name", subSample -> subSample.setName("Injected child name")),
+            new Undeclared("iconId", subSample -> subSample.setIconId(424242L)),
             new Undeclared(
                 "parentLocation",
                 subSample -> subSample.setParentLocation(new ApiContainerLocation())));
@@ -1040,5 +1047,154 @@ class InventoryOperationPostValidatorTest {
     ApiInventoryOperationPost request = poolRequest();
     request.getOrigins().get(1).setId(100L);
     assertTrue(validate(request).hasFieldErrors("origins[1].id"));
+  }
+
+  // --- amount-taken unit: must be a real amount unit (code review F4) ---
+
+  @Test
+  void rejectsAmountTakenWithAUnitThatDoesNotExist() {
+    // unitId > 0 is not enough: an unknown id reached QuantityUtils.sum in the manager and surfaced
+    // as a 422, not a field-scoped 400.
+    ApiInventoryOperationPost request = aliquotRequest();
+    request.getOrigins().get(0).setAmountTaken(new ApiQuantityInfo(new BigDecimal("1"), 999999));
+    assertSingleErrorWithCode(
+        validate(request), "origins[0].amountTaken", "errors.inventory.quantity.unitInvalid");
+  }
+
+  @Test
+  void rejectsAmountTakenInAUnitThatIsNotAnAmount() {
+    ApiInventoryOperationPost request = aliquotRequest();
+    request.getOrigins().get(0).setAmountTaken(celsius("1"));
+    assertSingleErrorWithCode(
+        validate(request), "origins[0].amountTaken", "errors.inventory.quantity.unitNotAmount");
+  }
+
+  @Test
+  void rejectsNewSubSampleQuantityFinerThanTheStored3dp() {
+    // Same rule as amountTaken: 0.0004 ml would persist as 0 once QuantityInfo rounds to 3dp,
+    // creating a subsample that holds nothing (code review, finding 7).
+    ApiInventoryOperationPost request = aliquotRequest();
+    request.getNewSample().getSubSamples().get(0).setQuantity(millilitres("0.0004"));
+    assertSingleErrorWithCode(
+        validate(request),
+        "newSample.subSamples[0].quantity",
+        "errors.inventory.operation.subSampleQuantityTooPrecise");
+  }
+
+  @Test
+  void acceptsNewSubSampleQuantityAtTheStoredPrecision() {
+    ApiInventoryOperationPost request = aliquotRequest();
+    request.getNewSample().getSubSamples().get(0).setQuantity(millilitres("0.001"));
+    assertFalse(validate(request).hasErrors());
+  }
+
+  @Test
+  void rejectsAnIconSmuggledOntoTheNewSample() {
+    ApiInventoryOperationPost request = aliquotRequest();
+    request.getNewSample().setIconId(424242L);
+    assertSingleErrorWithCode(
+        validate(request), "newSample.iconId", "errors.inventory.operation.undeclaredProperty");
+  }
+
+  /**
+   * Tripwire (code review, finding 9): the subsample whitelist is a denylist in code, so a property
+   * added to the subsample DTO later would be accepted silently. This pins the DTO's writable JSON
+   * properties; a new one fails here until the operation contract either declares it or the
+   * validator rejects it.
+   */
+  @Test
+  void everyWritableSubSampleJsonPropertyIsEitherDeclaredOrRejected() {
+    ObjectMapper mapper = new ObjectMapper();
+    Set<String> writable =
+        mapper
+            .getDeserializationConfig()
+            .introspect(mapper.constructType(ApiSubSample.class))
+            .findProperties()
+            .stream()
+            .filter(BeanPropertyDefinition::couldDeserialize)
+            .map(BeanPropertyDefinition::getName)
+            .collect(Collectors.toCollection(TreeSet::new));
+    Set<String> declared = Set.of("quantity");
+    Set<String> rejectedAsUndeclared =
+        Set.of(
+            "barcodes",
+            "description",
+            "extraFields",
+            "iconId",
+            "name",
+            "newBase64Image",
+            "notes",
+            "parentContainers",
+            "parentLocation",
+            "sharedWith",
+            "sharingMode",
+            "tags");
+    // apiTagInfo is the DTO's alternative tag input; it populates tags, which is rejected above.
+    Set<String> feedsARejectedProperty = Set.of("apiTagInfo");
+    Set<String> assignedByTheServerOnCreation =
+        Set.of(
+            "_links",
+            "attachments",
+            "created",
+            "createdBy",
+            "deleted",
+            "deletedDate",
+            "deletedOnSampleDeletion",
+            "globalId",
+            "historicalVersion",
+            "id",
+            "identifiers",
+            "lastModified",
+            "lastMoveDate",
+            "lastNonWorkbenchParent",
+            "modifiedBy",
+            "modifiedByFullName",
+            "owner",
+            "permittedActions",
+            "revisionId",
+            "sample",
+            "storedInContainer",
+            "type",
+            "version");
+    Set<String> ignoredByTheServer = new TreeSet<>(feedsARejectedProperty);
+    ignoredByTheServer.addAll(assignedByTheServerOnCreation);
+    Set<String> unaccounted = new TreeSet<>(writable);
+    unaccounted.removeAll(declared);
+    unaccounted.removeAll(rejectedAsUndeclared);
+    unaccounted.removeAll(ignoredByTheServer);
+    assertTrue(
+        unaccounted.isEmpty(),
+        () ->
+            "ApiSubSample gained writable JSON properties the operation contract does not account"
+                + " for: "
+                + unaccounted
+                + " (all writable: "
+                + writable
+                + ")");
+  }
+
+  // --- documentation link target (code review, finding 6) ---
+
+  @Test
+  void rejectsADocumentationLinkToAnInventoryRecord() {
+    ApiInventoryOperationPost request = aliquotRequest();
+    ApiExtraField documentation = documentationLink();
+    documentation.getLink().setTargetGlobalId("SS100");
+    request.getNewSample().getExtraFields().add(documentation);
+    assertSingleErrorWithCode(
+        validate(request),
+        "newSample.extraFields[1].link",
+        "errors.inventory.operation.documentationLinkTargetInvalid");
+  }
+
+  @Test
+  void acceptsADocumentationLinkToAnyElnRecordThePickerOffers() {
+    for (String target : List.of("SD1", "NB1", "GL1")) {
+      ApiInventoryOperationPost request = aliquotRequest();
+      ApiExtraField documentation = documentationLink();
+      documentation.getLink().setTargetGlobalId(target);
+      request.getNewSample().getExtraFields().add(documentation);
+      assertFalse(validate(request).hasErrors(), () -> target + " should be accepted");
+    }
   }
 }
