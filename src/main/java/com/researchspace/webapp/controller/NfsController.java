@@ -16,6 +16,8 @@ import com.researchspace.netfiles.NfsViewProperty;
 import com.researchspace.service.FilestoreAclChecker;
 import com.researchspace.service.NfsFileHandler;
 import com.researchspace.service.NfsManager;
+import com.researchspace.service.NfsManager.LoginResult;
+import com.researchspace.service.NfsManager.LoginStatus;
 import com.researchspace.service.UserKeyManager;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -144,7 +146,7 @@ public class NfsController extends BaseController {
     aclChecker.assertCanRead(user, nfsManager.getFileSystem(nfsLoginData.getFileSystemId()));
     Map<Long, NfsClient> nfsClients = retrieveNfsClientsMapFromSession(request);
 
-    String loginResult =
+    LoginResult loginResult =
         nfsManager.loginToNfs(
             nfsLoginData.getFileSystemId(),
             nfsLoginData.getNfsusername(),
@@ -153,13 +155,10 @@ public class NfsController extends BaseController {
             user,
             targetDirectory);
 
-    if (loginResult == null) {
+    if (loginResult.status() == LoginStatus.NEEDS_LOGIN) {
       return NEED_LOG_IN_MSG; // not logged in
     }
-    if (loginResult.startsWith(NfsManager.LOGGED_AS_MSG)) {
-      return loginResult; // logged in fine
-    }
-    return getText(loginResult); // error code, let's translate
+    return loginResult.response();
   }
 
   /*

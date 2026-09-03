@@ -20,6 +20,8 @@ import com.researchspace.netfiles.WriteAttribution;
 import com.researchspace.service.FilestoreAclChecker;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.NfsManager;
+import com.researchspace.service.NfsManager.LoginResult;
+import com.researchspace.service.NfsManager.LoginStatus;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -34,6 +36,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.stereotype.Service;
 
 /** Implementation of NfsManager interface. */
@@ -169,7 +172,7 @@ public class NfsManagerImpl implements NfsManager {
    */
 
   @Override
-  public String loginToNfs(
+  public LoginResult loginToNfs(
       Long fileSystemId,
       String nfsusername,
       String nfspassword,
@@ -180,9 +183,10 @@ public class NfsManagerImpl implements NfsManager {
     // check if required credentials provided
     NfsAuthentication nfsAuthentication =
         nfsFactory.getNfsAuthentication(getFileSystem(fileSystemId));
-    String errorCode = nfsAuthentication.validateCredentials(nfsusername, nfspassword, user);
-    if (errorCode != null) {
-      return errorCode;
+    DefaultMessageSourceResolvable validationError =
+        nfsAuthentication.validateCredentials(nfsusername, nfspassword, user);
+    if (validationError != null) {
+      return new LoginResult(LoginStatus.ERROR, messages.getMessage(validationError));
     }
 
     // try to log in with provided credentials
@@ -190,43 +194,44 @@ public class NfsManagerImpl implements NfsManager {
         nfsAuthentication.login(nfsusername, nfspassword, getFileSystem(fileSystemId), user);
     nfsClients.put(fileSystemId, nfsClient);
 
-    String connectionResult = null;
+    LoginResult connectionResult = new LoginResult(LoginStatus.NEEDS_LOGIN, null);
     if (checkIfUserLoggedIn(fileSystemId, nfsClients, user)) {
       connectionResult =
           testConnectionToTarget(targetDir != null ? targetDir : "", fileSystemId, nfsClient);
     }
-    if (connectionResult == null || !connectionResult.startsWith(NfsManager.LOGGED_AS_MSG)) {
+    if (connectionResult.status() != LoginStatus.LOGGED_IN) {
       logoutFromNfs(fileSystemId, nfsClients);
     }
     return connectionResult;
   }
 
-  @Override
-  public String testConnectionToTarget(String target, Long fileSystemId, NfsClient nfsClient) {
-
-    String result;
+  private LoginResult testConnectionToTarget(
+      String target, Long fileSystemId, NfsClient nfsClient) {
     try {
       // Some data in NFSFileStore table was html encoded by Jquery
       // eg & encoded to &amp;
       // this will unencode that data. Data that was not html encoded
       // by JQuery will be untouched.
       nfsClient.tryConnectAndReadTarget(Jsoup.parse(target).text());
-      result = NfsManager.LOGGED_AS_MSG + nfsClient.getUsername();
+      return new LoginResult(
+          LoginStatus.LOGGED_IN, NfsManager.LOGGED_AS_MSG + nfsClient.getUsername());
 
     } catch (MalformedURLException e) {
-      result = "netFileStores.errors.invalidUrl";
+      String result = messages.getMessage("netFileStores.errors.invalidUrl");
       log.warn(result, e);
+      return new LoginResult(LoginStatus.ERROR, result);
     } catch (NfsAuthException authException) {
       NfsAuthentication nfsAuthentication =
           nfsFactory.getNfsAuthentication(getFileSystem(fileSystemId));
-      String errorMsgCode = nfsAuthentication.getMessageCodeForAuthException(authException);
-      result = errorMsgCode;
+      String result =
+          messages.getMessage(nfsAuthentication.getMessageForAuthException(authException));
       log.warn(result);
+      return new LoginResult(LoginStatus.ERROR, result);
     } catch (NfsException e) {
-      result = "netFileStores.errors.connection";
+      String result = messages.getMessage("netFileStores.errors.connection");
       log.warn(result, e);
+      return new LoginResult(LoginStatus.ERROR, result);
     }
-    return result;
   }
 
   @Override
@@ -263,8 +268,8 @@ public class NfsManagerImpl implements NfsManager {
           "user " + user.getUsername() + " doesn't have nfsClient for system: " + fileSystemId);
 
       try {
-        String autoLoginResult = loginToNfs(fileSystemId, null, null, nfsClients, user, null);
-        if (autoLoginResult.startsWith(NfsManager.LOGGED_AS_MSG)) {
+        LoginResult autoLoginResult = loginToNfs(fileSystemId, null, null, nfsClients, user, null);
+        if (autoLoginResult.status() == LoginStatus.LOGGED_IN) {
           log.debug("auto login success for user: " + user.getUsername());
           nfsClient = nfsClients.get(fileSystemId);
         }

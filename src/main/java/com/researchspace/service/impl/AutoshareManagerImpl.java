@@ -249,19 +249,16 @@ public class AutoshareManagerImpl implements AutoshareManager {
       Boolean autoshareStatus,
       ServiceOperationResultCollection<RecordGroupSharing, RecordGroupSharing> res) {
 
-    String messageKey =
-        autoshareStatus
-            ? "autoshare.notification.memberEnabled"
-            : "autoshare.notification.memberDisabled";
-
     if (res.isAllSucceeded()) {
+      String notification =
+          messages.getMessage(
+              autoshareStatus
+                  ? "autoshare.notification.memberEnabled"
+                  : "autoshare.notification.memberDisabled",
+              new Object[] {subject.getFullName(), targetGroup.getDisplayName()});
       for (User groupMember : targetGroup.getMembers()) {
         if (!groupMember.equals(subject)) {
-
-          sysnotify(
-              groupMember,
-              messages.getMessage(
-                  messageKey, new Object[] {subject.getFullName(), targetGroup.getDisplayName()}));
+          sysnotify(groupMember, notification);
         }
       }
     }

@@ -27,6 +27,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -216,9 +217,14 @@ public class SignupController extends BaseController {
     log.info("Signing up user {}", user.getUsername());
     // we verify captcha 1st if it is enabled
     if ("true".equals(properties.getSignupCaptchaEnabled())) {
-      String verificationResult = captchaVerifier.verifyCaptchaFromRequest(request);
-      if (!SignupCaptchaVerifier.CAPTCHA_OK.equals(verificationResult)) {
-        errors.rejectValue("captcha", verificationResult);
+      DefaultMessageSourceResolvable verificationError =
+          captchaVerifier.verifyCaptchaFromRequest(request);
+      if (verificationError != null) {
+        errors.rejectValue(
+            "captcha",
+            verificationError.getCode(),
+            verificationError.getArguments(),
+            verificationError.getDefaultMessage());
         return returnToSignupPage(user);
       }
     }

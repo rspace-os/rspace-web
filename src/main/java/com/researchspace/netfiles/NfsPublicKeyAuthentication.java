@@ -5,6 +5,7 @@ import com.researchspace.model.UserKeyPair;
 import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.service.UserKeyManager;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -15,10 +16,11 @@ public class NfsPublicKeyAuthentication implements NfsAuthentication {
   @Autowired private UserKeyManager userKeyManager;
 
   @Override
-  public String validateCredentials(String nfsusername, String nfspassword, User user) {
+  public DefaultMessageSourceResolvable validateCredentials(
+      String nfsusername, String nfspassword, User user) {
     UserKeyPair userKey = getKeyForUser(user);
     if (userKey == null) {
-      return "netFileStores.validation.noKey";
+      return new DefaultMessageSourceResolvable("netFileStores.validation.noKey");
     }
     return null;
   }
@@ -32,8 +34,8 @@ public class NfsPublicKeyAuthentication implements NfsAuthentication {
   }
 
   @Override
-  public String getMessageCodeForAuthException(NfsAuthException auth) {
-    return "netFileStores.errors.authPublicKey";
+  public DefaultMessageSourceResolvable getMessageForAuthException(NfsAuthException auth) {
+    return new DefaultMessageSourceResolvable("netFileStores.errors.authPublicKey");
   }
 
   private UserKeyPair getKeyForUser(User user) {

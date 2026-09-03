@@ -11,6 +11,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -40,21 +41,21 @@ public class SignupCaptchaVerifierImpl implements SignupCaptchaVerifier {
   private String googleCaptchaVerifyUrl;
 
   @Override
-  public String verifyCaptchaFromRequest(HttpServletRequest request) {
+  public DefaultMessageSourceResolvable verifyCaptchaFromRequest(HttpServletRequest request) {
 
     if (!"true".equals(properties.getSignupCaptchaEnabled())) {
-      return CAPTCHA_OK;
+      return null;
     }
 
     String captchaResponse = request.getParameter("g-recaptcha-response");
     if (StringUtils.isEmpty(captchaResponse)) {
-      return ERROR_CAPTCHA_RESPONSE_MISSING;
+      return new DefaultMessageSourceResolvable("errors.captcha.response.missing");
     }
 
     String captchaSiteKey = properties.getSignupCaptchaSiteKey();
     if (StringUtils.isEmpty(captchaSiteKey) || StringUtils.isEmpty(googleCaptchaSecret)) {
       log.warn(MISCONFIGURED_PROPERTIES_LOG_MSG);
-      return CAPTCHA_OK;
+      return null;
     }
 
     ResponseEntity<Map<Object, Object>> googleApiResponse =
@@ -66,7 +67,7 @@ public class SignupCaptchaVerifierImpl implements SignupCaptchaVerifier {
           "Captcha Verification request not successful: "
               + statusCode
               + ". Skipping the verification.");
-      return CAPTCHA_OK;
+      return null;
     }
 
     Boolean verified = (Boolean) googleApiResponse.getBody().get("success");
@@ -74,11 +75,11 @@ public class SignupCaptchaVerifierImpl implements SignupCaptchaVerifier {
       List<String> errorCodes = (List<String>) googleApiResponse.getBody().get("error-codes");
       log.info(
           "Captcha Verification failed, error-codes: " + Arrays.toString(errorCodes.toArray()));
-      return ERROR_VERIFICATION_FAILED;
+      return new DefaultMessageSourceResolvable("errors.captcha.verification.failed");
     }
 
     log.info("Captcha Verification success.");
-    return CAPTCHA_OK;
+    return null;
   }
 
   public ResponseEntity<Map<Object, Object>> verifyRecaptchaAtGoogle(String captchaResponse) {

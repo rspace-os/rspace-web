@@ -595,19 +595,16 @@ public class WorkspaceController extends BaseController {
     if (moveSuccessCount == toMove.length) {
       model.addAttribute("successMsg", getText("workspace.move.success"));
     } else {
-      String msgKey;
-      if (moveSuccessCount == 0) {
-        msgKey =
-            moveResults.stream()
-                    .anyMatch(
-                        result ->
-                            result != null && result.getMessage().contains("into own notebook"))
-                ? "workspace.share.owned.intoSharedOwned"
-                : "workspace.move.nothing.moved";
-      } else {
-        msgKey = "workspace.move.some.notMoved";
-      }
-      model.addAttribute("errorMsg", getText(msgKey));
+      final String messageKey =
+          moveSuccessCount == 0
+              ? moveResults.stream()
+                      .anyMatch(
+                          result ->
+                              result != null && result.getMessage().contains("into own notebook"))
+                  ? "workspace.share.owned.intoSharedOwned"
+                  : "workspace.move.nothingMoved"
+              : "workspace.move.some.notMoved";
+      model.addAttribute("errorMsg", getText(messageKey));
     }
 
     Folder source = folderManager.getFolder(settings.getParentFolderId(), user);

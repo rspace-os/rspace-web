@@ -62,21 +62,20 @@ public class FilestoreAclChecker {
 
   public void assertCanRead(User user, NfsFileSystem fs) {
     if (!canRead(user, fs)) {
-      throw denied(user, fs, "read");
+      throw denied(user, fs, "netFileStores.acl.denied.read");
     }
   }
 
   public void assertCanWrite(User user, NfsFileSystem fs) {
     if (!canWrite(user, fs)) {
-      throw denied(user, fs, "write");
+      throw denied(user, fs, "netFileStores.acl.denied.write");
     }
   }
 
-  private AuthorizationException denied(User user, NfsFileSystem fs, String op) {
+  private AuthorizationException denied(User user, NfsFileSystem fs, String messageKey) {
     String fsName = fs == null ? "(unknown)" : fs.getName();
     return new AuthorizationException(
-        messages.getMessage(
-            "netFileStores.acl.denied." + op, new Object[] {user.getUsername(), fsName}));
+        messages.getMessage(messageKey, new Object[] {user.getUsername(), fsName}));
   }
 
   private static boolean isGated(NfsFileSystem fs) {

@@ -1,6 +1,7 @@
 package com.researchspace.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.core.testutil.CoreTestUtils;
@@ -48,21 +49,19 @@ public class SignupCaptchaVerifierTest extends SpringTransactionalTest {
 
     /* captcha disabled */
     when(propHolder.getSignupCaptchaEnabled()).thenReturn("false");
-    assertEquals(
-        SignupCaptchaVerifier.CAPTCHA_OK, captchaVerifier.verifyCaptchaFromRequest(mockRequest));
+    assertNull(captchaVerifier.verifyCaptchaFromRequest(mockRequest));
     assertEquals("", stringLogger.logContents);
 
     /* captcha enabled, but token not provided in request */
     when(propHolder.getSignupCaptchaEnabled()).thenReturn("true");
     assertEquals(
         SignupCaptchaVerifier.ERROR_CAPTCHA_RESPONSE_MISSING,
-        captchaVerifier.verifyCaptchaFromRequest(mockRequest));
+        captchaVerifier.verifyCaptchaFromRequest(mockRequest).getCode());
 
     /* Captcha enabled and provided, but google site key or secret key not in deployment properties.
      * This should not stop the signup, but write a message in log. */
     mockRequest.addParameter("g-recaptcha-response", new String[] {"dummy"});
-    assertEquals(
-        SignupCaptchaVerifier.CAPTCHA_OK, captchaVerifier.verifyCaptchaFromRequest(mockRequest));
+    assertNull(captchaVerifier.verifyCaptchaFromRequest(mockRequest));
     assertEquals(
         SignupCaptchaVerifierImpl.MISCONFIGURED_PROPERTIES_LOG_MSG, stringLogger.logContents);
     stringLogger.logContents = ""; // clear contents
@@ -79,7 +78,7 @@ public class SignupCaptchaVerifierTest extends SpringTransactionalTest {
     captchaVerifier.setGoogleCaptchaSecret("dummy_secret");
     assertEquals(
         SignupCaptchaVerifier.ERROR_VERIFICATION_FAILED,
-        captchaVerifier.verifyCaptchaFromRequest(mockRequest));
+        captchaVerifier.verifyCaptchaFromRequest(mockRequest).getCode());
     assertEquals(
         "Captcha Verification failed, error-codes: [invalid-input-response]",
         stringLogger.logContents);
@@ -90,7 +89,7 @@ public class SignupCaptchaVerifierTest extends SpringTransactionalTest {
     captchaVerifier.setGoogleCaptchaSecret(captchaSecret);
     assertEquals(
         SignupCaptchaVerifier.ERROR_VERIFICATION_FAILED,
-        captchaVerifier.verifyCaptchaFromRequest(mockRequest));
+        captchaVerifier.verifyCaptchaFromRequest(mockRequest).getCode());
     assertEquals(
         "Captcha Verification failed, error-codes: [invalid-input-response]",
         stringLogger.logContents);

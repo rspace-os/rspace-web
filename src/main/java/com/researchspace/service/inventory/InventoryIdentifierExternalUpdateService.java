@@ -328,11 +328,17 @@ public class InventoryIdentifierExternalUpdateService {
    */
   private ApiExternalMetadataUpdate notWritableOutcome(ApiInventoryDOI doi) {
     IdentifierType type = typeOf(doi);
-    String key =
+    String reason =
         IdentifierType.PIDINST_B2INST.equals(type)
-            ? "errors.inventory.identifier.externalUpdateNotPossibleB2inst"
-            : "errors.inventory.identifier.externalUpdateNotPossibleDataCite";
-    return new ApiExternalMetadataUpdate(false, message(key, providerName(type), null));
+            ? message(
+                "errors.inventory.identifier.externalUpdateNotPossibleB2inst",
+                providerName(type),
+                null)
+            : message(
+                "errors.inventory.identifier.externalUpdateNotPossibleDataCite",
+                providerName(type),
+                null);
+    return new ApiExternalMetadataUpdate(false, reason);
   }
 
   /** A mapping failure, reported like a push failure. Not audited: nothing was sent. */

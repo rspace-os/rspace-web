@@ -5268,6 +5268,13 @@ export default interface Resources {
         "search": {
           "help": "Typing `/rs-search [search term]` will look up your search term using RSpace basic search and post the first five results. Search term can be a document name, tag or global ID. For example, `/rs-search Example*`. If you've not already done so, please connect RSpace to Slack from the RSpace Apps tab to set up this feature."
         }
+      },
+      "urlValidation": {
+        "errors": {
+          "expectedFragmentNotFound": "The expected content was not found at the provided URL.",
+          "malformed": "The provided URL is not valid.",
+          "unreachable": "The provided URL could not be reached."
+        }
       }
     },
     "connect": {
@@ -5624,6 +5631,36 @@ export default interface Resources {
         "tooMany": "Only {0} values can be handled at once, please choose fewer items."
       }
     },
+    "jakarta": {
+      "validation": {
+        "constraints": {
+          "Email": {
+            "message": "must be a well-formed email address"
+          },
+          "Max": {
+            "message": "must be less than or equal to {value}"
+          },
+          "Min": {
+            "message": "must be greater than or equal to {value}"
+          },
+          "NotBlank": {
+            "message": "must not be blank"
+          },
+          "NotEmpty": {
+            "message": "must not be empty"
+          },
+          "NotNull": {
+            "message": "must not be null"
+          },
+          "Pattern": {
+            "message": "must match \"{regexp}\""
+          },
+          "Size": {
+            "message": "size must be between {min} and {max}"
+          }
+        }
+      }
+    },
     "label": {
       "affiliation": "Affiliation",
       "caption": "caption",
@@ -5658,6 +5695,20 @@ export default interface Resources {
       "uniqueName": "Unique name",
       "username": "Username",
       "yourComment": "your comment"
+    },
+    "org": {
+      "hibernate": {
+        "validator": {
+          "constraints": {
+            "NotEmpty": {
+              "message": "may not be empty"
+            },
+            "Range": {
+              "message": "must be between {min} and {max}"
+            }
+          }
+        }
+      }
     },
     "pagination": {
       "first": "First",
@@ -6483,9 +6534,10 @@ export default interface Resources {
         "fileSkipped": "file skipped ({0})",
         "fileTooLarge": "file larger than provided size limit",
         "folderEmpty": "empty folder",
-        "folderIncludedLabel": "Included",
+        "folderIncludedAndSkippedSummary": "Included: {0}; Skipped: {1};",
+        "folderIncludedSummary": "Included: {0};",
         "folderSkippedAsSubfolder": "skipped as subfolder",
-        "folderSkippedLabel": "Skipped",
+        "folderSkippedSummary": "Skipped: {0};",
         "noReadAccess": "no read access to ''{0}'' File System",
         "notLoggedIn": "not logged into connected File System",
         "resourceNotAccessible": "resource not accessible",
@@ -6834,6 +6886,14 @@ export default interface Resources {
     "errors": {
       "inventory": {
         "attachment": {
+          "mediaFileGlobalId": {
+            "empty": "mediaFileGlobalId is required.",
+            "invalid": "mediaFileGlobalId must be a valid global identifier."
+          },
+          "parentGlobalId": {
+            "empty": "parentGlobalId is required.",
+            "invalid": "parentGlobalId must be a valid global identifier."
+          },
           "sampleTemplateUnsupported": "Sample templates do not support file attachments yet",
           "workbenchUnsupported": "Files cannot be attached to a workbench"
         },
@@ -6909,7 +6969,11 @@ export default interface Resources {
           "validation": "{0}"
         },
         "file": {
-          "imagesNotSupported": "Getting images for general files not supported yet"
+          "imagesNotSupported": "Getting images for general files not supported yet",
+          "parentGlobalId": {
+            "empty": "parentGlobalId is required.",
+            "invalid": "parentGlobalId must be a valid global identifier."
+          }
         },
         "globalId": {
           "unsupportedParent": "Unknown parent global id: {0}",
@@ -10080,6 +10144,7 @@ export default interface Resources {
         "errors": {
           "noRecords": "No records to move"
         },
+        "nothingMoved": "Nothing was moved. You may lack permission to move the records from their current location or into the new location.",
         "some": {
           "notMoved": "Some records were not moved. You may lack permissions to move the records from their current location, or into the new location."
         },

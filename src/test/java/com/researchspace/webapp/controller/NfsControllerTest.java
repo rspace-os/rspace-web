@@ -25,6 +25,8 @@ import com.researchspace.netfiles.NfsFileDetails;
 import com.researchspace.netfiles.NfsTarget;
 import com.researchspace.netfiles.NfsViewProperty;
 import com.researchspace.service.NfsManager;
+import com.researchspace.service.NfsManager.LoginResult;
+import com.researchspace.service.NfsManager.LoginStatus;
 import com.researchspace.testutils.GalleryFilestoreTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
 import jakarta.servlet.http.HttpServletRequest;
@@ -142,7 +144,14 @@ public class NfsControllerTest extends SpringTransactionalTest {
 
   @Test
   public void testLoginToNfs() {
-    // before stubbing manager.loginToNfs the call returns NEED_LOG_IN_MSG
+    when(nfsManagerMock.loginToNfs(
+            eq(TEST_FILE_SYSTEM_ID),
+            eq("username"),
+            eq("password"),
+            anyMap(),
+            any(),
+            eq("target_dir")))
+        .thenReturn(new LoginResult(LoginStatus.NEEDS_LOGIN, null));
     String loginResult =
         controller.loginToNfs(
             TEST_FILE_SYSTEM_ID, "username", "password", "target_dir", request, principalStub);
@@ -154,7 +163,7 @@ public class NfsControllerTest extends SpringTransactionalTest {
             anyMap(),
             any(),
             eq("target_dir")))
-        .thenReturn("logged.as.username");
+        .thenReturn(new LoginResult(LoginStatus.LOGGED_IN, "logged.as.username"));
     loginResult =
         controller.loginToNfs(
             TEST_FILE_SYSTEM_ID, "username", "password", "target_dir", request, principalStub);

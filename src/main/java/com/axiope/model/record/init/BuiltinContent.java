@@ -8,6 +8,7 @@ import com.researchspace.model.record.IRecordFactory;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.RecordFactory;
 import com.researchspace.model.record.StructuredDocument;
+import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.UserFolderSetup;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -15,7 +16,6 @@ import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
-import java.util.ResourceBundle;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +25,8 @@ import org.springframework.core.io.Resource;
 
 /** All subclasses should provide a default constructor for reflection-based testing. */
 public abstract class BuiltinContent implements IBuiltinContent {
+
+  private static final JsonMessageSource MESSAGES = new JsonMessageSource();
 
   /* the form associated with this content */
   RSForm m_form;
@@ -40,7 +42,6 @@ public abstract class BuiltinContent implements IBuiltinContent {
   IRecordFactory recordFactory;
 
   private Locale locale;
-  private ResourceBundle resourceBundle;
 
   public BuiltinContent() {
     this.recordFactory = new RecordFactory();
@@ -77,15 +78,9 @@ public abstract class BuiltinContent implements IBuiltinContent {
     return Collections.emptyList();
   }
 
-  /** For use by subclasses to get the resource bundle. Initialises once and then caches. */
-  protected ResourceBundle getResourceBundle() {
-    if (resourceBundle == null) {
-      resourceBundle =
-          BuiltinContentMessages.forLocale(
-              locale != null ? locale : LocaleContextHolder.getLocale());
-    }
-
-    return resourceBundle;
+  protected String getMessage(String key) {
+    return MESSAGES.getMessage(
+        key, null, locale != null ? locale : LocaleContextHolder.getLocale());
   }
 
   protected void markAsTemplate(StructuredDocument template) {
@@ -134,13 +129,6 @@ public abstract class BuiltinContent implements IBuiltinContent {
   public List<StructuredDocument> createExamples(
       User createdBy, UserFolderSetup folders, StructuredDocument linkTo) {
     return createExamples(createdBy, folders);
-  }
-
-  /*
-   * For testing
-   */
-  void setResourceBundle(ResourceBundle resourceBundle) {
-    this.resourceBundle = resourceBundle;
   }
 
   public void logDebug(String message) {

@@ -74,7 +74,10 @@ pipeline {
                         expression { return params.LIQUIBASE }
                     }
                 }
-                changeset '**/*.java'
+                anyOf {
+                    changeset '**/*.java'
+                    changeset 'src/main/webapp/ui/src/modules/common/i18n/locales/**/*.json'
+                }
             }
 
             steps {

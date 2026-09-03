@@ -84,7 +84,7 @@ public class InventoryFileApiManagerImpl implements InventoryFileApiManager {
     // record, so a crafted GL<non-media-id> cannot become an existence oracle via a 500.
     if (!linkTargetResolver.targetExistsAndIsReadable(target, actor)) {
       throw new ApiRuntimeException(
-          "errors.inventory.field.link.targetNotFound", galleryFileGlobalId);
+          "errors.inventory.field.linkTargetNotFound", galleryFileGlobalId);
     }
     List<ApiInventoryReferencingItem> rows = new ArrayList<>();
     // record-level attachments: the attachment resolves its own owning record
@@ -106,13 +106,13 @@ public class InventoryFileApiManagerImpl implements InventoryFileApiManager {
       gid = new GlobalIdentifier(galleryFileGlobalId);
     } catch (IllegalArgumentException | NullPointerException e) {
       throw new ApiRuntimeException(
-          "errors.inventory.field.link.targetNotFound", galleryFileGlobalId);
+          "errors.inventory.field.linkTargetNotFound", galleryFileGlobalId);
     }
     // attachments only ever target a Gallery media file; any other kind is treated as not-found so
     // a caller cannot probe non-Gallery ids through this endpoint
     if (gid.getPrefix() != GlobalIdPrefix.GL) {
       throw new ApiRuntimeException(
-          "errors.inventory.field.link.targetNotFound", galleryFileGlobalId);
+          "errors.inventory.field.linkTargetNotFound", galleryFileGlobalId);
     }
     return gid;
   }

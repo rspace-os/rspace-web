@@ -13,7 +13,6 @@ import com.researchspace.service.UserFolderSetup;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.ResourceBundle;
 
 public class RtPCR extends BuiltinContent implements IBuiltinContent {
 
@@ -29,40 +28,33 @@ public class RtPCR extends BuiltinContent implements IBuiltinContent {
 
   @Override
   protected String getFormName() {
-    ResourceBundle resources = getResourceBundle();
-    return resources.getString("form.rtpcr.name");
+    return getMessage("form.rtpcr.name");
   }
 
   @Override
   public RSForm createForm(User createdBy) {
-    String[] textFieldKeys = {
-      "form.rtpcr.template",
-      "form.rtpcr.masterMix",
-      "form.rtpcr.cyclingParameters",
-      "form.rtpcr.primers",
-      "form.rtpcr.results",
-      "form.rtpcr.positives",
-      "form.rtpcr.discussion",
-      "form.rtpcr.toDo",
+    String[] textFieldNames = {
+      getMessage("form.rtpcr.template"),
+      getMessage("form.rtpcr.masterMix"),
+      getMessage("form.rtpcr.cyclingParameters"),
+      getMessage("form.rtpcr.primers"),
+      getMessage("form.rtpcr.results"),
+      getMessage("form.rtpcr.positives"),
+      getMessage("form.rtpcr.discussion"),
+      getMessage("form.rtpcr.toDo"),
     };
 
-    ResourceBundle resources = getResourceBundle();
-
     RSForm form =
-        new RSForm(
-            resources.getString("form.rtpcr.name"),
-            resources.getString("form.rtpcr.description"),
-            createdBy);
+        new RSForm(getMessage("form.rtpcr.name"), getMessage("form.rtpcr.description"), createdBy);
     form.setCurrent(true);
 
     int colindex = 1;
-    FieldForm dateField = new DateFieldForm(resources.getString("form.rtpcr.date"));
+    FieldForm dateField = new DateFieldForm(getMessage("form.rtpcr.date"));
     dateField.setColumnIndex(colindex++);
     form.addFieldForm(dateField);
 
     // then text fields
-    for (String resourceKey : textFieldKeys) {
-      String fieldName = resources.getString(resourceKey);
+    for (String fieldName : textFieldNames) {
       FieldForm field = new TextFieldForm(fieldName);
       field.setColumnIndex(colindex++);
       form.addFieldForm(field);
@@ -87,7 +79,6 @@ public class RtPCR extends BuiltinContent implements IBuiltinContent {
 
   @Override
   public List<StructuredDocument> createExamples(User createdBy, UserFolderSetup folderSetup) {
-    ResourceBundle resources = getResourceBundle();
     ArrayList<StructuredDocument> examples = new ArrayList<>();
     if (m_form == null) {
       log.warn("Can't create example from form " + getFormName() + " - does not exist!");
@@ -95,32 +86,29 @@ public class RtPCR extends BuiltinContent implements IBuiltinContent {
     }
 
     StructuredDocument example =
-        recordFactory.createStructuredDocument(
-            resources.getString("form.rtpcrE1.name"), createdBy, m_form);
+        recordFactory.createStructuredDocument(getMessage("form.rtpcrE1.name"), createdBy, m_form);
 
     // persist so images can be added, they need a database id
     m_initializer.saveRecord(example);
+    example.getField(getMessage("form.rtpcr.date")).setFieldData(getMessage("form.rtpcrE1.date"));
     example
-        .getField(resources.getString("form.rtpcr.date"))
-        .setFieldData(resources.getString("form.rtpcrE1.date"));
+        .getField(getMessage("form.rtpcr.template"))
+        .setFieldData(getStartupHTMLData(getMessage("form.rtpcrE1.template")));
     example
-        .getField(resources.getString("form.rtpcr.template"))
-        .setFieldData(getStartupHTMLData(resources.getString("form.rtpcrE1.template")));
+        .getField(getMessage("form.rtpcr.masterMix"))
+        .setFieldData(getStartupHTMLData(getMessage("form.rtpcrE1.masterMix")));
     example
-        .getField(resources.getString("form.rtpcr.masterMix"))
-        .setFieldData(getStartupHTMLData(resources.getString("form.rtpcrE1.masterMix")));
+        .getField(getMessage("form.rtpcr.cyclingParameters"))
+        .setFieldData(getStartupHTMLData(getMessage("form.rtpcrE1.cyclingParameters")));
     example
-        .getField(resources.getString("form.rtpcr.cyclingParameters"))
-        .setFieldData(getStartupHTMLData(resources.getString("form.rtpcrE1.cyclingParameters")));
-    example
-        .getField(resources.getString("form.rtpcr.primers"))
-        .setFieldData(getStartupHTMLData(resources.getString("form.rtpcrE1.primers")));
-    TextField method = (TextField) example.getField(resources.getString("form.rtpcr.results"));
-    String first = getStartupHTMLData(resources.getString("form.rtpcrE1.results"));
+        .getField(getMessage("form.rtpcr.primers"))
+        .setFieldData(getStartupHTMLData(getMessage("form.rtpcrE1.primers")));
+    TextField method = (TextField) example.getField(getMessage("form.rtpcr.results"));
+    String first = getStartupHTMLData(getMessage("form.rtpcrE1.results"));
     String second =
         m_initializer.loadImageReturnTextFieldLink(
             createdBy,
-            "StartUpData/" + resources.getString("form.rtpcrE1.resultsImage"),
+            "StartUpData/" + getMessage("form.rtpcrE1.resultsImage"),
             "E1_Picture1.png",
             method.getId(),
             folderSetup,
@@ -128,14 +116,14 @@ public class RtPCR extends BuiltinContent implements IBuiltinContent {
             0); // full size
     method.setFieldData(first + second);
     example
-        .getField(resources.getString("form.rtpcr.positives"))
-        .setFieldData(getStartupHTMLData(resources.getString("form.rtpcrE1.positives")));
+        .getField(getMessage("form.rtpcr.positives"))
+        .setFieldData(getStartupHTMLData(getMessage("form.rtpcrE1.positives")));
     example
-        .getField(resources.getString("form.rtpcr.discussion"))
-        .setFieldData(getStartupHTMLData(resources.getString("form.rtpcrE1.discussion")));
+        .getField(getMessage("form.rtpcr.discussion"))
+        .setFieldData(getStartupHTMLData(getMessage("form.rtpcrE1.discussion")));
     example
-        .getField(resources.getString("form.rtpcr.toDo"))
-        .setFieldData(getStartupHTMLData(resources.getString("form.rtpcrE1.toDo")));
+        .getField(getMessage("form.rtpcr.toDo"))
+        .setFieldData(getStartupHTMLData(getMessage("form.rtpcrE1.toDo")));
     m_initializer.saveRecord(example);
     examples.add(example);
 
