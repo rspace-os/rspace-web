@@ -13,7 +13,12 @@ import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.model.User;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.inventory.SubSampleApiManager;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -640,5 +645,89 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
 
   private ApiExtraField findLinkField(List<ApiExtraField> extraFields) {
     return extraFields.stream().filter(ef -> ef.getLink() != null).findFirst().orElse(null);
+  }
+
+  /**
+   * RSDEV-1231: identical requests racing the same origin used to have every losing request surface
+   * an uncaught commit-time conflict (a deadlock, or "record has changed since last read") as a
+   * 500, even though the origin itself always ended up in the correct final state. Fires {@code
+   * count} copies of {@code operationJson} concurrently and returns each response status.
+   */
+  private List<Integer> fireConcurrentOperationRequests(String operationJson, int count)
+      throws Exception {
+    ExecutorService pool = Executors.newFixedThreadPool(count);
+    try {
+      List<Callable<Integer>> requests = new ArrayList<>();
+      for (int i = 0; i < count; i++) {
+        requests.add(
+            () ->
+                mockMvc
+                    .perform(
+                        createBuilderForPostWithJSONBody(
+                            apiKey, "/operations", anyUser, operationJson))
+                    .andReturn()
+                    .getResponse()
+                    .getStatus());
+      }
+      List<Integer> statuses = new ArrayList<>();
+      for (Future<Integer> result : pool.invokeAll(requests)) {
+        statuses.add(result.get());
+      }
+      return statuses;
+    } finally {
+      pool.shutdown();
+    }
+  }
+
+  @Test
+  public void parallelDestroyRequestsAgainstTheSameOriginNeverReturn5xx() throws Exception {
+    // Destroy must take the origin's entire quantity, so only the first of these to commit can
+    // still match it; every other request should lose cleanly (400/409), never 500.
+    ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
+    String disposedField =
+        "{\"name\":\"Disposed\",\"type\":\"text\",\"newFieldRequest\":true,"
+            + "\"operationFieldKey\":\"operations.destroy.disposedField\",\"content\":\"2026-09-03\"}";
+    String operationJson =
+        "{\"operationType\":\"destroy\",\"origins\":[{\"id\":"
+            + origin.getId()
+            + ",\"amountTaken\":{\"numericValue\":"
+            + origin.getQuantity().getNumericValue().toPlainString()
+            + ",\"unitId\":"
+            + origin.getQuantity().getUnitId()
+            + "},\"extraFields\":["
+            + disposedField
+            + "]}]}";
+
+    List<Integer> statuses = fireConcurrentOperationRequests(operationJson, 5);
+
+    assertTrue(statuses.stream().noneMatch(status -> status >= 500), () -> "5xx in " + statuses);
+    assertEquals(
+        1,
+        statuses.stream().filter(status -> status == 201).count(),
+        () -> "exactly one request should win the race, got " + statuses);
+    ApiSubSample reloaded = subSampleApiManager.getApiSubSampleById(origin.getId(), anyUser);
+    assertTrue(
+        java.math.BigDecimal.ZERO.compareTo(reloaded.getQuantity().getNumericValue()) == 0,
+        "origin should be fully consumed by the one request that won");
+  }
+
+  @Test
+  public void parallelAliquotRequestsAgainstTheSameOriginNeverReturn5xx() throws Exception {
+    // Aliquot only decrements, so several concurrent requests can legitimately all succeed before
+    // the origin runs out; the race is only over which of them commits first, so none may 500.
+    ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
+    java.math.BigDecimal originalAmount = origin.getQuantity().getNumericValue();
+    String operationJson = aliquotJson(origin, isPartOfLinkJson(origin.getGlobalId()));
+
+    List<Integer> statuses = fireConcurrentOperationRequests(operationJson, 5);
+
+    assertTrue(statuses.stream().noneMatch(status -> status >= 500), () -> "5xx in " + statuses);
+    long successes = statuses.stream().filter(status -> status == 201).count();
+    ApiSubSample reloaded = subSampleApiManager.getApiSubSampleById(origin.getId(), anyUser);
+    java.math.BigDecimal expected =
+        originalAmount.subtract(java.math.BigDecimal.valueOf(successes));
+    assertTrue(
+        expected.compareTo(reloaded.getQuantity().getNumericValue()) == 0,
+        () -> "origin should be reduced by exactly " + successes + " g, got statuses " + statuses);
   }
 }
