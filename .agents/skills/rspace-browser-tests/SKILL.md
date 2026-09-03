@@ -1,16 +1,15 @@
 ---
 name: rspace-browser-tests
-description: Write, run, and debug RSpace frontend component tests in Vitest Browser Mode (real chromium/firefox/webkit via the Playwright provider + MSW + a Page Object Model). Use when adding or fixing a `*.spec.tsx` browser test, migrating a component to the browser-test pattern, debugging a cross-engine failure or flake, or wiring MSW handlers for a component under test. Do NOT use for jsdom unit tests (`*.test.tsx`, run with `pnpm run test`) or for backend Java tests.
+description: Write, run, and debug RSpace component tests in Vitest Browser Mode with real browsers, Playwright, MSW, and page objects. Use for `*.spec.tsx` tests and cross-engine failures. Do not use for jsdom tests or backend Java tests.
 ---
 
-# RSpace Browser-Mode Component Tests
+# RSpace browser-mode component tests
 
-The frontend (`src/main/webapp/ui`) runs its component tests in **Vitest Browser
-Mode**: real browsers (chromium, firefox, webkit) driven through the
-`@vitest/browser-playwright` provider, with network mocked by **MSW** and the UI
-exercised through a **Page Object Model**. This replaced the old Playwright
-Component Testing stack; there is no `playwright-ct` anymore. Future end-to-end
-Playwright tests use the `*.e2e.*` suffix so the two never collide.
+Component tests in `src/main/webapp/ui` run in Vitest Browser Mode. The suite
+uses real Chromium, Firefox, and WebKit browsers through
+`@vitest/browser-playwright`, mocks network calls with MSW, and drives the UI
+through a Page Object Model. The old `playwright-ct` setup is gone. End-to-end
+Playwright tests use the `*.e2e.*` suffix.
 
 `REFERENCE.md` holds the full artifact templates, the gotcha catalogue, and the
 Playwright-CT to Vitest API translation table. Read it before writing a spec.

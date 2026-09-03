@@ -1,25 +1,18 @@
 ---
 name: rspace-dev-stack
-description: Boot, drive, and tear down the per-worktree Dockerized RSpace dev stack (MariaDB + Jetty backend + Vite frontend) to reproduce bugs, diagnose issues, and manually test functionality against a real running instance. Use when a user asks to run/start RSpace locally, spin up the app to test or verify a change, reproduce a bug end-to-end, or check behaviour in a browser. Do not use for unit/integration tests (use mvn/pnpm directly) or for production deployment (use rspace-docker).
+description: Run and diagnose the per-worktree RSpace Docker stack (MariaDB, Jetty, and Vite) for live runtime checks and end-to-end feature verification. Do not use for unit or integration tests or production deployment.
 ---
 
 # RSpace Dev Stack Skill
 
-Drive the experimental per-worktree Docker dev stack to get a full RSpace
-instance (MariaDB + Jetty backend + Vite frontend) running so you can reproduce
-issues and test functionality live. **RSpace is a SPA (single-page
-application):** both frontend and backend must run together. Even for
-frontend-only changes, boot the entire stack to verify the UI works against the
-real API and database. The launcher is `docker/dev/rspace-dev`; full reference
-is `docker/dev/README.md` — read it for ports, debugging, and hot-reload
-details.
+Use the per-worktree Docker stack to run a complete RSpace instance: MariaDB,
+Jetty, and Vite. RSpace is a single-page app, so the frontend and backend must
+run together. Boot the full stack even for frontend-only changes so the UI uses
+the real API and database. The launcher is `docker/dev/rspace-dev`. Read
+`docker/dev/README.md` for ports, debugging, and hot reload.
 
 ## Guardrails (read first)
 
-- **Never run `up` (or otherwise launch containers) unless the user explicitly
-  asks.** It is resource-heavy (full JVM + DB + Node per worktree). If a task
-  would benefit from a running instance, say so and ask — do not start it on
-  your own initiative. This mirrors the rule in `CLAUDE.md`.
 - **Always boot the entire stack together: `./docker/dev/rspace-dev up`.**
   RSpace is a SPA; the frontend cannot work without the backend API and
   database. Do not try to run just the frontend (Vite) or just the backend
@@ -36,7 +29,7 @@ details.
 ## When to launch over static analysis
 
 Reading code answers "what does this do"; running the app answers "what is
-actually happening". Prefer launching the stack (after asking the user) when:
+actually happening". Prefer launching the stack when:
 
 - **A crash or error needs its real stack trace.** A React component blows up,
   a 500 comes back from an endpoint, or a Spring bean fails to wire — the live
@@ -66,10 +59,10 @@ exercises. Don't boot the stack just to read code.
 ./docker/dev/rspace-dev ps      # status + URLs/ports for this worktree
 ```
 
-If nothing is running and the user asked to run the app, proceed; otherwise
-reuse the running instance.
+If nothing is running and live verification is needed, boot it. Otherwise reuse
+the running instance.
 
-### 2. Boot (only when the user asked)
+### 2. Boot when needed
 
 ```bash
 ./docker/dev/rspace-dev up                # reuse existing DB (fast)
@@ -178,12 +171,16 @@ For backend stepping, attach a debugger to this worktree's JDWP port (shown by
 
 ### 5. Test functionality in the browser
 
-Use the app URL from `ps` and drive the flow with whichever browser-automation
-tooling your runtime has connected — point it at the running instance's URL to
-exercise flows and capture state. See "Browser automation" below for which of
-`preview_*` / Playwright / Chrome DevTools to reach for and the standard loop.
-If none are connected, drive it manually and read state from devtools (console,
-network, DOM).
+Use the app URL from `ps` and verify the feature with both Playwright MCP and
+Chrome DevTools MCP when they are connected. Playwright (`mcp__playwright__browser_*`)
+drives repeatable user flows and captures accessibility snapshots. Chrome DevTools
+(`mcp__chrome_devtools__*`) checks console and network errors, layout and reflow
+behavior, performance traces, and Lighthouse findings. Exercise the happy path
+and likely regression paths, then sweep for unintended issues such as failed
+requests, accessibility violations, layout shifts, and responsive or performance
+regressions. If one tool is unavailable, record that limitation and do not claim
+full browser verification. If neither is connected, drive the flow manually and
+read state from devtools (console, network, DOM).
 
 ### 6. Tear down (always prompt when finished)
 
@@ -202,33 +199,32 @@ wants the local data and volumes gone. Only run either after the user confirms.
 ## Browser automation
 
 Three browser-driving toolsets can target the running instance. None are built
-into a coding agent by default — they come from MCP servers (and matching
-skills) in the runtime, so **check what's actually connected** (your tool list /
-`ToolSearch`)
-before relying on one; in headless/cron runs none may be present, in which case
-drive manually via devtools. They share an accessibility-tree model, so the
-workflow is the same; pick by the job:
+into a coding agent by default. They come from MCP servers (and matching skills)
+in the runtime, so check what is connected (your tool list / `ToolSearch`) before
+relying on one. For feature verification, use both Playwright MCP and Chrome
+DevTools MCP when connected. In headless or cron runs, either may be absent; if
+so, record the limitation and use the connected tool or manual devtools checks.
+They share an accessibility-tree model, so the workflow is the same:
 
 | Use when…                                              | Reach for          |
 | ------------------------------------------------------ | ------------------ |
-| UI flows, forms, upload, tabs — and `t3-code` is connected | **t3-code** `preview_*` (preferred) |
-| Same, but no `t3-code` in your runtime (**default fallback**) | **Playwright** |
-| Perf trace / Web Vitals, network or console forensics, throttling, Lighthouse (a11y/SEO) | **Chrome DevTools** |
+| UI flows, forms, upload, tabs | **Playwright MCP** `mcp__playwright__browser_*` |
+| Perf trace, reflows, Web Vitals, network or console forensics, throttling, Lighthouse | **Chrome DevTools MCP** `mcp__chrome_devtools__*` |
+| UI flow when MCP tools are unavailable but `t3-code` is connected | **t3-code** `preview_*` |
 
-**Prefer `t3-code` `preview_*` when it's present; otherwise default to
-Playwright.** `t3-code` exists only in some runtimes and most developers won't
-have it, so don't assume it — but when your tool list does show it, it's the
-preferred driver. Playwright is the broadly-available fallback. (Chrome DevTools
-is for diagnosis, per the table, regardless of which driver you use for flows.)
+Playwright is the primary flow driver. Chrome DevTools is the diagnostic pass.
+Use both for feature verification rather than treating a passing click path as
+complete. `t3-code` `preview_*` is an alternate flow driver when it is connected.
 
 **The loop is always: navigate → snapshot → act on a ref → assert.** Snapshot
 first (it returns element refs/selectors); act using those refs; re-snapshot or
 wait to confirm. Don't act on coordinates from a stale snapshot.
 
 First navigate to the app URL printed by `ps` (e.g. `http://localhost:8080`),
-log in (`user1a` / `user1234`), then:
+log in (`user1a` / `user1234`), then run the Playwright flow and the Chrome
+DevTools diagnostic pass:
 
-- **Playwright** (`browser_*`, default fallback): `browser_navigate`, `browser_snapshot`,
+- **Playwright** (`browser_*`): `browser_navigate`, `browser_snapshot`,
   `browser_click`, `browser_type`, `browser_fill_form`, `browser_select_option`,
   `browser_press_key`, `browser_file_upload`, `browser_wait_for`, `browser_tabs`,
   `browser_console_messages`, `browser_network_requests` /
@@ -254,7 +250,8 @@ log in (`user1a` / `user1234`), then:
 
 If a matching **skill** is installed (Playwright / Chrome DevTools), invoking it
 is the higher-level entry point; calling the MCP tools directly (above) is the
-lower-level one. Either works — use whichever is available.
+lower-level one. Either works when only one is available, but use both for
+feature verification whenever both are connected.
 
 ### Debugging recipe
 
