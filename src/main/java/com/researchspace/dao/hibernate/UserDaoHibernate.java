@@ -71,9 +71,11 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
   private static final String USERS_IN_COMMUNITY_Q =
       " from User u inner join u.userGroups ug inner join ug.group g  inner join g.communities c "
           + " where c.id=:id ";
-  private static final String SEARCH_QUERY_FORMAT =
-      " and (u.email like '%%%s%%' or u.firstName like '%%%s%%' or u.lastName like '%%%s%%' or"
-          + " u.username like '%%%s%%')";
+  private static final String ALL_FIELDS_TERM = "allFieldsTerm";
+  private static final String SEARCH_ALL_FIELDS_CLAUSE =
+      " and (u.email like :allFieldsTerm or u.firstName like :allFieldsTerm"
+          + " or u.lastName like :allFieldsTerm or u.username like :allFieldsTerm)";
+  private static final String EXCLUDED_SIGNUP_SOURCE = "excludedSignupSource";
   private static final String ORDER_BY_QUERY_FORMAT = " order by u.%s %s";
   private static final String ENABLED = "enabled";
   private static final String EMAIL = "email";
@@ -213,15 +215,15 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
     String countQuery = "select count (distinct u) " + USERS_IN_COMMUNITY_Q;
 
     String subQuery = "";
-    Map<String, Object> dateParams = new HashMap<>();
+    Map<String, Object> queryParams = new HashMap<>();
     if (pgCrit.getSearchCriteria() != null) {
       UserSearchCriteria searchCriteria = (UserSearchCriteria) pgCrit.getSearchCriteria();
-      subQuery = applySearchRestrictionsToHQL(searchCriteria, dateParams);
+      subQuery = applySearchRestrictionsToHQL(searchCriteria, queryParams);
       countQuery += subQuery;
     }
 
     var countQ = session.createQuery(countQuery, Long.class).setParameter("id", communityId);
-    dateParams.forEach(countQ::setParameter);
+    queryParams.forEach(countQ::setParameter);
     Long userCount = countQ.uniqueResult();
     if (userCount == 0) {
       return new SearchResultsImpl<>(Collections.emptyList(), 0, 0L);
@@ -234,15 +236,18 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
             .setParameter("id", communityId)
             .setMaxResults(pgCrit.getResultsPerPage())
             .setFirstResult(pgCrit.getFirstResultIndex());
-    dateParams.forEach(listQ::setParameter);
+    queryParams.forEach(listQ::setParameter);
     List<User> rc = listQ.list();
     return new SearchResultsImpl<>(
         rc, pgCrit.getPageNumber().intValue(), userCount, pgCrit.getResultsPerPage());
   }
 
   /**
-   * @param params date parameters are added to this map (key=param name, value=Date) for binding
-   *     via query.setParameter(); must not be null.
+   * Builds the HQL restriction clauses for the search criteria. Every request-supplied value is
+   * added to {@code params} as a named parameter rather than written into the query string.
+   *
+   * @param params receives the parameter values (key=param name) for binding via
+   *     query.setParameter(); must not be null.
    */
   private String applySearchRestrictionsToHQL(UserSearchCriteria sc, Map<String, Object> params) {
     var clauses = new ArrayList<String>();
@@ -259,7 +264,8 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
       clauses.add("and u.privateProfile != true");
     }
     if (sc.isWithoutBackdoorSysadmins()) {
-      clauses.add("and u.signupSource !=  '" + SignupSource.SSO_BACKDOOR + "'");
+      clauses.add("and u.signupSource != :excludedSignupSource");
+      params.put(EXCLUDED_SIGNUP_SOURCE, SignupSource.SSO_BACKDOOR);
     }
     return StringUtils.join(clauses, " ");
   }
@@ -272,7 +278,8 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
       if ("allFields".equals(entry.getKey())) {
         String term = entry.getValue().toString();
         if (term != null && !term.equalsIgnoreCase("null")) {
-          clauses.add(String.format(SEARCH_QUERY_FORMAT, term, term, term, term));
+          clauses.add(SEARCH_ALL_FIELDS_CLAUSE);
+          params.put(ALL_FIELDS_TERM, "%" + term + "%");
         }
       }
 
@@ -289,9 +296,7 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
             .ifPresent(
                 limit -> {
                   clauses.add("and u.creationDate < :creationDateLimit");
-                  if (params != null) {
-                    params.put("creationDateLimit", limit);
-                  }
+                  params.put("creationDateLimit", limit);
                 });
       }
       if ("lastLoginEarlierThan".equals(entry.getKey())) {
@@ -299,9 +304,7 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
             .ifPresent(
                 limit -> {
                   clauses.add("and (u.lastLogin IS NULL or u.lastLogin < :lastLoginLimit)");
-                  if (params != null) {
-                    params.put("lastLoginLimit", limit);
-                  }
+                  params.put("lastLoginLimit", limit);
                 });
       }
     }
