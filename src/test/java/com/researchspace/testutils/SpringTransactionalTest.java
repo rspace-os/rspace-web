@@ -9,6 +9,7 @@ import com.researchspace.dao.EcatCommentDao;
 import com.researchspace.dao.EcatImageAnnotationDao;
 import com.researchspace.dao.GroupDao;
 import com.researchspace.dao.InternalLinkDao;
+import com.researchspace.dao.RecordDao;
 import com.researchspace.files.service.ExternalFileStoreProvider;
 import com.researchspace.files.service.InternalFileStore;
 import com.researchspace.model.Community;
@@ -65,6 +66,7 @@ public abstract class SpringTransactionalTest extends BaseManagerTestCaseBase {
   protected @Autowired InternalLinkDao internalLinkDao;
   protected @Autowired EcatImageAnnotationDao imageAnnotationDao;
   protected @Autowired InternalFileStore fileStore;
+  protected @Autowired RecordDao recordDao;
   protected @Autowired UserConnectionManager connMgr;
 
   @AfterEach

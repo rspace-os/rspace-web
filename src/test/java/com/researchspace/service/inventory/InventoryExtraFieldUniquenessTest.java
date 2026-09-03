@@ -18,11 +18,13 @@ import com.researchspace.api.v1.model.ApiSampleTemplatePost;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.api.v1.model.ApiSubSampleInfo;
+import com.researchspace.dao.SampleTemplateDao;
 import com.researchspace.model.User;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * Manager-level coverage for the RSDEV-1066 uniqueness rule on ExtraField names across all
@@ -33,6 +35,7 @@ import org.junit.jupiter.api.Test;
  */
 public class InventoryExtraFieldUniquenessTest extends SpringTransactionalTest {
 
+  private @Autowired SampleTemplateDao sampleTemplateDao;
   private User testUser;
 
   @BeforeEach

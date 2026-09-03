@@ -28,6 +28,7 @@ public class FolderManagerSpringTest extends SpringTransactionalTest {
   User user;
 
   private @Autowired RecordManager recordManager;
+  private @Autowired LicenseService licenseService;
   private @Autowired ServiceLoggerAspct aspect;
   private @Autowired SharingHandler sharingHandler;
 

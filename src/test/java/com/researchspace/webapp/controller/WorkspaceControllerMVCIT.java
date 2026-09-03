@@ -45,6 +45,7 @@ import com.researchspace.model.SignatureStatus;
 import com.researchspace.model.User;
 import com.researchspace.model.UserPreference;
 import com.researchspace.model.audit.AuditedEntity;
+import com.researchspace.model.audit.AuditedRecord;
 import com.researchspace.model.audittrail.AuditTrailService;
 import com.researchspace.model.audittrail.CreateAuditEvent;
 import com.researchspace.model.audittrail.DuplicateAuditEvent;
@@ -70,6 +71,7 @@ import com.researchspace.model.record.Record;
 import com.researchspace.model.record.RecordToFolder;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.AuditManager;
+import com.researchspace.service.DocumentTagManager;
 import com.researchspace.service.IApplicationInitialisor;
 import com.researchspace.service.PostLoginHandler;
 import com.researchspace.service.RecordFavoritesManager;
@@ -90,16 +92,17 @@ import java.util.Optional;
 import java.util.Set;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.lucene.queryparser.classic.ParseException;
+import org.hibernate.search.mapper.orm.Search;
 import org.jsoup.Jsoup;
 import org.jsoup.parser.Tag;
 import org.jsoup.select.Elements;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.MethodOrderer.MethodName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.mockito.Mock;
 import org.springframework.aop.framework.AopProxyUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -135,6 +138,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
   private IApplicationInitialisor customFormAppInitialiser;
 
   private @Autowired RecordFavoritesManager favMgr;
+  private @Autowired DocumentTagManager documentTagManager;
   private @Autowired WorkspaceController workspaceController;
   private @Autowired RecordManager recordManager;
   private @Autowired AuditManager auditMgr;
@@ -406,49 +410,40 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     assertEquals(initRecordCount - 1, getNumberOfRecordsInRootFolder(settings));
   }
 
-  /**
-   * NOT a UNIT test - run this in debug mode with a breakpoint at the final line of code System.out
-   * You can then run rspace log in as the random user using "testpass" as password You can then
-   * navigate to deleted items page and check it peforms with 1000 items.
-   *
-   * @throws Exception
-   */
   @Test
-  @Disabled
+  @EnabledIfSystemProperty(named = "performanceTests", matches = "true")
   public void testBulkDeletionPerformance() throws Exception {
-    final GroupSetUp setup = setUpDocumentGroupForPIUserAndShareRecord();
-    System.out.println(piUser.getUsername());
-    piUser.getPassword();
+    GroupSetUp setup = setUpDocumentGroupForPIUserAndShareRecord();
     workspaceController.listRootFolder(
         "", model, mockPrincipal, request, session, response, new WorkspaceSettings());
 
-    final WorkspaceSettings srchInput = new WorkspaceSettings();
-    srchInput.setParentFolderId(root.getId());
-    System.out.println(piUser.getUsername());
-    // now delete for real.
+    WorkspaceSettings searchInput = new WorkspaceSettings();
+    searchInput.setParentFolderId(root.getId());
     workspaceController.delete(
         new Long[] {setup.structuredDocument.getId()},
         null,
         model,
-        srchInput,
+        searchInput,
         request,
         mockPrincipal,
         session,
         response);
     RSForm form = createAnyForm(piUser);
-    for (int i = 0; i < 1000; i++) { // will take several minutes to run
-      StructuredDocument doc = createDocumentInFolder(root, form, piUser);
+    for (int i = 0; i < 1000; i++) {
+      StructuredDocument document = createDocumentInFolder(root, form, piUser);
       workspaceController.delete(
-          new Long[] {doc.getId()},
+          new Long[] {document.getId()},
           null,
           model,
-          srchInput,
+          searchInput,
           request,
           mockPrincipal,
           session,
           response);
     }
-    System.out.println(piUser.getUsername());
+    PaginationCriteria<AuditedRecord> pagination =
+        PaginationCriteria.createDefaultForClass(AuditedRecord.class);
+    assertEquals(1001, auditMgr.getDeletedDocuments(piUser, null, pagination).getTotalHits());
   }
 
   @Test
@@ -995,20 +990,17 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     assertEquals(Long.valueOf(1), res.getTotalHits());
   }
 
-  @Disabled
   @Test
   public void testMVCAttachmentSearch() throws Exception {
-    final int SleepTime = 50;
     User anyUser = createAndSaveUser(getRandomName(10));
     setUpUserWithoutCustomContent(anyUser);
     logoutAndLoginAs(anyUser);
-    // initialiseFileIndexer();
+    initialiseFileIndexer();
     String[] option = {ALL_SEARCH_OPTION};
     InputStream is = RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder("testTxt.txt");
     EcatDocumentFile file = mediaMgr.saveNewDocument("testTxt.txt", is, anyUser, null, null);
 
-    // Allow time to index, basic search finds attachment
-    Thread.sleep(SleepTime);
+    flushToSearchIndices();
     String[] terms = new String[] {"testing"};
 
     searchAndExpectNHits(anyUser, option, terms, 1);
@@ -1016,7 +1008,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     Folder rootFolder = getRootFolderForUser(anyUser);
     Folder subFolder = createSubFolder(rootFolder, "subfolder", anyUser);
     createBasicDocumentInFolder(anyUser, subFolder, "I am testing something");
-    Thread.sleep(SleepTime);
+    flushToSearchIndices();
     searchAndExpectNHits(anyUser, option, terms, 2);
 
     // search by subfolder, gallery Item should be excluded
@@ -1030,6 +1022,11 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     MvcResult result = doSearch(option, terms, anyUser, terms.length < 2);
     ISearchResults<BaseRecord> res = getSearchResultsFromMvcResult(result);
     assertEquals(Long.valueOf(expectedhits), res.getTotalHits());
+  }
+
+  private void flushToSearchIndices() throws Exception {
+    doInTransaction(
+        () -> Search.session(sessionFactory.getCurrentSession()).indexingPlan().execute());
   }
 
   private MvcResult doSearch(String[] option, String[] terms, User anyUser, boolean isAdvanced)

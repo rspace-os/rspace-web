@@ -120,6 +120,23 @@ Test category 3 (from above) is bound to the integration-test phase,
 run after _package_. If these tests fail, a war is generated, but the
 build will be reported as a failure.
 
+Tests tagged `chemistry` require the OSS chemistry service and are excluded
+from ordinary Maven runs. GitHub Actions and Jenkins run them in a separate
+service-backed job. To run that group locally against a chemistry service on
+port 8090, use:
+
+```bash
+./mvnw integration-test -DskipUnitTests=true -Denvironment=drop-recreate-db \
+  -DincludedTestGroups=chemistry -DexcludedTestGroups= \
+  -Dchemistry.provider=indigo -Dchemistry.service.url=http://localhost:8090
+```
+
+Keep expensive load checks behind `-DperformanceTests=true`. Tests that call a
+live third-party service should use a class-level `@EnabledIfSystemProperty`
+with an integration-specific property instead of `@Disabled` or the general
+`nightly` property. This prevents Spring from loading the test context when the
+required environment or credentials are absent.
+
 #### Writing category 3 acceptance tests
 
 Test class should inherit from `RealTransactionSpringTestBase.java`,
@@ -133,8 +150,9 @@ defining `IntegrationTest` classes in Maven.
 
 - Run `mvn test -Dfast` during development; these should run relatively
 quickly.
-- Run `mvn verify` before committing; this will run all tests and is
-what is run on Jenkins.
+- Run `mvn verify` before committing; this runs the default unit and
+integration tests. Jenkins also runs service-backed groups such as chemistry
+in separate jobs.
 
 We can review this periodically to see how it works in practice.
 

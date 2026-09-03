@@ -1,11 +1,11 @@
 package com.researchspace.webapp.controller;
 
-import static com.researchspace.core.testutil.CoreTestUtils.assertExceptionThrown;
 import static com.researchspace.core.util.TransformerUtils.toList;
 import static com.researchspace.testutils.SystemPropertyTestFactory.createAnyAppWithConfigElements;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
@@ -577,13 +577,13 @@ public class ExportControllerTest {
 
   @Test
   public void displayPdfArgumentValidation() throws Exception {
-    assertExceptionThrown(
-        () -> exportController.displayPdf("", "any", principal, response),
-        IllegalArgumentException.class);
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> exportController.displayPdf("", "any", principal, response));
 
-    assertExceptionThrown(
-        () -> exportController.displayPdf("../../passwordfile.txt", "any", principal, response),
-        IllegalArgumentException.class);
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> exportController.displayPdf("../../passwordfile.txt", "any", principal, response));
 
     when(principal.getName()).thenReturn("user1a");
     when(mockUserMgr.getUserByUsername("user1a")).thenReturn(user);

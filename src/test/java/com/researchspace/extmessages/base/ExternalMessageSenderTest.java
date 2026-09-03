@@ -3,11 +3,11 @@ package com.researchspace.extmessages.base;
 import static com.researchspace.testutils.RSpaceTestUtils.assertAuthExceptionThrown;
 import static com.researchspace.testutils.SystemPropertyTestFactory.createAnyAppWithConfigElements;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.AdditionalMatchers.aryEq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.model.User;
 import com.researchspace.model.apps.UserAppConfig;
 import com.researchspace.service.MessageSourceUtils;
@@ -75,11 +75,11 @@ public class ExternalMessageSenderTest {
   public void testSendMessageAppThrowsIAEIfAppNotSupported() throws Exception {
     msteamsSender.supported = false;
     UserAppConfig cfg = createAnyAppWithConfigElements(sender, "message");
-    CoreTestUtils.assertExceptionThrown(
+    assertThrows(
+        IllegalArgumentException.class,
         () ->
             msteamsSender.sendMessage(
-                null, cfg.getAppConfigElementSets().iterator().next(), sender),
-        IllegalArgumentException.class);
+                null, cfg.getAppConfigElementSets().iterator().next(), sender));
     // never invoked
     assertMessageNotPosted();
   }

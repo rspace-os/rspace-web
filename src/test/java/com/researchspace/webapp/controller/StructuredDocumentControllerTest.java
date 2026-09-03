@@ -22,7 +22,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.core.testutil.Invokable;
 import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.document.importer.ExternalFileImporter;
@@ -298,7 +297,8 @@ public class StructuredDocumentControllerTest {
 
   @Test
   public void testGetTooLongTagRejected() {
-    CoreTestUtils.assertIllegalArgumentException(
+    assertThrows(
+        IllegalArgumentException.class,
         () -> strucDocCtrller.getTags(randomAlphanumeric(StructuredDocument.MAX_TAG_LENGTH + 1)));
   }
 

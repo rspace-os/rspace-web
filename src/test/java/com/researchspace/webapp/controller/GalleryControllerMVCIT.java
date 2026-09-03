@@ -33,7 +33,8 @@ import com.researchspace.model.views.CompositeRecordOperationResult;
 import com.researchspace.search.impl.FileIndexSearcher;
 import com.researchspace.search.impl.FileIndexer;
 import com.researchspace.search.impl.LuceneSearchStrategy;
-import com.researchspace.service.RSChemElementManager;
+import com.researchspace.service.BaseRecordManager;
+import com.researchspace.service.EcatChemistryFileManager;
 import com.researchspace.service.RecordManager;
 import com.researchspace.testutils.RSpaceTestUtils;
 import java.awt.image.BufferedImage;
@@ -47,7 +48,7 @@ import javax.imageio.ImageIO;
 import org.apache.http.entity.ContentType;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,16 +59,13 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.ui.ModelMap;
 
-@TestPropertySource(
-    properties = {
-      "chemistry.service.url=http://your-chem-service:8090",
-      "chemistry.provider=indigo"
-    })
+@TestPropertySource(properties = "chemistry.provider=indigo")
 public class GalleryControllerMVCIT extends MVCTestBase {
 
   private @Autowired GalleryController galleryController;
+  private @Autowired BaseRecordManager baseRecordMgr;
+  private @Autowired EcatChemistryFileManager chemistryFileManager;
   private @Autowired RecordManager recordManager;
-  private @Autowired RSChemElementManager rsChemElementManager;
   @TempDir public File tempIndexFolder;
   @Autowired FileIndexSearcher searcher;
 
@@ -390,9 +388,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
   }
 
   @Test
-  @Disabled(
-      "Requires chemistry service to run. See"
-          + " https://documentation.researchspace.com/article/1jbygguzoa")
+  @Tag("chemistry")
   public void testChemistryFileUploadNewVersion() throws Exception {
     User user = createInitAndLoginAnyUser();
     mockPrincipal = user::getUsername;
@@ -667,9 +663,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
   // Chemistry File Specific Tests
   // 1. Generic test, check file goes in correct "Chemistry" folder
   // 2. Check RsChemElement is generated with a chemId
-  @Disabled(
-      "Requires chemistry service to run. See"
-          + " https://documentation.researchspace.com/article/1jbygguzoa")
+  @Tag("chemistry")
   @Test
   public void testUploadingChemistryFile() throws IOException, URISyntaxException {
     Folder chemistryFolder =

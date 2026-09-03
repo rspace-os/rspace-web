@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.Constants;
 import com.researchspace.linkedelements.FieldContents;
+import com.researchspace.linkedelements.FieldParser;
 import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.EcatImage;
 import com.researchspace.model.EcatMediaFile;
@@ -28,6 +29,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 public class FieldAttachmentHandlingMVCIT extends MVCTestBase {
   private @Autowired AuditManager auditMgr;
+  private @Autowired FieldParser fieldParser;
 
   @BeforeEach
   public void setUp() throws Exception {

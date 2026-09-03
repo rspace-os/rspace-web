@@ -25,6 +25,7 @@ import com.researchspace.core.util.PaginationUtil;
 import com.researchspace.core.util.Transformer;
 import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.linkedelements.FieldContents;
+import com.researchspace.linkedelements.FieldParser;
 import com.researchspace.model.EcatImage;
 import com.researchspace.model.FieldAttachment;
 import com.researchspace.model.Group;
@@ -48,6 +49,7 @@ import com.researchspace.model.record.RecordInformation;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.views.RecordCopyResult;
 import com.researchspace.service.AuditManager;
+import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.DefaultRecordContext;
 import com.researchspace.service.DocumentCopyManager;
 import com.researchspace.testutils.RSpaceTestUtils;
@@ -76,6 +78,8 @@ public class SDocControllerMVCIT extends MVCTestBase {
 
   private @Autowired DummyWord2HTMLConverter dummyConverter;
   private @Autowired AuditManager auditMgr;
+  private @Autowired BaseRecordManager baseRecordMgr;
+  private @Autowired FieldParser fieldParser;
   @Autowired DocumentCopyManager docCopyMgr;
 
   @BeforeEach

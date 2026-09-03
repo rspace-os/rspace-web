@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.researchspace.dao.RecordDao;
 import com.researchspace.dao.customliquibaseupdates.AbstractDBHelpers;
 import com.researchspace.model.ChemElementsFormat;
 import com.researchspace.model.EcatComment;
@@ -17,7 +18,6 @@ import com.researchspace.model.User;
 import com.researchspace.model.record.Snippet;
 import com.researchspace.service.EcatCommentManager;
 import com.researchspace.service.EcatImageAnnotationManager;
-import com.researchspace.service.RSChemElementManager;
 import com.researchspace.service.RecordManager;
 import com.researchspace.testutils.RSpaceTestUtils;
 import java.io.IOException;
@@ -33,8 +33,8 @@ public class UpdateReferencesInSnippetAttachments0_29IT extends AbstractDBHelper
 
   private @Autowired RecordManager recordManager;
   private @Autowired EcatCommentManager commentManager;
-  private @Autowired RSChemElementManager rsChemElementManager;
   private @Autowired EcatImageAnnotationManager ecatImageAnnotationManager;
+  private @Autowired RecordDao recordDao;
 
   private UpdateReferencesInSnippetAttachments updater;
   private User user;

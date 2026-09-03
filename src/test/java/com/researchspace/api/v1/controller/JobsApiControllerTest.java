@@ -4,13 +4,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.api.v1.model.ApiExportJobResult;
 import com.researchspace.api.v1.model.ApiJob;
 import com.researchspace.api.v1.model.ApiLinkItem;
-import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.model.User;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.JsonMessageSource;
@@ -68,7 +68,7 @@ public class JobsApiControllerTest {
     when(handler.getJob(1L, exporter)).thenReturn(completed);
     when(s3ExportUtils.getPresignedUrlForArchiveDownload(completed.getResourceLocation()))
         .thenReturn(null);
-    CoreTestUtils.assertIllegalStateExceptionThrown(() -> controller.get(1L, response, exporter));
+    assertThrows(IllegalStateException.class, () -> controller.get(1L, response, exporter));
   }
 
   @Test

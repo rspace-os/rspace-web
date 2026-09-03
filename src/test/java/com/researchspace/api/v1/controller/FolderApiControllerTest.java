@@ -3,7 +3,6 @@ package com.researchspace.api.v1.controller;
 import static com.researchspace.api.v1.controller.BaseApiController.DOCUMENTS_ENDPOINT;
 import static com.researchspace.api.v1.controller.BaseApiController.FOLDERS_ENDPOINT;
 import static com.researchspace.api.v1.controller.BaseApiController.FOLDER_TREE_ENDPOINT;
-import static com.researchspace.core.testutil.CoreTestUtils.assertIllegalArgumentException;
 import static com.researchspace.core.util.TransformerUtils.toSet;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -26,7 +25,6 @@ import com.researchspace.api.v1.model.ApiRecordTreeItemListing;
 import com.researchspace.api.v1.model.ApiRecordType;
 import com.researchspace.api.v1.model.LinkableApiObject;
 import com.researchspace.api.v1.model.RecordTreeItemInfo;
-import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SearchResultsImpl;
 import com.researchspace.core.util.TransformerUtils;
@@ -338,7 +336,8 @@ public class FolderApiControllerTest {
   @Test
   public void rejectInvalidFolderTreeFilter() {
     DocumentApiPaginationCriteria pgCriteria = new DocumentApiPaginationCriteria();
-    CoreTestUtils.assertIllegalArgumentException(
+    assertThrows(
+        IllegalArgumentException.class,
         () ->
             controller.rootFolderTree(
                 TransformerUtils.toSet("unknown"), pgCriteria, errorsObject(pgCriteria), subject));
@@ -474,16 +473,15 @@ public class FolderApiControllerTest {
     // root folder
     createdFolder.addType(RecordType.ROOT);
     when(folderMgr.getFolderSafe(1L, subject)).thenReturn(Optional.of(createdFolder));
-    assertIllegalArgumentException(() -> controller.deleteFolder(1L, subject));
+    assertThrows(IllegalArgumentException.class, () -> controller.deleteFolder(1L, subject));
 
     // or any system folder
     createdFolder.removeType(RecordType.ROOT);
     createdFolder.setSystemFolder(true);
-    assertIllegalArgumentException(() -> controller.deleteFolder(1L, subject));
+    assertThrows(IllegalArgumentException.class, () -> controller.deleteFolder(1L, subject));
     // not a folder or unauth
     when(folderMgr.getFolderSafe(1L, subject)).thenReturn(Optional.empty());
-    CoreTestUtils.assertExceptionThrown(
-        () -> controller.deleteFolder(1L, subject), NotFoundException.class);
+    assertThrows(NotFoundException.class, () -> controller.deleteFolder(1L, subject));
 
     // happy case
     ServiceOperationResultCollection<CompositeRecordOperationResult, Long> result = successResult();
@@ -501,8 +499,7 @@ public class FolderApiControllerTest {
 
     // deletion fails internally
     result.addFailure(10L); // simulate a failure
-    CoreTestUtils.assertExceptionThrown(
-        () -> controller.deleteFolder(1L, subject), RuntimeException.class);
+    assertThrows(RuntimeException.class, () -> controller.deleteFolder(1L, subject));
   }
 
   private ServiceOperationResultCollection<CompositeRecordOperationResult, Long> successResult() {

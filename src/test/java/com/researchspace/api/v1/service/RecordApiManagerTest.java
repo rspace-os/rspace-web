@@ -19,8 +19,6 @@ import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.DocumentAlreadyEditedException;
-import com.researchspace.service.FormManager;
-import com.researchspace.service.RecordManager;
 import com.researchspace.service.WorkspaceService;
 import com.researchspace.testutils.SpringTransactionalTest;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,8 +31,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class RecordApiManagerTest extends SpringTransactionalTest {
 
   @Autowired private RecordApiManager recordApiMgr;
-  @Autowired private RecordManager recordMgr;
-  @Autowired private FormManager formMgr;
   @Autowired private WorkspaceService workspaceService;
   @Mock private AuditTrailService auditTrailService;
 

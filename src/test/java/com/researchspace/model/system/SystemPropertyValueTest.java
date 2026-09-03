@@ -1,6 +1,5 @@
 package com.researchspace.model.system;
 
-import static com.researchspace.core.testutil.CoreTestUtils.assertIllegalArgumentException;
 import static com.researchspace.model.system.SystemPropertyTestFactory.createASystemProperty;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -22,7 +21,8 @@ public class SystemPropertyValueTest {
   public void validateValueByType() {
     SystemProperty property = createASystemProperty();
     property.getDescriptor().setType(SettingsType.BOOLEAN);
-    assertIllegalArgumentException(
+    assertThrows(
+        IllegalArgumentException.class,
         () -> new SystemPropertyValue(property).setValue("not a boolean"));
   }
 

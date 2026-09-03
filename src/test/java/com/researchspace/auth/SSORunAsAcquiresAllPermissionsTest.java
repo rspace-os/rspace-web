@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.User;
+import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
@@ -12,10 +13,12 @@ import org.apache.shiro.subject.Subject;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockHttpSession;
 
 public class SSORunAsAcquiresAllPermissionsTest extends SpringTransactionalTest {
 
+  private @Autowired IPermissionUtils permissionUtils;
   MockHttpSession session;
 
   @BeforeEach

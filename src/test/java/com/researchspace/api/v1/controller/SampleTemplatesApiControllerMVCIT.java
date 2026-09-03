@@ -35,6 +35,7 @@ import com.researchspace.model.inventory.SampleSource;
 import com.researchspace.model.inventory.SubSampleName;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.impl.ContentInitializerForDevRunManager;
+import com.researchspace.service.inventory.impl.InventoryEditLockTracker;
 import com.researchspace.testutils.RSpaceTestUtils;
 import java.time.LocalDate;
 import java.util.List;
@@ -43,6 +44,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.web.WebAppConfiguration;
@@ -53,6 +55,7 @@ public class SampleTemplatesApiControllerMVCIT extends API_MVC_InventoryTestBase
 
   User anyUser, otherUser;
   String apiKey;
+  private @Autowired InventoryEditLockTracker invLockTracker;
 
   @BeforeEach
   public void setup() throws Exception {
