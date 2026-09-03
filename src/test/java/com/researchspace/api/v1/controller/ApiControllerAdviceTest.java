@@ -1,6 +1,7 @@
 package com.researchspace.api.v1.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -12,6 +13,8 @@ import com.researchspace.service.FilestoreOperationForbiddenException;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.chemistry.ChemistryClientException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -152,8 +155,45 @@ class ApiControllerAdviceTest {
     when(ex.getSQLException())
         .thenReturn(new SQLException("Data too long for column", "22001", 1406));
 
+    advice.messages = new MessageSourceUtils(new JsonMessageSource());
+
     ResponseEntity<Object> response = advice.handleHibernateJdbcException(ex, null);
 
     assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+    // The detail text ships in the response body, so it comes from the catalog like every other
+    // message this advice produces, not from an English literal in the handler.
+    ApiError error = (ApiError) response.getBody();
+    assertEquals(List.of("General server error"), error.getErrors());
+  }
+
+  /**
+   * This handler is registered for every @ApiController, not just the Inventory operations
+   * endpoint, so a lock conflict on any API resource resolves it. Its message therefore lives in
+   * the cross-cutting catalog rather than under errors.inventory.operation.
+   */
+  @Test
+  void concurrentUpdateMessageIsCrossCuttingNotInventorySpecific() throws java.io.IOException {
+    ApiControllerAdvice advice = new ApiControllerAdvice();
+    advice.messages = new MessageSourceUtils(new JsonMessageSource());
+
+    ApiError error =
+        (ApiError)
+            advice
+                .handleCannotAcquireLock(
+                    new CannotAcquireLockException(
+                        "could not execute statement",
+                        new SQLException("Deadlock found", "40001", 1213)),
+                    null)
+                .getBody();
+
+    assertEquals(
+        "Another request modified this item at the same time; retry the request.",
+        error.getMessage());
+    assertFalse(
+        Files.readString(
+                Path.of(
+                    "src/main/webapp/ui/src/modules/common/i18n/locales/en-US/server.inventory.json"))
+            .contains("concurrentUpdate"),
+        "the message is not inventory-specific, so it must not live in the inventory catalog");
   }
 }

@@ -25,11 +25,21 @@ export const PREFERENCES: { [pref: string]: symbol } = {
 type UiPreferencesContextType = {
   uiPreferences: { [key in keyof typeof PREFERENCES]: unknown };
   setUiPreferences: React.Dispatch<React.SetStateAction<{ [key in keyof typeof PREFERENCES]: unknown } | null>>;
+  /*
+   * Writes are chained so each one reads the previous write's result before merging its own key.
+   * Every setter does a read-merge-write of the whole UI_JSON_SETTINGS object; run concurrently
+   * (e.g. three setters in one event handler) they would all read the same snapshot and the last
+   * POST would drop the other keys (code review, finding 8). The chain belongs to the provider
+   * rather than the module so one stalled request cannot hold up every other preference write in
+   * the app for the rest of the session.
+   */
+  pendingWrite: React.MutableRefObject<Promise<void>>;
 };
 
 const DEFAULT_UI_PREFERENCES_CONTEXT: UiPreferencesContextType = {
   uiPreferences: mapValues(PREFERENCES, () => null),
   setUiPreferences: () => {},
+  pendingWrite: { current: Promise.resolve() },
 };
 
 const UiPreferencesContext: React.Context<UiPreferencesContextType> =
@@ -51,17 +61,9 @@ async function fetchPreferences(): Promise<UiPreferencesContextType["uiPreferenc
  * If the network call fails, the UI Preferences default to an empty object
  * and all calls to useUiPreference will use the passed default value.
  */
-/*
- * Writes are chained so each one reads the previous write's result before merging its own key.
- * Every setter does a read-merge-write of the whole UI_JSON_SETTINGS object; run concurrently
- * (e.g. three setters in one event handler) they would all read the same snapshot and the last POST
- * would drop the other keys (code review, finding 8). A failed write is swallowed here so it cannot
- * block the chain; it is already unawaited by callers.
- */
-let pendingWrite: Promise<void> = Promise.resolve();
-
 export function UiPreferences({ children }: { children: React.ReactNode }): React.ReactNode {
   const [uiPreferences, setUiPreferences] = React.useState<UiPreferencesContextType["uiPreferences"] | null>(null);
+  const pendingWrite = React.useRef<Promise<void>>(Promise.resolve());
 
   React.useEffect(() => {
     void fetchPreferences()
@@ -83,7 +85,7 @@ export function UiPreferences({ children }: { children: React.ReactNode }): Reac
    */
   if (!uiPreferences) return null;
   return (
-    <UiPreferencesContext.Provider value={{ uiPreferences, setUiPreferences }}>
+    <UiPreferencesContext.Provider value={{ uiPreferences, setUiPreferences, pendingWrite }}>
       {children}
     </UiPreferencesContext.Provider>
   );
@@ -108,7 +110,7 @@ export default function useUiPreference<T>(
     defaultValue: T;
   },
 ): UseState<T> {
-  const { uiPreferences, setUiPreferences } = React.useContext(UiPreferencesContext);
+  const { uiPreferences, setUiPreferences, pendingWrite } = React.useContext(UiPreferencesContext);
   const key = Symbol.keyFor(preference);
   let v = opts.defaultValue;
   if (key && typeof uiPreferences[key] !== "undefined") {
@@ -133,7 +135,7 @@ export default function useUiPreference<T>(
       });
 
       if (!key) return;
-      pendingWrite = pendingWrite.then(async () => {
+      pendingWrite.current = pendingWrite.current.then(async () => {
         const preferences = await fetchPreferences();
         const formData = new FormData();
         formData.append("preference", "UI_JSON_SETTINGS");
@@ -151,7 +153,11 @@ export default function useUiPreference<T>(
         );
         await axios.post<unknown>("/userform/ajax/preference", formData);
       });
-      pendingWrite = pendingWrite.catch(() => {});
+      // Caught so a failure cannot block the chain (callers never await it), but reported: a
+      // silently dropped preference save is invisible to user and developer alike.
+      pendingWrite.current = pendingWrite.current.catch((e) => {
+        console.error(`Could not save UI preference ${key}`, e);
+      });
     },
   ];
 }
