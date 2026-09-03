@@ -12,6 +12,7 @@ import com.researchspace.model.inventory.SubSample;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.hibernate.LockMode;
 import org.hibernate.query.Query;
 import org.springframework.stereotype.Repository;
 
@@ -112,5 +113,10 @@ public class SubSampleDaoHibernateImpl extends InventoryDaoHibernate<SubSample, 
             SubSample.class)
         .setParameter("fileProperty", fileProperty)
         .list();
+  }
+
+  @Override
+  public SubSample getForUpdate(Long id) {
+    return getSession().get(SubSample.class, id, LockMode.PESSIMISTIC_WRITE);
   }
 }

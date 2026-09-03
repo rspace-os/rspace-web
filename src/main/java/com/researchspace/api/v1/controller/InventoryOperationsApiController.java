@@ -65,8 +65,16 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
         }
       }
       if (!errors.hasErrors()) {
-        inputValidator.validate(
-            new ApiSampleFullPost(newSample, user, template), sampleApiPostFullValidator, errors);
+        // The full-post validator names fields relative to the sample (quantity,
+        // subSamples[i].quantity); this binding result is rooted at the request, so nest the path
+        // or a rejection would fail to resolve the field and surface as a 500.
+        errors.pushNestedPath("newSample");
+        try {
+          inputValidator.validate(
+              new ApiSampleFullPost(newSample, user, template), sampleApiPostFullValidator, errors);
+        } finally {
+          errors.popNestedPath();
+        }
       }
     }
     throwBindExceptionIfErrors(errors);
