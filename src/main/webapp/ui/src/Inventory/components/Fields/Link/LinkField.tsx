@@ -80,7 +80,9 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
   // ELN targets the viewer cannot read get a "No access" pill; inventory
   // targets ignore readability because every logged-in user keeps the
   // limited-read view. A redacted summary always has deleted=false, so the
-  // two pills can never co-occur.
+  // two pills can never co-occur. An inventory target that does not exist
+  // at all (e.g. a CSV-imported dangling link, RSDEV-1354) is reported as
+  // deleted=true, so it shows "Target deleted".
   const noAccess = targetSummary?.readable === false && !targetIsInventory;
   // deleted inventory items live on in the trash and their viewer works, so
   // only deleted or unreadable ELN targets lose Open (their routes are just

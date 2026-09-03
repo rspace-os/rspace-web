@@ -74,6 +74,15 @@ public class LinkTargetSnapshotResolverImpl implements LinkTargetSnapshotResolve
             ? auditManager.getObjectForRevision(cls, dbId, targetRevisionId)
             : auditManager.getNewestRevisionForEntity(cls, dbId);
     if (snapshot == null || snapshot.getEntity() == null) {
+      if (isInventoryPrefix(prefix)) {
+        // No inventory record here at all: never existed on this server (a CSV-imported dangling
+        // link, RSDEV-1354) or its audit rows were purged. Report it as deleted so the card shows
+        // "Target deleted" instead of a working-looking Open. Existence of inventory records is
+        // not secret (every user keeps the limited-read view), so this does not breach ADR-0002.
+        summary.setReadable(true);
+        summary.setDeleted(true);
+      }
+      // ELN targets stay redacted: nonexistent must look exactly like unreadable (ADR-0002)
       return summary;
     }
     Object entity = snapshot.getEntity();

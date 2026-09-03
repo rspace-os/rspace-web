@@ -33,7 +33,11 @@ public class InventoryLinkField extends InventoryEntityField {
   private String allowedRelationTypes;
 
   public InventoryLinkField() {
-    super(FieldType.LINK, "");
+    this("");
+  }
+
+  public InventoryLinkField(String name) {
+    super(FieldType.LINK, name);
   }
 
   /*

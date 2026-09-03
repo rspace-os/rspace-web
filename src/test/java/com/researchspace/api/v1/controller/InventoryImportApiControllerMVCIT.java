@@ -12,11 +12,13 @@ import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiField.ApiFieldType;
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult;
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult.InventoryBulkOperationStatus;
+import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiInventoryImportPartialResult;
 import com.researchspace.api.v1.model.ApiInventoryImportResult;
 import com.researchspace.api.v1.model.ApiInventoryImportSampleImportResult;
 import com.researchspace.api.v1.model.ApiInventoryImportSampleParseResult;
 import com.researchspace.api.v1.model.ApiInventoryImportSubSampleImportResult;
+import com.researchspace.api.v1.model.ApiInventoryLink;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiInventorySearchResult;
 import com.researchspace.api.v1.model.ApiSampleTemplatePost;
@@ -32,12 +34,14 @@ import com.researchspace.model.inventory.DigitalObjectIdentifier;
 import com.researchspace.model.inventory.SampleSource;
 import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.units.RSUnitDef;
+import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.ApiAvailabilityHandler;
 import com.researchspace.service.inventory.ContainerApiManager;
 import com.researchspace.service.inventory.SampleApiManager;
 import com.researchspace.service.inventory.csvimport.CsvSampleImporter;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -76,6 +80,7 @@ public class InventoryImportApiControllerMVCIT extends API_MVC_InventoryTestBase
 
   @Autowired private DigitalObjectIdentifierDao doiDao;
   @Autowired private CsvSampleImporter csvSampleImporter;
+  @Autowired private IPropertyHolder propertyHolder;
   @Mock private ApiAvailabilityHandler apiHandler;
 
   @BeforeEach
@@ -1188,6 +1193,85 @@ public class InventoryImportApiControllerMVCIT extends API_MVC_InventoryTestBase
     assertEquals(
         "CSV file is too long, import limit is set to 500 containers.",
         csvSizeException.getMessage());
+  }
+
+  /**
+   * RSDEV-1354: a link column exported as "RelationType serverUrl/globalId/GID[vN]" is suggested as
+   * a Link field on parse and re-imported as a link, even when the target does not exist on this
+   * server (a dangling link, rendered by the UI as a missing target).
+   */
+  @Test
+  public void parseAndImportSampleCsvWithLinkColumn() throws Exception {
+    String serverUrl = propertyHolder.getServerUrl();
+    if (serverUrl.endsWith("/")) {
+      serverUrl = serverUrl.substring(0, serverUrl.length() - 1);
+    }
+    String csv =
+        "Name,Related\n"
+            + "linked sample,IsDerivedFrom "
+            + serverUrl
+            + "/globalId/SA999999v2\n"
+            + "unlinked sample,\n";
+    MockMultipartFile parseFile =
+        new MockMultipartFile(
+            "file", "links.csv", "text/csv", csv.getBytes(StandardCharsets.UTF_8));
+
+    MvcResult result =
+        mockMvc
+            .perform(
+                multipart(createUrl(API_VERSION.ONE, "/import/parseFile"))
+                    .file(parseFile)
+                    .contentType(MediaType.MULTIPART_FORM_DATA)
+                    .param("recordType", "SAMPLES")
+                    .header("apiKey", apiKey))
+            .andReturn();
+    assertNull(result.getResolvedException());
+    ApiInventoryImportSampleParseResult parseResult =
+        getFromJsonResponseBody(result, ApiInventoryImportSampleParseResult.class);
+    ApiSampleTemplatePost templateInfo = parseResult.getTemplateInfo();
+    assertEquals(ApiFieldType.LINK, templateInfo.getFields().get(1).getType());
+    templateInfo.setExpiryDate(null);
+    templateInfo.getFields().remove(0); // Name column maps to the sample name
+
+    String settingsJson =
+        "{ \"sampleSettings\": { \"fieldMappings\": { \"Name\": \"name\"}, \"templateInfo\": "
+            + JacksonUtil.toJson(templateInfo)
+            + "} }";
+    result =
+        mockMvc
+            .perform(
+                multipart(createUrl(API_VERSION.ONE, "/import/importFiles"))
+                    .file(
+                        new MockMultipartFile(
+                            "samplesFile",
+                            "links.csv",
+                            "text/csv",
+                            csv.getBytes(StandardCharsets.UTF_8)))
+                    .contentType(MediaType.MULTIPART_FORM_DATA)
+                    .param("importSettings", settingsJson)
+                    .header("apiKey", apiKey))
+            .andReturn();
+    assertNull(result.getResolvedException());
+
+    ApiInventoryImportResult importResult =
+        getFromJsonResponseBody(result, ApiInventoryImportResult.class);
+    ApiInventoryImportSampleImportResult sampleResults = importResult.getSampleResult();
+    assertEquals(InventoryBulkOperationStatus.COMPLETED, sampleResults.getStatus());
+    assertEquals(2, sampleResults.getSuccessCount());
+
+    ApiSampleWithFullSubSamples linked =
+        (ApiSampleWithFullSubSamples) sampleResults.getResults().get(0).getRecord();
+    ApiInventoryEntityField linkField = linked.getFields().get(0);
+    assertEquals(ApiFieldType.LINK, linkField.getType());
+    ApiInventoryLink link = linkField.getLink();
+    assertNotNull(link);
+    assertEquals("IsDerivedFrom", link.getRelationType());
+    assertEquals("SA999999", link.getTargetGlobalId());
+    assertEquals(2L, link.getVersionPin());
+
+    ApiSampleWithFullSubSamples unlinked =
+        (ApiSampleWithFullSubSamples) sampleResults.getResults().get(1).getRecord();
+    assertNull(unlinked.getFields().get(0).getLink());
   }
 
   private MockMultipartFile getTestCsvFile(String paramName, String fileName)

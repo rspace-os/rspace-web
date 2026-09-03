@@ -4,6 +4,7 @@ import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.field.InventoryDateField;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.inventory.field.InventoryIdentifierField;
+import com.researchspace.model.inventory.field.InventoryLinkField;
 import com.researchspace.model.inventory.field.InventoryNumberField;
 import com.researchspace.model.inventory.field.InventoryRadioField;
 import com.researchspace.model.inventory.field.InventoryRadioFieldDef;
@@ -14,16 +15,16 @@ import com.researchspace.model.inventory.field.InventoryUriField;
 import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.model.units.RSUnitDef;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /** Recognise potential sample field type from provided values. */
@@ -33,8 +34,22 @@ public class InventoryImportSampleFieldCreator {
   /** Maximum length of a value for which field type other than 'text' will be suggested */
   public static final int MAX_NON_TEXT_LENGTH = 100;
 
+  /**
+   * Same limit for a value containing a URL: a hostname can push a single-line value (a URI, or a
+   * "RelationType url" link cell) well past 100 characters without it being prose (RSDEV-1354).
+   */
+  public static final int MAX_NON_TEXT_LENGTH_WITH_URL = 500;
+
+  private static final Pattern URL_TOKEN = Pattern.compile("(?i)\\bhttps?://\\S+");
+
+  static int maxNonTextLength(String value) {
+    return URL_TOKEN.matcher(value).find() ? MAX_NON_TEXT_LENGTH_WITH_URL : MAX_NON_TEXT_LENGTH;
+  }
+
   /** Maximum number of distinct values for which field type 'radio' will be suggested */
   public static final int MAX_RADIO_OPTIONS = 20;
+
+  @Autowired CsvLinkValueParser linkParser;
 
   /** Ratio of distinct values to all values below which the radio type is suggested. */
   public static final double RADIO_REPEATING_OPTIONS_RATIO = 0.76;
@@ -52,8 +67,7 @@ public class InventoryImportSampleFieldCreator {
     }
 
     // text
-    String longestValue = Collections.max(valueSet, Comparator.comparing(String::length));
-    if (longestValue.length() > MAX_NON_TEXT_LENGTH) {
+    if (valueSet.stream().anyMatch(v -> v.length() > maxNonTextLength(v))) {
       return new InventoryTextField(name);
     }
     // number
@@ -67,6 +81,9 @@ public class InventoryImportSampleFieldCreator {
     // uri
     if (isSuggestedFieldForValues(valueSet, new InventoryUriField())) {
       return new InventoryUriField(name);
+    }
+    if (valueSet.stream().allMatch(linkParser::isParseable)) {
+      return new InventoryLinkField(name);
     }
     // time
     if (isSuggestedFieldForValues(valueSet, new InventoryTimeField())) {
