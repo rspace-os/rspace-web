@@ -89,6 +89,9 @@ public class InventoryOperationPostValidator implements Validator {
     }
   }
 
+  /** Stateless; one instance per bean, as elsewhere in the codebase. */
+  private static final QuantityUtils quantityUtils = new QuantityUtils();
+
   private final InventoryOperationConfigRegistry operationConfigs;
   private final SampleApiPostValidator sampleApiPostValidator;
   private final ApiExtraFieldsHelper extraFieldsHelper;
@@ -418,7 +421,6 @@ public class InventoryOperationPostValidator implements Validator {
     // (0.5 ml equals 500 ul); a different category can never be equal. Only checked once every
     // quantity passed the shape rules above, so it never double-reports an invalid quantity.
     if (config.effect().eachAmountFrom() != null && allQuantitiesValid) {
-      QuantityUtils quantityUtils = new QuantityUtils();
       ApiQuantityInfo first = newSample.getSubSamples().get(0).getQuantity();
       boolean allEqual =
           newSample.getSubSamples().stream()
@@ -558,7 +560,6 @@ public class InventoryOperationPostValidator implements Validator {
         || maximum.getNumericValue() == null) {
       return; // already rejected as storageTempRequired
     }
-    QuantityUtils quantityUtils = new QuantityUtils();
     if (!quantityUtils.isComparableQuantities(minimum, maximum)
         || quantityUtils.getComparatorFor(minimum).compare(minimum, maximum) != 0) {
       errors.rejectValue(
@@ -603,7 +604,6 @@ public class InventoryOperationPostValidator implements Validator {
       return;
     }
     QuantityInfo value = temperature.toQuantityInfo();
-    QuantityUtils quantityUtils = new QuantityUtils();
     if (input.maxCelsius() != null) {
       QuantityInfo maximum = QuantityInfo.of(input.maxCelsius(), RSUnitDef.CELSIUS);
       if (quantityUtils.getComparatorFor(maximum).compare(value, maximum) > 0) {

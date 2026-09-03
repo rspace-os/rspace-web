@@ -46,8 +46,11 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
     // Template conformance, mirroring POST /samples
     // (SamplesApiController.validateCreateSampleInput):
     // a template-based new sample must reference a readable template, and its fields and quantity
-    // unit must match that template. Without this pass, a mismatched field list would surface as a
-    // 500 inside the manager transaction instead of a clean 400 here.
+    // unit must match that template, so a mismatched field list is a clean 400 here instead of a
+    // 500 inside the manager transaction. This read is in its own transaction, so it narrows that
+    // window rather than closing it: a template edited between this check and performOperation can
+    // still 500. Closing it would mean moving the check into the manager; left as-is to mirror
+    // SamplesApiController.validateCreateSampleInput.
     if (!errors.hasErrors() && request.getNewSample() != null) {
       ApiSampleWithFullSubSamples newSample = request.getNewSample();
       SampleTemplate template = null;

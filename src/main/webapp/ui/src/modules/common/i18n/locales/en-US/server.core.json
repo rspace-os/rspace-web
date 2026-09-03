@@ -13,7 +13,9 @@
         "userApiDisabled": "Access to API has been disabled for user ''{0}''",
         "userOAuthDisabled": "Access through OAuth tokens has been disabled for user ''{0}''"
       },
-      "detected": "Errors detected: {0}"
+      "concurrentUpdate": "Another request modified this item at the same time; retry the request.",
+    "detected": "Errors detected: {0}",
+    "generalServerError": "General server error"
     },
     "pubchem": {
       "errors": {

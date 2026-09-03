@@ -3,6 +3,7 @@ package com.researchspace.api.v1.model;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Size;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Data;
@@ -31,7 +32,11 @@ public class ApiInventoryOperationPost {
   // @Valid on both members: the endpoint binds this DTO as @Valid, and without an explicit cascade
   // none of the Bean Validation constraints ordinary sample creation enforces (image size, note
   // length) would apply to an operation's payload.
+  // Capped here as well as in InventoryOperationPostValidator (MAX_ORIGINS): the validator's check
+  // runs only after Jackson has materialised every element and the @Valid cascade above has walked
+  // all of them, so the ceiling belongs at binding too.
   @Valid
+  @Size(max = 100, message = "{errors.inventory.operation.tooManyOrigins}")
   @JsonProperty("origins")
   private List<ApiInventoryOperationOriginUpdate> origins = new ArrayList<>();
 
