@@ -94,6 +94,16 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
   }
 
   @Override
+  public SubSample lockSubSampleForEdit(Long id, User user) {
+    SubSample subSample = subSampleDao.getForUpdate(id);
+    if (subSample == null) {
+      throw new NotFoundException("No SubSample with id: " + id);
+    }
+    invPermissions.assertUserCanEditInventoryRecord(subSample, user);
+    return subSample;
+  }
+
+  @Override
   public SubSample assertUserCanDeleteSubSample(Long id, User user) {
     SubSample subSample = getIfExists(id);
     invPermissions.assertUserCanDeleteInventoryRecord(subSample, user);
