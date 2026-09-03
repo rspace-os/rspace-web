@@ -40,6 +40,15 @@ describe("detailsValid", () => {
     expect(detailsValid(cryo, { ...validValues, amountTaken: { numericValue: -1, unitId: 3 } })).toBe(false);
   });
 
+  it("requires the child count to be a whole number between the minimum and the server's cap of 100", () => {
+    // Code review, finding 12: 1.5 used to pass and Array.from truncated it to one child; 101 was
+    // built client-side only to be rejected by the server's @Size(max = 100).
+    expect(detailsValid(cryo, { ...validValues, count: 1.5 })).toBe(false);
+    expect(detailsValid(cryo, { ...validValues, count: 101 })).toBe(false);
+    expect(detailsValid(cryo, { ...validValues, count: 0 })).toBe(false);
+    expect(detailsValid(cryo, { ...validValues, count: 100 })).toBe(true);
+  });
+
   it("requires the amount taken from the origin to be strictly positive", () => {
     expect(detailsValid(cryo, { ...validValues, amountTaken: { numericValue: 0, unitId: 3 } })).toBe(false);
   });

@@ -24,6 +24,7 @@ import {
 } from "./operationsConfig";
 import {
   amountTakenExceedsOrigin,
+  MAX_SUBSAMPLE_COUNT,
   quantityExceedsOrigin,
   temperatureBelowMin,
   temperatureExceedsMax,
@@ -154,7 +155,7 @@ function OperationDetailsStep({
           value={String(values[input.key] ?? "")}
           fullWidth
           margin="dense"
-          slotProps={{ htmlInput: { min: input.min ?? 1 } }}
+          slotProps={{ htmlInput: { min: input.min ?? 1, max: MAX_SUBSAMPLE_COUNT, step: 1 } }}
           onChange={(e) => set(input.key, Number(e.target.value))}
         />
       );

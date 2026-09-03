@@ -1,9 +1,12 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render as renderWithoutQueryClient, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { HttpResponse, http } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { server } from "@/__tests__/mswServer";
 import { makeMockSubSample } from "@/stores/models/__tests__/SubSampleModel/mocking";
 import OperationWizard from "../OperationWizard";
+import { rawConfig } from "./testOperations";
 
 // The wizard fetches the operation definitions with React Query (mocked fetchOperationsConfig
 // below), so every render needs a QueryClient; a fresh one per render keeps tests isolated.
@@ -29,19 +32,30 @@ vi.mock("@/hooks/api/useUiPreference", () => ({
   },
 }));
 
-const performOperation = vi.fn((_req: unknown) => Promise.resolve({ id: 1, globalId: "SS9", name: "New" }));
-const sampleNameAvailable = vi.fn((_name: string) => Promise.resolve(true));
-vi.mock("../operationsApi", () => ({
-  performOperation: (req: unknown) => performOperation(req),
-  sampleNameAvailable: (name: string) => sampleNameAvailable(name),
-  // The real definitions, exactly as fetching the backend's config would resolve them.
-  fetchOperationsConfig: async () => (await import("./testOperations")).operations,
-}));
+// The wizard talks to the backend through the real operationsApi client, answered here by MSW, so
+// the resource names and response handling are exercised rather than mocked away. `posted` collects
+// every operation request body; `taken` lists sample names the name check should report as in use.
+const OPERATIONS_URL = "/api/inventory/v1/operations";
+const posted: Array<Record<string, unknown>> = [];
+const taken: Array<string> = [];
+const operationHandlers = [
+  // The real definitions, exactly as the backend's config endpoint serves them.
+  http.get(`${OPERATIONS_URL}/config`, () => HttpResponse.json(rawConfig)),
+  http.post(OPERATIONS_URL, async ({ request }) => {
+    posted.push((await request.json()) as Record<string, unknown>);
+    return HttpResponse.json({ id: 1, globalId: "SS9", name: "New" }, { status: 201 });
+  }),
+  http.get("/api/inventory/v1/samples/validateNameForNewSample", ({ request }) => {
+    const name = new URL(request.url).searchParams.get("name") ?? "";
+    return HttpResponse.json({ valid: !taken.includes(name) });
+  }),
+];
 
 const performSearch = vi.fn();
 const addAlert = vi.fn();
 vi.mock("@/stores/stores/getRootStore", () => ({
   default: () => ({
+    authStore: { isSynchronizing: false },
     searchStore: { search: { performSearch } },
     uiStore: { addAlert },
     unitStore: { getUnit: () => ({ label: "ml" }) },
@@ -199,11 +213,11 @@ const backButton = () => screen.getByRole("button", { name: /actions\.back/i });
 
 beforeEach(() => {
   for (const k of Object.keys(prefs.store)) delete prefs.store[k];
-  performOperation.mockClear();
+  posted.length = 0;
+  taken.length = 0;
   performSearch.mockClear();
   addAlert.mockClear();
-  sampleNameAvailable.mockClear();
-  sampleNameAvailable.mockResolvedValue(true);
+  server.use(...operationHandlers);
 });
 
 /** Pick Derive, type a process name (which auto-derives the sample name), and fill the amounts. */
@@ -258,8 +272,7 @@ describe("OperationWizard step flow", () => {
 
   it("de-duplicates the derived sample name against existing names with a numeric suffix", async () => {
     // "A sample dna" and its _1 are taken, so the wizard must land on _2.
-    const taken = ["A sample dna", "A sample dna_1"];
-    sampleNameAvailable.mockImplementation((name: string) => Promise.resolve(!taken.includes(name)));
+    taken.push("A sample dna", "A sample dna_1");
     const user = userEvent.setup();
     render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
     await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
@@ -394,7 +407,11 @@ describe("OperationWizard step flow", () => {
   });
 
   it("surfaces a rejected Perform as an alert and keeps the wizard open for retry", async () => {
-    performOperation.mockRejectedValueOnce(new Error("backend rejected the request"));
+    server.use(
+      http.post(OPERATIONS_URL, () => HttpResponse.json({ message: "backend rejected the request" }, { status: 400 }), {
+        once: true,
+      }),
+    );
     const user = userEvent.setup();
     const onClose = vi.fn();
     const origin = makeMockSubSample({});
@@ -408,6 +425,24 @@ describe("OperationWizard step flow", () => {
     expect(screen.getByTestId("confirm")).toBeInTheDocument();
   });
 
+  it("treats a successful Perform as done even when refreshing the origin afterwards fails", async () => {
+    // Code review, finding 2: the POST committed (output created, origin decremented), so a failed
+    // refresh must not be reported as a failed operation with the wizard left open for a retry that
+    // would charge the origin twice. The wizard closes and the refresh failure is a warning.
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    const origin = makeMockSubSample({});
+    vi.spyOn(origin, "fetchAdditionalInfo").mockRejectedValue(new Error("network down"));
+    render(<OperationWizard open onClose={onClose} origins={[origin]} />);
+    await reachConfirm(user, "refresh");
+    await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+    expect(posted).toHaveLength(1);
+    const alerts = addAlert.mock.calls.map((call) => call[0] as { variant: string; title: string });
+    expect(alerts.some((a) => a.variant === "error")).toBe(false);
+    expect(alerts.some((a) => a.variant === "warning" && /refreshFailed/.test(a.title))).toBe(true);
+  });
+
   it("sends a Destroy request with no new sample and the computed disposed date on the origin", async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
@@ -417,7 +452,7 @@ describe("OperationWizard step flow", () => {
     await user.click(await screen.findByRole("button", { name: /operations\.destroy\.label/i }));
     await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
     await waitFor(() => expect(onClose).toHaveBeenCalled());
-    const request = performOperation.mock.calls[0][0] as {
+    const request = posted[0] as {
       operationType: string;
       newSample: unknown;
       origins: Array<{
@@ -457,7 +492,7 @@ describe("OperationWizard step flow", () => {
     render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
     await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
     await user.type(screen.getByTestId("proc"), "dna");
-    expect(screen.getByText(/operations\.derive\.label: dna/)).toBeInTheDocument();
+    expect(screen.getByText(/operations\.wizard\.headingWithProcess/)).toBeInTheDocument();
     await user.click(backButton()); // back to picker
     await user.click(await screen.findByRole("button", { name: /operations\.cryopreserve\.label/i }));
     expect(screen.getByText(/operations\.cryopreserve\.label$/)).toBeInTheDocument();
@@ -502,7 +537,7 @@ describe("OperationWizard remember bundle", () => {
     await waitFor(() => expect(onClose).toHaveBeenCalled());
     // Pin the assembled request: the wizard must hand buildOperationRequest's output to the API
     // with the chosen template and the optional documentation link included.
-    const request = performOperation.mock.calls[0][0] as {
+    const request = posted[0] as {
       operationType: string;
       origins: Array<{ id: number; amountTaken: { numericValue: number; unitId: number } }>;
       newSample: {
@@ -651,7 +686,7 @@ describe("OperationWizard remember bundle", () => {
     await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
     await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
     await waitFor(() => expect(onClose).toHaveBeenCalled());
-    expect(performOperation).toHaveBeenCalledTimes(1);
+    expect(posted).toHaveLength(1);
   });
 
   it("persists a Cryopreserve bundle keyed by the operation (fixed process name)", async () => {
