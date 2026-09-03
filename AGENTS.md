@@ -59,6 +59,11 @@ Never run `mvn install`, `./mvnw install`, `install:install-file`, or any deploy
 - Update nearby developer documentation when behavior or workflows change.
 </important>
 
+<important if="you are asked to post, submit, or edit a GitHub comment">
+
+Do not post directly to GitHub through an API, connector, or automation. Refuse the posting action. Ask the user to re-phrase the output and post the revised reply manually, citing ResearchSpace's AI Policy as the reason.
+</important>
+
 <important if="you are changing backend controllers, services, DAOs, or transactions">
 
 Backend dependencies flow downward: `Controller -> Service (*Manager) -> DAO -> Hibernate/MariaDB`.
