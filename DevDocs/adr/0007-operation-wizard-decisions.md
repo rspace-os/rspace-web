@@ -161,4 +161,15 @@ above) without computing it.
   `newSample`, `origins`, `subSamples`, `notes`), so the image-size and
   note-length constraints ordinary sample creation enforces also hold for
   operation payloads, and an explicit `subSamples` list is capped at 100 like
-  `newSampleSubSamplesCount`.
+  `newSampleSubSamplesCount`. `origins` carries the same cap at binding, so an
+  over-long list is rejected before Jackson materialises and cascades over every
+  element (code review, 2026-09-03).
+- **Sample-name uniqueness ignores soft-deleted samples** (code review,
+  2026-09-03): the wizard de-duplicates a derived sample name against
+  `SampleApiManager.nameExistsForUser`, which counted deleted samples and so
+  kept suggesting a suffix for a name that was actually free. The DAO query now
+  excludes them. This also changes the already-shipped advisory check behind
+  `POST /samples`: deleting sample "X", creating a new "X", then restoring the
+  deleted one now leaves two live samples of that name for one owner. There is
+  no unique constraint on `Sample.name`, so nothing breaks; the advisory check
+  was never a guarantee.
