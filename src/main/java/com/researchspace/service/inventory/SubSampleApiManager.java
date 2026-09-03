@@ -32,6 +32,15 @@ public interface SubSampleApiManager extends InventoryApiManager<SubSample> {
 
   SubSample assertUserCanEditSubSample(Long id, User user);
 
+  /**
+   * Like {@link #assertUserCanEditSubSample} but reads the subsample with a row lock held until the
+   * current transaction ends, so concurrent edits of the same subsample serialise. Intended for the
+   * operation endpoint's origins; ordinary edits keep using the unlocked read.
+   *
+   * @throws jakarta.ws.rs.NotFoundException if no subsample has the id
+   */
+  SubSample lockSubSampleForEdit(Long id, User user);
+
   SubSample assertUserCanDeleteSubSample(Long id, User user);
 
   /**

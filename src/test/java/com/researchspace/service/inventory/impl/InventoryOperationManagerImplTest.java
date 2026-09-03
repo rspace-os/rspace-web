@@ -64,7 +64,7 @@ class InventoryOperationManagerImplTest {
   }
 
   private void originHolds(long originId, SubSample subSample) {
-    when(subSampleApiMgr.assertUserCanEditSubSample(originId, user)).thenReturn(subSample);
+    when(subSampleApiMgr.lockSubSampleForEdit(originId, user)).thenReturn(subSample);
   }
 
   @BeforeEach
@@ -95,7 +95,7 @@ class InventoryOperationManagerImplTest {
     // the created sample is returned unchanged
     assertSame(created, result);
     // permission on the origin is asserted, and the sample is created exactly once
-    verify(subSampleApiMgr).assertUserCanEditSubSample(100L, user);
+    verify(subSampleApiMgr).lockSubSampleForEdit(100L, user);
     verify(sampleApiMgr).createNewApiSample(newSample, user);
     // the origin is REDUCED by the amount taken (registerApiSubSampleUsage subtracts and clamps at
     // zero, so it can never increase the origin)
@@ -137,7 +137,7 @@ class InventoryOperationManagerImplTest {
     request.setNewSample(new ApiSampleWithFullSubSamples("Derived material"));
     doThrow(new RuntimeException("no permission"))
         .when(subSampleApiMgr)
-        .assertUserCanEditSubSample(100L, user);
+        .lockSubSampleForEdit(100L, user);
 
     assertThrows(RuntimeException.class, () -> manager.performOperation(request, user));
 
@@ -156,7 +156,7 @@ class InventoryOperationManagerImplTest {
     originHolds(100L, subSampleHolding("5", 3));
     doThrow(new RuntimeException("no permission"))
         .when(subSampleApiMgr)
-        .assertUserCanEditSubSample(200L, user);
+        .lockSubSampleForEdit(200L, user);
     ApiInventoryOperationPost request = new ApiInventoryOperationPost();
     request.setOperationType("pool");
     request.setOrigins(
@@ -248,8 +248,8 @@ class InventoryOperationManagerImplTest {
     manager.performOperation(request, user);
 
     // both origins are permission-checked and each is reduced by its own amount
-    verify(subSampleApiMgr).assertUserCanEditSubSample(100L, user);
-    verify(subSampleApiMgr).assertUserCanEditSubSample(200L, user);
+    verify(subSampleApiMgr).lockSubSampleForEdit(100L, user);
+    verify(subSampleApiMgr).lockSubSampleForEdit(200L, user);
     ArgumentCaptor<QuantityInfo> first = ArgumentCaptor.forClass(QuantityInfo.class);
     verify(subSampleApiMgr).registerApiSubSampleUsage(eq(100L), first.capture(), eq(user));
     assertEquals(0, new BigDecimal("0.6").compareTo(first.getValue().getNumericValue()));
@@ -448,5 +448,94 @@ class InventoryOperationManagerImplTest {
         InventoryOperationManagerImpl.amountTakenEmptiesOrigin(millilitres("5"), grams("5")));
     assertFalse(InventoryOperationManagerImpl.amountTakenEmptiesOrigin(null, grams("5")));
     assertFalse(InventoryOperationManagerImpl.amountTakenEmptiesOrigin(grams("5"), null));
+  }
+
+  // --- measurement categories against the origin's live quantity (code review F4, F5) ---
+
+  private static ApiSubSample subSampleOf(ApiQuantityInfo quantity) {
+    ApiSubSample subSample = new ApiSubSample();
+    subSample.setQuantity(quantity);
+    return subSample;
+  }
+
+  @Test
+  void rejectsAmountTakenFromADifferentMeasurementCategoryThanTheOrigin() {
+    // Grams taken from a millilitre origin used to reach QuantityUtils.sum and surface as a 422.
+    ApiInventoryOperationPost request = new ApiInventoryOperationPost();
+    request.setOperationType("derive");
+    request.setOrigins(List.of(origin(100L, grams("1"))));
+    request.setNewSample(new ApiSampleWithFullSubSamples("Derived material"));
+    originHolds(100L, subSampleHolding("5", RSUnitDef.MILLI_LITRE.getId()));
+
+    BindException rejection = performExpectingRejection(request);
+    assertEquals(
+        "errors.inventory.operation.amountTakenCategoryMismatch",
+        rejection.getFieldErrors("origins[0].amountTaken").get(0).getCode());
+  }
+
+  @Test
+  void rejectsNewSubSamplesInADifferentMeasurementCategoryThanTheOrigin() {
+    // Without a template the wizard offers only the origin's category for the created amounts, so
+    // a gram child from a millilitre origin is a request the wizard never builds.
+    ApiInventoryOperationPost request = new ApiInventoryOperationPost();
+    request.setOperationType("derive");
+    request.setOrigins(List.of(origin(100L, millilitres("1"))));
+    ApiSampleWithFullSubSamples newSample = new ApiSampleWithFullSubSamples("Derived material");
+    newSample.getSubSamples().add(subSampleOf(grams("0.5")));
+    newSample.getSubSamples().add(subSampleOf(millilitres("0.5")));
+    newSample.getSubSamples().add(subSampleOf(grams("0.5")));
+    request.setNewSample(newSample);
+    originHolds(100L, subSampleHolding("5", RSUnitDef.MILLI_LITRE.getId()));
+
+    BindException rejection = performExpectingRejection(request);
+    assertEquals(
+        "errors.inventory.operation.subSampleCategoryMismatch",
+        rejection.getFieldErrors("newSample.subSamples[0].quantity").get(0).getCode());
+    assertTrue(rejection.getFieldErrors("newSample.subSamples[1].quantity").isEmpty());
+    assertEquals(
+        "errors.inventory.operation.subSampleCategoryMismatch",
+        rejection.getFieldErrors("newSample.subSamples[2].quantity").get(0).getCode());
+  }
+
+  @Test
+  void leavesNewSubSampleCategoriesToTheTemplateCheckWhenATemplateIsChosen() throws Exception {
+    // With a template the created amounts follow the template's category, not the origin's (a
+    // DNA extract in microlitres derived from tissue in grams); the controller's template check
+    // owns that rule.
+    ApiInventoryOperationPost request = new ApiInventoryOperationPost();
+    request.setOperationType("derive");
+    request.setOrigins(List.of(origin(100L, grams("1"))));
+    ApiSampleWithFullSubSamples newSample = new ApiSampleWithFullSubSamples("DNA extract");
+    newSample.setTemplateId(7L);
+    newSample.getSubSamples().add(subSampleOf(millilitres("0.5")));
+    request.setNewSample(newSample);
+    originHolds(100L, subSampleHolding("5", RSUnitDef.GRAM.getId()));
+    when(sampleApiMgr.createNewApiSample(newSample, user)).thenReturn(newSample);
+
+    manager.performOperation(request, user);
+
+    verify(sampleApiMgr).createNewApiSample(newSample, user);
+  }
+
+  @Test
+  void locksOriginsInAscendingIdOrderAndReportsErrorsAtTheirRequestIndex() {
+    // The row locks taken by the live-state read must be acquired in the same consistent order as
+    // the decrements, so two overlapping Pool requests cannot deadlock; the error path still names
+    // the origin by its position in the request (code review, finding 1).
+    ApiInventoryOperationPost request = new ApiInventoryOperationPost();
+    request.setOperationType("pool");
+    request.setOrigins(List.of(origin(300L, millilitres("1")), origin(100L, millilitres("9"))));
+    request.setNewSample(new ApiSampleWithFullSubSamples("Pooled material"));
+    originHolds(300L, subSampleHolding("5", RSUnitDef.MILLI_LITRE.getId()));
+    originHolds(100L, subSampleHolding("5", RSUnitDef.MILLI_LITRE.getId()));
+
+    BindException rejection = performExpectingRejection(request);
+
+    InOrder inOrder = inOrder(subSampleApiMgr);
+    inOrder.verify(subSampleApiMgr).lockSubSampleForEdit(100L, user);
+    inOrder.verify(subSampleApiMgr).lockSubSampleForEdit(300L, user);
+    assertEquals(
+        "errors.inventory.operation.amountTakenExceedsOrigin",
+        rejection.getFieldErrors("origins[1].amountTaken").get(0).getCode());
   }
 }

@@ -7,6 +7,7 @@ import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.model.core.GlobalIdPrefix;
+import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.model.units.QuantityUtils;
@@ -191,6 +192,20 @@ public class InventoryOperationPostValidator implements Validator {
             "amountTaken",
             "errors.inventory.operation.amountTakenInvalid",
             "Each origin must specify a non-negative amount, with a unit, to take from it.");
+      } else if (!RSUnitDef.exists(origin.getAmountTaken().getUnitId())) {
+        // The manager subtracts unit-aware, so an unknown unit would fail there as a 422 rather
+        // than a field-scoped 400 (code review, finding 4).
+        errors.rejectValue(
+            "amountTaken",
+            "errors.inventory.quantity.unitInvalid",
+            new Object[] {origin.getAmountTaken().getUnitId()},
+            "The amount taken must use a known unit.");
+      } else if (!RSUnitDef.getUnitById(origin.getAmountTaken().getUnitId()).isAmount()) {
+        errors.rejectValue(
+            "amountTaken",
+            "errors.inventory.quantity.unitNotAmount",
+            new Object[] {origin.getAmountTaken().getUnitId()},
+            "The amount taken must use an amount unit (volume, mass or count).");
       } else if (!QuantityInfo.canStoreWithoutRounding(origin.getAmountTaken().getNumericValue())) {
         // Quantities persist at 3dp (QuantityInfo rounds HALF_UP), so a finer amount would pass the
         // live-state checks as given yet decrement the origin by the rounded surrogate (0.0004 ml
@@ -384,6 +399,15 @@ public class InventoryOperationPostValidator implements Validator {
             "errors.inventory.operation.subSampleQuantityInvalid",
             "Each new subsample must hold a quantity greater than zero, with a unit.");
         allQuantitiesValid = false;
+      } else if (!QuantityInfo.canStoreWithoutRounding(quantity.getNumericValue())) {
+        // Same rule as amountTaken: a quantity finer than the stored 3dp would round to a
+        // different amount, possibly zero, so the created subsample would not hold what was
+        // validated (code review, finding 7).
+        errors.rejectValue(
+            String.format("newSample.subSamples[%d].quantity", index),
+            "errors.inventory.operation.subSampleQuantityTooPrecise",
+            "Each new subsample quantity supports at most 3 decimal places.");
+        allQuantitiesValid = false;
       }
       index++;
     }
@@ -429,6 +453,7 @@ public class InventoryOperationPostValidator implements Validator {
   private void rejectUndeclaredNewSampleContent(
       ApiSampleWithFullSubSamples newSample, InventoryOperationConfig config, Errors errors) {
     rejectIfPresent(errors, "newSample.description", newSample.getDescription());
+    rejectIfPresent(errors, "newSample.iconId", newSample.getIconId());
     rejectIfPresent(errors, "newSample.tags", newSample.getTags());
     rejectIfPresent(errors, "newSample.barcodes", newSample.getBarcodes());
     rejectIfPresent(errors, "newSample.identifiers", newSample.getIdentifiers());
@@ -454,6 +479,10 @@ public class InventoryOperationPostValidator implements Validator {
     int index = 0;
     for (ApiSubSample subSample : newSample.getSubSamples()) {
       String path = String.format("newSample.subSamples[%d].", index++);
+      // A child's name is generated from the sample's (code review, finding 9); its icon is the
+      // sample's. Neither is a declared input of any operation.
+      rejectIfPresent(errors, path + "name", subSample.getName());
+      rejectIfPresent(errors, path + "iconId", subSample.getIconId());
       rejectIfPresent(errors, path + "notes", subSample.getNotes());
       rejectIfPresent(errors, path + "extraFields", subSample.getExtraFields());
       rejectIfPresent(errors, path + "description", subSample.getDescription());
@@ -715,7 +744,9 @@ public class InventoryOperationPostValidator implements Validator {
   /**
    * The documentation link is a wizard-level feature rather than a per-operation declaration, so
    * every output-producing operation accepts at most one, and it must actually be an IsDocumentedBy
-   * link. Its target is any record the caller can read, checked by the delegated samples-endpoint
+   * link. Its target must be an ELN record of a kind the wizard's picker offers (a document, a
+   * notebook or a Gallery file); a link "documented by" an Inventory record is rejected (code
+   * review, finding 6). Readability of the target is checked by the delegated samples-endpoint
    * rules.
    */
   private void validateDocumentationLink(List<ApiExtraField> fields, Errors errors) {
@@ -735,7 +766,26 @@ public class InventoryOperationPostValidator implements Validator {
             "errors.inventory.operation.documentationLinkInvalid",
             new Object[] {DOCUMENTATION_RELATION_TYPE},
             "A documentation link must be a link field with the documentation relation type.");
+      } else if (!targetsElnRecord(field.getLink().getTargetGlobalId())) {
+        errors.rejectValue(
+            String.format("newSample.extraFields[%d].link", fields.indexOf(field)),
+            "errors.inventory.operation.documentationLinkTargetInvalid",
+            "A documentation link must target an ELN document, notebook or Gallery file.");
       }
+    }
+  }
+
+  /** The ELN record kinds the documentation picker offers (ElnFolderBrowser.PICKABLE_TYPES). */
+  private static final Set<GlobalIdPrefix> DOCUMENTATION_TARGET_PREFIXES =
+      Set.of(GlobalIdPrefix.SD, GlobalIdPrefix.NB, GlobalIdPrefix.GL);
+
+  private static boolean targetsElnRecord(String targetGlobalId) {
+    try {
+      return DOCUMENTATION_TARGET_PREFIXES.contains(
+          new GlobalIdentifier(targetGlobalId).getPrefix());
+    } catch (IllegalArgumentException malformed) {
+      // a malformed or missing id is already reported by the delegated link validation
+      return true;
     }
   }
 

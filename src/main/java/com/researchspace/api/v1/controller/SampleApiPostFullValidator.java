@@ -2,7 +2,9 @@ package com.researchspace.api.v1.controller;
 
 import com.researchspace.api.v1.controller.SamplesApiController.ApiSampleFullPost;
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
+import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
+import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.api.v1.service.ApiFieldsHelper;
 import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.inventory.field.InventoryEntityField;
@@ -89,21 +91,50 @@ public class SampleApiPostFullValidator implements Validator {
     }
   }
 
+  /**
+   * A template fixes the measurement category of the samples made from it. The sample's total is
+   * derived from its subsamples when any are posted, so each posted subsample quantity is checked
+   * against the template as well as the optional top-level quantity; otherwise a comparable
+   * top-level value could stand in front of children in another category.
+   */
   private void validateQuantityUnit(Errors errors, ApiSampleFullPost apiSamplePost) {
     ApiSampleWithFullSubSamples postedApiSample = apiSamplePost.getApiSample();
     SampleTemplate template = apiSamplePost.getTemplate();
-    if (template != null && postedApiSample.getQuantity() != null) {
-      RSUnitDef templateUnit = RSUnitDef.getUnitById(template.getDefaultUnitId());
-      RSUnitDef sampleUnit = RSUnitDef.getUnitById(postedApiSample.getQuantity().getUnitId());
-      if (!templateUnit.isComparable(sampleUnit)) {
-        errors.rejectValue(
-            "quantity",
-            "errors.inventory.sample.unitIncompatibleWithTemplate",
-            new Object[] {
-              sampleUnit.getId(), sampleUnit.name(), templateUnit.getId(), templateUnit.name()
-            },
-            null);
-      }
+    if (template == null) {
+      return;
+    }
+    RSUnitDef templateUnit = RSUnitDef.getUnitById(template.getDefaultUnitId());
+    rejectUnitIncompatibleWithTemplate(
+        errors, "quantity", postedApiSample.getQuantity(), templateUnit);
+    if (postedApiSample.getSubSamples() == null) {
+      return;
+    }
+    int index = 0;
+    for (ApiSubSample subSample : postedApiSample.getSubSamples()) {
+      rejectUnitIncompatibleWithTemplate(
+          errors,
+          String.format("subSamples[%d].quantity", index++),
+          subSample == null ? null : subSample.getQuantity(),
+          templateUnit);
+    }
+  }
+
+  private void rejectUnitIncompatibleWithTemplate(
+      Errors errors, String field, ApiQuantityInfo quantity, RSUnitDef templateUnit) {
+    if (quantity == null
+        || quantity.getUnitId() == null
+        || !RSUnitDef.exists(quantity.getUnitId())) {
+      return; // absent, or already rejected as an invalid unit by the quantity validator
+    }
+    RSUnitDef sampleUnit = RSUnitDef.getUnitById(quantity.getUnitId());
+    if (!templateUnit.isComparable(sampleUnit)) {
+      errors.rejectValue(
+          field,
+          "errors.inventory.sample.unitIncompatibleWithTemplate",
+          new Object[] {
+            sampleUnit.getId(), sampleUnit.name(), templateUnit.getId(), templateUnit.name()
+          },
+          null);
     }
   }
 }

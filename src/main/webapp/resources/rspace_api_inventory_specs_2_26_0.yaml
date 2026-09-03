@@ -1815,7 +1815,17 @@ paths:
             valid ISO yyyy-MM-dd date); a blank value in a field fed by a required input; storage
             temperatures that are not equal to each other, or sent to an operation that declares no
             temperature input; fewer subsamples than the count input's minimum; and a documentation
-            link that is not an IsDocumentedBy link, or more than one of them.
+            link that is not an IsDocumentedBy link, that targets anything other than an ELN
+            document, notebook or Gallery file, or more than one of them.
+
+
+            Units and precision are checked against the origins too: an amountTaken unit that does
+            not exist or is not an amount unit, or that is in a different measurement category from
+            its origin; a new subsample quantity in a different measurement category from the
+            origin (or, when a templateId is given, from the template's default unit); and a new
+            subsample quantity finer than the 3 decimal places quantities are stored at. A new
+            subsample may carry only its quantity, so a name or iconId on one is rejected like any
+            other undeclared property.
 
 
             The origins are left unchanged.
