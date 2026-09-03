@@ -2,7 +2,6 @@ package com.researchspace.service.impl;
 
 import com.axiope.model.record.init.AntibodySampleTemplate;
 import com.axiope.model.record.init.BacterialSampleTemplate;
-import com.axiope.model.record.init.BuiltinContentMessages;
 import com.axiope.model.record.init.Elisa;
 import com.axiope.model.record.init.Experiment;
 import com.axiope.model.record.init.FFPESampleTemplate;
@@ -23,6 +22,7 @@ import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.IContentInitializer;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserFolderSetup;
 import com.researchspace.service.UserLocaleService;
 import com.researchspace.service.archive.ExportImport;
@@ -34,7 +34,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
-import java.util.ResourceBundle;
 import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -57,6 +56,7 @@ public class ProdContentInitializerManager extends AbstractContentInitializer
   private @Autowired @Qualifier("importRecordsOnly") ImportStrategy importRecordsOnly;
   private @Autowired FolderManager fMger;
   private @Autowired UserLocaleService userLocaleService;
+  private @Autowired MessageSourceUtils messages;
 
   // this class is supposed to be a singleton but spring creates > 1 instance, so
   // this is static for now till it gets sorted.
@@ -158,10 +158,9 @@ public class ProdContentInitializerManager extends AbstractContentInitializer
 
     log.info("Adding Notebook example in system; for user [{}]", user.getFullName());
     Locale locale = userLocaleService.getLocaleFor(user);
-    ResourceBundle resources = BuiltinContentMessages.forLocale(locale);
     Notebook notebookFolder =
         recordFactory.createNotebook(
-            resources.getString("common:recordTypes.notebook.singular"), user);
+            messages.getMessageForLocale("common:recordTypes.notebook.singular", locale), user);
     addChild(folders.getExamples(), notebookFolder, user);
 
     try {

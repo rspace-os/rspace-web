@@ -130,10 +130,10 @@ public class UserValidator implements Validator {
           });
     }
     if (!usernameHasValidCharactersAndLength(username)) {
-      String invalidUsernameMsg = "errors.invalidUsername.strict";
-      if (shouldRelaxedUsernamePatternBeUsed()) {
-        invalidUsernameMsg = "errors.invalidUsername.relaxed";
-      }
+      final String invalidUsernameMsg =
+          shouldRelaxedUsernamePatternBeUsed()
+              ? "errors.invalidUsername.relaxed"
+              : "errors.invalidUsername.strict";
       return addToErrorsAndGetMessage(errors, "username", invalidUsernameMsg, null);
     }
 

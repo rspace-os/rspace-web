@@ -42,6 +42,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.collections.MapUtils;
+import org.springframework.context.MessageSourceResolvable;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -161,7 +163,7 @@ public class IntegrationController extends BaseController {
       HttpSession session) {
 
     /* for Egnyte integration we verify that passed URL is valid */
-    String error = null;
+    MessageSourceResolvable error = null;
     if (EGNYTE_APP_NAME.equals(newInfo.getName()) && !MapUtils.isEmpty(newInfo.getOptions())) {
       removeEgnyteTokenFromSession(session);
       String egnyteUrl = (String) newInfo.getOptions().get(EGNYTE_DOMAIN_SETTING);
@@ -176,16 +178,16 @@ public class IntegrationController extends BaseController {
           && (isBlank(properties.getOwnCloudUrl())
               || isBlank(properties.getOwnCloudClientId())
               || isBlank(properties.getOwnCloudSecret()))) {
-        error = "apps.owncloud.errors.notConfigured";
+        error = new DefaultMessageSourceResolvable("apps.owncloud.errors.notConfigured");
       } else if (NEXTCLOUD_APP_NAME.equals(newInfo.getName())
           && (isBlank(properties.getNextCloudUrl())
               || isBlank(properties.getNextCloudClientId())
               || isBlank(properties.getNextCloudSecret()))) {
-        error = "apps.nextcloud.errors.notConfigured";
+        error = new DefaultMessageSourceResolvable("apps.nextcloud.errors.notConfigured");
       }
     }
     if (error != null) {
-      ErrorList errorList = ErrorList.of(getText(error));
+      ErrorList errorList = ErrorList.of(messages.getMessage(error));
       return new AjaxReturnObject<>(null, errorList);
     }
 

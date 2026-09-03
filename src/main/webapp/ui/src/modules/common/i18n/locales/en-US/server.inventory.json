@@ -71,7 +71,11 @@
         "validation": "{0}"
       },
       "file": {
-        "imagesNotSupported": "Getting images for general files not supported yet"
+        "imagesNotSupported": "Getting images for general files not supported yet",
+        "parentGlobalId": {
+          "empty": "parentGlobalId is required.",
+          "invalid": "parentGlobalId must be a valid global identifier."
+        }
       },
       "icon": {
         "imageParseFailure": "Couldn''t parse file [{0}] as an image."
@@ -234,6 +238,14 @@
         "reservedFieldName": "{0} is a reserved field name, please choose a name other than {1}"
       },
       "attachment": {
+        "mediaFileGlobalId": {
+          "empty": "mediaFileGlobalId is required.",
+          "invalid": "mediaFileGlobalId must be a valid global identifier."
+        },
+        "parentGlobalId": {
+          "empty": "parentGlobalId is required.",
+          "invalid": "parentGlobalId must be a valid global identifier."
+        },
         "sampleTemplateUnsupported": "Sample templates do not support file attachments yet",
         "workbenchUnsupported": "Files cannot be attached to a workbench"
       }

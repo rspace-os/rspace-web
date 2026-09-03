@@ -106,21 +106,21 @@ public class SysAdminUserRegistrationController extends BaseController {
       throws IOException {
     if (xfile == null) {
       // no file part in the request at all (e.g. a direct API call without the file)
-      return badRequestWithError("system.batchRegistration.upload.noFile");
+      return badRequestWithError(getText("system.batchRegistration.upload.noFile"));
     }
     if (xfile.isEmpty()) {
-      return badRequestWithError("system.batchRegistration.upload.emptyFile");
+      return badRequestWithError(getText("system.batchRegistration.upload.emptyFile"));
     }
     return ResponseEntity.ok(getImportResultsFromCSVInput(xfile.getInputStream()));
   }
 
-  private ResponseEntity<UserImportResult> badRequestWithError(String messageKey) {
+  private ResponseEntity<UserImportResult> badRequestWithError(String message) {
     UserImportResult result =
         new UserImportResult(
             new ArrayList<>(),
             new ArrayList<>(),
             new ArrayList<>(),
-            ErrorList.createErrListWithSingleMsg(getText(messageKey)));
+            ErrorList.createErrListWithSingleMsg(message));
     return ResponseEntity.badRequest().body(result);
   }
 

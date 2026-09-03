@@ -19,6 +19,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
@@ -40,10 +41,12 @@ public class SignupControllerTest {
   @Test
   public void recaptchaRejectsEarly() {
     when(properties.getSignupCaptchaEnabled()).thenReturn("true");
-    when(captchaVerifier.verifyCaptchaFromRequest(mockRequest)).thenReturn("notOK");
+    when(captchaVerifier.verifyCaptchaFromRequest(mockRequest))
+        .thenReturn(new DefaultMessageSourceResolvable("errors.captcha.verification.failed"));
     User user = createAnyUser("any123");
     BindingResult errors = new BeanPropertyBindingResult(user, "errors");
     signupCtrller.onSubmit(user, errors, mockRequest);
+    assertEquals("errors.captcha.verification.failed", errors.getFieldError("captcha").getCode());
     verify(userValidator, never()).validate(user, errors);
   }
 

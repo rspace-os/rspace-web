@@ -291,6 +291,50 @@
     "exportPlan": "Export plan",
     "property": "Property"
   },
+  "jakarta": {
+    "validation": {
+      "constraints": {
+        "Email": {
+          "message": "must be a well-formed email address"
+        },
+        "Max": {
+          "message": "must be less than or equal to {value}"
+        },
+        "Min": {
+          "message": "must be greater than or equal to {value}"
+        },
+        "NotBlank": {
+          "message": "must not be blank"
+        },
+        "NotEmpty": {
+          "message": "must not be empty"
+        },
+        "NotNull": {
+          "message": "must not be null"
+        },
+        "Pattern": {
+          "message": "must match \"{regexp}\""
+        },
+        "Size": {
+          "message": "size must be between {min} and {max}"
+        }
+      }
+    }
+  },
+  "org": {
+    "hibernate": {
+      "validator": {
+        "constraints": {
+          "NotEmpty": {
+            "message": "may not be empty"
+          },
+          "Range": {
+            "message": "must be between {min} and {max}"
+          }
+        }
+      }
+    }
+  },
   "validation": {
     "fieldForm": {
       "choiceOptionsRequired": "Choice options are required.",

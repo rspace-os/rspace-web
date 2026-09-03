@@ -29,7 +29,6 @@ import com.researchspace.model.comms.MessageType;
 import com.researchspace.model.comms.MsgOrReqstCreationCfg;
 import com.researchspace.model.comms.NotificationType;
 import com.researchspace.model.dtos.GroupSearchCriteria;
-import com.researchspace.model.dtos.GroupValidator;
 import com.researchspace.model.dtos.SwapPiCommand;
 import com.researchspace.model.dtos.SwapPiValidator;
 import com.researchspace.model.dtos.UserRoleView;
@@ -580,7 +579,7 @@ public class GroupController extends BaseController {
       return getText("groups.invitation.errors.missingGroupId");
     }
     if (group.getMemberString() == null || group.getMemberString().isEmpty()) {
-      errors.rejectValue("memberString", GroupValidator.GROUP_MEMBERS_NONESELECTED);
+      errors.rejectValue("memberString", "groups.members.noneSelected");
       return getText("groups.invitation.errors.noMembers");
     }
 

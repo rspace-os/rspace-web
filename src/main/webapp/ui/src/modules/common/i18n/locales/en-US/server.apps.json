@@ -1,5 +1,12 @@
 {
   "apps": {
+    "urlValidation": {
+      "errors": {
+        "expectedFragmentNotFound": "The expected content was not found at the provided URL.",
+        "malformed": "The provided URL is not valid.",
+        "unreachable": "The provided URL could not be reached."
+      }
+    },
     "box": {
       "errors": {
         "apiException": "Box API exception: {0}",

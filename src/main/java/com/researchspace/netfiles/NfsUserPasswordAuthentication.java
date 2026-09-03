@@ -4,6 +4,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.netfiles.NfsFileSystem;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -12,12 +13,13 @@ public class NfsUserPasswordAuthentication implements NfsAuthentication {
   @Autowired private NfsFactory nfsClientFactory;
 
   @Override
-  public String validateCredentials(String nfsusername, String nfspassword, User user) {
+  public DefaultMessageSourceResolvable validateCredentials(
+      String nfsusername, String nfspassword, User user) {
     if (nfsusername == null || nfsusername.trim().isEmpty()) {
-      return "netFileStores.validation.noUsername";
+      return new DefaultMessageSourceResolvable("netFileStores.validation.noUsername");
     }
     if (StringUtils.isEmpty(nfspassword)) {
-      return "netFileStores.validation.noPassword";
+      return new DefaultMessageSourceResolvable("netFileStores.validation.noPassword");
     }
     return null;
   }
@@ -29,7 +31,7 @@ public class NfsUserPasswordAuthentication implements NfsAuthentication {
   }
 
   @Override
-  public String getMessageCodeForAuthException(NfsAuthException auth) {
-    return "workspace:export.fileStore.login.authProblem";
+  public DefaultMessageSourceResolvable getMessageForAuthException(NfsAuthException auth) {
+    return new DefaultMessageSourceResolvable("workspace:export.fileStore.login.authProblem");
   }
 }

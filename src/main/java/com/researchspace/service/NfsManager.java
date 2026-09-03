@@ -59,11 +59,9 @@ public interface NfsManager {
    * Methods for logging user in/out of file systems
    */
 
-  /**
-   * @return "logged.as.-username" if logged in, null if not, or error code if error
-   */
+  /** Returns the login status and its localized response. */
   @IgnoreInServiceLoggerAspct(ignoreAllRequestParams = true)
-  String loginToNfs(
+  LoginResult loginToNfs(
       Long fileSystemId,
       String nfsusername,
       String nfspassword,
@@ -88,11 +86,6 @@ public interface NfsManager {
   String getLoggedAsUsernameIfUserLoggedIn(
       Long fileSystemId, Map<Long, NfsClient> nfsClients, User user);
 
-  /**
-   * @return "logged.as.-username-" string or error message code
-   */
-  String testConnectionToTarget(String target, Long fileSystemId, NfsClient nfsClient);
-
   void logoutFromNfs(Long fileSystemId, Map<Long, NfsClient> nfsClients);
 
   ApiExternalStorageOperationResult uploadFilesToNfs(
@@ -113,4 +106,12 @@ public interface NfsManager {
 
   /* for tests purposes */
   void setFileStore(FileStore fileStore);
+
+  enum LoginStatus {
+    ERROR,
+    LOGGED_IN,
+    NEEDS_LOGIN
+  }
+
+  record LoginResult(LoginStatus status, String response) {}
 }

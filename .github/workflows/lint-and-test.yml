@@ -67,6 +67,7 @@ jobs:
               - 'src/test/java/**'
               - 'src/main/resources/**'
               - 'src/test/resources/**'
+              - 'src/main/webapp/ui/src/modules/common/i18n/locales/**/*.json'
               - 'src/main/webapp/WEB-INF/**'
               - 'pom.xml'
 
