@@ -15,7 +15,9 @@ import com.researchspace.service.inventory.InventoryOperationManager;
 import com.researchspace.service.inventory.SampleApiManager;
 import com.researchspace.service.inventory.SubSampleApiManager;
 import java.util.Comparator;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -28,6 +30,9 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
   @Autowired private SampleApiManager sampleApiMgr;
   @Autowired private SubSampleApiManager subSampleApiMgr;
   @Autowired private InventoryOperationConfigRegistry operationConfigs;
+
+  /** Stateless; one instance per bean, as elsewhere in the codebase. */
+  private static final QuantityUtils quantityUtils = new QuantityUtils();
 
   @Override
   public ApiSampleWithFullSubSamples performOperation(ApiInventoryOperationPost request, User user)
@@ -103,11 +108,17 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
             .orElse(false);
     BeanPropertyBindingResult errors =
         new BeanPropertyBindingResult(request, "apiInventoryOperationPost");
-    QuantityUtils quantityUtils = new QuantityUtils();
+    // Origins are processed in id order but reported at their REQUEST index. Keyed by identity: a
+    // list scan per origin is quadratic at the 100-origin cap, and these are Lombok @Data values,
+    // so two equal origins would both resolve to the first one's index.
+    Map<ApiInventoryOperationOriginUpdate, Integer> requestIndex = new IdentityHashMap<>();
+    for (int i = 0; i < request.getOrigins().size(); i++) {
+      requestIndex.put(request.getOrigins().get(i), i);
+    }
     QuantityInfo firstOriginQuantity = null;
     for (ApiInventoryOperationOriginUpdate origin : originsById) {
       SubSample dbSubSample = subSampleApiMgr.lockSubSampleForEdit(origin.getId(), user);
-      errors.pushNestedPath(String.format("origins[%d]", request.getOrigins().indexOf(origin)));
+      errors.pushNestedPath(String.format("origins[%d]", requestIndex.get(origin)));
       try {
         QuantityInfo currentQuantity = dbSubSample.getQuantity();
         if (originHoldsNothing(currentQuantity)) {
@@ -151,7 +162,7 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
         errors.popNestedPath();
       }
     }
-    rejectNewSubSamplesOutsideOriginCategory(request, firstOriginQuantity, quantityUtils, errors);
+    rejectNewSubSamplesOutsideOriginCategory(request, firstOriginQuantity, errors);
     if (errors.hasErrors()) {
       throw new BindException(errors);
     }
@@ -166,7 +177,6 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
   private static void rejectNewSubSamplesOutsideOriginCategory(
       ApiInventoryOperationPost request,
       QuantityInfo originQuantity,
-      QuantityUtils quantityUtils,
       BeanPropertyBindingResult errors) {
     ApiSampleWithFullSubSamples newSample = request.getNewSample();
     if (newSample == null
@@ -216,7 +226,6 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
       // Origin holds nothing: any positive amount taken is over-removal.
       return amountTaken.getNumericValue().signum() > 0;
     }
-    QuantityUtils quantityUtils = new QuantityUtils();
     if (!quantityUtils.isComparableQuantities(amountTaken, originQuantity)) {
       return false;
     }
@@ -237,7 +246,6 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
         || originQuantity.getNumericValue() == null) {
       return false;
     }
-    QuantityUtils quantityUtils = new QuantityUtils();
     if (!quantityUtils.isComparableQuantities(amountTaken, originQuantity)) {
       return false;
     }

@@ -118,7 +118,8 @@ public class ApiControllerAdvice extends RestControllerAdvice {
         && CONCURRENT_WRITE_SQL_ERROR_CODES.contains(sqlException.getErrorCode())) {
       return handleConcurrentUpdateConflict(ex);
     }
-    return handle500Error(ex, ApiErrorCodes.GENERAL_ERROR, "General server error");
+    return handle500Error(
+        ex, ApiErrorCodes.GENERAL_ERROR, messages.getMessage("api.errors.generalServerError"));
   }
 
   private ResponseEntity<Object> handleConcurrentUpdateConflict(final DataAccessException ex) {
@@ -127,7 +128,7 @@ public class ApiControllerAdvice extends RestControllerAdvice {
         new ApiError(
             HttpStatus.CONFLICT,
             ApiErrorCodes.EDIT_CONFLICT.getCode(),
-            messages.getMessage("errors.inventory.operation.concurrentUpdate"),
+            messages.getMessage("api.errors.concurrentUpdate"),
             "");
     return new ResponseEntity<Object>(apiError, new HttpHeaders(), apiError.getStatus());
   }

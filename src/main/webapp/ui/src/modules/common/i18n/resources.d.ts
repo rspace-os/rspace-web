@@ -5499,7 +5499,9 @@ export default interface Resources {
           "userApiDisabled": "Access to API has been disabled for user ''{0}''",
           "userOAuthDisabled": "Access through OAuth tokens has been disabled for user ''{0}''"
         },
-        "detected": "Errors detected: {0}"
+        "concurrentUpdate": "Another request modified this item at the same time; retry the request.",
+        "detected": "Errors detected: {0}",
+        "generalServerError": "General server error"
       },
       "pubchem": {
         "errors": {
@@ -6993,7 +6995,6 @@ export default interface Resources {
           "amountTakenTooPrecise": "The amount taken supports at most 3 decimal places.",
           "amountTakenZero": "This operation does not take from its origins, so the amount taken must be zero.",
           "computedContentInvalid": "The content of field [{0}] does not match the [{1}] value this operation computes for it.",
-          "concurrentUpdate": "Another request modified this item at the same time; retry the request.",
           "declaredFieldMissing": "This request must contain exactly the fields this operation declares; [{0}] is missing, duplicated or empty.",
           "documentationLinkInvalid": "A documentation link must be a link field with relation type [{0}].",
           "documentationLinkTargetInvalid": "A documentation link must target an ELN document, notebook or Gallery file.",
@@ -7020,6 +7021,7 @@ export default interface Resources {
           "subSampleQuantityInvalid": "Each new subsample must hold a quantity greater than zero, with a unit.",
           "subSampleQuantityTooPrecise": "Each new subsample quantity supports at most 3 decimal places.",
           "subSamplesRequired": "The new sample must include at least {0} subsample(s).",
+          "tooManyOrigins": "This operation accepts at most {max} origin subsamples.",
           "undeclaredProperty": "This operation does not accept [{0}] on the sample it creates.",
           "unknownType": "Unknown operation type [{0}]."
         },
@@ -7041,7 +7043,7 @@ export default interface Resources {
           "subSamplesCountOutOfRange": "{0} supported values are 1-100, was [{1}]",
           "templateActionsNotAllowed": "Please use /sampleTemplates endpoint for template actions",
           "templateNotFound": "No sample template with id: {0}",
-          "tooManySubSamples": "A sample can be created with at most 100 subsamples",
+          "tooManySubSamples": "A sample can be created with at most {max} subsamples",
           "unitIncompatibleWithTemplate": "Sample quantity unit {0} ({1}) is incompatible with template quantity unit {2} ({3})"
         },
         "search": {
