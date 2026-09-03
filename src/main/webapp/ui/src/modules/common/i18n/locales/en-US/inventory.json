@@ -1705,6 +1705,7 @@
       "values": {
         "amountTaken": "{amount} {unit}",
         "emptied": "Will be set to 0",
+        "originAmount": "{origin}: {amount}",
         "storageTemp": "{temp} °C",
         "subsamples": "{count} × {amount} {unit} each",
         "takeAll": "All (subsamples emptied)"
@@ -1796,8 +1797,10 @@
     },
     "wizard": {
       "failed": "The operation could not be completed",
+      "headingWithProcess": "{operation}: {process}",
       "inProgress": "Performing operation…",
       "perform": "Perform",
+      "refreshFailed": "The operation completed, but the view could not be refreshed. Reload to see the changes.",
       "reviewEdit": "Review / edit",
       "step": {
         "amounts": "Amounts",

@@ -3968,6 +3968,7 @@ export default interface Resources {
         "values": {
           "amountTaken": "{amount} {unit}",
           "emptied": "Will be set to 0",
+          "originAmount": "{origin}: {amount}",
           "storageTemp": "{temp} °C",
           "subsamples": "{count} × {amount} {unit} each",
           "takeAll": "All (subsamples emptied)"
@@ -4059,8 +4060,10 @@ export default interface Resources {
       },
       "wizard": {
         "failed": "The operation could not be completed",
+        "headingWithProcess": "{operation}: {process}",
         "inProgress": "Performing operation…",
         "perform": "Perform",
+        "refreshFailed": "The operation completed, but the view could not be refreshed. Reload to see the changes.",
         "reviewEdit": "Review / edit",
         "step": {
           "amounts": "Amounts",
@@ -6983,14 +6986,17 @@ export default interface Resources {
         },
         "notEnabled": "Inventory is not enabled on this RSpace instance.",
         "operation": {
+          "amountTakenCategoryMismatch": "The amount taken must use the origin's measurement category (e.g. millilitres from a volume origin).",
           "amountTakenExceedsOrigin": "Cannot take more from an origin than it currently holds.",
           "amountTakenInvalid": "Each origin must specify a non-negative amount, with a unit, to take from it.",
           "amountTakenPositive": "This operation takes from each origin, so the amount taken must be greater than zero.",
           "amountTakenTooPrecise": "The amount taken supports at most 3 decimal places.",
           "amountTakenZero": "This operation does not take from its origins, so the amount taken must be zero.",
           "computedContentInvalid": "The content of field [{0}] does not match the [{1}] value this operation computes for it.",
+          "concurrentUpdate": "Another request modified this item at the same time; retry the request.",
           "declaredFieldMissing": "This request must contain exactly the fields this operation declares; [{0}] is missing, duplicated or empty.",
           "documentationLinkInvalid": "A documentation link must be a link field with relation type [{0}].",
+          "documentationLinkTargetInvalid": "A documentation link must target an ELN document, notebook or Gallery file.",
           "duplicateOrigin": "An origin subsample may appear at most once in an operation.",
           "fieldKeyUnknown": "The field [{0}] is not one this operation declares.",
           "linkToOriginRequired": "The new sample must include a {0} link back to origin subsample {1}.",
@@ -7009,8 +7015,10 @@ export default interface Resources {
           "storageTempBelowMin": "The storage temperature must be at least {0}°C for this operation.",
           "storageTempRequired": "This operation requires a storage temperature on the new sample.",
           "storageTempSingleValue": "This operation stores a single temperature, so the minimum and maximum must be equal.",
+          "subSampleCategoryMismatch": "Each new subsample must use the origin's measurement category (e.g. all volume or all mass).",
           "subSampleQuantitiesUnequal": "This operation creates equal subsamples, so every new subsample must have the same quantity.",
           "subSampleQuantityInvalid": "Each new subsample must hold a quantity greater than zero, with a unit.",
+          "subSampleQuantityTooPrecise": "Each new subsample quantity supports at most 3 decimal places.",
           "subSamplesRequired": "The new sample must include at least {0} subsample(s).",
           "undeclaredProperty": "This operation does not accept [{0}] on the sample it creates.",
           "unknownType": "Unknown operation type [{0}]."

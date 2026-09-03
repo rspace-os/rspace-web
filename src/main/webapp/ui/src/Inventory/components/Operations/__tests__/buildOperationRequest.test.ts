@@ -63,6 +63,21 @@ describe("buildOperationRequest (Derive)", () => {
     expect(request.origins).toEqual([{ id: 100, amountTaken: { numericValue: 0.6, unitId: 3 } }]);
   });
 
+  it("refuses to build a request for a fractional or excessive child count", () => {
+    // Code review, finding 12: Array.from({ length: 1.5 }) silently truncates to one child.
+    for (const count of [1.5, 101, 0]) {
+      expect(() =>
+        buildOperationRequest({
+          operation: deriveOperation,
+          values: { ...deriveValues, count },
+          origins: [origin],
+          resolveLabel,
+          templateId: null,
+        }),
+      ).toThrow();
+    }
+  });
+
   it("passes through a chosen templateId (any / from-origin-sample resolve to an id)", () => {
     const withTemplate = buildOperationRequest({
       operation: deriveOperation,

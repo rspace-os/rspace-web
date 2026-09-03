@@ -501,6 +501,23 @@ function OperationWizard({
         perSubsampleAmounts,
       });
       await showToastWhilstPending(t("operations.wizard.inProgress"), performOperation(request));
+    } catch (error) {
+      // Never fail silently: surface the reason (e.g. a backend rejection) instead of leaving the
+      // Perform button looking dead. The wizard stays open so the user can retry.
+      getRootStore().uiStore.addAlert(
+        mkAlert({
+          title: t("operations.wizard.failed"),
+          message: getErrorMessage(error, t("operations.wizard.failed")),
+          variant: "error",
+        }),
+      );
+      setSubmitting(false);
+      return;
+    }
+    // From here the operation has committed (output created, origins decremented), so nothing below
+    // may report it as failed or leave the wizard open for a retry that would charge the origins
+    // again (code review, finding 2). Bookkeeping errors are warnings, and the wizard closes.
+    try {
       // Persist the "remember" bundle only now that Perform has succeeded, and only when the box is
       // ticked. Keyed per operation + process name; unticking never deletes a prior bundle (DevDocs/adr/0007).
       if (remember) {
@@ -528,18 +545,16 @@ function OperationWizard({
           setProcessNameDefaults(processNameDefaultAfterPerform(processNameDefaults ?? {}, operation.key, name));
         }
       }
+      onClose();
       await Promise.all(origins.map((o) => o.fetchAdditionalInfo()));
       // Re-run the main search so the newly created sample appears without a manual re-search.
       getRootStore().searchStore.search.performSearch();
-      onClose();
     } catch (error) {
-      // Never fail silently: surface the reason (e.g. a backend rejection) instead of leaving the
-      // Perform button looking dead. The wizard stays open so the user can retry.
       getRootStore().uiStore.addAlert(
         mkAlert({
-          title: t("operations.wizard.failed"),
-          message: getErrorMessage(error, t("operations.wizard.failed")),
-          variant: "error",
+          title: t("operations.wizard.refreshFailed"),
+          message: getErrorMessage(error, t("operations.wizard.refreshFailed")),
+          variant: "warning",
         }),
       );
     } finally {
@@ -641,7 +656,12 @@ function OperationWizard({
   // (Cryopreserve) show just the operation name.
   const headingProcessName = operation?.effect.processNameFrom ? resolveProcessName(operation, values) : "";
   const heading = operation
-    ? `${resolveLabel(operation.labelKey)}${headingProcessName ? `: ${headingProcessName}` : ""}`
+    ? headingProcessName
+      ? t("operations.wizard.headingWithProcess", {
+          operation: resolveLabel(operation.labelKey),
+          process: headingProcessName,
+        })
+      : resolveLabel(operation.labelKey)
     : t("operations.wizard.title");
 
   return (

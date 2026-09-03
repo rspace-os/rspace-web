@@ -51,6 +51,15 @@ async function fetchPreferences(): Promise<UiPreferencesContextType["uiPreferenc
  * If the network call fails, the UI Preferences default to an empty object
  * and all calls to useUiPreference will use the passed default value.
  */
+/*
+ * Writes are chained so each one reads the previous write's result before merging its own key.
+ * Every setter does a read-merge-write of the whole UI_JSON_SETTINGS object; run concurrently
+ * (e.g. three setters in one event handler) they would all read the same snapshot and the last POST
+ * would drop the other keys (code review, finding 8). A failed write is swallowed here so it cannot
+ * block the chain; it is already unawaited by callers.
+ */
+let pendingWrite: Promise<void> = Promise.resolve();
+
 export function UiPreferences({ children }: { children: React.ReactNode }): React.ReactNode {
   const [uiPreferences, setUiPreferences] = React.useState<UiPreferencesContextType["uiPreferences"] | null>(null);
 
@@ -124,7 +133,7 @@ export default function useUiPreference<T>(
       });
 
       if (!key) return;
-      void (async () => {
+      pendingWrite = pendingWrite.then(async () => {
         const preferences = await fetchPreferences();
         const formData = new FormData();
         formData.append("preference", "UI_JSON_SETTINGS");
@@ -141,7 +150,8 @@ export default function useUiPreference<T>(
           }),
         );
         await axios.post<unknown>("/userform/ajax/preference", formData);
-      })();
+      });
+      pendingWrite = pendingWrite.catch(() => {});
     },
   ];
 }

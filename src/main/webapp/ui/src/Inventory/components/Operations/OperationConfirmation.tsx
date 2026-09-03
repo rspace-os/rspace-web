@@ -146,7 +146,9 @@ function OperationConfirmation({
                 const amount = q
                   ? t("operations.confirm.values.amountTaken", { amount: q.numericValue, unit: unitLabel(q.unitId) })
                   : "";
-                return <div key={o.globalId}>{`${o.name}: ${amount}`}</div>;
+                return (
+                  <div key={o.globalId}>{t("operations.confirm.values.originAmount", { origin: o.name, amount })}</div>
+                );
               })}
             </>
           ),

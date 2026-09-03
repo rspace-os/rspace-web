@@ -3,6 +3,19 @@ import type { InventoryOperation, OperationInputConfig } from "./operationsConfi
 import type { OperationInputs, OperationQuantity } from "./types";
 
 /**
+ * Most subsamples one operation may create: mirrors the server's cap on an explicit subSamples list
+ * (`@Size(max = 100)` on the sample DTO), so the wizard refuses a count the endpoint would reject
+ * rather than building it first.
+ */
+export const MAX_SUBSAMPLE_COUNT = 100;
+
+/** Whether a child count is a whole number within [min, MAX_SUBSAMPLE_COUNT]. */
+export function validSubSampleCount(count: unknown, min = 1): boolean {
+  const n = Number(count);
+  return Number.isInteger(n) && n >= min && n <= MAX_SUBSAMPLE_COUNT;
+}
+
+/**
  * Whether a temperature input's value is above its configured Celsius ceiling (e.g. cryopreserve must
  * be stored at or below -18 °C, set via `maxCelsius` in operations_config.json). Returns false for a
  * non-temperature input, an unconfigured ceiling, or an incomplete value - none of which is an
@@ -46,8 +59,9 @@ export function detailsValid(
     if (input.type === "text") {
       if (input.required && !String(value ?? "").trim()) return false;
     } else if (input.type === "integer") {
-      const n = Number(value);
-      if (!Number.isFinite(n) || n < (input.min ?? 1)) return false;
+      // A fractional count would be truncated by Array.from when the request is built (1.5 -> 1
+      // child), and a count above the server's cap would be built only to be rejected.
+      if (!validSubSampleCount(value, input.min ?? 1)) return false;
     } else {
       const q = value as OperationQuantity | undefined;
       if (!q || !Number.isFinite(q.numericValue)) return false;
