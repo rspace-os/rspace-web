@@ -13,6 +13,7 @@
  * null and only the origins are affected.
  */
 import type { InventoryOperation } from "./operationsConfig";
+import { validSubSampleCount } from "./operationValidation";
 import type {
   AmountMode,
   OperationExtraField,
@@ -117,6 +118,9 @@ export function buildOperationRequest(params: {
   let newSample: OperationNewSample | null = null;
   if (!operation.noOutput && effect.nameFrom && effect.countFrom && effect.eachAmountFrom) {
     const count = Number(values[effect.countFrom]);
+    if (!validSubSampleCount(count)) {
+      throw new Error(`Invalid subsample count ${String(values[effect.countFrom])}`);
+    }
     const eachAmount = quantityValue(values, effect.eachAmountFrom);
     const name = String(values[effect.nameFrom]);
 
