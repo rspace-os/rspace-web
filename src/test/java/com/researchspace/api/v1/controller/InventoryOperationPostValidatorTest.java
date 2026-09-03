@@ -943,6 +943,24 @@ class InventoryOperationPostValidatorTest {
                     "errors.inventory.operation.subSampleQuantityInvalid".equals(error.getCode())));
   }
 
+  @Test
+  void rejectsNullTagsListEntry() {
+    // Would otherwise reach the delegated samples validator's tag-length check and NPE.
+    ApiInventoryOperationPost request = aliquotRequest();
+    request.getNewSample().setTags(new ArrayList<>(Arrays.asList((ApiTagInfo) null)));
+    assertSingleErrorWithCode(
+        validate(request), "newSample.tags", "errors.inventory.operation.undeclaredProperty");
+  }
+
+  @Test
+  void rejectsNullExtraFieldListEntry() {
+    // Would otherwise reach the delegated samples validator's key-lookup loop and NPE.
+    ApiInventoryOperationPost request = aliquotRequest();
+    request.getNewSample().getExtraFields().add(null);
+    assertSingleErrorWithCode(
+        validate(request), "newSample.extraFields", "errors.inventory.operation.fieldKeyUnknown");
+  }
+
   // --- origin count ceiling (resource-exhaustion guard) ---
 
   @Test
