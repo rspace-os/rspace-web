@@ -4,6 +4,7 @@ import static org.apache.commons.io.FilenameUtils.getBaseName;
 import static org.apache.commons.lang3.StringUtils.join;
 import static org.apache.commons.lang3.StringUtils.replaceChars;
 
+import com.researchspace.core.util.SafeTempFiles;
 import com.researchspace.evernote.EnExport;
 import com.researchspace.evernote.EvernoteParser;
 import com.researchspace.evernote.FileAndOriginalName;
@@ -66,7 +67,7 @@ public class EvernoteEnexImporter implements ExternalFileImporter {
     String origDocNameNoSpaces = replaceChars(getBaseName(originalName), " ", "");
     File tempFolder =
         Files.createTempDirectory(origDocNameNoSpaces, new FileAttribute[] {}).toFile();
-    File tempInputFile = new File(tempFolder, originalName);
+    File tempInputFile = SafeTempFiles.randomFileIn(tempFolder, originalName, "enex");
 
     try (FileOutputStream tempFos = new FileOutputStream(tempInputFile)) {
       IOUtils.copy(srcFile, tempFos);
