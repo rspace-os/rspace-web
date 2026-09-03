@@ -39,42 +39,29 @@ import org.springframework.transaction.support.TransactionTemplate;
  * it, as part of the ordinary instrument save (RSDEV-1251, ADR 0008; CONTEXT.md, "External metadata
  * update").
  *
- * <p>Deliberately <strong>not</strong> a {@code *Manager}: the {@code
- * *..service.inventory.*Manager} pointcut in {@code applicationContext-service.xml} would wrap
- * every method in a transaction, and the whole point of this class is that the provider HTTP call
- * happens outside one. The payload rebuild does need a transaction, because {@link
- * RspaceToExternalProviderAdapter} is {@code Propagation.MANDATORY} and reads the instrument's lazy
- * fields, so the boundary is opened explicitly and narrowly with a read-only {@link
- * TransactionTemplate} and closed again before anything is sent. A {@code @Transactional} method
- * called from a sibling method of the same bean would bypass the proxy and silently have no
- * transaction at all, which is the other reason for the template.
+ * <p>Deliberately <strong>not</strong> a {@code *Manager}, and do not rename it to one: the {@code
+ * *..service.inventory.*Manager} pointcut would wrap every method in a transaction, and the point
+ * of this class is that the provider HTTP call happens outside one. The payload rebuild does need a
+ * transaction ({@link RspaceToExternalProviderAdapter} is {@code Propagation.MANDATORY}), so the
+ * boundary is opened narrowly with a {@link TransactionTemplate} rather than
+ * {@code @Transactional}, which a sibling method of the same bean would bypass.
  *
- * <p>Nothing here writes to the database. A push failure is reported and audited, never rethrown to
- * the caller: the instrument edit has already committed and must stay committed.
+ * <p>Nothing here writes to the database, and a push failure is reported and audited, never
+ * rethrown: the instrument edit has already committed and must stay committed.
  */
 @Slf4j
 @Service
 public class InventoryIdentifierExternalUpdateService {
 
   /**
-   * The B2INST states in which there is no writable draft left. Acceptance publishes the record and
-   * removes its draft, so this is the one B2INST state an external metadata update cannot reach;
-   * updating an accepted record would mean a whole new draft-and-review round (ADR 0008).
+   * The one B2INST state with no writable draft left: acceptance publishes the record and removes
+   * it (ADR 0008).
    *
-   * <p>An exclusion rather than the inclusion list of {@code draft} and {@code submitted} the plan
-   * assumed, because {@code refreshIdentifier} stores the community review's status verbatim for
-   * anything that is not accepted, so an identifier can also sit in {@code created} (a review PUT
-   * but never submitted), {@code cancelled}, {@code declined} or {@code expired} - each with a
-   * live, writable draft that the narrower rule would have left to drift for good. Verified against
-   * b2inst-test.gwdg.de (August 2026): a full-replace {@code PUT .../draft} answers 200 and bumps
-   * {@code revision_id} while the review status is {@code created}, {@code submitted} and {@code
-   * cancelled} alike, and cancelling drops the record's own status back to {@code draft}. Erring
-   * towards pushing is also the safer direction: a push that should not have happened is reported
-   * and changes nothing locally, while one wrongly skipped is silent drift.
-   *
-   * <p>Lower-cased and compared case-insensitively. {@code DigitalObjectIdentifier.state} is
-   * free-form text, written either by RSpace or copied verbatim from a provider response, so a
-   * differently-cased value is worth updating rather than silently skipping.
+   * <p>An exclusion rather than an inclusion list of {@code draft} and {@code submitted}, because
+   * {@code refreshIdentifier} stores the review status verbatim, so an identifier can also sit in
+   * {@code created}, {@code cancelled}, {@code declined} or {@code expired} - each with a live
+   * draft that the narrower rule would have left to drift for good. All confirmed writable against
+   * b2inst-test.gwdg.de, August 2026.
    */
   private static final Set<String> B2INST_PUBLISHED_STATES = Set.of("accepted");
 
@@ -100,11 +87,9 @@ public class InventoryIdentifierExternalUpdateService {
   public void setTransactionManager(PlatformTransactionManager transactionManager) {
     this.readOnlyTx = new TransactionTemplate(transactionManager);
     this.readOnlyTx.setReadOnly(true);
-    // REQUIRES_NEW, not the default REQUIRED: this class's contract is that the push happens
-    // outside any transaction, and REQUIRED would silently join a caller's instead of enforcing
-    // that. Joined, setReadOnly above is ignored, the boundary never closes so the provider HTTP
-    // exchange holds a pooled JDBC connection, and a build failure would mark the caller's
-    // transaction rollback-only and lose the instrument save the push is meant not to affect.
+    // REQUIRES_NEW, not the default REQUIRED, which would silently join a caller's transaction:
+    // setReadOnly would be ignored, the boundary would stay open across the provider HTTP call,
+    // and a build failure would mark the caller rollback-only and lose the instrument save.
     this.readOnlyTx.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
   }
 
@@ -131,13 +116,10 @@ public class InventoryIdentifierExternalUpdateService {
    * <p>Must be called after the update transaction has committed, from a non-transactional caller.
    * That is now enforced rather than merely asked for: see the guard below.
    *
-   * <p>Every identifier the record carries ends up in one of three places. One whose provider
-   * record is writable is pushed and the result reported. One whose record is frozen by its own
-   * state is not pushed but is still reported, because "nothing was sent, and here is why" is the
-   * answer the acceptance criteria ask for and silence is not. One this deployment could not push
-   * in any case - no provider record id, no state, an IGSN, or a provider integration that is
-   * switched off - is passed over in silence, because there is nothing the user could act on and a
-   * sentence on every save would be noise.
+   * <p>A writable record is pushed and reported. One frozen by its own state is reported without
+   * being pushed, since "nothing was sent, and here is why" is what the acceptance criteria ask
+   * for. One that could not be pushed in any case - no record id, no state, an IGSN, a switched-off
+   * integration - is passed over in silence, because a sentence on every save would be noise.
    *
    * @param saved the instrument as saved and about to be returned. Its identifier DTOs are the ones
    *     decorated, but they are not what decides who gets pushed - see {@link
@@ -148,26 +130,15 @@ public class InventoryIdentifierExternalUpdateService {
       return;
     }
     /*
-     * The contract of this class is a caller with no transaction open, and it really is reachable
-     * with one: bulk CHANGE_OWNER with rollbackOnError runs the whole batch inside a single
-     * transaction (InventoryBulkOperationApiManager) and calls back into
-     * InstrumentsApiController.changeInstrumentOwner, which pushes.
-     *
-     * Pushing from there would be wrong in the one direction always-push cannot heal. A later record
-     * in the batch fails, the owner change rolls back locally, and the provider is left holding an
-     * owner RSpace no longer has - the mirror image of the failure this design accepts, and not
-     * self-correcting, because there is no later save to retry from. It would also defeat the
-     * boundary: REQUIRES_NEW would suspend the caller's transaction and hold its connection for the
-     * length of the provider exchange.
-     *
-     * So decline. The metadata drifts until the next ordinary save of that instrument, which is the
-     * recoverable direction and exactly what a failed push already leaves behind.
+     * Pushing from inside a caller's transaction is the one failure always-push cannot heal: the
+     * batch rolls back locally and the provider is left holding what RSpace no longer has, with no
+     * later save to retry from. A bulk batch really does reach here, so InventoryBulkOperationsApi-
+     * Controller pushes after its transaction commits instead; this stays as the backstop.
      */
     if (TransactionSynchronizationManager.isActualTransactionActive()) {
       log.warn(
           "Skipping the external metadata update of instrument {}: a transaction is already open,"
-              + " so the provider call would run inside it and a rollback would leave the provider"
-              + " ahead of RSpace. The next ordinary save of this instrument will push.",
+              + " so a rollback would leave the provider ahead of RSpace.",
           saved.getId());
       return;
     }
@@ -191,11 +162,9 @@ public class InventoryIdentifierExternalUpdateService {
   }
 
   /**
-   * Whether the response can be believed when it lists no identifiers, letting the record read
-   * below be skipped. An unfiltered view lists every identifier the record has, so an empty list
-   * there really does mean there is nothing to push - the ordinary case, and the reason an
-   * instrument without identifiers costs no extra read. A filtered view lists none whatever the
-   * record holds, so it says nothing and has to be checked against the record.
+   * Whether an empty identifier list can be believed, letting the record read be skipped. Only an
+   * unfiltered view lists everything the record has; a filtered one lists none regardless, so it
+   * proves nothing and the record has to be asked.
    */
   private static boolean nothingCouldBeAttached(ApiInstrument saved) {
     boolean listsSome = saved.getIdentifiers() != null && !saved.getIdentifiers().isEmpty();
@@ -207,13 +176,9 @@ public class InventoryIdentifierExternalUpdateService {
    * Divides the record's identifiers into the ones to push and the ones frozen by their own state,
    * inside a read-only transaction because reading them off the record needs a session.
    *
-   * <p>Deliberately does no mapping. The mapping adapter is {@code Propagation.MANDATORY}, so an
-   * exception from it marks this transaction rollback-only, and anything else decided in the same
-   * boundary would be lost with it - see {@link #buildInItsOwnTransaction(Long, ApiInventoryDOI)}.
-   *
-   * <p>If the instrument itself cannot be read back, {@code getIfExists} throws {@code
-   * NotFoundException} and it propagates to the controller's guard, which logs it and leaves the
-   * response unannotated. That is a save racing a deletion, not something a user can act on.
+   * <p>Deliberately does no mapping: the adapter is {@code Propagation.MANDATORY}, so an exception
+   * from it would mark this transaction rollback-only and take everything decided here with it. See
+   * {@link #buildInItsOwnTransaction(Long, ApiInventoryDOI)}.
    */
   private Classified classify(ApiInstrument saved) {
     InstrumentEntity instrument = instrumentApiMgr.getIfExists(saved.getId());
@@ -236,17 +201,12 @@ public class InventoryIdentifierExternalUpdateService {
    * Remaps one identifier's payload in a transaction of its own, returning null if it could not be
    * built.
    *
-   * <p>One boundary per identifier, and the catch outside it, is what actually isolates a mapping
-   * failure. The adapter is {@code Propagation.MANDATORY}, so an exception escaping it marks the
-   * surrounding transaction rollback-only ({@code globalRollbackOnParticipationFailure} defaults to
-   * true) and the commit throws {@code UnexpectedRollbackException} however carefully the call
-   * itself was wrapped - the hazard the adapter's own javadoc predicts. Catching inside a shared
-   * boundary therefore discarded every other identifier's push, report and audit for that
-   * instrument, which is the opposite of what ADR 0008 promises. An instrument realistically
-   * carries one identifier, so the extra boundaries cost nothing.
-   *
-   * <p>The transaction closes before this returns, so the provider call the caller makes next is
-   * outside it and cannot pin a pooled JDBC connection for the length of an HTTP exchange.
+   * <p>One boundary per identifier, with the catch outside it, is what isolates a mapping failure.
+   * The adapter is {@code Propagation.MANDATORY}, so an exception escaping it marks the surrounding
+   * transaction rollback-only and the commit throws {@code UnexpectedRollbackException} however
+   * carefully the call was wrapped. Catching inside a shared boundary therefore lost every other
+   * identifier's push for that instrument. An instrument realistically carries one, so the extra
+   * boundaries cost nothing.
    */
   private PendingUpdate buildInItsOwnTransaction(Long instrumentId, ApiInventoryDOI doi) {
     try {
@@ -265,16 +225,12 @@ public class InventoryIdentifierExternalUpdateService {
   /**
    * The identifiers the record actually has, which is what decides who gets pushed.
    *
-   * <p>The response's own list is used when it has one. That is the ordinary save, where the list
-   * is already built from the record, so nothing extra is read. It cannot be trusted when empty,
-   * though: a permission-filtered response carries no identifiers whatever the record holds,
-   * because {@code ApiInventoryRecordInfo.clearPropertiesForLimitedView} blanks its lists. That is
-   * exactly the owner-transfer case - the caller is the owner giving the instrument away, left with
-   * {@code LIMITED_READ} - and reading candidates from there skipped the push silently while the
-   * registered record kept the previous owner's contact address. An empty list is therefore
-   * ambiguous and the record is asked instead. A non-empty one can only have come from an
-   * unfiltered view, since filtering blanks the list entirely rather than trimming it, so it is
-   * safe to take.
+   * <p>The response's own list is used when it has one, which costs nothing on an ordinary save. An
+   * EMPTY one says nothing, though: {@code clearPropertiesForLimitedView} blanks the list entirely
+   * for a permission-filtered response, which is exactly the owner-transfer case, and trusting it
+   * there skipped the push while the provider kept the previous owner's address. So an empty list
+   * falls back to the record. A non-empty one can only have come from an unfiltered view, since
+   * filtering blanks rather than trims.
    */
   private List<ApiInventoryDOI> attachedIdentifiers(
       ApiInstrument saved, InstrumentEntity instrument) {
@@ -291,12 +247,9 @@ public class InventoryIdentifierExternalUpdateService {
    * Whether this deployment could push this identifier at all: it carries a provider record id and
    * a state, and belongs to a PIDINST provider whose integration is switched on.
    *
-   * <p>The enablement check is what every other identifier operation does first (see {@code
-   * ApiAvailabilityHandler}), and it matters more here because this push is not something the user
-   * asked for: it rides on an ordinary save. Without it, disabling PIDINST - or switching provider,
-   * which disables the sibling automatically - would put a failure sentence on every later save of
-   * every instrument still holding a draft, and audit a write each time, with nothing the user
-   * could do to stop it.
+   * <p>The enablement check matters more here than elsewhere because the push is not something the
+   * user asked for: it rides on an ordinary save. Without it, switching PIDINST provider would put
+   * a failure sentence on every later save of every instrument still holding a draft.
    */
   private boolean isPushable(ApiInventoryDOI doi) {
     return isNotBlank(doi.getDoi())
@@ -365,19 +318,13 @@ public class InventoryIdentifierExternalUpdateService {
   /**
    * The "nothing was sent, and here is why" outcome, for a record its own state has frozen.
    *
-   * <p>One message per provider, because the two are frozen for different reasons and a single
-   * sentence could only be right about one of them. B2INST really has nothing writable left once a
-   * community review is accepted. A DataCite DOI past draft is a decision of record, not a provider
-   * refusal (see {@link #DATACITE_UPDATABLE_STATES}), and it has a next step the user can take, so
-   * saying "no record open for changes" there would be both wrong and a dead end. The split follows
-   * the {@code b2instRegisterNoDraft} / {@code dataCiteRegisterNoDraft} pair already in this
-   * catalogue.
+   * <p>One message per provider, because the two are frozen for different reasons: B2INST has
+   * nothing writable left, whereas a DataCite DOI past draft is our own decision (see {@link
+   * #DATACITE_UPDATABLE_STATES}) and has Republish as its next step.
    *
-   * <p>The state itself is deliberately not interpolated. It is free-form text written by the
-   * provider, so it would ship untranslated inside a translated sentence, and it would not even
-   * match what the user is shown: the UI maps every state to its own catalogue label.
-   *
-   * <p>Not audited: nothing was sent and nothing changed, so there is no synchronisation to record.
+   * <p>The state itself is deliberately not interpolated: it is free-form provider text, so it
+   * would ship untranslated inside a translated sentence and would not match the label the UI
+   * shows. Not audited either, since nothing was sent.
    */
   private ApiExternalMetadataUpdate notWritableOutcome(ApiInventoryDOI doi) {
     IdentifierType type = typeOf(doi);
@@ -460,11 +407,10 @@ public class InventoryIdentifierExternalUpdateService {
   /**
    * The provider's own explanation, when there is one fit to show a user.
    *
-   * <p>The B2INST connector already separates that from its developer-facing message (see {@code
-   * B2instConnectionException}), so its reason is passed through. Nothing equivalent exists on the
-   * DataCite side: {@code DataCiteConnectionException} carries only a developer sentence, and the
-   * client's three canned messages ask the reader about repository prefixes and credentials, so the
-   * detail is left out rather than shown. The localized text stands on its own without it.
+   * <p>B2INST separates that from its developer-facing message (see {@code
+   * B2instConnectionException}), so its reason is passed through. DataCite has no equivalent - its
+   * exception carries only a developer sentence asking about prefixes and credentials - so nothing
+   * is interpolated there and the localized text stands on its own.
    */
   private String userSafeDetail(RuntimeException e) {
     return e instanceof B2instConnectionException b2instError ? b2instError.getReason() : null;
@@ -487,12 +433,11 @@ public class InventoryIdentifierExternalUpdateService {
    * Audits the attempt, successful or not, so the drift window between a failed push and the next
    * save is visible after the fact.
    *
-   * <p>A direct {@code notify} rather than an application event: the push runs after the write
-   * transaction has committed, and {@code InventoryAuditTrail}'s listeners are
-   * {@code @TransactionalEventListener}s, which would never fire. The audited object is the
-   * instrument entity, because {@code @AuditTrailData} lives there and not on the API DTO; it is
-   * detached by now, which is safe since its two audited properties ({@code getName} and {@code
-   * getGlobalIdentifier}) read the id and the embedded edit info rather than a lazy association.
+   * <p>A direct {@code notify} rather than an application event, because the push runs after the
+   * write transaction has committed and {@code InventoryAuditTrail}'s
+   * {@code @TransactionalEventListener}s would never fire. The audited object is the instrument
+   * entity, which carries {@code @AuditTrailData}; it is detached by now, which is safe because its
+   * audited properties read the id and embedded edit info rather than a lazy association.
    */
   private void audit(InstrumentEntity instrument, User user, ApiExternalMetadataUpdate outcome) {
     try {

@@ -5,28 +5,17 @@ package com.researchspace.webapp.integrations.b2inst;
  * com.researchspace.datacite.model.DataCiteConnectionException} for the DataCite connector.
  *
  * <p>Carries the failure {@link #getReason() reason} separately from the message. The message is
- * the developer-facing sentence that names the operation and goes to the logs, and it may contain
- * internal detail such as a deployment property name. The reason is the part that is safe and
- * useful to show a user, and it is what callers interpolate into a localized string. Keeping them
- * apart is the point of this class: interpolating the message would put an English developer prefix
- * inside a translated sentence and duplicate what that sentence already says.
+ * developer-facing, goes to the logs, and may name internal detail such as a deployment property.
+ * The reason is what a caller interpolates into a localized string for the user.
  *
- * <p>There is deliberately <strong>no</strong> convenience constructor that omits the reason, and
- * {@link #getReason()} deliberately does <strong>not</strong> fall back to the message. An earlier
- * version had both, and the result was that two throw sites which never supplied a reason silently
- * leaked their full developer message, including an internal property name, into a user-facing
- * string with no compile error and no failing test. A new provider-failure throw site must now
- * state its reason or fail to compile.
+ * <p>Deliberately no constructor that omits the reason, and {@link #getReason()} deliberately does
+ * not fall back to the message. An earlier version had both, and two throw sites that supplied no
+ * reason silently leaked an internal property name into user-facing text, with no compile error and
+ * no failing test. A new throw site must now state its reason or fail to compile.
  *
- * <p>Where a reason comes from. One shape is B2INST's own words: the description parsed out of a
- * B2INST error body, which is the useful case and cannot be translated. Every other shape is
- * RSpace's own sentence, and those are resolved from the message catalogue by the connector, not
- * written into it as literals - the caller interpolates this value into localized text and into the
- * audit trail, so an English literal here would ship untranslated inside an otherwise translated
- * sentence. They are also deliberately not the underlying exception's message: Spring's message for
- * a transport failure carries the request URL and host, and its blank-message fallback was the
- * exception class name. That detail belongs in the developer-facing message, which is where it now
- * goes.
+ * <p>A reason is either B2INST's own words, parsed from its error body, or one of RSpace's own
+ * sentences resolved from the message catalogue. Never the underlying exception's message, which
+ * carries the request URL and host.
  */
 public class B2instConnectionException extends RuntimeException {
 

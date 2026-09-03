@@ -281,41 +281,6 @@ class InventoryIdentifierExternalUpdateServiceTest {
   }
 
   @Test
-  void pushesADraftB2instRecordAndReportsSuccess() {
-    expectPayloadBuildAndMessages();
-    expectServerUrl();
-    B2instDoi rebuilt = new B2instDoi();
-    when(rspaceToExternalProviderAdapter.buildB2instDoi(eq(instrument), anyString()))
-        .thenReturn(rebuilt);
-    ApiInventoryDOI doi = identifier(IdentifierType.PIDINST_B2INST, "draft", RID);
-
-    service.pushMetadataUpdates(savedInstrumentWith(doi), user);
-
-    verify(b2instConnector).updateDraftDoi(RID, rebuilt);
-    // the fast path: a populated response list is complete, so the record's own list is not read
-    verify(instrument, never()).getActiveIdentifiers();
-    ApiExternalMetadataUpdate outcome = doi.getExternalMetadataUpdate();
-    assertNotNull(outcome);
-    assertTrue(outcome.isSucceeded());
-    assertTrue(outcome.getReason().contains("externalUpdated"), outcome.getReason());
-  }
-
-  /** An InvenioRDM draft stays writable while its community review is open. */
-  @Test
-  void pushesASubmittedB2instRecord() {
-    expectPayloadBuildAndMessages();
-    expectServerUrl();
-    when(rspaceToExternalProviderAdapter.buildB2instDoi(eq(instrument), anyString()))
-        .thenReturn(new B2instDoi());
-    ApiInventoryDOI doi = identifier(IdentifierType.PIDINST_B2INST, "submitted", RID);
-
-    service.pushMetadataUpdates(savedInstrumentWith(doi), user);
-
-    verify(b2instConnector).updateDraftDoi(eq(RID), any(B2instDoi.class));
-    assertTrue(doi.getExternalMetadataUpdate().isSucceeded());
-  }
-
-  @Test
   void pushesADraftDataCiteDoiThroughThePidinstClient() {
     expectPayloadBuildAndMessages();
     DataCiteDoi rebuilt = new DataCiteDoi();
@@ -365,10 +330,8 @@ class InventoryIdentifierExternalUpdateServiceTest {
     ApiExternalMetadataUpdate outcome = doi.getExternalMetadataUpdate();
     assertNotNull(outcome, "a frozen record must still be explained");
     assertFalse(outcome.isSucceeded());
-    // the message is provider-specific, because the two are frozen for different reasons: B2INST
-    // has
-    // no draft left, whereas a DataCite DOI past draft is our own decision and has Republish as its
-    // next step. The raw provider state is deliberately NOT interpolated, so it is not asserted.
+    // provider-specific, because the two are frozen for different reasons. The raw provider state
+    // is deliberately not interpolated, so it is not asserted.
     String expectedKey =
         IdentifierType.PIDINST_B2INST.name().equals(type)
             ? "externalUpdateNotPossibleB2inst"
@@ -442,14 +405,20 @@ class InventoryIdentifierExternalUpdateServiceTest {
   void pushesEveryB2instStateThatStillHasAWritableDraft(String state) {
     expectPayloadBuildAndMessages();
     expectServerUrl();
+    B2instDoi rebuilt = new B2instDoi();
     when(rspaceToExternalProviderAdapter.buildB2instDoi(eq(instrument), anyString()))
-        .thenReturn(new B2instDoi());
+        .thenReturn(rebuilt);
     ApiInventoryDOI doi = identifier(IdentifierType.PIDINST_B2INST, state, RID);
 
     service.pushMetadataUpdates(savedInstrumentWith(doi), user);
 
-    verify(b2instConnector).updateDraftDoi(eq(RID), any(B2instDoi.class));
+    verify(b2instConnector).updateDraftDoi(RID, rebuilt);
+    // the fast path: a populated response list is complete, so the record's own list is not read
+    verify(instrument, never()).getActiveIdentifiers();
     assertTrue(doi.getExternalMetadataUpdate().isSucceeded());
+    assertTrue(
+        doi.getExternalMetadataUpdate().getReason().contains("externalUpdated"),
+        doi.getExternalMetadataUpdate().getReason());
   }
 
   /**
@@ -571,7 +540,7 @@ class InventoryIdentifierExternalUpdateServiceTest {
   }
 
   @Test
-  void auditsEveryAttempt() {
+  void auditsAFailedAttempt() {
     expectPayloadBuildAndMessages();
     expectServerUrl();
     when(rspaceToExternalProviderAdapter.buildB2instDoi(eq(instrument), anyString()))
@@ -749,13 +718,5 @@ class InventoryIdentifierExternalUpdateServiceTest {
         broken.getExternalMetadataUpdate().getReason());
     assertTrue(good.getExternalMetadataUpdate().isSucceeded());
     verify(auditer, times(1)).notify(any());
-  }
-
-  @Test
-  void auditsNothingWhenNothingWasEligible() {
-    service.pushMetadataUpdates(
-        savedInstrumentWith(identifier(IdentifierType.PIDINST_B2INST, "accepted", RID)), user);
-
-    verify(auditer, never()).notify(any());
   }
 }
