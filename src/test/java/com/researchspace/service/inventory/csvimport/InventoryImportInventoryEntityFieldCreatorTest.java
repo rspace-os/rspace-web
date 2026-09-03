@@ -47,6 +47,35 @@ public class InventoryImportInventoryEntityFieldCreatorTest {
   }
 
   @Test
+  public void longValueContainingUrlIsNotForcedToText() {
+    String url = "https://rsdev-1354-export-import-inventory-links-bb57ac5e-3.researchspace.com/x";
+    String longWithUrl = "see " + url + " " + StringUtils.repeat("y", 150 - url.length() - 5);
+    assertTrue(longWithUrl.length() > InventoryImportSampleFieldCreator.MAX_NON_TEXT_LENGTH);
+    InventoryEntityField field =
+        helper.getSuggestedSampleFieldForNameAndValues("n", List.of(longWithUrl));
+    assertEquals(FieldType.STRING, field.getType());
+
+    String longWithoutUrl = StringUtils.repeat("y", 150);
+    field = helper.getSuggestedSampleFieldForNameAndValues("n", List.of(longWithoutUrl));
+    assertEquals(FieldType.TEXT, field.getType());
+
+    String tooLongEvenWithUrl = url + " " + StringUtils.repeat("y", 500);
+    field = helper.getSuggestedSampleFieldForNameAndValues("n", List.of(tooLongEvenWithUrl));
+    assertEquals(FieldType.TEXT, field.getType());
+
+    // a link cell on a server with a long hostname stays eligible for the Link type
+    String longLinkCell =
+        "IsVersionOf https://rsdev-1354-export-import-inventory-links-bb57ac5e-3.researchspace.com"
+            + "/globalId/SA1711111";
+    helper.linkParser.properties = mock(IPropertyHolder.class);
+    when(helper.linkParser.properties.getServerUrl())
+        .thenReturn(
+            "https://rsdev-1354-export-import-inventory-links-bb57ac5e-3.researchspace.com");
+    field = helper.getSuggestedSampleFieldForNameAndValues("n", List.of(longLinkCell));
+    assertEquals(FieldType.LINK, field.getType());
+  }
+
+  @Test
   public void testColumnTypeRecognition() {
 
     // repeating not too long values -> radio
