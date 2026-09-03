@@ -1,33 +1,36 @@
 package com.researchspace.service.inventory;
 
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.File;
-import java.io.IOException;
-import org.junit.jupiter.api.Test;
+import com.researchspace.service.JsonMessageSource;
+import java.util.Locale;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 /**
- * The message codes the external metadata update asks for must exist in the catalogue.
+ * Every message code the external metadata update asks for must resolve to real text.
  *
- * <p>Worth its own test because a missing key does not fail loudly: {@code
- * applicationContext-resources.xml} sets {@code useCodeAsDefaultMessage=true}, so a typo returns
- * the bare code, and the user's reason - and the audit entry - would read
- * "errors.inventory.identifier.externalUpdateFailed". The service's own unit tests mock the message
- * source and assert on the code that was requested, which pins the call site but cannot see whether
+ * <p>Worth pinning because a missing code does not fail loudly: {@code
+ * applicationContext-resources.xml} sets {@code useCodeAsDefaultMessage=true}, so a typo or a
+ * deleted catalogue entry reaches the user, and the audit trail, as the bare code
+ * "errors.inventory.identifier.externalUpdateFailed". The service's own tests mock the message
+ * source and assert the code that was requested, which pins the call site but cannot see whether
  * the catalogue answers it.
  *
- * <p>Reads the catalogue file directly rather than through Spring, so it stays a fast unit test.
- * {@code JsonMessageSource} flattens these files with dots and gives {@code server.*} an empty
- * prefix, so a code is the flattened JSON path exactly as asserted here.
+ * <p>Resolved through {@link JsonMessageSource}, the class production uses, and not by reading the
+ * catalogue file. How a code maps onto the JSON - dot flattening, the empty prefix for {@code
+ * server.*} - is the message source's business, so a test that walked the file itself would be
+ * restating those rules rather than exercising them. The catalogue is on the test classpath (see
+ * the {@code i18n/locales} resource in {@code pom.xml}), which is what makes this a fast unit test.
  */
 class ExternalUpdateMessageKeysTest {
 
-  private static final File CATALOGUE =
-      new File("src/main/webapp/ui/src/modules/common/i18n/locales/en-US/server.inventory.json");
+  private static final JsonMessageSource MESSAGES = new JsonMessageSource();
+  private static final Locale EN_US = Locale.forLanguageTag("en-US");
+
+  /** A name no catalogue entry contains, so finding it proves it was interpolated. */
+  private static final String PROVIDER = "Zz-Provider";
 
   @ParameterizedTest
   @ValueSource(
@@ -43,27 +46,26 @@ class ExternalUpdateMessageKeysTest {
         "errors.inventory.identifier.b2instNoCommunity",
         "errors.inventory.identifier.b2instNoSubmitAction"
       })
-  void everyCodeTheServiceAsksForResolves(String code) throws IOException {
-    JsonNode node = new ObjectMapper().readTree(CATALOGUE);
-    for (String segment : code.split("\\.")) {
-      node = node.path(segment);
-    }
-    assertTrue(
-        node.isTextual() && !node.asText().isBlank(), code + " is missing from " + CATALOGUE);
+  void everyCodeResolvesToRealText(String code) {
+    // an unknown code throws NoSuchMessageException here, which is the failure this exists to catch
+    String message = MESSAGES.getMessage(code, new Object[] {PROVIDER, "a provider detail"}, EN_US);
+
+    assertNotEquals(code, message, "resolved to its own code, so the catalogue has no entry");
+    assertTrue(message.length() > code.length() / 2, "suspiciously short message: " + message);
   }
 
-  /** The provider name is passed as {0}, so every one of these must have somewhere to put it. */
-  @Test
-  void everyProviderMessageInterpolatesTheProviderName() throws IOException {
-    JsonNode errors =
-        new ObjectMapper().readTree(CATALOGUE).path("errors").path("inventory").path("identifier");
-    for (String key :
-        new String[] {
-          "externalUpdateFailed",
-          "externalUpdateNotPossibleB2inst",
-          "externalUpdateNotPossibleDataCite"
-        }) {
-      assertTrue(errors.path(key).asText().contains("{0}"), key + " must interpolate {0}");
-    }
+  /** The provider name is passed as {0}, so each of these must actually place it. */
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "inventory.identifier.externalUpdated",
+        "errors.inventory.identifier.externalUpdateFailed",
+        "errors.inventory.identifier.externalUpdateNotPossibleB2inst",
+        "errors.inventory.identifier.externalUpdateNotPossibleDataCite"
+      })
+  void everyProviderMessageNamesTheProvider(String code) {
+    String message = MESSAGES.getMessage(code, new Object[] {PROVIDER, ""}, EN_US);
+
+    assertTrue(message.contains(PROVIDER), code + " must name the provider, but said: " + message);
   }
 }
