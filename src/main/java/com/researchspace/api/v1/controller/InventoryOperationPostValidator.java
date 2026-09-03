@@ -319,6 +319,28 @@ public class InventoryOperationPostValidator implements Validator {
           "Each new subsample must hold a quantity greater than zero, with a unit.");
       return;
     }
+    // A null tags/extraFields entry (JSON "[null]") would otherwise reach the delegated samples
+    // validator's per-element checks (name length, key lookup) and NPE; reject it here as a clean
+    // 400, same as origins/subSamples above. Tags are never declared by any operation, so this is
+    // just the undeclaredProperty rule anticipating the element it cannot inspect; extraFields are
+    // matched by key, so a null entry is reported the same way an unkeyed one already is.
+    if (newSample.getTags() != null && newSample.getTags().stream().anyMatch(Objects::isNull)) {
+      errors.rejectValue(
+          "newSample.tags",
+          "errors.inventory.operation.undeclaredProperty",
+          new Object[] {"tags"},
+          "This operation does not accept this property on the sample it creates.");
+      return;
+    }
+    if (newSample.getExtraFields() != null
+        && newSample.getExtraFields().stream().anyMatch(Objects::isNull)) {
+      errors.rejectValue(
+          "newSample.extraFields",
+          "errors.inventory.operation.fieldKeyUnknown",
+          new Object[] {null},
+          "This field is not one the operation declares.");
+      return;
+    }
 
     // The operations path bypasses SamplesApiController, so delegate the new sample to the exact
     // validator the public samples endpoint uses (name, tags, storage-temperature sanity, extra

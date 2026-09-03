@@ -1823,6 +1823,15 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        "422":
+          description: >
+            The request passes the checks the 400 response describes, but a link field's
+            targetGlobalId names the same record the field is being added to - a self-link, which
+            is never allowed regardless of relation type or which link the operation declares.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /sampleTemplates:
     get:
       summary: List Sample Templates visible to the current user
