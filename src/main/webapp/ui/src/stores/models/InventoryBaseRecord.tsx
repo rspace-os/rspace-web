@@ -970,7 +970,6 @@ export default class InventoryBaseRecord
           : `${this.recordType}s/${id}`;
       this.fetchingAdditionalInfo = ApiService.query<object>(endpoint, new URLSearchParams(queryParameters));
       const { data } = await this.fetchingAdditionalInfo;
-      this.fetchingAdditionalInfo = null;
       runInAction(() => {
         this.infoLoaded = true;
       });
@@ -993,6 +992,9 @@ export default class InventoryBaseRecord
       console.error(`Error fetching additional info for ${this.globalId ?? "UNKNOWN"}`, error);
       throw new Error(`Error fetching additional info for ${this.globalId ?? "UNKNOWN"}`, { cause: error });
     } finally {
+      // Cleared on failure too, or every later call would await this same rejected promise instead
+      // of re-fetching (code review, finding 2).
+      this.fetchingAdditionalInfo = null;
       this.setLoading(false);
     }
   }

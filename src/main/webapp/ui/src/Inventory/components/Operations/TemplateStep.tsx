@@ -7,6 +7,7 @@ import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { formatList } from "@/modules/common/i18n/listFormat";
 import type TemplateModel from "@/stores/models/TemplateModel";
 import type { UnitCategory } from "@/stores/stores/UnitStore";
 import { templateSelectionBlock } from "./templateResolution";
@@ -47,7 +48,7 @@ function TemplateStep({
    *  template" option is disabled with a hint: the wizard never creates a template (DevDocs/adr/0007). */
   parentHasTemplate?: boolean;
 }): React.ReactNode {
-  const { t } = useTranslation("inventory");
+  const { t, i18n } = useTranslation("inventory");
   const [checking, setChecking] = React.useState(false);
   const [blockError, setBlockError] = React.useState<string | null>(null);
   // The most recently picked template id. fetchAdditionalInfo is async, so if the user picks A then
@@ -104,7 +105,9 @@ function TemplateStep({
         }));
         const { blocked, missingFields } = templateSelectionBlock(fields);
         if (blocked) {
-          setBlockError(t("operations.template.mandatoryFieldsError", { fields: missingFields.join(", ") }));
+          setBlockError(
+            t("operations.template.mandatoryFieldsError", { fields: formatList(missingFields, i18n.language) }),
+          );
         } else {
           // Capture the template's quantity category so the amounts step offers this template's units
           // (mass/volume/...) rather than the origin subsample's.
