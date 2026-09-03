@@ -730,4 +730,142 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
         expected.compareTo(reloaded.getQuantity().getNumericValue()) == 0,
         () -> "origin should be reduced by exactly " + successes + " g, got statuses " + statuses);
   }
+
+  // --- code review (2026-09-03) reproductions: each is a field-scoped 400 leaving the origin
+  // untouched, where it used to be a 422 or a 201 with wrong data ---
+
+  /** An Aliquot request body with explicit amount-taken and single-child JSON. */
+  private String aliquotJsonWith(
+      ApiSubSample origin, String amountTakenJson, String subSampleJson, String newSampleExtras) {
+    return "{\"operationType\":\"aliquot\",\"origins\":[{\"id\":"
+        + origin.getId()
+        + ",\"amountTaken\":"
+        + amountTakenJson
+        + "}],\"newSample\":{\"name\":\"Aliquots\","
+        + newSampleExtras
+        + "\"extraFields\":["
+        + isPartOfLinkJson(origin.getGlobalId())
+        + "],\"subSamples\":["
+        + subSampleJson
+        + "]}}";
+  }
+
+  private static String quantityJson(String value, int unitId) {
+    return "{\"numericValue\":" + value + ",\"unitId\":" + unitId + "}";
+  }
+
+  @Test
+  public void rejectsAmountTakenInAUnitThatDoesNotExist() throws Exception {
+    // review repro f4-unknown: used to reach QuantityUtils.sum and surface as a 422
+    ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
+    int unitId = origin.getQuantity().getUnitId();
+    assertRejectedLeavingOriginUnchanged(
+        origin,
+        aliquotJsonWith(
+            origin,
+            quantityJson("1", 999999),
+            "{\"quantity\":" + quantityJson("0.5", unitId) + "}",
+            ""));
+  }
+
+  @Test
+  public void rejectsAmountTakenInADifferentCategoryThanTheOrigin() throws Exception {
+    // review repro f4-category: millilitres taken from a gram origin used to be a 422
+    ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
+    int unitId = origin.getQuantity().getUnitId();
+    assertRejectedLeavingOriginUnchanged(
+        origin,
+        aliquotJsonWith(
+            origin,
+            quantityJson("1", RSUnitDef.MILLI_LITRE.getId()),
+            "{\"quantity\":" + quantityJson("0.5", unitId) + "}",
+            ""));
+  }
+
+  @Test
+  public void rejectsANewSubSampleInADifferentCategoryThanTheOrigin() throws Exception {
+    // review repro f5: a millilitre child from a gram origin used to be created
+    ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
+    int unitId = origin.getQuantity().getUnitId();
+    assertRejectedLeavingOriginUnchanged(
+        origin,
+        aliquotJsonWith(
+            origin,
+            quantityJson("1", unitId),
+            "{\"quantity\":" + quantityJson("0.5", RSUnitDef.MILLI_LITRE.getId()) + "}",
+            ""));
+  }
+
+  @Test
+  public void rejectsANewSubSampleOutsideTheChosenTemplatesCategory() throws Exception {
+    // review repro f5-template: gram children under a volume template used to be created when a
+    // comparable top-level quantity was sent as a decoy
+    ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
+    int unitId = origin.getQuantity().getUnitId();
+    ApiSampleTemplatePost templatePost = new ApiSampleTemplatePost();
+    templatePost.setName("RSDEV-1231 volume template");
+    templatePost.setDefaultUnitId(RSUnitDef.MILLI_LITRE.getId());
+    MvcResult templateResult =
+        mockMvc
+            .perform(
+                createBuilderForPostWithJSONBody(apiKey, "/sampleTemplates", anyUser, templatePost))
+            .andExpect(status().isCreated())
+            .andReturn();
+    ApiSampleTemplate template = getFromJsonResponseBody(templateResult, ApiSampleTemplate.class);
+    assertRejectedLeavingOriginUnchanged(
+        origin,
+        aliquotJsonWith(
+            origin,
+            quantityJson("1", unitId),
+            "{\"quantity\":" + quantityJson("0.5", unitId) + "}",
+            "\"templateId\":"
+                + template.getId()
+                + ",\"quantity\":"
+                + quantityJson("0.5", RSUnitDef.MILLI_LITRE.getId())
+                + ","));
+  }
+
+  @Test
+  public void rejectsADocumentationLinkToAnInventoryRecord() throws Exception {
+    // review repro f6: IsDocumentedBy pointing at the origin subsample itself used to be stored
+    ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
+    String documentation =
+        "{\"name\":\"Documented by\",\"type\":\"link\",\"newFieldRequest\":true,"
+            + "\"operationFieldKey\":\"operations.documentationLink\","
+            + "\"link\":{\"relationType\":\"IsDocumentedBy\",\"targetGlobalId\":\""
+            + origin.getGlobalId()
+            + "\",\"versionPin\":null}}";
+    assertRejectedLeavingOriginUnchanged(
+        origin, aliquotJson(origin, isPartOfLinkJson(origin.getGlobalId()) + "," + documentation));
+  }
+
+  @Test
+  public void rejectsANewSubSampleQuantityFinerThanTheStored3dp() throws Exception {
+    // review repro f7: 0.0004 used to persist as a subsample holding 0
+    ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
+    int unitId = origin.getQuantity().getUnitId();
+    assertRejectedLeavingOriginUnchanged(
+        origin,
+        aliquotJsonWith(
+            origin,
+            quantityJson("1", unitId),
+            "{\"quantity\":" + quantityJson("0.0004", unitId) + "}",
+            ""));
+  }
+
+  @Test
+  public void rejectsANameAndIconSmuggledOntoANewSubSample() throws Exception {
+    // review repro f9: both used to be persisted on the created subsample
+    ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
+    int unitId = origin.getQuantity().getUnitId();
+    assertRejectedLeavingOriginUnchanged(
+        origin,
+        aliquotJsonWith(
+            origin,
+            quantityJson("1", unitId),
+            "{\"quantity\":"
+                + quantityJson("0.5", unitId)
+                + ",\"name\":\"Injected child name\",\"iconId\":424242}",
+            ""));
+  }
 }
