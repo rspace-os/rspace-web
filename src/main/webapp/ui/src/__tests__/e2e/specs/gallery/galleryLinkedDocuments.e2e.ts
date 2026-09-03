@@ -26,6 +26,7 @@ test.describe("Gallery Linked Documents", () => {
 
     await test.step("Then the file's Gallery info panel lists this document as a Linked Document", async () => {
       await pageGallery.openInSection("Images");
+      await pageGallery.openFolder("Api Inbox");
       await pageGallery.selectFile(fileName);
       await expect(pageGallery.infoPanel.linkedDocumentsRow("Untitled document")).toBeVisible();
     });
