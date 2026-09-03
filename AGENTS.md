@@ -1,244 +1,144 @@
-# Agent instructions
+# AGENTS.md
 
-These instructions apply to the whole repository. A nested `AGENTS.md` takes
-precedence for files below it.
+RSpace is a Java 17/Spring application with a React/TypeScript frontend, MUI, Axios, pnpm, Liquibase, Hibernate, and MariaDB.
 
-## Working rules
+These instructions apply to the whole repository. A nested `AGENTS.md` takes precedence for files below it.
 
-- Keep changes narrowly scoped. Preserve unrelated and user-authored work.
-- Match the conventions of the code you touch and check for nested
-  `AGENTS.md` files first.
+## Project map
+
+- `src/main/java/` - backend Java code
+- `src/test/java/` - backend tests
+- `src/main/webapp/ui/src/` - React/TypeScript frontend
+- `src/main/resources/` - configuration, message bundles, and Liquibase resources
+- `src/main/resources/sqlUpdates/` - database changesets
+- `DevDocs/DeveloperNotes/` - developer documentation
+- `.agents/skills/` - repository-local playbooks
+
+Core domain models, utilities, audit-trail code, and test utilities now live in this repository. External consumers still use the released `rspace-core-util` 2.0.0 through JitPack. Treat `JacksonUtil`, `TransformerUtils`, and `zipprocessing` as frozen APIs for those consumers. Vendor a class into the consumer when a change is needed there.
+
+<important if="you need to build, test, lint, generate code, or run the application">
+
+Run frontend commands from the repository root. Root scripts change into `src/main/webapp/ui`, where Vite owns the module aliases.
+
+pnpm forwards arguments directly to scripts. Never add a standalone `--` after `pnpm test`, `pnpm run test`, or another pnpm script. Pass options immediately after the script name.
+
+| Command | Purpose |
+|---|---|
+| `pnpm install --frozen-lockfile` | Install frontend dependencies |
+| `pnpm test` | Run Vitest/jsdom unit tests |
+| `pnpm test src/components/MyComponent/__tests__/MyComponent.test.tsx` | Run one unit-test file |
+| `pnpm test --verbose <filter>` | Run tests with an option and filter |
+| `pnpm test-browser` | Run Browser Mode tests in Chromium, Firefox, and WebKit |
+| `pnpm test-browser src/components/MyComponent.spec.tsx` | Run one Browser Mode test file |
+| `VITEST_BROWSERS=chromium pnpm test-browser <file>` | Run a Browser Mode file in Chromium |
+| `pnpm tsc` | Type-check the frontend |
+| `pnpm lint` | Run the read-only Biome check |
+| `pnpm lint:fix` | Apply Biome fixes |
+| `pnpm serve` | Serve the frontend |
+| `pnpm run i18n:extract --sync-primary` | Extract and sync primary English translations |
+| `pnpm run i18n:types` | Generate i18n types |
+| `pnpm run i18n:lint` | Lint translation catalogs |
+| `mvn test -Dtest=MyClassName -Dfast=true` | Run one pure backend unit-test class |
+| `mvn clean test -Dfast=true` | Run all pure backend unit tests |
+| `mvn test -Dtest=MyClassName` | Run one Spring transactional test class |
+| `mvn clean test` | Run unit and Spring tests; requires a database |
+| `mvn clean verify -Denvironment=drop-recreate-db` | Run verification including `*IT`; resets the database |
+| `mvn clean package -DgenerateReactDist -DskipTests=true` | Build a WAR with the frontend |
+
+Never run `mvn install`, `./mvnw install`, `install:install-file`, or any deploy goal. These write artifacts to the local repository and can shadow the JitPack dependency. Use `compile`, `package`, `test`, or `verify`. To test unpublished sibling-project changes, push them, wait for the remote build, then update this project's pinned commit hash.
+</important>
+
+<important if="you are changing repository files">
+
+- Keep changes narrowly scoped and preserve unrelated user-authored work.
+- Check nested `AGENTS.md` files before editing their directories.
 - Use `rg` and `rg --files` for searches.
-- Treat vendored code, minified files, build output, and dependency directories
-  as read-only unless the task explicitly targets them. Do not add `target/`,
-  `dist/`, or `node_modules/` to diffs.
-- Put plans and scratch notes only in `.claude/`, which is gitignored.
-- Do not add dependencies unless they are necessary.
+- Treat vendored code, minified files, build output, `target/`, `dist/`, and `node_modules/` as read-only unless the task explicitly targets them.
+- Put plans and scratch notes in `.claude/`, which is gitignored.
+- Do not add dependencies unless necessary.
 - Update nearby developer documentation when behavior or workflows change.
+</important>
 
-### Maven safety
+<important if="you are changing backend controllers, services, DAOs, or transactions">
 
-Never run a Maven phase or goal that writes artifacts to the local repository.
-In particular, do not run `mvn install`, `./mvnw install`,
-`install:install-file`, or any deploy goal in this or sibling projects. Local
-artifacts can silently shadow the JitPack dependency pinned in `pom.xml`.
+Backend dependencies flow downward: `Controller -> Service (*Manager) -> DAO -> Hibernate/MariaDB`.
 
-Use `compile`, `package`, `test`, or `verify`. To test unpublished changes in a
-sibling project, ask the user to push them, wait for the remote build, and then
-bump this project's pinned commit hash.
+- Controllers validate input and call services, never DAOs.
+- Transactional Spring services should end in `Manager` so AOP pointcuts in `applicationContext-service.xml` apply.
+- A non-`Manager` service may declare its boundary with `@Transactional`; `TransactionAdviceStartupCheck` verifies annotation-driven advice at startup.
+- DAOs require an active transaction.
+- Do not import from a lower layer into a higher one.
+</important>
 
-## Project shape
+<important if="you are changing frontend application code">
 
-RSpace is a Java 17/Spring application with a React/TypeScript frontend and
-MariaDB:
+Use React functional components with TypeScript. Prefer React Query for new server state; MobX remains in legacy areas. Sanitize user-generated HTML with DOMPurify.
+</important>
 
-- Backend: `src/main/java`, tests in `src/test/java`
-- Frontend: `src/main/webapp/ui/src`
-- Configuration and Liquibase: `src/main/resources`
-- Developer documentation: `DevDocs/DeveloperNotes`
-- Core domain models, core utilities, and the audit-trail model live in-tree
-  (absorbed from the former `rspace-core-model`, `rspace-core-util`,
-  `rspace-audit`, and `rspace-test-util` repositories). A few libraries outside
-  this repository still consume the final `rspace-core-util` 2.0.0 release from
-  JitPack (the repository adapters, `rspace-rest-api-utils`, the chemistry
-  services, `aspose-web`), so treat the classes they use as a frozen API
-  surface: `JacksonUtil`, `TransformerUtils`, and the `zipprocessing` package.
-  Changing those in place will not reach those consumers; vendor the classes
-  into a consumer when one next needs a change.
+<important if="you are writing or modifying frontend tests">
 
-Backend dependencies flow downward:
+- Use Vitest and Testing Library. For `*.spec.tsx` Browser Mode tests, follow the `rspace-browser-tests` skill.
+- Import `render` and `within` directly from `@testing-library/react`. Use `findTableCell` / `getIndexOfTableCell` from `@/__tests__/tableQueries` and `expectAccessible` from `@/__tests__/accessibility` when needed.
+- MSW uses the shared Node server in `src/__tests__/mswServer.ts`, enabled by `src/__tests__/setup.ts`; register test-local handlers with its shared `server` export. Unhandled requests fail tests.
+- Use `toBeAccessible` for accessibility checks and `silenceConsole()` for expected console errors.
+- Prefer semantic jest-dom assertions such as `toBeInTheDocument`, `toHaveAttribute`, and `toBeDisabled`.
+- Assign mocked methods to a local before calling `vi.mocked` to satisfy the unbound-method lint rule.
+- Give MUI `Select` controls inside `FormField` an accessible name through `SelectDisplayProps` and query them by role and name.
+</important>
 
-```text
-Controller -> Service (*Manager) -> DAO -> Hibernate/MariaDB
-```
+<important if="you are writing or modifying backend tests">
 
-Controllers validate input and call services, never DAOs. Services used as
-transactional Spring beans should end in `Manager`, which puts them under the
-AOP pointcuts in `applicationContext-service.xml`. A non-`Manager` service may
-instead declare its transaction boundary explicitly with `@Transactional`;
-`TransactionAdviceStartupCheck` verifies at startup that annotation-driven
-transaction advice was applied. DAOs assume an active transaction. Do not
-introduce imports from a lower layer to a higher one.
+- Tests use JUnit 6 (Jupiter) imports from `org.junit.jupiter`.
+- Surefire discovers `Test*`, `*Test`, `*Tests`, and `*TestCase` in the `test` phase. `*IT` runs only through the `integration-tests` execution in `pom.xml`, unless named with `-Dtest=`. Other names are not reported as tests.
+- DAO tests extend `SpringTransactionalTest`.
+- Service behavior that requires commits extends `RealTransactionSpringTestBase` and uses an `*IT.java` name.
+- Controller tests extend `MVCTestBase` and use an `*IT.java` name.
+- For Spring context-only tests, annotate the class with `@WithSpringContext` and a context annotation such as `@DefaultTestContext` or `@ContextConfiguration`. Do not replace Spring's default test execution listeners.
+- For several class-level configurations, use one outer class with a `@Nested` class per configuration. Put `@TestPropertySource` and `@ContextConfiguration` on the nested classes, not the outer class.
+- Gate tests unavailable in CI with class-level `@EnabledIfSystemProperty` when the whole class is gated; method-level gating still loads a Spring context.
+- Use the inherited `assertExceptionThrown`, `assertAuthorisationExceptionThrown`, and `assertLazyInitializationExceptionThrown` helpers on `BaseManagerTestCaseBase` when applicable.
+</important>
 
-Frontend code uses React functional components, TypeScript, MUI, Axios, and
-pnpm. Prefer React Query for new server state; MobX remains in legacy areas.
-Sanitize user-generated HTML with DOMPurify.
+<important if="you are changing frontend or backend behavior that users can see">
 
-## Build and test
+- Externalize backend user-facing text in `src/main/resources/bundles/` or `ApplicationResources.properties` and resolve it through the injected message source. Logs and internal-only messages are exempt.
+- Frontend English catalogs live in `src/main/webapp/ui/src/modules/common/i18n/locales/en-US/`; use semantic keys. Follow `DevDocs/DeveloperNotes/i18n.md`.
+- For new frontend text, use a literal `defaultValue` with `t()`, run `pnpm run i18n:extract --sync-primary`, review the catalog, remove `defaultValue`, then run `pnpm run i18n:types`, `pnpm run i18n:lint`, and `pnpm run tsc`. Never use `--sync-all`.
+- Wrap raw JSX text in `t()` before extraction. Use ICU syntax for interpolation and plurals.
+</important>
 
-Run frontend commands from the repository root. The root scripts change into
-`src/main/webapp/ui`, where Vite owns the module aliases.
+<important if="you are changing database schema or persistence">
 
-### pnpm arguments: never add a separator
+Use a new Liquibase changeset under `src/main/resources/sqlUpdates/`; never edit the baseline for an existing schema change. Follow `DatabaseChangeGuidelines.md`. New changesets normally use `context="run"`; reserve `dev-test` and `cloud` for environment-specific data. Use soft deletion where the domain supports it.
+</important>
 
-pnpm passes arguments after a script name directly to that script. Do **not**
-insert a standalone `--` after `pnpm test`, `pnpm run test`, or any other pnpm
-script. Unlike npm, pnpm forwards a literal `--` into the command instead of
-stripping it, so Vitest treats it as the end of its options and silently
-discards everything after it, including a file filter.
+<important if="you are adding Java code or changing Java error handling, resources, or entities">
 
-```bash
-# Correct: one unit-test file
-pnpm test src/components/MyComponent/__tests__/MyComponent.test.tsx
-
-# Correct: one browser-test file
-pnpm test-browser src/components/MyComponent.spec.tsx
-```
-
-This rule also applies to options: pass them immediately after the script name,
-for example `pnpm test --verbose <filter>`.
-
-### Frontend commands
-
-```bash
-pnpm install --frozen-lockfile
-pnpm test                         # Vitest/jsdom unit tests
-pnpm test-browser                 # Browser Mode in Chromium, Firefox, WebKit
-VITEST_BROWSERS=chromium pnpm test-browser <file>
-pnpm tsc
-pnpm lint                         # read-only Biome check
-pnpm lint:fix
-pnpm serve
-```
-
-For frontend changes, run `pnpm tsc` at minimum. Also run focused tests for
-behavioral changes and `pnpm lint` for linted or formatted code. Do not replace
-a focused test with the full suite unless broad verification is warranted.
-
-Frontend test conventions:
-
-- Import `render` and `within` directly from `@testing-library/react`. Import
-  focused helpers only when needed: `findTableCell` / `getIndexOfTableCell`
-  from `@/__tests__/tableQueries`, and `expectAccessible` from
-  `@/__tests__/accessibility`.
-- Network mocking uses MSW. A Node server (`src/__tests__/mswServer.ts`) is
-  enabled globally in `src/__tests__/setup.ts` with strict unhandled-request
-  errors; register test-local handlers with the shared `server` export.
-- Use `toBeAccessible` for accessibility assertions and `silenceConsole()` for
-  expected console errors.
-- Prefer semantic jest-dom assertions such as `toBeInTheDocument`,
-  `toHaveAttribute`, and `toBeDisabled`.
-- With `vi.mocked(obj.method)`, first assign the method to a local variable to
-  avoid the unbound-method lint rule.
-- MUI `Select` inside `FormField` needs an explicit accessible name. Pass an
-  `aria-label` via `SelectDisplayProps` and query it by role and name.
-- Use the `rspace-browser-tests` skill for `*.spec.tsx` Browser Mode work.
-
-### Backend commands
-
-```bash
-mvn test -Dtest=MyClassName -Dfast=true        # pure unit test
-mvn clean test -Dfast=true                     # all pure unit tests
-mvn test -Dtest=MyClassName                    # Spring transactional test
-mvn clean test                                 # unit + Spring tests; needs DB
-mvn clean verify -Denvironment=drop-recreate-db # includes *IT; resets DB
-```
-
-All tests use JUnit 6 (Jupiter). Import only from `org.junit.jupiter`.
-
-Name test classes so surefire can find them. `Test*`, `*Test`, `*Tests` and
-`*TestCase` are surefire's defaults and run in the `test` phase; `*IT` is not a
-default and runs only via the `integration-tests` execution configured in
-`pom.xml`, so an `*IT` class does not run in `mvn test` at all unless `-Dtest=`
-names it. A class matching none of these never runs and nothing reports that it
-did not.
-
-- DAO test: extend `SpringTransactionalTest`.
-- Service behavior requiring commits: extend `RealTransactionSpringTestBase`
-  and name it `*IT.java`.
-- Controller test: extend `MVCTestBase` and name it `*IT.java`.
-- Spring context only, without the DAO/transaction helpers: annotate the class
-  with `@WithSpringContext` plus a context annotation such as
-  `@DefaultTestContext` or `@ContextConfiguration`, rather than extending a base
-  class. `@WithSpringContext` deliberately adds only `SpringExtension`, so
-  Spring's default `@TestExecutionListeners` still apply; naming any set there
-  would replace those defaults for every annotated class.
-- Several class-level configurations of the same subject: one outer class with a
-  `@Nested` inner class per configuration, each carrying its own
-  `@TestPropertySource` / `@ContextConfiguration`. Keep Spring annotations off
-  the outer class; `@NestedTestConfiguration` defaults to `INHERIT`, so outer
-  config merges into every nested class.
-
-To assert on an exception message, nest the call rather than introducing a local:
-
-```java
-assertThat(assertThrows(IllegalStateException.class, () -> foo()).getMessage(),
-    containsString("expected text"));
-```
-
-Spring test subclasses can also use the inherited `assertExceptionThrown`,
-`assertAuthorisationExceptionThrown` and `assertLazyInitializationExceptionThrown`
-on `BaseManagerTestCaseBase`, which take the project's `Invokable` and delegate to
-`assertThrows`.
-
-Gate a test that needs an environment CI does not have with
-`@EnabledIfSystemProperty`, on the **class** when every test in it is gated.
-Jupiter constructs the test instance before evaluating a method-level condition,
-so a method-level gate on a Spring test still loads the application context and
-fails if that environment is absent.
-
-Build a WAR with the frontend using:
-
-```bash
-mvn clean package -DgenerateReactDist -DskipTests=true
-```
-
-## Implementation constraints
-
-### User-facing backend text
-
-Externalize all backend text that can reach users into the appropriate bundle
-under `src/main/resources/bundles/` (or `ApplicationResources.properties` for
-cross-cutting text), and resolve it through the injected message source. When
-touching a block that contains hard-coded user-facing text, externalize it as
-part of the change. Logs and internal-only developer messages are exempt.
-
-### Frontend i18n
-
-Frontend English catalogs live in
-`src/main/webapp/ui/src/modules/common/i18n/locales/en-US/`; finished code
-uses semantic keys, not literal English strings (see
-`DevDocs/DeveloperNotes/i18n.md` for naming and namespace rules).
-To author English inline while developing, pass a literal `defaultValue` to
-`t()`, then run `pnpm run i18n:extract --sync-primary` from the repo root,
-review the catalog diff, remove `defaultValue`, and run `pnpm run i18n:types`,
-`pnpm run i18n:lint`, and `pnpm run tsc`. Never use `--sync-all`; it also
-clears matching secondary-locale values. Wrap raw JSX text in `t()` first —
-`i18n:extract` does not see it. Use ICU syntax in `defaultValue` for
-interpolation and plurals.
-
-### Database changes
-
-Use Liquibase changesets in `src/main/resources/sqlUpdates/`; never edit the
-baseline for an existing schema change. Follow
-`DatabaseChangeGuidelines.md`. New schema changes normally use `context="run"`;
-reserve `dev-test` and `cloud` for data specific to those environments. Use
-soft deletion where the domain supports it.
-
-### Java
-
-- Follow Google Java Style; Spotless is configured in Maven.
 - Use try-with-resources for streams and files.
-- Log caught exceptions at WARN or ERROR; do not leave empty catch blocks.
-- Never log credentials or sensitive data.
+- Log caught exceptions at WARN or ERROR, never credentials or other sensitive data, and do not leave empty catch blocks.
 - Add Javadoc to service interface methods and non-trivial entity methods.
+</important>
 
-## Running RSpace locally
+<important if="you are finishing a feature or code/configuration change">
 
-Normal Jetty commands and setup are documented in
-`DevDocs/DeveloperNotes/GettingStarted/GettingStarted.md`.
+Run relevant focused tests. For frontend changes, run `pnpm tsc` at minimum, plus focused tests for behavioral changes and `pnpm lint` for linted or formatted code. Do not replace focused tests with the full suite unless broad verification is warranted.
+</important>
 
-The per-worktree Docker stack lives at `docker/dev/rspace-dev`; its instructions
-are in `docker/dev/README.md` and the `rspace-dev-stack` skill. Never start it
-unless the user explicitly asks because it launches a database, JVM, and Node
-server. `down` is reversible. `nuke` permanently deletes that worktree's local
-data, so confirm unless the user explicitly requested destruction.
+<important if="you are verifying that a feature works in the running application">
 
-## Repository skills and references
+Use Browser Automation against this worktree's Docker Dev Stack to exercise the completed user flow. The stack is a throwaway instance, so updating fixtures and application settings during verification is allowed.
+</important>
 
-Repo-local playbooks live in `.agents/skills/`. Read the matching `SKILL.md`
-when a task fits one. Keep new skills concise and put bulky material in a
-sibling `REFERENCE.md`.
+<important if="you need to run RSpace locally or reproduce behavior end to end">
+
+Normal Jetty setup is documented in `DevDocs/DeveloperNotes/GettingStarted/GettingStarted.md`.
+
+The per-worktree Docker stack is in `docker/dev/rspace-dev`; read `docker/dev/README.md` and the `rspace-dev-stack` skill first. Start it only when the user explicitly asks, because it launches MariaDB, the JVM, and Node. `down` is reversible. Confirm before `nuke`, which permanently deletes that worktree's local data.
+</important>
+
+<important if="you are using or creating repository skills, or need project workflow references">
+
+Read the matching playbook in `.agents/skills/`. Keep new skills concise and put bulky material in a sibling `REFERENCE.md`.
 
 Useful references:
 
@@ -247,3 +147,4 @@ Useful references:
 - Security: `DevDocs/DeveloperNotes/SecurityAndPermissions.md`
 - Logging: `DevDocs/DeveloperNotes/Logging.md`
 - CI: `.github/workflows/lint-and-test.yml` and `Jenkinsfile`
+</important>
