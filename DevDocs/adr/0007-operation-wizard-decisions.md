@@ -127,6 +127,32 @@ above) without computing it.
   the controller's separate read transaction, whose race let a concurrent
   decrement produce a 201 with a silently clamped origin instead of the
   documented 400.
+- **Origins are read with a row lock inside the operation transaction** (code
+  review, 2026-09-03): `checkOriginLiveState` reads each origin through
+  `SubSampleApiManager.lockSubSampleForEdit` (`SELECT ... FOR UPDATE`), in
+  ascending id order like the decrements, so two operations on one origin
+  serialise on the database row and the second sees the first's committed
+  quantity. Before this the outcome depended on the MariaDB version: with
+  `innodb_snapshot_isolation` (11.6+) the loser failed at commit and was mapped
+  to 409; on 10.11 it applied a stale subtraction. The 409 mapping in
+  `ApiControllerAdvice` stays as the fallback for anything the lock does not
+  cover. `InventoryEditLockTracker` is not a substitute: it is process-local and
+  treats a same-user re-lock as an extension.
+- **Category and precision rules also apply to the created subsamples** (code
+  review, 2026-09-03): the amount taken must be a real amount unit in the
+  origin's category; each new subsample quantity must be in the origin's
+  category (or the template's, when a template is chosen, since the wizard then
+  offers the template's units) and storable at 3dp; a new subsample carries
+  only its quantity, so `name` and `iconId` are undeclared like the rest. The
+  top-level `newSample.quantity` is not cross-checked against the children: the
+  server derives the total from the children and the wizard computes it in
+  floating point, so an equality rule would reject the wizard's own requests.
+- **The documentation link targets an ELN document, notebook or Gallery file**
+  (the set `ElnFolderBrowser` already offers); a link "documented by" an
+  Inventory record is rejected.
+- **Process is offered in every Inventory context menu except the picker**:
+  epic RSDEV-1228 names both the list view and the item view as entry points,
+  so the shared action list is not narrowed to item-view menus.
 - **The operations endpoint is JSON-only** (`consumes = application/json`): the
   app registers a global YAML message converter, whose laxer parsing (duplicate
   keys, alternate numeric forms) would bypass the JSON contract the validator

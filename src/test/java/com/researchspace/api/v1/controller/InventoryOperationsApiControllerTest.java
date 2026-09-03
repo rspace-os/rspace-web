@@ -14,18 +14,24 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.researchspace.api.v1.model.ApiInventoryOperationPost;
+import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
+import com.researchspace.api.v1.service.ApiFieldsHelper;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.DTOControllerValidatorImpl;
+import com.researchspace.model.inventory.SampleTemplate;
+import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.inventory.InventoryOperationConfigRegistry;
 import com.researchspace.service.inventory.InventoryOperationManager;
 import com.researchspace.service.inventory.SampleApiManager;
 import com.researchspace.webapp.config.WebConfig;
 import jakarta.ws.rs.NotFoundException;
+import java.math.BigDecimal;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.validation.BeanPropertyBindingResult;
@@ -52,6 +58,8 @@ class InventoryOperationsApiControllerTest {
     controller.operationPostValidator = InventoryOperationPostValidatorTest.newValidator();
     controller.operationConfigs = new InventoryOperationConfigRegistry();
     controller.sampleApiPostFullValidator = new SampleApiPostFullValidator();
+    ReflectionTestUtils.setField(
+        controller.sampleApiPostFullValidator, "fieldHelper", mock(ApiFieldsHelper.class));
     controller.inventoryOperationManager = operationManager;
   }
 
@@ -131,6 +139,38 @@ class InventoryOperationsApiControllerTest {
         () ->
             controller.performOperation(
                 request, new BeanPropertyBindingResult(request, "request"), user));
+    verifyNoInteractions(operationManager);
+  }
+
+  @Test
+  void rejectsNewSubSamplesOutsideTheChosenTemplatesCategory() throws Exception {
+    // The server derives the sample's total from its children and ignores the top-level quantity
+    // when children are present, so the template's unit must be checked against every child, not
+    // only the optional top-level value a caller can use as a decoy (code review, finding 5).
+    ApiInventoryOperationPost request = aliquotRequest();
+    request.getNewSample().setTemplateId(7L);
+    request
+        .getNewSample()
+        .setQuantity(new ApiQuantityInfo(new BigDecimal("0.5"), RSUnitDef.MILLI_LITRE.getId()));
+    request
+        .getNewSample()
+        .getSubSamples()
+        .get(0)
+        .setQuantity(new ApiQuantityInfo(new BigDecimal("0.5"), RSUnitDef.GRAM.getId()));
+    SampleTemplate volumeTemplate = new SampleTemplate();
+    volumeTemplate.setDefaultUnitId(RSUnitDef.MILLI_LITRE.getId());
+    when(sampleApiMgr.getSampleTemplateByIdWithPopulatedFields(7L, user))
+        .thenReturn(volumeTemplate);
+
+    BindException rejection =
+        assertThrows(
+            BindException.class,
+            () ->
+                controller.performOperation(
+                    request, new BeanPropertyBindingResult(request, "request"), user));
+    assertEquals(
+        "errors.inventory.sample.unitIncompatibleWithTemplate",
+        rejection.getFieldErrors("newSample.subSamples[0].quantity").get(0).getCode());
     verifyNoInteractions(operationManager);
   }
 }

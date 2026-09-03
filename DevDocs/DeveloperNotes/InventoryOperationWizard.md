@@ -340,8 +340,9 @@ both the numbers and the units.
 Every link (provenance and the optional documentation link) is placed on the new
 sample only, never on the subsamples it creates. Links reuse the RSDEV-1131 `link` field
 (`{ relationType, targetGlobalId, versionPin }`); relation types come from
-`DataCiteRelationType`. The documentation link targets an ELN document
-(`IsDocumentedBy`); it is remembered as part of the single per-process bundle (see
+`DataCiteRelationType`. The documentation link (`IsDocumentedBy`) targets an ELN
+document, notebook or Gallery file, the kinds the picker offers; the endpoint
+rejects any other target. It is remembered as part of the single per-process bundle (see
 "Remembered process values" above), not a separate preference.
 
 ## Template for the new sample (DevDocs/adr/0007)
