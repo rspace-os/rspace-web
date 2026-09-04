@@ -56,6 +56,17 @@ public class InventoryOperationPostValidator implements Validator {
   static final int MAX_ORIGINS = 100;
 
   /**
+   * Ceilings on the two other lists this validator walks repeatedly. The DTO's {@code @Size} caps
+   * the subsamples but only records a violation: validation continued through every per-subsample
+   * pass. {@code extraFields} has no DTO cap at all, and {@link #validateDeclaredLinks} scans it
+   * once per origin, so an oversized list is O(origins x fields) of work on a public endpoint. Both
+   * are checked before the first traversal and return (Copilot review, PR #1090).
+   */
+  static final int MAX_SUBSAMPLES = 100;
+
+  static final int MAX_EXTRA_FIELDS = 100;
+
+  /**
    * The documentation link is a wizard-level feature (an SOP chosen in the documentation step), not
    * a per-operation declaration, so its key is fixed and every operation that creates a sample
    * accepts one (DevDocs/adr/0007).
@@ -362,6 +373,24 @@ public class InventoryOperationPostValidator implements Validator {
           "errors.inventory.operation.fieldKeyUnknown",
           new Object[] {null},
           "This field is not one the operation declares.");
+      return;
+    }
+
+    if (newSample.getSubSamples() != null && newSample.getSubSamples().size() > MAX_SUBSAMPLES) {
+      errors.rejectValue(
+          "newSample.subSamples",
+          "errors.inventory.operation.subSampleCountMaximum",
+          new Object[] {MAX_SUBSAMPLES},
+          "This operation accepts at most 100 new subsamples.");
+      return;
+    }
+    if (newSample.getExtraFields() != null
+        && newSample.getExtraFields().size() > MAX_EXTRA_FIELDS) {
+      errors.rejectValue(
+          "newSample.extraFields",
+          "errors.inventory.operation.extraFieldCountMaximum",
+          new Object[] {MAX_EXTRA_FIELDS},
+          "This operation accepts at most 100 extra fields on the sample it creates.");
       return;
     }
 
