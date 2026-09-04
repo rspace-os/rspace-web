@@ -94,3 +94,17 @@ describe("WizardTemplatePicker", () => {
     expect(screen.getByRole("combobox")).toHaveValue("Cells");
   });
 });
+
+describe("WizardTemplatePicker clearing", () => {
+  it("tells the parent the selection is gone, so a cleared box cannot submit the old template", async () => {
+    // Clearing used to reset only the picker's own value: the parent kept the previous templateId,
+    // so an empty-looking box still submitted that hidden selection (Copilot review, PR #1090).
+    const setTemplate = vi.fn();
+    const user = userEvent.setup();
+    render(<WizardTemplatePicker setTemplate={setTemplate} selectedTemplateId={5} selectedTemplateName="Cells" />);
+    // MUI only reveals the clear button once the field has focus, as it would for a real user.
+    await user.click(screen.getByRole("combobox"));
+    await user.click(screen.getByRole("button", { name: /clear/i }));
+    expect(setTemplate).toHaveBeenCalledWith(null);
+  });
+});
