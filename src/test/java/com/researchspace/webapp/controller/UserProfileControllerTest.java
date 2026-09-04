@@ -9,6 +9,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -359,5 +361,52 @@ public class UserProfileControllerTest {
     assertEquals(1, ugs.getData().size());
     assertFalse(ugs.getData().get(0).getPrivateGroup());
     assertNotNull(ugs.getData().get(0).getGroupDisplayName());
+  }
+
+  @Test
+  public void updatePreferenceValueWithKeyMergesInsteadOfReplacing() {
+    // The whole UI_JSON_SETTINGS blob is one column: replacing it from the client meant two
+    // overlapping writers each dropped the other's key. With a key the server merges just that one.
+    when(usrMgr.getUserByUsername("any")).thenReturn(anyUser);
+    UserPreference merged =
+        new UserPreference(Preference.UI_JSON_SETTINGS, anyUser, "{\"A\":1,\"B\":2}");
+    when(usrMgr.mergeUiJsonSetting("B", "{\"value\":2}", "any")).thenReturn(merged);
+
+    AjaxReturnObject<String> response =
+        userProfileController.updatePreferenceValue(
+            "UI_JSON_SETTINGS", "{\"value\":2}", "B", () -> "any", mockRequest);
+
+    assertEquals("{\"A\":1,\"B\":2}", response.getData());
+    verify(usrMgr, never()).setPreference(any(Preference.class), anyString(), anyString());
+  }
+
+  @Test
+  public void updatePreferenceValueWithoutKeyStillReplacesTheWholeValue() {
+    // Legacy JSP callers post no key and every other preference is a single scalar, so the
+    // whole-value path has to keep working untouched.
+    when(usrMgr.getUserByUsername("any")).thenReturn(anyUser);
+    UserPreference replaced = new UserPreference(Preference.UI_JSON_SETTINGS, anyUser, "whole");
+    when(usrMgr.setPreference(Preference.UI_JSON_SETTINGS, "whole", "any")).thenReturn(replaced);
+
+    AjaxReturnObject<String> response =
+        userProfileController.updatePreferenceValue(
+            "UI_JSON_SETTINGS", "whole", null, () -> "any", mockRequest);
+
+    assertEquals("whole", response.getData());
+    verify(usrMgr, never()).mergeUiJsonSetting(anyString(), anyString(), anyString());
+  }
+
+  @Test
+  public void updatePreferenceValueIgnoresAKeyOnAPreferenceThatIsNotTheJsonBlob() {
+    // Only UI_JSON_SETTINGS is a JSON object; merging a key into a scalar preference would write a
+    // JSON object into a column the rest of the app reads as a plain value.
+    when(usrMgr.getUserByUsername("any")).thenReturn(anyUser);
+    UserPreference replaced = new UserPreference(Preference.UI_CLIENT_SETTINGS, anyUser, "whole");
+    when(usrMgr.setPreference(Preference.UI_CLIENT_SETTINGS, "whole", "any")).thenReturn(replaced);
+
+    userProfileController.updatePreferenceValue(
+        "UI_CLIENT_SETTINGS", "whole", "B", () -> "any", mockRequest);
+
+    verify(usrMgr, never()).mergeUiJsonSetting(anyString(), anyString(), anyString());
   }
 }

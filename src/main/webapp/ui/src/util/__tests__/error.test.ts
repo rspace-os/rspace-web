@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 
-import { getErrorMessage } from "../error";
+import { getApiErrorDetail, getErrorMessage } from "../error";
 
 describe("getErrorMessage", () => {
   test("should extract message from axios response data", () => {
@@ -89,5 +89,49 @@ describe("getErrorMessage", () => {
       message: "fake error message",
     };
     expect(getErrorMessage(error, "fallback")).toBe("fallback");
+  });
+});
+
+describe("getApiErrorDetail", () => {
+  // A field-scoped 400 from the Inventory API puts "Errors detected: 1" in `message` and the actual
+  // reason in `errors[0]`, prefixed by the path it applies to. Showing only `message` told the user
+  // nothing they could act on.
+  test("returns the first error, with its path prefix stripped", () => {
+    const error = {
+      response: {
+        data: {
+          message: "Errors detected: 1",
+          errors: ["origins[0].amountTaken: Cannot take more from an origin than it currently holds"],
+        },
+      },
+    };
+    expect(getApiErrorDetail(error, "fallback")).toBe("Cannot take more from an origin than it currently holds");
+  });
+
+  test("shows only the first of several errors", () => {
+    const error = {
+      response: { data: { message: "Errors detected: 2", errors: ["a: first", "b: second"] } },
+    };
+    expect(getApiErrorDetail(error, "fallback")).toBe("first");
+  });
+
+  test("keeps an error that has no path prefix", () => {
+    const error = { response: { data: { errors: ["Something went wrong"] } } };
+    expect(getApiErrorDetail(error, "fallback")).toBe("Something went wrong");
+  });
+
+  test("falls back to the message when the errors array is empty", () => {
+    const error = { response: { data: { message: "Errors detected: 0", errors: [] } } };
+    expect(getApiErrorDetail(error, "fallback")).toBe("Errors detected: 0");
+  });
+
+  test("falls back to the message when there is no errors array", () => {
+    const error = { response: { data: { message: "Plain failure" } } };
+    expect(getApiErrorDetail(error, "fallback")).toBe("Plain failure");
+  });
+
+  test("falls back for a non-Axios error", () => {
+    expect(getApiErrorDetail(new Error("boom"), "fallback")).toBe("boom");
+    expect(getApiErrorDetail(null, "fallback")).toBe("fallback");
   });
 });

@@ -284,7 +284,12 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
 
     boolean temporaryLock = lockItemForEdit(dbSubSample, user);
     try {
-      dbSubSample = getIfExists(dbSubSample.getId());
+      // Every stock decrement in the app funnels through here (the operations endpoint,
+      // Stoichiometry, List of Materials), so the row lock is taken once here rather than in each
+      // caller. Without it the re-read is a plain get and two decrements racing the same subsample
+      // both subtract from the same stale quantity. The operations path locks the same row again;
+      // InnoDB treats a repeat lock in one transaction as a no-op.
+      dbSubSample = subSampleDao.getForUpdate(dbSubSample.getId());
 
       QuantityInfo orgQuantity = dbSubSample.getQuantity();
       QuantityInfo newQuantity = qUtils.sum(Arrays.asList(orgQuantity, usedQuantity.negate()));

@@ -182,6 +182,9 @@
         "message": "{0} failed for the following reasons: {1}"
       }
     },
+    "preference": {
+      "invalidJsonValue": "The value for preference key ''{0}'' is not valid JSON."
+    },
     "rateLimitExceeded": "You have exceeded the number of {0} requests. Please contact ResearchSpace support for assistance.",
     "composedId": {
       "missing": "No id to retrieve",
