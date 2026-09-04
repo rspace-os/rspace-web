@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, test, vi } from "vitest";
 import { operationFunctions } from "../operationFunctions";
 
 describe("operationFunctions.increment", () => {
@@ -40,5 +40,28 @@ describe("operationFunctions.today", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date(2026, 2, 14, 23, 30, 0));
     expect(String(today.fn())).toBe("2026-03-14");
+  });
+});
+
+describe("increment guards against values the endpoint always rejects", () => {
+  // The backend accepts a Passage number only as a positive whole number, so a field that somehow
+  // holds a fraction or a negative would have the wizard build a request its own endpoint refuses
+  // every time, with no way for the user to see why (Copilot review, PR #1090).
+  test.each([
+    ["a fraction", "1.5"],
+    ["a negative", "-3"],
+    ["a value past safe integers", "9007199254740993"],
+    ["not a number at all", "banana"],
+    ["absent", undefined],
+  ])("falls back to start for %s", (_label, current) => {
+    expect(operationFunctions.increment.fn({ current, start: "1" })).toBe(1);
+  });
+
+  test("still counts on from a whole number", () => {
+    expect(operationFunctions.increment.fn({ current: "4", start: "1" })).toBe(5);
+  });
+
+  test("counts on from zero, which is a legitimate prior value", () => {
+    expect(operationFunctions.increment.fn({ current: "0", start: "1" })).toBe(1);
   });
 });
