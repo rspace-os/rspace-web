@@ -51,8 +51,18 @@ function mockPutReturningIdentifierWith(update?: ExternalMetadataUpdate) {
 
 async function saveInstrument(): Promise<void> {
   const instrument = makeMockInstrument({ id: 1, globalId: "IN1", templateId: null });
-  // Leaving edit mode releases the lock and refetches the record over the API; not under test.
-  vi.spyOn(instrument, "setEditing").mockResolvedValue("UNLOCKED_OK");
+  /*
+   * Leaving edit mode releases the lock and refetches the record; the API call itself is not under
+   * test, but the refetch dropping the response-only outcome is: a fresh GET never carries it, so
+   * the stub clears it the way populateFromJson would. That is what makes these tests fail if the
+   * read in update() is ever moved below this call, which would lose every toast in production.
+   */
+  vi.spyOn(instrument, "setEditing").mockImplementation(() => {
+    instrument.identifiers.forEach((identifier) => {
+      identifier.externalMetadataUpdate = null;
+    });
+    return Promise.resolve("UNLOCKED_OK");
+  });
   await instrument.update();
 }
 

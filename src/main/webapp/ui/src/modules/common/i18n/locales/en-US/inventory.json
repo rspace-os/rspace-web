@@ -1220,8 +1220,10 @@
   "identifierModel": {
     "alerts": {
       "doiRequired": "DOI must be known",
-      "externalUpdateFailed": "External PID record not updated ({doi})",
-      "externalUpdateNotPossible": "External PID record left unchanged ({doi})",
+      "externalUpdateFailed": "Instrument PID not updated ({doi})",
+    "externalUpdateFailedMany": "{count, plural, one {# instrument PID was not updated} other {# instrument PIDs were not updated}}",
+      "externalUpdateNotPossible": "Instrument PID left unchanged ({doi})",
+    "externalUpdateNotPossibleMany": "{count, plural, one {# instrument PID was left unchanged} other {# instrument PIDs were left unchanged}}",
       "published": "The identifier {doi} has been published.",
       "publishFailed": "The identifier could not be published.",
       "refreshed": "The identifier status is now \"{state}\".",

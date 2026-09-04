@@ -144,7 +144,11 @@ export type ExternalMetadataUpdateOutcome = "UPDATED" | "FAILED" | "NOT_UPDATABL
  * identifier does not carry it. `reason` is a localized sentence from the server, ready to show.
  */
 export type ExternalMetadataUpdate = {
-  succeeded: boolean;
+  /**
+   * True only for `UPDATED`, from which the server derives it. Carried for API clients; the UI
+   * decides everything from `outcome`, so nothing here reads this.
+   */
+  succeeded?: boolean;
   outcome: ExternalMetadataUpdateOutcome;
   reason: string;
 };
@@ -185,7 +189,7 @@ export type IdentifierAttrs = {
   geoLocations: Array<GeoLocationAttrs> | null;
   _links: Array<_LINK>;
   customFieldsOnPublicPage: boolean;
-  externalMetadataUpdate?: ExternalMetadataUpdate;
+  externalMetadataUpdate?: ExternalMetadataUpdate | null;
 };
 
 export interface Identifier {

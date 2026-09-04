@@ -518,6 +518,28 @@ class InventoryIdentifierExternalUpdateServiceTest {
   }
 
   /**
+   * Nothing upstream bounds the provider's own wording, and this sentence is shown to a user in a
+   * toast that waits to be dismissed, so it is abbreviated at the width the log path already uses.
+   */
+  @Test
+  void abbreviatesAnOversizedProviderDetailBeforeItReachesTheUser() {
+    expectPayloadBuildAndMessages();
+    expectServerUrl();
+    String oversized = "x".repeat(2000);
+    when(rspaceToExternalProviderAdapter.buildB2instDoi(eq(instrument), anyString()))
+        .thenReturn(new B2instDoi());
+    when(b2instConnector.updateDraftDoi(anyString(), any(B2instDoi.class)))
+        .thenThrow(new B2instConnectionException("Error updating B2INST draft record", oversized));
+    ApiInventoryDOI doi = identifier(IdentifierType.PIDINST_B2INST, "draft", RID);
+
+    service.pushMetadataUpdates(savedInstrumentWith(doi), user);
+
+    String reason = doi.getExternalMetadataUpdate().getReason();
+    assertFalse(reason.contains(oversized), "the provider's full wording reached the user");
+    assertTrue(reason.length() < 700, reason.length() + " characters: " + reason);
+  }
+
+  /**
    * DataCite's exception carries only a developer sentence - the client's canned messages ask the
    * reader about repository prefixes and credentials - so no detail is interpolated for that
    * provider.

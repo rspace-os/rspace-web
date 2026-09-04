@@ -62,6 +62,34 @@ function mockBulkTransferReturning(identifiers: Array<IdentifierAttrs>) {
   });
 }
 
+function mockBulkTransferReturningMany(count: number, identifiers: Array<IdentifierAttrs>) {
+  vi.mocked(InvApiService.bulk).mockResolvedValueOnce({
+    data: {
+      results: Array.from({ length: count }, (_, i) => ({
+        error: null,
+        record: instrumentAttrs({ id: i + 1, globalId: `IN${i + 1}`, identifiers }),
+      })),
+      errorCount: 0,
+    },
+    status: 200,
+    statusText: "OK",
+    headers: {},
+    // biome-ignore lint/suspicious/noExplicitAny: test setup
+    config: {} as any,
+  });
+}
+
+async function transferMany(count: number): Promise<void> {
+  const search = new Search({ factory: new AlwaysNewFactory() });
+  vi.spyOn(search, "updateStateAfterTransfer").mockResolvedValue(undefined);
+  await search.transferRecords(
+    "newowner",
+    Array.from({ length: count }, (_, i) =>
+      makeMockInstrument({ id: i + 1, globalId: `IN${i + 1}`, templateId: null }),
+    ),
+  );
+}
+
 async function transfer(): Promise<void> {
   const search = new Search({ factory: new AlwaysNewFactory() });
   // The post-transfer refresh chain (bench count, re-search, active result) is not under test.
@@ -87,6 +115,23 @@ describe("Search.transferRecords surfaces the external PIDINST update outcome", 
 
     expect(mockAddAlert.mock.calls.map(([alert]) => alert.variant)).toEqual(["notice", "success", "error"]);
     expect(mockAddAlert).toHaveBeenCalledWith(expect.objectContaining({ variant: "error", message: REASON }));
+  });
+
+  /*
+   * Both variants wait to be dismissed, so one toast per identifier would leave a provider outage
+   * across a bulk transfer as one sticky toast per instrument to clear by hand. The outcomes are
+   * still all reported, as detail rows of a single alert, the way this method reports its own
+   * bulk successes and failures.
+   */
+  test("a provider outage across many transferred instruments is one alert, not one per instrument", async () => {
+    mockBulkTransferReturningMany(3, [pidinst({ succeeded: false, outcome: "FAILED", reason: REASON })]);
+
+    await transferMany(3);
+
+    expect(mockAddAlert.mock.calls.map(([alert]) => alert.variant)).toEqual(["notice", "success", "error"]);
+    const error = mockAddAlert.mock.calls.map(([alert]) => alert).find((alert) => alert.variant === "error");
+    expect(error.details).toHaveLength(3);
+    expect(error.details.map((d: { title: string }) => d.title)).toEqual([REASON, REASON, REASON]);
   });
 
   test("the departing owner's blanked identifier list is silence, not failure", async () => {

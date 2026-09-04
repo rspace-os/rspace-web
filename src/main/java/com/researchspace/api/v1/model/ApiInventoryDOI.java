@@ -131,9 +131,11 @@ public class ApiInventoryDOI extends LinkableApiObject {
   public static class ApiExternalMetadataUpdate {
 
     /**
-     * The same result in machine-readable form, so a client can tell a provider failure from a
-     * record its own state has frozen without matching the wording of {@link #reason} (RSDEV-1356).
-     * Additive alongside {@link #succeeded}, which stays for existing clients.
+     * The result in machine-readable form, so a client can tell a provider failure from a record
+     * its own state has frozen without matching the wording of {@link #reason} (RSDEV-1356).
+     *
+     * <p>The single source of truth for the outcome: {@code succeeded} is derived from it rather
+     * than stored beside it, so the two cannot disagree.
      */
     public enum Outcome {
       /** The provider accepted the rebuilt metadata. */
@@ -147,12 +149,20 @@ public class ApiInventoryDOI extends LinkableApiObject {
       NOT_UPDATABLE
     }
 
-    /** Whether the provider accepted the rebuilt metadata. */
-    @JsonProperty("succeeded")
-    private boolean succeeded;
-
+    /** Which of the three results this was. Never null on an object that exists. */
     @JsonProperty("outcome")
     private Outcome outcome;
+
+    /**
+     * Whether the provider accepted the rebuilt metadata: true for {@link Outcome#UPDATED} alone.
+     *
+     * <p>Derived rather than stored, so no construction site can state a result that contradicts
+     * {@link #outcome}. Still serialized, so the property an API client sees is unchanged.
+     */
+    @JsonProperty("succeeded")
+    public boolean isSucceeded() {
+      return outcome == Outcome.UPDATED;
+    }
 
     /**
      * Localized sentence for the user: what was updated, or why it was not. Carries the provider's

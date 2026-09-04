@@ -74,6 +74,12 @@ public class InventoryIdentifierExternalUpdateService {
    */
   private static final Set<String> DATACITE_UPDATABLE_STATES = Set.of("draft");
 
+  /**
+   * Width at which a provider's own wording is abbreviated before it reaches a user, matching the
+   * cap {@code B2instConnectorImpl} already applies to the same text on the log path.
+   */
+  private static final int MAX_PROVIDER_DETAIL = 500;
+
   @Autowired private InstrumentEntityApiManager instrumentApiMgr;
   @Autowired private RspaceToExternalProviderAdapter rspaceToExternalProviderAdapter;
   @Autowired private B2instConnector b2instConnector;
@@ -334,13 +340,12 @@ public class InventoryIdentifierExternalUpdateService {
             ? "errors.inventory.identifier.externalUpdateNotPossibleB2inst"
             : "errors.inventory.identifier.externalUpdateNotPossibleDataCite";
     return new ApiExternalMetadataUpdate(
-        false, Outcome.NOT_UPDATABLE, message(key, providerName(type), null));
+        Outcome.NOT_UPDATABLE, message(key, providerName(type), null));
   }
 
   /** A mapping failure, reported like a push failure. Not audited: nothing was sent. */
   private ApiExternalMetadataUpdate failedOutcome(ApiInventoryDOI doi) {
     return new ApiExternalMetadataUpdate(
-        false,
         Outcome.FAILED,
         message(
             "errors.inventory.identifier.externalUpdateFailed", providerName(typeOf(doi)), null));
@@ -391,7 +396,7 @@ public class InventoryIdentifierExternalUpdateService {
         dataCiteConnector.updateDoi(pending.dataCitePayload(), InventorySettingType.PIDINST);
       }
       return new ApiExternalMetadataUpdate(
-          true, Outcome.UPDATED, message("inventory.identifier.externalUpdated", provider, null));
+          Outcome.UPDATED, message("inventory.identifier.externalUpdated", provider, null));
     } catch (RuntimeException e) {
       // e.getMessage() only, never the throwable: B2instConnectorImpl redacts the bearer token at
       // a single exit, and in Spring 6 RestClientResponseException.getMessage() embeds the raw
@@ -402,7 +407,6 @@ public class InventoryIdentifierExternalUpdateService {
           pending.providerRecordId(),
           e.getMessage());
       return new ApiExternalMetadataUpdate(
-          false,
           Outcome.FAILED,
           message("errors.inventory.identifier.externalUpdateFailed", provider, userSafeDetail(e)));
     }
@@ -423,10 +427,14 @@ public class InventoryIdentifierExternalUpdateService {
   /**
    * Resolves the localized reason, collapsing the whitespace left where an absent provider detail
    * would have gone and any line breaks a provider's own message brought with it.
+   *
+   * <p>The detail is the provider's own wording, which nothing upstream bounds, and this sentence
+   * is shown to a user in a toast that waits to be dismissed. Abbreviated at the width the log path
+   * already uses for the same text.
    */
   private String message(String key, String provider, String detail) {
-    return StringUtils.normalizeSpace(
-        messages.getMessage(key, new Object[] {provider, StringUtils.defaultString(detail)}));
+    String bounded = StringUtils.abbreviate(StringUtils.defaultString(detail), MAX_PROVIDER_DETAIL);
+    return StringUtils.normalizeSpace(messages.getMessage(key, new Object[] {provider, bounded}));
   }
 
   private static String providerName(IdentifierType type) {
