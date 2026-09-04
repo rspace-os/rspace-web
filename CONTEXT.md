@@ -154,11 +154,14 @@ resolved during design. This file is a glossary only — no implementation detai
   A failed push never blocks or reverts the save: the instrument edit is
   persisted regardless, the identifier's own state is left untouched, and the
   failure is reported on the identifier in the API response, and the web
-  interface shows it after a save or a transfer as one toast per identifier: a
-  provider failure as an error, a record frozen by its own state as a notice,
-  and success silently (RSDEV-1356). The toast decides by the machine-readable
-  `outcome` (`UPDATED`, `FAILED`, `NOT_UPDATABLE`) that travels with the reason,
-  never by the wording of the reason itself. Every
+  interface shows it after a save or a transfer: a provider failure as an error,
+  a record frozen by its own state as a notice, and success silently
+  (RSDEV-1356). A save reports one toast per identifier; a bulk transfer groups
+  them into one alert per kind, because both kinds wait to be dismissed. The
+  toast decides by the machine-readable `outcome` (`UPDATED`, `FAILED`,
+  `NOT_UPDATABLE`) that travels with the reason, never by the wording of the
+  reason itself, and an outcome it does not recognise is reported as a failure
+  rather than passed over. Every
   qualifying save pushes, whether or not a mapped field changed, so retrying a
   failed push is just saving again. An identifier whose state has frozen its
   provider record is reported too, rather than passed over in silence, in a

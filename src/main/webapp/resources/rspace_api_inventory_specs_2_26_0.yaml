@@ -157,7 +157,7 @@ paths:
 
         | Property | Explanation |
         | --- | --- |
-        `succeeded` | `true` when the provider accepted the metadata
+        `succeeded` | `true` when the provider accepted the metadata, derived from `outcome` being `UPDATED` so the two can never disagree
         `outcome` | `UPDATED`, `FAILED` or `NOT_UPDATABLE`: the same result in machine-readable form, so a client can tell a provider failure (`FAILED`, retried by saving again) from a record its own state has frozen (`NOT_UPDATABLE`, expected) without matching the wording of `reason`
         `reason` | A sentence for the user: what was updated, or why it was not, including the provider's own wording for a rejection
 

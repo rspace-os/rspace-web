@@ -46,7 +46,11 @@ import ContainerModel from "./ContainerModel";
 import CacheFetcher from "./Fetcher/CacheFetcher";
 import CoreFetcher from "./Fetcher/CoreFetcher";
 import DynamicFetcher from "./Fetcher/DynamicFetcher";
-import { externalMetadataUpdateAlerts } from "./IdentifierModel";
+import {
+  type ExternalMetadataUpdateReport,
+  externalMetadataUpdateAlert,
+  externalMetadataUpdateReports,
+} from "./IdentifierModel";
 import InventoryBaseRecord, { sortProperties } from "./InventoryBaseRecord";
 import SampleModel from "./SampleModel";
 import SubSampleModel, { type SubSampleAttrs } from "./SubSampleModel";
@@ -127,6 +131,42 @@ const DEFAULT_UI_CONFIG: UiConfig = {
   selectionLimit: Infinity,
   onlyAllowSelectingEmptyLocations: false,
 };
+
+/**
+ * Reports the external PIDINST metadata updates carried by a bulk operation's returned records.
+ *
+ * One alert per variant with a detail row per identifier, which is the shape this module already
+ * uses for bulk successes and failures. Both variants wait to be dismissed, so raising one toast
+ * per identifier would leave a provider outage across twenty transferred instruments as twenty
+ * toasts to dismiss by hand. A lone report is still raised on its own, so it keeps naming its
+ * identifier the way a single-record save does.
+ */
+function raiseBulkExternalMetadataUpdateAlerts(records: ReadonlyArray<InventoryRecord>): void {
+  const { uiStore } = getRootStore();
+  const reported: Array<{ report: ExternalMetadataUpdateReport; record: InventoryRecord }> = records.flatMap((record) =>
+    externalMetadataUpdateReports(record.identifiers).map((report) => ({ report, record })),
+  );
+
+  for (const variant of ["error", "notice"] as const) {
+    const group = reported.filter(({ report }) => report.variant === variant);
+    if (group.length === 0) continue;
+    if (group.length === 1) {
+      uiStore.addAlert(externalMetadataUpdateAlert(group[0].report));
+      continue;
+    }
+    uiStore.addAlert(
+      mkAlert({
+        message:
+          variant === "error"
+            ? i18n.t("inventory:identifierModel.alerts.externalUpdateFailedMany", { count: group.length })
+            : i18n.t("inventory:identifierModel.alerts.externalUpdateNotPossibleMany", { count: group.length }),
+        variant,
+        isInfinite: true,
+        details: group.map(({ report, record }) => ({ title: report.reason, variant, record })),
+      }),
+    );
+  }
+}
 
 export default class Search implements SearchInterface {
   activeResult: InventoryRecord | null = null;
@@ -918,9 +958,7 @@ export default class Search implements SearchInterface {
        * identifiers of each returned record. The departing owner's limited view lists none, which
        * is silence, not failure.
        */
-      externalMetadataUpdateAlerts(successfullyTranferred.flatMap((r) => r.identifiers)).forEach((alert) => {
-        getRootStore().uiStore.addAlert(alert);
-      });
+      raiseBulkExternalMetadataUpdateAlerts(successfullyTranferred);
       await this.updateStateAfterTransfer(new RsSet(successfullyTranferred));
     } catch (error) {
       getRootStore().uiStore.addAlert(

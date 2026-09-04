@@ -3485,8 +3485,10 @@ export default interface Resources {
     "identifierModel": {
       "alerts": {
         "doiRequired": "DOI must be known",
-        "externalUpdateFailed": "External PID record not updated ({doi})",
-        "externalUpdateNotPossible": "External PID record left unchanged ({doi})",
+        "externalUpdateFailed": "Instrument PID not updated ({doi})",
+        "externalUpdateFailedMany": "{count, plural, one {# instrument PID was not updated} other {# instrument PIDs were not updated}}",
+        "externalUpdateNotPossible": "Instrument PID left unchanged ({doi})",
+        "externalUpdateNotPossibleMany": "{count, plural, one {# instrument PID was left unchanged} other {# instrument PIDs were left unchanged}}",
         "publishFailed": "The identifier could not be published.",
         "published": "The identifier {doi} has been published.",
         "refreshFailed": "Could not refresh the identifier status",

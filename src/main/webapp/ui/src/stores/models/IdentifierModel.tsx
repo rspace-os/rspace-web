@@ -736,40 +736,71 @@ export default class IdentifierModel implements Identifier {
 }
 
 /**
- * The toasts to raise for the external PIDINST metadata updates attempted by the save or transfer
- * that returned these identifiers (RSDEV-1356). Success is deliberately silent. The variant is
- * decided by `outcome`, never by the wording of `reason`; the reason itself is a localized
- * sentence from the server and is shown verbatim as the message. A provider failure is an error,
- * which does not auto-dismiss; a record frozen by its own state is expected, so it is a notice.
+ * One external PIDINST metadata update worth telling the user about, classified but not yet
+ * rendered (RSDEV-1356). `UPDATED` and an absent update produce no report at all, because success
+ * is deliberately silent and absence means nothing was attempted.
  *
- * A pure function rather than a method so callers can raise the alerts against the store after
- * their own success toast, and so this module stays free of the global stores (see the note at
- * the top of the file).
+ * Kept separate from the toasts so the single-record and bulk callers can present the same
+ * classification differently without either one restating the outcome-to-variant mapping.
  */
-export const externalMetadataUpdateAlerts = (identifiers: ReadonlyArray<Identifier>): Array<Alert> =>
+export type ExternalMetadataUpdateReport = {
+  doi: string;
+  variant: "error" | "notice";
+  /** A localized sentence from the server, ready to show verbatim. */
+  reason: string;
+};
+
+/**
+ * Classifies the external PIDINST metadata updates attempted by the save or transfer that returned
+ * these identifiers. The variant is decided by `outcome`, never by the wording of `reason`.
+ *
+ * A record frozen by its own state is a `notice`: normal and expected. Every other outcome,
+ * including one added to the server's enum after this build shipped, is an `error`. That
+ * fall-through is deliberate: staying quiet about an outcome the UI does not recognise would
+ * reinstate the silent drift this feature exists to close, which is worse than an unexpected
+ * error toast carrying the server's own sentence.
+ *
+ * A pure function rather than a method, so this module stays free of the global stores (see the
+ * note at the top of the file) and each caller raises its own alerts after its own success toast.
+ */
+export const externalMetadataUpdateReports = (
+  identifiers: ReadonlyArray<Identifier>,
+): Array<ExternalMetadataUpdateReport> =>
   identifiers.flatMap((id) => {
     const update = id.externalMetadataUpdate;
-    if (!update) return [];
-    switch (update.outcome) {
-      case "FAILED":
-        return [
-          mkAlert({
-            title: i18n.t("inventory:identifierModel.alerts.externalUpdateFailed", { doi: id.doi }),
-            message: update.reason,
-            variant: "error",
-          }),
-        ];
-      case "NOT_UPDATABLE":
-        return [
-          mkAlert({
-            title: i18n.t("inventory:identifierModel.alerts.externalUpdateNotPossible", { doi: id.doi }),
-            message: update.reason,
-            variant: "notice",
-            // a full sentence of explanation; the 4 s default is too short to read it
-            duration: 8000,
-          }),
-        ];
-      default:
-        return [];
-    }
+    if (!update || update.outcome === "UPDATED") return [];
+    return [
+      {
+        doi: id.doi,
+        variant: update.outcome === "NOT_UPDATABLE" ? ("notice" as const) : ("error" as const),
+        reason: update.reason,
+      },
+    ];
   });
+
+/**
+ * The toast for one report, naming the identifier it belongs to.
+ *
+ * Both variants wait to be dismissed rather than expiring on a timer, because both carry a full
+ * sentence to read and no reading speed can be assumed (WCAG 2.2.1). The notice stays a notice, so
+ * a record frozen by its own state still reads as information rather than as a problem.
+ */
+export const externalMetadataUpdateAlert = ({ doi, variant, reason }: ExternalMetadataUpdateReport): Alert =>
+  mkAlert({
+    title: i18n.t(
+      variant === "error"
+        ? "inventory:identifierModel.alerts.externalUpdateFailed"
+        : "inventory:identifierModel.alerts.externalUpdateNotPossible",
+      { doi },
+    ),
+    message: reason,
+    variant,
+    isInfinite: true,
+  });
+
+/**
+ * One toast per identifier. Right for a single record, which carries one or two identifiers; a
+ * bulk caller should group the reports instead of raising a toast for every one of them.
+ */
+export const externalMetadataUpdateAlerts = (identifiers: ReadonlyArray<Identifier>): Array<Alert> =>
+  externalMetadataUpdateReports(identifiers).map(externalMetadataUpdateAlert);

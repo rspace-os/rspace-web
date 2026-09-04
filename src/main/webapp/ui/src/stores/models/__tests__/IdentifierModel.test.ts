@@ -2,7 +2,7 @@ import { runInAction } from "mobx";
 import { describe, expect, test, vi } from "vitest";
 import type InvApiService from "../../../common/InvApiService";
 import { mockIGSNAttrs } from "../../../Inventory/components/Fields/Identifiers/__tests__/mocking";
-import type { ExternalMetadataUpdate } from "../../definitions/Identifier";
+import type { ExternalMetadataUpdate, ExternalMetadataUpdateOutcome } from "../../definitions/Identifier";
 import { isPublishedState } from "../../definitions/Identifier";
 import IdentifierModel, { externalMetadataUpdateAlerts } from "../IdentifierModel";
 
@@ -135,7 +135,7 @@ describe("externalMetadataUpdateAlerts", () => {
     const alerts = externalMetadataUpdateAlerts([model]);
 
     expect(alerts).toHaveLength(1);
-    expect(alerts[0]).toMatchObject({ variant: "notice", message: reason, isInfinite: false });
+    expect(alerts[0]).toMatchObject({ variant: "notice", message: reason, isInfinite: true });
     expect(alerts[0].title).toBe("inventory:identifierModel.alerts.externalUpdateNotPossible");
   });
 
@@ -167,5 +167,26 @@ describe("externalMetadataUpdateAlerts", () => {
       "B2INST said no",
       "DataCite said no",
     ]);
+  });
+
+  /*
+   * The outcome union mirrors a Java enum by hand, so the server can outrun it. An outcome the UI
+   * does not recognise has to fail loud: staying quiet would reinstate exactly the silent drift
+   * this feature exists to close, which is the one outcome worse than an unexpected error toast.
+   */
+  test("an unrecognised outcome is reported as a failure rather than swallowed", () => {
+    const reason = "An outcome this UI has no case for.";
+    const model = new IdentifierModel(
+      pidinstAttrs({
+        outcome: "SOME_FUTURE_OUTCOME" as ExternalMetadataUpdateOutcome,
+        reason,
+      }),
+      "IN1",
+    );
+
+    const alerts = externalMetadataUpdateAlerts([model]);
+
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0]).toMatchObject({ variant: "error", message: reason, isInfinite: true });
   });
 });

@@ -94,12 +94,16 @@ anything that is not accepted, so an identifier really can be sitting in
    template sync) can never trigger a recursive push.
 
    Amended by RSDEV-1356: the object also carries a machine-readable `outcome`
-   (`UPDATED`, `FAILED`, `NOT_UPDATABLE`) alongside `succeeded`. The web
-   interface has to show a provider failure as an error and a state-frozen
-   record as plain information, and its acceptance criteria forbid telling the
-   two apart by the wording of `reason`. Purely additive, so no client breaks.
-   The values were fixed only once the UI had said what it needed, which is why
-   RSDEV-1251 deliberately left them out.
+   (`UPDATED`, `FAILED`, `NOT_UPDATABLE`). The web interface has to show a
+   provider failure as an error and a state-frozen record as plain information,
+   and its acceptance criteria forbid telling the two apart by the wording of
+   `reason`. The values were fixed only once the UI had said what it needed,
+   which is why RSDEV-1251 deliberately left them out.
+
+   `outcome` is the single source of truth: `succeeded` is derived from it
+   (`outcome == UPDATED`) rather than stored beside it, so no construction site
+   can state a result that contradicts the other field. The wire format is
+   unchanged, so the property an API client sees is exactly as before.
 
    Two controller methods sit on that seam, not one: `updateInstrument` and
    `changeInstrumentOwner`. The transfer was excluded originally on the premise
