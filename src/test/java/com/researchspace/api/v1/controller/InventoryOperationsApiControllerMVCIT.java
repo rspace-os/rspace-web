@@ -1113,6 +1113,9 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
           fireConcurrentOperationRequests(
               List.of(aliquotTakingJson(first, "3"), aliquotTakingJson(second, "3")));
 
+      // A green run is necessary but not sufficient: if the second request's transaction happens to
+      // begin after the first commits, its snapshot is already fresh and the test passes whatever
+      // the locking does. The rounds raise the chance of a real overlap, they do not guarantee one.
       assertTrue(
           statuses.stream().noneMatch(status -> status >= 500),
           () -> "5xx from sibling aliquots: " + statuses);
@@ -1150,7 +1153,7 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
     return getFromJsonResponseBody(result, ApiSampleWithFullSubSamples.class);
   }
 
-  /** An Aliquot taking the given amount, in the origin's own unit, into one child of half that. */
+  /** An Aliquot taking the given amount, in the origin's own unit, into one child of the same. */
   private String aliquotTakingJson(ApiSubSample origin, String amount) {
     return "{\"operationType\":\"aliquot\",\"origins\":[{\"id\":"
         + origin.getId()
