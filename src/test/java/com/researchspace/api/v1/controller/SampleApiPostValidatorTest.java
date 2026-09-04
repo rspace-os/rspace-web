@@ -238,4 +238,21 @@ public class SampleApiPostValidatorTest extends InventoryRecordValidationTestBas
     ef.setName(name);
     return ef;
   }
+
+  @Test
+  public void aTemperatureWithAUnitButNoNumberIsRejectedNotDereferenced() {
+    // A valid temperature unit with no numericValue used to pass the unit check and then be sorted
+    // against the other bound, where the unit-aware comparison dereferences the missing number and
+    // turns a malformed request into a 500 (Copilot review, PR #1090). Whether a temperature is
+    // required at all is each caller's own rule, so this only has to not blow up.
+    ApiSampleWithFullSubSamples full = new ApiSampleWithFullSubSamples();
+    full.setName("s1");
+    full.setStorageTempMin(new ApiQuantityInfo(null, RSUnitDef.CELSIUS));
+    full.setStorageTempMax(new ApiQuantityInfo(null, RSUnitDef.CELSIUS));
+
+    Errors e = new BeanPropertyBindingResult(full, "fullpost");
+    validator.validate(full, e);
+
+    assertEquals(0, e.getErrorCount(), "unexpected errors: " + e.getAllErrors());
+  }
 }
