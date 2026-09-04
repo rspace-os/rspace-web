@@ -94,7 +94,7 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
     // dedupe: a repeated link id deducts its amount once (RSDEV-1319). The response still carries
     // one result row per submitted entry, so the API's cardinality contract is unchanged
     Map<Long, StockDeductionResult.IndividualResult> resultsById = new HashMap<>();
-    for (Long id : linkIds.stream().distinct().toList()) {
+    for (Long id : inLockOrder(linkIds)) {
       try {
         StoichiometryInventoryLink link = getLinkOrThrowNotFound(id);
         StoichiometryMolecule stoichiometryMolecule = link.getStoichiometryMolecule();
@@ -135,6 +135,30 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
     return result;
   }
 
+  /**
+   * The submitted link ids, deduped and ordered by the inventory record each one points at. Two
+   * deductions over the same subsamples submitted in opposite orders would otherwise each hold one
+   * row and wait for the other; taking the rows in id order means one simply waits for the other
+   * (DevDocs/adr/0007). An id whose link cannot be resolved sorts last: it fails as a not-found row
+   * without locking anything.
+   */
+  private List<Long> inLockOrder(List<Long> linkIds) {
+    return linkIds.stream()
+        .distinct()
+        .map(id -> Map.entry(id, lockOrderKey(id)))
+        .sorted(Map.Entry.comparingByValue())
+        .map(Map.Entry::getKey)
+        .toList();
+  }
+
+  private Long lockOrderKey(Long linkId) {
+    return linkDao
+        .getSafeNull(linkId)
+        .map(StoichiometryInventoryLink::getInventoryRecord)
+        .map(InventoryRecord::getId)
+        .orElse(Long.MAX_VALUE);
+  }
+
   private void processStockDeduction(
       User user,
       StoichiometryInventoryLink link,
@@ -142,9 +166,14 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
       InventoryRecord inventoryRecord) {
     if (link.getInventoryRecord() instanceof SubSample) {
       SubSample subSample = (SubSample) link.getInventoryRecord();
+      // The over-use check reads the row it is about to decrement, under the same lock the
+      // decrement takes, rather than the link's own copy: a concurrent operation may have drained
+      // the subsample since that copy was loaded, and registerApiSubSampleUsage clamps at zero, so
+      // a check against stale stock would report success for a deduction that never happened.
+      SubSample liveSubSample = subSampleMgr.lockSubSampleForEdit(subSample.getId(), user);
       BigDecimal totalAfterStockUpdate =
           quantityUtils
-              .sum(List.of(subSample.getQuantity(), quantityInfo.negate()))
+              .sum(List.of(liveSubSample.getQuantity(), quantityInfo.negate()))
               .getNumericValue();
       if (totalAfterStockUpdate.compareTo(BigDecimal.ZERO) < 0) {
         throw new IllegalArgumentException(
@@ -152,8 +181,8 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
                 "errors.inventory.stoichiometry.insufficientStock",
                 new Object[] {
                   quantityInfo.toPlainString(),
-                  subSample.getQuantity().toPlainString(),
-                  subSample.getGlobalIdentifier()
+                  liveSubSample.getQuantity().toPlainString(),
+                  liveSubSample.getGlobalIdentifier()
                 }));
       }
       subSampleMgr.registerApiSubSampleUsage(inventoryRecord.getId(), quantityInfo, user);

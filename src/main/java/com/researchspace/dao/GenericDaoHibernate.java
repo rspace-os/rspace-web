@@ -6,9 +6,12 @@ import com.researchspace.model.PaginationCriteria;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import org.hibernate.LockMode;
 import org.hibernate.MappingException;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -71,6 +74,24 @@ public class GenericDaoHibernate<T, PK extends Serializable> implements GenericD
    *
    * @return
    */
+
+  /**
+   * Lock modes under which this transaction already holds the row exclusively, so asking for the
+   * lock again is unnecessary and, worse, fails: see {@link GenericDao#getForUpdate}.
+   */
+  private static final Set<LockMode> ALREADY_HELD_EXCLUSIVELY =
+      EnumSet.of(LockMode.WRITE, LockMode.PESSIMISTIC_WRITE, LockMode.PESSIMISTIC_FORCE_INCREMENT);
+
+  @Override
+  public T getForUpdate(PK id) {
+    Session session = getSession();
+    T managed = session.get(persistentClass, id);
+    if (managed == null || ALREADY_HELD_EXCLUSIVELY.contains(session.getCurrentLockMode(managed))) {
+      return managed;
+    }
+    return session.get(persistentClass, id, LockMode.PESSIMISTIC_WRITE);
+  }
+
   protected Session getSession() {
     return sessionFactory.getCurrentSession();
   }

@@ -26,12 +26,12 @@ type UiPreferencesContextType = {
   uiPreferences: { [key in keyof typeof PREFERENCES]: unknown };
   setUiPreferences: React.Dispatch<React.SetStateAction<{ [key in keyof typeof PREFERENCES]: unknown } | null>>;
   /*
-   * Writes are chained so each one reads the previous write's result before merging its own key.
-   * Every setter does a read-merge-write of the whole UI_JSON_SETTINGS object; run concurrently
-   * (e.g. three setters in one event handler) they would all read the same snapshot and the last
-   * POST would drop the other keys (code review, finding 8). The chain belongs to the provider
-   * rather than the module so one stalled request cannot hold up every other preference write in
-   * the app for the rest of the session.
+   * Writes are chained so two writes of the same key from one page land in the order they were
+   * made, and so a failure is reported once rather than per in-flight request. Losing a key to an
+   * overlapping writer is no longer possible: each write sends only its own key and the server
+   * merges it (code review, finding 3). The chain belongs to the provider rather than the module
+   * so one stalled request cannot hold up every other preference write in the app for the rest of
+   * the session.
    */
   pendingWrite: React.MutableRefObject<Promise<void>>;
 };
@@ -136,19 +136,20 @@ export default function useUiPreference<T>(
 
       if (!key) return;
       pendingWrite.current = pendingWrite.current.then(async () => {
-        const preferences = await fetchPreferences();
         const formData = new FormData();
         formData.append("preference", "UI_JSON_SETTINGS");
+        // Only this key is sent; the server merges it into the stored object under a row lock.
+        // Reading the whole object here first and posting it back was the collision: two writers
+        // that overlapped both merged into the same snapshot and the later one dropped the
+        // other's key (code review, finding 3).
+        formData.append("key", key);
         formData.append(
           "value",
           JSON.stringify({
-            ...(typeof preferences === "object" ? preferences : {}),
-            [key]: {
-              value: newValue,
-              // we save the time so that we have the option of implementing an
-              // eviction polciy in the future
-              time: Date.now(),
-            },
+            value: newValue,
+            // we save the time so that we have the option of implementing an
+            // eviction polciy in the future
+            time: Date.now(),
           }),
         );
         await axios.post<unknown>("/userform/ajax/preference", formData);

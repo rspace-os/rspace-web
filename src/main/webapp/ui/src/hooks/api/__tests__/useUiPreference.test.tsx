@@ -5,19 +5,25 @@ import { server } from "@/__tests__/mswServer";
 import useUiPreference, { PREFERENCES, UiPreferences } from "../useUiPreference";
 
 describe("useUiPreference", () => {
-  it("serialises concurrent writes so every changed key survives on the server", async () => {
-    // Code review, finding 8: each setter used to read the full preference object, merge one key and
-    // POST it back independently, so three setters fired in one tick all read the same snapshot and
-    // the last POST overwrote the other two keys.
+  it("writes one key at a time and never re-reads the whole object first", async () => {
+    // Code review, finding 3: each setter used to read the full preference object, merge one key
+    // and POST the lot back. Two writers that overlapped (two tabs, or two setters in one handler)
+    // read the same snapshot and the later POST dropped the other's key. The server merges the one
+    // key now, so the read before each write is gone and cannot go stale.
     let stored: Record<string, unknown> = {};
-    const posted: Array<Record<string, unknown>> = [];
+    const postedKeys: Array<string> = [];
+    let reads = 0;
     server.use(
-      http.get("/userform/ajax/preference", () => HttpResponse.json(stored)),
+      http.get("/userform/ajax/preference", () => {
+        reads += 1;
+        return HttpResponse.json(stored);
+      }),
       http.post("/userform/ajax/preference", async ({ request }) => {
         const form = await request.formData();
-        stored = JSON.parse(String(form.get("value"))) as Record<string, unknown>;
-        posted.push(stored);
-        return HttpResponse.json({});
+        const key = String(form.get("key"));
+        stored = { ...stored, [key]: JSON.parse(String(form.get("value"))) as unknown };
+        postedKeys.push(key);
+        return HttpResponse.json({ data: JSON.stringify(stored) });
       }),
     );
 
@@ -37,29 +43,63 @@ describe("useUiPreference", () => {
       result.current.sortOrder[1]("asc");
     });
 
-    await waitFor(() => expect(posted).toHaveLength(3));
+    await waitFor(() => expect(postedKeys).toHaveLength(3));
+    expect(postedKeys.sort()).toEqual(["GALLERY_SORT_BY", "GALLERY_SORT_ORDER", "GALLERY_VIEW_MODE"]);
     expect(Object.keys(stored).sort()).toEqual(["GALLERY_SORT_BY", "GALLERY_SORT_ORDER", "GALLERY_VIEW_MODE"]);
+    // one read: the provider mounting. A read per write is what went stale.
+    expect(reads).toBe(1);
   });
-  it("does not let one provider's stalled write block another provider's", async () => {
-    // The write chain exists to stop concurrent read-merge-writes clobbering each other, but a
-    // module-level chain serialises every preference write in the app: one hung request would stall
-    // unrelated writes (Gallery view mode, sysadmin columns) for the rest of the session.
-    let releaseHungRead: () => void = () => {};
-    const hungRead = new Promise<void>((resolve) => {
-      releaseHungRead = resolve;
-    });
-    let readsAfterMount = 0;
-    const posted: Array<string> = [];
+
+  it("sends the preference name, the key and the timestamped value", async () => {
+    const fields: Array<Record<string, string>> = [];
     server.use(
-      http.get("/userform/ajax/preference", async () => {
-        readsAfterMount += 1;
-        // The first two reads are the two providers mounting; the third is the stalled write's.
-        if (readsAfterMount === 3) await hungRead;
-        return HttpResponse.json({});
-      }),
+      http.get("/userform/ajax/preference", () => HttpResponse.json({})),
       http.post("/userform/ajax/preference", async ({ request }) => {
         const form = await request.formData();
-        posted.push(String(form.get("value")));
+        fields.push({
+          preference: String(form.get("preference")),
+          key: String(form.get("key")),
+          value: String(form.get("value")),
+        });
+        return HttpResponse.json({});
+      }),
+    );
+
+    const { result } = renderHook(
+      () => useUiPreference<string | null>(PREFERENCES.GALLERY_VIEW_MODE, { defaultValue: null }),
+      { wrapper: UiPreferences },
+    );
+    await waitFor(() => expect(result.current).not.toBeNull());
+
+    act(() => {
+      result.current[1]("grid");
+    });
+
+    await waitFor(() => expect(fields).toHaveLength(1));
+    expect(fields[0].preference).toBe("UI_JSON_SETTINGS");
+    expect(fields[0].key).toBe("GALLERY_VIEW_MODE");
+    // the time is stored so an eviction policy stays possible later
+    const sent = JSON.parse(fields[0].value) as { value: string; time: number };
+    expect(sent.value).toBe("grid");
+    expect(typeof sent.time).toBe("number");
+  });
+
+  it("does not let one provider's stalled write block another provider's", async () => {
+    // The write chain orders one page's writes of the same key, but a module-level chain would
+    // serialise every preference write in the app: one hung request would stall unrelated writes
+    // (Gallery view mode, sysadmin columns) for the rest of the session.
+    let releaseHungWrite: () => void = () => {};
+    const hungWrite = new Promise<void>((resolve) => {
+      releaseHungWrite = resolve;
+    });
+    const posted: Array<string> = [];
+    server.use(
+      http.get("/userform/ajax/preference", () => HttpResponse.json({})),
+      http.post("/userform/ajax/preference", async ({ request }) => {
+        const form = await request.formData();
+        const key = String(form.get("key"));
+        if (key === "GALLERY_VIEW_MODE") await hungWrite;
+        posted.push(key);
         return HttpResponse.json({});
       }),
     );
@@ -82,9 +122,8 @@ describe("useUiPreference", () => {
       independent.result.current[1]("wide");
     });
 
-    // The second provider must complete while the first is still waiting on its hung read.
-    await waitFor(() => expect(posted.some((body) => body.includes("wide"))).toBe(true));
-    releaseHungRead();
+    await waitFor(() => expect(posted).toEqual(["SYSADMIN_USERS_TABLE_COLUMNS"]));
+    releaseHungWrite();
   });
 
   it("reports a failed write instead of swallowing it", async () => {

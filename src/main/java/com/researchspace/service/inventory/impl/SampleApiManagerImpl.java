@@ -43,6 +43,7 @@ import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.inventory.field.InventoryLinkField;
 import com.researchspace.model.record.IActiveUserStrategy;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.inventory.InventoryAuditApiManager;
 import com.researchspace.service.inventory.InventoryFieldNameUniquenessValidator;
 import com.researchspace.service.inventory.InventoryMoveHelper;
@@ -69,6 +70,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
 
   private @Autowired SubSampleApiManager subSampleMgr;
   private @Autowired SampleDao sampleDao;
+  private @Autowired MessageSourceUtils messages;
   private @Autowired SampleTemplateDao sampleTemplateDao;
   private @Autowired InventoryMoveHelper inventoryMoveHelper;
   private @Autowired InventoryAuditApiManager inventoryAuditMgr;
@@ -137,6 +139,17 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
   @Override
   public Sample assertUserCanEditSample(Long id, User user) {
     Sample sample = getSampleOrThrowNotFound(id);
+    invPermissions.assertUserCanEditInventoryRecord(sample, user);
+    return sample;
+  }
+
+  @Override
+  public Sample lockSampleForEdit(Long id, User user) {
+    Sample sample = sampleDao.getForUpdate(id);
+    if (sample == null) {
+      throw new NotFoundException(
+          messages.getMessage("errors.inventory.sample.notFound", new Object[] {id}));
+    }
     invPermissions.assertUserCanEditInventoryRecord(sample, user);
     return sample;
   }

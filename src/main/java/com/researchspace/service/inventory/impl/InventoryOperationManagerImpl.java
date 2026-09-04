@@ -18,6 +18,8 @@ import java.util.Comparator;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -95,6 +97,13 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
    * and then sees this one's committed quantity instead of decrementing from a stale read (code
    * review, finding 1). Origins are locked in ascending id order, the same order they are
    * decremented in, so overlapping multi-origin operations cannot deadlock.
+   *
+   * <p>Their distinct parent samples are then locked, also ascending, once the origins have passed
+   * (code review, finding 2). Decrementing a subsample rewrites its parent's denormalised total, so
+   * without this lock two operations on sibling subsamples of one sample both read the old total
+   * and one of the two writes is lost. Parents come after origins because every other writer takes
+   * the subsample row first and the sample row second; locking them the other way round would
+   * invert the order against all of them.
    */
   private void checkOriginLiveState(
       ApiInventoryOperationPost request,
@@ -116,8 +125,10 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
       requestIndex.put(request.getOrigins().get(i), i);
     }
     QuantityInfo firstOriginQuantity = null;
+    Set<Long> parentSampleIds = new TreeSet<>();
     for (ApiInventoryOperationOriginUpdate origin : originsById) {
       SubSample dbSubSample = subSampleApiMgr.lockSubSampleForEdit(origin.getId(), user);
+      parentSampleIds.add(dbSubSample.getSample().getId());
       errors.pushNestedPath(String.format("origins[%d]", requestIndex.get(origin)));
       try {
         QuantityInfo currentQuantity = dbSubSample.getQuantity();
@@ -165,6 +176,9 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
     rejectNewSubSamplesOutsideOriginCategory(request, firstOriginQuantity, errors);
     if (errors.hasErrors()) {
       throw new BindException(errors);
+    }
+    for (Long sampleId : parentSampleIds) {
+      sampleApiMgr.lockSampleForEdit(sampleId, user);
     }
   }
 
