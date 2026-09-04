@@ -159,6 +159,41 @@ describe("Search.transferRecords surfaces the external PIDINST update outcome", 
     ).toEqual(["10.82316/aaaa-aaaa", "10.82316/bbbb-bbbb"]);
   });
 
+  /*
+   * The frozen-record half of the grouping, which is the likelier one in practice: an accepted
+   * B2INST record stays accepted, so a bulk transfer of a settled collection hits this and not the
+   * failure path. Asserted separately because TypeScript catches a mistyped key but not the two
+   * keys being swapped, and the count is read from the group rather than the whole set.
+   */
+  test("frozen records across a bulk transfer group into one notice, counted", async () => {
+    const tSpy = vi.spyOn(i18n, "t");
+    mockBulkTransferReturningMany(2, [
+      pidinst({ outcome: "NOT_UPDATABLE", reason: "its community review has been accepted" }),
+    ]);
+
+    await transferMany(2);
+
+    expect(mockAddAlert.mock.calls.map(([alert]) => alert.variant)).toEqual(["notice", "success", "notice"]);
+    expect(
+      tSpy.mock.calls.filter(([key]) => key === "inventory:identifierModel.alerts.externalUpdateNotPossibleMany"),
+    ).toEqual([["inventory:identifierModel.alerts.externalUpdateNotPossibleMany", { count: 2 }]]);
+  });
+
+  /*
+   * One provider can freeze while the other fails, so the two kinds have to stay separable: one
+   * alert each, never merged into whichever variant happened to come first.
+   */
+  test("a mix of failures and frozen records raises one alert of each kind", async () => {
+    mockBulkTransferReturningMany(2, [
+      pidinst({ outcome: "FAILED", reason: "B2INST could not be reached" }),
+      pidinst({ outcome: "NOT_UPDATABLE", reason: "already accepted" }, "10.82316/frozen"),
+    ]);
+
+    await transferMany(2);
+
+    expect(mockAddAlert.mock.calls.map(([alert]) => alert.variant)).toEqual(["notice", "success", "error", "notice"]);
+  });
+
   test("the departing owner's blanked identifier list is silence, not failure", async () => {
     mockBulkTransferReturning([]);
 

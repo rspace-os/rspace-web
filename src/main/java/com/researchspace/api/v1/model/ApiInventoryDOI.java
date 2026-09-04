@@ -134,8 +134,8 @@ public class ApiInventoryDOI extends LinkableApiObject {
      * The result in machine-readable form, so a client can tell a provider failure from a record
      * its own state has frozen without matching the wording of {@link #reason} (RSDEV-1356).
      *
-     * <p>The only representation of the outcome. An earlier draft carried a redundant boolean
-     * beside it, which two construction sites could have disagreed about; nothing had consumed it.
+     * <p>The only representation of the outcome, and the constant names are the wire contract: the
+     * Inventory UI switches on these exact strings and the API spec documents them.
      */
     public enum Outcome {
       /** The provider accepted the rebuilt metadata. */

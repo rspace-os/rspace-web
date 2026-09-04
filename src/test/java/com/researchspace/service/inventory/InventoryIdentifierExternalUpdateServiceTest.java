@@ -516,7 +516,8 @@ class InventoryIdentifierExternalUpdateServiceTest {
 
   /**
    * Nothing upstream bounds the provider's own wording, and this sentence is shown to a user in a
-   * toast that waits to be dismissed, so it is abbreviated at the width the log path already uses.
+   * toast that waits to be dismissed. The bound itself lives in {@code B2instConnectionException},
+   * so this asserts it end to end: an oversized reason must not reach the text built here.
    */
   @Test
   void abbreviatesAnOversizedProviderDetailBeforeItReachesTheUser() {

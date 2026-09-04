@@ -74,12 +74,6 @@ public class InventoryIdentifierExternalUpdateService {
    */
   private static final Set<String> DATACITE_UPDATABLE_STATES = Set.of("draft");
 
-  /**
-   * Width at which a provider's own wording is abbreviated before it reaches a user, matching the
-   * cap {@code B2instConnectorImpl} already applies to the same text on the log path.
-   */
-  private static final int MAX_PROVIDER_DETAIL = 500;
-
   @Autowired private InstrumentEntityApiManager instrumentApiMgr;
   @Autowired private RspaceToExternalProviderAdapter rspaceToExternalProviderAdapter;
   @Autowired private B2instConnector b2instConnector;
@@ -428,13 +422,13 @@ public class InventoryIdentifierExternalUpdateService {
    * Resolves the localized reason, collapsing the whitespace left where an absent provider detail
    * would have gone and any line breaks a provider's own message brought with it.
    *
-   * <p>The detail is the provider's own wording, which nothing upstream bounds, and this sentence
-   * is shown to a user in a toast that waits to be dismissed. Abbreviated at the width the log path
-   * already uses for the same text.
+   * <p>The detail is the provider's own wording. Its length is bounded by {@code
+   * B2instConnectionException} at construction rather than here, so that the four other places
+   * which interpolate the same reason into user-facing text get the same guard.
    */
   private String message(String key, String provider, String detail) {
-    String bounded = StringUtils.abbreviate(StringUtils.defaultString(detail), MAX_PROVIDER_DETAIL);
-    return StringUtils.normalizeSpace(messages.getMessage(key, new Object[] {provider, bounded}));
+    return StringUtils.normalizeSpace(
+        messages.getMessage(key, new Object[] {provider, StringUtils.defaultString(detail)}));
   }
 
   private static String providerName(IdentifierType type) {

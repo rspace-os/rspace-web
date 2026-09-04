@@ -137,10 +137,10 @@ const DEFAULT_UI_CONFIG: UiConfig = {
  * Reports the external PIDINST metadata updates carried by a bulk operation's returned records.
  *
  * One alert per variant with a detail row per identifier, which is the shape this module already
- * uses for bulk successes and failures. Both variants wait to be dismissed, so raising one toast
- * per identifier would leave a provider outage across twenty transferred instruments as twenty
- * toasts to dismiss by hand. A lone report is still raised on its own, so it keeps naming its
- * identifier the way a single-record save does.
+ * uses for bulk successes and failures: neither variant auto-dismisses, so one toast per identifier
+ * would leave a provider outage across twenty transferred instruments as twenty to clear by hand.
+ * A lone report is still raised on its own, which keeps its reason in the toast body rather than
+ * behind the details expander.
  */
 function raiseBulkExternalMetadataUpdateAlerts(records: ReadonlyArray<InventoryRecord>): void {
   const { uiStore } = getRootStore();
@@ -959,13 +959,16 @@ export default class Search implements SearchInterface {
         (erroredRecords) => this.transferRecords(username, erroredRecords),
       );
       handleDetailedSuccesses(successfullyTranferred, "transferred", () => "transferred", translatedHelpMessage);
+      await this.updateStateAfterTransfer(new RsSet(successfullyTranferred));
       /*
        * A transfer pushes the new owner to the provider (ADR 0008); the outcome rides on the
        * identifiers of each returned record. The departing owner's limited view lists none, which
        * is silence, not failure.
+       *
+       * Last in the block on purpose: if this ever threw, the catch below would otherwise report a
+       * completed transfer as failed, and the post-transfer refresh would be skipped.
        */
       raiseBulkExternalMetadataUpdateAlerts(successfullyTranferred);
-      await this.updateStateAfterTransfer(new RsSet(successfullyTranferred));
     } catch (error) {
       getRootStore().uiStore.addAlert(
         mkAlert({

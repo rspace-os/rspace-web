@@ -29,6 +29,16 @@ declare module "@mui/material/Alert" {
   }
 }
 
+/*
+ * MUI's Alert builds its colour class and its icon from real `palette.<severity>` and
+ * `iconMapping` entries, and there is no `notice` in either theme: a row passed `severity="notice"`
+ * renders transparent, with inherited text and an empty icon gutter. The module augmentation below
+ * only satisfies TypeScript. The outer toast already treats notice as informational (see
+ * variantIcon), so the detail rows map it the same way rather than inventing a palette entry.
+ */
+const severityOf = (variant: AlertType["variant"]): "success" | "warning" | "error" | "info" =>
+  variant === "notice" ? "info" : variant;
+
 const variantIcon = {
   success: CheckCircleIcon,
   warning: WarningIcon,
@@ -150,7 +160,7 @@ const SnackbarContentWrapper = forwardRef<HTMLDivElement, SnackbarContentWrapper
             <Grid key={index} size={12}>
               <Alert
                 sx={{ alignItems: "center" }}
-                severity={variant}
+                severity={severityOf(variant)}
                 action={record && <GlobalId record={record} onClick={() => setExpanded(false)} />}
               >
                 <Box sx={{ wordBreak: "break-word" }}>
@@ -168,7 +178,7 @@ const SnackbarContentWrapper = forwardRef<HTMLDivElement, SnackbarContentWrapper
           ))}
           {alert.detailsCount > alert.details.length && (
             <Grid size={12}>
-              <Alert sx={{ alignItems: "center" }} severity={alert.variant}>
+              <Alert sx={{ alignItems: "center" }} severity={severityOf(alert.variant)}>
                 <Box sx={{ wordBreak: "break-word" }}>
                   {t("alerts.moreDetails", { count: alert.detailsCount - alert.details.length })}
                 </Box>

@@ -217,34 +217,43 @@ class ApiInventoryDOITest {
    * guards an ordinary change to this class.
    */
   @Test
-  void externalMetadataUpdateOutcomeSerializesAsTheLiteralTokenTheUiSwitchesOn() throws Exception {
+  void externalMetadataUpdateOutcomeSerializesAsTheLiteralTokenTheUiSwitchesOn() {
     ObjectMapper mapper = new ObjectMapper();
 
+    for (Outcome outcome : Outcome.values()) {
+      assertEquals(
+          outcome.name(),
+          mapper
+              .valueToTree(new ApiExternalMetadataUpdate(outcome, "any reason"))
+              .path("outcome")
+              .asText(),
+          outcome::name);
+    }
+    /*
+     * And only the outcome. RSDEV-1251's redundant succeeded boolean was removed here; asserted so it
+     * cannot come back by accident, for instance as a derived convenience getter.
+     */
     assertTrue(
         mapper
-            .writeValueAsString(new ApiExternalMetadataUpdate(Outcome.UPDATED, "any reason"))
-            .contains("\"outcome\":\"UPDATED\""));
-    assertTrue(
-        mapper
-            .writeValueAsString(new ApiExternalMetadataUpdate(Outcome.FAILED, "any reason"))
-            .contains("\"outcome\":\"FAILED\""));
-    assertTrue(
-        mapper
-            .writeValueAsString(new ApiExternalMetadataUpdate(Outcome.NOT_UPDATABLE, "any reason"))
-            .contains("\"outcome\":\"NOT_UPDATABLE\""));
+            .valueToTree(new ApiExternalMetadataUpdate(Outcome.UPDATED, "any reason"))
+            .path("succeeded")
+            .isMissingNode());
   }
 
   /**
-   * RSDEV-1251's {@code succeeded} boolean was removed in RSDEV-1356: it restated {@code outcome},
-   * nothing consumed it, and two fields for one fact could be made to disagree. Asserted so it
-   * cannot come back by accident, for instance as a convenience getter on this class.
+   * The guard on the outcome the UI trusts. {@code externalMetadataUpdate} is {@code
+   * Access.READ_ONLY}, so a client cannot forge an {@code UPDATED} on the way in. Pinned because
+   * this project has already had to replace that annotation on the sibling {@code doi} field, which
+   * makes it exactly the kind of thing a future author removes without realising what it holds up.
    */
   @Test
-  void externalMetadataUpdateCarriesOnlyTheOutcomeAndNotARedundantBoolean() throws Exception {
-    String json =
-        new ObjectMapper()
-            .writeValueAsString(new ApiExternalMetadataUpdate(Outcome.UPDATED, "any reason"));
+  void externalMetadataUpdateIsDiscardedOnTheWayIn() throws Exception {
+    String forged =
+        "{\"externalMetadataUpdate\": {\"outcome\": \"UPDATED\", \"reason\": \"trust me\"}}";
 
-    assertFalse(json.contains("succeeded"), json);
+    ApiInventoryDOI incoming = new ObjectMapper().readValue(forged, ApiInventoryDOI.class);
+
+    assertNull(
+        incoming.getExternalMetadataUpdate(), "a client must not be able to state an outcome");
   }
 }

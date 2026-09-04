@@ -161,9 +161,8 @@ resolved during design. This file is a glossary only — no implementation detai
   toast decides by the machine-readable `outcome` (`UPDATED`, `FAILED`,
   `NOT_UPDATABLE`) that travels with the reason, never by the wording of the
   reason itself, and an outcome it does not recognise is reported as a failure
-  rather than passed over. Every
-  qualifying save pushes, whether or not a mapped field changed, so retrying a
-  failed push is just saving again. An identifier whose state has frozen its
+  rather than passed over. Every qualifying save pushes, whether or not a mapped
+  field changed, so retrying a failed push is just saving again. An identifier whose state has frozen its
   provider record is reported too, rather than passed over in silence, in a
   message that explains why in words without echoing the provider's own state
   token; an identifier belonging to a provider whose integration is switched
