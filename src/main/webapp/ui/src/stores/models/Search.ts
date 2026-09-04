@@ -46,6 +46,7 @@ import ContainerModel from "./ContainerModel";
 import CacheFetcher from "./Fetcher/CacheFetcher";
 import CoreFetcher from "./Fetcher/CoreFetcher";
 import DynamicFetcher from "./Fetcher/DynamicFetcher";
+import { externalMetadataUpdateAlerts } from "./IdentifierModel";
 import InventoryBaseRecord, { sortProperties } from "./InventoryBaseRecord";
 import SampleModel from "./SampleModel";
 import SubSampleModel, { type SubSampleAttrs } from "./SubSampleModel";
@@ -912,6 +913,14 @@ export default class Search implements SearchInterface {
         (erroredRecords) => this.transferRecords(username, erroredRecords),
       );
       handleDetailedSuccesses(successfullyTranferred, "transferred", () => "transferred", translatedHelpMessage);
+      /*
+       * A transfer pushes the new owner to the provider (ADR 0008); the outcome rides on the
+       * identifiers of each returned record. The departing owner's limited view lists none, which
+       * is silence, not failure.
+       */
+      externalMetadataUpdateAlerts(successfullyTranferred.flatMap((r) => r.identifiers)).forEach((alert) => {
+        getRootStore().uiStore.addAlert(alert);
+      });
       await this.updateStateAfterTransfer(new RsSet(successfullyTranferred));
     } catch (error) {
       getRootStore().uiStore.addAlert(

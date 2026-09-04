@@ -130,9 +130,29 @@ public class ApiInventoryDOI extends LinkableApiObject {
   @AllArgsConstructor
   public static class ApiExternalMetadataUpdate {
 
+    /**
+     * The same result in machine-readable form, so a client can tell a provider failure from a
+     * record its own state has frozen without matching the wording of {@link #reason} (RSDEV-1356).
+     * Additive alongside {@link #succeeded}, which stays for existing clients.
+     */
+    public enum Outcome {
+      /** The provider accepted the rebuilt metadata. */
+      UPDATED,
+      /**
+       * The provider could not be reached or rejected the update, or the payload could not be
+       * built. The instrument is saved; saving it again retries.
+       */
+      FAILED,
+      /** The record's own state no longer allows an in-place update. Expected, not an error. */
+      NOT_UPDATABLE
+    }
+
     /** Whether the provider accepted the rebuilt metadata. */
     @JsonProperty("succeeded")
     private boolean succeeded;
+
+    @JsonProperty("outcome")
+    private Outcome outcome;
 
     /**
      * Localized sentence for the user: what was updated, or why it was not. Carries the provider's

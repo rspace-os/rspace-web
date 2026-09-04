@@ -1220,6 +1220,8 @@
   "identifierModel": {
     "alerts": {
       "doiRequired": "DOI must be known",
+      "externalUpdateFailed": "External PID record not updated ({doi})",
+      "externalUpdateNotPossible": "External PID record left unchanged ({doi})",
       "published": "The identifier {doi} has been published.",
       "publishFailed": "The identifier could not be published.",
       "refreshed": "The identifier status is now \"{state}\".",
