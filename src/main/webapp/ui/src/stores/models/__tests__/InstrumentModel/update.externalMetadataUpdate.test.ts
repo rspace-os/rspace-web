@@ -76,7 +76,7 @@ describe("InstrumentModel.update surfaces the external PIDINST update outcome", 
   });
 
   test("a failed push is shown as an error after the saved toast, with the server's reason", async () => {
-    mockPutReturningIdentifierWith({ succeeded: false, outcome: "FAILED", reason: REASON });
+    mockPutReturningIdentifierWith({ outcome: "FAILED", reason: REASON });
 
     await saveInstrument();
 
@@ -85,7 +85,7 @@ describe("InstrumentModel.update surfaces the external PIDINST update outcome", 
   });
 
   test("a record frozen by its own state is shown as a notice", async () => {
-    mockPutReturningIdentifierWith({ succeeded: false, outcome: "NOT_UPDATABLE", reason: REASON });
+    mockPutReturningIdentifierWith({ outcome: "NOT_UPDATABLE", reason: REASON });
 
     await saveInstrument();
 
@@ -94,7 +94,6 @@ describe("InstrumentModel.update surfaces the external PIDINST update outcome", 
 
   test("a successful push adds nothing beyond the ordinary saved toast", async () => {
     mockPutReturningIdentifierWith({
-      succeeded: true,
       outcome: "UPDATED",
       reason: "The instrument metadata held by B2INST was updated.",
     });

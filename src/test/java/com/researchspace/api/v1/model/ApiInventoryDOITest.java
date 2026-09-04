@@ -8,6 +8,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.researchspace.api.v1.model.ApiInventoryDOI.ApiExternalMetadataUpdate;
+import com.researchspace.api.v1.model.ApiInventoryDOI.ApiExternalMetadataUpdate.Outcome;
 import com.researchspace.model.inventory.DigitalObjectIdentifier;
 import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
 import org.junit.jupiter.api.Test;
@@ -203,5 +205,46 @@ class ApiInventoryDOITest {
 
     assertNull(api.getPublicLinkSuffix(), "an entity-derived DTO must not carry a suffix");
     assertEquals(entity.getPublicLink(), api.getRsPublicId());
+  }
+
+  /**
+   * The Inventory UI switches on these exact strings, and the API spec documents them, so the enum
+   * constant names are the wire contract rather than an implementation detail: renaming one would
+   * silently make the frontend report every outcome as a failure.
+   *
+   * <p>Pinned here as well as in {@code InstrumentExternalMetadataUpdateMVCIT} because that test
+   * needs a database and a real Spring context, so it does not run in the fast unit suite that
+   * guards an ordinary change to this class.
+   */
+  @Test
+  void externalMetadataUpdateOutcomeSerializesAsTheLiteralTokenTheUiSwitchesOn() throws Exception {
+    ObjectMapper mapper = new ObjectMapper();
+
+    assertTrue(
+        mapper
+            .writeValueAsString(new ApiExternalMetadataUpdate(Outcome.UPDATED, "any reason"))
+            .contains("\"outcome\":\"UPDATED\""));
+    assertTrue(
+        mapper
+            .writeValueAsString(new ApiExternalMetadataUpdate(Outcome.FAILED, "any reason"))
+            .contains("\"outcome\":\"FAILED\""));
+    assertTrue(
+        mapper
+            .writeValueAsString(new ApiExternalMetadataUpdate(Outcome.NOT_UPDATABLE, "any reason"))
+            .contains("\"outcome\":\"NOT_UPDATABLE\""));
+  }
+
+  /**
+   * RSDEV-1251's {@code succeeded} boolean was removed in RSDEV-1356: it restated {@code outcome},
+   * nothing consumed it, and two fields for one fact could be made to disagree. Asserted so it
+   * cannot come back by accident, for instance as a convenience getter on this class.
+   */
+  @Test
+  void externalMetadataUpdateCarriesOnlyTheOutcomeAndNotARedundantBoolean() throws Exception {
+    String json =
+        new ObjectMapper()
+            .writeValueAsString(new ApiExternalMetadataUpdate(Outcome.UPDATED, "any reason"));
+
+    assertFalse(json.contains("succeeded"), json);
   }
 }

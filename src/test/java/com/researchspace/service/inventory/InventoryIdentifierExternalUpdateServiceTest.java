@@ -294,7 +294,6 @@ class InventoryIdentifierExternalUpdateServiceTest {
 
     verify(dataCiteConnector).updateDoi(rebuilt, InventorySettingType.PIDINST);
     verifyNoInteractions(b2instConnector);
-    assertTrue(doi.getExternalMetadataUpdate().isSucceeded());
     assertEquals(Outcome.UPDATED, doi.getExternalMetadataUpdate().getOutcome());
   }
 
@@ -331,7 +330,6 @@ class InventoryIdentifierExternalUpdateServiceTest {
     verifyNoInteractions(rspaceToExternalProviderAdapter, auditer);
     ApiExternalMetadataUpdate outcome = doi.getExternalMetadataUpdate();
     assertNotNull(outcome, "a frozen record must still be explained");
-    assertFalse(outcome.isSucceeded());
     assertEquals(Outcome.NOT_UPDATABLE, outcome.getOutcome());
     // provider-specific, because the two are frozen for different reasons. The raw provider state
     // is deliberately not interpolated, so it is not asserted.
@@ -418,7 +416,7 @@ class InventoryIdentifierExternalUpdateServiceTest {
     verify(b2instConnector).updateDraftDoi(RID, rebuilt);
     // the fast path: a populated response list is complete, so the record's own list is not read
     verify(instrument, never()).getActiveIdentifiers();
-    assertTrue(doi.getExternalMetadataUpdate().isSucceeded());
+    assertEquals(Outcome.UPDATED, doi.getExternalMetadataUpdate().getOutcome());
     assertTrue(
         doi.getExternalMetadataUpdate().getReason().contains("externalUpdated"),
         doi.getExternalMetadataUpdate().getReason());
@@ -511,7 +509,6 @@ class InventoryIdentifierExternalUpdateServiceTest {
     service.pushMetadataUpdates(savedInstrumentWith(doi), user);
 
     ApiExternalMetadataUpdate outcome = doi.getExternalMetadataUpdate();
-    assertFalse(outcome.isSucceeded());
     assertEquals(Outcome.FAILED, outcome.getOutcome());
     assertTrue(outcome.getReason().contains("externalUpdateFailed"), outcome.getReason());
     assertTrue(outcome.getReason().contains("Record is not editable."), outcome.getReason());
@@ -561,7 +558,7 @@ class InventoryIdentifierExternalUpdateServiceTest {
     service.pushMetadataUpdates(savedInstrumentWith(doi), user);
 
     ApiExternalMetadataUpdate outcome = doi.getExternalMetadataUpdate();
-    assertFalse(outcome.isSucceeded());
+    assertEquals(Outcome.FAILED, outcome.getOutcome());
     assertFalse(outcome.getReason().contains("credentials"), outcome.getReason());
   }
 
@@ -673,8 +670,8 @@ class InventoryIdentifierExternalUpdateServiceTest {
 
     verify(b2instConnector).updateDraftDoi(eq(RID), any(B2instDoi.class));
     verify(b2instConnector, never()).updateDraftDoi(eq("acc-ept01"), any(B2instDoi.class));
-    assertFalse(accepted.getExternalMetadataUpdate().isSucceeded());
-    assertTrue(draft.getExternalMetadataUpdate().isSucceeded());
+    assertEquals(Outcome.NOT_UPDATABLE, accepted.getExternalMetadataUpdate().getOutcome());
+    assertEquals(Outcome.UPDATED, draft.getExternalMetadataUpdate().getOutcome());
   }
 
   /** Success is audited too, not only failure: the audit trail is the record of every attempt. */
@@ -738,12 +735,11 @@ class InventoryIdentifierExternalUpdateServiceTest {
 
     verify(b2instConnector).updateDraftDoi(eq(RID), any(B2instDoi.class));
     verify(b2instConnector, never()).updateDraftDoi(eq("br-oken01"), any(B2instDoi.class));
-    assertFalse(broken.getExternalMetadataUpdate().isSucceeded());
     assertEquals(Outcome.FAILED, broken.getExternalMetadataUpdate().getOutcome());
     assertTrue(
         broken.getExternalMetadataUpdate().getReason().contains("externalUpdateFailed"),
         broken.getExternalMetadataUpdate().getReason());
-    assertTrue(good.getExternalMetadataUpdate().isSucceeded());
+    assertEquals(Outcome.UPDATED, good.getExternalMetadataUpdate().getOutcome());
     verify(auditer, times(1)).notify(any());
   }
 }

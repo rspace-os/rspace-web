@@ -87,8 +87,8 @@ anything that is not accepted, so an identifier really can be sitting in
    persisted needs-sync flag or payload hash (rejected: schema change and
    bookkeeping to solve a problem always-push does not have).
 4. **The outcome is transient response data, not state.** A read-only object on
-   the returned identifier DTO carries succeeded/reason for the frontend to
-   surface; nothing is persisted. The push seam is the instruments controller,
+   the returned identifier DTO carries the outcome and a reason for the frontend
+   to surface; nothing is persisted. The push seam is the instruments controller,
    after the manager returns, so identifier operations that re-enter the
    instrument update internally (publish, retract, refresh bookkeeping,
    template sync) can never trigger a recursive push.
@@ -100,10 +100,10 @@ anything that is not accepted, so an identifier really can be sitting in
    `reason`. The values were fixed only once the UI had said what it needed,
    which is why RSDEV-1251 deliberately left them out.
 
-   `outcome` is the single source of truth: `succeeded` is derived from it
-   (`outcome == UPDATED`) rather than stored beside it, so no construction site
-   can state a result that contradicts the other field. The wire format is
-   unchanged, so the property an API client sees is exactly as before.
+   `outcome` is the only representation of the result. RSDEV-1251's original
+   `succeeded` boolean was removed in the same unreleased line it arrived in,
+   once it turned out that nothing consumed it and that two fields for one fact
+   could be made to disagree. Clients read `outcome`.
 
    Two controller methods sit on that seam, not one: `updateInstrument` and
    `changeInstrumentOwner`. The transfer was excluded originally on the premise

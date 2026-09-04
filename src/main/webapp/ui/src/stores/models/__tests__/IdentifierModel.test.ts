@@ -106,7 +106,6 @@ describe("externalMetadataUpdateAlerts", () => {
   test("a successful update stays quiet", () => {
     const model = new IdentifierModel(
       pidinstAttrs({
-        succeeded: true,
         outcome: "UPDATED",
         reason: "The instrument metadata held by B2INST was updated.",
       }),
@@ -118,7 +117,7 @@ describe("externalMetadataUpdateAlerts", () => {
   test("a provider failure is an error that does not auto-dismiss, carrying the server's reason", () => {
     const reason =
       "Could not update the instrument metadata held by B2INST. The instrument itself was saved, so saving it again will try the update once more. Record is not editable.";
-    const model = new IdentifierModel(pidinstAttrs({ succeeded: false, outcome: "FAILED", reason }), "IN1");
+    const model = new IdentifierModel(pidinstAttrs({ outcome: "FAILED", reason }), "IN1");
 
     const alerts = externalMetadataUpdateAlerts([model]);
 
@@ -130,7 +129,7 @@ describe("externalMetadataUpdateAlerts", () => {
   test("a record frozen by its own state is a notice, not an error", () => {
     const reason =
       "The instrument metadata held by B2INST could not be updated because its community review has been accepted, so the record no longer has a draft open for changes. The instrument itself was saved.";
-    const model = new IdentifierModel(pidinstAttrs({ succeeded: false, outcome: "NOT_UPDATABLE", reason }), "IN1");
+    const model = new IdentifierModel(pidinstAttrs({ outcome: "NOT_UPDATABLE", reason }), "IN1");
 
     const alerts = externalMetadataUpdateAlerts([model]);
 
@@ -141,23 +140,17 @@ describe("externalMetadataUpdateAlerts", () => {
 
   test("the variant is decided by outcome, never by the wording of the reason", () => {
     const sameWords = "identical wording for both outcomes";
-    const failed = new IdentifierModel(pidinstAttrs({ succeeded: false, outcome: "FAILED", reason: sameWords }), "IN1");
-    const frozen = new IdentifierModel(
-      pidinstAttrs({ succeeded: false, outcome: "NOT_UPDATABLE", reason: sameWords }),
-      "IN1",
-    );
+    const failed = new IdentifierModel(pidinstAttrs({ outcome: "FAILED", reason: sameWords }), "IN1");
+    const frozen = new IdentifierModel(pidinstAttrs({ outcome: "NOT_UPDATABLE", reason: sameWords }), "IN1");
 
     expect(externalMetadataUpdateAlerts([failed, frozen]).map((a) => a.variant)).toEqual(["error", "notice"]);
   });
 
   test("several identifiers each get their own alert, in order", () => {
-    const b2inst = new IdentifierModel(
-      pidinstAttrs({ succeeded: false, outcome: "FAILED", reason: "B2INST said no" }),
-      "IN1",
-    );
+    const b2inst = new IdentifierModel(pidinstAttrs({ outcome: "FAILED", reason: "B2INST said no" }), "IN1");
     const dataCite = new IdentifierModel(
       {
-        ...pidinstAttrs({ succeeded: false, outcome: "FAILED", reason: "DataCite said no" }),
+        ...pidinstAttrs({ outcome: "FAILED", reason: "DataCite said no" }),
         doiType: "PIDINST_DATACITE",
       },
       "IN1",

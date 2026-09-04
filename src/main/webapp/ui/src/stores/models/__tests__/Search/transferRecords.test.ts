@@ -111,7 +111,7 @@ describe("Search.transferRecords surfaces the external PIDINST update outcome", 
   });
 
   test("a failed push on a transferred instrument is shown as an error after the transferred toast", async () => {
-    mockBulkTransferReturning([pidinst({ succeeded: false, outcome: "FAILED", reason: REASON })]);
+    mockBulkTransferReturning([pidinst({ outcome: "FAILED", reason: REASON })]);
 
     await transfer();
 
@@ -126,7 +126,7 @@ describe("Search.transferRecords surfaces the external PIDINST update outcome", 
    * bulk successes and failures.
    */
   test("a provider outage across many transferred instruments is one alert, not one per instrument", async () => {
-    mockBulkTransferReturningMany(3, [pidinst({ succeeded: false, outcome: "FAILED", reason: REASON })]);
+    mockBulkTransferReturningMany(3, [pidinst({ outcome: "FAILED", reason: REASON })]);
 
     await transferMany(3);
 
@@ -144,8 +144,8 @@ describe("Search.transferRecords surfaces the external PIDINST update outcome", 
   test("each detail row names its own identifier, so two PIDs on one instrument stay distinguishable", async () => {
     const tSpy = vi.spyOn(i18n, "t");
     mockBulkTransferReturning([
-      pidinst({ succeeded: false, outcome: "FAILED", reason: "B2INST said no" }, "10.82316/aaaa-aaaa"),
-      pidinst({ succeeded: false, outcome: "FAILED", reason: "DataCite said no" }, "10.82316/bbbb-bbbb"),
+      pidinst({ outcome: "FAILED", reason: "B2INST said no" }, "10.82316/aaaa-aaaa"),
+      pidinst({ outcome: "FAILED", reason: "DataCite said no" }, "10.82316/bbbb-bbbb"),
     ]);
 
     await transfer();
