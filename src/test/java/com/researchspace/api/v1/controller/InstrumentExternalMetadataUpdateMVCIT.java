@@ -165,7 +165,7 @@ public class InstrumentExternalMetadataUpdateMVCIT extends API_MVC_InventoryTest
     MvcResult result = renameInstrument(anyUser, apiKey, instrument.getId(), "after-update");
 
     JsonNode update = firstIdentifierOf(result).path("externalMetadataUpdate");
-    assertTrue(update.path("succeeded").asBoolean(), update.toString());
+    assertEquals("UPDATED", update.path("outcome").asText(), update.toString());
     assertNotNull(update.path("reason").asText(null));
     // the push carries the instrument as it now is, not as it was when the draft was registered
     B2instDoi pushed = b2instDummy.getDoiUpdateSentToB2inst();
@@ -195,7 +195,7 @@ public class InstrumentExternalMetadataUpdateMVCIT extends API_MVC_InventoryTest
 
     JsonNode identifier = firstIdentifierOf(result);
     JsonNode update = identifier.path("externalMetadataUpdate");
-    assertFalse(update.path("succeeded").asBoolean(), update.toString());
+    assertEquals("FAILED", update.path("outcome").asText(), update.toString());
     assertTrue(
         update.path("reason").asText().contains("Record is not editable."), update.toString());
     // the save itself stands, and the identifier's own state is untouched
@@ -386,8 +386,9 @@ public class InstrumentExternalMetadataUpdateMVCIT extends API_MVC_InventoryTest
 
     MvcResult result = renameInstrument(anyUser, apiKey, instrument.getId(), "tx-boundary-renamed");
 
-    assertTrue(
-        firstIdentifierOf(result).path("externalMetadataUpdate").path("succeeded").asBoolean(),
+    assertEquals(
+        "UPDATED",
+        firstIdentifierOf(result).path("externalMetadataUpdate").path("outcome").asText(),
         "the push should have happened at all");
     assertFalse(
         transactionWasActive.get(),

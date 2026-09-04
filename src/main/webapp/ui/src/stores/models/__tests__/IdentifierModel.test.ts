@@ -2,8 +2,9 @@ import { runInAction } from "mobx";
 import { describe, expect, test, vi } from "vitest";
 import type InvApiService from "../../../common/InvApiService";
 import { mockIGSNAttrs } from "../../../Inventory/components/Fields/Identifiers/__tests__/mocking";
+import type { ExternalMetadataUpdate, ExternalMetadataUpdateOutcome } from "../../definitions/Identifier";
 import { isPublishedState } from "../../definitions/Identifier";
-import IdentifierModel from "../IdentifierModel";
+import IdentifierModel, { externalMetadataUpdateAlerts } from "../IdentifierModel";
 
 describe("IdentifierModel.toJson() — Dates serialization", () => {
   test("date values are plain yyyy-MM-dd strings, not Date objects or ISO timestamps", () => {
@@ -81,5 +82,104 @@ describe("IdentifierModel.refresh()", () => {
 
     expect(model.state).toBe("submitted");
     expect(addAlert).toHaveBeenCalledWith(expect.objectContaining({ variant: "error" }));
+  });
+});
+
+const pidinstAttrs = (externalMetadataUpdate?: ExternalMetadataUpdate) => ({
+  ...mockIGSNAttrs(),
+  doiType: "PIDINST_B2INST",
+  state: "draft" as const,
+  externalMetadataUpdate,
+});
+
+/*
+ * i18next runs in cimode in tests, so a translated title is its catalog key. Asserting the key
+ * proves the wording comes from the catalogue (acceptance criterion 6) without pinning English.
+ */
+describe("externalMetadataUpdateAlerts", () => {
+  test("an identifier without an outcome raises nothing: absent means nothing was attempted", () => {
+    const model = new IdentifierModel(pidinstAttrs(), "IN1");
+    expect(model.externalMetadataUpdate).toBeNull();
+    expect(externalMetadataUpdateAlerts([model])).toEqual([]);
+  });
+
+  test("a successful update stays quiet", () => {
+    const model = new IdentifierModel(
+      pidinstAttrs({
+        outcome: "UPDATED",
+        reason: "The instrument metadata held by B2INST was updated.",
+      }),
+      "IN1",
+    );
+    expect(externalMetadataUpdateAlerts([model])).toEqual([]);
+  });
+
+  test("a provider failure is an error that does not auto-dismiss, carrying the server's reason", () => {
+    const reason =
+      "Could not update the instrument metadata held by B2INST. The instrument itself was saved, so saving it again will try the update once more. Record is not editable.";
+    const model = new IdentifierModel(pidinstAttrs({ outcome: "FAILED", reason }), "IN1");
+
+    const alerts = externalMetadataUpdateAlerts([model]);
+
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0]).toMatchObject({ variant: "error", message: reason, isInfinite: true });
+    expect(alerts[0].title).toBe("inventory:identifierModel.alerts.externalUpdateFailed");
+  });
+
+  test("a record frozen by its own state is a notice, not an error", () => {
+    const reason =
+      "The instrument metadata held by B2INST could not be updated because its community review has been accepted, so the record no longer has a draft open for changes. The instrument itself was saved.";
+    const model = new IdentifierModel(pidinstAttrs({ outcome: "NOT_UPDATABLE", reason }), "IN1");
+
+    const alerts = externalMetadataUpdateAlerts([model]);
+
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0]).toMatchObject({ variant: "notice", message: reason, isInfinite: true });
+    expect(alerts[0].title).toBe("inventory:identifierModel.alerts.externalUpdateNotPossible");
+  });
+
+  test("the variant is decided by outcome, never by the wording of the reason", () => {
+    const sameWords = "identical wording for both outcomes";
+    const failed = new IdentifierModel(pidinstAttrs({ outcome: "FAILED", reason: sameWords }), "IN1");
+    const frozen = new IdentifierModel(pidinstAttrs({ outcome: "NOT_UPDATABLE", reason: sameWords }), "IN1");
+
+    expect(externalMetadataUpdateAlerts([failed, frozen]).map((a) => a.variant)).toEqual(["error", "notice"]);
+  });
+
+  test("several identifiers each get their own alert, in order", () => {
+    const b2inst = new IdentifierModel(pidinstAttrs({ outcome: "FAILED", reason: "B2INST said no" }), "IN1");
+    const dataCite = new IdentifierModel(
+      {
+        ...pidinstAttrs({ outcome: "FAILED", reason: "DataCite said no" }),
+        doiType: "PIDINST_DATACITE",
+      },
+      "IN1",
+    );
+
+    expect(externalMetadataUpdateAlerts([b2inst, dataCite]).map((a) => a.message)).toEqual([
+      "B2INST said no",
+      "DataCite said no",
+    ]);
+  });
+
+  /*
+   * The outcome union mirrors a Java enum by hand, so the server can outrun it. An outcome the UI
+   * does not recognise has to fail loud: staying quiet would reinstate exactly the silent drift
+   * this feature exists to close, which is the one outcome worse than an unexpected error toast.
+   */
+  test("an unrecognised outcome is reported as a failure rather than swallowed", () => {
+    const reason = "An outcome this UI has no case for.";
+    const model = new IdentifierModel(
+      pidinstAttrs({
+        outcome: "SOME_FUTURE_OUTCOME" as ExternalMetadataUpdateOutcome,
+        reason,
+      }),
+      "IN1",
+    );
+
+    const alerts = externalMetadataUpdateAlerts([model]);
+
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0]).toMatchObject({ variant: "error", message: reason, isInfinite: true });
   });
 });
