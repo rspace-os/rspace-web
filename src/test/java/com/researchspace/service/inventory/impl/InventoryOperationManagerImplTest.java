@@ -1,5 +1,6 @@
 package com.researchspace.service.inventory.impl;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -12,6 +13,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -23,6 +25,7 @@ import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.model.User;
+import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.model.units.RSUnitDef;
@@ -47,6 +50,7 @@ class InventoryOperationManagerImplTest {
 
   private InventoryOperationManagerImpl manager;
   private final User user = new User("anyUser");
+  private long nextParentSampleId = 900L;
 
   private static ApiInventoryOperationOriginUpdate origin(Long id, ApiQuantityInfo amountTaken) {
     ApiInventoryOperationOriginUpdate origin = new ApiInventoryOperationOriginUpdate();
@@ -55,11 +59,22 @@ class InventoryOperationManagerImplTest {
     return origin;
   }
 
-  /** A subsample entity mock currently holding the given quantity, in the given unit. */
+  /**
+   * A subsample entity mock currently holding the given quantity, in the given unit, under a parent
+   * sample of its own (the manager locks the parents too, and a real subsample always has one).
+   */
   private SubSample subSampleHolding(String value, int unitId) {
+    return subSampleHolding(value, unitId, nextParentSampleId++);
+  }
+
+  /** A subsample holding the given quantity whose parent sample has the given id. */
+  private SubSample subSampleHolding(String value, int unitId, long sampleId) {
     SubSample subSample = mock(SubSample.class);
     when(subSample.getQuantity())
         .thenReturn(value == null ? null : new QuantityInfo(new BigDecimal(value), unitId));
+    SampleEntity parent = mock(SampleEntity.class);
+    when(parent.getId()).thenReturn(sampleId);
+    when(subSample.getSample()).thenReturn(parent);
     return subSample;
   }
 
@@ -537,5 +552,48 @@ class InventoryOperationManagerImplTest {
     assertEquals(
         "errors.inventory.operation.amountTakenExceedsOrigin",
         rejection.getFieldErrors("origins[1].amountTaken").get(0).getCode());
+  }
+
+  @Test
+  void locksOriginsAscendingThenTheirParentSamplesAscending() {
+    // Decrementing a subsample rewrites its parent sample's denormalised total, so two operations
+    // on sibling subsamples of one sample must serialise on the parent row too or one total is
+    // written from a stale read (code review, finding 2). The parents are locked after the origins
+    // and in id order: every other writer takes the subsample row first and then the sample row, so
+    // locking the other way round would invert the order against all of them.
+    ApiInventoryOperationPost request = new ApiInventoryOperationPost();
+    request.setOperationType("pool");
+    request.setOrigins(List.of(origin(300L, millilitres("1")), origin(100L, millilitres("1"))));
+    request.setNewSample(new ApiSampleWithFullSubSamples("Pooled material"));
+    originHolds(300L, subSampleHolding("5", RSUnitDef.MILLI_LITRE.getId(), 30L));
+    originHolds(100L, subSampleHolding("5", RSUnitDef.MILLI_LITRE.getId(), 20L));
+    when(sampleApiMgr.createNewApiSample(any(ApiSampleWithFullSubSamples.class), eq(user)))
+        .thenReturn(new ApiSampleWithFullSubSamples("Pooled material"));
+
+    assertDoesNotThrow(() -> manager.performOperation(request, user));
+
+    InOrder inOrder = inOrder(subSampleApiMgr, sampleApiMgr);
+    inOrder.verify(subSampleApiMgr).lockSubSampleForEdit(100L, user);
+    inOrder.verify(subSampleApiMgr).lockSubSampleForEdit(300L, user);
+    inOrder.verify(sampleApiMgr).lockSampleForEdit(20L, user);
+    inOrder.verify(sampleApiMgr).lockSampleForEdit(30L, user);
+  }
+
+  @Test
+  void locksEachParentSampleOnceWhenOriginsAreSiblings() {
+    // Two origins under one sample are one row: asking twice is harmless but pointless, and the
+    // second ask would be a re-lock of an entity the first decrement has already dirtied.
+    ApiInventoryOperationPost request = new ApiInventoryOperationPost();
+    request.setOperationType("pool");
+    request.setOrigins(List.of(origin(100L, millilitres("1")), origin(300L, millilitres("1"))));
+    request.setNewSample(new ApiSampleWithFullSubSamples("Pooled material"));
+    originHolds(100L, subSampleHolding("5", RSUnitDef.MILLI_LITRE.getId(), 20L));
+    originHolds(300L, subSampleHolding("5", RSUnitDef.MILLI_LITRE.getId(), 20L));
+    when(sampleApiMgr.createNewApiSample(any(ApiSampleWithFullSubSamples.class), eq(user)))
+        .thenReturn(new ApiSampleWithFullSubSamples("Pooled material"));
+
+    assertDoesNotThrow(() -> manager.performOperation(request, user));
+
+    verify(sampleApiMgr, times(1)).lockSampleForEdit(20L, user);
   }
 }

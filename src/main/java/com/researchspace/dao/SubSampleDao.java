@@ -26,14 +26,4 @@ public interface SubSampleDao extends GenericDao<SubSample, Long> {
       User user);
 
   List<SubSample> getAllUsingImage(FileProperty fileProperty);
-
-  /**
-   * Reads a subsample and holds a row lock on it ({@code SELECT ... FOR UPDATE}) until the current
-   * transaction ends, so a concurrent transaction reading the same row this way waits for this one
-   * to commit. Used by the operation endpoint so two operations on one origin serialise instead of
-   * both decrementing from the same stale quantity (code review, finding 1).
-   *
-   * @return the locked subsample, or null if none has the id
-   */
-  SubSample getForUpdate(Long id);
 }
