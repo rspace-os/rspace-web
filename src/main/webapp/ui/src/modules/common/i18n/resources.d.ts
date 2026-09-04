@@ -9804,7 +9804,7 @@ export default interface Resources {
       "apiKey": {
         "confirmPasswordLabel": "Please confirm your password",
         "docsLinkPrefix": "See <a href=\"/public/apiDocs\" target=\"_blank\">API Documentation</a>.",
-        "docsLinkSuffix": "For more examples, check out our <a href=\"https://github.com/rspace-os\" target=\"_blank\">GitHub</a>.",
+        "docsLinkSuffix": "For more examples, check out our <a href=\"https://github.com/rspace-os/api-tutorial\" target=\"_blank\">GitHub</a>.",
         "generateKeyButton": "Generate key",
         "generateWarningIntro": "This API key provides access to your account, research data, and intellectual property. If exposed or compromised:",
         "generateWarningRisk1": "Unauthorized users could access and steal your data",
