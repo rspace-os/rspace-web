@@ -791,6 +791,7 @@ function initTinyMCE(selector) {
 		const identifiersEnabled = false; // Once RSDEV-484 is complete, this should check whether Inventory is available
     	const pubchemEnabled = chemistryEnabled;
 		const galaxyEnabled = integrations.GALAXY.enabled && integrations.GALAXY.available;
+		const dbrepoEnabled = integrations.DBREPO.enabled && integrations.DBREPO.available;
 		const boxClientId = properties['box.client.id'];
 		const hasValidBoxClientId = typeof boxClientId === "string" && boxClientId.trim() !== ''
 
@@ -821,6 +822,11 @@ function initTinyMCE(selector) {
 			localTinymcesetup.external_plugins["galaxy"] = "/scripts/externalTinymcePlugins/galaxy/plugin.min.js";
 			enabledFileRepositories += " galaxy";
 			fileRepositoriesMenu += " optGalaxy";
+		}
+		if (dbrepoEnabled) {
+			localTinymcesetup.external_plugins["dbrepo"] = "/scripts/externalTinymcePlugins/dbrepo/plugin.min.js";
+			addToToolbarIfNotPresent(localTinymcesetup, " | dbrepo");
+			addToMenuIfNotPresent(localTinymcesetup, " | optDBRepo");
 		}
 		if (omeroEnabled) {
 			localTinymcesetup.external_plugins["omero"] = "/scripts/externalTinymcePlugins/omero/plugin.min.js";

@@ -443,6 +443,7 @@
         "dropboxAvailable": "Makes Dropbox integration available to the users. After enabling the integration user can import from Dropbox into the Gallery and (with 'dropbox.linking.enabled = true') link to Dropbox in text field editor",
         "dropboxLinkingEnabled": "Enables linking to Dropbox in text field editor. Relevant only if 'dropbox.available' is 'true'",
         "dryadAvailable": "Makes Dryad integration available. User can create new dryad submissionand attach RSpace exports or documents to that submission.",
+        "dbrepoAvailable": "Makes DBRepo integration available.",
         "dswAvailable": "Makes DSW integration available.",
         "egnyteAvailable": "Makes Egnyte integration available to the users. After enabling the integration, users can link to Egnyte in text field editor",
         "evernoteAvailable": "Enables users to import Evernote XML export files via Create->Import",

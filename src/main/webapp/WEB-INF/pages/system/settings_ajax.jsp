@@ -71,6 +71,7 @@
         <div id="orcid.available.description"><spring:message code="system.property.description.orcidAvailable" /></div>
         <div id="raid.available.description"><spring:message code="system.property.description.raidAvailable" /></div>
         <div id="dataverse.available.description"><spring:message code="system.property.description.repoAvailable" arguments="Dataverse"/></div>
+        <div id="dbrepo.available.description"><spring:message code="system.property.description.dbrepoAvailable" /></div>
         <div id="figshare.available.description"><spring:message code="system.property.description.repoAvailable" arguments="Figshare"/></div>
         <div id="pyrat.available.description"><spring:message code="system.property.description.pyratAvailable" /></div>
         <div id="clustermarket.available.description"><spring:message code="system.property.description.clustermarketAvailable" /></div>
