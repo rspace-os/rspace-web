@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
+import i18n from "@/modules/common/i18n";
 import InvApiService from "../../../../common/InvApiService";
 import { mockIGSNAttrs } from "../../../../Inventory/components/Fields/Identifiers/__tests__/mocking";
 import type { ExternalMetadataUpdate, IdentifierAttrs } from "../../../definitions/Identifier";
@@ -41,10 +42,11 @@ vi.mock("../../../stores/SearchStore", () => ({ default: class {} })); // break 
 const REASON =
   "Could not update the instrument metadata held by DataCite. The instrument itself was saved, so saving it again will try the update once more.";
 
-const pidinst = (update: ExternalMetadataUpdate): IdentifierAttrs => ({
+const pidinst = (update: ExternalMetadataUpdate, doi?: string): IdentifierAttrs => ({
   ...mockIGSNAttrs(),
   doiType: "PIDINST_DATACITE",
   state: "draft",
+  ...(doi ? { doi } : {}),
   externalMetadataUpdate: update,
 });
 
@@ -131,7 +133,30 @@ describe("Search.transferRecords surfaces the external PIDINST update outcome", 
     expect(mockAddAlert.mock.calls.map(([alert]) => alert.variant)).toEqual(["notice", "success", "error"]);
     const error = mockAddAlert.mock.calls.map(([alert]) => alert).find((alert) => alert.variant === "error");
     expect(error.details).toHaveLength(3);
-    expect(error.details.map((d: { title: string }) => d.title)).toEqual([REASON, REASON, REASON]);
+    expect(error.details.map((d: { help: string }) => d.help)).toEqual([REASON, REASON, REASON]);
+  });
+
+  /*
+   * Two identifiers on one instrument share a record, so the record cannot tell their detail rows
+   * apart. Each row is titled with its own DOI and carries the server's sentence as its help text,
+   * which is what keeps the grouped alert as informative as one toast per identifier would be.
+   */
+  test("each detail row names its own identifier, so two PIDs on one instrument stay distinguishable", async () => {
+    const tSpy = vi.spyOn(i18n, "t");
+    mockBulkTransferReturning([
+      pidinst({ succeeded: false, outcome: "FAILED", reason: "B2INST said no" }, "10.82316/aaaa-aaaa"),
+      pidinst({ succeeded: false, outcome: "FAILED", reason: "DataCite said no" }, "10.82316/bbbb-bbbb"),
+    ]);
+
+    await transfer();
+
+    const error = mockAddAlert.mock.calls.map(([alert]) => alert).find((alert) => alert.variant === "error");
+    expect(error.details.map((d: { help: string }) => d.help)).toEqual(["B2INST said no", "DataCite said no"]);
+    expect(
+      tSpy.mock.calls
+        .filter(([key]) => key === "inventory:identifierModel.alerts.externalUpdateFailed")
+        .map(([, options]) => (options as { doi: string }).doi),
+    ).toEqual(["10.82316/aaaa-aaaa", "10.82316/bbbb-bbbb"]);
   });
 
   test("the departing owner's blanked identifier list is silence, not failure", async () => {
