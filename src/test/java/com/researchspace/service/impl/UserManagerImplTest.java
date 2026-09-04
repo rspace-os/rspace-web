@@ -5,6 +5,7 @@ import static com.researchspace.core.util.TransformerUtils.toSet;
 import static com.researchspace.model.Role.SYSTEM_ROLE;
 import static com.researchspace.testutils.TestFactory.createACommunity;
 import static com.researchspace.testutils.TestFactory.createAnyUser;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -12,6 +13,8 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.Constants;
 import com.researchspace.analytics.service.AnalyticsManager;
 import com.researchspace.core.testutil.CoreTestUtils;
@@ -21,6 +24,8 @@ import com.researchspace.dao.UserDao;
 import com.researchspace.model.Community;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
+import com.researchspace.model.UserPreference;
+import com.researchspace.model.preference.Preference;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserExistsException;
@@ -199,5 +204,106 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
     List<Community> comms = toList(createACommunity());
     comms.get(0).setId(1L);
     return comms;
+  }
+
+  /** A user whose UI_JSON_SETTINGS blob currently holds the given JSON (null for never written). */
+  private User userWithUiJsonSettings(String storedJson) {
+    User user = createAnyUser("jbloggs");
+    user.setId(7L);
+    if (storedJson != null) {
+      user.setPreference(new UserPreference(Preference.UI_JSON_SETTINGS, user, storedJson));
+    }
+    when(userDao.getUserByUsername("jbloggs")).thenReturn(user);
+    when(userDao.getForUpdate(7L)).thenReturn(user);
+    return user;
+  }
+
+  private String storedUiJsonSettings(User user) {
+    return user.getValueForPreference(Preference.UI_JSON_SETTINGS).getValue();
+  }
+
+  @Test
+  public void mergeUiJsonSettingKeepsTheKeysItWasNotAskedToChange() throws Exception {
+    // The whole UI_JSON_SETTINGS blob is one column, so the client used to read it, merge one key
+    // and post the lot back. Two overlapping writers each merged into the same snapshot and the
+    // later post dropped the earlier one's key. The merge happens here instead, under a row lock.
+    User user = userWithUiJsonSettings("{\"GALLERY_VIEW_MODE\":{\"value\":\"grid\"}}");
+    when(userDao.save(user)).thenReturn(user);
+
+    userManager.mergeUiJsonSetting("GALLERY_SORT_BY", "{\"value\":\"name\"}", user.getUsername());
+
+    JsonNode merged = new ObjectMapper().readTree(storedUiJsonSettings(user));
+    assertEquals("grid", merged.path("GALLERY_VIEW_MODE").path("value").asText());
+    assertEquals("name", merged.path("GALLERY_SORT_BY").path("value").asText());
+  }
+
+  @Test
+  public void mergeUiJsonSettingMergesIntoTheLockedRowNotTheUnlockedRead() throws Exception {
+    // The lookup that finds the user runs before any lock, so its copy of the blob may already be
+    // superseded. Merging into that copy would reintroduce the race one layer down, so the merge
+    // has to use what the locked read returned. Two distinct users stand in for the two reads.
+    User staleRead = createAnyUser("jbloggs");
+    staleRead.setId(7L);
+    staleRead.setPreference(
+        new UserPreference(
+            Preference.UI_JSON_SETTINGS,
+            staleRead,
+            "{\"GALLERY_VIEW_MODE\":{\"value\":\"list\"}}"));
+    User lockedRead = createAnyUser("jbloggs");
+    lockedRead.setId(7L);
+    lockedRead.setPreference(
+        new UserPreference(
+            Preference.UI_JSON_SETTINGS,
+            lockedRead,
+            "{\"GALLERY_VIEW_MODE\":{\"value\":\"grid\"},\"SYSADMIN_USERS_TABLE_COLUMNS\":{\"value\":1}}"));
+    when(userDao.getUserByUsername("jbloggs")).thenReturn(staleRead);
+    when(userDao.getForUpdate(7L)).thenReturn(lockedRead);
+    when(userDao.save(lockedRead)).thenReturn(lockedRead);
+
+    userManager.mergeUiJsonSetting("GALLERY_SORT_BY", "{\"value\":\"name\"}", "jbloggs");
+
+    JsonNode merged = new ObjectMapper().readTree(storedUiJsonSettings(lockedRead));
+    // the key another writer added between the two reads survives...
+    assertEquals(1, merged.path("SYSADMIN_USERS_TABLE_COLUMNS").path("value").asInt());
+    // ...and so does its change to a key the stale copy also had
+    assertEquals("grid", merged.path("GALLERY_VIEW_MODE").path("value").asText());
+    assertEquals("name", merged.path("GALLERY_SORT_BY").path("value").asText());
+  }
+
+  @Test
+  public void mergeUiJsonSettingWritesTheFirstKeyWhenNothingIsStoredYet() throws Exception {
+    User user = userWithUiJsonSettings(null);
+    when(userDao.save(user)).thenReturn(user);
+
+    userManager.mergeUiJsonSetting("GALLERY_SORT_BY", "{\"value\":\"name\"}", "jbloggs");
+
+    JsonNode merged = new ObjectMapper().readTree(storedUiJsonSettings(user));
+    assertEquals("name", merged.path("GALLERY_SORT_BY").path("value").asText());
+  }
+
+  @Test
+  public void mergeUiJsonSettingRejectsAKeyThatIsNotAPreferenceName() {
+    // The key is written verbatim into the user's single settings column, so an unconstrained one
+    // lets a caller fill that column with arbitrary names until it hits the TEXT limit, after which
+    // every keyed write for that user fails for good. Only the shape the client actually uses is
+    // accepted.
+    // no DAO stubbing: the key is rejected before the user is even read
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> userManager.mergeUiJsonSetting("../evil key", "{}", "jbloggs"));
+    assertThrows(
+        IllegalArgumentException.class, () -> userManager.mergeUiJsonSetting("", "{}", "jbloggs"));
+    verify(userDao, never()).save(Mockito.any(User.class));
+  }
+
+  @Test
+  public void mergeUiJsonSettingRejectsAValueThatIsNotJson() {
+    // The value is stored verbatim inside the blob, so an unparseable one would corrupt every
+    // other key in it on the next read.
+    // no DAO stubbing: the value is rejected before the user is even read
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> userManager.mergeUiJsonSetting("GALLERY_SORT_BY", "not json", "jbloggs"));
+    verify(userDao, never()).save(Mockito.any(User.class));
   }
 }

@@ -135,10 +135,14 @@ public class SampleApiPostValidatorTest extends InventoryRecordValidationTestBas
     e = resetErrorsAndValidate(full);
     assertEquals(1, e.getErrorCount());
 
-    // set invalid unit, should be rejected
+    // set invalid unit, should be rejected, and only for being an invalid unit: a litre is not
+    // comparable to a temperature either, but reporting that as well told the user nothing they
+    // did not already have to fix (Copilot review, PR #1090)
     full.setStorageTempMin(new ApiQuantityInfo(BigDecimal.valueOf(5L), RSUnitDef.LITRE));
     e = resetErrorsAndValidate(full);
-    assertEquals(2, e.getErrorCount());
+    assertEquals(1, e.getErrorCount(), "unexpected errors: " + e.getAllErrors());
+    assertEquals("storageTempMin", e.getFieldError().getField());
+    assertEquals("errors.inventory.temperature.invalidUnit", e.getFieldError().getCode());
 
     // set min temperature in different unit (but still 5 degrees C), should pass
     full.setStorageTempMin(new ApiQuantityInfo(BigDecimal.valueOf(278L), RSUnitDef.KELVIN));
@@ -233,5 +237,22 @@ public class SampleApiPostValidatorTest extends InventoryRecordValidationTestBas
     ApiExtraField ef = new ApiExtraField();
     ef.setName(name);
     return ef;
+  }
+
+  @Test
+  public void aTemperatureWithAUnitButNoNumberIsRejectedNotDereferenced() {
+    // A valid temperature unit with no numericValue used to pass the unit check and then be sorted
+    // against the other bound, where the unit-aware comparison dereferences the missing number and
+    // turns a malformed request into a 500 (Copilot review, PR #1090). Whether a temperature is
+    // required at all is each caller's own rule, so this only has to not blow up.
+    ApiSampleWithFullSubSamples full = new ApiSampleWithFullSubSamples();
+    full.setName("s1");
+    full.setStorageTempMin(new ApiQuantityInfo(null, RSUnitDef.CELSIUS));
+    full.setStorageTempMax(new ApiQuantityInfo(null, RSUnitDef.CELSIUS));
+
+    Errors e = new BeanPropertyBindingResult(full, "fullpost");
+    validator.validate(full, e);
+
+    assertEquals(0, e.getErrorCount(), "unexpected errors: " + e.getAllErrors());
   }
 }

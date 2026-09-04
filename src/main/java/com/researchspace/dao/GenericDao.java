@@ -46,6 +46,22 @@ public interface GenericDao<T, PK extends Serializable> {
   T get(PK id);
 
   /**
+   * Reads an entity and holds a row lock on it ({@code SELECT ... FOR UPDATE}) until the current
+   * transaction ends, so a concurrent transaction reading the same row this way waits for this one
+   * to commit. Use it where two requests writing one row must serialise rather than both compute
+   * from the same stale read (RSDEV-1231).
+   *
+   * <p>The row is re-read under the lock, so the returned entity holds what another transaction
+   * committed rather than what this one saw beforehand. The caller must therefore not hold
+   * unflushed changes to a row it locks here for the first time: they would be discarded. A row
+   * this transaction already holds exclusively is exempt and is returned as it is, so asking twice
+   * is a no-op and a caller's own pending changes are safe.
+   *
+   * @return the locked entity, or null if none has the id
+   */
+  T getForUpdate(PK id);
+
+  /**
    * Alternative object retriever, which just returns <code>null</code> if an item is not found,
    * rather than throwing an exception. Use this method when the id may not exist ( for example, if
    * from the identifier it is not clear what table to use (e.g., record or folder id; snippet or

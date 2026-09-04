@@ -6,9 +6,12 @@ import com.researchspace.model.PaginationCriteria;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import org.hibernate.LockMode;
 import org.hibernate.MappingException;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -38,6 +41,13 @@ public class GenericDaoHibernate<T, PK extends Serializable> implements GenericD
   protected final Logger log = LoggerFactory.getLogger(getClass());
 
   protected Class<T> persistentClass;
+
+  /**
+   * Lock modes under which this transaction already holds the row exclusively, so it must be
+   * returned as it is rather than locked again: see {@link GenericDao#getForUpdate}.
+   */
+  private static final Set<LockMode> ALREADY_HELD_EXCLUSIVELY =
+      EnumSet.of(LockMode.WRITE, LockMode.PESSIMISTIC_WRITE, LockMode.PESSIMISTIC_FORCE_INCREMENT);
 
   protected SessionFactory sessionFactory;
 
@@ -73,6 +83,21 @@ public class GenericDaoHibernate<T, PK extends Serializable> implements GenericD
    */
   protected Session getSession() {
     return sessionFactory.getCurrentSession();
+  }
+
+  @Override
+  public T getForUpdate(PK id) {
+    Session session = getSession();
+    T managed = session.get(persistentClass, id);
+    if (managed == null || ALREADY_HELD_EXCLUSIVELY.contains(session.getCurrentLockMode(managed))) {
+      return managed;
+    }
+    // Refreshed, not merely locked. Asking Hibernate to lock an entity it has already loaded is a
+    // lock UPGRADE: it issues "select id ... for update" and keeps the column values read before
+    // the lock, so the caller would compute from exactly the stale state the lock exists to
+    // prevent. Refreshing re-reads the row under the lock instead.
+    session.refresh(managed, LockMode.PESSIMISTIC_WRITE);
+    return managed;
   }
 
   @Autowired

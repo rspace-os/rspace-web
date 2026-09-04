@@ -13,7 +13,9 @@
         "userApiDisabled": "Access to API has been disabled for user ''{0}''",
         "userOAuthDisabled": "Access through OAuth tokens has been disabled for user ''{0}''"
       },
-      "detected": "Errors detected: {0}"
+      "concurrentUpdate": "Another request modified this item at the same time; retry the request.",
+    "detected": "Errors detected: {0}",
+    "generalServerError": "General server error"
     },
     "pubchem": {
       "errors": {
@@ -179,6 +181,11 @@
       "failed": {
         "message": "{0} failed for the following reasons: {1}"
       }
+    },
+    "preference": {
+      "invalidJsonValue": "The value for preference key ''{0}'' is not valid JSON.",
+      "invalidKey": "''{0}'' is not a valid preference key.",
+      "keyNotSupported": "Preference ''{0}'' is stored as a single value, so it cannot be updated one key at a time."
     },
     "rateLimitExceeded": "You have exceeded the number of {0} requests. Please contact ResearchSpace support for assistance.",
     "composedId": {

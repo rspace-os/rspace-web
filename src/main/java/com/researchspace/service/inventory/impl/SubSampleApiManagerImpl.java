@@ -23,6 +23,7 @@ import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.record.IActiveUserStrategy;
 import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.model.units.QuantityUtils;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.inventory.InventoryAuditApiManager;
 import com.researchspace.service.inventory.InventoryFieldNameUniquenessValidator;
 import com.researchspace.service.inventory.InventoryMoveHelper;
@@ -43,6 +44,7 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
     implements SubSampleApiManager {
 
   private @Autowired SubSampleDao subSampleDao;
+  private @Autowired MessageSourceUtils messages;
   private @Autowired InventoryMoveHelper moveHelper;
   private @Autowired InventoryAuditApiManager inventoryAuditMgr;
 
@@ -89,6 +91,17 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
   @Override
   public SubSample assertUserCanEditSubSample(Long id, User user) {
     SubSample subSample = getIfExists(id);
+    invPermissions.assertUserCanEditInventoryRecord(subSample, user);
+    return subSample;
+  }
+
+  @Override
+  public SubSample lockSubSampleForEdit(Long id, User user) {
+    SubSample subSample = subSampleDao.getForUpdate(id);
+    if (subSample == null) {
+      throw new NotFoundException(
+          messages.getMessage("errors.inventory.subsample.notFound", new Object[] {id}));
+    }
     invPermissions.assertUserCanEditInventoryRecord(subSample, user);
     return subSample;
   }
@@ -271,7 +284,14 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
 
     boolean temporaryLock = lockItemForEdit(dbSubSample, user);
     try {
-      dbSubSample = getIfExists(dbSubSample.getId());
+      // Every stock decrement in the app funnels through here (the operations endpoint,
+      // Stoichiometry, List of Materials), so the row lock is taken once here rather than in each
+      // caller. Without it the re-read is a plain get and two decrements racing the same subsample
+      // both subtract from the same stale quantity. Routed through lockSubSampleForEdit rather than
+      // the DAO so a row that vanished between the two reads is the same localised 404 as anywhere
+      // else, instead of a null dereference; the repeat permission check it performs is the same
+      // verdict as the one above.
+      dbSubSample = lockSubSampleForEdit(dbSubSample.getId(), user);
 
       QuantityInfo orgQuantity = dbSubSample.getQuantity();
       QuantityInfo newQuantity = qUtils.sum(Arrays.asList(orgQuantity, usedQuantity.negate()));

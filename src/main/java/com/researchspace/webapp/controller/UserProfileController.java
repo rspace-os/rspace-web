@@ -707,13 +707,26 @@ public class UserProfileController extends BaseController {
   public AjaxReturnObject<String> updatePreferenceValue(
       @RequestParam(value = "preference") String preferenceName,
       @RequestParam(value = "value") String value,
+      // Optional: with a key, only that key of the UI_JSON_SETTINGS object is written, merged
+      // server-side under a row lock. Without one the whole preference value is replaced, which is
+      // what every other preference and every legacy JSP caller means (code review, finding 3).
+      @RequestParam(value = "key", required = false) String key,
       Principal principal,
       HttpServletRequest req) {
 
     Preference pref = Preference.valueOf(preferenceName);
+    boolean keyed = StringUtils.isNotBlank(key);
+    if (keyed && !Preference.UI_JSON_SETTINGS.equals(pref)) {
+      return new AjaxReturnObject<>(
+          null,
+          ErrorList.of(
+              getText("errors.preference.keyNotSupported", new Object[] {preferenceName})));
+    }
     User user = userManager.getUserByUsername(principal.getName());
     UserPreference updatedPreference =
-        userManager.setPreference(pref, "" + value, user.getUsername());
+        keyed
+            ? userManager.mergeUiJsonSetting(key, "" + value, user.getUsername())
+            : userManager.setPreference(pref, "" + value, user.getUsername());
     analyticsManager.usersPreferencesChanged(user, req);
     return new AjaxReturnObject<>(updatedPreference.getValue(), null);
   }

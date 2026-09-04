@@ -11,6 +11,7 @@ import EditAction from "./EditAction";
 import ExportAction from "./ExportAction";
 import MoveAction from "./MoveAction";
 import PrintBarcodeAction from "./PrintBarcodeAction";
+import ProcessAction, { isProcessableSelection } from "./ProcessAction";
 import RemoveFromBasketAction from "./RemoveFromBasketAction";
 import RestoreAction from "./RestoreAction";
 import SelectAction from "./SelectAction";
@@ -88,6 +89,18 @@ const contextActions = ({
           />
         ),
         hidden: hideInPickerAndWhenNotAllCurrent,
+      },
+      {
+        component: (
+          <ProcessAction
+            key="process"
+            selectedResults={selectedResults}
+            as={as}
+            disabled={disableAllActions}
+            closeMenu={closeMenu}
+          />
+        ),
+        hidden: hideInPickerAndWhenNotAllCurrent || !isProcessableSelection(selectedResults),
       },
       {
         component: (

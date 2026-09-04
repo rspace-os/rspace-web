@@ -10,6 +10,7 @@ import com.researchspace.service.MessageSourceUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.ConstraintViolationException;
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.TimeZone;
@@ -20,6 +21,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
+import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.dao.PessimisticLockingFailureException;
+import org.springframework.orm.hibernate5.HibernateJdbcException;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -359,9 +363,41 @@ public class ControllerExceptionHandler implements IControllerExceptionHandler {
   private static void setErrorResponseStatus(HttpServletResponse response, Exception e) {
     if (isSecurityException(e)) {
       response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+    } else if (isConcurrentWriteConflict(e)) {
+      response.setStatus(HttpServletResponse.SC_CONFLICT);
     } else {
       response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
     }
+  }
+
+  /**
+   * MariaDB/InnoDB error code seen when two transactions write the same row at once (RSDEV-1231):
+   * 1020 is "Record has changed since last read", surfaced through the generic JDBC wrapper
+   * Hibernate falls back to when it cannot classify a failure. Deliberately duplicated rather than
+   * shared with {@code ApiControllerAdvice}: the API and web tiers map statuses independently, and
+   * a shared constant would tie one tier's mapping to the other's.
+   */
+  private static final int CONCURRENT_WRITE_SQL_ERROR_CODE = 1020;
+
+  /**
+   * Two writers of one row, which the caller can retry, rather than the 500 everything else gets.
+   * The UI preference blob is the common case: it is a single JSON column, so two browser tabs
+   * saving different preferences write the same row. Hibernate classifies most of these itself, and
+   * the shapes are siblings rather than subclasses of one another: a deadlock loser, a lock-wait
+   * timeout, and the stale-row failure a locked read raises all arrive as different types. Only
+   * what Hibernate could not classify at all needs the SQL code check, and anything else stays a
+   * 500.
+   */
+  private static boolean isConcurrentWriteConflict(Exception e) {
+    if (e instanceof PessimisticLockingFailureException
+        || e instanceof OptimisticLockingFailureException) {
+      return true;
+    }
+    if (e instanceof HibernateJdbcException) {
+      SQLException sqlException = ((HibernateJdbcException) e).getSQLException();
+      return sqlException != null && sqlException.getErrorCode() == CONCURRENT_WRITE_SQL_ERROR_CODE;
+    }
+    return false;
   }
 
   private static boolean isSecurityException(Exception e) {

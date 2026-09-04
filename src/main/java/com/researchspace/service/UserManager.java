@@ -306,6 +306,21 @@ public interface UserManager extends GenericManager<User, Long> {
   UserPreference setPreference(Preference preference, String value, String subject);
 
   /**
+   * Merges a single key into the user's {@code UI_JSON_SETTINGS} preference, leaving the other keys
+   * in it untouched. The whole preference is one JSON column, so a client that read it, merged its
+   * key and wrote the lot back lost the keys of any writer it overlapped with; merging server-side
+   * under a row lock removes that race for every caller. Writes of the same key stay
+   * last-write-wins, which is what a preference means.
+   *
+   * @param key the key within the JSON object
+   * @param valueJson the key's new value, as JSON
+   * @param subject the username
+   * @return the stored preference, holding the whole merged object
+   * @throws IllegalArgumentException if {@code valueJson} is not valid JSON
+   */
+  UserPreference mergeUiJsonSetting(String key, String valueJson, String subject);
+
+  /**
    * Variant of getUserByUsername that does not return User from Session. In general usage, use
    * getUserByUsername(). This method is or specifi cases when a Session is not available
    *
