@@ -17,7 +17,10 @@ export const MAX_SUBSAMPLE_COUNT = 100;
  */
 export function amountIsStorable(value: number): boolean {
   if (!Number.isFinite(value)) return false;
-  return Number.isInteger(value * 1000);
+  // Compared as a three-decimal round trip, not as an integer test on the scaled value: binary
+  // floating point makes 1.001 * 1000 equal 1000.9999999999999, which would reject an amount the
+  // backend stores exactly (Copilot review, PR #1090).
+  return Math.round(value * 1000) / 1000 === value;
 }
 
 /** Whether a child count is a whole number within [min, MAX_SUBSAMPLE_COUNT]. */
