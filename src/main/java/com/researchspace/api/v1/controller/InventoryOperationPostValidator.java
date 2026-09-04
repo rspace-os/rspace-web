@@ -28,6 +28,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
@@ -469,6 +470,35 @@ public class InventoryOperationPostValidator implements Validator {
             "errors.inventory.operation.subSampleQuantitiesUnequal",
             "This operation creates equal subsamples, so every new subsample must have the same"
                 + " quantity.");
+      }
+    }
+
+    // Creation derives the sample's own total from its children and stores it in the same
+    // DECIMAL(19,3) column, so children that are each storable can still sum past it and 500 inside
+    // the manager (Copilot review, PR #1090). Only checked once every quantity passed the shape
+    // rules above, so it never double-reports an invalid quantity.
+    // Quantities in different categories cannot be summed at all; that is already reported as its
+    // own error above, so this check simply does not apply to them.
+    boolean allComparable =
+        allQuantitiesValid
+            && newSample.getSubSamples().stream()
+                .map(ApiSubSample::getQuantity)
+                .allMatch(
+                    quantity ->
+                        quantityUtils.isComparableQuantities(
+                            newSample.getSubSamples().get(0).getQuantity(), quantity));
+    if (allComparable && newSample.getSubSamples().size() > 1) {
+      QuantityInfo total =
+          quantityUtils.sum(
+              newSample.getSubSamples().stream()
+                  .map(ApiSubSample::getQuantity)
+                  .map(ApiQuantityInfo::toQuantityInfo)
+                  .collect(Collectors.toList()));
+      if (!QuantityInfo.canStoreWithoutRounding(total.getNumericValue())) {
+        errors.rejectValue(
+            "newSample.subSamples",
+            "errors.inventory.operation.subSampleTotalNotStorable",
+            "The new subsamples add up to more than a sample quantity can hold.");
       }
     }
 

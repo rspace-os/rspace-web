@@ -1159,6 +1159,25 @@ class InventoryOperationPostValidatorTest {
   }
 
   @Test
+  void rejectsCreatedSubSamplesWhoseTotalCannotBeStored() {
+    // Each child is storable on its own, but creation derives and persists the parent sample total
+    // from them, into the same DECIMAL(19,3) column. Two children at the per-value ceiling sum past
+    // it, so a request that passes every individual check would still 500 inside the manager
+    // (Copilot review, PR #1090).
+    ApiInventoryOperationPost request = aliquotRequest();
+    ApiSubSample first = request.getNewSample().getSubSamples().get(0);
+    first.setQuantity(millilitres("9999999999999999.999"));
+    ApiSubSample second = new ApiSubSample();
+    second.setQuantity(millilitres("9999999999999999.999"));
+    request.getNewSample().getSubSamples().add(second);
+
+    assertSingleErrorWithCode(
+        validate(request),
+        "newSample.subSamples",
+        "errors.inventory.operation.subSampleTotalNotStorable");
+  }
+
+  @Test
   void rejectsAmountTakenInAUnitThatIsNotAnAmount() {
     ApiInventoryOperationPost request = aliquotRequest();
     request.getOrigins().get(0).setAmountTaken(celsius("1"));

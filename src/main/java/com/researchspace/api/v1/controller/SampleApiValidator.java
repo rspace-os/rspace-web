@@ -62,9 +62,13 @@ abstract class SampleApiValidator extends InventoryRecordValidator {
       errors.rejectValue(field, "errors.inventory.temperature.invalidUnit");
       return null;
     }
-    // A missing number is left to the callers' own required-value rules, unchanged.
-    if (temperature.getNumericValue() != null
-        && !QuantityInfo.canStoreWithoutRounding(temperature.getNumericValue())) {
+    // A missing number stays unresolved: whether a temperature is required at all is each caller's
+    // own rule, but the min/max comparison below dereferences the number, so returning the value
+    // here turned a malformed request into a 500 (Copilot review, PR #1090).
+    if (temperature.getNumericValue() == null) {
+      return null;
+    }
+    if (!QuantityInfo.canStoreWithoutRounding(temperature.getNumericValue())) {
       errors.rejectValue(field, "errors.inventory.temperature.notStorable");
       return null;
     }
