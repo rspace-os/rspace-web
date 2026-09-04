@@ -6,6 +6,7 @@ import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.api.v1.model.ApiSampleTemplate;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
+import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.units.RSUnitDef;
@@ -64,6 +65,42 @@ public class SampleApiPostFullValidatorTest extends InventoryRecordValidationTes
     e = new BeanPropertyBindingResult(apiSamplePost, "apiSample");
     validator.validate(fullPost, e);
     assertEquals(0, e.getErrorCount());
+  }
+
+  @Test
+  public void validateSubSampleQuantityUnitsAgainstTemplate() {
+    // The sample's total is derived from its subsamples when any are posted, so a comparable
+    // top-level quantity must not stand in front of children in another category (code review,
+    // finding 5). RSDEV-1231 reaches this validator from POST /operations too.
+    SampleTemplate massTemplate = new SampleTemplate();
+    massTemplate.setDefaultUnitId(RSUnitDef.GRAM.getId());
+
+    ApiSampleWithFullSubSamples apiSamplePost = new ApiSampleWithFullSubSamples();
+    apiSamplePost.setQuantity(new ApiQuantityInfo(BigDecimal.ONE, RSUnitDef.MILLI_GRAM.getId()));
+    ApiSubSample child = new ApiSubSample();
+    child.setQuantity(new ApiQuantityInfo(BigDecimal.ONE, RSUnitDef.MILLI_LITRE.getId()));
+    apiSamplePost.setSubSamples(List.of(child));
+
+    SamplesApiController.ApiSampleFullPost fullPost = new SamplesApiController.ApiSampleFullPost();
+    fullPost.setApiSample(apiSamplePost);
+    fullPost.setTemplate(massTemplate);
+
+    Errors mismatched = new BeanPropertyBindingResult(apiSamplePost, "apiSample");
+    validator.validate(fullPost, mismatched);
+    assertEquals(
+        1, mismatched.getErrorCount(), () -> "unexpected errors: " + mismatched.getAllErrors());
+    assertEquals("subSamples[0].quantity", mismatched.getFieldError().getField());
+    assertEquals(
+        "errors.inventory.sample.unitIncompatibleWithTemplate",
+        mismatched.getFieldError().getCode());
+
+    // the template fixes the category, not the unit: a microgram child is fine under a gram
+    // template
+    child.setQuantity(new ApiQuantityInfo(BigDecimal.ONE, RSUnitDef.MICRO_GRAM.getId()));
+    Errors comparable = new BeanPropertyBindingResult(apiSamplePost, "apiSample");
+    validator.validate(fullPost, comparable);
+    assertEquals(
+        0, comparable.getErrorCount(), () -> "unexpected errors: " + comparable.getAllErrors());
   }
 
   @Test
