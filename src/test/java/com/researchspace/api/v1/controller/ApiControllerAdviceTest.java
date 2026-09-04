@@ -17,11 +17,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.List;
+import org.hibernate.StaleObjectStateException;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.CannotAcquireLockException;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.orm.hibernate5.HibernateJdbcException;
+import org.springframework.orm.hibernate5.HibernateOptimisticLockingFailureException;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
@@ -117,7 +120,7 @@ class ApiControllerAdviceTest {
     advice.messages = new MessageSourceUtils(new JsonMessageSource());
 
     ResponseEntity<Object> response =
-        advice.handleCannotAcquireLock(
+        advice.handleConcurrencyFailure(
             new CannotAcquireLockException(
                 "could not execute statement",
                 new SQLException("Deadlock found when trying to get lock", "40001", 1213)),
@@ -128,6 +131,32 @@ class ApiControllerAdviceTest {
     assertEquals(
         "Another request modified this item at the same time; retry the request.",
         error.getMessage());
+  }
+
+  /**
+   * CannotAcquireLockException is one of several shapes a contended write takes, and they are
+   * siblings rather than subclasses of one another: a lock-wait timeout and the stale-row failure
+   * the locked reads added in RSDEV-1231 raise arrive as different types. All are retryable, so the
+   * API tier maps the whole Spring category, matching the web tier.
+   */
+  @Test
+  void theOtherConcurrencyFailuresAlsoMapTo409() {
+    ApiControllerAdvice advice = new ApiControllerAdvice();
+    advice.messages = new MessageSourceUtils(new JsonMessageSource());
+
+    assertEquals(
+        HttpStatus.CONFLICT,
+        advice
+            .handleConcurrencyFailure(new PessimisticLockingFailureException("lock wait"), null)
+            .getStatusCode());
+    assertEquals(
+        HttpStatus.CONFLICT,
+        advice
+            .handleConcurrencyFailure(
+                new HibernateOptimisticLockingFailureException(
+                    new StaleObjectStateException("SubSample", 1L)),
+                null)
+            .getStatusCode());
   }
 
   /**
@@ -179,7 +208,7 @@ class ApiControllerAdviceTest {
     ApiError error =
         (ApiError)
             advice
-                .handleCannotAcquireLock(
+                .handleConcurrencyFailure(
                     new CannotAcquireLockException(
                         "could not execute statement",
                         new SQLException("Deadlock found", "40001", 1213)),
