@@ -184,6 +184,12 @@ describe("amountIsStorable", () => {
     expect(amountIsStorable(1)).toBe(true);
     expect(amountIsStorable(0.001)).toBe(true);
     expect(amountIsStorable(2.5)).toBe(true);
+    // Binary floating point: 1.001 * 1000 is 1000.9999999999999, so a naive integer test on the
+    // scaled value rejects a three-decimal amount the backend stores happily (Copilot review,
+    // PR #1090).
+    expect(amountIsStorable(1.001)).toBe(true);
+    expect(amountIsStorable(2.002)).toBe(true);
+    expect(amountIsStorable(0.007)).toBe(true);
     expect(amountIsStorable(0.0005)).toBe(false);
     expect(amountIsStorable(0.0004)).toBe(false);
     expect(amountIsStorable(Number.NaN)).toBe(false);
