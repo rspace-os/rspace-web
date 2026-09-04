@@ -7028,6 +7028,7 @@ export default interface Resources {
           "subSampleQuantitiesUnequal": "This operation creates equal subsamples, so every new subsample must have the same quantity.",
           "subSampleQuantityInvalid": "Each new subsample must hold a quantity greater than zero, with a unit.",
           "subSampleQuantityTooPrecise": "Each new subsample quantity supports at most 3 decimal places.",
+          "subSampleTotalNotStorable": "The new subsamples add up to more than a sample quantity can hold.",
           "subSamplesRequired": "The new sample must include at least {0} subsample(s).",
           "tooManyOrigins": "This operation accepts at most {max} origin subsamples.",
           "undeclaredProperty": "This operation does not accept [{0}] on the sample it creates.",

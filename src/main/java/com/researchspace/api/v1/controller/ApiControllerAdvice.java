@@ -25,8 +25,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.CannotAcquireLockException;
 import org.springframework.dao.DataAccessException;
+import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -96,13 +97,18 @@ public class ApiControllerAdvice extends RestControllerAdvice {
     return new ResponseEntity<Object>(apiError, new HttpHeaders(), apiError.getStatus());
   }
 
-  // 409: Spring's own recognized category for "could not acquire a DB lock" (a deadlock or lock-
-  // wait timeout at commit); Hibernate has already classified it this specifically, so every
-  // occurrence is a conflict worth retrying (RSDEV-1231).
+  // 409: Spring's own recognized categories for a contended write. Hibernate has already
+  // classified these specifically, so every occurrence is a conflict worth retrying (RSDEV-1231).
+  // Both categories are needed and neither implies the other: a deadlock and a lock-wait timeout
+  // arrive as CannotAcquireLockException under PessimisticLockingFailureException, while the
+  // stale-row failure a locked read raises is an OptimisticLockingFailureException.
   @ResponseStatus(HttpStatus.CONFLICT)
-  @ExceptionHandler(CannotAcquireLockException.class)
-  public ResponseEntity<Object> handleCannotAcquireLock(
-      final CannotAcquireLockException ex, final WebRequest request) {
+  @ExceptionHandler({
+    PessimisticLockingFailureException.class,
+    OptimisticLockingFailureException.class
+  })
+  public ResponseEntity<Object> handleConcurrencyFailure(
+      final DataAccessException ex, final WebRequest request) {
     return handleConcurrentUpdateConflict(ex);
   }
 

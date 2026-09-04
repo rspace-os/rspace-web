@@ -173,6 +173,7 @@
         "subSampleQuantitiesUnequal": "This operation creates equal subsamples, so every new subsample must have the same quantity.",
         "subSampleQuantityInvalid": "Each new subsample must hold a quantity greater than zero, with a unit.",
         "subSampleQuantityTooPrecise": "Each new subsample quantity supports at most 3 decimal places.",
+        "subSampleTotalNotStorable": "The new subsamples add up to more than a sample quantity can hold.",
         "extraFieldCountMaximum": "This operation accepts at most {0} extra fields on the sample it creates.",
         "subSampleCountMaximum": "This operation accepts at most {0} new subsamples.",
         "subSamplesRequired": "The new sample must include at least {0} subsample(s).",
