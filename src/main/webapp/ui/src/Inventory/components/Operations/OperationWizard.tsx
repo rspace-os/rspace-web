@@ -23,7 +23,7 @@ import { getUnitId, getValue } from "@/stores/models/HasQuantity";
 import type SubSampleModel from "@/stores/models/SubSampleModel";
 import getRootStore from "@/stores/stores/getRootStore";
 import { showToastWhilstPending } from "@/util/alerts";
-import { getErrorMessage } from "@/util/error";
+import { getApiErrorDetail, getErrorMessage } from "@/util/error";
 import ContextDialog from "../ContextMenu/ContextDialog";
 import { buildOperationRequest } from "./buildOperationRequest";
 import { applyComputedValues, gatherParentFields } from "./computedValues";
@@ -507,14 +507,24 @@ function OperationWizard({
       await showToastWhilstPending(t("operations.wizard.inProgress"), performOperation(request));
     } catch (error) {
       // Never fail silently: surface the reason (e.g. a backend rejection) instead of leaving the
-      // Perform button looking dead. The wizard stays open so the user can retry.
+      // Perform button looking dead. The wizard stays open so the user can retry. The reason comes
+      // from the field-scoped errors array, not `message`, which for a rejected request is only
+      // "Errors detected: 1" (code review, finding 4).
       getRootStore().uiStore.addAlert(
         mkAlert({
           title: t("operations.wizard.failed"),
-          message: getErrorMessage(error, t("operations.wizard.failed")),
+          message: getApiErrorDetail(error, t("operations.wizard.failed")),
           variant: "error",
         }),
       );
+      // Re-read the origins: the usual rejection is "you asked for more than it holds", and the
+      // amounts step validates against origin.quantity, so without this the user can only fail the
+      // same way again. Best-effort - the alert above already names the real problem.
+      try {
+        await Promise.all(origins.map((o) => o.fetchAdditionalInfo()));
+      } catch (refreshError) {
+        console.warn("Could not refresh the origins after a rejected operation", refreshError);
+      }
       setSubmitting(false);
       return;
     }
