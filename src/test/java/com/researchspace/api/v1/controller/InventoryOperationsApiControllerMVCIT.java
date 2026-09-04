@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.researchspace.api.v1.model.ApiExtraField;
+import com.researchspace.api.v1.model.ApiSample;
 import com.researchspace.api.v1.model.ApiSampleTemplate;
 import com.researchspace.api.v1.model.ApiSampleTemplatePost;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
@@ -1094,6 +1095,74 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
                 + reloaded.getQuantity().getNumericValue()
                 + " after "
                 + statuses);
+  }
+
+  @Test
+  public void parallelAliquotsOnSiblingSubSamplesKeepTheParentTotalExact() throws Exception {
+    // Two Aliquots on different subsamples of ONE sample never touch the same subsample row, so the
+    // origin locks alone let them run at once. Both still rewrite the parent's denormalised total,
+    // which each computes from its own read: without the parent lock one of the two decrements is
+    // lost from the total (10.11) or the loser fails at commit (12.3). Repeated: it is a race.
+    for (int round = 0; round < 5; round++) {
+      ApiSampleWithFullSubSamples sample =
+          createSampleWithTwoSubSamples("siblings " + round, "10", RSUnitDef.MILLI_LITRE.getId());
+      ApiSubSample first = sample.getSubSamples().get(0);
+      ApiSubSample second = sample.getSubSamples().get(1);
+
+      List<Integer> statuses =
+          fireConcurrentOperationRequests(
+              List.of(aliquotTakingJson(first, "3"), aliquotTakingJson(second, "3")));
+
+      assertTrue(
+          statuses.stream().noneMatch(status -> status >= 500),
+          () -> "5xx from sibling aliquots: " + statuses);
+      assertEquals(
+          2,
+          statuses.stream().filter(status -> status == 201).count(),
+          () -> "sibling subsamples do not contend, both should succeed, got " + statuses);
+      assertQuantityIs(first, 7, statuses);
+      assertQuantityIs(second, 7, statuses);
+      // The point of the test: the sample's stored total must equal what its children now hold,
+      // not one decrement short of it.
+      ApiSample reloadedSample = sampleApiMgr.getApiSampleById(sample.getId(), anyUser);
+      assertTrue(
+          new java.math.BigDecimal("14").compareTo(reloadedSample.getQuantity().getNumericValue())
+              == 0,
+          () ->
+              "expected the parent total to match its children (14), got "
+                  + reloadedSample.getQuantity()
+                  + " after "
+                  + statuses);
+    }
+  }
+
+  /** A sample whose two subsamples each hold the given quantity. */
+  private ApiSampleWithFullSubSamples createSampleWithTwoSubSamples(
+      String name, String value, int unitId) throws Exception {
+    String subSampleJson = "{\"quantity\":" + quantityJson(value, unitId) + "}";
+    String sampleJson =
+        "{\"name\":\"" + name + "\",\"subSamples\":[" + subSampleJson + "," + subSampleJson + "]}";
+    MvcResult result =
+        mockMvc
+            .perform(createBuilderForPostWithJSONBody(apiKey, "/samples", anyUser, sampleJson))
+            .andExpect(status().isCreated())
+            .andReturn();
+    return getFromJsonResponseBody(result, ApiSampleWithFullSubSamples.class);
+  }
+
+  /** An Aliquot taking the given amount, in the origin's own unit, into one child of half that. */
+  private String aliquotTakingJson(ApiSubSample origin, String amount) {
+    return "{\"operationType\":\"aliquot\",\"origins\":[{\"id\":"
+        + origin.getId()
+        + ",\"amountTaken\":"
+        + quantityJson(amount, origin.getQuantity().getUnitId())
+        + "}],\"newSample\":{\"name\":\"Aliquot of "
+        + origin.getGlobalId()
+        + "\",\"extraFields\":["
+        + isPartOfLinkJson(origin.getGlobalId())
+        + "],\"subSamples\":[{\"quantity\":"
+        + quantityJson(amount, origin.getQuantity().getUnitId())
+        + "}]}}";
   }
 
   /** How many samples the test user can see; the outputs a race actually created. */
