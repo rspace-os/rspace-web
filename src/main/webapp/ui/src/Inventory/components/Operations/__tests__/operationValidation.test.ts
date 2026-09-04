@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { InventoryOperation } from "../operationsConfig";
-import { amountTakenExceedsOrigin, detailsValid, quantityExceedsOrigin } from "../operationValidation";
+import {
+  amountIsStorable,
+  amountTakenExceedsOrigin,
+  detailsValid,
+  quantityExceedsOrigin,
+} from "../operationValidation";
 import type { OperationInputs } from "../types";
 
 // A cryopreserve-shaped operation: it has a sub-zero temperature field and an optional cryomedium.
@@ -169,5 +174,19 @@ describe("quantityExceedsOrigin", () => {
 
   it("flags any positive amount against an origin that holds nothing", () => {
     expect(quantityExceedsOrigin({ numericValue: 1, unitId: 3 }, null)).toBe(true);
+  });
+});
+
+describe("amountIsStorable", () => {
+  // Quantities persist in a DECIMAL(19,3) column and the endpoint rejects anything finer, so the
+  // wizard must block it rather than let Perform fail (Copilot review, PR #1090).
+  it("accepts up to three decimal places and rejects finer values", () => {
+    expect(amountIsStorable(1)).toBe(true);
+    expect(amountIsStorable(0.001)).toBe(true);
+    expect(amountIsStorable(2.5)).toBe(true);
+    expect(amountIsStorable(0.0005)).toBe(false);
+    expect(amountIsStorable(0.0004)).toBe(false);
+    expect(amountIsStorable(Number.NaN)).toBe(false);
+    expect(amountIsStorable(Number.POSITIVE_INFINITY)).toBe(false);
   });
 });
