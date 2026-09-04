@@ -26,20 +26,19 @@ type UiPreferencesContextType = {
   uiPreferences: { [key in keyof typeof PREFERENCES]: unknown };
   setUiPreferences: React.Dispatch<React.SetStateAction<{ [key in keyof typeof PREFERENCES]: unknown } | null>>;
   /*
-   * Writes are chained so two writes of the same key from one page land in the order they were
-   * made, and so a failure is reported once rather than per in-flight request. Losing a key to an
-   * overlapping writer is no longer possible: each write sends only its own key and the server
-   * merges it (code review, finding 3). The chain belongs to the provider rather than the module
-   * so one stalled request cannot hold up every other preference write in the app for the rest of
-   * the session.
+   * One write chain per key, so two writes of the same key from one page land in the order they
+   * were made. Losing a key to an overlapping writer is no longer possible: each write sends only
+   * its own key and the server merges it (code review, finding 3), which is also why the chains are
+   * per key rather than one shared one - a single chain would let one stalled request hold up every
+   * other preference for the rest of the session, with nothing left to gain from the ordering.
    */
-  pendingWrite: React.MutableRefObject<Promise<void>>;
+  pendingWrites: React.MutableRefObject<Map<string, Promise<void>>>;
 };
 
 const DEFAULT_UI_PREFERENCES_CONTEXT: UiPreferencesContextType = {
   uiPreferences: mapValues(PREFERENCES, () => null),
   setUiPreferences: () => {},
-  pendingWrite: { current: Promise.resolve() },
+  pendingWrites: { current: new Map() },
 };
 
 const UiPreferencesContext: React.Context<UiPreferencesContextType> =
@@ -63,7 +62,7 @@ async function fetchPreferences(): Promise<UiPreferencesContextType["uiPreferenc
  */
 export function UiPreferences({ children }: { children: React.ReactNode }): React.ReactNode {
   const [uiPreferences, setUiPreferences] = React.useState<UiPreferencesContextType["uiPreferences"] | null>(null);
-  const pendingWrite = React.useRef<Promise<void>>(Promise.resolve());
+  const pendingWrites = React.useRef<Map<string, Promise<void>>>(new Map());
 
   React.useEffect(() => {
     void fetchPreferences()
@@ -85,7 +84,7 @@ export function UiPreferences({ children }: { children: React.ReactNode }): Reac
    */
   if (!uiPreferences) return null;
   return (
-    <UiPreferencesContext.Provider value={{ uiPreferences, setUiPreferences, pendingWrite }}>
+    <UiPreferencesContext.Provider value={{ uiPreferences, setUiPreferences, pendingWrites }}>
       {children}
     </UiPreferencesContext.Provider>
   );
@@ -110,7 +109,7 @@ export default function useUiPreference<T>(
     defaultValue: T;
   },
 ): UseState<T> {
-  const { uiPreferences, setUiPreferences, pendingWrite } = React.useContext(UiPreferencesContext);
+  const { uiPreferences, setUiPreferences, pendingWrites } = React.useContext(UiPreferencesContext);
   const key = Symbol.keyFor(preference);
   let v = opts.defaultValue;
   if (key && typeof uiPreferences[key] !== "undefined") {
@@ -135,7 +134,8 @@ export default function useUiPreference<T>(
       });
 
       if (!key) return;
-      pendingWrite.current = pendingWrite.current.then(async () => {
+      const previous = pendingWrites.current.get(key) ?? Promise.resolve();
+      const write = previous.then(async () => {
         const formData = new FormData();
         formData.append("preference", "UI_JSON_SETTINGS");
         // Only this key is sent; the server merges it into the stored object under a row lock.
@@ -154,11 +154,14 @@ export default function useUiPreference<T>(
         );
         await axios.post<unknown>("/userform/ajax/preference", formData);
       });
-      // Caught so a failure cannot block the chain (callers never await it), but reported: a
+      // Caught so a failure cannot block this key's chain (callers never await it), but reported: a
       // silently dropped preference save is invisible to user and developer alike.
-      pendingWrite.current = pendingWrite.current.catch((e) => {
-        console.error(`Could not save UI preference ${key}`, e);
-      });
+      pendingWrites.current.set(
+        key,
+        write.catch((e) => {
+          console.error(`Could not save UI preference ${key}`, e);
+        }),
+      );
     },
   ];
 }
