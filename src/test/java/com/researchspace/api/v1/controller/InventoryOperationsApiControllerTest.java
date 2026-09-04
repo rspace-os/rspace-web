@@ -173,4 +173,30 @@ class InventoryOperationsApiControllerTest {
         rejection.getFieldErrors("newSample.subSamples[0].quantity").get(0).getCode());
     verifyNoInteractions(operationManager);
   }
+
+  @Test
+  void acceptsNewSubSamplesInAnotherUnitOfTheTemplatesCategory() throws Exception {
+    // The template fixes the measurement category, not the exact unit, so microlitre children under
+    // a millilitre template are a legitimate request: the check above must not have tightened into
+    // unit equality (code review, finding 5).
+    ApiInventoryOperationPost request = aliquotRequest();
+    request.getNewSample().setTemplateId(7L);
+    request
+        .getNewSample()
+        .getSubSamples()
+        .get(0)
+        .setQuantity(new ApiQuantityInfo(new BigDecimal("500"), RSUnitDef.MICRO_LITRE.getId()));
+    SampleTemplate volumeTemplate = new SampleTemplate();
+    volumeTemplate.setDefaultUnitId(RSUnitDef.MILLI_LITRE.getId());
+    when(sampleApiMgr.getSampleTemplateByIdWithPopulatedFields(7L, user))
+        .thenReturn(volumeTemplate);
+    ApiSampleWithFullSubSamples created = new ApiSampleWithFullSubSamples("Aliquots");
+    when(operationManager.performOperation(request, user)).thenReturn(created);
+
+    assertSame(
+        created,
+        controller.performOperation(
+            request, new BeanPropertyBindingResult(request, "request"), user));
+    verify(operationManager).performOperation(request, user);
+  }
 }
