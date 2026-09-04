@@ -144,11 +144,6 @@ export type ExternalMetadataUpdateOutcome = "UPDATED" | "FAILED" | "NOT_UPDATABL
  * identifier does not carry it. `reason` is a localized sentence from the server, ready to show.
  */
 export type ExternalMetadataUpdate = {
-  /**
-   * True only for `UPDATED`, from which the server derives it. Carried for API clients; the UI
-   * decides everything from `outcome`, so nothing here reads this.
-   */
-  succeeded?: boolean;
   outcome: ExternalMetadataUpdateOutcome;
   reason: string;
 };
