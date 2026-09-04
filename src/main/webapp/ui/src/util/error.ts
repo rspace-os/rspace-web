@@ -68,3 +68,24 @@ export function getErrorMessage(error: unknown, fallback: string): string {
     )
     .orElse(fallback);
 }
+
+/**
+ * The reason an API call was rejected, for showing to the user.
+ *
+ * A field-scoped 400 from the Inventory API carries "Errors detected: N" in `message` and the
+ * actual reasons in `errors`, each prefixed by the request path it applies to
+ * ("origins[0].amountTaken: Cannot take more..."). `getErrorMessage` shows only `message`, which
+ * tells the user nothing they can act on. Only the first error is returned: the user fixes one
+ * thing at a time, and the API already orders them by request index.
+ *
+ * @arg error     Anything; the detail is extracted if it is an Axios error carrying one.
+ * @arg fallback  Passed through to {@link getErrorMessage} when there is no detail.
+ */
+export function getApiErrorDetail(error: unknown, fallback: string): string {
+  return Parsers.objectPath(["response", "data", "errors"], error)
+    .flatMap(Parsers.isArray)
+    .flatMap(([first]) => (typeof first === "undefined" ? Result.Error<unknown>([]) : Result.Ok(first)))
+    .flatMap(Parsers.isString)
+    .map((detail) => detail.replace(/^[\w.[\]]+:\s*/, ""))
+    .orElse(getErrorMessage(error, fallback));
+}

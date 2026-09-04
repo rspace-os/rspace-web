@@ -30,9 +30,11 @@ beforeEach(() => {
   writes = 0;
   server.use(
     http.get(PREFERENCE_URL, () => HttpResponse.json(stored)),
+    // Merges the one posted key, as the server does: the client no longer sends the whole object.
     http.post(PREFERENCE_URL, async ({ request }) => {
       const form = await request.formData();
-      stored = JSON.parse(String(form.get("value"))) as typeof stored;
+      const key = String(form.get("key"));
+      stored = { ...stored, [key]: JSON.parse(String(form.get("value"))) as (typeof stored)[string] };
       writes += 1;
       return HttpResponse.json({});
     }),
@@ -148,7 +150,7 @@ describe("OperationWizard with the real preference hook", () => {
     await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
 
     await waitFor(() => expect(onClose).toHaveBeenCalled());
-    // three separate read-merge-writes, so all three keys must survive on the server
+    // three separate single-key writes, so all three keys must survive on the server
     await waitFor(() => expect(writes).toBe(3));
     expect(Object.keys(stored).sort()).toEqual([
       "INVENTORY_OPERATION_PROCESS_NAMES",

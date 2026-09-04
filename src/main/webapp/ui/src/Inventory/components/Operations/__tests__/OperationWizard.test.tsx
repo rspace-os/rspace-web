@@ -435,6 +435,65 @@ describe("OperationWizard step flow", () => {
     expect(screen.getByTestId("confirm")).toBeInTheDocument();
   });
 
+  it("shows the field-scoped reason for a rejection and reloads the origin", async () => {
+    // A BindException 400 puts "Errors detected: 1" in `message`; the reason the user can act on is
+    // in `errors[0]`, behind the path it applies to. Showing only `message` left them re-submitting
+    // against a quantity the wizard had not refreshed, so it could only fail the same way again.
+    server.use(
+      http.post(
+        OPERATIONS_URL,
+        () =>
+          HttpResponse.json(
+            {
+              message: "Errors detected: 1",
+              errors: ["origins[0].amountTaken: Cannot take more from an origin than it currently holds"],
+            },
+            { status: 400 },
+          ),
+        { once: true },
+      ),
+    );
+    const user = userEvent.setup();
+    const origin = makeMockSubSample({});
+    const refresh = vi.spyOn(origin, "fetchAdditionalInfo").mockResolvedValue(undefined);
+    render(<OperationWizard open onClose={vi.fn()} origins={[origin]} />);
+    await reachConfirm(user, "stale");
+    await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
+
+    await waitFor(() => expect(addAlert).toHaveBeenCalled());
+    const alert = addAlert.mock.calls[0][0] as { message: string; variant: string };
+    expect(alert.variant).toBe("error");
+    expect(alert.message).toBe("Cannot take more from an origin than it currently holds");
+    // the amounts step validates against origin.quantity, so it has to be re-read or the user can
+    // only fail again
+    await waitFor(() => expect(refresh).toHaveBeenCalledTimes(1));
+  });
+
+  it("still reports the operation as failed when reloading the origin also fails", async () => {
+    // The refresh is best-effort: the alert above already names the real problem, and a refresh
+    // failure must not replace it with a less useful one.
+    server.use(
+      http.post(OPERATIONS_URL, () => HttpResponse.json({ message: "backend rejected the request" }, { status: 400 }), {
+        once: true,
+      }),
+    );
+    const consoleWarn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    const origin = makeMockSubSample({});
+    vi.spyOn(origin, "fetchAdditionalInfo").mockRejectedValue(new Error("network down"));
+    render(<OperationWizard open onClose={onClose} origins={[origin]} />);
+    await reachConfirm(user, "both fail");
+    await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
+
+    await waitFor(() => expect(addAlert).toHaveBeenCalled());
+    const alerts = addAlert.mock.calls.map((call) => call[0] as { variant: string; message: string });
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0].message).toBe("backend rejected the request");
+    expect(onClose).not.toHaveBeenCalled();
+    consoleWarn.mockRestore();
+  });
+
   it("treats a successful Perform as done even when refreshing the origin afterwards fails", async () => {
     // Code review, finding 2: the POST committed (output created, origin decremented), so a failed
     // refresh must not be reported as a failed operation with the wizard left open for a retry that
