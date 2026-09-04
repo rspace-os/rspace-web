@@ -72,8 +72,17 @@ vi.mock("@/components/SubmitSpinnerButton", () => ({
   ),
 }));
 // ContextDialog wraps the content in a MUI Dialog; render its children inline when open.
+// ContextDialog wraps the content in a MUI Dialog; render its children inline when open. The
+// "dialog-close" button stands in for the dialog's own close paths (Escape), which reach the wizard
+// through this same onClose prop.
 vi.mock("../../ContextMenu/ContextDialog", () => ({
-  default: ({ open, children }: { open: boolean; children: React.ReactNode }) => (open ? <div>{children}</div> : null),
+  default: ({ open, children, onClose }: { open: boolean; children: React.ReactNode; onClose: () => void }) =>
+    open ? (
+      <div>
+        <button type="button" data-testid="dialog-close" onClick={onClose} />
+        {children}
+      </div>
+    ) : null,
 }));
 
 // Stub the step bodies so the flow can be driven deterministically. The details stub renders all its
@@ -497,6 +506,56 @@ describe("OperationWizard step flow", () => {
     await user.click(backButton()); // back to picker
     await user.click(await screen.findByRole("button", { name: /operations\.cryopreserve\.label/i }));
     expect(screen.getByText(/operations\.cryopreserve\.label$/)).toBeInTheDocument();
+  });
+
+  it("blocks Cancel while a Perform is in flight, so the origin cannot be charged twice", async () => {
+    // Closing does not cancel the POST, so a user who cancelled mid-request could reopen the wizard
+    // and submit the same operation again against origins the first request was still decrementing
+    // (Copilot review, PR #1090).
+    let releasePost: () => void = () => {};
+    const pending = new Promise<void>((resolve) => {
+      releasePost = resolve;
+    });
+    server.use(
+      http.post(
+        OPERATIONS_URL,
+        async () => {
+          await pending;
+          return HttpResponse.json({ id: 1, globalId: "SS9", name: "New" }, { status: 201 });
+        },
+        { once: true },
+      ),
+    );
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    const origin = makeMockSubSample({});
+    vi.spyOn(origin, "fetchAdditionalInfo").mockResolvedValue(undefined);
+    render(<OperationWizard open onClose={onClose} origins={[origin]} />);
+    await reachConfirm(user, "slow");
+    await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
+
+    // Cancel is disabled (MUI then makes it unclickable), and the dialog's own close path (Escape)
+    // is blocked too: both route through the same guard.
+    await waitFor(() => expect(screen.getByRole("button", { name: /actions\.cancel/i })).toBeDisabled());
+    await user.click(screen.getByTestId("dialog-close"));
+    expect(onClose).not.toHaveBeenCalled();
+
+    releasePost();
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+  });
+
+  it("re-gates Perform on every step when un-ticking remember resets the earlier ones", async () => {
+    // Un-ticking resets the template/documentation/values but stays on the confirm step. Gating
+    // Perform on the confirm step alone left it enabled with no template chosen, producing an
+    // avoidable backend rejection (Copilot review, PR #1090).
+    const user = userEvent.setup();
+    render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
+    await reachConfirm(user, "dna");
+    await user.click(screen.getByTestId("toggle-remember")); // tick
+    expect(screen.getByRole("button", { name: /wizard\.perform/i })).toBeEnabled();
+
+    await user.click(screen.getByTestId("toggle-remember")); // un-tick: template selection is reset
+    expect(screen.getByRole("button", { name: /wizard\.perform/i })).toBeDisabled();
   });
 
   it("reads that heading as 'Derive: dna' in English", async () => {

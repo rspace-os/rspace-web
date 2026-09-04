@@ -4047,6 +4047,7 @@ export default interface Resources {
         "description": "Optionally choose a template for the new sample.",
         "fromSample": "Use the parent sample's template",
         "loadingTemplates": "Loading templates…",
+        "lookupFailed": "This template could not be checked. Try choosing it again.",
         "mandatoryFieldsError": "This template cannot be used: the required field(s) {fields} have no default value. Choose another template.",
         "noTemplates": "No templates found",
         "none": "No template",
@@ -7165,6 +7166,7 @@ export default interface Resources {
         "temperature": {
           "invalidUnit": "Unit id is not a valid temperature unit.",
           "minGreaterThanMax": "Min temperature is greater than max temperature.",
+          "notStorable": "Temperature must be within the range the system stores, with at most 3 decimal places.",
           "unitsNotComparable": "Temperature units are not mutually comparable."
         },
         "template": {
