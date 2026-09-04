@@ -5018,9 +5018,38 @@ export default interface Resources {
         "uploadImage": "Change Image"
       },
       "preferences": {
+        "box": "Box",
+        "boxLinkType": "Box Link Type",
+        "chemistry": "Chemistry",
+        "defaultPdfPageSize": "Default PDF page size",
+        "deletedRecordsPerPage": "Number of deleted items per page",
+        "directoryResultsPerPage": "Number of Directory items per page",
+        "documentShared": "A document is shared with me",
+        "documentUnshared": "A document is unshared with me",
+        "dropbox": "Dropbox",
+        "ecat": "Ecat",
+        "ecatServer": "eCAT Server",
+        "formsPerPage": "Number of Forms per page",
+        "googleDrive": "GoogleDrive",
+        "guidedTours": "Show guided tours",
+        "initialWorkspaceView": "Whether Workspace page opens up as list view or tree view initially",
+        "mendeley": "Mendeley",
+        "notificationsByEmail": "Send notifications by email",
+        "oneDrive": "OneDrive",
+        "piCanEditAllWork": "PI can edit all work in lab group",
+        "processCompleted": "A background process finishes",
+        "processFailed": "A background process fails",
+        "requestStatusChanged": "A request status changes",
+        "requestsByEmail": "Send requests by email",
+        "sharedDocumentDeleted": "A shared document is deleted",
+        "sharedDocumentEdited": "A shared document is edited",
+        "sharedRecordsPerPage": "Number of shared items per page",
+        "uiClientSettings": "UI client-side settings",
+        "uiJsonSettings": "UI client-side settings, in json format",
         "updateButton": {
           "label": "Update Preferences"
-        }
+        },
+        "workspaceResultsPerPage": "Number of Workspace items per page"
       },
       "sectionLabel": {
         "collaborationGroups": "Collaboration Groups:",
@@ -5628,6 +5657,10 @@ export default interface Resources {
       "username": "Username",
       "yourComment": "your comment"
     },
+    "pagination": {
+      "first": "First",
+      "last": "Last"
+    },
     "relativeDate": {
       "daysAgo": "{0, plural, one {# day ago at {1}} other {# days ago at {1}}}",
       "today": "Today at {0}",
@@ -5672,6 +5705,63 @@ export default interface Resources {
         "subjectStringMax": "Subject \"${validatedValue}\" must be less than {max} characters.",
         "titleRequired": "Title is a required field.",
         "titleStringRange": "Title \"${validatedValue}\" must be between {min} and {max} characters."
+      },
+      "fieldData": {
+        "dateAfterMaximum": "Input date [{0}] after maximum [{1}]",
+        "dateBeforeMinimum": "Input date [{0}] before minimum [{1}]",
+        "invalidChoice": "Invalid data for Choice Field [{0}]",
+        "invalidDateFormat": "Invalid date format [{0}]",
+        "invalidGlobalIdPrefix": "The prefix {0} is not a globalIdPrefix. It must belong to GlobalIdPrefix enumset",
+        "invalidNumberFormat": "Invalid number format [{0}].",
+        "invalidRadio": "Invalid data for Radio Field [{0}]",
+        "invalidReference": "Invalid data ({0}) for Source Field [{1}] - must be parsable into GlobalIds",
+        "invalidUri": "Invalid URI syntax; {0}",
+        "numberAboveMaximum": "Data [{0}] greater than maximum [{1}]",
+        "numberBelowMinimum": "Data [{0}] smaller than minimum [{1}]",
+        "tooManyDecimalPlaces": "Data [{0}] has too many decimal places (should be [{1}] )."
+      },
+      "fieldForm": {
+        "choiceOptionsRequired": "Choice options are required.",
+        "dateFormatRequired": "Date format is required.",
+        "radioOptionsRequired": "Radio options are required."
+      },
+      "form": {
+        "fieldCountMismatch": "The field order must contain {0} fields, but contains {1}",
+        "inactiveFieldId": "Field ID [{0}] is not active on this form; active field IDs are [{1}]"
+      },
+      "inventoryField": {
+        "extraNumberInvalid": "''{0}'' cannot be parsed into number",
+        "invalidData": "{0}",
+        "invalidDate": "{0} is an invalid date format. Valid format is yyyy-MM-dd.",
+        "invalidForFieldType": "[{0}] is invalid for field type {1}: {2}",
+        "invalidForLatestTemplate": "Field [{0}] value [{1}] is invalid according to latest template field definition",
+        "invalidIgsn": "Invalid IGSN format: [{0}]",
+        "invalidNumber": "Invalid number: {0}",
+        "invalidTime": "{0} is an invalid 24hour time format. Valid format is HH:mm.",
+        "mandatoryContentMissing": "Field [{0}] is mandatory, but no content is provided",
+        "mandatoryInLatestTemplate": "Field [{0}] is empty, but is mandatory in latest template field definition",
+        "noConnectedTemplate": "Field [{0}] has no connected template field",
+        "optionsNotAllowed": "Some supplied values are not allowed options",
+        "radioSingleOptionOnly": "Only one option can be selected on a radio field"
+      },
+      "preference": {
+        "unknownEnumValue": "Unknown value [{0}] for [{1}]; expected one of {2}"
+      },
+      "quantity": {
+        "parseFailed": "Could not parse quantity [{0}]",
+        "temperatureAboveAbsoluteZero": "Invalid temperature - must be a temperature measurement greater than absolute zero",
+        "unitUnrecognized": "Could not parse quantity because unit [{0}] is not recognized"
+      },
+      "scheduledMaintenance": {
+        "endDateRequired": "End date is required.",
+        "messageStringMax": "Message must be no more than {max} characters.",
+        "startDateRequired": "Start date is required."
+      },
+      "settings": {
+        "invalidBoolean": "[{0}] is not a boolean value",
+        "invalidNumber": "[{0}] is not a number",
+        "textTooLong": "Text value is {0} characters long; the maximum is {1}",
+        "valueTooLong": "Value is {0} characters long; the maximum is {1}"
       }
     }
   },
@@ -5706,6 +5796,9 @@ export default interface Resources {
       }
     },
     "messages": {
+      "calendar": {
+        "requestFrom": "RS request from {0}"
+      },
       "completionBy": {
         "label": "Due for completion by:"
       },
@@ -5724,6 +5817,9 @@ export default interface Resources {
       },
       "joinRequest": {
         "toJoin": "To join: {0}"
+      },
+      "moreInfo": {
+        "witnessDocumentSigning": "To proceed, please follow the above link to the document. Then, click on the 'Witness' button."
       },
       "orderBy": {
         "completionDate": "| Completion date",
@@ -5761,6 +5857,18 @@ export default interface Resources {
         "message": "Message",
         "messageRequest": "Message request",
         "request": "{0} request"
+      },
+      "types": {
+        "basic": "Basic message",
+        "createCollaborationGroup": "Create a Collaboration Group",
+        "createLabGroupAsPi": "Create LabGroup as PI",
+        "global": "Message to all users",
+        "joinExistingCollaborationGroup": "Join existing collaboration Group",
+        "joinLabGroup": "Join LabGroup",
+        "joinProjectGroup": "Join Project Group",
+        "reviewDocument": "Review document",
+        "shareDocument": "Share document",
+        "witnessDocumentSigning": "Witness document signing"
       },
       "updateReply": {
         "label": "Update & Reply"
@@ -6570,6 +6678,12 @@ export default interface Resources {
           "help": "Please enter a short description of this group."
         }
       },
+      "roles": {
+        "groupOwner": "Group Owner",
+        "labAdmin": "Lab Admin",
+        "pi": "PI",
+        "user": "User"
+      },
       "shared": {
         "title": "Shared Documents"
       },
@@ -6627,6 +6741,11 @@ export default interface Resources {
           "inGroup": "The new PI must already belong to the group",
           "role": "New PI must have global PI role"
         }
+      },
+      "types": {
+        "collaborationGroup": "Collaboration Group",
+        "labGroup": "Lab Group",
+        "projectGroup": "Project Group"
       },
       "userDeletion": {
         "errors": {
@@ -6712,6 +6831,10 @@ export default interface Resources {
   "server.inventory": {
     "errors": {
       "inventory": {
+        "attachment": {
+          "sampleTemplateUnsupported": "Sample templates do not support file attachments yet",
+          "workbenchUnsupported": "Files cannot be attached to a workbench"
+        },
         "barcode": {
           "contentRequired": "Content parameter is required",
           "heightNonNegative": "Requested height cannot be less then zero",
@@ -6731,12 +6854,16 @@ export default interface Resources {
           "deletion": {
             "notEmpty": "Container {0} is not empty and cannot be deleted"
           },
+          "directLocationUnsupported": "{0} containers cannot add locations directly",
+          "explicitCoordinatesNotAllowed": "{0} container can''t use explicit location coordinates",
           "gridLayoutInvalidSize": "Provided grid size {0}x{1} is incorrect, must be between 1x1 and 24x24.",
           "gridLayoutMissingOptions": "Grid layout has to specify both columnsNumber and rowsNumber properties.",
           "gridLayoutRequired": "Grid layout must be set for a grid container.",
+          "imageContainerLocationRequired": "Image container must provide target location id, not coordinates",
           "imageTooLarge": "Container image cannot be larger than 10MB",
           "invalidCanStoreFlags": "'canStoreSamples', 'canStoreContainers', and 'canStoreInstruments' flags cannot all be set to 'false'.",
           "locationsImageTooLarge": "Container locations image cannot be larger than 10MB",
+          "noCoordinatesRequired": "{0} container cannot store content without providing specific coordinates",
           "notFound": "No container with id: {0}",
           "typeRequired": "Container type (cType) is required and must be one of {0}."
         },
@@ -6754,6 +6881,7 @@ export default interface Resources {
           "unexportableUsers": "Cannot export data of users [{0}] - users not found, or no permission"
         },
         "field": {
+          "attachmentUnsupported": "{0} fields do not support file attachments",
           "deleteRequestIdMissing": "'id' property not provided for a field with 'deleteFieldRequest' flag.",
           "deleteRequestIdUnknown": "Field id {0} doesn''t match the id of any pre-existing field.",
           "duplicateName": "Field name ''{0}'' is duplicated. Field names on a record must be unique.",
@@ -6838,20 +6966,27 @@ export default interface Resources {
           "descriptionTooLong": "Description cannot be longer than 255 chars",
           "elnFieldIdRequired": "elnFieldId cannot be null",
           "nameRequired": "name cannot be empty",
-          "nameTooLong": "Name cannot be longer than 255 chars"
+          "nameTooLong": "Name cannot be longer than 255 chars",
+          "negativeQuantity": "Record quantity cannot be negative: {0}"
         },
         "location": {
+          "occupied": "Location {0} is already occupied by record {1}",
           "outsideGridDimensions": "Location ({0},{1}) is outside container grid dimensions (columns: {2}, rows: {3}).",
           "outsideNewGridDimensions": "Container has a location ({0},{1}) which would be outside new grid dimensions (columns: {2}, rows: {3})."
         },
         "move": {
+          "containerDeleted": "Cannot move into deleted container",
+          "containerIntoItself": "Cannot move container into itself",
+          "containerIntoSubcontainer": "Cannot move container into its subcontainer",
           "targetContainer": {
             "unavailable": "Cannot locate target container from provided target container and location details"
           },
           "targetLocation": {
             "notFoundInImageContainer": "Target location not found.",
             "requiredForGridOrImageContainer": "When moving to image/grid type container request has to specify target location"
-          }
+          },
+          "unsupportedRecordType": "Container {0} can''t hold record of type: {1}",
+          "workbenchIntoContainer": "Workbench cannot be moved into another container"
         },
         "name": {
           "tooLong": "Name is too long (max {0} chars)",
@@ -6914,6 +7049,7 @@ export default interface Resources {
           "unitsNotComparable": "Temperature units are not mutually comparable."
         },
         "template": {
+          "choiceDefinitionRequired": "Choice field must supply a definition",
           "emptyFieldName": "Field name cannot be empty",
           "emptyFieldType": "Field type cannot be empty",
           "fieldNameTooLong": "{0} is too long for a template field name, max length is {1}",
@@ -6921,6 +7057,7 @@ export default interface Resources {
           "invalidRelationType": "{0} is not a valid DataCite relation type",
           "invalidUnitIdDefault": "Unit id was {0} must be the id of a unit (see /units)",
           "invalidUnitIdNotAmount": "Unit id {0} is not a valid sample-template default unit; must be a mass, volume, or dimensionless (\"items\") unit (see /units)",
+          "radioDefinitionRequired": "Radio field must supply a definition",
           "reservedFieldName": "{0} is a reserved field name, please choose a name other than {1}"
         },
         "validation": {

@@ -1,6 +1,7 @@
 package com.researchspace.model.preference;
 
 import com.researchspace.model.comms.NotificationType;
+import com.researchspace.model.field.LocalizedIllegalArgumentException;
 
 /**
  * Contains hard-coded information about preferences. By convention, these preferences about
@@ -16,56 +17,56 @@ public enum Preference {
       Boolean.TRUE.toString(),
       SettingsType.BOOLEAN,
       PreferenceCategory.MESSAGING,
-      "A document is shared with me"),
+      "userProfile.preferences.documentShared"),
 
   /** Follows naming convention of {@link NotificationType} name + "_PREF" */
   NOTIFICATION_DOCUMENT_EDITED_PREF(
       Boolean.TRUE.toString(),
       SettingsType.BOOLEAN,
       PreferenceCategory.MESSAGING,
-      "A shared document is edited"),
+      "userProfile.preferences.sharedDocumentEdited"),
 
   /** Follows naming convention of {@link NotificationType} name + "_PREF" */
   NOTIFICATION_DOCUMENT_UNSHARED_PREF(
       Boolean.TRUE.toString(),
       SettingsType.BOOLEAN,
       PreferenceCategory.MESSAGING,
-      "A document is unshared with me"),
+      "userProfile.preferences.documentUnshared"),
 
   /** Follows naming convention of {@link NotificationType} name + "_PREF" */
   NOTIFICATION_REQUEST_STATUS_CHANGE_PREF(
       Boolean.TRUE.toString(),
       SettingsType.BOOLEAN,
       PreferenceCategory.MESSAGING,
-      "A request status changes"),
+      "userProfile.preferences.requestStatusChanged"),
 
   /** Follows naming convention of {@link NotificationType} name + "_PREF" */
   PROCESS_COMPLETED_PREF(
       Boolean.TRUE.toString(),
       SettingsType.BOOLEAN,
       PreferenceCategory.MESSAGING,
-      "A background process finishes"),
+      "userProfile.preferences.processCompleted"),
 
   /** Follows naming convention of {@link NotificationType} name + "_PREF" */
   PROCESS_FAILED_PREF(
       Boolean.TRUE.toString(),
       SettingsType.BOOLEAN,
       PreferenceCategory.MESSAGING,
-      "A background process fails"),
+      "userProfile.preferences.processFailed"),
 
   /** Preference for receiving notifications by email; boolean type */
   BROADCAST_NOTIFICATIONS_BY_EMAIL(
       Boolean.TRUE.toString(),
       SettingsType.BOOLEAN,
       PreferenceCategory.MESSAGING_BROADCAST,
-      "Send notifications by email"),
+      "userProfile.preferences.notificationsByEmail"),
 
   /** Preference for receiving messages and requests by email; boolean type */
   BROADCAST_REQUEST_BY_EMAIL(
       Boolean.TRUE.toString(),
       SettingsType.BOOLEAN,
       PreferenceCategory.MESSAGING_BROADCAST,
-      "Send requests by email"),
+      "userProfile.preferences.requestsByEmail"),
 
   /**
    * Preference for connecting to an eCAT server; string type
@@ -74,37 +75,54 @@ public enum Preference {
    *     ordinal value which is used in the database.
    */
   @Deprecated
-  ECAT_SERVER("", SettingsType.STRING, PreferenceCategory.EXTERNAL_DATA, "eCAT Server"),
+  ECAT_SERVER(
+      "",
+      SettingsType.STRING,
+      PreferenceCategory.EXTERNAL_DATA,
+      "userProfile.preferences.ecatServer"),
 
   /** Page size to be used on Export */
   UI_PDF_PAGE_SIZE(
       ExportPageSize.UNKNOWN.toString(),
       SettingsType.ENUM,
       PreferenceCategory.UI,
-      "Default PDF page size",
+      "userProfile.preferences.defaultPdfPageSize",
       new EnumPreferenceValidator(ExportPageSize.class)),
 
   /** User enablement of Box linking */
-  BOX(Boolean.FALSE.toString(), SettingsType.BOOLEAN, PreferenceCategory.INTEGRATIONS, "Box"),
+  BOX(
+      Boolean.FALSE.toString(),
+      SettingsType.BOOLEAN,
+      PreferenceCategory.INTEGRATIONS,
+      "userProfile.preferences.box"),
 
   /** User enablement of Googledrive linking */
   GOOGLEDRIVE(
       Boolean.FALSE.toString(),
       SettingsType.BOOLEAN,
       PreferenceCategory.INTEGRATIONS,
-      "GoogleDrive"),
+      "userProfile.preferences.googleDrive"),
 
   /** User enablement of Onedrive linking */
   ONEDRIVE(
-      Boolean.FALSE.toString(), SettingsType.BOOLEAN, PreferenceCategory.INTEGRATIONS, "OneDrive"),
+      Boolean.FALSE.toString(),
+      SettingsType.BOOLEAN,
+      PreferenceCategory.INTEGRATIONS,
+      "userProfile.preferences.oneDrive"),
 
   /** User enablement of Dropbox linking */
   DROPBOX(
-      Boolean.FALSE.toString(), SettingsType.BOOLEAN, PreferenceCategory.INTEGRATIONS, "Dropbox"),
+      Boolean.FALSE.toString(),
+      SettingsType.BOOLEAN,
+      PreferenceCategory.INTEGRATIONS,
+      "userProfile.preferences.dropbox"),
 
   /** User enablement of Chemisrty search /structure */
   CHEMISTRY(
-      Boolean.FALSE.toString(), SettingsType.BOOLEAN, PreferenceCategory.INTEGRATIONS, "Chemistry"),
+      Boolean.FALSE.toString(),
+      SettingsType.BOOLEAN,
+      PreferenceCategory.INTEGRATIONS,
+      "userProfile.preferences.chemistry"),
 
   /**
    * User enablement of Mendeley linking
@@ -114,7 +132,10 @@ public enum Preference {
    */
   @Deprecated
   MENDELEY(
-      Boolean.FALSE.toString(), SettingsType.BOOLEAN, PreferenceCategory.INTEGRATIONS, "Mendeley"),
+      Boolean.FALSE.toString(),
+      SettingsType.BOOLEAN,
+      PreferenceCategory.INTEGRATIONS,
+      "userProfile.preferences.mendeley"),
 
   /**
    * User enablement of Ecat linking
@@ -123,14 +144,18 @@ public enum Preference {
    *     ordinal value which is used in the database.
    */
   @Deprecated
-  ECAT(Boolean.FALSE.toString(), SettingsType.BOOLEAN, PreferenceCategory.INTEGRATIONS, "Ecat"),
+  ECAT(
+      Boolean.FALSE.toString(),
+      SettingsType.BOOLEAN,
+      PreferenceCategory.INTEGRATIONS,
+      "userProfile.preferences.ecat"),
 
   /** User preference about type of Box links inserted into documents */
   BOX_LINK_TYPE(
       BoxLinkType.LIVE.toString(),
       SettingsType.ENUM,
       PreferenceCategory.INTEGRATIONS,
-      "Box Link Type",
+      "userProfile.preferences.boxLinkType",
       new EnumPreferenceValidator(BoxLinkType.class)),
 
   /**
@@ -138,66 +163,82 @@ public enum Preference {
    * users it is set to TRUE automatically)
    */
   CHAMELEON_TOURS_ENABLED_FOR_USER(
-      Boolean.FALSE.toString(), SettingsType.BOOLEAN, PreferenceCategory.UI, "Show guided tours"),
+      Boolean.FALSE.toString(),
+      SettingsType.BOOLEAN,
+      PreferenceCategory.UI,
+      "userProfile.preferences.guidedTours"),
 
   WORKSPACE_RESULTS_PER_PAGE(
-      "10", SettingsType.NUMBER, PreferenceCategory.UI, "Number of Workspace items per page"),
+      "10",
+      SettingsType.NUMBER,
+      PreferenceCategory.UI,
+      "userProfile.preferences.workspaceResultsPerPage"),
 
   PI_CAN_EDIT_ALL_WORK_IN_LABGROUP(
       HierarchicalPermission.DENIED_BY_DEFAULT.toString(),
       SettingsType.ENUM,
       PreferenceCategory.UI,
-      "PI can edit all work in lab group"),
+      "userProfile.preferences.piCanEditAllWork"),
 
   NOTIFICATION_DOCUMENT_DELETED_PREF(
       Boolean.TRUE.toString(),
       SettingsType.BOOLEAN,
       PreferenceCategory.MESSAGING,
-      "A shared document is deleted"),
+      "userProfile.preferences.sharedDocumentDeleted"),
 
   /**
    * User preference holding the list of UI settings that generally don't impact server side, e.g.
    * visibility toggles. Stored as a comma-separated name=value string.
    */
-  UI_CLIENT_SETTINGS("", SettingsType.STRING, PreferenceCategory.UI, "UI client-side settings"),
+  UI_CLIENT_SETTINGS(
+      "", SettingsType.STRING, PreferenceCategory.UI, "userProfile.preferences.uiClientSettings"),
 
   // these 3 are persistent preferences for items per page
   FORM_RESULTS_PER_PAGE(
-      "10", SettingsType.NUMBER, PreferenceCategory.UI, "Number of Forms per page"),
+      "10", SettingsType.NUMBER, PreferenceCategory.UI, "userProfile.preferences.formsPerPage"),
 
   DIRECTORY_RESULTS_PER_PAGE(
-      "10", SettingsType.NUMBER, PreferenceCategory.UI, "Number of Directory items per page"),
+      "10",
+      SettingsType.NUMBER,
+      PreferenceCategory.UI,
+      "userProfile.preferences.directoryResultsPerPage"),
 
   SHARED_RECORDS_RESULTS_PER_PAGE(
-      "10", SettingsType.NUMBER, PreferenceCategory.UI, "Number of shared items per page"),
+      "10",
+      SettingsType.NUMBER,
+      PreferenceCategory.UI,
+      "userProfile.preferences.sharedRecordsPerPage"),
 
   CURRENT_WORKSPACE_VIEW_MODE(
       "LIST_VIEW",
       SettingsType.STRING,
       PreferenceCategory.UI,
-      "Whether Workspace page opens up as list view or tree view initially"),
+      "userProfile.preferences.initialWorkspaceView"),
   DELETED_RECORDS_RESULTS_PER_PAGE(
-      "10", SettingsType.NUMBER, PreferenceCategory.UI, "Number of deleted items per page"),
+      "10",
+      SettingsType.NUMBER,
+      PreferenceCategory.UI,
+      "userProfile.preferences.deletedRecordsPerPage"),
 
   /** Similar to UI_CLIENT_SETTINGS, but for storing arbitrary data in json key-value format */
   UI_JSON_SETTINGS(
-      "", SettingsType.TEXT, PreferenceCategory.UI, "UI client-side settings, in json format");
+      "", SettingsType.TEXT, PreferenceCategory.UI, "userProfile.preferences.uiJsonSettings");
 
   private String defaultValue;
   private SettingsType prefType;
   private PreferenceCategory category;
-  private String displayMessage;
+  private final String displayMessageKey;
   private PreferenceValidator prefValidator;
 
   private Preference(
       String defaultValue,
       SettingsType prefType,
       PreferenceCategory category,
-      String displayMessage) {
+      String displayMessageKey) {
     this.defaultValue = defaultValue;
     this.prefType = prefType;
     this.category = category;
-    this.displayMessage = displayMessage;
+    this.displayMessageKey = displayMessageKey;
     this.prefValidator = PreferenceValidator.ALWAYS_TRUE;
   }
 
@@ -205,20 +246,24 @@ public enum Preference {
       String defaultValue,
       SettingsType prefType,
       PreferenceCategory category,
-      String displayMessage,
+      String displayMessageKey,
       PreferenceValidator validator) {
-    this(defaultValue, prefType, category, displayMessage);
+    this(defaultValue, prefType, category, displayMessageKey);
     this.prefValidator = validator;
   }
 
+  /** Returns a coded exception when {@code value} is invalid, or {@code null} when valid. */
+  public LocalizedIllegalArgumentException getInvalidExceptionForValue(String value) {
+    return prefValidator.getExceptionIfInvalid(value);
+  }
+
   /**
-   * If <code>value</code> is invalid, returns an error message. O
-   *
-   * @param value
-   * @return An error string, or <code>null</code> if is not an invalid value.
+   * @deprecated use {@link #getInvalidExceptionForValue(String)} for localizable arguments.
    */
+  @Deprecated
   public String getInvalidErrorMessageForValue(String value) {
-    return prefValidator.getMsgIfInvalid(value);
+    LocalizedIllegalArgumentException exception = getInvalidExceptionForValue(value);
+    return exception == null ? null : exception.getMessage();
   }
 
   /**
@@ -228,16 +273,11 @@ public enum Preference {
    * @return <code>true</code> if a valid value, <code>false</code> otherwise
    */
   public boolean isValid(String value) {
-    return getInvalidErrorMessageForValue(value) == null;
+    return getInvalidExceptionForValue(value) == null;
   }
 
-  /**
-   * Gets a user-friendly string explaining the preference
-   *
-   * @return
-   */
-  public String getDisplayMessage() {
-    return displayMessage;
+  public String getDisplayMessageKey() {
+    return displayMessageKey;
   }
 
   /**

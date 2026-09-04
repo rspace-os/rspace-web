@@ -7,6 +7,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditDomain;
 import com.researchspace.model.audittrail.AuditTrailData;
 import com.researchspace.model.core.GlobalIdPrefix;
+import com.researchspace.model.field.LocalizedIllegalArgumentException;
 import com.researchspace.model.inventory.field.ExtraField;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -340,9 +341,8 @@ public class Container extends MovableInventoryRecord implements Serializable {
 
   public ContainerLocation addToNewLocation(MovableInventoryRecord record) {
     if (!isListLayoutContainer() && !isWorkbench()) {
-      throw new IllegalArgumentException(
-          getContainerType()
-              + " container cannot store content without providing specific coordinates");
+      throw new LocalizedIllegalArgumentException(
+          "errors.inventory.container.noCoordinatesRequired", getContainerType());
     }
     ContainerLocation newLocation = createOrRetrieveLocationWithCoords(locations.size() + 1, 1);
     setRecordInLocation(record, newLocation);
@@ -352,12 +352,12 @@ public class Container extends MovableInventoryRecord implements Serializable {
   public ContainerLocation addToNewLocationWithCoords(
       MovableInventoryRecord record, Integer coordX, Integer coordY) {
     if (isListLayoutContainer() || isWorkbench()) {
-      throw new IllegalArgumentException(
-          getContainerType() + " container can't use explicit location coordinates");
+      throw new LocalizedIllegalArgumentException(
+          "errors.inventory.container.explicitCoordinatesNotAllowed", getContainerType());
     }
     if (isImageLayoutContainer()) {
-      throw new IllegalArgumentException(
-          "Image container must provide target location id, not coordinates");
+      throw new LocalizedIllegalArgumentException(
+          "errors.inventory.container.imageContainerLocationRequired");
     }
     ContainerLocation targetLocation = createOrRetrieveLocationWithCoords(coordX, coordY);
     setRecordInLocation(record, targetLocation);
@@ -366,8 +366,8 @@ public class Container extends MovableInventoryRecord implements Serializable {
 
   public ContainerLocation createNewImageContainerLocation(Integer coordX, Integer coordY) {
     if (!isImageLayoutContainer()) {
-      throw new IllegalArgumentException(
-          getContainerType() + " container cannot add locations directly");
+      throw new LocalizedIllegalArgumentException(
+          "errors.inventory.container.directLocationUnsupported", getContainerType());
     }
     return createOrRetrieveLocationWithCoords(coordX, coordY);
   }
@@ -410,11 +410,12 @@ public class Container extends MovableInventoryRecord implements Serializable {
   private void validateNewCoordinates(Integer coordX, Integer coordY) {
     if (isGridLayoutContainer()) {
       if (coordX > getGridLayoutColumnsNumber() || coordY > getGridLayoutRowsNumber()) {
-        throw new IllegalArgumentException(
-            String.format(
-                "Requested new location (%d,%d) "
-                    + "is outside grid container dimensions (columns:%d, rows:%d)",
-                coordX, coordY, getGridLayoutColumnsNumber(), getGridLayoutRowsNumber()));
+        throw new LocalizedIllegalArgumentException(
+            "errors.inventory.location.outsideGridDimensions",
+            coordX,
+            coordY,
+            getGridLayoutColumnsNumber(),
+            getGridLayoutRowsNumber());
       }
     }
   }
@@ -443,11 +444,10 @@ public class Container extends MovableInventoryRecord implements Serializable {
 
     InventoryRecord currentlyStoredRecord = location.getStoredRecord();
     if (currentlyStoredRecord != null && !currentlyStoredRecord.equals(record)) {
-      throw new IllegalArgumentException(
-          "Location: "
-              + location.getId()
-              + " is already taken by the record: "
-              + currentlyStoredRecord.getGlobalIdentifier());
+      throw new LocalizedIllegalArgumentException(
+          "errors.inventory.location.occupied",
+          location.getId(),
+          currentlyStoredRecord.getGlobalIdentifier());
     }
     location.addStoredRecord(record);
     record.setParentLocation(location);
@@ -485,26 +485,27 @@ public class Container extends MovableInventoryRecord implements Serializable {
     }
 
     if (isDeleted()) {
-      throw new IllegalArgumentException("Cannot move into deleted container");
+      throw new LocalizedIllegalArgumentException("errors.inventory.move.containerDeleted");
     }
     if (record.isContainer()) {
       if (record.getId() != null && record.getId().equals(getId())) {
-        throw new IllegalArgumentException("Cannot move container into itself");
+        throw new LocalizedIllegalArgumentException("errors.inventory.move.containerIntoItself");
       }
       if (hasRecordOnParentList((Container) record)) {
-        throw new IllegalArgumentException("Cannot move container into its subcontainer");
+        throw new LocalizedIllegalArgumentException(
+            "errors.inventory.move.containerIntoSubcontainer");
       }
       Container container = (Container) record;
       if (container.isWorkbench()) {
-        throw new IllegalArgumentException("Workbench cannot be moved into other container");
+        throw new LocalizedIllegalArgumentException("errors.inventory.move.workbenchIntoContainer");
       }
     }
 
     if (!(record.isContainer() && canStoreContainers)
         && !(record.isSubSample() && canStoreSamples)
         && !(record.isInstrument() && canStoreInstruments)) {
-      throw new IllegalArgumentException(
-          "Container " + getGlobalIdentifier() + " can't hold record of type: " + record.getType());
+      throw new LocalizedIllegalArgumentException(
+          "errors.inventory.move.unsupportedRecordType", getGlobalIdentifier(), record.getType());
     }
   }
 
@@ -578,7 +579,8 @@ public class Container extends MovableInventoryRecord implements Serializable {
   @Override
   protected void assertCanStoreAttachments() {
     if (isWorkbench()) {
-      throw new IllegalArgumentException("Can't attach files to Workbench");
+      throw new LocalizedIllegalArgumentException(
+          "errors.inventory.attachment.workbenchUnsupported");
     }
   }
 

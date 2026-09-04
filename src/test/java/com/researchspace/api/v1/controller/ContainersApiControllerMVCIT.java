@@ -484,7 +484,7 @@ public class ContainersApiControllerMVCIT extends API_MVC_InventoryTestBase {
     result = postCreateContainerExpecting4xx(anyUser, apiKey, simpleContainerJSON);
     error = getErrorFromJsonResponseBody(result, ApiError.class);
     assertApiErrorContainsMessage(
-        error, "Location: " + locationId + " is already taken by the record: IC");
+        error, "Location " + locationId + " is already occupied by record IC");
   }
 
   private MvcResult postCreateContainerExpecting4xx(

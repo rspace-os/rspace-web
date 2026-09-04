@@ -87,7 +87,7 @@ public class InventoryRadioFieldDef extends InventoryFieldDef implements Seriali
     ErrorList el = new ErrorList();
 
     if (!StringUtils.isEmpty(data) && !getRadioOptionsList().contains(data)) {
-      el.addErrorMsg("Some supplied values are not allowed options");
+      el.addErrorMsgCode("validation.inventoryField.optionsNotAllowed");
     }
     return el;
   }

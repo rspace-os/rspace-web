@@ -26,12 +26,14 @@ import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.apiutils.ApiError;
 import com.researchspace.apiutils.ApiErrorCodes;
 import com.researchspace.model.User;
+import com.researchspace.model.field.LocalizedIllegalArgumentException;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.inventory.InventoryMoveHelper;
 import java.util.List;
 import java.util.function.BiFunction;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.BindException;
@@ -170,14 +172,24 @@ public class InventoryBulkOperationHandler {
 
   public ApiError convertExceptionToApiError(Exception e) {
     Throwable cause = e.getCause() == null ? e : e.getCause();
-    if (cause instanceof BindException) {
-      return apiControllerAdvice.getApiErrorFromBindException((BindException) cause);
+    if (cause instanceof BindException bindException) {
+      return apiControllerAdvice.getApiErrorFromBindException(bindException);
     }
+    Throwable exceptionToResolve =
+        e instanceof LocalizedIllegalArgumentException || e instanceof MessageSourceResolvable
+            ? e
+            : cause;
+    String errorMessage =
+        exceptionToResolve instanceof LocalizedIllegalArgumentException localized
+            ? messages.getMessage(localized)
+            : exceptionToResolve instanceof MessageSourceResolvable resolvable
+                ? messages.getMessage(resolvable)
+                : e.getMessage();
     return new ApiError(
         HttpStatus.BAD_REQUEST,
         ApiErrorCodes.INVALID_FIELD.getCode(),
         messages.getMessage("api.errors.detected", new Object[] {1}),
-        e.getMessage());
+        errorMessage);
   }
 
   private ApiInventoryRecordInfo createInventoryRecord(ApiInventoryRecordInfo recInfo, User user) {

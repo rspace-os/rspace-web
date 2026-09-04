@@ -12,6 +12,7 @@ import com.researchspace.model.audittrail.AuditTrailData;
 import com.researchspace.model.audittrail.AuditTrailProperty;
 import com.researchspace.model.core.UniquelyIdentifiable;
 import com.researchspace.model.field.FieldForm;
+import com.researchspace.model.field.LocalizedIllegalArgumentException;
 import com.researchspace.model.permissions.AbstractEntityPermissionAdapter;
 import com.researchspace.model.permissions.FormPermissionAdapter;
 import com.researchspace.model.permissions.PermissionType;
@@ -716,20 +717,15 @@ public abstract class AbstractForm
    */
   public AbstractForm reorderFields(List<Long> fieldFormIds) {
     if (fieldFormIds.size() != getNumActiveFields()) {
-      throw new IllegalArgumentException(
-          String.format(
-              "fieldFormIds should have %d values " + " but only has %d",
-              getNumActiveFields(), fieldFormIds.size()));
+      throw new LocalizedIllegalArgumentException(
+          "validation.form.fieldCountMismatch", getNumActiveFields(), fieldFormIds.size());
     }
     getActiveFieldForms().stream().map(t -> t.getId()).collect(Collectors.toList());
     List<Long> knownIds = getActiveFieldForms().stream().map(FieldForm::getId).collect(toList());
     for (Long incomingId : fieldFormIds) {
       if (!knownIds.contains(incomingId)) {
-        throw new IllegalArgumentException(
-            String.format(
-                "Supplied id [%d] is not an active field id for this form;"
-                    + " it should belong to this set: [%s]",
-                incomingId, join(knownIds, ",")));
+        throw new LocalizedIllegalArgumentException(
+            "validation.form.inactiveFieldId", incomingId, join(knownIds, ","));
       }
     }
 

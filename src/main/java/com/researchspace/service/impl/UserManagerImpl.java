@@ -23,6 +23,7 @@ import com.researchspace.model.UserPreference;
 import com.researchspace.model.dto.UserBasicInfo;
 import com.researchspace.model.dtos.UserRoleView;
 import com.researchspace.model.events.UserAccountEvent;
+import com.researchspace.model.field.LocalizedIllegalArgumentException;
 import com.researchspace.model.permissions.ConstraintBasedPermission;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.SecurityLogger;
@@ -333,9 +334,10 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
   public UserPreference setPreference(Preference preference, String value, String username) {
     User subject = getUserByUsername(username, true);
     Validate.notNull(preference, "preference can't be null");
-    String error = preference.getInvalidErrorMessageForValue(value);
-    if (!StringUtils.isEmpty(error)) {
-      throw new IllegalArgumentException(error);
+    LocalizedIllegalArgumentException validationException =
+        preference.getInvalidExceptionForValue(value);
+    if (validationException != null) {
+      throw validationException;
     }
     UserPreference userPreference = new UserPreference(preference, subject, value);
     subject.setPreference(userPreference);

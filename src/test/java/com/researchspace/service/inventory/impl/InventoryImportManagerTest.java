@@ -473,8 +473,7 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
     sampleErrorMsg = sampleResult.getResults().get(3).getError().getErrors().get(0);
     assertEquals("Text 'TestData3' could not be parsed at index 0", sampleErrorMsg);
     sampleErrorMsg = sampleResult.getResults().get(5).getError().getErrors().get(0);
-    assertEquals(
-        "Cannot parse quantity string: Failed to parse number-literal 'ml'.", sampleErrorMsg);
+    assertEquals("Could not parse quantity [ml]", sampleErrorMsg);
     sampleErrorMsg = sampleResult.getResults().get(6).getError().getErrors().get(0);
     assertEquals(
         "quantity: Sample quantity unit 7 (GRAM) is incompatible with template quantity unit 3"

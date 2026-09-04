@@ -1,5 +1,6 @@
 package com.researchspace.model.inventory.field;
 
+import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.field.FieldType;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
@@ -27,8 +28,8 @@ public class ExtraTextField extends ExtraField {
   }
 
   @Override
-  public String validateNewData(String data) {
-    return null;
+  public ErrorList validateNewData(String data) {
+    return new ErrorList();
   }
 
   @Override

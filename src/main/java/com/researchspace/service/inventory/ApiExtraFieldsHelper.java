@@ -9,6 +9,7 @@ import com.researchspace.api.v1.model.ApiSampleWithoutSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdentifier;
+import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.InstrumentEntity;
@@ -19,6 +20,7 @@ import com.researchspace.model.inventory.field.ExtraField;
 import com.researchspace.model.inventory.field.ExtraLinkField;
 import com.researchspace.model.inventory.field.InventoryLink;
 import com.researchspace.model.record.IRecordFactory;
+import com.researchspace.service.MessageSourceUtils;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -42,6 +44,7 @@ public class ApiExtraFieldsHelper implements Validator {
   private final InventoryLinkValidator linkValidator = new InventoryLinkValidator();
 
   @Autowired private InventoryLinkManager inventoryLinkManager;
+  @Autowired private MessageSourceUtils messages;
 
   public ApiExtraFieldsHelper(@Autowired IRecordFactory recordFactory) {
     this.recordFactory = recordFactory;
@@ -68,10 +71,13 @@ public class ApiExtraFieldsHelper implements Validator {
       return;
     }
     ExtraField extraField = recordFactory.createExtraField(aef.getTypeAsFieldType());
-    String validationMsg = extraField.validateNewData(aef.getContent());
-    if (!StringUtils.isEmpty(validationMsg)) {
+    ErrorList validationErrors = messages.resolve(extraField.validateNewData(aef.getContent()));
+    if (validationErrors.hasErrorMessages()) {
       errors.rejectValue(
-          "content", "errors.inventory.field.validation", new Object[] {validationMsg}, null);
+          "content",
+          "errors.inventory.field.validation",
+          new Object[] {validationErrors.getAllErrorMessagesAsStringsSeparatedBy(", ")},
+          null);
     }
   }
 

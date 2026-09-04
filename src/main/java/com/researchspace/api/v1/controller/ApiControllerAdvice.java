@@ -9,6 +9,8 @@ import com.researchspace.apiutils.BindError;
 import com.researchspace.apiutils.BindErrorList;
 import com.researchspace.apiutils.RestControllerAdvice;
 import com.researchspace.core.util.throttling.TooManyRequestsException;
+import com.researchspace.model.field.LocalizedIllegalArgumentException;
+import com.researchspace.model.field.LocalizedIllegalStateException;
 import com.researchspace.service.DocumentAlreadyEditedException;
 import com.researchspace.service.FilestoreOperationForbiddenException;
 import com.researchspace.service.MediaContentMismatchException;
@@ -62,7 +64,7 @@ public class ApiControllerAdvice extends RestControllerAdvice {
         new ApiError(
             HttpStatus.NOT_FOUND,
             ApiErrorCodes.CONFIGURED_UNAVAILABLE.getCode(),
-            ex.getLocalizedMessage(),
+            messages.getExceptionMessage(ex),
             "");
     return new ResponseEntity<Object>(apiError, new HttpHeaders(), apiError.getStatus());
   }
@@ -129,6 +131,32 @@ public class ApiControllerAdvice extends RestControllerAdvice {
             ApiErrorCodes.ILLEGAL_ARGUMENT.getCode(),
             resolvedMessage,
             ex.getErrorCode(),
+            resolvedMessage);
+    return new ResponseEntity<>(apiError, new HttpHeaders(), apiError.getStatus());
+  }
+
+  @ExceptionHandler(LocalizedIllegalStateException.class)
+  public ResponseEntity<Object> handleLocalizedIllegalStateException(
+      LocalizedIllegalStateException ex, WebRequest request) {
+    String resolvedMessage = messages.getMessage(ex);
+    ApiError apiError =
+        new ApiError(
+            HttpStatus.INTERNAL_SERVER_ERROR,
+            ApiErrorCodes.GENERAL_ERROR.getCode(),
+            resolvedMessage,
+            "");
+    return new ResponseEntity<>(apiError, new HttpHeaders(), apiError.getStatus());
+  }
+
+  @ExceptionHandler(LocalizedIllegalArgumentException.class)
+  public ResponseEntity<Object> handleLocalizedIllegalArgumentException(
+      LocalizedIllegalArgumentException ex, WebRequest request) {
+    String resolvedMessage = messages.getMessage(ex);
+    ApiError apiError =
+        new ApiError(
+            HttpStatus.UNPROCESSABLE_ENTITY,
+            ApiErrorCodes.ILLEGAL_ARGUMENT.getCode(),
+            resolvedMessage,
             resolvedMessage);
     return new ResponseEntity<>(apiError, new HttpHeaders(), apiError.getStatus());
   }
