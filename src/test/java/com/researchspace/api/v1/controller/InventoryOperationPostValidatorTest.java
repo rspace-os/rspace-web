@@ -1,5 +1,7 @@
 package com.researchspace.api.v1.controller;
 
+import static com.researchspace.api.v1.controller.InventoryOperationPostValidator.MAX_EXTRA_FIELDS;
+import static com.researchspace.api.v1.controller.InventoryOperationPostValidator.MAX_SUBSAMPLES;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -1047,6 +1049,40 @@ class InventoryOperationPostValidatorTest {
     // and validation stops there rather than reporting a per-origin error for each of the 101
     assertEquals(
         1, errors.getErrorCount(), () -> "expected one error, got " + errors.getAllErrors());
+  }
+
+  @Test
+  void rejectsMoreSubSamplesThanTheMaximumBeforeWalkingThem() {
+    // The DTO's @Size records a violation, but this validator still ran every per-subsample pass
+    // over the whole list. Bounded like the origins ceiling (Copilot review, PR #1090).
+    ApiInventoryOperationPost request = aliquotRequest();
+    List<ApiSubSample> children = new ArrayList<>();
+    for (int i = 0; i <= MAX_SUBSAMPLES; i++) {
+      ApiSubSample child = new ApiSubSample();
+      child.setQuantity(millilitres("0.5"));
+      children.add(child);
+    }
+    request.getNewSample().setSubSamples(children);
+    Errors errors = validate(request);
+    assertSingleErrorWithCode(
+        errors, "newSample.subSamples", "errors.inventory.operation.subSampleCountMaximum");
+  }
+
+  @Test
+  void rejectsMoreExtraFieldsThanTheMaximumBeforeMatchingThemPerOrigin() {
+    // Worse than the subsample list: extraFields has no @Size at all, and validateDeclaredLinks
+    // scans every field once per origin, so an oversized list is O(origins x fields) of work on a
+    // public endpoint (Copilot review, PR #1090).
+    ApiInventoryOperationPost request = aliquotRequest();
+    for (int i = 0; i <= MAX_EXTRA_FIELDS; i++) {
+      request
+          .getNewSample()
+          .getExtraFields()
+          .add(linkTo("operations.aliquot.linkFieldName", "IsPartOf", 100));
+    }
+    Errors errors = validate(request);
+    assertSingleErrorWithCode(
+        errors, "newSample.extraFields", "errors.inventory.operation.extraFieldCountMaximum");
   }
 
   // --- origin shape rules (operation-independent) ---
