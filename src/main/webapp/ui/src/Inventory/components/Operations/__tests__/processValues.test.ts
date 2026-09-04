@@ -70,3 +70,35 @@ describe("normalizeProcessValues (amount modes, DevDocs/adr/0007)", () => {
     expect(normalized).not.toHaveProperty("perSubsampleAmounts");
   });
 });
+
+describe("normalizeProcessValues: the stored template choice", () => {
+  // Preferences are persisted JSON that outlives the code that wrote them. An unrecognised mode was
+  // cast straight through, and resolveTemplateId then treated it as "fromSample", silently swapping
+  // the user's template choice (Copilot review, PR #1090).
+  const bundleWith = (template: unknown) => normalizeProcessValues({ values: { count: 1 }, template });
+
+  it("falls back to unselected for a mode this version does not know", () => {
+    expect(bundleWith({ mode: "someFutureMode", templateId: 7 })?.template).toEqual({
+      mode: "unselected",
+      templateId: null,
+    });
+  });
+
+  it("falls back to unselected for a pick with no usable id", () => {
+    expect(bundleWith({ mode: "pick", templateId: null })?.template).toEqual({
+      mode: "unselected",
+      templateId: null,
+    });
+    expect(bundleWith({ mode: "pick", templateId: "7" })?.template).toEqual({
+      mode: "unselected",
+      templateId: null,
+    });
+  });
+
+  it("keeps a well-formed choice, with its name and category", () => {
+    expect(bundleWith({ mode: "pick", templateId: 7, templateName: "T7", quantityCategory: "mass" })?.template).toEqual(
+      { mode: "pick", templateId: 7, templateName: "T7", quantityCategory: "mass" },
+    );
+    expect(bundleWith({ mode: "none", templateId: null })?.template).toEqual({ mode: "none", templateId: null });
+  });
+});

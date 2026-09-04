@@ -21,16 +21,10 @@ abstract class SampleApiValidator extends InventoryRecordValidator {
   QuantityUtils impl = new QuantityUtils();
 
   void validateStorageTemperatures(Errors errors, ApiSampleInfo apiSamplePost) {
-    QuantityInfo max = null;
-    QuantityInfo min = null;
-    if (apiSamplePost.getStorageTempMax() != null) {
-      max = apiSamplePost.getStorageTempMax().toQuantityInfo();
-      validateTemperatureUnit(max, "storageTempMax", errors);
-    }
-    if (apiSamplePost.getStorageTempMin() != null) {
-      min = apiSamplePost.getStorageTempMin().toQuantityInfo();
-      validateTemperatureUnit(min, "storageTempMin", errors);
-    }
+    QuantityInfo max =
+        validatedTemperature(apiSamplePost.getStorageTempMax(), "storageTempMax", errors);
+    QuantityInfo min =
+        validatedTemperature(apiSamplePost.getStorageTempMin(), "storageTempMin", errors);
     if (max != null && min != null) {
 
       if (!impl.isComparableQuantities(min, max)) {
@@ -47,11 +41,34 @@ abstract class SampleApiValidator extends InventoryRecordValidator {
     }
   }
 
-  void validateTemperatureUnit(QuantityInfo temp, String field, Errors errors) {
-    RSUnitDef def = RSUnitDef.getUnitById(temp.getUnitId());
-    if (!def.isTemperature()) {
-      errors.rejectValue(field, "errors.inventory.temperature.invalidUnit");
+  /**
+   * The temperature as a {@link QuantityInfo}, or null when it is absent or malformed (in which
+   * case the reason is recorded against {@code field}).
+   *
+   * <p>The unit is resolved here, so an absent or unknown unit id has to be rejected rather than
+   * left to throw out of {@link RSUnitDef#getUnitById} as an unchecked exception: a temperature
+   * object of {@code {}} was surfacing as a 500 instead of a field-scoped 400. The magnitude is
+   * checked for the same reason the amounts are: the column is DECIMAL(19,3), so a value outside it
+   * would be stored as a different temperature, or overflow (Copilot review, PR #1090).
+   */
+  private QuantityInfo validatedTemperature(
+      com.researchspace.api.v1.model.ApiQuantityInfo temperature, String field, Errors errors) {
+    if (temperature == null) {
+      return null;
     }
+    if (temperature.getUnitId() == null
+        || !RSUnitDef.exists(temperature.getUnitId())
+        || !RSUnitDef.getUnitById(temperature.getUnitId()).isTemperature()) {
+      errors.rejectValue(field, "errors.inventory.temperature.invalidUnit");
+      return null;
+    }
+    // A missing number is left to the callers' own required-value rules, unchanged.
+    if (temperature.getNumericValue() != null
+        && !QuantityInfo.canStoreWithoutRounding(temperature.getNumericValue())) {
+      errors.rejectValue(field, "errors.inventory.temperature.notStorable");
+      return null;
+    }
+    return temperature.toQuantityInfo();
   }
 
   // use supplier to reuse for ApiSampleFull and ApiSample
