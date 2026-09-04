@@ -2,11 +2,14 @@ package com.researchspace.service.impl;
 
 import static java.lang.String.format;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.researchspace.CacheNames;
 import com.researchspace.Constants;
 import com.researchspace.analytics.service.AnalyticsManager;
 import com.researchspace.core.util.CryptoUtils;
 import com.researchspace.core.util.ISearchResults;
+import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.core.util.SearchResultsImpl;
 import com.researchspace.dao.CommunityDao;
 import com.researchspace.dao.RoleDao;
@@ -341,6 +344,48 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
     subject.setPreference(userPreference);
     save(subject);
     return userPreference;
+  }
+
+  @Override
+  @CachePut(value = "com.researchspace.model.UserPreference", key = "#subject + 'UI_JSON_SETTINGS'")
+  @CacheEvict(value = CacheNames.INTEGRATION_INFO, key = "#subject + 'UI_JSON_SETTINGS'")
+  public UserPreference mergeUiJsonSetting(String key, String valueJson, String subject) {
+    Validate.notEmpty(key, "preference key can't be empty");
+    JsonNode newValue = JacksonUtil.fromJson(valueJson, JsonNode.class);
+    if (newValue == null) {
+      throw new IllegalArgumentException(
+          messages.getMessage("errors.preference.invalidJsonValue", new Object[] {key}));
+    }
+    // Locked before the blob is read: reading first would merge into a snapshot another writer is
+    // already replacing, which is the race this method exists to remove.
+    User user = userDao.getForUpdate(userDao.getUserByUsername(subject).getId());
+    ObjectNode settings = storedUiJsonSettings(user);
+    settings.set(key, newValue);
+    UserPreference merged =
+        new UserPreference(Preference.UI_JSON_SETTINGS, user, settings.toString());
+    user.setPreference(merged);
+    // Deliberately not delegating to setPreference: a self-invocation bypasses the Spring cache
+    // proxy, so the annotations above would never run.
+    save(user);
+    return merged;
+  }
+
+  /**
+   * The user's stored UI settings as a mutable object. A blank or unparseable value starts a fresh
+   * object rather than failing every later write: only this method writes the column, and refusing
+   * to write over a corrupt value would leave the user unable to save any preference again.
+   */
+  private ObjectNode storedUiJsonSettings(User user) {
+    String stored = user.getValueForPreference(Preference.UI_JSON_SETTINGS).getValue();
+    if (StringUtils.isEmpty(stored)) {
+      return JacksonUtil.createObjectNode();
+    }
+    JsonNode parsed = JacksonUtil.fromJson(stored, JsonNode.class);
+    if (parsed == null || !parsed.isObject()) {
+      log.warn("Discarding unreadable UI_JSON_SETTINGS for user {}", user.getUsername());
+      return JacksonUtil.createObjectNode();
+    }
+    return (ObjectNode) parsed;
   }
 
   @Override

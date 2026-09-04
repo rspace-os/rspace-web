@@ -74,6 +74,16 @@ public interface SampleApiManager extends InventoryApiManager<SampleEntity> {
   Sample assertUserCanEditSample(Long id, User user);
 
   /**
+   * Like {@link #assertUserCanEditSample} but reads the sample with a row lock held until the
+   * current transaction ends. Used by the operation endpoint for the origins' parent samples, whose
+   * denormalised totals every origin decrement rewrites; ordinary edits keep using the unlocked
+   * read.
+   *
+   * @throws jakarta.ws.rs.NotFoundException if no sample has the id
+   */
+  Sample lockSampleForEdit(Long id, User user);
+
+  /**
    * Returns the {@link Sample} (not a template) if it exists and user can delete/restore it.
    *
    * @param id

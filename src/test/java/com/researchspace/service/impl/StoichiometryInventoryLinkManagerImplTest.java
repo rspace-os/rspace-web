@@ -8,6 +8,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -41,6 +42,7 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -178,6 +180,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
     when(linkDao.getSafeNull(321L)).thenReturn(java.util.Optional.of(original));
     when(moleculeManager.getDocContainingMolecule(molecule)).thenReturn(owningRecord);
     when(elnPerms.isPermitted(owningRecord, PermissionType.WRITE, user)).thenReturn(true);
+    when(subSampleMgr.lockSubSampleForEdit(invSubSample.getId(), user)).thenReturn(invSubSample);
 
     StockDeductionResult result = manager.deductStock(stoichiometryId, List.of(321L), user);
 
@@ -206,6 +209,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
     doNothing()
         .when(invPerms)
         .assertUserCanEditInventoryRecord(original.getInventoryRecord(), user);
+    when(subSampleMgr.lockSubSampleForEdit(invSubSample.getId(), user)).thenReturn(invSubSample);
 
     StockDeductionResult result =
         manager.deductStock(stoichiometryId, List.of(321L, 321L, 321L), user);
@@ -241,6 +245,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
     when(linkDao.getSafeNull(321L)).thenReturn(java.util.Optional.of(original));
     when(moleculeManager.getDocContainingMolecule(molecule)).thenReturn(owningRecord);
     when(elnPerms.isPermitted(owningRecord, PermissionType.WRITE, user)).thenReturn(true);
+    when(subSampleMgr.lockSubSampleForEdit(invSubSample.getId(), user)).thenReturn(invSubSample);
 
     StockDeductionResult result = manager.deductStock(stoichiometryId, List.of(321L), user);
 
@@ -250,6 +255,78 @@ public class StoichiometryInventoryLinkManagerImplTest {
         "Insufficient stock to perform this action. Attempting to use 20 g of stock amount 5 g"
             + " for SS300",
         result.getResults().get(0).getErrorMessage());
+  }
+
+  @Test
+  public void insufficientStockIsJudgedFromTheLockedRowNotTheLinkEntity() {
+    // The link carries whatever copy of the subsample the session loaded; a concurrent operation
+    // may have drained it since. The over-use check has to read the row it is about to decrement,
+    // under the same lock the decrement takes, or a deduction is accepted against stock that is no
+    // longer there and registerApiSubSampleUsage silently clamps it at zero.
+    StoichiometryInventoryLink original = new StoichiometryInventoryLink();
+    original.setId(321L);
+    long stoichiometryId = 55L;
+    molecule.getStoichiometry().setId(stoichiometryId);
+    molecule.setActualAmount(20.0);
+    original.setStoichiometryMolecule(molecule);
+    original.setInventoryRecord(invSubSample);
+    // the stale copy still reports plenty
+    invSubSample.setQuantity(new QuantityInfo(BigDecimal.valueOf(100), RSUnitDef.GRAM.getId()));
+
+    SubSample liveRow = new SubSample();
+    liveRow.setId(invSubSample.getId());
+    liveRow.setQuantity(new QuantityInfo(BigDecimal.valueOf(5), RSUnitDef.GRAM.getId()));
+
+    when(linkDao.getSafeNull(321L)).thenReturn(java.util.Optional.of(original));
+    when(moleculeManager.getDocContainingMolecule(molecule)).thenReturn(owningRecord);
+    when(elnPerms.isPermitted(owningRecord, PermissionType.WRITE, user)).thenReturn(true);
+    when(subSampleMgr.lockSubSampleForEdit(invSubSample.getId(), user)).thenReturn(liveRow);
+
+    StockDeductionResult result = manager.deductStock(stoichiometryId, List.of(321L), user);
+
+    assertFalse(result.getResults().get(0).isSuccess());
+    assertEquals(
+        "Insufficient stock to perform this action. Attempting to use 20 g of stock amount 5 g"
+            + " for SS300",
+        result.getResults().get(0).getErrorMessage());
+    verify(subSampleMgr, never())
+        .registerApiSubSampleUsage(any(), any(QuantityInfo.class), any(User.class));
+  }
+
+  @Test
+  public void locksSubSamplesInIdOrderWhateverOrderTheLinksWereSubmittedIn() {
+    // Two deductions over the same subsamples in opposite request orders would each hold one row
+    // and wait for the other. Locking in id order means every caller takes them in the same
+    // sequence, so one simply waits for the other (DevDocs/adr/0007).
+    StoichiometryMolecule mol = new StoichiometryMolecule();
+    mol.setStoichiometry(new Stoichiometry());
+    long stoichiometryId = 55L;
+    mol.getStoichiometry().setId(stoichiometryId);
+    mol.setActualAmount(1.0);
+    StoichiometryInventoryLink higher = createMoleculeAndLink(500L, 900L, mol);
+    StoichiometryInventoryLink lower = createMoleculeAndLink(501L, 800L, mol);
+
+    when(linkDao.getSafeNull(500L)).thenReturn(java.util.Optional.of(higher));
+    when(linkDao.getSafeNull(501L)).thenReturn(java.util.Optional.of(lower));
+    when(moleculeManager.getDocContainingMolecule(mol)).thenReturn(owningRecord);
+    when(elnPerms.isPermitted(owningRecord, PermissionType.WRITE, user)).thenReturn(true);
+    when(subSampleMgr.lockSubSampleForEdit(900L, user)).thenReturn(stocked(900L));
+    when(subSampleMgr.lockSubSampleForEdit(800L, user)).thenReturn(stocked(800L));
+
+    // submitted highest-subsample-first
+    manager.deductStock(stoichiometryId, List.of(500L, 501L), user);
+
+    InOrder inOrder = inOrder(subSampleMgr);
+    inOrder.verify(subSampleMgr).lockSubSampleForEdit(800L, user);
+    inOrder.verify(subSampleMgr).lockSubSampleForEdit(900L, user);
+  }
+
+  /** A subsample holding plenty, so a deduction against it succeeds. */
+  private SubSample stocked(Long id) {
+    SubSample subSample = new SubSample();
+    subSample.setId(id);
+    subSample.setQuantity(new QuantityInfo(BigDecimal.valueOf(100), RSUnitDef.GRAM.getId()));
+    return subSample;
   }
 
   private StoichiometryInventoryLink createMoleculeAndLink(
