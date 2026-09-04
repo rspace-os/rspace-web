@@ -19,6 +19,7 @@ import type { CoreFetcherArgs } from "../definitions/Search";
 import type { AdjustableTableRowOptions } from "../definitions/Tables";
 import type { Template } from "../definitions/Template";
 import getRootStore from "../stores/getRootStore";
+import type { UnitCategory } from "../stores/UnitStore";
 import FieldModel, { type FieldModelAttrs } from "./FieldModel";
 import SampleModel, {
   defaultEditableSampleFields,
@@ -485,6 +486,20 @@ export default class TemplateModel extends SampleModel implements Template {
     return Object.values(this.subSampleAlias).every(
       (v) => typeof v === "string" && v !== "custom" && v !== "customs" && v.length > 1 && v.length <= 30,
     );
+  }
+
+  /**
+   * The measurement category the template's samples are made in.
+   *
+   * Overridden because the inherited HasQuantity getter derives the category from `quantity`, and a
+   * template's quantity is always null: it would fall back to unit id 3 and report every template
+   * as "volume", so a mass or count template offered volume units and produced a request the
+   * backend rejects (Copilot review, PR #1090). A template declares its unit as `defaultUnitId`.
+   */
+  get quantityCategory(): UnitCategory {
+    const unit = getRootStore().unitStore.getUnit(this.defaultUnitId);
+    if (!unit) throw new Error("Could not get unit category");
+    return unit.category;
   }
 
   validateQuantity(): ValidationResult {
