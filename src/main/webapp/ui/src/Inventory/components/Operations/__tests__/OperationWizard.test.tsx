@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
+import { InEnglish } from "@/__tests__/realI18n";
 import { makeMockSubSample } from "@/stores/models/__tests__/SubSampleModel/mocking";
 import OperationWizard from "../OperationWizard";
 import { rawConfig } from "./testOperations";
@@ -496,6 +497,21 @@ describe("OperationWizard step flow", () => {
     await user.click(backButton()); // back to picker
     await user.click(await screen.findByRole("button", { name: /operations\.cryopreserve\.label/i }));
     expect(screen.getByText(/operations\.cryopreserve\.label$/)).toBeInTheDocument();
+  });
+
+  it("reads that heading as 'Derive: dna' in English", async () => {
+    // The key above proves the right branch rendered; only the real catalogs show that both
+    // parameters actually arrive rather than the heading being assembled in code (code review,
+    // finding 10). cimode renders the key alone and hides interpolation entirely.
+    const user = userEvent.setup();
+    render(
+      <InEnglish>
+        <OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />
+      </InEnglish>,
+    );
+    await user.click(await screen.findByRole("button", { name: /^Derive/ }));
+    await user.type(screen.getByTestId("proc"), "dna");
+    expect(screen.getByRole("heading", { name: "Derive: dna" })).toBeInTheDocument();
   });
 });
 

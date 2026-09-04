@@ -128,6 +128,25 @@ describe("ElnFolderBrowser", () => {
     });
   });
 
+  it("offers exactly the global-id prefixes the server accepts as a documentation target", async () => {
+    // Drift guard for the documentation link (RSDEV-1231): the server rejects an IsDocumentedBy
+    // link whose target is outside InventoryOperationPostValidator.DOCUMENTATION_TARGET_PREFIXES
+    // (SD, NB, GL), so a fourth pickable type here would only be discoverable as a 400 at Perform.
+    const onSelectionChange = vi.fn();
+    renderBrowser(onSelectionChange);
+    const user = userEvent.setup();
+    await screen.findByText("Protocol doc");
+    for (const node of ROOTS) await user.click(screen.getByText(node.name));
+
+    const prefixes = new Set(
+      onSelectionChange.mock.calls
+        .map(([selection]) => selection as { globalId: string } | null)
+        .filter((selection) => selection !== null)
+        .map((selection) => selection.globalId.replace(/\d+$/, "")),
+    );
+    expect([...prefixes].sort()).toEqual(["GL", "NB", "SD"]);
+  });
+
   it("reports no selection for a folder (navigate-only)", async () => {
     const onSelectionChange = vi.fn();
     renderBrowser(onSelectionChange);

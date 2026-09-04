@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 import type SubSampleModel from "@/stores/models/SubSampleModel";
 import OperationDetailsStep from "../OperationDetailsStep";
 import type { InventoryOperation } from "../operationsConfig";
+import { MAX_SUBSAMPLE_COUNT } from "../operationValidation";
 import type { OperationInputs } from "../types";
 
 // Stub UnitSelect (real one reads the MobX unitStore) with a native <select> that exposes its
@@ -137,6 +138,29 @@ describe("OperationDetailsStep", () => {
     );
     expect(screen.queryByRole("combobox", { name: /fields\.processName/i })).not.toBeInTheDocument();
     expect(screen.getAllByTestId("unit-select")).toHaveLength(2);
+  });
+
+  it("bounds the count input to whole numbers up to the server's cap", () => {
+    // The count decides how many subsamples the operation creates; the backend rejects a
+    // fractional count and caps it at MAX_SUBSAMPLE_COUNT (DevDocs/adr/0007), so the input must
+    // not invite a value the request builder would then throw on (code review, finding 12).
+    const countOperation = {
+      ...operation,
+      inputs: [{ key: "count", type: "integer", labelKey: "operations.fields.count", min: 1 }, ...operation.inputs],
+    } as unknown as InventoryOperation;
+    render(
+      <OperationDetailsStep
+        operation={countOperation}
+        origin={origin}
+        values={{ ...values, count: 2 }}
+        onChange={() => undefined}
+        section="amounts"
+      />,
+    );
+    const count = screen.getByRole("spinbutton", { name: /fields\.count/i });
+    expect(count).toHaveAttribute("min", "1");
+    expect(count).toHaveAttribute("max", String(MAX_SUBSAMPLE_COUNT));
+    expect(count).toHaveAttribute("step", "1");
   });
 
   it("does not allow a negative amount (clamps it to zero)", () => {
