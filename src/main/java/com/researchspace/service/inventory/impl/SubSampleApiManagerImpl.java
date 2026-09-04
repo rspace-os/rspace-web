@@ -287,9 +287,11 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
       // Every stock decrement in the app funnels through here (the operations endpoint,
       // Stoichiometry, List of Materials), so the row lock is taken once here rather than in each
       // caller. Without it the re-read is a plain get and two decrements racing the same subsample
-      // both subtract from the same stale quantity. The operations path locks the same row again;
-      // InnoDB treats a repeat lock in one transaction as a no-op.
-      dbSubSample = subSampleDao.getForUpdate(dbSubSample.getId());
+      // both subtract from the same stale quantity. Routed through lockSubSampleForEdit rather than
+      // the DAO so a row that vanished between the two reads is the same localised 404 as anywhere
+      // else, instead of a null dereference; the repeat permission check it performs is the same
+      // verdict as the one above.
+      dbSubSample = lockSubSampleForEdit(dbSubSample.getId(), user);
 
       QuantityInfo orgQuantity = dbSubSample.getQuantity();
       QuantityInfo newQuantity = qUtils.sum(Arrays.asList(orgQuantity, usedQuantity.negate()));

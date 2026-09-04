@@ -45,6 +45,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.CannotAcquireLockException;
 
 @ExtendWith(MockitoExtension.class)
 public class StoichiometryInventoryLinkManagerImplTest {
@@ -319,6 +320,33 @@ public class StoichiometryInventoryLinkManagerImplTest {
     InOrder inOrder = inOrder(subSampleMgr);
     inOrder.verify(subSampleMgr).lockSubSampleForEdit(800L, user);
     inOrder.verify(subSampleMgr).lockSubSampleForEdit(900L, user);
+  }
+
+  @Test
+  public void aLockFailureAbortsTheWholeDeductionRatherThanBecomingOneFailedRow() {
+    // The row locks this method now takes can fail (deadlock loser, lock-wait timeout). Hibernate
+    // leaves the session unusable and the transaction rollback-only after one, so catching it per
+    // link would run the remaining links on a poisoned session and end in an
+    // UnexpectedRollbackException that loses the per-row results entirely. It escapes instead, and
+    // the tier maps it to the 409 the Stoichiometry retry UI already handles.
+    StoichiometryInventoryLink original = new StoichiometryInventoryLink();
+    original.setId(321L);
+    long stoichiometryId = 55L;
+    molecule.getStoichiometry().setId(stoichiometryId);
+    molecule.setActualAmount(1.0);
+    original.setStoichiometryMolecule(molecule);
+    original.setInventoryRecord(invSubSample);
+    invSubSample.setQuantity(new QuantityInfo(BigDecimal.valueOf(100), RSUnitDef.GRAM.getId()));
+
+    when(linkDao.getSafeNull(321L)).thenReturn(java.util.Optional.of(original));
+    when(moleculeManager.getDocContainingMolecule(molecule)).thenReturn(owningRecord);
+    when(elnPerms.isPermitted(owningRecord, PermissionType.WRITE, user)).thenReturn(true);
+    when(subSampleMgr.lockSubSampleForEdit(invSubSample.getId(), user))
+        .thenThrow(new CannotAcquireLockException("deadlock loser"));
+
+    assertThrows(
+        CannotAcquireLockException.class,
+        () -> manager.deductStock(stoichiometryId, List.of(321L), user));
   }
 
   /** A subsample holding plenty, so a deduction against it succeeds. */

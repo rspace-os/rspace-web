@@ -35,7 +35,6 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -239,16 +238,36 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
   }
 
   @Test
-  public void mergeUiJsonSettingLocksTheUserRowBeforeReadingTheBlob() throws Exception {
-    // Reading the stored value before taking the lock would reintroduce the race one layer down.
-    User user = userWithUiJsonSettings("{}");
-    when(userDao.save(user)).thenReturn(user);
+  public void mergeUiJsonSettingMergesIntoTheLockedRowNotTheUnlockedRead() throws Exception {
+    // The lookup that finds the user runs before any lock, so its copy of the blob may already be
+    // superseded. Merging into that copy would reintroduce the race one layer down, so the merge
+    // has to use what the locked read returned. Two distinct users stand in for the two reads.
+    User staleRead = createAnyUser("jbloggs");
+    staleRead.setId(7L);
+    staleRead.setPreference(
+        new UserPreference(
+            Preference.UI_JSON_SETTINGS,
+            staleRead,
+            "{\"GALLERY_VIEW_MODE\":{\"value\":\"list\"}}"));
+    User lockedRead = createAnyUser("jbloggs");
+    lockedRead.setId(7L);
+    lockedRead.setPreference(
+        new UserPreference(
+            Preference.UI_JSON_SETTINGS,
+            lockedRead,
+            "{\"GALLERY_VIEW_MODE\":{\"value\":\"grid\"},\"SYSADMIN_USERS_TABLE_COLUMNS\":{\"value\":1}}"));
+    when(userDao.getUserByUsername("jbloggs")).thenReturn(staleRead);
+    when(userDao.getForUpdate(7L)).thenReturn(lockedRead);
+    when(userDao.save(lockedRead)).thenReturn(lockedRead);
 
     userManager.mergeUiJsonSetting("GALLERY_SORT_BY", "{\"value\":\"name\"}", "jbloggs");
 
-    InOrder inOrder = Mockito.inOrder(userDao);
-    inOrder.verify(userDao).getForUpdate(7L);
-    inOrder.verify(userDao).save(user);
+    JsonNode merged = new ObjectMapper().readTree(storedUiJsonSettings(lockedRead));
+    // the key another writer added between the two reads survives...
+    assertEquals(1, merged.path("SYSADMIN_USERS_TABLE_COLUMNS").path("value").asInt());
+    // ...and so does its change to a key the stale copy also had
+    assertEquals("grid", merged.path("GALLERY_VIEW_MODE").path("value").asText());
+    assertEquals("name", merged.path("GALLERY_SORT_BY").path("value").asText());
   }
 
   @Test
@@ -260,6 +279,21 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
 
     JsonNode merged = new ObjectMapper().readTree(storedUiJsonSettings(user));
     assertEquals("name", merged.path("GALLERY_SORT_BY").path("value").asText());
+  }
+
+  @Test
+  public void mergeUiJsonSettingRejectsAKeyThatIsNotAPreferenceName() {
+    // The key is written verbatim into the user's single settings column, so an unconstrained one
+    // lets a caller fill that column with arbitrary names until it hits the TEXT limit, after which
+    // every keyed write for that user fails for good. Only the shape the client actually uses is
+    // accepted.
+    // no DAO stubbing: the key is rejected before the user is even read
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> userManager.mergeUiJsonSetting("../evil key", "{}", "jbloggs"));
+    assertThrows(
+        IllegalArgumentException.class, () -> userManager.mergeUiJsonSetting("", "{}", "jbloggs"));
+    verify(userDao, never()).save(Mockito.any(User.class));
   }
 
   @Test
