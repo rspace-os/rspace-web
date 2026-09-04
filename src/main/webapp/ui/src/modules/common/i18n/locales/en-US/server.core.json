@@ -183,7 +183,9 @@
       }
     },
     "preference": {
-      "invalidJsonValue": "The value for preference key ''{0}'' is not valid JSON."
+      "invalidJsonValue": "The value for preference key ''{0}'' is not valid JSON.",
+      "invalidKey": "''{0}'' is not a valid preference key.",
+      "keyNotSupported": "Preference ''{0}'' is stored as a single value, so it cannot be updated one key at a time."
     },
     "rateLimitExceeded": "You have exceeded the number of {0} requests. Please contact ResearchSpace support for assistance.",
     "composedId": {

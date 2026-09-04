@@ -43,6 +43,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.shiro.SecurityUtils;
@@ -346,11 +347,22 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
     return userPreference;
   }
 
+  /**
+   * The shape of a key inside the UI settings object, matching the names the client declares in its
+   * PREFERENCES map. The key is written verbatim into the user's single settings column, so an
+   * unconstrained one lets a caller fill that column with arbitrary names until it reaches the TEXT
+   * limit, after which every keyed write for that user fails for good.
+   */
+  private static final Pattern UI_JSON_SETTINGS_KEY = Pattern.compile("[A-Z0-9_]{1,64}");
+
   @Override
   @CachePut(value = "com.researchspace.model.UserPreference", key = "#subject + 'UI_JSON_SETTINGS'")
   @CacheEvict(value = CacheNames.INTEGRATION_INFO, key = "#subject + 'UI_JSON_SETTINGS'")
   public UserPreference mergeUiJsonSetting(String key, String valueJson, String subject) {
-    Validate.notEmpty(key, "preference key can't be empty");
+    if (key == null || !UI_JSON_SETTINGS_KEY.matcher(key).matches()) {
+      throw new IllegalArgumentException(
+          messages.getMessage("errors.preference.invalidKey", new Object[] {key}));
+    }
     JsonNode newValue = JacksonUtil.fromJson(valueJson, JsonNode.class);
     if (newValue == null) {
       throw new IllegalArgumentException(

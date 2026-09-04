@@ -397,16 +397,21 @@ public class UserProfileControllerTest {
   }
 
   @Test
-  public void updatePreferenceValueIgnoresAKeyOnAPreferenceThatIsNotTheJsonBlob() {
-    // Only UI_JSON_SETTINGS is a JSON object; merging a key into a scalar preference would write a
-    // JSON object into a column the rest of the app reads as a plain value.
-    when(usrMgr.getUserByUsername("any")).thenReturn(anyUser);
-    UserPreference replaced = new UserPreference(Preference.UI_CLIENT_SETTINGS, anyUser, "whole");
-    when(usrMgr.setPreference(Preference.UI_CLIENT_SETTINGS, "whole", "any")).thenReturn(replaced);
+  public void updatePreferenceValueRejectsAKeyOnAPreferenceThatIsNotTheJsonBlob() {
+    // Only UI_JSON_SETTINGS holds a JSON object. Quietly ignoring the key for any other preference
+    // would let a caller believe it merged one field while the whole value was replaced, so it is
+    // refused instead of silently doing something else.
+    when(messages.getMessage(
+            "errors.preference.keyNotSupported", new Object[] {"UI_CLIENT_SETTINGS"}))
+        .thenReturn("not a keyed preference");
 
-    userProfileController.updatePreferenceValue(
-        "UI_CLIENT_SETTINGS", "whole", "B", () -> "any", mockRequest);
+    AjaxReturnObject<String> response =
+        userProfileController.updatePreferenceValue(
+            "UI_CLIENT_SETTINGS", "whole", "B", () -> "any", mockRequest);
 
+    assertNull(response.getData());
+    assertEquals("not a keyed preference", response.getErrorMsg().getErrorMessages().get(0));
     verify(usrMgr, never()).mergeUiJsonSetting(anyString(), anyString(), anyString());
+    verify(usrMgr, never()).setPreference(any(Preference.class), anyString(), anyString());
   }
 }

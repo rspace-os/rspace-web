@@ -104,4 +104,30 @@ public class SampleDaoTest extends SpringTransactionalTest {
 
     assertEquals(locked, sampleDao.getForUpdate(sampleId));
   }
+
+  @Test
+  public void getForUpdateReReadsTheRowUnderTheLock() {
+    // Hibernate takes a lock on an already-loaded entity by UPGRADING it: it issues
+    // "select id ... for update" and keeps the column values it read before the lock. A caller that
+    // then computed from those values would be doing exactly the stale read the lock exists to
+    // prevent, so the row is re-read under the lock rather than merely locked.
+    User user = createAndSaveRandomUser();
+    Container workbench = containerDao.getWorkbenchForUser(user);
+    Sample sample = recordFactory.createSample("sample refresh test", user);
+    sample.getSubSamples().get(0).moveToNewParent(workbench);
+    Long sampleId = sampleDao.persistNewSample(sample).getId();
+    sessionFactory.getCurrentSession().flush();
+    sessionFactory.getCurrentSession().clear();
+
+    // loaded unlocked, then altered in memory only: standing in for the values a concurrent
+    // transaction has since changed underneath us
+    Sample loaded = sampleDao.get(sampleId);
+    loaded.setDescription("only in this session");
+
+    Sample locked = sampleDao.getForUpdate(sampleId);
+
+    // the stored value wins, which is the whole point, and is why a caller must not hold unflushed
+    // changes to a row it is about to lock for the first time
+    assertNull(locked.getDescription());
+  }
 }

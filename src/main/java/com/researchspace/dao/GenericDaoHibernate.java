@@ -42,6 +42,13 @@ public class GenericDaoHibernate<T, PK extends Serializable> implements GenericD
 
   protected Class<T> persistentClass;
 
+  /**
+   * Lock modes under which this transaction already holds the row exclusively, so it must be
+   * returned as it is rather than locked again: see {@link GenericDao#getForUpdate}.
+   */
+  private static final Set<LockMode> ALREADY_HELD_EXCLUSIVELY =
+      EnumSet.of(LockMode.WRITE, LockMode.PESSIMISTIC_WRITE, LockMode.PESSIMISTIC_FORCE_INCREMENT);
+
   protected SessionFactory sessionFactory;
 
   /**
@@ -74,13 +81,9 @@ public class GenericDaoHibernate<T, PK extends Serializable> implements GenericD
    *
    * @return
    */
-
-  /**
-   * Lock modes under which this transaction already holds the row exclusively, so asking for the
-   * lock again is unnecessary and, worse, fails: see {@link GenericDao#getForUpdate}.
-   */
-  private static final Set<LockMode> ALREADY_HELD_EXCLUSIVELY =
-      EnumSet.of(LockMode.WRITE, LockMode.PESSIMISTIC_WRITE, LockMode.PESSIMISTIC_FORCE_INCREMENT);
+  protected Session getSession() {
+    return sessionFactory.getCurrentSession();
+  }
 
   @Override
   public T getForUpdate(PK id) {
@@ -89,11 +92,12 @@ public class GenericDaoHibernate<T, PK extends Serializable> implements GenericD
     if (managed == null || ALREADY_HELD_EXCLUSIVELY.contains(session.getCurrentLockMode(managed))) {
       return managed;
     }
-    return session.get(persistentClass, id, LockMode.PESSIMISTIC_WRITE);
-  }
-
-  protected Session getSession() {
-    return sessionFactory.getCurrentSession();
+    // Refreshed, not merely locked. Asking Hibernate to lock an entity it has already loaded is a
+    // lock UPGRADE: it issues "select id ... for update" and keeps the column values read before
+    // the lock, so the caller would compute from exactly the stale state the lock exists to
+    // prevent. Refreshing re-reads the row under the lock instead.
+    session.refresh(managed, LockMode.PESSIMISTIC_WRITE);
+    return managed;
   }
 
   @Autowired

@@ -51,10 +51,11 @@ public interface GenericDao<T, PK extends Serializable> {
    * to commit. Use it where two requests writing one row must serialise rather than both compute
    * from the same stale read (RSDEV-1231).
    *
-   * <p>A row this transaction already holds exclusively is returned as it is: Hibernate upgrades a
-   * lock by re-reading the row and comparing its stored version to the in-memory one, which fails
-   * as a stale-object error whenever the entity carries unflushed changes or has not been inserted
-   * yet, so asking twice must be a no-op.
+   * <p>The row is re-read under the lock, so the returned entity holds what another transaction
+   * committed rather than what this one saw beforehand. The caller must therefore not hold
+   * unflushed changes to a row it locks here for the first time: they would be discarded. A row
+   * this transaction already holds exclusively is exempt and is returned as it is, so asking twice
+   * is a no-op and a caller's own pending changes are safe.
    *
    * @return the locked entity, or null if none has the id
    */

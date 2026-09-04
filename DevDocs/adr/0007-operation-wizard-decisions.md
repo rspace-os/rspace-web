@@ -138,7 +138,18 @@ above) without computing it.
   old total and one write is lost. They are locked after the origins because
   every other writer takes the subsample row first and the sample row second,
   and the total stays denormalised because deriving it on read would touch every
-  sample listing and search projection. Before this the outcome depended on the MariaDB version: with
+  sample listing and search projection.
+
+  **Known limit, not yet closed** (code review, 2026-09-04): the parent lock
+  serialises the two writers but may not by itself make the total exact.
+  `SubSample.setQuantity` recomputes it from `getActiveSubSamples()`, a plain
+  non-locking read of the *sibling* rows, and under the REPEATABLE READ this app
+  runs at, the waiter's snapshot was fixed before it queued. It can therefore
+  still recompute from a sibling quantity the other transaction has already
+  changed. Closing it needs the siblings locked or refreshed too, or the total
+  recomputed in SQL. `parallelAliquotsOnSiblingSubSamplesKeepTheParentTotalExact`
+  in `InventoryOperationsApiControllerMVCIT` is the test that settles it and has
+  not been run. Before this the outcome depended on the MariaDB version: with
   `innodb_snapshot_isolation` (11.6+) the loser failed at commit and was mapped
   to 409; on 10.11 it applied a stale subtraction. The 409 mapping in
   `ApiControllerAdvice` stays as the fallback for anything the lock does not
@@ -151,11 +162,20 @@ above) without computing it.
   lock. The operations path locks the same row twice in one transaction; the
   DAO skips a lock this transaction already holds, because Hibernate upgrades a
   lock by re-reading the row and comparing versions, which fails on an entity
-  with unflushed changes. Stoichiometry processes its links ordered by
+  with unflushed changes. Every other locked read REFRESHES the row: asking
+  Hibernate to lock an entity it has already loaded only issues
+  `select id ... for update` and keeps the values read before the lock, so a
+  caller would compute from exactly the stale state the lock exists to prevent.
+  The cost is that a caller must not hold unflushed changes to a row it locks
+  there for the first time. Stoichiometry processes its links ordered by
   inventory record id so two deductions over the same subsamples cannot each
   hold what the other waits for; a cross-endpoint multi-row deadlock is still
   possible in theory, and surfaces as the 409 the Stoichiometry
-  refresh-and-retry UI already handles.
+  refresh-and-retry UI already handles; a lock failure aborts the whole
+  deduction rather than becoming one failed row, because Hibernate leaves the
+  session unusable afterwards. The whole-value `POST /userform/ajax/preference`
+  path takes no lock, so until every client sends a key, a cached-JS tab writing
+  the whole UI settings blob can still clobber a concurrent keyed merge.
 - **Category and precision rules also apply to the created subsamples** (code
   review, 2026-09-03): the amount taken must be a real amount unit in the
   origin's category; each new subsample quantity must be in the origin's

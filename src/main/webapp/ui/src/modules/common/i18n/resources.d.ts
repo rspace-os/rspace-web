@@ -5694,6 +5694,11 @@ export default interface Resources {
         "invalid": "Invalid password.",
         "notEqualUsername": "Please use a password other than your username."
       },
+      "preference": {
+        "invalidJsonValue": "The value for preference key ''{0}'' is not valid JSON.",
+        "invalidKey": "''{0}'' is not a valid preference key.",
+        "keyNotSupported": "Preference ''{0}'' is stored as a single value, so it cannot be updated one key at a time."
+      },
       "rateLimitExceeded": "You have exceeded the number of {0} requests. Please contact ResearchSpace support for assistance.",
       "reauthentication": {
         "failed": "Reauthentication failed, please try again."
@@ -7000,6 +7005,7 @@ export default interface Resources {
           "documentationLinkInvalid": "A documentation link must be a link field with relation type [{0}].",
           "documentationLinkTargetInvalid": "A documentation link must target an ELN document, notebook or Gallery file.",
           "duplicateOrigin": "An origin subsample may appear at most once in an operation.",
+          "extraFieldCountMaximum": "This operation accepts at most {0} extra fields on the sample it creates.",
           "fieldKeyUnknown": "The field [{0}] is not one this operation declares.",
           "linkToOriginRequired": "The new sample must include a {0} link back to origin subsample {1}.",
           "mustEmptyOrigin": "This operation must take the origin's entire remaining quantity.",
@@ -7018,6 +7024,7 @@ export default interface Resources {
           "storageTempRequired": "This operation requires a storage temperature on the new sample.",
           "storageTempSingleValue": "This operation stores a single temperature, so the minimum and maximum must be equal.",
           "subSampleCategoryMismatch": "Each new subsample must use the origin's measurement category (e.g. all volume or all mass).",
+          "subSampleCountMaximum": "This operation accepts at most {0} new subsamples.",
           "subSampleQuantitiesUnequal": "This operation creates equal subsamples, so every new subsample must have the same quantity.",
           "subSampleQuantityInvalid": "Each new subsample must hold a quantity greater than zero, with a unit.",
           "subSampleQuantityTooPrecise": "Each new subsample quantity supports at most 3 decimal places.",

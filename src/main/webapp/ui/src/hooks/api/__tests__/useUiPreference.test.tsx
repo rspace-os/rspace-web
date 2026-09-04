@@ -84,6 +84,47 @@ describe("useUiPreference", () => {
     expect(typeof sent.time).toBe("number");
   });
 
+  it("does not let a stalled write of one key block a different key", async () => {
+    // The chain exists to order repeated writes of the SAME key and to report a failure once.
+    // Sharing one chain across every key in a provider would make a single hung request block every
+    // other preference in that provider for the rest of the session, which is the same head-of-line
+    // problem, one level down.
+    let releaseHungWrite: () => void = () => {};
+    const hungWrite = new Promise<void>((resolve) => {
+      releaseHungWrite = resolve;
+    });
+    const posted: Array<string> = [];
+    server.use(
+      http.get("/userform/ajax/preference", () => HttpResponse.json({})),
+      http.post("/userform/ajax/preference", async ({ request }) => {
+        const form = await request.formData();
+        const key = String(form.get("key"));
+        if (key === "GALLERY_VIEW_MODE") await hungWrite;
+        posted.push(key);
+        return HttpResponse.json({});
+      }),
+    );
+
+    const { result } = renderHook(
+      () => ({
+        viewMode: useUiPreference<string | null>(PREFERENCES.GALLERY_VIEW_MODE, { defaultValue: null }),
+        columns: useUiPreference<string | null>(PREFERENCES.SYSADMIN_USERS_TABLE_COLUMNS, { defaultValue: null }),
+      }),
+      { wrapper: UiPreferences },
+    );
+    // the provider renders null children until its own fetch resolves, so gate on a value from
+    // inside it rather than on `result.current` itself
+    await waitFor(() => expect(result.current?.viewMode).toBeDefined());
+
+    act(() => {
+      result.current.viewMode[1]("grid");
+      result.current.columns[1]("wide");
+    });
+
+    await waitFor(() => expect(posted).toEqual(["SYSADMIN_USERS_TABLE_COLUMNS"]));
+    releaseHungWrite();
+  });
+
   it("does not let one provider's stalled write block another provider's", async () => {
     // The write chain orders one page's writes of the same key, but a module-level chain would
     // serialise every preference write in the app: one hung request would stall unrelated writes
