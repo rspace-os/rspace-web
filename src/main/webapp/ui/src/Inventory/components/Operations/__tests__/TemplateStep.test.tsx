@@ -1,6 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
+import { InEnglish } from "@/__tests__/realI18n";
 import TemplateStep, { type TemplateSelection } from "../TemplateStep";
 
 type FakeField = {
@@ -192,5 +193,23 @@ describe("TemplateStep", () => {
     resolveA();
     await Promise.resolve();
     expect(onChange).not.toHaveBeenCalledWith(expect.objectContaining({ templateId: 5 }));
+  });
+});
+
+describe("TemplateStep in English", () => {
+  it("names the blocking fields as a list, not a bare join", async () => {
+    // The message is assembled by i18n, not in code (code review, finding 10): the field names go
+    // through Intl.ListFormat for the locale, so English reads "A, B, and C". cimode hides the
+    // interpolated parameters entirely, which is why this one test uses the real catalogs.
+    currentTemplate = makeTemplate(
+      ["A", "B", "C"].map((name) => ({ name, mandatory: true, content: "", selectedOptions: null })),
+    );
+    render(
+      <InEnglish>
+        <TemplateStep value={pickMode} onChange={vi.fn()} originSampleName="S1" />
+      </InEnglish>,
+    );
+    await userEvent.setup().click(screen.getByTestId("template-picker"));
+    expect(await screen.findByText(/the required field\(s\) A, B, and C have no default value/)).toBeInTheDocument();
   });
 });
