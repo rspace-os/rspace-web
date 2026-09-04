@@ -5,13 +5,17 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import java.sql.SQLException;
+import org.hibernate.StaleObjectStateException;
 import org.hibernate.exception.GenericJDBCException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.CannotAcquireLockException;
+import org.springframework.dao.DeadlockLoserDataAccessException;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.orm.hibernate5.HibernateJdbcException;
+import org.springframework.orm.hibernate5.HibernateOptimisticLockingFailureException;
 import org.springframework.test.util.ReflectionTestUtils;
 
 /**
@@ -48,6 +52,20 @@ public class ControllerExceptionHandlerTest {
     // 1020, "Record has changed since last read": MariaDB 11.6+ raises it at commit under snapshot
     // isolation, and Hibernate cannot classify it, so it arrives as the generic JDBC wrapper.
     assertEquals(409, statusFor(hibernateJdbcExceptionWithSqlErrorCode(1020)));
+  }
+
+  @Test
+  public void theOtherPessimisticAndOptimisticFailuresAreAlsoConflicts() {
+    // CannotAcquireLockException is only one of the shapes a contended write takes: a deadlock
+    // loser and a lock-wait timeout are siblings of it, not subclasses, and the locked read added
+    // in RSDEV-1231 raises a stale-object failure of its own. All are retryable, not server faults.
+    assertEquals(409, statusFor(new DeadlockLoserDataAccessException("deadlock", null)));
+    assertEquals(409, statusFor(new PessimisticLockingFailureException("lock wait timeout")));
+    assertEquals(
+        409,
+        statusFor(
+            new HibernateOptimisticLockingFailureException(
+                new StaleObjectStateException("Sample", 1L))));
   }
 
   @Test

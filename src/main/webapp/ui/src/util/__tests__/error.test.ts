@@ -110,7 +110,12 @@ describe("getApiErrorDetail", () => {
 
   test("shows only the first of several errors", () => {
     const error = {
-      response: { data: { message: "Errors detected: 2", errors: ["a: first", "b: second"] } },
+      response: {
+        data: {
+          message: "Errors detected: 2",
+          errors: ["origins[0].id: first", "origins[1].id: second"],
+        },
+      },
     };
     expect(getApiErrorDetail(error, "fallback")).toBe("first");
   });
@@ -118,6 +123,24 @@ describe("getApiErrorDetail", () => {
   test("keeps an error that has no path prefix", () => {
     const error = { response: { data: { errors: ["Something went wrong"] } } };
     expect(getApiErrorDetail(error, "fallback")).toBe("Something went wrong");
+  });
+
+  test("falls back to the message when the only error is blank", () => {
+    // ApiError wraps its fourth constructor argument in a singleton list, so every response that is
+    // not a BindException carries `errors: [""]`. That covers the 409, 404 and 403 cases this very
+    // change cares about, and returning "" would show a titled alert with no message at all.
+    const error = { response: { data: { message: "Edit conflict", errors: [""] } } };
+    expect(getApiErrorDetail(error, "fallback")).toBe("Edit conflict");
+  });
+
+  test("falls back when an error is nothing but a field path", () => {
+    const error = { response: { data: { message: "Errors detected: 1", errors: ["origins[0].id:"] } } };
+    expect(getApiErrorDetail(error, "fallback")).toBe("Errors detected: 1");
+  });
+
+  test("does not strip a leading word that is not a field path", () => {
+    const error = { response: { data: { errors: ["Warning: stock is low"] } } };
+    expect(getApiErrorDetail(error, "fallback")).toBe("Warning: stock is low");
   });
 
   test("falls back to the message when the errors array is empty", () => {

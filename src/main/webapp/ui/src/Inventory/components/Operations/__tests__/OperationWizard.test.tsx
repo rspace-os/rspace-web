@@ -3,6 +3,7 @@ import { render as renderWithoutQueryClient, screen, waitFor } from "@testing-li
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import { server } from "@/__tests__/mswServer";
 import { InEnglish } from "@/__tests__/realI18n";
 import { makeMockSubSample } from "@/stores/models/__tests__/SubSampleModel/mocking";
@@ -477,7 +478,7 @@ describe("OperationWizard step flow", () => {
         once: true,
       }),
     );
-    const consoleWarn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const restoreConsole = silenceConsole(["warn"], ["Could not refresh the origins"]);
     const user = userEvent.setup();
     const onClose = vi.fn();
     const origin = makeMockSubSample({});
@@ -486,12 +487,15 @@ describe("OperationWizard step flow", () => {
     await reachConfirm(user, "both fail");
     await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
 
+    // wait for the refresh to have failed too, so the single-alert assertion below is about the
+    // finished state rather than a moment before the second alert could have been added
+    await waitFor(() => expect(origin.fetchAdditionalInfo).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(addAlert).toHaveBeenCalled());
     const alerts = addAlert.mock.calls.map((call) => call[0] as { variant: string; message: string });
     expect(alerts).toHaveLength(1);
     expect(alerts[0].message).toBe("backend rejected the request");
     expect(onClose).not.toHaveBeenCalled();
-    consoleWarn.mockRestore();
+    restoreConsole();
   });
 
   it("treats a successful Perform as done even when refreshing the origin afterwards fails", async () => {
