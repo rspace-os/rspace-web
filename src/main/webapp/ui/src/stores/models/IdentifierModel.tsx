@@ -179,6 +179,11 @@ export default class IdentifierModel implements Identifier {
   _links: Array<_LINK> = [];
   editing: boolean = false;
   customFieldsOnPublicPage: boolean;
+  /*
+   * Deliberately absent from the makeObservable map below, unlike every sibling field: it is read
+   * once, imperatively, right after a save (see InventoryBaseRecord.update) and never rendered, so
+   * observing it would buy nothing and would make plain assignment to it an out-of-action write.
+   */
   externalMetadataUpdate: ExternalMetadataUpdate | null = null;
 
   ApiServiceBase: typeof InvApiService | null = null;
@@ -757,8 +762,7 @@ export type ExternalMetadataUpdateReport = {
  * A record frozen by its own state is a `notice`: normal and expected. Every other outcome,
  * including one added to the server's enum after this build shipped, is an `error`. That
  * fall-through is deliberate: staying quiet about an outcome the UI does not recognise would
- * reinstate the silent drift this feature exists to close, which is worse than an unexpected
- * error toast carrying the server's own sentence.
+ * reinstate the silent drift this feature exists to close (ADR 0008).
  *
  * A pure function rather than a method, so this module stays free of the global stores (see the
  * note at the top of the file) and each caller raises its own alerts after its own success toast.
@@ -780,7 +784,8 @@ export const externalMetadataUpdateReports = (
 
 /**
  * The title for one report, naming the identifier it belongs to. Shared by the single toast and by
- * a grouped alert's detail rows, where two identifiers on one record are otherwise indistinguishable.
+ * a grouped alert's detail rows, where two identifiers on one record are otherwise
+ * indistinguishable.
  */
 export const externalMetadataUpdateTitle = ({ doi, variant }: ExternalMetadataUpdateReport): string =>
   variant === "error"
@@ -788,11 +793,8 @@ export const externalMetadataUpdateTitle = ({ doi, variant }: ExternalMetadataUp
     : i18n.t("inventory:identifierModel.alerts.externalUpdateNotPossible", { doi });
 
 /**
- * The toast for one report.
- *
- * Both variants wait to be dismissed rather than expiring on a timer, because both carry a full
- * sentence to read and no reading speed can be assumed (WCAG 2.2.1). The notice stays a notice, so
- * a record frozen by its own state still reads as information rather than as a problem.
+ * The toast for one report. Neither variant expires on a timer: both carry a full sentence to read
+ * and no reading speed can be assumed for it (WCAG 2.2.1).
  */
 export const externalMetadataUpdateAlert = (report: ExternalMetadataUpdateReport): Alert =>
   mkAlert({
@@ -802,9 +804,6 @@ export const externalMetadataUpdateAlert = (report: ExternalMetadataUpdateReport
     isInfinite: true,
   });
 
-/**
- * One toast per identifier. Right for a single record, which carries one or two identifiers; a
- * bulk caller should group the reports instead of raising a toast for every one of them.
- */
+/** One toast per identifier. A bulk caller should group the reports instead. */
 export const externalMetadataUpdateAlerts = (identifiers: ReadonlyArray<Identifier>): Array<Alert> =>
   externalMetadataUpdateReports(identifiers).map(externalMetadataUpdateAlert);
