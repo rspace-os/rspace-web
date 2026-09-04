@@ -2,6 +2,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
+import { InEnglish } from "@/__tests__/realI18n";
 import appTheme from "@/theme";
 import OperationConfirmation from "../OperationConfirmation";
 import type { InventoryOperation } from "../operationsConfig";
@@ -279,5 +280,50 @@ describe("OperationConfirmation", () => {
       templateSelection: { mode: "none", templateId: null, remember: false },
     });
     expect(screen.getByText(/fields\.originAmountZero/)).toBeInTheDocument();
+  });
+});
+
+describe("OperationConfirmation in English", () => {
+  const poolOp = {
+    key: "pool",
+    labelKey: "operations.pool.label",
+    requiresMultiple: true,
+    effect: {
+      nameFrom: "sampleName",
+      amountTakenFrom: "amountTaken",
+      links: [{ relationType: "HasPart", fieldNameKey: "operations.pool.linkFieldName" }],
+    },
+    confirmSummary: ["amountTaken"],
+  } as unknown as InventoryOperation;
+
+  it("reads each per-subsample line as 'origin: amount unit'", () => {
+    // The line is assembled by i18n from the originAmount and amountTaken keys, not concatenated in
+    // code (code review, finding 10). cimode renders the key and drops every parameter, so only the
+    // real catalogs can show that the origin name and its amount both arrive.
+    render(
+      <InEnglish>
+        <ThemeProvider theme={appTheme}>
+          <OperationConfirmation
+            operation={poolOp}
+            values={values}
+            documentation={null}
+            templateSelection={{ mode: "none", templateId: null, remember: false }}
+            originSampleName="S1"
+            originName="Vial A"
+            amountMode="perSubsample"
+            origins={[
+              { globalId: "SS1", name: "Vial A" },
+              { globalId: "SS2", name: "Vial B" },
+            ]}
+            perSubsampleAmounts={{
+              SS1: { numericValue: 1, unitId: 3 },
+              SS2: { numericValue: 2.5, unitId: 3 },
+            }}
+          />
+        </ThemeProvider>
+      </InEnglish>,
+    );
+    expect(screen.getByText("Vial A: 1 ml")).toBeInTheDocument();
+    expect(screen.getByText("Vial B: 2.5 ml")).toBeInTheDocument();
   });
 });
