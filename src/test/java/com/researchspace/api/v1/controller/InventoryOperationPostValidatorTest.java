@@ -968,6 +968,47 @@ class InventoryOperationPostValidatorTest {
         validate(request), "newSample.extraFields", "errors.inventory.operation.fieldKeyUnknown");
   }
 
+  // --- storage temperature shape and magnitude (Copilot review, PR #1090) ---
+
+  @Test
+  void malformedStorageTemperatureIsAFieldScopedErrorNotAnException() {
+    // The delegated samples validator resolves the unit before the operation's own bounds check
+    // runs, so a temperature object with no unit (JSON "{}") or an unknown one used to escape as an
+    // unchecked IllegalArgumentException, i.e. a 500 rather than a 400.
+    for (ApiQuantityInfo malformed :
+        List.of(
+            new ApiQuantityInfo(new BigDecimal("-20"), (Integer) null),
+            new ApiQuantityInfo(new BigDecimal("-20"), 999999),
+            new ApiQuantityInfo(null, (Integer) null))) {
+      ApiInventoryOperationPost request = cryopreserveRequest();
+      request.getNewSample().setStorageTempMax(malformed);
+      Errors errors = validate(request);
+      assertTrue(
+          errors.hasErrors(),
+          () -> "a malformed storage temperature must be reported, not thrown: " + malformed);
+    }
+  }
+
+  @Test
+  void rejectsAStorageTemperatureTooLargeForTheStoredColumn() {
+    // -1E30 is below Cryopreserve's -18 maximum, so the configured bound accepts it, but the
+    // storage-temperature column is DECIMAL(19,3): persisting it would overflow or silently store a
+    // different temperature. Same rule as amountTaken (code review, finding 7).
+    ApiInventoryOperationPost request = cryopreserveRequest();
+    request
+        .getNewSample()
+        .setStorageTempMin(
+            new ApiQuantityInfo(new BigDecimal("-1E+30"), RSUnitDef.CELSIUS.getId()));
+    request
+        .getNewSample()
+        .setStorageTempMax(
+            new ApiQuantityInfo(new BigDecimal("-1E+30"), RSUnitDef.CELSIUS.getId()));
+    assertTrue(
+        validate(request).getFieldErrors().stream()
+            .anyMatch(error -> "errors.inventory.temperature.notStorable".equals(error.getCode())),
+        () -> "expected a not-storable rejection, got " + validate(request).getAllErrors());
+  }
+
   // --- origin count ceiling (resource-exhaustion guard) ---
 
   @Test
@@ -986,6 +1027,26 @@ class InventoryOperationPostValidatorTest {
         validate(request).getFieldErrors("origins").stream()
             .anyMatch(
                 error -> "errors.inventory.operation.originCountMaximum".equals(error.getCode())));
+  }
+
+  @Test
+  void reportsTheMaximumBeforeTheCardinalityForAnOversizedSingleOriginOperation() {
+    // A single-origin operation with 500 origins used to report only "exactly one", hiding the
+    // actual reason and still walking every origin afterwards (Copilot review, PR #1090).
+    ApiInventoryOperationPost request = aliquotRequest();
+    List<ApiInventoryOperationOriginUpdate> origins = new ArrayList<>();
+    for (long id = 1; id <= 101; id++) {
+      origins.add(origin(id, "0.6"));
+    }
+    request.setOrigins(origins);
+    Errors errors = validate(request);
+    assertEquals(
+        List.of("errors.inventory.operation.originCountMaximum"),
+        errors.getFieldErrors("origins").stream().map(FieldError::getCode).toList(),
+        () -> "expected only the ceiling error, got " + errors.getAllErrors());
+    // and validation stops there rather than reporting a per-origin error for each of the 101
+    assertEquals(
+        1, errors.getErrorCount(), () -> "expected one error, got " + errors.getAllErrors());
   }
 
   // --- origin shape rules (operation-independent) ---

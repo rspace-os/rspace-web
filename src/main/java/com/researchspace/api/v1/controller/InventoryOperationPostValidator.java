@@ -144,6 +144,19 @@ public class InventoryOperationPostValidator implements Validator {
           "Each origin must identify a subsample by id.");
       return;
     }
+    // The ceiling is checked before the cardinality, and returns: an oversized list is the more
+    // specific reason (a single-origin operation would otherwise report only "exactly one" and hide
+    // it), and stopping here keeps the per-origin and per-link work bounded by the cap rather than
+    // by whatever the caller sent (Copilot review, PR #1090). Each origin costs a read, a lock and
+    // an update cycle; the batch is capped like the samples endpoint caps newSampleSubSamplesCount.
+    if (request.getOrigins().size() > MAX_ORIGINS) {
+      errors.rejectValue(
+          "origins",
+          "errors.inventory.operation.originCountMaximum",
+          new Object[] {MAX_ORIGINS},
+          "This operation accepts at most 100 origin subsamples.");
+      return;
+    }
     if (config.requiresMultiple() && request.getOrigins().size() < 2) {
       errors.rejectValue(
           "origins",
@@ -154,14 +167,6 @@ public class InventoryOperationPostValidator implements Validator {
           "origins",
           "errors.inventory.operation.originCountExact",
           "This operation requires exactly one origin subsample.");
-    } else if (request.getOrigins().size() > MAX_ORIGINS) {
-      // Each origin costs a read, a lock and an update cycle; cap the batch like the samples
-      // endpoint caps newSampleSubSamplesCount at 100.
-      errors.rejectValue(
-          "origins",
-          "errors.inventory.operation.originCountMaximum",
-          new Object[] {MAX_ORIGINS},
-          "This operation accepts at most 100 origin subsamples.");
     }
 
     validateOrigins(request, config, errors);

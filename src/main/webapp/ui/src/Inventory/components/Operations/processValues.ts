@@ -7,10 +7,14 @@
  * Supersedes the previous per-item defaults (separate template / documentation / amount preferences).
  */
 
+import type { UnitCategory } from "@/stores/stores/UnitStore";
 import type { DocumentationSelection } from "./DocumentationStep";
 import { normalizeDocumentation } from "./documentationResolution";
-import type { TemplateDefault } from "./templateResolution";
+import type { TemplateDefault, TemplateMode } from "./templateResolution";
 import type { AmountMode, OperationInputs, PerSubsampleAmounts } from "./types";
+
+/** The template modes a stored bundle may name; anything else is stale or corrupt. */
+const TEMPLATE_MODES: ReadonlySet<string> = new Set(["none", "pick", "fromSample", "remembered", "unselected"]);
 
 export type ProcessValues = {
   /** The collected inputs to restore. The wizard omits the name/process-name keys before saving. */
@@ -45,6 +49,32 @@ function normalizePerSubsampleAmounts(value: unknown): PerSubsampleAmounts {
   return out;
 }
 
+/**
+ * Guard a stored template choice back into shape. Preferences are persisted JSON that outlives the
+ * code that wrote them, so an unrecognised mode used to be cast straight through: templateStepValid
+ * accepted it and resolveTemplateId then treated it as "fromSample", silently swapping the user's
+ * template (Copilot review, PR #1090). Anything unrecognised falls back to "unselected", which
+ * blocks the step until the user chooses.
+ */
+function normalizeTemplateDefault(stored: unknown): TemplateDefault {
+  if (typeof stored !== "object" || stored === null) return UNSELECTED_TEMPLATE;
+  const { mode, templateId, templateName, quantityCategory } = stored as {
+    mode?: unknown;
+    templateId?: unknown;
+    templateName?: unknown;
+    quantityCategory?: unknown;
+  };
+  if (!TEMPLATE_MODES.has(mode as string)) return UNSELECTED_TEMPLATE;
+  // A "pick" is only meaningful with a real id; without one it would restore as a chosen template
+  // that cannot be resolved.
+  const id = typeof templateId === "number" && Number.isFinite(templateId) ? templateId : null;
+  if (mode === "pick" && id === null) return UNSELECTED_TEMPLATE;
+  const result: TemplateDefault = { mode: mode as TemplateMode, templateId: id };
+  if (typeof templateName === "string") result.templateName = templateName;
+  if (typeof quantityCategory === "string") result.quantityCategory = quantityCategory as UnitCategory;
+  return result;
+}
+
 /** Guard a stored bundle back into shape, tolerating an absent template/documentation/amount mode. */
 export function normalizeProcessValues(stored: unknown): ProcessValues | null {
   if (typeof stored !== "object" || stored === null) return null;
@@ -56,8 +86,7 @@ export function normalizeProcessValues(stored: unknown): ProcessValues | null {
     perSubsampleAmounts?: unknown;
   };
   if (typeof s.values !== "object" || s.values === null) return null;
-  const template =
-    typeof s.template === "object" && s.template !== null ? (s.template as TemplateDefault) : UNSELECTED_TEMPLATE;
+  const template = normalizeTemplateDefault(s.template);
   const result: ProcessValues = {
     values: s.values as OperationInputs,
     template,

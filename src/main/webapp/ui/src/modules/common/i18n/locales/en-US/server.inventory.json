@@ -232,6 +232,7 @@
       "temperature": {
         "invalidUnit": "Unit id is not a valid temperature unit.",
         "minGreaterThanMax": "Min temperature is greater than max temperature.",
+        "notStorable": "Temperature must be within the range the system stores, with at most 3 decimal places.",
         "unitsNotComparable": "Temperature units are not mutually comparable."
       },
       "validation": {

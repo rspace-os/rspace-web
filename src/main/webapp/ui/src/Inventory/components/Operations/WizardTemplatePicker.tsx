@@ -35,7 +35,8 @@ function WizardTemplatePicker({
   selectedTemplateId = null,
   selectedTemplateName,
 }: {
-  setTemplate: (template: TemplateModel) => void;
+  /** The chosen template, or null when the user clears the box (which must clear the parent too). */
+  setTemplate: (template: TemplateModel | null) => void;
   /** The already-chosen template (if any), so a reopened picker starts pre-filled on it. */
   selectedTemplateId?: number | null;
   selectedTemplateName?: string;
@@ -110,7 +111,12 @@ function WizardTemplatePicker({
       filterOptions={(opts) => opts}
       onChange={(_event, next) => {
         setValue(next);
-        if (next?.record) setTemplate(next.record);
+        // Clearing must reach the parent: reporting only the local value left the wizard holding
+        // the previous template id, so an empty-looking box still submitted it (Copilot review,
+        // PR #1090). Re-picking the pre-filled placeholder (no record) is the one no-op: it is
+        // already the parent's selection.
+        if (next === null) setTemplate(null);
+        else if (next.record) setTemplate(next.record);
       }}
       onInputChange={(_event, next, reason) => {
         setInputValue(next);

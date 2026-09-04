@@ -9,6 +9,17 @@ import type { OperationInputs, OperationQuantity } from "./types";
  */
 export const MAX_SUBSAMPLE_COUNT = 100;
 
+/**
+ * Whether an amount is one the server can store exactly. Quantities persist in a DECIMAL(19,3)
+ * column, so the endpoint rejects anything finer than three decimal places rather than round it to
+ * a different amount (mirrors QuantityInfo.canStoreWithoutRounding). Gating on it here means the
+ * wizard blocks Next instead of letting Perform fail at the backend (Copilot review, PR #1090).
+ */
+export function amountIsStorable(value: number): boolean {
+  if (!Number.isFinite(value)) return false;
+  return Number.isInteger(value * 1000);
+}
+
 /** Whether a child count is a whole number within [min, MAX_SUBSAMPLE_COUNT]. */
 export function validSubSampleCount(count: unknown, min = 1): boolean {
   const n = Number(count);
@@ -74,6 +85,7 @@ export function detailsValid(
         // the user picks one. Fresh amounts are otherwise prefilled with the origin's own unit.
         if (!Number.isFinite(q.unitId) || q.unitId <= 0) return false;
         if (q.numericValue < 0) return false;
+        if (!amountIsStorable(q.numericValue)) return false;
         // The created "each amount" and the amount taken from the origin must both be > 0: an
         // operation must create real subsamples and must actually remove something from the origin.
         const mustBePositive =

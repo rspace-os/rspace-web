@@ -40,7 +40,7 @@ import {
   resolveProcessName,
   usesAmountModes,
 } from "./operationsConfig";
-import { amountTakenExceedsOrigin, detailsValid, quantityExceedsOrigin } from "./operationValidation";
+import { amountIsStorable, amountTakenExceedsOrigin, detailsValid, quantityExceedsOrigin } from "./operationValidation";
 import { addProcessName, processNameDefaultAfterPerform, rememberKey } from "./processNames";
 import { normalizeProcessValues, type ProcessValues, processValuesAfterPerform } from "./processValues";
 import { derivedSampleName, firstAvailableName } from "./sampleNaming";
@@ -421,6 +421,8 @@ function OperationWizard({
       return origins.every((o) => {
         const q = perSubsampleAmounts[o.globalId ?? ""];
         if (!q || !Number.isFinite(q.numericValue) || q.unitId <= 0 || q.numericValue <= 0) return false;
+        // Same three-decimal rule as the shared amount: the endpoint rejects a finer value.
+        if (!amountIsStorable(q.numericValue)) return false;
         return !quantityExceedsOrigin(q, toOrigin(o).quantity);
       });
     }
@@ -451,6 +453,13 @@ function OperationWizard({
   // Step one shows the confirmation and Perform (skipping the wizard) when a remembered bundle fully
   // specifies a valid run and the user has not chosen to step through it.
   const fastPath = operation !== null && activeStep === 0 && remember && !reviewing && allStepsValid();
+
+  // Closing does not cancel the in-flight POST, so allowing it (Cancel, or Escape via the dialog)
+  // would let the user reopen the wizard and submit a second operation while the first is still
+  // decrementing the same origins (Copilot review, PR #1090).
+  const closeUnlessSubmitting = () => {
+    if (!submitting) onClose();
+  };
 
   const submit = async (): Promise<void> => {
     if (!operation) return;
@@ -660,7 +669,7 @@ function OperationWizard({
     : t("operations.wizard.title");
 
   return (
-    <ContextDialog open={open} onClose={onClose} maxWidth="sm" fullWidth disableBackdropClick>
+    <ContextDialog open={open} onClose={closeUnlessSubmitting} maxWidth="sm" fullWidth disableBackdropClick>
       <DialogTitle>{heading}</DialogTitle>
       <DialogContent dividers sx={{ minHeight: operation ? "60vh" : undefined }}>
         {operation ? (
@@ -708,7 +717,9 @@ function OperationWizard({
         )}
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>{t("common:actions.cancel")}</Button>
+        <Button onClick={closeUnlessSubmitting} disabled={submitting}>
+          {t("common:actions.cancel")}
+        </Button>
         {operation ? (
           fastPath ? (
             // Remembered run: perform straight from step one, or drop into the wizard to change it.
@@ -734,10 +745,11 @@ function OperationWizard({
                 <SubmitSpinnerButton
                   onClick={() => void submit()}
                   loading={submitting}
-                  // Gate Perform on stepValid() too, not just submitting: the confirm step's own
-                  // guards (e.g. Destroy's empty-origin block) must actually block submission, not only
-                  // show a message. Next is gated the same way below.
-                  disabled={submitting || !stepValid()}
+                  // Gate Perform on EVERY step, not just the confirm step's own guards (e.g.
+                  // Destroy's empty-origin block). Un-ticking "remember" here resets the earlier
+                  // steps' values without leaving this step, so checking only this one could submit
+                  // a run an earlier step would have blocked (Copilot review, PR #1090).
+                  disabled={submitting || !allStepsValid()}
                   label={t("operations.wizard.perform")}
                 />
               ) : (

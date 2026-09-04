@@ -4869,13 +4869,21 @@ components:
           description: >
             The id of a sample template to base the sample on, or null for an ad-hoc
             (template-less) sample.
+        quantity:
+          allOf:
+            - $ref: "#/components/schemas/Quantity"
+          description: >
+            Accepted but not authoritative: the sample's total is derived from the subsamples
+            below, so a value here is ignored. Present because the wizard sends it and the schema
+            is a whitelist; omit it unless mirroring the wizard's payload.
         storageTempMin:
           allOf:
             - $ref: "#/components/schemas/Quantity"
           description: >
             Storage temperature (unit in Celsius), accepted only by an operation that declares a
             temperature input (Cryopreserve, Revive), where it is required. One input feeds both
-            bounds, so it must equal storageTempMax.
+            bounds, so it must equal storageTempMax. Must be a value the stored
+            DECIMAL(19,3) column holds, or it is rejected with 400.
         storageTempMax:
           allOf:
             - $ref: "#/components/schemas/Quantity"

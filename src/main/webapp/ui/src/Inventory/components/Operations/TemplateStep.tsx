@@ -84,7 +84,16 @@ function TemplateStep({
     });
   };
 
-  const onPickTemplate = (template: TemplateModel) => {
+  const onPickTemplate = (template: TemplateModel | null) => {
+    // The picker was cleared: drop the selection so Next blocks again and the wizard cannot submit
+    // the template the box no longer shows (Copilot review, PR #1090).
+    if (template === null) {
+      latestPickRef.current = null;
+      setBlockError(null);
+      setChecking(false);
+      onChange({ ...value, templateId: null, templateName: undefined, quantityCategory: undefined });
+      return;
+    }
     // Clear the selection until the template is validated, so Next stays disabled meanwhile.
     const pickId = String(template.id);
     latestPickRef.current = pickId;
@@ -118,6 +127,13 @@ function TemplateStep({
             quantityCategory: template.quantityCategory,
           });
         }
+      } catch {
+        // The lookup failed (offline, permission change, template deleted): without this the
+        // rejection escaped the detached task unhandled and the user saw only the spinner stop,
+        // with no reason and no way to tell a failed check from a passed one (Copilot review,
+        // PR #1090). Leave the selection cleared so Next stays blocked, and say why.
+        if (latestPickRef.current !== pickId) return;
+        setBlockError(t("operations.template.lookupFailed"));
       } finally {
         // Only the latest pick clears the spinner; a superseded lookup leaves it to the newer one.
         if (latestPickRef.current === pickId) setChecking(false);
@@ -129,7 +145,10 @@ function TemplateStep({
   // step never churn the picker via a changing prop.
   const onPickTemplateRef = React.useRef(onPickTemplate);
   onPickTemplateRef.current = onPickTemplate;
-  const handlePickTemplate = React.useCallback((template: TemplateModel) => onPickTemplateRef.current(template), []);
+  const handlePickTemplate = React.useCallback(
+    (template: TemplateModel | null) => onPickTemplateRef.current(template),
+    [],
+  );
 
   return (
     <Stack spacing={1}>

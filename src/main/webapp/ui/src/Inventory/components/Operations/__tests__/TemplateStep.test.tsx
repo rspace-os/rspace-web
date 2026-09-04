@@ -25,9 +25,14 @@ const capturedSetTemplate: Array<(t: FakeTemplate) => void> = [];
 // Stub the wizard's template picker so this test does not mount its real Search/fetcher; clicking
 // it plays back the current fake template through the setTemplate prop.
 vi.mock("../WizardTemplatePicker", () => ({
-  default: ({ setTemplate }: { setTemplate: (t: FakeTemplate) => void }) => {
+  default: ({ setTemplate }: { setTemplate: (t: FakeTemplate | null) => void }) => {
     capturedSetTemplate.push(setTemplate);
-    return <button type="button" data-testid="template-picker" onClick={() => setTemplate(currentTemplate)} />;
+    return (
+      <>
+        <button type="button" data-testid="template-picker" onClick={() => setTemplate(currentTemplate)} />
+        <button type="button" data-testid="template-clear" onClick={() => setTemplate(null)} />
+      </>
+    );
   },
 }));
 
@@ -211,5 +216,36 @@ describe("TemplateStep in English", () => {
     );
     await userEvent.setup().click(screen.getByTestId("template-picker"));
     expect(await screen.findByText(/the required field\(s\) A, B, and C have no default value/)).toBeInTheDocument();
+  });
+});
+
+describe("TemplateStep failure and clearing paths", () => {
+  it("reports a failed template lookup instead of leaving an unhandled rejection", async () => {
+    // The check ran in a detached async task with no catch: a rejection escaped unhandled and the
+    // user saw only the spinner stop (Copilot review, PR #1090).
+    currentTemplate = {
+      ...makeTemplate([]),
+      fetchAdditionalInfo: () => Promise.reject(new Error("network down")),
+    };
+    const onChange = vi.fn();
+    render(<TemplateStep value={pickMode} onChange={onChange} originSampleName="S1" />);
+    await userEvent.setup().click(screen.getByTestId("template-picker"));
+    expect(await screen.findByText(/template\.lookupFailed/)).toBeInTheDocument();
+    // and the selection stays unset, so Next remains blocked rather than submitting a bad template
+    expect(onChange).not.toHaveBeenCalledWith(expect.objectContaining({ templateId: 5 }));
+  });
+
+  it("clears the parent's selection when the picker is cleared", async () => {
+    currentTemplate = makeTemplate([{ name: "Batch", mandatory: true, content: "B1", selectedOptions: null }]);
+    const onChange = vi.fn();
+    render(
+      <TemplateStep
+        value={{ mode: "pick", templateId: 5, templateName: "T5", remember: false }}
+        onChange={onChange}
+        originSampleName="S1"
+      />,
+    );
+    await userEvent.setup().click(screen.getByTestId("template-clear"));
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ templateId: null, templateName: undefined }));
   });
 });
