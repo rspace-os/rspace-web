@@ -33,7 +33,13 @@ function UnitSelect({ disabled, handleChange, value, categories }: UnitSelectArg
   return (
     <InputAdornment position="end">
       <FormControl>
-        <Select
+        {/*
+          Pinned to <number> so the change event keeps its true domain: every MenuItem below carries
+          a numeric unit id, so onChange can only ever emit a number. MUI's own SelectProps types
+          `value` as `Value | ""` precisely for the empty-display case, so the unset marker needs no
+          cast (Copilot review, PR #1090).
+        */}
+        <Select<number>
           disabled={disabled}
           onChange={handleChange}
           inputProps={{
@@ -41,7 +47,7 @@ function UnitSelect({ disabled, handleChange, value, categories }: UnitSelectArg
           }}
           // A non-positive id means "no unit chosen" (e.g. after amounts are cleared for a new
           // process); render the dropdown empty rather than as an out-of-range value.
-          value={(value > 0 ? value : "") as number}
+          value={value > 0 ? value : ""}
           size="small"
           sx={{
             [`& .${selectClasses.select}`]: {
