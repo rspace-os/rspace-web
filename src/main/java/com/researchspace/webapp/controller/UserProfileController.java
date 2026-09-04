@@ -715,9 +715,16 @@ public class UserProfileController extends BaseController {
       HttpServletRequest req) {
 
     Preference pref = Preference.valueOf(preferenceName);
+    boolean keyed = StringUtils.isNotBlank(key);
+    if (keyed && !Preference.UI_JSON_SETTINGS.equals(pref)) {
+      return new AjaxReturnObject<>(
+          null,
+          ErrorList.of(
+              getText("errors.preference.keyNotSupported", new Object[] {preferenceName})));
+    }
     User user = userManager.getUserByUsername(principal.getName());
     UserPreference updatedPreference =
-        Preference.UI_JSON_SETTINGS.equals(pref) && StringUtils.isNotBlank(key)
+        keyed
             ? userManager.mergeUiJsonSetting(key, "" + value, user.getUsername())
             : userManager.setPreference(pref, "" + value, user.getUsername());
     analyticsManager.usersPreferencesChanged(user, req);
