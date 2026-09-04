@@ -5,6 +5,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInventoryDOI;
 import com.researchspace.api.v1.model.ApiInventoryDOI.ApiExternalMetadataUpdate;
+import com.researchspace.api.v1.model.ApiInventoryDOI.ApiExternalMetadataUpdate.Outcome;
 import com.researchspace.api.v1.model.ApiInventorySystemSettings.InventorySettingType;
 import com.researchspace.b2inst.model.request.B2instDoi;
 import com.researchspace.datacite.model.DataCiteDoi;
@@ -332,13 +333,15 @@ public class InventoryIdentifierExternalUpdateService {
         IdentifierType.PIDINST_B2INST.equals(type)
             ? "errors.inventory.identifier.externalUpdateNotPossibleB2inst"
             : "errors.inventory.identifier.externalUpdateNotPossibleDataCite";
-    return new ApiExternalMetadataUpdate(false, message(key, providerName(type), null));
+    return new ApiExternalMetadataUpdate(
+        false, Outcome.NOT_UPDATABLE, message(key, providerName(type), null));
   }
 
   /** A mapping failure, reported like a push failure. Not audited: nothing was sent. */
   private ApiExternalMetadataUpdate failedOutcome(ApiInventoryDOI doi) {
     return new ApiExternalMetadataUpdate(
         false,
+        Outcome.FAILED,
         message(
             "errors.inventory.identifier.externalUpdateFailed", providerName(typeOf(doi)), null));
   }
@@ -388,7 +391,7 @@ public class InventoryIdentifierExternalUpdateService {
         dataCiteConnector.updateDoi(pending.dataCitePayload(), InventorySettingType.PIDINST);
       }
       return new ApiExternalMetadataUpdate(
-          true, message("inventory.identifier.externalUpdated", provider, null));
+          true, Outcome.UPDATED, message("inventory.identifier.externalUpdated", provider, null));
     } catch (RuntimeException e) {
       // e.getMessage() only, never the throwable: B2instConnectorImpl redacts the bearer token at
       // a single exit, and in Spring 6 RestClientResponseException.getMessage() embeds the raw
@@ -400,6 +403,7 @@ public class InventoryIdentifierExternalUpdateService {
           e.getMessage());
       return new ApiExternalMetadataUpdate(
           false,
+          Outcome.FAILED,
           message("errors.inventory.identifier.externalUpdateFailed", provider, userSafeDetail(e)));
     }
   }

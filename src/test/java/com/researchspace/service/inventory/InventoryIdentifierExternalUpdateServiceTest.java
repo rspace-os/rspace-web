@@ -21,6 +21,7 @@ import static org.mockito.Mockito.when;
 import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInventoryDOI;
 import com.researchspace.api.v1.model.ApiInventoryDOI.ApiExternalMetadataUpdate;
+import com.researchspace.api.v1.model.ApiInventoryDOI.ApiExternalMetadataUpdate.Outcome;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiInventorySystemSettings.InventorySettingType;
 import com.researchspace.b2inst.model.request.B2instDoi;
@@ -294,6 +295,7 @@ class InventoryIdentifierExternalUpdateServiceTest {
     verify(dataCiteConnector).updateDoi(rebuilt, InventorySettingType.PIDINST);
     verifyNoInteractions(b2instConnector);
     assertTrue(doi.getExternalMetadataUpdate().isSucceeded());
+    assertEquals(Outcome.UPDATED, doi.getExternalMetadataUpdate().getOutcome());
   }
 
   /**
@@ -330,6 +332,7 @@ class InventoryIdentifierExternalUpdateServiceTest {
     ApiExternalMetadataUpdate outcome = doi.getExternalMetadataUpdate();
     assertNotNull(outcome, "a frozen record must still be explained");
     assertFalse(outcome.isSucceeded());
+    assertEquals(Outcome.NOT_UPDATABLE, outcome.getOutcome());
     // provider-specific, because the two are frozen for different reasons. The raw provider state
     // is deliberately not interpolated, so it is not asserted.
     String expectedKey =
@@ -509,6 +512,7 @@ class InventoryIdentifierExternalUpdateServiceTest {
 
     ApiExternalMetadataUpdate outcome = doi.getExternalMetadataUpdate();
     assertFalse(outcome.isSucceeded());
+    assertEquals(Outcome.FAILED, outcome.getOutcome());
     assertTrue(outcome.getReason().contains("externalUpdateFailed"), outcome.getReason());
     assertTrue(outcome.getReason().contains("Record is not editable."), outcome.getReason());
   }
@@ -713,6 +717,7 @@ class InventoryIdentifierExternalUpdateServiceTest {
     verify(b2instConnector).updateDraftDoi(eq(RID), any(B2instDoi.class));
     verify(b2instConnector, never()).updateDraftDoi(eq("br-oken01"), any(B2instDoi.class));
     assertFalse(broken.getExternalMetadataUpdate().isSucceeded());
+    assertEquals(Outcome.FAILED, broken.getExternalMetadataUpdate().getOutcome());
     assertTrue(
         broken.getExternalMetadataUpdate().getReason().contains("externalUpdateFailed"),
         broken.getExternalMetadataUpdate().getReason());

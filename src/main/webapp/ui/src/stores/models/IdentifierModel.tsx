@@ -30,6 +30,7 @@ import type {
   AlternateIdentifier,
   CreatorType,
   DropdownOption,
+  ExternalMetadataUpdate,
   Identifier,
   IdentifierAttrs,
   IdentifierDate,
@@ -178,6 +179,7 @@ export default class IdentifierModel implements Identifier {
   _links: Array<_LINK> = [];
   editing: boolean = false;
   customFieldsOnPublicPage: boolean;
+  externalMetadataUpdate: ExternalMetadataUpdate | null = null;
 
   ApiServiceBase: typeof InvApiService | null = null;
 
@@ -263,6 +265,7 @@ export default class IdentifierModel implements Identifier {
     this.geoLocations = attrs.geoLocations?.map((gl) => new GeoLocationModel(gl)) ?? [];
     this._links = attrs._links;
     this.customFieldsOnPublicPage = attrs.customFieldsOnPublicPage;
+    this.externalMetadataUpdate = attrs.externalMetadataUpdate ?? null;
 
     if (ApiServiceBase) {
       this.ApiServiceBase = ApiServiceBase;
@@ -731,3 +734,42 @@ export default class IdentifierModel implements Identifier {
     };
   }
 }
+
+/**
+ * The toasts to raise for the external PIDINST metadata updates attempted by the save or transfer
+ * that returned these identifiers (RSDEV-1356). Success is deliberately silent. The variant is
+ * decided by `outcome`, never by the wording of `reason`; the reason itself is a localized
+ * sentence from the server and is shown verbatim as the message. A provider failure is an error,
+ * which does not auto-dismiss; a record frozen by its own state is expected, so it is a notice.
+ *
+ * A pure function rather than a method so callers can raise the alerts against the store after
+ * their own success toast, and so this module stays free of the global stores (see the note at
+ * the top of the file).
+ */
+export const externalMetadataUpdateAlerts = (identifiers: ReadonlyArray<Identifier>): Array<Alert> =>
+  identifiers.flatMap((id) => {
+    const update = id.externalMetadataUpdate;
+    if (!update) return [];
+    switch (update.outcome) {
+      case "FAILED":
+        return [
+          mkAlert({
+            title: i18n.t("inventory:identifierModel.alerts.externalUpdateFailed", { doi: id.doi }),
+            message: update.reason,
+            variant: "error",
+          }),
+        ];
+      case "NOT_UPDATABLE":
+        return [
+          mkAlert({
+            title: i18n.t("inventory:identifierModel.alerts.externalUpdateNotPossible", { doi: id.doi }),
+            message: update.reason,
+            variant: "notice",
+            // a full sentence of explanation; the 4 s default is too short to read it
+            duration: 8000,
+          }),
+        ];
+      default:
+        return [];
+    }
+  });

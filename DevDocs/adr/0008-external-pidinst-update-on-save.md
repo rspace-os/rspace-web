@@ -93,6 +93,14 @@ anything that is not accepted, so an identifier really can be sitting in
    instrument update internally (publish, retract, refresh bookkeeping,
    template sync) can never trigger a recursive push.
 
+   Amended by RSDEV-1356: the object also carries a machine-readable `outcome`
+   (`UPDATED`, `FAILED`, `NOT_UPDATABLE`) alongside `succeeded`. The web
+   interface has to show a provider failure as an error and a state-frozen
+   record as plain information, and its acceptance criteria forbid telling the
+   two apart by the wording of `reason`. Purely additive, so no client breaks.
+   The values were fixed only once the UI had said what it needed, which is why
+   RSDEV-1251 deliberately left them out.
+
    Two controller methods sit on that seam, not one: `updateInstrument` and
    `changeInstrumentOwner`. The transfer was excluded originally on the premise
    that the mapped Owner comes from the instrument's own field, so a transfer

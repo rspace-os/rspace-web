@@ -46,7 +46,7 @@ import { type AttachmentJson, newExistingAttachment } from "./AttachmentModel";
 import { GeneratedBarcode, PersistedBarcode } from "./Barcode";
 import type { ContainerInContainerParams } from "./ContainerModel";
 import ExtraFieldModel from "./ExtraFieldModel";
-import IdentifierModel from "./IdentifierModel";
+import IdentifierModel, { externalMetadataUpdateAlerts } from "./IdentifierModel";
 import type { SampleInContainerParams } from "./SampleModel";
 
 export type InventoryBaseRecordEditableFields = {
@@ -1142,6 +1142,11 @@ export default class InventoryBaseRecord
         );
       }
       this.populateFromJson(this.factory.newFactory(), data as object);
+      /*
+       * Read before setEditing: with refresh it refetches the record, and the outcome of the
+       * external PIDINST update is response-only data the fresh GET does not carry (ADR 0008).
+       */
+      const externalUpdateAlerts = externalMetadataUpdateAlerts(this.identifiers);
       await this.setEditing(false, refresh);
       getRootStore().searchStore.search.replaceResult(this);
       getRootStore().uiStore.addAlert(
@@ -1150,6 +1155,9 @@ export default class InventoryBaseRecord
           variant: "success",
         }),
       );
+      externalUpdateAlerts.forEach((alert) => {
+        getRootStore().uiStore.addAlert(alert);
+      });
       if (this.recordType === "instrument" || this.recordType === "instrumentTemplate") {
         const type = this.recordType === "instrument" ? "instrument" : "instrument_template";
         getRootStore().trackingStore.trackEvent(`user:edit:${type}:inventory`);

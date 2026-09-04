@@ -128,6 +128,27 @@ export const identifierStateLabelKey = (state: PublishingState) => {
   }
 };
 
+/**
+ * Machine-readable result of one external PIDINST metadata update attempt (RSDEV-1356). UPDATED:
+ * the provider accepted the rebuilt metadata. FAILED: it could not be reached or rejected the
+ * update, or the payload could not be built; the instrument is saved and saving again retries.
+ * NOT_UPDATABLE: the record's own state no longer allows an in-place update, which is normal and
+ * expected rather than an error.
+ */
+export type ExternalMetadataUpdateOutcome = "UPDATED" | "FAILED" | "NOT_UPDATABLE";
+
+/**
+ * Outcome of the external PIDINST metadata update attempted by the save or transfer that returned
+ * this identifier (ADR 0008 item 4). Present only when a push was attempted; absent means nothing
+ * was attempted and must never be shown as a failure. Response-only: the next read of the same
+ * identifier does not carry it. `reason` is a localized sentence from the server, ready to show.
+ */
+export type ExternalMetadataUpdate = {
+  succeeded: boolean;
+  outcome: ExternalMetadataUpdateOutcome;
+  reason: string;
+};
+
 export type IdentifierDate = { value: Date; type: IGSNDateType };
 
 /*
@@ -164,6 +185,7 @@ export type IdentifierAttrs = {
   geoLocations: Array<GeoLocationAttrs> | null;
   _links: Array<_LINK>;
   customFieldsOnPublicPage: boolean;
+  externalMetadataUpdate?: ExternalMetadataUpdate;
 };
 
 export interface Identifier {
@@ -197,6 +219,7 @@ export interface Identifier {
   geoLocations: ReadonlyArray<GeoLocation> | null;
   customFieldsOnPublicPage: boolean;
   _links: Array<_LINK>;
+  externalMetadataUpdate?: ExternalMetadataUpdate | null;
 
   readonly doiTypeLabel: string;
   readonly isValid: boolean;
