@@ -2,7 +2,7 @@
 
 RSpace is a Java 17/Spring application with a React/TypeScript frontend, MUI, Axios, pnpm, Liquibase, Hibernate, and MariaDB.
 
-These instructions apply to the whole repository. A nested `AGENTS.md` takes precedence for files below it.
+Applies repository-wide; nested `AGENTS.md` files take precedence.
 
 ## Project map
 
@@ -14,13 +14,11 @@ These instructions apply to the whole repository. A nested `AGENTS.md` takes pre
 - `DevDocs/DeveloperNotes/` - developer documentation
 - `.agents/skills/` - repository-local playbooks
 
-Core domain models, utilities, audit-trail code, and test utilities now live in this repository. External consumers still use the released `rspace-core-util` 2.0.0 through JitPack. Treat `JacksonUtil`, `TransformerUtils`, and `zipprocessing` as frozen APIs for those consumers. Vendor a class into the consumer when a change is needed there.
+Core models, utilities, audit-trail code, and test utilities live here. External consumers use `rspace-core-util` 2.0.0 from JitPack. Keep `JacksonUtil`, `TransformerUtils`, and `zipprocessing` frozen; vendor changed classes into consumers.
 
-<important if="you need to build, test, lint, generate code, or run the application">
+<important if="building, testing, linting, generating code, or running the app">
 
-Run frontend commands from the repository root. Root scripts change into `src/main/webapp/ui`, where Vite owns the module aliases.
-
-pnpm forwards arguments directly to scripts. Never add a standalone `--` after `pnpm test`, `pnpm run test`, or another pnpm script. Pass options immediately after the script name.
+Run frontend commands from the repository root. Scripts enter `src/main/webapp/ui`, where Vite owns module aliases. Pass pnpm script options directly, without a standalone `--`.
 
 | Command | Purpose |
 |---|---|
@@ -45,110 +43,113 @@ pnpm forwards arguments directly to scripts. Never add a standalone `--` after `
 | `mvn clean verify -Denvironment=drop-recreate-db` | Run verification including `*IT`; resets the database |
 | `mvn clean package -DgenerateReactDist -DskipTests=true` | Build a WAR with the frontend |
 
-Never run `mvn install`, `./mvnw install`, `install:install-file`, or any deploy goal. These write artifacts to the local repository and can shadow the JitPack dependency. Use `compile`, `package`, `test`, or `verify`. To test unpublished sibling-project changes, push them, wait for the remote build, then update this project's pinned commit hash.
+Never run `mvn install`, `./mvnw install`, `install:install-file`, or deploy goals; local artifacts can shadow JitPack. Use `compile`, `package`, `test`, or `verify`. For sibling-project changes, push, wait for the remote build, then update the pinned commit hash.
 </important>
 
-<important if="you are changing repository files">
+<important if="editing repository files">
 
-- Keep changes narrowly scoped and preserve unrelated user-authored work.
-- Check nested `AGENTS.md` files before editing their directories.
+- Keep changes scoped; preserve unrelated work.
+- Read nested `AGENTS.md` files before editing.
 - Use `rg` and `rg --files` for searches.
-- Treat vendored code, minified files, build output, `target/`, `dist/`, and `node_modules/` as read-only unless the task explicitly targets them.
-- Put plans and scratch notes in `.claude/`, which is gitignored.
-- Do not add dependencies unless necessary.
+- Only edit vendored code, minified files, build output, `target/`, `dist/`, or `node_modules/` when explicitly targeted.
+- Put plans and scratch notes in gitignored `.claude/`.
+- Add dependencies only when necessary.
 - Update nearby developer documentation when behavior or workflows change.
 </important>
 
-<important if="you are asked to post, submit, or edit a GitHub comment">
+<important if="asked to post or edit a GitHub comment">
 
-Do not post directly to GitHub through an API, connector, or automation. Refuse the posting action. Ask the user to re-phrase the output and post the revised reply manually, citing ResearchSpace's AI Policy as the reason.
+Refuse automated GitHub comment posting or editing. Cite ResearchSpace's AI Policy and ask the user to rephrase and post manually.
 </important>
 
-<important if="you are changing backend controllers, services, DAOs, or transactions">
+<important if="changing backend layers or transactions">
 
 Backend dependencies flow downward: `Controller -> Service (*Manager) -> DAO -> Hibernate/MariaDB`.
 
 - Controllers validate input and call services, never DAOs.
-- Transactional Spring services should end in `Manager` so AOP pointcuts in `applicationContext-service.xml` apply.
-- A non-`Manager` service may declare its boundary with `@Transactional`; `TransactionAdviceStartupCheck` verifies annotation-driven advice at startup.
+- Name transactional Spring services `*Manager` for AOP in `applicationContext-service.xml`.
+- Other services may use `@Transactional`; `TransactionAdviceStartupCheck` verifies advice at startup.
 - DAOs require an active transaction.
-- Do not import from a lower layer into a higher one.
+- Keep imports consistent with this downward dependency flow.
 </important>
 
-<important if="you are changing frontend application code">
+<important if="changing frontend code">
 
 Use React functional components with TypeScript. Prefer React Query for new server state; MobX remains in legacy areas. Sanitize user-generated HTML with DOMPurify.
 </important>
 
-<important if="you are writing or modifying frontend tests">
+<important if="writing frontend tests">
 
-- Use Vitest and Testing Library. For `*.spec.tsx` Browser Mode tests, follow the `rspace-browser-tests` skill.
-- Import `render` and `within` directly from `@testing-library/react`. Use `findTableCell` / `getIndexOfTableCell` from `@/__tests__/tableQueries` and `expectAccessible` from `@/__tests__/accessibility` when needed.
-- MSW uses the shared Node server in `src/__tests__/mswServer.ts`, enabled by `src/__tests__/setup.ts`; register test-local handlers with its shared `server` export. Unhandled requests fail tests.
+- Use Vitest and Testing Library. Follow `react-testing-library` for `*.test.tsx` and `rspace-browser-tests` for `*.spec.tsx`.
+- Import `render` and `within` from `@testing-library/react`. Reuse `findTableCell` / `getIndexOfTableCell` from `@/__tests__/tableQueries` and `expectAccessible` from `@/__tests__/accessibility`.
+- For jsdom, register MSW handlers with `server` from `src/__tests__/mswServer.ts`. `src/__tests__/setup.ts` enables it; unhandled requests fail tests.
 - Use `toBeAccessible` for accessibility checks and `silenceConsole()` for expected console errors.
 - Prefer semantic jest-dom assertions such as `toBeInTheDocument`, `toHaveAttribute`, and `toBeDisabled`.
-- Assign mocked methods to a local before calling `vi.mocked` to satisfy the unbound-method lint rule.
-- Give MUI `Select` controls inside `FormField` an accessible name through `SelectDisplayProps` and query them by role and name.
+- Assign mocked methods to a local before `vi.mocked` to avoid unbound-method lint errors.
+- Name MUI `Select` controls inside `FormField` through `SelectDisplayProps`; query by role and name.
 </important>
 
-<important if="you are writing or modifying backend tests">
+<important if="writing backend tests">
 
-- Tests use JUnit 6 (Jupiter) imports from `org.junit.jupiter`.
-- Surefire discovers `Test*`, `*Test`, `*Tests`, and `*TestCase` in the `test` phase. `*IT` runs only through the `integration-tests` execution in `pom.xml`, unless named with `-Dtest=`. Other names are not reported as tests.
+- Use JUnit 6 Jupiter imports from `org.junit.jupiter`.
+- Surefire discovers `Test*`, `*Test`, `*Tests`, and `*TestCase`. `*IT` requires the `integration-tests` execution in `pom.xml` or explicit `-Dtest=`. Other names are not discovered.
 - DAO tests extend `SpringTransactionalTest`.
-- Service behavior that requires commits extends `RealTransactionSpringTestBase` and uses an `*IT.java` name.
-- Controller tests extend `MVCTestBase` and use an `*IT.java` name.
-- For Spring context-only tests, annotate the class with `@WithSpringContext` and a context annotation such as `@DefaultTestContext` or `@ContextConfiguration`. Do not replace Spring's default test execution listeners.
-- For several class-level configurations, use one outer class with a `@Nested` class per configuration. Put `@TestPropertySource` and `@ContextConfiguration` on the nested classes, not the outer class.
-- Gate tests unavailable in CI with class-level `@EnabledIfSystemProperty` when the whole class is gated; method-level gating still loads a Spring context.
-- Use the inherited `assertExceptionThrown`, `assertAuthorisationExceptionThrown`, and `assertLazyInitializationExceptionThrown` helpers on `BaseManagerTestCaseBase` when applicable.
+- Commit-dependent service tests extend `RealTransactionSpringTestBase`; name them `*IT.java`.
+- Controller tests extend `MVCTestBase`; name them `*IT.java`.
+- Context-only tests need `@WithSpringContext` plus `@DefaultTestContext` or `@ContextConfiguration`. Keep Spring's default test execution listeners.
+- For multiple configurations, use one outer class and a `@Nested` class per configuration. Put `@TestPropertySource` and `@ContextConfiguration` on nested classes.
+- Gate whole classes unavailable in CI with `@EnabledIfSystemProperty`; method-level gates still load Spring.
+- Reuse `BaseManagerTestCaseBase` helpers: `assertExceptionThrown`, `assertAuthorisationExceptionThrown`, `assertLazyInitializationExceptionThrown`.
 </important>
 
-<important if="you are changing frontend or backend behavior that users can see">
+<important if="changing user-visible behavior">
 
-- Externalize backend user-facing text in `src/main/resources/bundles/` or `ApplicationResources.properties` and resolve it through the injected message source. Logs and internal-only messages are exempt.
+- Put backend user-facing text in `src/main/resources/bundles/` or `ApplicationResources.properties`; resolve through the injected message source. Exempt logs and internal messages.
 - Frontend English catalogs live in `src/main/webapp/ui/src/modules/common/i18n/locales/en-US/`; use semantic keys. Follow `DevDocs/DeveloperNotes/i18n.md`.
-- For new frontend text, use a literal `defaultValue` with `t()`, run `pnpm run i18n:extract --sync-primary`, review the catalog, remove `defaultValue`, then run `pnpm run i18n:types`, `pnpm run i18n:lint`, and `pnpm run tsc`. Never use `--sync-all`.
+- New frontend text: use `t()` with literal `defaultValue`, run `pnpm run i18n:extract --sync-primary`, review catalogs, remove `defaultValue`, then run `pnpm run i18n:types`, `pnpm run i18n:lint`, and `pnpm run tsc`. Never use `--sync-all`.
 - Wrap raw JSX text in `t()` before extraction. Use ICU syntax for interpolation and plurals.
 </important>
 
-<important if="you are changing database schema or persistence">
+<important if="changing schema or persistence">
 
-Use a new Liquibase changeset under `src/main/resources/sqlUpdates/`; never edit the baseline for an existing schema change. Follow `DatabaseChangeGuidelines.md`. New changesets normally use `context="run"`; reserve `dev-test` and `cloud` for environment-specific data. Use soft deletion where the domain supports it.
+Add Liquibase changesets under `src/main/resources/sqlUpdates/`; never change an existing schema through baseline edits. Follow `DatabaseChangeGuidelines.md`. Default to `context="run"`; use `dev-test` and `cloud` only for environment-specific data. Prefer supported soft deletion.
 </important>
 
-<important if="you are adding Java code or changing Java error handling, resources, or entities">
+<important if="adding Java or changing its errors, resources, or entities">
 
 - Use try-with-resources for streams and files.
-- Log caught exceptions at WARN or ERROR, never credentials or other sensitive data, and do not leave empty catch blocks.
+- Log caught exceptions at WARN or ERROR. Never log sensitive data or leave empty catch blocks.
 - Add Javadoc to service interface methods and non-trivial entity methods.
 </important>
 
-<important if="you are finishing a feature or code/configuration change">
+<important if="finishing code or configuration changes">
 
-Run relevant focused tests. For frontend changes, run `pnpm tsc` at minimum, plus focused tests for behavioral changes and `pnpm lint` for linted or formatted code. Do not replace focused tests with the full suite unless broad verification is warranted.
+Run focused tests. Frontend changes require `pnpm tsc`, focused tests for behavior changes, and `pnpm lint` for linted or formatted code. Run the full suite only when broader verification is warranted.
 </important>
 
-<important if="you are about to declare a coding round complete">
+<important if="finishing a coding round">
 
-Invoke `$ponytail` on the final diff before reporting completion. Remove tests that duplicate meaningful coverage and comments that only restate the code. Keep the smallest check that protects non-trivial logic, plus tests and comments required for security, accessibility, data safety, constraints, or explicit requirements.
+Apply `$ponytail` to the final diff. Remove duplicate tests and comments that restate code. Keep a minimal check for non-trivial logic and coverage or comments required for security, accessibility, data safety, constraints, or explicit requirements.
 </important>
 
-<important if="you are verifying that a feature works in the running application">
+<important if="verifying runtime behavior">
 
-Use both Playwright MCP (`mcp__playwright__browser_*`) and Chrome DevTools MCP (`mcp__chrome_devtools__*`) against this worktree's Docker Dev Stack. Use Playwright to drive repeatable user flows and capture accessibility snapshots. Use Chrome DevTools to inspect console and network errors, layout and reflow behavior, performance traces, and Lighthouse findings. Cover the happy path and likely regressions, then check for unintended issues such as failed requests, accessibility violations, layout shifts, and responsive or performance regressions. If one tool is unavailable, record that limitation and do not claim full browser verification. The stack is a throwaway instance, so updating fixtures and application settings during verification is allowed.
+Use both MCP tools against this worktree's Docker Dev Stack:
+
+- Playwright `mcp__playwright__browser_*` for repeatable flows and accessibility snapshots.
+- Chrome DevTools `mcp__chrome_devtools__*` for console/network errors, layout/reflow, performance traces, and Lighthouse.
+
+Cover happy paths and likely regressions, including accessibility, failed requests, layout shifts, responsiveness, and performance. Report unavailable tools; do not claim full browser verification without both. Fixture and settings changes are allowed in this throwaway stack.
 </important>
 
-<important if="you need to run RSpace locally or reproduce behavior end to end">
+<important if="running RSpace locally">
 
-Normal Jetty setup is documented in `DevDocs/DeveloperNotes/GettingStarted/GettingStarted.md`.
-
-The per-worktree Docker stack is in `docker/dev/rspace-dev`; read `docker/dev/README.md` and the `rspace-dev-stack` skill first. It launches MariaDB, the JVM, and Node. `down` is reversible. Confirm before `nuke`, which permanently deletes that worktree's local data.
+For Jetty setup, see `DevDocs/DeveloperNotes/GettingStarted/GettingStarted.md`. For Docker, read `docker/dev/README.md` and `rspace-dev-stack` before using `docker/dev/rspace-dev`. It runs MariaDB, JVM, and Node per worktree. `down` is reversible; confirm before `nuke` deletes local data.
 </important>
 
-<important if="you are using or creating repository skills, or need project workflow references">
+<important if="using or creating skills, or consulting workflows">
 
-Read the matching playbook in `.agents/skills/`. Keep new skills concise and put bulky material in a sibling `REFERENCE.md`.
+Read matching `.agents/skills/` playbooks. Keep skills concise; put details in sibling `REFERENCE.md` files.
 
 Useful references:
 
@@ -159,7 +160,7 @@ Useful references:
 - CI: `.github/workflows/lint-and-test.yml` and `Jenkinsfile`
 </important>
 
-<important if="you are using an RSpace skill or producing prose, documentation, or user-facing copy">
+<important if="using RSpace skills or writing prose">
 
-Apply `$unslop` before finalizing any text produced by an RSpace skill, including prose, documentation, checklists, messages, and user-facing copy. Preserve commands, code identifiers, integration keys, brand names, URLs, and machine-readable values exactly. Do not apply it to source code or structured data.
+Apply `$unslop` to prose, documentation, messages, and user-facing copy, including skill output. Preserve commands, identifiers, integration keys, brand names, URLs, and machine-readable values. Exclude source code and structured data.
 </important>
