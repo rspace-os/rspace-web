@@ -50,6 +50,7 @@ import {
   type ExternalMetadataUpdateReport,
   externalMetadataUpdateAlert,
   externalMetadataUpdateReports,
+  externalMetadataUpdateTitle,
 } from "./IdentifierModel";
 import InventoryBaseRecord, { sortProperties } from "./InventoryBaseRecord";
 import SampleModel from "./SampleModel";
@@ -162,7 +163,12 @@ function raiseBulkExternalMetadataUpdateAlerts(records: ReadonlyArray<InventoryR
             : i18n.t("inventory:identifierModel.alerts.externalUpdateNotPossibleMany", { count: group.length }),
         variant,
         isInfinite: true,
-        details: group.map(({ report, record }) => ({ title: report.reason, variant, record })),
+        details: group.map(({ report, record }) => ({
+          title: externalMetadataUpdateTitle(report),
+          variant,
+          record,
+          help: report.reason,
+        })),
       }),
     );
   }

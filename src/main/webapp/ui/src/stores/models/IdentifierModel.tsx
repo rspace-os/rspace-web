@@ -779,22 +779,26 @@ export const externalMetadataUpdateReports = (
   });
 
 /**
- * The toast for one report, naming the identifier it belongs to.
+ * The title for one report, naming the identifier it belongs to. Shared by the single toast and by
+ * a grouped alert's detail rows, where two identifiers on one record are otherwise indistinguishable.
+ */
+export const externalMetadataUpdateTitle = ({ doi, variant }: ExternalMetadataUpdateReport): string =>
+  variant === "error"
+    ? i18n.t("inventory:identifierModel.alerts.externalUpdateFailed", { doi })
+    : i18n.t("inventory:identifierModel.alerts.externalUpdateNotPossible", { doi });
+
+/**
+ * The toast for one report.
  *
  * Both variants wait to be dismissed rather than expiring on a timer, because both carry a full
  * sentence to read and no reading speed can be assumed (WCAG 2.2.1). The notice stays a notice, so
  * a record frozen by its own state still reads as information rather than as a problem.
  */
-export const externalMetadataUpdateAlert = ({ doi, variant, reason }: ExternalMetadataUpdateReport): Alert =>
+export const externalMetadataUpdateAlert = (report: ExternalMetadataUpdateReport): Alert =>
   mkAlert({
-    title: i18n.t(
-      variant === "error"
-        ? "inventory:identifierModel.alerts.externalUpdateFailed"
-        : "inventory:identifierModel.alerts.externalUpdateNotPossible",
-      { doi },
-    ),
-    message: reason,
-    variant,
+    title: externalMetadataUpdateTitle(report),
+    message: report.reason,
+    variant: report.variant,
     isInfinite: true,
   });
 
