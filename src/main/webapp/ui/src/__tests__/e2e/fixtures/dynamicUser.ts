@@ -1,25 +1,11 @@
-import type { Browser, BrowserContextOptions } from "@playwright/test";
 import { createDynamicUser } from "../createDynamicUser";
 import { LoginPage } from "../pageObjects/auth/LoginPage";
 import { WorkspacePage } from "../pageObjects/workspace/WorkspacePage";
 import { DYNAMIC_USER_PASSWORD } from "../testData";
 import { test } from "./flows";
+import { loginInNewContext } from "./flows/userSessions";
 
 type CreatableRole = "ROLE_USER" | "ROLE_PI" | "ROLE_ADMIN";
-
-async function loginInNewContext(
-  browser: Browser,
-  browserContextOptions: BrowserContextOptions,
-  username: string,
-): Promise<{ workspace: WorkspacePage; close: () => Promise<void> }> {
-  const ctx = await browser.newContext({ ...browserContextOptions, storageState: undefined });
-  const page = await ctx.newPage();
-  const loginPage = new LoginPage(page);
-  await loginPage.open();
-  await loginPage.login(username, DYNAMIC_USER_PASSWORD);
-  await page.waitForURL((url) => !url.pathname.includes("/login"));
-  return { workspace: new WorkspacePage(page), close: () => ctx.close() };
-}
 
 type DynamicUserFixtures = {
   flowCreateUser: (
@@ -57,9 +43,14 @@ export const dynamicUserTest = test.extend<DynamicUserFixtures>({
     try {
       await use(async (role, namePrefix = "e2eDynUser2") => {
         const { username, apiKey } = await createDynamicUser(clientSysadmin, role, namePrefix);
-        const { workspace, close } = await loginInNewContext(browser, browserContextOptions, username);
+        const { page, close } = await loginInNewContext(
+          browser,
+          browserContextOptions,
+          username,
+          DYNAMIC_USER_PASSWORD,
+        );
         closers.push(close);
-        return { username, apiKey, workspace };
+        return { username, apiKey, workspace: new WorkspacePage(page) };
       });
     } finally {
       const results = await Promise.allSettled(closers.map((close) => close()));

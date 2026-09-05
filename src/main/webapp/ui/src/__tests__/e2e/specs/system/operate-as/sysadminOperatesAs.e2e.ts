@@ -19,11 +19,11 @@ test.describe("Sysadmin Operate As", { tag: tags.SYSTEM }, () => {
     await dialog.submit(SYSADMIN.password);
 
     await workspace.waitUntilLoaded();
-    await expect(workspace.operateAsBanner).toBeVisible();
-    expect(await workspace.isOwnerVisible("E2E")).toBe(true);
+    await expect(workspace.operateAsBanner).toContainText(user.username);
+    expect(await workspace.isOwnerVisible(user.fullName)).toBe(true);
 
     await workspace.releaseOperateAs();
-    expect(await workspace.isOwnerVisible("E2E")).toBe(false);
+    expect(await workspace.isOwnerVisible(user.fullName)).toBe(false);
   });
 
   test("Operate As rejects a wrong password or an unknown username", async ({
@@ -109,20 +109,13 @@ test.describe("Sysadmin Operate As", { tag: tags.SYSTEM }, () => {
     await dialog.submit(SYSADMIN.password);
 
     await workspace.waitUntilLoaded();
-    expect(await workspace.isOwnerVisible("E2E")).toBe(true);
+    expect(await workspace.isOwnerVisible(user.fullName)).toBe(true);
 
     await profile.open();
     await profile.waitUntilLoaded();
     const changePassword = await profile.openChangePassword();
-    // Real, live-verified finding: while impersonating, the "current password" field accepts the
-    // sysadmin's own login password, not the impersonated user's actual password — the backend
-    // doesn't require knowledge of the target's password during Operate As. Confirmed live and
-    // matches Java's `changePassword(getSysAdminPassword(), newPassword, newPassword)`.
     await changePassword.save(SYSADMIN.password, newPassword);
     await expect(changePassword.successMessage("Password changed successfully")).toBeVisible();
-
-    // #runAs is injected site-wide and evaluate-clickable from any page, confirmed live — no need
-    // to navigate back to /workspace first, releaseOperateAs() already waits for that redirect.
     await workspace.releaseOperateAs();
 
     const newSession = await flowUserSession(user.username, newPassword);

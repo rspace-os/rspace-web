@@ -88,7 +88,7 @@ test.describe("Sysadmin access and role", { tag: tags.SYSTEM }, () => {
     flowUserSession,
     flowSysadminGroupAdmin,
   }) => {
-    test.skip(true, "Known issue: Field Editor dialog never closes after adding a Number field");
+    test.skip(true, "Known issue: Field Editor dialog never closes after adding a Number field: PRT-1148");
 
     const member = await createDynamicUser(clientSysadmin, "ROLE_USER", "e2eFormXferMember");
     const formName = uniqueName("e2eFormXferForm");
@@ -142,9 +142,10 @@ test.describe("Sysadmin access and role", { tag: tags.SYSTEM }, () => {
     expect(countCsvDataRows(readFileSync(selectedPath, "utf-8"))).toBe(1);
 
     await users.open();
+    const pageRowCount = await users.rowCount();
     const pageDownload = await users.exportThisPageToCsv();
     const pagePath = join(tempDir, "page.csv");
     await pageDownload.saveAs(pagePath);
-    expect(countCsvDataRows(readFileSync(pagePath, "utf-8"))).toBe(10);
+    expect(countCsvDataRows(readFileSync(pagePath, "utf-8"))).toBe(pageRowCount);
   });
 });
