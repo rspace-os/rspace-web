@@ -1,7 +1,7 @@
 package com.researchspace.service.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.model.User;
@@ -10,15 +10,14 @@ import com.researchspace.service.UserManager;
 import com.researchspace.testutils.TestFactory;
 import org.apache.shiro.subject.PrincipalCollection;
 import org.apache.shiro.subject.Subject;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class OperateAsUserLookupTest {
-  public @Rule MockitoRule rule = MockitoJUnit.rule();
 
   static class OperateAsUserLookupTSS extends OperateAsUserLookup {
     Subject subject;
@@ -45,7 +44,7 @@ public class OperateAsUserLookupTest {
   public void ifNotRunAsReturnSameUser() {
     when(subject.isRunAs()).thenReturn(false);
     assertEquals(mainUser, lookup.apply(mainUser));
-    verifyZeroInteractions(userMgr);
+    verifyNoInteractions(userMgr);
   }
 
   @Test

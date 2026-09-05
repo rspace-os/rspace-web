@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -21,7 +20,6 @@ import com.researchspace.model.inventory.field.InventoryLink;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
 import com.researchspace.service.inventory.LinkTargetResolver;
 import com.researchspace.service.inventory.LinkTargetSnapshotResolver;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -44,14 +42,18 @@ class InventoryLinkManagerImplUnitTest {
 
   private final User actor = mock(User.class);
 
-  @BeforeEach
-  void setUp() {
-    lenient().when(linkTargetResolver.targetExistsAndIsReadable(any(), any())).thenReturn(true);
-    lenient().when(linkDao.save(any())).thenAnswer(inv -> inv.getArgument(0));
+  private void stubReadableTarget() {
+    when(linkTargetResolver.targetExistsAndIsReadable(any(), any())).thenReturn(true);
+  }
+
+  private void stubSavedLink() {
+    when(linkDao.save(any())).thenAnswer(inv -> inv.getArgument(0));
   }
 
   @Test
   void createLinkCapturesResolvedRevisionForPinnedTarget() {
+    stubReadableTarget();
+    stubSavedLink();
     when(snapshotResolver.resolveRevisionForVersion(GlobalIdPrefix.SD, 42L, 3L)).thenReturn(99L);
     ApiInventoryLink api = new ApiInventoryLink();
     api.setRelationType("References");
@@ -65,6 +67,8 @@ class InventoryLinkManagerImplUnitTest {
 
   @Test
   void createLinkLeavesRevisionNullForLatestTarget() {
+    stubReadableTarget();
+    stubSavedLink();
     ApiInventoryLink api = new ApiInventoryLink();
     api.setRelationType("References");
     api.setTargetGlobalId("SD42");
@@ -78,6 +82,8 @@ class InventoryLinkManagerImplUnitTest {
 
   @Test
   void updateLinkClearsRevisionWhenRepointedToLatest() {
+    stubReadableTarget();
+    stubSavedLink();
     InventoryLink existing = new InventoryLink();
     existing.setVersionPin(3L);
     existing.setTargetRevisionId(99L);
@@ -94,6 +100,8 @@ class InventoryLinkManagerImplUnitTest {
 
   @Test
   void updateLinkRecapturesRevisionWhenRepointedToPinnedTarget() {
+    stubReadableTarget();
+    stubSavedLink();
     when(snapshotResolver.resolveRevisionForVersion(GlobalIdPrefix.SD, 42L, 7L)).thenReturn(55L);
     InventoryLink existing = new InventoryLink();
     ApiInventoryLink update = new ApiInventoryLink();
@@ -118,6 +126,7 @@ class InventoryLinkManagerImplUnitTest {
 
   @Test
   void findReferencingItemsQueriesSourcesWhenTargetIsReadable() {
+    stubReadableTarget();
     when(linkDao.findReferencingLinkFields(GlobalIdPrefix.SA, 42L))
         .thenReturn(java.util.Collections.emptyList());
 

@@ -37,6 +37,12 @@ export const StoichiometryDialogWithTableStory = ({
   onDelete?: () => void;
 } = {}) => {
   const [open, setOpen] = React.useState(true);
+  const [stoichiometryId, setStoichiometryId] = React.useState<number | undefined>(1);
+
+  const handleDelete = () => {
+    setStoichiometryId(undefined);
+    onDelete?.();
+  };
 
   return (
     <StoichiometryDialogEntrypoint
@@ -44,10 +50,10 @@ export const StoichiometryDialogWithTableStory = ({
       onClose={() => setOpen(false)}
       chemId={12345}
       recordId={1}
-      stoichiometryId={1}
+      stoichiometryId={stoichiometryId}
       stoichiometryRevision={1}
       onSave={onSave}
-      onDelete={onDelete}
+      onDelete={handleDelete}
     />
   );
 };

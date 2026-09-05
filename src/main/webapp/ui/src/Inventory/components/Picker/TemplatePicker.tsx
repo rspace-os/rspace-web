@@ -12,9 +12,10 @@ type TemplatePickerArgs = {
   setTemplate: (template: TemplateModel) => void;
   disabled?: boolean;
   sample?: Sample;
+  selectedTemplate?: TemplateModel | null;
 };
 
-function TemplatePicker({ setTemplate, disabled, sample }: TemplatePickerArgs): ReactNode {
+function TemplatePicker({ setTemplate, disabled, sample, selectedTemplate }: TemplatePickerArgs): ReactNode {
   const [search] = useState(
     new Search({
       factory: new AlwaysNewFactory(),
@@ -43,6 +44,12 @@ function TemplatePicker({ setTemplate, disabled, sample }: TemplatePickerArgs): 
       search.setActiveResult(sample.template, { defaultToFirstResult: false });
     }
   }, [sample?.template]);
+
+  useEffect(() => {
+    if (typeof selectedTemplate !== "undefined" && search.activeResult !== selectedTemplate) {
+      void search.setActiveResult(selectedTemplate, { defaultToFirstResult: false });
+    }
+  }, [selectedTemplate]);
 
   useEffect(() => {
     if (!disabled) void search.fetcher.performInitialSearch(null);

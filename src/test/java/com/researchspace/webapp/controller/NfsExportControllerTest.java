@@ -1,8 +1,8 @@
 package com.researchspace.webapp.controller;
 
 import static com.researchspace.webapp.controller.ExportControllerTest.createExportArchiveConfigForUser;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.export.ExportArchiveDialogConfigDTO;
@@ -16,7 +16,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.security.Principal;
 import java.util.Collections;
 import java.util.Map;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;

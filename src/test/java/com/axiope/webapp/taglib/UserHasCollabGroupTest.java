@@ -1,6 +1,6 @@
 package com.axiope.webapp.taglib;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.model.Group;
 import com.researchspace.model.GroupType;
@@ -9,22 +9,18 @@ import com.researchspace.model.User;
 import com.researchspace.testutils.TestFactory;
 import jakarta.servlet.jsp.JspException;
 import jakarta.servlet.jsp.tagext.TagSupport;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class UserHasCollabGroupTest {
 
   User u;
   UserHasCollaborationGroup tag = new UserHasCollaborationGroup();
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     u = TestFactory.createAnyUser("any");
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void testDoStartTag() throws JspException {

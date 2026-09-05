@@ -1,7 +1,7 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
@@ -16,8 +16,8 @@ import com.researchspace.testutils.RunProfileTestConfiguration;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MvcResult;
@@ -28,7 +28,7 @@ public class SysAdminConfigControllerMVCIT extends MVCTestBase {
 
   @Autowired private WhiteListedIPAddressManager ipMgr;
 
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     super.setUp();
     removeExistingIPWhiteList();

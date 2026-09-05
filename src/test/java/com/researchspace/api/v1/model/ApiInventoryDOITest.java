@@ -59,6 +59,50 @@ class ApiInventoryDOITest {
     assertTrue(json.contains("\"url\":\"https://rspace.example.com/globalId/IN5\""));
   }
 
+  /**
+   * The provider record id is the ADDRESS of the external record RSpace writes to, so an existing
+   * identifier must not be retargeted by a payload. The id check in {@code
+   * ApiInventoryRecordInfo.applyChangesToDatabaseIdentifiers} stops a client naming someone else's
+   * identifier row, but not a client pointing its OWN row at someone else's record: without this
+   * guard, one instrument PUT carrying a foreign RID or DOI made the RSDEV-1251 on-save push
+   * overwrite that record with this instrument's metadata, under the deployment's own provider
+   * credentials.
+   *
+   * <p>Guarded here rather than with {@code Access.READ_ONLY} on the field, because the value is
+   * part of every identifier response and READ_ONLY would also stop a Java client reading it back
+   * out of one.
+   */
+  @Test
+  void providerRecordIdNotMutatedOnExistingIdentifier() {
+    DigitalObjectIdentifier existing = new DigitalObjectIdentifier("10.12345/ours-1234", "t");
+    existing.setId(1L);
+
+    ApiInventoryDOI apiDoi = new ApiInventoryDOI();
+    apiDoi.setDoi("10.12345/someone-elses");
+
+    boolean changed = apiDoi.applyChangesToDatabaseDOI(existing);
+
+    assertEquals(
+        "10.12345/ours-1234",
+        existing.getIdentifier(),
+        "an existing identifier must not be retargeted at another provider record");
+    assertFalse(changed);
+  }
+
+  /** Registration must still work: it applies the provider's own response to a new identifier. */
+  @Test
+  void providerRecordIdIsAppliedWhileTheIdentifierIsStillBeingCreated() {
+    DigitalObjectIdentifier brandNew = new DigitalObjectIdentifier(null, null, "aSuffix");
+
+    ApiInventoryDOI apiDoi = new ApiInventoryDOI();
+    apiDoi.setDoi("10.12345/minted-by-the-provider");
+
+    boolean changed = apiDoi.applyChangesToDatabaseDOI(brandNew);
+
+    assertEquals("10.12345/minted-by-the-provider", brandNew.getIdentifier());
+    assertTrue(changed);
+  }
+
   @Test
   void typeNotMutatedOnExistingIdentifier() {
     DigitalObjectIdentifier existing = new DigitalObjectIdentifier(null, null);

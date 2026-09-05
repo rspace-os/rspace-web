@@ -14,8 +14,8 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 public class NfsElementFieldExporterTest {
@@ -34,7 +34,7 @@ public class NfsElementFieldExporterTest {
 
   private File tmpNfsArchiveFolder;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
 
     File anyAttachment = RSpaceTestUtils.getAnyAttachment();

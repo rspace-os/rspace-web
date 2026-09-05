@@ -1,7 +1,7 @@
 package com.axiope.service.cfg;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.axiope.search.IFileIndexer;
 import com.researchspace.files.service.ExternalFileStore;
@@ -11,7 +11,7 @@ import com.researchspace.files.service.FileStore;
 import com.researchspace.files.service.egnyte.EgnyteFileStoreAdapter;
 import com.researchspace.testutils.EgnyteTestConfig;
 import com.researchspace.testutils.SpringTransactionalTest;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 

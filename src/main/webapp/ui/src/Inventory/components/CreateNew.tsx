@@ -64,7 +64,7 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
       throw e;
     }
   };
-  const handleImport = async (recordType: "SAMPLES" | "CONTAINERS" | "SUBSAMPLES") => {
+  const handleImport = async (recordType: "SAMPLES" | "CONTAINERS" | "SUBSAMPLES" | "INSTRUMENTS") => {
     if (await uiStore.confirmDiscardAnyChanges()) {
       importStore.initializeNewImport(recordType);
       navigate(`/inventory/import?recordType=${recordType}`);
@@ -201,8 +201,6 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
                 width: "28px",
                 height: "28px",
                 padding: "2px",
-                paddingTop: "5px",
-                paddingLeft: "5px",
               }}
             />
           }
@@ -224,8 +222,6 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
                 width: "28px",
                 height: "28px",
                 padding: "2px",
-                paddingTop: "5px",
-                paddingLeft: "5px",
               }}
             />
           }
@@ -238,65 +234,12 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
         </Divider>
         <AccentMenuItem
           compact
-          title={t("recordTypes.sample.plural")}
-          avatar={
-            <RecordTypeIcon
-              record={{
-                recordTypeLabel: "",
-                iconName: "sample",
-              }}
-              color=""
-              style={{
-                width: "18px",
-                height: "18px",
-                padding: "5px",
-              }}
-            />
-          }
+          title={t("createNew.fromCsv")}
+          subheader={t("createNew.fromCsvDescription")}
+          avatarBackgroundColor="white"
+          avatar={<CardMedia image="/images/icons/csv.svg" />}
           onClick={() => {
             void handleImport("SAMPLES");
-          }}
-        />
-        <AccentMenuItem
-          compact
-          title={t("recordTypes.subsample.plural")}
-          avatar={
-            <RecordTypeIcon
-              record={{
-                recordTypeLabel: "",
-                iconName: "subsample",
-              }}
-              color=""
-              style={{
-                width: "18px",
-                height: "18px",
-                padding: "5px",
-              }}
-            />
-          }
-          onClick={() => {
-            void handleImport("SUBSAMPLES");
-          }}
-        />
-        <AccentMenuItem
-          compact
-          title={t("recordTypes.container.plural")}
-          avatar={
-            <RecordTypeIcon
-              record={{
-                recordTypeLabel: "",
-                iconName: "container",
-              }}
-              color=""
-              style={{
-                width: "18px",
-                height: "18px",
-                padding: "5px",
-              }}
-            />
-          }
-          onClick={() => {
-            void handleImport("CONTAINERS");
           }}
         />
         {showFieldmark && (

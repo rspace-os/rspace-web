@@ -1,6 +1,9 @@
 package com.researchspace.service;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.auth.PermissionUtils;
 import com.researchspace.core.util.ISearchResults;
@@ -16,9 +19,8 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.testutils.TestFactory;
 import java.util.*;
 import org.apache.shiro.authz.Permission;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class PermissionUtilsTest {
 
@@ -26,14 +28,11 @@ public class PermissionUtilsTest {
   private PermissionUtilsTSS permissionUtilsTSS;
   private User user;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     permissionUtils = new PermissionUtils();
     user = TestFactory.createAnyUser("user");
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void testFindBy() {

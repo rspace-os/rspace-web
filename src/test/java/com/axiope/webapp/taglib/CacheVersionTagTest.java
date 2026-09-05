@@ -1,89 +1,58 @@
 package com.axiope.webapp.taglib;
 
-import static org.junit.Assert.assertEquals;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.lenient;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.when;
 
-import jakarta.servlet.ServletContext;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.jsp.JspException;
 import jakarta.servlet.jsp.JspWriter;
 import jakarta.servlet.jsp.PageContext;
 import jakarta.servlet.jsp.tagext.TagSupport;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import java.io.StringWriter;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockJspWriter;
+import org.springframework.mock.web.MockServletContext;
 
+@ExtendWith(MockitoExtension.class)
 public class CacheVersionTagTest {
 
-  @Rule public MockitoRule mockito = MockitoJUnit.rule();
-
-  @Mock private HttpServletRequest request;
   @Mock private PageContext pageContext;
-  @Mock private ServletContext servletContext;
-  @Mock private JspWriter writer;
 
-  private final StringBuilder output = new StringBuilder();
-  private final Map<String, Object> requestAttributes = new LinkedHashMap<>();
-  private final Map<String, Object> servletContextAttributes = new LinkedHashMap<>();
+  private final StringWriter output = new StringWriter();
+  private MockHttpServletRequest request;
+  private MockServletContext servletContext;
+  private JspWriter writer;
   private CacheVersionTag tag;
 
-  @Before
-  public void setUp() throws Exception {
+  @BeforeEach
+  public void setUp() {
     tag = new CacheVersionTag();
+    output.getBuffer().setLength(0);
+    servletContext = new MockServletContext();
+    request = new MockHttpServletRequest(servletContext);
+    writer = new MockJspWriter(output);
     tag.setPageContext(pageContext);
-    output.setLength(0);
-    requestAttributes.clear();
-    servletContextAttributes.clear();
+  }
 
-    lenient().when(pageContext.getRequest()).thenReturn(request);
-    lenient().when(pageContext.getOut()).thenReturn(writer);
-    lenient().when(pageContext.getServletContext()).thenReturn(servletContext);
-    lenient()
-        .when(servletContext.getAttribute(anyString()))
-        .thenAnswer(
-            invocation -> servletContextAttributes.get(invocation.getArgument(0, String.class)));
-    lenient()
-        .doAnswer(
-            invocation -> {
-              servletContextAttributes.put(
-                  invocation.getArgument(0, String.class), invocation.getArgument(1));
-              return null;
-            })
-        .when(servletContext)
-        .setAttribute(anyString(), org.mockito.ArgumentMatchers.any());
-    lenient()
-        .when(request.getAttribute(anyString()))
-        .thenAnswer(invocation -> requestAttributes.get(invocation.getArgument(0, String.class)));
-    lenient()
-        .doAnswer(
-            invocation -> {
-              requestAttributes.put(
-                  invocation.getArgument(0, String.class), invocation.getArgument(1));
-              return null;
-            })
-        .when(request)
-        .setAttribute(anyString(), org.mockito.ArgumentMatchers.any());
+  private void stubPageContext() {
+    when(pageContext.getRequest()).thenReturn(request);
+    when(pageContext.getServletContext()).thenReturn(servletContext);
+  }
 
-    lenient()
-        .doAnswer(
-            invocation -> {
-              output.append(invocation.getArgument(0, String.class));
-              return null;
-            })
-        .when(writer)
-        .write(anyString());
+  private void stubWriter() {
+    when(pageContext.getOut()).thenReturn(writer);
   }
 
   @Test
   public void emitsProductionVersionToken() throws JspException {
-    servletContextAttributes.put(FrontendCacheVersion.DEV_MODE_CACHE_ATTR, Boolean.FALSE);
-    servletContextAttributes.put(FrontendCacheVersion.CACHE_VERSION_ATTR, "2.23.0");
+    stubPageContext();
+    stubWriter();
+    servletContext.setAttribute(FrontendCacheVersion.DEV_MODE_CACHE_ATTR, Boolean.FALSE);
+    servletContext.setAttribute(FrontendCacheVersion.CACHE_VERSION_ATTR, "2.23.0");
 
     assertEquals(TagSupport.SKIP_BODY, tag.doStartTag());
 
@@ -92,17 +61,20 @@ public class CacheVersionTagTest {
 
   @Test
   public void emitsRequestUuidInDevMode() throws JspException {
-    servletContextAttributes.put(FrontendCacheVersion.DEV_MODE_CACHE_ATTR, Boolean.TRUE);
+    stubPageContext();
+    stubWriter();
+    servletContext.setAttribute(FrontendCacheVersion.DEV_MODE_CACHE_ATTR, Boolean.TRUE);
 
     assertEquals(TagSupport.SKIP_BODY, tag.doStartTag());
 
     String first = output.toString();
-    assertEquals("expected a UUID-like token: " + first, true, first.matches("[0-9a-f-]{8,}"));
+    assertEquals(true, first.matches("[0-9a-f-]{8,}"), "expected a UUID-like token: " + first);
   }
 
   @Test
   public void emitsNothingWhenTokenAbsent() throws JspException {
-    servletContextAttributes.put(FrontendCacheVersion.DEV_MODE_CACHE_ATTR, Boolean.FALSE);
+    stubPageContext();
+    servletContext.setAttribute(FrontendCacheVersion.DEV_MODE_CACHE_ATTR, Boolean.FALSE);
 
     assertEquals(TagSupport.SKIP_BODY, tag.doStartTag());
 

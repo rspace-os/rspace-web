@@ -6,7 +6,7 @@ import com.researchspace.dao.InventoryLinkDao;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.inventory.field.InventoryLink;
 import com.researchspace.testutils.SpringTransactionalTest;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class InventoryLinkDaoHibernateTest extends SpringTransactionalTest {

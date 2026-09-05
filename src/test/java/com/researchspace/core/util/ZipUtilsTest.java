@@ -1,6 +1,6 @@
 package com.researchspace.core.util;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.File;
 import java.io.IOException;
@@ -10,15 +10,14 @@ import org.apache.commons.io.filefilter.FalseFileFilter;
 import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.apache.commons.io.filefilter.TrueFileFilter;
 import org.apache.commons.io.filefilter.WildcardFileFilter;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 public class ZipUtilsTest {
 
-  public @Rule TemporaryFolder tempFolder = new TemporaryFolder();
+  @TempDir public File tempFolder;
   private String PREFIX;
   private String EXTRACTED;
   private String ROOTFOLDER;
@@ -27,18 +26,18 @@ public class ZipUtilsTest {
   // contents of file A
   final String EXPECTED_CONTENTS = "this is file A.";
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
-    PREFIX = tempFolder.getRoot().getAbsolutePath();
+    PREFIX = tempFolder.getAbsolutePath();
     EXTRACTED = PREFIX + "extracted/";
     ROOTFOLDER = "src/test/resources/archives/rootFolder/";
     ROOTFOLDER_FILE = new File(ROOTFOLDER);
-    FileUtils.copyDirectoryToDirectory(ROOTFOLDER_FILE, tempFolder.getRoot());
+    FileUtils.copyDirectoryToDirectory(ROOTFOLDER_FILE, tempFolder);
     EXTRACTED_FOLDER = new File(EXTRACTED);
     EXTRACTED_FOLDER.mkdir();
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     FileUtils.deleteDirectory(EXTRACTED_FOLDER);
   }

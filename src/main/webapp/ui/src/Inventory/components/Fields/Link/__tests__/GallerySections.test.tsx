@@ -1,24 +1,25 @@
 import { ThemeProvider } from "@mui/material/styles";
-import { cleanup, render, screen } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { HttpResponse, http } from "msw";
 import type React from "react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { renderWithRealI18n } from "@/__tests__/helpers/realI18n";
+import { server } from "@/__tests__/mswServer";
+import inventoryEn from "@/modules/common/i18n/locales/en-US/inventory.json";
 import type { WorkspaceRecordInformation } from "@/modules/workspace/schema";
 import materialTheme from "../../../../../theme";
 
 const getLinkedDocuments = vi.fn();
 const uploadNewGalleryVersion = vi.fn();
-const useReferencingInventoryItems = vi.fn();
 
 vi.mock("@/modules/workspace/linkedRecords", () => ({
   getLinkedDocuments: (...args: Array<unknown>) => getLinkedDocuments(...args) as unknown,
 }));
 vi.mock("@/modules/workspace/galleryUpload", () => ({
   uploadNewGalleryVersion: (...args: Array<unknown>) => uploadNewGalleryVersion(...args) as unknown,
-}));
-vi.mock("@/eln/gallery/useReferencingInventoryItems", () => ({
-  default: (...args: Array<unknown>) => useReferencingInventoryItems(...args) as unknown,
 }));
 
 import GallerySections from "../GallerySections";
@@ -43,22 +44,20 @@ const imageInfo: WorkspaceRecordInformation = {
 beforeEach(() => {
   getLinkedDocuments.mockReset();
   uploadNewGalleryVersion.mockReset();
-  useReferencingInventoryItems.mockReset();
   getLinkedDocuments.mockResolvedValue({ readable: [], privateByOwner: [] });
   uploadNewGalleryVersion.mockResolvedValue(imageInfo);
-  useReferencingInventoryItems.mockReturnValue({
-    items: [],
-    loading: false,
-    errorMessage: null,
-  });
+  server.use(
+    http.get("/workspace/getReferencingInventoryItems/:globalId", () => HttpResponse.json({ referencingItems: [] })),
+    http.get("/workspace/getAttachingInventoryItems/:globalId", () => HttpResponse.json({ referencingItems: [] })),
+  );
 });
-
-afterEach(cleanup);
 
 function renderGallery(props: Partial<React.ComponentProps<typeof GallerySections>> = {}) {
   return render(
     <ThemeProvider theme={materialTheme}>
-      <GallerySections info={imageInfo} onRecordChanged={vi.fn()} {...props} />
+      <QueryClientProvider client={createQueryClient()}>
+        <GallerySections info={imageInfo} onRecordChanged={vi.fn()} {...props} />
+      </QueryClientProvider>
     </ThemeProvider>,
   );
 }
@@ -108,28 +107,34 @@ describe("GallerySections", () => {
   it("shows the Inventory items that link to this file on 'Show linked docs'", async () => {
     // the Gallery's own info panel shows these back-references; this dialog must
     // too, since the ELN linked-docs lookup does not cover inventory links
-    useReferencingInventoryItems.mockReturnValue({
-      items: [
-        {
-          globalId: "SA42",
-          name: "My sample",
-          type: "SAMPLE",
-          relationType: "References",
-          permalinkHref: "/globalId/SA42",
-          linkableRecord: {},
-        },
-      ],
-      loading: false,
-      errorMessage: null,
-    });
+    server.use(
+      http.get("/workspace/getReferencingInventoryItems/GL21", () =>
+        HttpResponse.json({
+          referencingItems: [
+            {
+              sourceGlobalId: "SA42",
+              sourceName: "My sample",
+              sourceType: "SAMPLE",
+              relationType: "References",
+            },
+          ],
+        }),
+      ),
+    );
     const user = userEvent.setup();
-    renderGallery();
+    await renderWithRealI18n(
+      <ThemeProvider theme={materialTheme}>
+        <QueryClientProvider client={createQueryClient()}>
+          <GallerySections info={imageInfo} onRecordChanged={vi.fn()} />
+        </QueryClientProvider>
+      </ThemeProvider>,
+      { resources: { inventory: inventoryEn }, defaultNS: "inventory" },
+    );
 
-    await user.click(screen.getByRole("button", { name: "inventory:fields.link.gallerySections.showLinkedDocs" }));
+    await user.click(screen.getByRole("button", { name: "Show linked docs" }));
 
-    expect(useReferencingInventoryItems).toHaveBeenCalledWith("GL21");
-    expect(await screen.findByText("inventory:fields.link.relatedInventoryItems.title")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "SA42" })).toHaveAttribute("href", "/globalId/SA42");
+    expect(await screen.findByText("Related inventory items")).toBeInTheDocument();
+    expect(await screen.findByRole("link", { name: "SA42" })).toHaveAttribute("href", "/globalId/SA42");
     expect(screen.getByText("(References)")).toBeInTheDocument();
   });
 
@@ -178,3 +183,6 @@ describe("GallerySections", () => {
     });
   });
 });
+function createQueryClient(): QueryClient {
+  return new QueryClient({ defaultOptions: { queries: { retry: false } } });
+}

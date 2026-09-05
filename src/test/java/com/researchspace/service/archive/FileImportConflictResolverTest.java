@@ -1,6 +1,6 @@
 package com.researchspace.service.archive;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.archive.ArchivalGalleryMetaDataParserRef;
 import com.researchspace.archive.ArchivalGalleryMetadata;
@@ -11,8 +11,8 @@ import com.researchspace.model.record.Folder;
 import com.researchspace.testutils.TestFactory;
 import java.io.File;
 import java.io.IOException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class FileImportConflictResolverTest {
 
@@ -20,7 +20,7 @@ public class FileImportConflictResolverTest {
   User anyUser;
   FileImportConflictResolver resolver = null;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     factory = new ArchiveModelFactory();
     anyUser = TestFactory.createAnyUser("any");

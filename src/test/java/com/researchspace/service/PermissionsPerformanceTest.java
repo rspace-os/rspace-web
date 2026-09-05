@@ -1,7 +1,7 @@
 package com.researchspace.service;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.Constants;
 import com.researchspace.auth.PermissionUtils;
@@ -15,8 +15,6 @@ import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.model.record.RSForm;
-import com.researchspace.service.impl.ConditionalTestRunnerNotSpring;
-import com.researchspace.service.impl.RunIfSystemPropertyDefined;
 import com.researchspace.service.impl.ShiroTestUtils;
 import com.researchspace.testutils.TestFactory;
 import java.util.ArrayList;
@@ -28,28 +26,27 @@ import org.apache.commons.lang3.time.StopWatch;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authc.UsernamePasswordToken;
 import org.apache.shiro.subject.Subject;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-@RunWith(ConditionalTestRunnerNotSpring.class)
+@ExtendWith(MockitoExtension.class)
+@EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
 public class PermissionsPerformanceTest {
   private static final int NUM_RECORDS_TO_CREATE = 500;
   PermissionFactory permFac;
   IPermissionUtils utils;
   ShiroTestUtils shiroUtils;
   @Mock Subject subject;
-  public @Rule MockitoRule rule = MockitoJUnit.rule();
 
   Map<String, User> map = new HashMap<>();
   ShiroTestUtils testUtils;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     permFac = new DefaultPermissionFactory();
     utils = new PermissionUtils();
@@ -57,13 +54,12 @@ public class PermissionsPerformanceTest {
     shiroUtils.setSubject(subject);
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     shiroUtils.clearSubject();
   }
 
   @Test
-  @RunIfSystemPropertyDefined(value = "nightly")
   public void test() throws IllegalAddChildOperation, InterruptedException {
     RSForm form = TestFactory.createAnyForm();
     StopWatch sw = new StopWatch();
@@ -87,9 +83,7 @@ public class PermissionsPerformanceTest {
     // this will go through subject permissions and ACLS
     utils.filter(toFilter, PermissionType.RENAME, u);
     sw.split();
-    assertTrue(
-        "Should be less than 1500ms but was " + sw.getSplitTime(),
-        sw.getSplitTime() < 1500); // check that 10000 records->500 takes < 1.5 second.
+    assertTrue(sw.getSplitTime() < 1500, "Should be less than 1500ms but was " + sw.getSplitTime());
     assertEquals(NUM_RECORDS_TO_CREATE, toFilter.size());
   }
 

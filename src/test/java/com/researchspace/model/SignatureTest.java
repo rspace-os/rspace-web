@@ -1,13 +1,13 @@
 package com.researchspace.model;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.core.testutil.JakartaValidatorTest;
 import com.researchspace.core.util.SecureStringUtils;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.record.TestFactory;
 import java.util.Arrays;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class SignatureTest extends JakartaValidatorTest {
 

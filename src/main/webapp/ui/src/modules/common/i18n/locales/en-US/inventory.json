@@ -391,7 +391,9 @@
     }
   },
   "createNew": {
-    "csvImport": "CSV Import",
+    "csvImport": "Import",
+    "fromCsv": "From CSV",
+    "fromCsvDescription": "Samples, Subsamples, Containers and Instruments",
     "helpTitles": {
       "container": "Info on creating containers.",
       "instrument": "Info on creating instruments.",
@@ -1010,7 +1012,8 @@
           "relation": "Relation"
         },
         "loading": "Loading...",
-        "none": "No Inventory items link to this {recordTypeName}.",
+        "none": "{recordType, select, document {No Inventory items link to this document.} notebook {No Inventory items link to this notebook.} galleryFile {No Inventory items link to this gallery file.} other {No Inventory items link to this record.}}",
+        "row": "<globalId>{globalId}</globalId>: {name}{relationKind, select, attachment { <relation>(Attachment)</relation>} relation { <relation>({relationType})</relation>} other {}}",
         "title": "Related inventory items"
       },
       "targetBrowser": {
@@ -1418,6 +1421,7 @@
     "templateDetails": {
       "chooseExistingTemplate": "Choose existing template.",
       "createNewTemplate": "Create new template.",
+      "selectInstrumentTemplate": "Select a template from which these imported instruments will be created.",
       "selectTemplate": "Select a template from which these imported samples will be created."
     },
     "title": "IMPORT"
@@ -1466,7 +1470,7 @@
       "explanation": "If you select an instrument template below, initial metadata and custom fields will be automatically generated.",
       "fetchError": "Could not fetch instrument template details.",
       "label": "Instrument Template",
-      "noTemplate": "No template",
+      "noTemplate": "No Template",
       "noTemplateTitle": "No Template",
       "unknownReason": "Unknown reason.",
       "version": "Version {version}"

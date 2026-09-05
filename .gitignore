@@ -81,6 +81,8 @@ src/main/webapp/ui/coverage
 # other tooling
 /.claude/
 .worktrees/
+# Firecrawl scrape cache (research artifacts, same status as /.claude/ notes)
+/.firecrawl/
 
 .pnpm-store
 # Playwright outputs (repo root; written by the component-test runner)

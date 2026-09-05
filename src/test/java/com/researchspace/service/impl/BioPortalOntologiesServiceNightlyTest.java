@@ -3,7 +3,7 @@ package com.researchspace.service.impl;
 import static com.researchspace.service.impl.OntologyDocManager.RSPACE_EXTONTOLOGY_NAME_DELIM;
 import static com.researchspace.service.impl.OntologyDocManager.RSPACE_EXTONTOLOGY_URL_DELIMITER;
 import static com.researchspace.service.impl.OntologyDocManager.RSPACE_EXTONTOLOGY_VERSION_DELIM;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.client.BioPortalOntologiesClient;
 import java.util.List;
@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 
+@EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
 public class BioPortalOntologiesServiceNightlyTest {
   private BioPortalOntologiesClient bioportalClient = new BioPortalOntologiesClient();
   private BioPortalOntologiesService service = new BioPortalOntologiesService(bioportalClient);
@@ -19,7 +20,6 @@ public class BioPortalOntologiesServiceNightlyTest {
   @SneakyThrows
   @Test
   @Disabled("BioPortal tags retrieval currently doesn't work, see rspace-os/rspace-web issue #319")
-  @EnabledIfSystemProperty(named = "nightly", matches = "true")
   public void testListResults() {
     List<String> results = service.getBioOntologyDataForQuery("Tolstoy");
     String town = results.get(0);

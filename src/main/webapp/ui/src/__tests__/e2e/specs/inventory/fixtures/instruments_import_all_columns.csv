@@ -1,0 +1,4 @@
+Global ID,Name,Tags,Owner,Description,Parent Template (Global ID),Parent Template (name),Parent Container (Global ID)
+IN1,Instrument01,"TagA,TagB",sysadmin1,<p>Description 01.</p>,,,BE1
+IN2,Instrument02,"TagA,TagC",sysadmin1,<p>Description 02.</p>,,,BE1
+IN3,Instrument03,"TagA,TagD",sysadmin1,<p>Description 03.</p>,,,BE1

@@ -1,6 +1,7 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.model.User;
@@ -16,21 +17,17 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoJUnitRunner;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-@RunWith(MockitoJUnitRunner.class)
-public class WorkspaceControllerPlainJunit {
+@ExtendWith(MockitoExtension.class)
+public class WorkspaceControllerPlainJunitTest {
+  private static final int TEMPLATE_COUNT = 5;
 
-  @Rule public MockitoRule mockery = MockitoJUnit.rule();
   @Mock RecordManager recordMgr;
   @Mock UserManager userMgr;
   @Mock RecordSharingManager sharingMgr;
@@ -38,14 +35,13 @@ public class WorkspaceControllerPlainJunit {
   @InjectMocks WorkspaceController workspaceCtrller;
   User anyUser;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     anyUser = TestFactory.createAnyUser("any");
+    // Set.of(anyUser.getId()) in the stub rejects null.
+    anyUser.setId(1L);
     workspaceCtrller.setRecordManager(recordMgr);
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   // rspac-2073
   @Test
@@ -68,10 +64,11 @@ public class WorkspaceControllerPlainJunit {
   }
 
   private void assertTemplateOrdering(List<RecordInformation> results) {
+    assertEquals(TEMPLATE_COUNT, results.size());
     for (int i = 0; i < results.size() - 1; i++) {
-      Integer thisSuffixInteger = Integer.parseInt(results.get(i).getName().split("-")[1]);
-      Integer nextSuffixInteger = Integer.parseInt(results.get(i + 1).getName().split("-")[1]);
-      assertTrue(thisSuffixInteger == nextSuffixInteger + 1);
+      int thisSuffix = Integer.parseInt(results.get(i).getName().split("-")[1]);
+      int nextSuffix = Integer.parseInt(results.get(i + 1).getName().split("-")[1]);
+      assertEquals(nextSuffix + 1, thisSuffix);
       assertTrue(
           results.get(i).getModificationDate().after(results.get(i + 1).getModificationDate()));
     }
@@ -84,7 +81,7 @@ public class WorkspaceControllerPlainJunit {
   // names of docs end with '-i' where i is order of creation, ascending
   private Set<BaseRecord> generateResults() throws InterruptedException {
     Set<BaseRecord> rc = new HashSet<>();
-    for (long i = 0; i < 5; i++) {
+    for (long i = 0; i < TEMPLATE_COUNT; i++) {
       StructuredDocument sdoc = TestFactory.createAnySD();
       Thread.sleep(1); // force mod-date to be different per document
       sdoc.setId(i);

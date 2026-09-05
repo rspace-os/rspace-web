@@ -1,10 +1,10 @@
 package com.researchspace.webapp.controller.cloud;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.model.TokenBasedVerification;
@@ -20,24 +20,19 @@ import com.researchspace.session.SessionAttributeUtils;
 import com.researchspace.testutils.TestFactory;
 import java.security.Principal;
 import java.util.Date;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoJUnitRunner;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.ui.ExtendedModelMap;
 import org.springframework.web.servlet.ModelAndView;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class CommunityControllerTest {
-
-  public @Rule MockitoRule mockito = MockitoJUnit.rule();
   @InjectMocks RSCommunityController controller;
   @Mock UserManager userMgr;
   @Mock CommunityUserManager cloudUserMgr;
@@ -47,13 +42,13 @@ public class CommunityControllerTest {
 
   User user;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     controller.setMessageSource(new MessageSourceUtils(new JsonMessageSource()));
     user = TestFactory.createAnyUser("any");
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {}
 
   @Test

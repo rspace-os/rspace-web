@@ -1959,6 +1959,7 @@ export default interface Resources {
         "name": "Name"
       },
       "heading": "Linked Documents",
+      "loadFailed": "Error loading linked documents.",
       "noRows": "No Linked Documents"
     },
     "listing": {
@@ -2108,7 +2109,8 @@ export default interface Resources {
       "viewLatest": "View the latest version"
     },
     "referencingInventoryItems": {
-      "loadFailed": "Error loading related inventory items."
+      "loadFailed": "Error loading related inventory items.",
+      "noRows": "No related inventory items"
     },
     "s3": {
       "errors": {
@@ -2654,7 +2656,9 @@ export default interface Resources {
       }
     },
     "createNew": {
-      "csvImport": "CSV Import",
+      "csvImport": "Import",
+      "fromCsv": "From CSV",
+      "fromCsvDescription": "Samples, Subsamples, Containers and Instruments",
       "helpTitles": {
         "container": "Info on creating containers.",
         "instrument": "Info on creating instruments.",
@@ -3273,7 +3277,8 @@ export default interface Resources {
             "relation": "Relation"
           },
           "loading": "Loading...",
-          "none": "No Inventory items link to this {recordTypeName}.",
+          "none": "{recordType, select, document {No Inventory items link to this document.} notebook {No Inventory items link to this notebook.} galleryFile {No Inventory items link to this gallery file.} other {No Inventory items link to this record.}}",
+          "row": "<globalId>{globalId}</globalId>: {name}{relationKind, select, attachment { <relation>(Attachment)</relation>} relation { <relation>({relationType})</relation>} other {}}",
           "title": "Related inventory items"
         },
         "targetBrowser": {
@@ -3681,6 +3686,7 @@ export default interface Resources {
       "templateDetails": {
         "chooseExistingTemplate": "Choose existing template.",
         "createNewTemplate": "Create new template.",
+        "selectInstrumentTemplate": "Select a template from which these imported instruments will be created.",
         "selectTemplate": "Select a template from which these imported samples will be created."
       },
       "title": "IMPORT"
@@ -3729,7 +3735,7 @@ export default interface Resources {
         "explanation": "If you select an instrument template below, initial metadata and custom fields will be automatically generated.",
         "fetchError": "Could not fetch instrument template details.",
         "label": "Instrument Template",
-        "noTemplate": "No template",
+        "noTemplate": "No Template",
         "noTemplateTitle": "No Template",
         "unknownReason": "Unknown reason.",
         "version": "Version {version}"
@@ -6792,6 +6798,9 @@ export default interface Resources {
           "dataCiteRetractFailed": "Error when retracting the DOI in DataCite. If the problem persists, please contact your System Admin",
           "deleteNotOwner": "You can only delete an identifier that you own.",
           "deleteWrongState": "You can only delete identifiers in \"draft\" state, or B2INST instrument PIDs whose community review was declined, cancelled or expired.",
+          "externalUpdateFailed": "Could not update the instrument metadata held by {0}. The instrument itself was saved, so saving it again will try the update once more. {1}",
+          "externalUpdateNotPossibleB2inst": "The instrument metadata held by {0} could not be updated because its community review has been accepted, so the record no longer has a draft open for changes. The instrument itself was saved.",
+          "externalUpdateNotPossibleDataCite": "The instrument metadata held by {0} could not be updated because its identifier is no longer a draft. Publishing or republishing the identifier sends its current metadata. The instrument itself was saved.",
           "integrationNotEnabled": "{0} integration is not enabled on this RSpace instance.",
           "mintingUnsupportedType": "unsupported type for minting: {0}",
           "refreshNoIdentifier": "This item has no identifier to refresh. Register an identifier before refreshing its status.",
@@ -6952,6 +6961,9 @@ export default interface Resources {
           "itemsAdded": "Added inventory items: {0}.",
           "itemsRemoved": "Removed inventory items: {0}."
         }
+      },
+      "identifier": {
+        "externalUpdated": "The instrument metadata held by {0} was updated."
       },
       "listOfMaterials": {
         "label": "List of materials"

@@ -1,13 +1,13 @@
 package com.researchspace.netfiles.sftp;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.netfiles.NfsException;
 import com.researchspace.testutils.RSpaceTestUtils;
 import java.io.IOException;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class SftpClientTest {
 
@@ -15,12 +15,12 @@ public class SftpClientTest {
 
   private String testUsername = "testSftpUsername";
 
-  @Before
+  @BeforeEach
   public void setUp() {
     sftpClient = new SftpClient(testUsername, "test", "sftp://test", "");
   }
 
-  @After
+  @AfterEach
   public void tearDown() {
     if (sftpClient != null) {
       sftpClient.closeSession();
@@ -63,7 +63,7 @@ public class SftpClientTest {
 
   @Test
   public void sftpClientKnowsCorrectUsername() {
-    assertEquals("client should know the username", testUsername, sftpClient.getUsername());
+    assertEquals(testUsername, sftpClient.getUsername(), "client should know the username");
   }
 
   // @Test

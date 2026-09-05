@@ -1,10 +1,10 @@
 package com.researchspace.netfiles.samba;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.testutils.RSpaceTestUtils;
 import java.net.MalformedURLException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class JcifsClientTest {
 
@@ -20,7 +20,7 @@ public class JcifsClientTest {
   public void sambaClientKnowsCorrectUsername() {
     String testUsername = "testUsername";
     JcifsClient sc = new JcifsClient(testUsername, "user", "domain", "smb://test");
-    assertEquals("client should remember the username", testUsername, sc.getUsername());
+    assertEquals(testUsername, sc.getUsername(), "client should remember the username");
   }
 
   @Test
@@ -31,12 +31,12 @@ public class JcifsClientTest {
     JcifsClient sc = new JcifsClient(testUsername, "testPass", testDomain, "smb://test");
 
     assertEquals(
-        "samba client should authenticate with provided the username",
         testUsername,
-        sc.getAuthenticationPrincipal().getUsername());
+        sc.getAuthenticationPrincipal().getUsername(),
+        "samba client should authenticate with provided the username");
     assertEquals(
-        "samba client should authenticate with provided domain",
         testDomain,
-        sc.getAuthenticationPrincipal().getDomain());
+        sc.getAuthenticationPrincipal().getDomain(),
+        "samba client should authenticate with provided domain");
   }
 }

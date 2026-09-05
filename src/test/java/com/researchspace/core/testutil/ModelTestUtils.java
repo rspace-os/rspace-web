@@ -1,7 +1,7 @@
 package com.researchspace.core.testutil;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.lang.reflect.Field;
 import java.util.Arrays;
@@ -48,13 +48,13 @@ public class ModelTestUtils {
         continue;
       }
       assertEquals(
+          origF,
+          copyF,
           origF == null
               ? "null"
               : origF.toString() + " doesn't equal " + copyF == null
                   ? "null"
-                  : copyF.toString() + " for field " + f.getName(),
-          origF,
-          copyF);
+                  : copyF.toString() + " for field " + f.getName());
     }
   }
 
@@ -75,7 +75,7 @@ public class ModelTestUtils {
     for (Field f : allFields) {
       // include private fields
       f.setAccessible(true);
-      assertNotNull("Field " + f + " was null", f.get(object));
+      assertNotNull(f.get(object), "Field " + f + " was null");
     }
   }
 }

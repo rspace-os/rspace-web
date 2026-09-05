@@ -16,15 +16,15 @@ import com.researchspace.model.inventory.DigitalObjectIdentifier;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnectorDummy;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class InventoryIdentifierApiManagerIT extends RealTransactionSpringTestBase {
 
   @Autowired private DigitalObjectIdentifierDao doiDao;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     inventoryIdentifierApiMgr.setDataCiteConnector(new DataCiteConnectorDummy());
@@ -103,15 +103,23 @@ public class InventoryIdentifierApiManagerIT extends RealTransactionSpringTestBa
   }
 
   /**
-   * The public page picks its revision by provider, and both rules are persistence-level: the
-   * revision comes out of an Envers query and the published check out of the DAO's predicate, so
-   * neither is exercised by the unit tests over the predicate alone (parallel review, PR 1066).
+   * The public page serves the newest identifier revision, for both providers. This is
+   * persistence-level on both counts - the revision comes out of an Envers query and the published
+   * check out of the DAO's predicate - so neither is exercised by the unit tests over the predicate
+   * alone (parallel review, PR 1066).
    *
-   * <p>Writes the identifier row a second time while it is published and asserts what the page
-   * serves before and after the provider changes, so a regression either way fails here.
+   * <p>The rule used to differ by provider: DataCite held the page at the publication-time snapshot
+   * so that a change made after publishing stayed private until a deliberate republish, while
+   * B2INST served the newest revision because it has no republish to push one out with. That
+   * distinction was removed deliberately. The user-visible consequence is asserted below: an
+   * identifier-row change made while an IGSN is published, such as the customFieldsOnPublicPage
+   * toggle, now reaches the public page immediately rather than waiting for a republish.
+   *
+   * <p>Writes the identifier row a second time while it is published, and again as B2INST, so a
+   * regression either way fails here.
    */
   @Test
-  public void publicPagePicksItsRevisionByProvider() throws Exception {
+  public void publicPageServesTheNewestRevisionForBothProviders() throws Exception {
     User user = createInitAndLoginAnyUser();
     ApiSampleWithFullSubSamples createdSample = createComplexSampleForUser(user);
 
@@ -142,19 +150,20 @@ public class InventoryIdentifierApiManagerIT extends RealTransactionSpringTestBa
         });
 
     /*
-     * DataCite (this identifier is an IGSN): still the publication-time snapshot, so the later
-     * write is not public. Republishing is what pushes changes out, and a regression to "newest
-     * revision" would leak them without one.
+     * This identifier is an IGSN, so DataCite's rule applies - and that rule is now the same as
+     * B2INST's. The later write IS public, with no republish. Before the rules were unified this
+     * asserted the opposite, and the change of expectation here is the whole user-visible effect of
+     * unifying them.
      */
     ApiInventoryRecordInfo igsnAfterSecondWrite =
         inventoryIdentifierApiMgr.findPublishedItemVersionByPublicLink(publicLink);
     assertNotNull(igsnAfterSecondWrite);
-    assertFalse(igsnAfterSecondWrite.getIdentifiers().get(0).getCustomFieldsOnPublicPage());
+    assertTrue(igsnAfterSecondWrite.getIdentifiers().get(0).getCustomFieldsOnPublicPage());
 
     /*
-     * The same history read as B2INST: the newest revision, because a B2INST identifier has no
-     * republish operation to push a change out with. Type is the DAO's only input for this, so
-     * setting it is what selects the other branch.
+     * The same history read as B2INST, which must now agree: the newest revision either way. Type
+     * used to be the DAO's input for choosing between the two rules and is no longer consulted at
+     * all, so this also pins that an accepted B2INST identifier is still served.
      */
     doInTransaction(
         () -> {

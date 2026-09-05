@@ -1,7 +1,7 @@
 package com.researchspace.service.impl;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.ldap.UserLdapRepo;
@@ -12,18 +12,15 @@ import com.researchspace.service.IVerificationPasswordValidator;
 import com.researchspace.service.UserManager;
 import com.researchspace.testutils.TestFactory;
 import org.apache.shiro.subject.Subject;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class ReauthenticatorTest {
-
-  public @Rule MockitoRule rule = MockitoJUnit.rule();
   private @Mock UserManager userMgr;
   private @Mock IVerificationPasswordValidator verificationPasswordValidator;
   private @Mock UserLdapRepo userLdapRepo;
@@ -36,14 +33,11 @@ public class ReauthenticatorTest {
 
   @InjectMocks ReauthenticatorImpl reauthenticator;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     user = TestFactory.createAnyUser("any");
     sysadmin = TestFactory.createAnyUserWithRole("sysadmin", Role.SYSTEM_ROLE.getName());
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void testReauthenticateDelegatesToVerificationPasswordIfNeeded() {

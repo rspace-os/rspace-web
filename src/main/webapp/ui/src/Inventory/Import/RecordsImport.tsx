@@ -21,9 +21,15 @@ import useStores from "../../stores/use-stores";
 import type { URL } from "../../util/types";
 import ColumnFieldMapping from "./Fields/ColumnFieldMapping";
 import FileForImport from "./Fields/File";
+import InstrumentTemplateDetails from "./Fields/InstrumentTemplateDetails";
 import TemplateDetails from "./Fields/TemplateDetails";
 
-const IMPORT_RECORD_TYPES = ["CONTAINERS", "SAMPLES", "SUBSAMPLES"] as const satisfies readonly ImportRecordType[];
+const IMPORT_RECORD_TYPES = [
+  "CONTAINERS",
+  "SAMPLES",
+  "SUBSAMPLES",
+  "INSTRUMENTS",
+] as const satisfies readonly ImportRecordType[];
 
 const onTypeSelect = (newValue: ImportRecordType): URL => {
   return `/inventory/import?recordType=${newValue}`;
@@ -38,6 +44,7 @@ function RecordsImport(): React.ReactNode {
 
   const recordType = importData?.recordType;
   const isSamplesImport = importData?.isSamplesImport;
+  const isInstrumentsImport = importData?.isInstrumentsImport;
 
   const loadedFileByRecordType = importData?.byRecordType("file") as File | null | undefined;
   const submitting = importStore.isCurrentImportState("submitting");
@@ -48,6 +55,7 @@ function RecordsImport(): React.ReactNode {
     CONTAINERS: t("recordTypes.container.plural"),
     SAMPLES: t("recordTypes.sample.plural"),
     SUBSAMPLES: t("recordTypes.subsample.plural"),
+    INSTRUMENTS: t("recordTypes.instrument.plural"),
   };
   const listFormatter = makeListFormatter(i18n.resolvedLanguage ?? i18n.language);
 
@@ -69,6 +77,12 @@ function RecordsImport(): React.ReactNode {
       label: recordTypeLabels.SUBSAMPLES,
       file: importData?.subSamplesFile ?? null,
       submittable: importData?.subSamplesSubmittable ?? false,
+    },
+    {
+      route: "INSTRUMENTS",
+      label: recordTypeLabels.INSTRUMENTS,
+      file: importData?.instrumentsFile ?? null,
+      submittable: importData?.instrumentsSubmittable ?? false,
     },
   ];
 
@@ -139,6 +153,11 @@ function RecordsImport(): React.ReactNode {
         {isSamplesImport && (
           <TitledBox title={t("import.sections.templateDetails")} border>
             <TemplateDetails />
+          </TitledBox>
+        )}
+        {isInstrumentsImport && (
+          <TitledBox title={t("import.sections.templateDetails")} border>
+            <InstrumentTemplateDetails />
           </TitledBox>
         )}
         <TitledBox title={t("import.sections.columnConversion")} border>

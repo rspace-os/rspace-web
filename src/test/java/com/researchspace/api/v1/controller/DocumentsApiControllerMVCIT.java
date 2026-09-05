@@ -4,11 +4,11 @@ import static com.researchspace.api.v1.controller.ApiDocSearchConfig.MAX_QUERY_L
 import static com.researchspace.core.util.TransformerUtils.toList;
 import static com.researchspace.testutils.RSpaceTestUtils.logout;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -49,7 +49,6 @@ import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.InternalLinkManager;
-import com.researchspace.service.impl.ConditionalTestRunner;
 import com.researchspace.service.impl.RecordEditorTracker;
 import com.researchspace.session.UserSessionTracker;
 import com.researchspace.testutils.RSpaceTestUtils;
@@ -60,10 +59,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockServletContext;
@@ -76,7 +74,6 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
       "chemistry.service.url=http://your-chem-service:8090",
       "chemistry.provider=indigo"
     })
-@RunWith(ConditionalTestRunner.class)
 public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
 
   @Autowired DocumentsApiController docApiCtrller;
@@ -84,7 +81,7 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
   @Autowired InternalLinkManager internalLinkMgr;
   MockServletContext mockServletCtxt = null;
 
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     super.setUp();
     mockServletCtxt = new MockServletContext();
@@ -334,11 +331,11 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
     assertEquals(1, getMediaFileCount(apiDoc));
     ApiFile file = apiDoc.getFields().get(0).getFiles().get(0);
     assertTrue(
-        "No self link for file " + file.getId(),
-        file.getLinks().stream().anyMatch(link -> link.getRel().equals(ApiLinkItem.SELF_REL)));
+        file.getLinks().stream().anyMatch(link -> link.getRel().equals(ApiLinkItem.SELF_REL)),
+        "No self link for file " + file.getId());
     assertTrue(
-        "No self link for file " + file.getId(),
-        file.getLinks().stream().anyMatch(link -> link.getRel().equals(ApiLinkItem.ENCLOSURE_REL)));
+        file.getLinks().stream().anyMatch(link -> link.getRel().equals(ApiLinkItem.ENCLOSURE_REL)),
+        "No self link for file " + file.getId());
     apiModelTestUtils.assertApiDocumentMatchSDoc(apiDoc, doc);
 
     // now simulate user deleting the attachment in UI
@@ -928,7 +925,7 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
         exception.getMessage());
   }
 
-  @Ignore(
+  @Disabled(
       "Requires chemistry service to run. See"
           + " https://documentation.researchspace.com/article/1jbygguzoa")
   @Test
@@ -953,7 +950,7 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
     Document doc = Jsoup.parse(actual);
     Elements elements = doc.select("img.chem");
     assertEquals(
-        "unexpected number of chem replacements, actual content: \n" + actual, 1, elements.size());
+        1, elements.size(), "unexpected number of chem replacements, actual content: \n" + actual);
     assertTrue(elements.first().select("img.chem").hasAttr("data-chemfileid"));
   }
 

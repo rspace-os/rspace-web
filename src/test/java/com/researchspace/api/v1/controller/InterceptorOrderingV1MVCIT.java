@@ -2,16 +2,15 @@ package com.researchspace.api.v1.controller;
 
 import static com.researchspace.api.v1.controller.API_VERSION.ONE;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.http.HttpStatus.TOO_MANY_REQUESTS;
 
 import com.researchspace.api.v1.throttling.APIFileUploadThrottler;
 import com.researchspace.api.v1.throttling.APIRequestThrottler;
 import com.researchspace.apiutils.ApiError;
 import com.researchspace.model.User;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -57,15 +56,12 @@ public class InterceptorOrderingV1MVCIT extends API_MVC_TestBase {
 
   @Autowired APIRequestThrottlingInterceptor throttle;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     apiUser = createAndSaveUser(getRandomAlphabeticString("user"));
     apiKey = createNewApiKeyForUser(apiUser);
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void throttlingDominatesAuthorisation() throws Exception {

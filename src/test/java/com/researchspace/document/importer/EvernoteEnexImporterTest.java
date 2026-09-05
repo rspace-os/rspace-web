@@ -1,9 +1,9 @@
 package com.researchspace.document.importer;
 
 import static org.apache.commons.io.FilenameUtils.getBaseName;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.linkedelements.FieldContents;
 import com.researchspace.model.EcatAudio;
@@ -19,8 +19,8 @@ import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.io.IOException;
 import java.io.InputStream;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
@@ -32,7 +32,7 @@ public class EvernoteEnexImporterTest extends SpringTransactionalTest {
   @Autowired
   ExternalFileImporter evernoteFileImporter;
 
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     super.setUp();
   }

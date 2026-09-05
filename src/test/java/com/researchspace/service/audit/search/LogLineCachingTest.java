@@ -1,23 +1,24 @@
 package com.researchspace.service.audit.search;
 
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 import com.researchspace.model.audittrail.spring.SpringConfig;
+import com.researchspace.testutils.WithSpringContext;
 import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.Collections;
 import java.util.List;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.AbstractJUnit4SpringContextTests;
 
+@WithSpringContext
 @ContextConfiguration(classes = SpringConfig.class)
 @ActiveProfiles("audit-file-cache-test")
-public class LogLineCachingTest extends AbstractJUnit4SpringContextTests {
+public class LogLineCachingTest {
 
   private @Autowired LogLineContentProvider logLineContentProvider;
   File logFileToCache = new File("src/test/resources/TestResources/sampleLogs/RSLogs.txt.1");

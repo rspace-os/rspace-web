@@ -4,7 +4,6 @@ import com.researchspace.dao.DigitalObjectIdentifierDao;
 import com.researchspace.dao.GenericDaoHibernate;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.DigitalObjectIdentifier;
-import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
 import java.util.List;
 import java.util.Optional;
 import org.hibernate.envers.AuditReader;
@@ -43,15 +42,17 @@ public class DigitalObjectIdentifierDaoHibernate
     Long id = latestDoiOptional.get().getId();
 
     /*
-     * Newest revision first, so both rules below can be read off one ordered list. Envers gives no
-     * ordering guarantee of its own, so it is asked for explicitly rather than inferred from the
-     * order rows happen to come back in.
+     * Newest revision first, and only that one. Envers gives no ordering guarantee of its own, so it
+     * is asked for explicitly rather than inferred from the order rows happen to come back in, and
+     * bounded to one row because that is all this reads: the revision list grows with every write to
+     * the identifier over its whole life, and this runs on the unauthenticated landing page.
      */
     List<Object> revisions =
         ar.createQuery()
             .forRevisionsOfEntity(DigitalObjectIdentifier.class, false, false)
             .add(AuditEntity.id().eq(id))
             .addOrder(AuditEntity.revisionNumber().desc())
+            .setMaxResults(1)
             .getResultList();
     if (revisions.isEmpty()) {
       return Optional.empty();
@@ -67,36 +68,24 @@ public class DigitalObjectIdentifierDaoHibernate
     }
 
     /*
-     * B2INST serves the newest revision. Identifier-row changes made while published (the
-     * customFieldsOnPublicPage toggle, a refresh re-persisting "accepted") must reach the page, and
-     * a B2INST identifier has no republish operation to push them out with (RSDEV-1260).
-     */
-    // when it is "B2inst" Provider then
-    if (IdentifierType.PIDINST_B2INST.equals(latestDoiOptional.get().getType())) {
-      return Optional.of(newestDoi);
-    }
-
-    /*
-     * DataCite keeps the publication-time snapshot: the oldest revision of the trailing published
-     * run. Envers resolves the linked record as of that revision, so edits made after publishing
-     * stay private until the user deliberately republishes. Walking back from the newest revision
-     * and stopping at the first unpublished one is what picks that revision out; an order and a row
-     * limit cannot, because the oldest revision overall is the draft the identifier started as.
+     * Both providers serve the newest revision.
      *
-     * A null type lands here too, which is right: identifiers persisted before the type column was
-     * populated load with a null type and predate PIDINST, so they are IGSN (the same default
-     * InventoryIdentifierApiManagerImpl.settingTypeFor applies).
+     * Envers resolves the linked record as of the revision an identifier snapshot came from, so
+     * returning the newest one shows the record as it stood at the last write to the IDENTIFIER row.
+     * Identifier-row changes made while published - the customFieldsOnPublicPage toggle, a refresh
+     * re-persisting "accepted" - therefore reach the page, which B2INST needs because it has no
+     * republish operation to push them out with (RSDEV-1260).
+     *
+     * Note the other half of that: a record edit made after publishing becomes public as soon as
+     * anything writes the identifier row, since the snapshot moves with it. DataCite used to be held
+     * back at the publication-time snapshot instead; that distinction was removed deliberately, and
+     * the consequence is recorded in CONTEXT.md under "Public landing page".
+     *
+     * A null type is covered by the same rule, which is right either way: identifiers persisted
+     * before the type column was populated load with a null type and predate PIDINST, so they are
+     * IGSN (the same default InventoryIdentifierApiManagerImpl.settingTypeFor applies).
      */
-    // when it is "DataCite" Provider then
-    DigitalObjectIdentifier firstOfPublishedRun = newestDoi;
-    for (int i = 1; i < revisions.size(); i++) {
-      DigitalObjectIdentifier candidate = doiOf(revisions.get(i));
-      if (!DigitalObjectIdentifier.isPublishedState(candidate.getState())) {
-        break;
-      }
-      firstOfPublishedRun = candidate;
-    }
-    return Optional.of(firstOfPublishedRun);
+    return Optional.of(newestDoi);
   }
 
   /** The entity out of an Envers revision row, whose first element is the entity itself. */
@@ -119,7 +108,9 @@ public class DigitalObjectIdentifierDaoHibernate
     return sessionFactory
         .getCurrentSession()
         .createQuery(
-            "from DigitalObjectIdentifier where publicLink=:publicLink ",
+            // deleted = false: the published-state check is the only other gate on an
+            // unauthenticated page, and a soft-deleted identifier must take its page with it
+            "from DigitalObjectIdentifier where publicLink=:publicLink and deleted = false",
             DigitalObjectIdentifier.class)
         .setParameter("publicLink", publicLink)
         .getResultList()
