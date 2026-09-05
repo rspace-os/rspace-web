@@ -106,14 +106,16 @@ export class AuditTrailPage extends BasePage {
 
   async downloadReport(): Promise<string> {
     const context = this.page.context();
-    const downloadPromise = this.page.waitForEvent("download").then(async (download) => {
+
+    const TIMEOUT_MS = 10_000;
+    const downloadPromise = this.page.waitForEvent("download", { timeout: TIMEOUT_MS }).then(async (download) => {
       const stream = await download.createReadStream();
       if (!stream) throw new Error("downloadReport: download had no read stream.");
       const chunks: Buffer[] = [];
       for await (const chunk of stream) chunks.push(chunk as Buffer);
       return Buffer.concat(chunks).toString("utf-8");
     });
-    const popupPromise = context.waitForEvent("page").then(async (popup) => {
+    const popupPromise = context.waitForEvent("page", { timeout: TIMEOUT_MS }).then(async (popup) => {
       await popup.waitForLoadState();
       const text = await popup.evaluate(() => document.body.innerText);
       await popup.close();

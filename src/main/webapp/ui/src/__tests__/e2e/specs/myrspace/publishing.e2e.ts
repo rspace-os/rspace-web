@@ -17,16 +17,18 @@ async function publishRecord(
 }
 
 test.describe("publishing documents", () => {
+  test.beforeEach(async ({ flowPublicSharing }) => {
+    void flowPublicSharing;
+  });
+
   test("As a user, an internet publication exposes metadata to an anonymous visitor", async ({
     appUser,
     clientDocuments,
     flowFreshPiPermissions,
     flowOpenAnonymousDocument,
-    flowPublicSharing,
     pageMyRSpace,
     pageWorkspace,
   }) => {
-    void flowPublicSharing;
     await flowFreshPiPermissions("e2ePublishMember");
 
     const name = uniqueName("e2e-internet-publication");
@@ -52,11 +54,9 @@ test.describe("publishing documents", () => {
     clientDocuments,
     flowFreshPiPermissions,
     flowOpenAnonymousDocument,
-    flowPublicSharing,
     pageMyRSpace,
     pageWorkspace,
   }) => {
-    void flowPublicSharing;
     await flowFreshPiPermissions("e2eLinkMember");
 
     const name = uniqueName("e2e-link-publication");
@@ -82,14 +82,16 @@ test.describe("publishing documents", () => {
 });
 
 test.describe("publishing notebooks", () => {
+  test.beforeEach(async ({ flowPublicSharing }) => {
+    void flowPublicSharing;
+  });
+
   test("As a user, publishing and unpublishing a notebook exposes and then removes all its entries for an anonymous visitor", async ({
     flowFreshPiPermissions,
     flowOpenAnonymousDocument,
-    flowPublicSharing,
     pageMyRSpace,
     pageWorkspace,
   }) => {
-    void flowPublicSharing;
     await flowFreshPiPermissions("e2eNotebookMember");
 
     const notebookName = uniqueName("e2e-publish-notebook");
@@ -116,11 +118,9 @@ test.describe("publishing notebooks", () => {
   test("As a user, entries added to a notebook after publishing are visible to the public", async ({
     flowFreshPiPermissions,
     flowOpenAnonymousDocument,
-    flowPublicSharing,
     pageMyRSpace,
     pageWorkspace,
   }) => {
-    void flowPublicSharing;
     await flowFreshPiPermissions("e2eNotebookFutureMember");
 
     const notebookName = uniqueName("e2e-future-entries-notebook");
@@ -150,11 +150,9 @@ test.describe("publishing notebooks", () => {
   test("As a user, an entry explicitly published on its own remains public after its parent notebook is unpublished", async ({
     flowFreshPiPermissions,
     flowOpenAnonymousDocument,
-    flowPublicSharing,
     pageMyRSpace,
     pageWorkspace,
   }) => {
-    void flowPublicSharing;
     await flowFreshPiPermissions("e2eNotebookEntryMember");
 
     const notebookName = uniqueName("e2e-entry-survives-notebook");
