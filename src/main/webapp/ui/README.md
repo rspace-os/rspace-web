@@ -89,6 +89,11 @@ or `pnpm storybook:build` to produce a static build. The attributed MUI v9
 stories live in `src/modules/common/ui/material-ui`; see its `UPSTREAM.md` for
 provenance. `pnpm storybook:test` runs the stories in Chromium.
 
+Stories can mount production components that call the API (the app bar, for
+example) by starting an MSW worker in a story `loaders` entry; Storybook serves
+the shared `src/__tests__/msw/mockServiceWorker.js` from `staticDirs`. See
+`src/modules/inventory/requests/inventoryChrome.tsx` for the pattern.
+
 To review the built catalog inside a local RSpace development server, run
 `pnpm run storybook:build`, set `dev.storybook.preview.enabled=true` in
 `deployment.properties`, and open `/public/storybook` on that instance.

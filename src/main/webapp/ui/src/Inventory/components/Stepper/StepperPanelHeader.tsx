@@ -146,7 +146,7 @@ function StepperPanelHeader_({
         </Grid>
         <Grid sx={{ flexGrow: 1 }}></Grid>
         <Grid>
-          <Slide direction="left" in={allBtn}>
+          <Slide direction="left" in={allBtn} mountOnEnter unmountOnExit>
             <Chip
               label={open ? t("formSections.expandAll") : t("formSections.collapseAll")}
               onClick={preventEventBubbling(() => {

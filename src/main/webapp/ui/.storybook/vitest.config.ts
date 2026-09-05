@@ -9,6 +9,7 @@ const __dirname = path.dirname(__filename);
 
 export default defineConfig({
   plugins: [storybookTest({ configDir: __dirname })],
+  define: { global: "globalThis" },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "../src"),
@@ -22,6 +23,9 @@ export default defineConfig({
       provider: playwright(),
       headless: true,
       instances: [{ browser: "chromium" }],
+      // Vitest defaults to a phone-sized viewport; the Inventory chrome stories
+      // need the desktop two-column layout and persistent sidebar.
+      viewport: { width: 1280, height: 800 },
     },
   },
 });

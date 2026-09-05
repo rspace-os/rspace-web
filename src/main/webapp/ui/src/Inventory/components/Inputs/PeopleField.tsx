@@ -15,6 +15,8 @@ import RsSet, { nullishToSingleton, unionWith } from "../../../util/set";
 type PeopleFieldArgs = {
   onSelection: (person: Person | null, doSearch?: boolean | null) => Promise<void> | void;
   label?: string;
+  labelPlacement?: "inline" | "outline";
+  autoFocus?: boolean;
   outsideGroup?: boolean;
   recipient: PersonModel | null;
   excludedUsernames?: RsSet<Username>;
@@ -26,6 +28,8 @@ type PeopleFieldArgs = {
 function PeopleField({
   onSelection,
   label,
+  labelPlacement = "inline",
+  autoFocus = true,
   outsideGroup = true,
   recipient,
   excludedUsernames,
@@ -118,12 +122,15 @@ function PeopleField({
         <TextField
           {...rest}
           variant="outlined"
-          autoFocus
+          label={labelPlacement === "outline" ? label : undefined}
+          autoFocus={autoFocus}
           slotProps={{
             ...inputSlotProps,
+            ...(labelPlacement === "outline" ? { inputLabel: { shrink: true } } : {}),
+            htmlInput: { ...inputSlotProps?.htmlInput, "aria-label": label },
             input: {
               ...inputSlotProps?.input,
-              ...(label !== undefined
+              ...(label !== undefined && labelPlacement === "inline"
                 ? {
                     startAdornment: <InputAdornment position="start"> {label}</InputAdornment>,
                   }

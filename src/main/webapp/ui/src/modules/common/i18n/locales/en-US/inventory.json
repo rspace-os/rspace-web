@@ -1845,6 +1845,151 @@
       "singular": "Template"
     }
   },
+  "requests": {
+    "actions": {
+      "resume": "Resume",
+      "review": "Review",
+      "transferTo": "Transfer ownership to {name}",
+      "view": "View"
+    },
+    "activity": {
+      "title": "Activity"
+    },
+    "blocked": {
+      "body": "The owner has not made this sample requestable.",
+      "title": "Not available for request"
+    },
+    "detail": {
+      "back": "All requests",
+      "title": "Request {id}"
+    },
+    "empty": "No requests have been raised against this sample.",
+    "fulfil": {
+      "approve": "Approve",
+      "close": "Close",
+      "closeDialog": "Close dialog",
+      "confirmReject": "Confirm rejection",
+      "doneBody": "{produced} ({producedId}) is owned by {name}, with lineage back to {globalId} intact. {firstName} has been notified.",
+      "fulfilledTitle": "{id} fulfilled",
+      "noReason": "No reason given",
+      "notNow": "Not now",
+      "operationLabel": "Process operation",
+      "operationTitle": "Process operation · {id}",
+      "ops": {
+        "aliquot": {
+          "body": "Take material from an origin subsample of {globalId}. Create a new sample with subsamples and an IsPartOf link to the origin.",
+          "label": "Aliquot"
+        },
+        "derive": {
+          "body": "Name the process and create a new sample with subsamples and an IsDerivedFrom link to the origin subsample.",
+          "label": "Derive"
+        }
+      },
+      "opsInfo": "Prototype of RSDEV-1231 operation effects. Amounts use mL; the new sample has no template or SOP link. The full wizard offers template and documentation steps. Created quantities are independent of the amount consumed. No API call is made here.",
+      "plan": {
+        "amountTaken": "Amount taken from origin (mL)",
+        "count": "Number of new subsamples",
+        "eachAmount": "Amount per new subsample (mL)",
+        "invalid": "Choose an available origin, a sample name, and a process name for Derive. Create 1–100 subsamples. Amounts must be positive with at most three decimal places; do not take more than the origin holds.",
+        "name": "New sample name",
+        "origin": "Origin subsample",
+        "process": "Process name",
+        "result": "Created {count} subsamples of {eachAmount} mL each. The new sample links to {origin} with {relation}. Consumed {amountTaken} mL; {remaining} mL remained after preparation.",
+        "summary": "Confirm: create a new sample with {count} subsamples of {amount} mL each; consume {taken} mL from {origin}. Write {relation} on the new sample, pointing to {origin}. Transfer ownership separately after preparation succeeds."
+      },
+      "preparedBody": "{produced} ({producedId}) was created from {globalId} with lineage intact, but it is still yours. Transfer ownership to fulfil the request; {firstName} is notified then.",
+      "preparedTitle": "Material prepared · {id}",
+      "reject": "Reject",
+      "rejectReasonLabel": "Reason for rejection",
+      "rejectReasonPlaceholder": "Kept on the request and written to the audit trail.",
+      "requestMeta": "{id} · {username} · {when}",
+      "reviewTitle": "Review request {id}",
+      "runOperation": "Run operation",
+      "sourceItem": "Source item: {globalId} {name}",
+      "transfer": "Transfer ownership",
+      "transferred": "Transferred",
+      "transferTitle": "Transfer the new sample and all its subsamples to {name}"
+    },
+    "list": {
+      "columns": {
+        "actions": "Actions",
+        "item": "Item",
+        "note": "Note",
+        "owner": "Owner",
+        "raised": "Raised",
+        "request": "Request",
+        "requester": "Requester"
+      },
+      "empty": {
+        "incoming": "No requests have been raised against your items.",
+        "outgoing": "You have not requested any material."
+      },
+      "tabs": {
+        "incoming": "To review",
+        "outgoing": "My requests"
+      }
+    },
+    "mine": {
+      "received": "Owned by you · IsDerivedFrom {globalId}",
+      "steps": {
+        "approved": {
+          "done": "Approved by {owner}.",
+          "title": "Approved",
+          "waiting": "A human owner reviews every request."
+        },
+        "fulfilled": {
+          "done": "{produced} is in your Inventory. The request is complete.",
+          "title": "Fulfilled. Ownership transferred",
+          "waiting": "The request is only fulfilled once the material is yours."
+        },
+        "pending": {
+          "body": "Raised against {globalId}. The owner was notified.",
+          "title": "Pending"
+        },
+        "prepared": {
+          "done": "{produced} produced from {globalId} with lineage recorded.",
+          "title": "Material prepared",
+          "waiting": "The owner runs a process operation to produce the material."
+        }
+      },
+      "subtitle": "Material from {globalId} · {name}",
+      "title": "Your request {id}"
+    },
+    "notifications": {
+      "open": "Open {id}",
+      "title": "Notifications"
+    },
+    "outcome": {
+      "fulfilled": "Fulfilled. Ownership transferred to {name}.",
+      "prepared": "{globalId} prepared. Not fulfilled until ownership transfers.",
+      "rejected": "Rejected. {reason}"
+    },
+    "pendingCount": "{count} pending",
+    "quoted": "“{note}”",
+    "request": {
+      "explanation": "{owner} reviews every request and produces the material. Nothing is issued automatically.",
+      "noteLabel": "What you need",
+      "notePlaceholder": "Say what you need and what for. The owner reads this to decide what to produce.",
+      "recordedAgainst": "Recorded against {globalId}",
+      "send": "Send request",
+      "title": "Request material"
+    },
+    "requestableChip": "Requestable",
+    "sectionTitle": "Requests",
+    "status": {
+      "approved": "Approved",
+      "fulfilled": "Fulfilled",
+      "pending": "Pending",
+      "prepared": "Awaiting transfer",
+      "rejected": "Rejected"
+    },
+    "toggle": {
+      "label": "Available for request",
+      "off": "Off. This sample is not offered to other researchers.",
+      "on": "Anyone on this RSpace instance can raise a request. You review each one and fulfil it by transferring the material.",
+      "switchLabel": "Requestable"
+    }
+  },
   "sample": {
     "alerts": {
       "updateToLatestFailed": "Updating sample to latest template failed.",
