@@ -39,12 +39,13 @@ export class CommunityAdminPage extends BasePage {
       .getByRole("row")
       .filter({ has: this.page.getByRole("link", { name: groupName, exact: true }) });
     await row.getByRole("checkbox").check();
-    await this.page.getByRole("link", { name: "Go", exact: true }).click();
-    await this.page
-      .getByRole("heading", { name: "Lab groups in this community:", exact: true })
-      .waitFor({ state: "visible" });
+    await Promise.all([
+      this.page.waitForResponse(
+        (r) => r.request().method() === "POST" && new URL(r.url()).pathname === "/community/admin/ajax/move",
+      ),
+      this.page.getByRole("link", { name: "Go", exact: true }).click(),
+    ]);
     await this.page.getByRole("link", { name: groupName, exact: true }).waitFor({ state: "visible" });
-    await this.page.waitForLoadState("load");
   }
 
   async isGroupPresent(groupName: string): Promise<boolean> {

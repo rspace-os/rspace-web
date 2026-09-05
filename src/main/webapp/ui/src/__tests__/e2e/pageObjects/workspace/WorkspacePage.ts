@@ -61,7 +61,9 @@ export class WorkspacePage extends BasePage {
   }
 
   get operateAsBanner(): Locator {
-    return this.page.locator("#runAs");
+    // #runAs release link sits inside this unlabeled span,
+    // which also carries the "Currently operating as <username>" message text.
+    return this.page.locator("span.header-info--right");
   }
 
   async releaseOperateAs(): Promise<void> {
