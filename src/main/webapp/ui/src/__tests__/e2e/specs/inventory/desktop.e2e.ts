@@ -68,6 +68,7 @@ test.describe(`Inventory Desktop layout`, { tag: tags.INVENTORY }, () => {
     await pageInventory.isLoaded();
 
     await expect.poll(() => pageInventory.searchPanel.rowCount()).toBe(10);
+    await expect(pageInventory.detailsPanel.heading).toContainText(sampleName);
 
     await pageInventory.searchPanel.hideRightPanel();
     await pageInventory.searchPanel.openFirstResult();

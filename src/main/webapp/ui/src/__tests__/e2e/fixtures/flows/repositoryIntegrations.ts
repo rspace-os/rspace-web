@@ -1,37 +1,12 @@
-import type { Browser, BrowserContextOptions, Page } from "@playwright/test";
-import type { SysadminClient } from "../api/clients/SysadminClient";
-import { storageStatePath } from "../authState";
-import { env } from "../env";
-import { InventoryPage } from "../pageObjects/inventory/InventoryPage";
-import { SystemConfigPage } from "../pageObjects/system/SystemConfigPage";
-import { SYSADMIN } from "../users";
-import { apiTest } from "./api";
+import type { SysadminClient } from "@/__tests__/e2e/api/clients/SysadminClient";
+import { env } from "@/__tests__/e2e/env";
+import { apiTest } from "@/__tests__/e2e/fixtures/api";
 
-type FlowFixtures = {
+type RepositoryIntegrationFixtures = {
   flowIgsnConfig: undefined;
   flowPidinstDataciteConfig: undefined;
   flowPidinstB2instConfig: undefined;
-  flowSysadminConfig: SystemConfigPage;
-  flowSysadminInventory: InventoryPage;
 };
-
-async function withSysadminPage<T>(
-  browser: Browser,
-  browserContextOptions: BrowserContextOptions,
-  open: (page: Page) => Promise<T>,
-  use: (pageObject: T) => Promise<void>,
-): Promise<void> {
-  const ctx = await browser.newContext({
-    ...browserContextOptions,
-    storageState: storageStatePath(SYSADMIN.username),
-  });
-  try {
-    const page = await ctx.newPage();
-    await use(await open(page));
-  } finally {
-    await ctx.close();
-  }
-}
 
 function mockOrReal<T>(mock: T, real: T): T {
   return env.integrationMode === "mock" ? mock : real;
@@ -72,7 +47,7 @@ async function configureDataciteProvider(
   }
 }
 
-export const test = apiTest.extend<FlowFixtures>({
+export const test = apiTest.extend<RepositoryIntegrationFixtures>({
   flowIgsnConfig: async ({ clientSysadmin }, use) => {
     await configureDataciteProvider(clientSysadmin, "IGSN_DATACITE");
     await use(undefined);
@@ -102,27 +77,4 @@ export const test = apiTest.extend<FlowFixtures>({
     }
     await use(undefined);
   },
-  flowSysadminConfig: async ({ browser, browserContextOptions }, use) =>
-    withSysadminPage(
-      browser,
-      browserContextOptions,
-      async (page) => {
-        const configPage = new SystemConfigPage(page);
-        await configPage.open();
-        return configPage;
-      },
-      use,
-    ),
-
-  flowSysadminInventory: async ({ browser, browserContextOptions }, use) =>
-    withSysadminPage(
-      browser,
-      browserContextOptions,
-      async (page) => {
-        const inventory = new InventoryPage(page);
-        await inventory.open();
-        return inventory;
-      },
-      use,
-    ),
 });
