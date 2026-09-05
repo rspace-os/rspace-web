@@ -10,6 +10,7 @@ const currentDir = dirname(fileURLToPath(import.meta.url));
 const CONTAINERS_CSV = resolve(currentDir, "fixtures/containers_import_all_columns.csv");
 const SAMPLES_CSV = resolve(currentDir, "fixtures/samples_import_with_id.csv");
 const SUBSAMPLES_CSV = resolve(currentDir, "fixtures/subsamples_import_all_columns.csv");
+const INSTRUMENTS_CSV = resolve(currentDir, "fixtures/instruments_import_all_columns.csv");
 
 async function expectContainerImportedToBench(page: Page, pageInventory: InventoryPage): Promise<void> {
   await page.goto("/inventory/search?resultType=CONTAINER");
@@ -26,7 +27,7 @@ test.describe(`Inventory CSV Import`, { tag: [tags.INVENTORY, tags.MOBILE] }, ()
     await pageInventory.open();
     await pageInventory.isLoaded();
 
-    const importPage = await pageInventory.openCsvImport("Containers");
+    const importPage = await pageInventory.openCsvImport("CONTAINERS");
     await importPage.uploadCsv(CONTAINERS_CSV);
     await importPage.setColumnChecked("Parent container global ID", false);
     await importPage.clickImport();
@@ -41,7 +42,7 @@ test.describe(`Inventory CSV Import`, { tag: [tags.INVENTORY, tags.MOBILE] }, ()
     await pageInventory.open();
     await pageInventory.isLoaded();
 
-    const importPage = await pageInventory.openCsvImport("Containers");
+    const importPage = await pageInventory.openCsvImport("CONTAINERS");
     await importPage.uploadCsv(CONTAINERS_CSV);
     await importPage.setColumnChecked("Parent container global ID", false);
 
@@ -65,7 +66,7 @@ test.describe(`Inventory CSV Import`, { tag: [tags.INVENTORY, tags.MOBILE] }, ()
     await pageInventory.open();
     await pageInventory.isLoaded();
 
-    const importPage = await pageInventory.openCsvImport("Containers");
+    const importPage = await pageInventory.openCsvImport("CONTAINERS");
     await importPage.uploadCsv(CONTAINERS_CSV);
     await importPage.setColumnChecked("Parent container global ID", false);
 
@@ -96,7 +97,7 @@ test.describe(`Inventory CSV Import`, { tag: [tags.INVENTORY, tags.MOBILE] }, ()
   }) => {
     await pageInventory.open();
     await pageInventory.isLoaded();
-    const importPage = await pageInventory.openCsvImport("Containers");
+    const importPage = await pageInventory.openCsvImport("CONTAINERS");
     await importPage.uploadCsv(CONTAINERS_CSV);
 
     await importPage.setColumnChecked("Parent container global ID", false);
@@ -107,5 +108,36 @@ test.describe(`Inventory CSV Import`, { tag: [tags.INVENTORY, tags.MOBILE] }, ()
 
     await importPage.setColumnChecked("Import ID", true);
     await expect(importPage.importButton).toBeEnabled();
+  });
+
+  test(`As a user, I can go to the Instruments tab and import an instruments CSV file creating a new template`, async ({
+    pageInventory,
+    page,
+  }) => {
+    await pageInventory.open();
+    await pageInventory.isLoaded();
+
+    const importPage = await pageInventory.openCsvImport("INSTRUMENTS");
+
+    await expect(importPage.main.getByRole("radio", { name: "Create new template." })).toBeVisible();
+    await expect(importPage.main.getByRole("radio", { name: "Choose existing template." })).toBeVisible();
+    await expect(importPage.importButton).toBeDisabled();
+
+    await importPage.uploadCsv(INSTRUMENTS_CSV);
+    await expect(importPage.importButton).toBeEnabled();
+
+    await importPage.chooseExistingTemplate();
+    await expect(importPage.importButton).toBeDisabled();
+
+    await importPage.chooseNewTemplate();
+    await expect(importPage.importButton).toBeEnabled();
+
+    await importPage.setColumnChecked("Parent Container (Global ID)", false);
+    await importPage.clickImport();
+
+    await page.goto("/inventory/search?resultType=INSTRUMENT");
+    await pageInventory.isLoaded();
+    await pageInventory.searchPanel.search("Instrument01");
+    await expect(pageInventory.searchPanel.row("Instrument01")).toBeVisible();
   });
 });

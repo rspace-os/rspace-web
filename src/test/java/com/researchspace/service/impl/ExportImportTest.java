@@ -1,7 +1,8 @@
 package com.researchspace.service.impl;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -20,22 +21,20 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import org.apache.commons.io.FileUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletResponse;
 
+@ExtendWith(MockitoExtension.class)
 public class ExportImportTest {
 
-  @Rule public MockitoRule mockery = MockitoJUnit.rule();
-
-  @Rule public TemporaryFolder folder = new TemporaryFolder();
+  @TempDir public File folder;
 
   @Mock private IPropertyHolder properties;
 
@@ -43,39 +42,46 @@ public class ExportImportTest {
 
   private MockHttpServletResponse response;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     response = new MockHttpServletResponse();
     exportImpl.setResponseUtil(new ResponseUtil());
     exportImpl.setMessageSource(new MessageSourceUtils(new JsonMessageSource()));
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {}
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void validateFileNameToDownLoadBadArchive() throws IOException {
-    exportImpl.streamArchiveDownload("../../badfile.test", response);
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> exportImpl.streamArchiveDownload("../../badfile.test", response));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void validateFileNameCannotBeEmpty() throws IOException {
-    exportImpl.streamArchiveDownload("", response);
+    assertThrows(
+        IllegalArgumentException.class, () -> exportImpl.streamArchiveDownload("", response));
   }
 
-  @Test(expected = ArchivalFileNotExistException.class)
+  @Test
   public void downloadNonexistentFile() throws IOException {
-    File file = folder.newFile("file");
-    FileUtils.write(file, "some data", StandardCharsets.UTF_8);
-    when(properties.getExportFolderLocation()).thenReturn(folder.getRoot().getAbsolutePath());
-    exportImpl.streamArchiveDownload("file", response);
+    assertThrows(
+        ArchivalFileNotExistException.class,
+        () -> {
+          File file = newFile(folder, "file");
+          FileUtils.write(file, "some data", StandardCharsets.UTF_8);
+          when(properties.getExportFolderLocation()).thenReturn(folder.getAbsolutePath());
+          exportImpl.streamArchiveDownload("file", response);
+        });
   }
 
   @Test
   public void downloadFailureIsNotReportedAsMissingFile() throws IOException {
-    File file = folder.newFile("file.zip");
+    File file = newFile(folder, "file.zip");
     FileUtils.write(file, "some data", StandardCharsets.UTF_8);
-    when(properties.getExportFolderLocation()).thenReturn(folder.getRoot().getAbsolutePath());
+    when(properties.getExportFolderLocation()).thenReturn(folder.getAbsolutePath());
     HttpServletResponse failingResponse = mock(HttpServletResponse.class);
     when(failingResponse.getOutputStream())
         .thenReturn(
@@ -107,12 +113,12 @@ public class ExportImportTest {
 
   @Test
   public void streamArchiveDownloadHappyCase() throws IOException {
-    File file = folder.newFile("file.zip"); // must be zip
+    File file = newFile(folder, "file.zip");
     final String EXPECTED_RESPONSE = "some data";
 
     FileUtils.write(file, "some data", StandardCharsets.UTF_8);
 
-    when(properties.getExportFolderLocation()).thenReturn(folder.getRoot().getAbsolutePath());
+    when(properties.getExportFolderLocation()).thenReturn(folder.getAbsolutePath());
 
     exportImpl.streamArchiveDownload("file", response);
     assertEquals(EXPECTED_RESPONSE, response.getContentAsString());
@@ -121,5 +127,11 @@ public class ExportImportTest {
     assertEquals(EXPECTED_RESPONSE + EXPECTED_RESPONSE, response.getContentAsString());
     // once for each case - with or without zip suffix
     verify(properties, times(2)).getExportFolderLocation();
+  }
+
+  private static File newFile(File parent, String child) throws IOException {
+    File result = new File(parent, child);
+    result.createNewFile();
+    return result;
   }
 }

@@ -6,6 +6,10 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.content;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
@@ -20,8 +24,10 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 import com.researchspace.b2inst.model.metadata.B2instInstrumentMetadata;
 import com.researchspace.b2inst.model.request.B2instDoi;
 import com.researchspace.b2inst.model.response.B2instDraftRecord;
+import com.researchspace.b2inst.model.response.B2instRequestResponse;
 import com.researchspace.model.system.SystemProperty;
 import com.researchspace.model.system.SystemPropertyValue;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.SystemPropertyManager;
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -29,6 +35,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.appender.AbstractAppender;
@@ -36,6 +43,8 @@ import org.apache.logging.log4j.core.config.Property;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -53,8 +62,11 @@ class B2instConnectorImplTest {
 
   private static final String REVIEW_URL =
       "https://b2inst-test.gwdg.de/api/records/k2j9p-7yh21/draft/review";
+  private static final String RECORD_URL = "https://b2inst-test.gwdg.de/api/records/k2j9p-7yh21";
+  private static final String DRAFT_URL = RECORD_URL + "/draft";
 
   @Mock private SystemPropertyManager mockSysPropMgr;
+  @Mock private MessageSourceUtils messages;
   @InjectMocks private B2instConnectorImpl connector;
 
   private Map<String, SystemPropertyValue> props;
@@ -67,6 +79,12 @@ class B2instConnectorImplTest {
     addProperty("pidinst.b2inst.community.id", "2cd7e6c2-comm");
     addProperty("pidinst.b2inst.token", "TOK123");
     when(mockSysPropMgr.getAllSysadminPropertiesAsMap()).thenReturn(props);
+    // Lenient: most tests never reach a reason RSpace authors. Echoing the code back is what lets
+    // the assertions below pin which message was asked for rather than today's English.
+    lenient().when(messages.getMessage(anyString())).thenAnswer(code -> code.getArgument(0));
+    lenient()
+        .when(messages.getMessage(anyString(), any(Object[].class)))
+        .thenAnswer(code -> code.getArgument(0));
   }
 
   private void addProperty(String name, String value) {
@@ -536,6 +554,7 @@ class B2instConnectorImplTest {
     server.verify();
   }
 
+  /** The developer message keeps the transport detail; the user-facing reason does not (below). */
   @Test
   void publishDoiKeepsTransportErrorMessageWhenNoResponse() {
     connector.reloadClient();
@@ -625,16 +644,29 @@ class B2instConnectorImplTest {
     assertTrue(warning.contains("***"));
   }
 
+  /**
+   * The two descriptions are deliberately different, and this is the seam where that is decided.
+   * The developer one keeps whatever the exception had, falling back to its type when the message
+   * is blank, because that is what a log reader needs. The user-facing reason never does: it would
+   * put a class name, or Spring's message with the request URL and host in it, into a localized
+   * sentence and into the audit trail.
+   */
   @Test
-  void describeFailureFallsBackToExceptionTypeWhenMessageMissing() throws Exception {
+  void theDeveloperDetailKeepsTheExceptionTypeButTheReasonNeverDoes() throws Exception {
     connector.reloadClient();
+    Method developerDetail =
+        B2instConnectorImpl.class.getDeclaredMethod("developerDetail", RestClientException.class);
+    developerDetail.setAccessible(true);
     Method describeFailure =
         B2instConnectorImpl.class.getDeclaredMethod("describeFailure", RestClientException.class);
     describeFailure.setAccessible(true);
+    RestClientException blank = new RestClientException((String) null);
 
-    Object description = describeFailure.invoke(connector, new RestClientException((String) null));
-
-    assertEquals("RestClientException", description);
+    assertEquals("RestClientException", developerDetail.invoke(connector, blank));
+    assertEquals(
+        "errors.inventory.identifier.b2instUnreachable",
+        describeFailure.invoke(connector, blank),
+        "the user-facing reason must come from the catalogue, not an English literal");
   }
 
   @Test
@@ -642,5 +674,316 @@ class B2instConnectorImplTest {
     connector.reloadClient();
 
     assertThrows(UnsupportedOperationException.class, () -> connector.retractDoi("k2j9p-7yh21"));
+  }
+
+  @Test
+  void getReviewOfReturnsReviewWhateverItsStatus() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    server
+        .expect(requestTo(REVIEW_URL))
+        .andExpect(method(HttpMethod.GET))
+        .andRespond(
+            withSuccess(
+                "{\"status\":\"declined\",\"is_open\":false,\"is_closed\":true}",
+                MediaType.APPLICATION_JSON));
+
+    Optional<B2instRequestResponse> review = connector.getReviewOf("k2j9p-7yh21");
+
+    assertTrue(review.isPresent());
+    assertEquals("declined", review.get().getStatus());
+    server.verify();
+  }
+
+  @Test
+  void getReviewOfReturnsEmptyOn404() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    server
+        .expect(requestTo(REVIEW_URL))
+        .andExpect(method(HttpMethod.GET))
+        .andRespond(withStatus(HttpStatus.NOT_FOUND));
+
+    assertTrue(connector.getReviewOf("k2j9p-7yh21").isEmpty());
+    server.verify();
+  }
+
+  @Test
+  void getPublishedRecordReturnsRecordWithPidsAndLinks() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    server
+        .expect(requestTo(RECORD_URL))
+        .andExpect(method(HttpMethod.GET))
+        .andRespond(
+            withSuccess(
+                "{\"id\":\"k2j9p-7yh21\",\"is_published\":true,"
+                    + "\"pids\":{\"epic\":{\"identifier\":\"http://hdl.handle.net/21.T11975/k2j9p-7yh21\"}},"
+                    + "\"links\":{\"self_html\":\"https://b2inst-test.gwdg.de/records/k2j9p-7yh21\"}}",
+                MediaType.APPLICATION_JSON));
+
+    Optional<B2instDraftRecord> record = connector.getPublishedRecord("k2j9p-7yh21");
+
+    assertTrue(record.isPresent());
+    assertEquals(
+        "https://b2inst-test.gwdg.de/records/k2j9p-7yh21", record.get().getLinks().getSelfHtml());
+    assertTrue(record.get().getPids().containsKey("epic"));
+    server.verify();
+  }
+
+  @Test
+  void getPublishedRecordAndDraftReturnEmptyOn404() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    server
+        .expect(requestTo(RECORD_URL))
+        .andExpect(method(HttpMethod.GET))
+        .andRespond(withStatus(HttpStatus.NOT_FOUND));
+    server
+        .expect(requestTo(DRAFT_URL))
+        .andExpect(method(HttpMethod.GET))
+        .andRespond(withStatus(HttpStatus.NOT_FOUND));
+
+    assertTrue(connector.getPublishedRecord("k2j9p-7yh21").isEmpty());
+    assertTrue(connector.getDraftRecord("k2j9p-7yh21").isEmpty());
+    server.verify();
+  }
+
+  @Test
+  void getReviewOfWrapsTransportErrors() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    server
+        .expect(requestTo(REVIEW_URL))
+        .andRespond(withException(new IOException("connection reset")));
+
+    assertThrows(B2instConnectionException.class, () -> connector.getReviewOf("k2j9p-7yh21"));
+  }
+
+  /**
+   * The record id reaches the connector from {@code DigitalObjectIdentifier.identifier}, which a
+   * record update can write, so a crafted value must never redirect these calls - and the bearer
+   * token they carry - to another path on the provider host. Refused before any request goes out;
+   * the URLs built for a legitimate id are pinned by the read tests above (parallel review, PR
+   * 1066).
+   */
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "../../admin",
+        "..",
+        ".",
+        "k2j9p-7yh21/../../admin",
+        "k2j9p-7yh21?x=1",
+        "k2j9p-7yh21#f",
+        "k2j9p 7yh21",
+        "http://elsewhere.example.org/",
+        ""
+      })
+  void recordCallsRefuseARecordIdRSpaceCouldNotHaveMinted(String craftedRid) {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+
+    assertThrows(B2instConnectionException.class, () -> connector.getReviewOf(craftedRid));
+    assertThrows(B2instConnectionException.class, () -> connector.getPublishedRecord(craftedRid));
+    assertThrows(B2instConnectionException.class, () -> connector.getDraftRecord(craftedRid));
+    assertThrows(B2instConnectionException.class, () -> connector.deleteDoi(craftedRid));
+    assertThrows(
+        B2instConnectionException.class,
+        () -> connector.updateDraftDoi(craftedRid, draftWithName("X")));
+
+    // no expectations were set, so verify() passing means nothing was sent
+    server.verify();
+  }
+
+  /**
+   * A review that exists but was never submitted reports {@code is_open: false} (verified against
+   * b2inst-test.gwdg.de, July 2026), so it must not short-circuit: pressing Publish again has to
+   * re-PUT, which is what returns the submit link, and then post it. Without this the record would
+   * sit in {@code created} for good, which is what the UI keeps Publish enabled for.
+   *
+   * <p>Pins the behaviour rather than changing it - a Copilot review read the short-circuit as
+   * catching this case too (PR 1066).
+   */
+  @Test
+  void publishDoiResubmitsAReviewThatWasCreatedButNeverSubmitted() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    String submitUrl = "https://b2inst-test.gwdg.de/api/requests/REQ-1/actions/submit";
+    server
+        .expect(requestTo(REVIEW_URL))
+        .andExpect(method(HttpMethod.GET))
+        .andRespond(
+            withSuccess(
+                "{\"id\":\"REQ-1\",\"status\":\"created\",\"is_open\":false}",
+                MediaType.APPLICATION_JSON));
+    server
+        .expect(requestTo(REVIEW_URL))
+        .andExpect(method(HttpMethod.PUT))
+        .andRespond(
+            withSuccess(
+                "{\"id\":\"REQ-1\",\"status\":\"created\",\"links\":{\"actions\":{\"submit\":\""
+                    + submitUrl
+                    + "\"}}}",
+                MediaType.APPLICATION_JSON));
+    server
+        .expect(requestTo(submitUrl))
+        .andExpect(method(HttpMethod.POST))
+        .andRespond(withSuccess("{\"status\":\"submitted\"}", MediaType.APPLICATION_JSON));
+
+    assertEquals("submitted", connector.publishDoi("k2j9p-7yh21").getStatus());
+    server.verify();
+  }
+
+  @Test
+  void updateDraftDoiPutsRebuiltMetadataToTheDraft() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    server
+        .expect(requestTo(DRAFT_URL))
+        .andExpect(method(HttpMethod.PUT))
+        .andExpect(header("Authorization", "Bearer TOK123"))
+        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+        .andExpect(jsonPath("$.metadata.Name").value("Renamed microscope"))
+        .andRespond(
+            withSuccess(
+                "{\"id\":\"k2j9p-7yh21\",\"status\":\"draft\",\"revision_id\":4}",
+                MediaType.APPLICATION_JSON));
+
+    B2instDraftRecord updated =
+        connector.updateDraftDoi("k2j9p-7yh21", draftWithName("Renamed microscope"));
+
+    assertEquals("k2j9p-7yh21", updated.getId());
+    server.verify();
+  }
+
+  /**
+   * The provider's own words are what the on-save update reports to the user, so a rejection has to
+   * arrive as the reason rather than as an HTTP status: a locked or accepted record is the case
+   * that matters, and only B2INST can say which it is.
+   */
+  @Test
+  void updateDraftDoiSurfacesTheProviderMessageAsTheReason() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    server
+        .expect(requestTo(DRAFT_URL))
+        .andExpect(method(HttpMethod.PUT))
+        .andRespond(
+            withStatus(HttpStatus.FORBIDDEN)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("{\"status\":403,\"message\":\"Record is not editable.\"}"));
+
+    B2instConnectionException thrown =
+        assertThrows(
+            B2instConnectionException.class,
+            () -> connector.updateDraftDoi("k2j9p-7yh21", draftWithName("X")));
+
+    assertEquals("Record is not editable.", thrown.getReason());
+    server.verify();
+  }
+
+  @Test
+  void updateDraftDoiFallsBackToTheStatusWhenTheBodyExplainsNothing() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    server.expect(requestTo(DRAFT_URL)).andRespond(withStatus(HttpStatus.NOT_FOUND).body(""));
+
+    B2instConnectionException thrown =
+        assertThrows(
+            B2instConnectionException.class,
+            () -> connector.updateDraftDoi("k2j9p-7yh21", draftWithName("X")));
+
+    assertEquals("errors.inventory.identifier.b2instHttpStatus", thrown.getReason());
+    // the status is still what a user is told, it just arrives as arguments to a localized string
+    verify(messages)
+        .getMessage(
+            "errors.inventory.identifier.b2instHttpStatus", new Object[] {404, "Not Found"});
+  }
+
+  @Test
+  void updateDraftDoiWrapsTransportErrors() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    server
+        .expect(requestTo(DRAFT_URL))
+        .andRespond(withException(new IOException("read timed out")));
+
+    B2instConnectionException thrown =
+        assertThrows(
+            B2instConnectionException.class,
+            () -> connector.updateDraftDoi("k2j9p-7yh21", draftWithName("X")));
+
+    assertNotNull(thrown.getReason());
+  }
+
+  /**
+   * A transport failure's reason is shown to a user and interpolated into the audit trail, so it
+   * must not be the underlying exception. Spring's own message for one of these carries the full
+   * request URL, host included, and the fallback when it is blank was the exception's class name -
+   * neither is anything a user can act on, and the host is a deployment detail. The reason is
+   * RSpace's own fixed sentence instead, and the detail goes to the log.
+   */
+  @Test
+  void updateDraftDoiKeepsTransportDetailOutOfTheUserFacingReason() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    server
+        .expect(requestTo(DRAFT_URL))
+        .andRespond(withException(new IOException("read timed out")));
+
+    B2instConnectionException thrown =
+        assertThrows(
+            B2instConnectionException.class,
+            () -> connector.updateDraftDoi("k2j9p-7yh21", draftWithName("X")));
+
+    String reason = thrown.getReason();
+    assertNotNull(reason);
+    assertFalse(reason.contains("b2inst-test.gwdg.de"), reason);
+    assertFalse(reason.contains("Exception"), reason);
+    assertFalse(reason.contains("I/O error"), reason);
+    // the developer detail is still available, on the message that goes to the log
+    assertTrue(thrown.getMessage().contains("k2j9p-7yh21"), thrown.getMessage());
+  }
+
+  /**
+   * The real 404 body from B2INST, captured against b2inst-test.gwdg.de (August 2026). Pins the
+   * reason the on-save external metadata update shows when the record is gone on the provider side:
+   * B2INST says it in plain words, which is why that path needs no HTTP-status classification of
+   * its own (RSDEV-1251).
+   */
+  @Test
+  void updateDraftDoiReportsAMissingRecordInB2instsOwnWords() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    server
+        .expect(requestTo(DRAFT_URL))
+        .andExpect(method(HttpMethod.PUT))
+        .andRespond(
+            withStatus(HttpStatus.NOT_FOUND)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(
+                    "{\"status\":404,\"message\":\"The persistent identifier does not exist.\"}"));
+
+    B2instConnectionException thrown =
+        assertThrows(
+            B2instConnectionException.class,
+            () -> connector.updateDraftDoi("k2j9p-7yh21", draftWithName("X")));
+
+    assertEquals("The persistent identifier does not exist.", thrown.getReason());
+    server.verify();
   }
 }

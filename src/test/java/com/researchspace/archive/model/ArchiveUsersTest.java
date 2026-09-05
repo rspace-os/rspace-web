@@ -1,23 +1,15 @@
 package com.researchspace.archive.model;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.Community;
 import com.researchspace.model.User;
 import com.researchspace.testutils.ArchiveTestUtils;
 import java.util.Iterator;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class ArchiveUsersTest {
-
-  @Before
-  public void setUp() throws Exception {}
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void testArchiveUsersRoundTrip() throws Exception {
@@ -40,6 +32,5 @@ public class ArchiveUsersTest {
     assertEquals(testData.getAdmin(), inCommunity.getAdmins().iterator().next());
     // profiles
     assertEquals(1, fromXml.getProfiles().size());
-    assertTrue(true);
   }
 }

@@ -10,8 +10,8 @@ import com.researchspace.api.v1.model.ApiSampleTemplate;
 import com.researchspace.api.v1.model.ApiSampleTemplatePost;
 import com.researchspace.model.units.RSUnitDef;
 import java.util.List;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
@@ -30,7 +30,7 @@ public class SampleTemplateValidatorTest extends InventoryRecordValidationTestBa
   @Autowired private SampleTemplatePostValidator postValidator;
   @Autowired private SampleTemplatePutValidator putValidator;
 
-  @Before
+  @BeforeEach
   public void setup() {
     // base class `validator` field unused here — tests pick POST or PUT explicitly.
   }

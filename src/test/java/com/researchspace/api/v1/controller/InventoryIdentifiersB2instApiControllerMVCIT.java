@@ -14,6 +14,7 @@ import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInstrumentTemplate;
 import com.researchspace.api.v1.model.ApiInstrumentTemplatePost;
 import com.researchspace.api.v1.model.ApiInventoryDOI;
+import com.researchspace.api.v1.model.ApiInventorySystemSettings;
 import com.researchspace.api.v1.model.ApiInventorySystemSettings.IdentifierSettings;
 import com.researchspace.b2inst.model.metadata.B2instInstrumentMetadata;
 import com.researchspace.model.User;
@@ -21,9 +22,9 @@ import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
 import com.researchspace.service.inventory.InventoryIdentifierApiManager;
 import com.researchspace.webapp.integrations.b2inst.B2instConnectorDummy;
 import java.util.List;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.test.context.web.WebAppConfiguration;
@@ -53,18 +54,40 @@ public class InventoryIdentifiersB2instApiControllerMVCIT extends API_MVC_Invent
   private final B2instConnectorDummy b2instDummy = new B2instConnectorDummy();
   private final BindingResult mockBindingResult = mock(BindingResult.class);
   private Object realB2instConnector;
+  private ApiInventorySystemSettings.IdentifierSettings originalB2instSettings;
+  private ApiInventorySystemSettings.IdentifierSettings originalPidinstDataCiteSettings;
 
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     realB2instConnector = ReflectionTestUtils.getField(identifierApiManager, "b2instConnector");
     ReflectionTestUtils.setField(identifierApiManager, "b2instConnector", b2instDummy);
     super.setUp();
+    // these are system properties in the shared dev database, so put them back afterwards
+    originalB2instSettings =
+        captureIdentifierSettings(settingsController, IdentifierType.PIDINST_B2INST);
+    // DataCite too: enabling one PIDINST provider disables the other, so turning B2INST on below
+    // switches the DataCite PIDINST provider off as a side effect and it has to be put back
+    originalPidinstDataCiteSettings =
+        captureIdentifierSettings(settingsController, IdentifierType.PIDINST_DATACITE);
     setB2instEnabled("true");
   }
 
-  @After
+  @AfterEach
   public void teardown() throws Exception {
-    setB2instEnabled("false");
+    /*
+     * Both providers, and in this order. Enabling a PIDINST provider disables its sibling (see
+     * updateInventorySettings), so this test switched the DataCite PIDINST provider off on the way
+     * in and must switch it back. B2INST goes first because restoring it is what leaves the enabled
+     * flag free for DataCite to reclaim.
+     *
+     * Leaving DataCite off is not a harmless default: this is the shared dev database, and the
+     * developer who owns it would find their instrument PIDs quietly going to the wrong provider,
+     * or nowhere, with nothing in the diff to explain it.
+     */
+    restoreIdentifierSettings(
+        settingsController, IdentifierType.PIDINST_B2INST, originalB2instSettings);
+    restoreIdentifierSettings(
+        settingsController, IdentifierType.PIDINST_DATACITE, originalPidinstDataCiteSettings);
     // identifierApiManager is a singleton in a Spring context cached across test classes, so the
     // dummy has to be swapped back out or later MVC tests silently run against it.
     ReflectionTestUtils.setField(identifierApiManager, "b2instConnector", realB2instConnector);
@@ -90,7 +113,7 @@ public class InventoryIdentifiersB2instApiControllerMVCIT extends API_MVC_Invent
 
   /*
    * Mirrors the private helper in InventoryIdentifiersApiControllerMVCIT, but returns the raw result
-   * rather than a deserialized DTO. providerUrl and publicUrl are @JsonProperty READ_ONLY on
+   * rather than a deserialized DTO. state, providerUrl and publicUrl are @JsonProperty READ_ONLY on
    * ApiInventoryDOI, so Jackson emits them but ignores them on the way in; getFromJsonResponseBody is
    * a plain readValue, so reading them off a deserialized DTO would silently yield null and the
    * assertion would pass vacuously. The response JSON is the only place they can be observed.
@@ -179,13 +202,16 @@ public class InventoryIdentifiersB2instApiControllerMVCIT extends API_MVC_Invent
 
     assertNotNull(registeredDoi);
     assertEquals(B2instConnectorDummy.DUMMY_RID, registeredDoi.getDoi());
-    assertEquals("draft", registeredDoi.getState());
     /*
-     * The B2INST record page is captured from the create-draft response and persisted, so the UI can
-     * link a PIDINST identifier from registration onwards, not only once it is published. Asserted on
-     * the response JSON, not the DTO: see registerNewIdentifier for why the DTO cannot show these two.
+     * state and the two URLs are asserted on the response JSON, not the DTO: state is READ_ONLY
+     * since the parallel review (a record update carrying "state" could otherwise open the public
+     * page), so it too would deserialize to null. See registerNewIdentifier.
+     *
+     * The B2INST record page is captured from the create-draft response and persisted, so the UI
+     * can link a PIDINST identifier from registration onwards, not only once it is published.
      */
     JsonNode doiJson = new ObjectMapper().readTree(doiResult.getResponse().getContentAsString());
+    assertEquals("draft", doiJson.path("state").asText());
     assertEquals(B2instConnectorDummy.DUMMY_SELF_HTML, doiJson.path("providerUrl").asText());
     assertTrue(
         doiJson.path("publicUrl").isNull() || doiJson.path("publicUrl").isMissingNode(),

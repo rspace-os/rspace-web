@@ -252,6 +252,7 @@
       "name": "Name"
     },
     "heading": "Linked Documents",
+    "loadFailed": "Error loading linked documents.",
     "noRows": "No Linked Documents"
   },
   "listing": {
@@ -401,7 +402,8 @@
     "viewLatest": "View the latest version"
   },
   "referencingInventoryItems": {
-    "loadFailed": "Error loading related inventory items."
+    "loadFailed": "Error loading related inventory items.",
+    "noRows": "No related inventory items"
   },
   "s3": {
     "errors": {

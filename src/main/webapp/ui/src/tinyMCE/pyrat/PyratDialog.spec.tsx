@@ -122,3 +122,30 @@ describe("PyratDialog pagination", () => {
     expect(requests.at(-1)).toEqual({ collection: "pups", l: 10, o: 0 });
   });
 });
+
+describe("PyratDialog insertion", () => {
+  test("renders the translated provenance sentence with a safe server link", async () => {
+    let insertedHtml: string | undefined;
+    render(<PyratDialogStory onInsert={(html) => (insertedHtml = html)} />);
+    await expect.poll(() => pageObj.dataRowCount()).toBe(10);
+
+    await pageObj.selectAnimal("A0000");
+    await expect.element(pageObj.insertButton).toBeEnabled();
+    await pageObj.insertSelectedAnimals();
+    await expect.poll(() => insertedHtml).toBeTypeOf("string");
+
+    const container = document.createElement("div");
+    container.innerHTML = insertedHtml ?? "";
+    const provenanceCell = container.querySelector("th");
+    if (!provenanceCell) throw new Error("Inserted table has no provenance cell");
+    const serverLink = provenanceCell.querySelector("a");
+    if (!serverLink) throw new Error("Provenance cell has no server link");
+
+    await expect
+      .element(provenanceCell)
+      .toHaveTextContent(/^Imported from fakepyrat \(https:\/\/demo\.pyrat\.example\) on .+$/);
+    await expect.element(serverLink).toHaveTextContent(/^fakepyrat \(https:\/\/demo\.pyrat\.example\)$/);
+    await expect.element(serverLink).toHaveAttribute("href", "https://demo.pyrat.example");
+    await expect.element(serverLink).toHaveAttribute("rel", "noreferrer");
+  });
+});

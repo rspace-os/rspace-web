@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -51,42 +50,45 @@ class InventoryFileApiManagerImplAttachingTest {
   @BeforeEach
   void setUp() {
     actor = new User("viewer");
-    // most tests exercise the source query, so the target read-gate is open by default; the gate
-    // test overrides this
-    lenient().when(linkTargetResolver.targetExistsAndIsReadable(any(), any())).thenReturn(true);
-    lenient()
-        .when(inventoryFileDao.findByMediaFileId(anyLong()))
-        .thenReturn(Collections.emptyList());
-    lenient()
-        .when(inventoryFileDao.findAttachmentFieldsByMediaFileId(anyLong()))
+  }
+
+  private void stubReadableTarget() {
+    when(linkTargetResolver.targetExistsAndIsReadable(any(), any())).thenReturn(true);
+    when(inventoryFileDao.findByMediaFileId(anyLong())).thenReturn(Collections.emptyList());
+    when(inventoryFileDao.findAttachmentFieldsByMediaFileId(anyLong()))
         .thenReturn(Collections.emptyList());
   }
 
-  private InventoryRecord parent(
-      String globalId, String name, InventoryRecordType type, boolean deleted) {
+  private InventoryRecord parent(boolean deleted) {
     InventoryRecord rec = mock(InventoryRecord.class);
-    lenient().when(rec.getOid()).thenReturn(new GlobalIdentifier(globalId));
-    lenient().when(rec.getName()).thenReturn(name);
-    lenient().when(rec.getType()).thenReturn(type);
-    lenient().when(rec.isDeleted()).thenReturn(deleted);
+    when(rec.isDeleted()).thenReturn(deleted);
     return rec;
+  }
+
+  private void stubIdentity(
+      InventoryRecord record, String globalId, String name, InventoryRecordType type) {
+    when(record.getOid()).thenReturn(new GlobalIdentifier(globalId));
+    when(record.getName()).thenReturn(name);
+    when(record.getType()).thenReturn(type);
   }
 
   private InventoryFile recordAttachment(InventoryRecord owningRecord) {
     InventoryFile file = mock(InventoryFile.class);
-    lenient().when(file.getInventoryRecord()).thenReturn(owningRecord);
+    when(file.getInventoryRecord()).thenReturn(owningRecord);
     return file;
   }
 
   private InventoryAttachmentField fieldAttachment(InventoryRecord owningRecord) {
     InventoryAttachmentField field = mock(InventoryAttachmentField.class);
-    lenient().when(field.getInventoryRecord()).thenReturn(owningRecord);
+    when(field.getInventoryRecord()).thenReturn(owningRecord);
     return field;
   }
 
   @Test
   void returnsRowForReadableRecordLevelAttachment() {
-    InventoryRecord sample = parent("SA1", "My sample", InventoryRecordType.SAMPLE, false);
+    stubReadableTarget();
+    InventoryRecord sample = parent(false);
+    stubIdentity(sample, "SA1", "My sample", InventoryRecordType.SAMPLE);
     // build the attachment mock BEFORE stubbing the dao: stubbing a mock inside a thenReturn
     // argument trips Mockito's unfinished-stubbing detection
     InventoryFile attachment = recordAttachment(sample);
@@ -106,9 +108,11 @@ class InventoryFileApiManagerImplAttachingTest {
 
   @Test
   void resolvesFieldLevelAttachmentToItsOwningItem() {
+    stubReadableTarget();
     // a gallery file attached to a sample/template attachment field reports the owning sample, not
     // the field
-    InventoryRecord template = parent("IT9", "My template", InventoryRecordType.SAMPLE, false);
+    InventoryRecord template = parent(false);
+    stubIdentity(template, "IT9", "My template", InventoryRecordType.SAMPLE);
     InventoryAttachmentField field = fieldAttachment(template);
     when(inventoryFileDao.findAttachmentFieldsByMediaFileId(5L)).thenReturn(List.of(field));
     when(invPermissions.canUserReadInventoryRecord(template, actor)).thenReturn(true);
@@ -121,8 +125,10 @@ class InventoryFileApiManagerImplAttachingTest {
 
   @Test
   void oneRowPerConnectionWithoutDedup() {
+    stubReadableTarget();
     // the same item attaching the same gallery file twice yields two rows (mirrors the links panel)
-    InventoryRecord sample = parent("SA1", "My sample", InventoryRecordType.SAMPLE, false);
+    InventoryRecord sample = parent(false);
+    stubIdentity(sample, "SA1", "My sample", InventoryRecordType.SAMPLE);
     InventoryFile first = recordAttachment(sample);
     InventoryFile second = recordAttachment(sample);
     when(inventoryFileDao.findByMediaFileId(5L)).thenReturn(List.of(first, second));
@@ -133,10 +139,12 @@ class InventoryFileApiManagerImplAttachingTest {
 
   @Test
   void filtersOutSourcesTheActorCannotRead() {
+    stubReadableTarget();
     // leaking names/ids of items the caller may not read would defeat the per-record permission
     // check the panel relies on
-    InventoryRecord readable = parent("SA10", "visible", InventoryRecordType.SAMPLE, false);
-    InventoryRecord hidden = parent("SA11", "secret", InventoryRecordType.SAMPLE, false);
+    InventoryRecord readable = parent(false);
+    InventoryRecord hidden = parent(false);
+    stubIdentity(readable, "SA10", "visible", InventoryRecordType.SAMPLE);
     InventoryFile readableAttachment = recordAttachment(readable);
     InventoryFile hiddenAttachment = recordAttachment(hidden);
     when(inventoryFileDao.findByMediaFileId(5L))
@@ -152,7 +160,8 @@ class InventoryFileApiManagerImplAttachingTest {
 
   @Test
   void skipsSoftDeletedSourceRecords() {
-    InventoryRecord deleted = parent("SA12", "binned", InventoryRecordType.SAMPLE, true);
+    stubReadableTarget();
+    InventoryRecord deleted = parent(true);
     InventoryFile attachment = recordAttachment(deleted);
     when(inventoryFileDao.findByMediaFileId(5L)).thenReturn(List.of(attachment));
 
@@ -161,6 +170,7 @@ class InventoryFileApiManagerImplAttachingTest {
 
   @Test
   void skipsAttachmentWhoseOwningRecordCannotBeResolved() {
+    stubReadableTarget();
     // a field-level attachment surfaced by the record query has a null owning record; it is found
     // instead via the attachment-field query, so the null must be skipped rather than NPE
     InventoryFile orphan = recordAttachment(null);

@@ -1,7 +1,9 @@
 package com.researchspace.model.inventory;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
 import jakarta.persistence.EnumType;
@@ -64,6 +66,34 @@ public class DigitalObjectIdentifierTest {
     DigitalObjectIdentifier doi =
         new DigitalObjectIdentifier("10.12345/test", "test title", "  abc123XYZ_-456789\t\n");
     assertEquals("abc123XYZ_-456789", doi.getPublicLink());
+  }
+
+  @Test
+  public void isPublishedStateCoversDataCiteFindableAndB2instAccepted() {
+    assertTrue(DigitalObjectIdentifier.isPublishedState("findable"));
+    assertTrue(DigitalObjectIdentifier.isPublishedState("accepted"));
+    assertFalse(DigitalObjectIdentifier.isPublishedState("draft"));
+    assertFalse(DigitalObjectIdentifier.isPublishedState("submitted"));
+    assertFalse(DigitalObjectIdentifier.isPublishedState("declined"));
+    assertFalse(DigitalObjectIdentifier.isPublishedState(null));
+  }
+
+  /**
+   * The state column is free-form text: RSpace writes it for some transitions and copies it
+   * verbatim from a provider response for others, so its case is not guaranteed. This gates the
+   * unauthenticated public landing page, and a case-sensitive comparison would have closed that
+   * page for a record the provider reported as published - and, through {@code
+   * DigitalObjectIdentifierDaoHibernate}, mis-selected which revision the page serves.
+   */
+  @Test
+  public void isPublishedStateIgnoresTheCaseTheProviderUsed() {
+    assertTrue(DigitalObjectIdentifier.isPublishedState("Findable"));
+    assertTrue(DigitalObjectIdentifier.isPublishedState("FINDABLE"));
+    assertTrue(DigitalObjectIdentifier.isPublishedState("Accepted"));
+    assertTrue(DigitalObjectIdentifier.isPublishedState("ACCEPTED"));
+    // still only these two states, whatever the case
+    assertFalse(DigitalObjectIdentifier.isPublishedState("DRAFT"));
+    assertFalse(DigitalObjectIdentifier.isPublishedState("Submitted"));
   }
 
   @Test

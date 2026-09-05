@@ -3,6 +3,7 @@ package com.researchspace.webapp.integrations.b2inst;
 import com.researchspace.b2inst.model.request.B2instDoi;
 import com.researchspace.b2inst.model.response.B2instDraftRecord;
 import com.researchspace.b2inst.model.response.B2instRequestResponse;
+import java.util.Optional;
 
 /**
  * Talks to a B2INST (EUDAT, Invenio-RDM) instance to register instrument PIDs. Mirrors the
@@ -19,6 +20,19 @@ public interface B2instConnector {
   /** Create a draft record from the given metadata. The returned draft carries the RID. */
   B2instDraftRecord registerDoi(B2instDoi doi);
 
+  /**
+   * Full-replace update of a record's draft metadata, returning the updated draft.
+   *
+   * <p>InvenioRDM keeps a draft writable in every review state except {@code accepted}, which
+   * publishes the record and removes its draft; see {@code
+   * InventoryIdentifierExternalUpdateService.B2INST_PUBLISHED_STATES} for why that is an exclusion
+   * rather than an inclusion list.
+   *
+   * <p>The body is the same register-shaped payload {@link #registerDoi(B2instDoi)} sends: the
+   * endpoint replaces the metadata block wholesale, so a partial body silently drops properties.
+   */
+  B2instDraftRecord updateDraftDoi(String rid, B2instDoi doi);
+
   /** Delete a draft record by its RID. Returns true on success. */
   boolean deleteDoi(String rid);
 
@@ -31,6 +45,19 @@ public interface B2instConnector {
    * B2INST/Invenio has no retract operation; always throws {@link UnsupportedOperationException}.
    */
   B2instRequestResponse retractDoi(String rid);
+
+  /**
+   * The record's community-submission review request, whatever its status, or empty when B2INST
+   * answers 404: no review was ever created, or the draft no longer exists because the record was
+   * published (community accepted) or deleted.
+   */
+  Optional<B2instRequestResponse> getReviewOf(String rid);
+
+  /** The published record by its RID, or empty when B2INST answers 404 (not published). */
+  Optional<B2instDraftRecord> getPublishedRecord(String rid);
+
+  /** The record's draft by its RID, or empty when B2INST answers 404 (no draft exists). */
+  Optional<B2instDraftRecord> getDraftRecord(String rid);
 
   /** Re-read the {@code pidinst.b2inst.*} system properties and rebuild the HTTP client. */
   void reloadClient();

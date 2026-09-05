@@ -1,11 +1,17 @@
 package com.researchspace.webapp.filter;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.fail;
+
 import com.researchspace.Constants;
 import com.researchspace.service.UserLocaleService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.jsp.jstl.core.Config;
 import java.util.Locale;
-import junit.framework.TestCase;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpHeaders;
 import org.springframework.mock.web.MockFilterConfig;
@@ -16,11 +22,12 @@ import org.springframework.mock.web.MockServletContext;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.StaticWebApplicationContext;
 
-public class LocaleFilterTest extends TestCase {
+public class LocaleFilterTest {
   private LocaleFilter filter = null;
   private static final Locale EN_US = Locale.forLanguageTag("en-US");
 
-  protected void setUp() throws Exception {
+  @BeforeEach
+  public void setUp() throws Exception {
     LocaleContextHolder.resetLocaleContext();
 
     MockServletContext servletContext = new MockServletContext();
@@ -35,10 +42,12 @@ public class LocaleFilterTest extends TestCase {
     filter.init(new MockFilterConfig(servletContext));
   }
 
-  protected void tearDown() {
+  @AfterEach
+  public void tearDown() {
     LocaleContextHolder.resetLocaleContext();
   }
 
+  @Test
   public void testSetLocaleInSessionWhenSessionIsNull() throws Exception {
     MockHttpServletRequest request = new MockHttpServletRequest();
 
@@ -50,6 +59,7 @@ public class LocaleFilterTest extends TestCase {
     assertNull(LocaleContextHolder.getLocaleContext());
   }
 
+  @Test
   public void testSetLocaleInSessionWhenSessionNotNull() throws Exception {
     MockHttpServletRequest request = new MockHttpServletRequest();
 
@@ -64,6 +74,7 @@ public class LocaleFilterTest extends TestCase {
     assertNull(LocaleContextHolder.getLocaleContext());
   }
 
+  @Test
   public void testLocaleParamIsIgnored() throws Exception {
     MockHttpServletRequest request = new MockHttpServletRequest();
     request.addParameter("locale", "es");
@@ -76,6 +87,7 @@ public class LocaleFilterTest extends TestCase {
     assertEquals(EN_US, locale);
   }
 
+  @Test
   public void testApiAcceptLanguageCannotSelectAnUnavailableLocale() throws Exception {
     MockHttpServletRequest request = new MockHttpServletRequest();
     request.setRequestURI("/api/v1/documents");
@@ -92,6 +104,7 @@ public class LocaleFilterTest extends TestCase {
     assertNull(LocaleContextHolder.getLocaleContext());
   }
 
+  @Test
   public void testNonApiAcceptLanguageDoesNotOverrideDeploymentLocale() throws Exception {
     MockHttpServletRequest request = new MockHttpServletRequest();
     request.setRequestURI("/workspace");
@@ -103,6 +116,7 @@ public class LocaleFilterTest extends TestCase {
         (wrappedRequest, response) -> assertEquals(EN_US, wrappedRequest.getLocale()));
   }
 
+  @Test
   public void testJstlLocaleIsSet() throws Exception {
     MockHttpServletRequest request = new MockHttpServletRequest();
 
@@ -114,6 +128,7 @@ public class LocaleFilterTest extends TestCase {
     assertEquals(EN_US, Config.get(request.getSession(), Config.FMT_LOCALE));
   }
 
+  @Test
   public void testLocaleContextIsRestoredWhenChainThrows() throws Exception {
     Locale originalLocale = Locale.GERMAN;
     LocaleContextHolder.setLocale(originalLocale);

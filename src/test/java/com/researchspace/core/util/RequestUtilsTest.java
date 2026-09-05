@@ -1,20 +1,18 @@
 package com.researchspace.core.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 import jakarta.servlet.http.HttpServletRequest;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class RequestUtilsTest {
-
-  @Rule public MockitoRule mockito = MockitoJUnit.rule();
   @Mock HttpServletRequest mockRequest;
 
   @Test
@@ -34,7 +32,6 @@ public class RequestUtilsTest {
     assertEquals("unknown", RequestUtil.remoteAddr(mockRequest));
     // default
     when(mockRequest.getRemoteAddr()).thenReturn(defaultFRom);
-    when(mockRequest.getRemoteHost()).thenReturn(defaultFRom);
 
     assertEquals(defaultFRom, RequestUtil.remoteAddr(mockRequest));
     // but use this preferentially (RSPAC-553)

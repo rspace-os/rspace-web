@@ -1,22 +1,24 @@
 package com.researchspace.linkedelements;
 
 import static org.apache.commons.io.FileUtils.readFileToString;
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.IFieldLinkableElement;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class FieldParserTest {
 
   // contains examples of linked elements from VelocityTemplates
@@ -33,35 +35,31 @@ public class FieldParserTest {
     }
   }
 
-  @Rule public MockitoRule mockery = MockitoJUnit.rule();
-
   private @InjectMocks FieldParserImpl fieldParser;
   private @Mock FieldConverterFactory converterFactory;
   private @Mock FieldElementConverter converter;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     fieldParser.setElementSelectorFactory(new ElementSelectorFactory());
   }
 
   @Test
   public void testGetElementsfromEmptyField() {
-    when(converterFactory.getConverterForClass(Mockito.anyString())).thenReturn(converter);
     FieldContents fieldContents = fieldParser.findFieldElementsInContent("");
     assertNotNull(fieldContents);
     assertNoElements(fieldContents);
-    Mockito.verifyZeroInteractions(converter, converterFactory);
+    Mockito.verifyNoInteractions(converter, converterFactory);
   }
 
   @Test
   public void testGetElementsfromFieldWithNoElements() {
-    when(converterFactory.getConverterForClass(Mockito.anyString())).thenReturn(converter);
     FieldContents fieldContents =
         fieldParser.findFieldElementsInContent("Text field with out elements");
 
     assertNotNull(fieldContents);
     assertNoElements(fieldContents);
-    Mockito.verifyZeroInteractions(converter, converterFactory);
+    Mockito.verifyNoInteractions(converter, converterFactory);
   }
 
   private void assertNoElements(FieldContents fieldContents) {

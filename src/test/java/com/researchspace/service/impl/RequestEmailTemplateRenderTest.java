@@ -1,7 +1,7 @@
 package com.researchspace.service.impl;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.Group;
 import com.researchspace.model.User;
@@ -19,15 +19,15 @@ import java.util.Map;
 import java.util.Properties;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class RequestEmailTemplateRenderTest {
 
   private VelocityEngine velocity;
   private MessageSourceUtils messages;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     velocity = new VelocityEngine();
     Properties props = new Properties();

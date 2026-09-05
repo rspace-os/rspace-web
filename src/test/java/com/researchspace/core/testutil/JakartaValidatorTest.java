@@ -1,13 +1,13 @@
 package com.researchspace.core.testutil;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import jakarta.validation.ValidatorFactory;
 import java.util.Set;
-import org.junit.BeforeClass;
+import org.junit.jupiter.api.BeforeAll;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,7 +20,7 @@ public abstract class JakartaValidatorTest {
   protected static Validator validator;
   Logger log = LoggerFactory.getLogger(JakartaValidatorTest.class);
 
-  @BeforeClass
+  @BeforeAll
   public static void beforeClass() {
     ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
     validator = factory.getValidator();

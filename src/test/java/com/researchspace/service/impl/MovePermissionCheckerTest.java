@@ -1,9 +1,10 @@
 package com.researchspace.service.impl;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.dao.FolderDao;
@@ -15,23 +16,21 @@ import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.model.record.RecordFactory;
 import com.researchspace.testutils.TestFactory;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class MovePermissionCheckerTest {
-  public @Rule MockitoRule mockery = MockitoJUnit.rule();
   @Mock IPermissionUtils permUtil;
   @Mock FolderDao fDao;
 
   @InjectMocks private MovePermissionChecker checker;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     user = TestFactory.createAnyUser("user");
     other = TestFactory.createAnyUser("other");
@@ -44,9 +43,6 @@ public class MovePermissionCheckerTest {
   private Folder createARootFolderForUser(User user) {
     return new RecordFactory().createRootFolder("root", user);
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   Folder toMove, target, sharedFolder, grp1, grp2, rootFolder;
   User user, other;
@@ -74,6 +70,7 @@ public class MovePermissionCheckerTest {
     target.setSystemFolder(true);
 
     setUpSharedFolderHierarchy();
+    when(fDao.getUserSharedFolder(user)).thenReturn(sharedFolder);
     // move across groups, disallowed
     assertFalse(checker.checkMovePermissions(user, target, toMove));
 
@@ -101,7 +98,6 @@ public class MovePermissionCheckerTest {
     grp1.addChild(target, user);
   }
 
-  // these 2 tests assert that loaading root folder does not trigger unnecessry DB call
   @Test
   public void homeFolderMoveOKDoesNotCallDatabaseMethod() throws IllegalAddChildOperation {
     setUpPermissionsOK(rootFolder);
@@ -110,16 +106,16 @@ public class MovePermissionCheckerTest {
   }
 
   @Test
-  public void someoneElseshomeFolderMoveOKDoesNotCallDatabaseMethod()
+  public void moveToSomeoneElsesHomeFolderIsRejectedWithoutDatabaseLookup()
       throws IllegalAddChildOperation {
-    setUpPermissionsOK(rootFolder);
+    when(permUtil.isPermitted(rootFolder, PermissionType.FOLDER_RECEIVE, other)).thenReturn(false);
+
     assertFalse(checker.checkMovePermissions(other, rootFolder, toMove));
-    verify(fDao, never()).getUserSharedFolder(user);
+    verifyNoInteractions(fDao);
   }
 
   protected void setUpPermissionsOK(Folder target) {
     when(permUtil.isPermitted(target, PermissionType.FOLDER_RECEIVE, user)).thenReturn(true);
     when(permUtil.isPermitted(toMove, PermissionType.SEND, user)).thenReturn(true);
-    when(fDao.getUserSharedFolder(user)).thenReturn(sharedFolder);
   }
 }

@@ -73,19 +73,31 @@
       },
       "identifier": {
         "assignTypeMismatch": "Identifier of type {0} cannot be assigned to inventory item [{1}]",
+        "b2instAcceptedRecordUnavailable": "B2INST accepted this submission but its record is not available yet, so the instrument PID cannot be shown. Please try again shortly.",
         "b2instDeleteFailed": "Could not delete the instrument PID from B2INST. {0}",
+        "b2instHttpStatus": "B2INST returned HTTP {0} {1}.",
+        "b2instNoCommunity": "B2INST is not fully configured for publishing, because no community has been set.",
+        "b2instNoSubmitAction": "B2INST did not offer a submit action for this record.",
         "b2instPublishFailed": "Could not publish the instrument PID in B2INST. {0}",
+        "b2instRecordGone": "B2INST no longer holds this record, so there is no status to refresh. The record was removed on the provider side.",
+        "b2instRefreshFailed": "Could not refresh the instrument PID status from B2INST. {0}",
         "b2instRegisterFailed": "Could not register a new instrument PID with B2INST. {0}",
         "b2instRegisterNoDraft": "Could not register a new instrument PID with B2INST: the service accepted the request but returned no draft record.",
         "b2instRetractUnsupported": "Instrument PIDs registered with B2INST cannot be retracted from RSpace.",
+        "b2instUnreachable": "B2INST could not be reached.",
         "bulkMaxExceeded": "cannot allocate more than {0} IGSNs in a single request",
         "bulkPositiveRequired": "not a valid number of IGSNs to allocate: \"{0}\". The number must be greater than 0",
         "dataCiteRegisterNoDraft": "Could not register a new identifier with DataCite: the service accepted the request but returned no draft record.",
         "dataCitePublishFailed": "Error when publishing the DOI in DataCite. If the problem persists, please contact your System Admin",
         "dataCiteRetractFailed": "Error when retracting the DOI in DataCite. If the problem persists, please contact your System Admin",
         "deleteNotOwner": "You can only delete an identifier that you own.",
+        "deleteWrongState": "You can only delete identifiers in \"draft\" state, or B2INST instrument PIDs whose community review was declined, cancelled or expired.",
+        "externalUpdateFailed": "Could not update the instrument metadata held by {0}. The instrument itself was saved, so saving it again will try the update once more. {1}",
+        "externalUpdateNotPossibleB2inst": "The instrument metadata held by {0} could not be updated because its community review has been accepted, so the record no longer has a draft open for changes. The instrument itself was saved.",
+        "externalUpdateNotPossibleDataCite": "The instrument metadata held by {0} could not be updated because its identifier is no longer a draft. Publishing or republishing the identifier sends its current metadata. The instrument itself was saved.",
         "integrationNotEnabled": "{0} integration is not enabled on this RSpace instance.",
         "mintingUnsupportedType": "unsupported type for minting: {0}",
+        "refreshNoIdentifier": "This item has no identifier to refresh. Register an identifier before refreshing its status.",
         "typeUnsupported": "identifiers of type {0} are not supported yet"
       },
       "import": {
@@ -218,6 +230,9 @@
         "itemsAdded": "Added inventory items: {0}.",
         "itemsRemoved": "Removed inventory items: {0}."
       }
+    },
+    "identifier": {
+      "externalUpdated": "The instrument metadata held by {0} was updated."
     },
     "listOfMaterials": {
       "label": "List of materials"

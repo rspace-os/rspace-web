@@ -51,6 +51,14 @@ public class DataCiteConnectorDummy implements DataCiteConnector {
     return dataCiteDoi;
   }
 
+  /** Leaves the state untouched, as a real metadata-only update does. */
+  @Override
+  public DataCiteDoi updateDoi(DataCiteDoi dataCiteDoi, InventorySettingType settingType) {
+    lastSettingTypeUsed = settingType;
+    doiSentToDatacite = dataCiteDoi;
+    return dataCiteDoi;
+  }
+
   @Override
   public void reloadDataCiteClient() {
     ;

@@ -37,8 +37,8 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.Set;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,7 +52,7 @@ public class UserManagerTest extends SpringTransactionalTest {
 
   private @Autowired RoleManager roleManager;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
   }
@@ -126,10 +126,12 @@ public class UserManagerTest extends SpringTransactionalTest {
     return g1;
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void getAllUsersInAdminsCommunityTestthrowIAEIfNotAdmin() {
     User pi1 = createAndSaveUserIfNotExists(getRandomAlphabeticString("pi"), Constants.PI_ROLE);
-    userMgr.getAllUsersInAdminsCommunity(pi1.getUsername());
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> userMgr.getAllUsersInAdminsCommunity(pi1.getUsername()));
   }
 
   @Test

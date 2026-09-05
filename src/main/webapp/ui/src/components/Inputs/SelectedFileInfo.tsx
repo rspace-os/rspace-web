@@ -40,8 +40,8 @@ function StatusChip({
     [() => true, t("values.none")],
   ])();
   const iconStyle = {
-    width: 18,
-    height: 18,
+    width: "18px !important",
+    height: "18px !important",
     marginLeft: "2px",
     color: theme.palette.primary.contrastText,
   };

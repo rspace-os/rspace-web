@@ -1,6 +1,7 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import axios from "@/common/axios";
 import Clustermarket, { getOrder, getOrderBy } from "../Clustermarket";
 import { BookingType, Order } from "../Enums";
@@ -26,6 +27,26 @@ const findFirstByText = async (text: any, options?: any, waitOptions?: any) => {
   const [match] = await screen.findAllByText(text, options, waitOptions);
   return match;
 };
+type DialogMessage = { mceAction: string; tableHtml?: string | null };
+type PostMessageSpy = { mock: { calls: Array<Array<unknown>> } };
+const lastMessage = (spy: PostMessageSpy): DialogMessage | undefined =>
+  spy.mock.calls.at(-1)?.[0] as DialogMessage | undefined;
+/** Stands in for the plugin clicking Insert, which asks the dialog for its table. */
+const requestTable = () => {
+  fireEvent(
+    window,
+    new MessageEvent("message", {
+      data: { mceAction: "clustermarket-insert" },
+      origin: window.location.origin,
+    }),
+  );
+};
+const tableSentToPlugin = (spy: PostMessageSpy): string | null => {
+  const reply = spy.mock.calls
+    .map((call) => call[0] as DialogMessage)
+    .findLast((message) => message.mceAction === "clustermarket-table");
+  return reply?.tableHtml ?? null;
+};
 beforeEach(() => {
   mockAxios.onGet("/apps/clustermarket/bookings").reply(200, BookingsList.data);
   mockAxios
@@ -50,6 +71,10 @@ beforeEach(() => {
   mockAxios
     .onPut("/apps/clustermarket/equipment/details", { equipmentIDs: "2,3" })
     .reply(200, [EquipmentDetails["2"], EquipmentDetails["3"]]);
+});
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
 });
 describe("Has defaultOrderBy", () => {
   test("when no value in localStorage then returns Order by start_time", () => {
@@ -142,5 +167,62 @@ describe("Renders page with booking data", () => {
     expect(screen.queryAllByText("CURRENT_2")).toHaveLength(0);
     expect(screen.queryByText("COMPLETED_3")).not.toBeInTheDocument();
     expect(screen.queryByText("COMPLETED_1")).not.toBeInTheDocument();
+  });
+
+  test("adds noreferrer to links in the table sent to the plugin", async () => {
+    const postMessage = vi.spyOn(window.parent, "postMessage");
+
+    const user = userEvent.setup();
+    getWrapper({ clustermarket_web_url: "https://calira.example/" });
+    await findFirstByText("CURRENT_2");
+    // The row overrides its role to checkbox and also labels the checkbox
+    // input inside it, so both match the same accessible name; the row
+    // precedes its descendant in document order.
+    const [bookingRow] = screen.getAllByRole("checkbox", { name: /CURRENT_2/ });
+
+    await user.click(bookingRow);
+    expect(bookingRow).toBeChecked();
+    requestTable();
+
+    const container = document.createElement("div");
+    container.innerHTML = tableSentToPlugin(postMessage) ?? "";
+    const links = Array.from(container.querySelectorAll("a"));
+
+    expect(links).toHaveLength(2);
+    links.forEach((link) => {
+      expect(link).toHaveAttribute("target", "_blank");
+      expect(link).toHaveAttribute("rel", "noreferrer");
+    });
+  });
+
+  test("enables the insert button only while rows are selected", async () => {
+    const postMessage = vi.spyOn(window.parent, "postMessage");
+
+    const user = userEvent.setup();
+    getWrapper({ clustermarket_web_url: "https://calira.example/" });
+    await findFirstByText("CURRENT_2");
+    expect(lastMessage(postMessage)).toEqual({ mceAction: "disable" });
+
+    const [bookingRow] = screen.getAllByRole("checkbox", { name: /CURRENT_2/ });
+    await user.click(bookingRow);
+    expect(lastMessage(postMessage)).toEqual({ mceAction: "enable" });
+
+    await user.click(bookingRow);
+    expect(lastMessage(postMessage)).toEqual({ mceAction: "disable" });
+  });
+
+  test("builds no table until the plugin asks for one", async () => {
+    const postMessage = vi.spyOn(window.parent, "postMessage");
+
+    const user = userEvent.setup();
+    getWrapper({ clustermarket_web_url: "https://calira.example/" });
+    await findFirstByText("CURRENT_2");
+    const [bookingRow] = screen.getAllByRole("checkbox", { name: /CURRENT_2/ });
+
+    await user.click(bookingRow);
+    expect(tableSentToPlugin(postMessage)).toBeNull();
+
+    requestTable();
+    expect(tableSentToPlugin(postMessage)).toContain("<table");
   });
 });

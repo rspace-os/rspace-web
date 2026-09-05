@@ -1,6 +1,7 @@
 import CssBaseline from "@mui/material/CssBaseline";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import React from "react";
 import { BrowserRouter } from "react-router";
 import createAccentedTheme from "@/accentedTheme";
@@ -17,6 +18,8 @@ import { Description, LocalGalleryFile } from "../useGalleryListing";
 import { GallerySelection } from "../useGallerySelection";
 import MainPanel from "./MainPanel";
 import OpenFolderProvider from "./OpenFolderProvider";
+
+const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
 /**
  * An example gallery listing with just a bunch of images and no folders.
@@ -62,43 +65,45 @@ export function BunchOfImages(): React.ReactNode {
 
   return (
     <React.StrictMode>
-      <ErrorBoundary>
-        <BrowserRouter>
-          <StyledEngineProvider injectFirst>
-            <CssBaseline />
-            <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
-              <Analytics>
-                <UiPreferences>
-                  <DisableDragAndDropByDefault>
-                    <Alerts>
-                      <LandmarksProvider>
-                        <GallerySelection>
-                          <OpenFolderProvider setPath={() => {}}>
-                            <MainPanel
-                              selectedSection="Images"
-                              path={[]}
-                              setSelectedSection={() => {}}
-                              galleryListing={MOCK_ROOT_WITH_IMAGES}
-                              folderId={{ tag: "success", value: -1 }}
-                              refreshListing={async () => {}}
-                              sortOrder="ASC"
-                              orderBy="name"
-                              setSortOrder={() => {}}
-                              setOrderBy={() => {}}
-                              appliedSearchTerm=""
-                              setAppliedSearchTerm={() => {}}
-                            />
-                          </OpenFolderProvider>
-                        </GallerySelection>
-                      </LandmarksProvider>
-                    </Alerts>
-                  </DisableDragAndDropByDefault>
-                </UiPreferences>
-              </Analytics>
-            </ThemeProvider>
-          </StyledEngineProvider>
-        </BrowserRouter>
-      </ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <ErrorBoundary>
+          <BrowserRouter>
+            <StyledEngineProvider injectFirst>
+              <CssBaseline />
+              <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
+                <Analytics>
+                  <UiPreferences>
+                    <DisableDragAndDropByDefault>
+                      <Alerts>
+                        <LandmarksProvider>
+                          <GallerySelection>
+                            <OpenFolderProvider setPath={() => {}}>
+                              <MainPanel
+                                selectedSection="Images"
+                                path={[]}
+                                setSelectedSection={() => {}}
+                                galleryListing={MOCK_ROOT_WITH_IMAGES}
+                                folderId={{ tag: "success", value: -1 }}
+                                refreshListing={async () => {}}
+                                sortOrder="ASC"
+                                orderBy="name"
+                                setSortOrder={() => {}}
+                                setOrderBy={() => {}}
+                                appliedSearchTerm=""
+                                setAppliedSearchTerm={() => {}}
+                              />
+                            </OpenFolderProvider>
+                          </GallerySelection>
+                        </LandmarksProvider>
+                      </Alerts>
+                    </DisableDragAndDropByDefault>
+                  </UiPreferences>
+                </Analytics>
+              </ThemeProvider>
+            </StyledEngineProvider>
+          </BrowserRouter>
+        </ErrorBoundary>
+      </QueryClientProvider>
     </React.StrictMode>
   );
 }
@@ -220,62 +225,64 @@ export function NestedFoldersWithImageFile(): React.ReactNode {
 
   return (
     <React.StrictMode>
-      <ErrorBoundary>
-        <BrowserRouter>
-          <StyledEngineProvider injectFirst>
-            <CssBaseline />
-            <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
-              <Analytics>
-                <UiPreferences>
-                  <DisableDragAndDropByDefault>
-                    <Alerts>
-                      <LandmarksProvider>
-                        <GallerySelection>
-                          <OpenFolderProvider
-                            setPath={(newPath) => {
-                              if (newPath.length === 0) {
-                                setGalleryListing(MOCK_ROOT_WITH_OUTER_FOLDER);
-                                setPath([]);
-                              } else if (newPath.length === 1) {
-                                setGalleryListing(MOCK_OUTER_FOLDER_LISTING);
-                                setPath([MOCK_ROOT_WITH_OUTER_FOLDER.value.list[0]]);
-                              } else if (newPath.length === 2) {
-                                setGalleryListing(MOCK_INNER_FOLDER_LISTING);
-                                setPath([
-                                  MOCK_ROOT_WITH_OUTER_FOLDER.value.list[0],
-                                  MOCK_OUTER_FOLDER_LISTING.value.list[0],
-                                ]);
-                              }
-                            }}
-                          >
-                            <MainPanel
-                              selectedSection="Images"
-                              path={path}
-                              setSelectedSection={() => {
-                                setGalleryListing(MOCK_ROOT_WITH_OUTER_FOLDER);
-                                setPath([]);
+      <QueryClientProvider client={queryClient}>
+        <ErrorBoundary>
+          <BrowserRouter>
+            <StyledEngineProvider injectFirst>
+              <CssBaseline />
+              <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
+                <Analytics>
+                  <UiPreferences>
+                    <DisableDragAndDropByDefault>
+                      <Alerts>
+                        <LandmarksProvider>
+                          <GallerySelection>
+                            <OpenFolderProvider
+                              setPath={(newPath) => {
+                                if (newPath.length === 0) {
+                                  setGalleryListing(MOCK_ROOT_WITH_OUTER_FOLDER);
+                                  setPath([]);
+                                } else if (newPath.length === 1) {
+                                  setGalleryListing(MOCK_OUTER_FOLDER_LISTING);
+                                  setPath([MOCK_ROOT_WITH_OUTER_FOLDER.value.list[0]]);
+                                } else if (newPath.length === 2) {
+                                  setGalleryListing(MOCK_INNER_FOLDER_LISTING);
+                                  setPath([
+                                    MOCK_ROOT_WITH_OUTER_FOLDER.value.list[0],
+                                    MOCK_OUTER_FOLDER_LISTING.value.list[0],
+                                  ]);
+                                }
                               }}
-                              galleryListing={galleryListing}
-                              folderId={{ tag: "success", value: -1 }}
-                              refreshListing={async () => {}}
-                              sortOrder="ASC"
-                              orderBy="name"
-                              setSortOrder={() => {}}
-                              setOrderBy={() => {}}
-                              appliedSearchTerm=""
-                              setAppliedSearchTerm={() => {}}
-                            />
-                          </OpenFolderProvider>
-                        </GallerySelection>
-                      </LandmarksProvider>
-                    </Alerts>
-                  </DisableDragAndDropByDefault>
-                </UiPreferences>
-              </Analytics>
-            </ThemeProvider>
-          </StyledEngineProvider>
-        </BrowserRouter>
-      </ErrorBoundary>
+                            >
+                              <MainPanel
+                                selectedSection="Images"
+                                path={path}
+                                setSelectedSection={() => {
+                                  setGalleryListing(MOCK_ROOT_WITH_OUTER_FOLDER);
+                                  setPath([]);
+                                }}
+                                galleryListing={galleryListing}
+                                folderId={{ tag: "success", value: -1 }}
+                                refreshListing={async () => {}}
+                                sortOrder="ASC"
+                                orderBy="name"
+                                setSortOrder={() => {}}
+                                setOrderBy={() => {}}
+                                appliedSearchTerm=""
+                                setAppliedSearchTerm={() => {}}
+                              />
+                            </OpenFolderProvider>
+                          </GallerySelection>
+                        </LandmarksProvider>
+                      </Alerts>
+                    </DisableDragAndDropByDefault>
+                  </UiPreferences>
+                </Analytics>
+              </ThemeProvider>
+            </StyledEngineProvider>
+          </BrowserRouter>
+        </ErrorBoundary>
+      </QueryClientProvider>
     </React.StrictMode>
   );
 }

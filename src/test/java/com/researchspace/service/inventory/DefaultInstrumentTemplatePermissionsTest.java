@@ -10,9 +10,9 @@ import com.researchspace.dao.InstrumentTemplateDao;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.testutils.SpringTransactionalTest;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -27,12 +27,12 @@ public class DefaultInstrumentTemplatePermissionsTest extends SpringTransactiona
 
   @Autowired private InstrumentTemplateDao instrumentTemplateDao;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     instrumentTemplateDao.resetDefaultTemplateOwner();
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
     instrumentTemplateDao.resetDefaultTemplateOwner();

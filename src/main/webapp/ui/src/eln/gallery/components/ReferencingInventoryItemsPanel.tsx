@@ -6,8 +6,8 @@ import { useTranslation } from "react-i18next";
 import GlobalId from "../../../components/GlobalId";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
 import { DataGridColumn } from "../../../util/table";
+import { type ReferencingInventoryItem, useReferencingInventoryItemsQuery } from "../queries";
 import type { GalleryFile } from "../useGalleryListing";
-import useReferencingInventoryItems, { type ReferencingInventoryItem } from "../useReferencingInventoryItems";
 
 /**
  * One grid row per link FIELD: a source item linking through two fields
@@ -26,8 +26,12 @@ type ReferencingItemRow = ReferencingInventoryItem & { rowId: string };
  */
 export function ReferencingInventoryItemsPanel({ file }: { file: GalleryFile }): React.ReactNode {
   const apiRef = useGridApiRef();
-  const { t } = useTranslation("inventory");
-  const referencing = useReferencingInventoryItems(typeof file.globalId === "string" ? file.globalId : null);
+  const { t } = useTranslation(["inventory", "gallery"]);
+  const globalId = typeof file.globalId === "string" ? file.globalId : null;
+  const referencing = useReferencingInventoryItemsQuery({
+    globalId,
+  });
+  const items = referencing.data ?? [];
   const { trackEvent } = React.useContext(AnalyticsContext);
 
   React.useEffect(() => {
@@ -37,7 +41,7 @@ export function ReferencingInventoryItemsPanel({ file }: { file: GalleryFile }):
         includeOutliers: true,
       });
     }, 10); // 10ms for react to re-render
-  }, [referencing.items, apiRef]);
+  }, [items, apiRef]);
 
   return (
     <Box component="section" sx={{ mt: 0.5, "--DataGrid-overlayHeight": "40px", flexGrow: 1 }}>
@@ -73,8 +77,11 @@ export function ReferencingInventoryItemsPanel({ file }: { file: GalleryFile }):
             ),
           }),
         ]}
-        rows={referencing.items.map((item, index) => ({
+        rows={items.map((item, index) => ({
           ...item,
+          relationType: item.isAttachment
+            ? t("inventory:fields.link.relatedInventoryItems.attachment")
+            : item.relationType,
           // one row per link FIELD: a source item linking through two fields
           // repeats its globalId, so the grid row id needs the index too
           rowId: `${item.globalId}-${index}`,
@@ -91,9 +98,11 @@ export function ReferencingInventoryItemsPanel({ file }: { file: GalleryFile }):
           pagination: null,
         }}
         localeText={{
-          noRowsLabel: referencing.errorMessage ?? "No related inventory items",
+          noRowsLabel: referencing.isError
+            ? t("gallery:referencingInventoryItems.loadFailed")
+            : t("gallery:referencingInventoryItems.noRows"),
         }}
-        loading={referencing.loading}
+        loading={Boolean(globalId) && referencing.isPending}
         getRowId={(row) => row.rowId}
         sx={{
           ml: 2,

@@ -105,6 +105,15 @@ public class DigitalObjectIdentifier extends InventoryRecordConnectedEntity
   }
 
   /**
+   * True when the given identifier state means the metadata is published: DataCite's {@code
+   * findable}, or B2INST's {@code accepted} (the community-review outcome that publishes the
+   * record). Gates the public landing page, so both providers' published states must be here.
+   */
+  public static boolean isPublishedState(String state) {
+    return "findable".equalsIgnoreCase(state) || "accepted".equalsIgnoreCase(state);
+  }
+
+  /**
    * @param publicLinkSuffix pre-generated suffix for this identifier's public landing page, created
    *     before registering with an external provider so the page's address can be part of the
    *     registration payload. Surrounding whitespace is trimmed, since the suffix becomes a path
@@ -205,6 +214,6 @@ public class DigitalObjectIdentifier extends InventoryRecordConnectedEntity
 
   @Transient
   public boolean canBeAssigned() {
-    return !this.isDeleted() && !this.isAssociated() && "draft".equals(this.getState());
+    return !this.isDeleted() && !this.isAssociated() && "draft".equalsIgnoreCase(this.getState());
   }
 }

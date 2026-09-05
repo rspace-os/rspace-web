@@ -1,10 +1,10 @@
 package com.researchspace.api.v1.controller;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.openMocks;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -19,8 +19,8 @@ import com.researchspace.model.User;
 import com.researchspace.service.RoRService;
 import com.researchspace.service.inventory.InventoryIdentifierApiManager;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnectorDummy;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -32,7 +32,7 @@ public class InventoryPublicApiControllerMVCIT extends API_MVC_InventoryTestBase
   @Mock private RoRService rorServiceMock;
   private DataCiteConnectorDummy dataCiteConnectorManualMock = new DataCiteConnectorDummy();
 
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     openMocks(this);
     identifierApiManager.setDataCiteConnector(dataCiteConnectorManualMock);

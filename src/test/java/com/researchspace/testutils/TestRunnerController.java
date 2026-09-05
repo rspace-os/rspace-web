@@ -1,13 +1,12 @@
 package com.researchspace.testutils;
 
-import org.junit.Assume;
+import org.junit.jupiter.api.Assumptions;
 
 public class TestRunnerController {
 
-  /** Will ignore test if this is called from a @BeforeClass method */
   public static void ignoreIfFastRun() {
     if (getFastProperty() != null) {
-      Assume.assumeFalse(true);
+      Assumptions.assumeFalse(true);
     }
   }
 

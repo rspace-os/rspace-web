@@ -2,9 +2,9 @@ package com.researchspace.webapp.integrations.protocolsio;
 
 import static com.researchspace.service.IntegrationsHandler.PROTOCOLS_IO_APP_NAME;
 import static com.researchspace.webapp.integrations.protocolsio.ProtocolsIO_OAuthController.REFRESH_TOKEN_EXPIRED_CODE;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 
 import com.researchspace.core.util.JacksonUtil;
@@ -29,15 +29,14 @@ import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.shiro.session.mgt.SimpleSession;
 import org.apache.shiro.subject.Subject;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.stubbing.OngoingStubbing;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
@@ -49,6 +48,7 @@ import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.view.RedirectView;
 
+@ExtendWith(MockitoExtension.class)
 @Slf4j
 public class ProtocolsIOOAuthTest {
 
@@ -58,8 +58,6 @@ public class ProtocolsIOOAuthTest {
   private static final String PROTOCOLSIO_AUTH_URL =
       "https://www.protocols.io/api/v3/oauth/authorize";
 
-  @Rule public MockitoRule rule = MockitoJUnit.rule();
-
   @Mock UserConnectionManager userConnMgr;
   @Mock RestTemplate restTemplate;
   @Mock IPropertyHolder properties;
@@ -68,18 +66,17 @@ public class ProtocolsIOOAuthTest {
 
   @InjectMocks ProtocolsIO_OAuthController ctrller;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     ctrller.setMessageSource(new MessageSourceUtils(new JsonMessageSource()));
     shiroUtils = new ShiroTestUtils();
     shiroUtils.setSubject(subjct);
-    Mockito.when(subjct.getSession()).thenReturn(new SimpleSession());
     ReflectionTestUtils.setField(
         ctrller, "protocolsioAccessTokenUrl", PROTOCOLSIO_ACCESS_TOKEN_URL);
     ReflectionTestUtils.setField(ctrller, "protocolsioAuthUrl", PROTOCOLSIO_AUTH_URL);
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     shiroUtils.clearSubject();
   }
@@ -91,6 +88,7 @@ public class ProtocolsIOOAuthTest {
 
   @Test
   public void connect() throws MalformedURLException {
+    Mockito.when(subjct.getSession()).thenReturn(new SimpleSession());
     Mockito.when(properties.getServerUrl()).thenReturn("http://somerspace.com");
     RedirectView view = ctrller.connect();
     // assert is valid URL syntax

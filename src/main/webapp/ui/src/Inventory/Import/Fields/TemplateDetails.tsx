@@ -7,8 +7,9 @@ import FormGroup from "@mui/material/FormGroup";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import { observer } from "mobx-react-lite";
-import type { ReactNode } from "react";
+import { type ReactNode, useCallback } from "react";
 import { useTranslation } from "react-i18next";
+import type TemplateModel from "../../../stores/models/TemplateModel";
 import useStores from "../../../stores/use-stores";
 import * as Parsers from "../../../util/parsers";
 import TemplatePicker from "../../components/Picker/TemplatePicker";
@@ -18,6 +19,16 @@ import TemplateName from "./TemplateName";
 function TemplateDetails(): ReactNode {
   const { t } = useTranslation("inventory");
   const { importStore } = useStores();
+  const importData = importStore.importData;
+
+  const handleSetTemplate = useCallback(
+    (tmpl: TemplateModel) => {
+      importData?.setTemplate(tmpl);
+      importData?.setCreateNewTemplate(false);
+      importData?.setDefaultUnitId(tmpl.defaultUnitId);
+    },
+    [importData],
+  );
 
   return (
     <RadioGroup
@@ -41,7 +52,15 @@ function TemplateDetails(): ReactNode {
       <Box sx={{ ml: 4, mb: 4, mt: 1 }}>
         <FormControl component="fieldset" fullWidth>
           <FormGroup sx={{ maxWidth: 660 }}>
-            <TemplateName disabled={importStore.importData?.createNewTemplate === false} />
+            <TemplateName
+              disabled={importStore.importData?.createNewTemplate === false}
+              value={importStore.importData?.templateName ?? ""}
+              onChange={(v) => importStore.importData?.setTemplateName(v)}
+              error={
+                (importStore.importData?.createNewTemplate ?? false) &&
+                !(importStore.importData?.validTemplateName ?? true)
+              }
+            />
           </FormGroup>
         </FormControl>
       </Box>
@@ -55,13 +74,7 @@ function TemplateDetails(): ReactNode {
         <Box sx={{ mb: 1 }}>
           <Divider />
         </Box>
-        <TemplatePicker
-          setTemplate={(t) => {
-            importStore.importData?.setTemplate(t);
-            importStore.importData?.setCreateNewTemplate(false);
-            importStore.importData?.setDefaultUnitId(t.defaultUnitId);
-          }}
-        />
+        <TemplatePicker setTemplate={handleSetTemplate} selectedTemplate={importStore.importData?.template ?? null} />
         {!importStore.importData?.createNewTemplate && !importStore.importData?.template ? (
           <Alert severity="info">{t("import.templateDetails.selectTemplate")}</Alert>
         ) : null}

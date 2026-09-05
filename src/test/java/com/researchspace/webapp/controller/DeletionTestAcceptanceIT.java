@@ -1,8 +1,8 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.core.testutil.Invokable;
 import com.researchspace.core.testutil.SequencedRunnableRunner;
@@ -20,10 +20,10 @@ import com.researchspace.testutils.RealTransactionSpringTestBase;
 import com.researchspace.testutils.TestGroup;
 import java.util.Map;
 import java.util.TreeMap;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,13 +36,13 @@ public class DeletionTestAcceptanceIT extends RealTransactionSpringTestBase {
   ShiroTestUtils shiroUtils;
   @Autowired RecordDeletionManager deleter;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     shiroUtils = new ShiroTestUtils();
     super.setUp();
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
     shiroUtils.clearSubject();
@@ -54,7 +54,7 @@ public class DeletionTestAcceptanceIT extends RealTransactionSpringTestBase {
   // of the record to fail as notifying the pi user fails due. Tested manually and this issue is not
   // present so only
   // exists as a problem in this test. See RSDEV-99 on Jira.
-  @Ignore
+  @Disabled
   public void testSomeoneCanDeleteWhileAnotherUserEditing() throws Exception {
     TestGroup tg = createTestGroup(2);
 
@@ -119,7 +119,7 @@ public class DeletionTestAcceptanceIT extends RealTransactionSpringTestBase {
   }
 
   @Test
-  @Ignore
+  @Disabled
   public void testPostDeleteNotifications() throws Exception {
     TestGroup grp = createTestGroup(2);
     setUpMessagePreferences(grp);

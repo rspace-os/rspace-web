@@ -1,13 +1,13 @@
 package com.researchspace.model.comms;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.model.User;
 import com.researchspace.model.record.TestFactory;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class UnanimousVotingRequestCompletionUpdatePolicyTest {
 
@@ -17,14 +17,14 @@ public class UnanimousVotingRequestCompletionUpdatePolicyTest {
   UnanimousVotingRequestCompletionUpdatePolicy policy =
       new UnanimousVotingRequestCompletionUpdatePolicy();
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     sender = TestFactory.createAnyUser("sender");
     recipient1 = TestFactory.createAnyUser("recipient1");
     recipient2 = TestFactory.createAnyUser("recipient2");
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {}
 
   @Test
@@ -51,7 +51,7 @@ public class UnanimousVotingRequestCompletionUpdatePolicyTest {
     ct2.setStatus(CommunicationStatus.COMPLETED);
     policy.voteCompleted(ct2);
 
-    assertTrue("Should be completed but is " + mor.getStatus(), mor.isCompleted());
+    assertTrue(mor.isCompleted(), "Should be completed but is " + mor.getStatus());
   }
 
   @Test
@@ -79,7 +79,7 @@ public class UnanimousVotingRequestCompletionUpdatePolicyTest {
 
     ct2.setStatus(CommunicationStatus.COMPLETED);
     policy.voteCompleted(ct2);
-    assertTrue("should stay uncompleted for global message", mor.isNew());
+    assertTrue(mor.isNew(), "should stay uncompleted for global message");
     assertTrue(ct1.isCompleted());
     assertTrue(ct2.isCompleted());
   }

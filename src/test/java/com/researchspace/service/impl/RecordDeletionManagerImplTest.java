@@ -9,16 +9,15 @@ import com.researchspace.service.impl.RecordDeletionManagerImpl.DeletionContext;
 import com.researchspace.testutils.TestFactory;
 import java.util.Collections;
 import java.util.Set;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class RecordDeletionManagerImplTest {
   static class RecordDeletionManagerImplTSS extends RecordDeletionManagerImpl {
 
@@ -27,18 +26,14 @@ public class RecordDeletionManagerImplTest {
     }
   }
 
-  public @Rule MockitoRule rule = MockitoJUnit.rule();
   @Mock CommunicationManager commMgr;
   private User user;
   @InjectMocks RecordDeletionManagerImplTSS tss;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     user = TestFactory.createAnyUser("any");
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void testNotificationNotSentForTempDoc_RSPAC1446() {

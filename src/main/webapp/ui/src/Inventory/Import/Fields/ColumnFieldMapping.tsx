@@ -79,6 +79,7 @@ function ColumnFieldMapping({ onTypeSelect }: MappingArgs): React.ReactNode {
   const hasRows = rowCount > 0;
 
   const matchExistingTemplate = importData.importMatchesExistingTemplate;
+  const matchExistingInstrumentTemplate = importData.importInstrumentMatchesExistingTemplate;
   const unitLabel = unitStore.getUnit(importData.templateInfo?.defaultUnitId || 3)?.label ?? "ml";
 
   const alertsBeforeTable: ReadonlyArray<AlertSpec> = [
@@ -92,6 +93,17 @@ function ColumnFieldMapping({ onTypeSelect }: MappingArgs): React.ReactNode {
       severity: "error",
       title: t("import.columnMapping.templateMismatch"),
       content: matchExistingTemplate?.matches ? "" : (matchExistingTemplate?.reason ?? ""),
+    },
+    {
+      key: "instrument-template-mismatch",
+      show:
+        importData.isInstrumentsImport &&
+        importData.nameFieldIsSelected &&
+        !importData.instrumentCreateNewTemplate &&
+        !matchExistingInstrumentTemplate?.matches,
+      severity: "error",
+      title: t("import.columnMapping.templateMismatch"),
+      content: matchExistingInstrumentTemplate?.matches ? "" : (matchExistingInstrumentTemplate?.reason ?? ""),
     },
     {
       key: "name-required-info",
@@ -188,7 +200,15 @@ function ColumnFieldMapping({ onTypeSelect }: MappingArgs): React.ReactNode {
             </TableHead>
             <TableBody>
               {mappingsByRecordType?.map((m: ColumnFieldMap, i: number) => (
-                <Row key={i} columnFieldMap={m} existingTemplate={!importData.createNewTemplate} />
+                <Row
+                  key={i}
+                  columnFieldMap={m}
+                  existingTemplate={
+                    importData.isInstrumentsImport
+                      ? !importData.instrumentCreateNewTemplate
+                      : !importData.createNewTemplate
+                  }
+                />
               ))}
             </TableBody>
           </Table>

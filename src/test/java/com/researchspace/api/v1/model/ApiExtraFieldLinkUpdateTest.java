@@ -1,8 +1,8 @@
 package com.researchspace.api.v1.model;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.api.v1.model.ApiExtraField.ExtraFieldTypeEnum;
 import com.researchspace.model.User;
@@ -14,9 +14,9 @@ import org.apache.shiro.authc.UsernamePasswordToken;
 import org.apache.shiro.mgt.DefaultSecurityManager;
 import org.apache.shiro.realm.SimpleAccountRealm;
 import org.apache.shiro.util.ThreadContext;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * Pure unit tests for {@link ApiExtraField#applyChangesToDatabaseExtraField} when applied to a
@@ -29,7 +29,7 @@ public class ApiExtraFieldLinkUpdateTest {
 
   private User user;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     // A prior unit test in the same fork can leave a Subject bound to this thread
     // (Shiro's ThreadContext is shared, thread-local state). Without clearing it,
@@ -49,7 +49,7 @@ public class ApiExtraFieldLinkUpdateTest {
     SecurityUtils.getSubject().login(new UsernamePasswordToken("tester", "pw"));
   }
 
-  @After
+  @AfterEach
   public void tearDown() {
     try {
       SecurityUtils.getSubject().logout();

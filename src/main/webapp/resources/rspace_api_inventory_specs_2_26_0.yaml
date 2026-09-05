@@ -149,6 +149,21 @@ paths:
 
         An instrument can be moved as part of the update by setting `parentContainers` (and, for grid/image containers, `parentLocation`) directly on the body. This endpoint requires `UPDATE` permission to the Instrument (and to the target container when moving).
 
+        ## External PIDINST metadata
+
+        If the instrument carries a PIDINST identifier whose metadata the provider still allows to be rewritten in place, saving also sends the instrument's remapped metadata to that provider, so the external record keeps describing the instrument as it is today. That means a B2INST record in any state other than `accepted` (its draft stays writable until acceptance publishes the record), and a DataCite DOI in `draft`. Published records are not updated in place: a findable DataCite DOI is refreshed through Republish, and an accepted B2INST record would need a new draft-and-review round. A retracted (`registered`) DataCite DOI is also left untouched.
+
+        The push never affects the save. The instrument edit is committed first and stays committed whatever the provider answers, and the identifier's own `state` is untouched. The outcome of the attempt is reported per identifier in the response, as a read-only `externalMetadataUpdate` object:
+
+        | Property | Explanation |
+        | --- | --- |
+        `succeeded` | `true` when the provider accepted the metadata
+        `reason` | A sentence for the user: what was updated, or why it was not, including the provider's own wording for a rejection
+
+        An identifier whose provider record its own state has frozen still gets the object, with `succeeded` false and a `reason` explaining why in words. The provider's own state token is deliberately not echoed into it, so "nothing was sent, and here is why" is never confused with having no identifier at all. The property is absent entirely only where there was nothing to attempt and nothing to act on: an instrument with no identifier, an identifier carrying no provider record id or no state, an IGSN, and an identifier whose provider integration is currently switched off. It is also absent from any response whose identifier list is blanked because the caller has only limited or public read of the record - most visibly the departing owner's own `changeOwner` response, where the push does happen but there is no identifier in their view to report it on. Nothing about the attempt is persisted, so a later read of the same identifier does not carry it: every qualifying save pushes again regardless of what changed, which makes retrying a failed push simply a matter of saving again.
+
+        `/instruments/{instrumentId}/actions/changeOwner` pushes on the same terms, because the transferred owner's name and email are themselves mapped PIDINST properties.
+
         ## Examples of the request body
 
         | Body | Explanation |
@@ -3107,6 +3122,22 @@ paths:
       responses:
         "200":
           description: Identifier is retracted and inventory item is hidden.
+  "/identifiers/{doiId}/refresh":
+    post:
+      summary: Refresh an identifier's status from its external provider
+      description: >
+        Re-reads the identifier's current status from the external provider and persists any change,
+        so the state RSpace shows matches what the provider holds. Meaningful for B2INST instrument
+        PIDs (PIDINST), whose community review is decided outside RSpace; identifiers of other types
+        are returned unchanged, without a provider call.
+
+      tags:
+        - External Identifiers
+      parameters:
+        - $ref: "#/components/parameters/digitalObjectIdentifierIdParam"
+      responses:
+        "200":
+          description: The refreshed identifier, carrying the provider's current state.
 
   '/identifiers/testIgsnConnection':
     get:

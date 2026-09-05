@@ -2,11 +2,11 @@ package com.researchspace.service.archive.export;
 
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static com.researchspace.core.util.progress.ProgressMonitor.NULL_MONITOR;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import com.researchspace.Constants;
 import com.researchspace.archive.ArchivalDocumentParserRef;
@@ -67,11 +67,10 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
@@ -100,19 +99,19 @@ public class ArchiveManagerServiceIT extends RealTransactionSpringTestBase {
 
   final int EXPECTED_FILE_COUNT_FOR_COMPLEX_DOC = 9;
 
-  @Rule public TemporaryFolder tempExportFolder = new TemporaryFolder();
-  @Rule public TemporaryFolder tempImportFolder = new TemporaryFolder();
-  @Rule public TemporaryFolder spareFolder = new TemporaryFolder();
-  @Rule public TemporaryFolder spareFolder2 = new TemporaryFolder();
-  @Rule public TemporaryFolder spareFolder3 = new TemporaryFolder();
+  @TempDir public File tempExportFolder;
+  @TempDir public File tempImportFolder;
+  @TempDir public File spareFolder;
+  @TempDir public File spareFolder2;
+  @TempDir public File spareFolder3;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     archivalParser = applicationContext.getBean(IArchiveParser.class);
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }
@@ -128,7 +127,7 @@ public class ArchiveManagerServiceIT extends RealTransactionSpringTestBase {
     addLinkToOtherRecord(doc1.getFields().get(0), doc2);
     addLinkToOtherRecord(doc2.getFields().get(0), doc1);
     ArchiveManifest manifest = new ArchiveManifest();
-    ArchiveExportConfig expCfg = createDefaultArchiveConfig(u1, tempExportFolder.getRoot());
+    ArchiveExportConfig expCfg = createDefaultArchiveConfig(u1, tempExportFolder);
     ImmutableExportRecordList list = createExportList(doc1.getOid(), expCfg);
     String zipFileName =
         archiveService.exportArchive(manifest, list, expCfg).getExportFile().getName();
@@ -137,10 +136,10 @@ public class ArchiveManagerServiceIT extends RealTransactionSpringTestBase {
     IArchiveModel archive = parseArchiveFile(zipFileName, tempExportFolder);
     assertEquals(2, archive.getCurrentDocCount());
 
-    File zipFile = new File(tempExportFolder.getRoot(), zipFileName);
+    File zipFile = new File(tempExportFolder, zipFileName);
     // make sure we only create 2 folders, 1 for each record. I.e., naming is consistent
     // for new files and for linked files
-    String expandedFolderPath = ZipUtils.extractZip(zipFile, tempExportFolder.getRoot());
+    String expandedFolderPath = ZipUtils.extractZip(zipFile, tempExportFolder);
     assertEquals(3, FileTestUtils.getFolderCount(new File(expandedFolderPath)));
   }
 
@@ -156,7 +155,7 @@ public class ArchiveManagerServiceIT extends RealTransactionSpringTestBase {
     addLinkToOtherRecord(doc1.getFields().get(0), doc2);
     addLinkToOtherRecord(doc2.getFields().get(0), doc3);
     ArchiveManifest manifest = new ArchiveManifest();
-    ArchiveExportConfig expCfg = createDefaultArchiveConfig(u1, tempExportFolder.getRoot());
+    ArchiveExportConfig expCfg = createDefaultArchiveConfig(u1, tempExportFolder);
     // there are 3 records, so we can only follow 2 links
     for (int i = 0; i <= 2; i++) {
       expCfg.setMaxLinkLevel(i);
@@ -177,7 +176,7 @@ public class ArchiveManagerServiceIT extends RealTransactionSpringTestBase {
     initUser(user);
     StructuredDocument doc = createComplexDocument(user);
     ArchiveManifest manifest = new ArchiveManifest();
-    ArchiveExportConfig expCfg = createDefaultArchiveConfig(user, tempExportFolder.getRoot());
+    ArchiveExportConfig expCfg = createDefaultArchiveConfig(user, tempExportFolder);
     ImmutableExportRecordList list = createExportList(doc.getOid(), expCfg);
     expCfg.setArchiveType(ArchiveExportConfig.HTML);
     archiveService =
@@ -185,15 +184,14 @@ public class ArchiveManagerServiceIT extends RealTransactionSpringTestBase {
     String zipFileName =
         archiveService.exportArchive(manifest, list, expCfg).getExportFile().getName();
     assertTrue(zipFileName.indexOf("zip") > 0); // successfully created a zip file
-    File zipFile = new File(tempExportFolder.getRoot(), zipFileName);
-    ZipUtils.extractZip(zipFile, tempImportFolder.getRoot());
+    File zipFile = new File(tempExportFolder, zipFileName);
+    ZipUtils.extractZip(zipFile, tempImportFolder);
 
-    Collection<File> htmlFiles =
-        FileUtils.listFiles(tempImportFolder.getRoot(), new String[] {"html"}, true);
+    Collection<File> htmlFiles = FileUtils.listFiles(tempImportFolder, new String[] {"html"}, true);
     // created file and link file and 2 index files + nfs file if exists
     assertEquals(5, htmlFiles.size());
     Collection<File> mathSVGFiles =
-        FileUtils.listFiles(tempImportFolder.getRoot(), new String[] {"svg"}, true);
+        FileUtils.listFiles(tempImportFolder, new String[] {"svg"}, true);
     assertEquals(1, mathSVGFiles.size());
   }
 
@@ -218,7 +216,7 @@ public class ArchiveManagerServiceIT extends RealTransactionSpringTestBase {
 
     // now export document with default link depth 1
     ArchiveManifest manifest = new ArchiveManifest();
-    ArchiveExportConfig expCfg = createDefaultArchiveConfig(user, tempExportFolder.getRoot());
+    ArchiveExportConfig expCfg = createDefaultArchiveConfig(user, tempExportFolder);
     expCfg.setArchiveType(ArchiveExportConfig.HTML);
     ImmutableExportRecordList list = createExportList(firstDoc.getOid(), expCfg);
 
@@ -227,11 +225,10 @@ public class ArchiveManagerServiceIT extends RealTransactionSpringTestBase {
     assertTrue(zipFileName.indexOf("zip") > 0); // successfully created a zip file
 
     // and check archive contents
-    File zipFile = new File(tempExportFolder.getRoot(), zipFileName);
-    ZipUtils.extractZip(zipFile, tempImportFolder.getRoot());
+    File zipFile = new File(tempExportFolder, zipFileName);
+    ZipUtils.extractZip(zipFile, tempImportFolder);
 
-    Collection<File> htmlFiles =
-        FileUtils.listFiles(tempImportFolder.getRoot(), new String[] {"html"}, true);
+    Collection<File> htmlFiles = FileUtils.listFiles(tempImportFolder, new String[] {"html"}, true);
     // should be 3 files: exported doc and two versions of linked doc (latest and prev version)
     assertEquals(3, htmlFiles.size());
     // sort the names, first should be firstDoc, then secondDoc-rev and then secondDoc
@@ -240,18 +237,18 @@ public class ArchiveManagerServiceIT extends RealTransactionSpringTestBase {
             .sorted((f1, f2) -> f1.getName().compareTo(f2.getName()))
             .collect(Collectors.toList());
     assertFalse(
-        "unexpected file: " + htmlFilesByName.get(0),
-        htmlFilesByName.get(0).getName().contains("rev"));
+        htmlFilesByName.get(0).getName().contains("rev"),
+        "unexpected file: " + htmlFilesByName.get(0));
     assertTrue(
-        "unexpected file: " + htmlFilesByName.get(1),
-        htmlFilesByName.get(1).getName().contains("rev"));
+        htmlFilesByName.get(1).getName().contains("rev"),
+        "unexpected file: " + htmlFilesByName.get(1));
     assertFalse(
-        "unexpected file: " + htmlFilesByName.get(2),
-        htmlFilesByName.get(2).getName().contains("rev"));
+        htmlFilesByName.get(2).getName().contains("rev"),
+        "unexpected file: " + htmlFilesByName.get(2));
     // assert exported version file contains correct version
     String revisionedFileContent =
         FileUtils.readFileToString(htmlFilesByName.get(1), StandardCharsets.UTF_8);
-    assertTrue(revisionedFileContent, revisionedFileContent.contains("version " + prevVersion));
+    assertTrue(revisionedFileContent.contains("version " + prevVersion), revisionedFileContent);
   }
 
   @Test
@@ -263,7 +260,7 @@ public class ArchiveManagerServiceIT extends RealTransactionSpringTestBase {
 
     // now export
     ArchiveManifest manifest = new ArchiveManifest();
-    ArchiveExportConfig expCfg = createDefaultArchiveConfig(user, tempExportFolder.getRoot());
+    ArchiveExportConfig expCfg = createDefaultArchiveConfig(user, tempExportFolder);
     ImmutableExportRecordList list = createExportList(doc.getOid(), expCfg);
 
     String zipFileName =
@@ -299,7 +296,7 @@ public class ArchiveManagerServiceIT extends RealTransactionSpringTestBase {
             .asStrucDoc();
     rename(user, copy, "complexDoc2");
 
-    expCfg = createDefaultArchiveConfig(user, spareFolder.getRoot());
+    expCfg = createDefaultArchiveConfig(user, spareFolder);
     list = createExportList(copy.getOid(), expCfg);
 
     zipFileName = archiveService.exportArchive(manifest, list, expCfg).getExportFile().getName();
@@ -313,7 +310,7 @@ public class ArchiveManagerServiceIT extends RealTransactionSpringTestBase {
     shareRecordWithGroup(user, group, copy);
     logoutAndLoginAs(u2);
 
-    expCfg = createDefaultArchiveConfig(u2, spareFolder2.getRoot());
+    expCfg = createDefaultArchiveConfig(u2, spareFolder2);
 
     zipFileName = archiveService.exportArchive(manifest, list, expCfg).getExportFile().getName();
     assertTrue(zipFileName.indexOf("zip") > 0); // successfully created a zip file
@@ -334,7 +331,7 @@ public class ArchiveManagerServiceIT extends RealTransactionSpringTestBase {
     StructuredDocument alienDoc =
         createBasicDocumentInRootFolderWithText(alien, doc.getFields().get(0).getFieldData());
     rename(alien, alienDoc, "alienDoc");
-    expCfg = createDefaultArchiveConfig(alien, spareFolder3.getRoot());
+    expCfg = createDefaultArchiveConfig(alien, spareFolder3);
     list = createExportList(alienDoc.getOid(), expCfg);
     zipFileName = archiveService.exportArchive(manifest, list, expCfg).getExportFile().getName();
     archive = parseArchiveFile(zipFileName, spareFolder3);
@@ -356,12 +353,11 @@ public class ArchiveManagerServiceIT extends RealTransactionSpringTestBase {
     return Collections.emptyList();
   }
 
-  private IArchiveModel parseArchiveFile(String zipFileName, TemporaryFolder folder)
-      throws IOException {
-    File zipFile = new File(folder.getRoot(), zipFileName);
+  private IArchiveModel parseArchiveFile(String zipFileName, File folder) throws IOException {
+    File zipFile = new File(folder, zipFileName);
 
     ImportArchiveReport report = new ImportArchiveReport();
-    String expandedFolderPath = ZipUtils.extractZip(zipFile, folder.getRoot());
+    String expandedFolderPath = ZipUtils.extractZip(zipFile, folder);
     IArchiveModel archive = archivalParser.parse(new File(expandedFolderPath), report);
     return archive;
   }
@@ -399,7 +395,7 @@ public class ArchiveManagerServiceIT extends RealTransactionSpringTestBase {
               found = true;
             }
           }
-          assertTrue("did not find replacement for element" + el, found);
+          assertTrue(found, "did not find replacement for element" + el);
         }
       }
     }
@@ -483,16 +479,15 @@ public class ArchiveManagerServiceIT extends RealTransactionSpringTestBase {
     ArchiveExportConfig expCfg = new ArchiveExportConfig();
     expCfg.setExporter(exporter);
     expCfg.setExportScope(ExportScope.SELECTION);
-    expCfg.setTopLevelExportFolder(tempExportFolder.getRoot());
+    expCfg.setTopLevelExportFolder(tempExportFolder);
     ImmutableExportRecordList list = createExportList(doc.getOid(), expCfg);
     String zipName = archiveService.exportArchive(manifest, list, expCfg).getExportFile().getName();
     assertTrue(zipName.indexOf("zip") > 0); // successfully created a zip file
 
-    File zipFile = new File(tempExportFolder.getRoot(), zipName);
+    File zipFile = new File(tempExportFolder, zipName);
     assertTrue(zipFile.exists()); // TBD unzip to read contents.
 
-    ArchivalImportConfig iconfig =
-        createDefaultArchiveImportConfig(exporter, tempImportFolder.getRoot());
+    ArchivalImportConfig iconfig = createDefaultArchiveImportConfig(exporter, tempImportFolder);
     ImportArchiveReport report =
         importer.importArchive(zipFile, iconfig, NULL_MONITOR, importStrategy::doImport);
     assertTrue(report.isSuccessful());
@@ -526,29 +521,29 @@ public class ArchiveManagerServiceIT extends RealTransactionSpringTestBase {
     assertTrue(contents.hasImageAnnotations());
     assertTrue(contents.hasElements(EcatComment.class));
     assertFalse(
-        "Math ID in text field was not updated",
         contents
             .getElements(RSMath.class)
             .getElements()
             .get(0)
             .getId()
-            .equals(originalMath.getId()));
+            .equals(originalMath.getId()),
+        "Math ID in text field was not updated");
     assertFalse(
-        "Chem ID in text field was not updated",
         contents
             .getElements(RSChemElement.class)
             .getElements()
             .get(0)
             .getId()
-            .equals(originalChemElement.getId()));
+            .equals(originalChemElement.getId()),
+        "Chem ID in text field was not updated");
     assertFalse(
-        "Imageannotation ID in text field was not updated",
         contents
             .getImageAnnotations()
             .getElements()
             .get(0)
             .getId()
-            .equals(originalAnnotation.getId()));
+            .equals(originalAnnotation.getId()),
+        "Imageannotation ID in text field was not updated");
   }
 
   @Test
@@ -581,16 +576,16 @@ public class ArchiveManagerServiceIT extends RealTransactionSpringTestBase {
     ArchiveExportConfig expCfg = new ArchiveExportConfig();
     expCfg.setExporter(exporter);
     expCfg.setExportScope(ExportScope.SELECTION);
-    expCfg.setTopLevelExportFolder(tempExportFolder.getRoot());
+    expCfg.setTopLevelExportFolder(tempExportFolder);
     ImmutableExportRecordList list = createExportList(doc.getOid(), expCfg);
     String zipName = archiveService.exportArchive(manifest, list, expCfg).getExportFile().getName();
     assertTrue(zipName.indexOf("zip") > 0); // successfully created a zip file
 
-    File zipFile = new File(tempExportFolder.getRoot(), zipName);
+    File zipFile = new File(tempExportFolder, zipName);
     assertTrue(zipFile.exists()); // TBD unzip to read contents.
 
     ArchivalImportConfig importConfig =
-        createDefaultArchiveImportConfig(exporter, tempImportFolder.getRoot());
+        createDefaultArchiveImportConfig(exporter, tempImportFolder);
     ImportArchiveReport report =
         importer.importArchive(zipFile, importConfig, NULL_MONITOR, importStrategy::doImport);
     assertTrue(report.isSuccessful());
@@ -692,7 +687,7 @@ public class ArchiveManagerServiceIT extends RealTransactionSpringTestBase {
 
     // now export document and empty folder, with default link depth 1
     ArchiveManifest manifest = new ArchiveManifest();
-    ArchiveExportConfig expCfg = createDefaultArchiveConfig(user, tempExportFolder.getRoot());
+    ArchiveExportConfig expCfg = createDefaultArchiveConfig(user, tempExportFolder);
     ImmutableExportRecordList list = createExportList(firstDoc.getOid(), expCfg);
     list.getFolderTree().add((new ArchiveModelFactory()).createArchiveFolder(exportedFolder));
 
@@ -705,46 +700,46 @@ public class ArchiveManagerServiceIT extends RealTransactionSpringTestBase {
 
     assertEquals(2, archive.getCurrentDocCount());
     assertEquals(
-        "firstDoc should be part of archive",
         1,
-        archive.findCurrentDocArchiveByName(firstDoc.getName()).size());
+        archive.findCurrentDocArchiveByName(firstDoc.getName()).size(),
+        "firstDoc should be part of archive");
     assertEquals(
-        "targetDocA should be part of archive",
         1,
-        archive.findCurrentDocArchiveByName(targetDocA.getName()).size());
+        archive.findCurrentDocArchiveByName(targetDocA.getName()).size(),
+        "targetDocA should be part of archive");
     assertEquals(
-        "targetDocB should not be in archive",
         0,
-        archive.findCurrentDocArchiveByName(targetDocB.getName()).size());
+        archive.findCurrentDocArchiveByName(targetDocB.getName()).size(),
+        "targetDocB should not be in archive");
 
     // assert relative link from firstDoc to targetDocA, absolute links to folder and notebook
     ArchivalDocumentParserRef firstDocRef =
         archive.findCurrentDocArchiveByName(firstDoc.getName()).get(0);
     ArchivalField firstDocArchivalField = firstDocRef.getArchivalDocument().getListFields().get(0);
     String firstDocExportedData = firstDocArchivalField.getFieldData();
-    assertTrue(firstDocExportedData, firstDocExportedData.contains("href=\"../doc_"));
+    assertTrue(firstDocExportedData.contains("href=\"../doc_"), firstDocExportedData);
     assertTrue(
-        firstDocExportedData,
         firstDocExportedData.contains(
-            "http://localhost:8080/globalId/" + folder.getGlobalIdentifier()));
+            "http://localhost:8080/globalId/" + folder.getGlobalIdentifier()),
+        firstDocExportedData);
     assertTrue(
-        firstDocExportedData,
         firstDocExportedData.contains(
-            "http://localhost:8080/globalId/" + notebook.getGlobalIdentifier()));
+            "http://localhost:8080/globalId/" + notebook.getGlobalIdentifier()),
+        firstDocExportedData);
 
     // relative link to exported folder, matching the document name in html export
     assertTrue(
-        firstDocExportedData,
         firstDocExportedData.contains(
-            "href=\"../" + exportedFolder.getName() + "-" + exportedFolder.getId()));
+            "href=\"../" + exportedFolder.getName() + "-" + exportedFolder.getId()),
+        firstDocExportedData);
 
     // absolute URLs pointing to another instance are left unchanged
     assertTrue(
-        firstDocExportedData,
-        firstDocExportedData.contains("http://localhost:8081/globalId/SD" + firstExternalLinkId));
+        firstDocExportedData.contains("http://localhost:8081/globalId/SD" + firstExternalLinkId),
+        firstDocExportedData);
     assertTrue(
-        firstDocExportedData,
-        firstDocExportedData.contains("http://localhost:8081/globalId/SD" + secondExternalLinkId));
+        firstDocExportedData.contains("http://localhost:8081/globalId/SD" + secondExternalLinkId),
+        firstDocExportedData);
 
     // exactly two links (to targetDocA and exportedFolder) in links list inside xml
     assertEquals(2, firstDocArchivalField.getLinkMeta().size());
@@ -756,10 +751,10 @@ public class ArchiveManagerServiceIT extends RealTransactionSpringTestBase {
         targetDocARef.getArchivalDocument().getListFields().get(0);
     String targetDocAExportedFieldData = targetDocAArchivalField.getFieldData();
     assertFalse(
-        targetDocAExportedFieldData, targetDocAExportedFieldData.contains("href=\"../doc_"));
+        targetDocAExportedFieldData.contains("href=\"../doc_"), targetDocAExportedFieldData);
     assertTrue(
-        targetDocAExportedFieldData,
         targetDocAExportedFieldData.contains(
-            "http://localhost:8080/globalId/" + targetDocB.getGlobalIdentifier()));
+            "http://localhost:8080/globalId/" + targetDocB.getGlobalIdentifier()),
+        targetDocAExportedFieldData);
   }
 }

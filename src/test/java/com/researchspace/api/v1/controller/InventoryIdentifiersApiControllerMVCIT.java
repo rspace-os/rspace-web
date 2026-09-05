@@ -7,19 +7,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiInventoryDOI;
 import com.researchspace.api.v1.model.ApiInventorySystemSettings;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
-import com.researchspace.service.impl.ConditionalTestRunner;
-import com.researchspace.service.impl.RunIfSystemPropertyDefined;
 import java.util.Arrays;
 import java.util.List;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -30,7 +30,6 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
 
 @WebAppConfiguration
-@RunWith(ConditionalTestRunner.class)
 public class InventoryIdentifiersApiControllerMVCIT extends API_MVC_InventoryTestBase {
 
   private @Autowired SystemSettingsApiController settingsController;
@@ -46,7 +45,7 @@ public class InventoryIdentifiersApiControllerMVCIT extends API_MVC_InventoryTes
 
   private BindingResult mockBindingResult = mock(BindingResult.class);
 
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     super.setUp();
     enableDataCiteRealConnectionSettings(true);
@@ -65,7 +64,7 @@ public class InventoryIdentifiersApiControllerMVCIT extends API_MVC_InventoryTes
         new MockHttpServletRequest(), igsnSettings, mockBindingResult, getSysAdminUser());
   }
 
-  @After
+  @AfterEach
   public void disableDataCiteConnection() throws BindException {
     ApiInventorySystemSettings.IdentifierSettings igsnSettings =
         new ApiInventorySystemSettings.IdentifierSettings();
@@ -86,7 +85,7 @@ public class InventoryIdentifiersApiControllerMVCIT extends API_MVC_InventoryTes
   }
 
   @Test
-  @RunIfSystemPropertyDefined("nightly")
+  @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
   public void realConnectionRegisterUpdateDeleteDataciteIdentifier() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
     String apiKey = createNewApiKeyForUser(anyUser);
@@ -112,7 +111,7 @@ public class InventoryIdentifiersApiControllerMVCIT extends API_MVC_InventoryTes
   }
 
   @Test
-  @RunIfSystemPropertyDefined("nightly")
+  @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
   public void realConnection_BulkCreate_Find_Assign_Delete_Identifier() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
     String apiKey = createNewApiKeyForUser(anyUser);
@@ -168,7 +167,7 @@ public class InventoryIdentifiersApiControllerMVCIT extends API_MVC_InventoryTes
   }
 
   @Test
-  @RunIfSystemPropertyDefined("nightly")
+  @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
   public void realConnectionRegisterPublishRetractDataciteIdentifier() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
     String apiKey = createNewApiKeyForUser(anyUser);
@@ -221,6 +220,26 @@ public class InventoryIdentifiersApiControllerMVCIT extends API_MVC_InventoryTes
     registeredDoi.setDates(List.of(testDate));
   }
 
+  /*
+   * ApiInventoryDOI.state is @JsonProperty READ_ONLY (a record update carrying "state" could
+   * otherwise open the unauthenticated public page), so a plain readValue of the response drops it
+   * and every state assertion in this class would compare against null. These helpers re-attach it
+   * from the response JSON, the only place it can be observed.
+   */
+  private ApiInventoryDOI doiWithStateFromJson(MvcResult result) throws Exception {
+    ApiInventoryDOI doi = getFromJsonResponseBody(result, ApiInventoryDOI.class);
+    doi.setState(readStateOf(readResponseJson(result)));
+    return doi;
+  }
+
+  private JsonNode readResponseJson(MvcResult result) throws Exception {
+    return new ObjectMapper().readTree(result.getResponse().getContentAsString());
+  }
+
+  private String readStateOf(JsonNode doiJson) {
+    return doiJson.path("state").asText(null);
+  }
+
   private ApiInventoryDOI registerNewIdentifier(User anyUser, String apiKey, String parentGlobalId)
       throws Exception {
     String post = "{ \"parentGlobalId\": \"" + parentGlobalId + "\" }";
@@ -229,8 +248,7 @@ public class InventoryIdentifiersApiControllerMVCIT extends API_MVC_InventoryTes
             .perform(createBuilderForPostWithJSONBody(apiKey, "/identifiers", anyUser, post))
             .andReturn();
     assertNull(result.getResolvedException());
-    ApiInventoryDOI registeredDoi = getFromJsonResponseBody(result, ApiInventoryDOI.class);
-    return registeredDoi;
+    return doiWithStateFromJson(result);
   }
 
   private ApiInventoryDOI assignIdentifier(
@@ -272,7 +290,13 @@ public class InventoryIdentifiersApiControllerMVCIT extends API_MVC_InventoryTes
             .andExpect(status().is(HttpStatus.CREATED.value()))
             .andReturn();
     assertNull(result.getResolvedException());
-    return Arrays.asList(getFromJsonResponseBody(result, ApiInventoryDOI[].class));
+    List<ApiInventoryDOI> dois =
+        Arrays.asList(getFromJsonResponseBody(result, ApiInventoryDOI[].class));
+    JsonNode doisJson = readResponseJson(result);
+    for (int i = 0; i < dois.size(); i++) {
+      dois.get(i).setState(readStateOf(doisJson.path(i)));
+    }
+    return dois;
   }
 
   private Boolean deleteDraftDataCiteDoiForItem(User anyUser, String apiKey, Long identifierId)
@@ -298,7 +322,7 @@ public class InventoryIdentifiersApiControllerMVCIT extends API_MVC_InventoryTes
                     anyUser))
             .andExpect(status().is2xxSuccessful())
             .andReturn();
-    return getFromJsonResponseBody(result, ApiInventoryDOI.class);
+    return doiWithStateFromJson(result);
   }
 
   private ApiInventoryDOI retractPublishedIdentifier(User anyUser, String apiKey, Long identifierId)
@@ -313,6 +337,6 @@ public class InventoryIdentifiersApiControllerMVCIT extends API_MVC_InventoryTes
                     anyUser))
             .andExpect(status().is2xxSuccessful())
             .andReturn();
-    return getFromJsonResponseBody(result, ApiInventoryDOI.class);
+    return doiWithStateFromJson(result);
   }
 }

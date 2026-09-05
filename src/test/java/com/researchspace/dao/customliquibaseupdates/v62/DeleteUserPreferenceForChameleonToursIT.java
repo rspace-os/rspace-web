@@ -11,15 +11,15 @@ import com.researchspace.model.preference.Preference;
 import com.researchspace.service.UserManager;
 import liquibase.exception.CustomChangeException;
 import liquibase.exception.SetupException;
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class DeleteUserPreferenceForChameleonToursIT extends AbstractDBHelpers {
 
   private @Autowired UserManager userManager;
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }

@@ -1,10 +1,10 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -21,9 +21,9 @@ import com.researchspace.service.AuditManager;
 import java.util.List;
 import java.util.function.Function;
 import org.hibernate.HibernateException;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.web.servlet.MvcResult;
@@ -32,12 +32,12 @@ public class FileDownloadControllerMVCIT extends MVCTestBase {
 
   private @Autowired AuditManager auditMgr;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }
@@ -56,15 +56,10 @@ public class FileDownloadControllerMVCIT extends MVCTestBase {
             hashes2 = getSignatureHashesForSignature(signResult.getSignature().get());
             return hashes2.stream().filter(h -> h.getFile() != null).findAny().get().getFile();
           } catch (Exception e) {
-            assertFalse(
-                "Invokable threw internal exception " + e.getMessage(), 1 == 1); // fail test
-            return null;
+            return fail("Invokable threw internal exception", e);
           }
         };
-    Function<InvokableWithResult<FileProperty>, FileProperty> p =
-        t -> {
-          return t.invokeWithResult();
-        };
+    Function<InvokableWithResult<FileProperty>, FileProperty> p = t -> t.invokeWithResult();
     FileProperty fp = waitUntilNotNull(p, inv, 5000L);
     assertNotNull(fp);
     MvcResult result =

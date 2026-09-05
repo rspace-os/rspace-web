@@ -1,7 +1,7 @@
 package com.researchspace.dao.customliquibaseupdates;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.Constants;
 import com.researchspace.model.User;
@@ -15,13 +15,14 @@ import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import java.util.ArrayList;
 import java.util.List;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
-@Ignore("historical changeset, no longer works as relies on folderMgr.move() allowing unsafe moves")
+@Disabled(
+    "historical changeset, no longer works as relies on folderMgr.move() allowing unsafe moves")
 public class MoveTemplateFolderFromGalleryToHomeFolderRSPAC921_1_36IT
     extends RealTransactionSpringTestBase {
 
@@ -31,7 +32,7 @@ public class MoveTemplateFolderFromGalleryToHomeFolderRSPAC921_1_36IT
   @Qualifier("oldFolderSetup")
   private UserFolderCreator oldTemplateInGallerySetup;
 
-  @Before
+  @BeforeEach
   public void setup() {
     contentInit.setUserFolderCreator(oldTemplateInGallerySetup);
   }

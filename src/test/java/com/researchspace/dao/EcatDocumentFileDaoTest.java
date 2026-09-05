@@ -1,8 +1,8 @@
 package com.researchspace.dao;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SortOrder;
@@ -22,9 +22,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URI;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class EcatDocumentFileDaoTest extends SpringTransactionalTest {
@@ -36,12 +34,6 @@ public class EcatDocumentFileDaoTest extends SpringTransactionalTest {
 
   private @Autowired EcatDocumentFileDao docFileDao;
   private @Autowired FileMetadataDao fDao;
-
-  @Before
-  public void setUp() throws Exception {}
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void testGetEcatDocumentFileByURI() throws IOException {

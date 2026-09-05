@@ -1,9 +1,9 @@
 package com.researchspace.service.impl;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -33,19 +33,17 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class UserDeletionManagerTest {
-
-  public @Rule MockitoRule mmockery = MockitoJUnit.rule();
 
   private @Mock GroupManager grpMgr;
   private @Mock FormDao formDao;
@@ -63,7 +61,7 @@ public class UserDeletionManagerTest {
   @InjectMocks UserDeletionManagerImpl userDeletionMgr;
   User toDelete, deleter, sysadmin1, sysadminToDelete, sysadmin3;
 
-  @Before
+  @BeforeEach
   public void before() throws IOException {
     toDelete = TestFactory.createAnyUser("any");
     toDelete.setId(1L);
@@ -73,11 +71,6 @@ public class UserDeletionManagerTest {
     sysadmin1 = createSysadminWithID(3L, Constants.SYSADMIN_UNAME);
     sysadminToDelete = createSysadminWithID(4L, "sysadminToDelete");
     sysadmin3 = createSysadminWithID(5L, "sysadmin3");
-
-    when(fileStore.verifyUserFilestoreFiles(Mockito.any())).thenReturn(true);
-    when(deletedResourcesHelper.isUserResourcesListWriteable()).thenReturn(true);
-    when(deletedResourcesHelper.saveUserResourcesListToTemporaryFile(Mockito.any(), Mockito.any()))
-        .thenReturn(true);
   }
 
   User createSysadminWithID(Long id, String uname) {
@@ -89,6 +82,7 @@ public class UserDeletionManagerTest {
 
   @Test
   public void removeSelfUserFails() {
+    stubResourcesListWriteable();
     enablePermissions();
     when(userDao.get(1L)).thenReturn(deleter);
     ServiceOperationResult<User> result = userDeletionMgr.removeUser(1L, noRestriction(), deleter);
@@ -100,9 +94,9 @@ public class UserDeletionManagerTest {
 
   @Test
   public void removeSysadmin1Fails() {
+    stubResourcesListWriteable();
     enablePermissions();
     when(userDao.get(1L)).thenReturn(sysadmin1);
-    mockSysadminListing(toList(sysadminToDelete, sysadmin1));
     ServiceOperationResult<User> result = userDeletionMgr.removeUser(1L, noRestriction(), deleter);
     assertFalse(result.isSucceeded());
     assertEquals(
@@ -115,17 +109,21 @@ public class UserDeletionManagerTest {
 
   @Test
   public void removeAnySysadminSucceeds() {
+    stubResourcesListSaved();
+    stubResourcesListWriteable();
+    stubFilestoreFilesVerified();
     standardMockSetup();
 
     mockSysadminListing(toList(sysadminToDelete, sysadmin1));
     mockDeletion();
     ServiceOperationResult<User> result = userDeletionMgr.removeUser(1L, noRestriction(), deleter);
-    assertTrue(result.getMessage(), result.isSucceeded());
+    assertTrue(result.isSucceeded(), result.getMessage());
     assertTrue(userDeletionMgr.isUserRemovable(1L, noRestriction(), deleter).isSucceeded());
   }
 
   @Test
   public void removeAnySysadminRequiresAtLeast1OtherActiveSysadmin() {
+    stubResourcesListWriteable();
     standardMockSetup();
     mockSysadminListing(toList(sysadminToDelete, sysadmin3));
     // disable remaining sysadmin
@@ -138,6 +136,7 @@ public class UserDeletionManagerTest {
 
   @Test
   public void removeAnySysadminRequiresAtLeast1_UnlockedSysadmin() {
+    stubResourcesListWriteable();
     standardMockSetup();
     mockSysadminListing(toList(sysadminToDelete, sysadmin3));
     // lock remaining sysadmin
@@ -150,6 +149,7 @@ public class UserDeletionManagerTest {
 
   @Test
   public void removeOnlyPiFails() {
+    stubResourcesListWriteable();
     User pi = TestFactory.createAnyUserWithRole("pi", Role.PI_ROLE.getName());
     Group grp = TestFactory.createAnyGroup(pi, new User[] {});
     when(userDao.get(1L)).thenReturn(pi);
@@ -167,6 +167,9 @@ public class UserDeletionManagerTest {
 
   @Test
   public void strictUserDeletionRequiresInactiveGroup() {
+    stubResourcesListSaved();
+    stubResourcesListWriteable();
+    stubFilestoreFilesVerified();
     User pi = TestFactory.createAnyUserWithRole("pi", Role.PI_ROLE.getName());
     User u1 = TestFactory.createAnyUser("u1");
     u1.setId(1L);
@@ -184,14 +187,14 @@ public class UserDeletionManagerTest {
     // case 1 strict policy is enabled, and lastLogins for all group members are before this date
     Group grp = TestFactory.createAnyGroup(pi, new User[] {u1, u2});
     ServiceOperationResult<User> result = userDeletionMgr.removeUser(1L, policy, deleter);
-    assertTrue(result.getMessage(), result.isSucceeded());
+    assertTrue(result.isSucceeded(), result.getMessage());
     assertTrue(userDeletionMgr.isUserRemovable(1L, policy, deleter).isSucceeded());
 
     // now set policy so that u2 has logged in more recently than cutoff:
     // case 2 strict policy is enabled, and lastLogins for >=1 group member are AFTER this date
     policy.setLastLoginCutOffForGroup(nYearsAgo(3));
     result = userDeletionMgr.removeUser(1L, policy, deleter);
-    assertFalse(result.getMessage(), result.isSucceeded());
+    assertFalse(result.isSucceeded(), result.getMessage());
     assertFalse(userDeletionMgr.isUserRemovable(1L, policy, deleter).isSucceeded());
 
     // now ignore the policy, user is removed anyway regardless of date cutoff
@@ -207,6 +210,7 @@ public class UserDeletionManagerTest {
 
   @Test
   public void isUserRemovableChecksResourcesFolderCconfiguration() throws IOException {
+    stubResourcesListWriteable();
     enablePermissions();
     when(userDao.get(toDelete.getId())).thenReturn(toDelete);
 
@@ -220,16 +224,15 @@ public class UserDeletionManagerTest {
     userRemovable = userDeletionMgr.isUserRemovable(toDelete.getId(), noRestriction(), sysadmin1);
     assertFalse(userRemovable.isSucceeded());
     assertTrue(
-        "was: " + userRemovable.getMessage(),
-        userRemovable
-            .getMessage()
-            .startsWith("sysadmin.delete.user.resourceList.folder points to"));
+        userRemovable.getMessage().startsWith("sysadmin.delete.user.resourceList.folder points to"),
+        "was: " + userRemovable.getMessage());
   }
 
   @Test
   public void removeUserFailsIfFilestoreResourcesListIncorrect() throws IOException {
+    stubResourcesListWriteable();
+    stubFilestoreFilesVerified();
     enablePermissions();
-    mockDeletion();
     when(userDao.get(toDelete.getId())).thenReturn(toDelete);
     when(fileStore.verifyUserFilestoreFiles(Mockito.any())).thenReturn(false);
 
@@ -284,5 +287,18 @@ public class UserDeletionManagerTest {
 
   private UserDeletionPolicy noRestriction() {
     return new UserDeletionPolicy(UserTypeRestriction.NO_RESTRICTION);
+  }
+
+  private void stubResourcesListSaved() {
+    when(deletedResourcesHelper.saveUserResourcesListToTemporaryFile(Mockito.any(), Mockito.any()))
+        .thenReturn(true);
+  }
+
+  private void stubResourcesListWriteable() {
+    when(deletedResourcesHelper.isUserResourcesListWriteable()).thenReturn(true);
+  }
+
+  private void stubFilestoreFilesVerified() {
+    when(fileStore.verifyUserFilestoreFiles(Mockito.any())).thenReturn(true);
   }
 }

@@ -1,8 +1,8 @@
 package com.researchspace.model.record;
 
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 import com.researchspace.model.EcatImage;
 import com.researchspace.model.User;
