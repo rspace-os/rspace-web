@@ -298,7 +298,7 @@
             </resource>
           </webResources>
           <warSourceExcludes>
-            ui/node/**, ui/node_modules/**, ui/dist/stats.json
+            ui/node/**, ui/node_modules/**, ui/dist/stats.json, ui/storybook-static/**
           </warSourceExcludes>
         </configuration>
       </plugin>

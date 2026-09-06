@@ -82,6 +82,20 @@ the optional Maven/system flag
 proxied — the `@vite/client` script connects directly to the dev server using
 `hmr.clientPort` from `vite.config.ts`.
 
+### Storybook
+
+Run `pnpm storybook` from the repository root to browse the component catalog,
+or `pnpm storybook:build` to produce a static build. The attributed MUI v9
+stories live in `src/modules/common/ui/material-ui`; see its `UPSTREAM.md` for
+provenance. `pnpm storybook:test` runs the stories in Chromium.
+
+To review the built catalog inside a local RSpace development server, run
+`pnpm run storybook:build`, set `dev.storybook.preview.enabled=true` in
+`deployment.properties`, and open `/public/storybook` on that instance.
+The route serves files from the gitignored `storybook-static` directory and is
+not registered when the property is false. Generated Storybook files are also
+excluded from WARs.
+
 ## Testing Strategy
 
 ### Testing Frameworks
