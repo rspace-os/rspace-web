@@ -17,6 +17,7 @@ rs.customer.name.short=RSpace Local
 rs.usergroup.initfile=deployments/dev/initUsers.csv
 email.enabled=false
 license.server.active=false
+dev.storybook.preview.enabled=true
 
 api.beta.enabled=true
 #api.beta.allowUnauthorizedLinks=true
