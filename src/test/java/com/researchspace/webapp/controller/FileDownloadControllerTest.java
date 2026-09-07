@@ -97,7 +97,6 @@ public class FileDownloadControllerTest {
     user = TestFactory.createAnyUser("any");
     resp = new MockHttpServletResponse();
     root = new FileStoreRoot(tempFolder.toURI().toString());
-    when(properties.isConversionEnabled()).thenReturn(true);
 
     ctrller.setMessageSource(new MessageSourceUtils(new JsonMessageSource()));
   }
@@ -228,6 +227,7 @@ public class FileDownloadControllerTest {
   }
 
   private void mockEnableConversionCaching() {
+    when(properties.isConversionEnabled()).thenReturn(true);
     when(properties.isConversionCachingEnabled()).thenReturn(true);
   }
 
