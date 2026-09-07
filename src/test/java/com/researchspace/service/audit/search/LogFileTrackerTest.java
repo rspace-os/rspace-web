@@ -24,7 +24,7 @@ public class LogFileTrackerTest {
   File logFolder;
   final int TOTAL_LOG_FILES = 5;
   SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
-  @TempDir public File folder;
+  @TempDir File folder;
 
   @BeforeEach
   public void setUp() {
