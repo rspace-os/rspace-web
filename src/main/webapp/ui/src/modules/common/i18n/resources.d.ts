@@ -750,6 +750,119 @@ export default interface Resources {
       "insertButton": "Insert"
     }
   },
+  "booking": {
+    "bookableItemDetails": {
+      "fields": {
+        "bufferAfter": "Buffer after",
+        "bufferBefore": "Buffer before",
+        "createdAt": "Created at",
+        "createdBy": "Created by",
+        "doubleBooking": "Allow double booking",
+        "granularity": "Slot granularity",
+        "location": "Location",
+        "maximumDuration": "Maximum duration",
+        "openingHours": "Opening hours",
+        "timezone": "Timezone",
+        "updatedAt": "Last updated"
+      }
+    },
+    "preferences": {
+      "actions": {
+        "reset": "Reset to global defaults",
+        "save": "Save"
+      },
+      "availabilityWindow": {
+        "description": "The times shown on each day's availability bars and timelines.",
+        "end": "End time",
+        "endOfDay": "End of day (24:00)",
+        "legend": "Default availability window",
+        "start": "Start time"
+      },
+      "description": "Choose how Booking dates, times, forms, and availability are displayed. These settings do not change an item's opening hours.",
+      "errors": {
+        "invalid": "Choose a valid same-day window and, for Custom, a valid IANA timezone.",
+        "save": "Booking preferences could not be saved."
+      },
+      "resetComplete": "Global Booking defaults restored.",
+      "saved": "Booking preferences saved.",
+      "timezone": {
+        "browser": "Use Browser Timezone ({timezone})",
+        "custom": "Use Custom Timezone",
+        "customLabel": "Custom timezone",
+        "institution": "Use Institution Timezone ({timezone})",
+        "legend": "Default timezone"
+      },
+      "title": "Booking preferences"
+    },
+    "settings": {
+      "actions": {
+        "save": "Save settings"
+      },
+      "defaultSharing": {
+        "addNamed": "Add {name}",
+        "addUserOrGroup": "Add user or group",
+        "description": "New bookable items grant the Booker role using this choice. Existing items are unchanged.",
+        "error": "Users and groups could not be searched.",
+        "loading": "Searching users and groups…",
+        "noResults": "No matching users or groups.",
+        "options": {
+          "ALL_USERS": {
+            "description": "Everyone, including future users, can create bookings.",
+            "label": "All users"
+          },
+          "ONLY_ME": {
+            "description": "Only the creator receives access as Owner.",
+            "label": "Only me"
+          },
+          "SELECTED": {
+            "description": "Exactly the users and groups selected below receive Booker access.",
+            "label": "Selected users and groups"
+          }
+        },
+        "removeNamed": "Remove {name}",
+        "required": "Add at least one user or group.",
+        "search": "Search",
+        "searchResults": "User and group search results",
+        "selected": "Selected users and groups",
+        "title": "Default shared with",
+        "unavailable": "Unavailable"
+      },
+      "description": "These defaults are copied to new bookable items. Existing bookable items keep their own settings.",
+      "displayDefaults": {
+        "description": "These defaults apply to users who have not saved their own Booking preferences.",
+        "title": "Booking display defaults"
+      },
+      "errors": {
+        "buffer": "Enter a whole number from 0 to 10,080.",
+        "granularity": "Choose 1, 5, 10, or 15 minutes.",
+        "maximumDuration": "Use 0 or a duration divisible by the selected time increment.",
+        "openingHours": "Use an opening start before the end, or select Open all day.",
+        "save": "RSpace could not save the booking settings. Try again.",
+        "stale": "These settings changed after you opened this page. Copy your changes, then refresh the page before editing again."
+      },
+      "fields": {
+        "allowDoubleBooking": "Allow concurrent bookings",
+        "buffer": "Buffer before and after bookings (minutes)",
+        "bufferMixed": "The stored before and after buffers differ. Enter a value to replace both, or leave this blank to preserve them.",
+        "fullDay": "Open all day",
+        "granularity": "Time increment",
+        "granularityOption": "{count, plural, one {# minute} other {# minutes}}",
+        "legend": "Scheduling rules",
+        "maximumDuration": "Maximum booking duration (minutes)",
+        "maximumDurationDescription": "Use 0 to allow bookings up to the 366-day system limit.",
+        "openingEnd": "Opening end",
+        "openingStart": "Opening start"
+      },
+      "saved": "Booking settings saved.",
+      "title": "Booking Settings"
+    },
+    "sidebar": {
+      "administration": "Administration",
+      "label": "Booking",
+      "preferences": "Preferences",
+      "settings": "Settings"
+    }
+  },
   "common": {
     "accessibilityTips": {
       "buttonLabel": "Accessibility tips",

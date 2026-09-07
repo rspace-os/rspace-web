@@ -1,12 +1,8 @@
 import { cleanup, render } from "@testing-library/react";
-import { afterEach, describe, expect, test, vi } from "vitest";
+import { afterEach, describe, expect, test } from "vitest";
 import { page } from "vitest/browser";
 import { AppBarStory } from "./AppBar.story";
 import { AppBarPage } from "./pageObjects/AppBarPage";
-
-vi.mock("./AccountMenu", () => ({
-  default: () => <button type="button" aria-label="Account Menu" className="size-8 shrink-0" />,
-}));
 
 const appBar = new AppBarPage();
 

@@ -2,9 +2,12 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createMemoryHistory, createRootRoute, createRouter, RouterProvider } from "@tanstack/react-router";
 import { Suspense } from "react";
 import { OAUTH_TOKEN } from "@/__tests__/mocks/oauthTokenMocks";
+import { featureFlagQueryKeys } from "@/featureFlags/queries";
+import { disabledFeatureFlags } from "@/featureFlags/schema";
 import { queryKeys as authQueryKeys } from "@/modules/common/hooks/auth";
 import type { CurrentUser } from "@/modules/common/queries/currentUser";
 import { currentUserQueryKeys } from "@/modules/common/queries/currentUser";
+import { UserSessionStoreProvider } from "@/modules/common/stores/userSessionStore";
 import AppBar from "./AppBar";
 import { appConfigQueryKeys } from "./queries/config";
 import { nextMaintenanceQueryKeys } from "./queries/nextMaintenance";
@@ -55,6 +58,7 @@ export function AppBarStory() {
     deploymentHelpEmail: null,
   });
   queryClient.setQueryData(nextMaintenanceQueryKeys.next(), null);
+  queryClient.setQueryData(featureFlagQueryKeys.flags(), disabledFeatureFlags());
 
   const rootRoute = createRootRoute({ component: AppBarRoute });
   const router = createRouter({
@@ -65,7 +69,9 @@ export function AppBarStory() {
   return (
     <QueryClientProvider client={queryClient}>
       <Suspense fallback={null}>
-        <RouterProvider router={router} />
+        <UserSessionStoreProvider>
+          <RouterProvider router={router} />
+        </UserSessionStoreProvider>
       </Suspense>
     </QueryClientProvider>
   );
