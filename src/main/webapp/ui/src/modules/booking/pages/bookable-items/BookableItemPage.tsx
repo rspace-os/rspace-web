@@ -1,0 +1,871 @@
+import { Tabs } from "@base-ui/react/tabs";
+import { Form, isDirty, reset, useForm } from "@formisch/react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate, useParams, useSearch } from "@tanstack/react-router";
+import { PencilIcon } from "lucide-react";
+import type { ReactNode } from "react";
+import { Suspense, useEffect, useId, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { SchedulingSettingsFields } from "@/modules/booking/configuration/schedulingSettings";
+import { bookingApiV2JsonHeaders } from "@/modules/booking/domain/apiV2";
+import { ApiV2ProblemError, parseApiV2Problem } from "@/modules/booking/domain/booking";
+import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { RenderFields } from "@/modules/common/collection-form/RenderFields";
+import {
+  RESPONSIVE_INLINE_FIELD_CONTAINER_CLASS_NAME,
+  RESPONSIVE_INLINE_FIELD_GRID_CLASS_NAME,
+  RESPONSIVE_INLINE_FIELD_ROW_CLASS_NAME,
+} from "@/modules/common/collection-form/responsiveFieldLayout";
+import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
+import { DirtyNavigationGuard } from "@/modules/common/navigation/DirtyNavigationGuard";
+import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
+import { ResourceAccessEditor } from "@/modules/common/resource-access/ResourceAccessEditor";
+import { leaveResource } from "@/modules/common/resource-access/resourceAccess";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/modules/common/ui/alert-dialog";
+import { Badge } from "@/modules/common/ui/badge";
+import { Button } from "@/modules/common/ui/button";
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/modules/common/ui/card";
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/modules/common/ui/empty";
+import { Input } from "@/modules/common/ui/input";
+import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
+import { Skeleton } from "@/modules/common/ui/skeleton";
+import { UserBadge } from "@/modules/common/ui/user-badge";
+import { BookableItemAuditLog } from "./BookableItemAuditLog";
+import {
+  BookingConfigurationActionsMenu,
+  type BookingConfigurationLifecycleAction,
+} from "./BookingConfigurationActionsMenu";
+import {
+  BOOKING_CONFIGURATION_READ_FIELDS,
+  type BookingConfiguration,
+  type BookingConfigurationUpdateInput,
+  BookingConfigurationUpdateInputSchema,
+  bookingConfigurationFields,
+  fetchBookingConfigurationDetailsByTarget,
+} from "./bookingConfiguration";
+import { bookingResourceAccessAdapter } from "./bookingResourceAccess";
+
+type BookableItemTab = "details" | "audit" | "access";
+
+const itemPageClassName = "mx-auto max-w-5xl space-y-6 p-4 sm:p-8";
+const itemColumnsClassName = "grid gap-6 @2xl:grid-cols-[minmax(0,1fr)_16rem]";
+
+function BookableItemSkeleton() {
+  const { t } = useTranslation("common");
+  return (
+    <main className={itemPageClassName} aria-busy="true">
+      <p role="status" className="sr-only">
+        {t("loading")}
+      </p>
+      <div className="@container" aria-hidden="true">
+        <div className={itemColumnsClassName}>
+          <div className="min-w-0 space-y-6">
+            <Skeleton className="h-20 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-90 w-full" />
+          </div>
+          <div data-slot="bookable-item-facts" className="space-y-4">
+            <Skeleton className="h-9 w-full" />
+            {[0, 1, 2, 3].map((row) => (
+              <Skeleton key={row} className="h-12 w-full" />
+            ))}
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+function bookableItemTab(tab: string | undefined): BookableItemTab {
+  return tab === "details" || tab === "audit" || tab === "access" ? tab : "details";
+}
+
+async function updateBookingConfiguration(
+  id: number,
+  version: number,
+  input: BookingConfigurationUpdateInput,
+  token: string,
+): Promise<void> {
+  const search = new URLSearchParams({
+    depth: "1",
+    "fields[booking-configurations]": BOOKING_CONFIGURATION_READ_FIELDS,
+  });
+  const response = await fetch(`/api/v2/booking-configurations/${id}?${search}`, {
+    method: "PATCH",
+    headers: bookingApiV2JsonHeaders(token, { "If-Match": `"${version}"` }),
+    body: JSON.stringify(input),
+  });
+  if (!response.ok) throw await parseApiV2Problem(response);
+}
+
+async function archiveBookingConfiguration(id: number, version: number, token: string): Promise<void> {
+  const response = await fetch(`/api/v2/booking-configurations/${id}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "If-Match": `"${version}"`,
+      "X-Requested-With": "XMLHttpRequest",
+    },
+  });
+  if (!response.ok) throw await parseApiV2Problem(response);
+}
+
+async function restoreBookingConfiguration(id: number, version: number, token: string): Promise<void> {
+  const response = await fetch(`/api/v2/booking-configurations/${id}`, {
+    method: "PATCH",
+    headers: bookingApiV2JsonHeaders(token, { "If-Match": `"${version}"` }),
+    body: JSON.stringify({ state: "ACTIVE" }),
+  });
+  if (!response.ok) throw await parseApiV2Problem(response);
+}
+
+async function permanentlyDeleteBookingConfiguration(id: number, version: number, token: string): Promise<void> {
+  const response = await fetch(`/api/v2/booking-configurations/${id}?permanent=true`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "If-Match": `"${version}"`,
+      "X-Requested-With": "XMLHttpRequest",
+    },
+  });
+  if (!response.ok) throw await parseApiV2Problem(response);
+}
+
+function configurationInput(configuration: BookingConfiguration): BookingConfigurationUpdateInput {
+  return {
+    enabled: configuration.enabled,
+    slotGranularityMinutes: configuration.slotGranularityMinutes,
+    openingStart: configuration.openingStart,
+    openingEnd: configuration.openingEnd,
+    bufferBeforeMinutes: configuration.bufferBeforeMinutes,
+    bufferAfterMinutes: configuration.bufferAfterMinutes,
+    maxBookingDurationMinutes: configuration.maxBookingDurationMinutes,
+    allowDoubleBooking: configuration.allowDoubleBooking,
+  };
+}
+
+type BookableItemLifecycleErrorKey =
+  | "bookableItemDetails.lifecycleErrors.restore"
+  | "bookableItemDetails.lifecycleErrors.stale"
+  | "bookableItemDetails.lifecycleErrors.stateChanged"
+  | "bookableItemDetails.permanentDeleteDialog.error";
+
+function lifecycleErrorKey(error: unknown, fallback: BookableItemLifecycleErrorKey): BookableItemLifecycleErrorKey {
+  if (error instanceof ApiV2ProblemError && error.status === 412) {
+    return "bookableItemDetails.lifecycleErrors.stale";
+  }
+  if (error instanceof ApiV2ProblemError && error.status === 409) {
+    return "bookableItemDetails.lifecycleErrors.stateChanged";
+  }
+  return fallback;
+}
+
+function SpotlightHeader({
+  configuration,
+  target,
+  action,
+  displayTimeZone,
+}: {
+  configuration: BookingConfiguration;
+  target: NonNullable<BookingConfiguration["target"]>;
+  action?: ReactNode;
+  displayTimeZone: string;
+}) {
+  const { t } = useTranslation("booking");
+  return (
+    <section className="flex flex-wrap items-center gap-4">
+      <InventoryItem
+        name={target.value.name}
+        nameAs="h1"
+        globalId={target.globalId}
+        idPlacement="title"
+        className="min-w-full flex-1 p-0 sm:min-w-64"
+      >
+        <span>{t("myBookings.timezone", { timezone: displayTimeZone })}</span>
+      </InventoryItem>
+      <div
+        data-slot="bookable-item-header-actions"
+        className="flex w-full min-w-0 flex-wrap items-center gap-3 sm:w-auto sm:shrink-0 [&_[data-slot=badge]]:h-[30px] [&_button]:h-[30px] [&_button]:min-h-[30px]"
+      >
+        <Badge variant={configuration.enabled ? "default" : "secondary"}>
+          {configuration.enabled ? t("bookableItemDetails.enabled") : t("bookableItemDetails.disabled")}
+        </Badge>
+        {configuration.state === "ARCHIVED" ? (
+          <Badge variant="secondary">{t("bookableItemDetails.archived")}</Badge>
+        ) : null}
+        {action}
+      </div>
+    </section>
+  );
+}
+
+function PageTab({ value, disabled, children }: { value: BookableItemTab; disabled: boolean; children: ReactNode }) {
+  return (
+    <Tabs.Tab
+      value={value}
+      disabled={disabled}
+      className="-mb-px cursor-default border-b-2 border-transparent px-4 py-3 text-sm font-medium text-muted-foreground transition-colors outline-none select-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/30 aria-selected:border-primary aria-selected:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+    >
+      {children}
+    </Tabs.Tab>
+  );
+}
+
+function RulesReadOut({
+  configuration,
+  displayTimeZone,
+}: {
+  configuration: BookingConfiguration;
+  displayTimeZone: string;
+}) {
+  const { t, i18n } = useTranslation("booking");
+  const updatedAt =
+    configuration.updatedAt === null || configuration.updatedAt === undefined ? (
+      t("bookableItemDetails.notAvailable")
+    ) : (
+      <time dateTime={configuration.updatedAt}>
+        {new Intl.DateTimeFormat(i18n.language, {
+          dateStyle: "medium",
+          timeStyle: "short",
+          timeZone: displayTimeZone,
+        }).format(new Date(configuration.updatedAt))}
+      </time>
+    );
+  const facts: Array<[string, ReactNode]> = [
+    [t("bookableItemDetails.fields.timezone"), configuration.timezone],
+    [t("bookableItemDetails.fields.updatedAt"), updatedAt],
+    [t("bookableItemDetails.fields.openingHours"), `${configuration.openingStart}–${configuration.openingEnd}`],
+    [
+      t("bookableItemDetails.fields.granularity"),
+      t("bookableItemDetails.minutes", { count: configuration.slotGranularityMinutes }),
+    ],
+    [
+      t("bookableItemDetails.fields.maximumDuration"),
+      configuration.maxBookingDurationMinutes === 0
+        ? t("bookableItemDetails.unlimited")
+        : t("bookableItemDetails.minutes", { count: configuration.maxBookingDurationMinutes }),
+    ],
+    [
+      t("bookableItemDetails.fields.bufferBefore"),
+      t("bookableItemDetails.minutes", { count: configuration.bufferBeforeMinutes }),
+    ],
+    [
+      t("bookableItemDetails.fields.bufferAfter"),
+      t("bookableItemDetails.minutes", { count: configuration.bufferAfterMinutes }),
+    ],
+    [
+      t("bookableItemDetails.fields.doubleBooking"),
+      configuration.allowDoubleBooking ? t("bookableItemDetails.yes") : t("bookableItemDetails.no"),
+    ],
+  ];
+
+  return (
+    <div className={RESPONSIVE_INLINE_FIELD_CONTAINER_CLASS_NAME}>
+      <dl className={`${RESPONSIVE_INLINE_FIELD_GRID_CLASS_NAME} gap-y-4`}>
+        {facts.map(([label, value]) => (
+          <div className={RESPONSIVE_INLINE_FIELD_ROW_CLASS_NAME} key={label}>
+            <dt className="font-medium">{label}</dt>
+            <dd>{value}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  );
+}
+
+function FactsAside({
+  configuration,
+  displayTimeZone,
+}: {
+  configuration: BookingConfiguration;
+  displayTimeZone: string;
+}) {
+  const { t, i18n } = useTranslation("booking");
+  const headingId = useId();
+  const target = configuration.target;
+
+  return (
+    <aside
+      data-slot="bookable-item-facts"
+      aria-labelledby={headingId}
+      className="min-w-0 @2xl:sticky @2xl:top-4 @2xl:self-start"
+    >
+      <Card size="sm">
+        <CardHeader>
+          <CardTitle id={headingId}>{t("bookableItemDetails.about")}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <dl className="space-y-3 text-sm">
+            <div>
+              <dt className="text-muted-foreground">{t("bookableItemDetails.fields.location")}</dt>
+              <dd className="min-w-0">
+                {target?.value.parentContainerName && target.value.parentContainerGlobalId ? (
+                  <InventoryLocationLink
+                    name={target.value.parentContainerName}
+                    globalId={target.value.parentContainerGlobalId}
+                    compact
+                  />
+                ) : (
+                  t("bookableItemDetails.notAvailable")
+                )}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground">{t("bookableItemDetails.fields.createdBy")}</dt>
+              <dd className="min-w-0">
+                {configuration.createdByName ? (
+                  <UserBadge name={configuration.createdByName} />
+                ) : (
+                  t("bookableItemDetails.notAvailable")
+                )}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground">{t("bookableItemDetails.fields.createdAt")}</dt>
+              <dd>
+                {configuration.createdAt ? (
+                  <time dateTime={configuration.createdAt}>
+                    {new Intl.DateTimeFormat(i18n.language, {
+                      dateStyle: "medium",
+                      timeStyle: "short",
+                      timeZone: displayTimeZone,
+                    }).format(new Date(configuration.createdAt))}
+                  </time>
+                ) : (
+                  t("bookableItemDetails.notAvailable")
+                )}
+              </dd>
+            </div>
+          </dl>
+        </CardContent>
+      </Card>
+    </aside>
+  );
+}
+
+function LoadedBookableItemPage({
+  configuration,
+  globalId,
+  tab,
+  token,
+}: {
+  configuration: BookingConfiguration;
+  globalId: string;
+  tab: BookableItemTab;
+  token: string;
+}) {
+  const { t } = useTranslation("booking");
+  const { t: commonT } = useTranslation("common");
+  const { data: currentUser } = useCurrentUserQuery();
+  const preferences = useBookingDisplayPreferences();
+  const { edit = false } = useSearch({ from: "/booking/bookable-items/$globalId/{-$tab}" });
+  const navigate = useNavigate({ from: "/booking/bookable-items/$globalId/{-$tab}" });
+  const queryClient = useQueryClient();
+  const [saveAnnouncement, setSaveAnnouncement] = useState<"saved" | "archived" | "restored" | null>(null);
+  const [staleEdit, setStaleEdit] = useState(false);
+  const [baseVersion, setBaseVersion] = useState(configuration.configurationVersion);
+  const [archiveOpen, setArchiveOpen] = useState(false);
+  const [permanentDeleteOpen, setPermanentDeleteOpen] = useState(false);
+  const [permanentDeleteConfirmation, setPermanentDeleteConfirmation] = useState("");
+  const [leaveOpen, setLeaveOpen] = useState(false);
+  const formId = `bookable-item-details-${useId()}`;
+  const permanentConfirmationId = `${formId}-permanent-delete-confirmation`;
+  const editButtonRef = useRef<HTMLButtonElement>(null);
+  const saveButtonRef = useRef<HTMLButtonElement>(null);
+  const actionsButtonRef = useRef<HTMLButtonElement>(null);
+  const wasEditing = useRef(false);
+  const target = configuration.target;
+  const canEdit = configuration.capabilities.canEditConfiguration;
+  const active = configuration.state === "ACTIVE";
+  const editing = active && canEdit && edit;
+  const directSysadmin = currentUser.hasSysAdminRole && !currentUser.session.operatedAs;
+  const form = useForm({
+    schema: BookingConfigurationUpdateInputSchema,
+    initialInput: configurationInput(configuration),
+  });
+
+  const setEdit = (next: boolean) =>
+    void navigate({
+      search: next ? { edit: true } : {},
+      replace: true,
+    });
+
+  const setTab = (next: BookableItemTab) =>
+    void navigate({
+      to: "/booking/bookable-items/$globalId/{-$tab}",
+      params: { globalId, tab: next },
+      search: edit ? { edit: true } : {},
+      replace: true,
+      resetScroll: false,
+    });
+
+  const updateMutation = useMutation({
+    mutationFn: (input: BookingConfigurationUpdateInput) =>
+      updateBookingConfiguration(configuration.id, baseVersion, input, token),
+    onMutate: () => setSaveAnnouncement(null),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] });
+      setSaveAnnouncement("saved");
+      setStaleEdit(false);
+      setEdit(false);
+    },
+    onError: async (error) => {
+      if (typeof error === "object" && error !== null && "status" in error && error.status === 412) {
+        setStaleEdit(true);
+        await queryClient.refetchQueries({
+          queryKey: ["api-v2", "booking-configurations", "target", globalId],
+        });
+      }
+    },
+  });
+  const archiveMutation = useMutation({
+    mutationFn: () => archiveBookingConfiguration(configuration.id, configuration.configurationVersion, token),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] });
+      setArchiveOpen(false);
+      setSaveAnnouncement("archived");
+    },
+    onError: async (error) => {
+      if (typeof error === "object" && error !== null && "status" in error && error.status === 412) {
+        await queryClient.refetchQueries({
+          queryKey: ["api-v2", "booking-configurations", "target", globalId],
+        });
+      }
+    },
+  });
+  const restoreMutation = useMutation({
+    mutationFn: () => restoreBookingConfiguration(configuration.id, configuration.configurationVersion, token),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] });
+      setSaveAnnouncement("restored");
+    },
+    onError: async (error) => {
+      if (typeof error === "object" && error !== null && "status" in error && error.status === 412) {
+        await queryClient.refetchQueries({
+          queryKey: ["api-v2", "booking-configurations", "target", globalId],
+        });
+      }
+    },
+  });
+  const permanentDeleteMutation = useMutation({
+    mutationFn: () =>
+      permanentlyDeleteBookingConfiguration(configuration.id, configuration.configurationVersion, token),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] });
+      setPermanentDeleteOpen(false);
+      void navigate({ to: "/booking/config/bookable-items", ignoreBlocker: true });
+    },
+    onError: async (error) => {
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        "status" in error &&
+        (error.status === 409 || error.status === 412)
+      ) {
+        await queryClient.refetchQueries({
+          queryKey: ["api-v2", "booking-configurations", "target", globalId],
+        });
+      }
+    },
+  });
+  const leaveMutation = useMutation({
+    mutationFn: () => leaveResource("booking-configurations", configuration.id, token),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] });
+      void navigate({ to: "/booking", ignoreBlocker: true });
+    },
+  });
+
+  useEffect(() => {
+    if (!editing) {
+      reset(form, { initialInput: configurationInput(configuration) });
+      setBaseVersion(configuration.configurationVersion);
+    }
+  }, [configuration, editing, form]);
+
+  useEffect(() => {
+    if (wasEditing.current && !editing) editButtonRef.current?.focus();
+    wasEditing.current = editing;
+  }, [editing]);
+
+  useEffect(() => {
+    if (updateMutation.isError && !updateMutation.isPending) saveButtonRef.current?.focus();
+  }, [updateMutation.isError, updateMutation.isPending]);
+
+  useEffect(() => {
+    // onSuccess runs before the mutation clears pending and re-enables this button.
+    if (
+      archiveMutation.isPending ||
+      restoreMutation.isPending ||
+      (!archiveMutation.isSuccess && !restoreMutation.isSuccess)
+    ) {
+      return;
+    }
+    const frame = requestAnimationFrame(() => actionsButtonRef.current?.focus());
+    return () => cancelAnimationFrame(frame);
+  }, [archiveMutation.isPending, archiveMutation.isSuccess, restoreMutation.isPending, restoreMutation.isSuccess]);
+
+  useEffect(() => {
+    if (!active && edit) setEdit(false);
+  }, [active, edit]);
+
+  useEffect(() => {
+    if (
+      (tab === "audit" && !configuration.capabilities.canViewAudit) ||
+      (tab === "access" && !configuration.capabilities.canViewAccess)
+    ) {
+      setTab("details");
+    }
+  }, [configuration.capabilities.canViewAccess, configuration.capabilities.canViewAudit, tab]);
+
+  if (target === null) return null;
+
+  const cancelEdit = () => {
+    reset(form, { initialInput: configurationInput(configuration) });
+    setSaveAnnouncement(null);
+    setStaleEdit(false);
+    setEdit(false);
+  };
+
+  const handleLifecycleAction = (action: BookingConfigurationLifecycleAction) => {
+    if (action === "archive") setArchiveOpen(true);
+    if (action === "restore") restoreMutation.mutate();
+    if (action === "permanent-delete") {
+      setPermanentDeleteConfirmation("");
+      setPermanentDeleteOpen(true);
+    }
+  };
+
+  return (
+    <main className={itemPageClassName}>
+      <DirtyNavigationGuard
+        dirty={editing && isDirty(form)}
+        shouldBlockNavigation={({ current, next }) =>
+          current.pathname !== next.pathname &&
+          (next.routeId !== "/booking/bookable-items/$globalId/{-$tab}" ||
+            next.params.globalId !== globalId ||
+            !next.search.edit)
+        }
+      />
+      <div className="@container">
+        <div className={itemColumnsClassName}>
+          <Tabs.Root
+            value={tab}
+            onValueChange={(value) => {
+              if (updateMutation.isPending) return;
+              const nextTab = value === "details" || value === "audit" || value === "access" ? value : "details";
+              setTab(nextTab);
+            }}
+            className="min-w-0 space-y-6"
+          >
+            {restoreMutation.isError ? (
+              <p role="alert" className="text-sm text-destructive">
+                {t(lifecycleErrorKey(restoreMutation.error, "bookableItemDetails.lifecycleErrors.restore"))}
+              </p>
+            ) : null}
+            <SpotlightHeader
+              displayTimeZone={preferences.timeZone}
+              configuration={configuration}
+              target={target}
+              action={
+                <>
+                  {active && configuration.capabilities.canLeaveConfiguration ? (
+                    <Button type="button" variant="outline" onClick={() => setLeaveOpen(true)}>
+                      {t("bookableItemDetails.actions.leave")}
+                    </Button>
+                  ) : null}
+                  <BookingConfigurationActionsMenu
+                    configuration={configuration}
+                    itemName={target.value.name}
+                    directSysadmin={directSysadmin}
+                    disabled={
+                      archiveMutation.isPending || restoreMutation.isPending || permanentDeleteMutation.isPending
+                    }
+                    triggerRef={actionsButtonRef}
+                    onAction={handleLifecycleAction}
+                  />
+                </>
+              }
+            />
+
+            <Tabs.List className="flex flex-wrap border-b">
+              <PageTab value="details" disabled={updateMutation.isPending}>
+                {t("bookableItemDetails.tabs.details")}
+              </PageTab>
+              {configuration.capabilities.canViewAudit ? (
+                <PageTab value="audit" disabled={updateMutation.isPending}>
+                  {t("bookableItemDetails.tabs.audit")}
+                </PageTab>
+              ) : null}
+              {configuration.capabilities.canViewAccess ? (
+                <PageTab value="access" disabled={updateMutation.isPending}>
+                  {t("bookableItemDetails.tabs.access")}
+                </PageTab>
+              ) : null}
+            </Tabs.List>
+
+            <Tabs.Panel value="details" keepMounted className="outline-none">
+              <Card>
+                <CardHeader>
+                  <CardTitle>{t("bookableItemDetails.rules")}</CardTitle>
+                  {active && canEdit ? (
+                    <CardAction className="flex gap-3">
+                      {editing ? (
+                        <>
+                          <Button
+                            key="save"
+                            ref={saveButtonRef}
+                            type="submit"
+                            size="sm"
+                            form={formId}
+                            disabled={updateMutation.isPending}
+                            aria-busy={updateMutation.isPending}
+                          >
+                            {t("bookableItems.actions.save")}
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            disabled={updateMutation.isPending}
+                            onClick={cancelEdit}
+                          >
+                            {t("bookableItemDetails.cancelEdit")}
+                          </Button>
+                        </>
+                      ) : (
+                        <Button
+                          key="edit"
+                          ref={editButtonRef}
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setEdit(true)}
+                        >
+                          <PencilIcon aria-hidden="true" />
+                          {t("bookableItemDetails.edit")}
+                        </Button>
+                      )}
+                    </CardAction>
+                  ) : null}
+                </CardHeader>
+                <CardContent>
+                  {editing ? (
+                    <Form
+                      id={formId}
+                      of={form}
+                      className="min-w-0 space-y-4"
+                      onSubmit={(input) => updateMutation.mutateAsync(input)}
+                    >
+                      <RenderFields
+                        fields={bookingConfigurationFields.filter((field) => field.name !== "target")}
+                        form={form}
+                        disabled={updateMutation.isPending}
+                        layout="inline"
+                      />
+                      <SchedulingSettingsFields form={form} disabled={updateMutation.isPending} layout="inline" />
+                      {staleEdit ? (
+                        <p role="alert" className="text-sm text-destructive">
+                          {t("bookableItems.staleEdit")}
+                        </p>
+                      ) : updateMutation.isError ? (
+                        <p role="alert" className="text-sm text-destructive">
+                          {t("bookableItems.editError")}
+                        </p>
+                      ) : null}
+                    </Form>
+                  ) : (
+                    <RulesReadOut configuration={configuration} displayTimeZone={preferences.timeZone} />
+                  )}
+                </CardContent>
+              </Card>
+            </Tabs.Panel>
+
+            {configuration.capabilities.canViewAudit ? (
+              <Tabs.Panel value="audit" className="outline-none">
+                <BookableItemAuditLog configurationId={configuration.id} />
+              </Tabs.Panel>
+            ) : null}
+
+            {configuration.capabilities.canViewAccess ? (
+              <Tabs.Panel value="access" className="outline-none">
+                <Card>
+                  <CardContent className="pt-6">
+                    <ResourceAccessEditor
+                      key={configuration.id}
+                      resource="booking-configurations"
+                      resourceId={configuration.id}
+                      token={token}
+                      adapter={bookingResourceAccessAdapter(t)}
+                      readOnly={!active}
+                      onLeave={() => void navigate({ to: "/booking", ignoreBlocker: true })}
+                    />
+                  </CardContent>
+                </Card>
+              </Tabs.Panel>
+            ) : null}
+          </Tabs.Root>
+          <FactsAside configuration={configuration} displayTimeZone={preferences.timeZone} />
+        </div>
+      </div>
+
+      <AlertDialog open={archiveOpen} onOpenChange={(open) => !archiveMutation.isPending && setArchiveOpen(open)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("bookableItemDetails.archiveDialog.title")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("bookableItemDetails.archiveDialog.description", { item: target.value.name })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {archiveMutation.isError ? (
+            <p role="alert" className="text-sm text-destructive">
+              {t("bookableItemDetails.archiveDialog.error")}
+            </p>
+          ) : null}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={archiveMutation.isPending}>{commonT("actions.cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={archiveMutation.isPending}
+              aria-busy={archiveMutation.isPending}
+              onClick={() => archiveMutation.mutate()}
+            >
+              {t("bookableItemDetails.archiveDialog.confirm")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog
+        open={permanentDeleteOpen}
+        onOpenChange={(open) => {
+          if (permanentDeleteMutation.isPending) return;
+          setPermanentDeleteOpen(open);
+          if (!open) requestAnimationFrame(() => actionsButtonRef.current?.focus());
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("bookableItemDetails.permanentDeleteDialog.title")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("bookableItemDetails.permanentDeleteDialog.description", { item: target.value.name })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <label htmlFor={permanentConfirmationId} className="space-y-2 text-sm">
+            <span>{t("bookableItemDetails.permanentDeleteDialog.confirmationLabel")}</span>
+            <Input
+              id={permanentConfirmationId}
+              value={permanentDeleteConfirmation}
+              onChange={(event) => setPermanentDeleteConfirmation(event.currentTarget.value)}
+              autoComplete="off"
+            />
+          </label>
+          {permanentDeleteMutation.isError ? (
+            <p role="alert" className="text-sm text-destructive">
+              {t(lifecycleErrorKey(permanentDeleteMutation.error, "bookableItemDetails.permanentDeleteDialog.error"))}
+            </p>
+          ) : null}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={permanentDeleteMutation.isPending}>
+              {commonT("actions.cancel")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={permanentDeleteMutation.isPending || permanentDeleteConfirmation !== target.value.name}
+              aria-busy={permanentDeleteMutation.isPending}
+              onClick={() => permanentDeleteMutation.mutate()}
+            >
+              {t("bookableItemDetails.permanentDeleteDialog.confirm")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog open={leaveOpen} onOpenChange={(open) => !leaveMutation.isPending && setLeaveOpen(open)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("bookableItemDetails.leaveDialog.title")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("bookableItemDetails.leaveDialog.description")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          {leaveMutation.isError ? (
+            <p role="alert" className="text-sm text-destructive">
+              {t("bookableItemDetails.leaveDialog.error")}
+            </p>
+          ) : null}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={leaveMutation.isPending}>{commonT("actions.cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={leaveMutation.isPending}
+              aria-busy={leaveMutation.isPending}
+              onClick={() => leaveMutation.mutate()}
+            >
+              {t("bookableItemDetails.actions.leave")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <p role="status" aria-live="polite" className="sr-only">
+        {updateMutation.isPending
+          ? t("bookableItemDetails.update.pending")
+          : saveAnnouncement === "saved"
+            ? t("bookableItemDetails.update.saved")
+            : saveAnnouncement === "archived"
+              ? t("bookableItemDetails.update.archived")
+              : saveAnnouncement === "restored"
+                ? t("bookableItemDetails.update.restored")
+                : null}
+      </p>
+    </main>
+  );
+}
+
+function Details({ globalId, tab }: { globalId: string; tab: BookableItemTab }) {
+  const { t } = useTranslation("booking");
+  const { t: commonT } = useTranslation("common");
+  const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
+  const configuration = useQuery({
+    queryKey: ["api-v2", "booking-configurations", "target", globalId],
+    queryFn: ({ signal }) => fetchBookingConfigurationDetailsByTarget(globalId, token, signal),
+  });
+
+  if (configuration.isPending) {
+    return <BookableItemSkeleton />;
+  }
+
+  const target = configuration.data?.target;
+  if (configuration.isError || target === null || target === undefined || target.globalId !== globalId) {
+    return (
+      <main className="p-4 sm:p-8">
+        <Empty className="border">
+          <EmptyHeader>
+            <EmptyTitle>{t("bookableItemDetails.error.title")}</EmptyTitle>
+            <EmptyDescription>{t("bookableItemDetails.error.description")}</EmptyDescription>
+          </EmptyHeader>
+          <Button type="button" variant="outline" onClick={() => void configuration.refetch()}>
+            {commonT("actions.retry")}
+          </Button>
+        </Empty>
+      </main>
+    );
+  }
+
+  return <LoadedBookableItemPage configuration={configuration.data} globalId={globalId} tab={tab} token={token} />;
+}
+
+export default function BookableItemPage() {
+  const { globalId, tab } = useParams({ from: "/booking/bookable-items/$globalId/{-$tab}" });
+  return (
+    <Suspense key={globalId} fallback={<BookableItemSkeleton />}>
+      <Details globalId={globalId} tab={bookableItemTab(tab)} key={globalId} />
+    </Suspense>
+  );
+}
