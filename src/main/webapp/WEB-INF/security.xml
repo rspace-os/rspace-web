@@ -41,6 +41,7 @@
                 /styles/** = anon
                 /scripts/** = anon
                 /resources/** = anon
+                /fonts/** = anon
                 /public/** = anon
                 /ui/dist/** = anon
                 /slack/callbacks/** = anon, ssl[8443]
@@ -58,6 +59,8 @@
                 /favicon.ico = anon
                 /officeOnline/supportedExts = anon
                 /collaboraOnline/supportedExts = anon
+                /about = anon
+                /about/** = anon
 
                 /selfServiceLabGroup/** anyRole[ROLE_PI]
                 /system/maintenance/ajax/nextMaintenance = authc, ssl[8443]
