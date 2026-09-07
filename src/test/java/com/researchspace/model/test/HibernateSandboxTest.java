@@ -421,10 +421,11 @@ class HibernateSandboxTest extends HibernateTest {
             () -> reloaded.moveToNewParentWithCoords(container, 1, 1));
     assertEquals("InstrumentTemplate cannot be moved or attached to containers", iae.getMessage());
 
+    ContainerLocation targetLocation = new ContainerLocation(container);
     iae =
         assertThrows(
             IllegalArgumentException.class,
-            () -> reloaded.moveToNewParentAndLocation(container, new ContainerLocation(container)));
+            () -> reloaded.moveToNewParentAndLocation(container, targetLocation));
     assertEquals("InstrumentTemplate cannot be moved or attached to containers", iae.getMessage());
 
     iae = assertThrows(IllegalArgumentException.class, reloaded::removeFromCurrentParent);
@@ -569,7 +570,9 @@ class HibernateSandboxTest extends HibernateTest {
 
     Sample sample = TestFactory.createBasicSampleWithSubSamples(u, 2);
     sample.setStorageTempMin(QuantityInfo.of(BigDecimal.valueOf(5), RSUnitDef.GRAM));
-    assertThrows(ConstraintViolationException.class, () -> saveSampleInContainer(sample));
+    Container container = sample.getSubSamples().get(0).getParentContainer();
+    dao.update(container, Container.class);
+    assertThrows(ConstraintViolationException.class, () -> dao.save(sample, Sample.class));
 
     sample.setStorageTempMin(QuantityInfo.of(BigDecimal.valueOf(5), RSUnitDef.KELVIN));
     assertNotNull(sample.getId());
@@ -704,20 +707,19 @@ class HibernateSandboxTest extends HibernateTest {
     assertEquals(2, loadedContainer.getContentCount());
     assertNull(loadedContainer.getParentContainer());
     // trying to access lazy-loaded locations should throw an exception
-    assertThrows(LazyInitializationException.class, () -> loadedContainer.getLocations().size());
+    var locations = loadedContainer.getLocations();
+    assertThrows(LazyInitializationException.class, () -> locations.size());
 
     // load subcontainer and try checking the parent
     Container loadedSubContainer1 = dao.load(savedSubContainer1.getId(), Container.class);
     assertEquals("test subcontainer #1", loadedSubContainer1.getName());
     assertEquals(
         "test container", loadedSubContainer1.getParentContainer().getName()); // parent is loaded
+    Container loadedParent = loadedSubContainer1.getParentContainer();
+    var parentLocations = loadedParent.getLocations();
     assertThrows(
         LazyInitializationException.class,
-        () ->
-            loadedSubContainer1
-                .getParentContainer()
-                .getLocations()
-                .size()); // but not parent's locations
+        () -> parentLocations.size()); // but not parent's locations
   }
 
   @Test
@@ -1073,8 +1075,10 @@ class HibernateSandboxTest extends HibernateTest {
     invFile.setDeleted(false);
 
     // try saving the sample with field having 2 non-deleted attachments
+    Container container = sample.getSubSamples().get(0).getParentContainer();
+    dao.update(container, Container.class);
     ConstraintViolationException cve =
-        assertThrows(ConstraintViolationException.class, () -> saveSampleInContainer(sample));
+        assertThrows(ConstraintViolationException.class, () -> dao.save(sample, Sample.class));
     assertEquals("Inventory attachment field can link only one attachment", cve.getMessage());
   }
 

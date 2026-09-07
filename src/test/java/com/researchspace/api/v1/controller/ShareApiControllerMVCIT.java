@@ -541,10 +541,13 @@ public class ShareApiControllerMVCIT extends API_MVC_TestBase {
     assertEquals(4, apiShareSearchResultWithFolders.getTotalHits().intValue());
 
     // attempt to list shares for pi's folder
+    Long piWorkspaceFolderId = piWorkspaceFolder.getId();
+    List<Long> sharedItemIds = List.of(piWorkspaceFolderId);
+    MockHttpServletRequestBuilder shareRequest =
+        createShareGetBuilder(sharer, apiKey)
+            .param("sharedItemIds", StringUtils.join(sharedItemIds, ","));
     AuthorizationException authEx =
-        assertThrows(
-            AuthorizationException.class,
-            () -> listSharesWithSharedItemIds(sharer, apiKey, List.of(piWorkspaceFolder.getId())));
+        assertThrows(AuthorizationException.class, () -> mockMvc.perform(shareRequest));
     assertEquals(
         String.format(
             "Unauthorized attempt by [%s] to list shares of record [%d]",

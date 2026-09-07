@@ -1,12 +1,12 @@
 package com.researchspace.core.util;
 
-import static com.researchspace.core.testutil.CoreTestUtils.assertExceptionThrown;
 import static com.researchspace.core.util.TransformerUtils.toEnums;
 import static com.researchspace.core.util.TransformerUtils.toList;
 import static com.researchspace.core.util.TransformerUtils.toSet;
 import static com.researchspace.core.util.TransformerUtils.transform;
 import static com.researchspace.core.util.TransformerUtils.transformToString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -72,6 +72,6 @@ public class TransformerUtilsTest {
     final List<Any> anys = toList(any);
     assertEquals("abcde", transformToString(anys, "x").get(0));
     assertEquals(0, transformToString(new ArrayList<>(), "x").size());
-    assertExceptionThrown(() -> transformToString(anys, "y"), IllegalArgumentException.class);
+    assertThrows(IllegalArgumentException.class, () -> transformToString(anys, "y"));
   }
 }

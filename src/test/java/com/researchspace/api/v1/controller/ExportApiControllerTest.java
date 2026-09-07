@@ -66,13 +66,11 @@ public class ExportApiControllerTest {
 
   @Test
   public void testExportFailureExecptionTrhownIfJobNotlaunched() throws BindException {
-    assertThrows(
-        ExportFailureException.class,
-        () -> {
-          ExportApiConfig cfg = new ExportApiConfig("html", "user");
-          Mockito.when(handler.export(cfg, exporter)).thenReturn(Optional.empty());
-          controller.export(cfg, new BeanPropertyBindingResult(cfg, "bean"), exporter);
-        });
+    ExportApiConfig cfg = new ExportApiConfig("html", "user");
+    Mockito.when(handler.export(cfg, exporter)).thenReturn(Optional.empty());
+    BeanPropertyBindingResult errors = new BeanPropertyBindingResult(cfg, "bean");
+
+    assertThrows(ExportFailureException.class, () -> controller.export(cfg, errors, exporter));
   }
 
   @Test

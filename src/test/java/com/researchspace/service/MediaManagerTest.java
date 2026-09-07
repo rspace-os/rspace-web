@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.ChemElementsFormat;
@@ -40,6 +41,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import net.coobird.thumbnailator.Thumbnails;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -81,9 +83,11 @@ public class MediaManagerTest extends SpringTransactionalTest {
     assertNotNull(rsChemElement.getImageFileProperty());
 
     logoutAndLoginAs(other);
-    assertAuthorisationExceptionThrown(
+    assertThrows(
+        AuthorizationException.class,
         () -> rsChemElementManager.saveChemElement(chemicalData, other));
-    assertAuthorisationExceptionThrown(
+    assertThrows(
+        AuthorizationException.class,
         () -> rsChemElementManager.saveChemImage(chemicalImageDTO, other));
   }
 
@@ -115,14 +119,12 @@ public class MediaManagerTest extends SpringTransactionalTest {
     assertEquals(savedMath.getId(), updatedMath.getId(), "The ids should be the same");
 
     logoutAndLoginAs(other);
-    assertAuthorisationExceptionThrown(
-        () ->
-            mediaMgr.saveMath(
-                svgAsString(anyMath),
-                sd.getFields().get(0).getId(),
-                newLatex,
-                savedMath.getId(),
-                other));
+    String svg = svgAsString(anyMath);
+    Long fieldId = sd.getFields().get(0).getId();
+    Long mathId = savedMath.getId();
+    assertThrows(
+        AuthorizationException.class,
+        () -> mediaMgr.saveMath(svg, fieldId, newLatex, mathId, other));
   }
 
   private String svgAsString(RSMath anyMath) {
@@ -180,10 +182,13 @@ public class MediaManagerTest extends SpringTransactionalTest {
     mediaMgr.addEcatComment(fieldId + "", comm.getComId() + "", "comm1", anyUser);
 
     logoutAndLoginAs(otherUser);
-    assertAuthorisationExceptionThrown(
+    assertThrows(
+        AuthorizationException.class,
         () -> mediaMgr.insertEcatComment(fieldId + "", "A comment", otherUser));
-    assertAuthorisationExceptionThrown(
-        () -> mediaMgr.addEcatComment(fieldId + "", comm.getComId() + "", "A comment", otherUser));
+    String commentId = comm.getComId() + "";
+    assertThrows(
+        AuthorizationException.class,
+        () -> mediaMgr.addEcatComment(fieldId + "", commentId, "A comment", otherUser));
   }
 
   @Test
@@ -289,9 +294,10 @@ public class MediaManagerTest extends SpringTransactionalTest {
     assertEquals(1, doc.getVersion());
 
     InputStream csvInputStream = RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder("csv.csv");
-    assertExceptionThrown(
-        () -> mediaMgr.updateMediaFile(doc.getId(), csvInputStream, "csv.csv", user, null),
-        IllegalArgumentException.class);
+    Long documentId = doc.getId();
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> mediaMgr.updateMediaFile(documentId, csvInputStream, "csv.csv", user, null));
 
     // still, uploading legacy ms office formats (e.g. doc->docx) should be allowed
     InputStream docxInputStream =
@@ -326,9 +332,9 @@ public class MediaManagerTest extends SpringTransactionalTest {
             super.close();
           }
         };
-    assertExceptionThrown(
-        () -> mediaMgr.saveNewImage("image.jpg", rejectedStream, user, null),
-        MediaContentMismatchException.class);
+    assertThrows(
+        MediaContentMismatchException.class,
+        () -> mediaMgr.saveNewImage("image.jpg", rejectedStream, user, null));
     assertTrue(rejectedStreamClosed.get());
 
     AtomicBoolean failingStreamClosed = new AtomicBoolean();
@@ -345,18 +351,18 @@ public class MediaManagerTest extends SpringTransactionalTest {
             super.close();
           }
         };
-    assertExceptionThrown(
-        () -> mediaMgr.saveNewImage("image.jpg", failingStream, user, null), IOException.class);
+    assertThrows(
+        IOException.class, () -> mediaMgr.saveNewImage("image.jpg", failingStream, user, null));
     assertTrue(failingStreamClosed.get());
 
     // updating an existing image with non-image content is also rejected
     InputStream pictureIS = RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder("Picture1.png");
     EcatImage image = mediaMgr.saveNewImage("Picture1.png", pictureIS, user, null);
-    assertExceptionThrown(
-        () ->
-            mediaMgr.updateMediaFile(
-                image.getId(), new ByteArrayInputStream(jspContent), "Picture1.png", user, null),
-        MediaContentMismatchException.class);
+    Long imageId = image.getId();
+    ByteArrayInputStream replacementContent = new ByteArrayInputStream(jspContent);
+    assertThrows(
+        MediaContentMismatchException.class,
+        () -> mediaMgr.updateMediaFile(imageId, replacementContent, "Picture1.png", user, null));
   }
 
   @Test
@@ -376,9 +382,10 @@ public class MediaManagerTest extends SpringTransactionalTest {
     lockHandler.lock(image.getGlobalIdentifier(), lockId);
 
     // doesn't work if file is locked and no lock is provided
-    assertExceptionThrown(
-        () -> mediaMgr.updateMediaFile(image.getId(), pictureIS, "Picture1.png", user, null),
-        IllegalStateException.class);
+    Long imageId = image.getId();
+    assertThrows(
+        IllegalStateException.class,
+        () -> mediaMgr.updateMediaFile(imageId, pictureIS, "Picture1.png", user, null));
 
     // works if correct lock is provided
     InputStream pictureIS2 =
@@ -447,10 +454,14 @@ public class MediaManagerTest extends SpringTransactionalTest {
             docFile, PermissionType.WRITE, otherUser));
 
     // otherUser can't upload new version, as have only read permission
-    assertAuthorisationExceptionThrown(
-        () ->
-            mediaMgr.updateMediaFile(
-                docFile.getId(), new FileInputStream(txtFile), txtFile.getName(), otherUser, null));
+    Long documentId = docFile.getId();
+    String fileName = txtFile.getName();
+    try (FileInputStream replacementContent = new FileInputStream(txtFile)) {
+      assertThrows(
+          AuthorizationException.class,
+          () ->
+              mediaMgr.updateMediaFile(documentId, replacementContent, fileName, otherUser, null));
+    }
 
     // owner shares with edit permission
     logoutAndLoginAs(owner);
