@@ -1,15 +1,16 @@
 import { expect } from "@playwright/test";
 import { dynamicUserTest as test } from "@/__tests__/e2e/fixtures/dynamicUser";
 import { ExportImportPage } from "@/__tests__/e2e/pageObjects/myrspace/ExportImportPage";
+import { USERS } from "@/__tests__/e2e/users";
 import { listZipEntries } from "@/__tests__/e2e/zipArchive";
 
 test.describe("My RSpace directory and export", () => {
   test("As a user, I can find another user in the directory and open their profile", async ({ pageMyRSpace }) => {
     await pageMyRSpace.open();
     const directory = await pageMyRSpace.openDirectory();
-    const profile = await directory.openUserProfile("user1a");
+    const profile = await directory.openUserProfile(USERS.user1a.username);
 
-    await expect(profile.username("user1a")).toBeVisible();
+    await expect(profile.username(USERS.user1a.username)).toBeVisible();
     await expect(profile.changePasswordLink).toHaveCount(0);
     expect(await profile.isProfileEditable()).toBe(false);
     expect(await profile.isApiKeyManagementVisible()).toBe(false);

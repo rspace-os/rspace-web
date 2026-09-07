@@ -30,9 +30,13 @@ test.describe("My RSpace profile", () => {
   test("As a user, I can upload a valid profile image", async ({ pageMyRSpace }) => {
     await pageMyRSpace.open();
     const profile = await pageMyRSpace.openProfile();
+    const srcBeforeUpload = await profile.profileImage.getAttribute("src");
+
     const upload = await profile.openUploadImage();
     await upload.upload(PROFILE_IMAGE);
     await profile.waitUntilLoaded();
+
+    await expect(profile.profileImage).not.toHaveAttribute("src", srcBeforeUpload ?? "");
   });
 
   test("As a user, uploading an invalid or too-large profile image is rejected", async ({ pageMyRSpace }) => {

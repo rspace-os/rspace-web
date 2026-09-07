@@ -1,20 +1,6 @@
 import { expect } from "@playwright/test";
-import type { PublicationKind } from "@/__tests__/e2e/components/myrspace/PublishDialogComponent";
 import { dynamicUserTest as test } from "@/__tests__/e2e/fixtures/dynamicUser";
-import type { WorkspacePage } from "@/__tests__/e2e/pageObjects/workspace/WorkspacePage";
 import { uniqueName } from "@/__tests__/e2e/testData";
-
-async function publishRecord(
-  pageWorkspace: WorkspacePage,
-  name: string,
-  kind: PublicationKind,
-  summary: string,
-  displayContactDetails: boolean,
-): Promise<void> {
-  await pageWorkspace.table.selectRecord(name);
-  const dialog = await pageWorkspace.selectionBar.publish();
-  await dialog.publish(kind, summary, displayContactDetails);
-}
 
 test.describe("publishing documents", () => {
   test.beforeEach(async ({ flowPublicSharing }) => {
@@ -37,7 +23,7 @@ test.describe("publishing documents", () => {
 
     await pageWorkspace.open();
     await pageWorkspace.searchBar.search(name);
-    await publishRecord(pageWorkspace, name, "internet", summary, true);
+    await pageWorkspace.publishRecord(name, "internet", summary, true);
 
     await pageMyRSpace.open();
     const published = await pageMyRSpace.openPublishedDocuments();
@@ -65,7 +51,7 @@ test.describe("publishing documents", () => {
 
     await pageWorkspace.open();
     await pageWorkspace.searchBar.search(name);
-    await publishRecord(pageWorkspace, name, "link", summary, false);
+    await pageWorkspace.publishRecord(name, "link", summary, false);
 
     await pageMyRSpace.open();
     const published = await pageMyRSpace.openPublishedDocuments();
@@ -101,7 +87,7 @@ test.describe("publishing notebooks", () => {
     await notebook.addEntryNamed(uniqueName("e2e-notebook-entry"));
 
     await pageWorkspace.open();
-    await publishRecord(pageWorkspace, notebookName, "internet", summary, false);
+    await pageWorkspace.publishRecord(notebookName, "internet", summary, false);
 
     await pageMyRSpace.open();
     const published = await pageMyRSpace.openPublishedDocuments();
@@ -130,7 +116,7 @@ test.describe("publishing notebooks", () => {
     await notebook.addEntryNamed(firstEntryName);
 
     await pageWorkspace.open();
-    await publishRecord(pageWorkspace, notebookName, "internet", "Future entries summary", false);
+    await pageWorkspace.publishRecord(notebookName, "internet", "Future entries summary", false);
 
     await pageMyRSpace.open();
     const published = await pageMyRSpace.openPublishedDocuments();
@@ -163,14 +149,14 @@ test.describe("publishing notebooks", () => {
 
     await pageWorkspace.open();
     await pageWorkspace.table.openRecord(notebookName);
-    await publishRecord(pageWorkspace, entryName, "internet", "Entry summary", false);
+    await pageWorkspace.publishRecord(entryName, "internet", "Entry summary", false);
 
     await pageMyRSpace.open();
     const publishedAfterEntry = await pageMyRSpace.openPublishedDocuments();
     const entryHref = await publishedAfterEntry.publicHref(entryName);
 
     await pageWorkspace.open();
-    await publishRecord(pageWorkspace, notebookName, "internet", "Notebook summary", false);
+    await pageWorkspace.publishRecord(notebookName, "internet", "Notebook summary", false);
 
     await pageMyRSpace.open();
     const publishedAfterNotebook = await pageMyRSpace.openPublishedDocuments();

@@ -76,11 +76,11 @@ test.describe
       await forms.toggleMenu(formName, "Add to Menu");
       await forms.duplicate(formName);
       await forms.search(formName);
-      await expect(forms.formRow(formName)).toBeVisible();
+      await expect(forms.formRow(formName)).toHaveCount(2);
 
       await pageMyRSpace.open();
       forms = await pageMyRSpace.openManageForms();
       await forms.search(formName);
-      await expect(forms.formRow(formName)).toBeVisible();
+      await expect(forms.formRow(formName)).toHaveCount(2);
     });
   });

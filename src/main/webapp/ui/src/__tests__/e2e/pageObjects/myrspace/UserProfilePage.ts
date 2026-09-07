@@ -43,7 +43,7 @@ export class UserProfilePage extends BasePage {
   }
 
   get profileImage(): Locator {
-    return this.page.getByRole("img").nth(1);
+    return this.page.locator("#profileImage");
   }
 
   get changePasswordLink(): Locator {

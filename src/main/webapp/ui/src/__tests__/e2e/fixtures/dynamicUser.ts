@@ -1,87 +1,23 @@
-import type { Browser, BrowserContext, BrowserContextOptions } from "@playwright/test";
-import type { SysadminClient } from "../api/clients/SysadminClient";
+import { createDynamicUser } from "../createDynamicUser";
 import { LoginPage } from "../pageObjects/auth/LoginPage";
-import { MyRSpacePage } from "../pageObjects/myrspace/MyRSpacePage";
 import { WorkspacePage } from "../pageObjects/workspace/WorkspacePage";
-import { alphaNumericUnique, uniqueName } from "../testData";
+import { DYNAMIC_USER_PASSWORD, uniqueName } from "../testData";
 import { test } from "./flows";
+import { loginInNewContext } from "./flows/userSessions";
 
-const DYNAMIC_USER_PASSWORD = "Passw0rd!23";
-
-export type CreatableRole = "ROLE_USER" | "ROLE_PI" | "ROLE_ADMIN";
-
-export async function createDynamicUser(
-  clientSysadmin: SysadminClient,
-  role: CreatableRole,
-  namePrefix: string,
-): Promise<{ username: string; password: string; apiKey: string }> {
-  const username = alphaNumericUnique(namePrefix);
-  const apiKey = alphaNumericUnique(`${namePrefix}Key`).slice(0, 32);
-  await clientSysadmin.createUser({
-    username,
-    password: DYNAMIC_USER_PASSWORD,
-    email: `${username}@example.com`,
-    firstName: "E2E",
-    lastName: namePrefix,
-    role,
-    apiKey,
-  });
-  return { username, password: DYNAMIC_USER_PASSWORD, apiKey };
-}
-
-export async function loginInNewContext(
-  browser: Browser,
-  browserContextOptions: BrowserContextOptions,
-  { username, password }: { username: string; password: string },
-): Promise<{
-  ctx: BrowserContext;
-  workspace: WorkspacePage;
-  myRSpace: MyRSpacePage;
-  close: () => Promise<void>;
-}> {
-  const ctx = await browser.newContext({ ...browserContextOptions, storageState: undefined });
-  const page = await ctx.newPage();
-  const loginPage = new LoginPage(page);
-  await loginPage.open();
-  await loginPage.login(username, password);
-  await page.waitForURL((url) => !url.pathname.includes("/login"));
-  return {
-    ctx,
-    workspace: new WorkspacePage(page),
-    myRSpace: new MyRSpacePage(page),
-    close: () => ctx.close(),
-  };
-}
+type CreatableRole = "ROLE_USER" | "ROLE_PI" | "ROLE_ADMIN";
 
 type DynamicUserFixtures = {
   flowCreateUser: (
     role: CreatableRole,
     namePrefix?: string,
-  ) => Promise<{
-    username: string;
-    password: string;
-    apiKey: string;
-    workspace: WorkspacePage;
-    myRSpace: MyRSpacePage;
-  }>;
-  flowFreshPiPermissions: (
-    namePrefix?: string,
-  ) => Promise<{ username: string; password: string; apiKey: string; groupName: string }>;
+  ) => Promise<{ username: string; apiKey: string; workspace: WorkspacePage }>;
+  flowFreshPiPermissions: (namePrefix?: string) => Promise<{ username: string; apiKey: string; groupName: string }>;
 };
 
 export const dynamicUserTest = test.extend<DynamicUserFixtures>({
   appUser: async ({ clientSysadmin }, use) => {
-    const username = alphaNumericUnique("e2eDynUser");
-    const apiKey = alphaNumericUnique("e2eDynUserKey").slice(0, 32);
-    await clientSysadmin.createUser({
-      username,
-      password: DYNAMIC_USER_PASSWORD,
-      email: `${username}@example.com`,
-      firstName: "E2E",
-      lastName: "DynamicUser",
-      role: "ROLE_PI",
-      apiKey,
-    });
+    const { username, apiKey } = await createDynamicUser(clientSysadmin, "ROLE_PI", "e2eDynUser", "DynamicUser");
     await use({ username, password: DYNAMIC_USER_PASSWORD, apiKey, roles: ["ROLE_PI", "ROLE_USER"] });
   },
   storageState: async ({ appUser, browser, browserContextOptions }, use) => {
@@ -107,10 +43,15 @@ export const dynamicUserTest = test.extend<DynamicUserFixtures>({
     const closers: Array<() => Promise<void>> = [];
     try {
       await use(async (role, namePrefix = "e2eDynUser2") => {
-        const user = await createDynamicUser(clientSysadmin, role, namePrefix);
-        const { workspace, myRSpace, close } = await loginInNewContext(browser, browserContextOptions, user);
+        const { username, apiKey } = await createDynamicUser(clientSysadmin, role, namePrefix);
+        const { page, close } = await loginInNewContext(
+          browser,
+          browserContextOptions,
+          username,
+          DYNAMIC_USER_PASSWORD,
+        );
         closers.push(close);
-        return { ...user, workspace, myRSpace };
+        return { username, apiKey, workspace: new WorkspacePage(page) };
       });
     } finally {
       const results = await Promise.allSettled(closers.map((close) => close()));

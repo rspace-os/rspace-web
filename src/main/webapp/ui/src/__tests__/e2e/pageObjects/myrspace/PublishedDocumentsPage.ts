@@ -1,4 +1,4 @@
-import type { Locator } from "@playwright/test";
+import { expect, type Locator } from "@playwright/test";
 import { BasePage } from "../BasePage";
 
 export class PublishedDocumentsPage extends BasePage {
@@ -17,14 +17,16 @@ export class PublishedDocumentsPage extends BasePage {
   }
 
   private async waitForRow(name: string, timeoutMs = 30_000): Promise<void> {
-    const deadline = Date.now() + timeoutMs;
-    while ((await this.row(name).count()) === 0) {
-      if (Date.now() > deadline) {
-        throw new Error(`Published record '${name}' did not appear within ${timeoutMs}ms.`);
-      }
-      await this.page.reload();
-      await this.waitUntilLoaded();
-    }
+    await expect
+      .poll(
+        async () => {
+          await this.page.reload();
+          await this.waitUntilLoaded();
+          return this.row(name).count();
+        },
+        { timeout: timeoutMs },
+      )
+      .toBeGreaterThan(0);
   }
 
   async publicHref(name: string): Promise<string> {

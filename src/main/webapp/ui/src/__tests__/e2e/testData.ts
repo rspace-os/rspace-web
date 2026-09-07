@@ -7,6 +7,8 @@ export function fixturePath(importMetaUrl: string, ...segments: string[]): strin
   return resolve(dirname(fileURLToPath(importMetaUrl)), ...segments);
 }
 
+export const DYNAMIC_USER_PASSWORD = "Passw0rd!23";
+
 export function uniqueName(prefix: string): string {
   return `${prefix}-${randomUUID().slice(0, 12)}`;
 }
