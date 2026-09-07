@@ -1,7 +1,5 @@
 package com.researchspace.service;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -313,7 +311,7 @@ public class OAuthTokenManagerTest extends SpringTransactionalTest {
 
     ServiceOperationResult<OAuthToken> expired = tokenManager.authenticate(token.getAccessToken());
     assertFalse(expired.isSucceeded());
-    assertThat(expired.getMessage(), containsString("expired"));
+    assertTrue(expired.getMessage().contains("expired"), expired.getMessage());
 
     // Forge jwt tokens with information that should be rejected
 
@@ -333,7 +331,7 @@ public class OAuthTokenManagerTest extends SpringTransactionalTest {
             .compact();
     expired = tokenManager.authenticate(expiredJwtToken);
     assertFalse(expired.isSucceeded());
-    assertThat(expired.getMessage(), containsString("expired"));
+    assertTrue(expired.getMessage().contains("expired"), expired.getMessage());
 
     // Wrong signature
     String badSignatureJwtToken =

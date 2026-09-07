@@ -1,6 +1,5 @@
 package com.researchspace.webapp.controller;
 
-import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -100,18 +99,18 @@ public class RoRSysAdminControllerMVCIT extends MVCTestBase {
     mockMvc
         .perform(get(rorSysadminUrl + "rorForID/" + validRorOne))
         .andExpect(status().is2xxSuccessful())
-        .andExpect(jsonPath("$.id", is(ROR_FULL_ID)))
+        .andExpect(jsonPath("$.id").value(ROR_FULL_ID))
         .andReturn();
     mockMvc
         .perform(get(rorSysadminUrl + "rorForID/" + validRorTwo))
         .andExpect(status().is2xxSuccessful())
-        .andExpect(jsonPath("$.id", is(ROR_FULL_ID)))
+        .andExpect(jsonPath("$.id").value(ROR_FULL_ID))
         .andReturn();
     MvcResult result =
         mockMvc
             .perform(get(rorSysadminUrl + "rorForID/" + validRorThree))
             .andExpect(status().is2xxSuccessful())
-            .andExpect(jsonPath("$.id", is(ROR_FULL_ID)))
+            .andExpect(jsonPath("$.id").value(ROR_FULL_ID))
             .andReturn();
 
     JsonNode rorDetails = getFromJsonResponseBody(result, JsonNode.class);
@@ -142,7 +141,7 @@ public class RoRSysAdminControllerMVCIT extends MVCTestBase {
     mockMvc
         .perform(post(rorSysadminUrl + "rorForID/" + validRorOne))
         .andExpect(status().is2xxSuccessful())
-        .andExpect(jsonPath("$.data", is(true)));
+        .andExpect(jsonPath("$.data").value(true));
     MvcResult result =
         mockMvc
             .perform(get(rorSysadminUrl + "existingGlobalRoRID"))
@@ -179,7 +178,7 @@ public class RoRSysAdminControllerMVCIT extends MVCTestBase {
     mockMvc
         .perform(delete(rorSysadminUrl + "rorForID"))
         .andExpect(status().is2xxSuccessful())
-        .andExpect(jsonPath("$.data", is(true)));
+        .andExpect(jsonPath("$.data").value(true));
     MvcResult result =
         mockMvc
             .perform(get(rorSysadminUrl + "existingGlobalRoRID"))

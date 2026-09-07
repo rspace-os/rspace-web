@@ -4,7 +4,6 @@ import static com.researchspace.core.util.MediaUtils.DOCUMENT_MEDIA_FLDER_NAME;
 import static com.researchspace.core.util.MediaUtils.IMAGES_MEDIA_FLDER_NAME;
 import static com.researchspace.core.util.MediaUtils.extractFileTypeFromPath;
 import static com.researchspace.core.util.MediaUtils.getSupportedFileTypesForGallerySection;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -14,7 +13,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.Arrays;
 import java.util.List;
 import org.apache.commons.lang3.ArrayUtils;
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -122,7 +120,7 @@ class MediaUtilsTest {
   @Test
   void supportedDNATypes() {
     List<String> dnaNameStrings = MediaUtils.supportedDNATypes();
-    assertThat(dnaNameStrings, Matchers.hasItem("gb"));
+    assertTrue(dnaNameStrings.contains("gb"));
     assertThrows(UnsupportedOperationException.class, () -> dnaNameStrings.add("pdb"));
   }
 }

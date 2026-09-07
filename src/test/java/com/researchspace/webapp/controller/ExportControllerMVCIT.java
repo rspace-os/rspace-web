@@ -6,7 +6,6 @@ import static com.researchspace.webapp.controller.ExportControllerTest.createExp
 import static com.researchspace.webapp.controller.ExportControllerTest.createExportConfig;
 import static com.researchspace.webapp.controller.ExportControllerTest.createExportConfigForUser;
 import static com.researchspace.webapp.controller.ExportControllerTest.createExportRaidAndElnArchiveConfigSelectionForProjectGroup;
-import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -431,7 +430,7 @@ public class ExportControllerMVCIT extends MVCTestBase {
     return mockMvc
         .perform(get("/export/ajax/defaultPDFConfig").principal(u::getUsername))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.data.pageSize", is(size)))
+        .andExpect(jsonPath("$.data.pageSize").value(size))
         .andReturn();
   }
 

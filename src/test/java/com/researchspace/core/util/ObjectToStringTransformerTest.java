@@ -1,10 +1,9 @@
 package com.researchspace.core.util;
 
 import static java.util.Arrays.asList;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasItems;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
 import java.util.List;
@@ -89,7 +88,7 @@ public class ObjectToStringTransformerTest {
     transformer = new ObjectToStringPropertyTransformer<>("inner.p1");
     List<String> usages = list.stream().map(transformer).collect(Collectors.toList());
     assertEquals(2, usages.size());
-    assertThat(usages, hasItems("inner1", "inner2"));
+    assertTrue(usages.contains("inner1") && usages.contains("inner2"));
   }
 
   @Test
