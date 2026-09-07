@@ -22,9 +22,13 @@ export async function expectNoAxeViolations(): Promise<void> {
        *    attribute; this is a known upstream limitation — the component-test
        *    wrapper has no page-level label to assign, and fixing it would require
        *    patching the TinyMCE init config in every consumer.
+       * 7. Base UI gives its visually hidden focus guards role="button" only in
+       *    WebKit so VoiceOver can focus them. They are internal sentinels rather
+       *    than commands, so axe's accessible-name rule does not apply to them.
        */
       return (
         v.description !== "Ensure elements with an ARIA role that require child roles contain them" &&
+        !(v.id === "aria-command-name" && v.nodes.every(({ html }) => html.includes("data-base-ui-focus-guard"))) &&
         v.id !== "landmark-one-main" &&
         v.id !== "page-has-heading-one" &&
         v.id !== "region" &&

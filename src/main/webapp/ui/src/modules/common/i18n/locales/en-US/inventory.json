@@ -1436,6 +1436,19 @@
     "setAsTarget": "Set as Target"
   },
   "instrument": {
+    "booking": {
+      "configured": {
+        "book": "Book",
+        "description": "Open Booking to view this instrument's calendar and booking configuration.",
+        "open": "Open booking page",
+        "title": "Booking configured"
+      },
+      "notConfigured": {
+        "action": "Set up booking",
+        "description": "Set up booking to make this instrument available in Booking.",
+        "title": "Booking has not been set up"
+      }
+    },
     "createOptions": {
       "location": {
         "label": "Location",

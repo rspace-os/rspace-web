@@ -1,5 +1,5 @@
 import { type AnyRoute, createRoute, Link, linkOptions, Outlet, redirect } from "@tanstack/react-router";
-import { ChevronRightIcon, SettingsIcon, SlidersHorizontalIcon } from "lucide-react";
+import { CalendarIcon, ChevronRightIcon, SettingsIcon, SlidersHorizontalIcon } from "lucide-react";
 import { Suspense } from "react";
 import { useTranslation } from "react-i18next";
 import i18n from "@/modules/common/i18n";
@@ -20,6 +20,7 @@ import {
 
 const items = () =>
   [
+    { key: "calendar", icon: CalendarIcon, link: <Link {...linkOptions({ to: "/booking/calendar" })} /> },
     {
       key: "preferences",
       icon: SlidersHorizontalIcon,
@@ -41,6 +42,7 @@ export function BookingSidebar() {
   const { data: currentUser } = useCurrentUserQuery();
   const sidebarItems = items();
   const labels = {
+    calendar: t("sidebar.calendar"),
     preferences: t("sidebar.preferences"),
     administration: t("sidebar.administration"),
     settings: t("sidebar.settings"),
@@ -101,7 +103,7 @@ export function createBookingIndexRoute<TParentRoute extends AnyRoute>(bookingRo
     getParentRoute: () => bookingRoute,
     path: "/",
     beforeLoad: () => {
-      throw redirect({ to: "/booking/preferences", replace: true });
+      throw redirect({ to: "/booking/calendar", replace: true });
     },
   });
 }

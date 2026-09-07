@@ -54,6 +54,22 @@ const configuration = {
   updatedAt: null,
   ...ownerBookingAccess,
 };
+const booking = {
+  id: 41,
+  version: 0,
+  target: configuration.target,
+  timezone: "UTC",
+  start: "2026-08-25T09:00:00Z",
+  end: "2026-08-25T10:00:00Z",
+  state: "CONFIRMED",
+  privacy: "full",
+  purpose: null,
+  bookedBy: "Ada Lovelace (ada)",
+  canEdit: false,
+  canCancel: false,
+  createdAt: "2026-08-17T00:00:00Z",
+  updatedAt: "2026-08-17T00:00:00Z",
+};
 
 function envelope(docs: unknown[], limit: number) {
   return {
@@ -200,7 +216,6 @@ describe("BookableItemPage", () => {
   it("confirms navigation to another resource even when the dirty editor survives tab changes", async () => {
     const user = userEvent.setup();
     server.use(
-      http.get("/api/v2/booking-configurations/7/audit", () => new HttpResponse(null, { status: 503 })),
       http.get("/api/v2/booking-configurations", () => HttpResponse.json(envelope([configuration], 2))),
       http.get("/api/v2/bookings", () => HttpResponse.json(envelope([], 10))),
     );
@@ -210,8 +225,8 @@ describe("BookableItemPage", () => {
     });
     await user.clear(duration);
     await user.type(duration, "60");
-    await user.click(screen.getByRole("tab", { name: "booking:bookableItemDetails.tabs.audit" }));
-    await waitFor(() => expect(router.state.location.pathname).toBe("/booking/bookable-items/IN123/audit"));
+    await user.click(screen.getByRole("tab", { name: "booking:bookableItemDetails.tabs.bookings" }));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/booking/bookable-items/IN123"));
     await act(async () => {
       void router.navigate({
         to: "/booking/bookable-items/$globalId/{-$tab}",
@@ -221,16 +236,23 @@ describe("BookableItemPage", () => {
     });
     const dialog = await screen.findByRole("alertdialog");
     await user.click(within(dialog).getByRole("button", { name: "common:actions.cancel" }));
-    expect(router.state.location.pathname).toBe("/booking/bookable-items/IN123/audit");
+    expect(router.state.location.pathname).toBe("/booking/bookable-items/IN123");
     await user.click(screen.getByRole("tab", { name: "booking:bookableItemDetails.tabs.details" }));
     expect(screen.getByRole("spinbutton", { name: "booking:bookableItemDetails.fields.maximumDuration" })).toHaveValue(
       60,
     );
   });
 
-  it("renders identity, rules, and role-sensitive actions", async () => {
+  it("renders identity, rules, role-sensitive actions, and event requests with one cutoff", async () => {
     const user = userEvent.setup();
-    server.use(http.get("/api/v2/booking-configurations", () => HttpResponse.json(envelope([configuration], 2))));
+    const eventFilters: string[] = [];
+    server.use(
+      http.get("/api/v2/booking-configurations", () => HttpResponse.json(envelope([configuration], 2))),
+      http.get("/api/v2/bookings", ({ request }) => {
+        eventFilters.push(new URL(request.url).searchParams.get("where") ?? "");
+        return HttpResponse.json(envelope([], 10));
+      }),
+    );
     const { container } = renderPage();
 
     expect(await screen.findByRole("heading", { level: 1, name: "Confocal microscope" })).toBeVisible();
@@ -242,10 +264,13 @@ describe("BookableItemPage", () => {
     expect(within(facts).getByText("booking:bookableItemDetails.fields.createdAt")).toBeVisible();
     expect(screen.getByRole("button", { name: "booking:bookableItems.actions.menu" })).toBeVisible();
     expect(screen.getAllByText("UTC").length).toBeGreaterThan(0);
-    expect(screen.getByRole("tab", { name: "booking:bookableItemDetails.tabs.details" })).toHaveAttribute(
+    expect(screen.getByRole("tab", { name: "booking:bookableItemDetails.tabs.bookings" })).toHaveAttribute(
       "aria-selected",
       "true",
     );
+    expect(screen.getByText("booking:bookableItemDetails.upcoming")).toBeVisible();
+    expect(screen.getByText("booking:bookableItemDetails.past")).toBeVisible();
+    await waitFor(() => expect(eventFilters).toHaveLength(2));
 
     await user.click(screen.getByRole("tab", { name: "booking:bookableItemDetails.tabs.details" }));
     expect(screen.getByText("08:00–17:30")).toBeVisible();
@@ -257,6 +282,9 @@ describe("BookableItemPage", () => {
     );
     expect(screen.getByRole("tab", { name: "booking:bookableItemDetails.tabs.audit" })).toBeVisible();
     expect(screen.getByRole("button", { name: "booking:bookableItemDetails.edit" })).toBeVisible();
+    const boundaries = eventFilters.map((where) => where.match(/end=(?:gt|le)=([^;]+)/)?.[1]);
+    expect(boundaries[0]).toBeTruthy();
+    expect(boundaries[0]).toBe(boundaries[1]);
     await expectAccessible(container);
   });
 
@@ -323,24 +351,15 @@ describe("BookableItemPage", () => {
 
   it("keeps archived configurations on the canonical route with read-only controls", async () => {
     const archived = { ...configuration, state: "ARCHIVED" as const };
-    let posts = 0;
     server.use(
       http.get("/api/v2/booking-configurations", () => HttpResponse.json(envelope([archived], 2))),
       http.get("/api/v2/bookings", () => HttpResponse.json(envelope([], 10))),
-      http.get("/api/v2/booking-configurations/7/calendar-subscription", () =>
-        HttpResponse.json({ active: false, updatedAt: null, subscriptionUrl: null }),
-      ),
-      http.post("/api/v2/booking-configurations/7/calendar-subscription", () => {
-        posts += 1;
-        return HttpResponse.json({ active: true, updatedAt: null, subscriptionUrl: null });
-      }),
     );
     renderPage("/booking/bookable-items/IN123/details?edit=true");
 
     expect(await screen.findByText("booking:bookableItemDetails.archived")).toBeVisible();
     expect(screen.queryByRole("button", { name: "booking:bookableItemDetails.edit" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "booking:bookings.actions.newBooking" })).not.toBeInTheDocument();
-    expect(posts).toBe(0);
   });
 
   it("restores an archived configuration with a state-only conditional PATCH", async () => {
@@ -587,7 +606,7 @@ describe("BookableItemPage", () => {
 
     expect(await screen.findByText("Confocal microscope")).toBeVisible();
     expect(screen.queryByRole("link", { name: "booking:bookableItemDetails.edit" })).not.toBeInTheDocument();
-    expect(eventRequests).toBe(0);
+    await waitFor(() => expect(eventRequests).toBe(2));
   });
 
   it("marks the configuration update timestamp as machine-readable time", async () => {
@@ -604,5 +623,29 @@ describe("BookableItemPage", () => {
       (element) => element.getAttribute("datetime") === updatedAt,
     );
     expect(updatedTime).toBeVisible();
+  });
+
+  it("reformats existing events after a configuration timezone refresh without refetching events", async () => {
+    let timezone = "UTC";
+    let eventRequests = 0;
+    server.use(
+      http.get("/api/v2/booking-configurations", () =>
+        HttpResponse.json(envelope([{ ...configuration, timezone }], 2)),
+      ),
+      http.get("/api/v2/bookings", () => {
+        eventRequests += 1;
+        return HttpResponse.json(envelope([booking], 10));
+      }),
+    );
+    const { queryClient } = renderPage();
+
+    const times = await screen.findAllByRole("time");
+    const utcText = times[0].textContent;
+    expect(eventRequests).toBe(2);
+    timezone = "Europe/Berlin";
+    await queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations", "target", "IN123"] });
+
+    await waitFor(() => expect(screen.getAllByRole("time")[0]).not.toHaveTextContent(utcText ?? ""));
+    expect(eventRequests).toBe(2);
   });
 });

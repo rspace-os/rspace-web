@@ -9,7 +9,13 @@ import MockAdapter from "axios-mock-adapter";
 
 import { stubAppChrome, type VisibleTabs } from "@/__tests__/helpers/appChrome";
 import axios from "@/common/axios";
+import { FEATURE_FLAGS } from "@/featureFlags/generatedFeatureFlags";
+import { useIsFeatureFlagEnabled } from "@/featureFlags/queries";
 import { SimplePageWithAppBar } from "./index.story";
+
+vi.mock("@/featureFlags/queries", () => ({
+  useIsFeatureFlagEnabled: vi.fn(),
+}));
 
 const mockAxios = new MockAdapter(axios);
 
@@ -34,6 +40,7 @@ async function waitForLoaded() {
 describe("App Bar", () => {
   beforeEach(() => {
     stubEndpoints();
+    vi.mocked(useIsFeatureFlagEnabled).mockReturnValue(true);
   });
 
   afterEach(() => {
@@ -90,6 +97,28 @@ describe("App Bar", () => {
     render(<SimplePageWithAppBar variant="dialog" currentPage="Test Page" />);
     const heading = await screen.findByRole("heading", { level: 2 });
     expect(heading).toHaveTextContent("Test Page");
+  });
+
+  describe("Booking feature flag", () => {
+    test("When enabled, the Booking link is shown", async () => {
+      render(<SimplePageWithAppBar variant="page" />);
+      await waitForLoaded();
+
+      expect(useIsFeatureFlagEnabled).toHaveBeenCalledWith(FEATURE_FLAGS.bookingEnabled);
+      expect(screen.getByRole("link", { name: "common:appBar.sections.booking.title" })).toHaveAttribute(
+        "href",
+        "/booking",
+      );
+    });
+
+    test("When disabled, the Booking link is hidden", async () => {
+      vi.mocked(useIsFeatureFlagEnabled).mockReturnValue(false);
+
+      render(<SimplePageWithAppBar variant="page" />);
+      await waitForLoaded();
+
+      expect(screen.queryByRole("link", { name: "common:appBar.sections.booking.title" })).not.toBeInTheDocument();
+    });
   });
 
   test("When the user avatar is clicked, a menu should appear with profile and logout options", async () => {
