@@ -16,6 +16,9 @@ import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.UserGroup;
 import com.researchspace.model.UserPreference;
+import com.researchspace.model.booking.BookingConfiguration;
+import com.researchspace.model.booking.BookingConfigurationDefaults;
+import com.researchspace.model.booking.BookingDefaultAccessGrantee;
 import com.researchspace.model.dmps.DMPUser;
 import com.researchspace.model.elninventory.ListOfMaterials;
 import com.researchspace.model.elninventory.MaterialUsage;
@@ -79,6 +82,8 @@ import com.researchspace.model.record.RecordFactory;
 import com.researchspace.model.record.RecordToFolder;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.record.TestFactory;
+import com.researchspace.model.resourceaccess.ResourceAccess;
+import com.researchspace.model.resourceaccess.ResourceRoleAssignment;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -303,6 +308,11 @@ public abstract class HibernateTest {
       Basket.class,
       BasketItem.class,
       UserRaid.class,
+      BookingConfiguration.class,
+      BookingConfigurationDefaults.class,
+      BookingDefaultAccessGrantee.class,
+      ResourceAccess.class,
+      ResourceRoleAssignment.class,
       InstrumentEntity.class,
       InstrumentTemplate.class,
       Instrument.class

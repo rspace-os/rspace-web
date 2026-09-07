@@ -46,6 +46,12 @@ public class InventorySearchConfig extends SearchConfig {
 
   private String originalSearchQuery;
 
+  /** Caller-relative filter for active, enabled, readable Booking configurations. */
+  private Boolean bookable;
+
+  /** Instrument database identifiers satisfying {@link #bookable} for the authenticated caller. */
+  private Set<Long> bookableInstrumentIds = Set.of();
+
   /**
    * Constructor using default settings for all other properties. Constructor using settings for
    * advanced search.

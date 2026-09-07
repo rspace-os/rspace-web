@@ -11,7 +11,12 @@ import com.researchspace.api.v2.model.ApiV2CollectionQuery;
 import com.researchspace.api.v2.model.ApiV2FieldsetQuery;
 import com.researchspace.inventory.model.ApiV2InstrumentResource;
 import com.researchspace.model.User;
+import com.researchspace.model.collection.CollectionDescription;
+import com.researchspace.model.collection.CollectionDescription.Field;
 import com.researchspace.model.collection.CollectionDescription.Operator;
+import com.researchspace.model.collection.CollectionDescription.Relationship;
+import com.researchspace.model.collection.CollectionDescription.Sort;
+import com.researchspace.model.collection.CollectionFieldTypes;
 import com.researchspace.model.collection.CollectionQueryException;
 import com.researchspace.model.collection.CollectionQueryLimits;
 import com.researchspace.model.collection.FilterExpression;
@@ -41,6 +46,29 @@ class ApiV2RuntimeFieldParserTest {
 
   private static final ResourceRegistry REGISTRY =
       new ResourceRegistry(List.of(ApiV2InstrumentResource.DESCRIPTION));
+
+  private record InstrumentHolder(Long id, Instrument target) {}
+
+  // Exercise generic relationship traversal without exposing private fields through Booking.
+  private static final CollectionDescription<InstrumentHolder> HOLDERS =
+      new CollectionDescription<>(
+          "holders",
+          InstrumentHolder.class,
+          List.of(
+              Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), InstrumentHolder::id)),
+          List.of(
+              Relationship.referenceToOne(
+                  "target",
+                  "instruments",
+                  CollectionFieldTypes.longNumber(),
+                  Instrument.class,
+                  InstrumentHolder::target,
+                  Instrument::getId,
+                  "target.id")),
+          "id",
+          List.of(new Sort("id", true)));
+  private static final ResourceRegistry HOLDER_REGISTRY =
+      new ResourceRegistry(List.of(HOLDERS, ApiV2InstrumentResource.DESCRIPTION));
   private static final User READER = new User("reader");
   private static final User STRANGER = new User("stranger");
 
@@ -384,6 +412,68 @@ class ApiV2RuntimeFieldParserTest {
                 "customFields.SF1==BSL-2", ApiV2InstrumentResource.DESCRIPTION, REGISTRY));
   }
 
+  @Test
+  void resolvesARuntimeFieldReachedThroughARelationship() {
+    StubFields instruments = new StubFields();
+    RuntimeFieldContext context =
+        new RuntimeFieldContext(
+            List.of(),
+            READER,
+            name -> "instruments".equals(name) ? List.of(instruments) : List.of());
+
+    ResourceRequest request =
+        ApiV2ResourceRequestParser.filtered(
+            "target.customFields.SF1==BSL-2", HOLDERS, HOLDER_REGISTRY, context);
+
+    ResolvedRuntimeField resolved = request.runtime().find("target.customFields.SF1");
+    assertEquals("SF1", resolved.id());
+    assertEquals("target", request.runtime().relationshipFor("target.customFields.SF1"));
+    FilterExpression.Comparison comparison = (FilterExpression.Comparison) request.filter();
+    assertEquals("target.customFields.SF1", comparison.field());
+  }
+
+  @Test
+  void projectsARuntimeFieldReachedThroughARelationship() {
+    StubFields instruments = new StubFields();
+    RuntimeFieldContext context =
+        new RuntimeFieldContext(
+            List.of(),
+            READER,
+            name -> "instruments".equals(name) ? List.of(instruments) : List.of());
+
+    ResourceRequest request =
+        ApiV2ResourceRequestParser.parse(
+            collectionQuery(null),
+            fields(Map.of("holders", "id,target.customFields.SF1")),
+            HOLDERS,
+            HOLDER_REGISTRY,
+            context);
+
+    assertEquals(Set.of("target.customFields.SF1"), request.runtime().projected());
+    assertEquals("target", request.runtime().relationshipFor("target.customFields.SF1"));
+    assertEquals("SF1", request.runtime().find("target.customFields.SF1").id());
+    assertFalse(request.fields().includes("target.customFields.SF1", "id"));
+  }
+
+  @Test
+  void refusesProjectingThroughAProviderThatCannotAnswerByTargetId() {
+    RuntimeFieldContext context =
+        new RuntimeFieldContext(
+            List.of(),
+            READER,
+            name -> "instruments".equals(name) ? List.of(new FilterOnlyFields()) : List.of());
+
+    assertThrows(
+        CollectionQueryException.class,
+        () ->
+            ApiV2ResourceRequestParser.parse(
+                collectionQuery(null),
+                fields(Map.of("holders", "id,target.customFields.SF1")),
+                HOLDERS,
+                HOLDER_REGISTRY,
+                context));
+  }
+
   private static final class FilterOnlyFields implements RuntimeCollectionFields<Instrument> {
 
     private final StubFields delegate = new StubFields();
@@ -413,6 +503,22 @@ class ApiV2RuntimeFieldParserTest {
         List<Instrument> resources, Set<String> fieldIds, User actor) {
       return delegate.values(resources, fieldIds, actor);
     }
+  }
+
+  @Test
+  void refusesARelationshipHopOntoADefinitionTheActorCannotReach() {
+    StubFields instruments = new StubFields();
+    RuntimeFieldContext context =
+        new RuntimeFieldContext(
+            List.of(),
+            STRANGER,
+            name -> "instruments".equals(name) ? List.of(instruments) : List.of());
+
+    assertThrows(
+        CollectionQueryException.class,
+        () ->
+            ApiV2ResourceRequestParser.filtered(
+                "target.customFields.SF1==BSL-2", HOLDERS, HOLDER_REGISTRY, context));
   }
 
   private static final class AlwaysResolves implements RuntimeCollectionFields<Instrument> {

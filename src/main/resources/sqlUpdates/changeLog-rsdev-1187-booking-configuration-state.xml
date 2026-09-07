@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.17.xsd">
+
+  <changeSet id="rsdev-1187-booking-configuration-state" author="researchspace" context="run">
+    <comment>Represent the booking configuration lifecycle explicitly</comment>
+    <addColumn tableName="BookingConfiguration">
+      <column name="state" type="VARCHAR(16)" defaultValue="ACTIVE">
+        <constraints nullable="false"/>
+      </column>
+    </addColumn>
+    <addColumn tableName="BookingConfiguration_AUD">
+      <column name="state" type="VARCHAR(16)"/>
+    </addColumn>
+    <sql>UPDATE BookingConfiguration SET state = CASE WHEN deleted = 1 THEN 'ARCHIVED' ELSE 'ACTIVE' END</sql>
+    <sql>UPDATE BookingConfiguration_AUD SET state = CASE WHEN deleted = 1 THEN 'ARCHIVED' ELSE 'ACTIVE' END</sql>
+    <dropColumn tableName="BookingConfiguration" columnName="deleted"/>
+    <dropColumn tableName="BookingConfiguration_AUD" columnName="deleted"/>
+  </changeSet>
+</databaseChangeLog>
