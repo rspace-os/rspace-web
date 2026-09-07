@@ -10,8 +10,8 @@ import { useState } from "react";
 import { expect, userEvent, within } from "storybook/test";
 import {
   createBooleanArgType,
+  createSelectArgType,
   muiCheckedArgType,
-  muiColorArgType,
   muiDisabledArgType,
   muiRequiredArgType,
   muiSizeArgType,
@@ -23,7 +23,14 @@ const meta = {
   tags: ["autodocs"],
   parameters: { a11y: { test: "error" } },
   argTypes: {
-    color: muiColorArgType,
+    color: createSelectArgType(
+      ["primary", "secondary", "success", "error", "info", "warning", "default"] satisfies NonNullable<
+        React.ComponentProps<typeof Checkbox>["color"]
+      >[],
+      "primary",
+      "The color of the component.",
+      "Appearance",
+    ),
     size: muiSizeArgType,
     disabled: muiDisabledArgType,
     required: muiRequiredArgType,

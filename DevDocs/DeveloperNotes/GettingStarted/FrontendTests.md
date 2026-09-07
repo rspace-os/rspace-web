@@ -32,6 +32,9 @@ pnpm run test --color | less -R
 
 ## Storybook composition examples
 
+For the complete Storybook workflow, including authoring, verification, and
+RSpace preview deployment, see [Storybook](../Storybook.md).
+
 Run `pnpm storybook` from the repository root. MUI compound examples are under
 each component family's **Composition** entry, with sources in
 `src/modules/common/ui/material-ui/components/*/*.compound.stories.tsx`

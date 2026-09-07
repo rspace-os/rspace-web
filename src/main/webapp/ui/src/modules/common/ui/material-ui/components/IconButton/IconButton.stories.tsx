@@ -10,13 +10,7 @@ import IconButton from "@mui/material/IconButton";
 import Stack from "@mui/material/Stack";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fn, userEvent, within } from "storybook/test";
-import {
-  createBooleanArgType,
-  createSelectArgType,
-  muiColorArgType,
-  muiDisabledArgType,
-  muiSizeArgType,
-} from "../../argTypeTemplates";
+import { createBooleanArgType, createSelectArgType, muiDisabledArgType, muiSizeArgType } from "../../argTypeTemplates";
 
 const meta = {
   title: "Material UI/Inputs/IconButton",
@@ -24,7 +18,22 @@ const meta = {
   tags: ["autodocs"],
   parameters: { a11y: { test: "error" } },
   argTypes: {
-    color: muiColorArgType,
+    color: createSelectArgType(
+      [
+        "primary",
+        "secondary",
+        "success",
+        "error",
+        "info",
+        "warning",
+        "inherit",
+        "default",
+        "standardIcon",
+      ] satisfies NonNullable<React.ComponentProps<typeof IconButton>["color"]>[],
+      "default",
+      "The color of the component.",
+      "Appearance",
+    ),
     size: muiSizeArgType,
     disabled: muiDisabledArgType,
     disableRipple: createBooleanArgType("If true, the ripple effect is disabled.", false, "Appearance"),

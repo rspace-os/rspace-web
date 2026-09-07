@@ -17,6 +17,9 @@ generated Docs page with prop descriptions, examples, and source code. Select
 an individual story to use its Controls panel. Docs examples run in separate
 frames to contain portals, fixed positioning, and repeated example IDs.
 
+The SvgIcon examples use `@mui/icons-material` SVGs. Font-ligature `Icon`
+requires a separate icon font stylesheet, which this catalog does not load.
+
 Stories import the installed MUI components directly for rendering and prop
 metadata; this catalog does not maintain a separate wrapper API.
 

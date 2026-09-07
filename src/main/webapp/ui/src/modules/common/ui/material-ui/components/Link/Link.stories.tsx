@@ -7,7 +7,7 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fn, userEvent, within } from "storybook/test";
-import { createSelectArgType, muiColorArgType } from "../../argTypeTemplates";
+import { createSelectArgType } from "../../argTypeTemplates";
 
 const meta = {
   title: "Material UI/Navigation/Link",
@@ -15,7 +15,23 @@ const meta = {
   tags: ["autodocs"],
   parameters: { a11y: { test: "error" } },
   argTypes: {
-    color: muiColorArgType,
+    color: createSelectArgType(
+      [
+        "primary",
+        "secondary",
+        "success",
+        "error",
+        "info",
+        "warning",
+        "inherit",
+        "textPrimary",
+        "textSecondary",
+        "textDisabled",
+      ] satisfies NonNullable<React.ComponentProps<typeof Link>["color"]>[],
+      "primary",
+      "The color of the component.",
+      "Appearance",
+    ),
     underline: createSelectArgType(
       ["always", "hover", "none"],
       "always",

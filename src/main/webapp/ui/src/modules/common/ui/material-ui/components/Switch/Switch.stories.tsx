@@ -7,7 +7,12 @@ import Switch from "@mui/material/Switch";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useArgs } from "storybook/preview-api";
 import { expect, userEvent, within } from "storybook/test";
-import { createBooleanArgType, muiCheckedArgType, muiColorArgType, muiDisabledArgType } from "../../argTypeTemplates";
+import {
+  createBooleanArgType,
+  createSelectArgType,
+  muiCheckedArgType,
+  muiDisabledArgType,
+} from "../../argTypeTemplates";
 
 const meta = {
   title: "Material UI/Inputs/Switch",
@@ -15,7 +20,14 @@ const meta = {
   tags: ["autodocs"],
   parameters: { a11y: { test: "error" } },
   argTypes: {
-    color: muiColorArgType,
+    color: createSelectArgType(
+      ["primary", "secondary", "success", "error", "info", "warning", "default", "tertiary"] satisfies NonNullable<
+        React.ComponentProps<typeof Switch>["color"]
+      >[],
+      "primary",
+      "The color of the component.",
+      "Appearance",
+    ),
     size: {
       control: "radio",
       options: ["small", "medium"],

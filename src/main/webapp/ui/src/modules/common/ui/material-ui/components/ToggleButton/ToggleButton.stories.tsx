@@ -21,7 +21,7 @@ import { useArgs } from "storybook/preview-api";
 import { expect, fn, userEvent, waitFor, within } from "storybook/test";
 import {
   createBooleanArgType,
-  muiColorArgType,
+  createSelectArgType,
   muiDisabledArgType,
   muiSelectedArgType,
   muiSizeArgType,
@@ -33,7 +33,14 @@ const meta = {
   tags: ["autodocs"],
   parameters: { a11y: { test: "error" } },
   argTypes: {
-    color: muiColorArgType,
+    color: createSelectArgType(
+      ["primary", "secondary", "success", "error", "info", "warning", "standard"] satisfies NonNullable<
+        React.ComponentProps<typeof ToggleButton>["color"]
+      >[],
+      "standard",
+      "The color of the component.",
+      "Appearance",
+    ),
     size: muiSizeArgType,
     disabled: muiDisabledArgType,
     selected: muiSelectedArgType,

@@ -8,7 +8,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fn, userEvent, within } from "storybook/test";
 import {
   createBooleanArgType,
-  muiColorArgType,
+  createSelectArgType,
   muiDisabledArgType,
   muiFullWidthArgType,
   muiSizeArgType,
@@ -32,7 +32,22 @@ const meta = {
   },
   argTypes: {
     variant: muiVariantArgType(["text", "contained", "outlined"], "text"),
-    color: muiColorArgType,
+    color: createSelectArgType(
+      [
+        "primary",
+        "secondary",
+        "success",
+        "error",
+        "info",
+        "warning",
+        "inherit",
+        "standardIcon",
+        "callToAction",
+      ] satisfies NonNullable<React.ComponentProps<typeof Button>["color"]>[],
+      "standardIcon",
+      "The color of the component.",
+      "Appearance",
+    ),
     size: muiSizeArgType,
     disabled: muiDisabledArgType,
     fullWidth: muiFullWidthArgType,

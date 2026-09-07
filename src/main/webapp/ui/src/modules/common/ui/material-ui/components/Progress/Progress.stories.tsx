@@ -10,7 +10,7 @@ import Typography from "@mui/material/Typography";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import React from "react";
 import { expect, within } from "storybook/test";
-import { createNumberArgType, createSelectArgType, muiColorArgType } from "../../argTypeTemplates";
+import { createNumberArgType, createSelectArgType } from "../../argTypeTemplates";
 
 const meta = {
   title: "Material UI/Feedback/LinearProgress",
@@ -18,7 +18,14 @@ const meta = {
   tags: ["autodocs"],
   parameters: { a11y: { test: "error" } },
   argTypes: {
-    color: muiColorArgType,
+    color: createSelectArgType(
+      ["primary", "secondary", "success", "error", "info", "warning", "inherit"] satisfies NonNullable<
+        React.ComponentProps<typeof LinearProgress>["color"]
+      >[],
+      "primary",
+      "The color of the component.",
+      "Appearance",
+    ),
     variant: createSelectArgType(
       ["determinate", "indeterminate", "buffer", "query"],
       "indeterminate",
