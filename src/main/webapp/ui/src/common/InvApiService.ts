@@ -15,11 +15,13 @@ class InvApiService extends ApiServiceBase {
     records: ReadonlyArray<BulkEndpointRecordSerialisation>,
     operationType: "CREATE" | "UPDATE" | "DELETE" | "RESTORE" | "DUPLICATE" | "MOVE" | "CHANGE_OWNER",
     rollbackOnError: boolean,
+    transferBookingConfigurationOwnership = false,
   ): Promise<AxiosResponse<T>> {
     const params = {
       operationType,
       records,
       rollbackOnError,
+      transferBookingConfigurationOwnership,
     };
 
     return when(() => !getRootStore().authStore.isSynchronizing).then(() => {
