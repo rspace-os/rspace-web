@@ -37,6 +37,7 @@
     "@playwright/test": "1.62.1",
     "@sa11y/vitest": "8.0.28",
     "@suspensive/react": "3.21.3",
+    "@tailwindcss/vite": "4.3.3",
     "@testing-library/jest-dom": "7.0.1",
     "@testing-library/react": "16.3.2",
     "@testing-library/user-event": "14.6.5",
@@ -70,6 +71,7 @@
     "msw": "2.15.0",
     "playwright-core": "1.62.1",
     "rollup-plugin-visualizer": "7.1.1",
+    "tailwindcss": "4.3.3",
     "typescript": "7.0.2",
     "url": "0.11.4",
     "vite": "8.2.2",
@@ -79,6 +81,7 @@
     "vitest-when": "0.10.0"
   },
   "dependencies": {
+    "@base-ui/react": "1.7.0",
     "@codemirror/language": "6.12.4",
     "@codemirror/legacy-modes": "6.5.3",
     "@dnd-kit/core": "6.3.1",
@@ -108,8 +111,11 @@
     "@tanstack/query-core": "5.101.4",
     "@tanstack/react-form": "1.33.5",
     "@tanstack/react-query": "5.101.4",
+    "@tanstack/react-router": "1.170.18",
     "@tinymce/tinymce-react": "6.3.0",
     "axios": "1.19.0",
+    "class-variance-authority": "0.7.1",
+    "clsx": "2.1.1",
     "date-fns": "4.4.0",
     "dompurify": "3.4.14",
     "email-validator": "2.0.4",
@@ -120,6 +126,7 @@
     "i18next-icu": "2.4.4",
     "i18next-resources-to-backend": "1.2.3",
     "immer": "11.1.18",
+    "input-otp": "1.4.2",
     "intl-messageformat": "11.2.14",
     "jwt-decode": "4.0.0",
     "katex": "0.18.4",
@@ -127,9 +134,11 @@
     "ketcher-react": "3.18.0",
     "ketcher-standalone": "3.18.0",
     "leaflet": "1.9.4",
+    "lucide-react": "1.28.0",
     "mobx": "6.16.1",
     "mobx-react": "9.2.2",
     "mobx-react-lite": "4.1.1",
+    "nuqs": "2.9.3",
     "pdfjs-dist": "5.4.296",
     "photoswipe": "5.4.4",
     "posthog-js": "1.418.10",
@@ -137,6 +146,7 @@
     "purify-ts": "2.1.4",
     "qr-scanner": "1.4.2",
     "react": "19.2.8",
+    "react-day-picker": "10.0.1",
     "react-device-detect": "2.2.3",
     "react-dom": "19.2.8",
     "react-i18next": "17.0.12",
@@ -144,6 +154,7 @@
     "react-leaflet": "5.0.0",
     "react-pdf": "10.5.0",
     "react-photoswipe-gallery": "4.1.2",
+    "react-resizable-panels": "4.12.2",
     "react-router": "8.3.0",
     "react-select": "5.10.2",
     "react-timeago-i18n": "2.4.0",
@@ -151,7 +162,14 @@
     "react-window": "2.3.0",
     "react-zoom-pan-pinch": "4.0.4",
     "sockjs-client": "1.6.1",
+    "tailwind-merge": "3.6.0",
     "tinymce": "8.8.2",
-    "valibot": "1.4.2"
+    "valibot": "1.4.2",
+    "zustand": "5.0.14"
+  },
+  "intent": {
+    "skills": [
+      "@tanstack/router-core"
+    ]
   }
 }
