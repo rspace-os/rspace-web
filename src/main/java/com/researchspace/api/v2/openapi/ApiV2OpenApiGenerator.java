@@ -1,12 +1,14 @@
 package com.researchspace.api.v2.openapi;
 
 import com.researchspace.api.v2.controller.ApiV2Problem;
+import com.researchspace.api.v2.model.ApiV2AuditEvent;
 import com.researchspace.api.v2.model.ApiV2CountResult;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
 import com.researchspace.api.v2.resource.ApiV2ResourceRegistration;
 import com.researchspace.api.v2.resource.OpenApiOperationDocumentation;
 import com.researchspace.api.v2.resource.ResourceAccessSpec;
 import com.researchspace.api.v2.resource.ResourceOperation;
+import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.collection.AccessDocumentation;
 import com.researchspace.model.collection.AccessDocumentation.AuthenticationRequirement;
 import com.researchspace.model.collection.AccessPolicy;
@@ -40,6 +42,7 @@ import io.swagger.v3.oas.models.servers.Server;
 import io.swagger.v3.oas.models.tags.Tag;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -191,6 +194,7 @@ public final class ApiV2OpenApiGenerator {
       }
       pathItem.put(method, operation(resource, operation, component, resourceSchemas));
     }
+    addAuditPaths(paths, resource, component);
     addResourceAccessPaths(paths, resource, component);
   }
 
@@ -1132,6 +1136,7 @@ public final class ApiV2OpenApiGenerator {
 
   private static void addStandardSchemas(Map<String, Object> schemas) {
     ApiV2OpenApiSchemas.schemaFor(ApiV2Problem.class, schemas);
+    ApiV2OpenApiSchemas.schemaFor(ApiV2AuditEvent.class, schemas);
     ApiV2OpenApiSchemas.schemaFor(ApiV2CountResult.class, schemas);
   }
 
@@ -1478,6 +1483,181 @@ public final class ApiV2OpenApiGenerator {
         List.of("docs"),
         "properties",
         ordered("docs", ordered("type", "array", "items", item)));
+  }
+
+  private void addAuditPaths(
+      Map<String, Object> paths, ApiV2ResourceRegistration<?, ?> resource, String component) {
+    String itemAuditPath = "/api/v2/" + resource.resourceName() + "/{id}/audit";
+    String countPath = itemAuditPath + "/count";
+    paths.put(itemAuditPath, ordered("get", auditOperation(resource, component, false)));
+    paths.put(countPath, ordered("get", auditOperation(resource, component, true)));
+  }
+
+  private Map<String, Object> auditOperation(
+      ApiV2ResourceRegistration<?, ?> resource, String component, boolean count) {
+    Map<String, Object> result = new LinkedHashMap<>();
+    result.put("operationId", (count ? "count" : "list") + component + "AuditEvents");
+    result.put(
+        "summary",
+        count
+            ? "Count audit events for one " + resource.resourceName() + " resource"
+            : "List audit events for one " + resource.resourceName() + " resource");
+    result.put(
+        "description",
+        "Returns events from the existing RSpace audit trail. The caller must be authenticated "
+            + "and must be able to read the resource. A resource without audit metadata returns "
+            + "an empty result. The search range is limited to 183 elapsed days. List requests "
+            + "use one-based pagination and a daily bounded-consistency snapshot over the exact "
+            + "half-open interval from dateFrom through midnight after snapshotDate in UTC. The "
+            + "first page selects the latest completed UTC day. Send snapshotDate and "
+            + "snapshotFingerprint together on every later page. A 409 means the result set "
+            + "changed and pagination must restart; a 503 means the server refused to return "
+            + "partial audit data. eventId is deterministic response identity, not a source-log "
+            + "signature.");
+    result.put("tags", List.of(resource.resourceName()));
+    result.put("security", List.of(Map.of("apiKey", List.of()), Map.of("bearerAuth", List.of())));
+    result.put(
+        "x-rspace-access",
+        ordered(
+            "description",
+            "Authenticated callers who can read the resource.",
+            "denialReasonCodes",
+            List.of(AccessPolicy.AUTHENTICATION_REQUIRED, AccessPolicy.FORBIDDEN)));
+    result.put("parameters", auditParameters(resource.description().schema(), count));
+    result.put("responses", auditResponses(count));
+    result.put("x-rspace-operation", count ? "AUDIT_COUNT" : "AUDIT_LIST");
+    return result;
+  }
+
+  private static List<Map<String, Object>> auditParameters(ResourceSchema schema, boolean count) {
+    List<Map<String, Object>> parameters = new ArrayList<>();
+    FieldSchema id = field(schema, schema.idField());
+    parameters.add(
+        parameter("id", "path", true, scalarSchema(id.type(), false), "Resource identifier."));
+    parameters.add(
+        parameter(
+            "dateFrom",
+            "query",
+            false,
+            ordered("type", "string", "format", "date-time"),
+            "Earliest event time. The server limits the range to 183 days."));
+    parameters.add(
+        parameter(
+            "dateTo",
+            "query",
+            false,
+            ordered("type", "string", "format", "date-time"),
+            "Latest event time."));
+    Map<String, Object> actions =
+        parameter(
+            "actions",
+            "query",
+            false,
+            ordered(
+                "type",
+                "array",
+                "items",
+                ordered(
+                    "type",
+                    "string",
+                    "enum",
+                    Arrays.stream(AuditAction.values()).map(Enum::name).toList())),
+            "Audit actions to include.");
+    actions.put("style", "form");
+    actions.put("explode", true);
+    parameters.add(actions);
+    if (!count) {
+      parameters.add(
+          parameter(
+              "snapshotDate",
+              "query",
+              false,
+              ordered("type", "string", "format", "date"),
+              "Completed UTC snapshot day returned by page one. Supply it together with"
+                  + " snapshotFingerprint on later pages."));
+      parameters.add(
+          parameter(
+              "snapshotFingerprint",
+              "query",
+              false,
+              ordered(
+                  "type", "string", "pattern", "^[0-9a-f]{64}$", "minLength", 64, "maxLength", 64),
+              "Fingerprint returned by page one. Supply it unchanged together with snapshotDate"
+                  + " on later pages."));
+      parameters.add(
+          parameter(
+              "page",
+              "query",
+              false,
+              ordered("type", "integer", "minimum", 1, "default", 1),
+              "One-based page number."));
+      parameters.add(
+          parameter(
+              "limit",
+              "query",
+              false,
+              ordered(
+                  "type",
+                  "integer",
+                  "minimum",
+                  1,
+                  "maximum",
+                  CollectionQueryLimits.MAX_PAGE_SIZE,
+                  "default",
+                  20),
+              "Maximum events per page."));
+    }
+    return parameters;
+  }
+
+  private static Map<String, Object> auditResponses(boolean count) {
+    Map<String, Object> responses = new LinkedHashMap<>();
+    responses.put(
+        "200",
+        ordered(
+            "description",
+            count ? "Audit event count." : "Audit event page.",
+            "headers",
+            rateLimitHeaders(),
+            "content",
+            Map.of(
+                JSON,
+                ordered(
+                    "schema",
+                    count ? ref("ApiV2CountResult") : auditPage(ref("ApiV2AuditEvent"))))));
+    responses.put(
+        "400",
+        count
+            ? responseRef("BadRequest")
+            : problemResponse(
+                "The range or snapshot parameters are invalid, or the result exceeds the"
+                    + " configured ceiling and requires a narrower date range.",
+                400,
+                "errors.api.v2.audit.results.tooMany"));
+    responses.put("401", responseRef("Unauthenticated"));
+    responses.put("403", responseRef("Forbidden"));
+    responses.put("404", responseRef("NotFound"));
+    responses.put("406", responseRef("NotAcceptable"));
+    if (!count) {
+      responses.put(
+          "409",
+          problemResponse(
+              "The bounded audit result changed; restart pagination.",
+              409,
+              "errors.api.v2.audit.snapshot.changed"));
+    }
+    responses.put("429", responseRef("TooManyRequests"));
+    responses.put("500", responseRef("UnexpectedError"));
+    if (!count) {
+      responses.put(
+          "503",
+          problemResponse(
+              "The server could not read a consistent audit snapshot and returned no partial"
+                  + " data.",
+              503,
+              "errors.api.v2.audit.unavailable"));
+    }
+    return responses;
   }
 
   private static Map<String, Object> standardResponses() {
