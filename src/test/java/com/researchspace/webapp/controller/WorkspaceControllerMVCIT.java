@@ -1,21 +1,15 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
-import org.apache.shiro.authz.AuthorizationException;
-
 import static com.axiope.search.SearchConstants.ALL_SEARCH_OPTION;
 import static com.axiope.search.SearchConstants.RECORDS_SEARCH_OPTION;
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static com.researchspace.core.util.TransformerUtils.toList;
 import static com.researchspace.testutils.SearchTestUtils.createSimpleNameSearchCfg;
-import static com.researchspace.testutils.matchers.TotalSearchResults.totalSearchResults;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
@@ -24,7 +18,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.MockitoAnnotations.openMocks;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -96,6 +89,7 @@ import java.util.Optional;
 import java.util.Set;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.shiro.authz.AuthorizationException;
 import org.hibernate.search.mapper.orm.Search;
 import org.jsoup.Jsoup;
 import org.jsoup.parser.Tag;
@@ -357,7 +351,9 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     // attempting to delete has no effect - permissions block this
     var sharedRecordId = sharedRecord.getId();
 
-    assertThrows(AuthorizationException.class, () -> recordDeletionMgr.deleteRecord(null, sharedRecordId, extra));
+    assertThrows(
+        AuthorizationException.class,
+        () -> recordDeletionMgr.deleteRecord(null, sharedRecordId, extra));
 
     // still 2 shared records
     assertEquals(2, getRecordCountInFolderForUser(grpFlderId));
@@ -388,16 +384,11 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     var documentIds = new Long[] {setup.structuredDocument.getId()};
     var otherPrincipal = new MockPrincipal(setup.user.getUsername());
 
-    assertThrows(AuthorizationException.class, () ->
+    assertThrows(
+        AuthorizationException.class,
+        () ->
             workspaceController.delete(
-                documentIds,
-                null,
-                model,
-                srchInput,
-                request,
-                otherPrincipal,
-                session,
-                response));
+                documentIds, null, model, srchInput, request, otherPrincipal, session, response));
 
     // now relog in as original user; their doc is still there
     RSpaceTestUtils.logoutCurrUserAndLoginAs(piUser.getUsername(), TESTPASSWD);
@@ -1947,7 +1938,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
                     .param("target", moveTarget.getId() + "")
                     .principal(pi::getUsername))
             .andReturn();
-    assertThat(getSearchResultsFromMvcResult(moveResult), totalSearchResults(2));
+    assertEquals(2, getSearchResultsFromMvcResult(moveResult).getTotalHits().intValue());
     // now, stay with favorites filter, but delete 1, we should get 1 favourite returned, i.e.
     // filter is still applied.
     // RSPAC-749
@@ -1961,7 +1952,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
                     .principal(pi::getUsername))
             .andReturn();
 
-    assertThat(getSearchResultsFromMvcResult(deleteResult), totalSearchResults(1));
+    assertEquals(1, getSearchResultsFromMvcResult(deleteResult).getTotalHits().intValue());
   }
 
   @Test
@@ -1985,7 +1976,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
             .andReturn();
     ISearchResults<BaseRecord> results = getSearchResultsFromMvcResult(copyResult);
     // after copy we now have 1 more results.
-    assertThat(results, totalSearchResults(initialRecordCount + 1));
+    assertEquals(initialRecordCount + 1, results.getTotalHits().intValue());
     verify(auditService).notify(any(DuplicateAuditEvent.class));
     verify(auditService).notify(any(CreateAuditEvent.class));
   }
@@ -2050,7 +2041,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
         mockMvc
             .perform(get("/workspace/getEcatMediaFile/{id}", image.getId()).principal(principal))
             .andExpect(status().isOk())
-            .andExpect(header().string("Content-Disposition", containsString(image.getFileName())))
+            .andExpect(headerContains("Content-Disposition", image.getFileName()))
             .andReturn();
     assertNull(result.getResolvedException());
   }

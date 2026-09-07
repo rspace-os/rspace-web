@@ -1,7 +1,5 @@
 package com.researchspace.api.v1.controller;
 
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-
 import static com.researchspace.api.v1.controller.API_ModelTestUtils.createAnyUserPost;
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static com.researchspace.core.util.DateUtil.localDateToDateUTC;
@@ -9,6 +7,7 @@ import static com.researchspace.core.util.TransformerUtils.toList;
 import static com.researchspace.testutils.MockAndStubUtils.modifyUserCreationDate;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.jdbc.JdbcTestUtils.countRowsInTable;

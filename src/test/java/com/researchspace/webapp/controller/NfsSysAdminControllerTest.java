@@ -18,6 +18,7 @@ import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.NfsManager;
 import com.researchspace.service.UserManager;
 import com.researchspace.testutils.TestFactory;
+import java.util.List;
 import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -93,8 +94,8 @@ public class NfsSysAdminControllerTest {
 
     NfsFileSystemSaveResult result = nfsSystemCtrller.saveFileSystem(nfs);
 
-    assertEquals(java.util.List.of("bob"), result.getUnknownReadAllowlistUsernames());
-    assertEquals(java.util.List.of("carol"), result.getUnknownWriteAllowlistUsernames());
+    assertEquals(List.of("bob"), result.getUnknownReadAllowlistUsernames());
+    assertEquals(List.of("carol"), result.getUnknownWriteAllowlistUsernames());
     verify(netFilesMgr, atLeastOnce()).saveNfsFileSystem(nfs);
   }
 

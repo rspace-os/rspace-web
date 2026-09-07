@@ -1,8 +1,7 @@
 package com.researchspace.model.events;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.not;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 import com.researchspace.Constants;
 import com.researchspace.model.Group;
@@ -21,8 +20,8 @@ class GroupMembershipEventTests {
     GroupMembershipEvent e1 = new GroupMembershipEvent(anyUser, g, GroupEventType.JOIN);
     Thread.sleep(1);
     GroupMembershipEvent e2 = new GroupMembershipEvent(anyUser, g, GroupEventType.JOIN);
-    assertThat(e1, not(equalTo(e2)));
-    assertThat(e1.hashCode(), not(equalTo(e2.hashCode())));
+    assertNotEquals(e2, e1);
+    assertNotEquals(e2.hashCode(), e1.hashCode());
   }
 
   @Test
@@ -36,7 +35,7 @@ class GroupMembershipEventTests {
 
     GroupMembershipEvent e2 =
         new GroupMembershipEvent(1L, anyUser, g, GroupEventType.JOIN, nowInstant);
-    assertThat(e1, equalTo(e2));
-    assertThat(e1.hashCode(), equalTo(e2.hashCode()));
+    assertEquals(e2, e1);
+    assertEquals(e2.hashCode(), e1.hashCode());
   }
 }

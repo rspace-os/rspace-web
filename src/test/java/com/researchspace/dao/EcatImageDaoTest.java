@@ -1,9 +1,6 @@
 package com.researchspace.dao;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
-
-import org.hibernate.LazyInitializationException;
-
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.core.util.imageutils.ImageUtils;
@@ -14,6 +11,7 @@ import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.testutils.TestFactory;
 import java.awt.image.BufferedImage;
+import org.hibernate.LazyInitializationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

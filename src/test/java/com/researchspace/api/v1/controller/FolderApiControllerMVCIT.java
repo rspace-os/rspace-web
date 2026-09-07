@@ -2,8 +2,6 @@ package com.researchspace.api.v1.controller;
 
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static java.util.stream.Collectors.toList;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasItem;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -179,9 +177,11 @@ public class FolderApiControllerMVCIT extends API_MVC_TestBase {
     assertEquals(expectedTotalRootFolderContents, listing.getTotalHits().intValue());
 
     // assert Gallery folder is listed
-    assertThat(
-        listing.getRecords().stream().map(RecordTreeItemInfo::getName).collect(toList()),
-        hasItem(Folder.MEDIAROOT));
+    assertTrue(
+        listing.getRecords().stream()
+            .map(RecordTreeItemInfo::getName)
+            .collect(toList())
+            .contains(Folder.MEDIAROOT));
     RecordTreeItemInfo galleryInfo =
         listing.getRecords().stream()
             .filter(item -> item.getName().equals(Folder.MEDIAROOT))

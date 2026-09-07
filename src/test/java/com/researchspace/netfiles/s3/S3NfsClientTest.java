@@ -131,8 +131,7 @@ public class S3NfsClientTest {
     File f1 = new File("file1.png");
     File f2 = new File("file2.png");
     WriteAttribution attribution =
-        new WriteAttribution(
-            "alice", Map.of(123L, "file1", 456L, "file2"), java.time.Instant.now());
+        new WriteAttribution("alice", Map.of(123L, "file1", 456L, "file2"), Instant.now());
 
     client.uploadFilesToNfs("dest", Map.of(123L, f1, 456L, f2), attribution);
 

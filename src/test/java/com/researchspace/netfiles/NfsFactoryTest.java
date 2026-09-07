@@ -1,7 +1,5 @@
 package com.researchspace.netfiles;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -111,32 +109,29 @@ public class NfsFactoryTest {
     testFileSystem.setUrl("");
     testFileSystem.setClientType(NfsClientType.SAMBA);
     testFileSystem.setAuthType(NfsAuthenticationType.PASSWORD);
-    assertThat(
+    var exception1 =
         assertThrows(
-                IllegalStateException.class,
-                () -> factory.getNfsClient(testUsername, testPassword, testFileSystem))
-            .getMessage(),
-        containsString("url"));
+            IllegalStateException.class,
+            () -> factory.getNfsClient(testUsername, testPassword, testFileSystem));
+    assertTrue(exception1.getMessage().contains("url"));
 
     testFileSystem.setUrl(testServerUrl);
     testFileSystem.setClientType(null);
     testFileSystem.setAuthType(NfsAuthenticationType.PASSWORD);
-    assertThat(
+    var exception2 =
         assertThrows(
-                IllegalStateException.class,
-                () -> factory.getNfsClient(testUsername, testPassword, testFileSystem))
-            .getMessage(),
-        containsString("client"));
+            IllegalStateException.class,
+            () -> factory.getNfsClient(testUsername, testPassword, testFileSystem));
+    assertTrue(exception2.getMessage().contains("client"));
 
     testFileSystem.setUrl(testServerUrl);
     testFileSystem.setClientType(NfsClientType.SFTP);
     testFileSystem.setAuthType(null);
-    assertThat(
+    var exception3 =
         assertThrows(
-                IllegalStateException.class,
-                () -> factory.getNfsClient(testUsername, testPassword, testFileSystem))
-            .getMessage(),
-        containsString("auth"));
+            IllegalStateException.class,
+            () -> factory.getNfsClient(testUsername, testPassword, testFileSystem));
+    assertTrue(exception3.getMessage().contains("auth"));
   }
 
   @Test

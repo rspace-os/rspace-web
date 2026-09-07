@@ -1,14 +1,11 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-
 import static com.researchspace.core.testutil.MockLoggingUtils.assertNoLogging;
 import static com.researchspace.session.SessionAttributeUtils.USER_INFO;
 import static com.researchspace.session.UserSessionTracker.USERS_KEY;
-import static org.hamcrest.Matchers.equalToIgnoringCase;
-import static org.hamcrest.Matchers.hasProperty;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -19,7 +16,6 @@ import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
@@ -35,6 +31,7 @@ import com.researchspace.model.Group;
 import com.researchspace.model.Role;
 import com.researchspace.model.SignupSource;
 import com.researchspace.model.User;
+import com.researchspace.model.dto.UserPublicInfo;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.StructuredDocument;
@@ -58,8 +55,8 @@ import java.util.Map;
 import net.minidev.json.JSONArray;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.shiro.SecurityUtils;
-import org.apache.shiro.authc.UsernamePasswordToken;
 import org.apache.shiro.authc.AuthenticationException;
+import org.apache.shiro.authc.UsernamePasswordToken;
 import org.apache.shiro.authz.AuthorizationException;
 import org.json.JSONObject;
 import org.junit.jupiter.api.AfterEach;
@@ -460,15 +457,13 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
     getBeanOfClass(ConfigurableLogger.class).setLogger(log);
     MockHttpServletRequestBuilder operateAsPost =
         preparePostOperateAs(targetuser, sysAdminPrincipal);
-    this.mockMvc
-        .perform(operateAsPost)
-        .andExpect(status().isOk())
-        .andExpect(
-            request()
-                .sessionAttribute(
-                    USER_INFO,
-                    hasProperty(
-                        "username", equalToIgnoringCase(targetuser.getUsername())))); // RSPAC-1018
+    MvcResult operateAsResult =
+        this.mockMvc.perform(operateAsPost).andExpect(status().isOk()).andReturn();
+    UserPublicInfo sessionUser =
+        (UserPublicInfo) operateAsResult.getRequest().getSession().getAttribute(USER_INFO);
+    assertEquals(
+        targetuser.getUsername().toLowerCase(),
+        sessionUser.getUsername().toLowerCase()); // RSPAC-1018
     assertEquals(targetuser.getUsername(), SecurityUtils.getSubject().getPrincipal());
 
     verify(log, times(1))

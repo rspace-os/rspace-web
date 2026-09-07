@@ -1,11 +1,9 @@
 package com.researchspace.webapp.controller;
 
-import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.GlobalIdentifier;
@@ -118,7 +116,7 @@ public class GlobalLookupControllerMVCIT extends MVCTestBase {
   private void assertRedirect(GlobalIdentifier gid, String expectedURL) throws Exception {
     this.mockMvc
         .perform(get("/globalId/{oid}", gid.getIdString()))
-        .andExpect(view().name(containsString(expectedURL)))
+        .andExpect(viewNameContains(expectedURL))
         .andExpect(status().is3xxRedirection())
         .andReturn();
   }

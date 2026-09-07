@@ -50,6 +50,11 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
   public void setUp() throws Exception {
     ReflectionTestUtils.setField(
         userManager, "messages", new MessageSourceUtils(new JsonMessageSource()));
+    // UserManagerImpl declares a UserDao constructor, so @InjectMocks satisfies it by
+    // constructor injection and does not also field-inject. Wire the @Autowired fields the
+    // tests below exercise by hand.
+    ReflectionTestUtils.setField(userManager, "communityDao", communityDao);
+    ReflectionTestUtils.setField(userManager, "analyticsManager", analyticsManager);
   }
 
   @Test

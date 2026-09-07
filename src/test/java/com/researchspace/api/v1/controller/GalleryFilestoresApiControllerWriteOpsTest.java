@@ -52,7 +52,9 @@ import com.researchspace.service.metadata.GeneratedSidecarFile;
 import com.researchspace.service.metadata.S3SidecarFileService;
 import com.researchspace.testutils.GalleryFilestoreTestUtils;
 import java.io.IOException;
+import java.time.Clock;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.Map;
 import java.util.Set;
 import org.apache.shiro.authz.AuthorizationException;
@@ -70,9 +72,8 @@ class GalleryFilestoresApiControllerWriteOpsTest {
 
   private static final String USERNAME = "username";
   private static final String PASSWORD = "password";
-  private static final java.time.Clock FIXED_CLOCK =
-      java.time.Clock.fixed(
-          java.time.Instant.parse("2026-06-18T10:00:00Z"), java.time.ZoneOffset.UTC);
+  private static final Clock FIXED_CLOCK =
+      Clock.fixed(Instant.parse("2026-06-18T10:00:00Z"), ZoneOffset.UTC);
 
   @Mock private NfsManager nfsManager;
   @Mock private RecordDeletionManager deletionManager;
@@ -380,8 +381,7 @@ class GalleryFilestoresApiControllerWriteOpsTest {
     controller.transferBetweenFilestores(
         srcId, request, new BeanPropertyBindingResult(request, "request"), user);
 
-    WriteAttribution expected =
-        new WriteAttribution("alice", null, java.time.Instant.now(FIXED_CLOCK));
+    WriteAttribution expected = new WriteAttribution("alice", null, Instant.now(FIXED_CLOCK));
     verify(srcClient)
         .copyObject("src/file.txt", destClient, "dst/file.txt", expected.metadataForRecord(null));
   }

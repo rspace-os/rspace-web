@@ -1,14 +1,12 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-
 import static com.researchspace.core.util.JacksonUtil.toJson;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -32,7 +30,6 @@ import java.util.TimeZone;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -107,7 +104,7 @@ public class ScheduledMaintenanceControllerMVCIT extends MVCTestBase {
                     .contentType(MediaType.APPLICATION_JSON)
                     .principal(sysUserPrincipal))
             .andExpect(status().isOk())
-            .andExpect(MockMvcResultMatchers.jsonPath("$.length()", Matchers.is(0)))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.length()").value(0))
             .andReturn();
     assertNull(result.getResolvedException());
 
@@ -180,7 +177,9 @@ public class ScheduledMaintenanceControllerMVCIT extends MVCTestBase {
             .andReturn();
     String deleteResponse = deleteResult.getResponse().getContentAsString();
     assertNotNull(deleteResponse);
-    assertThrows(ObjectRetrievalFailureException.class, () -> maintenanceManager.getScheduledMaintenance(savedId));
+    assertThrows(
+        ObjectRetrievalFailureException.class,
+        () -> maintenanceManager.getScheduledMaintenance(savedId));
   }
 
   @Test
@@ -214,14 +213,13 @@ public class ScheduledMaintenanceControllerMVCIT extends MVCTestBase {
                     .contentType(MediaType.APPLICATION_JSON)
                     .principal(sysUserPrincipal))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.length()", Matchers.is(1))) // one maintenance scheduled
-            .andExpect(jsonPath("$.[0].id", Matchers.is(savedId.intValue())))
-            .andExpect(jsonPath("$.[0].activeNow", Matchers.is(Boolean.TRUE)))
-            .andExpect(jsonPath("$.[0].formattedStartDate", Matchers.is(expectedStartDate)))
+            .andExpect(jsonPath("$.length()").value(1)) // one maintenance scheduled
+            .andExpect(jsonPath("$.[0].id").value(savedId.intValue()))
+            .andExpect(jsonPath("$.[0].activeNow").value(Boolean.TRUE))
+            .andExpect(jsonPath("$.[0].formattedStartDate").value(expectedStartDate))
             .andExpect(
-                jsonPath(
-                    "$.[0].formattedStopUserLoginDate", Matchers.is(expectedStopUserLoginDate)))
-            .andExpect(jsonPath("$.[0].message", Matchers.is(testMessage)))
+                jsonPath("$.[0].formattedStopUserLoginDate").value(expectedStopUserLoginDate))
+            .andExpect(jsonPath("$.[0].message").value(testMessage))
             .andReturn();
     assertNull(retrieveResult.getResolvedException());
 
@@ -243,7 +241,7 @@ public class ScheduledMaintenanceControllerMVCIT extends MVCTestBase {
                     .contentType(MediaType.APPLICATION_JSON)
                     .principal(sysUserPrincipal))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.length()", Matchers.is(0))) // no maintenance scheduled
+            .andExpect(jsonPath("$.length()").value(0)) // no maintenance scheduled
             .andReturn();
     assertNull(retrieveAgainResult.getResolvedException());
   }
@@ -348,7 +346,7 @@ public class ScheduledMaintenanceControllerMVCIT extends MVCTestBase {
                 get("/system/maintenance/ajax/nextMaintenance")
                     .contentType(MediaType.APPLICATION_JSON)
                     .principal(sysUserPrincipal))
-            .andExpect(jsonPath("$.id", Matchers.equalTo(maintenanceId.intValue())))
+            .andExpect(jsonPath("$.id").value(maintenanceId.intValue()))
             .andReturn();
   }
 }

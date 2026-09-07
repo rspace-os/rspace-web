@@ -3,11 +3,8 @@ package com.researchspace.webapp.controller;
 import static com.researchspace.core.util.TransformerUtils.toList;
 import static java.lang.Boolean.TRUE;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -21,7 +18,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import com.researchspace.core.testutil.Invokable;
 import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.document.importer.ExternalFileImporter;
 import com.researchspace.linkedelements.RichTextUpdater;
@@ -496,13 +492,16 @@ public class StructuredDocumentControllerTest {
     // now try if permission denied....throws AuthException
     when(permissionUtils.isPermitted(sd, PermissionType.READ, user)).thenReturn(false);
 
-    assertThrows(AuthorizationException.class, () -> strucDocCtrller.getComments(2L, null, mockPrincipal));
+    assertThrows(
+        AuthorizationException.class, () -> strucDocCtrller.getComments(2L, null, mockPrincipal));
 
     // now lets try revision history, also should be authorized
     final int revisionId = 123;
     when(auditMgr.getCommentItemsForCommentAtDocumentRevision(2L, revisionId)).thenReturn(items);
 
-    assertThrows(AuthorizationException.class, () -> strucDocCtrller.getComments(2L, revisionId, mockPrincipal));
+    assertThrows(
+        AuthorizationException.class,
+        () -> strucDocCtrller.getComments(2L, revisionId, mockPrincipal));
   }
 
   private void verifyWordImportNotAttempted() throws IOException {
@@ -552,19 +551,19 @@ public class StructuredDocumentControllerTest {
     AjaxReturnObject<List<RecordInformation>> res =
         strucDocCtrller.createSDFromWordFile(parentFolder.getId(), files, null, session);
     verifyFileImporterCalled(multipart);
-    assertThat(res.getData(), contains(equalTo(created.toRecordInfo())));
+    assertIterableEquals(List.of(created.toRecordInfo()), res.getData());
     verifyNoInteractions(recordShareHandler);
 
     whenCreatingDoc(multipart).thenThrow(new RuntimeException());
     res = strucDocCtrller.createSDFromWordFile(parentFolder.getId(), files, null, session);
     assertEquals(0, res.getData().size());
-    assertThat(res.getErrorMsg().getErrorMessages().size(), is(1));
+    assertEquals(1, res.getErrorMsg().getErrorMessages().size());
     verifyNoInteractions(recordShareHandler);
 
     whenCreatingDoc(multipart).thenReturn(null);
     res = strucDocCtrller.createSDFromWordFile(parentFolder.getId(), files, null, session);
     assertEquals(0, res.getData().size());
-    assertThat(res.getErrorMsg().getErrorMessages().size(), is(1));
+    assertEquals(1, res.getErrorMsg().getErrorMessages().size());
     verifyNoInteractions(recordShareHandler);
   }
 
@@ -594,7 +593,7 @@ public class StructuredDocumentControllerTest {
     AjaxReturnObject<List<RecordInformation>> res =
         strucDocCtrller.createSDFromWordFile(parentFolder.getId(), files, null, session);
     verifyFileImporterCalled(multipart);
-    assertThat(res.getData(), contains(equalTo(created.toRecordInfo())));
+    assertIterableEquals(List.of(created.toRecordInfo()), res.getData());
     verify(recordShareHandler)
         .shareIntoSharedFolderOrNotebook(user, parentFolder, created.getId(), null);
   }
