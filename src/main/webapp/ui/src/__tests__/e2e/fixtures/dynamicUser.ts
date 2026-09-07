@@ -1,10 +1,29 @@
-import { createDynamicUser } from "../createDynamicUser";
+import { createDynamicUser as createSharedDynamicUser } from "../createDynamicUser";
 import { WorkspacePage } from "../pageObjects/workspace/WorkspacePage";
 import { DYNAMIC_USER_PASSWORD, uniqueName } from "../testData";
 import { test } from "./flows";
-import { loginInNewContext, performLogin } from "./flows/sessions/userSessions";
+import { loginInNewContext as sessionLoginInNewContext, performLogin } from "./flows/sessions/userSessions";
 
-type CreatableRole = "ROLE_USER" | "ROLE_PI" | "ROLE_ADMIN";
+export type CreatableRole = "ROLE_USER" | "ROLE_PI" | "ROLE_ADMIN";
+
+/** Compatibility helper for booking specs that need the created user's id and password. */
+export async function createDynamicUser(
+  clientSysadmin: Parameters<typeof createSharedDynamicUser>[0],
+  role: CreatableRole,
+  namePrefix: string,
+): Promise<Awaited<ReturnType<typeof createSharedDynamicUser>> & { password: string }> {
+  const user = await createSharedDynamicUser(clientSysadmin, role, namePrefix);
+  return { ...user, password: DYNAMIC_USER_PASSWORD };
+}
+
+/** Compatibility login helper accepting the user object returned by createBookingDynamicUser. */
+export async function loginInNewContext(
+  browser: Parameters<typeof sessionLoginInNewContext>[0],
+  browserContextOptions: Parameters<typeof sessionLoginInNewContext>[1],
+  user: { username: string; password: string },
+) {
+  return sessionLoginInNewContext(browser, browserContextOptions, user.username, user.password);
+}
 
 type DynamicUserFixtures = {
   flowCreateUser: (
@@ -16,7 +35,7 @@ type DynamicUserFixtures = {
 
 export const dynamicUserTest = test.extend<DynamicUserFixtures>({
   appUser: async ({ clientSysadmin }, use) => {
-    const { username, apiKey } = await createDynamicUser(clientSysadmin, "ROLE_PI", "e2eDynUser", "DynamicUser");
+    const { username, apiKey } = await createSharedDynamicUser(clientSysadmin, "ROLE_PI", "e2eDynUser", "DynamicUser");
     await use({ username, password: DYNAMIC_USER_PASSWORD, apiKey, roles: ["ROLE_PI", "ROLE_USER"] });
   },
   storageState: async ({ appUser, browser, browserContextOptions }, use) => {
@@ -39,15 +58,15 @@ export const dynamicUserTest = test.extend<DynamicUserFixtures>({
     const closers: Array<() => Promise<void>> = [];
     try {
       await use(async (role, namePrefix = "e2eDynUser2") => {
-        const { username, apiKey } = await createDynamicUser(clientSysadmin, role, namePrefix);
-        const { page, close } = await loginInNewContext(
+        const user = await createSharedDynamicUser(clientSysadmin, role, namePrefix);
+        const { page, close } = await sessionLoginInNewContext(
           browser,
           browserContextOptions,
-          username,
+          user.username,
           DYNAMIC_USER_PASSWORD,
         );
         closers.push(close);
-        return { username, apiKey, workspace: new WorkspacePage(page) };
+        return { username: user.username, apiKey: user.apiKey, workspace: new WorkspacePage(page) };
       });
     } finally {
       const results = await Promise.allSettled(closers.map((close) => close()));

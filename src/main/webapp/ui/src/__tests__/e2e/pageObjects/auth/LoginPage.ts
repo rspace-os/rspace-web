@@ -23,9 +23,20 @@ export class LoginPage extends BasePage {
   }
 
   async login(username: string, password: string): Promise<void> {
-    await this.usernameInput.fill(username);
+    // Fill the autofocus field last: the legacy login page may restore focus and clear it while
+    // browser password handling settles.
     await this.passwordInput.fill(password);
-    await this.submitButton.click();
+    await this.usernameInput.fill(username);
+    if ((await this.usernameInput.inputValue()) !== username || (await this.passwordInput.inputValue()) !== password) {
+      throw new Error("Login credentials were not retained by the form");
+    }
+    await Promise.all([
+      this.submitButton.click(),
+      Promise.any([
+        this.page.waitForURL((url) => !url.pathname.endsWith("/login")),
+        this.invalidCredentialsError.waitFor({ state: "visible" }),
+      ]),
+    ]);
   }
 
   async clickForgotUsername(): Promise<RequestUsernameReminderPage> {
