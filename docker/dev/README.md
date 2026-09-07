@@ -5,11 +5,11 @@
 > manual Maven/Jetty workflow in the
 > [Getting Started guide](/DevDocs/DeveloperNotes/GettingStarted/GettingStarted.md).
 
-Boot a **complete** RSpace instance — database, Java/Jetty backend, and Vite
-frontend — for the git worktree you are currently in, with one command. Your
-worktree source is bind-mounted into the containers, so edits on your machine
-are live: the frontend hot-reloads automatically (HMR), and the backend can be
-hot-redeployed or restarted without rebuilding any image.
+Boot a **complete** RSpace instance — database, Java/Jetty backend, Vite
+frontend, and document converters — for the git worktree you are currently in, with one command.
+Your worktree source is bind-mounted into the containers, so edits on your machine are live: the
+frontend hot-reloads automatically (HMR), and the backend can be hot-redeployed or restarted
+without rebuilding any image.
 
 > This is for **local development only**. It uses throwaway credentials and is
 > not hardened. For running RSpace as a real deployment, use
@@ -100,6 +100,9 @@ The first boot:
 3. creates the schema and sample data (`drop-recreate-db`),
 4. compiles and starts the backend, and installs frontend deps + starts Vite.
 
+The stack also starts the RSpace conversion sidecar and its private Gotenberg container. Neither
+conversion service is published outside the Compose network.
+
 This takes several minutes the first time (Maven and pnpm download
 dependencies). Watch progress with:
 
@@ -136,7 +139,7 @@ endpoints.
 ./docker/dev/rspace-dev up --no-e2e    # stop using integration mocks
 ./docker/dev/rspace-dev up --mailpit   # also start the Mailpit SMTP catcher
 ./docker/dev/rspace-dev up --no-mailpit # stop using Mailpit
-./docker/dev/rspace-dev logs [svc]     # follow logs: app | frontend | db | chemistry | mailpit
+./docker/dev/rspace-dev logs [svc]     # app | frontend | db | chemistry | mailpit | conversion-sidecar | gotenberg
 ./docker/dev/rspace-dev ps             # status + URLs/ports for this worktree
 ./docker/dev/rspace-dev reload         # recompile Java + hot-redeploy webapp
 ./docker/dev/rspace-dev restart        # full backend JVM restart

@@ -90,7 +90,7 @@ export function CallablePdfPreview({ children }: { children: React.ReactNode }):
             // z-index to 2000 to ensure it still displays above legacy jQuery dialogs
             zIndex: 2000,
           }}
-          aria-label={t("callablePdfPreview.title")}
+          slotProps={{ paper: { "aria-label": t("callablePdfPreview.title") } }}
         >
           <DialogContent sx={{ overflowY: "auto" }}>
             <Document file={pdfPreviewOpen} onLoadSuccess={onDocumentLoadSuccess}>

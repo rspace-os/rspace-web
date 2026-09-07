@@ -8,9 +8,12 @@ import com.researchspace.documentconversion.ext.AsposeWebAppClient;
 import com.researchspace.documentconversion.ext.AsyncDocConverterService;
 import com.researchspace.documentconversion.ext.AsyncDocumentConverterService;
 import com.researchspace.documentconversion.ext.ConversionChecker;
+import com.researchspace.documentconversion.ext.ConversionSidecarClientFactory;
+import com.researchspace.documentconversion.ext.PdfConversionClient;
 import com.researchspace.documentconversion.spi.CompositeDocumentConvertor;
 import com.researchspace.documentconversion.spi.DocumentConversionService;
 import com.researchspace.service.impl.DummyConversionService;
+import com.researchspace.service.impl.PdfThenPngConverter;
 import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -57,7 +60,10 @@ public class DocConverterProdConfig {
   @Value("${aspose.enabled:true}")
   private boolean asposeEnabled;
 
-  @Value("${aspose.use.dummy.converter:false}")
+  @Value("${conversion.url:}")
+  private String conversionUrl;
+
+  @Value("${conversion.use.dummy.converter:${aspose.use.dummy.converter:false}}")
   private boolean useDummyConverter;
 
   @Autowired DocConverterBaseConfig baseCfg;
@@ -135,6 +141,13 @@ public class DocConverterProdConfig {
     if (useDummyConverter) {
       delegates.add(new DummyConversionService());
       log.info("Using dummy conversion service returning sample files.");
+    } else if (!StringUtils.isBlank(conversionUrl)) {
+      ConversionSidecarClientFactory.Clients clients = ConversionSidecarClientFactory.create(env);
+      PdfConversionClient pdfClient = clients.pdf();
+      delegates.add(new PdfThenPngConverter(pdfClient, baseCfg.pdfToImageConverter()));
+      delegates.add(pdfClient);
+      delegates.add(clients.word());
+      log.info("Using the configured Gotenberg and JODConverter sidecar.");
     } else if (asposeEnabled) {
       if (!StringUtils.isBlank(asposeWebAppUrl)) {
         delegates.add(asposeWebAppService());

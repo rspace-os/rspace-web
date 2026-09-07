@@ -2,6 +2,8 @@ package com.researchspace.service.impl;
 
 import com.researchspace.core.util.IoUtils;
 import com.researchspace.core.util.imageutils.ImageUtils;
+import com.researchspace.documentconversion.ext.DocumentConversionError;
+import com.researchspace.documentconversion.ext.SafePdfValidator;
 import com.researchspace.documentconversion.spi.ConversionResult;
 import com.researchspace.documentconversion.spi.Convertible;
 import com.researchspace.documentconversion.spi.DocumentConversionService;
@@ -18,9 +20,13 @@ import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPageTree;
 import org.apache.pdfbox.rendering.ImageType;
 import org.apache.pdfbox.rendering.PDFRenderer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** Specifically converts PDF files to thumbnail images */
 public class PDFToImageConverter implements DocumentConversionService {
+
+  private static final Logger LOG = LoggerFactory.getLogger(PDFToImageConverter.class);
 
   @Override
   public ConversionResult convert(Convertible toConvert, String outputExtension, File outfile) {
@@ -28,28 +34,26 @@ public class PDFToImageConverter implements DocumentConversionService {
     try {
       pdfFile = new File(new URI(toConvert.getFileUri()));
     } catch (URISyntaxException e2) {
-      return new ConversionResult("Couldn't read file from URI: " + e2.getMessage());
+      LOG.warn("PDF thumbnail input URI is invalid", e2);
+      return new ConversionResult(DocumentConversionError.INPUT_INVALID.code());
     }
 
-    PDDocument document2;
-    try {
-      document2 = Loader.loadPDF(pdfFile);
+    try (PDDocument document = Loader.loadPDF(pdfFile)) {
+      SafePdfValidator.validate(document);
+      PDFRenderer pdfRenderer = new PDFRenderer(document);
+      PDPageTree pages = document.getPages();
+      if (pages.getCount() == 0) {
+        return new ConversionResult(DocumentConversionError.OUTPUT_INVALID.code());
+      }
+      BufferedImage image = pdfRenderer.renderImageWithDPI(0, 72, ImageType.RGB);
+      return writeThumbnail(image, outfile);
     } catch (IOException e1) {
-      return new ConversionResult("Couldn't load pdf file: " + e1.getMessage());
+      LOG.warn("PDF thumbnail input failed validation or rendering", e1);
+      return new ConversionResult(DocumentConversionError.OUTPUT_INVALID.code());
     }
-    PDFRenderer pdfRenderer = new PDFRenderer(document2);
+  }
 
-    PDPageTree pages2 = document2.getPages();
-    if (pages2.getCount() == 0) {
-      return null;
-    }
-    BufferedImage image;
-    try {
-      image = pdfRenderer.renderImageWithDPI(0, 72, ImageType.RGB);
-      document2.close();
-    } catch (IOException e1) {
-      return new ConversionResult("Couldn't convert pdf to image: " + e1.getMessage());
-    }
+  private ConversionResult writeThumbnail(BufferedImage image, File outfile) {
     try (ByteArrayOutputStream baos = new ByteArrayOutputStream(1000)) {
       ImageUtils.createThumbnail(
           image,
@@ -61,7 +65,8 @@ public class PDFToImageConverter implements DocumentConversionService {
       FileUtils.writeByteArrayToFile(outfile, baos.toByteArray());
       return new ConversionResult(outfile, "image/png");
     } catch (IOException e) {
-      return new ConversionResult("Couldn't write thumbnail file: " + e.getMessage());
+      LOG.error("Could not write PDF thumbnail output", e);
+      return new ConversionResult(DocumentConversionError.FAILED.code());
     }
   }
 
@@ -72,7 +77,8 @@ public class PDFToImageConverter implements DocumentConversionService {
       File outfile = File.createTempFile("pdfThumbnail", ".png", tmpDir);
       return convert(toConvert, outputExtension, outfile);
     } catch (IOException e) {
-      return new ConversionResult("Couldn't generate outfile " + e.getMessage());
+      LOG.error("Could not create PDF thumbnail output", e);
+      return new ConversionResult(DocumentConversionError.OUTPUT_CREATE_FAILED.code());
     }
   }
 

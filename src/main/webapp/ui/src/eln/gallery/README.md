@@ -6,7 +6,7 @@ The Gallery is a sophisticated file management interface for RSpace that provide
 a unified view of various file types stored both locally and on external
 filesystems. It serves as the primary mechanism for browsing, organizing, and
 managing files across different storage backends, with specialized views for
-different file categories and comprehensive preview capabilities.
+different file categories and full preview capabilities.
 
 The Gallery powers file selection throughout RSpace, appearing as both a
 standalone application and as picker dialogs embedded in Inventory as a means of attachment files to samples as well as in the ELN for referencing files in documents.
@@ -67,11 +67,11 @@ to their type, while NetworkFiles are organised by their filestore.
 - **`useGallerySelection.tsx`** - Multi-select state with keyboard/mouse interactions
 - **`useGalleryActions.ts`** - File operations with error handling and progress tracking
 
-### External Service Integration
+### Document and external-service integration
 
 - **`useCollabora.ts`** - Collabora Online document editing integration
 - **`useOfficeOnline.ts`** - Microsoft Office Online editing capabilities
-- **`CallableAsposePreview.tsx`** - Document preview using Aspose services
+- **`CallableDocumentPreview.tsx`** - Office-document preview through the configured converter
 - **`CallableSnapGenePreview.tsx`** - DNA sequence file preview integration
 
 ## Routing
@@ -97,11 +97,12 @@ shape will 404 until one is added for it.
 
 The user interface dynamically provides a primary action based on the type of
 the file and the available integration services. For example, a Word document
-may show "Edit" if Office Online is available, or "Preview" if not (which will
-use Aspose to generate a PDF). Many of these integrations are enabled as React
-hooks and contexts allowing any part of the application to trigger the preview.
+may show "Edit" if Office Online is available, or "Preview" if not. Preview converts the file to
+PDF through the configured conversion sidecar. React hooks and contexts let other parts of the
+application trigger these integrations.
 If this functionality is useful outside of the Gallery, then these hooks can be
-extracted to a more global location. This is logic is in [primaryActionHooks.ts](./primaryActionHooks.ts), and in addition to the external services above includes
+extracted to a more global location. This logic is in
+[primaryActionHooks.ts](./primaryActionHooks.ts). In addition to the external services above, it includes
 
 - **`CallableImagePreview.tsx`** - Image preview in a modal dialog
 - **`CallablePdfPreview.tsx`** - PDF preview in a modal dialog
@@ -163,15 +164,15 @@ Seven things about it are easy to get wrong:
   A version with no recorded description shows an empty one, never the live one.
   In particular neither the thumbnail nor the preview endpoints are
   version-aware: `/gallery/getThumbnail` takes a cache-buster, not a version, the
-  document and chemistry thumbnails are keyed on the live record, Aspose converts
+  document and chemistry thumbnails are keyed on the live record, document conversion uses
   the live record, and `/molbiol/dna/png` takes a bare id. An image therefore
   thumbnails from `/Streamfile/{id}?version=N`, and anything else falls back to
   its stock type icon, because showing no content beats showing the wrong
   content. `previewCanAddressTheVersion`
   ([primaryActionHooks.ts](./primaryActionHooks.ts)) applies the same rule to the
-  Aspose, SnapGene and chemistry previews, so a pinned view offers no preview
+  document, SnapGene and chemistry previews, so a pinned view offers no preview
   rather than the live one. Images and PDFs are exempt: both read the
-  version-aware `downloadHref`. Aspose could in principle be made correct rather
+  version-aware `downloadHref`. Document conversion could be made correct rather
   than refused, since it already accepts a `revisionId` and the endpoint already
   returns one per revision; `VersionRow` would need to start carrying it.
 - **The decoration goes in the listing, not the selection.** Everything

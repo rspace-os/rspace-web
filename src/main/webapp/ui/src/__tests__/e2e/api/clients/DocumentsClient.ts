@@ -13,4 +13,13 @@ export class DocumentsClient extends BaseApiClient {
   async deleteById(id: number): Promise<void> {
     return this.requestVoid("delete", `/api/v1/documents/${id}`, { action: "deleteDocumentById" });
   }
+
+  async importWord(file: { name: string; mimeType: string; buffer: Buffer }): Promise<ApiDocument> {
+    const res = await this.request.post("/api/v1/import/word", {
+      headers: this.headers(),
+      multipart: { file },
+    });
+    await this.assertOk(res, "importWord");
+    return res.json() as Promise<ApiDocument>;
+  }
 }

@@ -240,6 +240,20 @@
       "searchRequestFailed": "Unsuccessful search request to the chemistry service, status code: {0}.",
       "serviceCallFailed": "Chemistry service call failed"
     },
+    "documentConversion": {
+      "authenticationFailed": "The document conversion service rejected its configured credential.",
+      "failed": "The document could not be converted.",
+      "inputInvalid": "The input document is invalid or unavailable.",
+      "inputTooLarge": "The input document exceeds the conversion limit.",
+      "outputCreateFailed": "The converted document could not be stored.",
+      "outputInvalid": "The conversion service returned an invalid document.",
+      "outputTooLarge": "The converted document exceeds the conversion limit.",
+      "previewPdfOnly": "Only PDF preview output is supported.",
+      "serviceBusy": "The document conversion service is busy. Try again later.",
+      "serviceUnavailable": "The document conversion service is unavailable.",
+      "timeout": "Document conversion timed out.",
+      "unsupported": "This document format cannot be converted."
+    },
     "stoichiometry": {
       "copyMoleculeFailed": "Problem saving molecule from SMILES during stoichiometry copy",
       "deleteFailed": "Error deleting stoichiometry with id {0}",
