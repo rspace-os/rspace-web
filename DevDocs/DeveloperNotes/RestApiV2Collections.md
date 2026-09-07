@@ -1,6 +1,6 @@
-# REST API v2 read collections
+# REST API v2 collections
 
-REST API v2 currently exposes read-only `instruments` and `users` collections.
+REST API v2 exposes read-only `instruments` and `users` collections and a writable `maintenances` collection.
 A resource description declares public fields, relationships, access rules and default sorting.
 An `ApiV2ResourceSpec` registers the description and an operations class that delegates to a
 transactional domain manager. DAOs apply access constraints and client filters together, before
@@ -20,9 +20,28 @@ pagination and counting. Do not filter results in the controller after paginatio
 | `GET /api/v2/{resource}/{id}` | The same row and field authorization as collection reads. |
 | `GET /api/v2/{resource}/fields/{namespace}` | Caller-specific runtime field catalog. |
 
-Collection mutations, access-management routes, audit routes and booking routes are not yet exposed.
-The generated document is the contract for this prefix; internal mutation support types do not
-enable HTTP write operations.
+Only declared operations are exposed. Maintenance reads are public; writes require a system
+administrator. Instruments and users remain read-only and return 405 for mutation requests.
+Audit and booking routes are not yet exposed.
+
+## Mutations and protected access
+
+The collection controller provides POST on a collection and its `/bulk` path, PATCH on an item or
+filtered collection, and DELETE on an item or filtered collection. A collection must explicitly
+declare each operation. Mutation authorization runs before dispatch; the manager owns the
+transaction, validation and lifecycle hooks. Bulk updates/deletes require an explicit filter and
+respect the collection's match limit. Invalid rows roll back the whole operation.
+
+`MaintenanceResourceOperations`, `MaintenanceManagerImpl` and `AbstractCollectionManager` show
+the complete path. Maintenance creation accepts `startDate`, `endDate`, optional
+`stopUserLoginDate` and `message`; dates use ISO timestamps. Domain validation checks the full
+resulting maintenance window after a patch, not just the changed fields.
+
+Protected resources can contribute `/api/v2/{resource}/{id}/access`, `/access/grantees` and
+`/access/me` through `ResourceAccessSpec`. The resource must opt in; ordinary collections return
+404 for these routes. Assignment replacement requires a strong `If-Match` version and enforces
+the resource's role and ownership rules. The access document is private and must not be cached.
+The generated OpenAPI document includes protected-access routes only for opted-in resources.
 
 ## Register a read-only collection
 
