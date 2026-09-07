@@ -66,6 +66,7 @@ services:
       RS_FILE_BASE: /var/rspace/filestore
       JDBC_URL: jdbc:mysql://db:3306/rspace
       JDBC_URL_MAVEN: jdbc:mysql://db:3306
+      FEATUREFLAGS_PROPERTIES_LOCATION: /rspace/docker/dev/feature-flags.properties
       # The app shares the frontend's network namespace (see network_mode below),
       # so Vite is reachable at localhost — a host its dev-server host check
       # trusts by default, unlike the service name "frontend".

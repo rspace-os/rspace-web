@@ -19,6 +19,15 @@
       "errors": {
         "unexpected": "An unexpected error occurred."
       }
+    },
+    "v2": {
+      "featureFlags": {
+        "errors": {
+          "invalidPatch": "The feature flag patch is invalid.",
+          "notPermitted": "Feature flag operation is not permitted",
+          "readOnly": "Feature flag is controlled by properties file: {0}"
+        }
+      }
     }
   },
   "errors": {

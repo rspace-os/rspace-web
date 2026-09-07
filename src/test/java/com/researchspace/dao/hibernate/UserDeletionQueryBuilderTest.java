@@ -9,6 +9,12 @@ public class UserDeletionQueryBuilderTest {
   private UserDeletionQueryBuilder queryBuilder = new UserDeletionQueryBuilder();
 
   @Test
+  void userDeletionIncludesFeatureFlagOverrides() {
+    assertEquals(
+        "user_id", UserDeletionDaoHibernate.table2UserIdColumn.get("FeatureFlagUserOverride"));
+  }
+
+  @Test
   public void checkDeleteByRecordQueryWithSingleJoin() {
     // syntax check
     assertEquals(
