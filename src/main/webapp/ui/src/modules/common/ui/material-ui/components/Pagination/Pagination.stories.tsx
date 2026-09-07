@@ -15,7 +15,7 @@ import TableRow from "@mui/material/TableRow";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import React from "react";
 import { expect, fn, userEvent, within } from "storybook/test";
-import { createNumberArgType, createSelectArgType, muiColorArgType, muiDisabledArgType } from "../../argTypeTemplates";
+import { createNumberArgType, createSelectArgType, muiDisabledArgType } from "../../argTypeTemplates";
 
 const meta = {
   title: "Material UI/Navigation/Pagination",
@@ -25,7 +25,12 @@ const meta = {
   argTypes: {
     count: createNumberArgType("The total number of pages.", 10, 1, 100, "Content"),
     page: createNumberArgType("The current page.", 1, 1, 100, "State"),
-    color: muiColorArgType,
+    color: createSelectArgType(
+      ["primary", "secondary", "standard"] satisfies NonNullable<React.ComponentProps<typeof Pagination>["color"]>[],
+      "standard",
+      "The color of the component.",
+      "Appearance",
+    ),
     variant: createSelectArgType(["text", "outlined"], "text", "The variant to use.", "Appearance"),
     shape: createSelectArgType(["circular", "rounded"], "circular", "The shape of the pagination items.", "Appearance"),
     size: {

@@ -9,12 +9,7 @@ import IconButton from "@mui/material/IconButton";
 import Stack from "@mui/material/Stack";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, within } from "storybook/test";
-import {
-  createBooleanArgType,
-  createNumberArgType,
-  createSelectArgType,
-  muiColorArgType,
-} from "../../argTypeTemplates";
+import { createBooleanArgType, createNumberArgType, createSelectArgType } from "../../argTypeTemplates";
 
 const meta = {
   title: "Material UI/Data Display/Badge",
@@ -22,7 +17,14 @@ const meta = {
   tags: ["autodocs"],
   parameters: { a11y: { test: "error" } },
   argTypes: {
-    color: muiColorArgType,
+    color: createSelectArgType(
+      ["primary", "secondary", "success", "error", "info", "warning", "default", "callToAction"] satisfies NonNullable<
+        React.ComponentProps<typeof Badge>["color"]
+      >[],
+      "default",
+      "The color of the component.",
+      "Appearance",
+    ),
     variant: createSelectArgType(["standard", "dot"], "standard", "The variant to use.", "Appearance"),
     anchorOrigin: { control: false }, // Complex object
     overlap: createSelectArgType(

@@ -10,7 +10,7 @@ import Box from "@mui/material/Box";
 import Fab from "@mui/material/Fab";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fn, userEvent, within } from "storybook/test";
-import { muiColorArgType, muiDisabledArgType, muiSizeArgType, muiVariantArgType } from "../../argTypeTemplates";
+import { createSelectArgType, muiDisabledArgType, muiSizeArgType, muiVariantArgType } from "../../argTypeTemplates";
 
 const meta = {
   title: "Material UI/Inputs/FloatingActionButton",
@@ -18,7 +18,22 @@ const meta = {
   tags: ["autodocs"],
   parameters: { a11y: { test: "error" } },
   argTypes: {
-    color: muiColorArgType,
+    color: createSelectArgType(
+      [
+        "primary",
+        "secondary",
+        "success",
+        "error",
+        "info",
+        "warning",
+        "inherit",
+        "default",
+        "callToAction",
+      ] satisfies NonNullable<React.ComponentProps<typeof Fab>["color"]>[],
+      "default",
+      "The color of the component.",
+      "Appearance",
+    ),
     size: muiSizeArgType,
     disabled: muiDisabledArgType,
     variant: muiVariantArgType(["circular", "extended"], "circular"),

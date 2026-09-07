@@ -17,7 +17,7 @@ import React from "react";
 import { expect, fn, userEvent, within } from "storybook/test";
 import {
   createBooleanArgType,
-  muiColorArgType,
+  createSelectArgType,
   muiDisabledArgType,
   muiOrientationArgType,
   muiSizeArgType,
@@ -31,7 +31,14 @@ const meta = {
   parameters: { a11y: { test: "error" } },
   argTypes: {
     variant: muiVariantArgType(["text", "outlined", "contained"], "outlined"),
-    color: muiColorArgType,
+    color: createSelectArgType(
+      ["primary", "secondary", "success", "error", "info", "warning", "inherit"] satisfies NonNullable<
+        React.ComponentProps<typeof ButtonGroup>["color"]
+      >[],
+      "primary",
+      "The color of the component.",
+      "Appearance",
+    ),
     size: muiSizeArgType,
     disabled: muiDisabledArgType,
     orientation: muiOrientationArgType,
