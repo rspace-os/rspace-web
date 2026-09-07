@@ -1,8 +1,5 @@
 package com.researchspace.service;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -347,7 +344,9 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     ServiceOperationResult<User> report =
         userDeletionMgr.removeUser(piToDelete.getId(), policy, sysadmin);
     assertFalse(report.isSucceeded());
-    assertThat(report.getMessage(), containsString("Sorry, cannot remove the only admin or PI"));
+    assertTrue(
+        report.getMessage().contains("Sorry, cannot remove the only admin or PI"),
+        report.getMessage());
   }
 
   @Test
@@ -486,7 +485,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     final UserDeletionPolicy policy = unrestrictedDeletionPolicy();
     ServiceOperationResult<User> report =
         userDeletionMgr.removeUser(communityAdminToDelete.getId(), policy, sysadmin1);
-    assertThat(report.isSucceeded(), is(true));
+    assertEquals(true, report.isSucceeded());
   }
 
   // RSPAC-1929
@@ -505,7 +504,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     final UserDeletionPolicy policy = unrestrictedDeletionPolicy();
     ServiceOperationResult<User> report =
         userDeletionMgr.removeUser(communityAdminToDelete.getId(), policy, sysadmin1);
-    assertThat(report.isSucceeded(), is(true));
+    assertEquals(true, report.isSucceeded());
   }
 
   private UserDeletionPolicy unrestrictedDeletionPolicy() {
@@ -525,7 +524,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     final UserDeletionPolicy policy = unrestrictedDeletionPolicy();
     ServiceOperationResult<User> report =
         userDeletionMgr.removeUser(communityAdminToDelete.getId(), policy, sysadmin1);
-    assertThat(report.isSucceeded(), is(false));
+    assertEquals(false, report.isSucceeded());
   }
 
   @Test

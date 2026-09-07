@@ -1,7 +1,6 @@
 package com.researchspace.webapp.controller;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -37,7 +36,6 @@ import com.researchspace.webapp.controller.RSChemController.ChemSearchResultsPag
 import java.security.Principal;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
-import org.hamcrest.Matchers;
 import org.jsoup.Jsoup;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -223,7 +221,7 @@ public class RSChemControllerMVCIT extends MVCTestBase {
                     .principal(principal))
             .andExpect(status().is2xxSuccessful())
             .andReturn();
-    assertThat(getJsonPathValue(result, "$.data.reaction"), Matchers.is(false));
+    assertEquals(false, getJsonPathValue(result, "$.data.reaction"));
     assertEquals(1, getJsonPathValue(result, "$.data.molecules.size()"));
   }
 
