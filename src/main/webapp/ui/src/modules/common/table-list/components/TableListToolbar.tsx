@@ -107,6 +107,7 @@ export function TableListToolbar<TDocument>({
   hideFilterPanel = false,
   onPanelChange,
   onReset,
+  resetView,
 }: {
   config: ResolvedCollectionConfig<TDocument>;
   collectionLabel: string;
@@ -119,6 +120,7 @@ export function TableListToolbar<TDocument>({
   hideFilterPanel?: boolean;
   onPanelChange: (panel: TableListControlPanel) => void;
   onReset: () => void;
+  resetView?: () => void;
 }) {
   const { t } = useTranslation("common");
   const [searchResetSignal, setSearchResetSignal] = useState(0);
@@ -272,12 +274,16 @@ export function TableListToolbar<TDocument>({
                   size="icon"
                   variant="ghost"
                   onClick={() => {
-                    if (features.filtering !== false) features.filtering.onChange({ search: "", expression: null });
-                    if (features.sorting !== false) features.sorting.onChange(defaultSorting);
-                    if (features.columns !== false) features.columns.onChange(config.defaultColumns);
-                    if (features.pagination !== false)
-                      features.pagination.onChange({ ...features.pagination.value, pageIndex: 0 });
-                    filterButtons?.onReset();
+                    if (resetView) {
+                      resetView();
+                    } else {
+                      if (features.filtering !== false) features.filtering.onChange({ search: "", expression: null });
+                      if (features.sorting !== false) features.sorting.onChange(defaultSorting);
+                      if (features.columns !== false) features.columns.onChange(config.defaultColumns);
+                      if (features.pagination !== false)
+                        features.pagination.onChange({ ...features.pagination.value, pageIndex: 0 });
+                      filterButtons?.onReset();
+                    }
                     setSearchResetSignal((current) => current + 1);
                     onReset();
                   }}
