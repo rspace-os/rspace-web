@@ -4,7 +4,10 @@ import java.util.List;
 
 /** Trusted server-side query restriction, distinct from caller-parsed filter syntax. */
 public sealed interface QueryConstraint
-    permits FilterExpression, QueryConstraint.And, QueryConstraint.Or {
+    permits FilterExpression,
+        QueryConstraint.And,
+        QueryConstraint.Or,
+        ResourceRoleMembershipConstraint {
 
   /** Conjunction of heterogeneous trusted constraints. */
   record And(List<QueryConstraint> children) implements QueryConstraint {
