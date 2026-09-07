@@ -1,5 +1,9 @@
 package com.researchspace.webapp.controller;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+
 import static com.researchspace.core.util.JacksonUtil.toJson;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -176,9 +180,7 @@ public class ScheduledMaintenanceControllerMVCIT extends MVCTestBase {
             .andReturn();
     String deleteResponse = deleteResult.getResponse().getContentAsString();
     assertNotNull(deleteResponse);
-    assertExceptionThrown(
-        () -> maintenanceManager.getScheduledMaintenance(savedId),
-        ObjectRetrievalFailureException.class);
+    assertThrows(ObjectRetrievalFailureException.class, () -> maintenanceManager.getScheduledMaintenance(savedId));
   }
 
   @Test
@@ -327,7 +329,7 @@ public class ScheduledMaintenanceControllerMVCIT extends MVCTestBase {
                     .principal(sysUserPrincipal)
                     .content(toJson(post)))
             .andReturn();
-    assertException(createResult, IllegalArgumentException.class);
+    assertInstanceOf(IllegalArgumentException.class, createResult.getResolvedException());
     assertTrue(
         createResult
             .getResolvedException()

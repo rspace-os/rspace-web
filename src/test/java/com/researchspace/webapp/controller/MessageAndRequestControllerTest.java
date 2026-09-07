@@ -70,11 +70,10 @@ public class MessageAndRequestControllerTest {
     MsgOrReqstCreationCfg cfg = new MsgOrReqstCreationCfg(notAdmin, permUtilsStub);
     cfg.setMessageType(MessageType.GLOBAL_MESSAGE);
     BindingResult result = new BeanPropertyBindingResult(cfg, "cfg");
+    Set<User> recipients = TransformerUtils.toSet(recipient);
     assertThrows(
         AuthorizationException.class,
-        () ->
-            ctrller.getUsernamesFromInput(
-                notAdmin, cfg, result, comTargetPolicy, TransformerUtils.toSet(recipient)));
+        () -> ctrller.getUsernamesFromInput(notAdmin, cfg, result, comTargetPolicy, recipients));
   }
 
   @Test

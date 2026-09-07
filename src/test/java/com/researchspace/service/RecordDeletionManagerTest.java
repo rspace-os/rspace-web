@@ -110,9 +110,11 @@ public class RecordDeletionManagerTest extends SpringTransactionalTest {
     // other user cannot deleted
     User other = createAndSaveUserIfNotExists("other");
     logoutCurrUserAndLoginAs(other.getUsername(), TESTPASSWD);
+    Long rootId = root.getId();
+    Long documentId = sdoc.getId();
     assertThrows(
         AuthorizationException.class,
-        () -> recordDeletionMgr.deleteRecord(root.getId(), sdoc.getId(), other));
+        () -> recordDeletionMgr.deleteRecord(rootId, documentId, other));
     StructuredDocument reloaded = (StructuredDocument) recordDao.get(sdoc.getId());
     assertFalse(reloaded.isDeleted());
     assertFalse(reloaded.getParents().iterator().next().isRecordInFolderDeleted());
@@ -177,7 +179,8 @@ public class RecordDeletionManagerTest extends SpringTransactionalTest {
     assertTrue(deletedsdoc.getParents().iterator().next().isRecordInFolderDeleted());
     // sysadmin can't view deleted folder RSPAC-1285
     logoutAndLoginAsSysAdmin();
-    assertAuthorisationExceptionThrown(() -> folderMgr.getFolder(f.getId(), user));
+    Long folderId = f.getId();
+    assertThrows(AuthorizationException.class, () -> folderMgr.getFolder(folderId, user));
   }
 
   @Test

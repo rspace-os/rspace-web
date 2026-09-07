@@ -1,8 +1,7 @@
 package com.researchspace.webapp.controller;
 
-import static com.researchspace.core.testutil.CoreTestUtils.assertIllegalStateExceptionThrown;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.service.EmailBroadcast;
 import com.researchspace.service.impl.DevEmailSenderImpl;
 import com.researchspace.testutils.SpringTransactionalTest;
@@ -78,7 +77,8 @@ public class UsernameReminderTest extends SpringTransactionalTest {
         .forEach(
             i -> usernameReminderByEmailHandlerTSS.sendUsernameReminderEmail(request, U3_EMAIL));
 
-    assertIllegalStateExceptionThrown(
+    assertThrows(
+        IllegalStateException.class,
         () -> usernameReminderByEmailHandlerTSS.sendUsernameReminderEmail(request, U3_EMAIL));
   }
 
@@ -90,7 +90,8 @@ public class UsernameReminderTest extends SpringTransactionalTest {
     MockHttpServletRequest request = new MockHttpServletRequest();
     request.setRemoteAddr("127.0.0.1");
 
-    CoreTestUtils.assertIllegalArgumentException(
+    assertThrows(
+        IllegalArgumentException.class,
         () -> usernameReminderByEmailHandlerTSS.sendUsernameReminderEmail(request, ""));
 
     usernameReminderByEmailHandlerTSS.sendUsernameReminderEmail(

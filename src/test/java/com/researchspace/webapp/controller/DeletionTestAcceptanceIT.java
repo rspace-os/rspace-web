@@ -1,5 +1,7 @@
 package com.researchspace.webapp.controller;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -55,9 +57,11 @@ public class DeletionTestAcceptanceIT extends RealTransactionSpringTestBase {
             doc1.getId(), tg.u1(), getUsernames(tg.u1()), () -> EDITING_SESSION_ID));
 
     logoutAndLoginAs(tg.u2());
-    assertExceptionThrown(
-        () -> deleter.deleteRecord(u2Root.getId(), doc1.getId(), tg.u2()),
-        DocumentAlreadyEditedException.class);
+    var parentId = u2Root.getId();
+    var documentId = doc1.getId();
+    var deletingUser = tg.u2();
+
+    assertThrows(DocumentAlreadyEditedException.class, () -> deleter.deleteRecord(parentId, documentId, deletingUser));
 
     logoutAndLoginAs(tg.u1());
     recordMgr.unlockRecord(doc1.getId(), tg.u1().getUsername(), () -> EDITING_SESSION_ID);

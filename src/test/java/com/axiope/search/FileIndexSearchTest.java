@@ -118,7 +118,19 @@ public class FileIndexSearchTest {
 
   @Test
   void failFastIndexerThrowsIAEForCorrupted() throws Exception {
-    assertThrows(IOException.class, () -> setUpIndexFiles(true, pathsToIndexWithCorruptFile));
+    for (String path : pathsToIndexWithCorruptFile) {
+      copyToDataFolder(new File(path));
+    }
+    FileIndexer indexer = new FileIndexerTSS();
+    try {
+      indexer.setIndexFolderDirectly(indexFolder);
+      searcher.setIndexFolderDirectly(indexFolder);
+      indexer.init(true);
+
+      assertThrows(IOException.class, () -> indexer.indexFolder(dataFolder, true));
+    } finally {
+      indexer.close();
+    }
     assertEquals(0, searcher.searchFiles(odtSearch, createAnyUser("any")).size());
     // this gets indexed first, before NonIdexable.pdf, and can still be searched
     assertEquals(1, searcher.searchFiles(msSearch, createAnyUser("any")).size());

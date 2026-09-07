@@ -41,15 +41,18 @@ class InventoryEntityFieldTest {
         field.getData()); // selected options string as saved in db
 
     // option outside definition list is invalid
+    List<String> undefinedOption = List.of("a");
     IllegalArgumentException iae =
-        assertThrows(IllegalArgumentException.class, () -> field.setSelectedOptions(List.of("a")));
+        assertThrows(
+            IllegalArgumentException.class, () -> field.setSelectedOptions(undefinedOption));
     assertEquals(
         "[[\"a\"]] is invalid for field type Choice: Some supplied values are not allowed options",
         iae.getMessage());
     // option that differs by trailing space is also invalid
+    List<String> optionWithoutSpace = List.of("pi=3.14");
     iae =
         assertThrows(
-            IllegalArgumentException.class, () -> field.setSelectedOptions(List.of("pi=3.14")));
+            IllegalArgumentException.class, () -> field.setSelectedOptions(optionWithoutSpace));
     assertEquals(
         "[[\"pi=3.14\"]] is invalid for field type Choice: Some supplied values are not allowed"
             + " options",

@@ -1,6 +1,5 @@
 package com.researchspace.model;
 
-import static com.researchspace.core.testutil.CoreTestUtils.assertIllegalArgumentException;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -60,14 +59,14 @@ public class CommunityTest {
   public void testCommunityThrowsIAEIfIdEmptyString() {
     community = new Community();
     community.setUniqueName("");
-    assertIllegalArgumentException(() -> new Community(admin1, community));
+    assertThrows(IllegalArgumentException.class, () -> new Community(admin1, community));
   }
 
   @Test
   public void testCommunityThrowsIAEIfAdminNotAnAdmin() {
     community = new Community();
     community.setUniqueName("id");
-    assertIllegalArgumentException(() -> new Community(normalUser, community));
+    assertThrows(IllegalArgumentException.class, () -> new Community(normalUser, community));
   }
 
   @Test
@@ -91,7 +90,7 @@ public class CommunityTest {
   @Test
   public void testAddAdminMustBeAnAdminRole() {
     community = new Community();
-    assertIllegalArgumentException(() -> community.addAdmin(normalUser));
+    assertThrows(IllegalArgumentException.class, () -> community.addAdmin(normalUser));
   }
 
   @Test

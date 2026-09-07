@@ -101,10 +101,11 @@ public class InventoryEditLockTrackerTest extends SpringTransactionalTest {
     assertEquals(piUser.getUsername(), invLockTracker.getLockOwnerForItem(piSample.getGlobalId()));
 
     // try to unlock as testUser
+    String sampleGlobalId = userSample.getGlobalId();
     IllegalArgumentException iae =
         assertThrows(
             IllegalArgumentException.class,
-            () -> invLockTracker.attemptToUnlock(userSample.getGlobalId(), testUser));
+            () -> invLockTracker.attemptToUnlock(sampleGlobalId, testUser));
     assertEquals(
         "Cannot unlock, as current lock belongs to another user (" + piUser.getUsername() + ")",
         iae.getMessage());

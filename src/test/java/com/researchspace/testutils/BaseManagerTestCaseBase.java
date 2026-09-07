@@ -1084,39 +1084,6 @@ public abstract class BaseManagerTestCaseBase {
   }
 
   /**
-   * Asserts that a particular exception is thrown.
-   *
-   * @param invokable The code to be run that should throw an exception
-   * @param clazz The expected exception class
-   * @throws Exception
-   */
-  protected void assertExceptionThrown(Invokable invokable, Class<? extends Throwable> clazz)
-      throws Exception {
-    assertThrows(clazz, invokable::invoke);
-  }
-
-  /**
-   * Convenience method to assert that an arbitrary piece of code throws an AuthorizationException
-   *
-   * @param invokable
-   * @throws Exception
-   */
-  protected void assertAuthorisationExceptionThrown(Invokable invokable) throws Exception {
-    assertExceptionThrown(invokable, AuthorizationException.class);
-  }
-
-  /**
-   * Convenience method to assert that an arbitrary piece of code throws an
-   * LazyInitializationException, useful for testing lazy-loading strategies.
-   *
-   * @param invokable
-   * @throws Exception
-   */
-  protected void assertLazyInitializationExceptionThrown(Invokable invokable) throws Exception {
-    assertExceptionThrown(invokable, LazyInitializationException.class);
-  }
-
-  /**
    * Will clear the Hibernate session and detach all objects, useful for testing lazy-loading
    * strategies. <br>
    * The session is still open after invoking this method and new queries can be issued.

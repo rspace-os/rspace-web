@@ -63,9 +63,10 @@ public class DeleteFolderFromSharedFolderPolicyTest {
         .thenReturn(TestFactory.createAFolder("notInTree", anyUser));
     Folder toDelete = createAFolder("ToDelete", anyUser);
     grpSharedFolder.addChild(toDelete, anyUser);
+    Folder parent = toDelete.getParent();
     assertThrows(
         IllegalArgumentException.class,
-        () -> deletionOrderPolicy.calculateDeletionOrder(toDelete, toDelete.getParent(), anyUser));
+        () -> deletionOrderPolicy.calculateDeletionOrder(toDelete, parent, anyUser));
   }
 
   @Test

@@ -1,5 +1,7 @@
 package com.researchspace.service;
 
+import org.apache.shiro.authz.AuthorizationException;
+
 import static com.researchspace.core.util.MediaUtils.IMAGES_MEDIA_FLDER_NAME;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -77,7 +79,8 @@ public class FolderManagerSpringTest extends SpringTransactionalTest {
         folderMgr.createNewFolder(
             user.getRootFolder().getId(), getRandomAlphabeticString("F"), user);
     folderMgr.removeBaseRecordFromFolder(folder, folder.getParent().getId());
-    assertAuthorisationExceptionThrown(() -> folderMgr.getFolder(folder.getId(), user));
+    Long folderId = folder.getId();
+    assertThrows(AuthorizationException.class, () -> folderMgr.getFolder(folderId, user));
   }
 
   @Test
@@ -88,15 +91,16 @@ public class FolderManagerSpringTest extends SpringTransactionalTest {
 
     logoutAndLoginAs(u1);
     final Folder f1 = folderMgr.getRootRecordForUser(u1, u1);
-    assertAuthorisationExceptionThrown(() -> folderMgr.getRootRecordForUser(u1, u2));
+    assertThrows(AuthorizationException.class, () -> folderMgr.getRootRecordForUser(u1, u2));
 
     logoutAndLoginAs(u2);
     final Folder f2 = folderMgr.getRootRecordForUser(u2, u2);
-    assertAuthorisationExceptionThrown(() -> folderMgr.getRootRecordForUser(u1, u2));
+    assertThrows(AuthorizationException.class, () -> folderMgr.getRootRecordForUser(u1, u2));
 
     // now try getFolder method
     folderMgr.getFolder(f2.getId(), u2);
-    assertAuthorisationExceptionThrown(() -> folderMgr.getFolder(f1.getId(), u2));
+    Long folderId = f1.getId();
+    assertThrows(AuthorizationException.class, () -> folderMgr.getFolder(folderId, u2));
   }
 
   @Test
@@ -185,20 +189,20 @@ public class FolderManagerSpringTest extends SpringTransactionalTest {
   public void folderCreationRequireActiveLicense() {
     aspect.setLicenseService(new InactiveLicenseTestService());
     logoutAndLoginAs(user);
+    Long rootFolderId = user.getRootFolder().getId();
     assertThrows(
-        LicenseExpiredException.class,
-        () -> folderMgr.createNewFolder(user.getRootFolder().getId(), "any", user));
+        LicenseExpiredException.class, () -> folderMgr.createNewFolder(rootFolderId, "any", user));
   }
 
   @Test
   public void notebookCreationRequireActiveLicense() {
     aspect.setLicenseService(new InactiveLicenseTestService());
     logoutAndLoginAs(user);
+    Long rootFolderId = user.getRootFolder().getId();
+    DefaultRecordContext context = new DefaultRecordContext();
     assertThrows(
         LicenseExpiredException.class,
-        () ->
-            folderMgr.createNewNotebook(
-                user.getRootFolder().getId(), "any", new DefaultRecordContext(), user));
+        () -> folderMgr.createNewNotebook(rootFolderId, "any", context, user));
   }
 
   @Test
@@ -210,15 +214,15 @@ public class FolderManagerSpringTest extends SpringTransactionalTest {
     // ok, has permission to create stuff in their own folder
     folderMgr.createNewFolder(userA.getRootFolder().getId(), "any", userA);
     // but can't create stuff in someone elses folder
-    assertAuthorisationExceptionThrown(
-        () -> folderMgr.createNewFolder(userB.getRootFolder().getId(), "any", userA));
+    Long otherRootFolderId = userB.getRootFolder().getId();
+    assertThrows(AuthorizationException.class, () -> folderMgr.createNewFolder(otherRootFolderId, "any", userA));
 
     // same for notebook
     folderMgr.createNewNotebook(
         userA.getRootFolder().getId(), "any", new DefaultRecordContext(), userA);
-    assertAuthorisationExceptionThrown(
-        () ->
+    DefaultRecordContext context = new DefaultRecordContext();
+    assertThrows(AuthorizationException.class, () ->
             folderMgr.createNewNotebook(
-                userB.getRootFolder().getId(), "any", new DefaultRecordContext(), userA));
+                otherRootFolderId, "any", context, userA));
   }
 }

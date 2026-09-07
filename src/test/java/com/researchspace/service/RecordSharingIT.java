@@ -1,5 +1,9 @@
 package com.researchspace.service;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import org.apache.shiro.authz.AuthorizationException;
+
 import static com.researchspace.core.util.TransformerUtils.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -180,10 +184,12 @@ public class RecordSharingIT extends RealTransactionSpringTestBase {
     final ShareConfigElement gsCommand = new ShareConfigElement(group.getId(), "write");
     logoutAndLoginAs(other);
 
-    assertAuthorisationExceptionThrown(
-        () ->
+    User reloadedPi = reloadPiUser();
+    Long recordId = recordToShare.getId();
+    ShareConfigElement[] shareConfig = new ShareConfigElement[] {gsCommand};
+    assertThrows(AuthorizationException.class, () ->
             sharingMgr.shareRecord(
-                reloadPiUser(), recordToShare.getId(), new ShareConfigElement[] {gsCommand}));
+                reloadedPi, recordId, shareConfig));
 
     // now do sharing as the *owner*, which is permitted...
     logoutAndLoginAs(piUser);

@@ -690,10 +690,9 @@ class InstrumentEntityApiManagerImplLinkFieldTest {
 
     // the clear-instead-of-store path is reserved for blank and inherited values; anything else is
     // user input for this record and goes through the ordinary URI validation
+    ApiInstrument request = creationRequestEchoing(1L, "http://[not a uri");
     assertThrows(
-        IllegalArgumentException.class,
-        () ->
-            manager.createNewApiInstrument(creationRequestEchoing(1L, "http://[not a uri"), user));
+        IllegalArgumentException.class, () -> manager.createNewApiInstrument(request, user));
 
     verify(instrumentDao, never()).save(any());
   }
@@ -789,25 +788,27 @@ class InstrumentEntityApiManagerImplLinkFieldTest {
     ApiInventoryEntityField deleteWithoutId = new ApiInventoryEntityField();
     deleteWithoutId.setDeleteFieldRequest(true);
     apiTemplate.setFields(List.of(deleteWithoutId));
+    InstrumentTemplate missingIdTemplate = new InstrumentTemplate();
 
     ApiRuntimeException missingId =
         assertThrows(
             ApiRuntimeException.class,
             () ->
                 manager.createDeleteRequestedFieldsInDbInstrumentTemplate(
-                    apiTemplate, new InstrumentTemplate(), user));
+                    apiTemplate, missingIdTemplate, user));
 
     ApiInventoryEntityField deleteUnknownId = new ApiInventoryEntityField();
     deleteUnknownId.setDeleteFieldRequest(true);
     deleteUnknownId.setId(404L);
     apiTemplate.setFields(List.of(deleteUnknownId));
+    InstrumentTemplate unknownIdTemplate = new InstrumentTemplate();
 
     ApiRuntimeException unknownId =
         assertThrows(
             ApiRuntimeException.class,
             () ->
                 manager.createDeleteRequestedFieldsInDbInstrumentTemplate(
-                    apiTemplate, new InstrumentTemplate(), user));
+                    apiTemplate, unknownIdTemplate, user));
 
     assertEquals("errors.inventory.field.deleteRequestIdMissing", missingId.getErrorCode());
     assertEquals("errors.inventory.field.deleteRequestIdUnknown", unknownId.getErrorCode());

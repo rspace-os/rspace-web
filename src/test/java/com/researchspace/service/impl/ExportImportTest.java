@@ -67,14 +67,14 @@ public class ExportImportTest {
 
   @Test
   public void downloadNonexistentFile() throws IOException {
+    File file = newFile(folder, "file");
+    FileUtils.write(file, "some data", StandardCharsets.UTF_8);
+    String exportFolder = folder.getAbsolutePath();
+    when(properties.getExportFolderLocation()).thenReturn(exportFolder);
+
     assertThrows(
         ArchivalFileNotExistException.class,
-        () -> {
-          File file = newFile(folder, "file");
-          FileUtils.write(file, "some data", StandardCharsets.UTF_8);
-          when(properties.getExportFolderLocation()).thenReturn(folder.getAbsolutePath());
-          exportImpl.streamArchiveDownload("file", response);
-        });
+        () -> exportImpl.streamArchiveDownload("file", response));
   }
 
   @Test

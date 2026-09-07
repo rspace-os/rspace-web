@@ -653,12 +653,13 @@ public class SamplesApiControllerTest extends SpringTransactionalTest {
     // try changing template name through samples controller
     ApiSampleWithFullSubSamples sampleUpdate = new ApiSampleWithFullSubSamples();
     sampleUpdate.setName("updated name");
+    Long savedTemplateId = savedTemplate.getId();
     iae =
         assertThrows(
             IllegalArgumentException.class,
             () ->
                 samplesApi.updateSample(
-                    savedTemplate.getId(), sampleUpdate, mockBindingResult, testUser));
+                    savedTemplateId, sampleUpdate, mockBindingResult, testUser));
     assertEquals("Please use /sampleTemplates endpoint for template actions", iae.getMessage());
   }
 
@@ -703,8 +704,8 @@ public class SamplesApiControllerTest extends SpringTransactionalTest {
 
     // the template-id guard must enforce permissions before revealing it is a template: a user
     // without access gets the read-path not-found rather than the 400 endpoint-mismatch leak
-    assertThrows(
-        NotFoundException.class, () -> samplesApi.duplicate(savedTemplate.getId(), otherUser));
+    Long savedTemplateId = savedTemplate.getId();
+    assertThrows(NotFoundException.class, () -> samplesApi.duplicate(savedTemplateId, otherUser));
   }
 
   @Test
@@ -737,9 +738,9 @@ public class SamplesApiControllerTest extends SpringTransactionalTest {
     assertEquals(0, revisions.getRevisions().size());
 
     // a missing revision surfaces as 404, not a 200 null body
+    Long sampleId = basicSample.getId();
     assertThrows(
-        NotFoundException.class,
-        () -> samplesApi.getSampleRevision(basicSample.getId(), 1L, testUser));
+        NotFoundException.class, () -> samplesApi.getSampleRevision(sampleId, 1L, testUser));
   }
 
   @Test

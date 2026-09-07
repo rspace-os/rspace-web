@@ -64,11 +64,12 @@ public class WorkbenchApiControllerTest extends SpringTransactionalTest {
     User user = createInitAndLoginAnyUser();
     ApiContainer container = createBasicContainerForUser(user);
     assertEquals("LIST", container.getCType());
+    Long containerId = container.getId();
 
     IllegalArgumentException iae =
         assertThrows(
             IllegalArgumentException.class,
-            () -> workbenchApi.getWorkbenchById(container.getId(), true, user));
+            () -> workbenchApi.getWorkbenchById(containerId, true, user));
     assertEquals(
         "Container with id " + container.getId() + " is not a workbench", iae.getMessage());
   }

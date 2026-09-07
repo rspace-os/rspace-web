@@ -62,9 +62,10 @@ public class InstrumentEntityApiManagerIT extends RealTransactionSpringTestBase 
 
     User otherUser = createAndSaveUser(CoreTestUtils.getRandomName(10));
     setUpUserWithoutCustomContent(otherUser);
+    Long instrumentId = created.getId();
     assertThrows(
         Exception.class,
-        () -> instrumentApiMgr.assertUserCanEditInstrument(created.getId(), otherUser));
+        () -> instrumentApiMgr.assertUserCanEditInstrument(instrumentId, otherUser));
   }
 
   @Test
@@ -199,9 +200,9 @@ public class InstrumentEntityApiManagerIT extends RealTransactionSpringTestBase 
 
     // new owner can read it; original owner no longer has access
     assertNotNull(instrumentApiMgr.assertUserCanReadInstrument(transferred.getId(), newOwner));
+    Long transferredId = transferred.getId();
     assertThrows(
-        Exception.class,
-        () -> instrumentApiMgr.assertUserCanEditInstrument(transferred.getId(), owner));
+        Exception.class, () -> instrumentApiMgr.assertUserCanEditInstrument(transferredId, owner));
   }
 
   @Test
@@ -214,9 +215,9 @@ public class InstrumentEntityApiManagerIT extends RealTransactionSpringTestBase 
     ApiInstrument created = createBasicInstrumentForUser(owner, "perm-delete-it");
 
     assertNotNull(instrumentApiMgr.assertUserCanDeleteInstrument(created.getId(), owner));
+    Long instrumentId = created.getId();
     assertThrows(
-        Exception.class,
-        () -> instrumentApiMgr.assertUserCanDeleteInstrument(created.getId(), other));
+        Exception.class, () -> instrumentApiMgr.assertUserCanDeleteInstrument(instrumentId, other));
   }
 
   @Test
@@ -229,8 +230,9 @@ public class InstrumentEntityApiManagerIT extends RealTransactionSpringTestBase 
     ApiInstrument created = createBasicInstrumentForUser(owner, "perm-transfer-it");
 
     assertNotNull(instrumentApiMgr.assertUserCanTransferInstrument(created.getId(), owner));
+    Long instrumentId = created.getId();
     assertThrows(
         Exception.class,
-        () -> instrumentApiMgr.assertUserCanTransferInstrument(created.getId(), other));
+        () -> instrumentApiMgr.assertUserCanTransferInstrument(instrumentId, other));
   }
 }

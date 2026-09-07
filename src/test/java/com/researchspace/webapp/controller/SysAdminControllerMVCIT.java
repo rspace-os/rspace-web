@@ -1,5 +1,7 @@
 package com.researchspace.webapp.controller;
 
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+
 import static com.researchspace.core.testutil.MockLoggingUtils.assertNoLogging;
 import static com.researchspace.session.SessionAttributeUtils.USER_INFO;
 import static com.researchspace.session.UserSessionTracker.USERS_KEY;
@@ -56,6 +58,7 @@ import java.util.Map;
 import net.minidev.json.JSONArray;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.shiro.SecurityUtils;
+import org.apache.shiro.authc.UsernamePasswordToken;
 import org.apache.shiro.authc.AuthenticationException;
 import org.apache.shiro.authz.AuthorizationException;
 import org.json.JSONObject;
@@ -844,10 +847,13 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
     assertEquals(SignupSource.SSO_BACKDOOR, internalSysAdmin.getSignupSource());
 
     // default sso password shouldn't work
+    logoutCurrentUser();
+    var subject = SecurityUtils.getSubject();
+    var credentials =
+        new UsernamePasswordToken(
+            nonSsoSysAdmin.getUsername(), RemoteUserRetrievalPolicy.SSO_DUMMY_PASSWORD);
     AuthenticationException ae =
-        assertThrows(
-            AuthenticationException.class,
-            () -> logoutAndLoginAs(nonSsoSysAdmin, RemoteUserRetrievalPolicy.SSO_DUMMY_PASSWORD));
+        assertThrows(AuthenticationException.class, () -> subject.login(credentials));
     assertTrue(ae.getMessage().contains("could not be authenticated"));
 
     // provided non-sso password should be the one to use
@@ -864,7 +870,7 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
     MockHttpServletRequestBuilder builder = post("/system/ajax/createUserAccount");
     addUserParams(builder, toCreate).principal(new MockPrincipal(admin.getUsername()));
     MvcResult result = mockMvc.perform(builder).andReturn();
-    assertAuthorizationExceptionThrown(result);
+    assertInstanceOf(AuthorizationException.class, result.getResolvedException());
   }
 
   @Test
@@ -908,7 +914,7 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
                     .principal(otherUser::getUsername)
                     .param("userId", anyUser.getId() + ""))
             .andReturn();
-    assertException(result, AuthorizationException.class);
+    assertInstanceOf(AuthorizationException.class, result.getResolvedException());
   }
 
   @Test
@@ -984,12 +990,7 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
     addUserParams(builder, userToCreate).principal(new MockPrincipal(user.getUsername()));
 
     MvcResult result = mockMvc.perform(builder).andExpect(status().isOk()).andReturn();
-    assertAuthorizationExceptionThrown(result);
-  }
-
-  private void assertAuthorizationExceptionThrown(MvcResult result) {
-    assertNotNull(result.getResolvedException());
-    assertTrue(result.getResolvedException() instanceof AuthorizationException);
+    assertInstanceOf(AuthorizationException.class, result.getResolvedException());
   }
 
   @Test

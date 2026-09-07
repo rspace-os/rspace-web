@@ -164,10 +164,11 @@ public class ApiIdentifiersHelperTest {
     ApiInventoryDOI apiDoi = new ApiInventoryDOI(); // deliberately no generatePublicLinkSuffix()
     apiDoi.setRegisterIdentifierRequest(true);
     InventoryRecord parent = mock(InventoryRecord.class);
+    List<ApiInventoryDOI> identifiers = List.of(apiDoi);
 
     assertThrows(
         IllegalStateException.class,
-        () -> underTest.createDeleteRequestedIdentifiers(List.of(apiDoi), parent, user));
+        () -> underTest.createDeleteRequestedIdentifiers(identifiers, parent, user));
   }
 
   /**

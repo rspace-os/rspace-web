@@ -54,21 +54,19 @@ public class DateRangeTest {
 
   @Test
   public void testParse() throws ParseException {
+    DateRange between = DateRange.parse("1900-01-23,2100-01-23");
+    assertTrue(between.getFromDate().after(sdf.parse("1900-01-22")));
+    assertTrue(between.getToDate().before(sdf.parse("2100-01-24")));
+
+    DateRange fromOnly = DateRange.parse("1900-01-23");
+    assertTrue(fromOnly.getTo() == Long.MAX_VALUE);
+
+    DateRange toOnly = DateRange.parse(",1900-01-23");
+    assertTrue(toOnly.getFrom() == 0L);
+
     assertThrows(
         IllegalArgumentException.class,
-        () -> {
-          DateRange between = DateRange.parse("1900-01-23,2100-01-23");
-          assertTrue(between.getFromDate().after(sdf.parse("1900-01-22")));
-          assertTrue(between.getToDate().before(sdf.parse("2100-01-24")));
-
-          DateRange fromOnly = DateRange.parse("1900-01-23");
-          assertTrue(fromOnly.getTo() == Long.MAX_VALUE);
-
-          DateRange toOnly = DateRange.parse(",1900-01-23");
-          assertTrue(toOnly.getFrom() == 0L);
-
-          DateRange.parse(",1900/01/23"); // illegal format throws IAE
-        });
+        () -> DateRange.parse(",1900/01/23")); // illegal format throws IAE
   }
 
   @Test

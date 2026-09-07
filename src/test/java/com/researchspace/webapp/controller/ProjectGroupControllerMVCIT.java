@@ -1,5 +1,7 @@
 package com.researchspace.webapp.controller;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -112,10 +114,8 @@ public class ProjectGroupControllerMVCIT extends MVCTestBase {
         .andExpect(status().is3xxRedirection())
         .andReturn();
 
-    assertExceptionThrown(
-        () -> grpMgr.getGroup(newProjectGroupId), ObjectRetrievalFailureException.class);
-    assertExceptionThrown(
-        () -> raIDServiceManager.getUserRaid(raidId), ObjectRetrievalFailureException.class);
+    assertThrows(ObjectRetrievalFailureException.class, () -> grpMgr.getGroup(newProjectGroupId));
+    assertThrows(ObjectRetrievalFailureException.class, () -> raIDServiceManager.getUserRaid(raidId));
   }
 
   @NotNull

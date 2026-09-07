@@ -1,7 +1,6 @@
 package com.researchspace.webapp.controller;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
-import static com.researchspace.testutils.RSpaceTestUtils.assertAuthExceptionThrown;
 import static java.lang.Boolean.TRUE;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 import static org.hamcrest.CoreMatchers.is;
@@ -22,7 +21,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.core.testutil.Invokable;
 import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.document.importer.ExternalFileImporter;
@@ -298,8 +296,8 @@ public class StructuredDocumentControllerTest {
 
   @Test
   public void testGetTooLongTagRejected() {
-    CoreTestUtils.assertIllegalArgumentException(
-        () -> strucDocCtrller.getTags(randomAlphanumeric(StructuredDocument.MAX_TAG_LENGTH + 1)));
+    String overlongTag = randomAlphanumeric(StructuredDocument.MAX_TAG_LENGTH + 1);
+    assertThrows(IllegalArgumentException.class, () -> strucDocCtrller.getTags(overlongTag));
   }
 
   @Test
@@ -498,23 +496,13 @@ public class StructuredDocumentControllerTest {
     // now try if permission denied....throws AuthException
     when(permissionUtils.isPermitted(sd, PermissionType.READ, user)).thenReturn(false);
 
-    assertAuthExceptionThrown(
-        new Invokable() {
-          public void invoke() {
-            strucDocCtrller.getComments(2L, null, mockPrincipal);
-          }
-        });
+    assertThrows(AuthorizationException.class, () -> strucDocCtrller.getComments(2L, null, mockPrincipal));
 
     // now lets try revision history, also should be authorized
     final int revisionId = 123;
     when(auditMgr.getCommentItemsForCommentAtDocumentRevision(2L, revisionId)).thenReturn(items);
 
-    assertAuthExceptionThrown(
-        new Invokable() {
-          public void invoke() {
-            strucDocCtrller.getComments(2L, revisionId, mockPrincipal);
-          }
-        });
+    assertThrows(AuthorizationException.class, () -> strucDocCtrller.getComments(2L, revisionId, mockPrincipal));
   }
 
   private void verifyWordImportNotAttempted() throws IOException {

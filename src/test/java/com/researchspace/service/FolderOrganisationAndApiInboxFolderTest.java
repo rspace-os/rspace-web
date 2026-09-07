@@ -195,64 +195,59 @@ public class FolderOrganisationAndApiInboxFolderTest {
 
   @Test
   public void getWorkspaceApiUploadTargetFolderThrowsIAEIfDesiredTargetInSharedFolder() {
+    Folder sharedFolder = setup.getShared();
+    mockGetFolderToReturn(sharedFolder);
+
     assertThrows(
-        IllegalArgumentException.class,
-        () -> {
-          mockGetFolderToReturn(setup.getShared());
-          folderMgr.getApiUploadTargetFolder("", user, 1L);
-        });
+        IllegalArgumentException.class, () -> folderMgr.getApiUploadTargetFolder("", user, 1L));
   }
 
   @Test
   public void getWorkspaceApiUploadTargetFolderThrowsIAEIfDesiredTargetInSTemplatesFolder() {
+    Folder templateFolder = setup.getTemplateFolder();
+    mockGetFolderToReturn(templateFolder);
+
     assertThrows(
-        IllegalArgumentException.class,
-        () -> {
-          mockGetFolderToReturn(setup.getTemplateFolder());
-          folderMgr.getApiUploadTargetFolder("", user, 1L);
-        });
+        IllegalArgumentException.class, () -> folderMgr.getApiUploadTargetFolder("", user, 1L));
   }
 
   @Test
   public void getWorkspaceApiUploadTargetFolderThrowsIAEIfDesiredTargetInGalleryFolder() {
+    Folder mediaRoot = setup.getMediaRoot();
+    mockGetFolderToReturn(mediaRoot);
+
     assertThrows(
-        IllegalArgumentException.class,
-        () -> {
-          mockGetFolderToReturn(setup.getMediaRoot());
-          folderMgr.getApiUploadTargetFolder("", user, 1L);
-        });
+        IllegalArgumentException.class, () -> folderMgr.getApiUploadTargetFolder("", user, 1L));
   }
 
   @Test
   public void getWorkspaceApiUploadTargetFolderThrowsAuthIfNoReadPermissionOnTargetFolder() {
+    Folder userRoot = setup.getUserRoot();
+    mockGetFolderToReturn(userRoot);
+    when(permUtils.isPermitted(userRoot, PermissionType.READ, user)).thenReturn(false);
+
     assertThrows(
-        AuthorizationException.class,
-        () -> {
-          mockGetFolderToReturn(setup.getUserRoot());
-          when(permUtils.isPermitted(setup.getUserRoot(), PermissionType.READ, user))
-              .thenReturn(false);
-          folderMgr.getApiUploadTargetFolder("", user, 1L);
-        });
+        AuthorizationException.class, () -> folderMgr.getApiUploadTargetFolder("", user, 1L));
   }
 
   @Test
   public void getGalleryApiUploadTargetFolderThrowThrowsIAEIfDesiredTargetInWorkspace() {
+    Folder userRoot = setup.getUserRoot();
+    mockGetFolderToReturn(userRoot);
+
     assertThrows(
         IllegalArgumentException.class,
-        () -> {
-          mockGetFolderToReturn(setup.getUserRoot());
-          folderMgr.getApiUploadTargetFolder(MediaUtils.IMAGES_MEDIA_FLDER_NAME, user, 1L);
-        });
+        () -> folderMgr.getApiUploadTargetFolder(MediaUtils.IMAGES_MEDIA_FLDER_NAME, user, 1L));
   }
 
   @Test
   public void getGalleryApiUploadTargetFolderThrowThrowsIAEIfDesiredTargetInTemplates() {
+    Folder templateFolder = setup.getTemplateFolder();
+    mockGetFolderToReturn(templateFolder);
+
     assertThrows(
         IllegalArgumentException.class,
-        () -> {
-          mockGetFolderToReturn(setup.getTemplateFolder());
-          folderMgr.getApiUploadTargetFolder(MediaUtils.IMAGES_MEDIA_FLDER_NAME, user, 1L);
-        });
+        () -> folderMgr.getApiUploadTargetFolder(MediaUtils.IMAGES_MEDIA_FLDER_NAME, user, 1L));
   }
 
   private void mockGetFolderToReturn(Folder folderToReturnOnGet) {
