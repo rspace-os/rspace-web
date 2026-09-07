@@ -2010,6 +2010,64 @@
   </dependencies>
 
   <profiles>
+    <!-- Opt-in WAR content. Keep the bundle under WEB-INF so the deployment
+      property controls access, including when the servlet container serves static files. -->
+    <profile>
+      <id>generateStorybookFiles</id>
+      <activation>
+        <property>
+          <name>generateStorybook</name>
+          <value>true</value>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>com.github.eirslett</groupId>
+            <artifactId>frontend-maven-plugin</artifactId>
+            <version>2.0.0</version>
+            <configuration>
+              <nodeVersion>v24.15.0</nodeVersion>
+              <pnpmVersion>11.18.0</pnpmVersion>
+              <workingDirectory>.</workingDirectory>
+            </configuration>
+            <executions>
+              <execution>
+                <id>Install node and pnpm locally to the project</id>
+                <goals><goal>install-node-and-pnpm</goal></goals>
+              </execution>
+              <execution>
+                <id>Collect frontend dependencies</id>
+                <goals><goal>pnpm</goal></goals>
+                <configuration>
+                  <arguments>${frontend.dependencies.install.arg}</arguments>
+                </configuration>
+              </execution>
+              <execution>
+                <id>Build Storybook</id>
+                <phase>prepare-package</phase>
+                <goals><goal>pnpm</goal></goals>
+                <configuration><arguments>run storybook:build</arguments></configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-war-plugin</artifactId>
+            <configuration>
+              <webResources combine.children="append">
+                <resource>
+                  <directory>src/main/webapp/ui/storybook-static</directory>
+                  <targetPath>WEB-INF/storybook</targetPath>
+                  <filtering>false</filtering>
+                </resource>
+              </webResources>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
     <!-- Generates the React/Vite frontend dist files and bundles them into the WAR.
       Opt-in: activated only when -DgenerateReactDist is passed. This keeps the pnpm
       install and Vite build out of everyday `mvn compile`/`test` runs, while CI
