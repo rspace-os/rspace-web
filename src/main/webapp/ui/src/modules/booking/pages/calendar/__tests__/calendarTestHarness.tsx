@@ -16,6 +16,7 @@ import { bookingDisplayPreferencesQueryKey } from "@/modules/booking/domain/book
 import bookingEnglish from "@/modules/common/i18n/locales/en-US/booking.json";
 import commonEnglish from "@/modules/common/i18n/locales/en-US/common.json";
 import BookingPage from "../../BookingPage";
+import { createAddBookingRoute, createBookingEventRouteTree } from "../../bookings/routes";
 import { inheritedBrowserBookingPreferences } from "../../preferences/bookingPreferencesFixtures";
 import { createCalendarRoute } from "../routes";
 
@@ -124,7 +125,13 @@ export async function renderCalendar(initialEntry = "/booking/calendar?date=2026
   const root = createRootRoute({ component: Outlet });
   const booking = createRoute({ getParentRoute: () => root, path: "/booking", component: BookingPage });
   const router = createRouter({
-    routeTree: root.addChildren([booking.addChildren([createCalendarRoute(booking)])]),
+    routeTree: root.addChildren([
+      booking.addChildren([
+        createCalendarRoute(booking),
+        createAddBookingRoute(booking),
+        createBookingEventRouteTree(booking),
+      ]),
+    ]),
     history: createMemoryHistory({ initialEntries: [initialEntry] }),
   });
   const wrapper = await createRealI18nWrapper({

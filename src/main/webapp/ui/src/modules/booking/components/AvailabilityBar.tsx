@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { CalendarClockIcon, ChevronRightIcon, WrenchIcon } from "lucide-react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
@@ -7,6 +8,7 @@ import {
   type AvailabilityState,
   buildAvailabilitySlices,
 } from "@/modules/booking/domain/availability";
+import { buttonVariants } from "@/modules/common/ui/button";
 import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
 import { Popover, PopoverContent, PopoverDescription, PopoverTitle, PopoverTrigger } from "@/modules/common/ui/popover";
 import { UserBadge } from "@/modules/common/ui/user-badge";
@@ -212,6 +214,16 @@ function BookingSourceAccordion({
               <dd className="text-xs leading-4">{source.booking.purpose ?? t("bookings.details.noneProvided")}</dd>
             </div>
           </dl>
+          <Link
+            to="/booking/calendar/bookings/$id"
+            params={{ id: String(source.booking.id) }}
+            className={cn(
+              buttonVariants({ variant: "link", size: "xs" }),
+              "h-auto w-full rounded-none border-t-border py-2",
+            )}
+          >
+            {t("availabilityBar.slice.details")}
+          </Link>
         </div>
       </details>
     </li>
@@ -436,7 +448,7 @@ export function AvailabilityBar({
                   </div>
                   <ul className="space-y-1">
                     {contributors.map(({ kind, source }) =>
-                      kind === "booking" && hasBookingDetails(source) ? (
+                      hasBookingDetails(source) ? (
                         <BookingSourceAccordion
                           key={source.id}
                           accordionName={accordionName}

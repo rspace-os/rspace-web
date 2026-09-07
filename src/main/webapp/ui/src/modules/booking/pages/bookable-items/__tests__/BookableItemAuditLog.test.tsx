@@ -102,7 +102,10 @@ describe("BookableItemAuditLog", () => {
     expect(parameters.get("dateTo")).toMatch(/T23:59:59\.999Z$/);
     expect(screen.getByText("booking:bookableItemDetails.audit.resultsThrough")).toBeVisible();
     expect(screen.getByRole("status")).toHaveTextContent("booking:bookableItemDetails.audit.status.loaded");
-    expect(screen.getAllByText("bookings:41")[0]).toBeVisible();
+    expect(screen.getAllByRole("link", { name: "bookings:41" })[0]).toHaveAttribute(
+      "href",
+      "/booking/calendar/bookings/41",
+    );
     await expectAccessible(container);
   });
 
