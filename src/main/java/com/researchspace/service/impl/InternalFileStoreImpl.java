@@ -24,6 +24,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -115,15 +116,31 @@ public class InternalFileStoreImpl implements InternalFileStore {
       return null;
     }
     File out = new File(baseDir, fileProperty.getRelPath());
+    Path replacement = null;
     try {
+      if (suc == 0) {
+        // Keep the existing file intact until the replacement has been written successfully.
+        replacement = Files.createTempFile(out.toPath().getParent(), ".replacement-", ".tmp");
+      }
       long size;
-      try (FileOutputStream output = new FileOutputStream(out)) {
+      try (FileOutputStream output =
+          new FileOutputStream(replacement == null ? out : replacement.toFile())) {
         size = fileOp.copyStream(output, inStream, 0);
       }
       fileProperty.setFileSize(Long.toString(size));
       fileMetadataDao.save(fileProperty);
+      if (replacement != null) {
+        Files.move(
+            replacement,
+            out.toPath(),
+            StandardCopyOption.ATOMIC_MOVE,
+            StandardCopyOption.REPLACE_EXISTING);
+      }
       return out.toURI();
     } catch (IOException | RuntimeException e) {
+      if (replacement != null) {
+        removeReservedFile(replacement, e);
+      }
       if (suc == 100) {
         removeReservedFile(out.toPath(), e);
       }

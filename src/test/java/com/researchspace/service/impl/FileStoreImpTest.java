@@ -260,6 +260,38 @@ public class FileStoreImpTest {
   }
 
   @Test
+  void failedReplacementStreamPreservesContentsAndRemovesTemporaryFile() throws IOException {
+    setUpStore();
+    FileProperty original = new FileProperty();
+    Path destination =
+        Path.of(saveContents(original, "original", FileDuplicateStrategy.AS_NEW, true));
+    try (InputStream input =
+        new InputStream() {
+          private boolean firstByte = true;
+
+          @Override
+          public int read() throws IOException {
+            if (firstByte) {
+              firstByte = false;
+              return 'x';
+            }
+            throw new IOException("source failed during read");
+          }
+        }) {
+      assertThrows(
+          IOException.class,
+          () -> fs.save(original, input, "test.txt", FileDuplicateStrategy.REPLACE));
+    }
+    assertEquals("original", Files.readString(destination));
+    try (Stream<Path> siblings = Files.list(destination.getParent())) {
+      assertEquals(List.of(destination), siblings.toList());
+    }
+    assertEquals(
+        destination.toUri(), saveContents(original, "retry", FileDuplicateStrategy.REPLACE, true));
+    assertEquals("retry", Files.readString(destination));
+  }
+
+  @Test
   void failedReplacementDoesNotDeleteExistingFile() throws IOException {
     FileMetadataDao metadata = setUpStore();
     FileProperty original = new FileProperty();
