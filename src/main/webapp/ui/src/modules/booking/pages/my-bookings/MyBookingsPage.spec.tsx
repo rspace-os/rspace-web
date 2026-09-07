@@ -46,6 +46,7 @@ describe("the My Bookings page", () => {
       [pageObj.confocalDetails, "View details"],
       [pageObj.confocalItemCalendar, "View item calendar"],
       [pageObj.confocalEdit, "Edit"],
+      [pageObj.confocalCalendarFile, ".ics file"],
       [pageObj.confocalCancel, "Cancel booking"],
     ] as const;
 

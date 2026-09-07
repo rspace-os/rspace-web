@@ -24,6 +24,7 @@ import com.researchspace.model.SignupSource;
 import com.researchspace.model.TokenBasedVerification;
 import com.researchspace.model.User;
 import com.researchspace.model.UserProfile;
+import com.researchspace.model.UserSavedEvent;
 import com.researchspace.model.collection.ApiV2UserResource;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
@@ -92,6 +93,8 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
 
   @Autowired private CriteriaBuilderFactory criteriaBuilderFactory;
 
+  @Autowired private org.springframework.context.ApplicationEventPublisher events = event -> {};
+
   /** Constructor that sets the entity to User.class. */
   public UserDaoHibernate() {
     super(User.class);
@@ -116,6 +119,7 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
     // this will force the throwing of a constraint violation exception
     // now, if there is one, so that it can be handled in the service layer.
     s.flush();
+    events.publishEvent(new UserSavedEvent(user));
     return user;
   }
 

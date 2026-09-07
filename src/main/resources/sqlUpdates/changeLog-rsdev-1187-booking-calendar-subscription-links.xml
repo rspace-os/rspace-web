@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.17.xsd">
+
+  <changeSet id="rsdev-1187-booking-calendar-subscription-links" author="researchspace" context="run">
+    <comment>Retain calendar subscription tokens so owners can retrieve their links</comment>
+    <addColumn tableName="BookableItemCalendarSubscription">
+      <column name="rawToken" type="VARCHAR(255)"/>
+    </addColumn>
+  </changeSet>
+</databaseChangeLog>
