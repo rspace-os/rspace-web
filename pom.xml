@@ -2025,10 +2025,10 @@
           <plugin>
             <groupId>com.github.eirslett</groupId>
             <artifactId>frontend-maven-plugin</artifactId>
-            <version>2.0.0</version>
+            <version>${frontend.maven.plugin.version}</version>
             <configuration>
-              <nodeVersion>v24.15.0</nodeVersion>
-              <pnpmVersion>11.18.0</pnpmVersion>
+              <nodeVersion>${frontend.node.version}</nodeVersion>
+              <pnpmVersion>${frontend.pnpm.version}</pnpmVersion>
               <workingDirectory>.</workingDirectory>
             </configuration>
             <executions>
@@ -2088,10 +2088,10 @@
           <plugin>
             <groupId>com.github.eirslett</groupId>
             <artifactId>frontend-maven-plugin</artifactId>
-            <version>2.0.0</version>
+            <version>${frontend.maven.plugin.version}</version>
             <configuration>
-              <nodeVersion>v24.15.0</nodeVersion>
-              <pnpmVersion>11.18.0</pnpmVersion>
+              <nodeVersion>${frontend.node.version}</nodeVersion>
+              <pnpmVersion>${frontend.pnpm.version}</pnpmVersion>
               <workingDirectory>.</workingDirectory>
             </configuration>
             <executions>
@@ -2689,6 +2689,9 @@
   </profiles>
 
   <properties>
+    <frontend.maven.plugin.version>2.0.0</frontend.maven.plugin.version>
+    <frontend.node.version>v24.15.0</frontend.node.version>
+    <frontend.pnpm.version>11.18.0</frontend.pnpm.version>
     <!-- jetty -->
     <jetty.version>12.1.11</jetty.version>
     <slf4j.version>2.0.2</slf4j.version>

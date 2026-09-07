@@ -9,7 +9,6 @@ import { expect, userEvent, within } from "storybook/test";
 import {
   createBooleanArgType,
   createSelectArgType,
-  muiColorArgType,
   muiDisabledArgType,
   muiErrorArgType,
   muiFullWidthArgType,
@@ -34,7 +33,14 @@ const meta = {
   },
   argTypes: {
     variant: muiVariantArgType(["outlined", "filled", "standard"], "outlined"),
-    color: muiColorArgType,
+    color: createSelectArgType(
+      ["primary", "secondary", "success", "error", "info", "warning"] satisfies NonNullable<
+        React.ComponentProps<typeof TextField>["color"]
+      >[],
+      "primary",
+      "The color of the component.",
+      "Appearance",
+    ),
     size: {
       control: "radio",
       options: ["small", "medium"],

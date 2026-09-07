@@ -5,7 +5,7 @@
 import Box from "@mui/material/Box";
 import CircularProgress from "@mui/material/CircularProgress";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { createNumberArgType, createSelectArgType, muiColorArgType } from "../../argTypeTemplates";
+import { createNumberArgType, createSelectArgType } from "../../argTypeTemplates";
 
 const meta = {
   title: "Material UI/Feedback/CircularProgress",
@@ -15,7 +15,14 @@ const meta = {
 
   args: { "aria-label": "Loading samples" },
   argTypes: {
-    color: muiColorArgType,
+    color: createSelectArgType(
+      ["primary", "secondary", "success", "error", "info", "warning", "inherit"] satisfies NonNullable<
+        React.ComponentProps<typeof CircularProgress>["color"]
+      >[],
+      "primary",
+      "The color of the component.",
+      "Appearance",
+    ),
     size: {
       control: { type: "number", min: 16, max: 100 },
       description: "The size of the component.",

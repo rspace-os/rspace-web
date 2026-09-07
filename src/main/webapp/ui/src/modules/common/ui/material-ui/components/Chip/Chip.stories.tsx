@@ -14,7 +14,7 @@ import React from "react";
 import { expect, userEvent, within } from "storybook/test";
 import {
   createBooleanArgType,
-  muiColorArgType,
+  createSelectArgType,
   muiDisabledArgType,
   muiSizeArgType,
   muiVariantArgType,
@@ -26,7 +26,14 @@ const meta = {
   tags: ["autodocs"],
   parameters: { a11y: { test: "error" } },
   argTypes: {
-    color: muiColorArgType,
+    color: createSelectArgType(
+      ["primary", "secondary", "success", "error", "info", "warning", "default", "callToAction"] satisfies NonNullable<
+        React.ComponentProps<typeof Chip>["color"]
+      >[],
+      "default",
+      "The color of the component.",
+      "Appearance",
+    ),
     size: muiSizeArgType,
     disabled: muiDisabledArgType,
     variant: muiVariantArgType(["filled", "outlined"], "filled"),

@@ -19,8 +19,8 @@ import { useArgs } from "storybook/preview-api";
 import { expect, fn, userEvent, within } from "storybook/test";
 import {
   createBooleanArgType,
+  createSelectArgType,
   muiCheckedArgType,
-  muiColorArgType,
   muiDisabledArgType,
   muiSizeArgType,
 } from "../../argTypeTemplates";
@@ -31,7 +31,14 @@ const meta = {
   tags: ["autodocs"],
   parameters: { a11y: { test: "error" } },
   argTypes: {
-    color: muiColorArgType,
+    color: createSelectArgType(
+      ["primary", "secondary", "success", "error", "info", "warning", "default"] satisfies NonNullable<
+        React.ComponentProps<typeof Radio>["color"]
+      >[],
+      "primary",
+      "The color of the component.",
+      "Appearance",
+    ),
     size: muiSizeArgType,
     disabled: muiDisabledArgType,
     checked: muiCheckedArgType,

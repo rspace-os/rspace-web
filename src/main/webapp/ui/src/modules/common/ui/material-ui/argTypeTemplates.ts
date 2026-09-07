@@ -11,19 +11,6 @@ type MuiArgType = ArgTypes[string];
 // APPEARANCE CONTROLS
 // ═══════════════════════════════════════════════════════════════
 
-export const muiColorArgType: MuiArgType = {
-  control: "select",
-  options: ["inherit", "primary", "secondary", "success", "error", "info", "warning"],
-  description: "The color of the component.",
-  table: {
-    defaultValue: { summary: "primary" },
-    category: "Appearance",
-    type: {
-      summary: '"inherit" | "primary" | "secondary" | "success" | "error" | "info" | "warning"',
-    },
-  },
-};
-
 export const muiSizeArgType: MuiArgType = {
   control: "radio",
   options: ["small", "medium", "large"],

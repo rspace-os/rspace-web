@@ -8,40 +8,50 @@ import FavoriteIcon from "@mui/icons-material/Favorite";
 import HomeIcon from "@mui/icons-material/Home";
 import SearchIcon from "@mui/icons-material/Search";
 import SettingsIcon from "@mui/icons-material/Settings";
-import Icon from "@mui/material/Icon";
 import IconButton from "@mui/material/IconButton";
 import Stack from "@mui/material/Stack";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, within } from "storybook/test";
-import { createSelectArgType, muiColorArgType } from "../../argTypeTemplates";
+import { createSelectArgType } from "../../argTypeTemplates";
 
 const meta = {
-  title: "Material UI/Data Display/Icon",
-  component: Icon,
+  title: "Material UI/Data Display/SvgIcon",
+  component: HomeIcon,
   tags: ["autodocs"],
   parameters: { a11y: { test: "error" } },
   argTypes: {
-    color: muiColorArgType,
+    color: createSelectArgType(
+      [
+        "primary",
+        "secondary",
+        "success",
+        "error",
+        "info",
+        "warning",
+        "inherit",
+        "action",
+        "disabled",
+      ] satisfies NonNullable<React.ComponentProps<typeof HomeIcon>["color"]>[],
+      "inherit",
+      "The color of the component.",
+      "Appearance",
+    ),
     fontSize: createSelectArgType(
       ["inherit", "small", "medium", "large"],
       "medium",
       "The fontSize applied to the icon.",
       "Appearance",
     ),
-    children: {
-      control: "text",
-      description: "The name of the icon font ligature.",
-      table: { category: "Content" },
-    },
+    titleAccess: { control: "text", description: "Accessible name for the SVG icon." },
   },
-} satisfies Meta<typeof Icon>;
+} satisfies Meta<typeof HomeIcon>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Playground: Story = {
   args: {
-    children: "home",
+    titleAccess: "Home",
     color: "primary",
     fontSize: "medium",
   },
@@ -49,7 +59,7 @@ export const Playground: Story = {
 
 export const Default: Story = {
   args: {
-    children: "home",
+    titleAccess: "Home",
   },
 };
 
@@ -153,19 +163,9 @@ export function MaterialIcons() {
 
 export const InteractionTest: Story = {
   args: {
-    children: "home",
+    titleAccess: "Home",
   },
-  play: async ({ canvasElement, step }) => {
-    const canvas = within(canvasElement);
-
-    await step("Verify icon renders with correct text", async () => {
-      const icon = canvas.getByText("home");
-      await expect(icon).toBeInTheDocument();
-    });
-
-    await step("Test accessibility", async () => {
-      const icon = canvas.getByText("home");
-      await expect(icon).toHaveAttribute("aria-hidden", "true");
-    });
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).getByRole("img", { name: "Home" })).toBeVisible();
   },
 };

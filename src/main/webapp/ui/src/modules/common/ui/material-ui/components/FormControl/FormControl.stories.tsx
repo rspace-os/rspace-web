@@ -17,7 +17,7 @@ import TextField from "@mui/material/TextField";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, within } from "storybook/test";
 import {
-  muiColorArgType,
+  createSelectArgType,
   muiDisabledArgType,
   muiErrorArgType,
   muiFullWidthArgType,
@@ -34,7 +34,14 @@ const meta = {
   argTypes: {
     variant: muiVariantArgType(["standard", "outlined", "filled"], "outlined"),
     size: muiSizeArgType,
-    color: muiColorArgType,
+    color: createSelectArgType(
+      ["primary", "secondary", "success", "error", "info", "warning"] satisfies NonNullable<
+        React.ComponentProps<typeof FormControl>["color"]
+      >[],
+      "primary",
+      "The color of the component.",
+      "Appearance",
+    ),
     disabled: muiDisabledArgType,
     required: muiRequiredArgType,
     error: muiErrorArgType,

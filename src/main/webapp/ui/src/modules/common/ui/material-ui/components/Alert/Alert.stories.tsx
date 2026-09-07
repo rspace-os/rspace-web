@@ -31,7 +31,7 @@ const meta = {
     ),
     variant: createSelectArgType(["standard", "outlined", "filled"], "standard", "The variant to use.", "Appearance"),
     color: createSelectArgType(
-      ["error", "warning", "info", "success"],
+      ["error", "warning", "info", "success"] satisfies NonNullable<React.ComponentProps<typeof Alert>["color"]>[],
       "success",
       "The color of the component. Unless provided, the value is taken from the severity prop.",
       "Appearance",
@@ -110,22 +110,36 @@ export function DescriptionAlerts() {
     </Stack>
   );
 }
-export function ActionAlerts() {
-  return (
-    <Stack sx={{ width: "100%" }} spacing={2}>
-      <Alert onClose={() => {}}>This is a success alert — check it out!</Alert>
-      <Alert
-        action={
-          <Button color="inherit" size="small">
-            UNDO
-          </Button>
-        }
-      >
-        This is a success alert — check it out!
-      </Alert>
-    </Stack>
-  );
-}
+export const ActionAlerts: Story = {
+  render: function Actions() {
+    const [dismissed, setDismissed] = React.useState(false);
+    return (
+      <Stack sx={{ width: "100%" }} spacing={2}>
+        {dismissed ? (
+          <Alert
+            severity="info"
+            action={
+              <Button color="inherit" size="small" onClick={() => setDismissed(false)}>
+                Undo
+              </Button>
+            }
+          >
+            Notification dismissed.
+          </Alert>
+        ) : (
+          <Alert onClose={() => setDismissed(true)}>Sample saved successfully.</Alert>
+        )}
+      </Stack>
+    );
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole("button", { name: "Close" }));
+    await expect(canvas.getByRole("alert")).toHaveTextContent("Notification dismissed.");
+    await userEvent.click(canvas.getByRole("button", { name: "Undo" }));
+    await expect(canvas.getByRole("alert")).toHaveTextContent("Sample saved successfully.");
+  },
+};
 
 export function TransitionAlerts() {
   const [open, setOpen] = React.useState(true);
