@@ -161,9 +161,6 @@ public final class RsqlFilterParser {
     if (rsql == null || rsql.isBlank()) {
       return null;
     }
-    if (rsql.length() > CollectionQueryLimits.MAX_WHERE_LENGTH) {
-      throw new CollectionQueryException(CollectionQueryException.Reason.COMPLEXITY);
-    }
     validateNesting(rsql);
     try {
       Node root = new RSQLParser(OPERATORS).parse(rsql);

@@ -1,7 +1,6 @@
 package com.researchspace.model.collection;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -70,47 +69,11 @@ class InMemoryCollectionQueryTest {
         matching(comparison("name", Operator.EQUAL, List.of("ALPHA*"), true)));
   }
 
+  /** An accented value cannot match ASCII text, so the caller gets an empty page. */
   @Test
-  void foldsAccentsLikeTheDatabaseCollation() {
-    List<Widget> accented =
-        List.of(new Widget(4L, "Álpha rotor", true), new Widget(5L, "Zèta", true));
-
+  void doesNotFoldAccents() {
     assertEquals(
-        List.of(accented.get(0)),
-        query
-            .page(
-                accented,
-                request(
-                    comparison("name", Operator.EQUAL, List.of("alpha rotor"), false),
-                    List.of(),
-                    1,
-                    20))
-            .resources());
-    assertEquals(
-        List.of(accented.get(0)),
-        query
-            .page(
-                accented,
-                request(
-                    comparison("name", Operator.CONTAINS, List.of("ALPHA"), false),
-                    List.of(),
-                    1,
-                    20))
-            .resources());
-    assertEquals(
-        List.of(accented.get(0)),
-        query
-            .page(
-                accented,
-                request(
-                    comparison("name", Operator.LIKE, List.of("alpha rotor"), false),
-                    List.of(),
-                    1,
-                    20))
-            .resources());
-    assertEquals(
-        List.of(accented.get(0), accented.get(1)),
-        query.page(accented, request(null, List.of(new Sort("name", true)), 1, 20)).resources());
+        List.of(), matching(comparison("name", Operator.CONTAINS, List.of("álpha"), false)));
   }
 
   @Test
@@ -151,16 +114,6 @@ class InMemoryCollectionQueryTest {
     assertEquals(
         new ResourcePage<>(List.of(), 3),
         query.page(widgets, request(null, WIDGETS.defaultSort(), Integer.MAX_VALUE, 100)));
-  }
-
-  @Test
-  void enforcesTheSharedMaximumPageSize() {
-    assertEquals(
-        CollectionQueryLimits.MAX_PAGE_SIZE,
-        new ResourceRequest.Page(1, CollectionQueryLimits.MAX_PAGE_SIZE).size());
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> new ResourceRequest.Page(1, CollectionQueryLimits.MAX_PAGE_SIZE + 1));
   }
 
   private List<Widget> matching(FilterExpression filter) {

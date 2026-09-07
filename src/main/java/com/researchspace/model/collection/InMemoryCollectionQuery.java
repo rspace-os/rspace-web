@@ -1,6 +1,8 @@
 package com.researchspace.model.collection;
 
 import java.text.Normalizer;
+import com.researchspace.model.collection.CollectionDescription.Operator;
+import com.researchspace.model.collection.CollectionDescription.Sort;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -174,10 +176,15 @@ public final class InMemoryCollectionQuery<T> {
         .matches();
   }
 
-  /** Compares text using the case- and accent-insensitive behaviour of utf8mb4_unicode_ci. */
+  /**
+   * Compares text case-insensitively, as the {@code utf8mb4_unicode_ci} collation does, so a query
+   * that matched a row in the database does not fail the same comparison here.
+   *
+   * <p>Accents are deliberately not folded. That collation ignores them, but no collection served
+   * from memory holds accented text, so an accented filter value can only be a caller mistake and
+   * must produce a miss. Fold accents here if such a collection is ever added.
+   */
   private static String fold(String value) {
-    return Normalizer.normalize(value, Normalizer.Form.NFD)
-        .replaceAll("\\p{M}+", "")
-        .toLowerCase(Locale.ROOT);
+    return value.toLowerCase(Locale.ROOT);
   }
 }

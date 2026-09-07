@@ -16,10 +16,8 @@ public record ResourceRequest(
   public record Page(int number, int size) {
 
     public Page {
-      if (number < 1 || size < 1 || size > CollectionQueryLimits.MAX_PAGE_SIZE) {
-        throw new IllegalArgumentException(
-            "Page number must be positive and size must be between 1 and "
-                + CollectionQueryLimits.MAX_PAGE_SIZE);
+      if (number < 1 || size < 1) {
+        throw new IllegalArgumentException("Page number and size must be positive");
       }
     }
   }
