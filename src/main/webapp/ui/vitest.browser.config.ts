@@ -135,6 +135,8 @@ export default defineConfig({
   // Vite re-optimize and reload — Vitest warns this can make browser tests flaky.
   optimizeDeps: {
     include: [
+      // Bookable-item tabs are discovered lazily through the route tree.
+      "@base-ui/react/tabs",
       // Pulled in by Inventory/Identifiers/IGSN/IgsnTable at runtime; pre-bundling
       // prevents a mid-run optimizer reload that causes duplicate React/emotion instances.
       "@mui/material/utils",
