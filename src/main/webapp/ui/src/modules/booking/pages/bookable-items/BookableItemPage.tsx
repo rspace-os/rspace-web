@@ -57,6 +57,7 @@ import {
   fetchBookingConfigurationDetailsByTarget,
 } from "./bookingConfiguration";
 import { bookingResourceAccessAdapter } from "./bookingResourceAccess";
+import { CalendarSubscriptionPopover } from "./CalendarSubscriptionPopover";
 
 type BookableItemTab = "bookings" | "details" | "audit" | "access";
 
@@ -591,6 +592,9 @@ function LoadedBookableItemPage({
                       lockTarget
                       disabled={!configuration.enabled}
                     />
+                  ) : null}
+                  {configuration.capabilities.canSubscribeCalendar ? (
+                    <CalendarSubscriptionPopover configurationId={configuration.id} token={token} archived={!active} />
                   ) : null}
                   {active && configuration.capabilities.canLeaveConfiguration ? (
                     <Button type="button" variant="outline" onClick={() => setLeaveOpen(true)}>
