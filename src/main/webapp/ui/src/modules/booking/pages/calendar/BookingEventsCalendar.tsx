@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { CalendarCheck2Icon, PlusIcon } from "lucide-react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
+import { BookingCalendarFileButton } from "@/modules/booking/components/BookingCalendarFileButton";
 import { BookingDateControls, BookingTimeZoneBadge } from "@/modules/booking/components/BookingToolbar";
 import {
   DayTimeline,
@@ -25,6 +26,7 @@ import {
 import { todayInTimeZone } from "@/modules/booking/domain/bookingDisplayPreferences";
 import {
   addCalendarDays,
+  formatAgendaPeriod,
   sliceAcrossZonedDay,
   wallClockToDayMinute,
   zonedDayBounds,
@@ -371,8 +373,10 @@ function BookingActions({ event, timezone }: { event: BookingListDocument; timez
   if (editing && editable) {
     return <InlineBookingEditor event={event} timezone={timezone} token={token} onClose={() => setEditing(false)} />;
   }
+  // The same pair of conditions the download endpoint itself enforces, so the action never 404s.
+  const canDownload = event.canViewConfiguration && event.state === "CONFIRMED";
   const canViewDetails = event.privacy === "full";
-  const actionCount = (canViewDetails ? 1 : 0) + (editable ? 1 : 0);
+  const actionCount = (canViewDetails ? 1 : 0) + (editable ? 1 : 0) + (canDownload ? 1 : 0);
   if (actionCount === 0) return null;
   return (
     <div
@@ -399,6 +403,17 @@ function BookingActions({ event, timezone }: { event: BookingListDocument; timez
         >
           {t("calendar.actions.edit")}
         </button>
+      ) : null}
+      {canDownload ? (
+        <BookingCalendarFileButton
+          bookingId={event.id}
+          itemName={event.target.value.name}
+          period={formatAgendaPeriod(event.start, event.end, timezone)}
+          token={token}
+          size="xs"
+          variant="link"
+          className="h-auto rounded-none py-2"
+        />
       ) : null}
     </div>
   );

@@ -232,6 +232,41 @@ class ApiV2OpenApiGeneratorTest {
   }
 
   @Test
+  void documentsCalendarSubscriptionManagementWithTheCurrentUrl() {
+    Map<String, Object> document = document();
+    Map<String, Object> paths = objectMap(document.get("paths"));
+    Map<String, Object> management =
+        objectMap(
+            paths.get("/api/v2/booking-configurations/{configurationId}/calendar-subscription"));
+
+    assertEquals(Set.of("get", "post", "delete"), management.keySet());
+    assertEquals(
+        "getBookingCalendarSubscription", objectMap(management.get("get")).get("operationId"));
+    assertEquals(
+        "createOrReplaceBookingCalendarSubscription",
+        objectMap(management.get("post")).get("operationId"));
+    assertEquals(
+        "revokeBookingCalendarSubscription",
+        objectMap(management.get("delete")).get("operationId"));
+    assertEquals(
+        Set.of("200", "401", "403", "404", "406", "429", "500"),
+        objectMap(objectMap(management.get("get")).get("responses")).keySet());
+    assertEquals(
+        Set.of("204", "401", "403", "404", "406", "429", "500"),
+        objectMap(objectMap(management.get("delete")).get("responses")).keySet());
+
+    Map<String, Object> schemas = schemas(document);
+    Map<String, Object> statusProperties =
+        objectMap(objectMap(schemas.get("BookingCalendarSubscriptionStatus")).get("properties"));
+    Map<String, Object> createdProperties =
+        objectMap(objectMap(schemas.get("BookingCalendarSubscriptionCreated")).get("properties"));
+    assertEquals(Set.of("active", "updatedAt", "subscriptionUrl"), statusProperties.keySet());
+    assertEquals("uri", objectMap(statusProperties.get("subscriptionUrl")).get("format"));
+    assertTrue(createdProperties.containsKey("subscriptionUrl"));
+    assertEquals("uri", objectMap(createdProperties.get("subscriptionUrl")).get("format"));
+  }
+
+  @Test
   void marksTemporaryInstrumentLocationFieldsDeprecatedAndNullable() {
     Map<String, Object> instrumentProperties =
         objectMap(objectMap(schemas(document()).get("InstrumentsRead")).get("properties"));

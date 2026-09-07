@@ -18,6 +18,7 @@ import { Separator } from "@/modules/common/ui/separator";
 import { Skeleton } from "@/modules/common/ui/skeleton";
 import { Heading } from "@/modules/common/ui/typography";
 import { BookingDisplaySettingsFields } from "./BookingDisplaySettingsFields";
+import { UserCalendarSubscription } from "./UserCalendarSubscription";
 
 function inputFrom(document: {
   availabilityWindowStart: string;
@@ -57,6 +58,8 @@ function PreferencesSkeleton() {
           ))}
           <Skeleton className="h-9 w-56" />
         </div>
+        <Separator />
+        <Skeleton className="h-32 w-full max-w-2xl" />
       </div>
     </main>
   );
@@ -131,6 +134,8 @@ function BookingPreferencesContent() {
           </Button>
         </div>
       </form>
+      <Separator />
+      <UserCalendarSubscription token={token} />
     </main>
   );
 }

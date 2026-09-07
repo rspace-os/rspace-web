@@ -922,6 +922,26 @@ export default interface Resources {
           "tooWide": "Choose a period of no more than 183 days."
         }
       },
+      "calendarSubscription": {
+        "appPrompt": "Add to your calendar app:",
+        "apple": "Apple",
+        "archivedUnavailable": "New calendar links cannot be generated while this booking configuration is archived.",
+        "close": "Close",
+        "copied": "Copied",
+        "copy": "Copy link",
+        "copyError": "The link could not be copied. Select and copy it manually.",
+        "copyPrompt": "Or copy the calendar link below:",
+        "description": "Subscribe to this bookable item's read-only calendar.",
+        "generateError": "The calendar link could not be generated. Try again.",
+        "generating": "Generating calendar link.",
+        "google": "Google Calendar",
+        "loading": "Loading calendar status.",
+        "other": "Other",
+        "retry": "Retry",
+        "statusError": "Calendar subscription status could not be loaded.",
+        "title": "Add to your calendar",
+        "trigger": "Add to calendar"
+      },
       "cancelEdit": "Cancel",
       "disabled": "Disabled",
       "edit": "Edit configuration",
@@ -1406,6 +1426,24 @@ export default interface Resources {
         "endOfDay": "End of day (24:00)",
         "legend": "Default availability window",
         "start": "Start time"
+      },
+      "calendarSubscription": {
+        "apple": "Apple",
+        "changeError": "The calendar subscription could not be changed. Try again.",
+        "copied": "Copied",
+        "copy": "Copy link",
+        "copyError": "The link could not be copied. Select and copy it manually.",
+        "copyPrompt": "Calendar subscription link",
+        "create": "Create calendar subscription",
+        "description": "Subscribe to your confirmed RSpace bookings across all bookable items. The private link updates automatically in your calendar app.",
+        "google": "Google Calendar",
+        "loading": "Loading calendar subscription.",
+        "other": "Other",
+        "replace": "Replace private link",
+        "retry": "Retry",
+        "revoke": "Disconnect calendar",
+        "statusError": "The calendar subscription could not be loaded.",
+        "title": "My booking calendar"
       },
       "description": "Choose how Booking dates, times, forms, and availability are displayed. These settings do not change an item's opening hours.",
       "errors": {
@@ -6591,6 +6629,10 @@ export default interface Resources {
               "unavailable": "The selected target is not available for booking."
             },
             "window": "Start time must be in the future and end time must be after start time."
+          },
+          "bookingCalendar": {
+            "ifMatchRequired": "The current calendar subscription version is required.",
+            "subscriptionConflict": "The calendar subscription changed. Refresh it and try again."
           },
           "bookingConfiguration": {
             "buffer": {
