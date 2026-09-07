@@ -85,3 +85,17 @@ export async function searchResourceGrantees(
   if (!response.ok) throw new ResourceAccessRequestError(response.status);
   return parseOrThrow(v.array(ResourceGranteeDirectoryEntrySchema), (await response.json()) as unknown);
 }
+
+export async function searchBookingSettingsGrantees(
+  query: string,
+  token: string,
+  signal?: AbortSignal,
+): Promise<readonly ResourceGranteeDirectoryEntry[]> {
+  const parameters = new URLSearchParams({ query, limit: "20" });
+  const response = await fetch(`/api/v2/booking-settings/access-grantees?${parameters}`, {
+    headers: headers(token),
+    signal,
+  });
+  if (!response.ok) throw new ResourceAccessRequestError(response.status);
+  return parseOrThrow(v.array(ResourceGranteeDirectoryEntrySchema), (await response.json()) as unknown);
+}

@@ -64,6 +64,8 @@
     <mapping path="/gallery*" exclude="true"/>
     <mapping path="/about" exclude="true"/>
     <mapping path="/about/**" exclude="true"/>
+    <mapping path="/booking" exclude="true"/>
+    <mapping path="/booking/**" exclude="true"/>
 
     <!-- Public / external pages decorator -->
     <mapping path="*/signup*" decorator="externalPages.jsp"/>
