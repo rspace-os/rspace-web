@@ -214,6 +214,7 @@ For detailed information about specific areas
 
 ### Topics
 - Accessibility: See [../../../../DevDocs/DeveloperNotes/GettingStarted/Accessibility.md](../../../../DevDocs/DeveloperNotes/GettingStarted/Accessibility.md)
+- Table List adapters and collection forms: See [../../../../DevDocs/DeveloperNotes/TableListAdapters.md](../../../../DevDocs/DeveloperNotes/TableListAdapters.md)
 - Link Navigation in Inventory: See [src/Inventory/NavigationInInventory.md](src/Inventory/NavigationInInventory.md)
 - Adding Form Fields in Inventory: See [src/Inventory/AddingNewFormFields.md](src/Inventory/AddingNewFormFields.md)
 - Adding new integrations to the Apps page: See [src/eln/apps/AddingANewIntegration.md](src/eln/apps/AddingANewIntegration.md)
