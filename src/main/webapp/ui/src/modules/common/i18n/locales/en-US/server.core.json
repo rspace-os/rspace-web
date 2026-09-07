@@ -95,6 +95,20 @@
           "endDate": {
             "required": "End date is required."
           }
+        },
+        "audit": {
+          "snapshot": {
+            "changed": "The audit results changed while you were paging through them. Start again to view a fresh snapshot.",
+            "invalid": "The audit snapshot date and fingerprint must be supplied together and in the required format."
+          },
+          "unavailable": "The audit trail is temporarily unavailable. Try again later.",
+          "results": {
+            "tooMany": "The audit search returned too many results. Choose a narrower date range."
+          },
+          "range": {
+            "inverted": "The audit search start date must not be after its end date.",
+            "tooWide": "The audit search range must not exceed {0} days."
+          }
         }
       },
       "pagination": {
