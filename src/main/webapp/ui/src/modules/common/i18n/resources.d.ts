@@ -1068,17 +1068,140 @@ export default interface Resources {
       }
     },
     "bookings": {
+      "actions": {
+        "cancel": "Cancel booking",
+        "createEvent": "Create calendar event",
+        "delete": "Delete booking",
+        "edit": "Edit",
+        "moreCreationOptions": "More event creation options",
+        "newBooking": "New Booking",
+        "newMaintenance": "New Maintenance Event"
+      },
+      "addTitle": "Add Booking",
+      "cancelDialog": {
+        "description": "Cancel the {itemName} booking for {period}? The cancelled event remains in the audit history.",
+        "title": "Cancel booking?"
+      },
+      "compact": {
+        "bookingDescription": "Choose a bookable item and time for the new booking.",
+        "bookingTitle": "New Booking",
+        "discard": "Discard changes",
+        "discardDescription": "Your unsaved event changes will be lost.",
+        "discardTitle": "Discard this event?",
+        "keepEditing": "Keep editing",
+        "maintenanceDescription": "Choose a bookable item and time for the maintenance blockout.",
+        "maintenanceTitle": "New Maintenance Event"
+      },
+      "deleteDialog": {
+        "description": "Delete Booking removes the {itemName} event for {period} from the Calendar. This release cannot restore the event.",
+        "title": "Delete booking?"
+      },
       "details": {
-        "noneProvided": "None provided"
+        "aboutBooking": "About this booking",
+        "aboutMaintenance": "About this maintenance event",
+        "bookedBy": "Booked by",
+        "bookingCancelled": "Booking cancelled.",
+        "cancelDescription": "The reserved time is released for others to book.",
+        "cancelMaintenance": "Cancel maintenance event",
+        "cancelMaintenanceDescription": "The maintenance window is released and the slot becomes bookable again.",
+        "cancelMaintenanceTitle": "Cancel maintenance event?",
+        "cancelled": "Cancelled",
+        "confirmed": "Confirmed",
+        "created": "Created",
+        "createdBy": "Created by",
+        "edit": {
+          "conflict": "This event changed while you were editing. Copy any changes you want to keep, then refresh this page.",
+          "discard": "Discard",
+          "maintenanceTitle": "Edit maintenance event",
+          "saved": "Changes saved.",
+          "title": "Edit booking"
+        },
+        "lastUpdated": "Last updated",
+        "loadFailedDescription": "The booking could not be loaded.",
+        "loadFailedTitle": "Something went wrong",
+        "maintenanceCancelled": "Maintenance event cancelled.",
+        "maintenanceTitle": "Maintenance details",
+        "noneProvided": "None provided",
+        "returnToItemCalendar": "Return to item calendar",
+        "returnToMyBookings": "Return to My Bookings",
+        "timesShownIn": "Times shown in",
+        "title": "Booking details",
+        "unavailableDescription": "This booking does not exist or you do not have access to it.",
+        "unavailableTitle": "Booking unavailable",
+        "viewItem": "View bookable item {globalId}",
+        "when": "When"
+      },
+      "editTitle": "Edit Booking",
+      "errors": {
+        "concurrentModification": "This event changed while you were editing it. Review the latest details and try again.",
+        "deleteForbidden": "You no longer have permission to cancel this booking.",
+        "deleteGeneric": "RSpace could not cancel the booking. Try again.",
+        "deleteStale": "This booking can no longer be cancelled.",
+        "duration": "Bookings may not exceed 366 days.",
+        "endAfterStart": "The end must be after the start.",
+        "forbidden": "You cannot edit this booking.",
+        "generic": "RSpace could not save the booking. Try again.",
+        "granularity": "Start and end times must use this bookable item's time increment.",
+        "itemLoad": "RSpace could not load bookable items.",
+        "itemRequired": "Select a bookable item.",
+        "load": "RSpace could not load this booking.",
+        "maximumDuration": "This booking exceeds the bookable item's maximum duration.",
+        "noLongerEditable": "This booking is no longer editable.",
+        "nonexistentTime": "This local time does not occur in the selected time zone.",
+        "notFound": "This booking was not found or is not visible.",
+        "occurrenceRequired": "Select which occurrence of this local time to use.",
+        "openingHours": "This booking must be within the bookable item's opening hours.",
+        "overlap": "This period overlaps another booking.",
+        "targetUnavailable": "This bookable item is unavailable.",
+        "windowRequired": "Enter a valid start and end."
       },
       "form": {
+        "cancel": "Cancel",
+        "date": "Date",
+        "earlierOccurrence": "Earlier occurrence ({offset})",
         "end": "End",
+        "endDate": "End date",
+        "endTime": "End time",
+        "item": "Bookable item",
+        "itemChoose": "Choose a bookable item",
+        "itemNone": "No bookable items found",
+        "itemOption": "{name} ({globalId}) — {timezone}",
+        "itemPage": "Page {page, number} of {total, number}",
+        "itemResults": "Bookable item results",
+        "itemSearch": "Search bookable items",
+        "laterOccurrence": "Later occurrence ({offset})",
+        "maximumDuration": "Maximum booking duration: {count, number} minutes",
+        "moreOptions": "More options",
+        "nextItems": "Next",
+        "notes": "Notes",
+        "notesCount": "{count, number}/1,000 characters",
+        "occurrence": "Repeated local time",
+        "openItem": "Open {globalId}",
+        "openingHours": "Open: {start} - {end}",
+        "openingHoursDifferentTimezone": "Open: {start} - {end} ({timezone})",
+        "previousItems": "Previous",
+        "purpose": "Purpose",
+        "purposeCount": "{count, number}/1,000 characters",
+        "returnToCalendar": "Return to Calendar",
+        "returnToMyBookings": "Return to My Bookings",
+        "save": "Save changes",
         "start": "Start",
+        "startDate": "Start date",
+        "startTime": "Start time",
+        "submit": "Book",
+        "submitMaintenance": "Create maintenance event",
         "time": "Time",
+        "type": "Booking type",
         "typeBlockout": "Maintenance blockout",
+        "typeBlockoutPending": "Maintenance blockouts are not stored yet. RSpace saves this as a standard booking.",
         "typeBooking": "Booking"
       },
-      "maintenanceLabel": "Maintenance blockout"
+      "loading": "Loading booking.",
+      "loadingConfiguration": "Loading bookable item settings.",
+      "maintenanceLabel": "Maintenance blockout",
+      "warnings": {
+        "past": "This booking is in the past. You can still create it."
+      }
     },
     "calendar": {
       "actions": {
@@ -1199,6 +1322,22 @@ export default interface Resources {
       }
     },
     "myBookings": {
+      "actions": {
+        "edit": "Edit",
+        "itemCalendar": "View item calendar",
+        "label": "Actions",
+        "viewDetails": "View details"
+      },
+      "count": {
+        "accessible": "{count, plural, one {# upcoming booking} other {# upcoming bookings}}",
+        "error": "The upcoming booking count could not be loaded.",
+        "loading": "Loading upcoming count"
+      },
+      "description": "View and manage bookings requested by this user.",
+      "empty": {
+        "past": "No past or cancelled bookings found.",
+        "upcoming": "No upcoming bookings found."
+      },
       "fields": {
         "end": "End",
         "id": "ID",
@@ -1208,7 +1347,18 @@ export default interface Resources {
         "target": "Bookable item",
         "timezone": "Time zone"
       },
-      "timezone": "Times are shown in {timezone}."
+      "period": {
+        "legend": "Booking period",
+        "past": "Past",
+        "upcoming": "Upcoming"
+      },
+      "plural": "Bookings",
+      "roleLoss": {
+        "readOnly": "Read-only: you no longer have access to this item."
+      },
+      "singular": "Booking",
+      "timezone": "Times are shown in {timezone}.",
+      "title": "My Bookings"
     },
     "preferences": {
       "actions": {
@@ -1301,10 +1451,13 @@ export default interface Resources {
       "title": "Booking Settings"
     },
     "sidebar": {
+      "addBooking": "Add Booking",
       "administration": "Administration",
+      "approvalQueue": "Approval Queue",
       "bookableItems": "Bookable Items",
       "calendar": "Calendar",
       "label": "Booking",
+      "myBookings": "My Bookings",
       "preferences": "Preferences",
       "settings": "Settings"
     }

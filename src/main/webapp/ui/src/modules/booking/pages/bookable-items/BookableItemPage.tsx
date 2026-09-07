@@ -7,6 +7,8 @@ import type { ReactNode } from "react";
 import { Suspense, useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { SchedulingSettingsFields } from "@/modules/booking/configuration/schedulingSettings";
+import { BookingCreationButtonGroup } from "@/modules/booking/creation/BookingCreationButtonGroup";
+import { bookableItemOption } from "@/modules/booking/creation/bookableItemOption";
 import { bookingApiV2JsonHeaders } from "@/modules/booking/domain/apiV2";
 import { ApiV2ProblemError, parseApiV2Problem } from "@/modules/booking/domain/booking";
 import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
@@ -581,6 +583,15 @@ function LoadedBookableItemPage({
               target={target}
               action={
                 <>
+                  {active &&
+                  (configuration.capabilities.canCreateBooking || configuration.capabilities.canCreateBlockout) ? (
+                    <BookingCreationButtonGroup
+                      ownerId={`bookable-item-${configuration.id}`}
+                      target={bookableItemOption({ ...configuration, target })}
+                      lockTarget
+                      disabled={!configuration.enabled}
+                    />
+                  ) : null}
                   {active && configuration.capabilities.canLeaveConfiguration ? (
                     <Button type="button" variant="outline" onClick={() => setLeaveOpen(true)}>
                       {t("bookableItemDetails.actions.leave")}

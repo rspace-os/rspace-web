@@ -15,6 +15,7 @@ import { Suspense } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
 import { server } from "@/__tests__/mswServer";
+import { BookingCreationStoreProvider } from "@/modules/booking/creation/bookingCreationStore";
 import { bookingDisplayPreferencesQueryKey } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
@@ -107,9 +108,11 @@ function renderPage(initialEntry = "/booking/bookable-items/IN123") {
   });
   const result = render(
     <QueryClientProvider client={queryClient}>
-      <Suspense fallback={null}>
-        <RouterProvider router={router as never} />
-      </Suspense>
+      <BookingCreationStoreProvider>
+        <Suspense fallback={null}>
+          <RouterProvider router={router as never} />
+        </Suspense>
+      </BookingCreationStoreProvider>
     </QueryClientProvider>,
   );
   return { ...result, queryClient, router };

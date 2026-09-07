@@ -18,6 +18,7 @@ import type { CurrentUser } from "@/modules/common/queries/currentUser";
 import { currentUserQueryKeys } from "@/modules/common/queries/currentUser";
 import BookingPage from "../BookingPage";
 import { createBookableItemRoute } from "../bookable-items/routes";
+import { createAddBookingRoute, createBookingEventRouteTree } from "../bookings/routes";
 import { inheritedBrowserBookingPreferences } from "../preferences/bookingPreferencesFixtures";
 import { currentUser } from "./calendarFixtures";
 import { createCalendarRoute } from "./routes";
@@ -40,7 +41,12 @@ export function CalendarPageStory({
   const booking = createRoute({ getParentRoute: () => root, path: "/booking", component: BookingPage });
   const router = createRouter({
     routeTree: root.addChildren([
-      booking.addChildren([createCalendarRoute(booking), createBookableItemRoute(booking)]),
+      booking.addChildren([
+        createCalendarRoute(booking),
+        createAddBookingRoute(booking),
+        createBookingEventRouteTree(booking),
+        createBookableItemRoute(booking),
+      ]),
     ]),
     history: createBrowserHistory(),
   });

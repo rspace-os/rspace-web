@@ -6,7 +6,7 @@ import {
   Outlet,
   RouterProvider,
 } from "@tanstack/react-router";
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
@@ -49,8 +49,8 @@ const resources = {
         },
         states: {
           booking: "Booked",
-          blockout: "Outside opening hours",
-          overlap: "Booked and outside opening hours",
+          blockout: "Blocked out",
+          overlap: "Booked and blocked out",
         },
         trigger: "{itemName}, {state}, {period}, {count, plural, one {# event} other {# events}}",
       },
@@ -325,32 +325,50 @@ describe("AvailabilityBar", () => {
     await expectAccessible(dialog);
   });
 
-  it("expands authorized booking details", async () => {
-    const user = userEvent.setup();
-    await renderRoutedAvailabilityBar({
-      intervals: [
-        sourced("booking:41", "2026-08-12T09:00:00.000Z", "2026-08-12T10:00:00.000Z", "booking", undefined, undefined, {
-          id: 41,
-          kind: "BOOKING",
-          privacy: "full",
-          purpose: "Cell imaging",
-          bookedBy: "Ada Lovelace (ada)",
-        }),
-      ],
-    });
+  it.each(["BOOKING", "MAINTENANCE"] as const)(
+    "expands authorized %s details and links to the booking page",
+    async (kind) => {
+      const user = userEvent.setup();
+      const { router } = await renderRoutedAvailabilityBar({
+        intervals: [
+          sourced(
+            "booking:41",
+            "2026-08-12T09:00:00.000Z",
+            "2026-08-12T10:00:00.000Z",
+            kind === "BOOKING" ? "booking" : "blockout",
+            undefined,
+            undefined,
+            {
+              id: 41,
+              kind,
+              privacy: "full",
+              purpose: "Cell imaging",
+              bookedBy: "Ada Lovelace (ada)",
+              createdBy: "Ada Lovelace (ada)",
+            },
+          ),
+        ],
+      });
 
-    await user.hover(await screen.findByRole("button", { name: /Confocal microscope, Booked/ }));
-    const dialog = await screen.findByRole("dialog");
-    const disclosure = within(dialog).getByLabelText("Show details for Confocal microscope, 09:00–10:00");
-    await user.click(disclosure);
+      await user.hover(await screen.findByRole("button", { name: /Confocal microscope, (Booked|Blocked out)/ }));
+      const dialog = await screen.findByRole("dialog");
+      const disclosure = within(dialog).getByLabelText(
+        `Show details for ${kind === "BOOKING" ? "Confocal microscope" : "Maintenance blockout"}, 09:00–10:00`,
+      );
+      await user.click(disclosure);
 
-    expect(within(dialog).getByRole("link", { name: "Open inventory record IN123" })).toBeVisible();
-    expect(within(dialog).getByRole("link", { name: "Imaging suite" })).toBeVisible();
-    expect(within(dialog).getByText("Ada Lovelace (ada)")).toBeVisible();
-    expect(within(dialog).getByText("Cell imaging")).toBeVisible();
-    expect(within(dialog).queryByRole("link", { name: "Details" })).not.toBeInTheDocument();
-    await expectAccessible(dialog);
-  });
+      expect(within(dialog).getByRole("link", { name: "Open inventory record IN123" })).toBeVisible();
+      expect(within(dialog).getByRole("link", { name: "Imaging suite" })).toBeVisible();
+      expect(within(dialog).getByText("Ada Lovelace (ada)")).toBeVisible();
+      expect(within(dialog).getByText("Cell imaging")).toBeVisible();
+      const details = within(dialog).getByRole("link", { name: "Details" });
+      expect(details).toHaveAttribute("href", "/booking/calendar/bookings/41");
+      await expectAccessible(dialog);
+
+      await user.click(details);
+      await waitFor(() => expect(router.state.location.pathname).toBe("/booking/calendar/bookings/41"));
+    },
+  );
 
   it("uses an explicitly supplied arbitrary period", async () => {
     await renderAvailabilityBar({
