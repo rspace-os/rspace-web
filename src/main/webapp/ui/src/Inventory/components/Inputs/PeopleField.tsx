@@ -121,6 +121,10 @@ function PeopleField({
           autoFocus
           slotProps={{
             ...inputSlotProps,
+            htmlInput: {
+              ...inputSlotProps?.htmlInput,
+              ...(label === undefined ? {} : { "aria-label": label }),
+            },
             input: {
               ...inputSlotProps?.input,
               ...(label !== undefined
@@ -130,7 +134,7 @@ function PeopleField({
                 : {}),
               endAdornment: (
                 <>
-                  {loading && <CircularProgress color="inherit" size={20} />}
+                  {loading && <CircularProgress color="inherit" size={20} aria-label={t("peopleField.loading")} />}
                   {inputSlotProps?.input.endAdornment ?? null}
                 </>
               ),
