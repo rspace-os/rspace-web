@@ -414,6 +414,22 @@ _Avoid_: runtime-failing flag, startup blocker
 - **Permanently delete a booking configuration** — irreversibly remove an
   Active or Archived booking configuration and its live operational data. Audit history
   remains. Only a system administrator acting as themselves may do this.
+- **Bookable-item calendar subscription** — one user's independently revocable,
+  read-only external calendar of one booking configuration's full schedule. It
+  remains available only while that user has effective permission to view the
+  configuration. Losing the final permission ends the subscription; restoring
+  access does not revive it.
+  _Avoid_: instrument calendar link, item feed
+- **Personal booking calendar subscription** — one user's revocable, read-only
+  external calendar of the reservations they requested and the blockouts they
+  created across bookable items.
+  _Avoid_: per-user calendar link, user calendar
+- **Subscription link** — the bearer URL for a bookable-item or personal booking
+  calendar subscription.
+- **Calendar cancellation tombstone** — the retained calendar representation of
+  a cancelled or deleted booking event. It keeps the event's stable identity and
+  original time range while declaring the event cancelled.
+  _Avoid_: deleted calendar event, hidden cancellation
 - **Booking access assignment**: one Booking role granted directly to one user
   or group for one booking configuration. The assignment governs the
   configuration and all of its bookings, blockouts, calendar views, audit

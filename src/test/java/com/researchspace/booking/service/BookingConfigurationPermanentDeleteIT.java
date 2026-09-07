@@ -73,8 +73,19 @@ public class BookingConfigurationPermanentDeleteIT extends RealTransactionSpring
             "Unrelated booking"),
         owner,
         owner);
+    jdbcTemplate.update(
+        "INSERT INTO BookableItemCalendarSubscription"
+            + " (bookingConfiguration_id, user_id, tokenHash, rawToken, updatedAt)"
+            + " VALUES (?, ?, ?, ?, NOW(6))",
+        configurationId,
+        owner.getId(),
+        "a".repeat(64),
+        "permanent-delete-test-token");
+
     assertEquals(1, count("BookingConfiguration", "id", configurationId));
     assertEquals(1, count("TimeSlotBooking", "bookingConfiguration_id", configurationId));
+    assertEquals(
+        1, count("BookableItemCalendarSubscription", "bookingConfiguration_id", configurationId));
     assertTrue(count("ResourceRoleAssignment", "resourceAccess_id", accessId) > 0);
 
     long currentVersion =
@@ -92,6 +103,8 @@ public class BookingConfigurationPermanentDeleteIT extends RealTransactionSpring
     assertFalse(configurationManager.getConfiguration(configurationId, sysadmin).isPresent());
     assertEquals(0, count("BookingConfiguration", "id", configurationId));
     assertEquals(0, count("TimeSlotBooking", "bookingConfiguration_id", configurationId));
+    assertEquals(
+        0, count("BookableItemCalendarSubscription", "bookingConfiguration_id", configurationId));
     assertEquals(0, count("ResourceRoleAssignment", "resourceAccess_id", accessId));
     assertEquals(0, count("ResourceAccess", "id", accessId));
     assertEquals(1, count("BookingConfiguration", "id", unrelated.getId()));

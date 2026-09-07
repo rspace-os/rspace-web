@@ -104,6 +104,7 @@ public final class ApiV2OpenApiGenerator {
             .collect(Collectors.toUnmodifiableSet());
 
     addStandardSchemas(schemas);
+    addCalendarSubscriptionSchemas(schemas);
     addResourceAccessSchemas(schemas);
     ApiV2OpenApiSchemas.schemaFor(BookingConfigurationTarget.class, schemas);
 
@@ -125,6 +126,8 @@ public final class ApiV2OpenApiGenerator {
     catalog
         .routableResources()
         .forEach(resource -> addPaths(paths, resource, componentNames, resourceSchemas));
+    addCalendarSubscriptionPath(paths);
+    addCalendarFilePath(paths);
     addBookingDirectoryPaths(paths);
 
     Map<String, Object> components = new LinkedHashMap<>();
@@ -143,6 +146,10 @@ public final class ApiV2OpenApiGenerator {
                         .name(resource.resourceName())
                         .description(
                             "Operations on the " + resource.resourceName() + " collection.")));
+    tags.add(
+        new Tag()
+            .name("booking-calendar-subscriptions")
+            .description("Manage one caller's bookable-item calendar subscription."));
     tags.add(
         new Tag()
             .name("booking-directories")
@@ -164,6 +171,55 @@ public final class ApiV2OpenApiGenerator {
         .tags(tags)
         .paths(Json31.mapper().convertValue(paths, Paths.class))
         .components(Json31.mapper().convertValue(components, Components.class));
+  }
+
+  private static void addCalendarSubscriptionSchemas(Map<String, Object> schemas) {
+    Map<String, Object> statusProperties =
+        ordered(
+            "active",
+            ordered("type", "boolean"),
+            "updatedAt",
+            ordered("type", List.of("string", "null"), "format", "date-time"),
+            "subscriptionUrl",
+            ordered(
+                "type",
+                List.of("string", "null"),
+                "format",
+                "uri",
+                "description",
+                "The current subscription URL, or null when inactive or awaiting migration."));
+    schemas.put(
+        "BookingCalendarSubscriptionStatus",
+        ordered(
+            "type",
+            "object",
+            "additionalProperties",
+            false,
+            "required",
+            List.of("active", "updatedAt", "subscriptionUrl"),
+            "properties",
+            statusProperties));
+    Map<String, Object> createdProperties = new LinkedHashMap<>(statusProperties);
+    createdProperties.put(
+        "subscriptionUrl",
+        ordered(
+            "type",
+            "string",
+            "format",
+            "uri",
+            "description",
+            "The newly issued subscription URL."));
+    schemas.put(
+        "BookingCalendarSubscriptionCreated",
+        ordered(
+            "type",
+            "object",
+            "additionalProperties",
+            false,
+            "required",
+            List.of("active", "updatedAt", "subscriptionUrl"),
+            "properties",
+            createdProperties));
   }
 
   private static void addBookingDirectoryPaths(Map<String, Object> paths) {
@@ -236,6 +292,169 @@ public final class ApiV2OpenApiGenerator {
         "x-rspace-operation",
         grantees ? "BOOKING_SETTINGS_GRANTEE_SEARCH" : "BOOKING_TARGET_SEARCH");
     return operation;
+  }
+
+  private static void addCalendarSubscriptionPath(Map<String, Object> paths) {
+    String path = "/api/v2/booking-configurations/{configurationId}/calendar-subscription";
+    paths.put(
+        path,
+        ordered(
+            "get",
+            calendarSubscriptionOperation("get"),
+            "post",
+            calendarSubscriptionOperation("post"),
+            "delete",
+            calendarSubscriptionOperation("delete")));
+  }
+
+  private static void addCalendarFilePath(Map<String, Object> paths) {
+    paths.put(
+        "/api/v2/bookings/{bookingId}/calendar-file", ordered("get", calendarFileOperation()));
+  }
+
+  private static Map<String, Object> calendarFileOperation() {
+    Map<String, Object> operation = new LinkedHashMap<>();
+    operation.put("operationId", "downloadBookingCalendarFile");
+    operation.put("summary", "Download a booking as a calendar file");
+    operation.put(
+        "description",
+        "Returns one confirmed booking as an iCalendar attachment, shaped by the caller's"
+            + " visibility of it. No subscription is created or changed.");
+    operation.put("tags", List.of("booking-calendar-subscriptions"));
+    operation.put(
+        "security", List.of(Map.of("apiKey", List.of()), Map.of("bearerAuth", List.of())));
+    operation.put(
+        "x-rspace-access",
+        ordered(
+            "description",
+            "Authenticated active callers with Booking enabled and read access to the bookable"
+                + " item; the booking must be confirmed.",
+            "denialReasonCodes",
+            List.of(AccessPolicy.AUTHENTICATION_REQUIRED, AccessPolicy.FORBIDDEN)));
+    operation.put(
+        "parameters",
+        List.of(
+            parameter(
+                "bookingId",
+                "path",
+                true,
+                ordered("type", "integer", "format", "int64"),
+                "Booking identifier.")));
+    Map<String, Object> responses = new LinkedHashMap<>();
+    responses.put(
+        "200",
+        ordered(
+            "description",
+            "The generated calendar file.",
+            "headers",
+            privateNoStoreHeaders(),
+            "content",
+            Map.of("text/calendar", ordered("schema", ordered("type", "string")))));
+    responses.put("401", responseRef("Unauthenticated"));
+    responses.put("403", responseRef("Forbidden"));
+    responses.put("404", responseRef("NotFound"));
+    responses.put("406", responseRef("NotAcceptable"));
+    responses.put("429", responseRef("TooManyRequests"));
+    responses.put("500", responseRef("UnexpectedError"));
+    operation.put("responses", responses);
+    operation.put("x-rspace-operation", "CALENDAR_DOWNLOAD");
+    return operation;
+  }
+
+  private static Map<String, Object> calendarSubscriptionOperation(String method) {
+    boolean get = "get".equals(method);
+    boolean post = "post".equals(method);
+    Map<String, Object> operation = new LinkedHashMap<>();
+    operation.put(
+        "operationId",
+        get
+            ? "getBookingCalendarSubscription"
+            : post
+                ? "createOrReplaceBookingCalendarSubscription"
+                : "revokeBookingCalendarSubscription");
+    operation.put(
+        "summary",
+        get
+            ? "Get calendar subscription status"
+            : post
+                ? "Create or replace a calendar subscription"
+                : "Revoke a calendar subscription");
+    operation.put(
+        "description",
+        get
+            ? "Returns the caller's current subscription URL when one exists."
+            : post
+                ? "Replaces any active credential and returns the new subscription URL."
+                : "Revokes only the caller's subscription for this bookable item.");
+    operation.put("tags", List.of("booking-calendar-subscriptions"));
+    operation.put(
+        "security", List.of(Map.of("apiKey", List.of()), Map.of("bearerAuth", List.of())));
+    operation.put(
+        "x-rspace-access",
+        ordered(
+            "description",
+            "Authenticated active callers with Booking enabled; status and creation also require"
+                + " read access to the bookable item.",
+            "denialReasonCodes",
+            List.of(AccessPolicy.AUTHENTICATION_REQUIRED, AccessPolicy.FORBIDDEN)));
+    operation.put(
+        "parameters",
+        List.of(
+            parameter(
+                "configurationId",
+                "path",
+                true,
+                ordered("type", "integer", "format", "int64"),
+                "Booking configuration identifier.")));
+    operation.put("responses", calendarSubscriptionResponses(get, post));
+    operation.put(
+        "x-rspace-operation",
+        get ? "CALENDAR_STATUS" : post ? "CALENDAR_CREATE" : "CALENDAR_REVOKE");
+    return operation;
+  }
+
+  private static Map<String, Object> calendarSubscriptionResponses(boolean get, boolean post) {
+    Map<String, Object> responses = new LinkedHashMap<>();
+    if (get || post) {
+      responses.put(
+          "200",
+          ordered(
+              "description",
+              get ? "Current subscription status and URL." : "New subscription URL.",
+              "headers",
+              privateNoStoreHeaders(),
+              "content",
+              Map.of(
+                  JSON,
+                  ordered(
+                      "schema",
+                      ref(
+                          get
+                              ? "BookingCalendarSubscriptionStatus"
+                              : "BookingCalendarSubscriptionCreated")))));
+    } else {
+      responses.put(
+          "204",
+          ordered(
+              "description", "The subscription is inactive.", "headers", privateNoStoreHeaders()));
+    }
+    responses.put("401", responseRef("Unauthenticated"));
+    responses.put("403", responseRef("Forbidden"));
+    responses.put("404", responseRef("NotFound"));
+    responses.put("406", responseRef("NotAcceptable"));
+    responses.put("429", responseRef("TooManyRequests"));
+    responses.put("500", responseRef("UnexpectedError"));
+    return responses;
+  }
+
+  private static Map<String, Object> privateNoStoreHeaders() {
+    return ordered(
+        "Cache-Control",
+        ordered(
+            "description",
+            "Prevents storage of caller-specific subscription state.",
+            "schema",
+            ordered("type", "string", "const", "private, no-store")));
   }
 
   private void addPaths(

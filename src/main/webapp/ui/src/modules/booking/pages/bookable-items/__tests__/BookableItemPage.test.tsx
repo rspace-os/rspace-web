@@ -265,6 +265,10 @@ describe("BookableItemPage", () => {
     expect(within(facts).getByRole("link", { name: "Imaging lab" })).toHaveAttribute("href", "/globalId/IC456");
     expect(within(facts).getByText("Grace Hopper (grace)")).toBeVisible();
     expect(within(facts).getByText("booking:bookableItemDetails.fields.createdAt")).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "booking:bookableItemDetails.calendarSubscription.trigger" }),
+    ).toBeVisible();
+    expect(screen.getByRole("button", { name: "booking:bookings.actions.newBooking" })).toBeVisible();
     expect(screen.getByRole("button", { name: "booking:bookableItems.actions.menu" })).toBeVisible();
     expect(screen.getAllByText("UTC").length).toBeGreaterThan(0);
     expect(screen.getByRole("tab", { name: "booking:bookableItemDetails.tabs.bookings" })).toHaveAttribute(
@@ -354,15 +358,29 @@ describe("BookableItemPage", () => {
 
   it("keeps archived configurations on the canonical route with read-only controls", async () => {
     const archived = { ...configuration, state: "ARCHIVED" as const };
+    let posts = 0;
     server.use(
       http.get("/api/v2/booking-configurations", () => HttpResponse.json(envelope([archived], 2))),
       http.get("/api/v2/bookings", () => HttpResponse.json(envelope([], 10))),
+      http.get("/api/v2/booking-configurations/7/calendar-subscription", () =>
+        HttpResponse.json({ active: false, updatedAt: null, subscriptionUrl: null }),
+      ),
+      http.post("/api/v2/booking-configurations/7/calendar-subscription", () => {
+        posts += 1;
+        return HttpResponse.json({ active: true, updatedAt: null, subscriptionUrl: null });
+      }),
     );
+    const user = userEvent.setup();
     renderPage("/booking/bookable-items/IN123/details?edit=true");
 
     expect(await screen.findByText("booking:bookableItemDetails.archived")).toBeVisible();
     expect(screen.queryByRole("button", { name: "booking:bookableItemDetails.edit" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "booking:bookings.actions.newBooking" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "booking:bookableItemDetails.calendarSubscription.trigger" }));
+    expect(
+      await screen.findByText("booking:bookableItemDetails.calendarSubscription.archivedUnavailable"),
+    ).toBeVisible();
+    expect(posts).toBe(0);
   });
 
   it("restores an archived configuration with a state-only conditional PATCH", async () => {
@@ -389,6 +407,7 @@ describe("BookableItemPage", () => {
     expect(patchRequest?.headers.get("Content-Type")).toBe("application/json");
     expect(patchRequest?.headers.get("If-Match")).toBe('"2"');
     await expect(patchRequest?.json()).resolves.toEqual({ state: "ACTIVE" });
+    expect(await screen.findByRole("button", { name: "booking:bookings.actions.newBooking" })).toBeVisible();
     expect(screen.getByRole("button", { name: "booking:bookableItems.actions.menu" })).toHaveFocus();
   });
 
@@ -497,6 +516,40 @@ describe("BookableItemPage", () => {
     expect(await screen.findByRole("button", { name: "booking:bookableItemDetails.edit" })).toHaveFocus();
     expect(screen.getByText("booking:bookableItemDetails.unlimited")).toBeVisible();
     expect(patched).toBe(false);
+  });
+
+  it("keeps calendar status lazy and exposes the trigger to an ordinary readable user", async () => {
+    let statusRequests = 0;
+    let createRequests = 0;
+    vi.mocked(useCurrentUserQuery).mockReturnValue({
+      data: { hasSysAdminRole: false },
+    } as ReturnType<typeof useCurrentUserQuery>);
+    server.use(
+      http.get("/api/v2/booking-configurations", () => HttpResponse.json(envelope([configuration], 2))),
+      http.get("/api/v2/bookings", () => HttpResponse.json(envelope([], 10))),
+      http.get("/api/v2/booking-configurations/7/calendar-subscription", () => {
+        statusRequests += 1;
+        return HttpResponse.json({ active: false, updatedAt: null, subscriptionUrl: null });
+      }),
+      http.post("/api/v2/booking-configurations/7/calendar-subscription", () => {
+        createRequests += 1;
+        return HttpResponse.json({
+          active: true,
+          updatedAt: "2026-08-27T12:00:00.000Z",
+          subscriptionUrl: `https://rspace.example/public/booking/calendars/feed.ics?token=${"c".repeat(43)}`,
+        });
+      }),
+    );
+    const user = userEvent.setup();
+    renderPage();
+    const trigger = await screen.findByRole("button", {
+      name: "booking:bookableItemDetails.calendarSubscription.trigger",
+    });
+    expect(statusRequests).toBe(0);
+    await user.click(trigger);
+    await screen.findByRole("textbox", { name: "booking:bookableItemDetails.calendarSubscription.copyPrompt" });
+    expect(statusRequests).toBe(1);
+    expect(createRequests).toBe(1);
   });
 
   it("keeps the editor and draft open when PATCH fails", async () => {
