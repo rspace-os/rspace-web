@@ -20,9 +20,14 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
@@ -109,11 +114,11 @@ public class InternalFileStoreImpl implements InternalFileStore {
       FileProperty fileProperty,
       InputStream inStream,
       String fnm,
-      FileDuplicateStrategy behavoiurOnDuplicate)
+      FileDuplicateStrategy behaviourOnDuplicate)
       throws IOException {
     checkInitialised();
     fnm = EscapeReplacement.replaceChars(fnm); // get ride funny characters
-    int suc = addMetadata(fileProperty, fnm, FileDuplicateStrategy.AS_NEW);
+    int suc = addMetadata(fileProperty, fnm, behaviourOnDuplicate);
     FileStoreRoot root = fileMetadataDao.getCurrentFileStoreRoot(false);
     fileProperty.setRoot(root);
     if (suc >= 0) { // success path
@@ -228,56 +233,52 @@ public class InternalFileStoreImpl implements InternalFileStore {
     return path.substring(idx + 1);
   }
 
-  /*
-   *
-   * @param meta
-   * @param fnm
-   * @param existCd -1 =error if already exists, 0 =replace, 1=add as new
-   * @return 0 if replace was successful, 100 if add as new successful
-   *  If could not be added: returns -1 if existCd was -1
-   */
-  int addMetadata(FileProperty meta, String fnm, FileDuplicateStrategy duplicateBehaviour) {
+  /** Reserves a destination for new files before saving their metadata. */
+  int addMetadata(FileProperty meta, String fnm, FileDuplicateStrategy duplicateBehaviour)
+      throws IOException {
     meta.setRoot(currentRootFs);
-    boolean success = true;
-    int rst = 100; // add one
+    if (StringUtils.isEmpty(meta.getFileName())) {
+      meta.setFileName(fnm);
+    }
+    meta.generateURIFromProperties(baseDir);
+    Path destination = baseDir.toPath().resolve(meta.getRelPath());
+    Files.createDirectories(destination.getParent());
+    boolean reserved = false;
+    if (duplicateBehaviour != FileDuplicateStrategy.REPLACE) {
+      try {
+        Files.createFile(destination);
+      } catch (FileAlreadyExistsException e) {
+        if (duplicateBehaviour == FileDuplicateStrategy.ERROR) {
+          return -1;
+        }
+        String extension = FilenameUtils.getExtension(meta.getFileName());
+        // Keep ordinary extensions intact; omit extensions exceeding 20 UTF-8 bytes.
+        if (extension.getBytes(StandardCharsets.UTF_8).length > 20) {
+          extension = "";
+        }
+        meta.setFileName(
+            EscapeReplacement.replaceChars(
+                UUID.randomUUID() + (extension.isEmpty() ? "" : "." + extension)));
+        meta.generateURIFromProperties(baseDir);
+        destination = baseDir.toPath().resolve(meta.getRelPath());
+        Files.createFile(destination);
+      }
+      reserved = true;
+    }
     try {
-      if (StringUtils.isEmpty(meta.getFileName())) {
-        meta.setFileName(fnm);
+      fileMetadataDao.save(meta);
+    } catch (RuntimeException e) {
+      log.warn("Could not save file metadata for file :{}", meta.getRelPath(), e);
+      if (reserved) {
+        try {
+          Files.delete(destination);
+        } catch (IOException cleanupFailure) {
+          e.addSuppressed(cleanupFailure);
+        }
       }
-      meta.generateURIFromProperties(baseDir);
-      if (meta.getAbsolutePathUri() != null
-          && FileDuplicateStrategy.REPLACE.equals(duplicateBehaviour)) {
-        fileMetadataDao.save(meta);
-        rst = 0;
-      } else {
-        fileMetadataDao.save(meta);
-      }
-
-    } catch (Exception ex) {
-      log.warn("Could not save file metadata for file :{}", meta.getRelPath(), ex);
-      success = false;
+      throw e;
     }
-
-    if (!success) {
-      if (FileDuplicateStrategy.ERROR.equals(duplicateBehaviour)) {
-        rst = -1; // return error if exist
-      } else if (FileDuplicateStrategy.REPLACE.equals(duplicateBehaviour)) {
-        fileMetadataDao.remove(meta.getId());
-        fileMetadataDao.save(meta);
-        rst = 0;
-      } else { // add change name add another one: may be recursive call
-        // purly for hibernate entity
-        FileProperty metax = meta.copy();
-        String fnmx = metax.getFileName();
-        fnmx = "A1_" + fnmx;
-        metax.setFileName(fnmx);
-        metax.generateURIFromProperties(baseDir);
-        log.debug("k2= {},", metax.getAbsolutePathUri());
-        fileMetadataDao.save(metax);
-        rst = 1;
-      }
-    }
-    return rst;
+    return reserved ? 100 : 0;
   }
 
   public FileStoreRoot getCurrentFileStoreRoot() {
