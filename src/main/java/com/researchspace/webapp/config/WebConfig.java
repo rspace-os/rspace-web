@@ -119,7 +119,7 @@ public class WebConfig extends WebMvcConfigurationSupport {
     if (isStorybookEnabled()) {
       registry
           .addResourceHandler("/public/storybook/**")
-          .addResourceLocations("file:src/main/webapp/ui/storybook-static/");
+          .addResourceLocations("/WEB-INF/storybook/", "file:src/main/webapp/ui/storybook-static/");
     }
   }
 

@@ -12,6 +12,8 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistration;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
+import org.springframework.web.servlet.handler.SimpleUrlHandlerMapping;
+import org.springframework.web.servlet.resource.ResourceHttpRequestHandler;
 
 class WebConfigStorybookRouteTest {
 
@@ -26,6 +28,13 @@ class WebConfigStorybookRouteTest {
     config.addViewControllers(views);
 
     assertTrue(resources.hasMappingForPattern("/public/storybook/**"));
+    SimpleUrlHandlerMapping mapping =
+        ReflectionTestUtils.invokeMethod(resources, "getHandlerMapping");
+    ResourceHttpRequestHandler handler =
+        (ResourceHttpRequestHandler) mapping.getUrlMap().get("/public/storybook/**");
+    assertEquals(
+        List.of("/WEB-INF/storybook/", "file:src/main/webapp/ui/storybook-static/"),
+        ReflectionTestUtils.getField(handler, "locationValues"));
     @SuppressWarnings("unchecked")
     List<ViewControllerRegistration> registrations =
         (List<ViewControllerRegistration>) ReflectionTestUtils.getField(views, "registrations");
