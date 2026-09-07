@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.initMocks;
+import static org.mockito.MockitoAnnotations.openMocks;
 
 import com.researchspace.core.util.RSpaceCoreTestUtils;
 import java.awt.image.BufferedImage;
@@ -47,7 +47,7 @@ public class ImageUtilsTest {
 
   @BeforeEach
   public void setUp() throws Exception {
-    initMocks(this);
+    openMocks(this);
   }
 
   @AfterEach
