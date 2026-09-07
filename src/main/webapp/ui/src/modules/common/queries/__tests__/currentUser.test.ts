@@ -35,6 +35,9 @@ const currentUserResponse = {
   session: {
     operatedAs: false,
     lastSession: null,
+    canUseDevtools: true,
+    canOverrideFeatureFlags: false,
+    canChangeFeatureFlagBaselines: false,
   },
 };
 
