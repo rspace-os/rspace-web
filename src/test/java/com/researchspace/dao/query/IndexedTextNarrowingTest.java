@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.inventory.model.ApiV2InstrumentResource;
+import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
 import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.CollectionFieldTypes;
 import com.researchspace.model.collection.Field;
@@ -129,6 +130,12 @@ class IndexedTextNarrowingTest {
     return IndexedTextNarrowing.apply(request, ApiV2InstrumentResource.DESCRIPTION, search);
   }
 
+  private static ResourceRequest narrowBookings(
+      ResourceRequest request, RuntimeFieldTextSearch search) {
+    return IndexedTextNarrowing.apply(
+        request, ApiV2BookingConfigurationResource.DESCRIPTION, search);
+  }
+
   @Test
   void replacesATextFilterWithTheMatchingIdSet() {
     RecordingSearch search = answering(Optional.of(List.of(7L, 9L)));
@@ -242,6 +249,48 @@ class IndexedTextNarrowingTest {
   }
 
   @Test
+  void narrowsARelationshipScalarByTargetIdAndKeepsTheOriginalPredicate() {
+    RecordingSearch search = answering(Optional.of(List.of(11L, 12L)));
+    FilterExpression original = like("target.name", "confocal");
+
+    ResourceRequest result =
+        narrowBookings(request(original, RuntimeFieldSelection.empty()), search);
+
+    assertEquals(
+        new FilterExpression.And(
+            List.of(
+                new FilterExpression.Comparison(
+                    "target.value", Operator.IN, List.of(11L, 12L), false),
+                original)),
+        result.filter());
+    assertEquals(List.of("name"), search.asked);
+    assertEquals(Instrument.class, search.askedType);
+  }
+
+  @Test
+  void narrowsATargetRuntimeFieldByTargetId() {
+    RecordingSearch search = answering(Optional.of(List.of(11L)));
+    String hopped = "target." + SELECTOR;
+    FilterExpression original = like(hopped, "BSL");
+    RuntimeFieldSelection runtime =
+        new RuntimeFieldSelection(
+            Map.of(hopped, customField(RuntimeFieldValueType.TEXT)),
+            Set.of(),
+            Map.of(hopped, "target"));
+
+    ResourceRequest result = narrowBookings(request(original, runtime), search);
+
+    assertEquals(
+        new FilterExpression.And(
+            List.of(
+                new FilterExpression.Comparison("target.value", Operator.IN, List.of(11L), false),
+                original)),
+        result.filter());
+    assertEquals(List.of("rtFieldValue_customFields_SF104"), search.asked);
+    assertEquals(Instrument.class, search.askedType);
+  }
+
+  @Test
   void leavesAPolymorphicRelationshipAlone() {
     RecordingSearch search = answering(Optional.of(List.of(11L)));
     ResourceRequest original =
@@ -252,6 +301,22 @@ class IndexedTextNarrowingTest {
 
     assertSame(original, result);
     assertEquals(List.of(), search.asked);
+  }
+
+  @Test
+  void leavesANameThatIsNotARelationshipAlone() {
+    ResourceRequest original =
+        request(like("owner.name", "confocal"), RuntimeFieldSelection.empty());
+
+    assertSame(original, narrowBookings(original, answering(Optional.of(List.of(11L)))));
+  }
+
+  @Test
+  void leavesASecondHopAlone() {
+    ResourceRequest original =
+        request(like("target.owner.name", "confocal"), RuntimeFieldSelection.empty());
+
+    assertSame(original, narrowBookings(original, answering(Optional.of(List.of(11L)))));
   }
 
   private static CollectionDescription<Related> twoDestinationDescription() {
@@ -281,5 +346,35 @@ class IndexedTextNarrowingTest {
   private enum TargetKind {
     INSTRUMENT,
     SAMPLE
+  }
+
+  @Test
+  void leavesARelationshipScalarAloneWhenTheIndexAnswersWithTooManyIds() {
+    List<Long> tooMany = java.util.stream.LongStream.rangeClosed(1, 2001).boxed().toList();
+    RecordingSearch search = answering(Optional.of(tooMany));
+    ResourceRequest original =
+        request(like("target.name", "microscope"), RuntimeFieldSelection.empty());
+
+    assertSame(original, narrowBookings(original, search));
+    assertEquals(List.of("name"), search.asked);
+    assertEquals(List.of(2_000), search.capsAsked);
+  }
+
+  @Test
+  void keepsNarrowingATargetRuntimeFieldWithALargeIdSet() {
+    List<Long> many = java.util.stream.LongStream.rangeClosed(1, 2001).boxed().toList();
+    String hopped = "target." + SELECTOR;
+    FilterExpression original = like(hopped, "BSL");
+    RuntimeFieldSelection runtime =
+        new RuntimeFieldSelection(
+            Map.of(hopped, customField(RuntimeFieldValueType.TEXT)),
+            Set.of(),
+            Map.of(hopped, "target"));
+
+    ResourceRequest result =
+        narrowBookings(request(original, runtime), answering(Optional.of(many)));
+
+    FilterExpression.And and = (FilterExpression.And) result.filter();
+    assertEquals(2, and.children().size());
   }
 }

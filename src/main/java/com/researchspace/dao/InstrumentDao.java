@@ -13,6 +13,7 @@ import com.researchspace.model.inventory.InstrumentParentLocationSummary;
 import com.researchspace.model.inventory.InstrumentReadSummary;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /** For DAO operations specific to Inventory {@link Instrument} (not templates). */
@@ -48,11 +49,30 @@ public interface InstrumentDao extends InstrumentEntityDao<Instrument> {
   Map<Long, InstrumentParentLocationSummary> getReadableParentLocationSummaries(
       Set<Long> instrumentIds, User caller);
 
+  /**
+   * Returns one database-paginated page of immediate parent Containers that are both readable in
+   * Inventory and attached to an active, enabled Booking configuration readable by the caller.
+   */
+  ResourcePage<InstrumentParentLocationSummary> getBookingCatalogueLocations(
+      String query, int page, int limit, User caller, Set<String> readableRoleKeys);
+
   /** Returns readable active instrument scalars for relationship expansion. */
   Map<Long, InstrumentReadSummary> getReadableSummaries(Set<Long> instrumentIds, User user);
 
   /** Returns names for the requested instruments without applying current read permissions. */
   Map<Long, String> getNamesByIds(Set<Long> instrumentIds);
+
+  /** Returns only the safe scalar fields Booking may reveal, independent of Inventory sharing. */
+  Map<Long, InstrumentReadSummary> getBookingSummaries(Set<Long> instrumentIds);
+
+  /**
+   * Returns concrete Instruments for Booking's safe relationship renderer, independent of Inventory
+   * sharing. Callers must render them through Booking's allowlisted description.
+   */
+  Map<Long, Instrument> getBookingRelationshipTargets(Set<Long> instrumentIds);
+
+  /** Searches active concrete Instruments eligible for a new Booking configuration. */
+  List<Instrument> searchEligibleBookingTargets(String query, int limit, User subject);
 
   /**
    * Returns active Instrument identifiers stored directly in readable Containers whose database
@@ -60,6 +80,15 @@ public interface InstrumentDao extends InstrumentEntityDao<Instrument> {
    */
   Set<Long> findByReadableImmediateParentIds(
       Set<Long> containerIds, Set<Long> workbenchIds, User caller);
+
+  /** Locks and returns one concrete Instrument for a coordinated ownership mutation. */
+  Optional<Instrument> lockById(Long id);
+
+  /**
+   * Locks and checks the current group memberships that allow {@code subject} to transfer an
+   * instrument owned by {@code owner}. Call this only after locking the instrument.
+   */
+  boolean hasLockedTransferAuthority(User subject, User owner);
 
   /** Returns all instruments whose image or thumbnail is the given file property. */
   List<Instrument> getAllUsingImage(FileProperty fileProperty);

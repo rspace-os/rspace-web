@@ -1,0 +1,349 @@
+package com.researchspace.booking.api.v2;
+
+import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
+
+import com.researchspace.api.v2.auth.ApiV2Caller;
+import com.researchspace.api.v2.resource.ApiV2ErrorMapping;
+import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
+import com.researchspace.api.v2.resource.OpenApiOperationDocumentation;
+import com.researchspace.api.v2.resource.ResourceAccessSpec;
+import com.researchspace.api.v2.resource.ResourceDeleteOptions;
+import com.researchspace.api.v2.resource.ResourceDeleteResult;
+import com.researchspace.api.v2.resource.ResourceOperation;
+import com.researchspace.api.v2.resource.ResourceOperations;
+import com.researchspace.booking.config.BookingTimeConfig;
+import com.researchspace.booking.service.BookingConcurrentModificationException;
+import com.researchspace.booking.service.BookingConfigurationLifecycleException;
+import com.researchspace.booking.service.BookingConfigurationManager;
+import com.researchspace.booking.service.BookingConfigurationManager.Create;
+import com.researchspace.booking.service.BookingConfigurationManager.Patch;
+import com.researchspace.booking.service.BookingConfigurationProtectedResourceAccess;
+import com.researchspace.booking.service.BookingConfigurationTargetConflictException;
+import com.researchspace.booking.service.InvalidBookableTargetException;
+import com.researchspace.model.User;
+import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
+import com.researchspace.model.booking.BookableTargetReference;
+import com.researchspace.model.booking.BookableTargetType;
+import com.researchspace.model.booking.BookingConfiguration;
+import com.researchspace.model.booking.BookingConfigurationState;
+import com.researchspace.model.booking.BookingSchedulingSettings;
+import com.researchspace.model.booking.ResolvedBookableTarget;
+import com.researchspace.model.collection.CollectionDescription;
+import com.researchspace.model.collection.ParsedDocument;
+import com.researchspace.model.collection.RelationshipTarget;
+import com.researchspace.model.collection.ResolvedResourceReference;
+import com.researchspace.model.collection.ResourcePage;
+import com.researchspace.model.collection.ResourceReference;
+import com.researchspace.model.collection.ResourceRequest;
+import com.researchspace.model.inventory.InventoryRecord;
+import com.researchspace.service.FeatureFlagManager;
+import java.time.Clock;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import org.apache.shiro.authz.AuthorizationException;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpStatus;
+
+/** Adapts REST v2 booking-configuration documents to the shared booking manager. */
+@Configuration(proxyBeanMethods = false)
+public final class BookingConfigurationResourceOperations
+    implements ResourceOperations<BookingConfiguration, Long> {
+
+  private final BookingConfigurationManager manager;
+  private final BookingConfigurationProtectedResourceAccess protectedResourceAccess;
+  private final FeatureFlagManager featureFlags;
+  private final Clock institutionClock;
+  private final CollectionDescription<BookingConfiguration> description;
+
+  public BookingConfigurationResourceOperations(
+      BookingConfigurationManager manager,
+      BookingConfigurationProtectedResourceAccess protectedResourceAccess,
+      FeatureFlagManager featureFlags,
+      @Qualifier(BookingTimeConfig.INSTITUTION_CLOCK) Clock institutionClock,
+      @Qualifier(
+              com.researchspace.booking.config.BookingResourceAccessConfiguration
+                  .BOOKING_CONFIGURATION_DESCRIPTION)
+          CollectionDescription<BookingConfiguration> description) {
+    this.manager = manager;
+    this.protectedResourceAccess = protectedResourceAccess;
+    this.featureFlags = featureFlags;
+    this.institutionClock = institutionClock;
+    this.description = description;
+  }
+
+  @Bean
+  ApiV2ResourceSpec<BookingConfiguration, Long> bookingConfigurationApiV2Resource() {
+    List<ApiV2ErrorMapping> writeErrors =
+        List.of(
+            ApiV2ErrorMapping.of(
+                InvalidBookableTargetException.class,
+                HttpStatus.BAD_REQUEST,
+                "errors.api.v2.bookingConfiguration.target.invalid",
+                "The target is not an eligible instrument."),
+            ApiV2ErrorMapping.of(
+                BookingConfigurationTargetConflictException.class,
+                HttpStatus.CONFLICT,
+                "errors.api.v2.bookingConfiguration.target.conflict",
+                "The instrument already has a booking configuration."));
+    List<ApiV2ErrorMapping> updateErrors =
+        java.util.stream.Stream.concat(
+                writeErrors.stream(),
+                java.util.stream.Stream.of(
+                    ApiV2ErrorMapping.of(
+                        BookingConcurrentModificationException.class,
+                        HttpStatus.PRECONDITION_FAILED,
+                        "errors.api.v2.bookingConfiguration.concurrentModification",
+                        "The configuration changed while it was being edited."),
+                    ApiV2ErrorMapping.of(
+                        BookingConfigurationLifecycleException.class,
+                        HttpStatus.CONFLICT,
+                        "errors.api.v2.bookingConfiguration.lifecycleConflict",
+                        "Restore an archived configuration before changing it.")))
+            .toList();
+    return new ApiV2ResourceSpec<>(
+        description,
+        this,
+        Long::valueOf,
+        "errors.api.v2.bookingConfiguration.create",
+        "errors.api.v2.bookingConfiguration.patch",
+        EnumSet.allOf(ResourceOperation.class),
+        Map.of(
+            ResourceOperation.CREATE,
+            OpenApiOperationDocumentation.builder()
+                .description(
+                    "Creates booking configuration for an instrument. Each instrument may have "
+                        + "only one booking configuration.")
+                .requestExample(
+                    Map.of(
+                        "enabled",
+                        true,
+                        "slotGranularityMinutes",
+                        5,
+                        "openingStart",
+                        "08:00",
+                        "openingEnd",
+                        "18:00",
+                        "bufferBeforeMinutes",
+                        15,
+                        "bufferAfterMinutes",
+                        15,
+                        "maxBookingDurationMinutes",
+                        120,
+                        "allowDoubleBooking",
+                        false,
+                        "target",
+                        Map.of("relationTo", "booking-instruments", "value", 123)))
+                .build()),
+        Map.of(
+            ResourceOperation.CREATE,
+            writeErrors,
+            ResourceOperation.BULK_CREATE,
+            writeErrors,
+            ResourceOperation.UPDATE,
+            updateErrors,
+            ResourceOperation.DELETE,
+            updateErrors,
+            ResourceOperation.BULK_UPDATE,
+            writeErrors),
+        ApiV2BookingConfigurationResource.MUTATION_LIMITS,
+        List.of(),
+        Optional.of(
+            new ResourceAccessSpec<>(
+                protectedResourceAccess,
+                com.researchspace.model.booking.BookingConfigurationCapabilities.class,
+                com.researchspace.model.booking.BookingOwnerHealth.class)));
+  }
+
+  @Override
+  public ResourcePage<BookingConfiguration> find(ResourceRequest request, User actor) {
+    if (!enabled(actor)) {
+      return new ResourcePage<>(List.of(), 0);
+    }
+    return manager.getConfigurations(request, actor);
+  }
+
+  @Override
+  public long count(ResourceRequest request, User actor) {
+    if (!enabled(actor)) {
+      return 0;
+    }
+    return manager.countConfigurations(request, actor);
+  }
+
+  @Override
+  public Optional<BookingConfiguration> findById(Long id, User actor) {
+    if (!enabled(actor)) {
+      return Optional.empty();
+    }
+    return manager.getConfiguration(id, actor);
+  }
+
+  @Override
+  public Set<String> relatedAuditFields() {
+    return Set.of("bookingConfigurationId", "start", "end", "kind", "state", "purpose", "deleted");
+  }
+
+  @Override
+  public boolean auditBypassesActorDirectory() {
+    return true;
+  }
+
+  @Override
+  public BookingConfiguration create(ParsedDocument document, ApiV2Caller caller) {
+    if (!enabled(caller.subject())) {
+      throw new AuthorizationException();
+    }
+    return manager.createConfiguration(create(document), caller.subject(), caller.actor());
+  }
+
+  @Override
+  public List<BookingConfiguration> createMany(List<ParsedDocument> documents, ApiV2Caller caller) {
+    if (!enabled(caller.subject())) {
+      throw new AuthorizationException();
+    }
+    return manager.createConfigurations(
+        documents.stream().map(this::create).toList(), caller.subject(), caller.actor());
+  }
+
+  @Override
+  public Optional<BookingConfiguration> update(
+      Long id, ParsedDocument document, ApiV2Caller caller) {
+    if (!enabled(caller.subject())) {
+      throw new AuthorizationException("errors.api.v2.forbidden");
+    }
+    return manager.updateConfiguration(id, patch(document), caller.subject(), caller.actor());
+  }
+
+  @Override
+  public Optional<BookingConfiguration> update(
+      Long id, ParsedDocument document, Long expectedVersion, ApiV2Caller caller) {
+    if (!enabled(caller.subject())) {
+      throw new AuthorizationException();
+    }
+    return manager.updateConfiguration(
+        id,
+        patch(document),
+        java.util.Objects.requireNonNull(expectedVersion, "Expected configuration version"),
+        caller.subject(),
+        caller.actor());
+  }
+
+  @Override
+  public Optional<String> versionField() {
+    return Optional.of("configurationVersion");
+  }
+
+  @Override
+  public Optional<String> ifMatchRequiredCode() {
+    return Optional.of("errors.api.v2.bookingConfiguration.ifMatchRequired");
+  }
+
+  @Override
+  public boolean deleteRequiresIfMatch() {
+    return true;
+  }
+
+  @Override
+  public boolean deleteIsSoft() {
+    return true;
+  }
+
+  @Override
+  public boolean supportsPermanentDelete() {
+    return true;
+  }
+
+  @Override
+  public List<BookingConfiguration> updateMany(
+      ResourceRequest request, ParsedDocument document, ApiV2Caller caller) {
+    if (!enabled(caller.subject())) {
+      throw new AuthorizationException("errors.api.v2.forbidden");
+    }
+    return manager.updateConfigurations(request, patch(document), caller.subject(), caller.actor());
+  }
+
+  @Override
+  public Optional<ResourceDeleteResult<BookingConfiguration>> delete(
+      Long id, ResourceDeleteOptions options, ApiV2Caller caller) {
+    if (!enabled(caller.subject())) {
+      throw new AuthorizationException("errors.api.v2.forbidden");
+    }
+    long expectedVersion =
+        java.util.Objects.requireNonNull(
+            options.expectedVersion(), "Expected configuration version");
+    if (options.permanent()) {
+      if (caller.isDelegated()) {
+        throw new AuthorizationException("errors.api.v2.forbidden");
+      }
+      return manager
+          .permanentlyDeleteConfiguration(id, expectedVersion, caller.subject(), caller.actor())
+          .map(ignored -> ResourceDeleteResult.permanentlyDeleted());
+    }
+    return manager
+        .archiveConfiguration(id, expectedVersion, caller.subject(), caller.actor())
+        .map(ResourceDeleteResult::retained);
+  }
+
+  @Override
+  public List<BookingConfiguration> deleteMany(ResourceRequest request, ApiV2Caller caller) {
+    if (!enabled(caller.subject())) {
+      throw new AuthorizationException("errors.api.v2.forbidden");
+    }
+    return manager.archiveConfigurations(request, caller.subject(), caller.actor());
+  }
+
+  private boolean enabled(User actor) {
+    return featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, actor);
+  }
+
+  private static Patch patch(ParsedDocument document) {
+    return new Patch(
+        value(document, "enabled", Boolean.class),
+        null,
+        schedulingPatch(document),
+        value(document, "state", BookingConfigurationState.class));
+  }
+
+  private Create create(ParsedDocument document) {
+    return new Create(
+        (boolean) document.values().getOrDefault("enabled", true),
+        institutionClock.getZone().getId(),
+        target(document),
+        schedulingPatch(document));
+  }
+
+  private static BookingSchedulingSettings.Patch schedulingPatch(ParsedDocument document) {
+    return new BookingSchedulingSettings.Patch(
+        value(document, "slotGranularityMinutes", Long.class),
+        value(document, "openingStart", String.class),
+        value(document, "openingEnd", String.class),
+        value(document, "bufferBeforeMinutes", Long.class),
+        value(document, "bufferAfterMinutes", Long.class),
+        value(document, "maxBookingDurationMinutes", Long.class),
+        value(document, "allowDoubleBooking", Boolean.class));
+  }
+
+  private ResolvedBookableTarget target(ParsedDocument document) {
+    Object value = document.values().get("target");
+    if (value == null) {
+      return null;
+    }
+    ResolvedResourceReference<?, ?> resolved = ResolvedResourceReference.class.cast(value);
+    ResourceReference<?, ?> reference = resolved.reference();
+    BookableTargetType type = BookableTargetType.class.cast(reference.kind());
+    Long id = Long.class.cast(reference.id());
+    RelationshipTarget<?> metadata = description.requireRelationship("target").targetForKind(type);
+    Object selectedEntity = resolved.entityAs(metadata.entityType());
+    InventoryRecord entity = InventoryRecord.class.cast(selectedEntity);
+    return new ResolvedBookableTarget(new BookableTargetReference(type, id), entity);
+  }
+
+  private static <T> T value(ParsedDocument document, String field, Class<T> type) {
+    return type.cast(document.values().get(field));
+  }
+}

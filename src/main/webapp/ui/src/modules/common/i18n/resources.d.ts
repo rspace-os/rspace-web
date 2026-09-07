@@ -5699,6 +5699,39 @@ export default interface Resources {
       "noResults": "Your search returned no results"
     }
   },
+  "server.booking": {
+    "bookingFixtures": {
+      "containers": {
+        "cryoEmSuite": "Cryo-EM suite",
+        "deletedInstrumentRoom": "Deleted instrument room",
+        "imagingLab": "Imaging lab",
+        "longCellAnalysisFacility": "Cell analysis facility with a deliberately long location name",
+        "restrictedInstrumentRoom": "Restricted instrument room"
+      },
+      "description": "Docker development booking fixture",
+      "instruments": {
+        "bookingCardArchived": "Booking card: Open (archived)",
+        "bookingCardBook": "Booking card: Book",
+        "bookingCardDisabled": "Booking card: Open (disabled)",
+        "bookingCardSetup": "Booking card: Set up booking",
+        "confocal": "Confocal microscope",
+        "deletedLocationSequencer": "Deleted-location sequencer",
+        "electronMicroscope": "Electron microscope",
+        "flowCytometer": "Flow cytometer",
+        "massSpectrometer": "Mass spectrometer",
+        "noParentCentrifuge": "No-parent centrifuge",
+        "restrictedLocationPlateReader": "Restricted-location plate reader"
+      },
+      "purposes": {
+        "calibrationRun": "Calibration run",
+        "cellImaging": "Cell imaging",
+        "cellSorting": "Cell sorting",
+        "overnightAnalysis": "Overnight analysis",
+        "proteomicsRun": "Proteomics run",
+        "ultrastructureImaging": "Ultrastructure imaging"
+      }
+    }
+  },
   "server.core": {
     "api": {
       "errors": {
@@ -5770,6 +5803,64 @@ export default interface Resources {
             "unavailable": "The audit trail is temporarily unavailable. Try again later."
           },
           "authenticationRequired": "Authentication is required.",
+          "booking": {
+            "create": "The booking is invalid.",
+            "duration": "Bookings may not exceed 366 days.",
+            "granularity": "Start and end must align with this bookable item's slot granularity.",
+            "maximumDuration": "The booking exceeds this bookable item's maximum duration.",
+            "openingHours": "The booking must remain within this bookable item's opening hours.",
+            "overlap": "The selected time overlaps another booking.",
+            "patch": "The booking patch is invalid.",
+            "purpose": {
+              "length": "Purpose must not exceed 1,000 characters."
+            },
+            "state": {
+              "transition": "The requested booking state transition is not permitted."
+            },
+            "target": {
+              "unavailable": "The selected target is not available for booking."
+            },
+            "window": "End time must be after start time."
+          },
+          "bookingConfiguration": {
+            "buffer": {
+              "invalid": "Booking buffers must be between 0 and 10,080 minutes."
+            },
+            "concurrentModification": "The booking configuration changed. Reload it and try again.",
+            "create": "The booking configuration is invalid.",
+            "defaultSharing": {
+              "invalid": "Choose at least one available user or group when sharing with selected people, and do not include selected people for other sharing options."
+            },
+            "granularity": {
+              "invalid": "Slot granularity must be 1, 5, 10, or 15 minutes."
+            },
+            "ifMatchRequired": "The current booking configuration version is required.",
+            "lifecycleConflict": "Restore the archived booking configuration before changing it.",
+            "maximumDuration": {
+              "invalid": "Maximum booking duration must be 0 or a multiple of the slot granularity, up to 527,040 minutes."
+            },
+            "openingHours": {
+              "invalid": "Opening hours must use HH:mm with start before end, or 00:00–24:00 for full-day availability."
+            },
+            "patch": "The booking configuration patch is invalid.",
+            "stale": "The booking settings changed after this page was loaded. Reload and try again.",
+            "target": {
+              "conflict": "The selected target already has a booking configuration.",
+              "invalid": "The selected target is not available for booking."
+            },
+            "timeZone": {
+              "invalid": "The time zone must be a valid IANA time zone.",
+              "required": "A time zone is required."
+            }
+          },
+          "bookingDisplayPreferences": {
+            "availabilityWindow": {
+              "invalid": "Availability window times must use HH:mm with start before end; the end may be 24:00."
+            },
+            "timeZone": {
+              "invalid": "Choose Browser, Institution, or a valid custom IANA time zone."
+            }
+          },
           "bulk": {
             "filter": {
               "required": "A where filter is required for bulk operations."
