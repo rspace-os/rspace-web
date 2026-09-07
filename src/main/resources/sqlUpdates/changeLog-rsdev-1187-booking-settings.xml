@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.17.xsd">
+
+  <changeSet id="rsdev-1187-booking-settings-columns" author="researchspace" context="run">
+    <comment>Add scheduling settings to each existing booking configuration</comment>
+    <addColumn tableName="BookingConfiguration">
+      <column name="slotGranularityMinutes" type="BIGINT" defaultValueNumeric="5"/>
+      <column name="openingStart" type="VARCHAR(5)" defaultValue="00:00"/>
+      <column name="openingEnd" type="VARCHAR(5)" defaultValue="24:00"/>
+      <column name="bufferBeforeMinutes" type="BIGINT" defaultValueNumeric="0"/>
+      <column name="bufferAfterMinutes" type="BIGINT" defaultValueNumeric="0"/>
+      <column name="allowDoubleBooking" type="BIT(1)" defaultValueBoolean="false"/>
+    </addColumn>
+    <update tableName="BookingConfiguration">
+      <column name="slotGranularityMinutes" valueNumeric="5"/>
+      <column name="openingStart" value="00:00"/>
+      <column name="openingEnd" value="24:00"/>
+      <column name="bufferBeforeMinutes" valueNumeric="0"/>
+      <column name="bufferAfterMinutes" valueNumeric="0"/>
+      <column name="allowDoubleBooking" valueBoolean="false"/>
+    </update>
+    <addNotNullConstraint tableName="BookingConfiguration" columnName="slotGranularityMinutes" columnDataType="BIGINT"/>
+    <addNotNullConstraint tableName="BookingConfiguration" columnName="openingStart" columnDataType="VARCHAR(5)"/>
+    <addNotNullConstraint tableName="BookingConfiguration" columnName="openingEnd" columnDataType="VARCHAR(5)"/>
+    <addNotNullConstraint tableName="BookingConfiguration" columnName="bufferBeforeMinutes" columnDataType="BIGINT"/>
+    <addNotNullConstraint tableName="BookingConfiguration" columnName="bufferAfterMinutes" columnDataType="BIGINT"/>
+    <addNotNullConstraint tableName="BookingConfiguration" columnName="allowDoubleBooking" columnDataType="BIT(1)"/>
+    <addColumn tableName="BookingConfiguration_AUD">
+      <column name="slotGranularityMinutes" type="BIGINT"/>
+      <column name="openingStart" type="VARCHAR(5)"/>
+      <column name="openingEnd" type="VARCHAR(5)"/>
+      <column name="bufferBeforeMinutes" type="BIGINT"/>
+      <column name="bufferAfterMinutes" type="BIGINT"/>
+      <column name="allowDoubleBooking" type="BIT(1)"/>
+    </addColumn>
+  </changeSet>
+
+  <changeSet id="rsdev-1187-booking-configuration-defaults" author="researchspace" context="run">
+    <comment>Create the singleton creation-time booking defaults and Envers history</comment>
+    <createTable tableName="BookingConfigurationDefaults">
+      <column name="id" type="BIGINT"><constraints primaryKey="true" nullable="false"/></column>
+      <column name="slotGranularityMinutes" type="BIGINT"><constraints nullable="false"/></column>
+      <column name="openingStart" type="VARCHAR(5)"><constraints nullable="false"/></column>
+      <column name="openingEnd" type="VARCHAR(5)"><constraints nullable="false"/></column>
+      <column name="bufferBeforeMinutes" type="BIGINT"><constraints nullable="false"/></column>
+      <column name="bufferAfterMinutes" type="BIGINT"><constraints nullable="false"/></column>
+      <column name="allowDoubleBooking" type="BIT(1)"><constraints nullable="false"/></column>
+      <column name="configurationVersion" type="BIGINT" defaultValueNumeric="0"><constraints nullable="false"/></column>
+    </createTable>
+    <insert tableName="BookingConfigurationDefaults">
+      <column name="id" valueNumeric="1"/>
+      <column name="slotGranularityMinutes" valueNumeric="5"/>
+      <column name="openingStart" value="00:00"/>
+      <column name="openingEnd" value="24:00"/>
+      <column name="bufferBeforeMinutes" valueNumeric="0"/>
+      <column name="bufferAfterMinutes" valueNumeric="0"/>
+      <column name="allowDoubleBooking" valueBoolean="false"/>
+      <column name="configurationVersion" valueNumeric="0"/>
+    </insert>
+    <createTable tableName="BookingConfigurationDefaults_AUD">
+      <column name="id" type="BIGINT"><constraints nullable="false"/></column>
+      <column name="REV" type="INT"><constraints nullable="false"/></column>
+      <column name="REVTYPE" type="TINYINT"/>
+      <column name="slotGranularityMinutes" type="BIGINT"/>
+      <column name="openingStart" type="VARCHAR(5)"/>
+      <column name="openingEnd" type="VARCHAR(5)"/>
+      <column name="bufferBeforeMinutes" type="BIGINT"/>
+      <column name="bufferAfterMinutes" type="BIGINT"/>
+      <column name="allowDoubleBooking" type="BIT(1)"/>
+      <column name="configurationVersion" type="BIGINT"/>
+    </createTable>
+    <addPrimaryKey tableName="BookingConfigurationDefaults_AUD" columnNames="id, REV" constraintName="PK_BookingConfigurationDefaults_AUD"/>
+    <addForeignKeyConstraint constraintName="FK_BookingConfigurationDefaults_AUD_REV"
+        baseTableName="BookingConfigurationDefaults_AUD" baseColumnNames="REV"
+        referencedTableName="REVINFO" referencedColumnNames="REV"/>
+    <sql>
+      ALTER TABLE BookingConfigurationDefaults ENGINE=InnoDB,
+      CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+      ALTER TABLE BookingConfigurationDefaults_AUD ENGINE=InnoDB,
+      CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+    </sql>
+  </changeSet>
+
+  <changeSet id="rsdev-1187-booking-maximum-duration" author="researchspace" context="run">
+    <comment>Add maximum booking duration to item settings and creation-time defaults</comment>
+    <addColumn tableName="BookingConfiguration">
+      <column name="maxBookingDurationMinutes" type="BIGINT" defaultValueNumeric="0"/>
+    </addColumn>
+    <update tableName="BookingConfiguration">
+      <column name="maxBookingDurationMinutes" valueNumeric="0"/>
+    </update>
+    <addNotNullConstraint tableName="BookingConfiguration" columnName="maxBookingDurationMinutes" columnDataType="BIGINT"/>
+    <addColumn tableName="BookingConfiguration_AUD">
+      <column name="maxBookingDurationMinutes" type="BIGINT"/>
+    </addColumn>
+    <addColumn tableName="BookingConfigurationDefaults">
+      <column name="maxBookingDurationMinutes" type="BIGINT" defaultValueNumeric="0"/>
+    </addColumn>
+    <update tableName="BookingConfigurationDefaults">
+      <column name="maxBookingDurationMinutes" valueNumeric="0"/>
+    </update>
+    <addNotNullConstraint tableName="BookingConfigurationDefaults" columnName="maxBookingDurationMinutes" columnDataType="BIGINT"/>
+    <addColumn tableName="BookingConfigurationDefaults_AUD">
+      <column name="maxBookingDurationMinutes" type="BIGINT"/>
+    </addColumn>
+  </changeSet>
+</databaseChangeLog>
