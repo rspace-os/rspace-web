@@ -78,11 +78,10 @@ public class MaintenanceManagerTest extends SpringTransactionalTest {
 
   @Test
   public void onlySysadminCanSaveScheduledMaintenance() {
+    ScheduledMaintenance maintenance = new ScheduledMaintenance(null, null);
     assertThrows(
         AuthorizationException.class,
-        () ->
-            maintenanceManager.saveScheduledMaintenance(
-                new ScheduledMaintenance(null, null), regularUser));
+        () -> maintenanceManager.saveScheduledMaintenance(maintenance, regularUser));
   }
 
   @Test

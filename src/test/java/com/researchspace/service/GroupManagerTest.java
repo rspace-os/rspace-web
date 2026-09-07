@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.eq;
@@ -101,14 +102,12 @@ public class GroupManagerTest extends SpringTransactionalTest {
 
     User sysadmin = logoutAndLoginAsSysAdmin();
     // can't remove only sysadmin
-    assertExceptionThrown(
-        () ->
-            grpMgr.setRoleForUser(
-                group.getId(),
-                testgroup.getPi().getId(),
-                RoleInGroup.RS_LAB_ADMIN.name(),
-                sysadmin),
-        IllegalStateException.class);
+    Long groupId = group.getId();
+    Long piId = testgroup.getPi().getId();
+    String labAdminRole = RoleInGroup.RS_LAB_ADMIN.name();
+    assertThrows(
+        IllegalStateException.class,
+        () -> grpMgr.setRoleForUser(groupId, piId, labAdminRole, sysadmin));
 
     User pi2 = createAndSaveUserIfNotExists("pi2", Constants.PI_ROLE);
     User member = createAndSaveUserIfNotExists("member");
@@ -702,11 +701,11 @@ public class GroupManagerTest extends SpringTransactionalTest {
     logoutAndLoginAs(otherGrpPi);
     final Group collabGrp = createCollabGroupBetweenGroups(otherGroup, grp);
     grpMgr.addUserToGroup(labAdmin.getUsername(), grp.getId(), RoleInGroup.RS_LAB_ADMIN);
-    assertExceptionThrown(
-        () ->
-            grpMgr.authorizeLabAdminToViewAll(
-                labAdmin.getId(), otherGrpPi, collabGrp.getId(), true),
-        UnsupportedOperationException.class);
+    Long labAdminId = labAdmin.getId();
+    Long collabGroupId = collabGrp.getId();
+    assertThrows(
+        UnsupportedOperationException.class,
+        () -> grpMgr.authorizeLabAdminToViewAll(labAdminId, otherGrpPi, collabGroupId, true));
 
     // and delete the labgroup - perms should be removed
     User sysadmin = logoutAndLoginAsSysAdmin();
@@ -948,14 +947,20 @@ public class GroupManagerTest extends SpringTransactionalTest {
 
   private void assertLabAdminCantAuthoriseLabAdmin(final User labadmin, final Group grp)
       throws Exception {
-    assertAuthorisationExceptionThrown(
-        () -> grpMgr.authorizeLabAdminToViewAll(labadmin.getId(), labadmin, grp.getId(), true));
+    Long labAdminId = labadmin.getId();
+    Long groupId = grp.getId();
+    assertThrows(
+        AuthorizationException.class,
+        () -> grpMgr.authorizeLabAdminToViewAll(labAdminId, labadmin, groupId, true));
   }
 
   private void assertUserCantAuthoriseLabAdmin(
       final User labadmin, final User user, final Group grp) throws Exception {
-    assertAuthorisationExceptionThrown(
-        () -> grpMgr.authorizeLabAdminToViewAll(labadmin.getId(), user, grp.getId(), true));
+    Long labAdminId = labadmin.getId();
+    Long groupId = grp.getId();
+    assertThrows(
+        AuthorizationException.class,
+        () -> grpMgr.authorizeLabAdminToViewAll(labAdminId, user, groupId, true));
   }
 
   private void saveSystemPropertyValue(
@@ -980,28 +985,28 @@ public class GroupManagerTest extends SpringTransactionalTest {
     User toMakePi = testgroup.getUserByPrefix("u1");
     User sysadmin = logoutAndLoginAsSysAdmin();
 
-    assertExceptionThrown(
-        () -> grpMgr.setNewPi(grp.getId(), toMakePi.getId(), sysadmin),
-        IllegalArgumentException.class);
+    Long groupId = grp.getId();
+    Long newPiId = toMakePi.getId();
+    assertThrows(IllegalArgumentException.class, () -> grpMgr.setNewPi(groupId, newPiId, sysadmin));
 
     // must be in group
     User piOutWithGroup = createAndSaveAPi();
-    assertExceptionThrown(
-        () -> grpMgr.setNewPi(grp.getId(), piOutWithGroup.getId(), sysadmin),
-        IllegalArgumentException.class);
+    Long outsidePiId = piOutWithGroup.getId();
+    assertThrows(
+        IllegalArgumentException.class, () -> grpMgr.setNewPi(groupId, outsidePiId, sysadmin));
 
     // new PI can't be the current PI user
-    assertExceptionThrown(
-        () -> grpMgr.setNewPi(grp.getId(), toMakePi.getId(), sysadmin),
-        IllegalArgumentException.class);
+    assertThrows(IllegalArgumentException.class, () -> grpMgr.setNewPi(groupId, newPiId, sysadmin));
     // collab group rejected. this use case is only for LabGroups
     TestGroup tg2 = createTestGroup(1);
     logoutAndLoginAs(tg2.getPi());
     Group collabGroup = createCollabGroupBetweenGroups(tg2.getGroup(), grp);
     logoutAndLoginAsSysAdmin();
-    assertExceptionThrown(
-        () -> grpMgr.setNewPi(collabGroup.getId(), tg2.getUserByPrefix("u1").getId(), sysadmin),
-        IllegalArgumentException.class);
+    Long collabGroupId = collabGroup.getId();
+    Long collabMemberId = tg2.getUserByPrefix("u1").getId();
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> grpMgr.setNewPi(collabGroupId, collabMemberId, sysadmin));
     // TODO new pi has group permissions; old pi has lost them
     // should oonly be able to set RIG pi if user has global PI role
   }

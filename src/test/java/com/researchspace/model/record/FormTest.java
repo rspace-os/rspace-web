@@ -285,14 +285,16 @@ public class FormTest {
   public void testReorderRequiresSameNumberOfFields() {
     setUpFormWith3Fields();
     // too few args
-    assertThrows(IllegalArgumentException.class, () -> form.reorderFields(toList(1L)));
+    List<Long> fieldIds = toList(1L);
+    assertThrows(IllegalArgumentException.class, () -> form.reorderFields(fieldIds));
   }
 
   @Test
   public void testReorderRequiresSameFieldIds() {
     setUpFormWith3Fields();
     // 4L is not in form
-    assertThrows(IllegalArgumentException.class, () -> form.reorderFields(toList(1L, 2L, 4L)));
+    List<Long> fieldIds = toList(1L, 2L, 4L);
+    assertThrows(IllegalArgumentException.class, () -> form.reorderFields(fieldIds));
   }
 
   @Test
@@ -300,9 +302,8 @@ public class FormTest {
     setUpFormWith3Fields();
     form.getFieldForms().get(0).setDeleted(true);
     // one is now delted
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> form.reorderFields(TransformerUtils.toList(1L, 2L, 3L)));
+    List<Long> fieldIds = TransformerUtils.toList(1L, 2L, 3L);
+    assertThrows(IllegalArgumentException.class, () -> form.reorderFields(fieldIds));
   }
 
   private void setUpFormWith3Fields() {

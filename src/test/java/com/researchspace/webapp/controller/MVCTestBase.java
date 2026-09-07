@@ -159,16 +159,6 @@ public abstract class MVCTestBase extends RealTransactionSpringTestBase {
   }
 
   /**
-   * Assert exception of a particular tupe is thrown
-   *
-   * @param result
-   * @param clazz
-   */
-  protected void assertException(MvcResult result, Class<? extends Exception> clazz) {
-    mvcUtils.assertException(result, clazz);
-  }
-
-  /**
    * Given a JSON MvcResult containing AjaxReturnObject, will attempt to parse its <code>data</code>
    * property into a Java object, using Jackson's default {@link ObjectMapper}
    *

@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.api.v1.model.ApiContainer;
@@ -21,6 +22,7 @@ import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import java.util.List;
+import org.hibernate.LazyInitializationException;
 import org.junit.jupiter.api.Test;
 
 public class SamplesApiManagerIT extends RealTransactionSpringTestBase {
@@ -49,8 +51,8 @@ public class SamplesApiManagerIT extends RealTransactionSpringTestBase {
     assertEquals(1, dbSubSample.getParentContainer().getParentContainer().getContentCount());
 
     // but shouldn't be able to access parent's locations at this point, that's lazy-initialized
-    assertLazyInitializationExceptionThrown(
-        () -> dbSubSample.getParentContainer().getLocations().size());
+    var parentLocations = dbSubSample.getParentContainer().getLocations();
+    assertThrows(LazyInitializationException.class, () -> parentLocations.size());
 
     // verify subsample can be mapped to ApiSubSample without extra db queries
     ApiSubSampleInfo infoWithParents = new ApiSubSampleInfo(dbSubSample);

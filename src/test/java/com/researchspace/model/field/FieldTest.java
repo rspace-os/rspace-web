@@ -1,11 +1,11 @@
 package com.researchspace.model.field;
 
-import static com.researchspace.core.testutil.CoreTestUtils.assertIllegalArgumentException;
 import static com.researchspace.model.record.TestFactory.createEcatAudio;
 import static com.researchspace.model.record.TestFactory.createEcatImage;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.EcatAudio;
@@ -147,7 +147,7 @@ public class FieldTest {
     Field f1 = new FieldTSS(ft1);
     assertTrue(f1.isValidating());
     assertFalse(f1.validate(BAD_INPUT));
-    assertIllegalArgumentException(() -> f1.setFieldData(BAD_INPUT));
+    assertThrows(IllegalArgumentException.class, () -> f1.setFieldData(BAD_INPUT));
   }
 
   @Test

@@ -1,6 +1,5 @@
 package com.researchspace.webapp.controller;
 
-import static com.researchspace.testutils.RSpaceTestUtils.assertAuthExceptionThrown;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -54,11 +53,10 @@ public class NfsSysAdminControllerTest {
   @Test
   public void testGetFileSystemsViewOnlyForSysadmin() throws Exception {
     assertNotNull(nfsSystemCtrller.getFileSystemsView(new ExtendedModelMap()));
-    assertAuthExceptionThrown(
-        () -> {
-          when(userMgr.getAuthenticatedUserInSession()).thenReturn(otherUser);
-          nfsSystemCtrller.getFileSystemsView(new ExtendedModelMap());
-        });
+    when(userMgr.getAuthenticatedUserInSession()).thenReturn(otherUser);
+    ExtendedModelMap model = new ExtendedModelMap();
+
+    assertThrows(AuthorizationException.class, () -> nfsSystemCtrller.getFileSystemsView(model));
   }
 
   @Test
@@ -69,13 +67,10 @@ public class NfsSysAdminControllerTest {
 
   @Test
   public void getFileSystemsListFailsForNonSysadmin() throws Exception {
-    assertThrows(
-        AuthorizationException.class,
-        () -> {
-          when(userMgr.getAuthenticatedUserInSession()).thenReturn(otherUser);
-          nfsSystemCtrller.getFileSystemsList();
-          verify(netFilesMgr, never()).getFileSystems();
-        });
+    when(userMgr.getAuthenticatedUserInSession()).thenReturn(otherUser);
+
+    assertThrows(AuthorizationException.class, () -> nfsSystemCtrller.getFileSystemsList());
+    verify(netFilesMgr, never()).getFileSystems();
   }
 
   @Test
@@ -159,13 +154,10 @@ public class NfsSysAdminControllerTest {
 
   @Test
   public void saveFileSystemsListFailsForNonSysadmin() throws Exception {
-    assertThrows(
-        AuthorizationException.class,
-        () -> {
-          when(userMgr.getAuthenticatedUserInSession()).thenReturn(otherUser);
-          nfsSystemCtrller.saveFileSystem(nfs);
-          verify(netFilesMgr, never()).saveNfsFileSystem(nfs);
-        });
+    when(userMgr.getAuthenticatedUserInSession()).thenReturn(otherUser);
+
+    assertThrows(AuthorizationException.class, () -> nfsSystemCtrller.saveFileSystem(nfs));
+    verify(netFilesMgr, never()).saveNfsFileSystem(nfs);
   }
 
   @Test
@@ -179,12 +171,9 @@ public class NfsSysAdminControllerTest {
 
   @Test
   public void deleteFileSystemFailsForNonSysadmin() throws Exception {
-    assertThrows(
-        AuthorizationException.class,
-        () -> {
-          when(userMgr.getAuthenticatedUserInSession()).thenReturn(otherUser);
-          nfsSystemCtrller.saveFileSystem(nfs);
-          verify(netFilesMgr, never()).deleteNfsFileSystem(Mockito.anyLong());
-        });
+    when(userMgr.getAuthenticatedUserInSession()).thenReturn(otherUser);
+
+    assertThrows(AuthorizationException.class, () -> nfsSystemCtrller.deleteFileSystem(12L));
+    verify(netFilesMgr, never()).deleteNfsFileSystem(Mockito.anyLong());
   }
 }
