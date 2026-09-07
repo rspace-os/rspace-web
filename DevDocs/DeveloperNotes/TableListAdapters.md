@@ -8,6 +8,13 @@ different wire rules.
 Read the [REST API v2 collection guide](./RestApiV2Collections.md) before you add a backend
 collection.
 
+If a page owns table filters, pagination, and extra controls in one route search state,
+pass `onReset` to `TableList`. That callback replaces the default per-feature resets,
+including `filterButtons.onReset`; it must reset the complete view in one update.
+For example, the booking catalogue clears its date, availability, target, search,
+and page together while retaining the selected page size. Independent state owners
+can omit the callback and keep the built-in reset behavior.
+
 ## Design summary
 
 The module has one endpoint interface:

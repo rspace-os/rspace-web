@@ -355,6 +355,14 @@ _Avoid_: runtime-failing flag, startup blocker
 
 ## Booking
 
+- **Available now** — the current instant falls in an available segment within
+  today's preferred display interval. Booking and blockout intervals are
+  half-open, so an occupied interval excludes its end.
+- **Free later today** — the bookable item is not available now, but has a
+  positive-duration available segment later in today's preferred display
+  interval. Before that interval starts, any available segment qualifies;
+  at or after its end, neither quick filter applies.
+
 - **Day timeline** — a horizontal representation of one calendar day in the
   display timezone, with events positioned by elapsed time. Clock-change days
   can contain 23 or 25 hours; UTC offsets distinguish repeated local hours.
