@@ -92,7 +92,7 @@ provenance. `pnpm storybook:test` runs the stories in Chromium.
 Stories can mount production components that call the API (the app bar, for
 example) by starting an MSW worker in a story `loaders` entry; Storybook serves
 the shared `src/__tests__/msw/mockServiceWorker.js` from `staticDirs`. See
-`src/modules/inventory/requests/inventoryChrome.tsx` for the pattern.
+`src/modules/inventory/requests/InventoryChromePrototype.tsx` for the pattern.
 
 To review the built catalog inside a local RSpace development server, run
 `pnpm run storybook:build`, set `dev.storybook.preview.enabled=true` in

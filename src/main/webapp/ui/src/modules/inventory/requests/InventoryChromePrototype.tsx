@@ -182,7 +182,7 @@ export async function startApiAs(me: Requester): Promise<void> {
   started ??= worker.start({
     onUnhandledRequest: "bypass",
     quiet: true,
-    serviceWorker: { url: "/mockServiceWorker.js" },
+    serviceWorker: { url: new URL("mockServiceWorker.js", window.location.href).pathname },
   });
   await started;
   // resetHandlers(...) with arguments would replace the app-shell defaults; use() prepends instead
