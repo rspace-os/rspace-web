@@ -41,7 +41,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 /** FileStore implementation for storing files locally on RSpace server */
 @Service
-@Transactional
+@Transactional(rollbackFor = IOException.class)
 public class InternalFileStoreImpl implements InternalFileStore {
 
   public void setBaseDir(File rootDir) throws IOException {
@@ -96,17 +96,9 @@ public class InternalFileStoreImpl implements InternalFileStore {
   @Override
   public URI save(FileProperty meta, File sourceFile, FileDuplicateStrategy behaviourOnDuplicate)
       throws IOException {
-    checkInitialised();
-    String sourceFileName = parseFileName(sourceFile);
-    long sourceFileSize = sourceFile.length();
-    meta.setFileSize(Long.toString(sourceFileSize));
-
-    int suc = addMetadata(meta, sourceFileName, behaviourOnDuplicate);
-    if (suc >= 0) { // success
-      String tgPath = meta.makeTargetPath(false);
-      URI rst = fileOp.addFile(tgPath, sourceFile, meta.parseFileKey());
-      return rst;
-    } else return null;
+    try (InputStream input = new FileInputStream(sourceFile)) {
+      return save(meta, input, parseFileName(sourceFile), behaviourOnDuplicate);
+    }
   }
 
   @Override
@@ -119,24 +111,25 @@ public class InternalFileStoreImpl implements InternalFileStore {
     checkInitialised();
     fnm = EscapeReplacement.replaceChars(fnm); // get ride funny characters
     int suc = addMetadata(fileProperty, fnm, behaviourOnDuplicate);
-    FileStoreRoot root = fileMetadataDao.getCurrentFileStoreRoot(false);
-    fileProperty.setRoot(root);
-    if (suc >= 0) { // success path
-      String relPath = fileProperty.makeTargetPath(true);
-      fileOp.getFoldOp().createPath(fileProperty.makeTargetPath(false));
-      File out = new File(fileOp.getFoldOp().getBaseDir(), relPath);
-      log.debug("Saving to {}", out.getAbsolutePath());
-      long fsz;
-
-      try (FileOutputStream fos = new FileOutputStream(out)) {
-        fsz = fileOp.copyStream(fos, inStream, 0);
+    if (suc < 0) {
+      return null;
+    }
+    File out = new File(baseDir, fileProperty.getRelPath());
+    try {
+      long size;
+      try (FileOutputStream output = new FileOutputStream(out)) {
+        size = fileOp.copyStream(output, inStream, 0);
       }
-      URI rst = out.toURI();
-      fileProperty.setFileSize(Long.toString(fsz));
+      fileProperty.setFileSize(Long.toString(size));
       fileMetadataDao.save(fileProperty);
-
-      return rst;
-    } else return null;
+      return out.toURI();
+    } catch (IOException | RuntimeException e) {
+      if (suc == 100) {
+        removeReservedFile(out.toPath(), e);
+      }
+      log.warn("Could not write file :{}", fileProperty.getRelPath(), e);
+      throw e;
+    }
   }
 
   private void checkInitialised() {
@@ -243,14 +236,16 @@ public class InternalFileStoreImpl implements InternalFileStore {
     meta.generateURIFromProperties(baseDir);
     Path destination = baseDir.toPath().resolve(meta.getRelPath());
     Files.createDirectories(destination.getParent());
-    boolean reserved = false;
-    if (duplicateBehaviour != FileDuplicateStrategy.REPLACE) {
-      try {
-        Files.createFile(destination);
-      } catch (FileAlreadyExistsException e) {
-        if (duplicateBehaviour == FileDuplicateStrategy.ERROR) {
-          return -1;
-        }
+    boolean reserved = true;
+    try {
+      Files.createFile(destination);
+    } catch (FileAlreadyExistsException e) {
+      if (duplicateBehaviour == FileDuplicateStrategy.ERROR) {
+        return -1;
+      }
+      if (duplicateBehaviour == FileDuplicateStrategy.REPLACE) {
+        reserved = false;
+      } else {
         String extension = FilenameUtils.getExtension(meta.getFileName());
         // Keep ordinary extensions intact; omit extensions exceeding 20 UTF-8 bytes.
         if (extension.getBytes(StandardCharsets.UTF_8).length > 20) {
@@ -263,22 +258,25 @@ public class InternalFileStoreImpl implements InternalFileStore {
         destination = baseDir.toPath().resolve(meta.getRelPath());
         Files.createFile(destination);
       }
-      reserved = true;
     }
     try {
       fileMetadataDao.save(meta);
     } catch (RuntimeException e) {
-      log.warn("Could not save file metadata for file :{}", meta.getRelPath(), e);
       if (reserved) {
-        try {
-          Files.delete(destination);
-        } catch (IOException cleanupFailure) {
-          e.addSuppressed(cleanupFailure);
-        }
+        removeReservedFile(destination, e);
       }
+      log.warn("Could not save file metadata for file :{}", meta.getRelPath(), e);
       throw e;
     }
     return reserved ? 100 : 0;
+  }
+
+  private void removeReservedFile(Path destination, Exception failure) {
+    try {
+      Files.deleteIfExists(destination);
+    } catch (IOException cleanupFailure) {
+      failure.addSuppressed(cleanupFailure);
+    }
   }
 
   public FileStoreRoot getCurrentFileStoreRoot() {
