@@ -30,9 +30,16 @@
     "test-e2e:api": "cd src/main/webapp/ui && cross-env playwright test --config playwright-e2e.config.ts --project=api",
     "test-e2e:debug": "cd src/main/webapp/ui && cross-env PW_LOG=trace playwright test --config playwright-e2e.config.ts",
     "feature-flags:generate": "node scripts/generate-feature-flags.mjs",
-    "feature-flags:check": "node scripts/generate-feature-flags.mjs --check"
+    "feature-flags:check": "node scripts/generate-feature-flags.mjs --check",
+    "storybook": "cd src/main/webapp/ui && storybook dev -p 6006",
+    "build-storybook": "cd src/main/webapp/ui && storybook build",
+    "test-storybook": "cd src/main/webapp/ui && vitest run --config .storybook/vitest.config.ts"
   },
   "devDependencies": {
+    "@storybook/addon-a11y": "10.5.8",
+    "@storybook/addon-vitest": "10.5.8",
+    "@storybook/tanstack-react": "10.5.8",
+    "storybook": "10.5.8",
     "@biomejs/biome": "2.5.9",
     "@hono/node-server": "2.1.1",
     "@mswjs/http-middleware": "0.10.3",
