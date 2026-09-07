@@ -19,6 +19,7 @@ import LimitedAccessAlert from "../components/LimitedAccessAlert";
 import Stepper from "../components/Stepper/Stepper";
 import StepperPanel from "../components/Stepper/StepperPanel";
 import { setFormSectionError, useFormSectionError } from "../components/Stepper/StepperPanelHeader";
+import BookingAction from "./BookingAction";
 import InstrumentTemplateField from "./Fields/InstrumentTemplateField";
 import TemplateFields from "./Fields/TemplateFields";
 
@@ -56,6 +57,7 @@ const OverviewSection = observer(({ activeResult }: OverviewSectionArgs) => {
           <ImageField fieldOwner={activeResult} alt={t("instrument.imageAlt")} />
         </>
       )}
+      <BookingAction globalId={activeResult.globalId} isOwner={activeResult.currentUserIsOwner === true} />
     </StepperPanel>
   );
 });
