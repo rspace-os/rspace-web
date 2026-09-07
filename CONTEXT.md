@@ -463,6 +463,11 @@ _Avoid_: runtime-failing flag, startup blocker
   requester relation, stores no departure marker, grants no configuration,
   calendar, audit, access, or subscription permission, and keeps those rows
   read-only.
+- **Booking ownership transfer**: an optional part of transferring the target
+  Instrument. It atomically makes the incoming Instrument owner a direct
+  Booking Owner and removes the outgoing owner's direct Booking assignment only
+  when that assignment is Owner. A lower outgoing role and every other Booking
+  assignment are preserved.
 - **Booking access directory**: the users and groups available for Booking role
   assignment through a resource-scoped, capability-protected search. An
   ordinary Owner or Manager can select their groups and fellow group members; a

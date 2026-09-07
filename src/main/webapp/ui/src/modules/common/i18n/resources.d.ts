@@ -3736,7 +3736,8 @@ export default interface Resources {
           "body": "Select someone to transfer ownership to. By performing this action you will give the new owner full control over the item. <strong>This action can only be undone by the recipient or their PI.</strong>",
           "recipientLabel": "Recipient",
           "recipientSearchHint": "If the desired recipient cannot be found in this list, try searching for their name or username.",
-          "title": "Transfer Ownership"
+          "title": "Transfer Ownership",
+          "transferBookingConfigurationOwnership": "Also transfer Booking configuration ownership"
         },
         "disabled": {
           "noPermission": "{count, plural, one {You do not have permission to transfer this item.} other {You do not have permission to transfer these items.}}",
@@ -5056,7 +5057,8 @@ export default interface Resources {
     "peopleField": {
       "errors": {
         "couldNotGetGroupMembers": "Could not get group members."
-      }
+      },
+      "loading": "Loading people"
     },
     "permalink": {
       "invalidId": "\"{id}\" is not a valid {recordType} id.",
@@ -5395,6 +5397,12 @@ export default interface Resources {
         }
       },
       "controls": {
+        "bookable": {
+          "any": "Any",
+          "label": "Bookable",
+          "no": "Not bookable",
+          "yes": "Bookable"
+        },
         "nameDialog": {
           "duplicateName": "This name is already taken. Please modify it.",
           "helperText": "Please enter a unique name, no longer than 32 characters.",
@@ -5494,6 +5502,7 @@ export default interface Resources {
       "parameterChips": {
         "basket": "Basket: {basket}",
         "benchOwner": "Bench Owner: {owner}",
+        "bookable": "Bookable: {value}",
         "contentsOf": "Contents of: {globalId}",
         "owner": "Owner: {owner}",
         "status": "Status: {status}",
