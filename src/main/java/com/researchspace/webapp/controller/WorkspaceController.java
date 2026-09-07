@@ -1087,7 +1087,6 @@ public class WorkspaceController extends BaseController {
 
     model.addAttribute("extMessaging", getExternalMessagingIntegrationInfos(subject));
     model.addAttribute("pioEnabled", isProtocolsIOEnabled(subject));
-    model.addAttribute("evernoteEnabled", isEvernoteEnabled(subject));
     model.addAttribute("asposeEnabled", isAsposeEnabled());
     model.addAttribute("user", subject);
     Long labGroupFolderId = folderManager.getLabGroupFolderIdForUser(subject);

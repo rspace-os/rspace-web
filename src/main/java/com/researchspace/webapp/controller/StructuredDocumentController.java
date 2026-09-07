@@ -161,26 +161,22 @@ public class StructuredDocumentController extends BaseController {
     this.externalWordFileImporter = externalFileImporter;
   }
 
-  @Qualifier("evernoteFileImporter")
-  @Autowired
-  private ExternalFileImporter evernoteFileImporter;
-
   private @Autowired WorkspaceHandler workspaceHandler;
 
   @PostMapping("/ajax/createFromWord/{parentId}")
   @ResponseBody
   public AjaxReturnObject<List<RecordInformation>> createSDFromWordFile(
       @PathVariable("parentId") Long parentFolderId,
-      @RequestParam("wordXfile") List<MultipartFile> mswordOrEvernoteFile,
+      @RequestParam("wordXfile") List<MultipartFile> wordFiles,
       @RequestParam(value = "grandParentId", required = false) String grandParentFolderId,
       HttpSession session)
       throws IOException {
     Long grandParentId = convertToLongOrNull(grandParentFolderId);
     User user = userManager.getAuthenticatedUserInSession();
-    log.info("Creating RSpace docs from {} submitted files", mswordOrEvernoteFile.size());
+    log.info("Creating RSpace docs from {} submitted files", wordFiles.size());
 
     ErrorList el = new ErrorList();
-    if (!isFileUploaded(mswordOrEvernoteFile)) {
+    if (!isFileUploaded(wordFiles)) {
       el.addErrorMsg(getText("workspace.word.import.noFilesError"));
       return new AjaxReturnObject<List<RecordInformation>>(null, el);
     }
@@ -189,9 +185,9 @@ public class StructuredDocumentController extends BaseController {
     assertAuthorisation(user, originalParentFolder, PermissionType.READ);
     List<RecordInformation> rc = new ArrayList<>();
     ProgressMonitor progress =
-        new ProgressMonitorImpl(mswordOrEvernoteFile.size() * 10, "File import progress");
+        new ProgressMonitorImpl(wordFiles.size() * 10, "File import progress");
     session.setAttribute(BATCH_WORDIMPORT_PROGRESS, progress);
-    for (MultipartFile mf : mswordOrEvernoteFile) {
+    for (MultipartFile mf : wordFiles) {
       try {
         BaseRecord createdOrUpdated = null;
         Optional<ExternalFileImporter> importer = getFileImporterForMultipartFile(mf);
@@ -248,9 +244,7 @@ public class StructuredDocumentController extends BaseController {
   }
 
   private Optional<ExternalFileImporter> getFileImporterForMultipartFile(MultipartFile mf) {
-    if (getExtension(mf.getOriginalFilename()).equalsIgnoreCase("enex")) {
-      return Optional.of(evernoteFileImporter);
-    } else if (isDoc(FilenameUtils.getExtension(mf.getOriginalFilename()))) {
+    if (isDoc(FilenameUtils.getExtension(mf.getOriginalFilename()))) {
       return Optional.of(externalWordFileImporter);
     }
     return Optional.empty();

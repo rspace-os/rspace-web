@@ -384,16 +384,6 @@ export default interface Resources {
         },
         "usage": "You can include files from Egnyte in your RSpace documents. Files are embedded as links to the Egnyte location of that file."
       },
-      "evernote": {
-        "description": "Take notes, manage tasks, and organise your notes into notebooks with embedded media.",
-        "helpLink": "Evernote integration docs",
-        "name": "Evernote",
-        "setup": {
-          "import": "In the Workspace, select Create → Import from Evernote.",
-          "instructions": "<ol><li>Enable the integration.</li><li>In the Workspace, select Create → Import from Evernote.</li></ol>"
-        },
-        "usage": "You can directly import Evernote XML exports into RSpace. The import creates a separate RSpace document for each Note, and images and attachments will also be imported."
-      },
       "fieldmark": {
         "description": "Collect structured, geospatial sample and fieldwork data while offline, for easy importing into Inventory.",
         "fields": {
@@ -1009,7 +999,6 @@ export default interface Resources {
       "dryad": "i1xvubndhm-dryad-integration",
       "dsw": "6adimrmy9m-dsw-fair-wizard-integration",
       "editLocationsInVisualContainers": "jya8j336dt-edit-locations-in-visual-containers",
-      "evernote": "9ckpmfdq8m-evernote-integration",
       "fieldmark": "idbaaggghu-fieldmark-integration",
       "figshare": "ir4ybsamcn-figshare-integration",
       "formsRadiosAndPicklists": "rozak8tlwr-forms#radios_and_picklists",
@@ -1633,7 +1622,6 @@ export default interface Resources {
       "displayingLockedVersion": "Displaying version {version} of the document - this is locked for editing.",
       "folder": "Folder",
       "folderIcon": "Folder icon",
-      "fromEvernote": "From Evernote",
       "fromForm": "From Form",
       "fromProtocolsIo": "From Protocols.io",
       "fromTemplate": "From Template",
@@ -6785,12 +6773,16 @@ export default interface Resources {
           "assignTypeMismatch": "Identifier of type {0} cannot be assigned to inventory item [{1}]",
           "b2instAcceptedRecordUnavailable": "B2INST accepted this submission but its record is not available yet, so the instrument PID cannot be shown. Please try again shortly.",
           "b2instDeleteFailed": "Could not delete the instrument PID from B2INST. {0}",
+          "b2instHttpStatus": "B2INST returned HTTP {0} {1}.",
+          "b2instNoCommunity": "B2INST is not fully configured for publishing, because no community has been set.",
+          "b2instNoSubmitAction": "B2INST did not offer a submit action for this record.",
           "b2instPublishFailed": "Could not publish the instrument PID in B2INST. {0}",
           "b2instRecordGone": "B2INST no longer holds this record, so there is no status to refresh. The record was removed on the provider side.",
           "b2instRefreshFailed": "Could not refresh the instrument PID status from B2INST. {0}",
           "b2instRegisterFailed": "Could not register a new instrument PID with B2INST. {0}",
           "b2instRegisterNoDraft": "Could not register a new instrument PID with B2INST: the service accepted the request but returned no draft record.",
           "b2instRetractUnsupported": "Instrument PIDs registered with B2INST cannot be retracted from RSpace.",
+          "b2instUnreachable": "B2INST could not be reached.",
           "bulkMaxExceeded": "cannot allocate more than {0} IGSNs in a single request",
           "bulkPositiveRequired": "not a valid number of IGSNs to allocate: \"{0}\". The number must be greater than 0",
           "dataCitePublishFailed": "Error when publishing the DOI in DataCite. If the problem persists, please contact your System Admin",
@@ -7903,8 +7895,6 @@ export default interface Resources {
           "chooseFormTitle": "Choose a form",
           "displaySettingsAction": "Display Workspace Settings",
           "folderEmpty": "This folder is empty.",
-          "importEvernoteFileType": "Evernote XML",
-          "importEvernoteTitle": "Import from Evernote",
           "importWordFileType": "Word or Open Office",
           "importWordTitle": "Import from Word/Open Office",
           "listView": "List View",
@@ -8762,7 +8752,6 @@ export default interface Resources {
           "dryadAvailable": "Makes Dryad integration available. User can create new dryad submissionand attach RSpace exports or documents to that submission.",
           "dswAvailable": "Makes DSW integration available.",
           "egnyteAvailable": "Makes Egnyte integration available to the users. After enabling the integration, users can link to Egnyte in text field editor",
-          "evernoteAvailable": "Enables users to import Evernote XML export files via Create->Import",
           "fieldmarkAvailable": "Makes Fieldmark integration available.",
           "galaxyAvailable": "Makes Galaxy integration available.",
           "githubAvailable": "Makes Github integration available. After enabling, user can add links to files in Github repositories.",
@@ -9967,7 +9956,6 @@ export default interface Resources {
         "import": {
           "createFailed": "Could not create document from {0}",
           "createFailedWithReason": "Could not create document from {0} - {1}",
-          "evernoteExtensionRequired": "File must be in Evernote XML ending in .enex",
           "noFilesError": "No files were submitted! Please choose some Word or text files to upload.",
           "noImporterForFileType": "No importer for file type {0}",
           "progressDescription": "Processed file ''{0}''. Import is {1}% complete."

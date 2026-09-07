@@ -1,6 +1,5 @@
 /* global configurePermittedActions */
 
-import { faEvernote } from "@fortawesome/free-brands-svg-icons/faEvernote";
 import { faFileAlt } from "@fortawesome/free-solid-svg-icons/faFileAlt";
 import { faFileWord } from "@fortawesome/free-solid-svg-icons/faFileWord";
 import { faFolderOpen } from "@fortawesome/free-solid-svg-icons/faFolderOpen";
@@ -31,7 +30,6 @@ type DynamicMenuItem = {
 
 type CreateMenuProps = {
   asposeEnabled?: boolean;
-  evernoteEnabled?: boolean;
   pioEnabled?: boolean;
 };
 
@@ -157,12 +155,6 @@ export default function CreateMenu(props: CreateMenuProps) {
           <MenuItem id="createFromWord" data-test-id="create-btn-word">
             <FontAwesomeIcon icon={faFileWord} style={{ paddingRight: "10px" }} aria-hidden="true" />
             {t("toolbar.fromWord")}
-          </MenuItem>
-        )}
-        {props.evernoteEnabled && (
-          <MenuItem id="createFromEvernote" data-test-id="create-btn-evernote">
-            <FontAwesomeIcon icon={faEvernote} style={{ paddingRight: "10px" }} aria-hidden="true" />
-            {t("toolbar.fromEvernote")}
           </MenuItem>
         )}
         {props.pioEnabled && (

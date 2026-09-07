@@ -12,7 +12,6 @@ import static com.researchspace.service.IntegrationsHandler.DMPTOOL_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.DRYAD_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.DSW_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.EGNYTE_APP_NAME;
-import static com.researchspace.service.IntegrationsHandler.EVERNOTE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.FIELDMARK_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.FIGSHARE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.GALAXY_APP_NAME;
@@ -119,7 +118,6 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
     expectedOptions.put(FIGSHARE_APP_NAME, new String[] {});
     expectedOptions.put(OWNCLOUD_APP_NAME, new String[] {});
     expectedOptions.put(NEXTCLOUD_APP_NAME, new String[] {});
-    expectedOptions.put(EVERNOTE_APP_NAME, new String[] {});
     expectedOptions.put(EGNYTE_APP_NAME, new String[] {});
     expectedOptions.put(MSTEAMS_APP_NAME, new String[] {});
     expectedOptions.put(PROTOCOLS_IO_APP_NAME, new String[] {}); // no token if not authenticated

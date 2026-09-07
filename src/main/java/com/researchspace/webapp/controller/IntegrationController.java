@@ -11,7 +11,6 @@ import static com.researchspace.service.IntegrationsHandler.DRYAD_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.DSW_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.EGNYTE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.EGNYTE_DOMAIN_SETTING;
-import static com.researchspace.service.IntegrationsHandler.EVERNOTE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.FIELDMARK_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.FIGSHARE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.GALAXY_APP_NAME;
@@ -129,7 +128,6 @@ public class IntegrationController extends BaseController {
     rc.put(FIGSHARE_APP_NAME, integrationsHandler.getIntegration(user, FIGSHARE_APP_NAME));
     rc.put(OWNCLOUD_APP_NAME, integrationsHandler.getIntegration(user, OWNCLOUD_APP_NAME));
     rc.put(NEXTCLOUD_APP_NAME, integrationsHandler.getIntegration(user, NEXTCLOUD_APP_NAME));
-    rc.put(EVERNOTE_APP_NAME, integrationsHandler.getIntegration(user, EVERNOTE_APP_NAME));
     rc.put(GITHUB_APP_NAME, integrationsHandler.getIntegration(user, GITHUB_APP_NAME));
     rc.put(EGNYTE_APP_NAME, integrationsHandler.getIntegration(user, EGNYTE_APP_NAME));
     rc.put(MSTEAMS_APP_NAME, integrationsHandler.getIntegration(user, MSTEAMS_APP_NAME));
