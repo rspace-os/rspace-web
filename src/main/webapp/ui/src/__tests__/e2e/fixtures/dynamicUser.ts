@@ -1,9 +1,8 @@
 import { createDynamicUser } from "../createDynamicUser";
-import { LoginPage } from "../pageObjects/auth/LoginPage";
 import { WorkspacePage } from "../pageObjects/workspace/WorkspacePage";
 import { DYNAMIC_USER_PASSWORD, uniqueName } from "../testData";
 import { test } from "./flows";
-import { loginInNewContext } from "./flows/userSessions";
+import { loginInNewContext, performLogin } from "./flows/sessions/userSessions";
 
 type CreatableRole = "ROLE_USER" | "ROLE_PI" | "ROLE_ADMIN";
 
@@ -25,10 +24,7 @@ export const dynamicUserTest = test.extend<DynamicUserFixtures>({
     const ctx = await browser.newContext({ ...browserContextOptions, storageState: undefined });
     try {
       const page = await ctx.newPage();
-      const loginPage = new LoginPage(page);
-      await loginPage.open();
-      await loginPage.login(appUser.username, appUser.password);
-      await page.waitForURL((url) => url.pathname === "/workspace");
+      await performLogin(page, appUser.username, appUser.password);
       const workspace = new WorkspacePage(page);
       if (!(await workspace.isLoaded())) {
         throw new Error(`Workspace did not load after authenticating dynamic user '${appUser.username}'.`);

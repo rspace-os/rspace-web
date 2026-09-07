@@ -1,6 +1,6 @@
 import type { BrowserContext } from "@playwright/test";
 import { env } from "@/__tests__/e2e/env";
-import { test as sysadminSessionTest } from "@/__tests__/e2e/fixtures/flows/sysadminSessions";
+import { test as sysadminSessionTest } from "@/__tests__/e2e/fixtures/flows/sessions/sysadminSessions";
 import { PublicDocumentPage } from "@/__tests__/e2e/pageObjects/myrspace/PublicDocumentPage";
 import type { SystemPropertyValue } from "@/__tests__/e2e/pageObjects/system/SystemConfigPage";
 
