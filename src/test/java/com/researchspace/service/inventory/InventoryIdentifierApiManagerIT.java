@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class InventoryIdentifierApiManagerIT extends RealTransactionSpringTestBase {
 
   @Autowired private DigitalObjectIdentifierDao doiDao;
+  @Autowired private InventoryIdentifierApiManager inventoryIdentifierApiMgr;
 
   @BeforeEach
   public void setUp() throws Exception {

@@ -17,7 +17,9 @@ import com.researchspace.api.v1.model.ApiMaterialUsage;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.core.util.MediaUtils;
 import com.researchspace.core.util.TransformerUtils;
+import com.researchspace.dao.ContainerDao;
 import com.researchspace.dao.InstrumentDao;
+import com.researchspace.dao.SampleDao;
 import com.researchspace.dao.StoichiometryInventoryLinkDao;
 import com.researchspace.model.Community;
 import com.researchspace.model.EcatImage;
@@ -94,7 +96,8 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
   private @Autowired RSChemElementManager rsChemElementMgr;
   private @Autowired StoichiometryInventoryLinkDao stoichiometryInventoryLinkDao;
   private @Autowired InstrumentDao instrumentDao;
-  private @Autowired MessageSourceUtils messages;
+  private @Autowired ContainerDao containerDao;
+  private @Autowired SampleDao sampleDao;
 
   @BeforeEach
   public void setUp() throws Exception {

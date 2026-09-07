@@ -11,6 +11,7 @@ import com.researchspace.auth.LoginHelper;
 import com.researchspace.auth.MaintenanceLoginAuthorizer;
 import com.researchspace.model.SignupSource;
 import com.researchspace.model.User;
+import com.researchspace.properties.IMutablePropertyHolder;
 import com.researchspace.service.UserExistsException;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
@@ -34,6 +35,7 @@ public class SSOShiroFormAuthFilterTest extends SpringTransactionalTest {
   private MockHttpServletResponse resp;
 
   private @Autowired MockRemoteUserPolicy remoteUserPolicy;
+  private @Autowired IMutablePropertyHolder propertyHolder;
 
   @Autowired
   @Qualifier("accountEnabledAuthorizer")

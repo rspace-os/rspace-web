@@ -21,6 +21,7 @@ import com.researchspace.core.testutil.Invokable;
 import com.researchspace.core.testutil.InvokableWithResult;
 import com.researchspace.core.util.CryptoUtils;
 import com.researchspace.dao.AuditDaoIT;
+import com.researchspace.dao.SampleTemplateDao;
 import com.researchspace.model.AbstractUserOrGroupImpl;
 import com.researchspace.model.Community;
 import com.researchspace.model.EcatChemistryFile;
@@ -47,6 +48,7 @@ import com.researchspace.model.comms.ShareRecordMessageOrRequestCreationConfigur
 import com.researchspace.model.dtos.ShareConfigElement;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.permissions.ConstraintBasedPermission;
+import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.DeltaType;
@@ -56,7 +58,6 @@ import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.EcatImageAnnotationManager;
-import com.researchspace.service.FieldManager;
 import com.researchspace.service.IContentInitializer;
 import com.researchspace.service.RecordDeletionManager;
 import com.researchspace.service.RecordSigningManager;
@@ -127,8 +128,8 @@ public class RealTransactionSpringTestBase extends BaseManagerTestCaseBase
 
   protected @Autowired IContentInitializer contentInitializer;
   protected @Autowired EcatImageAnnotationManager imgAnnotationMgr;
-  protected @Autowired FieldManager fieldMgr;
-
+  protected @Autowired IPermissionUtils permissionUtils;
+  protected @Autowired SampleTemplateDao sampleTemplateDao;
   protected @Autowired RoleManager roleMgr;
   protected @Autowired RecordDeletionManager recordDeletionMgr;
   protected @Autowired RecordSigningManager signingManager;

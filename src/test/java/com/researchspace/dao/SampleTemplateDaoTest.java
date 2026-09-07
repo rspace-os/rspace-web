@@ -15,8 +15,11 @@ import com.researchspace.testutils.SpringTransactionalTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 
 public class SampleTemplateDaoTest extends SpringTransactionalTest {
+
+  private @Autowired SampleTemplateDao sampleTemplateDao;
 
   @BeforeEach
   public void setUp() {

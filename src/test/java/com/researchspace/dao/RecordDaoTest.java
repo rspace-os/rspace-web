@@ -34,8 +34,6 @@ public class RecordDaoTest extends BaseDaoTestCase {
   static User anyuser = new User("any");
 
   @Autowired private RecordDao dao;
-  @Autowired private FolderDao folderDao;
-  @Autowired private UserDao userDao;
   @Autowired private FormDao formDao;
 
   @Test

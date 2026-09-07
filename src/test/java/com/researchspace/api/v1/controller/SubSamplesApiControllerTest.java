@@ -35,6 +35,7 @@ import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.api.v1.model.ApiSubSampleInfo;
 import com.researchspace.api.v1.model.ApiSubSampleNote;
 import com.researchspace.api.v1.model.ApiSubSampleSearchResult;
+import com.researchspace.dao.SampleTemplateDao;
 import com.researchspace.fieldmark.model.FieldmarkMultipartFile;
 import com.researchspace.model.User;
 import com.researchspace.model.units.RSUnitDef;
@@ -60,6 +61,7 @@ public class SubSamplesApiControllerTest extends SpringTransactionalTest {
   private @Autowired SampleTemplatesApi sampleTemplatesApi;
   private @Autowired SamplesApi samplesApi;
   private @Autowired SubSamplesApi subSamplesApi;
+  private @Autowired SampleTemplateDao sampleTemplateDao;
   @Mock private DocumentTagManager documentTagManagerMock;
 
   private BindingResult mockBindingResult = mock(BindingResult.class);

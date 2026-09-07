@@ -36,8 +36,8 @@ import com.researchspace.model.User;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.StructuredDocument;
+import com.researchspace.properties.IMutablePropertyHolder;
 import com.researchspace.service.UserEnablementUtils;
-import com.researchspace.service.UserManager;
 import com.researchspace.service.impl.ConfigurableLogger;
 import com.researchspace.service.impl.license.NoCheckLicenseService;
 import com.researchspace.testutils.MockAndStubUtils;
@@ -87,8 +87,8 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
   private User sysAdmin;
 
   private @Autowired UserEnablementUtils userEnablementUtils;
+  private @Autowired IMutablePropertyHolder propertyHolder;
   private @Autowired SysAdminController controller;
-  private @Autowired UserManager userMgr;
 
   @AfterEach
   public void teardown() throws Exception {

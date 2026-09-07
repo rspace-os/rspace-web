@@ -47,7 +47,6 @@ public class AuditDaoIT extends RealTransactionSpringTestBase {
   private @Autowired AuditDao dao;
   private @Autowired FormDao formDao;
   private @Autowired RecordDao recordDao;
-  private @Autowired FolderDao folderDao;
 
   private RecordFactory recordFactory = new RecordFactory();
   private User user;

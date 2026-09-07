@@ -20,6 +20,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.dtos.chemistry.ChemicalDataDTO;
 import com.researchspace.model.dtos.chemistry.ChemicalImageDTO;
 import com.researchspace.model.field.Field;
+import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.StructuredDocument;
@@ -40,8 +41,11 @@ import net.coobird.thumbnailator.Thumbnails;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 
 public class MediaManagerTest extends SpringTransactionalTest {
+
+  private @Autowired IPermissionUtils permissionUtils;
 
   @Test
   public void saveChemElementRequiresPermissionOnParentRecord() throws Exception {

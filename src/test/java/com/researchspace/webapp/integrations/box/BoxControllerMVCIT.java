@@ -23,27 +23,26 @@ import com.box.sdk.BoxFileVersion;
 import com.box.sdk.BoxFolder;
 import com.box.sdk.BoxSharedLink;
 import com.researchspace.model.field.ErrorList;
-import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.webapp.controller.MVCTestBase;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
 import java.io.OutputStream;
 import java.util.Map;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockHttpSession;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+@TestPropertySource(properties = {"box.client.id=test-client", "box.client.secret=test-secret"})
 public class BoxControllerMVCIT extends MVCTestBase {
 
   private @Autowired BoxController boxController;
-  private @Autowired MessageSourceUtils messages;
 
   private BoxConnector mockBoxConnector;
   private BoxAPIConnection mockConnection;
@@ -74,7 +73,6 @@ public class BoxControllerMVCIT extends MVCTestBase {
   }
 
   @Test
-  @Disabled // ignore for open-source, as requires valid box client id to run
   public void testAuthorizationFlow() throws Exception {
 
     when(mockBoxConnector.createBoxAPIConnection(anyString(), anyString(), anyString()))

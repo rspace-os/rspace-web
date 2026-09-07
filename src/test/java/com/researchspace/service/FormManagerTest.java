@@ -13,6 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.dao.FormCreateMenuDao;
+import com.researchspace.dao.FormDao;
 import com.researchspace.dao.FormUsageDao;
 import com.researchspace.model.AccessControl;
 import com.researchspace.model.User;
@@ -20,6 +21,7 @@ import com.researchspace.model.Version;
 import com.researchspace.model.dtos.*;
 import com.researchspace.model.field.*;
 import com.researchspace.model.permissions.ConstraintBasedPermission;
+import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionDomain;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.*;
@@ -39,8 +41,9 @@ public class FormManagerTest extends SpringTransactionalTest {
   private static final String USER1A = "user1a";
   private static final String USER1APWD = "user1234";
 
-  private @Autowired FormManager formMgr;
+  private @Autowired FormDao formDao;
   private @Autowired FormUsageDao formUsageDao;
+  private @Autowired IPermissionUtils permissionUtils;
   private @Autowired FormCreateMenuDao userMenuDao;
 
   User user = null;

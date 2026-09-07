@@ -20,6 +20,7 @@ import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.InventoryRecord.InventorySharingMode;
 import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.inventory.SubSample;
+import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.testutils.SpringTransactionalTest;
@@ -28,9 +29,12 @@ import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 
 public class InventoryPermissionUtilsTest extends SpringTransactionalTest {
 
+  private @Autowired InventoryPermissionUtils invPermissionUtils;
+  private @Autowired IPermissionUtils permissionUtils;
   private User testUser;
 
   @BeforeEach

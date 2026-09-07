@@ -1,113 +1,70 @@
 package com.researchspace.webapp.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.researchspace.core.testutil.Invokable;
-import com.researchspace.core.testutil.SequencedRunnableRunner;
 import com.researchspace.model.EditStatus;
+import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
+import com.researchspace.model.comms.CommunicationTarget;
+import com.researchspace.model.comms.NotificationType;
 import com.researchspace.model.dtos.ShareConfigElement;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.DocumentAlreadyEditedException;
 import com.researchspace.service.RecordDeletionManager;
-import com.researchspace.service.impl.ShiroTestUtils;
 import com.researchspace.session.UserSessionTracker;
-import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import com.researchspace.testutils.TestGroup;
-import java.util.Map;
-import java.util.TreeMap;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockHttpSession;
 
 public class DeletionTestAcceptanceIT extends RealTransactionSpringTestBase {
 
-  Logger log = LoggerFactory.getLogger(DeletionTestAcceptanceIT.class);
+  private static final String EDITING_SESSION_ID = "deletion-test-editing-session";
 
-  ShiroTestUtils shiroUtils;
   @Autowired RecordDeletionManager deleter;
 
   @BeforeEach
   public void setUp() throws Exception {
-    shiroUtils = new ShiroTestUtils();
     super.setUp();
   }
 
   @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
-    shiroUtils.clearSubject();
   }
 
   @Test
-  // test fails intermittently as occasionally the pi user disappears from group.userGroups which
-  // causes the deletion
-  // of the record to fail as notifying the pi user fails due. Tested manually and this issue is not
-  // present so only
-  // exists as a problem in this test. See RSDEV-99 on Jira.
-  @Disabled
   public void testSomeoneCanDeleteWhileAnotherUserEditing() throws Exception {
     TestGroup tg = createTestGroup(2);
 
     logoutAndLoginAs(tg.u2());
-    final Folder u2Root = folderMgr.getRootRecordForUser(tg.u2(), tg.u2());
-    final StructuredDocument doc1 = createBasicDocumentInRootFolderWithText(tg.u2(), "text");
+    Folder u2Root = folderMgr.getRootRecordForUser(tg.u2(), tg.u2());
+    StructuredDocument doc1 = createBasicDocumentInRootFolderWithText(tg.u2(), "text");
     ShareConfigElement cnd = new ShareConfigElement(tg.getGroup().getId(), "edit");
     sharingMgr.shareRecord(tg.u2(), doc1.getId(), new ShareConfigElement[] {cnd});
-    RSpaceTestUtils.logout();
-    // these are the steps to execute:
 
-    Invokable u1StartsEditing =
-        () -> {
-          log.info("u1StartsEditing");
-          shiroUtils.doLogin(tg.u1());
-          assertEquals(
-              EditStatus.EDIT_MODE,
-              recordMgr.requestRecordEdit(doc1.getId(), tg.u1(), getUsernames(tg.u1())));
-        };
+    logoutAndLoginAs(tg.u1());
+    assertEquals(
+        EditStatus.EDIT_MODE,
+        recordMgr.requestRecordEdit(
+            doc1.getId(), tg.u1(), getUsernames(tg.u1()), () -> EDITING_SESSION_ID));
 
-    Invokable u2AttemptsToDeleteButCannot =
-        () -> {
-          log.info("u2AttemptsToDeleteButCannot");
-          shiroUtils.doLogin(tg.u2());
-          assertExceptionThrown(
-              () -> deleter.deleteRecord(u2Root.getId(), doc1.getId(), tg.u2()),
-              DocumentAlreadyEditedException.class);
-        };
-    Invokable u1StopsEditing =
-        () -> {
-          log.info("u1StopsEditing");
-          recordMgr.unlockRecord(doc1, tg.u1());
-          RSpaceTestUtils.logout();
-          log.info("u1LogsOut");
-        };
-    Invokable u2SuccessfullyDeletes =
-        () -> {
-          log.info("u2SuccessfullyDeletes");
-          deleter.deleteRecord(u2Root.getId(), doc1.getId(), tg.u2());
-          RSpaceTestUtils.logout();
-          log.info("u2LogsOut");
-        };
-    Invokable[] actions =
-        new Invokable[] {
-          u1StartsEditing, u2AttemptsToDeleteButCannot, u1StopsEditing, u2SuccessfullyDeletes
-        };
-    Map<String, Integer[]> config = new TreeMap<>();
-    config.put("u1", new Integer[] {0, 2});
-    config.put("u2", new Integer[] {1, 3});
-    SequencedRunnableRunner runner = new SequencedRunnableRunner(config, actions);
-    runner.runSequence();
-    assertNull(runner.getInternalException());
-    assertTrue(runner.isCompletedOK());
+    logoutAndLoginAs(tg.u2());
+    assertExceptionThrown(
+        () -> deleter.deleteRecord(u2Root.getId(), doc1.getId(), tg.u2()),
+        DocumentAlreadyEditedException.class);
+
+    logoutAndLoginAs(tg.u1());
+    recordMgr.unlockRecord(doc1.getId(), tg.u1().getUsername(), () -> EDITING_SESSION_ID);
+
+    logoutAndLoginAs(tg.u2());
+    deleter.deleteRecord(u2Root.getId(), doc1.getId(), tg.u2());
+    assertTrue(recordMgr.get(doc1.getId()).isDeleted());
   }
 
   private UserSessionTracker getUsernames(User... users) {
@@ -119,7 +76,6 @@ public class DeletionTestAcceptanceIT extends RealTransactionSpringTestBase {
   }
 
   @Test
-  @Disabled
   public void testPostDeleteNotifications() throws Exception {
     TestGroup grp = createTestGroup(2);
     setUpMessagePreferences(grp);
@@ -140,10 +96,32 @@ public class DeletionTestAcceptanceIT extends RealTransactionSpringTestBase {
     deleter.deleteRecord(f1.getId(), doc1.getId(), u1);
     assertEquals(initialPiCount + 1, getNewNotificationCount(grp.getPi()));
     assertEquals(initialU2Count + 1, getNewNotificationCount(grp.u2()));
+    assertHasNotification(
+        grp.getPi(), NotificationType.NOTIFICATION_DOCUMENT_DELETED, doc1.getId());
+    assertHasNotification(grp.u2(), NotificationType.NOTIFICATION_DOCUMENT_UNSHARED, doc1.getId());
 
     // delete folder. This will notify pi (folder) and u2 twice ( for 2 unshared docs)
     deleter.deleteFolder(getRootFolderForUser(u1).getId(), f1.getId(), u1);
     assertEquals(initialPiCount + 2, getNewNotificationCount(grp.getPi()));
     assertEquals(initialU2Count + 3, getNewNotificationCount(grp.u2()));
+    assertHasNotification(grp.getPi(), NotificationType.NOTIFICATION_DOCUMENT_DELETED, f1.getId());
+    assertHasNotification(grp.u2(), NotificationType.NOTIFICATION_DOCUMENT_UNSHARED, doc2.getId());
+    assertHasNotification(grp.u2(), NotificationType.NOTIFICATION_DOCUMENT_UNSHARED, doc3.getId());
+  }
+
+  private void assertHasNotification(User recipient, NotificationType type, Long recordId) {
+    boolean found =
+        communicationMgr
+            .getNewNotificationsForUser(
+                recipient.getUsername(),
+                PaginationCriteria.createDefaultForClass(CommunicationTarget.class))
+            .getResults()
+            .stream()
+            .anyMatch(
+                notification ->
+                    type == notification.getNotificationType()
+                        && notification.getRecord() != null
+                        && recordId.equals(notification.getRecord().getId()));
+    assertTrue(found, () -> "Missing " + type + " notification for record " + recordId);
   }
 }

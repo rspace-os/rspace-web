@@ -15,6 +15,7 @@ import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SortOrder;
 import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.dao.CollaborationGroupTrackerDao;
+import com.researchspace.dao.UserDao;
 import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.RoleInGroup;
@@ -54,6 +55,7 @@ import org.springframework.transaction.UnexpectedRollbackException;
 
 public class CommunicationManagerIT extends RealTransactionSpringTestBase {
 
+  @Autowired private UserDao userDao;
   @Autowired private IMessageAndNotificationTracker tracker;
   @Autowired private CollaborationGroupTrackerDao collabGrpTrackerDao;
 

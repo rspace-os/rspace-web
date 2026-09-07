@@ -11,16 +11,13 @@ import com.researchspace.service.RSChemElementManager;
 import com.researchspace.service.RecordManager;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import java.util.List;
-import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.TestPropertySource;
 
-@Disabled(
-    "Requires chemistry service to run. See"
-        + " https://documentation.researchspace.com/article/1jbygguzoa")
-@TestPropertySource(
-    properties = {"chemistry.service.url=http://localhost:8090", "chemistry.provider=indigo"})
+@Tag("chemistry")
+@TestPropertySource(properties = "chemistry.provider=indigo")
 public class ChemistryDocumentCopyIT extends RealTransactionSpringTestBase {
 
   @Autowired RecordManager recordManager;

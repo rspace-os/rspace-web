@@ -207,12 +207,17 @@ images etc., are stored outside the DB in the file store. (Optional)
 e.g., `export RS_FILE_BASE=~/.researchspaceFStore` (**Note:** startup will fail
 if this folder does not exist)
 
-### Run full suit of unit tests (recommended)
+### Run the default test suite (recommended)
 
 To run tests: `mvn clean test -Denvironment=drop-recreate-db` will drop
 and recreate the database tables and run JUnit tests. This will run all
 unit and Spring integration tests and may take over 10 mins to run.
 If these pass, or there are just a few failures, then your setup is basically fine.
+
+Tests tagged `chemistry` are excluded because they require the OSS chemistry
+service. CI runs them in a separate job. See
+[CodingStandards.md](CodingStandards.md#maven-integration) for the local command
+and the conventions for performance and live-service tests.
 
 ### Running fast tests
 This just runs plain Junit tests and is much faster to run:

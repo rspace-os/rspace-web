@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.archive.ExportScope;
 import com.researchspace.core.util.ISearchResults;
+import com.researchspace.dao.ContainerDao;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.field.ExtraNumberField;
@@ -20,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class CsvContainerExporterTest extends SpringTransactionalTest {
 
   @Autowired private CsvContainerExporter containerExporter;
+  @Autowired private ContainerDao containerDao;
 
   private User testUser = new User("testUser");
 
