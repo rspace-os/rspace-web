@@ -1,3 +1,4 @@
+import { parse } from "@rsql/parser";
 import { HttpResponse, http, type RequestHandler } from "msw";
 import {
   DEFAULT_SCHEDULING_SETTINGS,
@@ -371,6 +372,39 @@ const detailBookingEvents = sampleBookingEvents.map((booking) => ({
   updatedAt: "2026-08-01T09:00:00Z",
 }));
 
+function matchesCatalogueFilter(
+  fixture: (typeof bookableItemFixtures)[number],
+  node: ReturnType<typeof parse>,
+): boolean {
+  if (node.type !== "COMPARISON")
+    return node.operator === ";"
+      ? matchesCatalogueFilter(fixture, node.left) && matchesCatalogueFilter(fixture, node.right)
+      : matchesCatalogueFilter(fixture, node.left) || matchesCatalogueFilter(fixture, node.right);
+  const actual = node.left.selector === "id" ? fixture.id : fixture.target.globalId;
+  const raw = Array.isArray(node.right.value) ? node.right.value : [node.right.value];
+  const values = raw.map((value) => (typeof actual === "number" ? Number(value) : value));
+  switch (node.operator) {
+    case "==":
+      return actual === values[0];
+    case "!=":
+      return actual !== values[0];
+    case "=in=":
+      return values.includes(actual);
+    case "=out=":
+      return !values.includes(actual);
+    case "=gt=":
+      return actual > values[0];
+    case "=ge=":
+      return actual >= values[0];
+    case "=lt=":
+      return actual < values[0];
+    case "=le=":
+      return actual <= values[0];
+    default:
+      throw new Error(`Unsupported catalogue fixture operator: ${node.operator}`);
+  }
+}
+
 function collectionPage(docs: readonly unknown[]) {
   return {
     docs,
@@ -442,11 +476,14 @@ export function bookableItemsHandlers(onCollectionRequest: (request: Request) =>
       const url = new URL(request.url);
       const query = (url.searchParams.get("q") ?? "").toLocaleLowerCase();
       const target = url.searchParams.get("target");
+      const where = url.searchParams.get("where");
+      const filter = where ? parse(where) : null;
       const locations = url.searchParams.getAll("location");
       const page = Number(url.searchParams.get("page") ?? "1");
       const pageSize = Number(url.searchParams.get("limit") ?? "20");
       const matching = bookableItemFixtures.filter(
         (fixture) =>
+          (!filter || matchesCatalogueFilter(fixture, filter)) &&
           (!query ||
             fixture.target.value.name.toLocaleLowerCase().includes(query) ||
             fixture.target.globalId.toLocaleLowerCase().includes(query)) &&

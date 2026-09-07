@@ -88,6 +88,7 @@ export function catalogueItemAsConfiguration(item: BookingCatalogueItem) {
 
 type CatalogueSearch = {
   q?: string;
+  where?: string;
   target?: string;
   types?: readonly string[];
   locations?: readonly string[];
@@ -109,6 +110,7 @@ export async function fetchBookingCatalogue(
     limit: String(search.pageSize ?? 20),
   });
   if (search.q?.trim()) parameters.set("q", search.q.trim());
+  if (search.where) parameters.set("where", search.where);
   if (search.target) parameters.set("target", search.target);
   appendAll(parameters, "type", search.types);
   appendAll(parameters, "location", search.locations);
