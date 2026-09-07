@@ -285,3 +285,22 @@ resolved during design. This file is a glossary only — no implementation detai
 - **Effective locale** — the locale actually served: the user's stored choice
   if it is in the allowed set, otherwise the instance default. A stored choice
   outside the allowed set is kept (not erased) and springs back if re-allowed.
+
+## Resource role permissions
+
+- **Role scheme**: the roles, ordering, capabilities, assignment rules, and
+  invariants for one protected resource type. Every scheme makes Owner its
+  highest role, puts Manager immediately below it, prevents Managers from
+  changing Owners, and requires one persisted Owner. Capabilities are
+  monotonic: every higher role includes every capability of each lower role.
+  Other roles and capabilities belong only to that resource type.
+- **Role assignment**: one role granted directly to one grantee for one
+  protected resource. A grantee has at most one direct role assignment for that
+  resource.
+- **Grantee**: a user, group, or dynamic audience that receives a role.
+  _Avoid_: subject, actor, sharee
+- **Capability**: one action allowed by a role scheme, such as changing a
+  resource or assigning an Owner. Callers receive resolved capabilities so they
+  do not have to reproduce a role scheme.
+- **Effective role**: the highest role a user receives from all applicable
+  direct, group, audience, and implicit sources for one resource.

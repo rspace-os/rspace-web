@@ -23,10 +23,13 @@ import com.researchspace.model.collection.RelationshipTarget;
 import com.researchspace.model.collection.ResolvedRuntimeField;
 import com.researchspace.model.collection.ResourceRegistry.RelationshipQueryPath;
 import com.researchspace.model.collection.ResourceRegistry.TargetQueryField;
+import com.researchspace.model.collection.ResourceRoleMembershipConstraint;
 import com.researchspace.model.collection.RuntimeFieldBinding;
 import com.researchspace.model.collection.RuntimeFieldSelection;
 import com.researchspace.model.collection.RuntimeFieldValueType;
 import com.researchspace.model.collection.SplitReferenceBinding;
+import com.researchspace.model.resourceaccess.ResourceAudience;
+import com.researchspace.model.resourceaccess.ResourceRoleAssignment;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -169,6 +172,9 @@ public final class RsqlCollectionQuery {
     if (constraint instanceof QueryConstraint.Or or) {
       return compileConstraintLogical(or.children(), " OR ", state);
     }
+    if (constraint instanceof ResourceRoleMembershipConstraint membership) {
+      return compileResourceRoleMembership(membership, state);
+    }
     throw new IllegalStateException("Unsupported query constraint " + constraint.getClass());
   }
 
@@ -179,6 +185,41 @@ public final class RsqlCollectionQuery {
         .reduce((left, right) -> left + separator + right)
         .map(expression -> "(" + expression + ")")
         .orElseThrow();
+  }
+
+  private String compileResourceRoleMembership(
+      ResourceRoleMembershipConstraint membership, RsqlCompilationState state) {
+    String assignment = state.nextTargetAlias();
+    List<String> applicable = new ArrayList<>();
+    applicable.add(
+        "("
+            + assignment
+            + ".user.id = :"
+            + state.add(membership.subjectId())
+            + " AND "
+            + assignment
+            + ".user.enabled = true)");
+    if (!membership.currentGroupIds().isEmpty()) {
+      applicable.add(assignment + ".group.id IN :" + state.add(membership.currentGroupIds()));
+    }
+    if (membership.includeAllUsers()) {
+      applicable.add(assignment + ".audienceKey = :" + state.add(ResourceAudience.ALL_USERS));
+    }
+    String where =
+        assignment
+            + ".resourceAccess.id = "
+            + alias
+            + "."
+            + membership.resourceAccessIdPath()
+            + " AND "
+            + assignment
+            + ".roleKey IN :"
+            + state.add(membership.readableRoleKeys())
+            + " AND ("
+            + String.join(" OR ", applicable)
+            + ")";
+    return "EXISTS "
+        + state.addSubquery(new Subquery(ResourceRoleAssignment.class, assignment, where));
   }
 
   private String compileLogical(
