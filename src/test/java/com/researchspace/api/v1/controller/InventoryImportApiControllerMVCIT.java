@@ -33,8 +33,7 @@ import com.researchspace.model.inventory.SampleSource;
 import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.ApiAvailabilityHandler;
-import com.researchspace.service.inventory.ContainerApiManager;
-import com.researchspace.service.inventory.SampleApiManager;
+import com.researchspace.service.inventory.InventoryImportManager;
 import com.researchspace.service.inventory.csvimport.CsvSampleImporter;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -70,12 +69,9 @@ public class InventoryImportApiControllerMVCIT extends API_MVC_InventoryTestBase
 
   @Autowired private SamplesApiController samplesController;
 
-  @Autowired private SampleApiManager sampleApiMgr;
-
-  @Autowired private ContainerApiManager containerApiMgr;
-
   @Autowired private DigitalObjectIdentifierDao doiDao;
   @Autowired private CsvSampleImporter csvSampleImporter;
+  @Autowired private InventoryImportManager importApiMgr;
   @Mock private ApiAvailabilityHandler apiHandler;
 
   @BeforeEach

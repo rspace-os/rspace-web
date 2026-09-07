@@ -3,7 +3,6 @@ package com.researchspace.core.testutil;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import java.io.InputStream;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -75,28 +74,8 @@ public class CoreTestUtils {
     Assertions.assertThrows(IllegalStateException.class, executable);
   }
 
-  /**
-   * Gets a random alphanumeric String of specified length suitable for a random user or group name
-   * that should be unique.
-   *
-   * @param length a positive int
-   */
   public static String getRandomName(int length) {
-    if (length > 4) { // min length we can make a composite uname from
-      String uname =
-          RandomStringUtils.random(length / 2, true, false)
-              + ".@"
-              + RandomStringUtils.random(length / 2, false, true);
-      uname = uname.substring(0, length);
-      if (uname.length() != length) {
-        throw new IllegalStateException("Generated string is wrong length");
-      }
-    }
-    return RandomStringUtils.random(length, true, false);
-  }
-
-  public static InputStream getWordFrequencyFile() {
-    return CoreTestUtils.class.getClassLoader().getResourceAsStream("WordListNoDupsCumulative.txt");
+    return RandomStringUtils.randomAlphabetic(length);
   }
 
   public static StringAppenderForTestLogging configureStringLogger(

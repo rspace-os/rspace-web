@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.test.util.ReflectionTestUtils;
 
-@EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
+@EnabledIfSystemProperty(named = "bioportal.realConnectionTests", matches = "true")
 @EnabledIfSystemProperty(named = "bioportal.api.key", matches = ".+")
 public class BioPortalOntologiesServiceNightlyTest {
 

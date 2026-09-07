@@ -35,7 +35,6 @@ import java.util.Set;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.util.ReflectionTestUtils;
 
 public class ProdContentInitializerTestIT extends RealTransactionSpringTestBase {
@@ -43,7 +42,6 @@ public class ProdContentInitializerTestIT extends RealTransactionSpringTestBase 
   private static final int EXPECTED_EXAMPLE_IMG_COUNT = 7;
 
   private ProdContentInitializerManager initializer;
-  private @Autowired RecordManager recordMgr;
 
   private User user;
 
