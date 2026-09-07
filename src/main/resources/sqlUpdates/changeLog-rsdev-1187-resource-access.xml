@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.17.xsd">
+
+  <changeSet id="rsdev-1187-resource-access-empty-booking-precondition" author="researchspace" context="run">
+    <preConditions onFail="HALT" onError="HALT">
+      <sqlCheck expectedResult="0">SELECT COUNT(*) FROM BookingConfiguration</sqlCheck>
+    </preConditions>
+    <comment>Refuse the no-migration resource-access schema when Booking configurations already exist</comment>
+  </changeSet>
+
+  <changeSet id="rsdev-1187-resource-access" author="researchspace" context="run">
+    <comment>Create generic resource-access aggregates and role assignments</comment>
+    <createTable tableName="ResourceAccess">
+      <column name="id" type="BIGINT" autoIncrement="true">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+      <column name="schemeKey" type="VARCHAR(64)"><constraints nullable="false"/></column>
+      <column name="version" type="BIGINT" defaultValueNumeric="0"><constraints nullable="false"/></column>
+      <column name="createdAt" type="DATETIME(6)"><constraints nullable="false"/></column>
+      <column name="updatedAt" type="DATETIME(6)"><constraints nullable="false"/></column>
+      <column name="createdBy_id" type="BIGINT"/>
+      <column name="updatedBy_id" type="BIGINT"/>
+    </createTable>
+    <createIndex tableName="ResourceAccess" indexName="IX_ResourceAccess_schemeKey">
+      <column name="schemeKey"/>
+    </createIndex>
+    <addForeignKeyConstraint constraintName="FK_ResourceAccess_createdBy"
+        baseTableName="ResourceAccess" baseColumnNames="createdBy_id"
+        referencedTableName="User" referencedColumnNames="id" onDelete="SET NULL"/>
+    <addForeignKeyConstraint constraintName="FK_ResourceAccess_updatedBy"
+        baseTableName="ResourceAccess" baseColumnNames="updatedBy_id"
+        referencedTableName="User" referencedColumnNames="id" onDelete="SET NULL"/>
+
+    <createTable tableName="ResourceRoleAssignment">
+      <column name="id" type="BIGINT" autoIncrement="true">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+      <column name="resourceAccess_id" type="BIGINT"><constraints nullable="false"/></column>
+      <column name="roleKey" type="VARCHAR(64)"><constraints nullable="false"/></column>
+      <column name="granteeKey" type="VARCHAR(191)"><constraints nullable="false"/></column>
+      <column name="granteeKind" type="VARCHAR(16)"><constraints nullable="false"/></column>
+      <column name="user_id" type="BIGINT"/>
+      <column name="group_id" type="BIGINT"/>
+      <column name="audienceKey" type="VARCHAR(32)"/>
+      <column name="nameSnapshot" type="VARCHAR(255)"><constraints nullable="false"/></column>
+      <column name="detailSnapshot" type="VARCHAR(255)"/>
+    </createTable>
+    <addUniqueConstraint tableName="ResourceRoleAssignment"
+        columnNames="resourceAccess_id, granteeKey"
+        constraintName="UK_ResourceRoleAssignment_access_grantee"/>
+    <createIndex tableName="ResourceRoleAssignment" indexName="IX_ResourceRoleAssignment_user">
+      <column name="user_id"/>
+      <column name="roleKey"/>
+      <column name="resourceAccess_id"/>
+    </createIndex>
+    <createIndex tableName="ResourceRoleAssignment" indexName="IX_ResourceRoleAssignment_group">
+      <column name="group_id"/>
+      <column name="roleKey"/>
+      <column name="resourceAccess_id"/>
+    </createIndex>
+    <createIndex tableName="ResourceRoleAssignment" indexName="IX_ResourceRoleAssignment_audience">
+      <column name="audienceKey"/>
+      <column name="roleKey"/>
+      <column name="resourceAccess_id"/>
+    </createIndex>
+    <addForeignKeyConstraint constraintName="FK_ResourceRoleAssignment_access"
+        baseTableName="ResourceRoleAssignment" baseColumnNames="resourceAccess_id"
+        referencedTableName="ResourceAccess" referencedColumnNames="id" onDelete="CASCADE"/>
+    <addForeignKeyConstraint constraintName="FK_ResourceRoleAssignment_user"
+        baseTableName="ResourceRoleAssignment" baseColumnNames="user_id"
+        referencedTableName="User" referencedColumnNames="id" onDelete="SET NULL"/>
+    <addForeignKeyConstraint constraintName="FK_ResourceRoleAssignment_group"
+        baseTableName="ResourceRoleAssignment" baseColumnNames="group_id"
+        referencedTableName="rsGroup" referencedColumnNames="id" onDelete="SET NULL"/>
+    <sql>
+      ALTER TABLE ResourceAccess ENGINE=InnoDB,
+      CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+      ALTER TABLE ResourceRoleAssignment ENGINE=InnoDB,
+      CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+    </sql>
+  </changeSet>
+
+  <changeSet id="rsdev-1187-resource-access-audit" author="researchspace" context="run">
+    <comment>Create Envers history for generic resource access</comment>
+    <createTable tableName="ResourceAccess_AUD">
+      <column name="id" type="BIGINT"><constraints nullable="false"/></column>
+      <column name="REV" type="INT"><constraints nullable="false"/></column>
+      <column name="REVTYPE" type="TINYINT"/>
+      <column name="schemeKey" type="VARCHAR(64)"/>
+      <column name="version" type="BIGINT"/>
+      <column name="createdAt" type="DATETIME(6)"/>
+      <column name="updatedAt" type="DATETIME(6)"/>
+      <column name="createdBy_id" type="BIGINT"/>
+      <column name="updatedBy_id" type="BIGINT"/>
+    </createTable>
+    <addPrimaryKey tableName="ResourceAccess_AUD" columnNames="id, REV"
+        constraintName="PK_ResourceAccess_AUD"/>
+    <addForeignKeyConstraint constraintName="FK_ResourceAccess_AUD_REV"
+        baseTableName="ResourceAccess_AUD" baseColumnNames="REV"
+        referencedTableName="REVINFO" referencedColumnNames="REV"/>
+
+    <createTable tableName="ResourceRoleAssignment_AUD">
+      <column name="id" type="BIGINT"><constraints nullable="false"/></column>
+      <column name="REV" type="INT"><constraints nullable="false"/></column>
+      <column name="REVTYPE" type="TINYINT"/>
+      <column name="resourceAccess_id" type="BIGINT"/>
+      <column name="roleKey" type="VARCHAR(64)"/>
+      <column name="granteeKey" type="VARCHAR(191)"/>
+      <column name="granteeKind" type="VARCHAR(16)"/>
+      <column name="user_id" type="BIGINT"/>
+      <column name="group_id" type="BIGINT"/>
+      <column name="audienceKey" type="VARCHAR(32)"/>
+      <column name="nameSnapshot" type="VARCHAR(255)"/>
+      <column name="detailSnapshot" type="VARCHAR(255)"/>
+    </createTable>
+    <addPrimaryKey tableName="ResourceRoleAssignment_AUD" columnNames="id, REV"
+        constraintName="PK_ResourceRoleAssignment_AUD"/>
+    <addForeignKeyConstraint constraintName="FK_ResourceRoleAssignment_AUD_REV"
+        baseTableName="ResourceRoleAssignment_AUD" baseColumnNames="REV"
+        referencedTableName="REVINFO" referencedColumnNames="REV"/>
+    <sql>
+      ALTER TABLE ResourceAccess_AUD ENGINE=InnoDB,
+      CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+      ALTER TABLE ResourceRoleAssignment_AUD ENGINE=InnoDB,
+      CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+    </sql>
+  </changeSet>
+
+  <changeSet id="rsdev-1187-booking-resource-access" author="researchspace" context="run">
+    <comment>Make each Booking configuration own one resource-access aggregate</comment>
+    <addColumn tableName="BookingConfiguration">
+      <column name="resourceAccess_id" type="BIGINT"><constraints nullable="false"/></column>
+    </addColumn>
+    <addUniqueConstraint tableName="BookingConfiguration" columnNames="resourceAccess_id"
+        constraintName="UK_BookingConfiguration_resourceAccess"/>
+    <addForeignKeyConstraint constraintName="FK_BookingConfiguration_resourceAccess"
+        baseTableName="BookingConfiguration" baseColumnNames="resourceAccess_id"
+        referencedTableName="ResourceAccess" referencedColumnNames="id"/>
+    <addColumn tableName="BookingConfiguration_AUD">
+      <column name="resourceAccess_id" type="BIGINT"/>
+    </addColumn>
+  </changeSet>
+
+  <changeSet id="rsdev-1187-booking-default-access" author="researchspace" context="run">
+    <comment>Add the initial Booking sharing mode and selected default grantees</comment>
+    <addColumn tableName="BookingConfigurationDefaults">
+      <column name="defaultSharedWith" type="VARCHAR(32)" defaultValue="ALL_USERS"/>
+    </addColumn>
+    <update tableName="BookingConfigurationDefaults">
+      <column name="defaultSharedWith" value="ALL_USERS"/>
+    </update>
+    <addNotNullConstraint tableName="BookingConfigurationDefaults"
+        columnName="defaultSharedWith" columnDataType="VARCHAR(32)"/>
+    <addColumn tableName="BookingConfigurationDefaults_AUD">
+      <column name="defaultSharedWith" type="VARCHAR(32)"/>
+    </addColumn>
+
+    <createTable tableName="BookingDefaultAccessGrantee">
+      <column name="id" type="BIGINT" autoIncrement="true">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+      <column name="defaults_id" type="BIGINT"><constraints nullable="false"/></column>
+      <column name="granteeKey" type="VARCHAR(191)"><constraints nullable="false"/></column>
+      <column name="granteeKind" type="VARCHAR(16)"><constraints nullable="false"/></column>
+      <column name="user_id" type="BIGINT"/>
+      <column name="group_id" type="BIGINT"/>
+      <column name="nameSnapshot" type="VARCHAR(255)"><constraints nullable="false"/></column>
+      <column name="detailSnapshot" type="VARCHAR(255)"/>
+    </createTable>
+    <addUniqueConstraint tableName="BookingDefaultAccessGrantee"
+        columnNames="defaults_id, granteeKey"
+        constraintName="UK_BookingDefaultAccessGrantee_defaults_grantee"/>
+    <createIndex tableName="BookingDefaultAccessGrantee" indexName="IX_BookingDefaultAccessGrantee_user">
+      <column name="user_id"/>
+    </createIndex>
+    <createIndex tableName="BookingDefaultAccessGrantee" indexName="IX_BookingDefaultAccessGrantee_group">
+      <column name="group_id"/>
+    </createIndex>
+    <addForeignKeyConstraint constraintName="FK_BookingDefaultAccessGrantee_defaults"
+        baseTableName="BookingDefaultAccessGrantee" baseColumnNames="defaults_id"
+        referencedTableName="BookingConfigurationDefaults" referencedColumnNames="id" onDelete="CASCADE"/>
+    <addForeignKeyConstraint constraintName="FK_BookingDefaultAccessGrantee_user"
+        baseTableName="BookingDefaultAccessGrantee" baseColumnNames="user_id"
+        referencedTableName="User" referencedColumnNames="id" onDelete="SET NULL"/>
+    <addForeignKeyConstraint constraintName="FK_BookingDefaultAccessGrantee_group"
+        baseTableName="BookingDefaultAccessGrantee" baseColumnNames="group_id"
+        referencedTableName="rsGroup" referencedColumnNames="id" onDelete="SET NULL"/>
+    <sql>
+      ALTER TABLE BookingDefaultAccessGrantee ENGINE=InnoDB,
+      CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+    </sql>
+
+    <createTable tableName="BookingDefaultAccessGrantee_AUD">
+      <column name="id" type="BIGINT"><constraints nullable="false"/></column>
+      <column name="REV" type="INT"><constraints nullable="false"/></column>
+      <column name="REVTYPE" type="TINYINT"/>
+      <column name="defaults_id" type="BIGINT"/>
+      <column name="granteeKey" type="VARCHAR(191)"/>
+      <column name="granteeKind" type="VARCHAR(16)"/>
+      <column name="user_id" type="BIGINT"/>
+      <column name="group_id" type="BIGINT"/>
+      <column name="nameSnapshot" type="VARCHAR(255)"/>
+      <column name="detailSnapshot" type="VARCHAR(255)"/>
+    </createTable>
+    <addPrimaryKey tableName="BookingDefaultAccessGrantee_AUD" columnNames="id, REV"
+        constraintName="PK_BookingDefaultAccessGrantee_AUD"/>
+    <addForeignKeyConstraint constraintName="FK_BookingDefaultAccessGrantee_AUD_REV"
+        baseTableName="BookingDefaultAccessGrantee_AUD" baseColumnNames="REV"
+        referencedTableName="REVINFO" referencedColumnNames="REV"/>
+    <sql>
+      ALTER TABLE BookingDefaultAccessGrantee_AUD ENGINE=InnoDB,
+      CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+    </sql>
+  </changeSet>
+</databaseChangeLog>
