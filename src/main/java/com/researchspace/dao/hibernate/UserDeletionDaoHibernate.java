@@ -67,6 +67,7 @@ public class UserDeletionDaoHibernate implements UserDeletionDao {
     table2UserIdColumn.put("ShareRecordMessageOrRequest", ORIGINATOR_ID);
     table2UserIdColumn.put("UserKeyPair", USER_ID);
     table2UserIdColumn.put("DMPUser", USER_ID);
+    table2UserIdColumn.put("FeatureFlagUserOverride", USER_ID);
   }
 
   static final String[] RecordTables1 =

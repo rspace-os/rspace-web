@@ -1,0 +1,11 @@
+<%= it.banner %>
+
+package com.researchspace.featureflags;
+
+public final class FeatureFlags {
+
+<% for (const flag of it.flags) { -%>
+  public static final String <%= flag.constant %> = "<%= flag.name %>";
+<% } %>
+  private FeatureFlags() {}
+}

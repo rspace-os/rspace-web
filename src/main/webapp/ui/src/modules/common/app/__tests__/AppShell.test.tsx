@@ -30,6 +30,8 @@ vi.mock("@/modules/common/stores/userSessionStore", () => ({
   UserSessionBootstrap: () => null,
 }));
 
+vi.mock("@/featureFlags/FeatureFlagDevtoolsMount", () => ({ default: () => null }));
+
 function testQueryClient() {
   return new QueryClient({ defaultOptions: { queries: { retry: false } } });
 }
