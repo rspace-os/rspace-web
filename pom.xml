@@ -457,6 +457,11 @@
 
   <dependencies>
     <dependency>
+      <groupId>com.bucket4j</groupId>
+      <artifactId>bucket4j_jdk17-core</artifactId>
+      <version>${bucket4j.version}</version>
+    </dependency>
+    <dependency>
       <groupId>org.hamcrest</groupId>
       <artifactId>hamcrest-all</artifactId>
       <version>${hamcrest.version}</version>
@@ -857,6 +862,33 @@
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.swagger.core.v3</groupId>
+      <artifactId>swagger-core-jakarta</artifactId>
+      <version>2.2.48</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.yaml</groupId>
+          <artifactId>snakeyaml</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <!--
+      MockServer brings the non-Jakarta swagger-core onto the test classpath. Keep its duplicate
+      classes API-compatible with the production Jakarta artifact used by OpenAPI generation.
+    -->
+    <dependency>
+      <groupId>io.swagger.core.v3</groupId>
+      <artifactId>swagger-core</artifactId>
+      <version>2.2.48</version>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>org.yaml</groupId>
+          <artifactId>snakeyaml</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.dataformat</groupId>
@@ -2732,6 +2764,7 @@
     <urlrewrite.version>5.1.3</urlrewrite.version>
     <skipUnitTests>false</skipUnitTests>
     <spotless.version>3.5.1</spotless.version>
+    <bucket4j.version>8.19.0</bucket4j.version>
     <frontend.dependencies.install.arg>install --frozen-lockfile</frontend.dependencies.install.arg>
 
     <!--Sonar properties-->

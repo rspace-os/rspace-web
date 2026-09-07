@@ -78,6 +78,9 @@
     <Logger name="com.researchspace.api.v1.service.impl.ApiRequestLogger" level="INFO">
       <AppenderRef ref="ApiRequestLogAppender"/>
     </Logger>
+    <Logger name="com.researchspace.api.v2.requests" level="INFO">
+      <AppenderRef ref="ApiRequestLogAppender"/>
+    </Logger>
 
     <Logger name="com.researchspace.webapp.controller.PerformanceLoggingInterceptor" level="INFO">
       <AppenderRef ref="SlowRequestsLogAppender"/>

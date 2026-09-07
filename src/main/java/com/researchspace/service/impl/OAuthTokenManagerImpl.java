@@ -1,5 +1,7 @@
 package com.researchspace.service.impl;
 
+import static com.researchspace.auth.BrowserSessionAuthContext.UI_TOKEN_AUDIENCE;
+
 import com.researchspace.api.v1.model.NewOAuthTokenResponse;
 import com.researchspace.core.util.CryptoUtils;
 import com.researchspace.dao.OAuthTokenDao;
@@ -11,20 +13,27 @@ import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.OAuthAppManager;
 import com.researchspace.service.OAuthTokenManager;
+import io.github.resilience4j.core.IntervalFunction;
+import io.github.resilience4j.retry.Retry;
+import io.github.resilience4j.retry.RetryConfig;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
+import io.vavr.control.Try;
 import java.time.Instant;
 import java.time.temporal.TemporalAmount;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.ObjectRetrievalFailureException;
 import org.springframework.stereotype.Service;
 
@@ -33,6 +42,14 @@ public class OAuthTokenManagerImpl implements OAuthTokenManager {
   private static final int ALLOWED_CLOCK_SKEW = 3 * 60;
   private static final int TOKEN_LENGTH = 32; // 192 bits in base64 (6bit)
   private static final Pattern jwtToken = Pattern.compile(".+\\..+\\..+");
+  private static final String UI_CLIENT_ID = "rsInventoryWebClient";
+  private static final String UI_CLIENT_SECRET = "rsInventoryPublicSecret";
+  private static final RetryConfig UI_TOKEN_RETRY =
+      RetryConfig.custom()
+          .maxAttempts(3)
+          .intervalFunction(IntervalFunction.ofExponentialRandomBackoff(500, 2d))
+          .retryExceptions(DataIntegrityViolationException.class)
+          .build();
 
   @Autowired OAuthTokenDao tokenDao;
 
@@ -244,6 +261,82 @@ public class OAuthTokenManagerImpl implements OAuthTokenManager {
     response.setExpiryTime(expiryTime);
 
     return new ServiceOperationResult<>(response, true);
+  }
+
+  @Override
+  public String createUiToken(User user) {
+    Retry retry = Retry.of("jwtTokenGeneration", UI_TOKEN_RETRY);
+    Callable<NewOAuthTokenResponse> createWithRetry =
+        Retry.decorateCallable(
+            retry,
+            () ->
+                createNewJwtToken(UI_CLIENT_ID, UI_CLIENT_SECRET, user, OAuthTokenType.UI_TOKEN)
+                    .getEntity());
+    return Try.ofCallable(createWithRetry).get().getAccessToken();
+  }
+
+  @Override
+  public String createUiToken(User subject, User actor, String sessionContextId) {
+    Retry retry = Retry.of("sessionBoundJwtTokenGeneration", UI_TOKEN_RETRY);
+    Callable<String> createWithRetry =
+        Retry.decorateCallable(
+            retry, () -> createSessionBoundUiToken(subject, actor, sessionContextId));
+    return Try.ofCallable(createWithRetry).get();
+  }
+
+  private String createSessionBoundUiToken(User subject, User actor, String sessionContextId) {
+    OAuthToken token =
+        tokenDao.getToken(UI_CLIENT_ID, subject.getId(), OAuthTokenType.UI_TOKEN).orElse(null);
+    if (token == null) {
+      token = new OAuthToken(subject, UI_CLIENT_ID, OAuthTokenType.UI_TOKEN);
+      token.setHashedRefreshToken(CryptoUtils.hashToken(CryptoUtils.generateUnhashedToken()));
+      tokenDao.save(token);
+    }
+
+    var builder =
+        Jwts.builder()
+            .setIssuer(properties.getServerUrl())
+            .setSubject(subject.getId().toString())
+            .setAudience(UI_TOKEN_AUDIENCE)
+            .setIssuedAt(new Date())
+            .setExpiration(Date.from(generateExpiryTime()))
+            .claim("sid", sessionContextId)
+            .claim("refreshTokenHash", token.getHashedRefreshToken());
+    if (!subject.getId().equals(actor.getId())) {
+      builder.claim("act", Map.of("sub", actor.getId().toString()));
+    }
+    return builder.signWith(properties.getJwtKey()).compact();
+  }
+
+  @Override
+  public Optional<UiTokenContext> getUiTokenContext(String accessToken) {
+    try {
+      Claims claims =
+          Jwts.parserBuilder()
+              .setAllowedClockSkewSeconds(ALLOWED_CLOCK_SKEW)
+              .requireIssuer(properties.getServerUrl())
+              .requireAudience(UI_TOKEN_AUDIENCE)
+              .setSigningKey(properties.getJwtKey())
+              .build()
+              .parseClaimsJws(accessToken)
+              .getBody();
+      long subjectId = Long.parseLong(claims.getSubject());
+      String sessionContextId = claims.get("sid", String.class);
+      if (StringUtils.isBlank(sessionContextId)) {
+        return Optional.empty();
+      }
+      Optional<Long> actorId = Optional.empty();
+      Object actorClaim = claims.get("act");
+      if (actorClaim instanceof Map<?, ?> actor) {
+        Object actorSubject = actor.get("sub");
+        if (actorSubject != null) {
+          actorId = Optional.of(Long.parseLong(actorSubject.toString()));
+        }
+      }
+      return Optional.of(new UiTokenContext(subjectId, actorId, sessionContextId));
+    } catch (JwtException | NumberFormatException ex) {
+      return Optional.empty();
+    }
   }
 
   private Instant generateExpiryTime() {
