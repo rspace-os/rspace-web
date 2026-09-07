@@ -1,7 +1,8 @@
 package com.researchspace.api.v1.controller;
 
 public enum API_VERSION {
-  ONE(1);
+  ONE(1),
+  TWO(2);
   private int version;
 
   private API_VERSION(int version) {
