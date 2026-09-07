@@ -3,7 +3,6 @@ package com.researchspace.api.v1.controller;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -167,8 +166,9 @@ public class InstrumentExternalMetadataUpdateDataCiteMVCIT extends API_MVC_Inven
             .path("identifiers")
             .path(0);
     JsonNode update = identifier.path("externalMetadataUpdate");
-    assertTrue(
-        update.path("succeeded").asBoolean(),
+    assertEquals(
+        "UPDATED",
+        update.path("outcome").asText(),
         "the real DataCite API rejected the rebuilt payload: " + update);
     assertNotNull(update.path("reason").asText(null));
     /*
