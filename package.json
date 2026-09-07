@@ -6,6 +6,7 @@
   "scripts": {
     "prepare": "node scripts/install-git-hooks.mjs",
     "postinstall": "node scripts/link-skills.mjs",
+    "dev:docker": "./docker/dev/rspace-dev",
     "test": "cd src/main/webapp/ui && cross-env NODE_OPTIONS=\"--max-old-space-size=8192\" vitest run",
     "test:ui": "cd src/main/webapp/ui && cross-env NODE_OPTIONS=\"--max-old-space-size=8192\" vitest --ui",
     "build": "cd src/main/webapp/ui && cross-env NODE_OPTIONS=\"--max-old-space-size=8192\" vite build --config vite.config.ts",
