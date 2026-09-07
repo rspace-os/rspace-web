@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+  <!--
+      REST API v2 allows PATCH to clear ScheduledMaintenance.stopUserLoginDate (the early
+      login-cutoff field) back to "no separate cutoff". That requires the column to accept NULL;
+      ScheduledMaintenance.getCanUserLoginNow() falls back to startDate when it is null.
+  -->
+  <changeSet id="2026-07-28-scheduledmaintenance-nullable-stopuserlogindate" context="run" author="claude">
+    <comment>Allow ScheduledMaintenance.stopUserLoginDate to be cleared via the API</comment>
+    <dropNotNullConstraint
+        tableName="ScheduledMaintenance"
+        columnName="stopUserLoginDate"
+        columnDataType="datetime"/>
+  </changeSet>
+
+</databaseChangeLog>
