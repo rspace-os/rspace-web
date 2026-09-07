@@ -32,6 +32,7 @@ import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.api.v1.model.ApiSubSampleInfo;
 import com.researchspace.api.v1.model.ApiUser;
 import com.researchspace.core.util.SortOrder;
+import com.researchspace.dao.SampleTemplateDao;
 import com.researchspace.model.Community;
 import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
@@ -45,6 +46,7 @@ import com.researchspace.model.events.InventoryRestoreEvent;
 import com.researchspace.model.events.InventoryTransferEvent;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.units.RSUnitDef;
+import com.researchspace.service.inventory.impl.InventoryEditLockTracker;
 import com.researchspace.service.inventory.impl.SubSampleDuplicateConfig;
 import com.researchspace.testutils.SpringTransactionalTest;
 import jakarta.ws.rs.NotFoundException;
@@ -57,10 +59,13 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 
 public class SampleApiManagerTest extends SpringTransactionalTest {
 
+  private @Autowired InventoryEditLockTracker invLockTracker;
+  private @Autowired SampleTemplateDao sampleTemplateDao;
   private ApplicationEventPublisher mockPublisher;
 
   private User testUser;

@@ -24,8 +24,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpEntity;
@@ -39,6 +39,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
 @WebAppConfiguration
+@EnabledIfSystemProperty(named = "digitalCommons.realConnectionTests", matches = "true")
 public class DigitalCommonsDataMVCIT extends API_MVC_TestBase {
 
   private @Autowired UserConnectionManager userConnectionManager;
@@ -51,9 +52,6 @@ public class DigitalCommonsDataMVCIT extends API_MVC_TestBase {
   }
 
   @Test
-  @Disabled(
-      "This test was used for the Digital Commons data POC. "
-          + "We leave the test Ignored so we can potentially run it manually")
   public void testGetAccessToken() throws Exception {
     MvcResult result =
         mockMvc
@@ -78,9 +76,6 @@ public class DigitalCommonsDataMVCIT extends API_MVC_TestBase {
   }
 
   @Test
-  @Disabled(
-      "This test was used for the Digital Commons data POC. We leave the test Ignored so we can"
-          + " potentially run it manually by adding clientId and clientSecret")
   public void testGetDatasetsAndByIdCredentialFlow() throws IOException, URISyntaxException {
     RestTemplate restTemplate = new RestTemplate();
 
@@ -161,9 +156,6 @@ public class DigitalCommonsDataMVCIT extends API_MVC_TestBase {
   }
 
   @Test
-  @Disabled(
-      "This test was used for the Digital Commons data POC. "
-          + "We leave the test Ignored so we can potentially run it manually by the access token")
   public void testCreateDatasetAndPushFile() throws IOException, URISyntaxException {
     RestTemplate restTemplate = new RestTemplate();
 
@@ -263,9 +255,6 @@ public class DigitalCommonsDataMVCIT extends API_MVC_TestBase {
   }
 
   @Test
-  @Disabled(
-      "This test was used for the Digital Commons data POC. "
-          + "We leave the test Ignored so we can potentially run it manually")
   public void testConnectController() throws Exception {
     MvcResult result =
         mockMvc

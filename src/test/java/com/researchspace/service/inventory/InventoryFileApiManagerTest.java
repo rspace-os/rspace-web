@@ -14,6 +14,7 @@ import com.researchspace.api.v1.model.ApiInventoryFile;
 import com.researchspace.api.v1.model.ApiInventoryReferencingItem;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.core.util.ISearchResults;
+import com.researchspace.dao.SampleTemplateDao;
 import com.researchspace.model.EcatImage;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
@@ -30,8 +31,11 @@ import java.io.IOException;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 
 public class InventoryFileApiManagerTest extends SpringTransactionalTest {
+
+  private @Autowired SampleTemplateDao sampleTemplateDao;
 
   @BeforeEach
   public void setUp() throws Exception {

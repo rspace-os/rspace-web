@@ -76,6 +76,7 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
 
   private @Autowired DigitalObjectIdentifierDao doiDao;
   private @Autowired InstrumentDao instrumentDao;
+  private @Autowired InventoryIdentifierApiManager inventoryIdentifierApiMgr;
 
   /** Restored after any test that swaps in a mock, so the shared context is left as it was. */
   private @Autowired DataCiteConnector realDataCiteConnector;

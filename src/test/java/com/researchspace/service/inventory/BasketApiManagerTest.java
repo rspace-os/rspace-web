@@ -20,9 +20,12 @@ import com.researchspace.model.User;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.BindException;
 
 public class BasketApiManagerTest extends SpringTransactionalTest {
+
+  private @Autowired InventoryPermissionUtils invPermissionUtils;
 
   @Test
   public void testBasicBasketOperations() throws BindException {

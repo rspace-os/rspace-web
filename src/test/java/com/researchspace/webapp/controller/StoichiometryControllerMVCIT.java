@@ -1,6 +1,9 @@
 package com.researchspace.webapp.controller;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -18,6 +21,7 @@ import com.researchspace.model.ChemElementsFormat;
 import com.researchspace.model.RSChemElement;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.chemistry.ChemicalDataDTO;
+import com.researchspace.model.dtos.chemistry.ChemicalImportSearchResult;
 import com.researchspace.model.dtos.chemistry.StoichiometryDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryMapper;
 import com.researchspace.model.dtos.chemistry.StoichiometryMoleculeDTO;
@@ -29,27 +33,35 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.stoichiometry.MoleculeRole;
 import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.service.AuditManager;
+import com.researchspace.service.ChemicalSearcher;
 import com.researchspace.testutils.RSpaceTestUtils;
 import java.io.IOException;
 import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.BeanOverrideTestExecutionListener;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoResetTestExecutionListener;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MvcResult;
 
 @WebAppConfiguration
-@TestPropertySource(
-    properties = {"chemistry.service.url=http://localhost:8090", "chemistry.provider=indigo"})
-@Disabled(
-    "Requires chemistry service to run. See"
-        + " https://documentation.researchspace.com/article/1jbygguzoa")
+@TestPropertySource(properties = "chemistry.provider=indigo")
+@TestExecutionListeners({
+  BeanOverrideTestExecutionListener.class,
+  MockitoResetTestExecutionListener.class
+})
+@Tag("chemistry")
 public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
+
+  private static final String EDITING_SESSION_ID = "stoichiometry-test-editing-session";
 
   private Principal principal;
   private User user;
@@ -57,6 +69,7 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
   private String apiKey;
 
   @Autowired private AuditManager auditManager;
+  @MockitoBean private ChemicalSearcher chemicalSearcher;
 
   private static final String URL = "/api/v1/stoichiometry";
 
@@ -66,6 +79,11 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
     user = createInitAndLoginAnyUser();
     principal = new MockPrincipal(user.getUsername());
     apiKey = createNewApiKeyForUser(user);
+    when(chemicalSearcher.searchChemicals(any(), anyString()))
+        .thenAnswer(
+            invocation ->
+                List.of(
+                    ChemicalImportSearchResult.builder().name(invocation.getArgument(1)).build()));
   }
 
   @Test
@@ -629,7 +647,8 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
     // Simulate an editor session holding the lock on the owning document.
     assertEquals(
         com.researchspace.model.EditStatus.EDIT_MODE,
-        recordMgr.requestRecordEdit(doc1.getId(), user, anySessionTracker()));
+        recordMgr.requestRecordEdit(
+            doc1.getId(), user, anySessionTracker(), () -> EDITING_SESSION_ID));
 
     try {
       StoichiometryUpdateDTO updateDTO = new StoichiometryUpdateDTO();
@@ -663,7 +682,7 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
                   .header("apiKey", apiKey))
           .andExpect(status().isOk());
     } finally {
-      recordMgr.unlockRecord(doc1, user);
+      recordMgr.unlockRecord(doc1.getId(), user.getUsername(), () -> EDITING_SESSION_ID);
     }
 
     // After releasing the lock the HTML-sync path must succeed again.
@@ -693,7 +712,8 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
 
     assertEquals(
         com.researchspace.model.EditStatus.EDIT_MODE,
-        recordMgr.requestRecordEdit(doc1.getId(), user, anySessionTracker()));
+        recordMgr.requestRecordEdit(
+            doc1.getId(), user, anySessionTracker(), () -> EDITING_SESSION_ID));
 
     try {
       mockMvc
@@ -714,7 +734,7 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
                   .header("apiKey", apiKey))
           .andExpect(status().isOk());
     } finally {
-      recordMgr.unlockRecord(doc1, user);
+      recordMgr.unlockRecord(doc1.getId(), user.getUsername(), () -> EDITING_SESSION_ID);
     }
   }
 

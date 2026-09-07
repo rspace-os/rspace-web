@@ -28,6 +28,7 @@ import com.researchspace.model.dtos.ShareConfigElement;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
+import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.cloud.impl.CommunityPostSignupVerification;
 import com.researchspace.testutils.CommunityTestContext;
 import com.researchspace.testutils.RSpaceTestUtils;
@@ -52,6 +53,7 @@ import org.springframework.test.context.web.WebAppConfiguration;
 public class CloudInvitedSignupTestMVCIT extends MVCTestBase {
 
   @Autowired private RSCommunityController cloudController;
+  @Autowired private IPropertyHolder propertyHolder;
 
   private HttpServletRequest mockRequest;
 

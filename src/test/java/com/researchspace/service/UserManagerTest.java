@@ -25,6 +25,7 @@ import com.researchspace.model.UserPreference;
 import com.researchspace.model.dtos.UserSearchCriteria;
 import com.researchspace.model.events.AccountEventType;
 import com.researchspace.model.events.UserAccountEvent;
+import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.model.record.StructuredDocument;
@@ -50,6 +51,7 @@ public class UserManagerTest extends SpringTransactionalTest {
   private static final String USER2 = "user1a";
   private Logger log = LoggerFactory.getLogger(UserManagerTest.class);
 
+  private @Autowired IPermissionUtils permissionUtils;
   private @Autowired RoleManager roleManager;
 
   @BeforeEach

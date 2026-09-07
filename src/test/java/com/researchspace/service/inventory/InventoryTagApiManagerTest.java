@@ -7,9 +7,11 @@ import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 
 public class InventoryTagApiManagerTest extends SpringTransactionalTest {
 
+  private @Autowired InventoryTagApiManager inventoryTagsApiManager;
   private User testUser;
 
   @BeforeEach
