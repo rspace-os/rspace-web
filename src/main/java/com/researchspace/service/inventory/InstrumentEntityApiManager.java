@@ -10,11 +10,18 @@ import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiInventorySearchResult;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
+import com.researchspace.model.collection.ResourcePage;
+import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InstrumentEntity;
+import com.researchspace.model.inventory.InstrumentParentLocationSummary;
+import com.researchspace.model.inventory.InstrumentReadSummary;
 import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.model.inventory.InventoryRecord;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 /** Handles API actions around Inventory Instrument. */
 public interface InstrumentEntityApiManager extends InventoryApiManager<InstrumentEntity> {
@@ -168,6 +175,30 @@ public interface InstrumentEntityApiManager extends InventoryApiManager<Instrume
   Instrument assertUserCanEditInstrument(Long dbId, User user);
 
   Instrument assertUserCanReadInstrument(Long dbId, User user);
+
+  /** Returns the instrument only when it exists and the caller may read it. */
+  Optional<Instrument> findReadableInstrument(Long dbId, User user);
+
+  /**
+   * Returns one REST API v2 collection page of the instruments the user may read.
+   *
+   * <p>Transactional entry point for the collection routes: the database applies the request
+   * filter, the sort, the inventory permission rules, and the page together.
+   */
+  ResourcePage<Instrument> getReadableInstruments(ResourceRequest request, User user);
+
+  /** Counts the instruments the user may read that match a REST API v2 collection request. */
+  long countReadableInstruments(ResourceRequest request, User user);
+
+  /** Returns current immediate parent-container data keyed by instrument ID. */
+  Map<Long, InstrumentParentLocationSummary> getParentLocationSummaries(Set<Long> instrumentIds);
+
+  /** Returns readable active instrument scalars for relationship expansion. */
+  Map<Long, InstrumentReadSummary> getReadableInstrumentSummaries(
+      Set<Long> instrumentIds, User user);
+
+  /** Returns the requested active parent-container IDs that the user may read. */
+  Set<Long> getReadableParentContainerIds(Set<Long> containerIds, User user);
 
   Instrument assertUserCanDeleteInstrument(Long dbId, User user);
 
