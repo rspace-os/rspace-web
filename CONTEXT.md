@@ -355,6 +355,38 @@ _Avoid_: runtime-failing flag, startup blocker
 
 ## Booking
 
+- **Day timeline** — a horizontal representation of one calendar day in the
+  display timezone, with events positioned by elapsed time. Clock-change days
+  can contain 23 or 25 hours; UTC offsets distinguish repeated local hours.
+- **Wall-clock day** — the interval between consecutive local midnights in a
+  timezone. Its elapsed duration can differ from 24 hours when clocks change.
+- **Event** — a time-bounded item displayed on a resource's calendar. Events may
+  overlap; overlap is not, by itself, evidence of a booking conflict.
+- **Event kind** — the reason an event affects a resource's availability: either
+  a booking or a blockout.
+- **Booking event** — an event that reserves a resource for a user. Its full
+  calendar card identifies who booked it, its exact period, and any notes the
+  viewer is permitted to see.
+- **Blockout event** — a non-booking event that marks a resource as unavailable,
+  such as maintenance or downtime. It has kind-appropriate card content and no
+  booker.
+- **Event lane** — one horizontal visual track within a day timeline. Overlapping
+  events occupy separate lanes so that each remains visible.
+- **Calendar card** — the reusable visual representation of an event. Its compact
+  state fits the geometry imposed by a calendar view; its expanded state exposes
+  the event's complete display details without changing the event's time range.
+- **Expanded calendar card** — a calendar card state that exposes the full booked-by
+  heading, exact period, and notes when compact timeline geometry cannot show them.
+  Expansion is distinct from creating or editing an event.
+- **Availability window** — the explicit time interval over which a resource's
+  availability is summarized. It can span part of a day, one day, or several days.
+- **Availability bar** — a thin summary of one resource's availability within an
+  availability window. Touching or overlapping events of the same kind form one
+  continuous section; its expanded overlay exposes the individual events the
+  viewer is permitted to see.
+- **Availability state** — the condition of a resource during one section of an
+  availability window: available, booked, blocked out, or simultaneously booked
+  and blocked out.
 - **Booking configuration** — the settings that make one inventory instrument
   bookable, including its scheduling timezone and booking rules.
 - **Booking configuration state** — the lifecycle condition of a booking
