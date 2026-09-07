@@ -751,7 +751,131 @@ export default interface Resources {
     }
   },
   "booking": {
+    "access": {
+      "allUsers": "All users",
+      "leave": "Leave configuration",
+      "roles": {
+        "booker": {
+          "description": "Can view the schedule, subscribe, create bookings, and manage their own bookings.",
+          "label": "Booker"
+        },
+        "manager": {
+          "description": "Can manage configuration, events, and non-owner access.",
+          "label": "Manager"
+        },
+        "noAccess": {
+          "description": "Does not grant public access. Direct user and group access still applies.",
+          "label": "No access"
+        },
+        "owner": {
+          "description": "Full control, including Owners and archiving.",
+          "label": "Owner"
+        },
+        "viewer": {
+          "description": "Can view the schedule and subscribe to the calendar.",
+          "label": "Viewer"
+        }
+      }
+    },
     "bookableItemDetails": {
+      "about": "About this item",
+      "actions": {
+        "archive": "Archive bookable item",
+        "createBooking": "Create booking",
+        "leave": "Leave configuration"
+      },
+      "archiveDialog": {
+        "confirm": "Archive",
+        "description": "Archive {item}? Every future booking on it is cancelled automatically and cannot be restored. Bookings that have already started are kept.",
+        "error": "Could not archive this bookable item. Try again.",
+        "title": "Archive bookable item?"
+      },
+      "archived": "Archived",
+      "audit": {
+        "apply": "Load audit events",
+        "conflict": {
+          "description": "This snapshot can no longer be paged reliably. Restart from the first page to avoid missing or duplicate events.",
+          "title": "The audit results changed"
+        },
+        "empty": "No recorded changes in this period.",
+        "emptyStable": "This period starts after the latest completed UTC day, so its stable daily snapshot is empty.",
+        "error": {
+          "description": "Try refreshing the audit log.",
+          "title": "Could not load audit events"
+        },
+        "fields": {
+          "action": "Action",
+          "actor": "Changed by",
+          "description": "Description",
+          "domain": "Domain",
+          "eventId": "Event ID",
+          "fullName": "Full name",
+          "rowId": "Row",
+          "timestamp": "Time",
+          "values": "Recorded values"
+        },
+        "from": "From date",
+        "fromError": "From: {message}",
+        "lastDays": "{count, plural, one {Last # day} other {Last # days}}",
+        "next": "Next",
+        "nextPage": "Next, page {page, number}",
+        "page": "Page {page, number} of {totalPages, number}",
+        "pagination": "Audit event pages",
+        "period": "Period",
+        "plural": "Audit events",
+        "previous": "Previous",
+        "previousPage": "Previous, page {page, number}",
+        "refresh": "Refresh",
+        "restart": "Restart from first page",
+        "resultsThrough": "Results through {date}",
+        "singular": "Audit event",
+        "status": {
+          "loaded": "Page {page, number} of {totalPages, number}. {count, plural, one {# audit event} other {# audit events}}. Results through {date}.",
+          "loading": "Loading audit events.",
+          "refreshing": "Updating audit events."
+        },
+        "to": "To date",
+        "toError": "To: {message}",
+        "tooMany": {
+          "description": "Choose a narrower date range and load the audit events again.",
+          "title": "Too many audit events"
+        },
+        "unavailable": {
+          "description": "The complete result set could not be read. No partial results are shown.",
+          "title": "Audit log unavailable"
+        },
+        "validation": {
+          "invalid": "Enter a real date in YYYY-MM-DD format.",
+          "inverted": "From must be on or before To.",
+          "required": "Choose a date.",
+          "tooWide": "Choose a period of no more than 183 days."
+        }
+      },
+      "cancelEdit": "Cancel",
+      "disabled": "Disabled",
+      "edit": "Edit configuration",
+      "enabled": "Enabled",
+      "error": {
+        "description": "RSpace could not load this bookable item's configuration.",
+        "title": "Bookable item unavailable"
+      },
+      "events": {
+        "actor": "Requester / creator",
+        "busy": "Busy",
+        "count": "{count, plural, one {# event} other {# events}}",
+        "edit": "Edit",
+        "empty": "No events",
+        "error": {
+          "description": "RSpace could not load these events.",
+          "title": "Events unavailable"
+        },
+        "kind": "Event type",
+        "loading": "Loading events.",
+        "page": "Page {page, number} of {totalPages, number}",
+        "pagination": "Event pages",
+        "purpose": "Purpose",
+        "requester": "Requester"
+      },
       "fields": {
         "bufferAfter": "Buffer after",
         "bufferBefore": "Buffer before",
@@ -764,7 +888,151 @@ export default interface Resources {
         "openingHours": "Opening hours",
         "timezone": "Timezone",
         "updatedAt": "Last updated"
+      },
+      "leaveDialog": {
+        "description": "Your direct access will be removed. Access inherited through a group or All users is not affected.",
+        "error": "Could not leave this configuration.",
+        "title": "Leave this booking configuration?"
+      },
+      "lifecycleErrors": {
+        "restore": "The booking configuration could not be restored. Refresh and try again.",
+        "stale": "This booking configuration changed after you loaded it. Review the latest version and try again.",
+        "stateChanged": "This booking configuration is no longer in the required state. Review the latest version and try again."
+      },
+      "loading": "Loading bookable item.",
+      "minutes": "{count, plural, one {# minute} other {# minutes}}",
+      "no": "No",
+      "notAvailable": "Not available",
+      "past": "Past events",
+      "permanentDeleteDialog": {
+        "confirm": "Delete permanently",
+        "confirmationLabel": "Item name",
+        "description": "This permanently deletes the configuration, all bookings, access assignments, and calendar subscription links. This cannot be undone. Type \"{item}\" to confirm.",
+        "error": "The configuration could not be permanently deleted. Refresh and try again.",
+        "title": "Permanently delete configuration?"
+      },
+      "rules": "Booking rules",
+      "tabs": {
+        "access": "Access",
+        "audit": "Audit log",
+        "bookings": "Bookings",
+        "details": "Details"
+      },
+      "title": "Bookable item details",
+      "unlimited": "Unlimited",
+      "upcoming": "Upcoming events",
+      "update": {
+        "archived": "Booking configuration archived.",
+        "pending": "Saving booking configuration.",
+        "restored": "Booking configuration restored.",
+        "saved": "Booking configuration saved."
+      },
+      "viewInventory": "View {name} in Inventory",
+      "yes": "Yes"
+    },
+    "bookableItems": {
+      "actions": {
+        "access": "Manage access for {item}",
+        "add": "Add",
+        "archive": "Archive",
+        "delete": "Delete {item}",
+        "deletePermanently": "Delete permanently",
+        "edit": "Edit {item}",
+        "menu": "Actions for {item}",
+        "repairAccess": "Repair access for {item}",
+        "restore": "Restore",
+        "save": "Save changes",
+        "submit": "Submit",
+        "viewDetails": "View details for {item}",
+        "viewInventory": "View {globalId} in Inventory"
+      },
+      "addError": "Could not add the bookable item. Try again.",
+      "addTitle": "Add Bookable Item",
+      "archiveDialog": {
+        "description": "{item} will no longer accept new bookings, and every future booking on it is cancelled automatically and cannot be restored.",
+        "error": "{item} could not be archived. Refresh and try again.",
+        "title": "Archive booking configuration?"
+      },
+      "availability": {
+        "alreadyConfigured": "This inventory item already has a bookable item configuration.",
+        "checkFailed": "RSpace could not check whether this instrument can be added. Select it again or try another instrument.",
+        "checking": "Checking whether this instrument can be added.",
+        "editExisting": "Edit the existing configuration",
+        "instrumentRequired": "The selected inventory item is not an instrument and cannot be added as a bookable item.",
+        "viewExisting": "View existing"
+      },
+      "bulk": {
+        "actions": {
+          "archive": "Archive selected",
+          "delete": "Delete selected",
+          "disable": "Disable",
+          "enable": "Enable"
+        },
+        "archiveDialog": {
+          "description": "They will no longer accept new bookings, and every future booking on them is cancelled automatically and cannot be restored.",
+          "title": "Archive {count, plural, one {# booking configuration} other {# booking configurations}}?"
+        },
+        "deleteDialog": {
+          "description": "This action cannot be undone.",
+          "title": "Delete {count, plural, one {# bookable item} other {# bookable items}}?"
+        },
+        "errors": {
+          "archive": "The selected configurations could not be archived.",
+          "delete": "Could not delete the selected rows. No rows changed. Try again.",
+          "disable": "Could not disable the selected rows. No rows changed. Try again.",
+          "enable": "Could not enable the selected rows. No rows changed. Try again."
+        }
+      },
+      "deleteDialog": {
+        "description": "Delete {item}? This action cannot be undone.",
+        "error": "Could not delete {item}. Try again.",
+        "title": "Delete bookable item?"
+      },
+      "editError": "Could not update the bookable item. Try again.",
+      "editTitle": "Edit Bookable Item",
+      "fields": {
+        "actions": "Actions",
+        "enabled": "Enabled",
+        "id": "ID",
+        "state": "State",
+        "target": "Bookable item",
+        "targetName": "Bookable item name",
+        "timezone": "Time zone",
+        "updatedAt": "Last updated"
+      },
+      "lifecycleErrors": {
+        "restore": "The booking configuration could not be restored. Refresh and try again.",
+        "stale": "This booking configuration changed after you loaded it. Review the latest version and try again.",
+        "stateChanged": "This booking configuration is no longer in the required state. Review the latest version and try again."
+      },
+      "ownerHealth": {
+        "error": "Could not find bookable items needing an owner.",
+        "filter": "Owner attention needed",
+        "filters": "Owner health filters",
+        "loading": "Finding bookable items needing an owner…",
+        "needsOwner": "Owner needed"
+      },
+      "permanentDeleteDialog": {
+        "confirmationLabel": "Item name",
+        "description": "This permanently deletes the configuration, all bookings, access assignments, and calendar subscription links. This cannot be undone. Type \"{item}\" to confirm.",
+        "error": "The configuration could not be permanently deleted. Refresh and try again.",
+        "title": "Permanently delete configuration?"
+      },
+      "plural": "Bookable Items",
+      "singular": "Bookable item",
+      "staleEdit": "This configuration changed while you were editing. Your draft is preserved. Copy your changes, then refresh the page before editing again.",
+      "states": {
+        "active": "Active"
+      },
+      "targetSearch": {
+        "error": "Eligible instruments could not be searched.",
+        "label": "Instrument",
+        "results": "Eligible instruments",
+        "search": "Search"
       }
+    },
+    "myBookings": {
+      "timezone": "Times are shown in {timezone}."
     },
     "preferences": {
       "actions": {
@@ -858,6 +1126,7 @@ export default interface Resources {
     },
     "sidebar": {
       "administration": "Administration",
+      "bookableItems": "Bookable Items",
       "label": "Booking",
       "preferences": "Preferences",
       "settings": "Settings"
