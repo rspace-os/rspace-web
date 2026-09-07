@@ -15,11 +15,17 @@ import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiInventorySearchResult;
 import com.researchspace.core.util.ISearchResults;
+import com.researchspace.dao.ContainerDao;
 import com.researchspace.dao.InstrumentDao;
 import com.researchspace.dao.InstrumentTemplateDao;
 import com.researchspace.dao.InventoryEntityFieldDao;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
+import com.researchspace.model.collection.AccessContext;
+import com.researchspace.model.collection.AccessContext.Operation;
+import com.researchspace.model.collection.AccessResult;
+import com.researchspace.model.collection.ResourcePage;
+import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.events.InventoryAccessEvent;
 import com.researchspace.model.events.InventoryCreationEvent;
@@ -31,6 +37,8 @@ import com.researchspace.model.events.InventoryTransferEvent;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InstrumentEntity;
+import com.researchspace.model.inventory.InstrumentParentLocationSummary;
+import com.researchspace.model.inventory.InstrumentReadSummary;
 import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.field.InventoryEntityField;
@@ -38,6 +46,7 @@ import com.researchspace.model.inventory.field.InventoryLinkField;
 import com.researchspace.model.record.IActiveUserStrategy;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
+import com.researchspace.service.inventory.InstrumentReadAccess;
 import com.researchspace.service.inventory.InventoryAuditApiManager;
 import com.researchspace.service.inventory.InventoryFieldNameUniquenessValidator;
 import com.researchspace.service.inventory.InventoryMoveHelper;
@@ -48,8 +57,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
@@ -66,6 +77,8 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
   public static final String INSTRUMENT_DEFAULT_NAME = "Generic Instrument";
 
   private @Autowired InstrumentDao instrumentDao;
+  private @Autowired ContainerDao containerDao;
+  private @Autowired InstrumentReadAccess instrumentReadAccess;
   private @Autowired InstrumentTemplateDao instrumentTemplateDao;
   private @Autowired InventoryEntityFieldDao inventoryEntityFieldDao;
   private @Autowired SampleApiManager sampleApiManager;
@@ -989,6 +1002,48 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
     Instrument instrument = getInstrumentOrThrowNotFound(dbId);
     invPermissions.assertUserCanReadOrLimitedReadInventoryRecord(instrument, user);
     return instrument;
+  }
+
+  @Override
+  public ResourcePage<Instrument> getReadableInstruments(ResourceRequest request, User user) {
+    return instrumentDao.getReadableResources(request, readAccess(user));
+  }
+
+  @Override
+  public long countReadableInstruments(ResourceRequest request, User user) {
+    return instrumentDao.countReadableResources(request, readAccess(user));
+  }
+
+  @Override
+  public Map<Long, InstrumentParentLocationSummary> getParentLocationSummaries(
+      Set<Long> instrumentIds) {
+    return instrumentDao.getParentLocationSummaries(instrumentIds);
+  }
+
+  @Override
+  public Map<Long, InstrumentReadSummary> getReadableInstrumentSummaries(
+      Set<Long> instrumentIds, User user) {
+    return instrumentDao.getReadableSummaries(instrumentIds, user);
+  }
+
+  @Override
+  public Set<Long> getReadableParentContainerIds(Set<Long> containerIds, User user) {
+    return containerDao.getReadableActiveContainerIds(containerIds, user);
+  }
+
+  private AccessResult readAccess(User user) {
+    return instrumentReadAccess.check(new AccessContext(user, Operation.READ, "instruments"));
+  }
+
+  @Override
+  public Optional<Instrument> findReadableInstrument(Long dbId, User user) {
+    if (!instrumentExists(dbId)) {
+      return Optional.empty();
+    }
+    Instrument instrument = instrumentDao.get(dbId);
+    return invPermissions.canUserReadOrLimitedReadInventoryRecord(instrument, user)
+        ? Optional.of(instrument)
+        : Optional.empty();
   }
 
   @Override

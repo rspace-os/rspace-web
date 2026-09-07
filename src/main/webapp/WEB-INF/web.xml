@@ -87,6 +87,11 @@
     </filter>
 
     <filter>
+        <filter-name>apiV2StatelessRequestFilter</filter-name>
+        <filter-class>com.researchspace.webapp.filter.ApiV2StatelessRequestFilter</filter-class>
+        <async-supported>true</async-supported>
+    </filter>
+    <filter>
         <filter-name>shiroFilter</filter-name>
         <filter-class>org.springframework.web.filter.DelegatingFilterProxy</filter-class>
         <async-supported>true</async-supported>
@@ -146,7 +151,17 @@
         <async-supported>true</async-supported>
     </filter>
 
-    <!--  this has to go first to secure subsequent URLs in filters -->
+    <!-- Strip ambient browser state before Shiro resolves a Subject for REST API v2. -->
+    <filter-mapping>
+        <filter-name>apiV2StatelessRequestFilter</filter-name>
+        <url-pattern>/api/v2/*</url-pattern>
+        <dispatcher>REQUEST</dispatcher>
+        <dispatcher>FORWARD</dispatcher>
+        <dispatcher>INCLUDE</dispatcher>
+        <dispatcher>ERROR</dispatcher>
+        <dispatcher>ASYNC</dispatcher>
+    </filter-mapping>
+    <!-- Shiro otherwise goes first to secure subsequent URLs in filters. -->
     <filter-mapping>
         <filter-name>shiroFilter</filter-name>
         <url-pattern>/*</url-pattern>
