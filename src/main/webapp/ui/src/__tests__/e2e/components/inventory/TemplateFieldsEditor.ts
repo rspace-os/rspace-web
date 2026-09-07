@@ -41,6 +41,10 @@ export class TemplateFieldsEditor {
   }
 
   async addCustomField(type: TemplateFieldType, name: string, option?: string): Promise<void> {
+    await this.root.evaluate(async (root) => {
+      await Promise.allSettled(root.getAnimations({ subtree: true }).map((animation) => animation.finished));
+    });
+
     await this.root.getByRole("button", { name: "Add new field" }).click();
 
     const newField = this.root.getByRole("region").last();

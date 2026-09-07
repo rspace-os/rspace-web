@@ -81,7 +81,7 @@ test.describe(`Inventory Samples`, { tag: [tags.INVENTORY, tags.MOBILE] }, () =>
     await expect(pageInventory.searchPanel.row(templateName)).toBeVisible();
   });
 
-  test(`As a sysadmin, I can create a Template—but not new or split Subsamples—from a Sample I don't own`, async ({
+  test(`As a sysadmin, I can create a Template,but not new or split Subsamples from a Sample I don't own`, async ({
     browser,
     browserContextOptions,
     clientInventory,

@@ -1,5 +1,6 @@
 import type { Locator, Page } from "@playwright/test";
 import { AppHeader } from "@/__tests__/e2e/components/shared/AppHeader";
+import { MessagesAndRequestsDialogComponent } from "@/__tests__/e2e/components/shared/MessagesAndRequestsDialogComponent";
 import type { RecordInfoDialog } from "@/__tests__/e2e/components/shared/RecordInfoDialog";
 import { CreateFolderDialog } from "@/__tests__/e2e/components/workspace/CreateFolderDialog";
 import { CreateNotebookDialog } from "@/__tests__/e2e/components/workspace/CreateNotebookDialog";
@@ -13,6 +14,7 @@ import { WorkspaceTree } from "@/__tests__/e2e/components/workspace/WorkspaceTre
 import { EvernoteImportDialog } from "@/modules/evernote/__tests__/pageObjects/EvernoteImportDialog";
 import { BasePage } from "../BasePage";
 import { DocumentEditorPage } from "../document/DocumentEditorPage";
+import { DocumentPage } from "../document/DocumentPage";
 import { NotebookPage } from "../notebook/NotebookPage";
 
 export class WorkspacePage extends BasePage {
@@ -58,6 +60,22 @@ export class WorkspacePage extends BasePage {
     return this.tree.root.isVisible();
   }
 
+  get operateAsBanner(): Locator {
+    // #runAs release link sits inside this unlabeled span,
+    // which also carries the "Currently operating as <username>" message text.
+    return this.page.locator("span.header-info--right");
+  }
+
+  async releaseOperateAs(): Promise<void> {
+    await this.page.locator("#runAs").evaluate((el: HTMLElement) => el.click());
+    await this.page.waitForURL((url) => url.pathname === "/workspace");
+    await this.operateAsBanner.waitFor({ state: "hidden" });
+  }
+
+  async isOwnerVisible(ownerNameSubstring: string): Promise<boolean> {
+    return (await this.table.root.getByRole("button", { name: ownerNameSubstring, exact: false }).count()) > 0;
+  }
+
   get breadcrumbFolderName(): Locator {
     return this.page.locator("#recordNameInBreadcrumb");
   }
@@ -89,11 +107,22 @@ export class WorkspacePage extends BasePage {
   }
 
   async createBasicDocument(): Promise<DocumentEditorPage> {
-    await this.toolbar.createMenu.createFromCustomForm("Basic Document");
+    return this.createDocumentFromCustomForm("Basic Document");
+  }
+
+  async createDocumentFromCustomForm(formName: string): Promise<DocumentEditorPage> {
+    await this.toolbar.createMenu.createFromCustomForm(formName);
     await this.page.waitForURL("**/workspace/editor/structuredDocument/**");
     const editor = new DocumentEditorPage(this.page);
     await editor.isLoaded();
     return editor;
+  }
+
+  async openDocument(id: number): Promise<DocumentPage> {
+    await this.page.goto(`/workspace/editor/structuredDocument/${id}`);
+    const document = new DocumentPage(this.page);
+    await document.isLoaded();
+    return document;
   }
 
   async createNotebook(name: string): Promise<NotebookPage> {
@@ -104,6 +133,21 @@ export class WorkspacePage extends BasePage {
     const notebook = new NotebookPage(this.page);
     await notebook.isLoaded();
     return notebook;
+  }
+
+  async openReceivedMessages(): Promise<MessagesAndRequestsDialogComponent> {
+    await this.toolbar.messagesButton.click();
+    const dialog = new MessagesAndRequestsDialogComponent(this.page);
+    await dialog.waitUntilVisible();
+    return dialog;
+  }
+
+  async openMessageLinkedDocument(recordName: string): Promise<DocumentPage> {
+    const messages = await this.openReceivedMessages();
+    await messages.openLinkedRecord(recordName);
+    const document = new DocumentPage(this.page);
+    await document.isLoaded();
+    return document;
   }
 
   async createFolder(path: string, { navigate = false }: { navigate?: boolean } = {}): Promise<void> {
@@ -124,6 +168,17 @@ export class WorkspacePage extends BasePage {
     await this.toolbar.createMenu.create("From Template");
     const picker = new WorkspaceTemplatePickerDialog(this.page);
     await picker.waitUntilVisible();
+    await picker.createFromTemplate(templateName, newDocName);
+    const editor = new DocumentEditorPage(this.page);
+    await editor.isLoaded();
+    return editor;
+  }
+
+  async createDocumentFromSharedTemplate(templateName: string, newDocName: string): Promise<DocumentEditorPage> {
+    await this.toolbar.createMenu.create("From Template");
+    const picker = new WorkspaceTemplatePickerDialog(this.page);
+    await picker.waitUntilVisible();
+    await picker.switchToSharedWithMe();
     await picker.createFromTemplate(templateName, newDocName);
     const editor = new DocumentEditorPage(this.page);
     await editor.isLoaded();
