@@ -1,5 +1,8 @@
 import { createRootRoute, createRoute, createRouter, lazyRouteComponent } from "@tanstack/react-router";
 import { createAboutRoute } from "@/modules/about/pages/AboutPage";
+import { createBookingIndexRoute, createBookingRoute } from "@/modules/booking/pages/BookingPage";
+import { createBookingSettingsRoute } from "@/modules/booking/pages/bookable-items/routes";
+import { createBookingPreferencesRoute } from "@/modules/booking/pages/preferences/routes";
 import i18n from "@/modules/common/i18n";
 import NotFoundPage from "@/modules/common/pages/notFound/NotFoundPage";
 import { createMaintenanceInProgressRoute } from "@/modules/maintenance/pages/MaintenanceInProgressPage";
@@ -23,6 +26,12 @@ const rootRoute = createRootRoute({
   }),
 });
 
+const bookingRouteBase = createBookingRoute(rootRoute);
+const bookingRoute = bookingRouteBase.addChildren([
+  createBookingIndexRoute(bookingRouteBase),
+  createBookingPreferencesRoute(bookingRouteBase),
+  createBookingSettingsRoute(bookingRouteBase),
+]);
 const aboutRoute = createAboutRoute(rootRoute);
 const maintenanceInProgressRoute = createMaintenanceInProgressRoute(rootRoute);
 const apiDocsRoute = createRoute({
@@ -39,7 +48,7 @@ const apiDocsRoute = createRoute({
   component: lazyRouteComponent(() => import("@/modules/api/components/ApiDocsPage")),
 });
 
-export const routeTree = rootRoute.addChildren([aboutRoute, maintenanceInProgressRoute, apiDocsRoute]);
+export const routeTree = rootRoute.addChildren([bookingRoute, aboutRoute, maintenanceInProgressRoute, apiDocsRoute]);
 
 export const router = createRouter({
   routeTree,
