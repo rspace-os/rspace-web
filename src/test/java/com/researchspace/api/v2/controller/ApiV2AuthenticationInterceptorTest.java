@@ -115,7 +115,7 @@ class ApiV2AuthenticationInterceptorTest {
     when(authenticator.authenticateIfPresent(request))
         .thenReturn(Optional.of(ApiV2Caller.direct(user)));
 
-    assertTrue(interceptor.preHandle(request, response, crudHandler("list")));
+    assertTrue(interceptor.preHandle(request, response, crudHandler("create")));
 
     assertSame(user, ApiV2Caller.from(request).subject());
   }

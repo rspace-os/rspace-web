@@ -66,6 +66,7 @@
 
     <include relativeToChangelogFile="true" file="changeLog-rsdev-444.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1341-remove-evernote.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-scheduledmaintenance-nullable-stopuserlogindate.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1187-booking-configuration.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1187-booking-settings.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1187-resource-access.xml"/>

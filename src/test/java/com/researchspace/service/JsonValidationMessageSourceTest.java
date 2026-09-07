@@ -2,11 +2,13 @@ package com.researchspace.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import com.researchspace.api.v2.model.ApiV2CollectionQuery;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
@@ -45,9 +47,33 @@ class JsonValidationMessageSourceTest {
             "Format is a required field.",
             "must not be null",
             "Title"),
-        violations.stream()
+        violations.stream().map(ConstraintViolation::getMessage).collect(Collectors.toSet()));
+    validator.close();
+  }
+
+  @Test
+  void resolvesApiV2ConstraintMessagesFromJson() {
+    LocalValidatorFactoryBean validator = new LocalValidatorFactoryBean();
+    validator.setValidationMessageSource(new JsonMessageSource());
+    validator.afterPropertiesSet();
+
+    ApiV2CollectionQuery query = new ApiV2CollectionQuery();
+    query.setLimit(ApiV2CollectionQuery.MAX_LIMIT + 1);
+    query.setDepth(ApiV2CollectionQuery.MAX_DEPTH + 1);
+
+    assertEquals(
+        Set.of("Limit must not exceed 100.", "Depth must not exceed 10."),
+        validator.validate(query).stream()
             .map(ConstraintViolation::getMessage)
-            .collect(java.util.stream.Collectors.toSet()));
+            .collect(Collectors.toSet()));
+
+    query.setLimit(0);
+    query.setDepth(-1);
+    assertEquals(
+        Set.of("Limit must be 1 or greater.", "Depth must be 0 or greater."),
+        validator.validate(query).stream()
+            .map(ConstraintViolation::getMessage)
+            .collect(Collectors.toSet()));
     validator.close();
   }
 }
