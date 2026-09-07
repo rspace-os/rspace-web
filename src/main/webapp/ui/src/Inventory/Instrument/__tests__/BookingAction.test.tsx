@@ -108,14 +108,14 @@ function bookingHandlers({ enabled, docs }: { enabled: boolean; docs: readonly u
 }
 
 describe("Inventory instrument booking action", () => {
-  test("links an owner to the item calendar when booking is configured", async () => {
+  test("links an owner to booking creation when booking is configured", async () => {
     server.use(...bookingHandlers({ enabled: true, docs: [configuration()] }));
     const { container } = renderAction();
 
-    const link = await screen.findByRole("link", { name: "inventory:instrument.booking.configured.open" });
+    const link = await screen.findByRole("link", { name: "inventory:instrument.booking.configured.book" });
 
     expect(screen.getAllByRole("link")).toHaveLength(1);
-    expect(link).toHaveAttribute("href", "/booking/bookable-items/IN123");
+    expect(link).toHaveAttribute("href", "/booking/calendar/bookings/add?target=IN123");
     expect(link).toHaveClass("MuiButton-colorCallToAction");
     expect(screen.getByText("inventory:instrument.booking.configured.title")).toBeInTheDocument();
     await expectAccessible(container);
@@ -188,7 +188,7 @@ describe("Inventory instrument booking action", () => {
     );
     renderAction();
 
-    await screen.findByRole("link", { name: "inventory:instrument.booking.configured.open" });
+    await screen.findByRole("link", { name: "inventory:instrument.booking.configured.book" });
     expect(availabilityRequests).toBe(0);
   });
 });
