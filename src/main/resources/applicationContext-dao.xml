@@ -43,6 +43,9 @@
     			     so this should never fire. -->
     			hibernate.javax.cache.missing_cache_strategy=create-warn
 			hibernate.search.indexing.plan.synchronization.strategy=sync
+			<!-- Index mappings this repository owns. The shared model library is annotated for
+			     Hibernate Search 5, whose annotations Search 7 ignores, so anything this
+			     deployment actually indexes is declared programmatically here. -->
     			<!-- Id generation for TABLE-strategy entities: every such entity carries an explicit
     			     @TableGenerator, keyed to its own row in hibernate_sequences.
     			     Generators declared without pkColumnValue segment by the entity's physical table
@@ -60,6 +63,15 @@
     		<!-- Turn batching off for better error messages under PostgreSQL -->
     		<!-- hibernate.jdbc.batch_size=0 -->
     	</property>
+    </bean>
+
+    <bean id="blazeCriteriaConfiguration"
+          class="com.researchspace.dao.query.BlazeCriteriaConfiguration"
+          factory-method="create" />
+    <bean id="criteriaBuilderFactory"
+          factory-bean="blazeCriteriaConfiguration"
+          factory-method="createCriteriaBuilderFactory">
+        <constructor-arg ref="sessionFactory" />
     </bean>
 
 </beans>
