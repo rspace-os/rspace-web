@@ -1,5 +1,5 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useState } from "react";
 import { useTranslation } from "react-i18next";
 import * as v from "valibot";
 import {
@@ -72,12 +72,11 @@ function BookingPreferencesContent() {
     queryKey: bookingDisplayPreferencesQueryKey,
     queryFn: ({ signal }) => fetchBookingDisplayPreferences(token, signal),
   }).data;
-  const [input, setInput] = useState(() => inputFrom(document));
+  const [draft, setDraft] = useState<BookingDisplayPreferencesInput>();
+  const input = draft ?? inputFrom(document);
   const replace = useReplaceBookingDisplayPreferences();
   const reset = useResetBookingDisplayPreferences();
   const browserZone = browserTimeZone() ?? document.institutionTimezone;
-
-  useEffect(() => setInput(inputFrom(document)), [document]);
 
   const valid = v.safeParse(BookingDisplayPreferencesInputSchema, input).success;
   const dirty = JSON.stringify(input) !== JSON.stringify(inputFrom(document));
@@ -97,12 +96,12 @@ function BookingPreferencesContent() {
         className="max-w-2xl space-y-6"
         onSubmit={(event) => {
           event.preventDefault();
-          if (valid) replace.mutate(input);
+          if (valid) replace.mutate(input, { onSuccess: () => setDraft(undefined) });
         }}
       >
         <BookingDisplaySettingsFields
           value={input}
-          onChange={setInput}
+          onChange={setDraft}
           browserTimezone={browserZone}
           institutionTimezone={document.institutionTimezone}
           disabled={pending}
@@ -128,7 +127,7 @@ function BookingPreferencesContent() {
             variant="outline"
             disabled={pending || (!document.overridden && !dirty)}
             aria-busy={reset.isPending}
-            onClick={() => reset.mutate()}
+            onClick={() => reset.mutate(undefined, { onSuccess: () => setDraft(undefined) })}
           >
             {t("preferences.actions.reset")}
           </Button>

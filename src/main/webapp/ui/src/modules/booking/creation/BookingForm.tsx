@@ -1,7 +1,7 @@
 import { Form, useField, useForm } from "@formisch/react";
 import { Link } from "@tanstack/react-router";
 import { CheckIcon } from "lucide-react";
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useId, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { useTranslation } from "react-i18next";
 import * as v from "valibot";
@@ -24,7 +24,11 @@ import { Button, buttonVariants } from "@/modules/common/ui/button";
 import { FieldError } from "@/modules/common/ui/field";
 import { InventoryItem } from "@/modules/common/ui/inventory-item";
 import { cn } from "@/modules/common/utils/cn";
-import { type ResolvedBookingWindow, ZonedBookingWindowFields } from "./ZonedBookingWindowFields";
+import {
+  type ResolvedBookingWindow,
+  validateBookingWindow,
+  ZonedBookingWindowFields,
+} from "./ZonedBookingWindowFields";
 
 type PurposeInput = { purpose: string };
 
@@ -141,7 +145,6 @@ export function BookingForm(props: BookingFormProps) {
     );
   const [target, setTarget] = useState<BookableItemOption | undefined>(editing ? fixedTarget : initialTarget);
   const [draft, setDraft] = useState<BookingWindowDraft>(() => originalDraft ?? addDraft);
-  const [window, setWindow] = useState<ResolvedBookingWindow>();
   const [attempted, setAttempted] = useState(false);
   const form = useForm({
     schema: v.object({ purpose: v.pipe(v.string(), v.maxLength(1000)) }),
@@ -153,27 +156,45 @@ export function BookingForm(props: BookingFormProps) {
   const submittingRef = useRef(false);
   const generatedFormId = useId();
   const formId = props.formId ?? generatedFormId;
-  const initialState = useRef({
+  const [initialState, setInitialState] = useState({
     targetGlobalId: (editing ? fixedTarget : initialTarget)?.globalId ?? "",
     draft: originalDraft ?? addDraft,
     purpose: initialPurpose,
     eventKind,
   });
   const busy = props.pending || submitting;
-  useEffect(() => {
+  const [previousInitialTarget, setPreviousInitialTarget] = useState(initialTarget);
+  if (initialTarget !== previousInitialTarget) {
+    setPreviousInitialTarget(initialTarget);
     if (!editing && !target && initialTarget) {
+      const date = currentWallClock(new Date().toISOString(), displayTimezone).date;
+      const seedDates = !draft.startDate && !initialDate;
+      const nextDraft = seedDates ? { ...draft, startDate: date, endDate: date } : draft;
       setTarget(initialTarget);
-      setDraft((current) => {
-        if (current.startDate || initialDate) return current;
-        const date = currentWallClock(new Date().toISOString(), displayTimezone).date;
-        const next = { ...current, startDate: date, endDate: date };
-        initialState.current = { ...initialState.current, targetGlobalId: initialTarget.globalId, draft: next };
-        return next;
+      setDraft(nextDraft);
+      setInitialState({
+        ...initialState,
+        targetGlobalId: initialTarget.globalId,
+        draft: seedDates ? nextDraft : initialState.draft,
       });
-      initialState.current = { ...initialState.current, targetGlobalId: initialTarget.globalId };
     }
-  }, [displayTimezone, editing, initialDate, initialTarget, target]);
-  const resolved = useCallback((value: ResolvedBookingWindow | undefined) => setWindow(value), []);
+  }
+  const allowPolicyMismatch = Boolean(originalDraft && sameWindowDraft(draft, originalDraft));
+  const window = useMemo(
+    () =>
+      target
+        ? validateBookingWindow(draft, displayTimezone, {
+            schedulingTimezone: target.timezone,
+            slotGranularityMinutes: target.slotGranularityMinutes,
+            maxBookingDurationMinutes: eventKind === "MAINTENANCE" ? 0 : target.maxBookingDurationMinutes,
+            openingStart: eventKind === "MAINTENANCE" ? "00:00" : target.openingStart,
+            openingEnd: eventKind === "MAINTENANCE" ? "24:00" : target.openingEnd,
+            enforceOpeningHours: eventKind !== "MAINTENANCE",
+            allowPolicyMismatch,
+          }).window
+        : undefined,
+    [draft, displayTimezone, target, eventKind, allowPolicyMismatch],
+  );
   const selectTarget = (next: BookableItemOption | undefined) => {
     setTarget(next);
     setDraft((current) => ({
@@ -217,13 +238,14 @@ export function BookingForm(props: BookingFormProps) {
     }
   };
   const dirty =
-    (target?.globalId ?? "") !== initialState.current.targetGlobalId ||
-    !sameWindowDraft(draft, initialState.current.draft) ||
-    purposeValue !== initialState.current.purpose;
+    (target?.globalId ?? "") !== initialState.targetGlobalId ||
+    !sameWindowDraft(draft, initialState.draft) ||
+    purposeValue !== initialState.purpose;
   const bookingInPast = window !== undefined && Date.parse(window.end) <= Date.now();
+  const notifyStateChange = useEffectEvent((state: BookingFormState) => props.onStateChange?.(state));
   useEffect(() => {
-    props.onStateChange?.({ target, draft, window, purpose: purposeValue, eventKind, dirty });
-  }, [dirty, draft, eventKind, props.onStateChange, purposeValue, target, window]);
+    notifyStateChange({ target, draft, window, purpose: purposeValue, eventKind, dirty });
+  }, [dirty, draft, eventKind, purposeValue, target, window]);
   const compact = props.density === "compact";
   const inline = props.layout === "inline";
   const windowFields = target ? (
@@ -237,8 +259,7 @@ export function BookingForm(props: BookingFormProps) {
       enforceOpeningHours={eventKind !== "MAINTENANCE"}
       value={draft}
       onChange={setDraft}
-      onResolved={resolved}
-      allowPolicyMismatch={Boolean(originalDraft && sameWindowDraft(draft, originalDraft))}
+      allowPolicyMismatch={allowPolicyMismatch}
       disabled={busy}
       density={props.density}
       showErrors={attempted}

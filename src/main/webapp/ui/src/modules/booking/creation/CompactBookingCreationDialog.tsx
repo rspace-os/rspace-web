@@ -72,40 +72,38 @@ export function DraftMarker({
 }
 
 export function CompactBookingCreationDialog() {
+  const creation = useBookingCreationStore((state) => state.activeCreation);
+  const endCreation = useBookingCreationStore((state) => state.endCreation);
+  React.useEffect(
+    () => () => {
+      if (creation) endCreation(creation.ownerId);
+    },
+    [creation, endCreation],
+  );
+
+  return creation ? <ActiveBookingCreationDialog key={creation.ownerId} creation={creation} /> : null;
+}
+
+function ActiveBookingCreationDialog({ creation }: { creation: BookingCreationContext }) {
   const { t } = useTranslation("booking");
   const { t: commonT } = useTranslation("common");
   const navigate = useNavigate();
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
   const preferences = useBookingDisplayPreferences();
   const pathname = useLocation({ select: (location) => location.pathname });
-  const creation = useBookingCreationStore((state) => state.activeCreation);
   const endCreation = useBookingCreationStore((state) => state.endCreation);
   const mutation = useCreateBooking(token);
-  const mutationHasError = React.useRef(false);
-  mutationHasError.current = mutation.isError;
-  const [dirty, setDirty] = React.useState(false);
   const [formState, setFormState] = React.useState<BookingFormState | null>(null);
   const [confirmClose, setConfirmClose] = React.useState(false);
-  const [navigationPending, setNavigationPending] = React.useState(false);
+  const dirty = formState?.dirty ?? false;
   const previousPathname = React.useRef(pathname);
   const blocker = useBlocker({
-    shouldBlockFn: () => creation !== null && dirty,
+    shouldBlockFn: () => dirty,
     withResolver: true,
-    enableBeforeUnload: creation !== null && dirty,
+    enableBeforeUnload: dirty,
   });
 
-  React.useEffect(() => {
-    if (creation) {
-      setDirty(false);
-      setFormState(null);
-      setConfirmClose(false);
-      setNavigationPending(false);
-      mutation.reset();
-    }
-  }, [creation?.ownerId]);
-
   const finish = React.useCallback(() => {
-    if (!creation) return;
     const { ownerId, triggerId } = creation;
     endCreation(ownerId);
     window.setTimeout(() => document.getElementById(triggerId)?.focus(), 0);
@@ -114,7 +112,7 @@ export function CompactBookingCreationDialog() {
   React.useEffect(() => {
     const routeChanged = previousPathname.current !== pathname;
     previousPathname.current = pathname;
-    if (routeChanged && creation && !dirty) finish();
+    if (routeChanged && !dirty) finish();
   }, [creation, dirty, finish, pathname]);
 
   React.useEffect(() => {
@@ -124,16 +122,7 @@ export function CompactBookingCreationDialog() {
       blocker.proceed();
       return;
     }
-    setNavigationPending(true);
-    setConfirmClose(true);
   }, [blocker, dirty, finish]);
-
-  React.useEffect(
-    () => () => {
-      if (creation) endCreation(creation.ownerId);
-    },
-    [creation, endCreation],
-  );
 
   const requestClose = () => {
     if (dirty) setConfirmClose(true);
@@ -141,7 +130,7 @@ export function CompactBookingCreationDialog() {
   };
 
   const openMoreOptions = () => {
-    if (!creation || maintenance) return;
+    if (maintenance) return;
     const draft: BookingCreationDraft | undefined = formState
       ? {
           targetGlobalId: formState.target?.globalId,
@@ -168,25 +157,22 @@ export function CompactBookingCreationDialog() {
   const discard = () => {
     setConfirmClose(false);
     finish();
-    if (navigationPending && blocker.status === "blocked") blocker.proceed();
+    if (blocker.status === "blocked") blocker.proceed();
   };
 
   const keepEditing = () => {
     setConfirmClose(false);
-    if (navigationPending && blocker.status === "blocked") blocker.reset();
-    setNavigationPending(false);
+    if (blocker.status === "blocked") blocker.reset();
   };
 
   const resetMutation = mutation.reset;
   const updateFormState = React.useCallback(
     (state: BookingFormState) => {
-      setDirty(state.dirty);
       setFormState(state);
-      if (!mutationHasError.current) return;
-      mutationHasError.current = false;
+      if (!mutation.isError) return;
       resetMutation();
     },
-    [resetMutation],
+    [mutation.isError, resetMutation],
   );
 
   const availabilityTarget = formState?.target ?? creation?.target;
@@ -201,7 +187,6 @@ export function CompactBookingCreationDialog() {
     : { start: "", end: "", date: "", timeZone: preferences.timeZone, elapsedMinutes: 0 };
   useCalendarAvailability(availabilityRow && formState?.window ? [availabilityRow] : [], availabilityInterval, token);
 
-  if (!creation) return null;
   const maintenance = creation.eventKind === "MAINTENANCE";
   const anchor = document.getElementById(creation.triggerId);
   const markerDraft = formState?.draft ?? creation.window;
@@ -277,7 +262,7 @@ export function CompactBookingCreationDialog() {
           />
         </PopoverContent>
       </Popover>
-      <AlertDialog open={confirmClose} onOpenChange={(open) => !open && keepEditing()}>
+      <AlertDialog open={confirmClose || blocker.status === "blocked"} onOpenChange={(open) => !open && keepEditing()}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{t("bookings.compact.discardTitle")}</AlertDialogTitle>

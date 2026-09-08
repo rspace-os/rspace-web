@@ -1,6 +1,6 @@
 import { useLocation, useNavigate, useSearch } from "@tanstack/react-router";
 import { ChevronDownIcon } from "lucide-react";
-import { Suspense, useCallback, useId, useRef, useState } from "react";
+import { Suspense, useCallback, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useBookableItem } from "@/modules/booking/creation/BookableItemPicker";
 import { BookingForm, type BookingFormState, type BookingFormSubmission } from "@/modules/booking/creation/BookingForm";
@@ -132,17 +132,14 @@ function AddBookingContent() {
   const initialTarget = useBookableItem(search.target, token);
   const [selectedTarget, setSelectedTarget] = useState<BookableItemOption>();
   const mutation = useCreateBooking(token);
-  const mutationHasError = useRef(false);
-  mutationHasError.current = mutation.isError;
   const resetMutation = mutation.reset;
   const updatePageState = useCallback(
     (state: BookingFormState) => {
       setSelectedTarget(state.target);
-      if (!mutationHasError.current) return;
-      mutationHasError.current = false;
+      if (!mutation.isError) return;
       resetMutation();
     },
-    [resetMutation],
+    [mutation.isError, resetMutation],
   );
   const submit = async (submission: BookingFormSubmission) => {
     await mutation.mutateAsync(submission);

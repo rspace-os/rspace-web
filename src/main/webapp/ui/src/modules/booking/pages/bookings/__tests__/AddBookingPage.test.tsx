@@ -205,8 +205,7 @@ describe("AddBookingPage", () => {
       kind: "BOOKING",
     });
     expect(router.state.location.search).toMatchObject({ date: "2026-08-18", target: "IN123" });
-    expect(invalidate).not.toHaveBeenCalledWith({ queryKey: ["api-v2", "bookings"] });
-    expect(invalidate).toHaveBeenCalledWith({ queryKey: ["api-v2", "bookings", 41] });
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ["api-v2", "bookings"] });
   });
 
   it("retains input and maps an overlap conflict to localized text", async () => {

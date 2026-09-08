@@ -1,25 +1,21 @@
 import { Tabs } from "@base-ui/react/tabs";
-import { Form, isDirty, reset, useForm } from "@formisch/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { PencilIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { Suspense, useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { SchedulingSettingsFields } from "@/modules/booking/configuration/schedulingSettings";
 import { BookingCreationButtonGroup } from "@/modules/booking/creation/BookingCreationButtonGroup";
 import { bookableItemOption } from "@/modules/booking/creation/bookableItemOption";
 import { bookingApiV2JsonHeaders } from "@/modules/booking/domain/apiV2";
 import { ApiV2ProblemError, parseApiV2Problem } from "@/modules/booking/domain/booking";
 import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
-import { RenderFields } from "@/modules/common/collection-form/RenderFields";
 import {
   RESPONSIVE_INLINE_FIELD_CONTAINER_CLASS_NAME,
   RESPONSIVE_INLINE_FIELD_GRID_CLASS_NAME,
   RESPONSIVE_INLINE_FIELD_ROW_CLASS_NAME,
 } from "@/modules/common/collection-form/responsiveFieldLayout";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
-import { DirtyNavigationGuard } from "@/modules/common/navigation/DirtyNavigationGuard";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { ResourceAccessEditor } from "@/modules/common/resource-access/ResourceAccessEditor";
 import { leaveResource } from "@/modules/common/resource-access/resourceAccess";
@@ -44,6 +40,7 @@ import { Heading } from "@/modules/common/ui/typography";
 import { UserBadge } from "@/modules/common/ui/user-badge";
 import { detailColumnsClassName, detailPageClassName } from "../DetailPageShell";
 import { BookableItemAuditLog } from "./BookableItemAuditLog";
+import { BookableItemConfigurationForm } from "./BookableItemConfigurationForm";
 import {
   BookingConfigurationActionsMenu,
   type BookingConfigurationLifecycleAction,
@@ -53,8 +50,6 @@ import {
   BOOKING_CONFIGURATION_READ_FIELDS,
   type BookingConfiguration,
   type BookingConfigurationUpdateInput,
-  BookingConfigurationUpdateInputSchema,
-  bookingConfigurationFields,
   fetchBookingConfigurationDetailsByTarget,
 } from "./bookingConfiguration";
 import { bookingResourceAccessAdapter } from "./bookingResourceAccess";
@@ -144,19 +139,6 @@ async function permanentlyDeleteBookingConfiguration(id: number, version: number
     },
   });
   if (!response.ok) throw await parseApiV2Problem(response);
-}
-
-function configurationInput(configuration: BookingConfiguration): BookingConfigurationUpdateInput {
-  return {
-    enabled: configuration.enabled,
-    slotGranularityMinutes: configuration.slotGranularityMinutes,
-    openingStart: configuration.openingStart,
-    openingEnd: configuration.openingEnd,
-    bufferBeforeMinutes: configuration.bufferBeforeMinutes,
-    bufferAfterMinutes: configuration.bufferAfterMinutes,
-    maxBookingDurationMinutes: configuration.maxBookingDurationMinutes,
-    allowDoubleBooking: configuration.allowDoubleBooking,
-  };
 }
 
 type BookableItemLifecycleErrorKey =
@@ -379,7 +361,6 @@ function LoadedBookableItemPage({
   const [cutoff] = useState(() => new Date().toISOString());
   const [saveAnnouncement, setSaveAnnouncement] = useState<"saved" | "archived" | "restored" | null>(null);
   const [staleEdit, setStaleEdit] = useState(false);
-  const [baseVersion, setBaseVersion] = useState(configuration.configurationVersion);
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [permanentDeleteOpen, setPermanentDeleteOpen] = useState(false);
   const [permanentDeleteConfirmation, setPermanentDeleteConfirmation] = useState("");
@@ -395,11 +376,6 @@ function LoadedBookableItemPage({
   const active = configuration.state === "ACTIVE";
   const editing = active && canEdit && edit;
   const directSysadmin = currentUser.hasSysAdminRole && !currentUser.session.operatedAs;
-  const form = useForm({
-    schema: BookingConfigurationUpdateInputSchema,
-    initialInput: configurationInput(configuration),
-  });
-
   const setEdit = (next: boolean) =>
     void navigate({
       search: next ? { edit: true } : {},
@@ -416,8 +392,8 @@ function LoadedBookableItemPage({
     });
 
   const updateMutation = useMutation({
-    mutationFn: (input: BookingConfigurationUpdateInput) =>
-      updateBookingConfiguration(configuration.id, baseVersion, input, token),
+    mutationFn: ({ input, version }: { input: BookingConfigurationUpdateInput; version: number }) =>
+      updateBookingConfiguration(configuration.id, version, input, token),
     onMutate: () => setSaveAnnouncement(null),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] });
@@ -493,13 +469,6 @@ function LoadedBookableItemPage({
   });
 
   useEffect(() => {
-    if (!editing) {
-      reset(form, { initialInput: configurationInput(configuration) });
-      setBaseVersion(configuration.configurationVersion);
-    }
-  }, [configuration, editing, form]);
-
-  useEffect(() => {
     if (wasEditing.current && !editing) editButtonRef.current?.focus();
     wasEditing.current = editing;
   }, [editing]);
@@ -537,7 +506,6 @@ function LoadedBookableItemPage({
   if (target === null) return null;
 
   const cancelEdit = () => {
-    reset(form, { initialInput: configurationInput(configuration) });
     setSaveAnnouncement(null);
     setStaleEdit(false);
     setEdit(false);
@@ -554,15 +522,6 @@ function LoadedBookableItemPage({
 
   return (
     <main className={itemPageClassName}>
-      <DirtyNavigationGuard
-        dirty={editing && isDirty(form)}
-        shouldBlockNavigation={({ current, next }) =>
-          current.pathname !== next.pathname &&
-          (next.routeId !== "/booking/bookable-items/$globalId/{-$tab}" ||
-            next.params.globalId !== globalId ||
-            !next.search.edit)
-        }
-      />
       <div className="@container">
         <div className={itemColumnsClassName}>
           <Tabs.Root
@@ -703,29 +662,15 @@ function LoadedBookableItemPage({
                 </CardHeader>
                 <CardContent>
                   {editing ? (
-                    <Form
-                      id={formId}
-                      of={form}
-                      className="min-w-0 space-y-4"
-                      onSubmit={(input) => updateMutation.mutateAsync(input)}
-                    >
-                      <RenderFields
-                        fields={bookingConfigurationFields.filter((field) => field.name !== "target")}
-                        form={form}
-                        disabled={updateMutation.isPending}
-                        layout="inline"
-                      />
-                      <SchedulingSettingsFields form={form} disabled={updateMutation.isPending} layout="inline" />
-                      {staleEdit ? (
-                        <p role="alert" className="text-sm text-destructive">
-                          {t("bookableItems.staleEdit")}
-                        </p>
-                      ) : updateMutation.isError ? (
-                        <p role="alert" className="text-sm text-destructive">
-                          {t("bookableItems.editError")}
-                        </p>
-                      ) : null}
-                    </Form>
+                    <BookableItemConfigurationForm
+                      configuration={configuration}
+                      globalId={globalId}
+                      formId={formId}
+                      pending={updateMutation.isPending}
+                      staleEdit={staleEdit}
+                      failed={updateMutation.isError}
+                      onSubmit={(input, version) => updateMutation.mutateAsync({ input, version })}
+                    />
                   ) : (
                     <RulesReadOut configuration={configuration} displayTimeZone={preferences.timeZone} />
                   )}

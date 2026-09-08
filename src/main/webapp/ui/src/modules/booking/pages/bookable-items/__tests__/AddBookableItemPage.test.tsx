@@ -76,7 +76,7 @@ function ExistingConfigurationPage() {
   return <h1>{t("bookableItemDetails.title")}</h1>;
 }
 
-function renderPage() {
+function renderPage(path = "/booking/bookable-items/add") {
   server.use(http.get("/api/v2/booking-settings", () => HttpResponse.json(settings)));
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const rootRoute = createRootRoute({ component: Outlet });
@@ -103,7 +103,7 @@ function renderPage() {
         createAddBookableItemRoute(bookingRoute),
       ]),
     ]),
-    history: createMemoryHistory({ initialEntries: ["/booking/bookable-items/add"] }),
+    history: createMemoryHistory({ initialEntries: [path] }),
   });
 
   return render(
@@ -123,6 +123,20 @@ async function completeForm(user: ReturnType<typeof userEvent.setup>) {
 }
 
 describe("AddBookableItemPage", () => {
+  it("initializes the route target once and lets the user clear it", async () => {
+    const user = userEvent.setup();
+    server.use(
+      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "test-token" })),
+      targetsHandler(),
+    );
+    renderPage("/booking/bookable-items/add?target=IN123");
+
+    expect(await screen.findByRole("button", { name: "booking:bookableItems.actions.submit" })).toBeVisible();
+    await user.click(await screen.findByRole("button", { name: "common:relationshipPicker.clear" }));
+    expect(screen.queryByRole("button", { name: "booking:bookableItems.actions.submit" })).not.toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "booking:bookableItems.targetSearch.label" })).toHaveValue("");
+  });
+
   it("uses the relationship picker to search for an eligible instrument", async () => {
     const user = userEvent.setup();
     server.use(

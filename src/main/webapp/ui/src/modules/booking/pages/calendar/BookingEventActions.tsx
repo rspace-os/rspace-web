@@ -69,14 +69,11 @@ function InlineBookingEditor({
       }
     },
   });
-  const mutationHasError = React.useRef(false);
-  mutationHasError.current = mutation.isError;
   const resetMutation = mutation.reset;
   const clearMutationErrorOnChange = React.useCallback(() => {
-    if (!mutationHasError.current) return;
-    mutationHasError.current = false;
+    if (!mutation.isError) return;
     resetMutation();
-  }, [resetMutation]);
+  }, [mutation.isError, resetMutation]);
 
   if (configuration.isPending) {
     return (

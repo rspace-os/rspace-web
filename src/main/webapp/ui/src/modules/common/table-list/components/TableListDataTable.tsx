@@ -21,7 +21,7 @@ import {
   useTable,
 } from "@tanstack/react-table";
 import { ArrowDownIcon, ArrowUpDownIcon, ArrowUpIcon, CircleHelpIcon } from "lucide-react";
-import { memo, type ReactNode, useCallback, useId, useMemo, useRef } from "react";
+import { memo, type ReactNode, useCallback, useId, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { FieldName, SearchSelector } from "@/modules/common/collection/collectionConfig";
 import { fieldLabel } from "@/modules/common/collection/collectionConfig";
@@ -248,9 +248,6 @@ export function TableListDataTable<TDocument extends Record<string, unknown>>({
   const sortingState = features.sorting === false ? false : features.sorting.value;
   const paginationState = features.pagination === false ? false : features.pagination.value;
   const columnState = features.columns === false ? false : features.columns.value;
-  const localFilteringState = clientSide ? filteringState : false;
-  const localSortingState = clientSide ? sortingState : false;
-  const localPaginationState = clientSide ? paginationState : false;
   const sortingEnabled = sortingState !== false;
   const hasSelection = selection !== undefined;
 
@@ -388,24 +385,7 @@ export function TableListDataTable<TDocument extends Record<string, unknown>>({
           },
   });
 
-  // Transient resize state refreshes the table wrapper; only row-affecting inputs should rebuild thousands of cells.
-  const tableRef = useRef(table);
-  tableRef.current = table;
-  const rowModel = useMemo(
-    () => tableRef.current.getRowModel(),
-    [
-      rows,
-      config,
-      uiColumns,
-      onRowOpen,
-      clientSide,
-      localFilteringState,
-      localSortingState,
-      localPaginationState,
-      columnState,
-      i18n.resolvedLanguage,
-    ],
-  );
+  const rowModel = table.getRowModel();
   const visibleRows = useMemo(() => rowModel.rows.map((row) => row.original), [rowModel]);
   const visibleRowIds = useMemo(() => rowModel.rows.map((row) => row.id), [rowModel]);
   const selectedVisibleCount = selection ? visibleRowIds.filter((rowId) => selection.value.has(rowId)).length : 0;
