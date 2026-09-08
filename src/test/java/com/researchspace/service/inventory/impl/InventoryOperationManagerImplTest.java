@@ -672,6 +672,31 @@ class InventoryOperationManagerImplTest {
     verify(sampleApiMgr, times(1)).lockSampleForEdit(20L, user);
   }
 
+  @Test
+  void rejectsAnAmountTakenWhoseSubtractionWouldBeLostToRounding() throws Exception {
+    // 0.001 ul is itself storable at 3dp, but taking it from a 1 l origin leaves 999.999999 ml,
+    // which the DECIMAL(19,3) column rounds back to 1000 ml: the operation would create its output
+    // without decrementing the origin at all (Copilot review, PR #1090).
+    ApiInventoryOperationPost request = new ApiInventoryOperationPost();
+    request.setOperationType("derive");
+    request.setOrigins(
+        List.of(
+            origin(
+                100L,
+                new ApiQuantityInfo(new BigDecimal("0.001"), RSUnitDef.MICRO_LITRE.getId()))));
+    request.setNewSample(new ApiSampleWithFullSubSamples("Derived material"));
+    originHolds(100L, subSampleHolding("1", RSUnitDef.LITRE.getId()));
+
+    BindException rejection =
+        assertThrows(BindException.class, () -> manager.performOperation(request, user, NONE));
+
+    assertEquals(
+        "errors.inventory.operation.amountTakenNotSubtractable",
+        rejection.getFieldErrors("origins[0].amountTaken").get(0).getCode());
+    verify(sampleApiMgr, never()).createNewApiSample(any(), any());
+    verify(subSampleApiMgr, never()).registerApiSubSampleUsage(any(), any(), any());
+  }
+
   // --- the caller-supplied in-transaction validation (template conformance) ---
 
   @Test
