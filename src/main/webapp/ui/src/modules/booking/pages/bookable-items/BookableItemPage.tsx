@@ -42,6 +42,7 @@ import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/invent
 import { Skeleton } from "@/modules/common/ui/skeleton";
 import { Heading } from "@/modules/common/ui/typography";
 import { UserBadge } from "@/modules/common/ui/user-badge";
+import { detailColumnsClassName, detailPageClassName } from "../DetailPageShell";
 import { BookableItemAuditLog } from "./BookableItemAuditLog";
 import {
   BookingConfigurationActionsMenu,
@@ -61,8 +62,8 @@ import { CalendarSubscriptionPopover } from "./CalendarSubscriptionPopover";
 
 type BookableItemTab = "bookings" | "details" | "audit" | "access";
 
-const itemPageClassName = "mx-auto max-w-5xl space-y-6 p-4 sm:p-8";
-const itemColumnsClassName = "grid gap-6 @2xl:grid-cols-[minmax(0,1fr)_16rem]";
+const itemPageClassName = detailPageClassName;
+const itemColumnsClassName = detailColumnsClassName;
 
 function BookableItemSkeleton() {
   const { t } = useTranslation("common");

@@ -36,6 +36,7 @@ import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/modules/comm
 import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
 import { Skeleton } from "@/modules/common/ui/skeleton";
 import { UserBadge } from "@/modules/common/ui/user-badge";
+import { detailColumnsClassName, detailPageClassName } from "../DetailPageShell";
 import { DeleteBookingDialog } from "./DeleteBookingDialog";
 
 type BookingEventContextValue = {
@@ -127,13 +128,12 @@ function BookingMetadataAside({ booking, displayTimeZone }: { booking: BookingDe
   );
 }
 
-const eventPageClassName = "@container mx-auto max-w-5xl space-y-6 p-4 sm:p-8";
-const eventColumnsClassName = "grid gap-6 @2xl:grid-cols-[minmax(0,1fr)_16rem]";
+const eventColumnsClassName = detailColumnsClassName;
 
 function BookingEventSkeleton() {
   const { t } = useTranslation("common");
   return (
-    <main className={eventPageClassName} aria-busy="true">
+    <main className={detailPageClassName} aria-busy="true">
       <p role="status" className="sr-only">
         {t("loading")}
       </p>
@@ -242,7 +242,7 @@ function BookingEventContent() {
   const period = formatAgendaPeriod(document.start, document.end, preferences.timeZone);
 
   return (
-    <main className={eventPageClassName}>
+    <main className={detailPageClassName}>
       <DirtyNavigationGuard dirty={dirty} />
       {document.canViewConfiguration ? (
         <Link
@@ -338,6 +338,7 @@ function BookingEventContent() {
 export function BookingDetailsView() {
   const { t, i18n } = useTranslation("booking");
   const { booking, displayTimeZone, editButtonRef } = useBookingEvent();
+  const durationMinutes = Math.max(0, Math.round((Date.parse(booking.end) - Date.parse(booking.start)) / 60000));
   const facts: Array<[string, ReactNode]> = [
     [
       t("bookings.details.when"),
@@ -345,6 +346,7 @@ export function BookingDetailsView() {
         <time dateTime={booking.start}>{formatDateTime(booking.start, displayTimeZone, i18n.language)}</time>
         {" – "}
         <time dateTime={booking.end}>{formatDateTime(booking.end, displayTimeZone, i18n.language)}</time>
+        <span className="text-muted-foreground">{` · ${t("bookableItemDetails.minutes", { count: durationMinutes })}`}</span>
       </span>,
     ],
     ...(booking.kind === "BOOKING" && booking.bookedBy
