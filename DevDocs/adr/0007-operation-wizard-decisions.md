@@ -213,6 +213,24 @@ above) without computing it.
   whole-value `POST /userform/ajax/preference` path takes no lock, so until
   every client sends a key, a cached-JS tab writing the whole UI settings blob
   can still clobber a concurrent keyed merge.
+- **The lock-taking transactions run at READ COMMITTED** (live test against
+  MariaDB 12.3, 2026-09-08). Every writer above does at least one plain read
+  before its first `FOR UPDATE` (resolving an origin's parent sample, loading a
+  link, looking the user up). Under REPEATABLE READ that read fixes the
+  transaction's snapshot, and MariaDB's `innodb_snapshot_isolation` (on by
+  default from 11.6) then makes a locking read of a row committed since fail
+  with error 1020 instead of waiting: the second of two concurrent writers got
+  a 409 on every contended row (C1 to C14 and the keyed preference merge in
+  the live run; 87 of them, 0 deadlocks), while on 10.11 the same code
+  serialised correctly. At READ COMMITTED the read view closes after each
+  statement, so the locking read that waited sees the committed row and the
+  lock order above does its job on both versions. Set per method in the
+  `txAdvice` of `applicationContext-service.xml` and its test twin
+  (`performOperation`, `deductStock`, `createNewListOfMaterials`,
+  `updateListOfMaterials`, `mergeUiJsonSetting`), pinned by
+  `StockWriterTransactionIsolationTest`. Nothing else changes: the scalar
+  locked reads still supply freshness, and entity reads inside these
+  transactions were already treated as snapshot values.
 - **Category and precision rules also apply to the created subsamples** (code
   review, 2026-09-03): the amount taken must be a real amount unit in the
   origin's category; each new subsample quantity must be in the origin's
