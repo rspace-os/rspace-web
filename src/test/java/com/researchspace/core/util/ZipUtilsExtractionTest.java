@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.abort;
 
 import java.io.File;
 import java.io.IOException;
@@ -173,7 +174,12 @@ class ZipUtilsExtractionTest {
     File dest = newDestination();
     assertTrue(dest.mkdirs());
     // a pre-existing symlink in the destination that points outside the extraction root
-    Files.createSymbolicLink(dest.toPath().resolve("linkdir"), outsideTarget.toPath());
+    try {
+      Files.createSymbolicLink(dest.toPath().resolve("linkdir"), outsideTarget.toPath());
+    } catch (IOException | UnsupportedOperationException e) {
+      // Windows needs Developer Mode or elevation to create symlinks
+      abort("symlinks not supported here: " + e.getMessage());
+    }
     File zip = makeZip(file("linkdir/escaped.txt", "evil".getBytes(StandardCharsets.UTF_8)));
 
     assertThrows(InvalidArchiveException.class, () -> ZipUtils.extractZip(zip, dest));
