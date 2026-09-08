@@ -1,5 +1,5 @@
 import { Temporal } from "@js-temporal/polyfill";
-import { useEffect, useId, useMemo } from "react";
+import { useId, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
   type BookingWindowDraft,
@@ -61,46 +61,31 @@ export function resolveBookingWindow(
   };
 }
 
-export function ZonedBookingWindowFields({
-  displayTimezone,
-  schedulingTimezone,
-  timezone,
-  slotGranularityMinutes,
-  maxBookingDurationMinutes,
-  openingStart,
-  openingEnd,
-  enforceOpeningHours = true,
-  value,
-  onChange,
-  onResolved,
-  allowPolicyMismatch = false,
-  disabled = false,
-  density = "comfortable",
-  showErrors = true,
-}: {
-  displayTimezone?: string;
-  schedulingTimezone?: string;
-  /** @deprecated Pass displayTimezone and schedulingTimezone separately. */
-  timezone?: string;
+export type BookingWindowPolicy = {
+  schedulingTimezone: string;
   slotGranularityMinutes: number;
   maxBookingDurationMinutes: number;
   openingStart: string;
   openingEnd: string;
   enforceOpeningHours?: boolean;
-  value: BookingWindowDraft;
-  onChange: (value: BookingWindowDraft) => void;
-  onResolved: (value: ResolvedBookingWindow | undefined) => void;
   allowPolicyMismatch?: boolean;
-  disabled?: boolean;
-  density?: "comfortable" | "compact";
-  showErrors?: boolean;
-}) {
-  const { t } = useTranslation("booking");
-  const fieldId = `booking-window-${useId()}`;
-  const windowErrorId = `${fieldId}-errors`;
-  const resolvedDisplayTimezone = displayTimezone ?? timezone ?? "UTC";
-  const resolvedSchedulingTimezone = schedulingTimezone ?? timezone ?? resolvedDisplayTimezone;
-  const result = useMemo(() => resolveBookingWindow(value, resolvedDisplayTimezone), [resolvedDisplayTimezone, value]);
+};
+
+/** Resolve and validate synchronously so rendering and submission use the same window. */
+export function validateBookingWindow(
+  value: BookingWindowDraft,
+  displayTimezone: string,
+  {
+    schedulingTimezone: resolvedSchedulingTimezone,
+    slotGranularityMinutes,
+    maxBookingDurationMinutes,
+    openingStart,
+    openingEnd,
+    enforceOpeningHours = true,
+    allowPolicyMismatch = false,
+  }: BookingWindowPolicy,
+) {
+  const result = resolveBookingWindow(value, displayTimezone);
   const schedulingEndpoint = (instant: string | undefined) =>
     instant ? Temporal.Instant.from(instant).toZonedDateTimeISO(resolvedSchedulingTimezone) : undefined;
   const schedulingStart = schedulingEndpoint(result.window?.start);
@@ -128,7 +113,79 @@ export function ZonedBookingWindowFields({
       maxBookingDurationMinutes * 60_000;
   const policyInvalid = granularityInvalid || openingInvalid || maximumDurationInvalid;
   const resolvedWindow = policyInvalid && !allowPolicyMismatch ? undefined : result.window;
-  useEffect(() => onResolved(resolvedWindow), [onResolved, resolvedWindow]);
+  return {
+    ...result,
+    window: resolvedWindow,
+    granularityInvalid,
+    openingInvalid,
+    maximumDurationInvalid,
+    policyInvalid,
+  };
+}
+
+export function ZonedBookingWindowFields({
+  displayTimezone,
+  schedulingTimezone,
+  timezone,
+  slotGranularityMinutes,
+  maxBookingDurationMinutes,
+  openingStart,
+  openingEnd,
+  enforceOpeningHours = true,
+  value,
+  onChange,
+  allowPolicyMismatch = false,
+  disabled = false,
+  density = "comfortable",
+  showErrors = true,
+}: {
+  displayTimezone?: string;
+  schedulingTimezone?: string;
+  /** @deprecated Pass displayTimezone and schedulingTimezone separately. */
+  timezone?: string;
+  slotGranularityMinutes: number;
+  maxBookingDurationMinutes: number;
+  openingStart: string;
+  openingEnd: string;
+  enforceOpeningHours?: boolean;
+  value: BookingWindowDraft;
+  onChange: (value: BookingWindowDraft) => void;
+  allowPolicyMismatch?: boolean;
+  disabled?: boolean;
+  density?: "comfortable" | "compact";
+  showErrors?: boolean;
+}) {
+  const { t } = useTranslation("booking");
+  const fieldId = `booking-window-${useId()}`;
+  const windowErrorId = `${fieldId}-errors`;
+  const resolvedDisplayTimezone = displayTimezone ?? timezone ?? "UTC";
+  const resolvedSchedulingTimezone = schedulingTimezone ?? timezone ?? resolvedDisplayTimezone;
+  const result = useMemo(
+    () =>
+      validateBookingWindow(value, resolvedDisplayTimezone, {
+        schedulingTimezone: resolvedSchedulingTimezone,
+        slotGranularityMinutes,
+        maxBookingDurationMinutes,
+        openingStart,
+        openingEnd,
+        enforceOpeningHours,
+        allowPolicyMismatch,
+      }),
+    [
+      value,
+      resolvedDisplayTimezone,
+      resolvedSchedulingTimezone,
+      slotGranularityMinutes,
+      maxBookingDurationMinutes,
+      openingStart,
+      openingEnd,
+      enforceOpeningHours,
+      allowPolicyMismatch,
+    ],
+  );
+  const { granularityInvalid, openingInvalid, maximumDurationInvalid, policyInvalid } = result;
+  const schedulingEndpoint = (instant: string | undefined) =>
+    instant ? Temporal.Instant.from(instant).toZonedDateTimeISO(resolvedSchedulingTimezone) : undefined;
   const change = (patch: Partial<BookingWindowDraft>) => onChange({ ...value, ...patch });
   const snapTime = (name: "start" | "end") => {
     const timeKey = `${name}Time` as const;
