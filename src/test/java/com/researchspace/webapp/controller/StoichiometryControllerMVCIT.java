@@ -10,7 +10,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.api.v1.controller.API_MVC_TestBase;
+import com.researchspace.api.v1.controller.API_VERSION;
+import com.researchspace.api.v1.model.ApiSample;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
+import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.api.v1.model.stoichiometry.StockDeductionRequest;
 import com.researchspace.api.v1.model.stoichiometry.StockDeductionResult;
 import com.researchspace.api.v1.model.stoichiometry.StoichiometryInventoryLinkRequest;
@@ -31,9 +34,15 @@ import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.service.AuditManager;
 import com.researchspace.testutils.RSpaceTestUtils;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.security.Principal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -917,6 +926,148 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
             .andReturn();
     StoichiometryDTO finalStoich = getFromJsonResponseBody(getResult, StoichiometryDTO.class);
     assertTrue(finalStoich.getMolecules().get(0).getInventoryLink().isStockDeducted());
+  }
+
+  @Test
+  public void parallelDeductionsOnSiblingSubSamplesDoNotDeadlock() throws Exception {
+    // A deduction used to take the origin's own row lock first (the over-use check in
+    // processStockDeduction) and the sibling-set lock second (inside registerApiSubSampleUsage),
+    // the inverse of the operations endpoint's order. Two deductions on two siblings of ONE sample
+    // are that inversion's sharpest probe: each held its own row while asking for the set that
+    // contains the other's, and InnoDB killed one. deductStock now locks every parent's sibling
+    // set up front, ascending by sample id, before any row lock, so both requests queue on the
+    // shared set and succeed; a non-200 here means the ordering regressed (deadlock victim or
+    // lock-wait timeout). The stored parent total must also equal what the children hold
+    // afterwards: both requests rewrite it, which is where the snapshot-sum bug lived.
+    String subSampleJson = "{\"quantity\":{\"numericValue\":5,\"unitId\":7}}";
+    String sampleJson =
+        "{\"name\":\"stoich siblings\",\"subSamples\":["
+            + subSampleJson
+            + ","
+            + subSampleJson
+            + "]}";
+    MvcResult sampleResult =
+        mockMvc
+            .perform(createBuilderForPostWithJSONBody(apiKey, "/samples", user, sampleJson))
+            .andExpect(status().isCreated())
+            .andReturn();
+    ApiSampleWithFullSubSamples sample =
+        getFromJsonResponseBody(sampleResult, ApiSampleWithFullSubSamples.class);
+    long firstSubSampleId = sample.getSubSamples().get(0).getId();
+    long secondSubSampleId = sample.getSubSamples().get(1).getId();
+
+    StockDeductionRequest firstDeduction =
+        stoichiometryDeducting(sample.getSubSamples().get(0).getGlobalId(), "stoich siblings 1");
+    StockDeductionRequest secondDeduction =
+        stoichiometryDeducting(sample.getSubSamples().get(1).getGlobalId(), "stoich siblings 2");
+
+    ExecutorService pool = Executors.newFixedThreadPool(2);
+    List<MvcResult> results = new ArrayList<>();
+    try {
+      List<Callable<MvcResult>> posts =
+          List.of(() -> postDeduction(firstDeduction), () -> postDeduction(secondDeduction));
+      for (Future<MvcResult> future : pool.invokeAll(posts)) {
+        results.add(future.get());
+      }
+    } finally {
+      pool.shutdown();
+    }
+
+    for (MvcResult result : results) {
+      assertEquals(
+          200,
+          result.getResponse().getStatus(),
+          "a non-200 concurrent deduction is a deadlock victim or lock-wait timeout");
+      StockDeductionResult deduction = getFromJsonResponseBody(result, StockDeductionResult.class);
+      assertTrue(
+          deduction.getResults().get(0).isSuccess(),
+          () -> "both sibling deductions should succeed: " + deduction.getResults().get(0));
+    }
+
+    // both deductions landed on their own subsample...
+    BigDecimal firstRemaining = subSampleQuantity(firstSubSampleId);
+    BigDecimal secondRemaining = subSampleQuantity(secondSubSampleId);
+    BigDecimal five = new BigDecimal("5");
+    assertTrue(firstRemaining.compareTo(five) < 0, () -> "first not deducted: " + firstRemaining);
+    assertTrue(
+        secondRemaining.compareTo(five) < 0, () -> "second not deducted: " + secondRemaining);
+    // ...and the denormalised parent total equals what the children actually hold
+    MvcResult sampleGet =
+        mockMvc
+            .perform(
+                createBuilderForGet(API_VERSION.ONE, apiKey, "/samples/" + sample.getId(), user))
+            .andExpect(status().isOk())
+            .andReturn();
+    ApiSample reloaded = getFromJsonResponseBody(sampleGet, ApiSample.class);
+    assertEquals(
+        0,
+        firstRemaining.add(secondRemaining).compareTo(reloaded.getQuantity().getNumericValue()),
+        () ->
+            "parent total should equal the sum of its children, got "
+                + reloaded.getQuantity()
+                + " for children "
+                + firstRemaining
+                + " + "
+                + secondRemaining);
+  }
+
+  /**
+   * A stoichiometry over its own document whose one molecule (actual amount 1) is linked to the
+   * given subsample, returning the request that deducts that link's stock.
+   */
+  private StockDeductionRequest stoichiometryDeducting(String subSampleGlobalId, String docName)
+      throws Exception {
+    StructuredDocument doc = createBasicDocumentInRootFolderWithText(user, docName);
+    RSChemElement reaction = addReactionToField(doc.getFields().get(0), user);
+    StoichiometryDTO stoichiometry =
+        getFromJsonResponseBody(createStoichiometry(reaction), StoichiometryDTO.class);
+    StoichiometryMoleculeUpdateDTO molUpdate =
+        StoichiometryMapper.toUpdateDTO(stoichiometry.getMolecules().get(0));
+    molUpdate.setActualAmount(1.0);
+    molUpdate.setInventoryLink(
+        StoichiometryInventoryLinkRequest.builder()
+            .inventoryItemGlobalId(subSampleGlobalId)
+            .build());
+    StoichiometryUpdateDTO updateDTO =
+        StoichiometryUpdateDTO.builder()
+            .id(stoichiometry.getId())
+            .molecules(List.of(molUpdate))
+            .build();
+    MvcResult updateResult =
+        mockMvc
+            .perform(
+                put(URL)
+                    .param("stoichiometryId", String.valueOf(stoichiometry.getId()))
+                    .contentType(APPLICATION_JSON)
+                    .content(new ObjectMapper().writeValueAsString(updateDTO))
+                    .principal(principal)
+                    .header("apiKey", apiKey))
+            .andExpect(status().isOk())
+            .andReturn();
+    StoichiometryDTO withLink = getFromJsonResponseBody(updateResult, StoichiometryDTO.class);
+    Long linkId = withLink.getMolecules().get(0).getInventoryLink().getId();
+    return new StockDeductionRequest(stoichiometry.getId(), List.of(linkId), false);
+  }
+
+  private MvcResult postDeduction(StockDeductionRequest request) throws Exception {
+    return mockMvc
+        .perform(
+            post(URL + "/link/deductStock")
+                .contentType(APPLICATION_JSON)
+                .content(new ObjectMapper().writeValueAsString(request))
+                .principal(principal)
+                .header("apiKey", apiKey))
+        .andReturn();
+  }
+
+  private BigDecimal subSampleQuantity(long subSampleId) throws Exception {
+    MvcResult result =
+        mockMvc
+            .perform(
+                createBuilderForGet(API_VERSION.ONE, apiKey, "/subSamples/" + subSampleId, user))
+            .andExpect(status().isOk())
+            .andReturn();
+    return getFromJsonResponseBody(result, ApiSubSample.class).getQuantity().getNumericValue();
   }
 
   private long getLatestStoichiometryRevisionId(long stoichiometryId) {
