@@ -30,7 +30,7 @@ import org.springframework.core.io.ClassPathResource;
 @Slf4j
 public class CreateDefaultInstrumentTemplate_RSDEV1219 extends AbstractCustomLiquibaseUpdater {
 
-  static final String TEMPLATE_NAME = "Instrument (PIDINST 1.0)";
+  public static final String TEMPLATE_NAME = "Instrument (PIDINST 1.0)";
   private static final String TEMPLATE_JSON =
       "inventory/defaultInstrumentTemplate-PIDINST-1.0.json";
 
