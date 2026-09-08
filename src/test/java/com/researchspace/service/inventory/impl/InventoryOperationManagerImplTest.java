@@ -1,5 +1,6 @@
 package com.researchspace.service.inventory.impl;
 
+import static com.researchspace.service.inventory.InventoryOperationManager.InTransactionValidation.NONE;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -15,6 +16,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.api.v1.model.ApiExtraField;
@@ -30,6 +32,7 @@ import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.inventory.InventoryOperationConfigRegistry;
+import com.researchspace.service.inventory.InventoryOperationManager;
 import java.math.BigDecimal;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -92,15 +95,21 @@ class InventoryOperationManagerImplTest {
 
   /** The origin resolves (parent sample findable) but is never read further. */
   private void originExists(long originId, long sampleId) {
-    when(subSampleApiMgr.getIfExists(originId)).thenReturn(subSampleWithParent(sampleId));
+    // Built BEFORE when(): creating and stubbing the entity mock inside thenReturn(...) would run
+    // while the outer stubbing is still in progress, which Mockito rejects as unfinished stubbing.
+    SubSample subSample = subSampleWithParent(sampleId);
+    when(subSampleApiMgr.assertUserCanEditSubSample(originId, user)).thenReturn(subSample);
   }
 
   private void originHolds(long originId, SubSample subSample) {
-    when(subSampleApiMgr.getIfExists(originId)).thenReturn(subSample);
+    // Read BEFORE when() for the same reason: getQuantity() is a mock call, and a mock call between
+    // when() and thenReturn() is unfinished stubbing.
+    QuantityInfo quantity = subSample.getQuantity();
+    when(subSampleApiMgr.assertUserCanEditSubSample(originId, user)).thenReturn(subSample);
     when(subSampleApiMgr.lockSubSampleForEdit(originId, user)).thenReturn(subSample);
     // The live checks read the quantity as a locked scalar, not from the locked entity; in these
     // tests the two agree unless a test overrides the scalar to model a concurrent committer.
-    when(subSampleApiMgr.getQuantityForUpdate(originId)).thenReturn(subSample.getQuantity());
+    when(subSampleApiMgr.getQuantityForUpdate(originId)).thenReturn(quantity);
   }
 
   @BeforeEach
@@ -126,7 +135,7 @@ class InventoryOperationManagerImplTest {
     ApiSampleWithFullSubSamples created = new ApiSampleWithFullSubSamples("Derived material");
     when(sampleApiMgr.createNewApiSample(newSample, user)).thenReturn(created);
 
-    ApiSampleWithFullSubSamples result = manager.performOperation(request, user);
+    ApiSampleWithFullSubSamples result = manager.performOperation(request, user, NONE);
 
     // the created sample is returned unchanged
     assertSame(created, result);
@@ -155,7 +164,7 @@ class InventoryOperationManagerImplTest {
     when(sampleApiMgr.createNewApiSample(newSample, user))
         .thenReturn(new ApiSampleWithFullSubSamples("Derived material"));
 
-    manager.performOperation(request, user);
+    manager.performOperation(request, user, NONE);
 
     InOrder inOrder = inOrder(subSampleApiMgr, sampleApiMgr);
     inOrder.verify(subSampleApiMgr).registerApiSubSampleUsage(eq(100L), any(), eq(user));
@@ -176,10 +185,30 @@ class InventoryOperationManagerImplTest {
         .when(subSampleApiMgr)
         .lockSubSampleForEdit(100L, user);
 
-    assertThrows(RuntimeException.class, () -> manager.performOperation(request, user));
+    assertThrows(RuntimeException.class, () -> manager.performOperation(request, user, NONE));
 
     verify(sampleApiMgr, never()).createNewApiSample(any(), any());
     verify(subSampleApiMgr, never()).registerApiSubSampleUsage(any(), any(), any());
+  }
+
+  @Test
+  void assertsEditPermissionBeforeLockingAnySiblingSet() {
+    // An under-permissioned caller must not be able to lock other users' sibling sets and delay
+    // their writers until the transaction fails: permission is asserted (unlocked) while the parent
+    // ids are collected, before recalculateTotalFromLockedRows takes the first lock (Copilot
+    // review, PR #1090).
+    ApiInventoryOperationPost request = new ApiInventoryOperationPost();
+    request.setOperationType("derive");
+    request.setOrigins(List.of(origin(100L, new ApiQuantityInfo(new BigDecimal("0.6"), 3))));
+    request.setNewSample(new ApiSampleWithFullSubSamples("Derived material"));
+    doThrow(new RuntimeException("no permission"))
+        .when(subSampleApiMgr)
+        .assertUserCanEditSubSample(100L, user);
+
+    assertThrows(RuntimeException.class, () -> manager.performOperation(request, user, NONE));
+
+    verifyNoInteractions(sampleApiMgr);
+    verify(subSampleApiMgr, never()).lockSubSampleForEdit(any(), any());
   }
 
   @Test
@@ -203,7 +232,7 @@ class InventoryOperationManagerImplTest {
             origin(200L, new ApiQuantityInfo(new BigDecimal("1.5"), 3))));
     request.setNewSample(new ApiSampleWithFullSubSamples("Derived material"));
 
-    assertThrows(RuntimeException.class, () -> manager.performOperation(request, user));
+    assertThrows(RuntimeException.class, () -> manager.performOperation(request, user, NONE));
 
     verify(subSampleApiMgr, never()).registerApiSubSampleUsage(eq(100L), any(), eq(user));
     verify(sampleApiMgr, never()).createNewApiSample(any(), any());
@@ -230,7 +259,7 @@ class InventoryOperationManagerImplTest {
     // destroy empties its origin: the amount taken equals what the origin currently holds
     originHolds(100L, subSampleHolding("2", 3));
 
-    ApiSampleWithFullSubSamples result = manager.performOperation(request, user);
+    ApiSampleWithFullSubSamples result = manager.performOperation(request, user, NONE);
 
     assertNull(result);
     verify(sampleApiMgr, never()).createNewApiSample(any(), any());
@@ -261,7 +290,7 @@ class InventoryOperationManagerImplTest {
     when(sampleApiMgr.createNewApiSample(newSample, user))
         .thenReturn(new ApiSampleWithFullSubSamples("Derived material"));
 
-    manager.performOperation(request, user);
+    manager.performOperation(request, user, NONE);
 
     InOrder inOrder = inOrder(subSampleApiMgr);
     inOrder.verify(subSampleApiMgr).registerApiSubSampleUsage(eq(100L), any(), eq(user));
@@ -283,7 +312,7 @@ class InventoryOperationManagerImplTest {
     when(sampleApiMgr.createNewApiSample(newSample, user))
         .thenReturn(new ApiSampleWithFullSubSamples("Derived material"));
 
-    manager.performOperation(request, user);
+    manager.performOperation(request, user, NONE);
 
     // both origins are permission-checked and each is reduced by its own amount
     verify(subSampleApiMgr).lockSubSampleForEdit(100L, user);
@@ -300,7 +329,7 @@ class InventoryOperationManagerImplTest {
 
   private BindException performExpectingRejection(ApiInventoryOperationPost request) {
     BindException rejection =
-        assertThrows(BindException.class, () -> manager.performOperation(request, user));
+        assertThrows(BindException.class, () -> manager.performOperation(request, user, NONE));
     verify(subSampleApiMgr, never()).registerApiSubSampleUsage(any(), any(), any());
     verify(subSampleApiMgr, never()).updateApiSubSample(any(), any());
     verify(sampleApiMgr, never()).createNewApiSample(any(), any());
@@ -335,7 +364,7 @@ class InventoryOperationManagerImplTest {
     request.setOrigins(List.of(origin(100L, new ApiQuantityInfo(new BigDecimal("0.6"), 3))));
     request.setNewSample(new ApiSampleWithFullSubSamples("Derived material"));
     SubSample snapshotOnlyEntity = subSampleWithParent(900L);
-    when(subSampleApiMgr.getIfExists(100L)).thenReturn(snapshotOnlyEntity);
+    when(subSampleApiMgr.assertUserCanEditSubSample(100L, user)).thenReturn(snapshotOnlyEntity);
     when(subSampleApiMgr.lockSubSampleForEdit(100L, user)).thenReturn(snapshotOnlyEntity);
     when(subSampleApiMgr.getQuantityForUpdate(100L))
         .thenReturn(new QuantityInfo(new BigDecimal("0.4"), 3));
@@ -409,7 +438,7 @@ class InventoryOperationManagerImplTest {
     when(sampleApiMgr.createNewApiSample(newSample, user))
         .thenReturn(new ApiSampleWithFullSubSamples("Pooled material"));
 
-    manager.performOperation(request, user);
+    manager.performOperation(request, user, NONE);
 
     verify(subSampleApiMgr).registerApiSubSampleUsage(eq(100L), any(), eq(user));
     verify(subSampleApiMgr).registerApiSubSampleUsage(eq(200L), any(), eq(user));
@@ -573,7 +602,7 @@ class InventoryOperationManagerImplTest {
     originHolds(100L, subSampleHolding("5", RSUnitDef.GRAM.getId()));
     when(sampleApiMgr.createNewApiSample(newSample, user)).thenReturn(newSample);
 
-    manager.performOperation(request, user);
+    manager.performOperation(request, user, NONE);
 
     verify(sampleApiMgr).createNewApiSample(newSample, user);
   }
@@ -616,7 +645,7 @@ class InventoryOperationManagerImplTest {
     when(sampleApiMgr.createNewApiSample(any(ApiSampleWithFullSubSamples.class), eq(user)))
         .thenReturn(new ApiSampleWithFullSubSamples("Pooled material"));
 
-    assertDoesNotThrow(() -> manager.performOperation(request, user));
+    assertDoesNotThrow(() -> manager.performOperation(request, user, NONE));
 
     InOrder inOrder = inOrder(subSampleApiMgr, sampleApiMgr);
     inOrder.verify(subSampleApiMgr).lockSubSampleForEdit(100L, user);
@@ -638,8 +667,49 @@ class InventoryOperationManagerImplTest {
     when(sampleApiMgr.createNewApiSample(any(ApiSampleWithFullSubSamples.class), eq(user)))
         .thenReturn(new ApiSampleWithFullSubSamples("Pooled material"));
 
-    assertDoesNotThrow(() -> manager.performOperation(request, user));
+    assertDoesNotThrow(() -> manager.performOperation(request, user, NONE));
 
     verify(sampleApiMgr, times(1)).lockSampleForEdit(20L, user);
+  }
+
+  // --- the caller-supplied in-transaction validation (template conformance) ---
+
+  @Test
+  void runsTheInTransactionValidationBeforeAnyOriginReadOrLock() throws Exception {
+    // The controller's template-conformance check used to run in its own transaction, so a template
+    // changed between it and the operation could still fail mid-mutation. The check is now handed
+    // in and run HERE, inside the operation's transaction, before any origin is read or locked
+    // (Copilot review, PR #1090).
+    ApiInventoryOperationPost request = new ApiInventoryOperationPost();
+    request.setOperationType("derive");
+    request.setOrigins(List.of(origin(100L, new ApiQuantityInfo(new BigDecimal("0.6"), 3))));
+    ApiSampleWithFullSubSamples newSample = new ApiSampleWithFullSubSamples("Derived material");
+    request.setNewSample(newSample);
+    originHolds(100L, subSampleHolding("5", 3));
+    when(sampleApiMgr.createNewApiSample(newSample, user))
+        .thenReturn(new ApiSampleWithFullSubSamples("Derived material"));
+    InventoryOperationManager.InTransactionValidation check =
+        mock(InventoryOperationManager.InTransactionValidation.class);
+
+    manager.performOperation(request, user, check);
+
+    InOrder inOrder = inOrder(check, subSampleApiMgr);
+    inOrder.verify(check).validate();
+    inOrder.verify(subSampleApiMgr).assertUserCanEditSubSample(100L, user);
+  }
+
+  @Test
+  void anInTransactionValidationRejectionPreventsAllReadsAndMutations() throws Exception {
+    ApiInventoryOperationPost request = new ApiInventoryOperationPost();
+    request.setOperationType("derive");
+    request.setOrigins(List.of(origin(100L, new ApiQuantityInfo(new BigDecimal("0.6"), 3))));
+    request.setNewSample(new ApiSampleWithFullSubSamples("Derived material"));
+    InventoryOperationManager.InTransactionValidation check =
+        mock(InventoryOperationManager.InTransactionValidation.class);
+    doThrow(new BindException(request, "apiInventoryOperationPost")).when(check).validate();
+
+    assertThrows(BindException.class, () -> manager.performOperation(request, user, check));
+
+    verifyNoInteractions(subSampleApiMgr, sampleApiMgr);
   }
 }
