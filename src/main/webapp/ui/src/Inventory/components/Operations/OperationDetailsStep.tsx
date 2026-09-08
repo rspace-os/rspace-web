@@ -29,6 +29,7 @@ import {
   quantityExceedsOrigin,
   temperatureBelowMin,
   temperatureExceedsMax,
+  temperatureNotStorable,
 } from "./operationValidation";
 import { filterProcessNames } from "./processNames";
 import type { AmountMode, OperationInputs, OperationInputValue, OperationQuantity, PerSubsampleAmounts } from "./types";
@@ -185,6 +186,10 @@ function OperationDetailsStep({
     // inline; the wizard blocks Next on the same condition (detailsValid).
     const overMaxTemp = temperatureExceedsMax(input, quantity);
     const underMinTemp = temperatureBelowMin(input, quantity);
+    // A temperature the backend rejects outright (below absolute zero, or finer than the stored 3
+    // decimal places) is flagged inline too; the wizard blocks Next on the same condition
+    // (Copilot review, PR #1090).
+    const unstorableTemp = temperatureNotStorable(input, quantity);
     return (
       <TextField
         key={input.key}
@@ -193,15 +198,17 @@ function OperationDetailsStep({
         value={quantity ? String(quantity.numericValue) : ""}
         fullWidth
         margin="dense"
-        error={overRemoval || overMaxTemp || underMinTemp}
+        error={overRemoval || overMaxTemp || underMinTemp || unstorableTemp}
         helperText={
           overRemoval
             ? label("operations.fields.amountTakenExceedsOrigin")
-            : overMaxTemp
-              ? label("operations.fields.storageTempMax", { max: input.maxCelsius })
-              : underMinTemp
-                ? label("operations.fields.storageTempMin", { min: input.minCelsius })
-                : undefined
+            : unstorableTemp
+              ? label("operations.fields.storageTempInvalid")
+              : overMaxTemp
+                ? label("operations.fields.storageTempMax", { max: input.maxCelsius })
+                : underMinTemp
+                  ? label("operations.fields.storageTempMin", { min: input.minCelsius })
+                  : undefined
         }
         onChange={(e) => set(input.key, { numericValue: numericValue(Number(e.target.value)), unitId: currentUnitId })}
         slotProps={{

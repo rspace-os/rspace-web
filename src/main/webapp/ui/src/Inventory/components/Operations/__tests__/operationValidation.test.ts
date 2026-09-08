@@ -111,6 +111,19 @@ describe("detailsValid temperature limit", () => {
     expect(detailsValid(reviveWithMin, { ...validValues, storageTemp: { numericValue: 4, unitId: 8 } })).toBe(true);
     expect(detailsValid(reviveWithMin, { ...validValues, storageTemp: { numericValue: 37, unitId: 8 } })).toBe(true);
   });
+
+  it("rejects a temperature the backend would refuse outright", () => {
+    // -300 satisfies the -18 C ceiling but is below absolute zero (@ValidTemperature), and
+    // -80.0005 is finer than the stored 3 decimal places; both used to enable Perform only to fail
+    // at the backend (Copilot review, PR #1090).
+    for (const numericValue of [-300, -80.0005]) {
+      expect(detailsValid(cryoWithMax, { ...validValues, storageTemp: { numericValue, unitId: 8 } })).toBe(false);
+    }
+    // absolute zero itself is storable and satisfies the ceiling
+    expect(detailsValid(cryoWithMax, { ...validValues, storageTemp: { numericValue: -273.15, unitId: 8 } })).toBe(
+      true,
+    );
+  });
 });
 
 describe("amountTakenExceedsOrigin", () => {

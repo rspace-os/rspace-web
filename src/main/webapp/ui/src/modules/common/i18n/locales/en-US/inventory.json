@@ -1753,6 +1753,7 @@
       "rememberProcessValuesHelp": "Reuses this process's template, amounts and documentation next time.",
       "sampleName": "New sample name",
       "storageTemp": "Storage temperature",
+      "storageTempInvalid": "Enter a temperature at or above -273.15°C, with at most 3 decimal places.",
       "storageTempMax": "Storage temperature must be at most {max}°C.",
       "storageTempMin": "Storage temperature must be at least {min}°C.",
       "temperatureUnit": "°C"

@@ -4016,6 +4016,7 @@ export default interface Resources {
         "rememberProcessValuesHelp": "Reuses this process's template, amounts and documentation next time.",
         "sampleName": "New sample name",
         "storageTemp": "Storage temperature",
+        "storageTempInvalid": "Enter a temperature at or above -273.15°C, with at most 3 decimal places.",
         "storageTempMax": "Storage temperature must be at most {max}°C.",
         "storageTempMin": "Storage temperature must be at least {min}°C.",
         "temperatureUnit": "°C"
@@ -6998,6 +6999,7 @@ export default interface Resources {
           "amountTakenCategoryMismatch": "The amount taken must use the origin's measurement category (e.g. millilitres from a volume origin).",
           "amountTakenExceedsOrigin": "Cannot take more from an origin than it currently holds.",
           "amountTakenInvalid": "Each origin must specify a non-negative amount, with a unit, to take from it.",
+          "amountTakenNotSubtractable": "The amount taken cannot be subtracted exactly from what the origin holds (quantities are stored at 3 decimal places).",
           "amountTakenPositive": "This operation takes from each origin, so the amount taken must be greater than zero.",
           "amountTakenTooPrecise": "The amount taken supports at most 3 decimal places.",
           "amountTakenZero": "This operation does not take from its origins, so the amount taken must be zero.",
