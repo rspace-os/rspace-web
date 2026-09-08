@@ -127,6 +127,21 @@ above) without computing it.
   the controller's separate read transaction, whose race let a concurrent
   decrement produce a 201 with a silently clamped origin instead of the
   documented 400.
+- **The template-conformance check also runs inside that transaction** (review,
+  2026-09-08): the check itself stays controller code (it delegates to the
+  shared samples validator, a controller-layer class the service must not
+  import), but the controller hands it to the manager as an
+  `InTransactionValidation` callback, run before any origin is read or locked.
+  Run in its own transaction it only narrowed the window: a template edited
+  between the check and the operation could fail mid-mutation or create the
+  sample against a definition different from the one validated.
+- **Permission is asserted before the first lock** (review, 2026-09-08): the
+  operations manager, the List of Materials lock hoist and the Stoichiometry
+  deduction hoist all resolve caller-supplied ids into parent-sample sibling
+  sets to lock. Each now asserts (or filters on) the caller's permission per
+  record BEFORE taking any lock, so an under-permissioned request cannot lock
+  other users' sibling sets and delay their writers until it fails; the
+  existing locked re-checks before mutation are retained.
 - **Locking and freshness are separate guarantees** (code review, 2026-09-08,
   superseding the 2026-09-03/04 lock bullets). `GenericDao.lockRowForUpdate`
   takes `lock_mode X` on exactly one row of the entity's own table, via a
