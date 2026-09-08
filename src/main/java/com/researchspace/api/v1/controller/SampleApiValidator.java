@@ -80,7 +80,10 @@ abstract class SampleApiValidator extends InventoryRecordValidator {
       Supplier<List<? extends ApiSubSampleInfo>> apiSamplePost, Errors errors) {
     for (int i = 0; i < apiSamplePost.get().size(); i++) {
       ApiSubSampleInfo sub = apiSamplePost.get().get(i);
-      if (sub.getQuantity() != null) {
+      // A null element ("subSamples": [null]) is already a bean-validation error at binding, but
+      // the controllers accept a BindingResult so this validator still runs; dereferencing the
+      // element would turn that reported 400 into a 500 (Copilot review, PR #1090).
+      if (sub != null && sub.getQuantity() != null) {
         errors.pushNestedPath("subSamples[" + i + "]");
         validateInventoryRecordQuantity(sub, errors);
         errors.popNestedPath();
