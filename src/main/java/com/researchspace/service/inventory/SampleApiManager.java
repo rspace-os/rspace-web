@@ -84,6 +84,21 @@ public interface SampleApiManager extends InventoryApiManager<SampleEntity> {
   Sample lockSampleForEdit(Long id, User user);
 
   /**
+   * Rewrites a sample's denormalised total from its subsample rows, read under a row lock.
+   *
+   * <p>Call this AFTER changing any subsample of the sample. {@code
+   * SampleEntity.recalculateTotalQuantity}, which {@code SubSample.setQuantity} triggers as a
+   * cascade, sums the sibling entities instead, and in InnoDB an unlocked sibling is read from the
+   * transaction's snapshot: two writers on different siblings of one sample therefore each compute
+   * the total from stale stock and one decrement is lost from it. Locking the siblings and
+   * refreshing them was not enough either, because a refreshed sibling was measured reverting to
+   * its pre-lock value later in the same request. This reads the values as scalars, which the
+   * persistence context cannot serve or re-stale, so it is the last word on the total (code review
+   * finding 2, reproduced by {@code parallelAliquotsOnSiblingSubSamplesKeepTheParentTotalExact}).
+   */
+  void recalculateTotalFromLockedRows(Long sampleId);
+
+  /**
    * Returns the {@link Sample} (not a template) if it exists and user can delete/restore it.
    *
    * @param id

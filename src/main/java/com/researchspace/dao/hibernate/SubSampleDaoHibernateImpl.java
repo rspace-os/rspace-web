@@ -9,6 +9,9 @@ import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.SubSample;
+import com.researchspace.model.units.QuantityInfo;
+import jakarta.persistence.LockModeType;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -112,5 +115,41 @@ public class SubSampleDaoHibernateImpl extends InventoryDaoHibernate<SubSample, 
             SubSample.class)
         .setParameter("fileProperty", fileProperty)
         .list();
+  }
+
+  @Override
+  public List<QuantityInfo> getActiveQuantitiesForUpdate(Long sampleId, boolean sampleDeleted) {
+    return getSession()
+        .createQuery(
+            "select ss.quantityInfo.numericValue, ss.quantityInfo.unitId from SubSample ss"
+                + " where ss.sample.id = :sampleId"
+                + " and ss.quantityInfo.numericValue is not null"
+                + " and (ss.deleted = false or (:sampleDeleted = true and"
+                + " ss.deletedOnSampleDeletion = true))",
+            Object[].class)
+        .setParameter("sampleId", sampleId)
+        .setParameter("sampleDeleted", sampleDeleted)
+        .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+        .list()
+        .stream()
+        .map(row -> new QuantityInfo((BigDecimal) row[0], ((Number) row[1]).intValue()))
+        .collect(Collectors.toList());
+  }
+
+  @Override
+  public QuantityInfo getQuantityForUpdate(Long subSampleId) {
+    Object[] row =
+        getSession()
+            .createQuery(
+                "select ss.quantityInfo.numericValue, ss.quantityInfo.unitId from SubSample ss"
+                    + " where ss.id = :id",
+                Object[].class)
+            .setParameter("id", subSampleId)
+            .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+            .uniqueResult();
+    if (row == null || row[0] == null) {
+      return null;
+    }
+    return new QuantityInfo((BigDecimal) row[0], ((Number) row[1]).intValue());
   }
 }

@@ -46,20 +46,38 @@ public interface GenericDao<T, PK extends Serializable> {
   T get(PK id);
 
   /**
-   * Reads an entity and holds a row lock on it ({@code SELECT ... FOR UPDATE}) until the current
-   * transaction ends, so a concurrent transaction reading the same row this way waits for this one
-   * to commit. Use it where two requests writing one row must serialise rather than both compute
-   * from the same stale read (RSDEV-1231).
+   * Takes a row lock ({@code SELECT id ... FOR UPDATE}) on exactly one row of the entity's own
+   * table, held until the current transaction ends, then returns the entity from an ordinary load.
+   * Use it where two requests writing one row must serialise rather than both compute from the same
+   * stale read (RSDEV-1231).
    *
-   * <p>The row is re-read under the lock, so the returned entity holds what another transaction
-   * committed rather than what this one saw beforehand. The caller must therefore not hold
-   * unflushed changes to a row it locks here for the first time: they would be discarded. A row
-   * this transaction already holds exclusively is exempt and is returned as it is, so asking twice
-   * is a no-op and a caller's own pending changes are safe.
+   * <p>This guarantees SERIALISATION only, not freshness. The returned entity comes from the same
+   * {@code session.get} path as every other load, so under REPEATABLE READ its column values are
+   * the transaction's snapshot, which may be stale. A caller that must compute from the current
+   * committed values reads them as scalars under the lock instead (for example {@code
+   * SubSampleDao#getQuantityForUpdate}); an entity read cannot provide that, because the
+   * persistence context serves and can re-stale it.
    *
-   * @return the locked entity, or null if none has the id
+   * <p>The lock statement deliberately never touches the entity's association graph. Locking a
+   * loaded entity would make Hibernate emit its eager-fetch SELECT (a ~20-table join for inventory
+   * records) with {@code FOR UPDATE} on the end, taking exclusive locks on rows in every joined
+   * table and deadlocking against unrelated features.
+   *
+   * <p>Safe to call repeatedly in one transaction, and it never discards the caller's unflushed
+   * changes (it re-reads nothing).
+   *
+   * <p>Snapshot-ness applies to EVERY column, and the write side inherits it: without
+   * {@code @Version} or {@code @DynamicUpdate} a flush writes all columns, so a caller that dirties
+   * this entity can write a snapshot value of an unrelated column (a name, a description) back over
+   * a concurrent committed edit. That is the same field-level last-write-wins every unlocked write
+   * path in the application already has; the old refresh-based implementation happened to shield
+   * these three call sites from it, and dropping the refresh deliberately returns them to the
+   * application norm (recorded in DevDocs/adr/0007). Whole-row freshness belongs to a global
+   * optimistic-locking change, not to this method.
+   *
+   * @return the entity, or null if none has the id
    */
-  T getForUpdate(PK id);
+  T lockRowForUpdate(PK id);
 
   /**
    * Alternative object retriever, which just returns <code>null</code> if an item is not found,
