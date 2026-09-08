@@ -736,6 +736,13 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
         1,
         statuses.stream().filter(status -> status == 201).count(),
         () -> "exactly one request should win the race, got " + statuses);
+    // Tightened (2026-09-08): with a row lock that makes concurrent requests WAIT, every loser
+    // proceeds after the winner commits, reads the emptied origin under the lock and fails the
+    // live-state check as a 400. A 409 means a deadlock victim or lock-wait timeout, which the
+    // earlier "no 5xx" assertion tolerated while every run was deadlocking.
+    assertTrue(
+        statuses.stream().allMatch(status -> status == 201 || status == 400),
+        () -> "losers must fail live-state (400), not deadlock (409), got " + statuses);
     ApiSubSample reloaded = subSampleApiManager.getApiSubSampleById(origin.getId(), anyUser);
     assertTrue(
         java.math.BigDecimal.ZERO.compareTo(reloaded.getQuantity().getNumericValue()) == 0,
@@ -758,6 +765,10 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
 
     assertTrue(statuses.stream().noneMatch(status -> status >= 500), () -> "5xx in " + statuses);
     long successes = statuses.stream().filter(status -> status == 201).count();
+    // Tightened (2026-09-08): five 1 g takes fit the 5 g origin exactly, so with row locks that
+    // make concurrent requests WAIT there is no legitimate loser; anything below five 201s is a
+    // deadlock victim or lock-wait timeout surfacing as a 409, which "no 5xx" alone tolerated.
+    assertEquals(5, successes, () -> "all five aliquots should succeed, got " + statuses);
     ApiSubSample reloaded = subSampleApiManager.getApiSubSampleById(origin.getId(), anyUser);
     java.math.BigDecimal expected =
         originalAmount.subtract(java.math.BigDecimal.valueOf(successes));
@@ -1119,13 +1130,11 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
       assertTrue(
           statuses.stream().noneMatch(status -> status >= 500),
           () -> "5xx from sibling aliquots: " + statuses);
-      // Both requests rewrite the same denormalised parent total, so they DO contend and one may
-      // lose with a retryable 409. Both could succeed only if the origin reads stopped being entity
-      // graph locks: FOR UPDATE on these entities joins Container, User, FileProperty and Barcode
-      // and locks all of them, so two operations deadlock and InnoDB picks a victim.
-      // Sibling subsamples are different rows, so neither request has to lose: they queue on the
-      // shared parent-total rows and both go through. Before the sibling rows were locked up front
-      // they deadlocked here instead and InnoDB killed one (409).
+      // Sibling subsamples are different rows, so neither request has to lose: both queue on the
+      // shared sibling-set lock (taken first, before either origin's own row) and go through in
+      // turn. Before the sibling rows were locked up front they deadlocked here and InnoDB killed
+      // one (409), and before the lock was narrowed the eager-fetch graph lock deadlocked them
+      // against each other's joined rows too.
       assertEquals(
           2,
           statuses.stream().filter(status -> status == 201).count(),

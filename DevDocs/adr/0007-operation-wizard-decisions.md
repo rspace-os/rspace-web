@@ -198,12 +198,18 @@ above) without computing it.
   lock. The operations path locks the same row twice in one transaction, which
   is harmless: the lock statement is a scalar query, so a repeat never
   refreshes or upgrades the entity and a caller's unflushed changes survive.
-  Stoichiometry processes its links ordered by inventory record id so two
-  deductions over the same subsamples cannot each hold what the other waits
-  for; a cross-endpoint multi-row deadlock is still possible in theory, and
-  surfaces as the 409 the Stoichiometry refresh-and-retry UI already handles;
-  a lock failure aborts the whole deduction rather than becoming one failed
-  row, because Hibernate leaves the session unusable afterwards. The
+  Stoichiometry and List of Materials follow the same canonical acquisition
+  order as the operations endpoint (2026-09-08): every distinct parent
+  sample's sibling set up front, ascending by sample id, then the individual
+  rows. The sibling-set lock is row locks on all of a sample's subsamples, so
+  once the sets are held every later row lock is a re-acquisition and cannot
+  form a deadlock cycle across the three writers. Stoichiometry additionally
+  processes its links ordered by inventory record id; a lock failure still
+  aborts the whole deduction rather than becoming one failed row (Hibernate
+  leaves the session unusable afterwards) and surfaces as the 409 the
+  Stoichiometry refresh-and-retry UI already handles, which remains the
+  backstop for anything unforeseen (e.g. rows outside the set query, such as
+  deleted or quantity-less subsamples). The
   whole-value `POST /userform/ajax/preference` path takes no lock, so until
   every client sends a key, a cached-JS tab writing the whole UI settings blob
   can still clobber a concurrent keyed merge.

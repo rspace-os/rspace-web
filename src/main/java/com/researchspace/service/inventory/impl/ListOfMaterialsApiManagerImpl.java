@@ -141,6 +141,9 @@ public class ListOfMaterialsApiManagerImpl implements ListOfMaterialsApiManager 
 
     ListOfMaterials newLom = incomingLom.toListOfMaterials();
     if (incomingLom.getMaterials() != null) {
+      // canonical lock order: every named subsample's sibling set first, ascending by sample id,
+      // then the per-subsample row locks the decrement loop below takes (see the helper's javadoc)
+      invRecHandler.lockParentSampleSets(incomingLom.getMaterials(), null);
       for (ApiMaterialUsage amu : incomingLom.getMaterials()) {
         MaterialUsage materialUsage = amu.toMaterialUsage(newLom, invRecHandler);
         invPermissions.assertUserCanReadOrLimitedReadInventoryRecord(
@@ -169,6 +172,9 @@ public class ListOfMaterialsApiManagerImpl implements ListOfMaterialsApiManager 
   public ApiListOfMaterials updateListOfMaterials(ApiListOfMaterials lomUpdate, User user) {
     ListOfMaterials storedLom = getIfExists(lomUpdate.getId());
     List<MaterialUsage> originalMaterials = new ArrayList<>(storedLom.getMaterials());
+    // canonical lock order, as on create; stored materials included because removing a usage
+    // restores its stock, which writes that subsample's sample total too
+    invRecHandler.lockParentSampleSets(lomUpdate.getMaterials(), storedLom.getMaterials());
     boolean lomChanged =
         lomUpdate.applyChangesToDatabaseListOfMaterials(storedLom, invRecHandler, user);
     if (lomChanged) {
