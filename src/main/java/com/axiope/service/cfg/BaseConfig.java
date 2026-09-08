@@ -24,8 +24,6 @@ import com.researchspace.dataverse.rspaceadapter.DataverseRSpaceRepository;
 import com.researchspace.dataverse.rspaceadapter.DataverseRepoConfigurer;
 import com.researchspace.dcd.rspaceadapter.DigitalCommonsDataRepository;
 import com.researchspace.document.importer.DocumentImporterFromWord2HTML;
-import com.researchspace.document.importer.EvernoteEnexImporter;
-import com.researchspace.document.importer.ExternalFileImporter;
 import com.researchspace.document.importer.RSpaceDocumentCreator;
 import com.researchspace.export.pdf.ExportConfigurer;
 import com.researchspace.export.pdf.ExportConfigurerImpl;
@@ -1136,11 +1134,6 @@ public abstract class BaseConfig {
   @Bean
   WorkspaceViewModePreferences workspaceViewModePreferences() {
     return new WorkspaceViewModePreferences();
-  }
-
-  @Bean
-  ExternalFileImporter evernoteFileImporter() {
-    return new EvernoteEnexImporter();
   }
 
   @Bean

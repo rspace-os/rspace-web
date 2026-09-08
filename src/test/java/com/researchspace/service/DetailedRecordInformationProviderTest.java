@@ -197,10 +197,12 @@ public class DetailedRecordInformationProviderTest extends SpringTransactionalTe
     assertEquals(userDoc.getName(), linkedBy2.get(0).getName());
     assertEquals(userDoc.getOwner().getFullName(), linkedBy2.get(0).getOwnerFullName());
 
-    // user2doc doc is not visible for user, so only owner's details are displayed
+    // user2doc doc is not visible for user, so only the owner's full name is displayed;
+    // the login username stays out of the placeholder (RSDEV-1329)
     assertEquals(null, linkedBy2.get(1).getOid());
     assertEquals(null, linkedBy2.get(1).getName());
     assertEquals(user2doc.getOwner().getFullName(), linkedBy2.get(1).getOwnerFullName());
+    assertEquals(null, linkedBy2.get(1).getOwnerUsername());
   }
 
   @Test

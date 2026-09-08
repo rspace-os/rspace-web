@@ -614,8 +614,16 @@ public class GalleryController extends BaseController {
   @GetMapping("/ajax/getLinkedDocuments/{mediaId}")
   @ResponseBody
   public AjaxReturnObject<List<RecordInformation>> getDocumentsLinkedToAttachment(
-      @PathVariable("mediaId") Long mediaId) {
-    return new AjaxReturnObject<>(mediaManager.getIdsOfLinkedDocuments(mediaId), null);
+      @PathVariable("mediaId") Long mediaId, Principal principal) {
+    // RSDEV-1329: the published view logs the anonymous guest in before serving, so requests on
+    // the /public prefix normally DO carry a subject and it is the manager's guest check that
+    // refuses them; the null case here is the rarer session-less request.
+    // Resolved from the Principal rather than userManager.getAuthenticatedUserInSession(), which
+    // calls SecurityUtils.getSubject().getSession() and so CREATES a session. This endpoint is
+    // also mapped under the anon /public/** prefix, where that would let an unauthenticated
+    // caller force unbounded session allocation before the refusal fires.
+    User user = principal == null ? null : getUserByUsername(principal.getName());
+    return new AjaxReturnObject<>(mediaManager.getIdsOfLinkedDocuments(mediaId, user), null);
   }
 
   /**

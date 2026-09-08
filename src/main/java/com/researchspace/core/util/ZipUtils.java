@@ -7,9 +7,12 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Enumeration;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.apache.commons.compress.archivers.zip.ZipFile;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -99,6 +102,13 @@ public class ZipUtils {
    * Extract zip file at the specified destination path. NB:archive must consist of a single root
    * folder containing everything else.
    *
+   * <p>Extraction is safe against archives that originate from user uploads: an absolute entry name
+   * is rejected, and each entry's canonical destination must resolve inside the extraction
+   * directory (covering {@code ..} traversal and backslash variants). A rejection or I/O failure
+   * aborts and removes everything the extraction created; it does not restore pre-existing files
+   * that a failed run has already overwritten, so extract into a fresh directory when the
+   * destination may hold content worth keeping.
+   *
    * @param archivePath path to zip file, e.g., a/b/c/d.archive.zip
    * @param destinationPath The folder into which the zip archive will be extracted.
    */
@@ -135,10 +145,13 @@ public class ZipUtils {
       throws IOException {
 
     final int bufferSize = 65536;
-    ZipFile zipFile = null;
     File topLevelDir = null;
-    try {
-      zipFile = new ZipFile(archiveFile);
+    String rootPath = zipDestinationFolder.getCanonicalPath();
+    String rootPrefix = rootPath.endsWith(File.separator) ? rootPath : rootPath + File.separator;
+    // paths this extraction created, so a rejection can remove exactly what it wrote
+    Set<File> created = new LinkedHashSet<>();
+
+    try (ZipFile zipFile = new ZipFile(archiveFile)) {
       byte[] buf = new byte[bufferSize];
 
       Enumeration<ZipArchiveEntry> entries = zipFile.getEntries();
@@ -146,12 +159,28 @@ public class ZipUtils {
         ZipArchiveEntry zipEntry = entries.nextElement();
         String name = zipEntry.getName();
         name = name.replace('\\', '/');
+        if (name.startsWith("/") || name.matches("^[A-Za-z]:.*")) {
+          throw new InvalidArchiveException("absolute entry name: " + zipEntry.getName());
+        }
 
         File destinationFile = new File(zipDestinationFolder, name);
+        String canonical = destinationFile.getCanonicalPath();
+        // the extraction root itself (e.g. a leading "./" entry) is inside the directory
+        if (!canonical.equals(rootPath) && !canonical.startsWith(rootPrefix)) {
+          throw new InvalidArchiveException(
+              "entry resolves outside the extraction directory: " + zipEntry.getName());
+        }
         if (name.endsWith("/")) {
-          if (!destinationFile.isDirectory() && !destinationFile.mkdirs()) {
-            log.warn("Error creating temp directory:{}", destinationFile.getPath());
-            return destinationFile.getAbsolutePath();
+          if (!destinationFile.isDirectory()) {
+            File topmostMissingDir = topmostMissingAncestor(destinationFile, rootPrefix);
+            if (!destinationFile.mkdirs()) {
+              // typically a file entry earlier in the archive already claimed this path
+              throw new InvalidArchiveException(
+                  "could not create directory for entry: " + zipEntry.getName());
+            }
+            if (topmostMissingDir != null) {
+              created.add(topmostMissingDir);
+            }
           }
           if (topLevelDir == null) {
             topLevelDir = destinationFile;
@@ -159,10 +188,14 @@ public class ZipUtils {
           continue;
         }
 
-        try (FileOutputStream fos = new FileOutputStream(destinationFile)) {
+        // track for rollback only what this extraction creates, never pre-existing content
+        if (!destinationFile.exists()) {
+          created.add(destinationFile);
+        }
+        try (InputStream entryStream = zipFile.getInputStream(zipEntry);
+            FileOutputStream fos = new FileOutputStream(destinationFile)) {
           int n;
-          InputStream entryContent = zipFile.getInputStream(zipEntry);
-          while ((n = entryContent.read(buf)) != -1) {
+          while ((n = entryStream.read(buf)) != -1) {
             if (n > 0) {
               fos.write(buf, 0, n);
             }
@@ -170,13 +203,39 @@ public class ZipUtils {
         }
       }
 
-    } catch (IOException e) {
-      log.warn("Unzip failed:" + e.getMessage());
+    } catch (InvalidArchiveException e) {
+      log.warn("Rejected archive {}: {}", archiveFile.getName(), e.getMessage());
+      deleteAll(created);
       throw e;
-    } finally {
-      IOUtils.closeQuietly(zipFile);
+    } catch (IOException e) {
+      log.warn("Unzip failed: {}", e.getMessage(), e);
+      deleteAll(created);
+      throw e;
     }
 
     return (topLevelDir != null) ? topLevelDir.getAbsolutePath() : null;
+  }
+
+  private static void deleteAll(Set<File> created) {
+    for (File file : created) {
+      FileUtils.deleteQuietly(file);
+    }
+  }
+
+  /**
+   * Returns the highest ancestor of {@code dir} (itself included) that does not yet exist, staying
+   * inside the extraction root; deleting it recursively after a {@code mkdirs} removes every
+   * directory that call created and nothing that existed before.
+   */
+  private static File topmostMissingAncestor(File dir, String rootPrefix) throws IOException {
+    File topmostMissing = null;
+    for (File d = dir;
+        d != null && d.getCanonicalPath().startsWith(rootPrefix);
+        d = d.getParentFile()) {
+      if (!d.exists()) {
+        topmostMissing = d;
+      }
+    }
+    return topmostMissing;
   }
 }

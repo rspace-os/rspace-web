@@ -6,7 +6,7 @@
   <modelVersion>4.0.0</modelVersion>
   <artifactId>researchspace</artifactId>
   <packaging>war</packaging>
-  <version>2.26.0-SNAPSHOT-${timestamp}</version><!-- appVersionID don't remove this comment it identifies this version -->
+  <version>2.27.0-SNAPSHOT-${timestamp}</version><!-- appVersionID don't remove this comment it identifies this version -->
   <name>ResearchSpace</name>
   <url>https://www.researchspace.com</url>
 
@@ -1906,11 +1906,6 @@
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcprov-jdk15on</artifactId>
       <version>1.70</version>
-    </dependency>
-    <dependency>
-      <groupId>com.github.rspace-os</groupId>
-      <artifactId>rspace-evernote-parser</artifactId>
-      <version>2.0.0</version>
     </dependency>
     <dependency>
       <groupId>com.google.code.gson</groupId>

@@ -3,6 +3,7 @@ package com.researchspace.ldap;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.researchspace.model.SignupSource;
@@ -60,6 +61,15 @@ public class UserLdapRepoTest extends SpringTransactionalTest {
         assertThrows(IllegalStateException.class, () -> userLdapRepo.signupLdapUser(null))
             .getMessage(),
         containsString("LDAP not configured"));
+  }
+
+  @Test
+  public void testEmptyPasswordRejected() {
+    properties.setLdapEnabled("true");
+    properties.setLdapAuthenticationEnabled("true");
+
+    assertNull(userLdapRepo.authenticate("user", null));
+    assertNull(userLdapRepo.authenticate("user", ""));
   }
 
   @Test

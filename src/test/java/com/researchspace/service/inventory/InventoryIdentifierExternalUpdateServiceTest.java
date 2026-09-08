@@ -21,6 +21,7 @@ import static org.mockito.Mockito.when;
 import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInventoryDOI;
 import com.researchspace.api.v1.model.ApiInventoryDOI.ApiExternalMetadataUpdate;
+import com.researchspace.api.v1.model.ApiInventoryDOI.ApiExternalMetadataUpdate.Outcome;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiInventorySystemSettings.InventorySettingType;
 import com.researchspace.b2inst.model.request.B2instDoi;
@@ -293,7 +294,7 @@ class InventoryIdentifierExternalUpdateServiceTest {
 
     verify(dataCiteConnector).updateDoi(rebuilt, InventorySettingType.PIDINST);
     verifyNoInteractions(b2instConnector);
-    assertTrue(doi.getExternalMetadataUpdate().isSucceeded());
+    assertEquals(Outcome.UPDATED, doi.getExternalMetadataUpdate().getOutcome());
   }
 
   /**
@@ -329,7 +330,7 @@ class InventoryIdentifierExternalUpdateServiceTest {
     verifyNoInteractions(rspaceToExternalProviderAdapter, auditer);
     ApiExternalMetadataUpdate outcome = doi.getExternalMetadataUpdate();
     assertNotNull(outcome, "a frozen record must still be explained");
-    assertFalse(outcome.isSucceeded());
+    assertEquals(Outcome.NOT_UPDATABLE, outcome.getOutcome());
     // provider-specific, because the two are frozen for different reasons. The raw provider state
     // is deliberately not interpolated, so it is not asserted.
     String expectedKey =
@@ -415,7 +416,7 @@ class InventoryIdentifierExternalUpdateServiceTest {
     verify(b2instConnector).updateDraftDoi(RID, rebuilt);
     // the fast path: a populated response list is complete, so the record's own list is not read
     verify(instrument, never()).getActiveIdentifiers();
-    assertTrue(doi.getExternalMetadataUpdate().isSucceeded());
+    assertEquals(Outcome.UPDATED, doi.getExternalMetadataUpdate().getOutcome());
     assertTrue(
         doi.getExternalMetadataUpdate().getReason().contains("externalUpdated"),
         doi.getExternalMetadataUpdate().getReason());
@@ -508,9 +509,32 @@ class InventoryIdentifierExternalUpdateServiceTest {
     service.pushMetadataUpdates(savedInstrumentWith(doi), user);
 
     ApiExternalMetadataUpdate outcome = doi.getExternalMetadataUpdate();
-    assertFalse(outcome.isSucceeded());
+    assertEquals(Outcome.FAILED, outcome.getOutcome());
     assertTrue(outcome.getReason().contains("externalUpdateFailed"), outcome.getReason());
     assertTrue(outcome.getReason().contains("Record is not editable."), outcome.getReason());
+  }
+
+  /**
+   * Nothing upstream bounds the provider's own wording, and this sentence is shown to a user in a
+   * toast that waits to be dismissed. The bound itself lives in {@code B2instConnectionException},
+   * so this asserts it end to end: an oversized reason must not reach the text built here.
+   */
+  @Test
+  void abbreviatesAnOversizedProviderDetailBeforeItReachesTheUser() {
+    expectPayloadBuildAndMessages();
+    expectServerUrl();
+    String oversized = "x".repeat(2000);
+    when(rspaceToExternalProviderAdapter.buildB2instDoi(eq(instrument), anyString()))
+        .thenReturn(new B2instDoi());
+    when(b2instConnector.updateDraftDoi(anyString(), any(B2instDoi.class)))
+        .thenThrow(new B2instConnectionException("Error updating B2INST draft record", oversized));
+    ApiInventoryDOI doi = identifier(IdentifierType.PIDINST_B2INST, "draft", RID);
+
+    service.pushMetadataUpdates(savedInstrumentWith(doi), user);
+
+    String reason = doi.getExternalMetadataUpdate().getReason();
+    assertFalse(reason.contains(oversized), "the provider's full wording reached the user");
+    assertTrue(reason.length() < 700, reason.length() + " characters: " + reason);
   }
 
   /**
@@ -535,7 +559,7 @@ class InventoryIdentifierExternalUpdateServiceTest {
     service.pushMetadataUpdates(savedInstrumentWith(doi), user);
 
     ApiExternalMetadataUpdate outcome = doi.getExternalMetadataUpdate();
-    assertFalse(outcome.isSucceeded());
+    assertEquals(Outcome.FAILED, outcome.getOutcome());
     assertFalse(outcome.getReason().contains("credentials"), outcome.getReason());
   }
 
@@ -647,8 +671,8 @@ class InventoryIdentifierExternalUpdateServiceTest {
 
     verify(b2instConnector).updateDraftDoi(eq(RID), any(B2instDoi.class));
     verify(b2instConnector, never()).updateDraftDoi(eq("acc-ept01"), any(B2instDoi.class));
-    assertFalse(accepted.getExternalMetadataUpdate().isSucceeded());
-    assertTrue(draft.getExternalMetadataUpdate().isSucceeded());
+    assertEquals(Outcome.NOT_UPDATABLE, accepted.getExternalMetadataUpdate().getOutcome());
+    assertEquals(Outcome.UPDATED, draft.getExternalMetadataUpdate().getOutcome());
   }
 
   /** Success is audited too, not only failure: the audit trail is the record of every attempt. */
@@ -712,11 +736,11 @@ class InventoryIdentifierExternalUpdateServiceTest {
 
     verify(b2instConnector).updateDraftDoi(eq(RID), any(B2instDoi.class));
     verify(b2instConnector, never()).updateDraftDoi(eq("br-oken01"), any(B2instDoi.class));
-    assertFalse(broken.getExternalMetadataUpdate().isSucceeded());
+    assertEquals(Outcome.FAILED, broken.getExternalMetadataUpdate().getOutcome());
     assertTrue(
         broken.getExternalMetadataUpdate().getReason().contains("externalUpdateFailed"),
         broken.getExternalMetadataUpdate().getReason());
-    assertTrue(good.getExternalMetadataUpdate().isSucceeded());
+    assertEquals(Outcome.UPDATED, good.getExternalMetadataUpdate().getOutcome());
     verify(auditer, times(1)).notify(any());
   }
 }

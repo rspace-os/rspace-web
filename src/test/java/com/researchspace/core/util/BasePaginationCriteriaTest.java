@@ -1,6 +1,7 @@
 package com.researchspace.core.util;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -54,6 +55,90 @@ public class BasePaginationCriteriaTest {
     // now an OK value:
     pg.setOrderBy("name");
     assertEquals("name", pg.getOrderBy());
+  }
+
+  @Test
+  public void isOrderBySafeAcceptsLegitimateSortFields() {
+    pg = new BasicPaginationCriteria<>(Object.class);
+    for (String value :
+        new String[] {
+          "name",
+          "id",
+          "creationDate",
+          "modificationDate",
+          "owner.username",
+          "owner.lastName",
+          "communication.creationTime",
+          "publishingState",
+          "lastStatusUpdate",
+          "deletedDate",
+          "r.editInfo.name"
+        }) {
+      assertTrue(pg.isOrderBySafe(value), value + " should be allowed");
+    }
+    // null and empty are treated as 'no ordering requested', not as unsafe
+    assertTrue(pg.isOrderBySafe(null));
+    assertTrue(pg.isOrderBySafe(""));
+  }
+
+  @Test
+  public void isOrderBySafeRejectsInjectionPayloads() {
+    pg = new BasicPaginationCriteria<>(Object.class);
+    for (String value :
+        new String[] {
+          "name,rand()",
+          "id,(select 1)",
+          "name; drop table user",
+          "name asc, (select password from User)",
+          "1=1",
+          "name)",
+          "name ",
+          " name",
+          "name/**/"
+        }) {
+      assertFalse(pg.isOrderBySafe(value), value + " should be rejected");
+    }
+  }
+
+  @Test
+  public void isOrderBySafeRejectsNonIdentifierTokens() {
+    pg = new BasicPaginationCriteria<>(Object.class);
+    // an identifier is dot-separated segments each starting with a letter or underscore
+    for (String value :
+        new String[] {
+          "1", // bare digit: positional ordering in native SQL, not a property
+          "123",
+          ".",
+          "name.", // trailing dot
+          ".name", // leading dot
+          "owner..name", // empty dot segment
+          "1name" // leading digit
+        }) {
+      assertFalse(pg.isOrderBySafe(value), value + " should be rejected");
+    }
+  }
+
+  @Test
+  public void setOrderByDropsInjectionPayloadThatPassedTheOldBlacklist() {
+    pg = new BasicPaginationCriteria<>(Object.class);
+    // contains none of the previously blacklisted characters
+    pg.setOrderBy("name,rand()");
+    assertTrue(StringUtils.isEmpty(pg.getOrderBy()));
+  }
+
+  @Test
+  public void sysadminVirtualSortTokensAreAcceptedVerbatim() {
+    pg = new BasicPaginationCriteria<>(Object.class);
+    // dispatch keys matched by equals() in SysAdminManagerImpl, never concatenated into SQL
+    for (String token : new String[] {"fileUsage()", "recordCount()"}) {
+      assertTrue(pg.isOrderBySafe(token), token + " should be allowed");
+      pg.setOrderBy(token);
+      assertEquals(token, pg.getOrderBy());
+    }
+    // no other parenthesised value is allowed
+    assertFalse(pg.isOrderBySafe("rand()"));
+    assertFalse(pg.isOrderBySafe("notAFunction()"));
+    assertFalse(pg.isOrderBySafe("fileUsage(),rand()"));
   }
 
   @Test

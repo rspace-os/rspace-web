@@ -4,11 +4,15 @@ import static com.researchspace.testutils.TestFactory.createAnyUser;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.ldap.UserLdapRepo;
@@ -56,7 +60,7 @@ public class LdapRealmTest {
     user1sid2.setSid("1-2-3-4");
     user1sid2.setId(1L);
     token = new UsernamePasswordToken(testUsername, "anypass");
-    when(userLdapRepo.authenticate(anyString(), anyString())).thenReturn(user1sid2);
+    lenient().when(userLdapRepo.authenticate(anyString(), anyString())).thenReturn(user1sid2);
   }
 
   @Test
@@ -83,6 +87,27 @@ public class LdapRealmTest {
         assertThrows(AuthenticationException.class, () -> ldapRealm.doGetAuthenticationInfo(token))
             .getMessage(),
         containsString("SID values are not matching"));
+  }
+
+  @Test
+  public void testEmptyPasswordRejectedWithoutLdapCall() throws Exception {
+    // the guard returns before any collaborator is consulted, so no stubbing is needed here;
+    // testWhitespaceOnlyPasswordStillVerifiedAgainstLdap covers the non-empty path
+    assertNull(
+        ldapRealm.doGetAuthenticationInfo(new UsernamePasswordToken(testUsername, (String) null)));
+    assertNull(ldapRealm.doGetAuthenticationInfo(new UsernamePasswordToken(testUsername, "")));
+    verifyNoInteractions(userLdapRepo);
+  }
+
+  @Test
+  public void testWhitespaceOnlyPasswordStillVerifiedAgainstLdap() throws Exception {
+    when(userManager.userExists(any())).thenReturn(true);
+    when(userManager.getUserByUsername(testUsername)).thenReturn(user1noSid);
+
+    AuthenticationInfo authenticationInfo =
+        ldapRealm.doGetAuthenticationInfo(new UsernamePasswordToken(testUsername, "   "));
+    assertNotNull(authenticationInfo);
+    verify(userLdapRepo).authenticate(testUsername, "   ");
   }
 
   @Test

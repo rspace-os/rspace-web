@@ -4,6 +4,35 @@ The intended audience is on-prem RSpace technical administrators who maintain RS
 
 You can find our official changelog at https://documentation.researchspace.com/article/mx11qvqg0i-changelog
 
+# 2.26.0 2026-09-08
+
+### ELN Features
+
+- RSDEV-1341 Evernote App (.enex importer) is now removed
+
+### ELN Bugfix
+
+- RSDEV-1350 in 2.25.0 Gallery UI used to partially reload after some user actions, this is fixed now
+- RSDEV-1318 inventory item decrements through List of Materials/Stock Management are now fully recorded in the item's history
+- RSDEV-779 fix for Omero App configuration panel
+- RSDEV-1328 fix an SQL injection vulnerability in legacy form sorting
+- RSDEV-1329 add missing record authorization check to the autosave endpoint
+- RSDEV-1332 prevent zip imports from writing outside their temporary directory
+- RSDEV-1334 reject empty-password login attempts in LDAP authentication
+- RSDEV-1336 close a shell command injection vector in LDAP fallback login
+
+### Inventory Features
+
+- RSDEV-1288 CSV import for Instruments
+- RSDEV-1226 changes to barcode scanner UI
+- RSDEV-1260 changes to instrument PID registration workflow
+
+### Inventory Bugfix
+
+- RSDEV-1306 fix for sidebar navigation in single-column layout
+- RSDEV-1347 fix for instrument info panel layout
+- RSDEV-1308 Fieldmark integration should be working again
+
 # 2.25.0 2026-08-19
 
 ### Server

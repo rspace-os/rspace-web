@@ -44,7 +44,6 @@ public enum SystemPropertyName {
   DMPTOOL_AVAILABLE("dmptool.available"),
   DRYAD_AVAILABLE("dryad.available"),
   EGNYTE_AVAILABLE("egnyte.available"),
-  EVERNOTE_AVAILABLE("evernote.available"),
   FIELDMARK_AVAILABLE("fieldmark.available"),
   FIGSHARE_AVAILABLE("figshare.available"),
   GALAXY_AVAILABLE("galaxy.available"),

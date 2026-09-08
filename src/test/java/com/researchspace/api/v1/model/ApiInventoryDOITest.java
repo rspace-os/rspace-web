@@ -8,6 +8,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.researchspace.api.v1.model.ApiInventoryDOI.ApiExternalMetadataUpdate;
+import com.researchspace.api.v1.model.ApiInventoryDOI.ApiExternalMetadataUpdate.Outcome;
 import com.researchspace.model.inventory.DigitalObjectIdentifier;
 import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
 import org.junit.jupiter.api.Test;
@@ -203,5 +205,55 @@ class ApiInventoryDOITest {
 
     assertNull(api.getPublicLinkSuffix(), "an entity-derived DTO must not carry a suffix");
     assertEquals(entity.getPublicLink(), api.getRsPublicId());
+  }
+
+  /**
+   * The Inventory UI switches on these exact strings, and the API spec documents them, so the enum
+   * constant names are the wire contract rather than an implementation detail: renaming one would
+   * silently make the frontend report every outcome as a failure.
+   *
+   * <p>Pinned here as well as in {@code InstrumentExternalMetadataUpdateMVCIT} because that test
+   * needs a database and a real Spring context, so it does not run in the fast unit suite that
+   * guards an ordinary change to this class.
+   */
+  @Test
+  void externalMetadataUpdateOutcomeSerializesAsTheLiteralTokenTheUiSwitchesOn() {
+    ObjectMapper mapper = new ObjectMapper();
+
+    for (Outcome outcome : Outcome.values()) {
+      assertEquals(
+          outcome.name(),
+          mapper
+              .valueToTree(new ApiExternalMetadataUpdate(outcome, "any reason"))
+              .path("outcome")
+              .asText(),
+          outcome::name);
+    }
+    /*
+     * And only the outcome. RSDEV-1251's redundant succeeded boolean was removed here; asserted so it
+     * cannot come back by accident, for instance as a derived convenience getter.
+     */
+    assertTrue(
+        mapper
+            .valueToTree(new ApiExternalMetadataUpdate(Outcome.UPDATED, "any reason"))
+            .path("succeeded")
+            .isMissingNode());
+  }
+
+  /**
+   * The guard on the outcome the UI trusts. {@code externalMetadataUpdate} is {@code
+   * Access.READ_ONLY}, so a client cannot forge an {@code UPDATED} on the way in. Pinned because
+   * this project has already had to replace that annotation on the sibling {@code doi} field, which
+   * makes it exactly the kind of thing a future author removes without realising what it holds up.
+   */
+  @Test
+  void externalMetadataUpdateIsDiscardedOnTheWayIn() throws Exception {
+    String forged =
+        "{\"externalMetadataUpdate\": {\"outcome\": \"UPDATED\", \"reason\": \"trust me\"}}";
+
+    ApiInventoryDOI incoming = new ObjectMapper().readValue(forged, ApiInventoryDOI.class);
+
+    assertNull(
+        incoming.getExternalMetadataUpdate(), "a client must not be able to state an outcome");
   }
 }

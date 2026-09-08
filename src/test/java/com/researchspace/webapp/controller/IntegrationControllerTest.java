@@ -33,7 +33,7 @@ public class IntegrationControllerTest {
   User subject;
   Principal principal;
 
-  private final int INTEGRATIONS_AMOUNT = 29;
+  private final int INTEGRATIONS_AMOUNT = 28;
 
   @BeforeEach
   public void setup() {
