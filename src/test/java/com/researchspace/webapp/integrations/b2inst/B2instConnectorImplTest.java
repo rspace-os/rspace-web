@@ -25,6 +25,7 @@ import com.researchspace.b2inst.model.metadata.B2instInstrumentMetadata;
 import com.researchspace.b2inst.model.request.B2instDoi;
 import com.researchspace.b2inst.model.response.B2instDraftRecord;
 import com.researchspace.b2inst.model.response.B2instRequestResponse;
+import com.researchspace.b2inst.model.response.B2instSearchResult;
 import com.researchspace.model.system.SystemProperty;
 import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.service.MessageSourceUtils;
@@ -984,6 +985,111 @@ class B2instConnectorImplTest {
             () -> connector.updateDraftDoi("k2j9p-7yh21", draftWithName("X")));
 
     assertEquals("The persistent identifier does not exist.", thrown.getReason());
+    server.verify();
+  }
+
+  @Test
+  void searchRecordsQueriesPublishedRecordsWithTheTokenAndParsesTheHits() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    server
+        .expect(requestTo("https://b2inst-test.gwdg.de/api/records?q=microscope&size=50"))
+        .andExpect(method(HttpMethod.GET))
+        .andExpect(header("Authorization", "Bearer TOK123"))
+        .andRespond(
+            withSuccess(
+                "{\"hits\":{\"hits\":[{\"id\":\"tpqdy-6zd98\",\"is_published\":true,\"metadata\":{\"Name\":\"Olympus"
+                    + " IX71 TIRF\",\"Identifier\":{\"identifierType\":\"Handle\","
+                    + "\"identifierValue\":\"21.11157/44b18238-bba1-4b42-abcc-975017181420\"}},"
+                    + "\"links\":{\"self_html\":\"https://b2inst-test.gwdg.de/records/tpqdy-6zd98\"}}],"
+                    + "\"total\":3}}",
+                MediaType.APPLICATION_JSON));
+
+    B2instSearchResult result = connector.searchRecords("microscope", 50);
+
+    assertEquals(3, result.getHits().getTotal());
+    assertEquals("tpqdy-6zd98", result.getHits().getHits().get(0).getId());
+    assertEquals(
+        "21.11157/44b18238-bba1-4b42-abcc-975017181420",
+        result.getHits().getHits().get(0).getMetadata().getIdentifier().getIdentifierValue());
+    server.verify();
+  }
+
+  @Test
+  void getRecordByHandleReadsThePublishedRecordUnderTheHandleSuffix() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    server
+        .expect(
+            requestTo(
+                "https://b2inst-test.gwdg.de/api/records/44b18238-bba1-4b42-abcc-975017181420"))
+        .andExpect(method(HttpMethod.GET))
+        .andRespond(
+            withSuccess(
+                "{\"id\":\"tpqdy-6zd98\",\"is_published\":true}", MediaType.APPLICATION_JSON));
+
+    Optional<B2instDraftRecord> record =
+        connector.getRecordByHandle(
+            "https://hdl.handle.net/21.11157/44b18238-bba1-4b42-abcc-975017181420");
+
+    assertTrue(record.isPresent());
+    assertEquals("tpqdy-6zd98", record.get().getId());
+    // a suffix that is not a record id shape is answered locally, never sent to the provider
+    assertTrue(connector.getRecordByHandle("21.11157/not a record id!").isEmpty());
+    server.verify();
+  }
+
+  @Test
+  void getRecordByHandleFallsBackToTheDraftOfAnUnpublishedRecord() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    // B2INST serves only published records at /api/records/{rid}; a draft, submitted or declined
+    // record answers 404 there and lives at /api/records/{rid}/draft (verified September 2026)
+    server
+        .expect(requestTo("https://b2inst-test.gwdg.de/api/records/anaf6-fk223"))
+        .andRespond(withStatus(HttpStatus.NOT_FOUND));
+    server
+        .expect(requestTo("https://b2inst-test.gwdg.de/api/records/anaf6-fk223/draft"))
+        .andExpect(method(HttpMethod.GET))
+        .andRespond(
+            withSuccess(
+                "{\"id\":\"anaf6-fk223\",\"is_published\":false,\"status\":\"draft\"}",
+                MediaType.APPLICATION_JSON));
+
+    Optional<B2instDraftRecord> record = connector.getRecordByHandle("21.T11975/anaf6-fk223");
+
+    assertTrue(record.isPresent(), "a draft record is still a record to import");
+    assertEquals("draft", record.get().getStatus());
+    server.verify();
+  }
+
+  @Test
+  void searchUserRecordsQueriesTheAccountsOwnRecordsIncludingDrafts() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    server
+        .expect(requestTo("https://b2inst-test.gwdg.de/api/user/records?q=microscope&size=50"))
+        .andExpect(method(HttpMethod.GET))
+        .andExpect(header("Authorization", "Bearer TOK123"))
+        .andRespond(
+            withSuccess(
+                "{\"hits\":{\"hits\":[{\"id\":\"anaf6-fk223\",\"is_published\":false,"
+                    + "\"status\":\"draft\",\"metadata\":{\"Name\":\"Draft microscope\","
+                    + "\"Identifier\":{\"identifierType\":\"Handle\","
+                    + "\"identifierValue\":\"21.T11975/anaf6-fk223\"}}}],\"total\":7}}",
+                MediaType.APPLICATION_JSON));
+
+    B2instSearchResult result = connector.searchUserRecords("microscope", 50);
+
+    assertEquals(7, result.getHits().getTotal());
+    assertEquals("draft", result.getHits().getHits().get(0).getStatus());
+    assertEquals(
+        "21.T11975/anaf6-fk223",
+        result.getHits().getHits().get(0).getMetadata().getIdentifier().getIdentifierValue());
     server.verify();
   }
 }

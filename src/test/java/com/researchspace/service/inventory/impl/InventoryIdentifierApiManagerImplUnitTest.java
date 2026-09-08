@@ -622,4 +622,27 @@ class InventoryIdentifierApiManagerImplUnitTest {
     assertEquals(
         "errors.inventory.identifier.b2instAcceptedRecordUnavailable", cause.getErrorCode());
   }
+
+  @Test
+  void publishRetractAndRefreshRefuseALinkedIdentifierBeforeAnyProviderCall() {
+    InventoryIdentifierApiManagerImpl mgr = new InventoryIdentifierApiManagerImpl();
+    InventoryRecordRetriever retriever = mock(InventoryRecordRetriever.class);
+    ReflectionTestUtils.setField(mgr, "invRecRetriever", retriever);
+    Instrument instrument = new Instrument();
+    DigitalObjectIdentifier linked =
+        new DigitalObjectIdentifier(
+            "21.11157/44b18238-bba1-4b42-abcc-975017181420", "Microscope", "suffix1234567890");
+    linked.setType(IdentifierType.PIDINST_B2INST);
+    linked.setState("accepted");
+    linked.markLinked();
+    instrument.addIdentifier(linked);
+    GlobalIdentifier oid = new GlobalIdentifier("IN1");
+    when(retriever.getInvRecordByGlobalId(oid)).thenReturn(instrument);
+    User user = new User("someone");
+
+    // connectors are null on this bare manager: reaching one would be an NPE, not this exception
+    assertThrows(ApiRuntimeException.class, () -> mgr.publishIdentifier(oid, user));
+    assertThrows(ApiRuntimeException.class, () -> mgr.retractIdentifier(oid, user));
+    assertThrows(ApiRuntimeException.class, () -> mgr.refreshIdentifier(oid, user));
+  }
 }

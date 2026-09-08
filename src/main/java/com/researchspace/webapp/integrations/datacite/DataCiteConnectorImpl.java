@@ -5,6 +5,7 @@ import com.researchspace.datacite.client.DataCiteClient;
 import com.researchspace.datacite.client.DataCiteClientImpl;
 import com.researchspace.datacite.model.DataCiteConnectionException;
 import com.researchspace.datacite.model.DataCiteDoi;
+import com.researchspace.datacite.model.DataCiteDoiSearchResult;
 import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.service.SystemPropertyManager;
 import com.researchspace.service.SystemPropertyName;
@@ -12,12 +13,16 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.EnumMap;
 import java.util.Map;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.HttpClientErrorException;
 
 @Slf4j
 public class DataCiteConnectorImpl implements DataCiteConnector {
@@ -32,6 +37,7 @@ public class DataCiteConnectorImpl implements DataCiteConnector {
 
   @EventListener(ContextRefreshedEvent.class)
   @Transactional(readOnly = true)
+  @CacheEvict(value = "pidinstLookupResults", allEntries = true)
   public void reloadDataCiteClient() {
     Map<String, SystemPropertyValue> propertiesMap = sysPropertyMgr.getAllSysadminPropertiesAsMap();
     reloadClientForType(
@@ -141,5 +147,25 @@ public class DataCiteConnectorImpl implements DataCiteConnector {
   @Override
   public DataCiteDoi updateDoi(DataCiteDoi dataCiteDoi, InventorySettingType settingType) {
     return getClient(settingType).updateDoi(dataCiteDoi);
+  }
+
+  @Override
+  public Optional<DataCiteDoi> findDoi(String doiId, InventorySettingType settingType) {
+    try {
+      return Optional.ofNullable(getClient(settingType).retrieveDoi(doiId));
+    } catch (HttpClientErrorException.NotFound e) {
+      return Optional.empty();
+    } catch (IllegalArgumentException e) {
+      // DataCiteClientImpl refuses to put a non-DOI in a request path: nothing to find
+      log.info("Not looking up '{}' in DataCite: {}", doiId, e.getMessage());
+      return Optional.empty();
+    }
+  }
+
+  @Override
+  @Cacheable(value = "pidinstLookupResults", key = "'datacite:' + #query + ':' + #pageSize")
+  public DataCiteDoiSearchResult searchInstrumentDois(
+      String query, int pageSize, InventorySettingType settingType) {
+    return getClient(settingType).searchDois(query, "instrument", pageSize);
   }
 }

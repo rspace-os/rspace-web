@@ -1785,7 +1785,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>datacite-java-client</artifactId>
-      <version>1.2.0</version>
+      <version>RSDEV-1326-datacite-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>

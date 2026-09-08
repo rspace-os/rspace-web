@@ -122,6 +122,56 @@ paths:
           $ref: "#/components/responses/UnprocessableQuery"
         "500":
           $ref: "#/components/responses/LicenseProblem"
+  /instruments/importPidinst:
+    post:
+      summary: Create an Instrument by importing a PID from the enabled PIDINST registry
+      description: >
+        Fetches the record for `pid` from the PIDINST provider enabled on this deployment, creates
+        an Instrument from the locked default "Instrument (PIDINST 1.0)" template filled from that
+        record, and attaches a *linked identifier* for the PID.
+
+
+        The server always re-fetches the record itself, so no metadata is taken from the request.
+        The identifier it attaches carries the provider's own value and state and is marked
+        `linked: true`: RSpace never pushes metadata to it, never refreshes, publishes or retracts
+        it, never deletes it at the provider, and serves no public landing page for it. Deleting the
+        identifier in RSpace removes the link and is allowed in every state.
+
+
+        `pid` may be a bare DOI or Handle, or a `doi.org` / `hdl.handle.net` address. A PID of the
+        registry that is *not* enabled on this deployment yields `404`; there is no cross-registry
+        lookup.
+
+
+        Requires the PIDINST integration to be enabled and a PIDINST provider to be configured.
+      tags:
+        - Instruments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PidinstImportRequest"
+        description: The PID to import, and optionally where to store the new Instrument.
+        required: true
+      responses:
+        "201":
+          description: The created Instrument, with its linked identifier attached.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Instrument"
+        "404":
+          description: >
+            The enabled provider holds no instrument record for this PID, or no PIDINST provider is
+            enabled on this deployment.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          $ref: "#/components/responses/PidAlreadyLinked"
+        "422":
+          $ref: "#/components/responses/UnprocessableQuery"
   "/instruments/{instrumentId}":
     get:
       summary: Retrieve a complete Instrument by ID
@@ -2955,6 +3005,54 @@ paths:
       responses:
         "200":
           description: Details of connected attachment (ApiInventoryFile object).
+  /pidinst/search:
+    get:
+      summary: Search the enabled PIDINST registry for instrument records
+      description: >
+        Searches the PIDINST provider enabled on this deployment, using that provider's configured
+        server and credentials. There is one registry per deployment and no provider filter.
+
+
+        A DOI or Handle, bare or as a `doi.org` / `hdl.handle.net` address, is a direct lookup;
+        anything else is one full-text query. A PID belonging to the registry that is not enabled
+        here yields no hit. At most 50 hits are returned in one page, sorted by name, alongside the
+        provider's own `total`, which may be larger. Provider results are cached for 10 minutes.
+
+
+        Hits are not limited to published records, because an import accepts a PID in any review
+        status. On B2INST that takes two searches - the published index, and this deployment's own
+        records, which is where a draft, submitted or declined record lives - merged and
+        deduplicated by PID, since the deployment's published records appear in both. DataCite has
+        no such split and returns its own non-findable DOIs directly.
+
+
+        Each hit carries `linkedInstrumentGlobalId` when an Instrument in this deployment already
+        links that PID, so a client can disable importing it before the `409`.
+
+
+        Requires the PIDINST integration to be enabled and a PIDINST provider to be configured.
+      tags:
+        - External Identifiers
+      parameters:
+        - in: query
+          name: query
+          required: true
+          description: Free text, or a DOI or Handle for a direct lookup.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: One page of hits from the enabled provider.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PidinstSearchResult"
+        "404":
+          description: No PIDINST provider is enabled on this deployment.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /identifiers:
     get:
       summary: Get all the DataCite IGSN identifiers created by the `user` with a given `state`
@@ -3747,6 +3845,14 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/Error"
+    PidAlreadyLinked:
+      description: >
+        An Instrument in this deployment already carries a linked identifier for this PID. The
+        message names that Instrument's global id.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
     TooManyRequests:
       description: Too many requests - see the X-Rate-Limit headers for more information.
       content:
@@ -4210,6 +4316,144 @@ components:
             - SA163841
             - SA163842
             - SA163843
+    PidinstImportRequest:
+      description: Body of the instrument import; the PID is re-fetched server-side.
+      required:
+        - pid
+      properties:
+        pid:
+          type: string
+          description: >
+            A DOI or Handle, bare or as a `doi.org` / `hdl.handle.net` address. Must belong to the
+            registry enabled on this deployment.
+          example: https://hdl.handle.net/21.T11975/smzcd-1x840
+        newTargetLocation:
+          description: Where to store the new Instrument. Absent means the user's own workbench.
+          properties:
+            containerId:
+              type: integer
+              format: int64
+              description: Id of the container to store the new Instrument in.
+              example: 12
+            location:
+              $ref: "#/components/schemas/ContainerLocationInfo"
+    PidinstRecord:
+      description: >
+        One instrument record as a PID registry describes it, normalised across providers.
+        Multi-valued PIDINST properties stay lists here; the import joins them with "; " when it
+        fills the single-valued template fields.
+      properties:
+        pid:
+          type: string
+          description: The PID itself - a Handle from B2INST, a DOI from DataCite.
+          example: 21.T11975/smzcd-1x840
+        provider:
+          type: string
+          description: The provider that holds the record.
+          enum:
+            - PIDINST_B2INST
+            - PIDINST_DATACITE
+        providerRecordUrl:
+          type: string
+          description: The record's page on the provider. Viewing it may require a provider sign-in.
+          example: https://b2inst-test.gwdg.de/records/smzcd-1x840
+        publicUrl:
+          type: string
+          description: The citable resolver address.
+          example: https://hdl.handle.net/21.T11975/smzcd-1x840
+        state:
+          type: string
+          description: >
+            The provider's own lifecycle state - `accepted` for a published B2INST record, else
+            DataCite's state.
+          example: accepted
+        name:
+          type: string
+          example: Test instrument
+        description:
+          type: string
+          example: High contrast TEM microscope
+        owners:
+          type: array
+          description: B2INST `Owner` names, or DataCite `HostingInstitution` contributors falling back to the publisher.
+          items:
+            type: string
+          example:
+            - University of RSpace
+        manufacturers:
+          type: array
+          description: B2INST `Manufacturer` names, or DataCite `creators`.
+          items:
+            type: string
+          example:
+            - Leica
+        model:
+          type: string
+          description: B2INST `Model` only; DataCite has no equivalent.
+          example: TEM-High-contrast2
+        instrumentTypes:
+          type: array
+          description: B2INST `InstrumentType` names, or DataCite `types.resourceType` unless it is the generic "Instrument".
+          items:
+            type: string
+          example:
+            - Microscope
+        measuredVariables:
+          type: array
+          description: B2INST `MeasuredVariable` only.
+          items:
+            type: string
+          example:
+            - Intensity
+        commissioned:
+          type: string
+          description: B2INST `Date` of type Commissioned, cut to `yyyy-MM-dd`.
+          example: "2011-09-30"
+        decommissioned:
+          type: string
+          description: B2INST `Date` of type DeCommissioned, cut to `yyyy-MM-dd`.
+          example: "2025-01-15"
+        landingPage:
+          type: string
+          description: Only an absolute http(s) address that parses.
+          example: https://demos.researchspace.com/PIDINST/IN32781
+        alternateIdentifier:
+          type: string
+          description: The first B2INST `AlternateIdentifier`, or the first DataCite `identifiers` alias.
+          example: https://demos.researchspace.com/globalId/IN32781
+        created:
+          type: string
+          description: Creation timestamp as the provider reports it.
+        updated:
+          type: string
+          description: Last-update timestamp as the provider reports it.
+        linkedInstrumentGlobalId:
+          type: string
+          description: >
+            Global id of the Instrument in this deployment that already links this PID, absent when
+            none does. Importing a PID that is already linked answers `409`.
+          example: IN2
+    PidinstSearchResult:
+      description: One page of PID lookup hits from the enabled provider.
+      properties:
+        provider:
+          type: string
+          description: The provider the search went to.
+          enum:
+            - PIDINST_B2INST
+            - PIDINST_DATACITE
+        total:
+          type: integer
+          description: >
+            The provider's total for the query, which may exceed the number of hits returned. Where
+            two searches are merged (B2INST), it is their combined total less the records seen in
+            both: exact while both pages fit, and an over-estimate once they do not.
+          example: 2
+        hits:
+          type: array
+          description: At most 50 records, sorted by name.
+          items:
+            $ref: "#/components/schemas/PidinstRecord"
     ContainerInfo:
       description: Basic information about Inventory Container.
       allOf:

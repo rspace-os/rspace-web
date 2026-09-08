@@ -16,6 +16,7 @@ import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.archive.export.ExportFailureException;
 import com.researchspace.service.chemistry.ChemistryClientException;
 import com.researchspace.service.chemistry.StoichiometryException;
+import com.researchspace.service.inventory.PidinstAlreadyLinkedException;
 import jakarta.ws.rs.NotFoundException;
 import java.util.ArrayList;
 import java.util.List;
@@ -71,6 +72,25 @@ public class ApiControllerAdvice extends RestControllerAdvice {
   @ExceptionHandler(DocumentAlreadyEditedException.class)
   protected ResponseEntity<Object> handleDocumentAlreadyEditedException(
       final DocumentAlreadyEditedException ex, final WebRequest request) {
+    logException(ex);
+    final ApiError apiError =
+        new ApiError(
+            HttpStatus.CONFLICT,
+            ApiErrorCodes.EDIT_CONFLICT.getCode(),
+            ex.getLocalizedMessage(),
+            "");
+    return new ResponseEntity<Object>(apiError, new HttpHeaders(), apiError.getStatus());
+  }
+
+  /*
+   * EDIT_CONFLICT is the only conflict code com.researchspace.apiutils.ApiErrorCodes offers;
+   * adding one would mean a release of rspace-rest-api-utils, which is not worth it for a message
+   * that names the conflicting instrument itself (RSDEV-1326, decision 7).
+   */
+  @ResponseStatus(HttpStatus.CONFLICT)
+  @ExceptionHandler(PidinstAlreadyLinkedException.class)
+  protected ResponseEntity<Object> handlePidinstAlreadyLinkedException(
+      final PidinstAlreadyLinkedException ex, final WebRequest request) {
     logException(ex);
     final ApiError apiError =
         new ApiError(

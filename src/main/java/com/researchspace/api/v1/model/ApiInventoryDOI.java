@@ -55,6 +55,7 @@ import org.apache.commons.lang3.StringUtils;
       "rsPublicId",
       "publicUrl",
       "providerUrl",
+      "linked",
       "customFieldsOnPublicPage",
       "externalMetadataUpdate",
       "_links"
@@ -296,6 +297,14 @@ public class ApiInventoryDOI extends LinkableApiObject {
   @JsonProperty(value = "providerUrl", access = JsonProperty.Access.READ_ONLY)
   private String providerUrl;
 
+  /**
+   * True for a linked identifier: a PID minted outside RSpace and attached by an instrument import
+   * (RSDEV-1326, ADR 0009). Server-owned: the import sets it in Java, and no client may turn an
+   * identifier RSpace registered into one it does not own, or the reverse.
+   */
+  @JsonProperty(value = "linked", access = JsonProperty.Access.READ_ONLY)
+  private boolean linked;
+
   @JsonProperty("customFieldsOnPublicPage")
   private Boolean customFieldsOnPublicPage;
 
@@ -362,6 +371,7 @@ public class ApiInventoryDOI extends LinkableApiObject {
     // same transaction has already created a draft. rsPublicId above carries the value for reads.
     setPublicUrl(identifier.getOtherData(IdentifierOtherProperty.PUBLIC_URL));
     setProviderUrl(identifier.getOtherData(IdentifierOtherProperty.PROVIDER_URL));
+    setLinked(identifier.isLinked());
     setCustomFieldsOnPublicPage(identifier.isCustomFieldsOnPublicPage());
 
     setSubjects(
@@ -462,6 +472,12 @@ public class ApiInventoryDOI extends LinkableApiObject {
         dbIdentifier.setIdentifier(getDoi());
         contentChanged = true;
       }
+    }
+    // Only while creating, like the type and the identifier above: an identifier's origin is fixed
+    // for its lifetime, and the flag is READ_ONLY over JSON, so only the import path can set it.
+    if (dbIdentifier.getId() == null && isLinked() && !dbIdentifier.isLinked()) {
+      dbIdentifier.markLinked();
+      contentChanged = true;
     }
     if (getState() != null) {
       if (!getState().equals(dbIdentifier.getState())) {

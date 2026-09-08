@@ -13,6 +13,7 @@ import com.researchspace.api.v1.model.ApiInventoryDOI.ApiExternalMetadataUpdate.
 import com.researchspace.model.inventory.DigitalObjectIdentifier;
 import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
 
 class ApiInventoryDOITest {
 
@@ -255,5 +256,23 @@ class ApiInventoryDOITest {
 
     assertNull(
         incoming.getExternalMetadataUpdate(), "a client must not be able to state an outcome");
+  }
+
+  @Test
+  void linkedFlagIsWrittenOnlyIntoATransientIdentifierAndReadBack() {
+    ApiInventoryDOI dto = new ApiInventoryDOI();
+    dto.setLinked(true);
+    dto.setDoi("21.11157/44b18238-bba1-4b42-abcc-975017181420");
+    dto.setDoiType(IdentifierType.PIDINST_B2INST.name());
+
+    DigitalObjectIdentifier created = new DigitalObjectIdentifier(null, null, "suffix1234567890");
+    assertTrue(dto.applyChangesToDatabaseDOI(created));
+    assertTrue(created.isLinked(), "a new row takes the origin from the DTO");
+    assertTrue(new ApiInventoryDOI(created).isLinked(), "and reports it back");
+
+    DigitalObjectIdentifier persisted = new DigitalObjectIdentifier(null, null, "suffix0987654321");
+    ReflectionTestUtils.setField(persisted, "id", 42L);
+    dto.applyChangesToDatabaseDOI(persisted);
+    assertFalse(persisted.isLinked(), "an existing row's origin is immutable");
   }
 }

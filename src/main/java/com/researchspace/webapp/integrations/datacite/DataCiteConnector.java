@@ -2,6 +2,8 @@ package com.researchspace.webapp.integrations.datacite;
 
 import com.researchspace.api.v1.model.ApiInventorySystemSettings.InventorySettingType;
 import com.researchspace.datacite.model.DataCiteDoi;
+import com.researchspace.datacite.model.DataCiteDoiSearchResult;
+import java.util.Optional;
 
 /**
  * Connects to DataCite for registering identifiers. Holds one client per {@link
@@ -25,6 +27,17 @@ public interface DataCiteConnector {
   DataCiteDoi updateDoi(DataCiteDoi dataCiteDoi, InventorySettingType settingType);
 
   DataCiteDoi retractDoi(DataCiteDoi dataCiteDoi, InventorySettingType settingType);
+
+  /**
+   * The DOI as the provider holds it, or empty when DataCite answers 404 or the value is not a DOI.
+   * Read through the configured client of the given setting type, so a deployment registering on
+   * the test registry looks up the test registry (RSDEV-1326).
+   */
+  Optional<DataCiteDoi> findDoi(String doiId, InventorySettingType settingType);
+
+  /** One page of instrument DOIs (resourceTypeGeneral Instrument) matching a free-text query. */
+  DataCiteDoiSearchResult searchInstrumentDois(
+      String query, int pageSize, InventorySettingType settingType);
 
   void reloadDataCiteClient();
 

@@ -4,6 +4,7 @@ import com.researchspace.dao.DigitalObjectIdentifierDao;
 import com.researchspace.dao.GenericDaoHibernate;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.DigitalObjectIdentifier;
+import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
 import java.util.List;
 import java.util.Optional;
 import org.hibernate.envers.AuditReader;
@@ -102,6 +103,21 @@ public class DigitalObjectIdentifierDaoHibernate
             DigitalObjectIdentifier.class)
         .setParameter("ownerId", owner.getId())
         .getResultList();
+  }
+
+  @Override
+  public Optional<DigitalObjectIdentifier> findActiveByIdentifierAndType(
+      String identifier, IdentifierType type) {
+    return sessionFactory
+        .getCurrentSession()
+        .createQuery(
+            "from DigitalObjectIdentifier where identifier=:identifier and type=:type"
+                + " and deleted = false order by id",
+            DigitalObjectIdentifier.class)
+        .setParameter("identifier", identifier)
+        .setParameter("type", type)
+        .setMaxResults(1)
+        .uniqueResultOptional();
   }
 
   private Optional<DigitalObjectIdentifier> getLatestIdentifierByPublicLink(String publicLink) {
