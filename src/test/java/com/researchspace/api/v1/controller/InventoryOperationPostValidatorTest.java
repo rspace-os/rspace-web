@@ -1105,6 +1105,26 @@ class InventoryOperationPostValidatorTest {
   }
 
   @Test
+  void aMalformedStorageTemperatureUnitIsAReported400NotA500() {
+    // The delegated sample validator rejects the bad unit, but the single-value comparison then ran
+    // QuantityUtils over it anyway: a null unitId unboxes inside isComparableQuantities and an
+    // unknown or non-temperature unit throws, turning the 400 into a 500 (Copilot review,
+    // PR #1090).
+    ApiQuantityInfo noUnit = celsius("-80");
+    noUnit.setUnitId(null);
+    ApiQuantityInfo unknownUnit = celsius("-80");
+    unknownUnit.setUnitId(99999);
+    for (ApiQuantityInfo malformed : List.of(noUnit, unknownUnit)) {
+      ApiInventoryOperationPost request = cryopreserveRequest();
+      request.getNewSample().setStorageTempMin(malformed);
+      Errors errors = validate(request);
+      assertTrue(
+          errors.hasFieldErrors("newSample.storageTempMin"),
+          () -> "unit " + malformed.getUnitId() + " must be reported: " + errors.getAllErrors());
+    }
+  }
+
+  @Test
   void rejectsMoreOriginExtraFieldsThanTheMaximumBeforeWalkingThem() {
     // The newSample list has this ceiling, but each ORIGIN's extraFields list had none: every entry
     // costs a shared-field-validator pass plus a declared-spec scan before any cap applied

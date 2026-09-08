@@ -51,6 +51,19 @@ public class SampleApiPostValidatorTest extends InventoryRecordValidationTestBas
   }
 
   @Test
+  public void aNullExtraFieldElementDoesNotBreakCustomValidation() {
+    // "extraFields": [null] is a bean-validation error at binding, but the controllers accept a
+    // BindingResult, so this validator still runs over the list; it must skip the null element
+    // rather than turn the reported 400 into a 500 (Copilot review, PR #1090).
+    ApiSampleWithFullSubSamples full = new ApiSampleWithFullSubSamples();
+    full.setName("ok");
+    full.getExtraFields().add(null);
+    Errors e = new BeanPropertyBindingResult(full, "fullpost");
+    validator.validate(full, e);
+    assertEquals(0, e.getErrorCount());
+  }
+
+  @Test
   public void validateExpiryDate() {
     ApiSampleWithFullSubSamples full = new ApiSampleWithFullSubSamples();
     full.setName("ok");

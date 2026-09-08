@@ -4031,7 +4031,8 @@ export default interface Resources {
         "loading": "Loading operations",
         "needsMultiple": "Select two or more subsamples to pool.",
         "sameCategory": "Select subsamples of the same measurement type to pool.",
-        "singleOnly": "Select a single subsample for this operation."
+        "singleOnly": "Select a single subsample for this operation.",
+        "tooManySelected": "Select at most 100 subsamples for this operation."
       },
       "pool": {
         "description": "Combine an equal amount from several subsamples into one new pooled sample.",

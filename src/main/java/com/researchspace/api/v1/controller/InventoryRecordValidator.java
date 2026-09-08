@@ -65,8 +65,13 @@ abstract class InventoryRecordValidator {
       int i = 0;
       for (ApiExtraField aef : inventoryRecord.getExtraFields()) {
         errors.pushNestedPath(String.format("extraFields[%d]", i++));
-        validateExtraFieldName(aef.getName(), errors);
-        ValidationUtils.invokeValidator(extraFieldHelper, aef, errors);
+        // A null element ("extraFields": [null]) is already a bean-validation error at binding,
+        // but the controllers accept a BindingResult so this validator still runs; dereferencing
+        // the element would turn that reported 400 into a 500 (Copilot review, PR #1090).
+        if (aef != null) {
+          validateExtraFieldName(aef.getName(), errors);
+          ValidationUtils.invokeValidator(extraFieldHelper, aef, errors);
+        }
         errors.popNestedPath();
       }
     }

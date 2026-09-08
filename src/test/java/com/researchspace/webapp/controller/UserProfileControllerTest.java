@@ -456,16 +456,15 @@ public class UserProfileControllerTest {
     when(messages.getMessage(
             "errors.preference.keyNotSupported", new Object[] {"UI_CLIENT_SETTINGS"}))
         .thenReturn("not a keyed preference");
+    MockHttpServletResponse servletResponse = new MockHttpServletResponse();
 
     AjaxReturnObject<String> response =
         userProfileController.updatePreferenceValue(
-            "UI_CLIENT_SETTINGS",
-            "whole",
-            "B",
-            () -> "any",
-            mockRequest,
-            new MockHttpServletResponse());
+            "UI_CLIENT_SETTINGS", "whole", "B", () -> "any", mockRequest, servletResponse);
 
+    // 400 like the other rejected shapes: without the status a client would treat this rejected
+    // update as successful (Copilot review, PR #1090)
+    assertEquals(400, servletResponse.getStatus());
     assertNull(response.getData());
     assertEquals("not a keyed preference", response.getErrorMsg().getErrorMessages().get(0));
     verify(usrMgr, never()).mergeUiJsonSetting(anyString(), anyString(), anyString());
