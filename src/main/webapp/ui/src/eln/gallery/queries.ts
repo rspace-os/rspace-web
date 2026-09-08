@@ -2,9 +2,12 @@ import { useQuery } from "@tanstack/react-query";
 import axios from "@/common/axios";
 import { INVENTORY_PREFIX_ICON_DATA, prefixOf } from "@/Inventory/components/Fields/Link/iconForGlobalId";
 import i18n from "@/modules/common/i18n";
+import { getLinkedDocuments as fetchLinkedDocuments } from "@/modules/workspace/linkedRecords";
+import type { PrivateLinkedRecordsByOwner } from "@/modules/workspace/schema";
 import type { LinkableRecord } from "../../stores/definitions/LinkableRecord";
 import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";
+import { type GalleryFile, idToString } from "./useGalleryListing";
 
 /**
  * Both desktop and mobile info panels remain mounted in the responsive layout. This keeps a
@@ -73,45 +76,41 @@ class LinkableDocument implements LinkableRecord {
   }
 }
 
-export async function getLinkedDocuments(fileId: string): Promise<ReadonlyArray<Document>> {
-  const { data } = await axios.get<unknown>(`/gallery/ajax/getLinkedDocuments/${fileId}`);
+export type LinkedDocuments = {
+  documents: ReadonlyArray<Document>;
+  /** Per-owner counts of linking documents the caller cannot read (RSDEV-1329). */
+  privateByOwner: ReadonlyArray<PrivateLinkedRecordsByOwner>;
+};
 
-  const docs = Parsers.objectPath(["data"], data).flatMap(Parsers.isArray).elseThrow();
-  const documents: Array<Document> = [];
-  docs.forEach((doc) => {
-    const parsed = Parsers.isObject(doc)
-      .flatMap(Parsers.isNotNull)
-      .flatMap((obj) => {
-        const id = Parsers.getValueWithKey("id")(obj).flatMap(Parsers.isNumber);
-        const globalId = Parsers.getValueWithKey("oid")(obj)
-          .flatMap(Parsers.isObject)
-          .flatMap(Parsers.isNotNull)
-          .flatMap(Parsers.getValueWithKey("idString"))
-          .flatMap(Parsers.isString);
-        const name = Parsers.getValueWithKey("name")(obj).flatMap(Parsers.isString);
-        return id.flatMap((parsedId) =>
-          globalId.flatMap((parsedGlobalId) =>
-            name.map((parsedName) => [parsedId, parsedGlobalId, parsedName] as const),
-          ),
-        );
-      });
-    parsed
-      .map(([id, globalId, name]) => ({
-        id,
-        globalId,
-        name,
-        permalinkHref: `/globalId/${globalId}`,
-        linkableRecord: new LinkableDocument({ id, globalId, name }),
-      }))
-      .do((document) => documents.push(document));
-  });
-  return documents;
+/**
+ * RSDEV-1329: the endpoint returns owner-only placeholder rows (no id/oid/name) for documents the
+ * caller cannot read. Those are surfaced as per-owner counts rather than as table rows.
+ */
+export async function getLinkedDocuments(fileId: string): Promise<LinkedDocuments> {
+  const { readable, privateByOwner } = await fetchLinkedDocuments(Number(fileId));
+  return {
+    documents: readable.map(({ id, globalId, name }) => ({
+      id,
+      globalId,
+      name,
+      permalinkHref: `/globalId/${globalId}`,
+      linkableRecord: new LinkableDocument({ id, globalId, name }),
+    })),
+    privateByOwner,
+  };
 }
 
-export function useLinkedDocumentsQuery(fileId: string) {
+/** Folders and snippets are not media files; the hardened endpoint rejects their ids outright. */
+function isLinkableMediaFile(file: GalleryFile): boolean {
+  return !(file.isFolder || file.isSnippet || file.isSnippetFolder);
+}
+
+export function useLinkedDocumentsQuery(file: GalleryFile) {
+  const fileId = idToString(file.id).elseThrow();
   return useQuery({
     queryKey: galleryQueryKeys.linkedDocuments(fileId),
     queryFn: () => getLinkedDocuments(fileId),
+    enabled: isLinkableMediaFile(file),
     retry: false,
     staleTime: INFO_PANEL_STALE_TIME,
   });

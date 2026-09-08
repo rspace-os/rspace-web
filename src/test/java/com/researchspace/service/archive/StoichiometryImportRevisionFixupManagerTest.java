@@ -89,6 +89,36 @@ public class StoichiometryImportRevisionFixupManagerTest {
   }
 
   @Test
+  void refusalOnOneRecordDoesNotAbortFixupOfRemainingRecords() {
+    // RSDEV-1329: getFieldsByRecordId now asserts READ; one refused record must not
+    // silently skip the revision fixup of every record imported after it
+    Set<BaseRecord> records = new java.util.LinkedHashSet<>();
+    records.add(mockStructuredDocument(100L));
+    records.add(mockStructuredDocument(101L));
+    when(report.getImportedRecords()).thenReturn(records);
+
+    when(fieldManager.getFieldsByRecordId(100L, user))
+        .thenThrow(new org.apache.shiro.authz.AuthorizationException("refused"));
+    when(fieldManager.getFieldsByRecordId(101L, user)).thenReturn(List.of());
+
+    testee.fixupStoichiometryRevisions(report, user);
+
+    verify(fieldManager).getFieldsByRecordId(101L, user);
+  }
+
+  @Test
+  void operationalFailurePropagatesRatherThanBeingSwallowed() {
+    // only an authorization refusal gets per-record recovery; a database or programming
+    // error must abort the fixup loudly, not let the import report success with stale
+    // stoichiometry revisions
+    setupRecordInReport();
+    when(fieldManager.getFieldsByRecordId(100L, user)).thenThrow(new RuntimeException("db gone"));
+
+    org.junit.jupiter.api.Assertions.assertThrows(
+        RuntimeException.class, () -> testee.fixupStoichiometryRevisions(report, user));
+  }
+
+  @Test
   void fixesNullRevisionWithActualEnversRevision() {
     setupRecordInReport();
 

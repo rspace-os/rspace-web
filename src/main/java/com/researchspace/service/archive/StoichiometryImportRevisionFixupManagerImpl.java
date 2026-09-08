@@ -12,6 +12,7 @@ import com.researchspace.service.FieldManager;
 import com.researchspace.service.archive.StoichiometryImporter.IdAndRevision;
 import com.researchspace.service.archive.export.StoichiometryReader;
 import java.util.List;
+import org.apache.shiro.authz.AuthorizationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,7 +41,14 @@ public class StoichiometryImportRevisionFixupManagerImpl
       if (!(record instanceof StructuredDocument)) {
         continue;
       }
-      fixupFieldsForRecord(record.getId(), user);
+      try {
+        fixupFieldsForRecord(record.getId(), user);
+      } catch (AuthorizationException e) {
+        // RSDEV-1329: getFieldsByRecordId asserts READ, so a single refused record must not
+        // abort the revision fixup of every record imported after it. Only the refusal gets
+        // per-record recovery; operational failures still propagate.
+        log.warn("Refused fixing up stoichiometry revisions for record id={}", record.getId(), e);
+      }
     }
   }
 

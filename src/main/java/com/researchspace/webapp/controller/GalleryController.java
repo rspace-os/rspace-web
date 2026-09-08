@@ -615,7 +615,11 @@ public class GalleryController extends BaseController {
   @ResponseBody
   public AjaxReturnObject<List<RecordInformation>> getDocumentsLinkedToAttachment(
       @PathVariable("mediaId") Long mediaId) {
-    return new AjaxReturnObject<>(mediaManager.getIdsOfLinkedDocuments(mediaId), null);
+    // RSDEV-1329: the published view logs the anonymous guest in before serving, so requests on
+    // the /public prefix normally DO carry a subject and it is the manager's guest check that
+    // refuses them; the null case here is the rarer session-less request.
+    User user = userManager.getAuthenticatedUserInSession();
+    return new AjaxReturnObject<>(mediaManager.getIdsOfLinkedDocuments(mediaId, user), null);
   }
 
   /**

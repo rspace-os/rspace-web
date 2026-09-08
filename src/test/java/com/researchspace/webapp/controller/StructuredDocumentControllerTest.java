@@ -363,10 +363,13 @@ public class StructuredDocumentControllerTest {
     Field field = sd.getFields().iterator().next();
     field.setId(1L);
     final List<Field> rc = TransformerUtils.toList(field);
-    when(fieldManager.getFieldsByRecordId(1L, null)).thenReturn(rc);
+    generalExpectations();
+    // RSDEV-1329: the draft buffer is gated on WRITE, not READ, so the controller now goes
+    // through the dedicated autosave accessor
+    when(fieldManager.getAutoSavedFieldsByRecordId(1L, user)).thenReturn(rc);
 
     // no temp fields, returns empty list
-    assertEquals(0, strucDocCtrller.getAutoSavedFields(field.getId()).size());
+    assertEquals(0, strucDocCtrller.getAutoSavedFields(field.getId(), mockPrincipal).size());
 
     // now let's set a etmp field into field
     Field tempField = TestFactory.createAnyField();
@@ -375,7 +378,7 @@ public class StructuredDocumentControllerTest {
     assertNotNull(field.getFieldForm().getForm());
     assertNotNull(field.getStructuredDocument());
 
-    assertEquals(field, strucDocCtrller.getAutoSavedFields(field.getId()).get(0));
+    assertEquals(field, strucDocCtrller.getAutoSavedFields(field.getId(), mockPrincipal).get(0));
     // returned fields are disconnected from the document; the form back-reference
     // is kept (Jackson ignores it during serialisation, so no need to null it)
     assertNotNull(field.getFieldForm().getForm());

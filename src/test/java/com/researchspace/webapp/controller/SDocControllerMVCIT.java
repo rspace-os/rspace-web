@@ -14,6 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -25,10 +26,12 @@ import com.researchspace.core.util.PaginationUtil;
 import com.researchspace.core.util.Transformer;
 import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.linkedelements.FieldContents;
+import com.researchspace.model.EcatComment;
 import com.researchspace.model.EcatImage;
 import com.researchspace.model.FieldAttachment;
 import com.researchspace.model.Group;
 import com.researchspace.model.IFieldLinkableElement;
+import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.SignatureHashInfo;
 import com.researchspace.model.SignatureHashType;
 import com.researchspace.model.SignatureInfo;
@@ -66,9 +69,12 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.web.WebAppConfiguration;
+import org.springframework.test.jdbc.JdbcTestUtils;
 import org.springframework.test.web.servlet.MvcResult;
 
 @WebAppConfiguration
@@ -77,6 +83,10 @@ public class SDocControllerMVCIT extends MVCTestBase {
   private @Autowired DummyWord2HTMLConverter dummyConverter;
   private @Autowired AuditManager auditMgr;
   @Autowired DocumentCopyManager docCopyMgr;
+  private @Autowired JdbcTemplate jdbcTemplate;
+
+  @Value("${publishing.anonymousGuest.password}")
+  private String anonymousPassword;
 
   @BeforeEach
   public void setup() throws Exception {
@@ -85,6 +95,9 @@ public class SDocControllerMVCIT extends MVCTestBase {
 
   @AfterEach
   public void tearDown() throws Exception {
+    // remove published links created by the RSDEV-1329 tests first (so a failure in
+    // super.tearDown cannot skip it), keeping later publish-listing MVCITs share-free
+    JdbcTestUtils.deleteFromTables(jdbcTemplate, "RecordGroupSharing");
     super.tearDown();
   }
 
@@ -224,7 +237,7 @@ public class SDocControllerMVCIT extends MVCTestBase {
     StructuredDocument doc = createBasicDocumentInRootFolderWithText(pi, "sharingTemplateTest");
     Field docField = doc.getFields().get(0);
     EcatImage image = addImageToField(docField, pi);
-    assertEquals(1, mediaMgr.getIdsOfLinkedDocuments(image.getId()).size());
+    assertEquals(1, mediaMgr.getIdsOfLinkedDocuments(image.getId(), pi).size());
 
     // create template from doc
     openTransaction();
@@ -239,7 +252,7 @@ public class SDocControllerMVCIT extends MVCTestBase {
             + templateContent
             + " shouldn't contain orginal field id: "
             + docField.getId());
-    assertEquals(2, mediaMgr.getIdsOfLinkedDocuments(image.getId()).size());
+    assertEquals(2, mediaMgr.getIdsOfLinkedDocuments(image.getId(), pi).size());
 
     // share template with group
     shareRecordWithGroup(pi, grp, template);
@@ -256,7 +269,7 @@ public class SDocControllerMVCIT extends MVCTestBase {
             + fromTemplateContent
             + " shouldn't contain template field id: "
             + templateField.getId());
-    assertEquals(3, mediaMgr.getIdsOfLinkedDocuments(image.getId()).size());
+    assertEquals(3, mediaMgr.getIdsOfLinkedDocuments(image.getId(), pi).size());
   }
 
   private void assertAllLinkedElementsNotLinkedDocsCanBeRead(User user, StructuredDocument doc)
@@ -919,5 +932,119 @@ public class SDocControllerMVCIT extends MVCTestBase {
             .andExpect(status().isOk())
             .andReturn();
     assertTrue(result.getResponse().getContentAsString().contains(root.getId() + ""));
+  }
+
+  @Test
+  public void getAutoSavedFieldsRequiresAuthAndWritePermission_RSDEV1329() throws Exception {
+    User owner = createInitAndLoginAnyUser();
+    StructuredDocument doc = createBasicDocumentInRootFolderWithText(owner, "autosave auth test");
+
+    // the editing controller must no longer be reachable via the anonymous /public/** prefix
+    mockMvc
+        .perform(
+            get("/public/publicView/workspace/editor/structuredDocument/getAutoSavedFields")
+                .param("recordId", doc.getId() + ""))
+        .andExpect(status().isNotFound());
+
+    // the owner can still read autosaved fields on the authenticated path
+    mockMvc
+        .perform(
+            get(STRUCTURED_DOCUMENT_EDITOR_URL + "/getAutoSavedFields")
+                .param("recordId", doc.getId() + "")
+                .principal(new MockPrincipal(owner.getUsername())))
+        .andExpect(status().isOk());
+
+    // a user without READ permission on the record is refused
+    User other = createInitAndLoginAnyUser();
+    MvcResult result =
+        mockMvc
+            .perform(
+                get(STRUCTURED_DOCUMENT_EDITOR_URL + "/getAutoSavedFields")
+                    .param("recordId", doc.getId() + "")
+                    .principal(new MockPrincipal(other.getUsername())))
+            .andReturn();
+    assertAuthorizationException(result);
+  }
+
+  @Test
+  public void getAutoSavedFieldsRefusedOnPublishedDocument_RSDEV1329() throws Exception {
+    // The exact RSDEV-1329 exploit shape: publishing a document makes PermissionUtils
+    // short-circuit READ to true for every logged-in account, so only the WRITE gate on the
+    // draft buffer can refuse. This pins that distinction against the real PermissionUtils,
+    // which the mocked unit test (FieldManagerImplTest) cannot.
+    // Publishing needs a group member, not a lone user (mirrors GalleryControllerMVCIT).
+    GroupSetUp setup =
+        setUpGroupCreateDocumentAndUserWithUserHavingRole(
+            "standardUser", Constants.USER_ROLE, false, 1);
+    User owner = setup.user;
+    StructuredDocument doc = createBasicDocumentInRootFolderWithText(owner, "published draft");
+    publishDocumentForUser(owner, doc.getId());
+
+    User other = createInitAndLoginAnyUser();
+
+    // sanity: READ genuinely is granted to the stranger through publication — the same
+    // fieldManager.getFieldsByRecordId READ gate serves getUpdatedFields with 200
+    mockMvc
+        .perform(
+            get(STRUCTURED_DOCUMENT_EDITOR_URL + "/ajax/getUpdatedFields")
+                .param("recordId", doc.getId() + "")
+                .param("modificationDate", "0")
+                .principal(new MockPrincipal(other.getUsername())))
+        .andExpect(status().isOk());
+
+    // ...but the autosave draft buffer stays WRITE-gated and refuses
+    MvcResult refused =
+        mockMvc
+            .perform(
+                get(STRUCTURED_DOCUMENT_EDITOR_URL + "/getAutoSavedFields")
+                    .param("recordId", doc.getId() + "")
+                    .principal(new MockPrincipal(other.getUsername())))
+            .andReturn();
+    assertAuthorizationException(refused);
+  }
+
+  @Test
+  public void publicGetCommentsServesPublishedDocumentGuest_RSDEV1329() throws Exception {
+    // the positive path the wrapper controller exists for: the published view's anonymous
+    // guest must be able to read comments on a published document.
+    // Publishing needs a group member, not a lone user (mirrors GalleryControllerMVCIT).
+    GroupSetUp setup =
+        setUpGroupCreateDocumentAndUserWithUserHavingRole(
+            "standardUser", Constants.USER_ROLE, false, 1);
+    User owner = setup.user;
+    StructuredDocument doc = createBasicDocumentInRootFolderWithText(owner, "commented doc");
+    EcatComment comment =
+        addNewCommentToField("public comment text", doc.getFields().get(0), owner);
+    publishDocumentForUser(owner, doc.getId());
+
+    logoutCurrentUser();
+    PublicDocumentsUtilities.loginAnonymousUser(anonymousPassword);
+
+    mockMvc
+        .perform(
+            get("/public/publicView/workspace/editor/structuredDocument/getComments")
+                .param("commentId", comment.getComId() + "")
+                .principal(new MockPrincipal(RecordGroupSharing.ANONYMOUS_USER)))
+        .andExpect(status().isOk())
+        .andExpect(content().string(containsString("public comment text")));
+  }
+
+  @Test
+  public void publicGetCommentsRouteStillMapped_RSDEV1329() throws Exception {
+    // comment viewing is the one editor endpoint the published-document view requests under the
+    // anonymous /public/publicView prefix (coreEditor.js), served by
+    // PublicStructuredDocumentCommentsController; it must not 404
+    MvcResult result =
+        mockMvc
+            .perform(
+                get("/public/publicView/workspace/editor/structuredDocument/getComments")
+                    .param("commentId", "1"))
+            .andReturn();
+    assertTrue(
+        404 != result.getResponse().getStatus(), "public getComments route must stay mapped");
+    // without the anonymous public login there is no principal, so it fails closed. Asserting the
+    // exception TYPE (not merely that some exception resolved) is what proves it is the
+    // authorization guard refusing, rather than a missing-parameter or database error.
+    assertAuthorizationException(result);
   }
 }

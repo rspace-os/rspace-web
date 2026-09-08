@@ -32,6 +32,7 @@ import com.researchspace.model.FileProperty;
 import com.researchspace.model.ImageBlob;
 import com.researchspace.model.RSChemElement;
 import com.researchspace.model.RSMath;
+import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.GlobalIdentifier;
@@ -73,9 +74,12 @@ import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import javax.imageio.ImageIO;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FilenameUtils;
@@ -893,10 +897,69 @@ public class MediaManagerImpl implements MediaManager {
   }
 
   @Override
-  public List<RecordInformation> getIdsOfLinkedDocuments(Long mediaFileId) {
-    List<RecordInformation> rc = recordDao.getInfosOfDocumentsLinkedToMediaFile(mediaFileId);
-    rc.stream().forEach(info -> info.setOid(new GlobalIdentifier(GlobalIdPrefix.SD, info.getId())));
-    return rc;
+  public List<RecordInformation> getIdsOfLinkedDocuments(Long mediaFileId, User user) {
+    // RSDEV-1329: fail closed — null user, the anonymous published-view guest, unknown id and
+    // no-READ are indistinguishable.
+    // Note: recordDao is a GenericDao<Record, Long> and Folder extends BaseRecord rather than
+    // Record, so a folder id resolves to Optional.empty() and fails closed here — intended on this
+    // endpoint, but a trap if this shape is reused where folder ids are legitimate.
+    if (user == null || user.isAnonymousGuestAccount()) {
+      throw new AuthorizationException(
+          messages.getMessage(
+              "errors.authorization.failure.listLinkedDocuments",
+              new Object[] {
+                user == null ? RecordGroupSharing.ANONYMOUS_USER : user.getUsername(), mediaFileId
+              }));
+    }
+    EcatMediaFile media =
+        recordDao
+            .getSafeNull(mediaFileId)
+            .filter(EcatMediaFile.class::isInstance)
+            .map(EcatMediaFile.class::cast)
+            .orElseThrow(
+                () ->
+                    new AuthorizationException(
+                        messages.getMessage(
+                            "errors.authorization.failure.listLinkedDocuments",
+                            new Object[] {user.getUsername(), mediaFileId})));
+    // same refusal message as the unknown-id branch above: the AJAX error view echoes exception
+    // messages, so a distinct message here would let a caller distinguish an existing
+    // inaccessible media id from a nonexistent one
+    if (!permUtils.isRecordAccessPermitted(user, media, PermissionType.READ)) {
+      throw new AuthorizationException(
+          messages.getMessage(
+              "errors.authorization.failure.listLinkedDocuments",
+              new Object[] {user.getUsername(), mediaFileId}));
+    }
+
+    // READ on the media file does not imply READ on every linking document. Unreadable rows are
+    // replaced by an owner-only placeholder rather than dropped, matching
+    // DetailedRecordInformationProvider.getLinkedByRecords and the contract the frontend relies on
+    // (modules/workspace/schema.ts: absent id/oid marks a private row, counted as "N private
+    // documents by <owner>").
+    List<RecordInformation> linked = recordDao.getInfosOfDocumentsLinkedToMediaFile(mediaFileId);
+    Map<Long, Record> byId =
+        recordDao
+            .getRecordsById(linked.stream().map(RecordInformation::getId).distinct().toList())
+            .stream()
+            .collect(Collectors.toMap(Record::getId, Function.identity(), (a, b) -> a));
+    return linked.stream()
+        .map(info -> toReadableOrPlaceholder(info, byId.get(info.getId()), user))
+        .toList();
+  }
+
+  private RecordInformation toReadableOrPlaceholder(RecordInformation info, Record doc, User user) {
+    if (doc != null && permUtils.isRecordAccessPermitted(user, doc, PermissionType.READ)) {
+      info.setOid(new GlobalIdentifier(GlobalIdPrefix.SD, info.getId()));
+      return info;
+    }
+    RecordInformation ownersInfo = new RecordInformation();
+    if (doc != null) {
+      // full name only: the username is a login identifier, and no consumer of the placeholder
+      // reads it (RSDEV-1329)
+      ownersInfo.setOwnerFullName(doc.getOwner().getFullName());
+    }
+    return ownersInfo;
   }
 
   @Override

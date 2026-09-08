@@ -781,7 +781,7 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
 
     EcatImage image = addImageToGallery(anyUser);
     // finally, a correct call
-    int initialLinkCount = mediaMgr.getIdsOfLinkedDocuments(image.getId()).size();
+    int initialLinkCount = mediaMgr.getIdsOfLinkedDocuments(image.getId(), anyUser).size();
 
     json =
         String.format(
@@ -795,7 +795,8 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
             .andExpect(status().isCreated())
             .andReturn();
     // assert that media-field link is established
-    assertEquals(initialLinkCount + 1, mediaMgr.getIdsOfLinkedDocuments(image.getId()).size());
+    assertEquals(
+        initialLinkCount + 1, mediaMgr.getIdsOfLinkedDocuments(image.getId(), anyUser).size());
   }
 
   @Test

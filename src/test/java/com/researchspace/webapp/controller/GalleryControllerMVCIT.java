@@ -15,6 +15,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.researchspace.Constants;
 import com.researchspace.core.util.MediaUtils;
 import com.researchspace.model.EcatChemistryFile;
 import com.researchspace.model.EcatDocumentFile;
@@ -51,8 +52,11 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.jdbc.JdbcTestUtils;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
@@ -70,6 +74,10 @@ public class GalleryControllerMVCIT extends MVCTestBase {
   private @Autowired RSChemElementManager rsChemElementManager;
   @TempDir public File tempIndexFolder;
   @Autowired FileIndexSearcher searcher;
+  private @Autowired JdbcTemplate jdbcTemplate;
+
+  @Value("${publishing.anonymousGuest.password}")
+  private String anonymousPassword;
 
   private User owner;
   private PaginationCriteria<BaseRecord> pgcrit = null;
@@ -83,6 +91,10 @@ public class GalleryControllerMVCIT extends MVCTestBase {
 
   @AfterEach
   public void tearDown() throws Exception {
+    // remove any published link created by the RSDEV-1329 guest test so the publish-listing
+    // MVCITs running later against the same database see no leftover shares; runs before
+    // super.tearDown() so a failure there cannot skip the cleanup
+    JdbcTestUtils.deleteFromTables(jdbcTemplate, "RecordGroupSharing");
     super.tearDown();
   }
 
@@ -579,7 +591,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
     StructuredDocument doc = createBasicDocumentInRootFolderWithText(user, "any");
     EcatDocumentFile attachment =
         addAttachmentDocumentToField(getAnyPdf(), doc.getFields().get(0), user);
-    assertEquals(1, mediaMgr.getIdsOfLinkedDocuments(attachment.getId()).size());
+    assertEquals(1, mediaMgr.getIdsOfLinkedDocuments(attachment.getId(), user).size());
     Field updated = fieldMgr.getWithLoadedMediaLinks(doc.getFields().get(0).getId(), user).get();
 
     doInTransaction(
@@ -587,18 +599,19 @@ public class GalleryControllerMVCIT extends MVCTestBase {
           removeAttachmentFromField(attachment, updated, user);
         });
     // don't show linked docs once link deleted from field
-    assertEquals(0, mediaMgr.getIdsOfLinkedDocuments(attachment.getId()).size());
+    assertEquals(0, mediaMgr.getIdsOfLinkedDocuments(attachment.getId(), user).size());
 
     EcatDocumentFile attachment2 =
         addAttachmentDocumentToField(
             RSpaceTestUtils.getAnyAttachment(), doc.getFields().get(0), user);
 
-    assertEquals(1, mediaMgr.getIdsOfLinkedDocuments(attachment2.getId()).size());
-    assertEquals(doc.getId(), mediaMgr.getIdsOfLinkedDocuments(attachment2.getId()).get(0).getId());
+    assertEquals(1, mediaMgr.getIdsOfLinkedDocuments(attachment2.getId(), user).size());
+    assertEquals(
+        doc.getId(), mediaMgr.getIdsOfLinkedDocuments(attachment2.getId(), user).get(0).getId());
 
     // don't show deleted docs
     recordDeletionMgr.deleteRecord(doc.getParent().getId(), doc.getId(), user);
-    assertEquals(0, mediaMgr.getIdsOfLinkedDocuments(attachment.getId()).size());
+    assertEquals(0, mediaMgr.getIdsOfLinkedDocuments(attachment.getId(), user).size());
   }
 
   @Test
@@ -819,5 +832,67 @@ public class GalleryControllerMVCIT extends MVCTestBase {
 
   private BufferedImage getImageFromBytes(byte[] fullImageBytes) throws IOException {
     return ImageIO.read(new ByteArrayInputStream(fullImageBytes));
+  }
+
+  @Test
+  public void getLinkedDocumentsRequiresReadPermissionOnMediaFile_RSDEV1329() throws Exception {
+    RecordInformation imageInfo = uploadImageToGallery();
+
+    // the endpoint resolves the subject from the Shiro session
+    // (userManager.getAuthenticatedUserInSession()), and MockMvc here runs without filters, so a
+    // request .principal(...) never reaches it: each leg logs the intended user in explicitly
+
+    // owner can list documents linked to their own media file
+    logoutAndLoginAs(owner);
+    mockMvc
+        .perform(get("/gallery/ajax/getLinkedDocuments/" + imageInfo.getId()))
+        .andExpect(status().isOk());
+
+    // a logged-in user without READ permission on the media file is refused
+    createInitAndLoginAnyUser();
+    MvcResult result =
+        mockMvc.perform(get("/gallery/ajax/getLinkedDocuments/" + imageInfo.getId())).andReturn();
+    assertAuthorizationException(result);
+
+    // the session-less /public/** route is refused via the manager's null-user branch
+    logoutCurrentUser();
+    MvcResult anonResult =
+        mockMvc
+            .perform(get("/public/publicView/gallery/ajax/getLinkedDocuments/" + imageInfo.getId()))
+            .andReturn();
+    assertAuthorizationException(anonResult);
+    // the isAnonymousGuestAccount() branch is covered by
+    // getLinkedDocumentsRefusesPublishedViewGuest_RSDEV1329, with the guest genuinely logged in
+  }
+
+  @Test
+  public void getLinkedDocumentsRefusesPublishedViewGuest_RSDEV1329() throws Exception {
+    // The route a real anonymous visitor takes: the published view logs in the anonymous guest
+    // account, and the guest gains READ on media embedded in the published document (via
+    // isPermittedViaMediaLinksToRecords). The linked-documents list must still be refused, and
+    // only the manager's isAnonymousGuestAccount() branch can do that here.
+    GroupSetUp setup =
+        setUpGroupCreateDocumentAndUserWithUserHavingRole(
+            "standardUser", Constants.USER_ROLE, false, 1);
+    StructuredDocument doc =
+        createBasicDocumentInRootFolderWithText(setup.user, "published text with image");
+    EcatImage image = addImageToField(doc.getFields().get(0), setup.user);
+    publishDocumentForUser(setup.user, doc.getId());
+
+    logoutCurrentUser();
+    PublicDocumentsUtilities.loginAnonymousUser(anonymousPassword);
+
+    // sanity: the guest really can READ the media file through the published document, so the
+    // refusal below cannot be a plain missing-READ denial — deleting the guest guard from
+    // MediaManagerImpl.getIdsOfLinkedDocuments turns the assertion after this one red
+    mockMvc
+        .perform(get("/public/publicView/gallery/getViewerImage/" + image.getId()))
+        .andExpect(status().is2xxSuccessful());
+
+    MvcResult guestResult =
+        mockMvc
+            .perform(get("/public/publicView/gallery/ajax/getLinkedDocuments/" + image.getId()))
+            .andReturn();
+    assertAuthorizationException(guestResult);
   }
 }
