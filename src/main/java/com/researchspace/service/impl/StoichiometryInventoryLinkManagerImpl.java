@@ -103,12 +103,20 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
     // this one canonical order (sibling sets ascending, then rows): the sibling-set lock IS row
     // locks on all of a sample's subsamples, so once the sets are held, every later row lock is a
     // re-acquisition and cannot participate in a deadlock cycle against the operations endpoint or
-    // List of Materials. An unresolvable or non-subsample link locks nothing here and fails
-    // per-row below, as before.
+    // List of Materials. Only a link that belongs to THIS stoichiometry and whose record the caller
+    // may edit locks anything here: without those filters a caller could name unrelated link ids
+    // solely to lock their sibling sets and delay authorized writers (Copilot review, PR #1090).
+    // Any link the filters skip, like an unresolvable or non-subsample one, locks nothing and
+    // fails per-row below with its specific reason, as before; the loop's own checks are retained.
     Set<Long> parentSampleIds = new TreeSet<>();
     for (Long id : linkIds) {
       linkDao
           .getSafeNull(id)
+          .filter(
+              link -> link.getStoichiometryMolecule().getStoichiometry().getId() == stoichiometryId)
+          .filter(
+              link ->
+                  invPermissionUtils.canUserEditInventoryRecord(link.getInventoryRecord(), user))
           .map(StoichiometryInventoryLink::getInventoryRecord)
           .filter(SubSample.class::isInstance)
           .map(record -> ((SubSample) record).getSample().getId())
