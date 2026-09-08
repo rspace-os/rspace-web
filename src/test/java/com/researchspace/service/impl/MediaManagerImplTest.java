@@ -217,7 +217,11 @@ class MediaManagerImplTest {
     StructuredDocument linkedDoc = TestFactory.createAnySD();
     linkedDoc.setId(5L);
     when(recordDao.getRecordsById(List.of(5L))).thenReturn(List.of(linkedDoc));
-    lenient().when(permUtils.isPermitted(linkedDoc, PermissionType.READ, user)).thenReturn(true);
+    // the fallback would GRANT access to the linking document; the plain check refuses it. Lenient
+    // because correct production code never consults the fallback for a linking document.
+    lenient()
+        .when(permUtils.isRecordAccessPermitted(user, linkedDoc, PermissionType.READ))
+        .thenReturn(true);
     when(permUtils.isPermitted(linkedDoc, PermissionType.READ, user)).thenReturn(false);
 
     List<RecordInformation> result = mediaManager.getIdsOfLinkedDocuments(1L, user);
