@@ -54,6 +54,23 @@ export function temperatureBelowMin(input: OperationInputConfig, value: Operatio
 }
 
 /**
+ * Whether a temperature input's value is one the backend would reject regardless of the configured
+ * bounds: below absolute zero (the control is fixed to Celsius, so below -273.15), or finer than
+ * the DECIMAL(19,3) column stores. Without this a value like -300 or -80.0005 satisfied the
+ * configured Cryopreserve ceiling and enabled Perform, only to fail at the backend via
+ * @ValidTemperature / the storability check (Copilot review, PR #1090). Pure and shared by
+ * detailsValid (gating) and the field's inline error.
+ */
+export function temperatureNotStorable(
+  input: OperationInputConfig,
+  value: OperationQuantity | undefined,
+): boolean {
+  if (input.type !== "temperature") return false;
+  if (!value || !Number.isFinite(value.numericValue)) return false;
+  return value.numericValue < -273.15 || !amountIsStorable(value.numericValue);
+}
+
+/**
  * Whether the given inputs are complete enough to advance. Text fields are required only when
  * flagged; integers must meet their minimum; amounts must be non-negative with the created "each
  * amount" strictly positive and a unit chosen. Temperature is exempt from the non-negative rule:
@@ -79,9 +96,11 @@ export function detailsValid(
     } else {
       const q = value as OperationQuantity | undefined;
       if (!q || !Number.isFinite(q.numericValue)) return false;
-      // A temperature outside its configured bounds (cryopreserve > -18 °C, revive < 4 °C) blocks it.
+      // A temperature outside its configured bounds (cryopreserve > -18 °C, revive < 4 °C) blocks
+      // it, as does one the backend rejects outright (below absolute zero, or finer than 3dp).
       if (temperatureExceedsMax(input, q)) return false;
       if (temperatureBelowMin(input, q)) return false;
+      if (temperatureNotStorable(input, q)) return false;
       if (input.type === "quantity") {
         // The unit is part of the amount: a cleared/unset unit (produced when a picked template
         // changes the measurement category) leaves the amount incomplete, so block the step until
