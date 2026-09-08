@@ -144,17 +144,25 @@ public class NameDateFilterImpl implements NameDateFilter {
 
     addForm(pname, pval, term, sbf, formIds);
 
-    addOrderBy(sbf, input.getPgCrit());
+    addOrderBy(sbf, input.getPgCrit(), "r.id");
     return sbf.toString();
   }
 
-  private void addOrderBy(StringBuffer sbf, PaginationCriteria<BaseRecord> pgCrit) {
+  private void addOrderBy(
+      StringBuffer sbf, PaginationCriteria<BaseRecord> pgCrit, String fallbackOrderBy) {
     String orderBy = null;
     SortOrder so = null;
     if (pgCrit != null && pgCrit.getOrderBy() != null) {
-      orderBy = pgCrit.getOrderBy();
-      so = pgCrit.getSortOrder();
-      sbf.append(" order by " + orderBy + "  " + so);
+      if (pgCrit.isOrderBySafe(pgCrit.getOrderBy())) {
+        orderBy = pgCrit.getOrderBy();
+        so = pgCrit.getSortOrder();
+        sbf.append(" order by " + orderBy + "  " + so);
+      } else {
+        log.warn("Ignoring unsafe orderBy value in name/date filter");
+        if (fallbackOrderBy != null) {
+          sbf.append(" order by ").append(fallbackOrderBy).append(" ASC");
+        }
+      }
     }
   }
 
@@ -175,7 +183,7 @@ public class NameDateFilterImpl implements NameDateFilter {
 
     pval.add(input.getParentFolderId());
     pval.add(Boolean.FALSE);
-    sb.append(makeFromClauseForNameDateSrc(input, pname, pval));
+    sb.append(makeFromClauseForNameDateSrc(input, pname, pval, "rc.id"));
     return sb.toString();
   }
 
@@ -194,7 +202,7 @@ public class NameDateFilterImpl implements NameDateFilter {
 
     pval.add(input.getParentFolderId());
     pval.add(Boolean.FALSE);
-    String from2 = makeFromClauseForNameDateSrc(input, pname, pval);
+    String from2 = makeFromClauseForNameDateSrc(input, pname, pval, null);
     sb.append(from2);
 
     String query = sb.toString();
@@ -217,7 +225,7 @@ public class NameDateFilterImpl implements NameDateFilter {
   }
 
   private String makeFromClauseForNameDateSrc(
-      WorkspaceListingConfig input, List<String> pname, List<Object> pval) {
+      WorkspaceListingConfig input, List<String> pname, List<Object> pval, String fallbackOrderBy) {
 
     StringBuffer sbf = new StringBuffer();
     sbf.append(
@@ -231,7 +239,7 @@ public class NameDateFilterImpl implements NameDateFilter {
       addCreationDate(pname, pval, input.getSrchTerms()[0], sbf);
     }
 
-    addOrderBy(sbf, input.getPgCrit());
+    addOrderBy(sbf, input.getPgCrit(), fallbackOrderBy);
     return sbf.toString();
   }
 

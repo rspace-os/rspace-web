@@ -307,12 +307,15 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
   }
 
   private String safeOrderBy(PaginationCriteria<User> pgCrit) {
-    if (!StringUtils.isBlank(pgCrit.getOrderBy()) && pgCrit.isOrderBySafe(pgCrit.getOrderBy())) {
-      return String.format(
-          ORDER_BY_QUERY_FORMAT, pgCrit.getOrderBy(), pgCrit.getSortOrder().toString());
-    } else {
+    if (StringUtils.isBlank(pgCrit.getOrderBy())) {
       return "";
     }
+    if (!pgCrit.isOrderBySafe(pgCrit.getOrderBy())) {
+      log.warn("Ignoring unsafe orderBy value in community user listing");
+      return " order by u.id"; // stable fallback so paging stays deterministic
+    }
+    return String.format(
+        ORDER_BY_QUERY_FORMAT, pgCrit.getOrderBy(), pgCrit.getSortOrder().toString());
   }
 
   @Override
@@ -462,7 +465,13 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
       CriteriaBuilder builder,
       Root<User> root,
       CriteriaQuery<?> query) {
-    if (pgCrit.getOrderBy() == null || !pgCrit.isOrderBySafe(pgCrit.getOrderBy())) {
+    if (pgCrit.getOrderBy() == null) {
+      return;
+    }
+    if (!pgCrit.isOrderBySafe(pgCrit.getOrderBy())) {
+      log.warn("Ignoring unsafe orderBy value in user search");
+      // stable fallback so paging stays deterministic
+      query.orderBy(builder.asc(root.get("id")));
       return;
     }
     List<Order> orders = new ArrayList<>();

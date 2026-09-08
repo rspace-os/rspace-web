@@ -247,12 +247,7 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
         sb.append(" union ");
       }
     }
-    if (pagCriteria != null && pagCriteria.getOrderBy() != null) {
-      sb.append(" order by ").append(pagCriteria.getOrderBy()).append(" ");
-      if (pagCriteria.getSortOrder() != null) {
-        sb.append(pagCriteria.getSortOrder());
-      }
-    }
+    sb.append(makeOrderBy(pagCriteria));
     allQuery = sb.toString();
     log.debug(" all clause is [{}]", allQuery);
 
@@ -316,9 +311,30 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
     return sb.toString();
   }
 
+  /**
+   * Builds the ORDER BY clause for the native form listing query. An unsafe sort field falls back
+   * to a stable {@code id} order so paging over the union stays deterministic.
+   */
+  String makeOrderBy(PaginationCriteria<RSForm> pagCriteria) {
+    if (pagCriteria == null || pagCriteria.getOrderBy() == null) {
+      return "";
+    }
+    if (!pagCriteria.isOrderBySafe(pagCriteria.getOrderBy())) {
+      log.warn("Ignoring unsafe orderBy value in form listing");
+      return " order by id ";
+    }
+    StringBuilder orderBy = new StringBuilder(" order by ");
+    orderBy.append(pagCriteria.getOrderBy()).append(" ");
+    if (pagCriteria.getSortOrder() != null) {
+      orderBy.append(pagCriteria.getSortOrder());
+    }
+    return orderBy.toString();
+  }
+
   private boolean isSortOrderSet(PaginationCriteria<RSForm> pagCriteria) {
     return pagCriteria != null
         && pagCriteria.getOrderBy() != null
+        && pagCriteria.isOrderBySafe(pagCriteria.getOrderBy())
         && !(pagCriteria.getOrderBy().equals("id"));
   }
 
