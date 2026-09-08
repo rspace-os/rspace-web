@@ -15,6 +15,7 @@ import com.researchspace.webapp.controller.RSpaceTag;
 import com.researchspace.webapp.controller.TagValidator;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -92,6 +93,10 @@ abstract class InventoryRecordValidator {
 
   void validateTags(List<ApiTagInfo> tags, Errors errors) {
     tags.stream()
+        // A null element ("tags": [null]) is already a bean-validation error at binding, but the
+        // controllers accept a BindingResult so this validator still runs; dereferencing the
+        // element would turn that reported 400 into a 500 (Copilot review, PR #1090).
+        .filter(Objects::nonNull)
         .forEach(
             tag -> {
               validateTooLong("tags", tag.getValue(), EditInfo.DESCRIPTION_LENGTH, errors);
