@@ -78,8 +78,29 @@ class InventoryOperationManagerImplTest {
     return subSample;
   }
 
+  /**
+   * A subsample entity mock without a quantity stub, for origins the manager resolves (to find the
+   * parent sample) but never reads a quantity from, e.g. because an earlier check throws first.
+   */
+  private SubSample subSampleWithParent(long sampleId) {
+    SubSample subSample = mock(SubSample.class);
+    SampleEntity parent = mock(SampleEntity.class);
+    when(parent.getId()).thenReturn(sampleId);
+    when(subSample.getSample()).thenReturn(parent);
+    return subSample;
+  }
+
+  /** The origin resolves (parent sample findable) but is never read further. */
+  private void originExists(long originId, long sampleId) {
+    when(subSampleApiMgr.getIfExists(originId)).thenReturn(subSampleWithParent(sampleId));
+  }
+
   private void originHolds(long originId, SubSample subSample) {
+    when(subSampleApiMgr.getIfExists(originId)).thenReturn(subSample);
     when(subSampleApiMgr.lockSubSampleForEdit(originId, user)).thenReturn(subSample);
+    // The live checks read the quantity as a locked scalar, not from the locked entity; in these
+    // tests the two agree unless a test overrides the scalar to model a concurrent committer.
+    when(subSampleApiMgr.getQuantityForUpdate(originId)).thenReturn(subSample.getQuantity());
   }
 
   @BeforeEach
@@ -150,6 +171,7 @@ class InventoryOperationManagerImplTest {
     request.setOperationType("derive");
     request.setOrigins(List.of(origin(100L, new ApiQuantityInfo(new BigDecimal("0.6"), 3))));
     request.setNewSample(new ApiSampleWithFullSubSamples("Derived material"));
+    originExists(100L, 900L);
     doThrow(new RuntimeException("no permission"))
         .when(subSampleApiMgr)
         .lockSubSampleForEdit(100L, user);
@@ -169,6 +191,7 @@ class InventoryOperationManagerImplTest {
     // one
     // does - it would decrement origin 100 before checking origin 200's permission.
     originHolds(100L, subSampleHolding("5", 3));
+    originExists(200L, 901L);
     doThrow(new RuntimeException("no permission"))
         .when(subSampleApiMgr)
         .lockSubSampleForEdit(200L, user);
@@ -298,6 +321,29 @@ class InventoryOperationManagerImplTest {
           "errors.inventory.operation.originEmpty",
           rejection.getFieldErrors("origins[0].id").get(0).getCode());
     }
+  }
+
+  @Test
+  void checksAgainstTheLockedScalarNotTheEntitySnapshot() {
+    // The locked entity holds this transaction's snapshot (lockRowForUpdate serialises, it does
+    // not refresh); the entity mock here deliberately has NO quantity, so a check reading the
+    // entity would fail this test. The last committed writer left 0.4 ml: the over-removal check
+    // must reject from the locked scalar, or it would approve a decrement that
+    // registerApiSubSampleUsage then clamps into a silent partial take.
+    ApiInventoryOperationPost request = new ApiInventoryOperationPost();
+    request.setOperationType("derive");
+    request.setOrigins(List.of(origin(100L, new ApiQuantityInfo(new BigDecimal("0.6"), 3))));
+    request.setNewSample(new ApiSampleWithFullSubSamples("Derived material"));
+    SubSample snapshotOnlyEntity = subSampleWithParent(900L);
+    when(subSampleApiMgr.getIfExists(100L)).thenReturn(snapshotOnlyEntity);
+    when(subSampleApiMgr.lockSubSampleForEdit(100L, user)).thenReturn(snapshotOnlyEntity);
+    when(subSampleApiMgr.getQuantityForUpdate(100L))
+        .thenReturn(new QuantityInfo(new BigDecimal("0.4"), 3));
+
+    BindException rejection = performExpectingRejection(request);
+    assertEquals(
+        "errors.inventory.operation.amountTakenExceedsOrigin",
+        rejection.getFieldErrors("origins[0].amountTaken").get(0).getCode());
   }
 
   @Test

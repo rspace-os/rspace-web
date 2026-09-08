@@ -1119,20 +1119,40 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
       assertTrue(
           statuses.stream().noneMatch(status -> status >= 500),
           () -> "5xx from sibling aliquots: " + statuses);
+      // Both requests rewrite the same denormalised parent total, so they DO contend and one may
+      // lose with a retryable 409. Both could succeed only if the origin reads stopped being entity
+      // graph locks: FOR UPDATE on these entities joins Container, User, FileProperty and Barcode
+      // and locks all of them, so two operations deadlock and InnoDB picks a victim.
+      // Sibling subsamples are different rows, so neither request has to lose: they queue on the
+      // shared parent-total rows and both go through. Before the sibling rows were locked up front
+      // they deadlocked here instead and InnoDB killed one (409).
       assertEquals(
           2,
           statuses.stream().filter(status -> status == 201).count(),
-          () -> "sibling subsamples do not contend, both should succeed, got " + statuses);
+          () -> "both sibling aliquots should succeed, got " + statuses);
       assertQuantityIs(first, 7, statuses);
       assertQuantityIs(second, 7, statuses);
-      // The point of the test: the sample's stored total must equal what its children now hold,
-      // not one decrement short of it.
+      // The point of the test: whatever the outcome of the race, the stored total must equal what
+      // the children actually hold. It used to be summed from a sibling read taken from the
+      // transaction's own snapshot, so it came out one decrement short (17 stored where the
+      // children held 14) even though both subsample rows were correct.
+      java.math.BigDecimal childTotal =
+          subSampleApiManager
+              .getApiSubSampleById(first.getId(), anyUser)
+              .getQuantity()
+              .getNumericValue()
+              .add(
+                  subSampleApiManager
+                      .getApiSubSampleById(second.getId(), anyUser)
+                      .getQuantity()
+                      .getNumericValue());
       ApiSample reloadedSample = sampleApiMgr.getApiSampleById(sample.getId(), anyUser);
       assertTrue(
-          new java.math.BigDecimal("14").compareTo(reloadedSample.getQuantity().getNumericValue())
-              == 0,
+          childTotal.compareTo(reloadedSample.getQuantity().getNumericValue()) == 0,
           () ->
-              "expected the parent total to match its children (14), got "
+              "expected the parent total to equal the sum of its children ("
+                  + childTotal
+                  + "), got "
                   + reloadedSample.getQuantity()
                   + " after "
                   + statuses);

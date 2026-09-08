@@ -488,12 +488,24 @@ public abstract class SampleEntity extends InventoryRecord
   }
 
   public void recalculateTotalQuantity() {
-    QuantityUtils quantityUtils = new QuantityUtils();
-    List<QuantityInfo> subSampleQuantities =
+    setTotalQuantityFrom(
         getActiveSubSamples().stream()
             .filter(ss -> ss.getQuantity() != null)
             .map(ss -> ss.getQuantity())
-            .collect(Collectors.toList());
+            .collect(Collectors.toList()));
+  }
+
+  /**
+   * Sets the total from the given subsample quantities rather than from this sample's own subsample
+   * entities.
+   *
+   * <p>The no-argument version reads the sibling entities, which a transaction sees as of its own
+   * snapshot, so two writers on different siblings each compute the total from stale stock and one
+   * decrement is lost from it. Callers that must be exact under concurrency pass values read from
+   * the rows under a lock instead (see {@code SampleApiManager.recalculateTotalFromLockedRows}).
+   */
+  public void setTotalQuantityFrom(List<QuantityInfo> subSampleQuantities) {
+    QuantityUtils quantityUtils = new QuantityUtils();
 
     if (subSampleQuantities.isEmpty()) {
       setQuantityInfo(null);

@@ -41,6 +41,16 @@ public interface SubSampleApiManager extends InventoryApiManager<SubSample> {
    */
   SubSample lockSubSampleForEdit(Long id, User user);
 
+  /**
+   * The subsample's CURRENT quantity, read as a scalar under a row lock. The entity {@link
+   * #lockSubSampleForEdit} returns holds the transaction's snapshot (locking guarantees
+   * serialisation only), so any check or arithmetic that must see what the last committed writer
+   * stored reads the value through this instead (RSDEV-1231).
+   *
+   * @return the current quantity, or null when the subsample holds none
+   */
+  QuantityInfo getQuantityForUpdate(Long subSampleId);
+
   SubSample assertUserCanDeleteSubSample(Long id, User user);
 
   /**

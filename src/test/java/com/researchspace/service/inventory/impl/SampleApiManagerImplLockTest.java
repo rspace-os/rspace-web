@@ -40,7 +40,7 @@ class SampleApiManagerImplLockTest {
 
   @Test
   void unknownIdIsNotFoundWithLocalisedText() {
-    when(sampleDao.getForUpdate(404L)).thenReturn(null);
+    when(sampleDao.lockRowForUpdate(404L)).thenReturn(null);
     when(messages.getMessage("errors.inventory.sample.notFound", new Object[] {404L}))
         .thenReturn("No sample with id: 404");
 
@@ -55,14 +55,14 @@ class SampleApiManagerImplLockTest {
   @Test
   void locksTheRowThenAssertsEditPermission() {
     Sample locked = new Sample();
-    when(sampleDao.getForUpdate(100L)).thenReturn(locked);
+    when(sampleDao.lockRowForUpdate(100L)).thenReturn(locked);
 
     assertEquals(locked, sampleApiMgr.lockSampleForEdit(100L, user));
 
     // The lock must be held before the permission verdict, so a caller that passes cannot then be
     // overtaken by a concurrent edit between the check and the total's recalculation.
     InOrder inOrder = inOrder(sampleDao, invPermissions);
-    inOrder.verify(sampleDao).getForUpdate(100L);
+    inOrder.verify(sampleDao).lockRowForUpdate(100L);
     inOrder.verify(invPermissions).assertUserCanEditInventoryRecord(locked, user);
   }
 }

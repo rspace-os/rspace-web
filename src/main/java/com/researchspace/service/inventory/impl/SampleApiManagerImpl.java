@@ -22,6 +22,7 @@ import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.jsonserialisers.LocalDateDeserialiser;
 import com.researchspace.dao.SampleDao;
 import com.researchspace.dao.SampleTemplateDao;
+import com.researchspace.dao.SubSampleDao;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.events.InventoryAccessEvent;
@@ -70,6 +71,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
 
   private @Autowired SubSampleApiManager subSampleMgr;
   private @Autowired SampleDao sampleDao;
+  private @Autowired SubSampleDao subSampleDao;
   private @Autowired MessageSourceUtils messages;
   private @Autowired SampleTemplateDao sampleTemplateDao;
   private @Autowired InventoryMoveHelper inventoryMoveHelper;
@@ -145,13 +147,30 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
 
   @Override
   public Sample lockSampleForEdit(Long id, User user) {
-    Sample sample = sampleDao.getForUpdate(id);
+    Sample sample = sampleDao.lockRowForUpdate(id);
     if (sample == null) {
       throw new NotFoundException(
           messages.getMessage("errors.inventory.sample.notFound", new Object[] {id}));
     }
     invPermissions.assertUserCanEditInventoryRecord(sample, user);
     return sample;
+  }
+
+  @Override
+  public void recalculateTotalFromLockedRows(Long sampleId) {
+    // Deliberately an UNLOCKED read of the sample: the serialisation this method needs comes from
+    // the locked scalar read of the subsample rows below, and taking the sample's own row lock
+    // here would insert a sample-before-subsample acquisition into paths that otherwise lock
+    // subsample rows first, inverting the order against them.
+    SampleEntity sample = sampleDao.get(sampleId);
+    if (sample == null) {
+      return;
+    }
+    // Assigned onto the entity so the flush at commit writes this value rather than the cascade's
+    // stale one; the arithmetic (empty, single, unit-aware sum) stays in the entity.
+    sample.setTotalQuantityFrom(
+        subSampleDao.getActiveQuantitiesForUpdate(sampleId, sample.isDeleted()));
+    saveSampleEntity(sample);
   }
 
   @Override

@@ -40,7 +40,7 @@ class SubSampleApiManagerImplLockTest {
 
   @Test
   void unknownIdIsNotFoundWithLocalisedText() {
-    when(subSampleDao.getForUpdate(404L)).thenReturn(null);
+    when(subSampleDao.lockRowForUpdate(404L)).thenReturn(null);
     when(messages.getMessage("errors.inventory.subsample.notFound", new Object[] {404L}))
         .thenReturn("No subsample with id: 404");
 
@@ -58,14 +58,14 @@ class SubSampleApiManagerImplLockTest {
   @Test
   void locksTheRowThenAssertsEditPermission() {
     SubSample locked = new SubSample();
-    when(subSampleDao.getForUpdate(100L)).thenReturn(locked);
+    when(subSampleDao.lockRowForUpdate(100L)).thenReturn(locked);
 
     assertEquals(locked, subSampleApiMgr.lockSubSampleForEdit(100L, user));
 
     // The lock must be held before the permission verdict, so a caller that passes cannot then be
     // overtaken by a concurrent edit between the check and the decrement.
     InOrder inOrder = inOrder(subSampleDao, invPermissions);
-    inOrder.verify(subSampleDao).getForUpdate(100L);
+    inOrder.verify(subSampleDao).lockRowForUpdate(100L);
     inOrder.verify(invPermissions).assertUserCanEditInventoryRecord(locked, user);
   }
 }

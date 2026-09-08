@@ -7,6 +7,7 @@ import com.researchspace.model.TokenBasedVerification;
 import com.researchspace.model.User;
 import com.researchspace.model.UserProfile;
 import com.researchspace.model.dtos.UserRoleView;
+import com.researchspace.model.preference.Preference;
 import com.researchspace.model.views.UserStatistics;
 import com.researchspace.model.views.UserView;
 import java.util.List;
@@ -52,6 +53,16 @@ public interface UserDao extends GenericDao<User, Long> {
   String getUserPassword(String username);
 
   User getUserByUsername(String username);
+
+  /**
+   * The stored value of the given preference, read with a row lock ({@code SELECT ... FOR UPDATE})
+   * on the UserPreference row so the value is current rather than the transaction's snapshot.
+   * {@code lockRowForUpdate} guarantees serialisation only; a merge into the blob this returns is a
+   * merge into what the last committed writer stored (RSDEV-1231).
+   *
+   * @return the stored value, or null when the user has never stored that preference
+   */
+  String getPreferenceValueForUpdate(Long userId, Preference preference);
 
   /**
    * Looks up a user by username without throwing when none exists.

@@ -11,7 +11,6 @@ import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.testutils.SpringTransactionalTest;
-import org.hibernate.LockMode;
 import org.junit.jupiter.api.Test;
 
 public class SampleDaoTest extends SpringTransactionalTest {
@@ -61,36 +60,40 @@ public class SampleDaoTest extends SpringTransactionalTest {
     assertFalse(sampleDao.entityNameExistsForUser(name, user));
   }
 
+  // The lock statement's actual scope (one row, one table, and blocking a second connection) can
+  // only be observed across transactions; that lives in GenericDaoLockScopeIT. These tests pin the
+  // loading behaviour of lockRowForUpdate, which must be an ordinary entity load.
+
   @Test
-  public void getForUpdateHoldsAPessimisticWriteLock() {
+  public void lockRowForUpdateReturnsTheOrdinarilyLoadedEntity() {
     User user = createAndSaveRandomUser();
     Container workbench = containerDao.getWorkbenchForUser(user);
     Sample sample = recordFactory.createSample("sample lock test", user);
     sample.getSubSamples().get(0).moveToNewParent(workbench);
     Long sampleId = sampleDao.persistNewSample(sample).getId();
-    // flush the insert, then read it fresh, so the lock is the one this call takes rather than one
-    // carried over from the session that created the row
+    // flush the insert, then read it fresh, so the load below is this call's own
     sessionFactory.getCurrentSession().flush();
     sessionFactory.getCurrentSession().clear();
 
-    Sample locked = sampleDao.getForUpdate(sampleId);
+    Sample locked = sampleDao.lockRowForUpdate(sampleId);
 
     assertEquals(sampleId, locked.getId());
-    assertEquals(
-        LockMode.PESSIMISTIC_WRITE, sessionFactory.getCurrentSession().getCurrentLockMode(locked));
+    // the same session.get path as every other read: no separate loading behaviour for locked reads
+    assertEquals(locked, sampleDao.get(sampleId));
   }
 
   @Test
-  public void getForUpdateReturnsNullForUnknownId() {
+  public void lockRowForUpdateReturnsNullForUnknownId() {
     // The caller turns this into a 404; a locking read that threw instead would surface as a 500.
-    assertNull(sampleDao.getForUpdate(-1L));
+    assertNull(sampleDao.lockRowForUpdate(-1L));
   }
 
   @Test
-  public void getForUpdateDoesNotRelockARowThisTransactionAlreadyHolds() {
-    // Hibernate upgrades a lock by re-reading the row and comparing its stored version to the
-    // in-memory one, so re-locking an entity with unflushed changes fails as a stale-object error.
-    // Two decrements of one subsample in a transaction reach this, so the second ask is a no-op.
+  public void lockRowForUpdateIsRepeatableAndKeepsUnflushedChanges() {
+    // The lock is taken by a scalar id query, never by refreshing or upgrading the entity, so a
+    // second ask in the same transaction is harmless and the caller's pending changes survive.
+    // (The old refresh-based implementation discarded them, which was a landmine on a shared DAO
+    // method.) Two decrements of one subsample in a transaction reach this path.
     User user = createAndSaveRandomUser();
     Container workbench = containerDao.getWorkbenchForUser(user);
     Sample sample = recordFactory.createSample("sample relock test", user);
@@ -99,35 +102,11 @@ public class SampleDaoTest extends SpringTransactionalTest {
     sessionFactory.getCurrentSession().flush();
     sessionFactory.getCurrentSession().clear();
 
-    Sample locked = sampleDao.getForUpdate(sampleId);
+    Sample locked = sampleDao.lockRowForUpdate(sampleId);
     locked.setDescription("edited under the lock, not yet flushed");
 
-    assertEquals(locked, sampleDao.getForUpdate(sampleId));
-  }
-
-  @Test
-  public void getForUpdateReReadsTheRowUnderTheLock() {
-    // Hibernate takes a lock on an already-loaded entity by UPGRADING it: it issues
-    // "select id ... for update" and keeps the column values it read before the lock. A caller that
-    // then computed from those values would be doing exactly the stale read the lock exists to
-    // prevent, so the row is re-read under the lock rather than merely locked.
-    User user = createAndSaveRandomUser();
-    Container workbench = containerDao.getWorkbenchForUser(user);
-    Sample sample = recordFactory.createSample("sample refresh test", user);
-    sample.getSubSamples().get(0).moveToNewParent(workbench);
-    Long sampleId = sampleDao.persistNewSample(sample).getId();
-    sessionFactory.getCurrentSession().flush();
-    sessionFactory.getCurrentSession().clear();
-
-    // loaded unlocked, then altered in memory only: standing in for the values a concurrent
-    // transaction has since changed underneath us
-    Sample loaded = sampleDao.get(sampleId);
-    loaded.setDescription("only in this session");
-
-    Sample locked = sampleDao.getForUpdate(sampleId);
-
-    // the stored value wins, which is the whole point, and is why a caller must not hold unflushed
-    // changes to a row it is about to lock for the first time
-    assertNull(locked.getDescription());
+    Sample relocked = sampleDao.lockRowForUpdate(sampleId);
+    assertEquals(locked, relocked);
+    assertEquals("edited under the lock, not yet flushed", relocked.getDescription());
   }
 }
