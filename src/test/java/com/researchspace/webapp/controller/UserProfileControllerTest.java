@@ -55,6 +55,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
 
 @ExtendWith(MockitoExtension.class)
 public class UserProfileControllerTest {
@@ -374,7 +375,12 @@ public class UserProfileControllerTest {
 
     AjaxReturnObject<String> response =
         userProfileController.updatePreferenceValue(
-            "UI_JSON_SETTINGS", "{\"value\":2}", "B", () -> "any", mockRequest);
+            "UI_JSON_SETTINGS",
+            "{\"value\":2}",
+            "B",
+            () -> "any",
+            mockRequest,
+            new MockHttpServletResponse());
 
     assertEquals("{\"A\":1,\"B\":2}", response.getData());
     verify(usrMgr, never()).setPreference(any(Preference.class), anyString(), anyString());
@@ -390,10 +396,35 @@ public class UserProfileControllerTest {
 
     AjaxReturnObject<String> response =
         userProfileController.updatePreferenceValue(
-            "UI_JSON_SETTINGS", "whole", null, () -> "any", mockRequest);
+            "UI_JSON_SETTINGS",
+            "whole",
+            null,
+            () -> "any",
+            mockRequest,
+            new MockHttpServletResponse());
 
     assertEquals("whole", response.getData());
     verify(usrMgr, never()).mergeUiJsonSetting(anyString(), anyString(), anyString());
+  }
+
+  @Test
+  public void updatePreferenceValueReturns400WhenTheKeyedValueIsRejected() {
+    // A value that is not JSON, or a key outside [A-Z0-9_], is refused by the merge with an
+    // IllegalArgumentException carrying the catalog text. Left to the web tier that is a 500
+    // (live test 2026-09-08, row P5); the caller sent a bad request and should be told so.
+    when(usrMgr.getUserByUsername("any")).thenReturn(anyUser);
+    when(usrMgr.mergeUiJsonSetting("BAD", "not json", "any"))
+        .thenThrow(new IllegalArgumentException("not valid JSON"));
+    MockHttpServletResponse response = new MockHttpServletResponse();
+
+    AjaxReturnObject<String> result =
+        userProfileController.updatePreferenceValue(
+            "UI_JSON_SETTINGS", "not json", "BAD", () -> "any", mockRequest, response);
+
+    assertEquals(400, response.getStatus());
+    assertNull(result.getData());
+    assertEquals("not valid JSON", result.getErrorMsg().getErrorMessages().get(0));
+    verify(analMgr, never()).usersPreferencesChanged(any(User.class), any());
   }
 
   @Test
@@ -407,7 +438,12 @@ public class UserProfileControllerTest {
 
     AjaxReturnObject<String> response =
         userProfileController.updatePreferenceValue(
-            "UI_CLIENT_SETTINGS", "whole", "B", () -> "any", mockRequest);
+            "UI_CLIENT_SETTINGS",
+            "whole",
+            "B",
+            () -> "any",
+            mockRequest,
+            new MockHttpServletResponse());
 
     assertNull(response.getData());
     assertEquals("not a keyed preference", response.getErrorMsg().getErrorMessages().get(0));
