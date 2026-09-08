@@ -83,6 +83,7 @@ class ApiInventoryOperationPostBeanValidationTest {
     ApiSubSample subSample = post.getNewSample().getSubSamples().get(0);
     subSample.getExtraFields().add(null);
     subSample.getNotes().add(null);
+    post.getNewSample().getSubSamples().add(null);
 
     Set<String> violated = violatedPaths(post);
     for (String path :
@@ -91,7 +92,8 @@ class ApiInventoryOperationPostBeanValidationTest {
             "newSample.tags[0]",
             "newSample.barcodes[0]",
             "newSample.subSamples[0].extraFields[0]",
-            "newSample.subSamples[0].notes[0]")) {
+            "newSample.subSamples[0].notes[0]",
+            "newSample.subSamples[1]")) {
       assertTrue(
           violated.stream().anyMatch(violation -> violation.startsWith(path)),
           () -> "expected a violation under " + path + ", got: " + violated);
