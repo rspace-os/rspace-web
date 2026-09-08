@@ -80,6 +80,7 @@ import io.github.resilience4j.retry.RetryConfig;
 import io.vavr.control.Try;
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Size;
@@ -712,7 +713,8 @@ public class UserProfileController extends BaseController {
       // what every other preference and every legacy JSP caller means (code review, finding 3).
       @RequestParam(value = "key", required = false) String key,
       Principal principal,
-      HttpServletRequest req) {
+      HttpServletRequest req,
+      HttpServletResponse response) {
 
     Preference pref = Preference.valueOf(preferenceName);
     boolean keyed = StringUtils.isNotBlank(key);
@@ -723,10 +725,18 @@ public class UserProfileController extends BaseController {
               getText("errors.preference.keyNotSupported", new Object[] {preferenceName})));
     }
     User user = userManager.getUserByUsername(principal.getName());
-    UserPreference updatedPreference =
-        keyed
-            ? userManager.mergeUiJsonSetting(key, "" + value, user.getUsername())
-            : userManager.setPreference(pref, "" + value, user.getUsername());
+    UserPreference updatedPreference;
+    try {
+      updatedPreference =
+          keyed
+              ? userManager.mergeUiJsonSetting(key, "" + value, user.getUsername())
+              : userManager.setPreference(pref, "" + value, user.getUsername());
+    } catch (IllegalArgumentException rejected) {
+      // A value that is not JSON or a malformed key is the caller's mistake, not a server fault:
+      // the generic handler would turn it into a 500 (RSDEV-1231 live test, row P5).
+      response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+      return new AjaxReturnObject<>(null, ErrorList.of(rejected.getMessage()));
+    }
     analyticsManager.usersPreferencesChanged(user, req);
     return new AjaxReturnObject<>(updatedPreference.getValue(), null);
   }
