@@ -180,19 +180,20 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
       // The over-use check reads the row it is about to decrement, under the same lock the
       // decrement takes, rather than the link's own copy: a concurrent operation may have drained
       // the subsample since that copy was loaded, and registerApiSubSampleUsage clamps at zero, so
-      // a check against stale stock would report success for a deduction that never happened.
+      // a check against stale stock would report success for a deduction that never happened. The
+      // value is a locked SCALAR, not the locked entity: the entity holds this transaction's
+      // snapshot (locking guarantees serialisation only).
       SubSample liveSubSample = subSampleMgr.lockSubSampleForEdit(subSample.getId(), user);
+      QuantityInfo currentQuantity = subSampleMgr.getQuantityForUpdate(subSample.getId());
       BigDecimal totalAfterStockUpdate =
-          quantityUtils
-              .sum(List.of(liveSubSample.getQuantity(), quantityInfo.negate()))
-              .getNumericValue();
+          quantityUtils.sum(List.of(currentQuantity, quantityInfo.negate())).getNumericValue();
       if (totalAfterStockUpdate.compareTo(BigDecimal.ZERO) < 0) {
         throw new IllegalArgumentException(
             messages.getMessage(
                 "errors.inventory.stoichiometry.insufficientStock",
                 new Object[] {
                   quantityInfo.toPlainString(),
-                  liveSubSample.getQuantity().toPlainString(),
+                  currentQuantity.toPlainString(),
                   liveSubSample.getGlobalIdentifier()
                 }));
       }

@@ -3,15 +3,13 @@ package com.researchspace.dao;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SearchResultsImpl;
 import com.researchspace.model.PaginationCriteria;
+import jakarta.persistence.LockModeType;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.EnumSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
-import org.hibernate.LockMode;
 import org.hibernate.MappingException;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -41,13 +39,6 @@ public class GenericDaoHibernate<T, PK extends Serializable> implements GenericD
   protected final Logger log = LoggerFactory.getLogger(getClass());
 
   protected Class<T> persistentClass;
-
-  /**
-   * Lock modes under which this transaction already holds the row exclusively, so it must be
-   * returned as it is rather than locked again: see {@link GenericDao#getForUpdate}.
-   */
-  private static final Set<LockMode> ALREADY_HELD_EXCLUSIVELY =
-      EnumSet.of(LockMode.WRITE, LockMode.PESSIMISTIC_WRITE, LockMode.PESSIMISTIC_FORCE_INCREMENT);
 
   protected SessionFactory sessionFactory;
 
@@ -86,18 +77,22 @@ public class GenericDaoHibernate<T, PK extends Serializable> implements GenericD
   }
 
   @Override
-  public T getForUpdate(PK id) {
+  public T lockRowForUpdate(PK id) {
     Session session = getSession();
-    T managed = session.get(persistentClass, id);
-    if (managed == null || ALREADY_HELD_EXCLUSIVELY.contains(session.getCurrentLockMode(managed))) {
-      return managed;
-    }
-    // Refreshed, not merely locked. Asking Hibernate to lock an entity it has already loaded is a
-    // lock UPGRADE: it issues "select id ... for update" and keeps the column values read before
-    // the lock, so the caller would compute from exactly the stale state the lock exists to
-    // prevent. Refreshing re-reads the row under the lock instead.
-    session.refresh(managed, LockMode.PESSIMISTIC_WRITE);
-    return managed;
+    // Lock exactly one row in one table by selecting only the id. Locking a loaded ENTITY instead
+    // makes Hibernate emit the entity's eager-fetch SELECT (a ~20-table join for inventory records)
+    // with FOR UPDATE on the end, taking lock_mode X on rows in every joined table (measured:
+    // "mysql tables in use 21, locked 20"), which deadlocks against unrelated writers (RSDEV-1231).
+    session
+        .createQuery(
+            "select e.id from " + persistentClass.getName() + " e where e.id = :id", Object.class)
+        .setParameter("id", id)
+        .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+        .uniqueResultOptional();
+    // An ordinary load, identical to every other read path, so mappings and initialisation are
+    // untouched. Under REPEATABLE READ this holds the transaction's snapshot, NOT the current row
+    // values: see GenericDao#lockRowForUpdate for the freshness contract.
+    return session.get(persistentClass, id);
   }
 
   @Autowired
