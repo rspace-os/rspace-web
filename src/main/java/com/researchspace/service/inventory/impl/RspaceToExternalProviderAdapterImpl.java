@@ -49,16 +49,16 @@ public class RspaceToExternalProviderAdapterImpl implements RspaceToExternalProv
    * spelling, matched case-insensitively on the trimmed field name AND on the template's field
    * type (see CONTEXT.md, "PIDINST-mapped field").
    */
-  private static final String FIELD_OWNER = "Owner";
-  private static final String FIELD_MANUFACTURER = "Manufacturer";
-  private static final String FIELD_MODEL = "Model";
-  private static final String FIELD_INSTRUMENT_TYPE = "Instrument type";
-  private static final String FIELD_COMMISSIONED = "Commissioned";
-  private static final String FIELD_DECOMMISSIONED = "Decommissioned";
-  private static final String FIELD_MEASURED_QUANTITY = "Measured quantity";
-  private static final String FIELD_ALTERNATE_IDENTIFIER = "Alternate Identifier";
-  private static final String FIELD_MEASUREMENT_TECHNIQUE = "Measurement technique";
-  private static final String FIELD_CALIBRATION = "Calibration";
+  private static final String FIELD_OWNER = PidinstFields.OWNER;
+  private static final String FIELD_MANUFACTURER = PidinstFields.MANUFACTURER;
+  private static final String FIELD_MODEL = PidinstFields.MODEL;
+  private static final String FIELD_INSTRUMENT_TYPE = PidinstFields.INSTRUMENT_TYPE;
+  private static final String FIELD_COMMISSIONED = PidinstFields.COMMISSIONED;
+  private static final String FIELD_DECOMMISSIONED = PidinstFields.DECOMMISSIONED;
+  private static final String FIELD_MEASURED_QUANTITY = PidinstFields.MEASURED_QUANTITY;
+  private static final String FIELD_ALTERNATE_IDENTIFIER = PidinstFields.ALTERNATE_IDENTIFIER;
+  private static final String FIELD_MEASUREMENT_TECHNIQUE = PidinstFields.MEASUREMENT_TECHNIQUE;
+  private static final String FIELD_CALIBRATION = PidinstFields.CALIBRATION;
 
   // PIDINST controlled values ("DeCommissioned" deliberately differs from the field name).
   private static final String DATE_TYPE_COMMISSIONED = "Commissioned";
