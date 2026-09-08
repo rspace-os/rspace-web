@@ -18,6 +18,7 @@ import com.researchspace.archive.ArchiveResult;
 import com.researchspace.archive.model.ArchiveExportConfig;
 import com.researchspace.core.util.ResponseUtil;
 import com.researchspace.core.util.SecureStringUtils;
+import com.researchspace.core.util.UnsupportedFileExtensionException;
 import com.researchspace.core.util.progress.ProgressMonitor;
 import com.researchspace.export.pdf.ExportToFileConfig;
 import com.researchspace.model.Group;
@@ -369,6 +370,47 @@ public class ExportControllerTest {
     exportController.importArchive(OKfile, session, ra, principal);
     assertTrue(
         ra.getFlashAttributes().keySet().contains(ExportController.IMPORT_FORM_ERROR_ATTR_NAME));
+    ra.getFlashAttributes().clear();
+  }
+
+  @Test
+  public void handleRejectedUploadFilenameShowsLocalizedBadFormatMessage() throws Exception {
+    byte[] ANY_BYTES = new byte[] {0, 1, 2};
+    MultipartFile OKfile = createOKMultipartFile(ANY_BYTES);
+    RedirectAttributes ra = new RedirectAttributesModelMap();
+    when(principal.getName()).thenReturn("user1a");
+    when(exImportMgr.importArchive(
+            Mockito.eq(OKfile),
+            Mockito.eq("user1a"),
+            Mockito.any(ArchivalImportConfig.class),
+            Mockito.any(ProgressMonitor.class),
+            Mockito.any(ImportStrategy.class)))
+        .thenThrow(
+            new UnsupportedFileExtensionException("Unsupported file extension for upload: <none>"));
+    exportController.importArchive(OKfile, session, ra, principal);
+    assertEquals(
+        messages.getMessage("importExport.import.badFormat.unsupportedFileType"),
+        ra.getFlashAttributes().get(ExportController.IMPORT_FORM_ERROR_ATTR_NAME));
+    ra.getFlashAttributes().clear();
+  }
+
+  @Test
+  public void handleUnrelatedIllegalArgumentExceptionShowsGenericFailureMessage() throws Exception {
+    byte[] ANY_BYTES = new byte[] {0, 1, 2};
+    MultipartFile OKfile = createOKMultipartFile(ANY_BYTES);
+    RedirectAttributes ra = new RedirectAttributesModelMap();
+    when(principal.getName()).thenReturn("user1a");
+    when(exImportMgr.importArchive(
+            Mockito.eq(OKfile),
+            Mockito.eq("user1a"),
+            Mockito.any(ArchivalImportConfig.class),
+            Mockito.any(ProgressMonitor.class),
+            Mockito.any(ImportStrategy.class)))
+        .thenThrow(new IllegalArgumentException("some pipeline validation failure"));
+    exportController.importArchive(OKfile, session, ra, principal);
+    assertEquals(
+        "There was an error importing the archive: some pipeline validation failure",
+        ra.getFlashAttributes().get(ExportController.IMPORT_FORM_ERROR_ATTR_NAME));
     ra.getFlashAttributes().clear();
   }
 
