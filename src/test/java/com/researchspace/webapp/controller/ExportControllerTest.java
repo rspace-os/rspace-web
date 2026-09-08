@@ -389,7 +389,7 @@ public class ExportControllerTest {
             new UnsupportedFileExtensionException("Unsupported file extension for upload: <none>"));
     exportController.importArchive(OKfile, session, ra, principal);
     assertEquals(
-        "Please supply an RSpace archive file in zip or .eln format",
+        messages.getMessage("importExport.import.badFormat.unsupportedFileType"),
         ra.getFlashAttributes().get(ExportController.IMPORT_FORM_ERROR_ATTR_NAME));
     ra.getFlashAttributes().clear();
   }
