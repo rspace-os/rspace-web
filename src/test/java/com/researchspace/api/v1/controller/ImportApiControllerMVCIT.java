@@ -70,32 +70,6 @@ public class ImportApiControllerMVCIT extends API_MVC_TestBase {
     assertEquals(totalFolderCount + 1, getCountOfEntityTable("Folder").intValue());
   }
 
-  @Test
-  public void testEvernoteImport() throws Exception {
-    User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createNewApiKeyForUser(anyUser);
-    MockMultipartFile mf =
-        new MockMultipartFile(
-            "file",
-            "EvernoteDump.enex",
-            "text/xml",
-            getTestResourceFileStream("EvernoteDump.enex"));
-    Folder imgTarget = createImageTarget(anyUser);
-
-    // this will create an API inbox folder
-    MvcResult result =
-        mockMvc
-            .perform(
-                multipart(createUrl(API_VERSION.ONE, "/import/evernote"))
-                    .file(mf)
-                    .param("imageFolderId", imgTarget.getId() + "")
-                    .header("apiKey", apiKey))
-            .andReturn();
-    assertEquals(HttpStatus.CREATED.value(), result.getResponse().getStatus());
-    final int EXPECTED_IMAGE_COUNT = 2;
-    assertEquals(EXPECTED_IMAGE_COUNT, getRecordCountInFolderForUser(imgTarget.getId()));
-  }
-
   private Folder createImageTarget(User anyUser) {
     Folder imageGallery =
         recordMgr.getGalleryMediaFolderForUser(MediaUtils.IMAGES_MEDIA_FLDER_NAME, anyUser);

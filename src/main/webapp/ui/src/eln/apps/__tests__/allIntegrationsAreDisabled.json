@@ -237,14 +237,6 @@
       "enabled": false,
       "oauthConnected": false,
       "options": {}
-    },
-    "EVERNOTE": {
-      "name": "EVERNOTE",
-      "displayName": "Evernote",
-      "available": true,
-      "enabled": false,
-      "oauthConnected": false,
-      "options": {}
     }
   },
   "error": null,

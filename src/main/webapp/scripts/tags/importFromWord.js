@@ -12,7 +12,7 @@ function initWordChooserDlg() {
         width: 400,
         open : function() {
             if (!isNotebook) {
-                _toggleWordFolderChooser($(this).data('config').listNotebooks);
+                _toggleWordFolderChooser();
             }
             $(this).find('.importfileType').text($(this).data('config').fileType);
         },
@@ -44,13 +44,9 @@ function _isNotebook() {
     return typeof notebookId !== 'undefined';
 }
 
-function _toggleWordFolderChooser(listNotebooks) {
+function _toggleWordFolderChooser() {
     if (_isNotebook()) {
         return;
-    }
-    //RSPAC-1761: evernote import generates folder, can't choose notebook
-    if(!listNotebooks) {
-        setFolderChooserDirListingParams('-wordimport', "showNotebooks=false");
     }
     $('#folderChooser-wordimport').show();
 

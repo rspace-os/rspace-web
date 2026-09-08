@@ -664,7 +664,6 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
       case FIGSHARE_APP_NAME:
       case OWNCLOUD_APP_NAME:
       case NEXTCLOUD_APP_NAME:
-      case EVERNOTE_APP_NAME:
       case MSTEAMS_APP_NAME:
       case ONBOARDING_APP_NAME:
       case DRYAD_APP_NAME:
