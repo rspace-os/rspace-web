@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -13,6 +14,8 @@ import com.researchspace.model.audit.AuditedEntity;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.field.TextField;
 import com.researchspace.model.field.TextFieldForm;
+import com.researchspace.model.permissions.IPermissionUtils;
+import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.StructuredDocument;
@@ -22,8 +25,10 @@ import com.researchspace.service.FieldManager;
 import com.researchspace.service.archive.export.StoichiometryReader;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -36,10 +41,18 @@ public class StoichiometryImportRevisionFixupManagerTest {
 
   @Mock private AuditManager auditManager;
   @Mock private FieldManager fieldManager;
+  @Mock private IPermissionUtils permissionUtils;
   @Mock private User user;
   @Mock private ImportArchiveReport report;
 
   @InjectMocks private StoichiometryImportRevisionFixupManagerImpl testee;
+
+  @BeforeEach
+  void permitEverythingByDefault() {
+    lenient()
+        .when(permissionUtils.isRecordAccessPermitted(any(), any(), eq(PermissionType.READ)))
+        .thenReturn(true);
+  }
 
   private StructuredDocument mockStructuredDocument(long id) {
     StructuredDocument doc = Mockito.mock(StructuredDocument.class);
@@ -86,6 +99,42 @@ public class StoichiometryImportRevisionFixupManagerTest {
     Set<BaseRecord> records = new HashSet<>();
     records.add(doc);
     when(report.getImportedRecords()).thenReturn(records);
+  }
+
+  @Test
+  void skipsUnreadableRecordsWithoutCallingTheTransactionalFieldManager() {
+    // RSDEV-1329: an unreadable record must be filtered out BEFORE the FieldManager call.
+    // Discovering the refusal by catching AuthorizationException out of the FieldManager
+    // proxy does not give per-record recovery: FieldManagerImpl is advised by managerTx
+    // (REQUIRED), so it participates in this method's transaction and its RuntimeException
+    // marks that transaction rollback-only. Swallowing it just defers the failure to an
+    // UnexpectedRollbackException at commit, aborting the whole import anyway.
+    StructuredDocument refused = mockStructuredDocument(100L);
+    StructuredDocument readable = mockStructuredDocument(101L);
+    Set<BaseRecord> records = new LinkedHashSet<>();
+    records.add(refused);
+    records.add(readable);
+    when(report.getImportedRecords()).thenReturn(records);
+    when(permissionUtils.isRecordAccessPermitted(user, refused, PermissionType.READ))
+        .thenReturn(false);
+    when(fieldManager.getFieldsByRecordId(101L, user)).thenReturn(List.of());
+
+    testee.fixupStoichiometryRevisions(report, user);
+
+    verify(fieldManager, never()).getFieldsByRecordId(eq(100L), any(User.class));
+    verify(fieldManager).getFieldsByRecordId(101L, user);
+  }
+
+  @Test
+  void operationalFailurePropagatesRatherThanBeingSwallowed() {
+    // only an authorization refusal gets per-record recovery; a database or programming
+    // error must abort the fixup loudly, not let the import report success with stale
+    // stoichiometry revisions
+    setupRecordInReport();
+    when(fieldManager.getFieldsByRecordId(100L, user)).thenThrow(new RuntimeException("db gone"));
+
+    org.junit.jupiter.api.Assertions.assertThrows(
+        RuntimeException.class, () -> testee.fixupStoichiometryRevisions(report, user));
   }
 
   @Test

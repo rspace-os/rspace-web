@@ -6,12 +6,17 @@
   <div class="linkedRecordsForAttachmentsDiv">
  <!--{{^isEmpty}} -->
 <spring:message code="inventory:fields.link.gallerySections.referencedBy"/>
+ <!--{{#hasReadable}} -->
 <table class="linkedRecordsForAttachmentsTable" width="100%">
             <tr class="linkedRecordRow"><th><spring:message code="recordInfoPanel.linkedRecords.idHeader"/></th><th><spring:message code="recordInfoPanel.linkedRecords.nameHeader"/></th></tr>
             <!--{{#items}} -->
             <tr><td><a href="/globalId/{{oid.idString}}">{{oid.idString}}</a></td><td>{{name}}</td></tr>
            <!--  {{/items}}   -->
   </table>
+ <!--{{/hasReadable}} -->
+            <!--{{#privateByOwner}} -->
+  <div class="linkedRecordPrivateRow">{{text}}</div>
+           <!--  {{/privateByOwner}}   -->
  <!--{{/isEmpty}} -->
  <!--{{#isEmpty}} -->
 <spring:message code="inventory:fields.link.gallerySections.noReferences"/>
@@ -50,6 +55,10 @@
 
   .linkedRecordsForAttachmentsTable td,
   .linkedRecordsForAttachmentsTable th {
+    padding: 0px 5px;
+  }
+
+  .linkedRecordPrivateRow {
     padding: 0px 5px;
   }
 

@@ -4,6 +4,8 @@ import com.researchspace.model.User;
 import com.researchspace.model.audit.AuditedEntity;
 import com.researchspace.model.dtos.chemistry.StoichiometryDTO;
 import com.researchspace.model.field.Field;
+import com.researchspace.model.permissions.IPermissionUtils;
+import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.stoichiometry.Stoichiometry;
@@ -28,6 +30,7 @@ public class StoichiometryImportRevisionFixupManagerImpl
 
   @Autowired private AuditManager auditManager;
   @Autowired private FieldManager fieldManager;
+  @Autowired private IPermissionUtils permissionUtils;
 
   private final StoichiometryReader reader = new StoichiometryReader();
 
@@ -38,6 +41,20 @@ public class StoichiometryImportRevisionFixupManagerImpl
     }
     for (BaseRecord record : report.getImportedRecords()) {
       if (!(record instanceof StructuredDocument)) {
+        continue;
+      }
+      // RSDEV-1329: getFieldsByRecordId asserts READ, so a record the importer cannot read
+      // must be filtered out HERE rather than by catching the refusal. FieldManagerImpl is
+      // advised by managerTx with the default REQUIRED propagation, so it participates in
+      // this method's transaction; letting its AuthorizationException escape the proxy marks
+      // that transaction rollback-only, and catching it merely defers the abort to an
+      // UnexpectedRollbackException at commit. A non-throwing check keeps the refusal from
+      // ever touching the transaction, so the remaining records really do get fixed up.
+      if (!permissionUtils.isRecordAccessPermitted(user, record, PermissionType.READ)) {
+        log.warn(
+            "Skipping stoichiometry revision fixup for record id={}: {} lacks READ permission",
+            record.getId(),
+            user.getUsername());
         continue;
       }
       fixupFieldsForRecord(record.getId(), user);

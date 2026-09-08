@@ -8,6 +8,7 @@ import { cleanup, render, screen, waitFor, within } from "@testing-library/react
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
 import fc from "fast-check";
+import { HttpResponse, http } from "msw";
 import { MemoryRouter } from "react-router";
 import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
@@ -564,11 +565,11 @@ describe("Gallery", () => {
       mockLiveItem();
       mockVersionHistory();
       mockListingWithItem();
-      mockAxios.onGet(/\/gallery\/ajax\/getLinkedDocuments\//).reply(200, {
-        data: [],
-        error: null,
-        success: true,
-      });
+      server.use(
+        http.get("/gallery/ajax/getLinkedDocuments/:id", () =>
+          HttpResponse.json({ data: [], error: null, success: true }),
+        ),
+      );
 
       render(<GalleryStory urlSuffix={`/item/${PINNED_ITEM_ID}/1`} />);
 
@@ -652,11 +653,11 @@ describe("Gallery", () => {
       mockLiveItem();
       mockVersionHistory();
       mockListingWithItem();
-      mockAxios.onGet(/\/gallery\/ajax\/getLinkedDocuments\//).reply(200, {
-        data: [],
-        error: null,
-        success: true,
-      });
+      server.use(
+        http.get("/gallery/ajax/getLinkedDocuments/:id", () =>
+          HttpResponse.json({ data: [], error: null, success: true }),
+        ),
+      );
 
       render(<GalleryStory urlSuffix={`/item/${PINNED_ITEM_ID}/1`} />);
 
@@ -744,12 +745,11 @@ describe("Gallery", () => {
         success: true,
         errorMsg: null,
       });
-      mockAxios.onGet(/\/gallery\/ajax\/getLinkedDocuments\//).reply(200, {
-        data: [],
-        error: null,
-        success: true,
-        errorMsg: null,
-      });
+      server.use(
+        http.get("/gallery/ajax/getLinkedDocuments/:id", () =>
+          HttpResponse.json({ data: [], error: null, success: true }),
+        ),
+      );
       mockAxios.onGet("/api/v1/userDetails/whoami").reply(200, {
         id: 1,
         username: "testuser",

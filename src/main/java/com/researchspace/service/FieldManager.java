@@ -27,7 +27,31 @@ public interface FieldManager {
 
   void delete(Long field, User user);
 
+  /**
+   * Gets the fields of a structured document.
+   *
+   * @param id the record id
+   * @param user the subject; must have READ permission on the record
+   * @return the record's fields
+   * @throws org.apache.shiro.authz.AuthorizationException if user is null or the anonymous
+   *     published-view guest, the record does not exist, or the user lacks READ permission on it
+   *     (RSDEV-1329)
+   */
   List<Field> getFieldsByRecordId(long id, User user);
+
+  /**
+   * Gets the fields of a structured document for reading its autosaved (draft) content.
+   *
+   * <p>Requires WRITE rather than READ: a published record grants READ to every user, but the
+   * unsaved editing buffer belongs to whoever is editing and is never published (RSDEV-1329).
+   *
+   * @param id the record id
+   * @param user the subject; must have WRITE permission on the record
+   * @return the record's fields, from which the caller derives the temporary (draft) fields
+   * @throws org.apache.shiro.authz.AuthorizationException if user is null or the anonymous guest,
+   *     the record does not exist, or the user lacks WRITE permission on it (RSDEV-1329)
+   */
+  List<Field> getAutoSavedFieldsByRecordId(long id, User user);
 
   List<String> getFieldNamesForRecord(Long recordId);
 

@@ -1948,7 +1948,9 @@ export default interface Resources {
       },
       "heading": "Linked Documents",
       "loadFailed": "Error loading linked documents.",
-      "noRows": "No Linked Documents"
+      "noRows": "No Linked Documents",
+      "privateDocs": "{count, plural, one {# private doc belonging to {ownerFullName}} other {# private docs belonging to {ownerFullName}}}",
+      "unknownOwner": "an unknown user"
     },
     "listing": {
       "alerts": {
@@ -5414,12 +5416,15 @@ export default interface Resources {
           "grantGlobalPiRole": "Unauthorized attempt by {0} to grant the global PI role",
           "insertComment": "Unauthorized attempt by {0} to insert a comment",
           "listAllUsers": "Unauthorized attempt by {0} to list all users",
+          "listLinkedDocuments": "Unauthorized attempt by {0} to list documents linked to media file [{1}]",
           "openDeletedFolder": "Unauthorized attempt by {0} to open a deleted folder",
           "openNotebook": "Unauthorized attempt by {0} to open notebook [{1}]",
           "openUnauthorisedFolder": "Unauthorized attempt by {0} to open an unauthorised folder",
           "polite": "Sorry, you don''t have permission to {0}",
           "promoteUserToPi": "Unauthorized attempt by {0} to promote a user to PI",
           "readCommunication": "Unauthorized attempt by {0} to view a communication",
+          "readDraftFields": "Unauthorized attempt by {0} to read draft fields of record [{1}]",
+          "readFields": "Unauthorized attempt by {0} to read fields of record [{1}]",
           "readMediaFile": "Unauthorized attempt by {0} to read a media file",
           "readRecord": "Unauthorized attempt by {0} to read a record",
           "removePiFromGroup": "Unauthorized attempt by {0} to remove a PI from a group. Only a PI or an administrator can remove another PI from a group.",
@@ -5436,7 +5441,8 @@ export default interface Resources {
           "sendExternalMessage": "Unauthorized attempt by {0} to send an external message",
           "shareFolder": "Unauthorized attempt by {0} to share folder {1}",
           "swapGroupPis": "Unauthorized attempt by {0} to swap group PIs",
-          "unlockUserAccount": "Unauthorized attempt by {0} to unlock a user account"
+          "unlockUserAccount": "Unauthorized attempt by {0} to unlock a user account",
+          "viewComments": "Unauthorized attempt by {0} to view comments"
         },
         "formIconUpdate": "Unauthorized attempt to update form icon",
         "maintenanceSysadminOnly": "Only sysadmin can manage scheduled maintenances",

@@ -399,7 +399,7 @@ export function galleryPickerSupportHandlers(): RequestHandler[] {
     http.get("/deploymentproperties/ajax/property", () => HttpResponse.json(false)),
     http.get("/collaboraOnline/supportedExts", () => HttpResponse.json([])),
     http.get("/officeOnline/supportedExts", () => HttpResponse.json([])),
-    http.get("/gallery/ajax/getLinkedDocuments/:id", () => HttpResponse.json({ data: { results: [], totalHits: 0 } })),
+    http.get("/gallery/ajax/getLinkedDocuments/:id", () => HttpResponse.json({ data: [], error: null, success: true })),
     http.get("/gallery/getChemThumbnail/:id/:revision", () => HttpResponse.json(null)),
   ];
 }

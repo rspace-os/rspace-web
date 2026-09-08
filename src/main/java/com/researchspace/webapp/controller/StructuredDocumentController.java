@@ -96,10 +96,12 @@ import org.springframework.web.servlet.ModelAndView;
 /** Main controller for loading, displaying and handling edits for StructuredDocuments */
 @Controller
 @BrowserCacheAdvice(cacheTime = BrowserCacheAdvice.NEVER)
-@RequestMapping({
-  "/workspace/editor/structuredDocument",
-  "/public/publicView/workspace/editor/structuredDocument"
-})
+// RSDEV-1329: this editor controller must never be dual-mapped under the anon /public/** prefix.
+// The one endpoint the published view needs (comment viewing) is served by
+// PublicStructuredDocumentCommentsController. Other controllers still dual-map under /public/**
+// (Gallery, FileDownload, Image, Journal, RSChem, SVGMath, Thumbnail, UserProfile); narrowing
+// those is tracked separately.
+@RequestMapping("/workspace/editor/structuredDocument")
 public class StructuredDocumentController extends BaseController {
 
   /** View name and redirect URLs */
@@ -689,8 +691,20 @@ public class StructuredDocumentController extends BaseController {
    */
   @GetMapping("/getAutoSavedFields")
   @ResponseBody
-  public List<Field> getAutoSavedFields(@RequestParam("recordId") long recordId) {
-    List<Field> fieldList = fieldManager.getFieldsByRecordId(recordId, null);
+  public List<Field> getAutoSavedFields(
+      @RequestParam("recordId") long recordId, Principal principal) {
+    // RSDEV-1329: fail closed rather than dereferencing a null principal into a 500 with a
+    // non-localized message. Unreachable while this controller is mapped only under the
+    // authenticated /workspace/** prefix, so this guards the mapping changing, not today's
+    // filter chain. Same shape as PublicStructuredDocumentCommentsController.
+    if (principal == null) {
+      throw new AuthorizationException(
+          getText(
+              "errors.authorization.failure.readDraftFields",
+              new Object[] {RecordGroupSharing.ANONYMOUS_USER, recordId}));
+    }
+    User user = getUserByUsername(principal.getName());
+    List<Field> fieldList = fieldManager.getAutoSavedFieldsByRecordId(recordId, user);
     List<Field> tempFieldList = Field.getNewListOfTempFields(fieldList, false);
     for (Field field : tempFieldList) {
       disconnectField(field);
