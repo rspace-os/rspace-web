@@ -812,6 +812,17 @@ export default interface Resources {
       "title": "All Bookable Items",
       "toolbar": "All Bookable Items controls"
     },
+    "archived": {
+      "description": "This booking configuration is archived. New bookings, edits, access changes, and calendar links are unavailable until it is restored.",
+      "error": "This archived booking configuration is not available.",
+      "futureBookings": "Future bookings",
+      "loading": "Loading archived booking configuration.",
+      "noFutureBookings": "There are no future bookings to manage.",
+      "subscriptionInactive": "The item calendar subscription is inactive.",
+      "unarchive": "Unarchive",
+      "unarchiveError": "The configuration could not be unarchived. Refresh and try again.",
+      "unknownItem": "Archived booking configuration"
+    },
     "availabilityBar": {
       "current": {
         "available": "Available",
@@ -839,9 +850,9 @@ export default interface Resources {
           "openingHours": "Outside opening hours"
         },
         "states": {
-          "blockout": "Blocked out",
+          "blockout": "Outside opening hours",
           "booking": "Booked",
-          "overlap": "Booked and blocked out"
+          "overlap": "Booked and outside opening hours"
         },
         "trigger": "{itemName}, {state}, {period}, {count, plural, one {# event} other {# events}}"
       },
@@ -1111,7 +1122,7 @@ export default interface Resources {
       },
       "plural": "Bookable Items",
       "singular": "Bookable item",
-      "staleEdit": "This configuration changed while you were editing. Your draft is preserved. Copy your changes, then refresh the page before editing again.",
+      "staleEdit": "This configuration changed while you were editing. Your draft is preserved; review the server-changed fields below before saving again.",
       "states": {
         "active": "Active"
       },
@@ -1376,6 +1387,79 @@ export default interface Resources {
         "out": "Zoom out"
       }
     },
+    "detailPrototype": {
+      "acceptBookings": "Accept new bookings",
+      "acceptBookingsHint": "Turning this off keeps existing bookings and pauses new ones.",
+      "acceptingBookings": "Accepting bookings",
+      "accessHint": "Who can use and manage this bookable item.",
+      "accessSummary": "Imaging group can book · Grace Hopper owns this configuration",
+      "activity": "Activity",
+      "activityCount": "Showing {shown} of {total} activities",
+      "activityCreated": "Created",
+      "activityCreatedBy": "30 Aug 2026, 09:14 · Grace Hopper",
+      "activityDetail": "Sample change: scheduling details updated after a calibration review. Expand entries to read full actor names without truncation.",
+      "activityPage": "Page {page} of {total}",
+      "activitySummary": "Updated 31 Aug 2026 by Grace Hopper",
+      "activityUpdated": "Last updated",
+      "activityUpdatedBy": "31 Aug 2026, 16:40 · Grace Hopper",
+      "bufferAfterLabel": "Buffer after (minutes)",
+      "bufferBeforeLabel": "Buffer before (minutes)",
+      "compareLayouts": "Compare detail layouts",
+      "configurationBreadcrumb": "Booking / Configuration details",
+      "configurationInvalid": "Check opening hours, duration increments and non-negative buffer values.",
+      "dailyHours": "{start}–{end} daily",
+      "discard": "Discard changes",
+      "discarded": "Draft discarded. Saved details restored.",
+      "doubleBookingHint": "Allow reservations to overlap.",
+      "duration": "Duration",
+      "durationHint": "Use 0 for no limit.",
+      "editEvent": "Edit booking",
+      "editing": "Editing",
+      "eventBreadcrumb": "Booking / Event details",
+      "eventInvalid": "Choose a unique local time, with end after start, within the displayed booking rules.",
+      "eventPeriod": "{date} · {time}",
+      "eventTimeHint": "Times in {timezone}. Use 15-minute increments between 08:00 and 18:00, up to 4 hours.",
+      "footer": "Times shown in {timezone}. Full timestamps are under Activity.",
+      "invalidPeriod": "Choose a valid booking period",
+      "layouts": {
+        "ledger": "Ledger",
+        "overview": "Overview",
+        "reading": "Reading"
+      },
+      "nextActivities": "Next activities",
+      "nextLayout": "Next layout",
+      "noActivities": "No matching activities. Try another search.",
+      "noChanges": "No changes yet",
+      "notice": "Prototype · sample data · edits reset on reload",
+      "outlineHint": "Expand a section to see its details.",
+      "paused": "New bookings paused",
+      "peopleItem": "People & location",
+      "peopleSummary": "Ada Lovelace · Imaging suite",
+      "previousActivities": "Previous activities",
+      "previousLayout": "Previous layout",
+      "reservedTime": "Reserved time",
+      "rulesSummary": "{start}–{end} daily · {increment}-minute increments",
+      "saved": "Changes saved in this prototype.",
+      "scenario": "Stress scenario",
+      "scenarioState": "{nameLength}-character name · {activities} activities · {access} access entries",
+      "scenarios": {
+        "combined": "Combined stress",
+        "dst": "DST transition",
+        "longNames": "Very long text",
+        "manyActivities": "240 activities / 40 access entries",
+        "overnight": "Overnight booking",
+        "standard": "Standard",
+        "veryLong": "Very long booking"
+      },
+      "schedulePurpose": "Schedule & purpose",
+      "searchActivity": "Search activity by person, action or number",
+      "sections": "Detail sections",
+      "showMoreActivity": "Show more activities",
+      "timeSummary": "{duration} · {timezone}",
+      "unsaved": "Unsaved changes",
+      "whoCanBook": "Who can book",
+      "yourAccess": "You are an Owner. You can edit rules and manage access."
+    },
     "myBookings": {
       "actions": {
         "edit": "Edit",
@@ -1461,6 +1545,13 @@ export default interface Resources {
       },
       "title": "Booking preferences"
     },
+    "sample": {
+      "check": "Sample check {number}.",
+      "maintenance": {
+        "notes": "Laser alignment and safety inspection.",
+        "title": "Scheduled maintenance"
+      }
+    },
     "settings": {
       "actions": {
         "save": "Save settings"
@@ -1505,7 +1596,7 @@ export default interface Resources {
         "maximumDuration": "Use 0 or a duration divisible by the selected time increment.",
         "openingHours": "Use an opening start before the end, or select Open all day.",
         "save": "RSpace could not save the booking settings. Try again.",
-        "stale": "These settings changed after you opened this page. Copy your changes, then refresh the page before editing again."
+        "stale": "These settings changed after you opened this page. Reload the page and try again."
       },
       "fields": {
         "allowDoubleBooking": "Allow concurrent bookings",
@@ -1530,6 +1621,7 @@ export default interface Resources {
       "approvalQueue": "Approval Queue",
       "bookableItems": "Bookable Items",
       "calendar": "Calendar",
+      "dashboard": "Dashboard",
       "label": "Booking",
       "myBookings": "My Bookings",
       "preferences": "Preferences",
