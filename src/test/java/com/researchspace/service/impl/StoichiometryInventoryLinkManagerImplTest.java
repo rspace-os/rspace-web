@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.calls;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
@@ -35,6 +36,7 @@ import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.StoichiometryMoleculeManager;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
+import com.researchspace.service.inventory.SampleApiManager;
 import com.researchspace.service.inventory.SubSampleApiManager;
 import jakarta.ws.rs.NotFoundException;
 import java.math.BigDecimal;
@@ -55,6 +57,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
   @Mock private IPermissionUtils elnPerms;
   @Mock private InventoryPermissionUtils invPerms;
   @Mock private SubSampleApiManager subSampleMgr;
+  @Mock private SampleApiManager sampleApiMgr;
 
   private StoichiometryInventoryLinkManagerImpl manager;
 
@@ -73,6 +76,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
             elnPerms,
             invPerms,
             subSampleMgr,
+            sampleApiMgr,
             new MessageSourceUtils(new JsonMessageSource()));
     user = new User();
     user.setUsername("u1");
@@ -83,6 +87,9 @@ public class StoichiometryInventoryLinkManagerImplTest {
     invSample.setId(200L);
     invSubSample = new SubSample();
     invSubSample.setId(300L);
+    // the deduction locks the parent sample's sibling set before the subsample's own row, so
+    // every subsample a deduction touches needs a parent to resolve
+    invSubSample.setSample(invSample);
     owningRecord = mock(StructuredDocument.class);
   }
 
@@ -330,6 +337,71 @@ public class StoichiometryInventoryLinkManagerImplTest {
   }
 
   @Test
+  public void locksTheParentSampleSetBeforeTheOriginRow() {
+    // The canonical order every stock writer uses is sibling set first, row second. Taking the row
+    // first (as the over-use check used to) deadlocks two deductions on two siblings of one
+    // sample: each holds its own row while asking registerApiSubSampleUsage for the set that
+    // contains the other's.
+    StoichiometryInventoryLink original = new StoichiometryInventoryLink();
+    original.setId(321L);
+    long stoichiometryId = 55L;
+    molecule.getStoichiometry().setId(stoichiometryId);
+    molecule.setActualAmount(1.0);
+    original.setStoichiometryMolecule(molecule);
+    original.setInventoryRecord(invSubSample);
+    invSubSample.setQuantity(new QuantityInfo(BigDecimal.valueOf(100), RSUnitDef.GRAM.getId()));
+
+    when(linkDao.getSafeNull(321L)).thenReturn(java.util.Optional.of(original));
+    when(moleculeManager.getDocContainingMolecule(molecule)).thenReturn(owningRecord);
+    when(elnPerms.isPermitted(owningRecord, PermissionType.WRITE, user)).thenReturn(true);
+    when(subSampleMgr.lockSubSampleForEdit(invSubSample.getId(), user)).thenReturn(invSubSample);
+    when(subSampleMgr.getQuantityForUpdate(invSubSample.getId()))
+        .thenReturn(invSubSample.getQuantity());
+
+    manager.deductStock(stoichiometryId, List.of(321L), user);
+
+    InOrder inOrder = inOrder(sampleApiMgr, subSampleMgr);
+    // calls(1): the set is deliberately asked for twice (the up-front hoist and the per-link
+    // re-ask); what matters is that the first ask precedes the row lock
+    inOrder.verify(sampleApiMgr, calls(1)).recalculateTotalFromLockedRows(invSample.getId());
+    inOrder.verify(subSampleMgr).lockSubSampleForEdit(invSubSample.getId(), user);
+  }
+
+  @Test
+  public void locksParentSampleSetsAscendingBeforeAnyRowLock() {
+    // A deduction spanning several samples must acquire every parent's sibling set up front,
+    // ascending by sample id, before its first row lock: acquiring each set only as the loop
+    // reaches its link would order the sets by link position, which can invert against another
+    // writer's ascending order and deadlock. Submitted highest-sample-first to prove the sort.
+    StoichiometryMolecule mol = new StoichiometryMolecule();
+    mol.setStoichiometry(new Stoichiometry());
+    long stoichiometryId = 55L;
+    mol.getStoichiometry().setId(stoichiometryId);
+    mol.setActualAmount(1.0);
+    // subsample 900 under sample 9000, subsample 800 under sample 8000
+    StoichiometryInventoryLink higher = createMoleculeAndLink(500L, 900L, mol);
+    StoichiometryInventoryLink lower = createMoleculeAndLink(501L, 800L, mol);
+
+    when(linkDao.getSafeNull(500L)).thenReturn(java.util.Optional.of(higher));
+    when(linkDao.getSafeNull(501L)).thenReturn(java.util.Optional.of(lower));
+    when(moleculeManager.getDocContainingMolecule(mol)).thenReturn(owningRecord);
+    when(elnPerms.isPermitted(owningRecord, PermissionType.WRITE, user)).thenReturn(true);
+    when(subSampleMgr.lockSubSampleForEdit(900L, user)).thenReturn(stocked(900L));
+    when(subSampleMgr.lockSubSampleForEdit(800L, user)).thenReturn(stocked(800L));
+    when(subSampleMgr.getQuantityForUpdate(900L)).thenReturn(stocked(900L).getQuantity());
+    when(subSampleMgr.getQuantityForUpdate(800L)).thenReturn(stocked(800L).getQuantity());
+
+    manager.deductStock(stoichiometryId, List.of(500L, 501L), user);
+
+    InOrder inOrder = inOrder(sampleApiMgr, subSampleMgr);
+    // calls(1): each set is re-asked per link later; the assertion is that BOTH sets are taken,
+    // ascending, before the first row lock
+    inOrder.verify(sampleApiMgr, calls(1)).recalculateTotalFromLockedRows(8000L);
+    inOrder.verify(sampleApiMgr, calls(1)).recalculateTotalFromLockedRows(9000L);
+    inOrder.verify(subSampleMgr).lockSubSampleForEdit(800L, user);
+  }
+
+  @Test
   public void aLockFailureAbortsTheWholeDeductionRatherThanBecomingOneFailedRow() {
     // The row locks this method now takes can fail (deadlock loser, lock-wait timeout). Hibernate
     // leaves the session unusable and the transaction rollback-only after one, so catching it per
@@ -368,6 +440,10 @@ public class StoichiometryInventoryLinkManagerImplTest {
       Long linkId, Long subSampleId, StoichiometryMolecule mol) {
     SubSample sub = new SubSample();
     sub.setId(subSampleId);
+    // parent sample id derived from the subsample id (800 -> 8000) so ordering tests can name it
+    Sample parent = new Sample();
+    parent.setId(subSampleId * 10);
+    sub.setSample(parent);
     StoichiometryInventoryLink link = new StoichiometryInventoryLink();
     link.setId(linkId);
     link.setStoichiometryMolecule(mol);
