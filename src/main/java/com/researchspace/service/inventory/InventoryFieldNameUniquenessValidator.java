@@ -136,7 +136,9 @@ public final class InventoryFieldNameUniquenessValidator {
     if (extraFields != null) {
       for (int i = 0; i < extraFields.size(); i++) {
         ApiExtraField extraField = extraFields.get(i);
-        if (extraField.isDeleteFieldRequest()) {
+        // A null element is already a bean-validation error at binding; dereferencing it here
+        // would turn that reported 400 into a 500 (Copilot review, PR #1090).
+        if (extraField == null || extraField.isDeleteFieldRequest()) {
           continue;
         }
         rejectIfDuplicate(seen, extraField.getName(), "extraFields[" + i + "].name", errors);

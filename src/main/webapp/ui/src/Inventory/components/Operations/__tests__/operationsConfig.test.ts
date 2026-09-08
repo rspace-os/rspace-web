@@ -142,6 +142,16 @@ describe("usesAmountModes", () => {
     expect(operationAvailability(derive, 2, true).reasonKey).toBe("operations.picker.singleOnly");
   });
 
+  it("disables Pool above the backend's 100-origin cap", () => {
+    // The public endpoint rejects more than 100 origins; without this mirror the wizard let a
+    // 101-subsample selection run the whole flow and only fail at Perform (Copilot review,
+    // PR #1090).
+    expect(operationAvailability(op("pool"), 100, true).enabled).toBe(true);
+    const availability = operationAvailability(op("pool"), 101, true);
+    expect(availability.enabled).toBe(false);
+    expect(availability.reasonKey).toBe("operations.picker.tooManySelected");
+  });
+
   it("disables Pool when the selected subsamples span measurement categories", () => {
     const availability = operationAvailability(op("pool"), 2, false);
     expect(availability.enabled).toBe(false);
