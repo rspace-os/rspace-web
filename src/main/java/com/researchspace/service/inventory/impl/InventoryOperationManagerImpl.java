@@ -6,7 +6,6 @@ import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.model.User;
-import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.units.Quantifiable;
 import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.model.units.QuantityUtils;
@@ -92,18 +91,19 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
    * Violations surface as the same field-scoped 400 (BindException) the structural validator
    * produces, under {@code origins[i]} in request order.
    *
-   * <p>Each origin is read through {@link SubSampleApiManager#lockSubSampleForEdit}, which holds a
-   * row lock until this transaction ends, so a concurrent operation on the same origin waits here
-   * and then sees this one's committed quantity instead of decrementing from a stale read (code
-   * review, finding 1). Origins are locked in ascending id order, the same order they are
-   * decremented in, so overlapping multi-origin operations cannot deadlock.
-   *
-   * <p>Their distinct parent samples are then locked, also ascending, once the origins have passed
-   * (code review, finding 2). Decrementing a subsample rewrites its parent's denormalised total, so
-   * without this lock two operations on sibling subsamples of one sample both read the old total
-   * and one of the two writes is lost. Parents come after origins because every other writer takes
-   * the subsample row first and the sample row second; locking them the other way round would
-   * invert the order against all of them.
+   * <p>Locking, in acquisition order. First, every distinct parent sample's subsample rows are
+   * locked as a set, ascending by sample id, via {@link
+   * SampleApiManager#recalculateTotalFromLockedRows}: the recompute of each parent's denormalised
+   * total must read the sibling rows currently, and taking them any later would deadlock, because
+   * each origin's own row is one of them. Then each origin is locked through {@link
+   * SubSampleApiManager#lockSubSampleForEdit}, ascending by subsample id (a re-ask for a row the
+   * sibling set already holds, plus the permission check and 404), so a concurrent operation on the
+   * same origin waits and then decrements from the committed quantity, not a stale read (code
+   * review, finding 1). Each check below reads the origin's quantity as a locked scalar ({@link
+   * SubSampleApiManager#getQuantityForUpdate}): the locked entity itself holds this transaction's
+   * snapshot, and a check against that would pass on stock a concurrent committer already took.
+   * Finally the parent sample rows themselves are locked, ascending, after all subsample rows,
+   * matching every other writer's subsample-then-sample order (code review, finding 2).
    */
   private void checkOriginLiveState(
       ApiInventoryOperationPost request,
@@ -124,14 +124,25 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
     for (int i = 0; i < request.getOrigins().size(); i++) {
       requestIndex.put(request.getOrigins().get(i), i);
     }
-    QuantityInfo firstOriginQuantity = null;
+    // The FIRST locks of the transaction, before any origin is locked. Each origin's own row is
+    // one of its parent's sibling rows, so asking for the sibling set after the per-origin locks
+    // means two operations on two siblings each hold the row the other wants, and InnoDB kills
+    // one. Taking the whole sibling set up front makes the second operation WAIT here instead.
     Set<Long> parentSampleIds = new TreeSet<>();
     for (ApiInventoryOperationOriginUpdate origin : originsById) {
-      SubSample dbSubSample = subSampleApiMgr.lockSubSampleForEdit(origin.getId(), user);
-      parentSampleIds.add(dbSubSample.getSample().getId());
+      parentSampleIds.add(subSampleApiMgr.getIfExists(origin.getId()).getSample().getId());
+    }
+    parentSampleIds.forEach(sampleApiMgr::recalculateTotalFromLockedRows);
+
+    QuantityInfo firstOriginQuantity = null;
+    for (ApiInventoryOperationOriginUpdate origin : originsById) {
+      subSampleApiMgr.lockSubSampleForEdit(origin.getId(), user);
       errors.pushNestedPath(String.format("origins[%d]", requestIndex.get(origin)));
       try {
-        QuantityInfo currentQuantity = dbSubSample.getQuantity();
+        // A locked scalar, not the locked entity: the entity holds this transaction's snapshot
+        // (locking guarantees serialisation only), and checking against that would pass on stock a
+        // concurrent committer already took.
+        QuantityInfo currentQuantity = subSampleApiMgr.getQuantityForUpdate(origin.getId());
         if (originHoldsNothing(currentQuantity)) {
           errors.rejectValue(
               "id",

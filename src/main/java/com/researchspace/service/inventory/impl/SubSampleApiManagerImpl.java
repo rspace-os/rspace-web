@@ -97,13 +97,18 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
 
   @Override
   public SubSample lockSubSampleForEdit(Long id, User user) {
-    SubSample subSample = subSampleDao.getForUpdate(id);
+    SubSample subSample = subSampleDao.lockRowForUpdate(id);
     if (subSample == null) {
       throw new NotFoundException(
           messages.getMessage("errors.inventory.subsample.notFound", new Object[] {id}));
     }
     invPermissions.assertUserCanEditInventoryRecord(subSample, user);
     return subSample;
+  }
+
+  @Override
+  public QuantityInfo getQuantityForUpdate(Long subSampleId) {
+    return subSampleDao.getQuantityForUpdate(subSampleId);
   }
 
   @Override
@@ -282,18 +287,27 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
       return getPopulatedApiSubSampleFull(dbSubSample, user);
     }
 
+    // Taken as the FIRST lock of the transaction, before the origin's own. The sibling rows have
+    // to be locked before the recompute at the end can read them currently, and acquiring them
+    // afterwards deadlocks: the origin's own row is one of the sibling rows, so two operations on
+    // two siblings each end up holding the row the other wants. Locking the whole sibling set up
+    // front makes the second operation WAIT here instead, which is why both can then succeed.
+    sampleApiMgr.recalculateTotalFromLockedRows(dbSubSample.getSample().getId());
     boolean temporaryLock = lockItemForEdit(dbSubSample, user);
     try {
       // Every stock decrement in the app funnels through here (the operations endpoint,
       // Stoichiometry, List of Materials), so the row lock is taken once here rather than in each
-      // caller. Without it the re-read is a plain get and two decrements racing the same subsample
-      // both subtract from the same stale quantity. Routed through lockSubSampleForEdit rather than
-      // the DAO so a row that vanished between the two reads is the same localised 404 as anywhere
-      // else, instead of a null dereference; the repeat permission check it performs is the same
-      // verdict as the one above.
+      // caller. Without it two decrements racing the same subsample both subtract from the same
+      // stale quantity. Routed through lockSubSampleForEdit rather than the DAO so a row that
+      // vanished between the two reads is the same localised 404 as anywhere else, instead of a
+      // null dereference; the repeat permission check it performs is the same verdict as the one
+      // above.
       dbSubSample = lockSubSampleForEdit(dbSubSample.getId(), user);
 
-      QuantityInfo orgQuantity = dbSubSample.getQuantity();
+      // The entity above holds this transaction's snapshot (the lock serialises, it does not
+      // refresh), so the value the subtraction starts from is read as a scalar under the lock:
+      // what the last committed writer stored.
+      QuantityInfo orgQuantity = subSampleDao.getQuantityForUpdate(dbSubSample.getId());
       QuantityInfo newQuantity = qUtils.sum(Arrays.asList(orgQuantity, usedQuantity.negate()));
 
       // if usage is larger than remaining quantity set remaining to zero, in the stored unit
@@ -312,6 +326,10 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
         increaseVersionOncePerTransaction(dbSubSample);
         registerSubSampleModification(user, dbSubSample);
         dbSubSample = subSampleDao.save(dbSubSample);
+        // setQuantity above recomputed the parent total from the sibling ENTITIES, which this
+        // transaction sees as of its own snapshot and so can be stale. Recompute it from the rows,
+        // read under their locks, which is the value that must survive.
+        sampleApiMgr.recalculateTotalFromLockedRows(dbSubSample.getSample().getId());
       }
 
     } finally {

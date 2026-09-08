@@ -127,55 +127,86 @@ above) without computing it.
   the controller's separate read transaction, whose race let a concurrent
   decrement produce a 201 with a silently clamped origin instead of the
   documented 400.
-- **Origins are read with a row lock inside the operation transaction** (code
-  review, 2026-09-03): `checkOriginLiveState` reads each origin through
-  `SubSampleApiManager.lockSubSampleForEdit` (`SELECT ... FOR UPDATE`), in
-  ascending id order like the decrements, and then their distinct parent samples,
-  also ascending, so two operations on one origin serialise on the database row
-  and the second sees the first's committed quantity. The parents are locked
-  because decrementing a subsample rewrites its parent's denormalised total:
-  without it, two operations on sibling subsamples of one sample both read the
-  old total and one write is lost. They are locked after the origins because
-  every other writer takes the subsample row first and the sample row second,
-  and the total stays denormalised because deriving it on read would touch every
-  sample listing and search projection.
+- **Locking and freshness are separate guarantees** (code review, 2026-09-08,
+  superseding the 2026-09-03/04 lock bullets). `GenericDao.lockRowForUpdate`
+  takes `lock_mode X` on exactly one row of the entity's own table, via a
+  scalar `select id ... for update`, and then returns the entity from an
+  ordinary `session.get`. It deliberately never locks the loaded entity:
+  Hibernate would emit the entity's eager-fetch SELECT (a ~20-table join for
+  a subsample: `Container`, `User`, `FileProperty`, `Barcode`, ...) with
+  `FOR UPDATE` on the end, taking exclusive locks on rows in every joined
+  table (measured: "mysql tables in use 21, locked 20"). Graph-wide locks made
+  every earlier ordering claim here meaningless (the join decided the order)
+  and deadlocked inventory operations against unrelated features such as
+  container moves. `GenericDaoLockScopeIT` pins the narrow scope.
 
-  **Known limit, not yet closed** (code review, 2026-09-04): the parent lock
-  serialises the two writers but may not by itself make the total exact.
-  `SubSample.setQuantity` recomputes it from `getActiveSubSamples()`, a plain
-  non-locking read of the *sibling* rows, and under the REPEATABLE READ this app
-  runs at, the waiter's snapshot was fixed before it queued. It can therefore
-  still recompute from a sibling quantity the other transaction has already
-  changed. Closing it needs the siblings locked or refreshed too, or the total
-  recomputed in SQL. `parallelAliquotsOnSiblingSubSamplesKeepTheParentTotalExact`
-  in `InventoryOperationsApiControllerMVCIT` is the test that settles it and has
-  not been run. Before this the outcome depended on the MariaDB version: with
-  `innodb_snapshot_isolation` (11.6+) the loser failed at commit and was mapped
-  to 409; on 10.11 it applied a stale subtraction. The 409 mapping in
+  The returned entity holds the transaction's snapshot: under REPEATABLE READ
+  the lock serialises writers but does not make entity reads current. Every
+  value that must be computed from the last committed state is therefore read
+  as a SCALAR under the lock, which the persistence context cannot serve or
+  re-stale: origin quantities in `checkOriginLiveState` and
+  `registerApiSubSampleUsage` and the Stoichiometry over-use check
+  (`SubSampleDao.getQuantityForUpdate`), the sibling quantities behind a
+  parent total (`getActiveQuantitiesForUpdate`), and the UI-settings blob in
+  `mergeUiJsonSetting` (`UserDao.getPreferenceValueForUpdate`). An earlier
+  refresh-based design (re-read the row under the lock so the entity is
+  current) was measured failing: a refreshed sibling reverted to its pre-lock
+  value later in the same request, and the refresh discarded a caller's
+  unflushed changes.
+
+  Accepted tradeoff of dropping the refresh: the entity's OTHER columns are
+  snapshot values too, and with no `@Version` and no `@DynamicUpdate` a flush
+  writes all columns, so a locked writer can write a stale unrelated column
+  (a name, a description) back over a concurrent committed edit. This is the
+  same field-level last-write-wins every unlocked write path already has
+  (`InventoryEditLockTracker` does not exclude a user's own concurrent
+  requests, and there is no If-Match anywhere in api/v1); the refresh had
+  been shielding only these three call sites from it, by accident. Fixing it
+  properly is a global optimistic-locking/`@DynamicUpdate` change, which the
+  no-mapping-changes constraint rules out here; it belongs to the separate
+  concurrency ticket alongside the If-Match discussion.
+- **Lock acquisition order in an operation**: first every distinct parent
+  sample's subsample rows as a set, ascending by sample id (the locked scalar
+  read in `SampleApiManager.recalculateTotalFromLockedRows`); then each origin
+  row, ascending by subsample id (a re-ask for a row the sibling set already
+  holds); then the parent sample rows themselves, ascending, matching every
+  other writer's subsample-then-sample order. The sibling set comes first
+  because each origin's own row belongs to it: acquiring the set after the
+  per-origin locks means two operations on two siblings each hold the row the
+  other wants, and InnoDB kills one (measured: 30 deadlocks per run).
+- **The parent total is recomputed from locked rows, not from sibling
+  entities** (code review finding 2, closed 2026-09-08):
+  `SubSample.setQuantity`'s cascade still sums the sibling entities, which a
+  transaction sees as of its own snapshot, so two operations on two siblings
+  of one sample each computed the total from stale stock (reproduced: children
+  held 14, stored total 17). `recalculateTotalFromLockedRows` re-derives the
+  total from `getActiveQuantitiesForUpdate` scalars and assigns it onto the
+  sample so the commit flush writes it over the cascade's value.
+  `parallelAliquotsOnSiblingSubSamplesKeepTheParentTotalExact` in
+  `InventoryOperationsApiControllerMVCIT` settles it (proven red-green on
+  2026-09-08 against the pre-narrowing tree: both requests 201, total exact,
+  0 deadlocks, and failing with the recompute call removed; not yet re-run
+  since the lock was narrowed). The total stays denormalised because deriving it on read
+  would touch every sample listing and search projection. The 409 mapping in
   `ApiControllerAdvice` stays as the fallback for anything the lock does not
-  cover. `InventoryEditLockTracker` is not a substitute: it is process-local and
-  treats a same-user re-lock as an extension.
+  cover. `InventoryEditLockTracker` is not a substitute: it is process-local
+  and treats a same-user re-lock as an extension.
 - **Every stock decrement takes the row lock, not just the operations one**
   (code review, 2026-09-04): Stoichiometry deduction and List of Materials
   usage decrement through the same `registerApiSubSampleUsage`, so the locked
   read lives there and all three callers share it rather than each learning to
-  lock. The operations path locks the same row twice in one transaction; the
-  DAO skips a lock this transaction already holds, because Hibernate upgrades a
-  lock by re-reading the row and comparing versions, which fails on an entity
-  with unflushed changes. Every other locked read REFRESHES the row: asking
-  Hibernate to lock an entity it has already loaded only issues
-  `select id ... for update` and keeps the values read before the lock, so a
-  caller would compute from exactly the stale state the lock exists to prevent.
-  The cost is that a caller must not hold unflushed changes to a row it locks
-  there for the first time. Stoichiometry processes its links ordered by
-  inventory record id so two deductions over the same subsamples cannot each
-  hold what the other waits for; a cross-endpoint multi-row deadlock is still
-  possible in theory, and surfaces as the 409 the Stoichiometry
-  refresh-and-retry UI already handles; a lock failure aborts the whole
-  deduction rather than becoming one failed row, because Hibernate leaves the
-  session unusable afterwards. The whole-value `POST /userform/ajax/preference`
-  path takes no lock, so until every client sends a key, a cached-JS tab writing
-  the whole UI settings blob can still clobber a concurrent keyed merge.
+  lock. The operations path locks the same row twice in one transaction, which
+  is harmless: the lock statement is a scalar query, so a repeat never
+  refreshes or upgrades the entity and a caller's unflushed changes survive.
+  Stoichiometry processes its links ordered by inventory record id so two
+  deductions over the same subsamples cannot each hold what the other waits
+  for; a cross-endpoint multi-row deadlock is still possible in theory, and
+  surfaces as the 409 the Stoichiometry refresh-and-retry UI already handles;
+  a lock failure aborts the whole deduction rather than becoming one failed
+  row, because Hibernate leaves the session unusable afterwards. The
+  whole-value `POST /userform/ajax/preference` path takes no lock, so until
+  every client sends a key, a cached-JS tab writing the whole UI settings blob
+  can still clobber a concurrent keyed merge.
 - **Category and precision rules also apply to the created subsamples** (code
   review, 2026-09-03): the amount taken must be a real amount unit in the
   origin's category; each new subsample quantity must be in the origin's
