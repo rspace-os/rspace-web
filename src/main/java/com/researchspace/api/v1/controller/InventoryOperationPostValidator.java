@@ -57,11 +57,13 @@ public class InventoryOperationPostValidator implements Validator {
   static final int MAX_ORIGINS = 100;
 
   /**
-   * Ceilings on the two other lists this validator walks repeatedly. The DTO's {@code @Size} caps
-   * the subsamples but only records a violation: validation continued through every per-subsample
-   * pass. {@code extraFields} has no DTO cap at all, and {@link #validateDeclaredLinks} scans it
-   * once per origin, so an oversized list is O(origins x fields) of work on a public endpoint. Both
-   * are checked before the first traversal and return (Copilot review, PR #1090).
+   * Ceilings on the other lists this validator walks repeatedly. The DTO's {@code @Size} caps the
+   * subsamples but only records a violation: validation continued through every per-subsample pass.
+   * {@code extraFields} has no DTO cap at all, on the new sample (where {@link
+   * #validateDeclaredLinks} scans it once per origin, O(origins x fields) of work on a public
+   * endpoint) or on each origin (where every entry costs a shared-field-validator pass plus a
+   * declared-spec scan). Each list is checked before its first traversal and returns (Copilot
+   * review, PR #1090).
    */
   static final int MAX_SUBSAMPLES = 100;
 
@@ -274,6 +276,18 @@ public class InventoryOperationPostValidator implements Validator {
         origin.getExtraFields() == null ? List.of() : origin.getExtraFields();
     List<InventoryOperationConfig.OriginField> declared = config.effect().originFields();
 
+    // Checked before the first traversal and returns, like the newSample ceilings: each entry below
+    // costs a shared-field-validator pass plus a declared-spec scan, so an unbounded list is
+    // caller-controlled work on a public endpoint (Copilot review, PR #1090).
+    if (fields.size() > MAX_EXTRA_FIELDS) {
+      errors.rejectValue(
+          "extraFields",
+          "errors.inventory.operation.originExtraFieldCountMaximum",
+          new Object[] {MAX_EXTRA_FIELDS},
+          "This operation accepts at most 100 extra fields on each origin subsample.");
+      return;
+    }
+
     int fieldIndex = 0;
     for (ApiExtraField field : fields) {
       errors.pushNestedPath(String.format("extraFields[%d]", fieldIndex++));
@@ -436,6 +450,13 @@ public class InventoryOperationPostValidator implements Validator {
             String.format("newSample.subSamples[%d].quantity", index),
             "errors.inventory.operation.subSampleQuantityInvalid",
             "Each new subsample must hold a quantity greater than zero, with a unit.");
+        allQuantitiesValid = false;
+      } else if (!RSUnitDef.exists(quantity.getUnitId())
+          || !RSUnitDef.getUnitById(quantity.getUnitId()).isAmount()) {
+        // Already reported by the delegated sample validator above (unitInvalid/unitNotAmount), so
+        // no second error; marked invalid so the unit-aware equality and total checks below never
+        // hand QuantityUtils a unit it throws on, which would turn the reported 400 into a 500
+        // (Copilot review, PR #1090).
         allQuantitiesValid = false;
       } else if (!QuantityInfo.canStoreWithoutRounding(quantity.getNumericValue())) {
         // Same rule as amountTaken: a quantity finer than the stored 3dp would round to a

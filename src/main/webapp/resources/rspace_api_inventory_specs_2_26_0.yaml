@@ -4812,9 +4812,11 @@ components:
         origins:
           type: array
           minItems: 1
+          maxItems: 100
           description: >
             The origin subsample(s) the operation consumes. Always an array: a single-origin
-            operation sends one element, Pool sends two or more. Each origin id must be unique.
+            operation sends one element, Pool sends two or more. Each origin id must be unique;
+            at most 100 origins per request.
           items:
             $ref: "#/components/schemas/InventoryOperationOriginUpdate"
         newSample:
@@ -4845,9 +4847,11 @@ components:
             "take all"). Taking more than the origin currently holds is rejected with 400.
         extraFields:
           type: array
+          maxItems: 100
           description: >
             Custom fields to add to the origin subsample itself (each with newFieldRequest
             true), e.g. Destroy's "Disposed" date. Omit for an ordinary decrement-only origin.
+            At most 100 per origin.
           items:
             $ref: "#/components/schemas/InventoryOperationExtraField"
     InventoryOperationNewSample:
@@ -4891,18 +4895,20 @@ components:
             Storage temperature (unit in Celsius); see storageTempMin. Must equal storageTempMin.
         extraFields:
           type: array
+          maxItems: 100
           description: >
             Exactly the fields the definition declares, each carrying its operationFieldKey: one
             link per origin for each declared link spec, one field per declared text field
             (e.g. Cryomedium for Cryopreserve, Passage number for Passage), plus at most one
-            optional documentation link. Anything else is rejected with 400.
+            optional documentation link. Anything else is rejected with 400. At most 100 fields.
           items:
             $ref: "#/components/schemas/InventoryOperationExtraField"
         subSamples:
           type: array
+          maxItems: 100
           description: >
             The subsamples to create, each carrying its quantity (the created amount) and nothing
-            else. At least as many as the definition's count input allows.
+            else. At least as many as the definition's count input allows, at most 100.
           items:
             $ref: "#/components/schemas/InventoryOperationNewSubSample"
     InventoryOperationNewSubSample:

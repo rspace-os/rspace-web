@@ -31,15 +31,28 @@ public class SubSampleDaoTest extends SpringTransactionalTest {
     Sample sample = recordFactory.createSample("subsample scalar test", user);
     SubSample subSample = sample.getSubSamples().get(0);
     subSample.moveToNewParent(workbench);
-    if (value == null) {
-      subSample.setQuantity(null);
-    } else {
-      subSample.setQuantity(new QuantityInfo(new BigDecimal(value), unit.getId()));
-    }
+    subSample.setQuantity(new QuantityInfo(new BigDecimal(value), unit.getId()));
     Long subSampleId = sampleDao.persistNewSample(sample).getSubSamples().get(0).getId();
     // flush the insert, then clear, so the reads below hit the row rather than the session cache
     sessionFactory.getCurrentSession().flush();
     sessionFactory.getCurrentSession().clear();
+    return subSampleId;
+  }
+
+  /**
+   * A persisted row whose quantityNumericValue column is NULL, the "no quantity" state {@code
+   * getQuantityForUpdate} guards for (quantityUnitId is NOT NULL in the schema, so only the value
+   * column can be missing). The entity setter forbids null ({@code SubSample.setQuantity}), so the
+   * column is nulled with a bulk update that bypasses it.
+   */
+  private Long persistSubSampleWithNullQuantityValueColumn() {
+    Long subSampleId = persistSubSampleHolding("1", RSUnitDef.MILLI_LITRE);
+    sessionFactory
+        .getCurrentSession()
+        .createMutationQuery(
+            "update SubSample ss set ss.quantityInfo.numericValue = null where ss.id = :id")
+        .setParameter("id", subSampleId)
+        .executeUpdate();
     return subSampleId;
   }
 
@@ -57,7 +70,7 @@ public class SubSampleDaoTest extends SpringTransactionalTest {
   public void getQuantityForUpdateReturnsNullForMissingRowOrMissingQuantity() {
     // callers lock and 404-check the subsample first, so null unambiguously means "holds nothing"
     assertNull(subSampleDao.getQuantityForUpdate(-1L));
-    assertNull(subSampleDao.getQuantityForUpdate(persistSubSampleHolding(null, null)));
+    assertNull(subSampleDao.getQuantityForUpdate(persistSubSampleWithNullQuantityValueColumn()));
   }
 
   @Test

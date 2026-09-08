@@ -218,7 +218,15 @@ stays unvalidated.
 
 The
 live-state rules run in `InventoryOperationManagerImpl`, inside the operation's own
-transaction so they hold against the state the mutation sees: every origin must
+transaction so they hold against the state the mutation sees. The controller's
+template-conformance check runs in that transaction too, handed in as the manager's
+`InTransactionValidation` callback and executed before any origin is read or locked, so
+the template the sample is created from is the one the request was validated against
+(the check stays controller code because it delegates to the shared samples validator,
+a controller-layer class the service must not import). Edit permission is asserted on
+every origin, unlocked, before the first sibling-set lock, so an under-permissioned
+caller cannot lock other users' rows; the locked per-origin re-check then closes the
+TOCTOU window. The live-state rules themselves: every origin must
 currently hold something, all origins must share one measurement category (a Pool of
 5 ml + 5 g is meaningless), the amount taken must not exceed what the origin holds
 (DevDocs/adr/0007), and

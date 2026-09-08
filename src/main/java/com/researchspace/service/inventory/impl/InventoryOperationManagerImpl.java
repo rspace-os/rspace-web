@@ -36,8 +36,14 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
   private static final QuantityUtils quantityUtils = new QuantityUtils();
 
   @Override
-  public ApiSampleWithFullSubSamples performOperation(ApiInventoryOperationPost request, User user)
+  public ApiSampleWithFullSubSamples performOperation(
+      ApiInventoryOperationPost request, User user, InTransactionValidation callerValidation)
       throws BindException {
+    // The caller's own validation (the controller's template-conformance check) runs FIRST, inside
+    // this transaction, before any origin is read or locked: a template changed after an
+    // out-of-transaction check could otherwise fail the operation mid-mutation or create the sample
+    // against a definition different from the one validated (Copilot review, PR #1090).
+    callerValidation.validate();
     // Origins are handled in ascending id order (not request order) so two concurrent multi-origin
     // operations over overlapping origins acquire their row locks in one consistent order and
     // cannot deadlock. The validator guarantees unique, non-null ids by this point.
@@ -124,13 +130,19 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
     for (int i = 0; i < request.getOrigins().size(); i++) {
       requestIndex.put(request.getOrigins().get(i), i);
     }
-    // The FIRST locks of the transaction, before any origin is locked. Each origin's own row is
-    // one of its parent's sibling rows, so asking for the sibling set after the per-origin locks
-    // means two operations on two siblings each hold the row the other wants, and InnoDB kills
-    // one. Taking the whole sibling set up front makes the second operation WAIT here instead.
+    // Edit permission is asserted on every origin BEFORE any lock is taken (unlocked read): an
+    // under-permissioned caller must not be able to lock other users' sibling sets and delay their
+    // writers until this transaction fails and rolls back (Copilot review, PR #1090). The locked
+    // per-origin re-check below (lockSubSampleForEdit) still closes the TOCTOU window.
+    // The parent ids collected here feed the FIRST locks of the transaction, before any origin is
+    // locked. Each origin's own row is one of its parent's sibling rows, so asking for the sibling
+    // set after the per-origin locks means two operations on two siblings each hold the row the
+    // other wants, and InnoDB kills one. Taking the whole sibling set up front makes the second
+    // operation WAIT here instead.
     Set<Long> parentSampleIds = new TreeSet<>();
     for (ApiInventoryOperationOriginUpdate origin : originsById) {
-      parentSampleIds.add(subSampleApiMgr.getIfExists(origin.getId()).getSample().getId());
+      parentSampleIds.add(
+          subSampleApiMgr.assertUserCanEditSubSample(origin.getId(), user).getSample().getId());
     }
     parentSampleIds.forEach(sampleApiMgr::recalculateTotalFromLockedRows);
 

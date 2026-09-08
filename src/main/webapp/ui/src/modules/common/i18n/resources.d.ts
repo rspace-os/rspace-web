@@ -7016,6 +7016,7 @@ export default interface Resources {
           "originCountMaximum": "This operation accepts at most {0} origin subsamples.",
           "originCountMinimum": "This operation requires at least two origin subsamples.",
           "originEmpty": "An origin subsample that currently holds nothing cannot be operated on.",
+          "originExtraFieldCountMaximum": "This operation accepts at most {0} extra fields on each origin subsample.",
           "originFieldNewOnly": "Origin extra fields may only add new fields.",
           "originIdRequired": "Each origin must identify a subsample by id.",
           "originsRequired": "At least one origin subsample must be provided for the operation.",

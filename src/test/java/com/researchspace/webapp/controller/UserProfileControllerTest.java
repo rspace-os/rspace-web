@@ -428,6 +428,27 @@ public class UserProfileControllerTest {
   }
 
   @Test
+  public void updatePreferenceValueTreatsABlankSuppliedKeyAsInvalidNotAbsent() {
+    // A supplied-but-blank key ("" or " ") used to be treated as if the parameter were absent,
+    // routing the request to setPreference and silently replacing the whole JSON blob, bypassing
+    // both the key validation and the locked merge (Copilot review, PR #1090). A supplied key must
+    // always reach the keyed path, where the merge rejects the invalid shape as a 400.
+    when(usrMgr.getUserByUsername("any")).thenReturn(anyUser);
+    when(usrMgr.mergeUiJsonSetting(anyString(), anyString(), anyString()))
+        .thenThrow(new IllegalArgumentException("bad key"));
+
+    for (String blank : java.util.List.of("", " ")) {
+      MockHttpServletResponse response = new MockHttpServletResponse();
+      AjaxReturnObject<String> result =
+          userProfileController.updatePreferenceValue(
+              "UI_JSON_SETTINGS", "{}", blank, () -> "any", mockRequest, response);
+      assertEquals(400, response.getStatus());
+      assertNull(result.getData());
+    }
+    verify(usrMgr, never()).setPreference(any(Preference.class), anyString(), anyString());
+  }
+
+  @Test
   public void updatePreferenceValueRejectsAKeyOnAPreferenceThatIsNotTheJsonBlob() {
     // Only UI_JSON_SETTINGS holds a JSON object. Quietly ignoring the key for any other preference
     // would let a caller believe it merged one field while the whole value was replaced, so it is

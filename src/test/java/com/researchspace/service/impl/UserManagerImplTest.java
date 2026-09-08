@@ -296,6 +296,20 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
   }
 
   @Test
+  public void mergeUiJsonSettingRejectsAMergeThatWouldOverflowTheStoredColumn() {
+    // The merged blob is one TEXT column (65535 chars). The UserPreference constructor fail-fast
+    // validates that limit (SettingsType.validate), so a merge that would overflow throws before
+    // anything is saved and the controller maps it to a 400; this test pins that the keyed path
+    // cannot reach the database with an oversized value (Copilot review, PR #1090).
+    userWithUiJsonSettings("{}");
+    String oversized = "{\"value\":\"" + "x".repeat(65_600) + "\"}";
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> userManager.mergeUiJsonSetting("GALLERY_SORT_BY", oversized, "jbloggs"));
+    verify(userDao, never()).save(Mockito.any(User.class));
+  }
+
+  @Test
   public void mergeUiJsonSettingRejectsAValueThatIsNotJson() {
     // The value is stored verbatim inside the blob, so an unparseable one would corrupt every
     // other key in it on the next read.
