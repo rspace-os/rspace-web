@@ -20,12 +20,15 @@ import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.StoichiometryInventoryLinkManager;
 import com.researchspace.service.StoichiometryMoleculeManager;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
+import com.researchspace.service.inventory.SampleApiManager;
 import com.researchspace.service.inventory.SubSampleApiManager;
 import jakarta.ws.rs.NotFoundException;
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
@@ -39,6 +42,7 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
   private final IPermissionUtils elnPermissionUtils;
   private final InventoryPermissionUtils invPermissionUtils;
   private final SubSampleApiManager subSampleMgr;
+  private final SampleApiManager sampleApiMgr;
   private final QuantityUtils quantityUtils;
   private final MessageSourceUtils messages;
 
@@ -49,12 +53,14 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
       IPermissionUtils elnPermissionUtils,
       InventoryPermissionUtils invPermissionUtils,
       SubSampleApiManager subSampleMgr,
+      SampleApiManager sampleApiMgr,
       MessageSourceUtils messages) {
     this.linkDao = linkDao;
     this.stoichiometryMoleculeManager = stoichiometryMoleculeManager;
     this.elnPermissionUtils = elnPermissionUtils;
     this.invPermissionUtils = invPermissionUtils;
     this.subSampleMgr = subSampleMgr;
+    this.sampleApiMgr = sampleApiMgr;
     this.messages = messages;
     this.quantityUtils = new QuantityUtils();
   }
@@ -92,6 +98,24 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
   public StockDeductionResult deductStock(long stoichiometryId, List<Long> linkIds, User user) {
     StockDeductionResult result = new StockDeductionResult();
     result.setStoichiometryId(stoichiometryId);
+    // Lock every distinct parent sample's sibling rows up front, ascending by sample id, before
+    // any per-link row lock. Every writer that touches multiple lock groups must acquire them in
+    // this one canonical order (sibling sets ascending, then rows): the sibling-set lock IS row
+    // locks on all of a sample's subsamples, so once the sets are held, every later row lock is a
+    // re-acquisition and cannot participate in a deadlock cycle against the operations endpoint or
+    // List of Materials. An unresolvable or non-subsample link locks nothing here and fails
+    // per-row below, as before.
+    Set<Long> parentSampleIds = new TreeSet<>();
+    for (Long id : linkIds) {
+      linkDao
+          .getSafeNull(id)
+          .map(StoichiometryInventoryLink::getInventoryRecord)
+          .filter(SubSample.class::isInstance)
+          .map(record -> ((SubSample) record).getSample().getId())
+          .ifPresent(parentSampleIds::add);
+    }
+    parentSampleIds.forEach(sampleApiMgr::recalculateTotalFromLockedRows);
+
     // dedupe: a repeated link id deducts its amount once (RSDEV-1319). The response still carries
     // one result row per submitted entry, so the API's cardinality contract is unchanged
     Map<Long, StockDeductionResult.IndividualResult> resultsById = new HashMap<>();
@@ -177,6 +201,11 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
       InventoryRecord inventoryRecord) {
     if (link.getInventoryRecord() instanceof SubSample) {
       SubSample subSample = (SubSample) link.getInventoryRecord();
+      // Sibling-set lock BEFORE the row lock, the canonical order every stock writer uses. For
+      // deductStock this is a re-acquisition (the sets were locked up front); it stands on its own
+      // so any future caller of this method cannot reintroduce the row-then-set inversion, where
+      // two deductions on two siblings each hold their own row and wait for the other's.
+      sampleApiMgr.recalculateTotalFromLockedRows(subSample.getSample().getId());
       // The over-use check reads the row it is about to decrement, under the same lock the
       // decrement takes, rather than the link's own copy: a concurrent operation may have drained
       // the subsample since that copy was loaded, and registerApiSubSampleUsage clamps at zero, so
