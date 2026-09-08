@@ -722,6 +722,9 @@ public class UserProfileController extends BaseController {
     // the locked merge; the merge itself rejects a blank key as a 400 (Copilot review, PR #1090).
     boolean keyed = key != null;
     if (keyed && !Preference.UI_JSON_SETTINGS.equals(pref)) {
+      // 400 like the malformed-key/value branch below: without the status a client would treat
+      // this rejected update as successful (Copilot review, PR #1090).
+      response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
       return new AjaxReturnObject<>(
           null,
           ErrorList.of(

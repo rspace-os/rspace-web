@@ -645,6 +645,12 @@ public class InventoryOperationPostValidator implements Validator {
         || maximum.getNumericValue() == null) {
       return; // already rejected as storageTempRequired
     }
+    // A null, unknown or non-temperature unit is already rejected by the delegated samples-endpoint
+    // rules; comparing through it would unbox a null unit id or throw inside QuantityUtils, turning
+    // that reported 400 into a 500 (Copilot review, PR #1090).
+    if (!isKnownTemperature(minimum) || !isKnownTemperature(maximum)) {
+      return;
+    }
     if (!quantityUtils.isComparableQuantities(minimum, maximum)
         || quantityUtils.getComparatorFor(minimum).compare(minimum, maximum) != 0) {
       errors.rejectValue(
@@ -669,6 +675,13 @@ public class InventoryOperationPostValidator implements Validator {
         .orElse(1);
   }
 
+  /** Whether the quantity carries a unit that exists and denotes a temperature. */
+  private static boolean isKnownTemperature(ApiQuantityInfo temperature) {
+    return temperature.getUnitId() != null
+        && RSUnitDef.exists(temperature.getUnitId())
+        && RSUnitDef.getUnitById(temperature.getUnitId()).isTemperature();
+  }
+
   private void checkConfiguredTemperature(
       ApiQuantityInfo temperature,
       String field,
@@ -683,9 +696,7 @@ public class InventoryOperationPostValidator implements Validator {
     }
     // A non-temperature unit is already rejected by the delegated samples-endpoint rules; the
     // configured bounds can only be checked against a real temperature.
-    if (temperature.getUnitId() == null
-        || !RSUnitDef.exists(temperature.getUnitId())
-        || !RSUnitDef.getUnitById(temperature.getUnitId()).isTemperature()) {
+    if (!isKnownTemperature(temperature)) {
       return;
     }
     QuantityInfo value = temperature.toQuantityInfo();
