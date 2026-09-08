@@ -323,6 +323,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
     when(linkDao.getSafeNull(501L)).thenReturn(java.util.Optional.of(lower));
     when(moleculeManager.getDocContainingMolecule(mol)).thenReturn(owningRecord);
     when(elnPerms.isPermitted(owningRecord, PermissionType.WRITE, user)).thenReturn(true);
+    when(invPerms.canUserEditInventoryRecord(any(SubSample.class), eq(user))).thenReturn(true);
     when(subSampleMgr.lockSubSampleForEdit(900L, user)).thenReturn(stocked(900L));
     when(subSampleMgr.lockSubSampleForEdit(800L, user)).thenReturn(stocked(800L));
     when(subSampleMgr.getQuantityForUpdate(900L)).thenReturn(stocked(900L).getQuantity());
@@ -354,6 +355,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
     when(linkDao.getSafeNull(321L)).thenReturn(java.util.Optional.of(original));
     when(moleculeManager.getDocContainingMolecule(molecule)).thenReturn(owningRecord);
     when(elnPerms.isPermitted(owningRecord, PermissionType.WRITE, user)).thenReturn(true);
+    when(invPerms.canUserEditInventoryRecord(any(SubSample.class), eq(user))).thenReturn(true);
     when(subSampleMgr.lockSubSampleForEdit(invSubSample.getId(), user)).thenReturn(invSubSample);
     when(subSampleMgr.getQuantityForUpdate(invSubSample.getId()))
         .thenReturn(invSubSample.getQuantity());
@@ -386,6 +388,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
     when(linkDao.getSafeNull(501L)).thenReturn(java.util.Optional.of(lower));
     when(moleculeManager.getDocContainingMolecule(mol)).thenReturn(owningRecord);
     when(elnPerms.isPermitted(owningRecord, PermissionType.WRITE, user)).thenReturn(true);
+    when(invPerms.canUserEditInventoryRecord(any(SubSample.class), eq(user))).thenReturn(true);
     when(subSampleMgr.lockSubSampleForEdit(900L, user)).thenReturn(stocked(900L));
     when(subSampleMgr.lockSubSampleForEdit(800L, user)).thenReturn(stocked(800L));
     when(subSampleMgr.getQuantityForUpdate(900L)).thenReturn(stocked(900L).getQuantity());
@@ -399,6 +402,35 @@ public class StoichiometryInventoryLinkManagerImplTest {
     inOrder.verify(sampleApiMgr, calls(1)).recalculateTotalFromLockedRows(8000L);
     inOrder.verify(sampleApiMgr, calls(1)).recalculateTotalFromLockedRows(9000L);
     inOrder.verify(subSampleMgr).lockSubSampleForEdit(800L, user);
+  }
+
+  @Test
+  public void aForeignOrUneditableLinkLocksNoSiblingSetUpFront() {
+    // The hoist resolves ids straight off a public request: a link from another stoichiometry, or
+    // one whose record the caller cannot edit, must not lock its sibling set, or a caller could
+    // name unrelated link ids solely to delay authorized writers until the request fails
+    // (Copilot review, PR #1090). Each such link still fails per-row with its specific reason.
+    StoichiometryMolecule foreignMol = new StoichiometryMolecule();
+    Stoichiometry otherStoichiometry = new Stoichiometry();
+    otherStoichiometry.setId(99L);
+    foreignMol.setStoichiometry(otherStoichiometry);
+    foreignMol.setActualAmount(1.0);
+    StoichiometryInventoryLink foreign = createMoleculeAndLink(500L, 900L, foreignMol);
+
+    long stoichiometryId = 55L;
+    molecule.getStoichiometry().setId(stoichiometryId);
+    molecule.setActualAmount(1.0);
+    StoichiometryInventoryLink uneditable = createMoleculeAndLink(501L, 800L, molecule);
+
+    when(linkDao.getSafeNull(500L)).thenReturn(java.util.Optional.of(foreign));
+    when(linkDao.getSafeNull(501L)).thenReturn(java.util.Optional.of(uneditable));
+    when(invPerms.canUserEditInventoryRecord(any(SubSample.class), eq(user))).thenReturn(false);
+
+    StockDeductionResult result = manager.deductStock(stoichiometryId, List.of(500L, 501L), user);
+
+    verify(sampleApiMgr, never()).recalculateTotalFromLockedRows(any());
+    assertEquals(2, result.getResults().size());
+    result.getResults().forEach(row -> assertFalse(row.isSuccess()));
   }
 
   @Test

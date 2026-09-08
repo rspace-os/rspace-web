@@ -1085,6 +1085,43 @@ class InventoryOperationPostValidatorTest {
         errors, "newSample.extraFields", "errors.inventory.operation.extraFieldCountMaximum");
   }
 
+  @Test
+  void anUnknownOrNonAmountChildUnitIsAReported400NotA500() {
+    // The delegated sample validator reports the bad unit, but the equality and total checks then
+    // ran QuantityUtils over it anyway, which throws on a unit it cannot compare, turning the
+    // reported 400 into a 500 (Copilot review, PR #1090).
+    for (int unitId : List.of(99999, RSUnitDef.CELSIUS.getId())) {
+      ApiInventoryOperationPost request = aliquotRequest();
+      request
+          .getNewSample()
+          .getSubSamples()
+          .get(0)
+          .setQuantity(new ApiQuantityInfo(new BigDecimal("0.5"), unitId));
+      Errors errors = validate(request);
+      assertTrue(
+          errors.hasFieldErrors("newSample.subSamples[0].quantity"),
+          () -> "unit " + unitId + " must be reported, got: " + errors.getAllErrors());
+    }
+  }
+
+  @Test
+  void rejectsMoreOriginExtraFieldsThanTheMaximumBeforeWalkingThem() {
+    // The newSample list has this ceiling, but each ORIGIN's extraFields list had none: every entry
+    // costs a shared-field-validator pass plus a declared-spec scan before any cap applied
+    // (Copilot review, PR #1090).
+    ApiInventoryOperationPost request = destroyRequest();
+    List<ApiExtraField> fields = new ArrayList<>();
+    for (int i = 0; i <= MAX_EXTRA_FIELDS; i++) {
+      fields.add(disposedField());
+    }
+    request.getOrigins().get(0).setExtraFields(fields);
+    Errors errors = validate(request);
+    assertSingleErrorWithCode(
+        errors,
+        "origins[0].extraFields",
+        "errors.inventory.operation.originExtraFieldCountMaximum");
+  }
+
   // --- origin shape rules (operation-independent) ---
 
   @Test

@@ -1,9 +1,12 @@
 package com.researchspace.api.v1.controller;
 
 import static com.researchspace.api.v1.controller.InventoryOperationPostValidatorTest.aliquotRequest;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -30,6 +33,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
@@ -63,39 +67,50 @@ class InventoryOperationsApiControllerTest {
     controller.inventoryOperationManager = operationManager;
   }
 
+  /**
+   * The template-conformance check the controller hands to the manager, which runs it inside the
+   * operation's transaction (Copilot review, PR #1090). Captured after a controller call so these
+   * tests can exercise it the way the manager does.
+   */
+  private InventoryOperationManager.InTransactionValidation handedInValidation() throws Exception {
+    ArgumentCaptor<InventoryOperationManager.InTransactionValidation> captor =
+        ArgumentCaptor.forClass(InventoryOperationManager.InTransactionValidation.class);
+    verify(operationManager).performOperation(any(), eq(user), captor.capture());
+    return captor.getValue();
+  }
+
   @Test
   void validRequestReachesTheManagerAndReturnsItsResult() throws Exception {
     ApiInventoryOperationPost request = aliquotRequest();
     ApiSampleWithFullSubSamples created = new ApiSampleWithFullSubSamples("Aliquots");
-    when(operationManager.performOperation(request, user)).thenReturn(created);
+    when(operationManager.performOperation(eq(request), eq(user), any())).thenReturn(created);
 
     ApiSampleWithFullSubSamples returned =
         controller.performOperation(
             request, new BeanPropertyBindingResult(request, "request"), user);
 
     assertSame(created, returned);
-    verify(operationManager).performOperation(request, user);
+    InventoryOperationManager.InTransactionValidation validation = handedInValidation();
+    assertDoesNotThrow(validation::validate);
   }
 
   @Test
-  void rejectsATemplateIdThatDoesNotResolveToAReadableTemplate() {
-    // Mirrors POST /samples: a bogus templateId must be a clean 400 here, not a failure inside
-    // the manager transaction after it has started work.
+  void rejectsATemplateIdThatDoesNotResolveToAReadableTemplate() throws Exception {
+    // Mirrors POST /samples: a bogus templateId must be a clean 400, not a failure after the
+    // manager has started mutating. The check runs inside the manager's transaction, so it is
+    // asserted here by running the validation the controller hands in.
     ApiInventoryOperationPost request = aliquotRequest();
     request.getNewSample().setTemplateId(999L);
     when(sampleApiMgr.getSampleTemplateByIdWithPopulatedFields(999L, user))
         .thenThrow(new NotFoundException("no template"));
 
-    BindException rejection =
-        assertThrows(
-            BindException.class,
-            () ->
-                controller.performOperation(
-                    request, new BeanPropertyBindingResult(request, "request"), user));
+    controller.performOperation(request, new BeanPropertyBindingResult(request, "request"), user);
+
+    InventoryOperationManager.InTransactionValidation validation = handedInValidation();
+    BindException rejection = assertThrows(BindException.class, validation::validate);
     assertEquals(
         "errors.inventory.sample.templateNotFound",
         rejection.getFieldErrors("newSample.templateId").get(0).getCode());
-    verifyNoInteractions(operationManager);
   }
 
   @Test
@@ -162,16 +177,13 @@ class InventoryOperationsApiControllerTest {
     when(sampleApiMgr.getSampleTemplateByIdWithPopulatedFields(7L, user))
         .thenReturn(volumeTemplate);
 
-    BindException rejection =
-        assertThrows(
-            BindException.class,
-            () ->
-                controller.performOperation(
-                    request, new BeanPropertyBindingResult(request, "request"), user));
+    controller.performOperation(request, new BeanPropertyBindingResult(request, "request"), user);
+
+    InventoryOperationManager.InTransactionValidation validation = handedInValidation();
+    BindException rejection = assertThrows(BindException.class, validation::validate);
     assertEquals(
         "errors.inventory.sample.unitIncompatibleWithTemplate",
         rejection.getFieldErrors("newSample.subSamples[0].quantity").get(0).getCode());
-    verifyNoInteractions(operationManager);
   }
 
   @Test
@@ -191,12 +203,13 @@ class InventoryOperationsApiControllerTest {
     when(sampleApiMgr.getSampleTemplateByIdWithPopulatedFields(7L, user))
         .thenReturn(volumeTemplate);
     ApiSampleWithFullSubSamples created = new ApiSampleWithFullSubSamples("Aliquots");
-    when(operationManager.performOperation(request, user)).thenReturn(created);
+    when(operationManager.performOperation(eq(request), eq(user), any())).thenReturn(created);
 
     assertSame(
         created,
         controller.performOperation(
             request, new BeanPropertyBindingResult(request, "request"), user));
-    verify(operationManager).performOperation(request, user);
+    InventoryOperationManager.InTransactionValidation validation = handedInValidation();
+    assertDoesNotThrow(validation::validate);
   }
 }
