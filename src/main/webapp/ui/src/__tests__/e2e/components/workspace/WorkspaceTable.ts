@@ -1,5 +1,6 @@
 import type { ElementHandle, Locator, Page } from "@playwright/test";
 import { RecordInfoDialog } from "@/__tests__/e2e/components/shared/RecordInfoDialog";
+import { rowWithLink } from "@/__tests__/e2e/pageObjects/rowHelpers";
 import { MiniProfilePopover } from "./MiniProfilePopover";
 import { WorkspaceSelectionBar } from "./WorkspaceSelectionBar";
 
@@ -27,9 +28,7 @@ export class WorkspaceTable {
   }
 
   row(name: string): Locator {
-    return this.root.getByRole("row").filter({
-      has: this.page.getByRole("link", { name, exact: true }),
-    });
+    return rowWithLink(this.root, this.page, name);
   }
 
   checkbox(name: string): Locator {
@@ -37,7 +36,7 @@ export class WorkspaceTable {
   }
 
   globalIdLink(name: string): Locator {
-    return this.row(name).getByRole("cell").nth(5).getByRole("link");
+    return this.row(name).locator(".workspace-record-id-link");
   }
 
   get selectAllCheckbox(): Locator {
@@ -64,7 +63,7 @@ export class WorkspaceTable {
   }
 
   ownerButton(name: string): Locator {
-    return this.row(name).getByRole("cell").last().getByRole("button");
+    return this.row(name).locator(".workspace-record-ownerName").getByRole("button");
   }
 
   async openOwnerMiniProfile(name: string): Promise<MiniProfilePopover> {

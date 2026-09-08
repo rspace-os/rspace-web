@@ -43,20 +43,24 @@ test.describe("Inventory baskets", { tag: [tags.INVENTORY, tags.MOBILE] }, () =>
     });
     await clientInventory.addItemsToBasket(basket.id, [container.globalId]);
 
-    await page.goto("/inventory/search?resultType=SAMPLE");
-    await pageInventory.isLoaded();
+    try {
+      await page.goto("/inventory/search?resultType=SAMPLE");
+      await pageInventory.isLoaded();
 
-    const basketsMenu1 = await pageInventory.searchPanel.openBasketsMenu();
-    await expect(basketsMenu1.basketItem(basketName)).toBeVisible();
+      const basketsMenu1 = await pageInventory.searchPanel.openBasketsMenu();
+      await expect(basketsMenu1.basketItem(basketName)).toBeVisible();
 
-    await basketsMenu1.renameBasket(basketName, newBasketName);
+      await basketsMenu1.renameBasket(basketName, newBasketName);
 
-    await page.keyboard.press("Escape");
+      await page.keyboard.press("Escape");
 
-    const basketsMenu2 = await pageInventory.searchPanel.openBasketsMenu();
-    const basketItem = basketsMenu2.basketItem(newBasketName);
-    await expect(basketItem).toBeVisible();
-    await expect(basketItem).toContainText("1");
-    await basketsMenu2.close();
+      const basketsMenu2 = await pageInventory.searchPanel.openBasketsMenu();
+      const basketItem = basketsMenu2.basketItem(newBasketName);
+      await expect(basketItem).toBeVisible();
+      await expect(basketItem).toContainText("1");
+      await basketsMenu2.close();
+    } finally {
+      await clientInventory.deleteBasket(basket.id);
+    }
   });
 });

@@ -101,7 +101,8 @@ export class AuditTrailPage extends BasePage {
       await userInput.waitFor({ state: "visible" });
     }
     await userInput.fill(username);
-    await this.page.getByRole("listitem").filter({ hasText: username }).first().click();
+    const suggestions = this.page.locator(".ui-autocomplete:visible");
+    await suggestions.getByRole("listitem").filter({ hasText: username }).first().click();
   }
 
   async downloadReport(): Promise<string> {

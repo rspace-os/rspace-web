@@ -93,7 +93,7 @@ export class BasketsMenuComponent {
         await this.page.keyboard.press("Escape");
       }
       await expect(this.root).toBeHidden({ timeout: 2_000 });
-    }).toPass();
+    }).toPass({ timeout: 10_000 });
   }
 
   async renameBasket(name: string, newName: string): Promise<void> {

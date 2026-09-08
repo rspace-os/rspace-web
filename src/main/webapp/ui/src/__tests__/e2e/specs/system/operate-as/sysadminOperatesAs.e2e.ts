@@ -108,10 +108,10 @@ test.describe("Sysadmin Operate As", { tag: tags.SYSTEM }, () => {
     await dialog.setUser(user.username);
     await dialog.submit(SYSADMIN.password);
 
-    await workspace.waitUntilLoaded();
-    expect(await workspace.isOwnerVisible(user.fullName)).toBe(true);
-
     try {
+      await workspace.waitUntilLoaded();
+      expect(await workspace.isOwnerVisible(user.fullName)).toBe(true);
+
       await profile.open();
       await profile.waitUntilLoaded();
       const changePassword = await profile.openChangePassword();

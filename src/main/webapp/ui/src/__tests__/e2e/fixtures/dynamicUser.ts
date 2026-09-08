@@ -59,7 +59,7 @@ export const dynamicUserTest = test.extend<DynamicUserFixtures>({
     }
   },
 
-  flowFreshPiPermissions: async ({ appUser, clientSysadmin, flowCreateUser, page, pageLogin, pageWorkspace }, use) => {
+  flowFreshPiPermissions: async ({ appUser, clientSysadmin, flowCreateUser, page, pageWorkspace }, use) => {
     await use(async (namePrefix = "e2ePublishMember") => {
       const member = await flowCreateUser("ROLE_USER", namePrefix);
       const groupName = uniqueName(`${namePrefix}-group`);
@@ -73,9 +73,7 @@ export const dynamicUserTest = test.extend<DynamicUserFixtures>({
       });
       await pageWorkspace.open();
       await pageWorkspace.header.logOut();
-      await pageLogin.open();
-      await pageLogin.login(appUser.username, appUser.password);
-      await page.waitForURL((url) => url.pathname === "/workspace");
+      await performLogin(page, appUser.username, appUser.password);
       return { ...member, groupName };
     });
   },

@@ -29,43 +29,43 @@ export class SharedDocumentsPage extends BasePage {
     await this.page.waitForLoadState("networkidle");
   }
 
+  get dataRows(): Locator {
+    return this.table.locator("tbody").getByRole("row");
+  }
+
+  private async columnIndex(headerName: string): Promise<number> {
+    const headers = this.table.getByRole("columnheader");
+    const count = await headers.count();
+    for (let i = 0; i < count; i++) {
+      if ((await headers.nth(i).innerText()).trim() === headerName) return i;
+    }
+    throw new Error(`columnIndex: no "${headerName}" column header found`);
+  }
+
   async documentNames(): Promise<string[]> {
-    const rows = this.table.getByRole("row");
+    const rows = this.dataRows;
     const names: string[] = [];
-    for (let index = 1; index < (await rows.count()); index++) {
-      names.push((await rows.nth(index).getByRole("link").nth(1).innerText()).trim());
+    for (let index = 0; index < (await rows.count()); index++) {
+      names.push((await rows.nth(index).locator("a:not(.recordInfoIcon)").first().innerText()).trim());
     }
     return names;
   }
 
   async rowCount(): Promise<number> {
-    return (await this.table.getByRole("row").count()) - 1;
+    return this.dataRows.count();
   }
 
   async uniqueIdAt(index: number): Promise<string> {
-    return (
-      await this.table
-        .getByRole("row")
-        .nth(index + 1)
-        .getByRole("cell")
-        .nth(1)
-        .innerText()
-    ).trim();
+    return (await this.dataRows.nth(index).locator('a[href^="/globalId/"]').innerText()).trim();
   }
 
   async sharedWithAt(index: number): Promise<string> {
-    return (
-      await this.table
-        .getByRole("row")
-        .nth(index + 1)
-        .getByRole("cell")
-        .nth(2)
-        .innerText()
-    ).trim();
+    const columnIndex = await this.columnIndex("Shared with");
+    return (await this.dataRows.nth(index).getByRole("cell").nth(columnIndex).innerText()).trim();
   }
 
   async openRecordInfo(name: string): Promise<RecordInfoDialog> {
-    const row = this.table.getByRole("row").filter({ has: this.page.getByRole("link", { name, exact: true }) });
+    const row = this.dataRows.filter({ has: this.page.getByRole("link", { name, exact: true }) });
     await row.getByRole("link", { name: "Record Info" }).click();
     const dialog = new RecordInfoDialog(this.page);
     await dialog.waitUntilVisible();

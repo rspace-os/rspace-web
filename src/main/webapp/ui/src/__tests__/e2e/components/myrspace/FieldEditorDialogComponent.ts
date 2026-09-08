@@ -4,7 +4,6 @@ export type FormFieldType = "Number" | "String" | "Text" | "Radio" | "Choice" | 
 
 export class FieldEditorDialogComponent {
   readonly root: Locator;
-  private readonly optionNames: string[] = [];
 
   constructor(page: Page) {
     this.root = page.getByRole("dialog", { name: "Field Editor" });
@@ -28,7 +27,7 @@ export class FieldEditorDialogComponent {
   }
 
   async setRequired(required: boolean): Promise<void> {
-    await this.fieldGroup.getByRole("checkbox").last().setChecked(required);
+    await this.fieldGroup.locator("#mandatoryCheckbox").setChecked(required);
   }
 
   async fillNumberValues(values: { defaultValue?: string; min?: string; max?: string }): Promise<void> {
@@ -48,16 +47,14 @@ export class FieldEditorDialogComponent {
   }
 
   async addOption(option: string): Promise<void> {
-    await this.fieldGroup.getByRole("textbox").nth(1).fill(option);
+    await this.fieldGroup.locator("#addChoiceName, #addRadioName").fill(option);
     await this.fieldGroup.getByRole("button", { name: "Add New" }).click();
-    this.optionNames.push(option);
   }
 
   async selectDefaultOption(type: "Radio" | "Choice", option: string): Promise<void> {
     const role = type === "Radio" ? "radio" : "checkbox";
-    const optionIndex = this.optionNames.indexOf(option);
-    if (optionIndex === -1) throw new Error(`Option '${option}' was not added through this field editor.`);
-    await this.fieldGroup.getByRole(role).nth(optionIndex).check();
+    const optionRow = this.fieldGroup.locator("li").filter({ hasText: option });
+    await optionRow.getByRole(role).check();
   }
 
   async setSortAlphabetically(checked: boolean): Promise<void> {
@@ -68,10 +65,9 @@ export class FieldEditorDialogComponent {
     await this.fieldGroup.getByLabel("Display as a picklist?").setChecked(checked);
   }
 
-  async uploadOptionsFile(filePath: string, optionNames: string[] = []): Promise<void> {
+  async uploadOptionsFile(filePath: string): Promise<void> {
     await this.fieldGroup.getByLabel("Or upload from a file").setInputFiles(filePath);
     await this.fieldGroup.getByRole("button", { name: "Read file" }).click();
-    this.optionNames.push(...optionNames);
   }
 
   async save(): Promise<void> {

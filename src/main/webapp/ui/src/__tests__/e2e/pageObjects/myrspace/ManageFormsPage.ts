@@ -5,6 +5,7 @@ import {
   type WorldFormPermission,
 } from "@/__tests__/e2e/components/myrspace/FormAccessDialogComponent";
 import { BasePage } from "../BasePage";
+import { rowWithLink } from "../rowHelpers";
 import { CreateFormPage } from "./CreateFormPage";
 
 export type FormAction =
@@ -28,9 +29,7 @@ export class ManageFormsPage extends BasePage {
   }
 
   formRow(name: string): Locator {
-    return this.formsTable.getByRole("row").filter({
-      has: this.page.getByRole("link", { name, exact: true }),
-    });
+    return rowWithLink(this.formsTable, this.page, name);
   }
 
   async showAllForms(): Promise<void> {
@@ -98,11 +97,21 @@ export class ManageFormsPage extends BasePage {
   }
 
   status(name: string): Locator {
-    return this.formRow(name).getByRole("cell").last();
+    return this.formRow(name).locator("td.publishingState");
   }
 
-  owner(name: string): Locator {
-    return this.formRow(name).getByRole("cell").nth(3);
+  private async columnIndex(headerName: string): Promise<number> {
+    const headers = this.formsTable.getByRole("columnheader");
+    const count = await headers.count();
+    for (let i = 0; i < count; i++) {
+      if ((await headers.nth(i).innerText()).trim() === headerName) return i;
+    }
+    throw new Error(`columnIndex: no "${headerName}" column header found`);
+  }
+
+  async owner(name: string): Promise<Locator> {
+    const columnIndex = await this.columnIndex("Owner");
+    return this.formRow(name).getByRole("cell").nth(columnIndex);
   }
 
   get resultRows(): Locator {

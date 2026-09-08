@@ -68,6 +68,7 @@ export class WorkspacePage extends BasePage {
   }
 
   async releaseOperateAs(): Promise<void> {
+    if (!(await this.operateAsBanner.isVisible().catch(() => false))) return;
     await this.page.locator("#runAs").evaluate((el: HTMLElement) => el.click());
     await this.page.waitForURL((url) => url.pathname === "/workspace");
     await this.operateAsBanner.waitFor({ state: "hidden" });

@@ -1,5 +1,6 @@
 import { expect, type Locator } from "@playwright/test";
 import { BasePage } from "../BasePage";
+import { rowWithLink } from "../rowHelpers";
 
 export class PublishedDocumentsPage extends BasePage {
   readonly path = "/record/share/published/manage";
@@ -9,7 +10,7 @@ export class PublishedDocumentsPage extends BasePage {
   }
 
   row(name: string): Locator {
-    return this.page.getByRole("row").filter({ has: this.page.getByRole("link", { name, exact: true }) });
+    return rowWithLink(this.page, this.page, name);
   }
 
   publicLink(name: string): Locator {

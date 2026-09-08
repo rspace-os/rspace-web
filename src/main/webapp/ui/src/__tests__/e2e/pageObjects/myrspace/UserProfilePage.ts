@@ -26,20 +26,16 @@ export class UserProfilePage extends BasePage {
     return this.page.getByText(`Username: ${username}`, { exact: false });
   }
 
-  private nameText(name: string): Locator {
-    return this.page.getByText(name, { exact: true }).first();
-  }
-
   firstName(name: string): Locator {
-    return this.nameText(name);
+    return this.page.locator("#firstName", { hasText: name });
   }
 
   lastName(name: string): Locator {
-    return this.nameText(name);
+    return this.page.locator("#lastName", { hasText: name });
   }
 
   email(email: string): Locator {
-    return this.page.getByText(email, { exact: true }).first();
+    return this.page.locator("#userEmail", { hasText: email });
   }
 
   get profileImage(): Locator {
@@ -77,14 +73,14 @@ export class UserProfilePage extends BasePage {
   }
 
   async openEditProfile(): Promise<EditProfileDialogComponent> {
-    await this.page.getByRole("link", { name: "Edit", exact: true }).first().click();
+    await this.page.locator("#userEditProfileButton").click();
     const dialog = new EditProfileDialogComponent(this.page);
     await dialog.waitUntilVisible();
     return dialog;
   }
 
   async openChangeEmail(): Promise<ChangeEmailDialogComponent> {
-    await this.page.getByRole("link", { name: "Edit", exact: true }).last().click();
+    await this.page.locator("#userChangeEmailButton").click();
     const dialog = new ChangeEmailDialogComponent(this.page);
     await dialog.waitUntilVisible();
     return dialog;
@@ -109,7 +105,7 @@ export class UserProfilePage extends BasePage {
     const dialog = new ConfirmPasswordDialogComponent(this.page);
     await dialog.waitUntilVisible();
     await dialog.submit(password);
-    const keyBlock = this.page.getByText("Key:", { exact: false }).first();
+    const keyBlock = this.page.locator(".api-menu__key");
     await keyBlock.waitFor({ state: "visible" });
     const text = await keyBlock.innerText();
     return text.split("Key:")[1].split("\n")[0].trim();
