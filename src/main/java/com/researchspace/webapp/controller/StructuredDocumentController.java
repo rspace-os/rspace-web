@@ -185,7 +185,8 @@ public class StructuredDocumentController extends BaseController {
     assertAuthorisation(user, originalParentFolder, PermissionType.READ);
     List<RecordInformation> rc = new ArrayList<>();
     ProgressMonitor progress =
-        new ProgressMonitorImpl(wordFiles.size() * 10, "File import progress");
+        new ProgressMonitorImpl(
+            wordFiles.size() * 10, getText("workspace.word.import.progressStarted"));
     session.setAttribute(BATCH_WORDIMPORT_PROGRESS, progress);
     for (MultipartFile mf : wordFiles) {
       try {

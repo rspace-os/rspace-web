@@ -9958,7 +9958,8 @@ export default interface Resources {
           "createFailedWithReason": "Could not create document from {0} - {1}",
           "noFilesError": "No files were submitted! Please choose some Word or text files to upload.",
           "noImporterForFileType": "No importer for file type {0}",
-          "progressDescription": "Processed file ''{0}''. Import is {1}% complete."
+          "progressDescription": "Processed file ''{0}''. Import is {1}% complete.",
+          "progressStarted": "Importing files..."
         }
       }
     },
