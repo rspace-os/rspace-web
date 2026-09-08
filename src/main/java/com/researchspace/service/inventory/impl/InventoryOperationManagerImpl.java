@@ -9,10 +9,12 @@ import com.researchspace.model.User;
 import com.researchspace.model.units.Quantifiable;
 import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.model.units.QuantityUtils;
+import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.inventory.InventoryOperationConfigRegistry;
 import com.researchspace.service.inventory.InventoryOperationManager;
 import com.researchspace.service.inventory.SampleApiManager;
 import com.researchspace.service.inventory.SubSampleApiManager;
+import java.math.BigDecimal;
 import java.util.Comparator;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -24,6 +26,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindException;
+import tech.units.indriya.quantity.Quantities;
 
 @Service("inventoryOperationManager")
 public class InventoryOperationManagerImpl implements InventoryOperationManager {
@@ -189,6 +192,15 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
               "amountTaken",
               "errors.inventory.operation.mustEmptyOrigin",
               "This operation must take the origin's entire remaining quantity.");
+        } else if (amountTakenLostToRounding(origin.getAmountTaken(), currentQuantity)) {
+          // The submitted scalar fits 3dp on its own, but the post-subtraction quantity may not
+          // after unit conversion (0.001 ul from a 1 l origin leaves 999.999999 ml), and
+          // registerApiSubSampleUsage would store it rounded, silently losing the decrement
+          // (Copilot review, PR #1090). Checked with the same sum the decrement itself uses.
+          errors.rejectValue(
+              "amountTaken",
+              "errors.inventory.operation.amountTakenNotSubtractable",
+              "The amount taken cannot be subtracted exactly from what the origin holds.");
         } else {
           firstOriginQuantity = firstOriginQuantity == null ? currentQuantity : firstOriginQuantity;
         }
@@ -267,6 +279,50 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
       return false;
     }
     return quantityUtils.getComparatorFor(originQuantity).compare(amountTaken, originQuantity) > 0;
+  }
+
+  /**
+   * Whether the amount taken is finer than the resolution the decrement is stored at. {@code
+   * registerApiSubSampleUsage} subtracts with {@code QuantityUtils.sum}, which computes in the
+   * LARGER of the two units, and the result persists at 3 decimal places, so an amount below that
+   * resolution is silently swallowed: 0.001 ul taken from a 1 l origin is 1e-9 l, the subtraction's
+   * double arithmetic and the 3dp store both round it away, and the operation would create its
+   * output without decrementing the origin at all (Copilot review, PR #1090). The scalar's own 3dp
+   * rule already holds by this point, so only a cross-unit take can be under-resolution: the check
+   * converts the amount exactly (unit factors are powers of ten) into the origin's unit and rejects
+   * a scale beyond 3. A take in a unit at or above the origin's can only gain whole digits and
+   * always passes. Missing values, a zero amount and incomparable categories are handled by their
+   * own rules.
+   */
+  static boolean amountTakenLostToRounding(
+      ApiQuantityInfo amountTaken, QuantityInfo originQuantity) {
+    if (amountTaken == null
+        || amountTaken.getNumericValue() == null
+        || amountTaken.getNumericValue().signum() == 0
+        || originQuantity == null
+        || originQuantity.getNumericValue() == null) {
+      return false;
+    }
+    if (!quantityUtils.isComparableQuantities(amountTaken, originQuantity)
+        || amountTaken.getUnitId().equals(originQuantity.getUnitId())) {
+      return false;
+    }
+    // Exact power-of-ten factor between the two units (e.g. ul -> l is 1e-6): computed through the
+    // unit definitions, then applied with BigDecimal so no precision is lost before the scale test.
+    // Raw-typed because the two definitions are wildcard-typed Units; comparability was asserted
+    // just above, so the conversion cannot mix categories.
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    javax.measure.Quantity oneTakenUnit =
+        Quantities.getQuantity(1, RSUnitDef.getUnitById(amountTaken.getUnitId()).getDefinition());
+    @SuppressWarnings("unchecked")
+    BigDecimal unitFactor =
+        BigDecimal.valueOf(
+            oneTakenUnit
+                .to(RSUnitDef.getUnitById(originQuantity.getUnitId()).getDefinition())
+                .getValue()
+                .doubleValue());
+    return !QuantityInfo.canStoreWithoutRounding(
+        amountTaken.getNumericValue().multiply(unitFactor));
   }
 
   /**
