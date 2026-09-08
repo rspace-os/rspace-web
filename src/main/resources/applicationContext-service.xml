@@ -70,6 +70,18 @@
         <tx:attributes>
             <!-- Read-only commented out to make things easier for end-users -->
             <!--tx:method name="get*" read-only="true"/-->
+            <!-- Stock writers and the UI-preference merge take row locks AFTER a plain read.
+                 Under REPEATABLE READ that first read fixes the snapshot, and MariaDB's
+                 innodb_snapshot_isolation (default on from 11.6) then fails a later FOR UPDATE
+                 on a row committed since with error 1020 (mapped to 409) instead of waiting.
+                 READ COMMITTED closes the read view after every statement, so the locking
+                 read that waited sees the committed row (RSDEV-1231, DevDocs/adr/0007).
+                 Keep this list in step with applicationContext-test-service.xml. -->
+            <tx:method name="performOperation" isolation="READ_COMMITTED"/>
+            <tx:method name="deductStock" isolation="READ_COMMITTED"/>
+            <tx:method name="createNewListOfMaterials" isolation="READ_COMMITTED"/>
+            <tx:method name="updateListOfMaterials" isolation="READ_COMMITTED"/>
+            <tx:method name="mergeUiJsonSetting" isolation="READ_COMMITTED"/>
             <tx:method name="*"/>
         </tx:attributes>
     </tx:advice>
