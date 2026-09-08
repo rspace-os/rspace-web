@@ -39,7 +39,7 @@ public class StockWriterTransactionIsolationTest {
   @ParameterizedTest
   @ValueSource(strings = {"applicationContext-service.xml", "applicationContext-test-service.xml"})
   void stockWritersAndThePreferenceMergeRunAtReadCommitted(String contextFile) throws Exception {
-    Map<String, String> isolationByMethod = txAdviceIsolationByMethodName(contextFile);
+    Map<String, String> isolationByMethod = txAdviceAttributeByMethodName(contextFile, "isolation");
     for (String method : READ_COMMITTED_METHODS) {
       assertEquals(
           "READ_COMMITTED",
@@ -48,8 +48,21 @@ public class StockWriterTransactionIsolationTest {
     }
   }
 
-  private static Map<String, String> txAdviceIsolationByMethodName(String contextFile)
-      throws Exception {
+  @ParameterizedTest
+  @ValueSource(strings = {"applicationContext-service.xml", "applicationContext-test-service.xml"})
+  void performOperationRollsBackForBindException(String contextFile) throws Exception {
+    // A live-state rejection is a checked BindException, which Spring's default rules COMMIT on;
+    // the live-state pass has already written each parent's recomputed total through
+    // recalculateTotalFromLockedRows by then, so without this rule those writes would be committed
+    // alongside the 400 (Copilot review, PR #1090).
+    assertEquals(
+        "org.springframework.validation.BindException",
+        txAdviceAttributeByMethodName(contextFile, "rollback-for").get("performOperation"),
+        contextFile + " should roll performOperation back for BindException");
+  }
+
+  private static Map<String, String> txAdviceAttributeByMethodName(
+      String contextFile, String attribute) throws Exception {
     Map<String, String> result = new HashMap<>();
     try (InputStream in =
         StockWriterTransactionIsolationTest.class
@@ -68,7 +81,7 @@ public class StockWriterTransactionIsolationTest {
         NodeList methods = advice.getElementsByTagNameNS(TX_NS, "method");
         for (int j = 0; j < methods.getLength(); j++) {
           Element method = (Element) methods.item(j);
-          result.put(method.getAttribute("name"), method.getAttribute("isolation"));
+          result.put(method.getAttribute("name"), method.getAttribute(attribute));
         }
       }
     }

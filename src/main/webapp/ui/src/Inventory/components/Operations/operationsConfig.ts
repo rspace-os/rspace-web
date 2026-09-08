@@ -266,10 +266,18 @@ export function resolveDefaultAmountMode(operation: InventoryOperation): AmountM
 export type OperationAvailability = { enabled: boolean; reasonKey?: string };
 
 /**
+ * The backend rejects a request with more than 100 origins (InventoryOperationPostValidator's
+ * MAX_ORIGINS), so a larger selection must not be able to launch a multi-origin operation: it
+ * would complete the whole wizard flow and only fail at Perform (Copilot review, PR #1090).
+ */
+export const MAX_ORIGINS = 100;
+
+/**
  * Whether an operation is enabled for the current subsample selection, and if not, the i18n key
  * explaining why (shown greyed-out in the picker; see DevDocs/adr/0007). A multi-origin operation (Pool)
- * needs two or more subsamples that share a measurement category; a single-origin operation needs
- * exactly one. Every operation is always shown - only its enabled state and reason change.
+ * needs two to 100 subsamples (the backend's origin cap) that share a measurement category; a
+ * single-origin operation needs exactly one. Every operation is always shown - only its enabled
+ * state and reason change.
  */
 export function operationAvailability(
   operation: InventoryOperation,
@@ -278,6 +286,8 @@ export function operationAvailability(
 ): OperationAvailability {
   if (operation.requiresMultiple) {
     if (selectionCount < 2) return { enabled: false, reasonKey: "operations.picker.needsMultiple" };
+    if (selectionCount > MAX_ORIGINS)
+      return { enabled: false, reasonKey: "operations.picker.tooManySelected" };
     if (!allSameCategory) return { enabled: false, reasonKey: "operations.picker.sameCategory" };
     return { enabled: true };
   }
