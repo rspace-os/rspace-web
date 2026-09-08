@@ -182,6 +182,8 @@ public class StoichiometryInventoryLinkManagerImplTest {
     when(moleculeManager.getDocContainingMolecule(molecule)).thenReturn(owningRecord);
     when(elnPerms.isPermitted(owningRecord, PermissionType.WRITE, user)).thenReturn(true);
     when(subSampleMgr.lockSubSampleForEdit(invSubSample.getId(), user)).thenReturn(invSubSample);
+    when(subSampleMgr.getQuantityForUpdate(invSubSample.getId()))
+        .thenReturn(invSubSample.getQuantity());
 
     StockDeductionResult result = manager.deductStock(stoichiometryId, List.of(321L), user);
 
@@ -211,6 +213,8 @@ public class StoichiometryInventoryLinkManagerImplTest {
         .when(invPerms)
         .assertUserCanEditInventoryRecord(original.getInventoryRecord(), user);
     when(subSampleMgr.lockSubSampleForEdit(invSubSample.getId(), user)).thenReturn(invSubSample);
+    when(subSampleMgr.getQuantityForUpdate(invSubSample.getId()))
+        .thenReturn(invSubSample.getQuantity());
 
     StockDeductionResult result =
         manager.deductStock(stoichiometryId, List.of(321L, 321L, 321L), user);
@@ -247,6 +251,8 @@ public class StoichiometryInventoryLinkManagerImplTest {
     when(moleculeManager.getDocContainingMolecule(molecule)).thenReturn(owningRecord);
     when(elnPerms.isPermitted(owningRecord, PermissionType.WRITE, user)).thenReturn(true);
     when(subSampleMgr.lockSubSampleForEdit(invSubSample.getId(), user)).thenReturn(invSubSample);
+    when(subSampleMgr.getQuantityForUpdate(invSubSample.getId()))
+        .thenReturn(invSubSample.getQuantity());
 
     StockDeductionResult result = manager.deductStock(stoichiometryId, List.of(321L), user);
 
@@ -259,11 +265,12 @@ public class StoichiometryInventoryLinkManagerImplTest {
   }
 
   @Test
-  public void insufficientStockIsJudgedFromTheLockedRowNotTheLinkEntity() {
-    // The link carries whatever copy of the subsample the session loaded; a concurrent operation
-    // may have drained it since. The over-use check has to read the row it is about to decrement,
-    // under the same lock the decrement takes, or a deduction is accepted against stock that is no
-    // longer there and registerApiSubSampleUsage silently clamps it at zero.
+  public void insufficientStockIsJudgedFromTheLockedScalarNotTheEntity() {
+    // A concurrent operation may have drained the subsample since any entity copy of it was
+    // loaded, and the locked entity itself holds this transaction's snapshot (lockRowForUpdate
+    // serialises, it does not refresh). The over-use check therefore reads the value as a scalar
+    // under the lock; judging from either entity here (both report plenty) would accept a
+    // deduction that registerApiSubSampleUsage then silently clamps at zero.
     StoichiometryInventoryLink original = new StoichiometryInventoryLink();
     original.setId(321L);
     long stoichiometryId = 55L;
@@ -271,17 +278,15 @@ public class StoichiometryInventoryLinkManagerImplTest {
     molecule.setActualAmount(20.0);
     original.setStoichiometryMolecule(molecule);
     original.setInventoryRecord(invSubSample);
-    // the stale copy still reports plenty
+    // the entity snapshot still reports plenty; the committed row holds only 5 g
     invSubSample.setQuantity(new QuantityInfo(BigDecimal.valueOf(100), RSUnitDef.GRAM.getId()));
-
-    SubSample liveRow = new SubSample();
-    liveRow.setId(invSubSample.getId());
-    liveRow.setQuantity(new QuantityInfo(BigDecimal.valueOf(5), RSUnitDef.GRAM.getId()));
 
     when(linkDao.getSafeNull(321L)).thenReturn(java.util.Optional.of(original));
     when(moleculeManager.getDocContainingMolecule(molecule)).thenReturn(owningRecord);
     when(elnPerms.isPermitted(owningRecord, PermissionType.WRITE, user)).thenReturn(true);
-    when(subSampleMgr.lockSubSampleForEdit(invSubSample.getId(), user)).thenReturn(liveRow);
+    when(subSampleMgr.lockSubSampleForEdit(invSubSample.getId(), user)).thenReturn(invSubSample);
+    when(subSampleMgr.getQuantityForUpdate(invSubSample.getId()))
+        .thenReturn(new QuantityInfo(BigDecimal.valueOf(5), RSUnitDef.GRAM.getId()));
 
     StockDeductionResult result = manager.deductStock(stoichiometryId, List.of(321L), user);
 
@@ -313,6 +318,8 @@ public class StoichiometryInventoryLinkManagerImplTest {
     when(elnPerms.isPermitted(owningRecord, PermissionType.WRITE, user)).thenReturn(true);
     when(subSampleMgr.lockSubSampleForEdit(900L, user)).thenReturn(stocked(900L));
     when(subSampleMgr.lockSubSampleForEdit(800L, user)).thenReturn(stocked(800L));
+    when(subSampleMgr.getQuantityForUpdate(900L)).thenReturn(stocked(900L).getQuantity());
+    when(subSampleMgr.getQuantityForUpdate(800L)).thenReturn(stocked(800L).getQuantity());
 
     // submitted highest-subsample-first
     manager.deductStock(stoichiometryId, List.of(500L, 501L), user);

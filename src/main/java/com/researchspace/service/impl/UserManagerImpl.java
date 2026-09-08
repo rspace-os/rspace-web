@@ -369,9 +369,15 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
           messages.getMessage("errors.preference.invalidJsonValue", new Object[] {key}));
     }
     // Locked before the blob is read: reading first would merge into a snapshot another writer is
-    // already replacing, which is the race this method exists to remove.
-    User user = userDao.getForUpdate(userDao.getUserByUsername(subject).getId());
-    ObjectNode settings = storedUiJsonSettings(user);
+    // already replacing, which is the race this method exists to remove. The lock serialises the
+    // merges; the blob itself is then read as a scalar under its own lock, because the entity
+    // returned here holds the transaction's snapshot (lockRowForUpdate guarantees serialisation
+    // only, not freshness).
+    User user = userDao.lockRowForUpdate(userDao.getUserByUsername(subject).getId());
+    ObjectNode settings =
+        uiJsonSettingsFrom(
+            userDao.getPreferenceValueForUpdate(user.getId(), Preference.UI_JSON_SETTINGS),
+            user.getUsername());
     settings.set(key, newValue);
     UserPreference merged =
         new UserPreference(Preference.UI_JSON_SETTINGS, user, settings.toString());
@@ -383,18 +389,18 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
   }
 
   /**
-   * The user's stored UI settings as a mutable object. A blank or unparseable value starts a fresh
-   * object rather than failing every later write: only this method writes the column, and refusing
-   * to write over a corrupt value would leave the user unable to save any preference again.
+   * The stored UI settings blob as a mutable object. A blank or unparseable value starts a fresh
+   * object rather than failing every later write: only this method's caller writes the column, and
+   * refusing to write over a corrupt value would leave the user unable to save any preference
+   * again.
    */
-  private ObjectNode storedUiJsonSettings(User user) {
-    String stored = user.getValueForPreference(Preference.UI_JSON_SETTINGS).getValue();
+  private ObjectNode uiJsonSettingsFrom(String stored, String username) {
     if (StringUtils.isEmpty(stored)) {
       return JacksonUtil.createObjectNode();
     }
     JsonNode parsed = JacksonUtil.fromJson(stored, JsonNode.class);
     if (parsed == null || !parsed.isObject()) {
-      log.warn("Discarding unreadable UI_JSON_SETTINGS for user {}", user.getUsername());
+      log.warn("Discarding unreadable UI_JSON_SETTINGS for user {}", username);
       return JacksonUtil.createObjectNode();
     }
     return (ObjectNode) parsed;

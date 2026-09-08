@@ -214,7 +214,10 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
       user.setPreference(new UserPreference(Preference.UI_JSON_SETTINGS, user, storedJson));
     }
     when(userDao.getUserByUsername("jbloggs")).thenReturn(user);
-    when(userDao.getForUpdate(7L)).thenReturn(user);
+    when(userDao.lockRowForUpdate(7L)).thenReturn(user);
+    // the blob is read as a scalar under its own lock, not from the entity
+    when(userDao.getPreferenceValueForUpdate(7L, Preference.UI_JSON_SETTINGS))
+        .thenReturn(storedJson);
     return user;
   }
 
@@ -238,34 +241,30 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
   }
 
   @Test
-  public void mergeUiJsonSettingMergesIntoTheLockedRowNotTheUnlockedRead() throws Exception {
-    // The lookup that finds the user runs before any lock, so its copy of the blob may already be
-    // superseded. Merging into that copy would reintroduce the race one layer down, so the merge
-    // has to use what the locked read returned. Two distinct users stand in for the two reads.
-    User staleRead = createAnyUser("jbloggs");
-    staleRead.setId(7L);
-    staleRead.setPreference(
+  public void mergeUiJsonSettingMergesIntoTheLockedColumnValueNotTheEntitySnapshot()
+      throws Exception {
+    // The entity the lock returns holds this transaction's snapshot of the blob (lockRowForUpdate
+    // serialises, it does not refresh), so the merge must read the stored value as a scalar under
+    // its own lock. The entity here carries an older blob than the column; only a merge into the
+    // scalar's value keeps the key a concurrent writer added and its change to a shared key.
+    User user = createAnyUser("jbloggs");
+    user.setId(7L);
+    user.setPreference(
         new UserPreference(
-            Preference.UI_JSON_SETTINGS,
-            staleRead,
-            "{\"GALLERY_VIEW_MODE\":{\"value\":\"list\"}}"));
-    User lockedRead = createAnyUser("jbloggs");
-    lockedRead.setId(7L);
-    lockedRead.setPreference(
-        new UserPreference(
-            Preference.UI_JSON_SETTINGS,
-            lockedRead,
-            "{\"GALLERY_VIEW_MODE\":{\"value\":\"grid\"},\"SYSADMIN_USERS_TABLE_COLUMNS\":{\"value\":1}}"));
-    when(userDao.getUserByUsername("jbloggs")).thenReturn(staleRead);
-    when(userDao.getForUpdate(7L)).thenReturn(lockedRead);
-    when(userDao.save(lockedRead)).thenReturn(lockedRead);
+            Preference.UI_JSON_SETTINGS, user, "{\"GALLERY_VIEW_MODE\":{\"value\":\"list\"}}"));
+    when(userDao.getUserByUsername("jbloggs")).thenReturn(user);
+    when(userDao.lockRowForUpdate(7L)).thenReturn(user);
+    when(userDao.getPreferenceValueForUpdate(7L, Preference.UI_JSON_SETTINGS))
+        .thenReturn(
+            "{\"GALLERY_VIEW_MODE\":{\"value\":\"grid\"},\"SYSADMIN_USERS_TABLE_COLUMNS\":{\"value\":1}}");
+    when(userDao.save(user)).thenReturn(user);
 
     userManager.mergeUiJsonSetting("GALLERY_SORT_BY", "{\"value\":\"name\"}", "jbloggs");
 
-    JsonNode merged = new ObjectMapper().readTree(storedUiJsonSettings(lockedRead));
-    // the key another writer added between the two reads survives...
+    JsonNode merged = new ObjectMapper().readTree(storedUiJsonSettings(user));
+    // the key another writer committed after this transaction's snapshot survives...
     assertEquals(1, merged.path("SYSADMIN_USERS_TABLE_COLUMNS").path("value").asInt());
-    // ...and so does its change to a key the stale copy also had
+    // ...and so does its change to a key the snapshot also had
     assertEquals("grid", merged.path("GALLERY_VIEW_MODE").path("value").asText());
     assertEquals("name", merged.path("GALLERY_SORT_BY").path("value").asText());
   }
