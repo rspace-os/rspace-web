@@ -24,6 +24,7 @@ public class InventoryMaterialUsageHelper {
 
   private @Autowired SubSampleApiManager subSampleMgr;
   private @Autowired SampleApiManager sampleApiMgr;
+  private @Autowired InventoryPermissionUtils invPermissions;
   private QuantityUtils qUtils = new QuantityUtils();
 
   /**
@@ -38,8 +39,15 @@ public class InventoryMaterialUsageHelper {
    * set in material-list order as the decrement loop reaches it, which can invert against another
    * writer's ascending order. Both the incoming and the stored materials are locked: an update that
    * removes a usage restores its stock, so removed subsamples' samples are written too.
+   *
+   * <p>Read permission is asserted on each INCOMING subsample before its parent's set is locked
+   * (the same assert the mutation path applies): ids here come straight off a public request, so
+   * locking first would let a caller name records they cannot access solely to lock those sibling
+   * sets and delay authorized writers until the request fails (Copilot review, PR #1090). Stored
+   * materials are already on the list being updated, so they carry no such assert.
    */
-  public void lockParentSampleSets(List<ApiMaterialUsage> incoming, List<MaterialUsage> stored) {
+  public void lockParentSampleSets(
+      List<ApiMaterialUsage> incoming, List<MaterialUsage> stored, User user) {
     Set<Long> parentSampleIds = new TreeSet<>();
     if (incoming != null) {
       for (ApiMaterialUsage usage : incoming) {
@@ -47,6 +55,7 @@ public class InventoryMaterialUsageHelper {
             && ApiInventoryRecordType.SUBSAMPLE.equals(usage.getRecord().getType())) {
           InventoryRecord record = getForApiInventoryRecordInfo(usage.getRecord());
           if (record instanceof SubSample) {
+            invPermissions.assertUserCanReadOrLimitedReadInventoryRecord(record, user);
             parentSampleIds.add(((SubSample) record).getSample().getId());
           }
         }
