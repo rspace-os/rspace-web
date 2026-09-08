@@ -717,7 +717,10 @@ public class UserProfileController extends BaseController {
       HttpServletResponse response) {
 
     Preference pref = Preference.valueOf(preferenceName);
-    boolean keyed = StringUtils.isNotBlank(key);
+    // Supplied means keyed, even when blank: treating "" or " " as absent would route the request
+    // to setPreference and silently replace the whole JSON blob, bypassing the key validation and
+    // the locked merge; the merge itself rejects a blank key as a 400 (Copilot review, PR #1090).
+    boolean keyed = key != null;
     if (keyed && !Preference.UI_JSON_SETTINGS.equals(pref)) {
       return new AjaxReturnObject<>(
           null,

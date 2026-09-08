@@ -1,5 +1,9 @@
 package com.researchspace.service.inventory;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -11,6 +15,7 @@ import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventoryRecordT
 import com.researchspace.api.v1.model.ApiMaterialUsage;
 import com.researchspace.api.v1.model.ApiSample;
 import com.researchspace.api.v1.model.ApiSubSample;
+import com.researchspace.model.User;
 import com.researchspace.model.elninventory.MaterialUsage;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SubSample;
@@ -34,7 +39,10 @@ public class InventoryMaterialUsageHelperTest {
   @Mock private InventoryRecordRetriever invRecRetriever;
   @Mock private SubSampleApiManager subSampleMgr;
   @Mock private SampleApiManager sampleApiMgr;
+  @Mock private InventoryPermissionUtils invPermissions;
   @InjectMocks private InventoryMaterialUsageHelper helper;
+
+  private final User user = new User("anyUser");
 
   private SubSample subSampleUnderSample(long subSampleId, long sampleId) {
     Sample parent = new Sample();
@@ -64,7 +72,7 @@ public class InventoryMaterialUsageHelperTest {
     MaterialUsage stored = mock(MaterialUsage.class);
     when(stored.getInventoryRecord()).thenReturn(subSampleUnderSample(700L, 70L));
 
-    helper.lockParentSampleSets(List.of(ninety, eighty, eightyAgain), List.of(stored));
+    helper.lockParentSampleSets(List.of(ninety, eighty, eightyAgain), List.of(stored), user);
 
     InOrder inOrder = inOrder(sampleApiMgr);
     inOrder.verify(sampleApiMgr).recalculateTotalFromLockedRows(70L);
@@ -80,8 +88,24 @@ public class InventoryMaterialUsageHelperTest {
     ApiSample sampleRecord = new ApiSample();
     sampleRecord.setId(90L);
 
-    helper.lockParentSampleSets(List.of(new ApiMaterialUsage(sampleRecord, null)), null);
-    helper.lockParentSampleSets(null, null);
+    helper.lockParentSampleSets(List.of(new ApiMaterialUsage(sampleRecord, null)), null, user);
+    helper.lockParentSampleSets(null, null, user);
+
+    verifyNoInteractions(sampleApiMgr);
+  }
+
+  @Test
+  public void assertsReadPermissionOnEachIncomingSubSampleBeforeLockingAnything() {
+    // The ids come straight off a public request: without this assert a caller could name records
+    // they cannot access solely to lock those sibling sets and delay authorized writers until the
+    // request fails later (Copilot review, PR #1090).
+    ApiMaterialUsage usage = usageOfSubSample(900L, 90L);
+    doThrow(new RuntimeException("no permission"))
+        .when(invPermissions)
+        .assertUserCanReadOrLimitedReadInventoryRecord(any(SubSample.class), eq(user));
+
+    assertThrows(
+        RuntimeException.class, () -> helper.lockParentSampleSets(List.of(usage), null, user));
 
     verifyNoInteractions(sampleApiMgr);
   }

@@ -21,6 +21,23 @@ import org.springframework.validation.BindException;
 public interface InventoryOperationManager {
 
   /**
+   * A validation the caller needs run INSIDE the operation's transaction, before any origin is read
+   * or mutated. The controller supplies its template-conformance check this way: the check itself
+   * belongs to the controller layer (it delegates to the shared samples validator), but running it
+   * in a separate transaction would leave a window in which the template changes between validation
+   * and use, failing the operation mid-mutation (Copilot review, PR #1090). A rejection is the same
+   * field-scoped 400 every other validation produces.
+   */
+  @FunctionalInterface
+  interface InTransactionValidation {
+
+    /** No additional validation; for callers with nothing to check transactionally. */
+    InTransactionValidation NONE = () -> {};
+
+    void validate() throws BindException;
+  }
+
+  /**
    * Precondition: the request must already have passed the structural validation the operations
    * endpoint applies (InventoryOperationPostValidator): every origin carries a non-null id and a
    * non-null, unit-bearing amountTaken, and origin ids are unique. The implementation dereferences
@@ -44,6 +61,7 @@ public interface InventoryOperationManager {
    *     committed alongside the 400. InventoryOperationManagerImplTest pins the ordering:
    *     performExpectingRejection asserts none of the mutating collaborators were called.
    */
-  ApiSampleWithFullSubSamples performOperation(ApiInventoryOperationPost request, User user)
+  ApiSampleWithFullSubSamples performOperation(
+      ApiInventoryOperationPost request, User user, InTransactionValidation callerValidation)
       throws BindException;
 }
