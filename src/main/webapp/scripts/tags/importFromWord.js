@@ -102,7 +102,7 @@ function _submitWordImportForm(fileType) {
         }
         if (aro.errorMsg != null && aro.errorMsg.errorMessages.length > 0) {
             report = report + RS.msg("legacyjs.core.word.notConverted",
-                    getValidationErrorString(aro.errorMsg));
+                    getValidationErrorString(aro.errorMsg, null, true));
         }
         if (aro.errorMsg == null || aro.errorMsg.errorMessages.length === 0) {
             RS.confirmAndNavigateTo(RS.msg("legacyjs.core.word.allImported"),
