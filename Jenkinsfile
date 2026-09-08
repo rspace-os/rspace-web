@@ -9,8 +9,10 @@ echo 'Building rspace-web'
  In Jenkins, it is called from 'rspace-web' project as a multi branch build
  For feature branches, it runs 'quick' JUnit tests
  For master/dev branches, it runs full Java tests (i.e. with IT tests).
- The script takes several parameters; there are other Jenkins jobs to run nightly test-suites using JDK 11 and also
+ The script takes several parameters; there are other Jenkins jobs to run nightly test-suites on other JDKs and also
  with 'nightly' tests which are more long running tests.
+ Java 17 and 21 are both supported. The defaults below stay on 17 until Temurin 21 is installed on the agents,
+ then flip MAVEN_TOOLCHAIN_JAVA_VERSION to 21 and MAVEN_TOOLCHAIN_JAVA_VENDOR to temurin.
 */
 
 pipeline {
@@ -19,7 +21,7 @@ pipeline {
     options { disableConcurrentBuilds() }
 
     parameters {
-        string(name: 'MAVEN_TOOLCHAIN_JAVA_VERSION', defaultValue: '17', description: 'Java version Maven toolchain')
+        string(name: 'MAVEN_TOOLCHAIN_JAVA_VERSION', defaultValue: '17', description: 'Java version Maven toolchain (17 or 21)')
         string(name: 'MAVEN_TOOLCHAIN_JAVA_VENDOR', defaultValue: 'openjdk', description: 'Java vendor Maven toolchain')
         string(name: 'NIGHTLY_BUILD', defaultValue: '', description: 'optional nightly build configuration')
         booleanParam(name: 'ONLY_BUILD_WAR', defaultValue: false, description: 'It only build the WAR file without deploying in AWS')

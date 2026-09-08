@@ -31,7 +31,7 @@ jobs:
     timeout-minutes: 30
     strategy:
       matrix:
-        java-version: [17]
+        java-version: [21]
     steps:
       - uses: actions/checkout@v7.0.0
         with:
@@ -68,12 +68,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        java-version: [17]
+        java-version: [21]
         project: [chromium, firefox, webkit, mobile]
         shard: [1, 2, 3]
         # API specs are a single file; run them once, unsharded.
         include:
-          - java-version: 17
+          - java-version: 21
             project: api
             shard: 1
     services:
