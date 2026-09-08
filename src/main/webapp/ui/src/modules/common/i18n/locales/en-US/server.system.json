@@ -445,7 +445,6 @@
         "dryadAvailable": "Makes Dryad integration available. User can create new dryad submissionand attach RSpace exports or documents to that submission.",
         "dswAvailable": "Makes DSW integration available.",
         "egnyteAvailable": "Makes Egnyte integration available to the users. After enabling the integration, users can link to Egnyte in text field editor",
-        "evernoteAvailable": "Enables users to import Evernote XML export files via Create->Import",
         "fieldmarkAvailable": "Makes Fieldmark integration available.",
         "galaxyAvailable": "Makes Galaxy integration available.",
         "githubAvailable": "Makes Github integration available. After enabling, user can add links to files in Github repositories.",

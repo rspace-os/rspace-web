@@ -1,0 +1,48 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <changeSet id="remove-evernote-a" context="run" author="fraser">
+        <comment>Remove Evernote integration data: AppConfigElement, AppConfigElementSet, AppConfigElementDescriptor and UserAppConfig</comment>
+        <sql>
+            delete from AppConfigElement where appConfigElementDescriptor_id in (
+                select id from AppConfigElementDescriptor where app_id = (
+                    select id from App where name = 'app.evernote'));
+
+            delete from AppConfigElementSet where userAppConfig_id in (
+                select id from UserAppConfig where app_id = (
+                    select id from App where name = 'app.evernote'));
+
+            delete from AppConfigElementDescriptor where app_id = (
+                select id from App where name = 'app.evernote');
+
+            delete from UserAppConfig where app_id = (
+                select id from App where name = 'app.evernote');
+        </sql>
+    </changeSet>
+
+    <changeSet id="remove-evernote-b" context="run" author="fraser">
+        <comment>Remove Evernote integration data: SystemPropertyValue and SystemProperty for evernote.available</comment>
+        <sql>
+            delete from SystemPropertyValue where property_id = (
+                select sp.id from SystemProperty sp
+                inner join PropertyDescriptor pd on sp.descriptor_id = pd.id
+                where pd.name = 'evernote.available');
+
+            delete from SystemProperty where descriptor_id = (
+                select id from PropertyDescriptor where name = 'evernote.available');
+        </sql>
+    </changeSet>
+
+    <changeSet id="remove-evernote-c" context="run" author="fraser">
+        <comment>Remove Evernote integration data: PropertyDescriptor and App</comment>
+        <sql>
+            delete from PropertyDescriptor where name = 'evernote.available';
+
+            delete from App where name = 'app.evernote';
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

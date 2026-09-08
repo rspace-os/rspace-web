@@ -108,7 +108,6 @@ export type IntegrationStates = {
   EGNYTE: IntegrationState<{
     EGNYTE_DOMAIN: Optional<string>;
   }>;
-  EVERNOTE: IntegrationState<emptyObject>;
   FIELDMARK: IntegrationState<{
     FIELDMARK_USER_TOKEN: Optional<string>;
   }>;
@@ -428,10 +427,6 @@ function decodeEgnyte(data: FetchedState): IntegrationStates["EGNYTE"] {
           : Optional.empty(),
     },
   };
-}
-
-function decodeEvernote(data: FetchedState): IntegrationStates["EVERNOTE"] {
-  return { mode: parseState(data), credentials: {} };
 }
 
 function decodeFieldmark(data: FetchedState): IntegrationStates["FIELDMARK"] {
@@ -790,7 +785,6 @@ function decodeIntegrationStates(
     DRYAD: decodeDryad(data.DRYAD),
     DSW: decodeDsw(data.DSW),
     EGNYTE: decodeEgnyte(data.EGNYTE),
-    EVERNOTE: decodeEvernote(data.EVERNOTE),
     FIELDMARK: decodeFieldmark(data.FIELDMARK),
     FIGSHARE: decodeFigshare(data.FIGSHARE),
     GALAXY: decodeGalaxy(data.GALAXY),
@@ -1018,14 +1012,6 @@ const encodeIntegrationState = <I extends Integration>(integration: I, data: Int
           EGNYTE_DOMAIN: token,
         })).orElse({}),
       },
-    };
-  }
-  if (integration === "EVERNOTE") {
-    return {
-      name: "EVERNOTE",
-      available: data.mode !== "UNAVAILABLE",
-      enabled: data.mode === "ENABLED",
-      options: {},
     };
   }
   if (integration === "FIELDMARK") {
@@ -1403,8 +1389,6 @@ export function useIntegrationsEndpoint(): {
               return decodeDsw(responseData.data) as IntegrationStates[I];
             case "EGNYTE":
               return decodeEgnyte(responseData.data) as IntegrationStates[I];
-            case "EVERNOTE":
-              return decodeEvernote(responseData.data) as IntegrationStates[I];
             case "FIELDMARK":
               return decodeFieldmark(responseData.data) as IntegrationStates[I];
             case "FIGSHARE":
@@ -1505,8 +1489,6 @@ export function useIntegrationsEndpoint(): {
           return decodeDsw(response.data.data) as IntegrationStates[I];
         case "EGNYTE":
           return decodeEgnyte(response.data.data) as IntegrationStates[I];
-        case "EVERNOTE":
-          return decodeEvernote(response.data.data) as IntegrationStates[I];
         case "FIELDMARK":
           return decodeFieldmark(response.data.data) as IntegrationStates[I];
         case "FIGSHARE":

@@ -419,7 +419,7 @@ These optional settings will enable you to import user data from LDAP, or enable
 * **ldap.url** ldap server URL, only needed if ldap.enabled is true. E.g. ldaps://kudu.rspace.com
 * **ldap.baseSuffix** ldap server url, only needed if ldap.enabled is true. E.g. 'dc=test,dc=kudu,dc=axiope,dc=com'
 * **ldap.ignorePartialResultException** if set to 'true' suppresses PartialResultException on search queries
-* **ldap.fallbackDnCalculationEnabled** if set to 'true' RSpace will run 'sh -c ldapsearch' command to retrieve user's dn
+* **ldap.fallbackDnCalculationEnabled** if set to 'true' RSpace will run the 'ldapsearch' command to retrieve user's dn
 
 * **ldap.bindQuery.dn** user to use for non-anonymous LDAP bind
 * **ldap.bindQuery.password** password to use for non-anonymous LDAP bind

@@ -50,8 +50,8 @@ class SafeTempFilesTest {
 
   @Test
   void veryLongNameProducesShortServerSideName() {
-    String longName = StringUtils.repeat("a", 300) + ".enex";
-    File f = SafeTempFiles.randomFileIn(dir(), longName, "enex");
+    String longName = StringUtils.repeat("a", 300) + ".zip";
+    File f = SafeTempFiles.randomFileIn(dir(), longName, "zip");
     assertTrue(f.getName().length() < 50);
   }
 
