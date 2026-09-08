@@ -52,9 +52,13 @@ public class SampleApiPostValidator extends SampleApiValidator implements Valida
       int j = 0;
       for (ApiSubSample ss : apiSample.getSubSamples()) {
         errors.pushNestedPath(String.format("subSamples[%d]", j++));
-        validateExtraFields(ss, errors);
-        InventoryFieldNameUniquenessValidator.rejectDuplicatesInPayload(
-            null, ss.getExtraFields(), errors);
+        // A null element ("subSamples": [null]) is already a bean-validation error at binding;
+        // dereferencing it here would turn that reported 400 into a 500 (Copilot review, PR #1090).
+        if (ss != null) {
+          validateExtraFields(ss, errors);
+          InventoryFieldNameUniquenessValidator.rejectDuplicatesInPayload(
+              null, ss.getExtraFields(), errors);
+        }
         errors.popNestedPath();
       }
     }
