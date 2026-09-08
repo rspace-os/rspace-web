@@ -48,7 +48,8 @@
             <!-- Mirrors applicationContext-service.xml (RSDEV-1231): stock writers and the
                  UI-preference merge run at READ COMMITTED so a locking read that waited sees
                  the committed row under MariaDB's innodb_snapshot_isolation. -->
-            <tx:method name="performOperation" isolation="READ_COMMITTED"/>
+            <tx:method name="performOperation" isolation="READ_COMMITTED"
+                rollback-for="org.springframework.validation.BindException"/>
             <tx:method name="deductStock" isolation="READ_COMMITTED"/>
             <tx:method name="createNewListOfMaterials" isolation="READ_COMMITTED"/>
             <tx:method name="updateListOfMaterials" isolation="READ_COMMITTED"/>
