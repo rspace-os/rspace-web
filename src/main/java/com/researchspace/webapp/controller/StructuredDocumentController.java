@@ -698,6 +698,16 @@ public class StructuredDocumentController extends BaseController {
   @ResponseBody
   public List<Field> getAutoSavedFields(
       @RequestParam("recordId") long recordId, Principal principal) {
+    // RSDEV-1329: fail closed rather than dereferencing a null principal into a 500 with a
+    // non-localized message. Unreachable while this controller is mapped only under the
+    // authenticated /workspace/** prefix, so this guards the mapping changing, not today's
+    // filter chain. Same shape as PublicStructuredDocumentCommentsController.
+    if (principal == null) {
+      throw new AuthorizationException(
+          getText(
+              "errors.authorization.failure.readDraftFields",
+              new Object[] {RecordGroupSharing.ANONYMOUS_USER, recordId}));
+    }
     User user = getUserByUsername(principal.getName());
     List<Field> fieldList = fieldManager.getAutoSavedFieldsByRecordId(recordId, user);
     List<Field> tempFieldList = Field.getNewListOfTempFields(fieldList, false);

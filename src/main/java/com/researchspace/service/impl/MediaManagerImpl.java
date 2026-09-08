@@ -73,6 +73,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -901,65 +902,79 @@ public class MediaManagerImpl implements MediaManager {
     // RSDEV-1329: fail closed — null user, the anonymous published-view guest, unknown id and
     // no-READ are indistinguishable.
     // Note: recordDao is a GenericDao<Record, Long> and Folder extends BaseRecord rather than
-    // Record, so a folder id resolves to Optional.empty() and fails closed here — intended on this
-    // endpoint, but a trap if this shape is reused where folder ids are legitimate.
+    // Record, so a folder id does not resolve to an EcatMediaFile and fails closed here —
+    // intended on this endpoint, but a trap if this shape is reused where folder ids are
+    // legitimate.
     if (user == null || user.isAnonymousGuestAccount()) {
-      throw new AuthorizationException(
-          messages.getMessage(
-              "errors.authorization.failure.listLinkedDocuments",
-              new Object[] {
-                user == null ? RecordGroupSharing.ANONYMOUS_USER : user.getUsername(), mediaFileId
-              }));
+      throw refuseListing(user, mediaFileId);
     }
     EcatMediaFile media =
         recordDao
             .getSafeNull(mediaFileId)
             .filter(EcatMediaFile.class::isInstance)
             .map(EcatMediaFile.class::cast)
-            .orElseThrow(
-                () ->
-                    new AuthorizationException(
-                        messages.getMessage(
-                            "errors.authorization.failure.listLinkedDocuments",
-                            new Object[] {user.getUsername(), mediaFileId})));
-    // same refusal message as the unknown-id branch above: the AJAX error view echoes exception
-    // messages, so a distinct message here would let a caller distinguish an existing
-    // inaccessible media id from a nonexistent one
+            .orElseThrow(() -> refuseListing(user, mediaFileId));
     if (!permUtils.isRecordAccessPermitted(user, media, PermissionType.READ)) {
-      throw new AuthorizationException(
-          messages.getMessage(
-              "errors.authorization.failure.listLinkedDocuments",
-              new Object[] {user.getUsername(), mediaFileId}));
+      throw refuseListing(user, mediaFileId);
     }
 
     // READ on the media file does not imply READ on every linking document. Unreadable rows are
     // replaced by an owner-only placeholder rather than dropped, matching
     // DetailedRecordInformationProvider.getLinkedByRecords and the contract the frontend relies on
-    // (modules/workspace/schema.ts: absent id/oid marks a private row, counted as "N private
-    // documents by <owner>").
-    List<RecordInformation> linked = recordDao.getInfosOfDocumentsLinkedToMediaFile(mediaFileId);
+    // (modules/workspace/schema.ts: absent id/oid marks a private row, rendered as
+    // "N private docs belonging to <owner>").
+    // De-duplicated by document id first: LINKED_DOCS_QUERY has no `distinct`, so a document
+    // embedding this file in two fields yields two rows and would be counted as two private
+    // documents.
+    Map<Long, RecordInformation> distinctByDocId = new LinkedHashMap<>();
+    for (RecordInformation info : recordDao.getInfosOfDocumentsLinkedToMediaFile(mediaFileId)) {
+      distinctByDocId.putIfAbsent(info.getId(), info);
+    }
     Map<Long, Record> byId =
-        recordDao
-            .getRecordsById(linked.stream().map(RecordInformation::getId).distinct().toList())
-            .stream()
+        recordDao.getRecordsById(List.copyOf(distinctByDocId.keySet())).stream()
             .collect(Collectors.toMap(Record::getId, Function.identity(), (a, b) -> a));
-    return linked.stream()
+    return distinctByDocId.values().stream()
         .map(info -> toReadableOrPlaceholder(info, byId.get(info.getId()), user))
+        .flatMap(Optional::stream)
         .toList();
   }
 
-  private RecordInformation toReadableOrPlaceholder(RecordInformation info, Record doc, User user) {
-    if (doc != null && permUtils.isRecordAccessPermitted(user, doc, PermissionType.READ)) {
+  /**
+   * One refusal for every branch of {@link #getIdsOfLinkedDocuments}. The AJAX error view echoes
+   * exception messages, so an absent media file, an inaccessible one and a missing subject must all
+   * produce the same text: a distinct message would let a caller use the endpoint as an existence
+   * oracle. Kept as a single factory so a later edit cannot make one branch diverge (RSDEV-1329).
+   */
+  private AuthorizationException refuseListing(User user, Long mediaFileId) {
+    return new AuthorizationException(
+        messages.getMessage(
+            "errors.authorization.failure.listLinkedDocuments",
+            new Object[] {
+              user == null ? RecordGroupSharing.ANONYMOUS_USER : user.getUsername(), mediaFileId
+            }));
+  }
+
+  private Optional<RecordInformation> toReadableOrPlaceholder(
+      RecordInformation info, Record doc, User user) {
+    // A linked id that no longer resolves to a Record cannot be shown to be readable, and there is
+    // no owner to attribute a private row to, so it is omitted rather than emitted as an
+    // unattributable "private doc belonging to <blank>" (RSDEV-1329).
+    if (doc == null) {
+      return Optional.empty();
+    }
+    // isPermitted, not isRecordAccessPermitted: the latter ORs in isPermittedViaMediaLinksToRecords
+    // which grants READ on a record via anything it links to. That fallback is correct for the
+    // media file itself (above) but on a LINKING document it would re-open the leak these
+    // placeholders exist to close.
+    if (permUtils.isPermitted(doc, PermissionType.READ, user)) {
       info.setOid(new GlobalIdentifier(GlobalIdPrefix.SD, info.getId()));
-      return info;
+      return Optional.of(info);
     }
     RecordInformation ownersInfo = new RecordInformation();
-    if (doc != null) {
-      // full name only: the username is a login identifier, and no consumer of the placeholder
-      // reads it (RSDEV-1329)
-      ownersInfo.setOwnerFullName(doc.getOwner().getFullName());
-    }
-    return ownersInfo;
+    // full name only: the username is a login identifier, and no consumer of the placeholder
+    // reads it (RSDEV-1329)
+    ownersInfo.setOwnerFullName(doc.getOwner().getFullName());
+    return Optional.of(ownersInfo);
   }
 
   @Override

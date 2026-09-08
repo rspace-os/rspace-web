@@ -120,10 +120,8 @@ class MediaManagerImplTest {
     StructuredDocument unreadableDoc = TestFactory.createAnySD();
     unreadableDoc.setId(6L);
     when(recordDao.getRecordsById(List.of(5L, 6L))).thenReturn(List.of(readableDoc, unreadableDoc));
-    when(permUtils.isRecordAccessPermitted(user, readableDoc, PermissionType.READ))
-        .thenReturn(true);
-    when(permUtils.isRecordAccessPermitted(user, unreadableDoc, PermissionType.READ))
-        .thenReturn(false);
+    when(permUtils.isPermitted(readableDoc, PermissionType.READ, user)).thenReturn(true);
+    when(permUtils.isPermitted(unreadableDoc, PermissionType.READ, user)).thenReturn(false);
 
     List<RecordInformation> result = mediaManager.getIdsOfLinkedDocuments(1L, user);
 
@@ -137,9 +135,11 @@ class MediaManagerImplTest {
   }
 
   @Test
-  void getIdsOfLinkedDocumentsReturnsOwnerlessPlaceholderWhenLinkedRecordNotLoaded() {
-    // Defensive branch: a linked-row id missing from the batch load still yields a private
-    // placeholder (with no owner name) rather than an NPE or a leaked row
+  void getIdsOfLinkedDocumentsOmitsRowsWhoseRecordDoesNotResolve() {
+    // Defensive branch: a linked-row id missing from the batch load cannot be shown to be
+    // readable and has no owner to attribute a private row to. Emitting a placeholder would
+    // render as "1 private docs belonging to " with a blank name in both consumers, so the row
+    // is omitted instead (RSDEV-1329).
     when(recordDao.getSafeNull(1L)).thenReturn(Optional.of(mediaFile));
     when(permUtils.isRecordAccessPermitted(user, mediaFile, PermissionType.READ)).thenReturn(true);
     RecordInformation info = new RecordInformation();
@@ -149,9 +149,7 @@ class MediaManagerImplTest {
 
     List<RecordInformation> result = mediaManager.getIdsOfLinkedDocuments(1L, user);
 
-    assertEquals(1, result.size());
-    assertNull(result.get(0).getId());
-    assertNull(result.get(0).getOwnerFullName());
+    assertEquals(List.of(), result);
   }
 
   @Test
@@ -169,14 +167,64 @@ class MediaManagerImplTest {
     StructuredDocument doc6 = TestFactory.createAnySD();
     doc6.setId(6L);
     when(recordDao.getRecordsById(List.of(5L, 6L))).thenReturn(List.of(doc5, doc6));
-    when(permUtils.isRecordAccessPermitted(user, doc5, PermissionType.READ)).thenReturn(true);
-    when(permUtils.isRecordAccessPermitted(user, doc6, PermissionType.READ)).thenReturn(true);
+    when(permUtils.isPermitted(doc5, PermissionType.READ, user)).thenReturn(true);
+    when(permUtils.isPermitted(doc6, PermissionType.READ, user)).thenReturn(true);
 
     mediaManager.getIdsOfLinkedDocuments(1L, user);
 
     verify(recordDao, times(1)).getRecordsById(List.of(5L, 6L));
     // only the media-file lookup, never one per linked document
     verify(recordDao, times(1)).getSafeNull(anyLong());
+  }
+
+  @Test
+  void getIdsOfLinkedDocumentsCountsADocumentEmbeddingTheSameFileTwiceOnlyOnce() {
+    // RecordDaoHibernate.LINKED_DOCS_QUERY has no `distinct`, so a document that embeds the same
+    // media file in two fields comes back as two rows. That was cosmetic before; now that
+    // unreadable rows feed a per-owner "N private docs" count, the duplicate would report one
+    // private document as two, so rows must be de-duplicated by document id.
+    when(recordDao.getSafeNull(1L)).thenReturn(Optional.of(mediaFile));
+    when(permUtils.isRecordAccessPermitted(user, mediaFile, PermissionType.READ)).thenReturn(true);
+    RecordInformation firstLink = new RecordInformation();
+    firstLink.setId(6L);
+    RecordInformation secondLink = new RecordInformation();
+    secondLink.setId(6L);
+    when(recordDao.getInfosOfDocumentsLinkedToMediaFile(1L))
+        .thenReturn(List.of(firstLink, secondLink));
+    StructuredDocument unreadableDoc = TestFactory.createAnySD();
+    unreadableDoc.setId(6L);
+    when(recordDao.getRecordsById(List.of(6L))).thenReturn(List.of(unreadableDoc));
+    when(permUtils.isPermitted(unreadableDoc, PermissionType.READ, user)).thenReturn(false);
+
+    List<RecordInformation> result = mediaManager.getIdsOfLinkedDocuments(1L, user);
+
+    assertEquals(1, result.size());
+    assertNull(result.get(0).getId());
+  }
+
+  @Test
+  void getIdsOfLinkedDocumentsDoesNotGrantLinkingDocumentAccessViaMediaLinkFallback() {
+    // RSDEV-1329: isRecordAccessPermitted ORs in isPermittedViaMediaLinksToRecords, which grants
+    // READ on a record when the subject can read something it links to. That fallback is load
+    // bearing for the media file itself, but applying it to a LINKING document would re-open the
+    // very leak the placeholder mechanism exists to close, so the per-document filter must use
+    // the plain permission check.
+    when(recordDao.getSafeNull(1L)).thenReturn(Optional.of(mediaFile));
+    when(permUtils.isRecordAccessPermitted(user, mediaFile, PermissionType.READ)).thenReturn(true);
+    RecordInformation info = new RecordInformation();
+    info.setId(5L);
+    when(recordDao.getInfosOfDocumentsLinkedToMediaFile(1L)).thenReturn(List.of(info));
+    StructuredDocument linkedDoc = TestFactory.createAnySD();
+    linkedDoc.setId(5L);
+    when(recordDao.getRecordsById(List.of(5L))).thenReturn(List.of(linkedDoc));
+    lenient().when(permUtils.isPermitted(linkedDoc, PermissionType.READ, user)).thenReturn(true);
+    when(permUtils.isPermitted(linkedDoc, PermissionType.READ, user)).thenReturn(false);
+
+    List<RecordInformation> result = mediaManager.getIdsOfLinkedDocuments(1L, user);
+
+    assertEquals(1, result.size());
+    assertNull(result.get(0).getId());
+    assertEquals(linkedDoc.getOwner().getFullName(), result.get(0).getOwnerFullName());
   }
 
   @Test
@@ -189,7 +237,7 @@ class MediaManagerImplTest {
     StructuredDocument linkedDoc = TestFactory.createAnySD();
     linkedDoc.setId(5L);
     when(recordDao.getRecordsById(List.of(5L))).thenReturn(List.of(linkedDoc));
-    when(permUtils.isRecordAccessPermitted(user, linkedDoc, PermissionType.READ)).thenReturn(true);
+    when(permUtils.isPermitted(linkedDoc, PermissionType.READ, user)).thenReturn(true);
 
     List<RecordInformation> result = mediaManager.getIdsOfLinkedDocuments(1L, user);
 

@@ -1961,7 +1961,8 @@ export default interface Resources {
       "heading": "Linked Documents",
       "loadFailed": "Error loading linked documents.",
       "noRows": "No Linked Documents",
-      "privateDocs": "{count, plural, one {# private doc belonging to {ownerFullName}} other {# private docs belonging to {ownerFullName}}}"
+      "privateDocs": "{count, plural, one {# private doc belonging to {ownerFullName}} other {# private docs belonging to {ownerFullName}}}",
+      "unknownOwner": "an unknown user"
     },
     "listing": {
       "alerts": {

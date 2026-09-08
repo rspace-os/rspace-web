@@ -4,6 +4,8 @@ import com.researchspace.model.User;
 import com.researchspace.model.audit.AuditedEntity;
 import com.researchspace.model.dtos.chemistry.StoichiometryDTO;
 import com.researchspace.model.field.Field;
+import com.researchspace.model.permissions.IPermissionUtils;
+import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.stoichiometry.Stoichiometry;
@@ -12,7 +14,6 @@ import com.researchspace.service.FieldManager;
 import com.researchspace.service.archive.StoichiometryImporter.IdAndRevision;
 import com.researchspace.service.archive.export.StoichiometryReader;
 import java.util.List;
-import org.apache.shiro.authz.AuthorizationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +30,7 @@ public class StoichiometryImportRevisionFixupManagerImpl
 
   @Autowired private AuditManager auditManager;
   @Autowired private FieldManager fieldManager;
+  @Autowired private IPermissionUtils permissionUtils;
 
   private final StoichiometryReader reader = new StoichiometryReader();
 
@@ -41,14 +43,21 @@ public class StoichiometryImportRevisionFixupManagerImpl
       if (!(record instanceof StructuredDocument)) {
         continue;
       }
-      try {
-        fixupFieldsForRecord(record.getId(), user);
-      } catch (AuthorizationException e) {
-        // RSDEV-1329: getFieldsByRecordId asserts READ, so a single refused record must not
-        // abort the revision fixup of every record imported after it. Only the refusal gets
-        // per-record recovery; operational failures still propagate.
-        log.warn("Refused fixing up stoichiometry revisions for record id={}", record.getId(), e);
+      // RSDEV-1329: getFieldsByRecordId asserts READ, so a record the importer cannot read
+      // must be filtered out HERE rather than by catching the refusal. FieldManagerImpl is
+      // advised by managerTx with the default REQUIRED propagation, so it participates in
+      // this method's transaction; letting its AuthorizationException escape the proxy marks
+      // that transaction rollback-only, and catching it merely defers the abort to an
+      // UnexpectedRollbackException at commit. A non-throwing check keeps the refusal from
+      // ever touching the transaction, so the remaining records really do get fixed up.
+      if (!permissionUtils.isRecordAccessPermitted(user, record, PermissionType.READ)) {
+        log.warn(
+            "Skipping stoichiometry revision fixup for record id={}: {} lacks READ permission",
+            record.getId(),
+            user.getUsername());
+        continue;
       }
+      fixupFieldsForRecord(record.getId(), user);
     }
   }
 

@@ -86,8 +86,8 @@ export type LinkedDocuments = {
  * RSDEV-1329: the endpoint returns owner-only placeholder rows (no id/oid/name) for documents the
  * caller cannot read. Those are surfaced as per-owner counts rather than as table rows.
  */
-export async function getLinkedDocuments(fileId: string): Promise<LinkedDocuments> {
-  const { readable, privateByOwner } = await fetchLinkedDocuments(Number(fileId));
+async function getLinkedDocuments(fileId: number): Promise<LinkedDocuments> {
+  const { readable, privateByOwner } = await fetchLinkedDocuments(fileId);
   return {
     documents: readable.map(({ id, globalId, name }) => ({
       id,
@@ -106,11 +106,14 @@ function isLinkableMediaFile(file: GalleryFile): boolean {
 }
 
 export function useLinkedDocumentsQuery(file: GalleryFile) {
-  const fileId = idToString(file.id).elseThrow();
+  // `id` is null on filesystems that do not support ids. Deriving the key with elseThrow()
+  // would throw during render, before `enabled` is consulted, taking the info panel down
+  // instead of degrading to an empty state, so the null case disables the query instead.
+  const fileId = file.id;
   return useQuery({
-    queryKey: galleryQueryKeys.linkedDocuments(fileId),
-    queryFn: () => getLinkedDocuments(fileId),
-    enabled: isLinkableMediaFile(file),
+    queryKey: galleryQueryKeys.linkedDocuments(idToString(fileId).orElse("")),
+    queryFn: () => getLinkedDocuments(fileId as number),
+    enabled: fileId !== null && isLinkableMediaFile(file),
     retry: false,
     staleTime: INFO_PANEL_STALE_TIME,
   });

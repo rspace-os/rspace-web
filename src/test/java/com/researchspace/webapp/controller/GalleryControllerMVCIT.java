@@ -22,6 +22,7 @@ import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.EcatImage;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.RSChemElement;
+import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.GalleryFilterCriteria;
 import com.researchspace.model.field.Field;
@@ -43,6 +44,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.List;
 import javax.imageio.ImageIO;
 import org.apache.http.entity.ContentType;
@@ -53,10 +55,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.jdbc.JdbcTestUtils;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
@@ -74,7 +74,6 @@ public class GalleryControllerMVCIT extends MVCTestBase {
   private @Autowired RSChemElementManager rsChemElementManager;
   @TempDir public File tempIndexFolder;
   @Autowired FileIndexSearcher searcher;
-  private @Autowired JdbcTemplate jdbcTemplate;
 
   @Value("${publishing.anonymousGuest.password}")
   private String anonymousPassword;
@@ -91,11 +90,34 @@ public class GalleryControllerMVCIT extends MVCTestBase {
 
   @AfterEach
   public void tearDown() throws Exception {
-    // remove any published link created by the RSDEV-1329 guest test so the publish-listing
-    // MVCITs running later against the same database see no leftover shares; runs before
-    // super.tearDown() so a failure there cannot skip the cleanup
-    JdbcTestUtils.deleteFromTables(jdbcTemplate, "RecordGroupSharing");
+    // Unpublish only what this class published, so the publish-listing MVCITs running later
+    // against the same committed database see no leftover shares. Deliberately NOT a
+    // `deleteFromTables("RecordGroupSharing")` wipe: that ran after every test in the class,
+    // destroyed share rows other fixtures had created, and being raw SQL it removed the
+    // sharing row while leaving the corresponding group ACL on the BaseRecord behind.
+    // Unsharing through the manager takes the ACL with it.
+    unpublishRecordsPublishedByThisTest();
     super.tearDown();
+  }
+
+  private void unpublishRecordsPublishedByThisTest() {
+    for (PublishedRecord published : publishedRecords) {
+      for (RecordGroupSharing share : sharingMgr.getRecordSharingInfo(published.recordId)) {
+        sharingHandler.unshare(share.getId(), published.publisher);
+      }
+    }
+    publishedRecords.clear();
+  }
+
+  /** Records published by a test in this class, unpublished again in tearDown. */
+  private record PublishedRecord(Long recordId, User publisher) {}
+
+  private final List<PublishedRecord> publishedRecords = new ArrayList<>();
+
+  /** Publishes a document and registers it for teardown, so no share row outlives the test. */
+  private void publishAndRegisterForCleanup(User publisher, Long recordId) {
+    publishDocumentForUser(publisher, recordId);
+    publishedRecords.add(new PublishedRecord(recordId, publisher));
   }
 
   @Test
@@ -877,7 +899,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
     StructuredDocument doc =
         createBasicDocumentInRootFolderWithText(setup.user, "published text with image");
     EcatImage image = addImageToField(doc.getFields().get(0), setup.user);
-    publishDocumentForUser(setup.user, doc.getId());
+    publishAndRegisterForCleanup(setup.user, doc.getId());
 
     logoutCurrentUser();
     PublicDocumentsUtilities.loginAnonymousUser(anonymousPassword);

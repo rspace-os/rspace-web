@@ -70,11 +70,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.web.WebAppConfiguration;
-import org.springframework.test.jdbc.JdbcTestUtils;
 import org.springframework.test.web.servlet.MvcResult;
 
 @WebAppConfiguration
@@ -83,7 +81,6 @@ public class SDocControllerMVCIT extends MVCTestBase {
   private @Autowired DummyWord2HTMLConverter dummyConverter;
   private @Autowired AuditManager auditMgr;
   @Autowired DocumentCopyManager docCopyMgr;
-  private @Autowired JdbcTemplate jdbcTemplate;
 
   @Value("${publishing.anonymousGuest.password}")
   private String anonymousPassword;
@@ -95,10 +92,34 @@ public class SDocControllerMVCIT extends MVCTestBase {
 
   @AfterEach
   public void tearDown() throws Exception {
-    // remove published links created by the RSDEV-1329 tests first (so a failure in
-    // super.tearDown cannot skip it), keeping later publish-listing MVCITs share-free
-    JdbcTestUtils.deleteFromTables(jdbcTemplate, "RecordGroupSharing");
+    // Unpublish only what this class published, keeping later publish-listing MVCITs
+    // share-free. Deliberately NOT a `deleteFromTables("RecordGroupSharing")` wipe: that ran
+    // after every test in the class (most create no shares at all), destroyed share rows other
+    // fixtures had created such as sharingTemplateTest's, and being raw SQL it removed the
+    // sharing row while leaving the corresponding group ACL on the BaseRecord behind.
+    // Unsharing through the manager takes the ACL with it.
+    unpublishRecordsPublishedByThisTest();
     super.tearDown();
+  }
+
+  private void unpublishRecordsPublishedByThisTest() {
+    for (PublishedRecord published : publishedRecords) {
+      for (RecordGroupSharing share : sharingMgr.getRecordSharingInfo(published.recordId)) {
+        sharingHandler.unshare(share.getId(), published.publisher);
+      }
+    }
+    publishedRecords.clear();
+  }
+
+  /** Records published by a test in this class, unpublished again in tearDown. */
+  private record PublishedRecord(Long recordId, User publisher) {}
+
+  private final List<PublishedRecord> publishedRecords = new ArrayList<>();
+
+  /** Publishes a document and registers it for teardown, so no share row outlives the test. */
+  private void publishAndRegisterForCleanup(User publisher, Long recordId) {
+    publishDocumentForUser(publisher, recordId);
+    publishedRecords.add(new PublishedRecord(recordId, publisher));
   }
 
   @Test
@@ -978,7 +999,7 @@ public class SDocControllerMVCIT extends MVCTestBase {
             "standardUser", Constants.USER_ROLE, false, 1);
     User owner = setup.user;
     StructuredDocument doc = createBasicDocumentInRootFolderWithText(owner, "published draft");
-    publishDocumentForUser(owner, doc.getId());
+    publishAndRegisterForCleanup(owner, doc.getId());
 
     User other = createInitAndLoginAnyUser();
 
@@ -1015,7 +1036,7 @@ public class SDocControllerMVCIT extends MVCTestBase {
     StructuredDocument doc = createBasicDocumentInRootFolderWithText(owner, "commented doc");
     EcatComment comment =
         addNewCommentToField("public comment text", doc.getFields().get(0), owner);
-    publishDocumentForUser(owner, doc.getId());
+    publishAndRegisterForCleanup(owner, doc.getId());
 
     logoutCurrentUser();
     PublicDocumentsUtilities.loginAnonymousUser(anonymousPassword);

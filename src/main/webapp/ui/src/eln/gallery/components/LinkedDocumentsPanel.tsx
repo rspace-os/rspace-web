@@ -86,17 +86,19 @@ export function LinkedDocumentsPanel({ file }: { file: GalleryFile }): React.Rea
               ? ""
               : t("linkedDocumentsPanel.noRows"),
         }}
-        loading={linkedDocuments.isPending && linkedDocuments.fetchStatus !== "idle"}
+        loading={linkedDocuments.isLoading}
         getRowId={(row) => row.id}
         sx={{
           ml: 2,
         }}
       />
       {privateByOwner.map((p) => (
-        <Typography key={p.ownerFullName} variant="body2" sx={{ ml: 2, mt: 0.5 }}>
+        // splitLinkedRecords buckets a row with no owner name under "", so fall back to a
+        // named unknown-owner string rather than rendering a dangling "belonging to "
+        <Typography key={p.ownerFullName || "unknownOwner"} variant="body2" sx={{ ml: 2, mt: 0.5 }}>
           {t("linkedDocumentsPanel.privateDocs", {
             count: p.count,
-            ownerFullName: p.ownerFullName,
+            ownerFullName: p.ownerFullName || t("linkedDocumentsPanel.unknownOwner"),
           })}
         </Typography>
       ))}

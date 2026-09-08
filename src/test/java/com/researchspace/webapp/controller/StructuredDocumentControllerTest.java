@@ -385,6 +385,15 @@ public class StructuredDocumentControllerTest {
     assertNull(field.getStructuredDocument());
   }
 
+  @Test
+  public void getAutosavedFieldsRefusesNullPrincipal() {
+    // RSDEV-1329: a session-less request must fail closed with the same externalized
+    // authorization refusal the sibling public controller raises, not dereference the principal
+    // into an NPE that surfaces as a 500 with a non-localized message.
+    assertThrows(AuthorizationException.class, () -> strucDocCtrller.getAutoSavedFields(1L, null));
+    verifyNoInteractions(fieldManager);
+  }
+
   private void generalExpectations() {
     when(userMgr.getUserByUsername(eq(user.getUsername()))).thenReturn(user);
   }
