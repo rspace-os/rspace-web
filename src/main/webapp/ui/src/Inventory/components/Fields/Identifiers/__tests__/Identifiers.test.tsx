@@ -3,6 +3,7 @@ import { describe, expect, test } from "vitest";
 import type { PidinstPublishingState } from "../../../../../stores/definitions/Identifier";
 import type { InventoryRecord } from "../../../../../stores/definitions/InventoryRecord";
 import { makeMockContainer } from "../../../../../stores/models/__tests__/ContainerModel/mocking";
+import { makeMockInstrument } from "../../../../../stores/models/__tests__/InstrumentModel/mocking";
 import { makeMockSample } from "../../../../../stores/models/__tests__/SampleModel/mocking";
 import { IdentifiersList } from "../Identifiers";
 import { mockIGSNIdentifier } from "./mocking";
@@ -47,6 +48,32 @@ describe("Identifiers section", () => {
         </ThemeProvider>,
       );
       expect(container).toHaveTextContent("Material Sample");
+    });
+  });
+  describe("When an instrument has a PIDINST_B2INST identifier", () => {
+    test("Required/Recommended Identifier Properties sections are not rendered", () => {
+      const instrument1: InventoryRecord = makeMockInstrument();
+      instrument1.identifiers = [{ ...mockIGSNIdentifier("instrument"), doiType: "PIDINST_B2INST" }];
+      const { container } = render(
+        <ThemeProvider theme={materialTheme}>
+          <IdentifiersList activeResult={instrument1} />
+        </ThemeProvider>,
+      );
+      expect(container).not.toHaveTextContent("fields.identifiers.wrapper.required.title");
+      expect(container).not.toHaveTextContent("fields.identifiers.wrapper.recommended.title");
+    });
+  });
+  describe("When an instrument has a PIDINST_DATACITE identifier", () => {
+    test("Required/Recommended Identifier Properties sections are rendered", () => {
+      const instrument1: InventoryRecord = makeMockInstrument();
+      instrument1.identifiers = [{ ...mockIGSNIdentifier("instrument"), doiType: "PIDINST_DATACITE" }];
+      const { container } = render(
+        <ThemeProvider theme={materialTheme}>
+          <IdentifiersList activeResult={instrument1} />
+        </ThemeProvider>,
+      );
+      expect(container).toHaveTextContent("fields.identifiers.wrapper.required.title");
+      expect(container).toHaveTextContent("fields.identifiers.wrapper.recommended.title");
     });
   });
   describe("When viewing a historical version", () => {

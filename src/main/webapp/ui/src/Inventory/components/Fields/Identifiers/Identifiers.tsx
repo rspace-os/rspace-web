@@ -76,114 +76,124 @@ const IdentifierWrapper = observer(
 
     const isInstrument = activeResult.recordType === "instrument" || activeResult.recordType === "instrumentTemplate";
 
+    /*
+     * B2INST manages its own community-specific metadata on its own side, so the DataCite-style
+     * required/recommended property sections below don't apply and would only confuse the user.
+     */
+    const isB2InstPidinst = id.doiType === "PIDINST_B2INST";
+
     const rawCustomFields: Array<unknown> =
       "fields" in activeResult && Array.isArray(activeResult.fields) ? activeResult.fields : [];
     const customFields = rawCustomFields.filter(isCustomField);
 
     return (
       <>
-        <section>
-          <Typography variant="h6" component="h4">
-            {t("fields.identifiers.wrapper.required.title")}
-          </Typography>
-          {id.requiredFields.map((f) => (
-            <Grid
-              key={f.key}
-              sx={{
-                width: "100%",
-                marginBottom: "8px",
-                borderBottom: editable ? "0px" : "1px dotted grey",
-              }}
-            >
-              <FormControl component="fieldset" fullWidth>
-                <InputWrapper label={f.key}>
-                  {editable && isRadio(f) ? (
-                    <RadioField
-                      name={`field-${f.key}`}
-                      value={f.value as string}
-                      // biome-ignore lint/style/noNonNullAssertion: initial biome migration
-                      options={f.radioOptions!}
-                      onChange={({ target: { value } }) => {
-                        if (value) handleUpdate(f, value);
-                      }}
-                    />
-                  ) : (
-                    <TextField
-                      size="small"
-                      variant="standard"
-                      fullWidth
-                      id={`IdentifierField-${f.key}`}
-                      disabled={!editable || fixedValue(f)}
-                      value={f.value ?? ""}
-                      placeholder={
-                        editable
-                          ? t("fields.identifiers.wrapper.enterValue", { key: f.key })
-                          : t("fields.identifiers.wrapper.none")
-                      }
-                      onChange={({ target: { value } }) => handleUpdate(f, value)}
-                      error={editable && isFieldInvalid(f)}
-                      helperText={editable && isFieldInvalid(f) ? t("fields.identifiers.wrapper.fieldInvalid") : null}
-                      slotProps={{
-                        inputLabel: { shrink: true },
-                      }}
-                    />
-                  )}
-                </InputWrapper>
-              </FormControl>
-            </Grid>
-          ))}
-        </section>
-        <section>
-          <Grid
-            container
-            direction="row"
-            spacing={1}
-            sx={{
-              justifyContent: "space-between",
-              width: "100%",
-              mb: 1,
-              fontWeight: "bold",
-            }}
-          >
-            <Grid>
-              <Typography variant="h6" component="h4">
-                {t("fields.identifiers.wrapper.recommended.title")}
-              </Typography>
-            </Grid>
-            <Grid>
-              <CustomTooltip
-                title={match<void, string>([
-                  [() => openRecommendedSection, t("fields.identifiers.wrapper.recommended.hide")],
-                  [() => true, t("fields.identifiers.wrapper.recommended.show")],
-                ])()}
-              >
-                <IconButton
-                  onClick={() => setOpenRecommendedSection(!openRecommendedSection)}
-                  disabled={false}
-                  aria-label={t("fields.identifiers.wrapper.recommended.label")}
-                >
-                  <ExpandCollapseIcon open={openRecommendedSection} />
-                </IconButton>
-              </CustomTooltip>
-            </Grid>
-          </Grid>
-          <Collapse in={openRecommendedSection}>
-            {id.recommendedFields.map((f) => (
+        {!isB2InstPidinst && (
+          <section>
+            <Typography variant="h6" component="h4">
+              {t("fields.identifiers.wrapper.required.title")}
+            </Typography>
+            {id.requiredFields.map((f) => (
               <Grid
                 key={f.key}
                 sx={{
                   width: "100%",
-                  mb: 1,
+                  marginBottom: "8px",
                   borderBottom: editable ? "0px" : "1px dotted grey",
                 }}
               >
                 <FormControl component="fieldset" fullWidth>
-                  <MultipleInputHandler field={f} activeResult={activeResult} editable={editable} />
+                  <InputWrapper label={f.key}>
+                    {editable && isRadio(f) ? (
+                      <RadioField
+                        name={`field-${f.key}`}
+                        value={f.value as string}
+                        // biome-ignore lint/style/noNonNullAssertion: initial biome migration
+                        options={f.radioOptions!}
+                        onChange={({ target: { value } }) => {
+                          if (value) handleUpdate(f, value);
+                        }}
+                      />
+                    ) : (
+                      <TextField
+                        size="small"
+                        variant="standard"
+                        fullWidth
+                        id={`IdentifierField-${f.key}`}
+                        disabled={!editable || fixedValue(f)}
+                        value={f.value ?? ""}
+                        placeholder={
+                          editable
+                            ? t("fields.identifiers.wrapper.enterValue", { key: f.key })
+                            : t("fields.identifiers.wrapper.none")
+                        }
+                        onChange={({ target: { value } }) => handleUpdate(f, value)}
+                        error={editable && isFieldInvalid(f)}
+                        helperText={editable && isFieldInvalid(f) ? t("fields.identifiers.wrapper.fieldInvalid") : null}
+                        slotProps={{
+                          inputLabel: { shrink: true },
+                        }}
+                      />
+                    )}
+                  </InputWrapper>
                 </FormControl>
               </Grid>
             ))}
-          </Collapse>
-        </section>
+          </section>
+        )}
+        {!isB2InstPidinst && (
+          <section>
+            <Grid
+              container
+              direction="row"
+              spacing={1}
+              sx={{
+                justifyContent: "space-between",
+                width: "100%",
+                mb: 1,
+                fontWeight: "bold",
+              }}
+            >
+              <Grid>
+                <Typography variant="h6" component="h4">
+                  {t("fields.identifiers.wrapper.recommended.title")}
+                </Typography>
+              </Grid>
+              <Grid>
+                <CustomTooltip
+                  title={match<void, string>([
+                    [() => openRecommendedSection, t("fields.identifiers.wrapper.recommended.hide")],
+                    [() => true, t("fields.identifiers.wrapper.recommended.show")],
+                  ])()}
+                >
+                  <IconButton
+                    onClick={() => setOpenRecommendedSection(!openRecommendedSection)}
+                    disabled={false}
+                    aria-label={t("fields.identifiers.wrapper.recommended.label")}
+                  >
+                    <ExpandCollapseIcon open={openRecommendedSection} />
+                  </IconButton>
+                </CustomTooltip>
+              </Grid>
+            </Grid>
+            <Collapse in={openRecommendedSection}>
+              {id.recommendedFields.map((f) => (
+                <Grid
+                  key={f.key}
+                  sx={{
+                    width: "100%",
+                    mb: 1,
+                    borderBottom: editable ? "0px" : "1px dotted grey",
+                  }}
+                >
+                  <FormControl component="fieldset" fullWidth>
+                    <MultipleInputHandler field={f} activeResult={activeResult} editable={editable} />
+                  </FormControl>
+                </Grid>
+              ))}
+            </Collapse>
+          </section>
+        )}
         <section>
           <Typography variant="h6" component="h4" sx={{ mb: 1 }}>
             {t("fields.identifiers.wrapper.inventoryFields.title")}
