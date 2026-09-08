@@ -22,7 +22,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVerticalIcon, XIcon } from "lucide-react";
-import { type CSSProperties, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { type CSSProperties, type ReactNode, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type {
   FieldName,
@@ -197,18 +197,15 @@ export function TableListColumns<TDocument>({
       hidden: availableFields.map((field) => field.name).filter((name) => !shown.includes(name)),
     };
   }, [availableFields, visibleFields]);
-  const [draft, setDraft] = useState(propsLayout);
+  const [dragLayout, setDraft] = useState(propsLayout);
   const [activeField, setActiveField] = useState<FieldName<TDocument> | null>(null);
+  const draft = activeField === null ? propsLayout : dragLayout;
   const origin = useRef(propsLayout);
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
-
-  useEffect(() => {
-    if (activeField === null) setDraft(propsLayout);
-  }, [activeField, propsLayout]);
 
   const targetSection = (event: DragOverEvent | DragEndEvent): Section | null => {
     const section = event.over?.data.current?.section;

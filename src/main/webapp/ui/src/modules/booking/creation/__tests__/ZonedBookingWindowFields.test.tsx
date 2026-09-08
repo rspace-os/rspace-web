@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { ZonedBookingWindowFields } from "../ZonedBookingWindowFields";
+import { validateBookingWindow, ZonedBookingWindowFields } from "../ZonedBookingWindowFields";
 
 describe("ZonedBookingWindowFields", () => {
   it("uses one date for both endpoints in compact mode", () => {
@@ -21,7 +21,6 @@ describe("ZonedBookingWindowFields", () => {
           endTime: "10:00",
         }}
         onChange={onChange}
-        onResolved={vi.fn()}
       />,
     );
 
@@ -48,7 +47,6 @@ describe("ZonedBookingWindowFields", () => {
   ])(
     "resolves %s display input to instants and validates policy in %s",
     (displayTimezone, schedulingTimezone, startTime, endTime, start, end) => {
-      const onResolved = vi.fn();
       render(
         <ZonedBookingWindowFields
           displayTimezone={displayTimezone}
@@ -59,11 +57,18 @@ describe("ZonedBookingWindowFields", () => {
           openingEnd="17:00"
           value={{ startDate: "2026-08-17", startTime, endDate: "2026-08-17", endTime }}
           onChange={vi.fn()}
-          onResolved={onResolved}
         />,
       );
 
-      expect(onResolved).toHaveBeenLastCalledWith({ start, end });
+      expect(
+        validateBookingWindow({ startDate: "2026-08-17", startTime, endDate: "2026-08-17", endTime }, displayTimezone, {
+          schedulingTimezone,
+          slotGranularityMinutes: 5,
+          maxBookingDurationMinutes: 0,
+          openingStart: "09:00",
+          openingEnd: "17:00",
+        }).window,
+      ).toEqual({ start, end });
       expect(screen.queryByText("booking:bookings.form.timezone")).not.toBeInTheDocument();
       expect(screen.queryByText("booking:bookings.form.schedulingTimezone")).not.toBeInTheDocument();
       expect(screen.queryByText("booking:bookings.errors.openingHours")).not.toBeInTheDocument();
@@ -87,7 +92,6 @@ describe("ZonedBookingWindowFields", () => {
           endTime: "10:02",
         }}
         onChange={onChange}
-        onResolved={vi.fn()}
       />,
     );
 
@@ -99,7 +103,6 @@ describe("ZonedBookingWindowFields", () => {
   });
 
   it("allows an always-open interval across the scheduling timezone's local date boundary", () => {
-    const onResolved = vi.fn();
     render(
       <ZonedBookingWindowFields
         displayTimezone="Europe/Berlin"
@@ -115,12 +118,23 @@ describe("ZonedBookingWindowFields", () => {
           endTime: "07:00",
         }}
         onChange={vi.fn()}
-        onResolved={onResolved}
       />,
     );
 
     expect(screen.queryByText("booking:bookings.errors.openingHours")).not.toBeInTheDocument();
-    expect(onResolved).toHaveBeenLastCalledWith({ start: "2026-08-18T03:00:00Z", end: "2026-08-18T05:00:00Z" });
+    expect(
+      validateBookingWindow(
+        { startDate: "2026-08-18", startTime: "05:00", endDate: "2026-08-18", endTime: "07:00" },
+        "Europe/Berlin",
+        {
+          schedulingTimezone: "America/New_York",
+          slotGranularityMinutes: 5,
+          maxBookingDurationMinutes: 0,
+          openingStart: "00:00",
+          openingEnd: "24:00",
+        },
+      ).window,
+    ).toEqual({ start: "2026-08-18T03:00:00Z", end: "2026-08-18T05:00:00Z" });
   });
 
   it.each([
@@ -130,7 +144,6 @@ describe("ZonedBookingWindowFields", () => {
   ])(
     "validates multiday windows against %s–%s and duration %i",
     (openingStart, openingEnd, maxBookingDurationMinutes, valid) => {
-      const onResolved = vi.fn();
       render(
         <ZonedBookingWindowFields
           timezone="UTC"
@@ -140,12 +153,15 @@ describe("ZonedBookingWindowFields", () => {
           maxBookingDurationMinutes={maxBookingDurationMinutes}
           value={{ startDate: "2026-10-19", startTime: "10:00", endDate: "2026-10-21", endTime: "11:00" }}
           onChange={vi.fn()}
-          onResolved={onResolved}
         />,
       );
-      expect(onResolved).toHaveBeenLastCalledWith(
-        valid ? { start: "2026-10-19T10:00:00Z", end: "2026-10-21T11:00:00Z" } : undefined,
-      );
+      expect(
+        validateBookingWindow(
+          { startDate: "2026-10-19", startTime: "10:00", endDate: "2026-10-21", endTime: "11:00" },
+          "UTC",
+          { schedulingTimezone: "UTC", slotGranularityMinutes: 5, openingStart, openingEnd, maxBookingDurationMinutes },
+        ).window,
+      ).toEqual(valid ? { start: "2026-10-19T10:00:00Z", end: "2026-10-21T11:00:00Z" } : undefined);
     },
   );
 
@@ -164,7 +180,6 @@ describe("ZonedBookingWindowFields", () => {
           endTime: "04:00",
         }}
         onChange={vi.fn()}
-        onResolved={vi.fn()}
       />,
     );
 
@@ -188,7 +203,6 @@ describe("ZonedBookingWindowFields", () => {
           endTime: "04:00",
         }}
         onChange={onChange}
-        onResolved={vi.fn()}
       />,
     );
 
@@ -198,7 +212,6 @@ describe("ZonedBookingWindowFields", () => {
   });
 
   it("uses elapsed instants for the maximum duration", () => {
-    const onResolved = vi.fn();
     render(
       <ZonedBookingWindowFields
         timezone="Europe/Berlin"
@@ -215,16 +228,33 @@ describe("ZonedBookingWindowFields", () => {
           endOccurrence: "later",
         }}
         onChange={vi.fn()}
-        onResolved={onResolved}
       />,
     );
 
     expect(screen.getByText("booking:bookings.errors.maximumDuration")).toBeVisible();
-    expect(onResolved).toHaveBeenLastCalledWith(undefined);
+    expect(
+      validateBookingWindow(
+        {
+          startDate: "2026-10-25",
+          startTime: "02:30",
+          startOccurrence: "earlier",
+          endDate: "2026-10-25",
+          endTime: "02:31",
+          endOccurrence: "later",
+        },
+        "Europe/Berlin",
+        {
+          schedulingTimezone: "Europe/Berlin",
+          slotGranularityMinutes: 1,
+          maxBookingDurationMinutes: 60,
+          openingStart: "00:00",
+          openingEnd: "24:00",
+        },
+      ).window,
+    ).toBeUndefined();
   });
 
   it("accepts a booking exactly at the maximum elapsed duration", () => {
-    const onResolved = vi.fn();
     render(
       <ZonedBookingWindowFields
         timezone="Europe/Berlin"
@@ -241,12 +271,30 @@ describe("ZonedBookingWindowFields", () => {
           endOccurrence: "later",
         }}
         onChange={vi.fn()}
-        onResolved={onResolved}
       />,
     );
 
     expect(screen.queryByText("booking:bookings.errors.maximumDuration")).not.toBeInTheDocument();
-    expect(onResolved).toHaveBeenLastCalledWith({
+    expect(
+      validateBookingWindow(
+        {
+          startDate: "2026-10-25",
+          startTime: "02:30",
+          startOccurrence: "earlier",
+          endDate: "2026-10-25",
+          endTime: "02:30",
+          endOccurrence: "later",
+        },
+        "Europe/Berlin",
+        {
+          schedulingTimezone: "Europe/Berlin",
+          slotGranularityMinutes: 1,
+          maxBookingDurationMinutes: 60,
+          openingStart: "00:00",
+          openingEnd: "24:00",
+        },
+      ).window,
+    ).toEqual({
       start: "2026-10-25T00:30:00Z",
       end: "2026-10-25T01:30:00Z",
     });

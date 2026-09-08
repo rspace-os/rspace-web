@@ -16,7 +16,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { PlusIcon, Trash2Icon, XIcon } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type {
   FilterOperator,
@@ -209,7 +209,6 @@ export function TableListFilters<TDocument>({
     ? "sm:grid-cols-[1.5rem_5rem_minmax(10rem,1.3fr)_minmax(7.5rem,auto)_minmax(10rem,1.3fr)_auto_2rem]"
     : "sm:grid-cols-[1.5rem_5rem_minmax(10rem,1.3fr)_minmax(7.5rem,auto)_minmax(10rem,1.3fr)_2rem]";
   const [rules, setRules] = useState<readonly DraftRule<TDocument>[]>(() => comparisonNodes(expression));
-  const nextId = useRef(Math.max(0, ...rules.map((rule) => rule.id)) + 1);
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
@@ -423,7 +422,12 @@ export function TableListFilters<TDocument>({
           if (!field) return;
           setRules((current) => [
             ...current,
-            { id: nextId.current++, field: field.name, operator: defaultOperator(field), value: "" },
+            {
+              id: Math.max(0, ...current.map((rule) => rule.id)) + 1,
+              field: field.name,
+              operator: defaultOperator(field),
+              value: "",
+            },
           ]);
         }}
       >

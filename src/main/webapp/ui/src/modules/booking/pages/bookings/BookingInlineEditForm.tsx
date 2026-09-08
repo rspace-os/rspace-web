@@ -122,18 +122,15 @@ export default function BookingInlineEditForm() {
     }
   }, [conflict, mutation.error, mutation.isError, mutation.isPending]);
 
-  const resetOnChange = useRef(false);
-  resetOnChange.current = mutation.isError && !conflict;
   const resetMutation = mutation.reset;
   const handleStateChange = useCallback(
     (state: BookingFormState) => {
       setDirty(state.dirty);
-      if (resetOnChange.current) {
-        resetOnChange.current = false;
+      if (mutation.isError && !conflict) {
         resetMutation();
       }
     },
-    [setDirty, resetMutation],
+    [setDirty, resetMutation, mutation.isError, conflict],
   );
 
   if (!editable(booking) || !editable(base)) return null;

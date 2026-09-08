@@ -3,7 +3,7 @@ import { faGoogle } from "@fortawesome/free-brands-svg-icons/faGoogle";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CalendarIcon, CalendarPlusIcon, CheckIcon, CopyIcon, LoaderCircleIcon, XIcon } from "lucide-react";
-import { useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button, buttonVariants } from "@/modules/common/ui/button";
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "@/modules/common/ui/input-group";
@@ -45,7 +45,6 @@ export function CalendarSubscriptionPopover({
   const copyLabelId = `${fieldId}-label`;
   const autoGenerateOnOpenRef = useRef(false);
   const headingRef = useRef<HTMLHeadingElement>(null);
-  const googleActionRef = useRef<HTMLAnchorElement>(null);
 
   const queryKey = calendarSubscriptionQueryKey(configurationId);
   const status = useQuery({
@@ -76,19 +75,19 @@ export function CalendarSubscriptionPopover({
     if (status.data.subscriptionUrl === null) createMutation.mutate();
   }, [archived, createMutation, open, status.data, status.isFetching, status.isSuccess]);
 
-  useEffect(() => {
-    if (open) requestAnimationFrame(() => headingRef.current?.focus());
-  }, [open]);
-
-  useEffect(() => {
-    if (!focusGoogle || googleActionRef.current === null) return;
-    googleActionRef.current.focus();
-    setFocusGoogle(false);
-  }, [focusGoogle, subscriptionUrl]);
+  const focusGoogleAction = useCallback(
+    (element: HTMLAnchorElement | null) => {
+      if (!open || !focusGoogle || !element) return;
+      element.focus();
+      setFocusGoogle(false);
+    },
+    [open, focusGoogle],
+  );
 
   const close = () => {
     autoGenerateOnOpenRef.current = false;
     setOpen(false);
+    setFocusGoogle(false);
     setCopied(false);
     setClipboardError(false);
   };
@@ -118,7 +117,7 @@ export function CalendarSubscriptionPopover({
               {t("bookableItemDetails.calendarSubscription.apple")}
             </a>
             <a
-              ref={googleActionRef}
+              ref={focusGoogleAction}
               className={buttonVariants({ variant: "outline", className: "min-w-0 px-2" })}
               href={apps.google}
               target="_blank"

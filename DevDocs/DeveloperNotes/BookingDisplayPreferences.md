@@ -32,6 +32,16 @@ Availability quick-filter counts load even when no filter is selected. They use 
 display interval: before it starts, an item with a free segment is “Free later today”; at or after
 its end, it matches neither filter. Loading these counts does not block the unfiltered catalogue.
 
+The preferences editor derives its initial input from the query cache. Once a user edits a field,
+it keeps that local draft across background refetches. Successful Save or Reset clears the draft
+and displays the saved query document.
+
+Booking forms resolve wall-clock input and scheduling policy synchronously with
+`validateBookingWindow`. The fields display validation results; they do not report a resolved
+window to the parent in an effect. Form state notifications use the latest callback without
+turning callback identity changes into draft changes, so mutation errors remain visible until
+the input changes.
+
 Global display defaults are stored on the audited `BookingConfigurationDefaults` singleton. The
 initial values are `08:00`–`18:00`, Browser mode, and no custom timezone. A user override is one
 versioned JSON document stored under `BOOKING_DISPLAY_PREFERENCES` in the existing
