@@ -309,8 +309,12 @@ export default class IdentifierModel implements Identifier {
        * Requiring what is never shown produced a "some required details are missing" warning with
        * nothing to act on, most visibly on an imported identifier, which carries neither
        * (RSDEV-1326).
+       *
+       * A linked identifier is exempt whichever registry minted it: RSpace does not mint it and
+       * cannot push metadata to it, so a linked DataCite PID has no publisher or publication year
+       * either and the warning would be just as unactionable.
        */
-      ...(this.doiType === "PIDINST_B2INST"
+      ...(this.linked || this.doiType === "PIDINST_B2INST"
         ? []
         : [
             {

@@ -83,8 +83,10 @@ const IdentifierWrapper = observer(
     /*
      * B2INST manages its own community-specific metadata on its own side, so the DataCite-style
      * required/recommended property sections below don't apply and would only confuse the user.
+     * Neither do they apply to a linked identifier of any registry: RSpace does not own it and
+     * cannot push an edit to it, so offering editable minting metadata would be a lie.
      */
-    const isB2InstPidinst = id.doiType === "PIDINST_B2INST";
+    const hidesMintingMetadata = id.linked || id.doiType === "PIDINST_B2INST";
 
     const rawCustomFields: Array<unknown> =
       "fields" in activeResult && Array.isArray(activeResult.fields) ? activeResult.fields : [];
@@ -92,7 +94,7 @@ const IdentifierWrapper = observer(
 
     return (
       <>
-        {!isB2InstPidinst && (
+        {!hidesMintingMetadata && (
           <section>
             <Typography variant="h6" component="h4">
               {t("fields.identifiers.wrapper.required.title")}
@@ -145,7 +147,7 @@ const IdentifierWrapper = observer(
             ))}
           </section>
         )}
-        {!isB2InstPidinst && (
+        {!hidesMintingMetadata && (
           <section>
             <Grid
               container
@@ -427,7 +429,7 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
           </Alert>
         )}
         {activeResult.identifiers.map((id) => {
-          const deletable = id.state === "draft" || isDeletableClosedReview(id);
+          const deletable = id.linked || id.state === "draft" || isDeletableClosedReview(id);
           return (
             <Grid key={id.doi} sx={{ width: "100%" }}>
               <Grid
@@ -533,15 +535,17 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
                 <Grid>
                   <CustomTooltip
                     title={
-                      id.state === "draft"
-                        ? t("fields.identifiers.list.tooltips.deleteDraft")
-                        : isDeletableClosedReview(id)
-                          ? t("fields.identifiers.list.tooltips.deleteClosedReview")
-                          : id.state === "findable"
-                            ? t("fields.identifiers.list.tooltips.retract")
-                            : isB2instBeyondDraft(id)
-                              ? t("fields.identifiers.list.tooltips.pidinstNotRetractable")
-                              : t("fields.identifiers.list.tooltips.notPublished")
+                      id.linked
+                        ? t("fields.identifiers.list.tooltips.linkedUnlink")
+                        : id.state === "draft"
+                          ? t("fields.identifiers.list.tooltips.deleteDraft")
+                          : isDeletableClosedReview(id)
+                            ? t("fields.identifiers.list.tooltips.deleteClosedReview")
+                            : id.state === "findable"
+                              ? t("fields.identifiers.list.tooltips.retract")
+                              : isB2instBeyondDraft(id)
+                                ? t("fields.identifiers.list.tooltips.pidinstNotRetractable")
+                                : t("fields.identifiers.list.tooltips.notPublished")
                     }
                   >
                     <Button
@@ -551,14 +555,16 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
                       onClick={deletable ? () => handleDelete(id) : () => handleRetract(id)}
                       disabled={
                         activeResult.state === "edit" ||
-                        id.state === "registered" ||
-                        (isB2instBeyondDraft(id) && !isDeletableClosedReview(id)) ||
+                        (!id.linked &&
+                          (id.state === "registered" || (isB2instBeyondDraft(id) && !isDeletableClosedReview(id)))) ||
                         Boolean(activeResult.historicalVersion)
                       }
                     >
-                      {deletable
-                        ? t("fields.identifiers.list.deleteOrRetract.delete")
-                        : t("fields.identifiers.list.deleteOrRetract.retract")}
+                      {id.linked
+                        ? t("fields.identifiers.list.deleteOrRetract.unlink")
+                        : deletable
+                          ? t("fields.identifiers.list.deleteOrRetract.delete")
+                          : t("fields.identifiers.list.deleteOrRetract.retract")}
                     </Button>
                   </CustomTooltip>
                 </Grid>

@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 public class ApiPidinstImportPost {
 
   /** The PID to import: a DOI or Handle, bare or as a doi.org / hdl.handle.net address. */
-  @NotBlank(message = "pid must not be blank")
+  @NotBlank(message = "{errors.inventory.identifier.pidinstImportPidRequired}")
   @JsonProperty("pid")
   private String pid;
 

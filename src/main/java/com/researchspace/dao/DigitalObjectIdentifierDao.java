@@ -3,6 +3,7 @@ package com.researchspace.dao;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.DigitalObjectIdentifier;
 import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,4 +22,13 @@ public interface DigitalObjectIdentifierDao extends GenericDao<DigitalObjectIden
    */
   Optional<DigitalObjectIdentifier> findActiveByIdentifierAndType(
       String identifier, IdentifierType type);
+
+  /**
+   * The same lookup for a whole page of provider hits at once, so annotating a search costs one
+   * query rather than one per hit. Oldest row first, so a caller keeping the first match per
+   * identifier sees what {@link #findActiveByIdentifierAndType} would have returned. An empty input
+   * yields an empty list without touching the database.
+   */
+  List<DigitalObjectIdentifier> findActiveByIdentifiersAndType(
+      Collection<String> identifiers, IdentifierType type);
 }

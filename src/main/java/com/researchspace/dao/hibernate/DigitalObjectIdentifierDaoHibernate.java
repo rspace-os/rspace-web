@@ -5,6 +5,7 @@ import com.researchspace.dao.GenericDaoHibernate;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.DigitalObjectIdentifier;
 import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import org.hibernate.envers.AuditReader;
@@ -118,6 +119,24 @@ public class DigitalObjectIdentifierDaoHibernate
         .setParameter("type", type)
         .setMaxResults(1)
         .uniqueResultOptional();
+  }
+
+  @Override
+  public List<DigitalObjectIdentifier> findActiveByIdentifiersAndType(
+      Collection<String> identifiers, IdentifierType type) {
+    if (identifiers == null || identifiers.isEmpty()) {
+      // an empty IN list is not valid HQL, and there is nothing to ask about anyway
+      return List.of();
+    }
+    return sessionFactory
+        .getCurrentSession()
+        .createQuery(
+            "from DigitalObjectIdentifier where identifier in (:identifiers) and type=:type"
+                + " and deleted = false order by id",
+            DigitalObjectIdentifier.class)
+        .setParameterList("identifiers", identifiers)
+        .setParameter("type", type)
+        .getResultList();
   }
 
   private Optional<DigitalObjectIdentifier> getLatestIdentifierByPublicLink(String publicLink) {

@@ -50,7 +50,7 @@ describe("PublishButton is not offered where publishing can never succeed", () =
   });
 
   test("still offers Republish for a findable DataCite DOI RSpace minted", () => {
-    renderButton(identifier({ doiType: "IGSN_DATACITE", state: "findable", linked: false }));
+    renderButton(identifier({ doiType: "DATACITE_IGSN", state: "findable", linked: false }));
     expect(screen.getByRole("button", { name: REPUBLISH })).toBeInTheDocument();
   });
 });

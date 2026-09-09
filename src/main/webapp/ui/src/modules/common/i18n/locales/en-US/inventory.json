@@ -749,7 +749,8 @@
       "list": {
         "deleteOrRetract": {
           "delete": "Delete",
-          "retract": "Retract"
+          "retract": "Retract",
+          "unlink": "Unlink"
         },
         "editFirst": "To update any details, press Edit first.",
         "headers": {
@@ -795,6 +796,7 @@
         "tooltips": {
           "deleteClosedReview": "Delete this identifier so a new one can be registered",
           "deleteDraft": "Delete Draft",
+          "linkedUnlink": "This PID was minted outside RSpace. Deleting it removes the link; the registry record is untouched.",
           "missingData": "Some missing data",
           "notPublished": "Not published yet",
           "pidinstNotRetractable": "B2INST instrument PIDs cannot be retracted or deleted once the record has been sent for community review.",

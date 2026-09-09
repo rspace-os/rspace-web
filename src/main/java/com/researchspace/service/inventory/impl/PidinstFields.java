@@ -39,7 +39,6 @@ final class PidinstFields {
   static final String MEASUREMENT_TECHNIQUE = "Measurement technique";
   static final String MEASURED_QUANTITY = "Measured quantity";
   static final String CALIBRATION = "Calibration";
-  static final String LAST_CALIBRATED = "Last calibrated";
   static final String ALTERNATE_IDENTIFIER = "Alternate Identifier";
 
   private PidinstFields() {}

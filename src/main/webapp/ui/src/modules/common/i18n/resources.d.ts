@@ -3004,7 +3004,8 @@ export default interface Resources {
         "list": {
           "deleteOrRetract": {
             "delete": "Delete",
-            "retract": "Retract"
+            "retract": "Retract",
+            "unlink": "Unlink"
           },
           "editFirst": "To update any details, press Edit first.",
           "headers": {
@@ -3052,7 +3053,8 @@ export default interface Resources {
             "deleteDraft": "Delete Draft",
             "missingData": "Some missing data",
             "notPublished": "Not published yet",
-            "pidinstNotRetractable": "B2INST instrument PIDs cannot be retracted or deleted once the record has been sent for community review.",
+            "linkedUnlink": "This PID was minted outside RSpace. Deleting it removes the link; the registry record is untouched.",
+          "pidinstNotRetractable": "B2INST instrument PIDs cannot be retracted or deleted once the record has been sent for community review.",
             "previewPage": "Preview Landing Page",
             "refresh": "Check the current status of the community review",
             "retract": "Retract"
@@ -6806,6 +6808,7 @@ export default interface Resources {
           "linkedReadOnly": "This identifier was minted outside RSpace and is only linked to this instrument. It cannot be published, retracted or refreshed from RSpace; delete it to remove the link.",
           "mintingUnsupportedType": "unsupported type for minting: {0}",
           "pidinstAlreadyLinked": "This PID is already linked to instrument {0}.",
+        "pidinstImportPidRequired": "A PID is required to import an instrument.",
           "pidinstMandatoryMissing": "The registry record has no {0}, which the \"Instrument (PIDINST 1.0)\" template requires, so it cannot be imported.",
           "pidinstNotFound": "No published instrument record was found for \"{0}\" at the enabled PIDINST provider.",
           "refreshNoIdentifier": "This item has no identifier to refresh. Register an identifier before refreshing its status.",

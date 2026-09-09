@@ -99,6 +99,7 @@
         "linkedReadOnly": "This identifier was minted outside RSpace and is only linked to this instrument. It cannot be published, retracted or refreshed from RSpace; delete it to remove the link.",
         "mintingUnsupportedType": "unsupported type for minting: {0}",
         "pidinstAlreadyLinked": "This PID is already linked to instrument {0}.",
+        "pidinstImportPidRequired": "A PID is required to import an instrument.",
         "pidinstMandatoryMissing": "The registry record has no {0}, which the \"Instrument (PIDINST 1.0)\" template requires, so it cannot be imported.",
         "pidinstNotFound": "No published instrument record was found for \"{0}\" at the enabled PIDINST provider.",
         "refreshNoIdentifier": "This item has no identifier to refresh. Register an identifier before refreshing its status.",

@@ -21,6 +21,7 @@ import materialTheme from "../../../../../theme";
 const PUBLISH = "common:actions.publish";
 const REPUBLISH = "common:actions.republish";
 const RETRACT = "inventory:fields.identifiers.list.deleteOrRetract.retract";
+const UNLINK = "inventory:fields.identifiers.list.deleteOrRetract.unlink";
 const DELETE = "inventory:fields.identifiers.list.deleteOrRetract.delete";
 
 const sample1: InventoryRecord = makeMockSample();
@@ -478,19 +479,24 @@ describe("Identifiers section", () => {
   });
 
   /*
-   * RSDEV-1326. An imported PID is accepted at B2INST and RSpace owns nothing on the provider
-   * side, so the row must offer no publish action, must still show Retract disabled with the
-   * "not retractable" explanation, and must not claim that details are missing: Publisher and
-   * Publication Year are DataCite metadata that this panel does not even display for B2INST.
+   * RSDEV-1326. An imported PID is minted outside RSpace, which owns nothing on the provider side.
+   * So the row must offer no publish action, must not claim details are missing, and must offer
+   * Unlink rather than Retract: the server refuses publish, retract and refresh on a linked
+   * identifier with a 422 (ADR 0009) but deliberately still allows the delete that removes the
+   * link. Both registries behave the same way, hence the parameterised describe: a linked DataCite
+   * PID is findable, so nothing else in the row would have disabled its Retract button.
    */
-  describe("When an instrument has a LINKED B2INST identifier", () => {
+  describe.each([
+    { registry: "B2INST", doiType: "PIDINST_B2INST", state: "accepted" },
+    { registry: "DataCite", doiType: "PIDINST_DATACITE", state: "findable" },
+  ] as const)("When an instrument has a LINKED $registry identifier", ({ doiType, state }) => {
     const linkedInstrument = (): InventoryRecord => {
       const instrument: InventoryRecord = makeMockInstrument();
       instrument.identifiers = [
         {
           ...mockIGSNIdentifier("instrument"),
-          doiType: "PIDINST_B2INST",
-          state: "accepted",
+          doiType,
+          state,
           linked: true,
           publisher: "",
           publicationYear: "",
@@ -509,23 +515,29 @@ describe("Identifiers section", () => {
       expect(screen.queryByRole("button", { name: REPUBLISH })).not.toBeInTheDocument();
     });
 
-    test("Retract is offered but disabled", () => {
+    test("Unlink is offered and enabled, and Retract is not offered at all", () => {
       render(
         <ThemeProvider theme={materialTheme}>
           <IdentifiersList activeResult={linkedInstrument()} />
         </ThemeProvider>,
       );
-      const retract = screen.getByRole("button", { name: RETRACT });
-      expect(retract).toBeInTheDocument();
-      expect(retract).toBeDisabled();
+      const unlink = screen.getByRole("button", { name: UNLINK });
+      expect(unlink).toBeInTheDocument();
+      // deleting is the one thing the server allows on a linked identifier, so it must be
+      // reachable; a Retract here would be a guaranteed 422
+      expect(unlink).toBeEnabled();
+      expect(screen.queryByRole("button", { name: RETRACT })).not.toBeInTheDocument();
     });
 
-    test("no 'required details are missing' warning", () => {
+    test("no minting metadata section, so nothing claims details are missing", () => {
       const { container } = render(
         <ThemeProvider theme={materialTheme}>
           <IdentifiersList activeResult={linkedInstrument()} />
         </ThemeProvider>,
       );
+      // the section itself must be gone, not merely the warning: RSpace cannot push an edit to a
+      // record it does not own, so an editable Publisher field would be a lie
+      expect(container).not.toHaveTextContent("fields.identifiers.wrapper.required.title");
       expect(container).not.toHaveTextContent("fields.identifiers.missingDetails");
     });
   });

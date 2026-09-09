@@ -27,6 +27,9 @@ import com.researchspace.b2inst.model.response.B2instRecordLinks;
 import com.researchspace.b2inst.model.response.B2instSearchResult;
 import com.researchspace.dao.DigitalObjectIdentifierDao;
 import com.researchspace.dao.InstrumentTemplateDao;
+import com.researchspace.datacite.model.DataCiteDoi;
+import com.researchspace.datacite.model.DataCiteDoiAttributes;
+import com.researchspace.datacite.model.DataCiteDoiSearchResult;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.DigitalObjectIdentifier;
@@ -72,6 +75,8 @@ class PidinstLookupManagerImplTest {
   void setUp() {
     // B2INST is the enabled provider in every test here; DataCite is asked only if B2INST is off
     lenient().when(b2instConnector.isConfiguredAndEnabled()).thenReturn(true);
+    // nothing is linked unless a test says so; search annotates every page through this one query
+    lenient().when(doiDao.findActiveByIdentifiersAndType(any(), any())).thenReturn(List.of());
     lenient()
         .when(messages.getMessage(anyString(), any(Object[].class)))
         .thenAnswer(
@@ -125,8 +130,8 @@ class PidinstLookupManagerImplTest {
     Instrument owner = new Instrument();
     owner.setId(99L);
     owner.addIdentifier(existing);
-    when(doiDao.findActiveByIdentifierAndType(HANDLE, IdentifierType.PIDINST_B2INST))
-        .thenReturn(Optional.of(existing));
+    when(doiDao.findActiveByIdentifiersAndType(List.of(HANDLE), IdentifierType.PIDINST_B2INST))
+        .thenReturn(List.of(existing));
 
     ApiPidinstSearchResult result = manager.search("  microscope ", user);
 
@@ -141,8 +146,6 @@ class PidinstLookupManagerImplTest {
   @Test
   void aHandleIsADirectLookupAndADoiYieldsNoHitOnAB2instDeployment() {
     when(b2instConnector.getRecordByHandle(HANDLE)).thenReturn(Optional.of(publishedRecord()));
-    when(doiDao.findActiveByIdentifierAndType(HANDLE, IdentifierType.PIDINST_B2INST))
-        .thenReturn(Optional.empty());
 
     ApiPidinstSearchResult direct = manager.search("https://hdl.handle.net/" + HANDLE, user);
     assertEquals(1, direct.getHits().size());
@@ -255,8 +258,6 @@ class PidinstLookupManagerImplTest {
     B2instSearchResult page = searchResultOf(publishedRecord(), 3);
     page.getHits().getHits().add(unpublished);
     when(b2instConnector.searchRecords("microscope", 50)).thenReturn(page);
-    when(doiDao.findActiveByIdentifierAndType(anyString(), eq(IdentifierType.PIDINST_B2INST)))
-        .thenReturn(Optional.empty());
 
     ApiPidinstSearchResult result = manager.search("microscope", user);
 
@@ -294,5 +295,153 @@ class PidinstLookupManagerImplTest {
         toCreate.getValue().getParentContainer().getId(),
         "the container is translated the way a plain instrument POST translates it");
     assertEquals(location, toCreate.getValue().getParentLocation());
+  }
+
+  // ---------------------------------------------------------------------------------------------
+  // DataCite deployment: B2INST off, so enabledProvider() resolves to PIDINST_DATACITE
+  // ---------------------------------------------------------------------------------------------
+
+  private static final String DOI = "10.15151/esrf-instr-gco8";
+
+  /** A findable instrument DOI, the shape DataCite returns for an ESRF beamline. */
+  private static DataCiteDoi dataCiteInstrument(String doi, String state, String resourceType) {
+    DataCiteDoi result = new DataCiteDoi();
+    result.setId(doi);
+    DataCiteDoiAttributes attributes = result.getAttributes();
+    attributes.setDoi(doi);
+    attributes.setState(state);
+    attributes.setTitles(List.of(new DataCiteDoiAttributes.Title("ID21 Beamline")));
+    DataCiteDoiAttributes.Types types = new DataCiteDoiAttributes.Types();
+    types.setResourceTypeGeneral(resourceType);
+    attributes.setTypes(types);
+    return result;
+  }
+
+  private static DataCiteDoiSearchResult dataCitePage(int total, DataCiteDoi... dois) {
+    DataCiteDoiSearchResult page = new DataCiteDoiSearchResult();
+    page.getData().addAll(List.of(dois));
+    page.getMeta().setTotal(total);
+    return page;
+  }
+
+  private void onADataCiteDeployment() {
+    when(b2instConnector.isConfiguredAndEnabled()).thenReturn(false);
+    when(dataCiteConnector.isDataCiteConfiguredAndEnabled(InventorySettingType.PIDINST))
+        .thenReturn(true);
+  }
+
+  @Test
+  void dataCiteFreeTextSearchReturnsFindableInstrumentsAndFlagsLinkedOnes() {
+    onADataCiteDeployment();
+    when(dataCiteConnector.searchInstrumentDois("Zeiss", 50, InventorySettingType.PIDINST))
+        .thenReturn(dataCitePage(7, dataCiteInstrument(DOI, "findable", "Instrument")));
+    DigitalObjectIdentifier existing =
+        new DigitalObjectIdentifier(DOI, "ID21 Beamline", "suffix1234567890");
+    Instrument owner = new Instrument();
+    owner.setId(42L);
+    owner.addIdentifier(existing);
+    when(doiDao.findActiveByIdentifiersAndType(List.of(DOI), IdentifierType.PIDINST_DATACITE))
+        .thenReturn(List.of(existing));
+
+    ApiPidinstSearchResult result = manager.search(" Zeiss ", user);
+
+    assertEquals("PIDINST_DATACITE", result.getProvider());
+    assertEquals(7, result.getTotal(), "the provider's own total, unaltered");
+    assertEquals(1, result.getHits().size());
+    assertEquals(DOI, result.getHits().get(0).getPid());
+    assertEquals("IN42", result.getHits().get(0).getLinkedInstrumentGlobalId());
+    verify(b2instConnector, never()).searchRecords(anyString(), eq(50));
+  }
+
+  /**
+   * ADR 0009 says RSpace re-checks the state on every hit, so the rule holds whatever the index
+   * returns. Asking DataCite for findable instruments is not the same as being given them.
+   */
+  @Test
+  void dataCiteSearchDropsAHitThatIsNotAFindableInstrument() {
+    onADataCiteDeployment();
+    when(dataCiteConnector.searchInstrumentDois("Zeiss", 50, InventorySettingType.PIDINST))
+        .thenReturn(
+            dataCitePage(
+                3,
+                dataCiteInstrument(DOI, "findable", "Instrument"),
+                dataCiteInstrument("10.1234/draft-one", "draft", "Instrument"),
+                dataCiteInstrument("10.1234/a-dataset", "findable", "Dataset")));
+
+    ApiPidinstSearchResult result = manager.search("Zeiss", user);
+
+    assertEquals(1, result.getHits().size(), "only the findable instrument survives");
+    assertEquals(DOI, result.getHits().get(0).getPid());
+  }
+
+  @Test
+  void aDoiIsADirectLookupOnADataCiteDeploymentAndAHandleYieldsNoHit() {
+    onADataCiteDeployment();
+    when(dataCiteConnector.findDoi(DOI, InventorySettingType.PIDINST))
+        .thenReturn(Optional.of(dataCiteInstrument(DOI, "findable", "Instrument")));
+
+    ApiPidinstSearchResult direct = manager.search("https://doi.org/" + DOI, user);
+    assertEquals(1, direct.getHits().size());
+    assertEquals(DOI, direct.getHits().get(0).getPid());
+    verify(dataCiteConnector, never()).searchInstrumentDois(anyString(), eq(50), any());
+
+    ApiPidinstSearchResult foreign = manager.search("21.T11975/abcde-12345", user);
+    assertTrue(foreign.getHits().isEmpty(), "a Handle cannot be resolved on a DataCite deployment");
+    assertEquals(0, foreign.getTotal());
+  }
+
+  @Test
+  void aDirectDoiLookupRefusesADraftAndANonInstrument() {
+    onADataCiteDeployment();
+    when(dataCiteConnector.findDoi(DOI, InventorySettingType.PIDINST))
+        .thenReturn(Optional.of(dataCiteInstrument(DOI, "draft", "Instrument")));
+    assertTrue(manager.search(DOI, user).getHits().isEmpty(), "a draft DOI has no public page");
+
+    when(dataCiteConnector.findDoi(DOI, InventorySettingType.PIDINST))
+        .thenReturn(Optional.of(dataCiteInstrument(DOI, "findable", "Dataset")));
+    assertTrue(manager.search(DOI, user).getHits().isEmpty(), "a dataset is not an instrument");
+  }
+
+  /**
+   * B2INST resolves the suffix after the last slash and ignores the prefix, so a well-formed but
+   * wrong prefix used to answer with the real record under the deployment's own prefix.
+   */
+  @Test
+  void aB2instLookupRefusesARecordWhoseHandleIsNotTheOneAsked() {
+    when(b2instConnector.getRecordByHandle("21.FAKE/abcde-12345"))
+        .thenReturn(Optional.of(publishedRecord()));
+
+    ApiPidinstSearchResult result = manager.search("21.FAKE/abcde-12345", user);
+
+    assertTrue(result.getHits().isEmpty(), "the record returned carries a different Handle");
+    assertEquals(0, result.getTotal());
+  }
+
+  /** A whole page of hits costs one link-status query, not one per hit. */
+  @Test
+  void everyHitOnAPageIsAnnotatedWithASingleQuery() {
+    B2instDraftRecord second = publishedRecord();
+    second.setId("fghij-67890");
+    second.getMetadata().setName("Another microscope");
+    second.getMetadata().setIdentifier(new B2instIdentifier("Handle", "21.T11975/fghij-67890"));
+    B2instSearchResult page = searchResultOf(publishedRecord(), 2);
+    page.getHits().getHits().add(second);
+    when(b2instConnector.searchRecords("microscope", 50)).thenReturn(page);
+    DigitalObjectIdentifier existing =
+        new DigitalObjectIdentifier("21.T11975/fghij-67890", "Another microscope", "suffix123456");
+    Instrument owner = new Instrument();
+    owner.setId(7L);
+    owner.addIdentifier(existing);
+    when(doiDao.findActiveByIdentifiersAndType(
+            List.of("21.T11975/fghij-67890", HANDLE), IdentifierType.PIDINST_B2INST))
+        .thenReturn(List.of(existing));
+
+    ApiPidinstSearchResult result = manager.search("microscope", user);
+
+    assertEquals(2, result.getHits().size());
+    // sorted by name, so "Another microscope" comes first
+    assertEquals("IN7", result.getHits().get(0).getLinkedInstrumentGlobalId());
+    assertNull(result.getHits().get(1).getLinkedInstrumentGlobalId());
+    verify(doiDao, never()).findActiveByIdentifierAndType(anyString(), any());
   }
 }

@@ -23,6 +23,7 @@ import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestClientException;
 
 @Slf4j
 public class DataCiteConnectorImpl implements DataCiteConnector {
@@ -162,11 +163,25 @@ public class DataCiteConnectorImpl implements DataCiteConnector {
       // DataCiteClientImpl refuses to put a non-DOI in a request path: nothing to find
       log.info("Not looking up '{}' in DataCite: {}", doiId, e.getMessage());
       return Optional.empty();
+    } catch (RestClientException e) {
+      /*
+       * Anything else - 401, 403, 429, 5xx - is a real failure and must not be read as "no such
+       * DOI". It is wrapped rather than rethrown because in Spring 6
+       * RestClientResponseException.getMessage() embeds the raw response body, and an unhandled
+       * exception reaches the caller through handle500Error, which echoes getLocalizedMessage()
+       * into the API response. searchInstrumentDois is already wrapped inside the client.
+       */
+      throw new DataCiteConnectionException("Problem with looking up a DOI in DataCite API.", e);
     }
   }
 
   @Override
-  @Cacheable(value = "pidinstLookupResults", key = "'datacite:' + #query + ':' + #pageSize")
+  // settingType is in the key because it selects the client, and so the registry and credentials:
+  // only PIDINST calls this today, but an IGSN search would otherwise read the other registry's
+  // page
+  @Cacheable(
+      value = "pidinstLookupResults",
+      key = "'datacite:' + #settingType + ':' + #query + ':' + #pageSize")
   public DataCiteDoiSearchResult searchInstrumentDois(
       String query, int pageSize, InventorySettingType settingType) {
     return getClient(settingType).searchDois(query, "instrument", STATE_FINDABLE, pageSize);

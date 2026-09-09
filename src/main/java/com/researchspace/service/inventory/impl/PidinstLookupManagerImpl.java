@@ -28,7 +28,11 @@ import com.researchspace.webapp.integrations.b2inst.B2instConnector;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnector;
 import jakarta.ws.rs.NotFoundException;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -82,7 +86,11 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
     } else {
       DataCiteDoiSearchResult hits =
           dataCiteConnector.searchInstrumentDois(q, MAX_HITS, InventorySettingType.PIDINST);
+      // re-checked here as well as asked for in the request, so the rule holds whatever the index
+      // returns (ADR 0009), and so this path cannot offer what fetchByPid would refuse
       hits.getData().stream()
+          .filter(PidinstLookupManagerImpl::isInstrumentDoi)
+          .filter(PidinstLookupManagerImpl::isFindable)
           .map(PidinstRecordMapper::fromDataCite)
           .filter(record -> record.getPid() != null)
           .forEach(result.getHits()::add);
@@ -93,9 +101,7 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
         .sort(
             Comparator.comparing(
                 hit -> StringUtils.defaultString(hit.getName()).toLowerCase(Locale.ROOT)));
-    for (ApiPidinstRecord hit : result.getHits()) {
-      hit.setLinkedInstrumentGlobalId(linkedInstrumentOf(hit.getPid(), provider).orElse(null));
-    }
+    annotateLinkedInstruments(result.getHits(), provider);
     return result;
   }
 
@@ -198,7 +204,11 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
           .getRecordByHandle(pid)
           .filter(record -> Boolean.TRUE.equals(record.getIsPublished()))
           .map(PidinstRecordMapper::fromB2inst)
-          .filter(record -> record.getPid() != null);
+          .filter(record -> record.getPid() != null)
+          // getRecordByHandle resolves the suffix alone, so any well-formed prefix reaches the same
+          // record: 21.FAKE/abc would otherwise answer with the real 21.T11998/abc. Handles are
+          // case-insensitive by spec, so the comparison is too.
+          .filter(record -> pid.equalsIgnoreCase(record.getPid()));
     }
     return dataCiteConnector
         .findDoi(pid, InventorySettingType.PIDINST)
@@ -224,6 +234,25 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
         && doi.getAttributes().getTypes() != null
         && PidinstRecordMapper.RESOURCE_TYPE_INSTRUMENT.equalsIgnoreCase(
             doi.getAttributes().getTypes().getResourceTypeGeneral());
+  }
+
+  /**
+   * Stamps every hit with the instrument already linking its PID, in one query rather than one per
+   * hit: a full page is {@link PidinstLookupManager#MAX_HITS} rows, and none of it is cached with
+   * the provider page because link status is local and changes independently of it.
+   */
+  private void annotateLinkedInstruments(List<ApiPidinstRecord> hits, IdentifierType provider) {
+    List<String> pids =
+        hits.stream().map(ApiPidinstRecord::getPid).filter(Objects::nonNull).toList();
+    Map<String, String> linkedByPid = new HashMap<>();
+    for (DigitalObjectIdentifier identifier :
+        doiDao.findActiveByIdentifiersAndType(pids, provider)) {
+      // rows come oldest first, and putIfAbsent keeps the oldest, which is the row the
+      // single-identifier query would have returned should two ever exist
+      linkedByPid.putIfAbsent(
+          identifier.getIdentifier(), identifier.getConnectedRecordGlobalIdentifier());
+    }
+    hits.forEach(hit -> hit.setLinkedInstrumentGlobalId(linkedByPid.get(hit.getPid())));
   }
 
   private Optional<String> linkedInstrumentOf(String pid, IdentifierType provider) {

@@ -13,6 +13,7 @@ import com.researchspace.service.inventory.ApiIdentifiersHelper;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -87,5 +88,53 @@ public class DigitalObjectIdentifierDaoTest extends SpringTransactionalTest {
         daoUnderTest
             .findActiveByIdentifierAndType(handle, IdentifierType.PIDINST_B2INST)
             .isEmpty());
+  }
+
+  /**
+   * The batch form annotates a whole page of provider hits in one query, so it has to agree with
+   * the single-identifier form on every axis that one filters: value, type and soft deletion.
+   */
+  @Test
+  public void findActiveByIdentifiersAndTypeMatchesTheSameRowsAsTheSingleLookup() {
+    User admin = createAndSaveAdminUser();
+    logoutAndLoginAs(admin);
+    String linked = "21.11157/aaaaaaaa-0000-0000-0000-000000000001";
+    String alsoLinked = "21.11157/bbbbbbbb-0000-0000-0000-000000000002";
+    String softDeleted = "21.11157/cccccccc-0000-0000-0000-000000000003";
+    String onDataCite = "10.1234/dddddddd";
+    savePidinstIdentifier(admin, linked, IdentifierType.PIDINST_B2INST);
+    savePidinstIdentifier(admin, alsoLinked, IdentifierType.PIDINST_B2INST);
+    DigitalObjectIdentifier deleted =
+        savePidinstIdentifier(admin, softDeleted, IdentifierType.PIDINST_B2INST);
+    savePidinstIdentifier(admin, onDataCite, IdentifierType.PIDINST_DATACITE);
+    deleted.setDeleted(true);
+    daoUnderTest.save(deleted);
+    flushDatabaseState();
+
+    List<DigitalObjectIdentifier> found =
+        daoUnderTest.findActiveByIdentifiersAndType(
+            List.of(linked, alsoLinked, softDeleted, onDataCite, "21.11157/never-stored"),
+            IdentifierType.PIDINST_B2INST);
+
+    assertEquals(
+        List.of(linked, alsoLinked),
+        found.stream().map(DigitalObjectIdentifier::getIdentifier).sorted().toList(),
+        "the soft-deleted row, the other registry's row and the unknown value are all skipped");
+    assertTrue(
+        daoUnderTest
+            .findActiveByIdentifiersAndType(List.of(), IdentifierType.PIDINST_B2INST)
+            .isEmpty(),
+        "an empty input must not reach the database as an empty IN list");
+  }
+
+  private DigitalObjectIdentifier savePidinstIdentifier(
+      User owner, String pid, IdentifierType type) {
+    ApiInventoryDOI apiDoi = new ApiInventoryDOI();
+    apiDoi.generatePublicLinkSuffix();
+    apiDoi.setDoi(pid);
+    apiDoi.setDoiType(type.name());
+    apiDoi.setState("accepted");
+    apiDoi.setLinked(true);
+    return daoUnderTest.save(doiHelper.createDoiToSave(apiDoi, owner));
   }
 }
