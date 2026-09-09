@@ -35,7 +35,12 @@ public interface DataCiteConnector {
    */
   Optional<DataCiteDoi> findDoi(String doiId, InventorySettingType settingType);
 
-  /** One page of instrument DOIs (resourceTypeGeneral Instrument) matching a free-text query. */
+  /**
+   * One page of FINDABLE instrument DOIs matching a free-text query. Findable only, because only a
+   * publicly resolvable DOI may be linked to an instrument (RSDEV-1326); DataCite applies the
+   * filter itself through its {@code state} request parameter, so {@code meta.total} describes the
+   * same set as the page.
+   */
   DataCiteDoiSearchResult searchInstrumentDois(
       String query, int pageSize, InventorySettingType settingType);
 

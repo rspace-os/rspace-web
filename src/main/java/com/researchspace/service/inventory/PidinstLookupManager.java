@@ -19,8 +19,9 @@ public interface PidinstLookupManager {
   /**
    * A DOI or Handle, bare or as a doi.org / hdl.handle.net address, is a direct lookup on the
    * enabled provider; a PID of the other registry yields no hit; anything else is one full-text
-   * query. Hits are sorted by name and carry {@code linkedInstrumentGlobalId} when an instrument in
-   * this deployment already links the PID.
+   * query. Only PUBLIC records are offered - B2INST {@code accepted}, DataCite {@code findable} -
+   * because only those may be linked to an instrument. Hits are sorted by name and carry {@code
+   * linkedInstrumentGlobalId} when an instrument in this deployment already links the PID.
    *
    * @throws UnsupportedOperationException when no PIDINST provider is enabled
    */
@@ -31,9 +32,10 @@ public interface PidinstLookupManager {
    * default PIDINST template filled from it, attaches a linked identifier, and returns the result;
    * one transaction.
    *
-   * @throws jakarta.ws.rs.NotFoundException when the provider has no instrument record for the PID,
-   *     or the value is not a PID of the enabled provider. A record in any review status can be
-   *     imported, so a draft, submitted or declined record is a hit like any other
+   * @throws jakarta.ws.rs.NotFoundException when the provider has no PUBLIC instrument record for
+   *     the PID, or the value is not a PID of the enabled provider. Only a public record may be
+   *     linked, so a PID that exists but is not published is reported exactly like one that does
+   *     not exist
    * @throws PidinstAlreadyLinkedException when an instrument in this deployment already links the
    *     PID
    * @throws com.researchspace.api.v1.auth.ApiRuntimeException when the record lacks a mandatory

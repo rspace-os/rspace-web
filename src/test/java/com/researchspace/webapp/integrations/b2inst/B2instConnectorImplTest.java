@@ -1042,54 +1042,18 @@ class B2instConnectorImplTest {
   }
 
   @Test
-  void getRecordByHandleFallsBackToTheDraftOfAnUnpublishedRecord() {
+  void getRecordByHandleFindsOnlyAPublishedRecord() {
     connector.reloadClient();
     MockRestServiceServer server =
         MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
-    // B2INST serves only published records at /api/records/{rid}; a draft, submitted or declined
-    // record answers 404 there and lives at /api/records/{rid}/draft (verified September 2026)
+    // /api/records/{rid} serves published records only, and only those may be imported
+    // (RSDEV-1326): a draft, submitted or declined record answers 404 there and is not looked
+    // for anywhere else
     server
         .expect(requestTo("https://b2inst-test.gwdg.de/api/records/anaf6-fk223"))
         .andRespond(withStatus(HttpStatus.NOT_FOUND));
-    server
-        .expect(requestTo("https://b2inst-test.gwdg.de/api/records/anaf6-fk223/draft"))
-        .andExpect(method(HttpMethod.GET))
-        .andRespond(
-            withSuccess(
-                "{\"id\":\"anaf6-fk223\",\"is_published\":false,\"status\":\"draft\"}",
-                MediaType.APPLICATION_JSON));
 
-    Optional<B2instDraftRecord> record = connector.getRecordByHandle("21.T11975/anaf6-fk223");
-
-    assertTrue(record.isPresent(), "a draft record is still a record to import");
-    assertEquals("draft", record.get().getStatus());
-    server.verify();
-  }
-
-  @Test
-  void searchUserRecordsQueriesTheAccountsOwnRecordsIncludingDrafts() {
-    connector.reloadClient();
-    MockRestServiceServer server =
-        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
-    server
-        .expect(requestTo("https://b2inst-test.gwdg.de/api/user/records?q=microscope&size=50"))
-        .andExpect(method(HttpMethod.GET))
-        .andExpect(header("Authorization", "Bearer TOK123"))
-        .andRespond(
-            withSuccess(
-                "{\"hits\":{\"hits\":[{\"id\":\"anaf6-fk223\",\"is_published\":false,"
-                    + "\"status\":\"draft\",\"metadata\":{\"Name\":\"Draft microscope\","
-                    + "\"Identifier\":{\"identifierType\":\"Handle\","
-                    + "\"identifierValue\":\"21.T11975/anaf6-fk223\"}}}],\"total\":7}}",
-                MediaType.APPLICATION_JSON));
-
-    B2instSearchResult result = connector.searchUserRecords("microscope", 50);
-
-    assertEquals(7, result.getHits().getTotal());
-    assertEquals("draft", result.getHits().getHits().get(0).getStatus());
-    assertEquals(
-        "21.T11975/anaf6-fk223",
-        result.getHits().getHits().get(0).getMetadata().getIdentifier().getIdentifierValue());
+    assertTrue(connector.getRecordByHandle("21.T11975/anaf6-fk223").isEmpty());
     server.verify();
   }
 }

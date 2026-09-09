@@ -120,8 +120,6 @@ class PidinstLookupManagerImplTest {
   void freeTextSearchGoesToTheEnabledProviderAndFlagsAlreadyLinkedPids() {
     when(b2instConnector.searchRecords("microscope", 50))
         .thenReturn(searchResultOf(publishedRecord(), 3));
-    // the B2INST published index does not carry the account's own drafts, so both are searched
-    when(b2instConnector.searchUserRecords("microscope", 50)).thenReturn(new B2instSearchResult());
     DigitalObjectIdentifier existing =
         new DigitalObjectIdentifier(HANDLE, "Test microscope", "suffix1234567890");
     Instrument owner = new Instrument();
@@ -150,7 +148,6 @@ class PidinstLookupManagerImplTest {
     assertEquals(1, direct.getHits().size());
     assertNull(direct.getHits().get(0).getLinkedInstrumentGlobalId());
     verify(b2instConnector, never()).searchRecords(anyString(), eq(50));
-    verify(b2instConnector, never()).searchUserRecords(anyString(), eq(50));
 
     ApiPidinstSearchResult foreign = manager.search("10.15151/esrf-instr-gco8", user);
     assertTrue(foreign.getHits().isEmpty());
@@ -235,62 +232,38 @@ class PidinstLookupManagerImplTest {
   }
 
   @Test
-  void importAcceptsARecordInAnyProviderStatusAndLinksTheStatusItReports() {
+  void aRecordThatIsNotPublishedIsNeitherFoundNorImportable() {
+    // only a public PID may be linked: B2INST accepted (published), DataCite findable
     B2instDraftRecord unpublished = publishedRecord();
     unpublished.setIsPublished(false);
-    unpublished.setStatus("submitted");
+    unpublished.setStatus("in_review");
     when(b2instConnector.getRecordByHandle(HANDLE)).thenReturn(Optional.of(unpublished));
-    when(doiDao.findActiveByIdentifierAndType(HANDLE, IdentifierType.PIDINST_B2INST))
-        .thenReturn(Optional.empty());
-    when(instrumentTemplateDao.findLockedTemplateByName("Instrument (PIDINST 1.0)"))
-        .thenReturn(Optional.of(lockedTemplate()));
-    ApiInstrument created = new ApiInstrument();
-    created.setId(5L);
-    created.setGlobalId("IN5");
-    when(instrumentApiMgr.createNewApiInstrument(any(ApiInstrument.class), eq(user)))
-        .thenReturn(created);
-    when(identifierMgr.linkExternalIdentifier(
-            eq(new GlobalIdentifier("IN5")), any(ApiInventoryDOI.class), eq(user)))
-        .thenReturn(created);
 
-    manager.importInstrument(HANDLE, null, user);
-
-    ArgumentCaptor<ApiInventoryDOI> link = ArgumentCaptor.forClass(ApiInventoryDOI.class);
-    verify(identifierMgr).linkExternalIdentifier(any(), link.capture(), eq(user));
-    assertTrue(link.getValue().isLinked());
-    assertEquals("submitted", link.getValue().getState(), "the provider's own status is linked");
-  }
-
-  private static B2instDraftRecord draftRecord() {
-    B2instInstrumentMetadata md = new B2instInstrumentMetadata();
-    md.setName("Draft microscope");
-    md.setIdentifier(new B2instIdentifier("Handle", "21.T11975/anaf6-fk223"));
-    B2instDraftRecord record = new B2instDraftRecord();
-    record.setId("anaf6-fk223");
-    record.setIsPublished(false);
-    record.setStatus("draft");
-    record.setMetadata(md);
-    return record;
+    assertThrows(NotFoundException.class, () -> manager.importInstrument(HANDLE, null, user));
+    assertTrue(manager.search(HANDLE, user).getHits().isEmpty());
+    verify(instrumentApiMgr, never()).createNewApiInstrument(any(), any());
   }
 
   @Test
-  void b2instSearchMergesTheAccountsOwnRecordsAndDropsTheOnesSeenTwice() {
-    // the account's own PUBLISHED records are in both indexes, so the union must be deduplicated
-    B2instSearchResult published = searchResultOf(publishedRecord(), 3);
-    B2instSearchResult own = searchResultOf(publishedRecord(), 2);
-    own.getHits().getHits().add(draftRecord());
-    when(b2instConnector.searchRecords("microscope", 50)).thenReturn(published);
-    when(b2instConnector.searchUserRecords("microscope", 50)).thenReturn(own);
+  void b2instSearchDropsAnyHitTheIndexReportsAsNotPublished() {
+    B2instDraftRecord unpublished = publishedRecord();
+    unpublished.setIsPublished(false);
+    unpublished.setStatus("draft");
+    unpublished
+        .getMetadata()
+        .setIdentifier(new B2instIdentifier("Handle", "21.T11975/anaf6-fk223"));
+    B2instSearchResult page = searchResultOf(publishedRecord(), 3);
+    page.getHits().getHits().add(unpublished);
+    when(b2instConnector.searchRecords("microscope", 50)).thenReturn(page);
     when(doiDao.findActiveByIdentifierAndType(anyString(), eq(IdentifierType.PIDINST_B2INST)))
         .thenReturn(Optional.empty());
 
     ApiPidinstSearchResult result = manager.search("microscope", user);
 
-    assertEquals(2, result.getHits().size(), "the record in both indexes appears once");
-    assertEquals("Draft microscope", result.getHits().get(0).getName(), "sorted by name");
-    assertEquals("draft", result.getHits().get(0).getState(), "a draft is offered for import");
-    assertEquals(HANDLE, result.getHits().get(1).getPid());
-    assertEquals(4, result.getTotal(), "both provider totals, less the record counted twice");
+    assertEquals(1, result.getHits().size(), "the unpublished hit is dropped");
+    assertEquals(HANDLE, result.getHits().get(0).getPid());
+    assertEquals("accepted", result.getHits().get(0).getState());
+    assertEquals(3, result.getTotal(), "the provider's own total, unaltered");
   }
 
   @Test

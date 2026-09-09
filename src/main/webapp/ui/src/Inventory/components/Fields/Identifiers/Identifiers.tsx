@@ -33,7 +33,11 @@ import AlertContext, { mkAlert } from "../../../../stores/contexts/Alert";
 import AnalyticsContext from "../../../../stores/contexts/Analytics";
 import type { HasEditableFields } from "../../../../stores/definitions/Editable";
 import type { Identifier, IdentifierField, PublishingState } from "../../../../stores/definitions/Identifier";
-import { identifierStateLabelKey, isPublishedState } from "../../../../stores/definitions/Identifier";
+import {
+  B2INST_CLOSED_REVIEW_STATES,
+  identifierStateLabelKey,
+  isPublishedState,
+} from "../../../../stores/definitions/Identifier";
 import type { InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
 import useStores from "../../../../stores/use-stores";
 import RsSet from "../../../../util/set";
@@ -277,9 +281,8 @@ const isB2instBeyondDraft = (id: Identifier): boolean => id.doiType === "PIDINST
  * failed submission to register a new one (RSDEV-1260). Deliberately a known-state allowlist, the
  * inverse of isB2instBeyondDraft's catch-all: an unknown state must stay disabled, not deletable.
  */
-const CLOSED_REVIEW_STATES: ReadonlyArray<string> = ["declined", "cancelled", "expired"];
 const isDeletableClosedReview = (id: Identifier): boolean =>
-  id.doiType === "PIDINST_B2INST" && CLOSED_REVIEW_STATES.includes(id.state);
+  id.doiType === "PIDINST_B2INST" && B2INST_CLOSED_REVIEW_STATES.includes(id.state);
 
 type IdentifiersListArgs = { activeResult: InventoryRecord };
 

@@ -78,12 +78,6 @@ public class B2instConnectorDummy implements B2instConnector {
     return result;
   }
 
-  /** The same one record: this double's account owns whatever it has published. */
-  @Override
-  public B2instSearchResult searchUserRecords(String query, int size) {
-    return searchRecords(query, size);
-  }
-
   /**
    * Nothing published unless a test set {@code publishedRecord}: {@link #publishDoi(String)} here
    * does not move the record on, so a record this double created is still only a draft.

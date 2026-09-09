@@ -8,7 +8,6 @@ import com.researchspace.api.v1.model.ApiInventorySystemSettings.InventorySettin
 import com.researchspace.api.v1.model.ApiPidinstRecord;
 import com.researchspace.api.v1.model.ApiPidinstSearchResult;
 import com.researchspace.api.v1.model.ApiTargetLocation;
-import com.researchspace.b2inst.model.response.B2instDraftRecord;
 import com.researchspace.b2inst.model.response.B2instSearchResult;
 import com.researchspace.dao.DigitalObjectIdentifierDao;
 import com.researchspace.dao.InstrumentTemplateDao;
@@ -29,10 +28,7 @@ import com.researchspace.webapp.integrations.b2inst.B2instConnector;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnector;
 import jakarta.ws.rs.NotFoundException;
 import java.util.Comparator;
-import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -45,6 +41,9 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service("pidinstLookupManager")
 public class PidinstLookupManagerImpl implements PidinstLookupManager {
+
+  /** The only DataCite state a lookup offers: a publicly resolvable DOI. */
+  static final String STATE_FINDABLE = "findable";
 
   /** A DOI, bare or behind a doi.org resolver; group 1 is the bare DOI. */
   static final Pattern DOI_QUERY =
@@ -94,10 +93,6 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
         .sort(
             Comparator.comparing(
                 hit -> StringUtils.defaultString(hit.getName()).toLowerCase(Locale.ROOT)));
-    // one page, whatever it was assembled from: the B2INST branch unions two searches of MAX_HITS
-    if (result.getHits().size() > MAX_HITS) {
-      result.getHits().subList(MAX_HITS, result.getHits().size()).clear();
-    }
     for (ApiPidinstRecord hit : result.getHits()) {
       hit.setLinkedInstrumentGlobalId(linkedInstrumentOf(hit.getPid(), provider).orElse(null));
     }
@@ -146,40 +141,23 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
   }
 
   /**
-   * The B2INST half of a free-text search: the published index and the account's own records,
-   * merged and deduplicated by PID.
+   * The B2INST half of a free-text search: one query against the PUBLISHED index.
    *
-   * <p>Two calls because InvenioRDM keeps unpublished records out of the published index, while an
-   * import accepts a PID in any review status, so a draft or submitted record would otherwise be
-   * impossible to find by name. The account's own PUBLISHED records come back from both, hence the
-   * deduplication; {@code total} is the two provider totals less what was seen twice, which is
-   * exact while both pages fit and an over-estimate once they do not - the direction that tells a
-   * user to narrow the query rather than hiding hits from them.
+   * <p>The account's own records under {@code /api/user/records} are deliberately not searched.
+   * Only a public PID may be linked (RSDEV-1326), so a record still in draft, submitted or declined
+   * is not a candidate, and the published index is exactly the set that is. Hits are filtered on
+   * {@code is_published} as well, so the rule holds in RSpace whatever the index returns, and
+   * {@code total} stays the provider's own.
    */
   private void searchB2inst(String query, ApiPidinstSearchResult result) {
-    B2instSearchResult published = b2instConnector.searchRecords(query, MAX_HITS);
-    B2instSearchResult own = b2instConnector.searchUserRecords(query, MAX_HITS);
-    Map<String, ApiPidinstRecord> byPid = new LinkedHashMap<>();
-    int duplicates = 0;
-    for (B2instSearchResult page : List.of(published, own)) {
-      for (B2instDraftRecord record : page.getHits().getHits()) {
-        ApiPidinstRecord mapped = PidinstRecordMapper.fromB2inst(record);
-        if (mapped.getPid() == null) {
-          continue;
-        }
-        if (byPid.put(mapped.getPid(), mapped) != null) {
-          duplicates++;
-        }
-      }
-    }
-    result.getHits().addAll(byPid.values());
-    result.setTotal(Math.max(byPid.size(), total(published) + total(own) - duplicates));
-  }
-
-  /** A provider total, falling back to the page size when the provider reports none. */
-  private static int total(B2instSearchResult page) {
+    B2instSearchResult page = b2instConnector.searchRecords(query, MAX_HITS);
+    page.getHits().getHits().stream()
+        .filter(record -> Boolean.TRUE.equals(record.getIsPublished()))
+        .map(PidinstRecordMapper::fromB2inst)
+        .filter(record -> record.getPid() != null)
+        .forEach(result.getHits()::add);
     Integer total = page.getHits().getTotal();
-    return total == null ? page.getHits().getHits().size() : total;
+    result.setTotal(total == null ? result.getHits().size() : total);
   }
 
   private IdentifierType enabledProvider() {
@@ -216,18 +194,29 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
 
   private Optional<ApiPidinstRecord> fetchByPid(String pid, IdentifierType provider) {
     if (provider == IdentifierType.PIDINST_B2INST) {
-      // No filter on is_published: a PID may be imported whatever its review status, and the
-      // mapper carries the provider's own status onto the linked identifier (RSDEV-1326).
       return b2instConnector
           .getRecordByHandle(pid)
+          .filter(record -> Boolean.TRUE.equals(record.getIsPublished()))
           .map(PidinstRecordMapper::fromB2inst)
           .filter(record -> record.getPid() != null);
     }
     return dataCiteConnector
         .findDoi(pid, InventorySettingType.PIDINST)
         .filter(PidinstLookupManagerImpl::isInstrumentDoi)
+        .filter(PidinstLookupManagerImpl::isFindable)
         .map(PidinstRecordMapper::fromDataCite)
         .filter(record -> record.getPid() != null);
+  }
+
+  /**
+   * Whether the DOI resolves publicly. Only a findable DOI may be linked (RSDEV-1326): a {@code
+   * draft} or {@code registered} DOI has no public landing page, so linking one would put an
+   * address in the Identifiers card that answers nothing. A DOI of another repository that is not
+   * findable never reaches here, because DataCite answers 404 for it.
+   */
+  private static boolean isFindable(DataCiteDoi doi) {
+    return doi.getAttributes() != null
+        && STATE_FINDABLE.equalsIgnoreCase(doi.getAttributes().getState());
   }
 
   private static boolean isInstrumentDoi(DataCiteDoi doi) {

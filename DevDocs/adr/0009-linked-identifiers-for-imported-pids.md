@@ -26,7 +26,8 @@ and API field names were ported instead.
 
 1. An imported PID is stored as a `DigitalObjectIdentifier` of the provider's type
    (PIDINST_B2INST or PIDINST_DATACITE) with the Handle or DOI as `identifier`, the
-   provider's own state (`accepted` for a published B2INST record, DataCite's state),
+   provider's own state (`accepted` for a published B2INST record, `findable` for a
+   DataCite one - only public PIDs may be linked, see decision 5),
    the provider record page as PROVIDER_URL, the resolver address as PUBLIC_URL, and
    `ORIGIN=EXTERNAL` in the otherData JSON map. This is a **linked identifier**
    (CONTEXT.md). Everything RSpace registered itself is a **registered identifier** and
@@ -35,7 +36,11 @@ and API field names were ported instead.
    update skips it, publish, retract and refresh refuse it (422), deleting it deletes
    nothing at the provider and is allowed in every state (it is unlinking), the public
    landing page is never served for it, and registering another PID is refused by the
-   existing one-identifier-per-record rule.
+   existing one-identifier-per-record rule. The UI must not OFFER what the server refuses:
+   the identifiers panel withdraws the publish action for a linked identifier of either
+   provider, and for any B2INST identifier whose community review is over (`accepted`,
+   `declined`, `cancelled`, `expired`), rather than rendering it disabled. `linked` is on every
+   `ApiInventoryDOI` for exactly this purpose.
 3. Lookup and import route to the single PIDINST provider enabled in the inventory
    settings, with its configured server URL and credentials, through the existing
    connectors. No cross-registry search, no separate lookup hosts, no provider filter
@@ -47,6 +52,19 @@ and API field names were ported instead.
    the publisher, a missing mandatory value refuses the import), creates the instrument
    and attaches the linked identifier in one transaction. A PID already linked anywhere
    in the deployment is refused with 409 naming the instrument.
+5. **Only public records may be looked up or imported**: B2INST `accepted` (a published
+   record) and DataCite `findable`. A PID that exists at the provider but is not public -
+   a B2INST draft, a record submitted for community review or declined, a DataCite `draft`
+   or `registered` DOI - is reported exactly like one that does not exist (404), because
+   for a DOI belonging to another repository DataCite itself answers 404 and RSpace cannot
+   tell the two apart. Both providers apply the filter at the source: B2INST's
+   `/api/records` index is published-only, and DataCite is asked with its `state=findable`
+   request parameter, so each `total` describes the same set as the page it accompanies.
+   RSpace re-checks the state on every hit as well, so the rule holds whatever an index
+   returns. The consequence accepted here is that a user cannot import their own
+   in-progress registration until it is public; the reason is that a non-public PID has no
+   resolvable landing page, so linking one would put an address in the Identifiers card
+   that answers nothing.
 
 ## Considered options
 
@@ -70,6 +88,25 @@ and API field names were ported instead.
   id, or whose state is `accepted` with no review history, must check `isLinked()`;
   the identifier manager, the external update service, the identifiers controller and
   the public-page lookup all do.
+- Publisher and Publication Year are DataCite minting metadata and are NOT required for a
+  B2INST identifier. The identifiers panel already hides both fields for B2INST, because
+  B2INST keeps its own community metadata, so requiring them produced a "some required
+  details are missing" warning against fields the user was never shown. An imported
+  identifier has neither, which is how the incoherence surfaced.
+- B2INST has no *retract*, and a published record cannot be removed with a deployment's
+  credentials either. Verified on b2inst-test (InvenioRDM 13.0) on 2026-09-09 by publishing a
+  throwaway record and calling `DELETE /api/records/{id}` on it: the route exists (`OPTIONS`
+  reports GET, PUT, DELETE) but answers **403 Permission denied**, and the record stayed published
+  with its Handle resolving. The token used even holds community-curator rights, since it accepted
+  its own review, so deletion is reserved for instance administrators. InvenioRDM 13 does document
+  user-initiated deletion (immediate within a grace period, deletion requests after it), but no
+  such route is exposed here: `/api/records/{id}/requests` accepts no POST, and every candidate
+  `delete-request` path 404s. So "RSpace never deletes a linked identifier at the provider" is a
+  choice that the provider also enforces, not merely a policy of ours.
+- The UI offers no way to unlink, and that is intended for now (Nico, 2026-09-09): for a
+  linked `accepted` B2INST identifier the row shows Retract, disabled, and never Delete, so
+  removing a link needs the API (`DELETE /identifiers/{id}`, which the server allows in every
+  state). Revisit in RSDEV-1325 if users need to unlink from the page.
 - Registration credentials are used for read-only searches; verified on
   b2inst-test.gwdg.de and api.test.datacite.org (September 2026) that an authenticated
   search still returns the global published registry, not the account's own drafts.

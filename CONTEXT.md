@@ -216,7 +216,10 @@ resolved during design. This file is a glossary only — no implementation detai
 - **PID lookup** — searching a PID registry for instrument records, by free text or by a
   PID, in order to import one. A lookup always goes to the deployment's enabled PIDINST
   provider, with that provider's configured server and credentials; while no PIDINST
-  provider is enabled there is no lookup, and there is never a choice of registry.
+  provider is enabled there is no lookup, and there is never a choice of registry. Only
+  *public* records are found: a PID whose registration is still in progress, or has been
+  declined, is not a lookup result and cannot be imported, because it has no resolvable
+  landing page to link to.
   _Avoid_: federated search (there is one registry per deployment), PIDINST search, DOI
   search
 

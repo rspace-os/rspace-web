@@ -3017,7 +3017,6 @@ export default interface Resources {
           "pidinstDocLink": "See PIDINST Documentation for details",
           "preview": "Preview",
           "publishAwaitingReview": "This instrument PID has been submitted to the B2INST community and is awaiting curator review.",
-          "publishPidinstPublished": "The community accepted this submission. The instrument PID is already published and cannot be published again.",
           "refresh": "Refresh",
           "rorError": "Could not get RoR data.",
           "show": "Show",
@@ -6808,7 +6807,7 @@ export default interface Resources {
           "mintingUnsupportedType": "unsupported type for minting: {0}",
           "pidinstAlreadyLinked": "This PID is already linked to instrument {0}.",
           "pidinstMandatoryMissing": "The registry record has no {0}, which the \"Instrument (PIDINST 1.0)\" template requires, so it cannot be imported.",
-          "pidinstNotFound": "No instrument record was found for \"{0}\" at the enabled PIDINST provider.",
+          "pidinstNotFound": "No published instrument record was found for \"{0}\" at the enabled PIDINST provider.",
           "refreshNoIdentifier": "This item has no identifier to refresh. Register an identifier before refreshing its status.",
           "typeUnsupported": "identifiers of type {0} are not supported yet"
         },

@@ -131,8 +131,9 @@ describe("a refreshed status reaching the UI", () => {
     expect(await screen.findByText(stateLabel("accepted"))).toBeVisible();
     expect(post).toHaveBeenCalledWith("/identifiers/1/refresh", {});
     expect(screen.queryByRole("button", { name: REFRESH })).not.toBeInTheDocument();
-    // an accepted B2INST PID cannot be published again, and B2INST has no retract
-    expect(screen.getByRole("button", { name: PUBLISH })).toBeDisabled();
+    // an accepted B2INST PID cannot be published again, and B2INST has no retract, so since
+    // RSDEV-1326 the action is withdrawn rather than shown disabled
+    expect(screen.queryByRole("button", { name: PUBLISH })).not.toBeInTheDocument();
   });
 
   test("a declined review is rendered and also retires Refresh", async () => {

@@ -27,6 +27,9 @@ import org.springframework.web.client.HttpClientErrorException;
 @Slf4j
 public class DataCiteConnectorImpl implements DataCiteConnector {
 
+  /** The only DataCite state a PID lookup offers: a DOI that resolves publicly (RSDEV-1326). */
+  private static final String STATE_FINDABLE = "findable";
+
   @Autowired private SystemPropertyManager sysPropertyMgr;
 
   private final Map<InventorySettingType, DataCiteClient> dataCiteClients =
@@ -166,6 +169,6 @@ public class DataCiteConnectorImpl implements DataCiteConnector {
   @Cacheable(value = "pidinstLookupResults", key = "'datacite:' + #query + ':' + #pageSize")
   public DataCiteDoiSearchResult searchInstrumentDois(
       String query, int pageSize, InventorySettingType settingType) {
-    return getClient(settingType).searchDois(query, "instrument", pageSize);
+    return getClient(settingType).searchDois(query, "instrument", STATE_FINDABLE, pageSize);
   }
 }

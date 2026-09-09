@@ -420,17 +420,26 @@ describe("Identifiers section", () => {
       expect(screen.getByRole("button", { name: PUBLISH })).toBeDisabled();
     });
 
-    test("an accepted B2INST identifier disables Publish and does not offer Republish", () => {
-      const instrument: InventoryRecord = makeMockSample();
-      instrument.identifiers = [{ ...mockIGSNIdentifier("sample"), doiType: "PIDINST_B2INST", state: "accepted" }];
-      render(
-        <ThemeProvider theme={materialTheme}>
-          <IdentifiersList activeResult={instrument} />
-        </ThemeProvider>,
-      );
-      expect(screen.getByRole("button", { name: PUBLISH })).toBeDisabled();
-      expect(screen.queryByRole("button", { name: REPUBLISH })).not.toBeInTheDocument();
-    });
+    /*
+     * Was "disables Publish": the button used to be rendered disabled with a tooltip. RSDEV-1326
+     * removes it instead, for every B2INST state whose review is over - accepted (published, and
+     * B2INST cannot retract), declined and expired (closed). A control that can never act is
+     * worse than no control.
+     */
+    test.each(["accepted", "expired", "declined", "cancelled"] as ReadonlyArray<PidinstPublishingState>)(
+      "a B2INST identifier in %s offers neither Publish nor Republish",
+      (state) => {
+        const instrument: InventoryRecord = makeMockSample();
+        instrument.identifiers = [{ ...mockIGSNIdentifier("sample"), doiType: "PIDINST_B2INST", state }];
+        render(
+          <ThemeProvider theme={materialTheme}>
+            <IdentifiersList activeResult={instrument} />
+          </ThemeProvider>,
+        );
+        expect(screen.queryByRole("button", { name: PUBLISH })).not.toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: REPUBLISH })).not.toBeInTheDocument();
+      },
+    );
   });
 
   describe("Delete for closed B2INST reviews", () => {
@@ -465,6 +474,59 @@ describe("Identifiers section", () => {
         </ThemeProvider>,
       );
       expect(container).toHaveTextContent("fields.identifiers.list.stateInfo.pidinstCreated");
+    });
+  });
+
+  /*
+   * RSDEV-1326. An imported PID is accepted at B2INST and RSpace owns nothing on the provider
+   * side, so the row must offer no publish action, must still show Retract disabled with the
+   * "not retractable" explanation, and must not claim that details are missing: Publisher and
+   * Publication Year are DataCite metadata that this panel does not even display for B2INST.
+   */
+  describe("When an instrument has a LINKED B2INST identifier", () => {
+    const linkedInstrument = (): InventoryRecord => {
+      const instrument: InventoryRecord = makeMockInstrument();
+      instrument.identifiers = [
+        {
+          ...mockIGSNIdentifier("instrument"),
+          doiType: "PIDINST_B2INST",
+          state: "accepted",
+          linked: true,
+          publisher: "",
+          publicationYear: "",
+        },
+      ];
+      return instrument;
+    };
+
+    test("no publish action is offered", () => {
+      render(
+        <ThemeProvider theme={materialTheme}>
+          <IdentifiersList activeResult={linkedInstrument()} />
+        </ThemeProvider>,
+      );
+      expect(screen.queryByRole("button", { name: PUBLISH })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: REPUBLISH })).not.toBeInTheDocument();
+    });
+
+    test("Retract is offered but disabled", () => {
+      render(
+        <ThemeProvider theme={materialTheme}>
+          <IdentifiersList activeResult={linkedInstrument()} />
+        </ThemeProvider>,
+      );
+      const retract = screen.getByRole("button", { name: RETRACT });
+      expect(retract).toBeInTheDocument();
+      expect(retract).toBeDisabled();
+    });
+
+    test("no 'required details are missing' warning", () => {
+      const { container } = render(
+        <ThemeProvider theme={materialTheme}>
+          <IdentifiersList activeResult={linkedInstrument()} />
+        </ThemeProvider>,
+      );
+      expect(container).not.toHaveTextContent("fields.identifiers.missingDetails");
     });
   });
 });

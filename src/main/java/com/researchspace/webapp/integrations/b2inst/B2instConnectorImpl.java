@@ -366,20 +366,11 @@ public class B2instConnectorImpl implements B2instConnector {
   @Override
   @Cacheable(value = "pidinstLookupResults", key = "'b2inst:' + #query + ':' + #size")
   public B2instSearchResult searchRecords(String query, int size) {
-    return searchAt("records", query, size);
-  }
-
-  @Override
-  @Cacheable(value = "pidinstLookupResults", key = "'b2inst-user:' + #query + ':' + #size")
-  public B2instSearchResult searchUserRecords(String query, int size) {
-    return searchAt("user/records", query, size);
-  }
-
-  /** One InvenioRDM search, against either the published index or the account's own records. */
-  private B2instSearchResult searchAt(String path, String query, int size) {
+    // /api/records is the PUBLISHED index, which is the whole of what may be imported: the
+    // account's own drafts live under /api/user/records and are deliberately not searched
     String url =
         UriComponentsBuilder.fromUriString(apiBase())
-            .pathSegment(path.split("/"))
+            .pathSegment("records")
             .queryParam("q", query)
             .queryParam("size", size)
             .build()

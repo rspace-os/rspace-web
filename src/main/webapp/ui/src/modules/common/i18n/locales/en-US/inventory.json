@@ -762,7 +762,6 @@
         "pidinstDocLink": "See PIDINST Documentation for details",
         "preview": "Preview",
         "publishAwaitingReview": "This instrument PID has been submitted to the B2INST community and is awaiting curator review.",
-        "publishPidinstPublished": "The community accepted this submission. The instrument PID is already published and cannot be published again.",
         "refresh": "Refresh",
         "rorError": "Could not get RoR data.",
         "show": "Show",

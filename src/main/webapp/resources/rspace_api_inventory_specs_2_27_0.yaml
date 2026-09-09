@@ -138,9 +138,10 @@ paths:
         identifier in RSpace removes the link and is allowed in every state.
 
 
-        `pid` may be a bare DOI or Handle, or a `doi.org` / `hdl.handle.net` address. A PID of the
-        registry that is *not* enabled on this deployment yields `404`; there is no cross-registry
-        lookup.
+        `pid` may be a bare DOI or Handle, or a `doi.org` / `hdl.handle.net` address. It must be
+        PUBLIC at the provider - B2INST `accepted`, DataCite `findable` - because RSpace links only
+        publicly resolvable PIDs. A PID of the registry that is *not* enabled on this deployment
+        also yields `404`; there is no cross-registry lookup.
 
 
         Requires the PIDINST integration to be enabled and a PIDINST provider to be configured.
@@ -162,8 +163,9 @@ paths:
                 $ref: "#/components/schemas/Instrument"
         "404":
           description: >
-            The enabled provider holds no instrument record for this PID, or no PIDINST provider is
-            enabled on this deployment.
+            The enabled provider holds no PUBLIC instrument record for this PID, or no PIDINST
+            provider is enabled on this deployment. A PID that exists but is not published is
+            reported the same way as one that does not exist.
           content:
             application/json:
               schema:
@@ -3019,11 +3021,10 @@ paths:
         provider's own `total`, which may be larger. Provider results are cached for 10 minutes.
 
 
-        Hits are not limited to published records, because an import accepts a PID in any review
-        status. On B2INST that takes two searches - the published index, and this deployment's own
-        records, which is where a draft, submitted or declined record lives - merged and
-        deduplicated by PID, since the deployment's published records appear in both. DataCite has
-        no such split and returns its own non-findable DOIs directly.
+        Only PUBLIC records are offered, because only a publicly resolvable PID may be linked to
+        an instrument: B2INST `accepted` (a published record) and DataCite `findable`. Records still
+        in draft, submitted for community review, declined, or DataCite's `registered` state are
+        not returned, and pasting such a PID yields no hit.
 
 
         Each hit carries `linkedInstrumentGlobalId` when an Instrument in this deployment already
@@ -4445,9 +4446,9 @@ components:
         total:
           type: integer
           description: >
-            The provider's total for the query, which may exceed the number of hits returned. Where
-            two searches are merged (B2INST), it is their combined total less the records seen in
-            both: exact while both pages fit, and an over-estimate once they do not.
+            The provider's total for the query, which may exceed the number of hits returned. Both
+            providers apply the public-only filter themselves, so the total describes the same set
+            as the page.
           example: 2
         hits:
           type: array

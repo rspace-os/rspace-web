@@ -60,16 +60,36 @@ class DataCiteConnectorImplLookupTest {
   }
 
   @Test
-  void searchInstrumentDoisRestrictsToTheInstrumentResourceType() {
+  void searchInstrumentDoisRestrictsToFindableInstrumentsOnly() {
+    // only publicly resolvable DOIs may be imported, and DataCite filters by state itself so the
+    // total matches the page (RSDEV-1326); the Lucene form "state:findable" matches nothing
     DataCiteDoiSearchResult page = new DataCiteDoiSearchResult();
-    page.getMeta().setTotal(63);
-    when(pidinstClient.searchDois("Zeiss", "instrument", 50)).thenReturn(page);
+    page.getMeta().setTotal(41);
+    when(pidinstClient.searchDois("Zeiss", "instrument", "findable", 50)).thenReturn(page);
 
     assertEquals(
-        63,
+        41,
         connector
             .searchInstrumentDois("Zeiss", 50, InventorySettingType.PIDINST)
             .getMeta()
             .getTotal());
+  }
+
+  @Test
+  void findDoiStillReturnsWhateverStateTheProviderHolds() {
+    // the connector reports the state; refusing a non-findable DOI is the lookup manager's job,
+    // because a DOI is also retrieved for reasons other than import
+    DataCiteDoi draft = new DataCiteDoi();
+    draft.setId("10.82316/dhhr-4396");
+    draft.getAttributes().setState("draft");
+    when(pidinstClient.retrieveDoi("10.82316/dhhr-4396")).thenReturn(draft);
+
+    assertEquals(
+        "draft",
+        connector
+            .findDoi("10.82316/dhhr-4396", InventorySettingType.PIDINST)
+            .get()
+            .getAttributes()
+            .getState());
   }
 }

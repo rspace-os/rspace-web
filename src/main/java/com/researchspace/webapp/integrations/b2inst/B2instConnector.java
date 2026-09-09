@@ -68,34 +68,20 @@ public interface B2instConnector {
    */
   B2instSearchResult searchRecords(String query, int size);
 
-  /**
-   * The authenticated account's own records matching a free-text query, whatever their review
-   * status, at most {@code size} of them plus the provider's total.
-   *
-   * <p>Needed because {@link #searchRecords(String, int)} queries the PUBLISHED index only, so a
-   * record still in draft, submitted or declined is invisible there (verified on
-   * b2inst-test.gwdg.de, September 2026) even though an instrument import accepts a PID in any
-   * status (RSDEV-1326). This endpoint is scoped to the token's own account, and it returns that
-   * account's PUBLISHED records too, so a caller combining the two must deduplicate.
-   */
-  B2instSearchResult searchUserRecords(String query, int size);
-
   /** The shape a record id or Handle suffix must have before it is put in a URL. */
   Pattern RECORD_ID_SHAPE = Pattern.compile("[A-Za-z0-9_-]{1,64}");
 
   /**
-   * The record a Handle resolves to, whatever its review status, or empty when B2INST has none.
-   * B2INST accepts the suffix of a PID it minted as an alias of the record id (verified against
-   * b2inst.gwdg.de, where the suffix is the b2rec uuid, and b2inst-test.gwdg.de, where it equals
-   * the record id; September 2026), so this looks the suffix up as a record id. Accepts the bare
-   * Handle or an hdl.handle.net address. A suffix that is not a record id shape is answered empty
-   * locally.
+   * The PUBLISHED record a Handle resolves to, or empty when B2INST has none. B2INST accepts the
+   * suffix of a PID it minted as an alias of the record id (verified against b2inst.gwdg.de, where
+   * the suffix is the b2rec uuid, and b2inst-test.gwdg.de, where it equals the record id; September
+   * 2026), so this is {@link #getPublishedRecord(String)} on that suffix. Accepts the bare Handle
+   * or an hdl.handle.net address. A suffix that is not a record id shape is answered empty locally.
    *
-   * <p>Two calls, because InvenioRDM splits the record in two: {@code /api/records/{rid}} serves
-   * only PUBLISHED records and answers 404 for a record that is still a draft, submitted for
-   * community review, or declined, while {@code /api/records/{rid}/draft} serves those (verified on
-   * b2inst-test.gwdg.de, September 2026). An instrument import may take a PID in any status
-   * (RSDEV-1326), so the draft is the fallback rather than an error.
+   * <p>Published only, deliberately. Only a public PID may be linked to an instrument (RSDEV-1326),
+   * and {@code /api/records/{rid}} serves exactly that: a record still in draft, submitted for
+   * community review, or declined answers 404 there, which is the answer the import wants. Its
+   * draft is NOT looked for.
    */
   default Optional<B2instDraftRecord> getRecordByHandle(String handle) {
     if (handle == null || !handle.contains("/")) {
@@ -105,8 +91,7 @@ public interface B2instConnector {
     if (!RECORD_ID_SHAPE.matcher(suffix).matches()) {
       return Optional.empty();
     }
-    Optional<B2instDraftRecord> published = getPublishedRecord(suffix);
-    return published.isPresent() ? published : getDraftRecord(suffix);
+    return getPublishedRecord(suffix);
   }
 
   /** Re-read the {@code pidinst.b2inst.*} system properties and rebuild the HTTP client. */
