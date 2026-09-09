@@ -1,6 +1,5 @@
 package com.researchspace.api.v1.controller;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -8,7 +7,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -35,15 +36,40 @@ class InventoryOperationsErrorCatalogTest {
   private static final Path CATALOG_DIR =
       Path.of("src/main/webapp/ui/src/modules/common/i18n/locales/en-US");
 
-  private static final Path[] SOURCES_RAISING_OPERATION_ERRORS = {
-    Path.of(
-        "src/main/java/com/researchspace/api/v1/controller/InventoryOperationPostValidator.java"),
-    Path.of(
-        "src/main/java/com/researchspace/service/inventory/impl/InventoryOperationManagerImpl.java"),
-    Path.of(
-        "src/main/java/com/researchspace/api/v1/controller/InventoryOperationsApiController.java"),
-    Path.of("src/main/java/com/researchspace/api/v1/controller/ApiControllerAdvice.java"),
-  };
+  private static final Path CONTROLLER_DIR =
+      Path.of("src/main/java/com/researchspace/api/v1/controller");
+
+  /**
+   * Every file in the controller package whose name starts with Operation or InventoryOperation is
+   * matched, rather than named one by one, so splitting a validator cannot quietly take its codes
+   * out of scope: that is exactly what happened when the 994-line validator became four classes
+   * (parallel review). The two files outside that package are named explicitly.
+   */
+  private static Path[] sourcesRaisingOperationErrors() throws IOException {
+    List<Path> sources = new ArrayList<>();
+    try (Stream<Path> files = Files.list(CONTROLLER_DIR)) {
+      files
+          .filter(
+              file -> {
+                String name = file.getFileName().toString();
+                return name.endsWith(".java")
+                    && (name.startsWith("Operation") || name.startsWith("InventoryOperation"));
+              })
+          .forEach(sources::add);
+    }
+    sources.add(
+        Path.of(
+            "src/main/java/com/researchspace/service/inventory/impl/InventoryOperationManagerImpl.java"));
+    sources.add(CONTROLLER_DIR.resolve("ApiControllerAdvice.java"));
+    return sources.toArray(new Path[0]);
+  }
+
+  /**
+   * The endpoint raised this many distinct codes when the guard was last reviewed. Raise it when
+   * codes are added; a DROP means a source file stopped being scanned rather than that rules were
+   * removed, which is the failure this floor exists to catch.
+   */
+  private static final int MINIMUM_CODES_RAISED = 40;
 
   /** A dotted code in a string literal: errors.inventory.operation.foo, api.errors.bar. */
   private static final Pattern RAISED_CODE =
@@ -52,13 +78,27 @@ class InventoryOperationsErrorCatalogTest {
   @Test
   void everyRaisedErrorCodeHasACatalogEntry() throws IOException {
     Set<String> raised = new HashSet<>();
-    for (Path source : SOURCES_RAISING_OPERATION_ERRORS) {
+    for (Path source : sourcesRaisingOperationErrors()) {
       Matcher matcher = RAISED_CODE.matcher(Files.readString(source));
       while (matcher.find()) {
         raised.add(matcher.group(1));
       }
     }
-    assertFalse(raised.isEmpty(), "expected the sources to raise error codes");
+    // A floor, not just non-empty. The G1 split moved 30-odd codes out of the validator into three
+    // new files, and because the source list was not updated with them this guard went on passing
+    // while scanning almost nothing (parallel review). "Not empty" is satisfied by a single file,
+    // so
+    // it cannot detect that narrowing; a count can.
+    assertTrue(
+        raised.size() >= MINIMUM_CODES_RAISED,
+        () ->
+            "only "
+                + raised.size()
+                + " codes scanned, expected at least "
+                + MINIMUM_CODES_RAISED
+                + ". Did a refactor move error codes into a file not listed in"
+                + " the scanned set? Raised: "
+                + new java.util.TreeSet<>(raised));
 
     Map<String, String> catalog = loadServerCatalogs();
     Set<String> missing = new java.util.TreeSet<>(raised);
