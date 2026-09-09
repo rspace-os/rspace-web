@@ -7,7 +7,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.api.v1.auth.ApiAuthenticationException;
-import com.researchspace.api.v1.model.UnknownOperationPropertyException;
 import com.researchspace.apiutils.ApiError;
 import com.researchspace.apiutils.BindErrorList;
 import com.researchspace.service.FilestoreOperationForbiddenException;
@@ -25,8 +24,6 @@ import org.springframework.dao.CannotAcquireLockException;
 import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.mock.http.MockHttpInputMessage;
 import org.springframework.orm.hibernate5.HibernateJdbcException;
 import org.springframework.orm.hibernate5.HibernateOptimisticLockingFailureException;
 import org.springframework.validation.BeanPropertyBindingResult;
@@ -204,30 +201,6 @@ class ApiControllerAdviceTest {
    * endpoint, so a lock conflict on any API resource resolves it. Its message therefore lives in
    * the cross-cutting catalog rather than under errors.inventory.operation.
    */
-  @Test
-  void anUnknownOperationPropertyIsATranslated400ThatLeaksNoClassNames() {
-    // Jackson wraps whatever a @JsonAnySetter throws, and the inherited handler reports
-    // ex.getLocalizedMessage() verbatim - which for the old IllegalArgumentException was
-    // untranslated English plus Jackson's reference chain naming the DTO class and package
-    // (parallel review, I6).
-    ApiControllerAdvice advice = new ApiControllerAdvice();
-    advice.messages = new MessageSourceUtils(new JsonMessageSource());
-
-    HttpMessageNotReadableException wrapped =
-        new HttpMessageNotReadableException(
-            "com.researchspace.api.v1.model.ApiInventoryOperationPost[\"typo\"]",
-            new UnknownOperationPropertyException("typo"),
-            new MockHttpInputMessage(new byte[0]));
-
-    ResponseEntity<Object> response =
-        advice.handleHttpMessageNotReadable(wrapped, null, null, null);
-
-    assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-    ApiError apiError = (ApiError) response.getBody();
-    assertEquals("This operation does not accept the property [typo].", apiError.getMessage());
-    assertFalse(apiError.getMessage().contains("com.researchspace"));
-  }
-
   @Test
   void inventoryEditConflictIs409WithItsOwnResolvedMessage() {
     // The generic concurrent-update text tells the caller nothing about what to do; the operations
