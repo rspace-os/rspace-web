@@ -323,19 +323,25 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
           orgQuantity.getNumericValue().compareTo(newQuantity.getNumericValue()) != 0
               || !orgQuantity.getUnitId().equals(newQuantity.getUnitId());
       if (quantityChanged) {
-        dbSubSample.setQuantity(newQuantity);
         // The entity's version is this transaction's snapshot too. A decrement that committed while
         // this request waited for the lock advanced the row past it, so bumping the cached number
         // would reissue a version the earlier decrement already used and make the stock state it
         // labelled unaddressable (Codex review, PR #1090). The committed version is read as a
         // scalar under the lock, like the quantity, so the bump below lands on top of it.
         //
-        // Strictly inside this branch: it mutates the entity, and the entity still carries this
-        // transaction's stale quantity. Dirtying it on the no-op path would make Hibernate's
-        // full-row flush write that stale quantity back and resurrect stock a concurrent writer had
-        // exhausted, even though nothing was deducted (second Codex review, PR #1090).
-        dbSubSample.refreshVersionFromLockedRow(
-            subSampleDao.getVersionForUpdate(dbSubSample.getId()));
+        // Read FIRST, into a local, because this is an HQL query against the SubSample table and
+        // Hibernate's default AUTO flush mode flushes pending changes to a query's tables before
+        // running it. Dirtying the entity before this line would flush the whole row, stale version
+        // included, and the query would read back the value this transaction just wrote rather than
+        // the committed one (third Codex review, PR #1090).
+        //
+        // Inside this branch, not above it, because applying it mutates the entity while the entity
+        // still carries this transaction's stale quantity. Dirtying it on the no-op path would make
+        // the full-row flush write that stale quantity back and resurrect stock a concurrent writer
+        // had exhausted, even though nothing was deducted (second Codex review, PR #1090).
+        Long committedVersion = subSampleDao.getVersionForUpdate(dbSubSample.getId());
+        dbSubSample.setQuantity(newQuantity);
+        dbSubSample.refreshVersionFromLockedRow(committedVersion);
         increaseVersionOncePerTransaction(dbSubSample);
         registerSubSampleModification(user, dbSubSample);
         dbSubSample = subSampleDao.save(dbSubSample);
