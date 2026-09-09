@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render as renderWithoutQueryClient, screen, waitFor } from "@testing-library/react";
+import { act, render as renderWithoutQueryClient, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -401,6 +401,41 @@ describe("OperationWizard step flow", () => {
 
     await waitFor(() => expect(screen.getByTestId("tmpl-parent-error")).toHaveTextContent(/lookupFailed/));
     expect(nextButton()).toBeDisabled();
+  });
+
+  it("retires an in-flight parent-template check when the user switches away from that mode", async () => {
+    // The check's early return used to leave the in-flight lookup owning the token and the
+    // "checking" flag: a late rejection then reported lookupFailed against the mode the user had
+    // just switched TO, and the spinner belonged to a request whose answer no longer mattered
+    // (Copilot review, PR #1090).
+    let rejectLookup: (reason: Error) => void = () => {};
+    getTemplate.mockImplementationOnce(
+      () =>
+        new Promise((_resolve, reject) => {
+          rejectLookup = reject;
+        }),
+    );
+    const user = userEvent.setup();
+    const origin = makeMockSubSample({});
+    origin.sample.templateId = 9;
+    render(<OperationWizard open onClose={vi.fn()} origins={[origin]} />);
+    await fillDerive(user, "dna");
+    await user.click(nextButton()); // details -> template
+    await waitFor(() => expect(screen.getByTestId("tmpl-checking")).toHaveTextContent("true"));
+
+    // Switch to a picked template while the parent lookup is still outstanding.
+    await user.click(screen.getByTestId("tmpl-pick5"));
+    expect(screen.getByTestId("tmpl-mode")).toHaveTextContent("pick");
+    expect(screen.getByTestId("tmpl-checking")).toHaveTextContent("false");
+
+    // The abandoned lookup now fails. Its result must not touch the new selection's status.
+    await act(async () => {
+      rejectLookup(new Error("late failure"));
+      await Promise.resolve();
+    });
+    expect(screen.getByTestId("tmpl-parent-error")).toHaveTextContent("");
+    expect(screen.getByTestId("tmpl-checking")).toHaveTextContent("false");
+    expect(nextButton()).toBeEnabled();
   });
 
   it("drops a restored 'use parent template' bundle when this run has no parent template", async () => {
