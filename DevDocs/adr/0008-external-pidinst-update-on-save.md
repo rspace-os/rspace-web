@@ -193,6 +193,20 @@ anything that is not accepted, so an identifier really can be sitting in
   DataCite side, and a save quietly restores a DOI someone removed there. That
   is consistent with always-push self-healing and is left as is, but it means
   RSpace's record of a DOI, not DataCite's, is what keeps it alive.
+- The Context's probe finding - that an identifier can really be sitting in `created`,
+  `cancelled`, `declined` or `expired`, because `refreshIdentifier` stores the review's
+  status verbatim - is also what decides which states the identifiers panel offers its
+  Refresh button for (RSDEV-1326). `created` is offered on exactly that evidence: the
+  record behind it is still a draft at B2INST, so the submitter can submit or delete it
+  there and RSpace hears about it no other way. Withheld only for the three states that
+  close a review without publishing, and for a linked identifier, which the server refuses
+  outright (ADR 0009).
+
+  The same argument arguably reaches `cancelled`, since cancelling a review drops the
+  record's own status back to `draft` and a fresh review can be raised at B2INST at any
+  time. Left out for now: nothing has been observed doing that, and the panel already
+  offers Delete and Publish there, which is what a user wanting to move on actually needs.
+
 - Verifying the above turned up a **pre-existing defect on the publish/retract
   path**, unrelated to this decision but found by it: an explicit `null` clears a
   DataCite property just as `[]` does, and only an absent key preserves it. The

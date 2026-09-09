@@ -42,8 +42,7 @@ describe("RefreshButton", () => {
   });
 
   /*
-   * The three states that close a B2INST review without publishing are terminal at the provider,
-   * so those are the whole of what has nothing left to pull.
+   * A review closed without publishing is terminal at B2INST, so there is nothing left to pull.
    */
   test.each(["declined", "cancelled", "expired"] as const)("renders nothing when the state is %s", (state) => {
     render(
@@ -55,9 +54,11 @@ describe("RefreshButton", () => {
   });
 
   /*
-   * A draft or created record's status is still decided at B2INST: it can be submitted for review
-   * or deleted in the B2INST UI, and a created review can be accepted by a curator, none of which
-   * reaches RSpace any other way (RSDEV-1326).
+   * Registration puts a newly created PIDINST in `draft`, and a draft can be submitted for review,
+   * or deleted, in the B2INST UI without RSpace hearing about it. `created` is the same case: it is
+   * a review PUT but never submitted, which the B2INST probe behind ADR 0008 confirmed an
+   * identifier can really be sitting in, and the submitter can drive it forward at B2INST just as
+   * they can a draft. Neither reaches RSpace any other way (RSDEV-1326).
    */
   test.each(["draft", "created"] as const)("renders for a B2INST identifier in state %s", (state) => {
     render(

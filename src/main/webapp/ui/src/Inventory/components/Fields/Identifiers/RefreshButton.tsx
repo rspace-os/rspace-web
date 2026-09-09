@@ -5,8 +5,7 @@ import { useTranslation } from "react-i18next";
 import { getErrorMessage } from "@/util/error";
 import CustomTooltip from "../../../../components/CustomTooltip";
 import { mkAlert } from "../../../../stores/contexts/Alert";
-import type { Identifier } from "../../../../stores/definitions/Identifier";
-import { B2INST_CLOSED_REVIEW_STATES } from "../../../../stores/definitions/Identifier";
+import type { Identifier, PublishingState } from "../../../../stores/definitions/Identifier";
 import useStores from "../../../../stores/use-stores";
 
 type RefreshButtonArgs = {
@@ -15,16 +14,24 @@ type RefreshButtonArgs = {
 };
 
 /**
- * Pulls the identifier's current review status from the provider (RSDEV-1260). Offered for a
- * B2INST identifier whenever its community review can still move, which is every state except the
- * three that close it without publishing. It used to be offered for "submitted" alone, plus an
- * accepted record that had not yet reported its Handle (Copilot review, PR 1066), and was widened
- * to accepted and then to draft on Nico's request (RSDEV-1326).
+ * The B2INST states a re-read can return something new for. The record behind all but `accepted`
+ * is a draft at B2INST, and a draft can be submitted for review, or deleted, in the B2INST UI
+ * without RSpace hearing about it - `created` (a review PUT but never submitted) included, which
+ * the probe behind ADR 0008 confirmed an identifier can really be sitting in. `accepted` earns its
+ * place differently: the minted ePIC PID, the landing page and the record page can all still
+ * arrive or move after publication.
  *
- * The status of a B2INST record is decided outside RSpace at every point: a draft can be submitted
- * for review, or deleted, in the B2INST UI; a created review can be accepted by a curator; and an
- * accepted record's minted ePIC PID, landing page and record page can all still arrive or move.
- * None of that reaches RSpace any other way.
+ * An allowlist rather than the complement of {@link B2INST_CLOSED_REVIEW_STATES}, so a state
+ * nobody has thought about does not silently acquire the button.
+ */
+const REFRESHABLE_B2INST_STATES: ReadonlyArray<PublishingState> = ["draft", "created", "submitted", "accepted"];
+
+/**
+ * Pulls the identifier's current review status from the provider (RSDEV-1260). Offered for a
+ * B2INST identifier in any state the provider can still move it out of; see
+ * {@link REFRESHABLE_B2INST_STATES}. It was offered for `submitted` alone, plus an accepted record
+ * that had not yet reported its Handle (Copilot review, PR 1066), and was widened to accepted,
+ * then draft, then created on Nico's requests (RSDEV-1326).
  */
 function RefreshButton({ identifier, disabled }: RefreshButtonArgs): React.ReactNode {
   const [refreshing, setRefreshing] = React.useState(false);
@@ -32,14 +39,12 @@ function RefreshButton({ identifier, disabled }: RefreshButtonArgs): React.React
   const { uiStore } = useStores();
 
   /*
-   * A review closed without publishing - declined, cancelled, expired - is terminal at B2INST, so
-   * that is the whole of what has nothing left to pull. The provider check is what makes "draft"
-   * safe to include: both providers use that state, and for DataCite the server makes no provider
-   * call at all, since its state only ever changes through RSpace's own publish and retract. Every
-   * IGSN draft would otherwise grow a button that reports success having done nothing.
+   * The provider check is what makes `draft` safe to list: both providers use that state, and for
+   * DataCite the server makes no provider call at all, since its state only ever changes through
+   * RSpace's own publish and retract. Every IGSN sample draft would otherwise grow a button that
+   * reports success having done nothing.
    */
-  const refreshable =
-    identifier.doiType === "PIDINST_B2INST" && !B2INST_CLOSED_REVIEW_STATES.includes(identifier.state);
+  const refreshable = identifier.doiType === "PIDINST_B2INST" && REFRESHABLE_B2INST_STATES.includes(identifier.state);
 
   /*
    * A linked identifier is a PID another party minted. RSpace holds no provider-side record of its
