@@ -9,6 +9,7 @@ import com.researchspace.api.v1.model.ApiExtraField.ExtraFieldTypeEnum;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.inventory.field.InventoryLinkField;
+import com.researchspace.model.inventory.field.InventoryNumberField;
 import com.researchspace.model.inventory.field.InventoryStringField;
 import java.util.ArrayList;
 import java.util.List;
@@ -134,6 +135,37 @@ class SampleApiManagerImplTemplateFieldMergeTest {
     SampleApiManagerImpl.mergeOperationFieldsIntoInheritedTemplateFields(sample, templateFields);
 
     assertEquals(1, sample.getExtraFields().size(), "a generated link is not merged into text");
+  }
+
+  @Test
+  void leavesAGeneratedFieldAloneWhenTheInheritedFieldRejectsItsContent() {
+    // Matching on the name alone says nothing about the inherited field's TYPE. A template may
+    // declare a number field called "Cryomedium"; Cryopreserve then generates a text field of that
+    // name whose content is "10% DMSO". setFieldData validates before storing, so merging it threw
+    // IllegalArgumentException out of the manager instead of letting the request reach the
+    // duplicate-name rejection that reports a controlled error (Copilot review, PR #1090).
+    ApiSampleWithFullSubSamples sample = sampleWith(operationField("Cryomedium", "10% DMSO"));
+    List<InventoryEntityField> templateFields = new ArrayList<>();
+    templateFields.add(new InventoryNumberField("Cryomedium"));
+
+    SampleApiManagerImpl.mergeOperationFieldsIntoInheritedTemplateFields(sample, templateFields);
+
+    assertEquals(1, sample.getExtraFields().size(), "the field must survive to be rejected");
+    assertNull(templateFields.get(0).getFieldData(), "template content must not be overwritten");
+  }
+
+  @Test
+  void stillMergesWhenTheInheritedFieldAcceptsTheGeneratedContent() {
+    // The counterpart: a number field named "Passage number" is exactly what the Passage counter
+    // merge exists for, so a numeric content must still be absorbed.
+    ApiSampleWithFullSubSamples sample = sampleWith(operationField("Passage number", "4"));
+    List<InventoryEntityField> templateFields = new ArrayList<>();
+    templateFields.add(new InventoryNumberField("Passage number"));
+
+    SampleApiManagerImpl.mergeOperationFieldsIntoInheritedTemplateFields(sample, templateFields);
+
+    assertEquals(0, sample.getExtraFields().size(), "the generated field is absorbed");
+    assertEquals("4", templateFields.get(0).getFieldData());
   }
 
   @Test
