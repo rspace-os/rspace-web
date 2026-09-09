@@ -477,7 +477,14 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
       }
       InventoryEntityField target =
           mergeTargets.get(field.getName().trim().toLowerCase(Locale.ROOT));
-      if (target != null) {
+      // A name match says nothing about the inherited field's TYPE: a template may declare a NUMBER
+      // field called "Cryomedium" while the operation generates a text one holding "10% DMSO".
+      // setFieldData validates before storing and throws, which would leave the manager as an
+      // uncontrolled failure rather than the request's own validation response. Asked first with
+      // the
+      // non-throwing validate, so an incompatible field is simply not absorbed: it stays in
+      // extraFields and collects the ordinary duplicate-name rejection (Copilot review, PR #1090).
+      if (target != null && !target.validate(field.getContent()).hasErrorMessages()) {
         target.setFieldData(field.getContent());
         generated.remove();
       }
