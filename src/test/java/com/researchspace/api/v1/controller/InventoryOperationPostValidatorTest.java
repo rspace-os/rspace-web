@@ -1,15 +1,17 @@
 package com.researchspace.api.v1.controller;
 
-import static com.researchspace.api.v1.controller.InventoryOperationPostValidator.MAX_EXTRA_FIELDS;
-import static com.researchspace.api.v1.controller.InventoryOperationPostValidator.MAX_SUBSAMPLES;
+import static com.researchspace.api.v1.controller.OperationValidationSupport.MAX_EXTRA_FIELDS;
+import static com.researchspace.api.v1.controller.OperationValidationSupport.MAX_SUBSAMPLES;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.introspect.BeanPropertyDefinition;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.researchspace.api.v1.model.ApiBarcode;
 import com.researchspace.api.v1.model.ApiContainerLocation;
@@ -86,16 +88,36 @@ class InventoryOperationPostValidatorTest {
   private Errors validateWithUnknownProperty(
       ApiInventoryOperationPost fixture, String pointer, String property) {
     ObjectNode root = API_MAPPER.valueToTree(fixture);
-    // expiryDate deserialises an explicit null to LocalDateDeserialiser.NULL_DATE, to tell "set
-    // this to null" from "not mentioned"; a serialise-then-rebind round trip cannot express the
-    // latter, so it arrives PRESENT and undeclaredProperty rejects it. Dropped here because it is
-    // an artefact of the round trip, not of anything a client sent.
-    ((ObjectNode) root.get("newSample")).remove("expiryDate");
+    stripRoundTripArtefacts(root);
     assertFalse(
         validate(bind(root)).hasErrors(),
         () -> "the round-tripped fixture must itself be valid: " + validate(bind(root)));
     ((ObjectNode) root.at(pointer)).put(property, "whatever");
     return validate(bind(root));
+  }
+
+  /**
+   * expiryDate deserialises an explicit null to LocalDateDeserialiser.NULL_DATE, to tell "set this
+   * to null" from "not mentioned"; a serialise-then-rebind round trip cannot express the latter, so
+   * it arrives PRESENT and undeclaredProperty rejects it. Dropped because it is an artefact of the
+   * round trip, not of anything a client sent. A terminal operation has no newSample at all.
+   */
+  private static void stripRoundTripArtefacts(ObjectNode root) {
+    if (root.get("newSample") instanceof ObjectNode newSample) {
+      newSample.remove("expiryDate");
+    }
+    // newFieldRequest is WRITE_ONLY, so serialising drops it and the rebound origin field looks
+    // like an edit of an existing field (originFieldNewOnly). Restored for the same reason
+    // expiryDate is removed: it is an artefact of the round trip, not of the request.
+    if (root.get("origins") instanceof ArrayNode origins) {
+      for (JsonNode origin : origins) {
+        if (origin.get("extraFields") instanceof ArrayNode fields) {
+          for (JsonNode field : fields) {
+            ((ObjectNode) field).put("newFieldRequest", true);
+          }
+        }
+      }
+    }
   }
 
   private static ApiInventoryOperationPost bind(ObjectNode json) {
@@ -282,7 +304,9 @@ class InventoryOperationPostValidatorTest {
     ApiInventoryOperationPost request = aliquotRequest();
     request.setOperationType(null);
     assertSingleErrorWithCode(
-        validate(request), "operationType", "errors.inventory.operation.unknownType");
+        // An omitted operationType is the likeliest first mistake against a new endpoint,
+        // and "Unknown operation type [null]." named nothing useful (parallel review).
+        validate(request), "operationType", "errors.inventory.operation.operationTypeRequired");
   }
 
   @Test
@@ -429,7 +453,7 @@ class InventoryOperationPostValidatorTest {
     // set is meant to prevent, so it is pinned rather than trusted (F3).
     assertEquals(
         InventoryOperationConfig.INTERPRETED_COMPUTED_FUNCTIONS,
-        InventoryOperationPostValidator.COMPUTED_CONTENT_SHAPES.keySet());
+        OperationValidationSupport.COMPUTED_CONTENT_SHAPES.keySet());
   }
 
   // --- per-operation amount-taken semantics ---
@@ -714,7 +738,9 @@ class InventoryOperationPostValidatorTest {
     assertSingleErrorWithCode(
         validate(request),
         "newSample.extraFields[1].operationFieldKey",
-        "errors.inventory.operation.fieldKeyUnknown");
+        // Absent is a different mistake from unrecognised; the latter rendered "The field
+        // [null] is not one this operation declares." (parallel review).
+        "errors.inventory.operation.fieldKeyMissing");
   }
 
   @Test
@@ -1077,7 +1103,7 @@ class InventoryOperationPostValidatorTest {
     ApiInventoryOperationPost request = aliquotRequest();
     request.getNewSample().getExtraFields().add(null);
     assertSingleErrorWithCode(
-        validate(request), "newSample.extraFields", "errors.inventory.operation.fieldKeyUnknown");
+        validate(request), "newSample.extraFields", "errors.inventory.operation.fieldKeyMissing");
   }
 
   // --- storage temperature shape and magnitude (Copilot review, PR #1090) ---
@@ -1523,7 +1549,7 @@ class InventoryOperationPostValidatorTest {
     // Aggregation is why this is a validator pass and not a throwing binder: a caller fixing a
     // typo-ridden payload one 400 at a time learns nothing about the rest of it.
     ObjectNode root = API_MAPPER.valueToTree(aliquotRequest());
-    ((ObjectNode) root.get("newSample")).remove("expiryDate");
+    stripRoundTripArtefacts(root);
     root.put("rootTypo", 1);
     ((ObjectNode) root.get("origins").get(0)).put("originTypo", 2);
     ((ObjectNode) root.get("newSample")).put("storageTemperature", 3);
@@ -1555,5 +1581,113 @@ class InventoryOperationPostValidatorTest {
     Errors errors = new BeanPropertyBindingResult(sample, "sample");
     samplesEndpointRules.validate(sample, errors);
     assertFalse(errors.hasErrors(), () -> "samples endpoint must be unchanged: " + errors);
+  }
+
+  @Test
+  void boundsTheNumberOfUnknownPropertyErrorsAcrossTheWholeRequest() {
+    // The per-object cap does not bound the response, because nothing bounds the number of objects:
+    // the walk runs before MAX_ORIGINS and MAX_EXTRA_FIELDS, by design, so it must carry its own
+    // ceiling or a body of junk keys amplifies into an unbounded error list, each entry costing a
+    // reflective field read and a message resolution (parallel review).
+    ObjectNode root = API_MAPPER.valueToTree(aliquotRequest());
+    stripRoundTripArtefacts(root);
+    ArrayNode origins = (ArrayNode) root.get("origins");
+    ObjectNode template = (ObjectNode) origins.get(0).deepCopy();
+    origins.removeAll();
+    for (int origin = 0; origin < 200; origin++) {
+      ObjectNode copy = template.deepCopy();
+      for (int junk = 0; junk < 10; junk++) {
+        copy.put("junk" + junk, 1);
+      }
+      origins.add(copy);
+    }
+
+    Errors errors = validate(bind(root));
+    assertTrue(
+        errors.getErrorCount()
+            <= InventoryOperationPostValidator.MAX_REPORTED_UNKNOWN_PROPERTIES + 5,
+        () -> "unbounded error list: " + errors.getErrorCount() + " errors");
+  }
+
+  @Test
+  void saysHowManyUnknownPropertiesWentUnreportedWhenTheCeilingIsHit() {
+    // Truncating silently would have a caller fix the reported typos, resubmit, and get a fresh
+    // unexplained 400 for the ones that were never named.
+    ObjectNode root = API_MAPPER.valueToTree(aliquotRequest());
+    stripRoundTripArtefacts(root);
+    ArrayNode origins = (ArrayNode) root.get("origins");
+    ObjectNode template = (ObjectNode) origins.get(0).deepCopy();
+    origins.removeAll();
+    for (int origin = 0; origin < 200; origin++) {
+      ObjectNode copy = template.deepCopy();
+      copy.put("junk", 1);
+      origins.add(copy);
+    }
+
+    Errors errors = validate(bind(root));
+    assertTrue(
+        errors.getGlobalErrors().stream()
+            .anyMatch(
+                error ->
+                    "errors.inventory.operation.unknownPropertiesTruncated"
+                        .equals(error.getCode())),
+        () -> "no truncation notice: " + errors.getAllErrors());
+  }
+
+  @Test
+  void rejectsAnAllAmountModeOnAnOperationThatTakesNothingFromItsOrigins() {
+    // Passage links to its origin and takes nothing, so its amount must be exactly zero. Declaring
+    // "all" claims the zero equals the origin's whole quantity, which the manager compare-and-swaps
+    // and rejects as a 409 telling the client to reload; reloading changes nothing, so the client
+    // resubmits the only payload the validator accepts and 409s forever. A whole-origin claim is
+    // meaningless here, so it is malformed: a 400, like the mirror rule for Destroy (parallel
+    // review).
+    ApiInventoryOperationPost request = passageRequest();
+    request.getOrigins().get(0).setAmountMode(ApiInventoryOperationAmountMode.ALL);
+    assertSingleErrorWithCode(
+        validate(request),
+        "origins[0].amountMode",
+        "errors.inventory.operation.amountModeNotApplicable");
+  }
+
+  @Test
+  void stillAcceptsAnAllAmountModeOnAnOperationThatDoesTakeFromItsOrigins() {
+    // Aliquot decrements its origin, so "take all of it" is a real request and stays a
+    // compare-and-swap rather than a 400.
+    ApiInventoryOperationPost request = aliquotRequest();
+    request.getOrigins().get(0).setAmountMode(ApiInventoryOperationAmountMode.ALL);
+    assertFalse(validate(request).hasErrors());
+  }
+
+  @Test
+  void rejectsAnUnknownPropertyOnAnOriginExtraField() {
+    // The one level the walk visits that had no test: it is reached through a nested forEachAt, so
+    // deleting that nesting would drop a typo on a Destroy origin's "Disposed" field silently
+    // (parallel review).
+    Errors errors =
+        validateWithUnknownProperty(destroyRequest(), "/origins/0/extraFields/0", "contnet");
+    assertSingleErrorWithCode(
+        errors, "origins[0].extraFields[0]", "errors.inventory.operation.unknownProperty");
+  }
+
+  @Test
+  void reportsAnUnknownPropertyEvenWhenTheOperationTypeIsAlsoWrong() {
+    // The walk runs before every early return on purpose. Without a test, moving it below the
+    // config lookup while fixing something else would silently drop the typo report for any
+    // request that is also structurally broken (parallel review).
+    ObjectNode root = API_MAPPER.valueToTree(aliquotRequest());
+    stripRoundTripArtefacts(root);
+    root.put("operationType", "nosuchoperation");
+    root.put("rootTypo", 1);
+
+    Errors errors = validate(bind(root));
+    assertTrue(
+        errors.getFieldErrors("operationType").stream()
+            .anyMatch(e -> "errors.inventory.operation.unknownType".equals(e.getCode())),
+        () -> "expected the unknown type: " + errors.getAllErrors());
+    assertTrue(
+        errors.getGlobalErrors().stream()
+            .anyMatch(e -> "errors.inventory.operation.unknownProperty".equals(e.getCode())),
+        () -> "the typo must still be reported: " + errors.getAllErrors());
   }
 }

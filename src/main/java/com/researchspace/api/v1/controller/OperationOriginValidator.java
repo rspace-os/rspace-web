@@ -1,6 +1,6 @@
 package com.researchspace.api.v1.controller;
 
-import static com.researchspace.api.v1.controller.InventoryOperationPostValidator.MAX_EXTRA_FIELDS;
+import static com.researchspace.api.v1.controller.OperationValidationSupport.MAX_EXTRA_FIELDS;
 import static com.researchspace.api.v1.controller.OperationValidationSupport.declaredFieldType;
 import static com.researchspace.api.v1.controller.OperationValidationSupport.fieldsWithKey;
 import static com.researchspace.api.v1.controller.OperationValidationSupport.isValidAmountTaken;
@@ -62,8 +62,9 @@ class OperationOriginValidator {
       // amountMode "explicit" is saying the opposite, that this is an amount the user chose, which
       // this operation cannot honour: malformed, not conflicted, so a 400 here rather than the
       // manager's 409 (RSDEV-1231). An ABSENT mode stays acceptable, so requests predating the
-      // field keep working; the manager reads absent-on-an-emptying-operation as a whole-origin
-      // claim, which is the only thing it can mean.
+      // field keep working, and it is NOT read as a whole-origin claim: only a DECLARED "all"
+      // earns the compare-and-swap, so an absent mode whose amount does not empty the origin still
+      // gets the mustEmptyOrigin 400 rather than a 409 it could never resolve.
       if (config.effect().emptiesOrigin()
           && origin.getAmountMode() == ApiInventoryOperationAmountMode.EXPLICIT) {
         errors.rejectValue(
@@ -71,6 +72,19 @@ class OperationOriginValidator {
             "errors.inventory.operation.amountModeMustBeAll",
             "This operation empties its origins, so the amount taken cannot be an explicit"
                 + " amount.");
+      } else if (!config.effect().emptiesOrigin()
+          && config.effect().amountTakenFrom() == null
+          && origin.getAmountMode() == ApiInventoryOperationAmountMode.ALL) {
+        // The mirror of the rule above. An operation that only links to its origins (Passage)
+        // requires an amount of exactly zero, so a whole-origin claim cannot be satisfied: the
+        // manager compare-and-swaps the zero against the live quantity, 409s, and the client
+        // reloads to find nothing changed and resubmits the only payload that validates, forever.
+        // Malformed rather than conflicted, so it is a 400 here (parallel review).
+        errors.rejectValue(
+            "amountMode",
+            "errors.inventory.operation.amountModeNotApplicable",
+            "This operation does not take from its origins, so the amount taken cannot be a"
+                + " whole-origin claim.");
       }
       if (!isValidAmountTaken(origin.getAmountTaken())) {
         errors.rejectValue(
@@ -169,7 +183,9 @@ class OperationOriginValidator {
             .noneMatch(spec -> spec.nameKey().equals(field.getOperationFieldKey()))) {
           errors.rejectValue(
               "operationFieldKey",
-              "errors.inventory.operation.fieldKeyUnknown",
+              field.getOperationFieldKey() == null
+                  ? "errors.inventory.operation.fieldKeyMissing"
+                  : "errors.inventory.operation.fieldKeyUnknown",
               new Object[] {field.getOperationFieldKey()},
               "This field is not one the operation declares.");
         } else {

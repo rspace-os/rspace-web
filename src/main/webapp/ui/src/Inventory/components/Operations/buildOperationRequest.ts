@@ -31,7 +31,7 @@ import { UNSET_UNIT } from "./types";
 /**
  * The documentation link is a wizard-level feature rather than a per-operation declaration, so it
  * carries this fixed key; the backend accepts one on every output-producing operation
- * (InventoryOperationPostValidator.DOCUMENTATION_LINK_KEY).
+ * (OperationNewSampleValidator.DOCUMENTATION_LINK_KEY).
  */
 const DOCUMENTATION_LINK_KEY = "operations.documentationLink";
 
