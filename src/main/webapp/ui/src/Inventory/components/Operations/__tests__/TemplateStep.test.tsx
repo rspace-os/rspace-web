@@ -202,12 +202,9 @@ describe("TemplateStep", () => {
 });
 
 describe("TemplateStep in English", () => {
-  it("names the blocking fields as a list, not a bare join", async () => {
-    // The message is assembled by i18n, not in code (code review, finding 10): the field names go
-    // through Intl.ListFormat for the locale, so English reads "A, B, and C". cimode hides the
-    // interpolated parameters entirely, which is why this one test uses the real catalogs.
+  const blockedBy = async (names: Array<string>) => {
     currentTemplate = makeTemplate(
-      ["A", "B", "C"].map((name) => ({ name, mandatory: true, content: "", selectedOptions: null })),
+      names.map((name) => ({ name, mandatory: true, content: "", selectedOptions: null })),
     );
     render(
       <InEnglish>
@@ -215,7 +212,22 @@ describe("TemplateStep in English", () => {
       </InEnglish>,
     );
     await userEvent.setup().click(screen.getByTestId("template-picker"));
-    expect(await screen.findByText(/the required field\(s\) A, B, and C have no default value/)).toBeInTheDocument();
+  };
+
+  it("names the blocking fields as a list, not a bare join", async () => {
+    // The message is assembled by i18n, not in code (code review, finding 10): the field names go
+    // through Intl.ListFormat for the locale, so English reads "A, B, and C". cimode hides the
+    // interpolated parameters entirely, which is why these tests use the real catalogs.
+    await blockedBy(["A", "B", "C"]);
+    expect(await screen.findByText(/the required fields A, B, and C have no default value/)).toBeInTheDocument();
+  });
+
+  it("inflects the sentence for a single blocking field rather than writing 'field(s)'", async () => {
+    // "field(s) ... have" is a parenthetical plural, which only works in English and reads badly
+    // even there. The count decides the wording in the catalog, so a translator can inflect it the
+    // way their own language requires (PR #963 review).
+    await blockedBy(["Batch"]);
+    expect(await screen.findByText(/the required field Batch has no default value/)).toBeInTheDocument();
   });
 });
 
