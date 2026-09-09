@@ -1,11 +1,15 @@
 package com.researchspace.api.v1.model;
 
+import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 /**
  * One origin subsample and how an Inventory operation updates it. {@code amountTaken} is a positive
@@ -25,7 +29,22 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @JsonPropertyOrder({"id", "amountMode", "amountTaken", "extraFields"})
-public class ApiInventoryOperationOriginUpdate {
+public class ApiInventoryOperationOriginUpdate implements UnknownPropertyCapturing {
+  /**
+   * Names of request properties this object does not declare; see {@link UnknownPropertyCapturing}.
+   * Inert here: never serialized, excluded from equals and toString, and inspected only by the
+   * operations endpoint's validator.
+   */
+  @JsonIgnore @EqualsAndHashCode.Exclude @ToString.Exclude
+  private final List<String> unknownProperties = new ArrayList<>();
+
+  /** Records an unrecognised property's NAME and discards its value. */
+  @JsonAnySetter
+  private void captureUnknownProperty(String name, Object ignoredValue) {
+    if (unknownProperties.size() < UnknownPropertyCapturing.MAX_CAPTURED_UNKNOWN_PROPERTIES) {
+      unknownProperties.add(name);
+    }
+  }
 
   @JsonProperty("id")
   private Long id;
