@@ -2,6 +2,8 @@ package com.researchspace.service.inventory.impl;
 
 import com.axiope.search.InventorySearchConfig.InventorySearchDeletedOption;
 import com.researchspace.api.v1.auth.ApiRuntimeException;
+import com.researchspace.api.v1.model.ApiExtraField;
+import com.researchspace.api.v1.model.ApiExtraField.ExtraFieldTypeEnum;
 import com.researchspace.api.v1.model.ApiFieldToModelFieldFactory;
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
@@ -55,9 +57,14 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.helper.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -285,6 +292,12 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
             ? recordFactory.createSample(sampleName, user, sampleTemplate)
             : recordFactory.createSample(sampleName, user);
 
+    if (sampleTemplate != null) {
+      // Before the extra fields are added below: an operation-generated field whose name the
+      // template already declares is absorbed into that inherited field rather than added beside it
+      // as a duplicate (Codex review, PR #1090).
+      mergeOperationFieldsIntoInheritedTemplateFields(apiSample, sample.getActiveFields());
+    }
     setBasicFieldsFromNewIncomingApiInventoryRecord(sample, apiSample, user);
     if (sampleTemplate != null) {
       // might be null from incoming API request, but here we want to reference template icon id
@@ -407,6 +420,63 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
       }
     }
     return subSample;
+  }
+
+  /**
+   * Writes an operation's generated field into the identically named field the created sample
+   * inherits from its template, instead of adding a second field with that name.
+   *
+   * <p>A template may legitimately declare a field an operation also produces: a Passage template
+   * with "Passage number", a Cryopreserve one with "Cryomedium". Adding the generated field
+   * alongside the inherited one gives the sample two fields of the same name, which {@link
+   * InventoryFieldNameUniquenessValidator#assertNoDuplicateFieldNames} rejects, so the operation
+   * failed for every such template and the wizard offered no way to repair the generated name
+   * (Codex review, PR #1090). Renaming the generated field would clear the rejection but break the
+   * Passage counter, which finds the previous number by looking the field up by name
+   * (computedValues.ts, {@code gatherParentFields}): the number would land beside an untouched
+   * template counter and the next Passage would read the empty one. Merging keeps one field of that
+   * name carrying the operation's value, so the lookup still works with or without a template.
+   *
+   * <p>Only fields the operation generated are merged, identified by their {@code
+   * operationFieldKey}: a user's own extra field on POST /samples keeps the existing duplicate-name
+   * rejection rather than silently overwriting template content. Link fields are never merged in
+   * either direction, because a link holds a structured {@code InventoryLink} rather than text.
+   * Names are matched the way the uniqueness check compares them, trimmed and case-insensitively,
+   * or a collision it would reject could survive this merge.
+   */
+  static void mergeOperationFieldsIntoInheritedTemplateFields(
+      ApiSampleWithFullSubSamples apiSample, List<InventoryEntityField> inheritedFields) {
+    if (apiSample == null
+        || CollectionUtils.isEmpty(apiSample.getExtraFields())
+        || CollectionUtils.isEmpty(inheritedFields)) {
+      return;
+    }
+    Map<String, InventoryEntityField> mergeTargets = new HashMap<>();
+    for (InventoryEntityField inherited : inheritedFields) {
+      if (inherited instanceof InventoryLinkField || inherited.isOptionsStoringField()) {
+        continue;
+      }
+      String name = inherited.getName();
+      if (StringUtils.isNotBlank(name)) {
+        mergeTargets.putIfAbsent(name.trim().toLowerCase(Locale.ROOT), inherited);
+      }
+    }
+    Iterator<ApiExtraField> generated = apiSample.getExtraFields().iterator();
+    while (generated.hasNext()) {
+      ApiExtraField field = generated.next();
+      if (field == null
+          || StringUtils.isBlank(field.getOperationFieldKey())
+          || ExtraFieldTypeEnum.LINK.equals(field.getType())
+          || StringUtils.isBlank(field.getName())) {
+        continue;
+      }
+      InventoryEntityField target =
+          mergeTargets.get(field.getName().trim().toLowerCase(Locale.ROOT));
+      if (target != null) {
+        target.setFieldData(field.getContent());
+        generated.remove();
+      }
+    }
   }
 
   private void saveNewApiFieldsIntoSampleFields(
