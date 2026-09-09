@@ -131,17 +131,6 @@ export default class CoreFetcher {
   // @ts-expect-error set by passing DEFAULT_SEARCH to setAttributes
   error: string;
   endpoint: string = "search";
-  /**
-   * Monotonic id of the most recently ISSUED search. Every store write in `search` is gated on
-   * still holding the latest id, so whichever search was issued last owns the results, rather than
-   * whichever response happens to arrive last. Results reach consumers through this shared store
-   * rather than through the promise they awaited, so no caller can impose that ordering itself: a
-   * debounced picker typing "abc" can otherwise be left showing the results for "ab".
-   *
-   * Not observable: it is bookkeeping about requests, not rendered state, and making it observable
-   * would invalidate every reaction on each keystroke.
-   */
-  latestSearchId: number = 0;
   // @ts-expect-error set by passing DEFAULT_SEARCH to setAttributes
   query: string;
   // @ts-expect-error set by passing DEFAULT_SEARCH to setAttributes
@@ -318,10 +307,6 @@ export default class CoreFetcher {
   }
 
   async search(_params: CoreFetcherArgs | null = null, storeResults: (results: Array<InventoryRecord>) => void) {
-    // Claim the latest slot before anything awaits. Every store write below first checks it still
-    // holds this id, so a slower earlier response is discarded rather than overwriting a newer one.
-    const searchId = ++this.latestSearchId;
-    const isLatest = () => searchId === this.latestSearchId;
     this.setLoading(true);
 
     let params = _params ?? this.generateParams();
@@ -354,7 +339,6 @@ export default class CoreFetcher {
             ? `${params.permalink.id}/versions/${params.permalink.version}`
             : params.permalink.id;
         const { data } = await ApiService.get<Record<string, unknown> & { globalId: GlobalId }>(endpoint, slug);
-        if (!isLatest()) return;
         runInAction(() => {
           this.count = 1;
         });
@@ -406,7 +390,6 @@ export default class CoreFetcher {
             data.templates as Array<Record<string, unknown> & { globalId: GlobalId }>,
           ],
         ])();
-        if (!isLatest()) return;
         runInAction(() => {
           this.count = data.totalHits || records.length;
         });
@@ -446,12 +429,8 @@ export default class CoreFetcher {
       }
       if (this.endpoint !== endpoint)
         console.warn("search.endpoint has changed during fetching, which may result in buggy behaviour.");
-      // A stale request must not clear the spinner: the search that superseded it is still running.
-      if (isLatest()) this.setLoading(false);
+      this.setLoading(false);
     } catch (error) {
-      // A stale failure is not the user's problem: they have already asked for something else, so
-      // resetting the results and alerting would both be about a search no longer on screen.
-      if (!isLatest()) return;
       this.resetSearch();
       const notFound = Parsers.objectPath(["response", "status"], error).flatMap(Parsers.isNumber).orElse(null) === 404;
       if (params.permalink && notFound) {
