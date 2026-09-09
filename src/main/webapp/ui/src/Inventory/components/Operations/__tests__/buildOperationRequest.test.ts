@@ -285,6 +285,63 @@ describe("buildOperationRequest (Pool - multi-origin)", () => {
     // Distinct names: a record cannot hold two fields with the same name.
     expect(new Set(names).size).toBe(names.length);
   });
+
+  // Two distinct subsamples may carry the same name, so interpolating the origin's name is not on
+  // its own enough to keep the generated field names apart. The backend rejects the duplicate
+  // (InventoryFieldNameUniquenessValidator, trimmed and case-insensitive), which made a perfectly
+  // valid Pool selection fail at Perform with nothing the wizard could do about it (Codex review,
+  // PR #1090).
+  it("keeps pooled link names apart when two origins share a name", () => {
+    const sameNamed: Array<OperationOrigin> = [
+      { id: 1, globalId: "SS1", name: "Aliquot", quantity: { numericValue: 5, unitId: 3 } },
+      { id: 2, globalId: "SS2", name: "Aliquot", quantity: { numericValue: 5, unitId: 3 } },
+    ];
+    const poolOfSameNamed = buildOperationRequest({
+      operation: poolOperation,
+      values: {
+        sampleName: "Pool",
+        count: 1,
+        eachAmount: { numericValue: 2, unitId: 3 },
+        amountTaken: { numericValue: 1, unitId: 3 },
+      },
+      origins: sameNamed,
+      resolveLabel,
+      templateId: null,
+    });
+
+    const links = newSampleOf(poolOfSameNamed).extraFields.filter((f): f is OperationLinkField => f.type === "link");
+    const names = links.map((l) => l.name);
+    expect(new Set(names.map((n) => n.trim().toLowerCase())).size).toBe(names.length);
+    // Disambiguated by the origin each link points at, so the name still says which is which.
+    expect(names).toEqual(["Pooled from: Aliquot (SS1)", "Pooled from: Aliquot (SS2)"]);
+    // The targets and the key the backend matches on are untouched.
+    expect(links.map((l) => l.link.targetGlobalId)).toEqual(["SS1", "SS2"]);
+    expect(links.every((l) => l.operationFieldKey === "operations.pool.linkFieldName")).toBe(true);
+  });
+
+  it("differs only by case is still a duplicate to the backend", () => {
+    const casedNames: Array<OperationOrigin> = [
+      { id: 1, globalId: "SS1", name: "Aliquot", quantity: { numericValue: 5, unitId: 3 } },
+      { id: 2, globalId: "SS2", name: "ALIQUOT", quantity: { numericValue: 5, unitId: 3 } },
+    ];
+    const poolOfCased = buildOperationRequest({
+      operation: poolOperation,
+      values: {
+        sampleName: "Pool",
+        count: 1,
+        eachAmount: { numericValue: 2, unitId: 3 },
+        amountTaken: { numericValue: 1, unitId: 3 },
+      },
+      origins: casedNames,
+      resolveLabel,
+      templateId: null,
+    });
+
+    const names = newSampleOf(poolOfCased)
+      .extraFields.filter((f): f is OperationLinkField => f.type === "link")
+      .map((l) => l.name);
+    expect(new Set(names.map((n) => n.trim().toLowerCase())).size).toBe(names.length);
+  });
 });
 
 // Destroy (DevDocs/adr/0007) is a terminal operation: noOutput (no new sample), it empties the origin (takes

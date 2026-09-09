@@ -39,6 +39,43 @@ function quantityValue(values: OperationInputs, key: string): OperationQuantity 
   return values[key] as OperationQuantity;
 }
 
+/**
+ * Makes every generated field name unique, the way the backend judges uniqueness.
+ *
+ * <p>A record cannot hold two fields with the same name, and the check compares them trimmed and
+ * case-insensitively (InventoryFieldNameUniquenessValidator.rejectDuplicatesInPayload). Pool's link
+ * name interpolates each origin's own name, and two distinct subsamples may share one ("Aliquot"),
+ * which produced two fields called "Pooled from: Aliquot": the endpoint rejected the request, so a
+ * perfectly valid Pool selection always failed at Perform and the wizard offered no way to repair
+ * the generated names (Codex review, PR #1090).
+ *
+ * <p>Every member of a colliding group is suffixed, not just the later ones, so the names stay
+ * symmetrical and each still says which origin it refers to. A link is disambiguated by the global
+ * id it targets, which is unique per origin; anything else falls back to an ordinal, as does the
+ * pathological case where a suffixed name collides in turn.
+ */
+function withUniqueFieldNames(fields: Array<OperationExtraField>): Array<OperationExtraField> {
+  const comparable = (name: string): string => name.trim().toLowerCase();
+  const occurrences = new Map<string, number>();
+  for (const field of fields) {
+    const key = comparable(field.name);
+    occurrences.set(key, (occurrences.get(key) ?? 0) + 1);
+  }
+  const used = new Set<string>();
+  return fields.map((field) => {
+    const base =
+      (occurrences.get(comparable(field.name)) ?? 0) > 1 && field.type === "link"
+        ? `${field.name} (${field.link.targetGlobalId})`
+        : field.name;
+    let candidate = base;
+    for (let ordinal = 2; used.has(comparable(candidate)); ordinal += 1) {
+      candidate = `${base} (${ordinal})`;
+    }
+    used.add(comparable(candidate));
+    return candidate === field.name ? field : { ...field, name: candidate };
+  });
+}
+
 export function buildOperationRequest(params: {
   operation: InventoryOperation;
   values: OperationInputs;
@@ -127,9 +164,10 @@ export function buildOperationRequest(params: {
     // Provenance links point back to each origin; the display name may interpolate inputs
     // (e.g. {processName}) and the origin's own name as {originName}. Each link spec fans out to one
     // link per origin, so a single-origin operation yields one link and Pool yields one HasPart link
-    // per pooled subsample (DevDocs/adr/0007). Pool's fieldNameKey includes {originName} so its several links
-    // get distinct names - a record cannot hold two fields with the same name. The optional
-    // documentation link is one more link; all of them land on the created sample only.
+    // per pooled subsample (DevDocs/adr/0007). Pool's fieldNameKey includes {originName}, but two
+    // distinct subsamples may share a name, so uniqueness is enforced by withUniqueFieldNames below
+    // rather than assumed here. The optional documentation link is one more link; all of them land
+    // on the created sample only.
     const links: Array<OperationExtraField> = effect.links.flatMap((spec) =>
       origins.map((origin) => ({
         name: resolveLabel(spec.fieldNameKey, { ...values, originName: origin.name }),
@@ -177,7 +215,7 @@ export function buildOperationRequest(params: {
       name,
       templateId,
       quantity: { numericValue: eachAmount.numericValue * count, unitId: eachAmount.unitId },
-      extraFields: [...links, ...textFields],
+      extraFields: withUniqueFieldNames([...links, ...textFields]),
       subSamples,
     };
 

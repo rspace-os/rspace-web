@@ -282,16 +282,26 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
   }
 
   /**
-   * Whether the amount taken is finer than the resolution the decrement is stored at. {@code
-   * registerApiSubSampleUsage} subtracts with {@code QuantityUtils.sum}, which computes in the
-   * LARGER of the two units, and the result persists at 3 decimal places, so an amount below that
-   * resolution is silently swallowed: 0.001 ul taken from a 1 l origin is 1e-9 l, the subtraction's
-   * double arithmetic and the 3dp store both round it away, and the operation would create its
-   * output without decrementing the origin at all (Copilot review, PR #1090). The scalar's own 3dp
-   * rule already holds by this point, so only a cross-unit take can be under-resolution: the check
-   * converts the amount exactly (unit factors are powers of ten) into the origin's unit and rejects
-   * a scale beyond 3. A take in a unit at or above the origin's can only gain whole digits and
-   * always passes. Missing values, a zero amount and incomparable categories are handled by their
+   * Whether the decrement would not subtract exactly what the caller asked for. {@code
+   * registerApiSubSampleUsage} subtracts with {@code QuantityUtils.sum}, whose summing visitor
+   * computes in the LARGER of the two units and whose result persists at 3 decimal places, so
+   * resolution can be lost in the conversion rather than in the submitted scalar. Two ways that
+   * happens, both rejected here:
+   *
+   * <ul>
+   *   <li>the amount itself falls below the stored resolution: 0.001 ul from a 1 l origin is 1e-9
+   *       l, rounded away entirely, so the operation would create its output without decrementing
+   *       the origin at all (Copilot review, PR #1090);
+   *   <li>the amount is exactly storable but the REMAINDER is not: 0.5 l is exactly 500 ml, yet
+   *       taking it from a 1500.4 ml origin is computed as 1.0004 l, which rounds to 1 l and
+   *       silently removes an extra 0.4 ml (Codex review, PR #1090).
+   * </ul>
+   *
+   * <p>A scale-only test of the converted amount catches the first and misses the second, so the
+   * check compares the exact remainder against the value {@code sum} would actually persist, both
+   * expressed in the origin's unit. Conversions use exact power-of-ten unit factors, so nothing is
+   * lost before the comparison. Over-removal is rejected before this runs, so the remainder is
+   * never negative. Missing values, a zero amount and incomparable categories are handled by their
    * own rules.
    */
   static boolean amountTakenLostToRounding(
@@ -305,24 +315,41 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
     }
     if (!quantityUtils.isComparableQuantities(amountTaken, originQuantity)
         || amountTaken.getUnitId().equals(originQuantity.getUnitId())) {
+      // Same unit: both operands are already stored at 3dp, so the subtraction is exact.
       return false;
     }
-    // Exact power-of-ten factor between the two units (e.g. ul -> l is 1e-6): computed through the
-    // unit definitions, then applied with BigDecimal so no precision is lost before the scale test.
-    // Raw-typed because the two definitions are wildcard-typed Units; comparability was asserted
-    // just above, so the conversion cannot mix categories.
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    javax.measure.Quantity oneTakenUnit =
-        Quantities.getQuantity(1, RSUnitDef.getUnitById(amountTaken.getUnitId()).getDefinition());
-    @SuppressWarnings("unchecked")
-    BigDecimal unitFactor =
-        BigDecimal.valueOf(
-            oneTakenUnit
-                .to(RSUnitDef.getUnitById(originQuantity.getUnitId()).getDefinition())
-                .getValue()
-                .doubleValue());
-    return !QuantityInfo.canStoreWithoutRounding(
-        amountTaken.getNumericValue().multiply(unitFactor));
+    BigDecimal takenInOriginUnit =
+        amountTaken
+            .getNumericValue()
+            .multiply(exactUnitFactor(amountTaken.getUnitId(), originQuantity.getUnitId()));
+    BigDecimal exactRemainder = originQuantity.getNumericValue().subtract(takenInOriginUnit);
+    QuantityInfo stored =
+        quantityUtils.sum(
+            List.of(
+                originQuantity,
+                new QuantityInfo(amountTaken.getNumericValue(), amountTaken.getUnitId()).negate()));
+    BigDecimal storedInOriginUnit =
+        stored
+            .getNumericValue()
+            .multiply(exactUnitFactor(stored.getUnitId(), originQuantity.getUnitId()));
+    return exactRemainder.compareTo(storedInOriginUnit) != 0;
+  }
+
+  /**
+   * The exact factor converting one unit into another within a measurement category. Factors are
+   * powers of ten, so the conversion is applied with {@link BigDecimal} and loses no precision
+   * before a scale or equality test. Raw-typed because the unit definitions are wildcard-typed;
+   * callers assert comparability first, so the conversion cannot mix categories.
+   */
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  private static BigDecimal exactUnitFactor(Integer fromUnitId, Integer toUnitId) {
+    if (fromUnitId.equals(toUnitId)) {
+      return BigDecimal.ONE;
+    }
+    javax.measure.Quantity oneFromUnit =
+        Quantities.getQuantity(1, RSUnitDef.getUnitById(fromUnitId).getDefinition());
+    return BigDecimal.valueOf(
+        oneFromUnit.to(RSUnitDef.getUnitById(toUnitId).getDefinition()).getValue().doubleValue());
   }
 
   /**

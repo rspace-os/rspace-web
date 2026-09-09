@@ -697,6 +697,45 @@ class InventoryOperationManagerImplTest {
     verify(subSampleApiMgr, never()).registerApiSubSampleUsage(any(), any(), any());
   }
 
+  @Test
+  void rejectsAnAmountTakenWhoseSubtractionLosesStockInTheLargerUnit() throws Exception {
+    // 0.5 l converts to exactly 500 ml, so the amount taken is storable in the origin's unit and
+    // the earlier scale-only guard let it through. The subtraction is not: QuantitySummingVisitor
+    // sums in the LARGEST unit of the operands, so 1500.4 ml - 0.5 l is computed as 1.0004 l,
+    // convertToMoreUsefulUnit leaves it in litres, and QuantityInfo rounds it to 1 l. The origin
+    // would silently lose an extra 0.4 ml (Codex review, PR #1090).
+    ApiInventoryOperationPost request = new ApiInventoryOperationPost();
+    request.setOperationType("derive");
+    request.setOrigins(
+        List.of(origin(100L, new ApiQuantityInfo(new BigDecimal("0.5"), RSUnitDef.LITRE.getId()))));
+    request.setNewSample(new ApiSampleWithFullSubSamples("Derived material"));
+    originHolds(100L, subSampleHolding("1500.4", RSUnitDef.MILLI_LITRE.getId()));
+
+    BindException rejection =
+        assertThrows(BindException.class, () -> manager.performOperation(request, user, NONE));
+
+    assertEquals(
+        "errors.inventory.operation.amountTakenNotSubtractable",
+        rejection.getFieldErrors("origins[0].amountTaken").get(0).getCode());
+    verify(subSampleApiMgr, never()).registerApiSubSampleUsage(any(), any(), any());
+  }
+
+  @Test
+  void acceptsACrossUnitAmountTakenWhoseSubtractionIsExact() throws Exception {
+    // The counterpart of the row above: 0.5 l from a 1500 ml origin leaves exactly 1 l, which is
+    // storable, so the guard must not reject a legitimate cross-unit take.
+    ApiInventoryOperationPost request = new ApiInventoryOperationPost();
+    request.setOperationType("derive");
+    request.setOrigins(
+        List.of(origin(100L, new ApiQuantityInfo(new BigDecimal("0.5"), RSUnitDef.LITRE.getId()))));
+    request.setNewSample(new ApiSampleWithFullSubSamples("Derived material"));
+    originHolds(100L, subSampleHolding("1500", RSUnitDef.MILLI_LITRE.getId()));
+    when(sampleApiMgr.createNewApiSample(any(), any()))
+        .thenReturn(new ApiSampleWithFullSubSamples("Derived material"));
+
+    assertDoesNotThrow(() -> manager.performOperation(request, user, NONE));
+  }
+
   // --- the caller-supplied in-transaction validation (template conformance) ---
 
   @Test
