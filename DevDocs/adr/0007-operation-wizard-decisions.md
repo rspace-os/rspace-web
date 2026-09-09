@@ -115,6 +115,45 @@ optional on the wire and absent means EXPLICIT, so every request accepted before
 it existed keeps its meaning; absent on an origin-emptying operation is still a
 whole-origin claim, because that operation cannot mean anything else.
 
+## An unrecognised property is captured at binding and rejected by the validator
+
+The API's ObjectMapper comes from `Jackson2ObjectMapperBuilder`, which turns
+`FAIL_ON_UNKNOWN_PROPERTIES` off, so a key matching no DTO property is dropped
+silently before any validator runs. After binding, a dropped key is
+indistinguishable from an optional property the caller omitted, so no presence
+rule can recover it. That default is right for endpoints promising nothing about
+strictness and wrong for this one, whose contract is that the request conforms to
+the operation definition: `newSample.storageTemperature`, a plausible typo for
+`storageTempMin`/`storageTempMax`, returned 201 with the value absorbed.
+
+Capturing is separated from rejecting because the payload's DTOs are not all
+ours. `ApiSampleWithFullSubSamples`, `ApiSubSample` and `ApiExtraField` are bound
+by POST /samples and the subsample endpoints too, and Jackson annotations act per
+CLASS, not per endpoint. So every object in the payload CAPTURES the names it
+does not recognise (`UnknownPropertyCapturing`, one `@JsonAnySetter` on
+`IdentifiableNameableApiObject` plus the two operation-owned DTOs), which is
+inert: bound values are unchanged, the list is never serialized, and it is
+excluded from equals and toString. Only `InventoryOperationPostValidator` reads
+it, as one walk of the payload emitting a field-scoped error per captured name,
+so no other endpoint's behaviour changes and every unknown property is reported
+together with the request's other errors in the one 400.
+
+Two consequences worth knowing. Jackson routes a property that is declared but
+`@JsonIgnore`d to the any-setter exactly as it routes an invented one, so those
+are reported as unknown; that is acceptable because a `@JsonIgnore` property is
+absent from every response too, so no client echoing a GET can send one. And the
+capture is capped per object, because each captured name becomes a field error
+and an uncapped list would let a body of junk keys amplify into an unbounded
+response.
+
+Rejected: enabling `FAIL_ON_UNKNOWN_PROPERTIES` globally, which breaks clients of
+every endpoint that promised nothing; a rejecting `@JsonAnySetter`, which is safe
+only on the two endpoint-owned classes and so cannot see `newSample.*` at all,
+and which fails on the FIRST unknown key with a message-conversion 400 that
+cannot aggregate or name a field path; and a private duplicate of the sample DTO
+family, which is a permanent sync burden plus a mapping layer back to
+`ApiSampleWithFullSubSamples` for sample creation.
+
 ## An operation-generated field is identified by its definition key, not its name
 
 A generated field's NAME is a localized resolution of a definition key

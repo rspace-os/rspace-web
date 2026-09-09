@@ -2,6 +2,7 @@ package com.researchspace.api.v1.controller;
 
 import static com.researchspace.api.v1.controller.InventoryOperationPostValidator.MAX_EXTRA_FIELDS;
 import static com.researchspace.api.v1.controller.InventoryOperationPostValidator.MAX_SUBSAMPLES;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -9,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.introspect.BeanPropertyDefinition;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.researchspace.api.v1.model.ApiBarcode;
 import com.researchspace.api.v1.model.ApiContainerLocation;
 import com.researchspace.api.v1.model.ApiExtraField;
@@ -42,6 +44,7 @@ import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
 import org.springframework.validation.FieldError;
@@ -68,6 +71,39 @@ class InventoryOperationPostValidatorTest {
     Errors errors = new BeanPropertyBindingResult(request, "request");
     validator.validate(request, errors);
     return errors;
+  }
+
+  /** The mapper the API's converter is built from, so binding captures exactly as in production. */
+  private static final ObjectMapper API_MAPPER = Jackson2ObjectMapperBuilder.json().build();
+
+  /**
+   * Validates a golden fixture carrying one extra property that no DTO declares, on the object at
+   * {@code pointer}. Going through the real mapper is the point: the capture only happens at
+   * binding, so a programmatically built request could never exercise it. Round-tripping the
+   * fixture first, and asserting it is still valid, keeps the injected property the only possible
+   * error.
+   */
+  private Errors validateWithUnknownProperty(
+      ApiInventoryOperationPost fixture, String pointer, String property) {
+    ObjectNode root = API_MAPPER.valueToTree(fixture);
+    // expiryDate deserialises an explicit null to LocalDateDeserialiser.NULL_DATE, to tell "set
+    // this to null" from "not mentioned"; a serialise-then-rebind round trip cannot express the
+    // latter, so it arrives PRESENT and undeclaredProperty rejects it. Dropped here because it is
+    // an artefact of the round trip, not of anything a client sent.
+    ((ObjectNode) root.get("newSample")).remove("expiryDate");
+    assertFalse(
+        validate(bind(root)).hasErrors(),
+        () -> "the round-tripped fixture must itself be valid: " + validate(bind(root)));
+    ((ObjectNode) root.at(pointer)).put(property, "whatever");
+    return validate(bind(root));
+  }
+
+  private static ApiInventoryOperationPost bind(ObjectNode json) {
+    try {
+      return API_MAPPER.treeToValue(json, ApiInventoryOperationPost.class);
+    } catch (Exception e) {
+      throw new AssertionError("fixture did not bind: " + json, e);
+    }
   }
 
   private static void assertSingleErrorWithCode(Errors errors, String field, String code) {
@@ -1443,5 +1479,81 @@ class InventoryOperationPostValidatorTest {
       request.getNewSample().getExtraFields().add(documentation);
       assertFalse(validate(request).hasErrors(), () -> target + " should be accepted");
     }
+  }
+
+  @Test
+  void rejectsAnUnknownPropertyOnTheRequestItself() {
+    // The API mapper has FAIL_ON_UNKNOWN_PROPERTIES off, so a mistyped property was dropped during
+    // binding, before any validator ran: after that, a dropped key is indistinguishable from an
+    // optional one the caller omitted. Captured at binding and reported here instead (F7).
+    Errors errors = validateWithUnknownProperty(aliquotRequest(), "", "operationTyp");
+    assertEquals(1, errors.getErrorCount(), () -> errors.getAllErrors().toString());
+    assertEquals(
+        "errors.inventory.operation.unknownProperty", errors.getGlobalErrors().get(0).getCode());
+  }
+
+  @Test
+  void rejectsAnUnknownPropertyOnTheNewSample() {
+    // The motivating case: storageTemperature is a plausible typo for storageTempMin/Max, and the
+    // request returned 201 with the value silently absorbed. Strictness on the two operation-owned
+    // DTOs could never catch it, because ApiSampleWithFullSubSamples is shared with POST /samples.
+    assertSingleErrorWithCode(
+        validateWithUnknownProperty(aliquotRequest(), "/newSample", "storageTemperature"),
+        "newSample",
+        "errors.inventory.operation.unknownProperty");
+  }
+
+  @Test
+  void rejectsAnUnknownPropertyAtEveryLevelBelowTheRoot() {
+    // Each level is a different DTO, and three of them (sample, subsample, extra field) are shared
+    // with POST /samples and the subsample endpoints, so per-class strictness could not reach them.
+    for (String[] level :
+        List.of(
+            new String[] {"/origins/0", "origins[0]"},
+            new String[] {"/newSample/subSamples/0", "newSample.subSamples[0]"},
+            new String[] {"/newSample/extraFields/0", "newSample.extraFields[0]"})) {
+      Errors errors = validateWithUnknownProperty(aliquotRequest(), level[0], "contnet");
+      assertSingleErrorWithCode(errors, level[1], "errors.inventory.operation.unknownProperty");
+      assertEquals("contnet", errors.getFieldErrors(level[1]).get(0).getArguments()[0]);
+    }
+  }
+
+  @Test
+  void reportsEveryUnknownPropertyInOneResponseRatherThanFailingOnTheFirst() {
+    // Aggregation is why this is a validator pass and not a throwing binder: a caller fixing a
+    // typo-ridden payload one 400 at a time learns nothing about the rest of it.
+    ObjectNode root = API_MAPPER.valueToTree(aliquotRequest());
+    ((ObjectNode) root.get("newSample")).remove("expiryDate");
+    root.put("rootTypo", 1);
+    ((ObjectNode) root.get("origins").get(0)).put("originTypo", 2);
+    ((ObjectNode) root.get("newSample")).put("storageTemperature", 3);
+
+    Errors errors = validate(bind(root));
+    assertEquals(3, errors.getErrorCount(), () -> errors.getAllErrors().toString());
+    assertEquals(1, errors.getGlobalErrorCount());
+    assertTrue(errors.hasFieldErrors("origins[0]"));
+    assertTrue(errors.hasFieldErrors("newSample"));
+  }
+
+  @Test
+  void theCaptureIsInertForEndpointsThatMakeNoStrictnessPromise() {
+    // The capture rides on DTOs shared with POST /samples and the subsample endpoints. Only this
+    // endpoint's validator reads it, so an unknown property must stay silently ignored everywhere
+    // else, exactly as before (F7 blast radius).
+    ApiExtraFieldsHelper extraFieldsHelper = new ApiExtraFieldsHelper(new RecordFactory());
+    SampleApiPostValidator samplesEndpointRules = new SampleApiPostValidator();
+    samplesEndpointRules.extraFieldHelper = extraFieldsHelper;
+
+    ApiSampleWithFullSubSamples sample =
+        assertDoesNotThrow(
+            () ->
+                API_MAPPER.readValue(
+                    "{\"name\":\"plain sample\",\"storageTemperature\":3}",
+                    ApiSampleWithFullSubSamples.class));
+    assertEquals(List.of("storageTemperature"), sample.getUnknownProperties());
+
+    Errors errors = new BeanPropertyBindingResult(sample, "sample");
+    samplesEndpointRules.validate(sample, errors);
+    assertFalse(errors.hasErrors(), () -> "samples endpoint must be unchanged: " + errors);
   }
 }
