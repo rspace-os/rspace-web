@@ -310,6 +310,7 @@ function OperationWizard({
         if (blocked) {
           setParentTemplateError(
             t("operations.template.mandatoryFieldsError", {
+              count: missingFields.length,
               fields: formatList(missingFields, i18n.language),
             }),
           );

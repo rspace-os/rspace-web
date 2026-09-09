@@ -104,7 +104,10 @@ function TemplateStep({
       const { blocked, missingFields } = templateSelectionBlock(fields);
       if (blocked) {
         setBlockError(
-          t("operations.template.mandatoryFieldsError", { fields: formatList(missingFields, i18n.language) }),
+          t("operations.template.mandatoryFieldsError", {
+            count: missingFields.length,
+            fields: formatList(missingFields, i18n.language),
+          }),
         );
         return;
       }
