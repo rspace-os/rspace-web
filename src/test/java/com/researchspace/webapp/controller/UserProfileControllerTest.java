@@ -409,7 +409,7 @@ public class UserProfileControllerTest {
 
   @Test
   public void updatePreferenceValueReturns400WhenTheKeyedValueIsRejected() {
-    // A value that is not JSON, or a key outside [A-Z0-9_], is refused by the merge with an
+    // A value that is not JSON, or a key no preference declares, is refused by the merge with an
     // IllegalArgumentException carrying the catalog text. Left to the web tier that is a 500
     // (live test 2026-09-08, row P5); the caller sent a bad request and should be told so.
     when(usrMgr.getUserByUsername("any")).thenReturn(anyUser);

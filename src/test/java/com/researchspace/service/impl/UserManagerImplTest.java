@@ -284,7 +284,7 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
   public void mergeUiJsonSettingRejectsAKeyThatIsNotAPreferenceName() {
     // The key is written verbatim into the user's single settings column, so an unconstrained one
     // lets a caller fill that column with arbitrary names until it hits the TEXT limit, after which
-    // every keyed write for that user fails for good. Only the shape the client actually uses is
+    // every keyed write for that user fails for good. Only a name the client actually declares is
     // accepted.
     // no DAO stubbing: the key is rejected before the user is even read
     assertThrows(
@@ -292,7 +292,54 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
         () -> userManager.mergeUiJsonSetting("../evil key", "{}", "jbloggs"));
     assertThrows(
         IllegalArgumentException.class, () -> userManager.mergeUiJsonSetting("", "{}", "jbloggs"));
+    // A null key is the same 400, not the NPE an immutable set's contains(null) would raise.
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> userManager.mergeUiJsonSetting(null, "{}", "jbloggs"));
     verify(userDao, never()).save(Mockito.any(User.class));
+  }
+
+  @Test
+  public void mergeUiJsonSettingRejectsAWellFormedKeyThatNoPreferenceDeclares() {
+    // A syntax rule alone (uppercase identifier) leaves the key space unbounded: every distinct
+    // name a caller invents becomes another property of the blob, and nothing ever deletes one. The
+    // oversize guard then makes that permanent, because once the accumulated junk brings the column
+    // to its limit EVERY later keyed write for that user is rejected for good. Only the names the
+    // client declares are accepted, so junk never enters the blob in the first place (Copilot
+    // review, PR #1090).
+    // no DAO stubbing: the key is rejected before the user is even read
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> userManager.mergeUiJsonSetting("AAAAAAAA", "{}", "jbloggs"));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> userManager.mergeUiJsonSetting("UNUSED_1", "{}", "jbloggs"));
+    verify(userDao, never()).save(Mockito.any(User.class));
+  }
+
+  @Test
+  public void mergeUiJsonSettingAcceptsEveryDeclaredPreferenceName() {
+    // The counterpart to the rejection above: the allowlist has to admit every name the client
+    // declares in its PREFERENCES map, or a legitimate preference silently stops persisting.
+    for (String declared :
+        List.of(
+            "GALLERY_VIEW_MODE",
+            "GALLERY_SORT_BY",
+            "GALLERY_SORT_ORDER",
+            "GALLERY_PICKER_INITIAL_SECTION",
+            "GALLERY_SIDEBAR_OPEN",
+            "INVENTORY_FORM_SECTIONS_EXPANDED",
+            "INVENTORY_HIDDEN_RIGHT_PANEL",
+            "INVENTORY_OPERATION_PROCESS_VALUES",
+            "INVENTORY_OPERATION_PROCESS_NAMES",
+            "INVENTORY_OPERATION_PROCESS_NAME_DEFAULTS",
+            "SYSADMIN_USERS_TABLE_COLUMNS")) {
+      User user = userWithUiJsonSettings("{}");
+      when(userDao.save(user)).thenReturn(user);
+      userManager.mergeUiJsonSetting(declared, "{\"value\":1}", "jbloggs");
+      assertTrue(
+          storedUiJsonSettings(user).contains(declared), declared + " must be an accepted key");
+    }
   }
 
   @Test
