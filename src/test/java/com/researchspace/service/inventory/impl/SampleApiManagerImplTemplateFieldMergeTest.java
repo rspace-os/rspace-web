@@ -33,6 +33,9 @@ class SampleApiManagerImplTemplateFieldMergeTest {
     field.setContent(content);
     field.setNewFieldRequest(true);
     field.setOperationFieldKey("operations.passage.numberField");
+    // Set by InventoryOperationPostValidator once the key is checked against the operation's own
+    // definition, which is what distinguishes a generated field from a client-forged claim.
+    field.setOperationFieldKeyVerified(true);
     return field;
   }
 
@@ -131,5 +134,27 @@ class SampleApiManagerImplTemplateFieldMergeTest {
     SampleApiManagerImpl.mergeOperationFieldsIntoInheritedTemplateFields(sample, templateFields);
 
     assertEquals(1, sample.getExtraFields().size(), "a generated link is not merged into text");
+  }
+
+  @Test
+  void doesNotMergeAKeyTheOperationsValidatorNeverVerified() {
+    // operationFieldKey is client-writable on every endpoint by design (rejecting it broke
+    // read-modify-write for API clients), so the raw key is not evidence an operation produced the
+    // field. Gating the merge on it let a plain POST /samples overwrite an inherited template
+    // field's content and drop the extra field, bypassing the duplicate-name rejection that
+    // request would otherwise get (parallel review).
+    ApiExtraField forged = new ApiExtraField(ExtraFieldTypeEnum.TEXT);
+    forged.setName("Passage number");
+    forged.setContent("999");
+    forged.setNewFieldRequest(true);
+    forged.setOperationFieldKey("operations.passage.numberField");
+    // no setOperationFieldKeyVerified: this is what a POST /samples payload looks like
+    ApiSampleWithFullSubSamples sample = sampleWith(forged);
+    List<InventoryEntityField> templateFields = inherited("Passage number");
+
+    SampleApiManagerImpl.mergeOperationFieldsIntoInheritedTemplateFields(sample, templateFields);
+
+    assertEquals(1, sample.getExtraFields().size(), "the field must survive to be rejected");
+    assertNull(templateFields.get(0).getFieldData(), "template content must not be overwritten");
   }
 }
