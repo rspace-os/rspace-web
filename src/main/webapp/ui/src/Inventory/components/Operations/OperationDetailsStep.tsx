@@ -41,6 +41,22 @@ import { resolveLabelFrom } from "./types";
 const MAX_QUANTITY = 1e9;
 
 /**
+ * The unit categories a subsample's amount may be expressed in: its own, or none while that cannot
+ * be determined.
+ *
+ * Derived from the quantity's unit id through the static unit table rather than read off
+ * SubSampleModel.quantityCategory, because that getter resolves the unit through the MobX unit
+ * store and THROWS when the store holds no entry for the id. The store seeds itself from
+ * localStorage, so it is empty until GET /units has resolved once and every id misses in that
+ * window (Copilot review, PR #1090). An unknown category yields an empty list, which offers no unit
+ * rather than crashing the step.
+ */
+const categoriesOfSubSample = (subSample: SubSampleModel): Array<string> => {
+  const category = categoryOfUnit(getUnitId(subSample.quantity));
+  return category ? [category] : [];
+};
+
+/**
  * Renders a slice of the operation's declared inputs generically. The wizard shows the process name
  * and derived sample name first ("details"; the single "remember" checkbox lives on the confirmation
  * step), then the quantities on a later step ("amounts") with the count full-width and the two
@@ -168,12 +184,9 @@ function OperationDetailsStep({
     const currentUnitId = isTemperature ? CELSIUS : (quantity?.unitId ?? originUnitId);
     // The amount taken FROM the origin must stay in the origin subsample's own measurement type (you
     // remove mass from a mass sample), even when a template overrides the created amount's units.
-    // Derived from the unit id through the static unit table, not from origin.quantityCategory:
-    // that getter throws when the unit store has no entry for the id, which is the state of a fresh
-    // profile until GET /units resolves (Copilot review, PR #1090). No category means no unit is
-    // offerable yet, so the list is empty rather than a throw.
-    const originCategory = categoryOfUnit(originUnitId);
-    const originCategories = originCategory ? [originCategory] : [];
+    // categoriesOfSubSample, not origin.quantityCategory: see its comment for why that getter cannot
+    // be called during a render.
+    const originCategories = categoriesOfSubSample(origin);
     const categoriesForInput =
       input.key === operation.effect.amountTakenFrom ? originCategories : (unitCategories ?? originCategories);
     const numericValue = (raw: number) => (isTemperature ? raw : Math.min(MAX_QUANTITY, Math.max(0, raw)));
@@ -264,7 +277,10 @@ function OperationDetailsStep({
           input: {
             endAdornment: (
               <UnitSelect
-                categories={[sub.quantityCategory]}
+                // Same static derivation as the shared-amount input above, and for the same reason:
+                // sub.quantityCategory throws while the unit store is unpopulated, which would take
+                // out the amounts step on Pool -> Per subsample (Copilot review, PR #1090).
+                categories={categoriesOfSubSample(sub)}
                 value={currentUnitId}
                 handleChange={(e) => setAmount(current?.numericValue ?? 0, Number(e.target.value))}
               />
