@@ -6908,6 +6908,7 @@ export default interface Resources {
           "mandatoryFieldEmpty": "Field ''{0}'' is mandatory, but provided value was empty",
           "mandatoryFieldNoSelection": "Field ''{0}'' is mandatory, but no option is provided",
           "notFound": "No inventory entity field with id: {0}",
+          "operationFieldKeyForbidden": "Only an Inventory operation may set operationFieldKey on a field.",
           "validation": "{0}"
         },
         "file": {
@@ -6996,11 +6997,13 @@ export default interface Resources {
         },
         "notEnabled": "Inventory is not enabled on this RSpace instance.",
         "operation": {
+          "amountModeMustBeAll": "This operation empties its origins, so the amount taken cannot be an explicit amount.",
           "amountTakenCategoryMismatch": "The amount taken must use the origin's measurement category (e.g. millilitres from a volume origin).",
           "amountTakenExceedsOrigin": "Cannot take more from an origin than it currently holds.",
           "amountTakenInvalid": "Each origin must specify a non-negative amount, with a unit, to take from it.",
           "amountTakenNotSubtractable": "The amount taken cannot be subtracted exactly from what the origin holds (quantities are stored at 3 decimal places).",
           "amountTakenPositive": "This operation takes from each origin, so the amount taken must be greater than zero.",
+          "amountTakenStale": "The subsample's quantity changed since it was read; reload and retry.",
           "amountTakenTooPrecise": "The amount taken supports at most 3 decimal places.",
           "amountTakenZero": "This operation does not take from its origins, so the amount taken must be zero.",
           "computedContentInvalid": "The content of field [{0}] does not match the [{1}] value this operation computes for it.",
@@ -7036,6 +7039,7 @@ export default interface Resources {
           "subSamplesRequired": "The new sample must include at least {0} subsample(s).",
           "tooManyOrigins": "This operation accepts at most {max} origin subsamples.",
           "undeclaredProperty": "This operation does not accept [{0}] on the sample it creates.",
+          "unknownProperty": "This operation does not accept the property [{0}].",
           "unknownType": "Unknown operation type [{0}]."
         },
         "publicLink": {

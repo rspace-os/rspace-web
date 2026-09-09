@@ -3,6 +3,7 @@ package com.researchspace.service.inventory;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Set;
 
 /**
  * One operation definition from {@code operations_config.json}, reduced to the fields the backend
@@ -21,6 +22,30 @@ public record InventoryOperationConfig(
     inputs = inputs == null ? List.of() : List.copyOf(inputs);
     effect = effect == null ? Effect.EMPTY : effect;
   }
+
+  /**
+   * The {@code inputs[].type} values the wizard renders and the config may declare.
+   *
+   * <p>Deliberately NOT described as "types the backend interprets": the request validator branches
+   * on the type in one place only ({@code "temperature"}, for the configured Celsius bounds), and
+   * the others are purely the wizard's business. The set exists so a typo ({@code "quantitiy"})
+   * fails the build rather than silently rendering nothing, not because the backend needs a branch
+   * per type.
+   *
+   * <p>That distinction matters because the registry rejects anything outside this set at
+   * construction: describing it as a backend concern invited the conclusion that a new wizard-only
+   * type needed no entry here, and adding one without it would boot-fail the whole application
+   * (parallel review, I16). Add the type here when the wizard learns to render it.
+   */
+  public static final Set<String> INTERPRETED_INPUT_TYPES =
+      Set.of("text", "integer", "quantity", "temperature");
+
+  /**
+   * The {@code computed[].fn} names the request validator knows the output shape of. An unknown
+   * function silently skips the content check, so a field the wizard computes would be accepted
+   * with any content at all.
+   */
+  public static final Set<String> INTERPRETED_COMPUTED_FUNCTIONS = Set.of("increment", "today");
 
   /** A wizard input; only the constraints the backend can check server-side are bound. */
   @JsonIgnoreProperties(ignoreUnknown = true)

@@ -123,9 +123,17 @@ describe("templateStepValid", () => {
     expect(templateStepValid({ mode: "pick", templateId: 5 })).toBe(true);
   });
 
-  it("is valid for none / fromSample / remembered", () => {
+  it("is valid for none / remembered", () => {
     expect(templateStepValid({ mode: "none", templateId: null })).toBe(true);
-    expect(templateStepValid({ mode: "fromSample", templateId: null })).toBe(true);
     expect(templateStepValid({ mode: "remembered", templateId: 5 })).toBe(true);
+  });
+
+  it("holds fromSample to the same id rule as pick", () => {
+    // Both end in a sample created against a concrete template, so both must clear the
+    // mandatory-without-default check first, and only a passing check writes the id. fromSample
+    // used to return true unconditionally, which is why the same template was blocked up front via
+    // "pick" and rejected at the last click via "fromSample" (F5).
+    expect(templateStepValid({ mode: "fromSample", templateId: null })).toBe(false);
+    expect(templateStepValid({ mode: "fromSample", templateId: 9 })).toBe(true);
   });
 });

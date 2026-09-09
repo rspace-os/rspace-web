@@ -1,5 +1,6 @@
 package com.researchspace.service.inventory.impl;
 
+import com.researchspace.api.v1.model.ApiInventoryOperationAmountMode;
 import com.researchspace.api.v1.model.ApiInventoryOperationOriginUpdate;
 import com.researchspace.api.v1.model.ApiInventoryOperationPost;
 import com.researchspace.api.v1.model.ApiQuantityInfo;
@@ -10,6 +11,7 @@ import com.researchspace.model.units.Quantifiable;
 import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.model.units.QuantityUtils;
 import com.researchspace.model.units.RSUnitDef;
+import com.researchspace.service.inventory.InventoryEditConflictException;
 import com.researchspace.service.inventory.InventoryOperationConfigRegistry;
 import com.researchspace.service.inventory.InventoryOperationManager;
 import com.researchspace.service.inventory.SampleApiManager;
@@ -150,6 +152,9 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
     parentSampleIds.forEach(sampleApiMgr::recalculateTotalFromLockedRows);
 
     QuantityInfo firstOriginQuantity = null;
+    // Whether any origin's whole-origin claim no longer matches its live quantity. Collected rather
+    // than thrown on sight so a field error found elsewhere in the request can be reported instead.
+    boolean staleOrigin = false;
     for (ApiInventoryOperationOriginUpdate origin : originsById) {
       subSampleApiMgr.lockSubSampleForEdit(origin.getId(), user);
       errors.pushNestedPath(String.format("origins[%d]", requestIndex.get(origin)));
@@ -181,17 +186,34 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
               "amountTaken",
               "errors.inventory.operation.amountTakenCategoryMismatch",
               "The amount taken must use the origin's measurement category.");
+        } else if (claimsWholeOrigin(origin)
+            && !amountTakenEmptiesOrigin(origin.getAmountTaken(), currentQuantity)) {
+          // Compare-and-swap, not a validation failure: the client DECLARED this amount was the
+          // origin's entire quantity when it read it, so a live quantity that no longer matches
+          // means the origin changed between wizard load and Perform. Emptying it anyway would
+          // destroy stock the user never saw, and rejecting it as a 400 would tell them to correct
+          // a field they never typed, so this is a 409 the client resolves by reloading
+          // (RSDEV-1231). Checked ahead of amountTakenExceedsOrigin because in this mode a
+          // too-large amount is equally a stale snapshot, not an over-removal the user chose.
+          // Recorded rather than thrown here: see the throw after the loop.
+          staleOrigin = true;
+        } else if (emptiesOrigin
+            && !amountTakenEmptiesOrigin(origin.getAmountTaken(), currentQuantity)) {
+          // An emptying operation whose client did NOT declare amountMode. Absent mode is not a
+          // whole-origin claim, so a mismatch here is a malformed request for this operation, not a
+          // conflict: nothing has necessarily changed, the caller simply asked Destroy to take part
+          // of the origin. Treating it as a 409 told such a client to reload and retry, which
+          // reloads the same quantity and retries forever (parallel review, I1). Requests from this
+          // wizard always declare "all", so they take the compare-and-swap branch above.
+          errors.rejectValue(
+              "amountTaken",
+              "errors.inventory.operation.mustEmptyOrigin",
+              "This operation must take the origin's entire remaining quantity.");
         } else if (amountTakenExceedsOrigin(origin.getAmountTaken(), currentQuantity)) {
           errors.rejectValue(
               "amountTaken",
               "errors.inventory.operation.amountTakenExceedsOrigin",
               "Cannot take more from an origin than it currently holds.");
-        } else if (emptiesOrigin
-            && !amountTakenEmptiesOrigin(origin.getAmountTaken(), currentQuantity)) {
-          errors.rejectValue(
-              "amountTaken",
-              "errors.inventory.operation.mustEmptyOrigin",
-              "This operation must take the origin's entire remaining quantity.");
         } else if (amountTakenLostToRounding(origin.getAmountTaken(), currentQuantity)) {
           // The submitted scalar fits 3dp on its own, but the post-subtraction quantity may not
           // after unit conversion (0.001 ul from a 1 l origin leaves 999.999999 ml), and
@@ -209,8 +231,16 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
       }
     }
     rejectNewSubSamplesOutsideOriginCategory(request, firstOriginQuantity, errors);
+    // Field errors take precedence over the conflict. Throwing the 409 the moment a stale origin
+    // was
+    // seen discarded errors already collected for earlier origins, so a caller with both problems
+    // got "reload and retry", reloaded, resubmitted, and only then learned about the 400 (parallel
+    // review, I4). A 400 is the more actionable answer and needs no reload.
     if (errors.hasErrors()) {
       throw new BindException(errors);
+    }
+    if (staleOrigin) {
+      throw new InventoryEditConflictException("errors.inventory.operation.amountTakenStale");
     }
     for (Long sampleId : parentSampleIds) {
       sampleApiMgr.lockSampleForEdit(sampleId, user);
@@ -247,6 +277,20 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
       }
       index++;
     }
+  }
+
+  /**
+   * Whether this origin's submitted amount is a DECLARED claim on the origin's whole quantity
+   * rather than a value the user typed, which is what makes it a compare-and-swap guard.
+   *
+   * <p>Only an explicit {@code amountMode: "all"} counts. An absent mode is not a claim, even on an
+   * origin-emptying operation: a client predating the field that asks Destroy for part of an origin
+   * is making a malformed request, and answering that with a conflict tells it to reload and retry
+   * a request that can never succeed (parallel review, I1). That case is a 400 instead, which is
+   * what it was before this field existed. This wizard always declares the mode.
+   */
+  static boolean claimsWholeOrigin(ApiInventoryOperationOriginUpdate origin) {
+    return origin.getAmountMode() == ApiInventoryOperationAmountMode.ALL;
   }
 
   /**
@@ -354,9 +398,10 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
 
   /**
    * Whether the amount taken equals the origin's current quantity, unit-aware within a measurement
-   * category (0.005 kg empties a 5 g origin). An origin-emptying operation (emptiesOrigin, e.g.
-   * Destroy) must take exactly what the origin holds, no less (over-removal is rejected
-   * separately). Missing values or incomparable categories never count as emptying.
+   * category (0.005 kg empties a 5 g origin, and 0.01 l a 10 ml one). This is the equality half of
+   * the whole-origin compare-and-swap: a whole-origin claim that does not match the live quantity
+   * is a stale snapshot, rejected as a 409. Missing values or incomparable categories never count
+   * as emptying, so an incomparable pair is left to the category check that runs before this one.
    */
   static boolean amountTakenEmptiesOrigin(
       ApiQuantityInfo amountTaken, Quantifiable originQuantity) {

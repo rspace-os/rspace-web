@@ -44,15 +44,22 @@ public interface InventoryOperationManager {
    * these without guards, so a future non-controller caller that skips validation would fail
    * mid-transaction instead of cleanly.
    *
-   * <p>The live-state rules (an origin must currently hold something, the amount taken may not
-   * exceed what it holds, and an origin-emptying operation must take exactly what it holds) are
-   * enforced HERE, inside the operation's own transaction, so they hold against the same state the
-   * mutation sees. A violation is reported as a {@link BindException} carrying field errors under
-   * {@code origins[i]}, before anything is written.
+   * <p>The live-state rules (an origin must currently hold something, and the amount taken may not
+   * exceed what it holds) are enforced HERE, inside the operation's own transaction, so they hold
+   * against the same state the mutation sees. A violation is reported as a {@link BindException}
+   * carrying field errors under {@code origins[i]}, before anything is written.
+   *
+   * <p>An origin whose amount is a whole-origin claim (amountMode ALL, or an origin-emptying
+   * operation) is additionally compare-and-swapped against the live quantity, and a mismatch raises
+   * {@link InventoryEditConflictException} rather than a BindException: the request was valid
+   * against the state the client read, so it is a 409 to reload from, not a 400 to correct.
    *
    * @return the newly created sample (with its subsamples), as returned by the sample-creation
    *     manager, or {@code null} for a terminal operation that creates nothing (noOutput, e.g.
    *     Destroy, which only acts on its origins). See DevDocs/adr/0007.
+   * @throws InventoryEditConflictException when a whole-origin claim no longer matches the origin's
+   *     live quantity, before any origin is decremented or any sample created. Unchecked, so
+   *     Spring's default rules roll the transaction back without a {@code rollback-for} entry.
    * @throws BindException when a live-state rule is violated, before any origin is decremented or
    *     any sample created. The txAdvice for this method declares {@code rollback-for
    *     BindException} (BindException is checked, so Spring's default rules would otherwise COMMIT

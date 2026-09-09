@@ -78,6 +78,16 @@ abstract class InventoryRecordValidator {
     }
   }
 
+  // No rejection of operationFieldKey here, deliberately. It is IGNORED on every endpoint but the
+  // operations one, enforced at the single write point (ApiExtraFieldsHelper) by a @JsonIgnore flag
+  // no client can set. Rejecting it in this shared method was tried and was wrong twice over: the
+  // template validators never call this method, so a forged key still persisted (parallel review,
+  // C1); and rejecting a value the API itself returns broke read-modify-write, so any client that
+  // GETs an operation-created sample, edits one field and PUTs it back got a 400 on a field it
+  // never
+  // touched (C2 of that review). Ignoring is also truthful: no update path can change a persisted
+  // key, so there is nothing a caller could have meant by sending one. RSDEV-1231.
+
   boolean isValidUnit(ApiQuantityInfo quantity) {
     return quantity.getUnitId() != null && RSUnitDef.exists(quantity.getUnitId());
   }

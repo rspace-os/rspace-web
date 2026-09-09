@@ -63,6 +63,7 @@
         "mandatoryFieldEmpty": "Field ''{0}'' is mandatory, but provided value was empty",
         "mandatoryFieldNoSelection": "Field ''{0}'' is mandatory, but no option is provided",
         "notFound": "No inventory entity field with id: {0}",
+        "operationFieldKeyForbidden": "Only an Inventory operation may set operationFieldKey on a field.",
         "validation": "{0}"
       },
       "file": {
@@ -141,10 +142,13 @@
         }
       },
       "operation": {
+        "amountModeMustBeAll": "This operation empties its origins, so the amount taken cannot be an explicit amount.",
         "amountTakenCategoryMismatch": "The amount taken must use the origin's measurement category (e.g. millilitres from a volume origin).",
         "amountTakenExceedsOrigin": "Cannot take more from an origin than it currently holds.",
         "amountTakenInvalid": "Each origin must specify a non-negative amount, with a unit, to take from it.",
+        "amountTakenNotSubtractable": "The amount taken cannot be subtracted exactly from what the origin holds (quantities are stored at 3 decimal places).",
         "amountTakenPositive": "This operation takes from each origin, so the amount taken must be greater than zero.",
+        "amountTakenStale": "The subsample's quantity changed since it was read; reload and retry.",
         "amountTakenTooPrecise": "The amount taken supports at most 3 decimal places.",
         "amountTakenZero": "This operation does not take from its origins, so the amount taken must be zero.",
         "computedContentInvalid": "The content of field [{0}] does not match the [{1}] value this operation computes for it.",
@@ -152,6 +156,7 @@
         "documentationLinkInvalid": "A documentation link must be a link field with relation type [{0}].",
         "documentationLinkTargetInvalid": "A documentation link must target an ELN document, notebook or Gallery file.",
         "duplicateOrigin": "An origin subsample may appear at most once in an operation.",
+        "extraFieldCountMaximum": "This operation accepts at most {0} extra fields on the sample it creates.",
         "fieldKeyUnknown": "The field [{0}] is not one this operation declares.",
         "linkToOriginRequired": "The new sample must include a {0} link back to origin subsample {1}.",
         "mustEmptyOrigin": "This operation must take the origin's entire remaining quantity.",
@@ -162,6 +167,7 @@
         "originCountMaximum": "This operation accepts at most {0} origin subsamples.",
         "originCountMinimum": "This operation requires at least two origin subsamples.",
         "originEmpty": "An origin subsample that currently holds nothing cannot be operated on.",
+        "originExtraFieldCountMaximum": "This operation accepts at most {0} extra fields on each origin subsample.",
         "originFieldNewOnly": "Origin extra fields may only add new fields.",
         "originIdRequired": "Each origin must identify a subsample by id.",
         "originsRequired": "At least one origin subsample must be provided for the operation.",
@@ -170,17 +176,15 @@
         "storageTempRequired": "This operation requires a storage temperature on the new sample.",
         "storageTempSingleValue": "This operation stores a single temperature, so the minimum and maximum must be equal.",
         "subSampleCategoryMismatch": "Each new subsample must use the origin's measurement category (e.g. all volume or all mass).",
+        "subSampleCountMaximum": "This operation accepts at most {0} new subsamples.",
         "subSampleQuantitiesUnequal": "This operation creates equal subsamples, so every new subsample must have the same quantity.",
         "subSampleQuantityInvalid": "Each new subsample must hold a quantity greater than zero, with a unit.",
         "subSampleQuantityTooPrecise": "Each new subsample quantity supports at most 3 decimal places.",
         "subSampleTotalNotStorable": "The new subsamples add up to more than a sample quantity can hold.",
-        "amountTakenNotSubtractable": "The amount taken cannot be subtracted exactly from what the origin holds (quantities are stored at 3 decimal places).",
-        "extraFieldCountMaximum": "This operation accepts at most {0} extra fields on the sample it creates.",
-        "originExtraFieldCountMaximum": "This operation accepts at most {0} extra fields on each origin subsample.",
-        "subSampleCountMaximum": "This operation accepts at most {0} new subsamples.",
         "subSamplesRequired": "The new sample must include at least {0} subsample(s).",
         "tooManyOrigins": "This operation accepts at most {max} origin subsamples.",
         "undeclaredProperty": "This operation does not accept [{0}] on the sample it creates.",
+        "unknownProperty": "This operation does not accept the property [{0}].",
         "unknownType": "Unknown operation type [{0}]."
       },
       "publicLink": {

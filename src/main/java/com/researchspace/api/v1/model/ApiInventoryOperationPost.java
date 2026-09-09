@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.model;
 
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import jakarta.validation.Valid;
@@ -23,6 +24,23 @@ import lombok.NoArgsConstructor;
  */
 @Data
 @NoArgsConstructor
+// Strict binding, deliberately narrower than the rest of api/v1. The API's converter is built by
+// Jackson2ObjectMapperBuilder, which turns FAIL_ON_UNKNOWN_PROPERTIES OFF, so every other endpoint
+// silently drops a property it does not recognise. That is the wrong default here because this
+// endpoint's whole contract is "the request must conform to the operation definition": a mistyped
+// or
+// invented property is a request the caller believes does something it does not, and silently
+// ignoring it means an operation performs differently from what was asked with no indication why.
+// The validator already whitelists the created sample the same way (undeclaredProperty).
+//
+// Enforced with a rejecting @JsonAnySetter rather than @JsonIgnoreProperties(ignoreUnknown =
+// false):
+// false is that attribute's own default value, so Jackson cannot tell "explicitly strict" from
+// "unspecified" and the mapper-level "off" still wins. A catch-all setter is independent of mapper
+// configuration, which is what this needs to be.
+// Scoped to the DTOs only this endpoint binds: ApiSampleWithFullSubSamples and ApiExtraField are
+// shared with POST /samples and the subsample endpoints, so making those strict would change
+// unrelated endpoints' behaviour. See DevDocs/adr/0007.
 @JsonPropertyOrder({"operationType", "origins", "newSample"})
 public class ApiInventoryOperationPost {
 
@@ -43,4 +61,14 @@ public class ApiInventoryOperationPost {
   @Valid
   @JsonProperty("newSample")
   private ApiSampleWithFullSubSamples newSample;
+
+  /**
+   * Rejects any property this request does not declare. Jackson routes an unrecognised property
+   * here and wraps the throw as a message-conversion failure, which the API advice reports as the
+   * endpoint's ordinary 400.
+   */
+  @JsonAnySetter
+  void rejectUnknownProperty(String name, Object ignoredValue) {
+    throw new UnknownOperationPropertyException(name);
+  }
 }

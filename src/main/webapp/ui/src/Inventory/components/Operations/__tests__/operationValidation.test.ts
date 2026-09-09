@@ -5,8 +5,10 @@ import {
   amountTakenExceedsOrigin,
   detailsValid,
   quantityExceedsOrigin,
+  reconcileRestoredQuantities,
 } from "../operationValidation";
 import type { OperationInputs } from "../types";
+import { UNSET_UNIT } from "../types";
 
 // A cryopreserve-shaped operation: it has a sub-zero temperature field and an optional cryomedium.
 const cryo = {
@@ -120,9 +122,7 @@ describe("detailsValid temperature limit", () => {
       expect(detailsValid(cryoWithMax, { ...validValues, storageTemp: { numericValue, unitId: 8 } })).toBe(false);
     }
     // absolute zero itself is storable and satisfies the ceiling
-    expect(detailsValid(cryoWithMax, { ...validValues, storageTemp: { numericValue: -273.15, unitId: 8 } })).toBe(
-      true,
-    );
+    expect(detailsValid(cryoWithMax, { ...validValues, storageTemp: { numericValue: -273.15, unitId: 8 } })).toBe(true);
   });
 });
 
@@ -207,5 +207,160 @@ describe("amountIsStorable", () => {
     expect(amountIsStorable(0.0004)).toBe(false);
     expect(amountIsStorable(Number.NaN)).toBe(false);
     expect(amountIsStorable(Number.POSITIVE_INFINITY)).toBe(false);
+  });
+});
+
+// Unit ids from stores/definitions/Units: volume 3 = mL, 4 = L; mass 7 = g.
+const ML = 3;
+const L = 4;
+const G = 7;
+
+/**
+ * A remembered bundle is keyed by operation plus process name only, so the same bundle is offered on
+ * any origin. Nothing downstream catches a category mismatch, so a mL bundle reused on a gram origin
+ * used to make allStepsValid() true and offer one-click Perform on a request the endpoint rejects.
+ */
+describe("reconcileRestoredQuantities", () => {
+  const reconcile = (
+    values: OperationInputs,
+    overrides: Partial<Parameters<typeof reconcileRestoredQuantities>[0]> = {},
+  ) =>
+    reconcileRestoredQuantities({
+      values,
+      perSubsampleAmounts: {},
+      amountTakenFrom: "amountTaken",
+      eachAmountFrom: "eachAmount",
+      originUnitId: G,
+      createdCategory: "mass",
+      perOriginUnitIds: {},
+      ...overrides,
+    });
+
+  it("clears the unit of an amount taken whose category no longer matches the origin", () => {
+    const { values } = reconcile({
+      amountTaken: { numericValue: 5, unitId: ML },
+      eachAmount: { numericValue: 2, unitId: G },
+    });
+    // Unit CLEARED, not defaulted to the origin's. A defaulted unit is a valid amount, so nothing
+    // downstream blocked and the one-click fast path stayed armed on a number the user never chose:
+    // a bundle remembering 50 mL on a gram origin silently removed 1 g (parallel review, C4). The
+    // saved number is kept so the user can see what to re-enter.
+    expect(values.amountTaken).toEqual({ numericValue: 5, unitId: UNSET_UNIT });
+  });
+
+  it("clears the created amount's unit rather than defaulting it, so the fast path is not offered", () => {
+    const { values } = reconcile({
+      amountTaken: { numericValue: 5, unitId: G },
+      eachAmount: { numericValue: 2, unitId: ML },
+    });
+    // Mirrors a cross-category template pick: unset unit, number kept, so the amounts step is walked.
+    expect(values.eachAmount).toEqual({ numericValue: 2, unitId: UNSET_UNIT });
+  });
+
+  it("leaves a different unit of the SAME category alone", () => {
+    const { values } = reconcile(
+      {
+        amountTaken: { numericValue: 0.5, unitId: L },
+        eachAmount: { numericValue: 2, unitId: ML },
+      },
+      { originUnitId: ML, createdCategory: "volume" },
+    );
+    // Litres on a millilitre origin is a unit choice, not a mismatch, so the bundle survives whole.
+    expect(values.amountTaken).toEqual({ numericValue: 0.5, unitId: L });
+    expect(values.eachAmount).toEqual({ numericValue: 2, unitId: ML });
+  });
+
+  it("keeps every non-quantity value, so template and text inputs are retained", () => {
+    const { values } = reconcile({
+      amountTaken: { numericValue: 5, unitId: ML },
+      eachAmount: { numericValue: 2, unitId: ML },
+      cryomedium: "DMSO 10%",
+      count: 4,
+    });
+    expect(values.cryomedium).toEqual("DMSO 10%");
+    expect(values.count).toEqual(4);
+  });
+
+  it("checks the created amount against the RESTORED TEMPLATE's category, not the origin's", () => {
+    // With a template restored, the created amounts follow the template; a gram origin does not make
+    // a millilitre created amount wrong.
+    const { values } = reconcile(
+      {
+        amountTaken: { numericValue: 5, unitId: G },
+        eachAmount: { numericValue: 2, unitId: ML },
+      },
+      { createdCategory: "volume" },
+    );
+    expect(values.eachAmount).toEqual({ numericValue: 2, unitId: ML });
+  });
+
+  it("resets only the mismatching origin's per-origin amount", () => {
+    const { perSubsampleAmounts } = reconcile(
+      { amountTaken: { numericValue: 1, unitId: G }, eachAmount: { numericValue: 1, unitId: G } },
+      {
+        perSubsampleAmounts: {
+          SS1: { numericValue: 2, unitId: G },
+          SS2: { numericValue: 3, unitId: ML },
+        },
+        perOriginUnitIds: { SS1: G, SS2: G },
+      },
+    );
+    expect(perSubsampleAmounts.SS1).toEqual({ numericValue: 2, unitId: G });
+    expect(perSubsampleAmounts.SS2).toEqual({ numericValue: 3, unitId: UNSET_UNIT });
+  });
+
+  it("leaves an amount alone when its unit's category cannot be determined", () => {
+    // categoryOfUnit knows only volume, mass and dimensionless ids, while the expected category
+    // comes from a server-supplied unit list that also has temperature, molarity and concentration.
+    // Comparing "actual !== expected" therefore reported a mismatch for every unit this module does
+    // not enumerate, wiping a perfectly good saved amount every time (parallel review, I9). Unknown
+    // is not the same as wrong.
+    const unknownUnit = 9999;
+    const { values } = reconcile(
+      {
+        amountTaken: { numericValue: 5, unitId: unknownUnit },
+        eachAmount: { numericValue: 2, unitId: unknownUnit },
+      },
+      { createdCategory: "molarity" },
+    );
+    expect(values.amountTaken).toEqual({ numericValue: 5, unitId: unknownUnit });
+    expect(values.eachAmount).toEqual({ numericValue: 2, unitId: unknownUnit });
+  });
+
+  it("leaves an already-unset unit alone: there is nothing to repair", () => {
+    const { values } = reconcile({
+      amountTaken: { numericValue: 1, unitId: UNSET_UNIT },
+      eachAmount: { numericValue: 1, unitId: UNSET_UNIT },
+    });
+    expect(values.amountTaken).toEqual({ numericValue: 1, unitId: UNSET_UNIT });
+    expect(values.eachAmount).toEqual({ numericValue: 1, unitId: UNSET_UNIT });
+  });
+
+  it("leaves an amount for an origin this run does not include alone", () => {
+    // That amount belongs to the stored bundle, not to this request; editing it here would silently
+    // rewrite what a later run on a matching origin restores.
+    const { perSubsampleAmounts } = reconcile(
+      { amountTaken: { numericValue: 1, unitId: G }, eachAmount: { numericValue: 1, unitId: G } },
+      {
+        perSubsampleAmounts: { SS_ELSEWHERE: { numericValue: 3, unitId: ML } },
+        perOriginUnitIds: { SS1: G },
+      },
+    );
+    expect(perSubsampleAmounts.SS_ELSEWHERE).toEqual({ numericValue: 3, unitId: ML });
+  });
+});
+
+describe("quantityExceedsOrigin across categories", () => {
+  it("answers 'not exceeding' explicitly for cross-category input", () => {
+    // Each side converts to the atomic unit of its own category, so without the guard this compared
+    // picolitres against picograms and produced a meaningless verdict.
+    expect(quantityExceedsOrigin({ numericValue: 1, unitId: G }, { numericValue: 1, unitId: ML })).toBe(false);
+    expect(quantityExceedsOrigin({ numericValue: 1e9, unitId: G }, { numericValue: 1, unitId: ML })).toBe(false);
+  });
+
+  it("still compares normally within one category", () => {
+    expect(quantityExceedsOrigin({ numericValue: 2, unitId: ML }, { numericValue: 1, unitId: ML })).toBe(true);
+    expect(quantityExceedsOrigin({ numericValue: 0.5, unitId: ML }, { numericValue: 1, unitId: ML })).toBe(false);
+    expect(quantityExceedsOrigin({ numericValue: 1, unitId: L }, { numericValue: 1, unitId: ML })).toBe(true);
   });
 });

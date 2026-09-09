@@ -248,4 +248,45 @@ describe("TemplateStep failure and clearing paths", () => {
     await userEvent.setup().click(screen.getByTestId("template-clear"));
     expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ templateId: null, templateName: undefined }));
   });
+
+  // --- "use parent template" status is DISPLAYED here, checked by the wizard (F5) ---
+
+  // The check itself moved to OperationWizard, because the gate it feeds is evaluated on every
+  // step while only the active step is mounted (parallel review, C2). What remains here is that
+  // this step surfaces the wizard's status, and surfaces it accessibly: both messages now appear
+  // with no user action at all, on the preselected mode.
+  const fromSampleMode: TemplateSelection = { mode: "fromSample", templateId: null, remember: false };
+
+  it("shows the wizard's parent-template spinner as a live status", async () => {
+    render(
+      <TemplateStep value={fromSampleMode} onChange={() => undefined} originSampleName="S1" parentTemplateChecking />,
+    );
+    const status = await screen.findByRole("status");
+    expect(status).toHaveTextContent(/template\.checking/);
+  });
+
+  it("announces the wizard's parent-template block as an alert", () => {
+    render(
+      <TemplateStep
+        value={fromSampleMode}
+        onChange={() => undefined}
+        originSampleName="S1"
+        parentTemplateError="Batch has no default"
+      />,
+    );
+    expect(screen.getByRole("alert")).toHaveTextContent("Batch has no default");
+  });
+
+  it("prefers its own pick error over the wizard's parent-template error", () => {
+    // Only one of the two can be current: picking a template abandons the parent-template mode.
+    render(
+      <TemplateStep
+        value={fromSampleMode}
+        onChange={() => undefined}
+        originSampleName="S1"
+        parentTemplateError="parent problem"
+      />,
+    );
+    expect(screen.getByRole("alert")).toHaveTextContent("parent problem");
+  });
 });

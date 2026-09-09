@@ -23,6 +23,17 @@ export type ExtraFieldAttrs = {
   initial?: boolean;
   newFieldRequest?: boolean;
   link?: ExtraInventoryLink | null;
+  /**
+   * The Inventory operation definition key that generated this field, when one did. Read-only from
+   * the client's point of view: it is persisted and returned by the API, but only the operations
+   * endpoint may set it, and `paramsForBackend` deliberately omits it so an ordinary save never
+   * echoes it back (every other endpoint rejects a non-null value with a 400).
+   *
+   * Its purpose is identity: a generated field's NAME is a localized resolution of this key, so a
+   * later run of the same operation has to match on the key to recognise the previous generation
+   * (see computedValues).
+   */
+  operationFieldKey?: string | null;
 };
 
 /**
@@ -43,6 +54,12 @@ export interface ExtraField {
    * fields (and for a Link field that has not yet been given a target).
    */
   readonly link: ExtraInventoryLink | null;
+
+  /**
+   * The operation definition key that generated this field, or null/undefined when nothing did.
+   * See ExtraFieldAttrs.
+   */
+  readonly operationFieldKey?: string | null;
 
   /*
    * Client-side only. True when this field was copied from a template, false

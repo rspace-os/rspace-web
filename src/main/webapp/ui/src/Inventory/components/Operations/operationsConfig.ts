@@ -286,8 +286,7 @@ export function operationAvailability(
 ): OperationAvailability {
   if (operation.requiresMultiple) {
     if (selectionCount < 2) return { enabled: false, reasonKey: "operations.picker.needsMultiple" };
-    if (selectionCount > MAX_ORIGINS)
-      return { enabled: false, reasonKey: "operations.picker.tooManySelected" };
+    if (selectionCount > MAX_ORIGINS) return { enabled: false, reasonKey: "operations.picker.tooManySelected" };
     if (!allSameCategory) return { enabled: false, reasonKey: "operations.picker.sameCategory" };
     return { enabled: true };
   }
