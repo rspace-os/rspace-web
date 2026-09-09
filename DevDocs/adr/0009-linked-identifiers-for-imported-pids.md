@@ -39,7 +39,9 @@ and API field names were ported instead.
    existing one-identifier-per-record rule. The UI must not OFFER what the server refuses:
    the identifiers panel withdraws the publish action for a linked identifier of either
    provider, and for any B2INST identifier whose community review is over (`accepted`,
-   `declined`, `cancelled`, `expired`), rather than rendering it disabled. `linked` is on every
+   `declined`, `cancelled`, `expired`), rather than rendering it disabled, and it withdraws
+   refresh for a linked identifier on that same flag rather than on the absence of a Handle,
+   which only ever hid it by coincidence. `linked` is on every
    `ApiInventoryDOI` for exactly this purpose.
 3. Lookup and import route to the single PIDINST provider enabled in the inventory
    settings, with its configured server URL and credentials, through the existing

@@ -16,21 +16,33 @@ type RefreshButtonArgs = {
 /**
  * Pulls the identifier's current review status from the provider (RSDEV-1260). Rendered while the
  * B2INST community review is open ("submitted"), when the outcome is decided outside RSpace and
- * this is the one useful action.
+ * this is the one useful action, and it stays offered once that review has been accepted.
  *
- * Also rendered for an accepted PID that has no Handle yet. Acceptance reads the minted ePIC PID
- * out of the published record's `pids` block, which can come back without one, and this is the
- * only action that can pick it up afterwards; hiding it there would leave the identifier
- * permanently accepted with no resolvable PID (Copilot review, PR 1066).
+ * An accepted record keeps it because acceptance reads the minted ePIC PID out of the published
+ * record's `pids` block, which can come back without one, and refresh is the only action that can
+ * pick it up afterwards; the landing page and record URLs B2INST holds can equally move after
+ * publication. It used to retire as soon as a Handle was present, which left no way to re-read
+ * either (Copilot review, PR 1066; RSDEV-1326).
  */
 function RefreshButton({ identifier, disabled }: RefreshButtonArgs): React.ReactNode {
   const [refreshing, setRefreshing] = React.useState(false);
   const { t } = useTranslation("inventory");
   const { uiStore } = useStores();
 
-  const reviewStillOpen = identifier.state === "submitted";
-  const acceptedWithoutHandle = identifier.state === "accepted" && !identifier.publicUrl;
-  if (!reviewStillOpen && !acceptedWithoutHandle) return null;
+  /*
+   * Only a B2INST review has a status held outside RSpace: "submitted" while the curator decides,
+   * and "accepted" afterwards. DataCite state changes only through RSpace's own publish and
+   * retract calls, so for those there is never anything to pull.
+   */
+  const refreshable = identifier.state === "submitted" || identifier.state === "accepted";
+
+  /*
+   * A linked identifier is a PID another party minted. RSpace holds no provider-side record of its
+   * own for it, so refresh is refused with 422 exactly like publish and retract (ADR 0009), and
+   * offering the action would only produce that error. Until now that was hidden here by accident,
+   * because an imported PID arrives with its Handle already resolved.
+   */
+  if (identifier.linked || !refreshable) return null;
 
   return (
     <CustomTooltip title={t("fields.identifiers.list.tooltips.refresh")}>
