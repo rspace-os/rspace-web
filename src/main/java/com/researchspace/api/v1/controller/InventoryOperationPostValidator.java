@@ -1,6 +1,7 @@
 package com.researchspace.api.v1.controller;
 
 import com.researchspace.api.v1.model.ApiExtraField;
+import com.researchspace.api.v1.model.ApiInventoryOperationAmountMode;
 import com.researchspace.api.v1.model.ApiInventoryOperationOriginUpdate;
 import com.researchspace.api.v1.model.ApiInventoryOperationPost;
 import com.researchspace.api.v1.model.ApiQuantityInfo;
@@ -87,7 +88,11 @@ public class InventoryOperationPostValidator implements Validator {
    * recomputed server-side would fight the client's timezone. A function with no rule here is left
    * unchecked; the registry test pins the shipped set.
    */
-  private static final Map<String, Predicate<String>> COMPUTED_CONTENT_SHAPES =
+  // Package-private so InventoryOperationPostValidatorTest can pin these names against
+  // InventoryOperationConfig.INTERPRETED_COMPUTED_FUNCTIONS, which the registry rejects unknown
+  // functions with at construction. The two sets must stay identical: a name here but not there
+  // boots a definition whose content check silently does nothing.
+  static final Map<String, Predicate<String>> COMPUTED_CONTENT_SHAPES =
       Map.of(
           "increment",
           content -> POSITIVE_INTEGER.matcher(content).matches(),
@@ -209,6 +214,21 @@ public class InventoryOperationPostValidator implements Validator {
             "errors.inventory.operation.duplicateOrigin",
             "An origin subsample may appear at most once in an operation.");
       }
+      // An origin-emptying operation (Destroy) means to take the whole origin, so its amount is a
+      // compare-and-swap claim the manager checks against the live quantity. A client that declares
+      // amountMode "explicit" is saying the opposite, that this is an amount the user chose, which
+      // this operation cannot honour: malformed, not conflicted, so a 400 here rather than the
+      // manager's 409 (RSDEV-1231). An ABSENT mode stays acceptable, so requests predating the
+      // field keep working; the manager reads absent-on-an-emptying-operation as a whole-origin
+      // claim, which is the only thing it can mean.
+      if (config.effect().emptiesOrigin()
+          && origin.getAmountMode() == ApiInventoryOperationAmountMode.EXPLICIT) {
+        errors.rejectValue(
+            "amountMode",
+            "errors.inventory.operation.amountModeMustBeAll",
+            "This operation empties its origins, so the amount taken cannot be an explicit"
+                + " amount.");
+      }
       if (!isValidAmountTaken(origin.getAmountTaken())) {
         errors.rejectValue(
             "amountTaken",
@@ -240,8 +260,8 @@ public class InventoryOperationPostValidator implements Validator {
         // What the amount taken must be follows the operation's effect (DevDocs/adr/0007): an
         // operation that decrements its origins (amountTakenFrom configured) must take a positive
         // amount from each; one that only links to them (e.g. Passage) must take exactly zero. An
-        // origin-emptying operation (Destroy) is checked live in the controller instead, where the
-        // amount must equal the origin's current quantity.
+        // origin-emptying operation (Destroy) is compare-and-swapped live in the manager
+        // instead, where the amount must still equal the origin's current quantity.
         int amountSignum = origin.getAmountTaken().getNumericValue().signum();
         if (config.effect().amountTakenFrom() != null && amountSignum <= 0) {
           errors.rejectValue(
@@ -309,6 +329,11 @@ public class InventoryOperationPostValidator implements Validator {
               "errors.inventory.operation.fieldKeyUnknown",
               new Object[] {field.getOperationFieldKey()},
               "This field is not one the operation declares.");
+        } else {
+          // Verified against this operation's own definition, so the key may be persisted. This is
+          // the only writer of that flag, which is what keeps a forged key out of every other
+          // endpoint (see ApiExtraField#operationFieldKeyVerified).
+          field.setOperationFieldKeyVerified(true);
         }
         ValidationUtils.invokeValidator(extraFieldsHelper, field, errors);
       } finally {
@@ -745,12 +770,19 @@ public class InventoryOperationPostValidator implements Validator {
     declaredKeys.add(DOCUMENTATION_LINK_KEY);
     for (int index = 0; index < fields.size(); index++) {
       ApiExtraField field = fields.get(index);
-      if (field != null && !declaredKeys.contains(field.getOperationFieldKey())) {
+      if (field == null) {
+        continue;
+      }
+      if (!declaredKeys.contains(field.getOperationFieldKey())) {
         errors.rejectValue(
             String.format("newSample.extraFields[%d].operationFieldKey", index),
             "errors.inventory.operation.fieldKeyUnknown",
             new Object[] {field.getOperationFieldKey()},
             "This field is not one the operation declares.");
+      } else {
+        // Verified against this operation's definition, so it may be persisted; see
+        // ApiExtraField#operationFieldKeyVerified.
+        field.setOperationFieldKeyVerified(true);
       }
     }
 

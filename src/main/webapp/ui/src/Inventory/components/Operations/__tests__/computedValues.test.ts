@@ -98,3 +98,77 @@ describe("gatherParentFields", () => {
     expect(result.passageNumber).toBe(3);
   });
 });
+
+/**
+ * A generated field's NAME is a localized resolution of its definition key, so name matching means
+ * matching whatever the current locale says today. The key is exact and locale-independent, which is
+ * what keeps a Passage lineage intact rather than forking it into one counter per locale (F6).
+ */
+describe("parentSampleField matching", () => {
+  const ctx = (parentFields: ComputedContext["parentFields"]): ComputedContext => ({
+    parentFields,
+    values: {},
+    resolveFieldName,
+  });
+
+  it("matches by operation key in preference to a same-named decoy", () => {
+    const values = applyComputedValues(
+      opWith(passageComputed),
+      ctx([
+        // A user's own field that happens to carry the current locale's wording.
+        { name: "Passage number", content: "99", operationFieldKey: null },
+        // The field the previous Passage actually generated.
+        { name: "Passagenummer", content: "4", operationFieldKey: "operations.passage.numberField" },
+      ]),
+    );
+    expect(values.passageNumber).toEqual(5);
+  });
+
+  it("keeps incrementing when the stored name no longer matches the current locale's wording", () => {
+    // The exact regression: with only name matching this found nothing and restarted at 1, which
+    // silently forks the culture's lineage instead of continuing it.
+    const values = applyComputedValues(
+      opWith(passageComputed),
+      ctx([{ name: "Passagenummer", content: "7", operationFieldKey: "operations.passage.numberField" }]),
+    );
+    expect(values.passageNumber).toEqual(8);
+  });
+
+  it("still matches a hand-created field by name when it carries no key", () => {
+    // The name fallback is permanent, not migration cover: this is how the first Passage of an
+    // existing culture picks up the count the user has been keeping by hand.
+    const values = applyComputedValues(opWith(passageComputed), ctx([{ name: "Passage number", content: "3" }]));
+    expect(values.passageNumber).toEqual(4);
+  });
+
+  it("falls back to the start value when neither key nor name is present", () => {
+    const values = applyComputedValues(opWith(passageComputed), ctx([{ name: "Something else", content: "3" }]));
+    expect(values.passageNumber).toEqual(1);
+  });
+
+  it("matches a keyed field gathered from either of the parent's two field lists", () => {
+    // Both lists must be searched: a Passage number can be a template field or an ad-hoc custom
+    // one. Asserting that gatherParentFields merely preserves the property would prove nothing -
+    // it spreads both arrays and always did, so such a test passes with the key matching removed
+    // entirely (parallel review, I11). This goes through the lookup instead, with a same-named
+    // decoy in the other list so only key matching can produce the right answer.
+    for (const listName of ["fields", "extraFields"] as const) {
+      const keyed = {
+        name: "Passagenummer",
+        content: "4",
+        operationFieldKey: "operations.passage.numberField",
+      };
+      const decoy = { name: "Passage number", content: "99", operationFieldKey: null };
+      const parentFields = gatherParentFields({
+        fields: listName === "fields" ? [keyed] : [decoy],
+        extraFields: listName === "extraFields" ? [keyed] : [decoy],
+      });
+      const values = applyComputedValues(opWith(passageComputed), {
+        parentFields,
+        values: {},
+        resolveFieldName,
+      });
+      expect(values.passageNumber, `keyed field in ${listName}`).toEqual(5);
+    }
+  });
+});

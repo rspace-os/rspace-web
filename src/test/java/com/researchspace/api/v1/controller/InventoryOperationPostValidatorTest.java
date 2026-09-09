@@ -4,6 +4,7 @@ import static com.researchspace.api.v1.controller.InventoryOperationPostValidato
 import static com.researchspace.api.v1.controller.InventoryOperationPostValidator.MAX_SUBSAMPLES;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -12,6 +13,7 @@ import com.researchspace.api.v1.model.ApiBarcode;
 import com.researchspace.api.v1.model.ApiContainerLocation;
 import com.researchspace.api.v1.model.ApiExtraField;
 import com.researchspace.api.v1.model.ApiInventoryLink;
+import com.researchspace.api.v1.model.ApiInventoryOperationAmountMode;
 import com.researchspace.api.v1.model.ApiInventoryOperationOriginUpdate;
 import com.researchspace.api.v1.model.ApiInventoryOperationPost;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiGroupInfoWithSharedFlag;
@@ -26,6 +28,7 @@ import com.researchspace.model.inventory.SampleSource;
 import com.researchspace.model.record.RecordFactory;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.inventory.ApiExtraFieldsHelper;
+import com.researchspace.service.inventory.InventoryOperationConfig;
 import com.researchspace.service.inventory.InventoryOperationConfigRegistry;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -380,6 +383,17 @@ class InventoryOperationPostValidatorTest {
                     "errors.inventory.operation.subSampleQuantityInvalid".equals(error.getCode())));
   }
 
+  @Test
+  void everyComputedFunctionTheRegistryAcceptsHasAContentShapeHere() {
+    // Two lists of function names, in two layers, that must agree: the registry refuses to boot a
+    // definition naming a function outside its set, and this validator silently skips the content
+    // check for a function outside its own. A name in one but not the other is the failure that
+    // set is meant to prevent, so it is pinned rather than trusted (F3).
+    assertEquals(
+        InventoryOperationConfig.INTERPRETED_COMPUTED_FUNCTIONS,
+        InventoryOperationPostValidator.COMPUTED_CONTENT_SHAPES.keySet());
+  }
+
   // --- per-operation amount-taken semantics ---
 
   @Test
@@ -390,6 +404,47 @@ class InventoryOperationPostValidatorTest {
         validate(request),
         "origins[0].amountTaken",
         "errors.inventory.operation.amountTakenPositive");
+  }
+
+  @Test
+  void rejectsAnExplicitAmountModeOnAnOriginEmptyingOperation() {
+    // Destroy's whole promise is to empty the origin, so its amount is a compare-and-swap claim the
+    // manager checks live. A client declaring "explicit" is claiming the opposite, which this
+    // operation cannot honour: malformed, so 400 here rather than the manager's 409 (RSDEV-1231).
+    ApiInventoryOperationPost request = destroyRequest();
+    request.getOrigins().get(0).setAmountMode(ApiInventoryOperationAmountMode.EXPLICIT);
+    assertSingleErrorWithCode(
+        validate(request),
+        "origins[0].amountMode",
+        "errors.inventory.operation.amountModeMustBeAll");
+  }
+
+  @Test
+  void acceptsAnAllAmountModeOnAnOriginEmptyingOperation() {
+    ApiInventoryOperationPost request = destroyRequest();
+    request.getOrigins().get(0).setAmountMode(ApiInventoryOperationAmountMode.ALL);
+    assertFalse(validate(request).hasErrors());
+  }
+
+  @Test
+  void acceptsAnAbsentAmountModeOnEveryOperation() {
+    // Backward compatibility: amountMode is optional on the wire, so a request predating it must
+    // still validate, on an origin-emptying operation as much as any other. The golden fixtures
+    // carry no mode, so this pins the default explicitly rather than by omission.
+    for (ApiInventoryOperationPost request : List.of(aliquotRequest(), destroyRequest())) {
+      assertNull(request.getOrigins().get(0).getAmountMode());
+      Errors errors = validate(request);
+      assertFalse(
+          errors.hasErrors(),
+          () -> request.getOperationType() + " without amountMode: " + errors.getAllErrors());
+    }
+  }
+
+  @Test
+  void acceptsAnExplicitAmountModeOnAnOperationThatDoesNotEmptyItsOrigin() {
+    ApiInventoryOperationPost request = aliquotRequest();
+    request.getOrigins().get(0).setAmountMode(ApiInventoryOperationAmountMode.EXPLICIT);
+    assertFalse(validate(request).hasErrors());
   }
 
   @Test

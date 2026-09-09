@@ -45,6 +45,31 @@ public abstract class ExtraField extends InventoryRecordConnectedEntity implemen
   private EditInfo editInfo;
   protected boolean deleted;
 
+  /**
+   * The operation-definition key that generated this field, or null when nothing generated it.
+   *
+   * <p>This is the field's STABLE identity across runs of an operation, which its name is not: a
+   * generated name is a localized resolution of this key ("Passage number" from
+   * operations.passage.numberField), so matching by name means matching the current locale's
+   * wording. A second locale, or a reworded translation, would miss the previous generation's field
+   * and reset a computed counter rather than continue it (RSDEV-1231).
+   *
+   * <p>Null means "not owned by any operation definition": every hand-created field, and every
+   * field predating the column. Only the operations endpoint may write a non-null value, enforced
+   * at the single write point ({@code ApiExtraFieldsHelper}) rather than by asking every other
+   * endpoint to reject one, so a non-null key is a reliable claim that an operation created this
+   * field rather than merely a hint.
+   *
+   * <p>SCOPE: this covers fields an operation adds as EXTRA fields. When the created sample
+   * inherits a template field of the same name, {@code
+   * SampleApiManagerImpl.mergeOperationFieldsIntoInheritedTemplateFields} folds the generated
+   * content into that inherited {@code InventoryEntityField} and drops the extra field, and that
+   * entity has no such column - so a template-based lineage still falls back to matching the
+   * localized field name (parallel review, I3). Giving {@code InventoryEntityField} the same column
+   * is the follow-up; until then the key fixes the no-template case only.
+   */
+  private String operationFieldKey;
+
   public ExtraField() {
     editInfo = new EditInfo();
     setCreationDate(new Date());
@@ -156,5 +181,9 @@ public abstract class ExtraField extends InventoryRecordConnectedEntity implemen
     copy.setEditInfo(getEditInfo().shallowCopy());
     copy.setData(getData());
     copy.setDeleted(isDeleted());
+    // Carried on the copy: a field copied from a template or a sample keeps its provenance, which
+    // is
+    // what lets a later operation recognise it as the one its definition generated.
+    copy.setOperationFieldKey(getOperationFieldKey());
   }
 }

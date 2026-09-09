@@ -1,5 +1,6 @@
 package com.researchspace.service.inventory;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -172,5 +173,219 @@ class InventoryOperationConfigRegistryTest {
             new InventoryOperationConfigRegistry(
                 new ByteArrayResource(
                     "not json".getBytes(java.nio.charset.StandardCharsets.UTF_8))));
+  }
+
+  // --- semantic validation of the definitions themselves (F3) ---
+
+  /** The registry over the given definitions, or the message of the rejection it produced. */
+  private static String rejectionMessage(String json) {
+    return assertThrows(
+            IllegalStateException.class,
+            () ->
+                new InventoryOperationConfigRegistry(
+                    new ByteArrayResource(json.getBytes(java.nio.charset.StandardCharsets.UTF_8))))
+        .getMessage();
+  }
+
+  @Test
+  void theShippedConfigPassesValidation() {
+    // The build-time guard: this is what makes every check below a safety net for future config
+    // edits rather than a tripwire on the file we ship today. Constructing the real registry is
+    // itself the assertion, and the field initialiser above already does it for every other test.
+    assertDoesNotThrow(
+        () -> {
+          new InventoryOperationConfigRegistry();
+        });
+    assertEquals(7, registry.keys().size());
+  }
+
+  @Test
+  void rejectsAnInputTypeNoValidationBranchInterprets() {
+    // An unrecognised type matches no validation branch, so this input's "required" and its bounds
+    // would never be enforced while the definition still advertises them.
+    String message =
+        rejectionMessage(
+            """
+            [{"key":"teleport","inputs":[{"key":"destination","type":"coordinates"}]}]
+            """);
+    assertTrue(message.contains("operation 'teleport'"), message);
+    assertTrue(message.contains("type 'coordinates'"), message);
+  }
+
+  @Test
+  void rejectsAnUnknownOriginFieldType() {
+    // FieldType.valueOf runs per request today, so this is a 500 on every request for the
+    // operation; validating at construction turns it into a boot failure instead.
+    String message =
+        rejectionMessage(
+            """
+            [{"key":"destroy","inputs":[],"effect":{"emptiesOrigin":true,
+              "computed":[{"fn":"today","into":"disposedDate"}],
+              "originFields":[{"nameKey":"a.key","contentFrom":"disposedDate","type":"hologram"}]}}]
+            """);
+    assertTrue(message.contains("unknown field type 'hologram'"), message);
+  }
+
+  @Test
+  void rejectsAContentReferenceThatNamesNothing() {
+    String message =
+        rejectionMessage(
+            """
+            [{"key":"cryopreserve","inputs":[{"key":"cryomedium","type":"text"}],
+              "effect":{"textFields":[{"nameKey":"a.key","contentFrom":"typo"}]}}]
+            """);
+    assertTrue(message.contains("takes content from 'typo'"), message);
+  }
+
+  @Test
+  void acceptsAContentReferenceToAComputedValueRatherThanAnInput() {
+    // Passage and Destroy both do this: the wizard DERIVES the value instead of asking for it, so
+    // the field's contentFrom names a computed slot, not a declared input.
+    assertDoesNotThrow(
+        () ->
+            new InventoryOperationConfigRegistry(
+                new ByteArrayResource(
+                    """
+                    [{"key":"passage","inputs":[{"key":"sampleName","type":"text"}],
+                      "effect":{"nameFrom":"sampleName",
+                        "computed":[{"fn":"increment","into":"passageNumber"}],
+                        "textFields":[{"nameKey":"a.key","contentFrom":"passageNumber"}]}}]
+                    """
+                        .getBytes(java.nio.charset.StandardCharsets.UTF_8))));
+  }
+
+  @Test
+  void rejectsAnEffectSourceThatIsNotADeclaredInput() {
+    String message =
+        rejectionMessage(
+            """
+            [{"key":"aliquot","inputs":[{"key":"sampleName","type":"text"}],
+              "effect":{"nameFrom":"sampleName","countFrom":"count"}}]
+            """);
+    assertTrue(message.contains("countFrom names 'count'"), message);
+  }
+
+  @Test
+  void rejectsAnUnknownComputedFunction() {
+    // An unknown function makes the validator's content check a no-op, so the field would be
+    // accepted carrying anything at all.
+    String message =
+        rejectionMessage(
+            """
+            [{"key":"passage","inputs":[],
+              "effect":{"computed":[{"fn":"guess","into":"passageNumber"}],
+                "textFields":[{"nameKey":"a.key","contentFrom":"passageNumber"}]}}]
+            """);
+    assertTrue(message.contains("computed function 'guess' is unknown"), message);
+  }
+
+  @Test
+  void rejectsAComputedValueThatShadowsAnInput() {
+    String message =
+        rejectionMessage(
+            """
+            [{"key":"passage","inputs":[{"key":"passageNumber","type":"integer"}],
+              "effect":{"computed":[{"fn":"increment","into":"passageNumber"}]}}]
+            """);
+    assertTrue(message.contains("which is also an input"), message);
+  }
+
+  @Test
+  void rejectsDuplicateAndBlankInputKeys() {
+    assertTrue(
+        rejectionMessage(
+                """
+                [{"key":"aliquot","inputs":[{"key":"count","type":"integer"},
+                  {"key":"count","type":"integer"}]}]
+                """)
+            .contains("duplicate input key 'count'"));
+    assertTrue(
+        rejectionMessage(
+                """
+                [{"key":"aliquot","inputs":[{"key":"","type":"integer"}]}]
+                """)
+            .contains("blank key"));
+  }
+
+  @Test
+  void rejectsATemperatureRangeThatIsInverted() {
+    String message =
+        rejectionMessage(
+            """
+            [{"key":"revive","inputs":[{"key":"storageTemp","type":"temperature",
+              "minCelsius":120,"maxCelsius":4}]}]
+            """);
+    assertTrue(message.contains("minCelsius 120 above maxCelsius 4"), message);
+  }
+
+  @Test
+  void rejectsAnEmptyingOperationThatAlsoAsksForAnAmount() {
+    // The two contradict: the operation takes the whole origin, so an amount the user chose would
+    // be collected and then ignored.
+    String message =
+        rejectionMessage(
+            """
+            [{"key":"destroy","inputs":[{"key":"amountTaken","type":"quantity"}],
+              "effect":{"emptiesOrigin":true,"amountTakenFrom":"amountTaken"}}]
+            """);
+    assertTrue(message.contains("must not also declare amountTakenFrom"), message);
+  }
+
+  @Test
+  void reportsEveryViolationAtOnceRatherThanTheFirst() {
+    // One round trip to fix a bad config file, not one per boot.
+    String message =
+        rejectionMessage(
+            """
+            [{"key":"broken","inputs":[{"key":"a","type":"coordinates"},{"key":"a","type":"text"}],
+              "effect":{"nameFrom":"missing","textFields":[{"nameKey":"","contentFrom":"absent"}]}}]
+            """);
+    for (String expected :
+        List.of(
+            "type 'coordinates'",
+            "duplicate input key 'a'",
+            "nameFrom names 'missing'",
+            "blank nameKey",
+            "takes content from 'absent'")) {
+      assertTrue(message.contains(expected), () -> expected + " missing from: " + message);
+    }
+  }
+
+  @Test
+  void reportsAMissingComputedFunctionAsAViolationRatherThanCrashing() {
+    // Set.of(...) throws NullPointerException from contains(null), so an omitted "fn" aborted the
+    // whole pass with a bare NPE naming neither the operation nor the problem - the exact failure
+    // this validation exists to replace (parallel review, C5).
+    String message =
+        rejectionMessage(
+            """
+            [{"key":"passage","inputs":[],
+              "effect":{"computed":[{"into":"passageNumber"}],
+                "textFields":[{"nameKey":"a.key","contentFrom":"passageNumber"}]}}]
+            """);
+    assertTrue(message.contains("operation 'passage'"), message);
+    assertTrue(message.contains("is unknown"), message);
+  }
+
+  @Test
+  void rejectsABlankOperationKey() {
+    assertTrue(
+        rejectionMessage(
+                """
+                [{"key":"","inputs":[]}]
+                """)
+            .contains("key is blank"));
+  }
+
+  @Test
+  void rejectsALinkMissingItsFieldNameKeyOrRelationType() {
+    String message =
+        rejectionMessage(
+            """
+            [{"key":"aliquot","inputs":[],
+              "effect":{"links":[{"relationType":"","fieldNameKey":""}]}}]
+            """);
+    assertTrue(message.contains("links[0] has a blank fieldNameKey"), message);
+    assertTrue(message.contains("links[0] has a blank relationType"), message);
   }
 }

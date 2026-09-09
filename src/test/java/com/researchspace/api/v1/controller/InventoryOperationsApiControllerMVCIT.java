@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.researchspace.api.v1.model.ApiExtraField;
 import com.researchspace.api.v1.model.ApiField.ApiFieldType;
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
+import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.api.v1.model.ApiSample;
 import com.researchspace.api.v1.model.ApiSampleTemplate;
 import com.researchspace.api.v1.model.ApiSampleTemplatePost;
@@ -816,6 +817,10 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
     // proceeds after the winner commits, reads the emptied origin under the lock and fails the
     // live-state check as a 400. A 409 means a deadlock victim or lock-wait timeout, which the
     // earlier "no 5xx" assertion tolerated while every run was deadlocking.
+    // Still 400 after the whole-origin compare-and-swap landed (RSDEV-1231): the winner leaves the
+    // origin at zero, and originHoldsNothing is checked BEFORE the stale-snapshot guard, so a loser
+    // is rejected as originEmpty rather than as a conflict. A loser would only see the 409 if the
+    // winner had left the origin non-empty, which Destroy cannot do.
     assertTrue(
         statuses.stream().allMatch(status -> status == 201 || status == 400),
         () -> "losers must fail live-state (400), not deadlock (409), got " + statuses);
@@ -826,6 +831,49 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
     // A losing request must roll back completely, not just fail to decrement: Destroy creates no
     // sample, so a partially-applied loser would show up as a stray one here.
     assertEquals(samplesBefore, sampleCount(), "a terminal operation creates no sample");
+  }
+
+  @Test
+  public void takeAllAgainstAnOriginToppedUpAfterTheReadReturnsConflict() throws Exception {
+    // The wizard's "take all" serializes the quantity it read. If someone tops the origin up before
+    // Perform, emptying it anyway would destroy stock the user never saw, so the endpoint rejects
+    // the stale claim with 409 and leaves the origin exactly as the concurrent writer left it
+    // (RSDEV-1231). Sequential rather than concurrent: the point is the stale SNAPSHOT, and firing
+    // both at once would leave which one reads first up to the scheduler.
+    ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
+    java.math.BigDecimal amountTheWizardSaw = origin.getQuantity().getNumericValue();
+
+    // a concurrent writer tops the origin up after the wizard read it
+    ApiSubSample topUp = new ApiSubSample();
+    topUp.setId(origin.getId());
+    topUp.setQuantity(
+        new ApiQuantityInfo(
+            amountTheWizardSaw.add(java.math.BigDecimal.ONE), origin.getQuantity().getUnitId()));
+    subSampleApiManager.updateApiSubSample(topUp, anyUser);
+
+    int unitId = origin.getQuantity().getUnitId();
+    String operationJson =
+        "{\"operationType\":\"aliquot\",\"origins\":[{\"id\":"
+            + origin.getId()
+            + ",\"amountMode\":\"all\",\"amountTaken\":"
+            + quantityJson(amountTheWizardSaw.toPlainString(), unitId)
+            + "}],\"newSample\":{\"name\":\"Aliquots\",\"extraFields\":["
+            + isPartOfLinkJson(origin.getGlobalId())
+            + "],\"subSamples\":[{\"quantity\":"
+            + quantityJson("0.5", unitId)
+            + "}]}}";
+
+    mockMvc
+        .perform(createBuilderForPostWithJSONBody(apiKey, "/operations", anyUser, operationJson))
+        .andExpect(status().isConflict());
+
+    ApiSubSample reloaded = subSampleApiManager.getApiSubSampleById(origin.getId(), anyUser);
+    assertEquals(
+        0,
+        amountTheWizardSaw
+            .add(java.math.BigDecimal.ONE)
+            .compareTo(reloaded.getQuantity().getNumericValue()),
+        "a rejected stale take-all must leave the origin untouched");
   }
 
   @Test

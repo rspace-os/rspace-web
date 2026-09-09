@@ -313,6 +313,16 @@ public class ApiExtraFieldsHelper implements Validator {
               apiField.getName(), apiField.getTypeAsFieldType(), user, parentInvRec);
       newField.setData(apiField.getContent());
     }
+    // Persist the operation definition key that generated this field, on both the link and non-link
+    // branches, but ONLY when the operations endpoint's validator has verified it against that
+    // operation's definition. The flag is @JsonIgnore, so a request cannot set it and no other
+    // endpoint does: every other caller silently persists null here, which is the truth about a
+    // field no operation generated. Enforced at this single write point rather than by asking each
+    // endpoint's validator to reject a key, because that enumeration missed the template endpoints
+    // entirely (parallel review, C1). RSDEV-1231.
+    if (apiField.isOperationFieldKeyVerified()) {
+      newField.setOperationFieldKey(apiField.getOperationFieldKey());
+    }
     parentInvRec.addExtraField(newField); // update parent's field list
   }
 

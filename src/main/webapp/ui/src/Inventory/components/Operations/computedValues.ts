@@ -9,8 +9,18 @@ import { type OperationFunctionArgs, type OperationFunctionName, operationFuncti
 import type { ComputedArgSource, InventoryOperation } from "./operationsConfig";
 import type { OperationInputs } from "./types";
 
-/** The minimal shape the resolver needs of a sample field (name + content). */
-type SampleField = { name: string | null; content: string | number | Date };
+/**
+ * The minimal shape the resolver needs of a sample field.
+ *
+ * `operationFieldKey` is the field's STABLE identity when an operation generated it; `name` is a
+ * localized resolution of that key, so it changes with the locale and with any rewording of the
+ * translation. Absent (null/undefined) on every hand-created field.
+ */
+type SampleField = {
+  name: string | null;
+  content: string | number | Date;
+  operationFieldKey?: string | null;
+};
 
 export type ComputedContext = {
   /** Fields on the origin's parent sample, for `parentSampleField` args (loaded before calling). */
@@ -34,17 +44,32 @@ export function gatherParentFields(sample: {
   return [...sample.fields, ...sample.extraFields];
 }
 
-/** The content of the (case- and whitespace-insensitively) named field, or undefined if absent. */
-function parentFieldValue(fields: ReadonlyArray<SampleField>, name: string): string | number | undefined {
+/**
+ * The content of the field a `parentSampleField` arg refers to, matched by definition KEY first and
+ * by localized name second.
+ *
+ * The key is exact and locale-independent, so it is what keeps a lineage intact: a Passage counter
+ * whose previous generation was created under a different locale, or under an earlier wording of the
+ * same translation, is still found and still increments. Matching only on the current locale's
+ * resolution of the key silently missed it and restarted the count at 1, forking the lineage into
+ * one counter per locale (F6).
+ *
+ * The name fallback is PERMANENT, not migration cover: it is how a user's own hand-created "Passage
+ * number" (no key at all) is picked up on the first Passage of an existing culture, which is
+ * deliberate behaviour rather than an accident.
+ */
+function parentFieldValue(fields: ReadonlyArray<SampleField>, key: string, name: string): string | number | undefined {
   const wanted = name.trim().toLowerCase();
-  const field = fields.find((f) => (f.name ?? "").trim().toLowerCase() === wanted);
+  const field =
+    fields.find((f) => f.operationFieldKey === key) ??
+    fields.find((f) => (f.name ?? "").trim().toLowerCase() === wanted);
   if (!field) return undefined;
   return field.content instanceof Date ? field.content.toISOString() : field.content;
 }
 
 function resolveArg(source: ComputedArgSource, ctx: ComputedContext): string | number | undefined {
   if ("parentSampleField" in source) {
-    return parentFieldValue(ctx.parentFields, ctx.resolveFieldName(source.parentSampleField));
+    return parentFieldValue(ctx.parentFields, source.parentSampleField, ctx.resolveFieldName(source.parentSampleField));
   }
   if ("constant" in source) return source.constant;
   const value = ctx.values[source.input];
