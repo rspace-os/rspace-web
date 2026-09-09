@@ -115,18 +115,6 @@ optional on the wire and absent means EXPLICIT, so every request accepted before
 it existed keeps its meaning; absent on an origin-emptying operation is still a
 whole-origin claim, because that operation cannot mean anything else.
 
-Requests to this endpoint bind **strictly**: an unrecognised property on the
-request or on an origin is rejected rather than silently dropped, because this
-endpoint's contract is that the request conforms to the operation definition,
-and a dropped property means an operation performed differently from what was
-asked with no indication why. Enforced with a rejecting `@JsonAnySetter` on the
-two DTOs only this endpoint binds, not with
-`@JsonIgnoreProperties(ignoreUnknown = false)`: `false` is that attribute's own
-default, so Jackson cannot distinguish "explicitly strict" from "unspecified"
-and the API mapper's global "off" (`Jackson2ObjectMapperBuilder`) still wins.
-The shared sample and extra-field DTOs are deliberately left permissive, since
-they are bound by unrelated endpoints too.
-
 ## An operation-generated field is identified by its definition key, not its name
 
 A generated field's NAME is a localized resolution of a definition key
