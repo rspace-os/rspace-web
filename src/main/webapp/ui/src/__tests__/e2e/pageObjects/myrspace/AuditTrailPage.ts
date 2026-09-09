@@ -106,10 +106,26 @@ export class AuditTrailPage extends BasePage {
   }
 
   async downloadReport(): Promise<string> {
-    const [download] = await Promise.all([
-      this.page.waitForEvent("download", { timeout: 10_000 }),
-      this.page.getByRole("button", { name: "Download Audit Report" }).click(),
-    ]);
+    // Every engine hides the payload somewhere different: Chromium/Firefox hand it over as a
+    // "download" then shred the response body, WebKit keeps the body but never says "download".
+    const context = this.page.context();
+    const downloadPromise = context.waitForEvent("download").catch(() => null);
+    const responsePromise = context
+      .waitForEvent("response", (res) => res.url().includes("/audit/download"))
+      .catch(() => null);
+
+    await this.page.getByRole("button", { name: "Download Audit Report" }).click();
+
+    const response = await responsePromise;
+    if (response) {
+      try {
+        return await response.text();
+      } catch {
+        // Fall through to the download event below.
+      }
+    }
+    const download = await downloadPromise;
+    if (!download) throw new Error("downloadReport: neither a response body nor a download event was available.");
     const stream = await download.createReadStream();
     if (!stream) throw new Error("downloadReport: download had no read stream.");
     const chunks: Buffer[] = [];
@@ -119,14 +135,11 @@ export class AuditTrailPage extends BasePage {
 
   async hitCount(): Promise<number> {
     const text = await this.page.getByText("You found", { exact: false }).innerText();
-    const numberToken = text
-      .trim()
-      .split(" ")
-      .find((word) => word !== "" && Number.isInteger(Number(word)));
-    if (numberToken === undefined) {
+    const match = text.match(/\d+/);
+    if (!match) {
       throw new Error(`hitCount: could not find a number in hits text "${text}"`);
     }
-    return Number(numberToken);
+    return Number(match[0]);
   }
 
   get resultRows(): Locator {

@@ -104,6 +104,8 @@ test.describe("Auditing (ELN)", () => {
   }) => {
     const name = uniqueName("e2e-audit-download-doc");
     const doc = await clientDocuments.create({ name });
+    const otherName = uniqueName("e2e-audit-download-other-doc");
+    await clientDocuments.create({ name: otherName });
 
     await pageMyRSpace.open();
     await pageMyRSpace.openAuditTrail();
@@ -112,6 +114,7 @@ test.describe("Auditing (ELN)", () => {
     const csv = await pageAuditTrail.downloadReport();
     expect(csv).toContain("Time,User,Action,Type,Resource,Name,Description");
     expect(csv).toContain(name);
+    expect(csv).not.toContain(otherName);
   });
 
   test("As a user, I can click through an audit row to the underlying record", async ({
