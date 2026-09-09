@@ -1,0 +1,36 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <changeSet id="2026-09-09a" context="run" author="matthias">
+        <comment>Create SampleRequest table (RSDEV-1366)</comment>
+
+        <!-- id is assigned from hibernate_sequences, so not autoIncrement.
+             InnoDB indexes the foreign key columns itself, so no explicit createIndex. -->
+        <createTable tableName="SampleRequest">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="sample_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_samplerequest_sample"
+                             references="Sample(id)"/>
+            </column>
+            <column name="requester_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_samplerequest_requester"
+                             references="User(id)"/>
+            </column>
+            <column name="status" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="note" type="VARCHAR(2000)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+</databaseChangeLog>

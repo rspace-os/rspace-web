@@ -42,6 +42,7 @@ public class BaseApiInventoryController extends BaseApiController {
   public static final String API_INVENTORY_V1 = "/api/inventory/v1";
   public static final String SAMPLES_ENDPOINT = "/samples";
   public static final String SAMPLE_TEMPLATES_ENDPOINT = "/sampleTemplates";
+  public static final String SAMPLE_REQUESTS_ENDPOINT = "/sampleRequests";
   public static final String INSTRUMENTS_ENDPOINT = "/instruments";
   public static final String INSTRUMENT_TEMPLATES_ENDPOINT = "/instrumentTemplates";
   public static final String SUBSAMPLES_ENDPOINT = "/subSamples";

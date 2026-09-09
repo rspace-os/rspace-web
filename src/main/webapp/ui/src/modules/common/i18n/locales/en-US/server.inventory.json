@@ -167,6 +167,16 @@
         "templateNotFound": "No sample template with id: {0}",
         "unitIncompatibleWithTemplate": "Sample quantity unit {0} ({1}) is incompatible with template quantity unit {2} ({3})"
       },
+      "sampleRequest": {
+        "notEnabled": "Sample requests are not enabled on this RSpace instance.",
+        "ownSample": "You cannot request material from a sample that you own.",
+        "role": {
+          "invalid": "Requested role must be one of: REQUESTER or OWNER"
+        },
+        "status": {
+          "invalid": "Requested status must be one of: PENDING, APPROVED, REJECTED, FULFILLED or CANCELLED"
+        }
+      },
       "search": {
         "deletedItems": {
           "invalid": "Requested deletedItems option must be one of: EXCLUDE, INCLUDE or DELETED_ONLY"

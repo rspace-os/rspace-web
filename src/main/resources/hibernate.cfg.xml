@@ -134,6 +134,7 @@
         <mapping class="com.researchspace.model.inventory.SampleTemplate"/>
         <mapping class="com.researchspace.model.inventory.SubSample"/>
         <mapping class="com.researchspace.model.inventory.SubSampleNote"/>
+        <mapping class="com.researchspace.model.inventory.SampleRequest"/>
 
         <mapping class="com.researchspace.model.inventory.Instrument"/>
         <mapping class="com.researchspace.model.inventory.InstrumentTemplate"/>
