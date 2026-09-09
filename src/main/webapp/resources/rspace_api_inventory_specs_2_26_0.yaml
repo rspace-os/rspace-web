@@ -4798,6 +4798,7 @@ components:
         must conform to the operation definition its operationType names (origin count, new-sample
         presence, amount semantics, temperature bounds, provenance links; see DevDocs/adr/0007). One request is one atomic transaction.
       type: object
+      additionalProperties: false
       required:
         - operationType
         - origins
@@ -4828,6 +4829,7 @@ components:
     InventoryOperationOriginUpdate:
       description: One origin subsample and how the operation updates it.
       type: object
+      additionalProperties: false
       required:
         - id
         - amountTaken
@@ -4861,6 +4863,7 @@ components:
         sample property is rejected with 400. The operation's relation link(s) and text fields are
         placed on the sample itself, never on the subsamples it creates.
       type: object
+      additionalProperties: false
       required:
         - name
       properties:
@@ -4917,6 +4920,7 @@ components:
         text fields belong to the sample, so extra fields, notes, tags and placement on a subsample
         are rejected with 400.
       type: object
+      additionalProperties: false
       properties:
         quantity:
           allOf:
@@ -4929,6 +4933,7 @@ components:
         provenance LINK field sets type "link" and a link object; a plain field sets type "text"
         (or "number") and content.
       type: object
+      additionalProperties: false
       required:
         - name
         - newFieldRequest
