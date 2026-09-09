@@ -4,6 +4,7 @@ import { BasePage } from "../BasePage";
 import { AuditTrailPage } from "./AuditTrailPage";
 import { CreateFormPage } from "./CreateFormPage";
 import { DeletedItemsPage } from "./DeletedItemsPage";
+import { ExportImportPage } from "./ExportImportPage";
 import { ManageFormsPage } from "./ManageFormsPage";
 
 export class MyRSpacePage extends BasePage {
@@ -41,5 +42,12 @@ export class MyRSpacePage extends BasePage {
     const manageForms = new ManageFormsPage(this.page);
     await manageForms.isLoaded();
     return manageForms;
+  }
+
+  async openExportImport(): Promise<ExportImportPage> {
+    await this.page.getByRole("link", { name: "Export - Import" }).click();
+    const page = new ExportImportPage(this.page);
+    await page.isLoaded();
+    return page;
   }
 }

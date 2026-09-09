@@ -62,6 +62,10 @@ export class WorkspaceTable {
     await this.row(name).getByRole("link", { name, exact: true }).click();
   }
 
+  async openNotebook(name: string): Promise<void> {
+    await this.row(name).getByRole("link").first().click();
+  }
+
   async openInfoFor(name: string): Promise<RecordInfoDialog> {
     await this.row(name).getByRole("link", { name: "Record Info" }).click();
     const dialog = new RecordInfoDialog(this.page);

@@ -8,6 +8,7 @@ export class NotebookViewToolbar {
   readonly editButton: Locator;
   readonly signButton: Locator;
   readonly witnessButton: Locator;
+  readonly shareButton: Locator;
 
   constructor(page: Page) {
     this.createMenu = new ToolbarCreateMenu(page);
@@ -15,5 +16,6 @@ export class NotebookViewToolbar {
     this.editButton = page.getByRole("button", { name: "Edit", exact: true });
     this.signButton = page.getByRole("button", { name: "Sign", exact: true });
     this.witnessButton = page.getByRole("button", { name: "Witness", exact: true });
+    this.shareButton = page.getByRole("button", { name: "Share", exact: true });
   }
 }

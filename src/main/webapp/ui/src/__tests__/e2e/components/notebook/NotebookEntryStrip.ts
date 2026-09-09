@@ -24,11 +24,20 @@ export class NotebookEntryStrip {
   }
 
   async next(): Promise<void> {
-    await this.nextButton.click();
+    await this.navigateAndWaitForEntryChange(this.nextButton);
   }
 
   async previous(): Promise<void> {
-    await this.prevButton.click();
+    await this.navigateAndWaitForEntryChange(this.prevButton);
+  }
+
+  private async navigateAndWaitForEntryChange(button: Locator): Promise<void> {
+    const before = await this.entryCounter.innerText();
+    await Promise.all([
+      this.page.waitForResponse((res) => res.url().includes("/journal/ajax/retrieveEntry")),
+      button.click(),
+    ]);
+    await this.entryCounter.filter({ hasNotText: before }).waitFor({ state: "visible" });
   }
 
   async getEntryCount(): Promise<{ current: number; total: number }> {
@@ -44,6 +53,9 @@ export class NotebookEntryStrip {
 
   async search(query: string): Promise<void> {
     await this.searchInput.fill(query);
-    await this.searchSubmit.click();
+    await Promise.all([
+      this.page.waitForResponse((res) => res.url().includes("/journal/ajax/quicksearch/")),
+      this.searchSubmit.click(),
+    ]);
   }
 }

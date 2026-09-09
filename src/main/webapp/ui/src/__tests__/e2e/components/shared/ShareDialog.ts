@@ -22,10 +22,26 @@ export class ShareDialog {
   }
 
   async addRecipient(query: string): Promise<void> {
-    await this.searchInput.fill(query);
-    const option = this.page.getByRole("option", { name: query });
+    await this.search(query);
+    const option = this.recipientOption(query);
     await option.waitFor({ state: "visible" });
     await option.click();
+  }
+
+  /** Searches the "Add RSpace users or groups" box; pair with recipientOption/isOptionDisabled. */
+  async search(query: string): Promise<void> {
+    await this.searchInput.fill(query);
+  }
+
+  private recipientOption(name: string): Locator {
+    return this.page.getByRole("option", { name });
+  }
+
+  /** Whether a recipient option — already located via search() — is disabled (non-selectable). */
+  async isOptionDisabled(name: string): Promise<boolean> {
+    const option = this.recipientOption(name);
+    await option.waitFor({ state: "visible" });
+    return (await option.getAttribute("aria-disabled")) === "true";
   }
 
   async setPermission(recipientName: string, permission: SharePermission): Promise<void> {

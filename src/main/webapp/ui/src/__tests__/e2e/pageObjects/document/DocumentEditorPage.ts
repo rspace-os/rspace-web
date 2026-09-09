@@ -85,6 +85,22 @@ export class DocumentEditorPage extends DocumentPage {
     return viewPage;
   }
 
+  /** Saves the current entry and lands on a fresh entry, still in edit mode. */
+  async saveAndNew(): Promise<DocumentEditorPage> {
+    await this.editToolbar.saveAndNew();
+    const editor = new DocumentEditorPage(this.page);
+    await editor.isLoaded();
+    return editor;
+  }
+
+  /** Saves the current entry and lands on a "<name>-copy" duplicate, still in edit mode. */
+  async saveAndClone(): Promise<DocumentEditorPage> {
+    await this.editToolbar.saveAndClone();
+    const editor = new DocumentEditorPage(this.page);
+    await editor.isLoaded();
+    return editor;
+  }
+
   /** Clicks a toolbar button by its accessible name, then waits for the given dialog to open. */
   private async openToolbarDialog<T extends ToolbarDialog>(buttonName: string, dialog: T): Promise<T> {
     await this.page.getByRole("button", { name: buttonName }).click();

@@ -1,6 +1,7 @@
 import { type Download, expect, type Locator, type Page } from "@playwright/test";
 import { GalleryActionsMenu } from "@/__tests__/e2e/components/gallery/GalleryActionsMenu";
 import { GalleryEditImageDialog } from "@/__tests__/e2e/components/gallery/GalleryEditImageDialog";
+import { galleryEmptyStateLocator } from "@/__tests__/e2e/components/gallery/GalleryEmptyState";
 import { GalleryInfoPanel } from "@/__tests__/e2e/components/gallery/GalleryInfoPanel";
 import { GalleryMoveDialog } from "@/__tests__/e2e/components/gallery/GalleryMoveDialog";
 import type { GallerySection } from "@/__tests__/e2e/components/gallery/GallerySidebar";
@@ -62,14 +63,25 @@ export class GalleryPage extends BasePage {
 
   async isLoaded(): Promise<void> {
     await this.filesListingRegion.waitFor({ state: "visible" });
-    if (!(await this.fileGrid.isVisible().catch(() => false))) {
-      await this.views.switchTo("Grid");
-      await this.fileGrid.waitFor({ state: "visible" });
-    }
+    const emptyState = galleryEmptyStateLocator(this.filesListingRegion);
+    await this.fileGrid
+      .or(this.page.getByRole("tree"))
+      .or(this.page.getByRole("region", { name: "Carousel view of files" }))
+      .or(emptyState)
+      .first()
+      .waitFor({ state: "visible" });
+    if (await this.fileGrid.isVisible().catch(() => false)) return;
+    if (await emptyState.isVisible().catch(() => false)) return;
+    await this.views.switchToGridOrEmpty();
   }
 
   async openSection(section: GallerySection): Promise<void> {
-    await this.sidebar.openSection(section);
+    await Promise.all([
+      this.page
+        .waitForResponse((res) => res.url().includes("/gallery/getUploadedFiles"), { timeout: 10_000 })
+        .catch(() => undefined),
+      this.sidebar.openSection(section),
+    ]);
     await this.isLoaded();
   }
 
@@ -83,8 +95,8 @@ export class GalleryPage extends BasePage {
     return this.fileGrid.getByRole("gridcell", { name, exact: true });
   }
 
-  async waitForFile(name: string): Promise<void> {
-    await this.fileCell(name).waitFor({ state: "visible" });
+  async waitForFile(name: string, options?: { timeout?: number }): Promise<void> {
+    await this.fileCell(name).waitFor({ state: "visible", timeout: options?.timeout });
   }
 
   async selectFile(name: string): Promise<void> {

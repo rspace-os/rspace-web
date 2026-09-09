@@ -15,7 +15,6 @@ export class WorkspacePagination {
   }
 
   private get activePageItem(): Locator {
-    // Bootstrap exposes the current page only through its active class.
     return this.root.locator("li.active");
   }
 
@@ -54,7 +53,6 @@ export class WorkspacePagination {
       await this.itemsPerPageSelect.selectOption(String(n));
       await expect(this.itemsPerPageSelect).toHaveValue(String(n));
       await this.applyItemsPerPageButton.click();
-      await this.waitForPage(1);
     });
   }
 }

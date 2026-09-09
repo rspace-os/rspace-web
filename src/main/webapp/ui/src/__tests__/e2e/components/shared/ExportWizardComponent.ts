@@ -107,10 +107,13 @@ export class ExportWizardComponent {
   }
 
   async next(): Promise<void> {
+    const formatStep = this.root.getByRole("radiogroup", { name: "Select Export" });
     await this.root.getByRole("button", { name: "Next", exact: true }).click();
+    await formatStep.waitFor({ state: "hidden" });
   }
 
   async submit(): Promise<void> {
     await this.root.getByRole("button", { name: "Export", exact: true }).click();
+    await this.root.waitFor({ state: "hidden" });
   }
 }

@@ -124,6 +124,14 @@ export class WorkspacePage extends BasePage {
     return document;
   }
 
+  async createDocumentFromForm(formName: string): Promise<DocumentPage> {
+    await this.toolbar.createMenu.createFromCustomForm(formName);
+    const doc = new DocumentPage(this.page);
+    await doc.isLoaded();
+    await this.page.waitForLoadState("networkidle").catch(() => undefined);
+    return doc;
+  }
+
   async createNotebook(name: string): Promise<NotebookPage> {
     await this.toolbar.createMenu.create("Notebook");
     const dialog = new CreateNotebookDialog(this.page);

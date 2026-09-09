@@ -18,4 +18,5 @@ export interface ApiDocumentCreateRequest {
   name: string;
   parentFolderId?: number;
   tags?: string;
+  fields?: Array<{ content: string }>;
 }

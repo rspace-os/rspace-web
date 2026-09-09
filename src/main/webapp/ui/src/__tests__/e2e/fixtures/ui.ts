@@ -19,6 +19,7 @@ import { SignupPage } from "../pageObjects/auth/SignupPage";
 import { DocumentEditorPage } from "../pageObjects/document/DocumentEditorPage";
 import { DocumentPage } from "../pageObjects/document/DocumentPage";
 import { GalleryPage } from "../pageObjects/gallery/GalleryPage";
+import { GroupViewPage } from "../pageObjects/groups/GroupViewPage";
 import { IdentifiersPage } from "../pageObjects/inventory/IdentifiersPage";
 import { InventoryImportPage } from "../pageObjects/inventory/InventoryImportPage";
 import { InventoryPage } from "../pageObjects/inventory/InventoryPage";
@@ -43,6 +44,7 @@ type UiFixtures = {
   pageDocument: DocumentPage;
   pageDocumentEditor: DocumentEditorPage;
   pageGallery: GalleryPage;
+  pageGroupView: GroupViewPage;
   pageInventory: InventoryPage;
   pageInventoryForUser: (user: AppUser) => Promise<InventoryPage>;
   pageInventoryImport: InventoryImportPage;
@@ -83,6 +85,7 @@ export const uiTest = base.extend<E2EOptions & UiFixtures>({
   pageDocument: pageFixture(DocumentPage),
   pageDocumentEditor: pageFixture(DocumentEditorPage),
   pageGallery: pageFixture(GalleryPage),
+  pageGroupView: pageFixture(GroupViewPage),
   pageInventory: pageFixture(InventoryPage),
   pageInventoryForUser: async ({ browser, browserContextOptions }, use) => {
     const contexts: BrowserContext[] = [];

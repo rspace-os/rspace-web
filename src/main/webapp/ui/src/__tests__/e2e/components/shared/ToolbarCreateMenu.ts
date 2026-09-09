@@ -31,7 +31,18 @@ export class ToolbarCreateMenu {
   }
 
   async createFromCustomForm(name: string): Promise<void> {
-    await this.select(name);
+    await this.createButton.click();
+    const menu = this.page.getByRole("menu").filter({ visible: true });
+    await expect(menu).toHaveCount(1);
+    const directItem = menu.getByRole("menuitem", { name, exact: true });
+    if (await directItem.isVisible().catch(() => false)) {
+      await directItem.click();
+      return;
+    }
+    await menu.getByRole("menuitem", { name: "From Form", exact: true }).click();
+    const dialog = this.page.getByRole("dialog", { name: "Choose a form" });
+    await dialog.waitFor({ state: "visible" });
+    await dialog.getByRole("link", { name, exact: true }).click();
   }
 
   private async select(name: string): Promise<void> {

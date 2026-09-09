@@ -30,6 +30,16 @@ export class TinyMceEditor {
     await this.body.fill(text);
   }
 
+  /** Types each line followed by Enter, producing one <p> per line (unlike fill(), which doesn't). */
+  async typeLines(lines: string[]): Promise<void> {
+    await this.waitForReady();
+    await this.body.click();
+    for (const line of lines) {
+      await this.body.pressSequentially(line);
+      await this.body.press("Enter");
+    }
+  }
+
   async getText(): Promise<string> {
     return this.body.innerText();
   }
@@ -40,6 +50,21 @@ export class TinyMceEditor {
 
   async clickToolbarButton(name: string): Promise<void> {
     await this.container.getByRole("button", { name }).click();
+  }
+
+  /**
+   * Saves this field's content. Only applies when editing a single field inline on an
+   * already-saved (view-mode) document — DocumentPage.editField() — where the Save
+   * button lives in this field's own toolbar, not the document-level Save dropdown.
+   */
+  async save(): Promise<void> {
+    const [response] = await Promise.all([
+      this.page.waitForResponse((res) => res.url().includes("/ajax/saveStructuredDocument")),
+      this.clickToolbarButton("Save"),
+    ]);
+    if (!response.ok()) {
+      throw new Error(`Saving field failed: ${response.status()} ${response.statusText()}`);
+    }
   }
 
   async openMenu(name: string): Promise<void> {
@@ -75,6 +100,15 @@ export class TinyMceEditor {
 
   get imageElement(): Locator {
     return this.frame.locator('img[src*="sourceType=IMAGE"]');
+  }
+
+  async countImages(): Promise<number> {
+    return this.imageElement.count();
+  }
+
+  async getImageSourceIds(): Promise<string[]> {
+    const srcs = await this.imageElement.evaluateAll((imgs) => imgs.map((img) => img.getAttribute("src") ?? ""));
+    return srcs.map((src) => new URL(src, "http://localhost").searchParams.get("sourceId") ?? "");
   }
 
   async selectImage(): Promise<ImageQuickToolbar> {

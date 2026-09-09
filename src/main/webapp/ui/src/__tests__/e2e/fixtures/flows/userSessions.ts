@@ -53,6 +53,16 @@ export async function loginInNewContext(
   return { page, close: () => ctx.close() };
 }
 
+/** Logs the named dynamic user into a fresh browser context and wires up their own WorkspacePage. */
+export async function loginAsWorkspaceUser(
+  browser: Browser,
+  browserContextOptions: BrowserContextOptions,
+  username: string,
+): Promise<{ page: Page; workspace: WorkspacePage; close: () => Promise<void> }> {
+  const { page, close } = await loginInNewContext(browser, browserContextOptions, username, DYNAMIC_USER_PASSWORD);
+  return { page, workspace: new WorkspacePage(page), close };
+}
+
 export const test = sysadminSessionTest.extend<UserSessionFixtures>({
   flowSelfServicePi: async ({ browser, browserContextOptions, clientSysadmin, flowSysadminConfig }, use) => {
     const closers: Array<() => Promise<void>> = [];
