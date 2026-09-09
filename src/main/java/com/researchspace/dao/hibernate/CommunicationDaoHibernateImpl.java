@@ -11,6 +11,7 @@ import com.researchspace.model.comms.*;
 import com.researchspace.model.dtos.MessageTypeFilter;
 import com.researchspace.model.dtos.NotificationStatus;
 import com.researchspace.model.record.BaseRecord;
+import com.researchspace.model.sort.CommunicationSort;
 import java.util.*;
 import org.hibernate.Session;
 import org.hibernate.query.Query;
@@ -414,18 +415,35 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
     return query.list();
   }
 
-  private String buildOrderBy(PaginationCriteria<?> pgCrit, String defaultAlias) {
-    if (pgCrit == null
-        || pgCrit.getOrderBy() == null
-        || !pgCrit.isOrderBySafe(pgCrit.getOrderBy())) {
+  /**
+   * Order clause for the queries above. The {@code mor} alias is the MessageOrRequest itself; the
+   * {@code ct} alias is a CommunicationTarget whose {@code communication} is the message.
+   */
+  private String buildOrderBy(PaginationCriteria<?> pgCrit, String alias) {
+    if (pgCrit == null) {
       return "";
     }
-    String orderBy = pgCrit.getOrderBy();
-    if (defaultAlias != null && orderBy.indexOf('.') == -1) {
-      orderBy = defaultAlias + "." + orderBy;
+    CommunicationSort sort = CommunicationSort.fromRequest(pgCrit.getOrderBy());
+    boolean viaTarget = COMMUNICATION_TARGET_ALIAS.equals(alias);
+    String messagePath = viaTarget ? alias + ".communication" : alias;
+    String path;
+    switch (sort) {
+      case SENDER:
+        path = "originator.username";
+        break;
+      case REQUESTED_COMPLETION_DATE:
+        path = messagePath + ".requestedCompletionDate";
+        break;
+      case LAST_STATUS_UPDATE:
+        path = viaTarget ? alias + ".lastStatusUpdate" : messagePath + ".creationTime";
+        break;
+      case CREATION_TIME:
+      default:
+        path = messagePath + ".creationTime";
+        break;
     }
     String direction = SortOrder.ASC.equals(pgCrit.getSortOrder()) ? "asc" : "desc";
-    return " order by " + orderBy + " " + direction;
+    return " order by " + path + " " + direction;
   }
 
   private List<Long> getPageFromIdList(List<Long> ids, PaginationCriteria<?> pgCrit) {

@@ -3,7 +3,6 @@ package com.researchspace.dao.hibernate;
 import com.axiope.search.SearchConstants;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SearchResultsImpl;
-import com.researchspace.core.util.SortOrder;
 import com.researchspace.dao.NameDateFilter;
 import com.researchspace.dao.RecordDao;
 import com.researchspace.model.PaginationCriteria;
@@ -12,6 +11,7 @@ import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.FormState;
 import com.researchspace.model.record.ObjectToIdPropertyTransformer;
 import com.researchspace.model.record.RSForm;
+import com.researchspace.model.sort.RecordSort;
 import java.util.*;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
@@ -150,19 +150,23 @@ public class NameDateFilterImpl implements NameDateFilter {
 
   private void addOrderBy(
       StringBuffer sbf, PaginationCriteria<BaseRecord> pgCrit, String fallbackOrderBy) {
-    String orderBy = null;
-    SortOrder so = null;
-    if (pgCrit != null && pgCrit.getOrderBy() != null) {
-      if (pgCrit.isOrderBySafe(pgCrit.getOrderBy())) {
-        orderBy = pgCrit.getOrderBy();
-        so = pgCrit.getSortOrder();
-        sbf.append(" order by " + orderBy + "  " + so);
-      } else {
-        log.warn("Ignoring unsafe orderBy value in name/date filter");
+    if (pgCrit == null) {
+      return;
+    }
+    RecordSort sort = RecordSort.fromRequest(pgCrit.getOrderBy());
+    switch (sort) {
+      case NAME:
+      case CREATION_DATE:
+      case CREATION_DATE_MILLIS:
+      case MODIFICATION_DATE:
+      case MODIFICATION_DATE_MILLIS:
+        // these queries select the sort columns under their own names
+        sbf.append(" order by " + sort.key() + "  " + pgCrit.getSortOrder());
+        break;
+      default:
         if (fallbackOrderBy != null) {
           sbf.append(" order by ").append(fallbackOrderBy).append(" ASC");
         }
-      }
     }
   }
 

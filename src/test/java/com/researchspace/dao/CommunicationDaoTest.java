@@ -107,7 +107,7 @@ public class CommunicationDaoTest extends BaseDaoTestCase {
     // sanity check
     assertThat(dao.getActiveRequestsAndMessagesForUser(sender, pgcrit).getResults()).hasSize(5);
     assertThat(dao.getActiveRequestsAndMessagesForUser(target, pgcrit).getResults()).hasSize(7);
-    pgcrit.setOrderBy("communication.creationTime");
+    pgcrit.setOrderBy("creationTime");
     pgcrit.setSortOrder(SortOrder.ASC);
     pgcrit.setGetAllResults();
     ISearchResults<MessageOrRequest> results =
@@ -145,7 +145,7 @@ public class CommunicationDaoTest extends BaseDaoTestCase {
         .hasSize(IPagination.DEFAULT_RESULTS_PERPAGE);
     assertThat(dao.getActiveRequestsAndMessagesForUser(target, pgcrit).getResults()).hasSize(7);
 
-    pgcrit.setOrderBy("communication.creationTime");
+    pgcrit.setOrderBy("creationTime");
     pgcrit.setSortOrder(SortOrder.ASC);
     ISearchResults<MessageOrRequest> results =
         dao.getAllSentAndReceivedSimpleMessagesForUser(sender, pgcrit);
@@ -198,7 +198,7 @@ public class CommunicationDaoTest extends BaseDaoTestCase {
     // Now listing new notifications. We are using the default pagination
     PaginationCriteria<CommunicationTarget> pgCrit =
         PaginationCriteria.createDefaultForClass(CommunicationTarget.class);
-    pgCrit.setOrderBy("communication.creationTime");
+    pgCrit.setOrderBy("creationTime");
     List<Notification> notifications = dao.getNewNotificationsForUser(target, pgCrit).getResults();
 
     Date lastNotificationDate =
@@ -319,21 +319,21 @@ public class CommunicationDaoTest extends BaseDaoTestCase {
   public void testSortOrderForSearches() throws InterruptedException {
     // Test for search test
     PaginationCriteria<CommunicationTarget> pc = getDefaultPgCrit();
-    pc.setOrderBy("originator.username");
+    pc.setOrderBy("sender");
 
     originator = createAndSaveUserIfNotExists("source");
     User target = createAndSaveUserIfNotExists("recipient");
     saveNNotifications(2, originator, target);
 
     assertEquals(2, dao.getNewNotificationsForUser(target, pc).getTotalHits().intValue());
-    pc.setOrderBy("communication.creationTime");
+    pc.setOrderBy("creationTime");
     assertEquals(2, dao.getNewNotificationsForUser(target, pc).getTotalHits().intValue());
     // Test ordering of active requests
     saveNMessages(3, originator, MessageType.REQUEST_RECORD_REVIEW, target);
     assertEquals(3, dao.getActiveRequestsAndMessagesForUser(target, pc).getTotalHits().intValue());
-    pc.setOrderBy("originator.username");
+    pc.setOrderBy("sender");
     assertEquals(3, dao.getActiveRequestsAndMessagesForUser(target, pc).getTotalHits().intValue());
-    pc.setOrderBy("communication.requestedCompletionDate");
+    pc.setOrderBy("requestedCompletionDate");
     assertEquals(3, dao.getActiveRequestsAndMessagesForUser(target, pc).getTotalHits().intValue());
 
     // Test ordering of sent messages
@@ -341,7 +341,7 @@ public class CommunicationDaoTest extends BaseDaoTestCase {
         PaginationCriteria.createDefaultForClass(MessageOrRequest.class);
     sentMsgesPC.setOrderBy("creationTime");
     assertEquals(3, dao.getSentRequests(originator, sentMsgesPC).getTotalHits().intValue());
-    sentMsgesPC.setOrderBy("originator.username");
+    sentMsgesPC.setOrderBy("sender");
     assertEquals(3, dao.getSentRequests(originator, sentMsgesPC).getTotalHits().intValue());
     sentMsgesPC.setOrderBy("requestedCompletionDate");
     assertEquals(3, dao.getSentRequests(originator, sentMsgesPC).getTotalHits().intValue());
@@ -400,7 +400,7 @@ public class CommunicationDaoTest extends BaseDaoTestCase {
         IPagination.DEFAULT_RESULTS_PERPAGE,
         dao.getNewNotificationsForUser(target, pc).getHits().intValue());
 
-    pc.setOrderBy("originator.username");
+    pc.setOrderBy("sender");
     assertEquals(
         IPagination.DEFAULT_RESULTS_PERPAGE,
         dao.getNewNotificationsForUser(target, pc).getHits().intValue());

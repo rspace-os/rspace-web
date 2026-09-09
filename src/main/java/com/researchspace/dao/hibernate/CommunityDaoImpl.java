@@ -9,9 +9,11 @@ import com.researchspace.dao.GenericDaoHibernate;
 import com.researchspace.model.Community;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
+import com.researchspace.model.sort.CommunitySort;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import java.lang.reflect.InvocationTargetException;
@@ -108,12 +110,18 @@ public class CommunityDaoImpl extends GenericDaoHibernate<Community, Long> imple
       CriteriaBuilder builder,
       Root<Community> root,
       CriteriaQuery<?> query) {
-    if (pgCrit.getOrderBy() != null && pgCrit.isOrderBySafe(pgCrit.getOrderBy())) {
-      if (SortOrder.ASC.equals(pgCrit.getSortOrder())) {
-        query.orderBy(builder.asc(root.get(pgCrit.getOrderBy())));
-      } else {
-        query.orderBy(builder.desc(root.get(pgCrit.getOrderBy())));
-      }
+    CommunitySort sort = CommunitySort.fromRequest(pgCrit.getOrderBy());
+    Path<?> path;
+    switch (sort) {
+      case DISPLAY_NAME:
+      default:
+        path = root.get("displayName");
+        break;
+    }
+    if (SortOrder.ASC.equals(pgCrit.getSortOrder())) {
+      query.orderBy(builder.asc(path));
+    } else {
+      query.orderBy(builder.desc(path));
     }
   }
 

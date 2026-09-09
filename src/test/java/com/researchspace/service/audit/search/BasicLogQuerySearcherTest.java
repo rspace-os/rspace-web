@@ -112,6 +112,9 @@ public class BasicLogQuerySearcherTest {
     searcher.setLogFilePrefix("RSLogs");
     AuditTrailSearchElement cfg = new AuditTrailSearchElement();
     cfg.addUsernameTerm("sysadmin1");
+    // chronological, matching the order in the log file
+    pgCrit.setOrderBy("date");
+    pgCrit.setSortOrder(SortOrder.ASC);
 
     ISearchResults<AuditTrailSearchResult> sysAdminresults = searcher.search(pgCrit, cfg);
     assertThat(sysAdminresults.getResults()).hasSize(2);

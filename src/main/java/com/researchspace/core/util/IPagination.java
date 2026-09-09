@@ -1,7 +1,5 @@
 package com.researchspace.core.util;
 
-import java.util.regex.Pattern;
-
 /**
  * @param <T> type parameter for the object being sorted on; is used for dynamically accessing
  *     fields of the class to order by
@@ -9,13 +7,6 @@ import java.util.regex.Pattern;
 public interface IPagination<T> {
 
   int DEFAULT_RESULTS_PERPAGE = 10;
-
-  /**
-   * Matches bare or dot-separated identifier paths, excluding SQL expressions, so an orderby clause
-   * cannot alter the generated query.
-   */
-  Pattern SAFE_ORDER_BY_TOKEN =
-      Pattern.compile("[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*");
 
   Class<T> getClazz();
 
@@ -66,31 +57,20 @@ public interface IPagination<T> {
   IPagination<T> setGetAllResults();
 
   /**
-   * Gets the name of the property to order the results by. CLients should validate that this is a
-   * meaningful term. <br>
-   * Can be <code>null</code>
+   * Gets the sort key requested for the listing, as sent by the client. It is not validated here:
+   * each listing resolves it with its {@code com.researchspace.model.sort} enum's {@code
+   * fromRequest} method, which rejects unknown keys. Can be <code>null</code>.
    *
-   * @return an order by string, or <code>null</code>
+   * @return the requested sort key, or <code>null</code>
    */
   String getOrderBy();
 
   /**
-   * Must be a JavaBean property in the listed objects (e.g., for a property xxx, there must be a
-   * getXxx() method.
-   *
-   * <p>If <Code>orderByField</code> is <code>null</code>, this method does nothing. Can be a .
-   * notation of properties
+   * Sets the requested sort key. Blank values are ignored.
    *
    * @param orderByField
    */
   void setOrderBy(String orderByField);
-
-  /**
-   * setOrderBy method that allows setting value to null
-   *
-   * @param orderByField
-   */
-  void setOrderByWithoutChecks(String orderByField);
 
   /**
    * Getter for whether this sort order should be ascending or descending
@@ -115,12 +95,4 @@ public interface IPagination<T> {
    * @return
    */
   int getFirstResultIndex();
-
-  /**
-   * Reject blacklisted orderBy fields
-   *
-   * @param orderBy - can be <code>null</code> or empty.
-   * @return <code>true</code> if <code>orderBy</code> is safe to use, <code>false</code> otherwise
-   */
-  boolean isOrderBySafe(String orderBy);
 }
