@@ -6,6 +6,11 @@ import type { UseState } from "../../util/types";
 /**
  * This constant ensures that we don't end up with clashing keys
  */
+/*
+ * The keys of the UI_JSON_SETTINGS object. The backend accepts only these names on a keyed
+ * preference write (UI_JSON_SETTINGS_KEYS in UserManagerImpl), so adding a preference here means
+ * adding it there too; without that, writes of the new key are refused with a 400.
+ */
 export const PREFERENCES: { [pref: string]: symbol } = {
   GALLERY_VIEW_MODE: Symbol.for("GALLERY_VIEW_MODE"),
   GALLERY_SORT_BY: Symbol.for("GALLERY_SORT_BY"),
