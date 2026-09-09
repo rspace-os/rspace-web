@@ -107,7 +107,8 @@ correct. The remedy is to reload, not to fix a field. Resolving "all"
 server-side was rejected: a Perform must never do something other than what the
 user saw, and reading the live quantity at Perform time would silently empty an
 origin someone else had just topped up. This replaces the old 400
-`mustEmptyOrigin`, whose bundle key is retired; the structural half of that rule
+`mustEmptyOrigin` for a DECLARED whole-origin claim only: that key is still raised when the
+mode is absent, because an absent mode earns no compare-and-swap. The structural half of that rule
 (an origin-emptying operation may not declare `amountMode: "explicit"`) moved to
 the request validator and is still a 400. The comparison is numeric after unit
 conversion, so 0.01 l and 10 ml are both "all" of a 10 ml origin. The field is
@@ -138,13 +139,31 @@ it, as one walk of the payload emitting a field-scoped error per captured name,
 so no other endpoint's behaviour changes and every unknown property is reported
 together with the request's other errors in the one 400.
 
-Two consequences worth knowing. Jackson routes a property that is declared but
+The capture is declared on the five DTOs the payload contains, NOT on their
+shared base class. A single `@JsonAnySetter` on `IdentifiableNameableApiObject`
+looked tidier and was wrong twice over: Jackson stops registering a class's
+ignorable property names once it has an any-setter, and it deserializes the
+any-setter's value before the method can discard it. Both effects would have
+applied to every API DTO beneath that base for a feature scoped to one endpoint,
+turning a body of junk keys into heap amplification API-wide and quietly killing
+the guard that stops `USE_GETTERS_AS_SETTERS` making a read-only collection
+writable. The value parameter is `Void` for the same reason: that routes Jackson
+to `NullifyingDeserializer`, which skips the subtree as unknown-property
+handling did before.
+
+Reporting is bounded twice over. Per object, because each captured name becomes
+a field error; and per request, because nothing bounds the number of OBJECTS a
+caller sends and the walk deliberately runs before the list ceilings so a typo is
+reported even in a structurally broken request. Past the request ceiling the
+response says how many went unlisted rather than truncating silently, and each
+echoed name is abbreviated, since a property name is bounded only by Jackson's
+50,000-character limit.
+
+One consequence worth knowing: Jackson routes a property that is declared but
 `@JsonIgnore`d to the any-setter exactly as it routes an invented one, so those
-are reported as unknown; that is acceptable because a `@JsonIgnore` property is
-absent from every response too, so no client echoing a GET can send one. And the
-capture is capped per object, because each captured name becomes a field error
-and an uncapped list would let a body of junk keys amplify into an unbounded
-response.
+are reported as unknown. That is acceptable because a `@JsonIgnore` property is
+absent from every response too, so no client echoing a GET can send one, and a
+round-tripped response body is pinned by test to capture nothing.
 
 Rejected: enabling `FAIL_ON_UNKNOWN_PROPERTIES` globally, which breaks clients of
 every endpoint that promised nothing; a rejecting `@JsonAnySetter`, which is safe

@@ -27,7 +27,7 @@ export type ExtraFieldAttrs = {
    * The Inventory operation definition key that generated this field, when one did. Read-only from
    * the client's point of view: it is persisted and returned by the API, but only the operations
    * endpoint may set it, and `paramsForBackend` deliberately omits it so an ordinary save never
-   * echoes it back (every other endpoint rejects a non-null value with a 400).
+   * echoes it back (every other endpoint ignores an incoming value rather than rejecting it).
    *
    * Its purpose is identity: a generated field's NAME is a localized resolution of this key, so a
    * later run of the same operation has to match on the key to recognise the previous generation
