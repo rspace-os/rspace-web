@@ -92,11 +92,21 @@ export function initialTemplateSelection(parentHasTemplate: boolean): TemplateSe
 
 /**
  * Whether the template step is complete enough to advance: the user has made a choice (not the
- * initial "unselected" state), and a picked template has finished validating (its id is set).
+ * initial "unselected" state), and any specific template has finished validating (its id is set).
+ *
+ * "fromSample" is held to the SAME rule as "pick", which it previously escaped. Both end up creating
+ * a sample against a concrete template, so both must clear the mandatory-without-default check
+ * (templateSelectionBlock) before the step can advance. A mandatory template field with no default is
+ * normal on the parent - its value was supplied on the parent sample itself - so the parent's own
+ * template is exactly as likely to be unusable as a picked one, and "fromSample" is the PRESELECTED
+ * default whenever the parent has a template. Letting it through unchecked meant the same template
+ * was blocked up front via "pick" and rejected at the last click via "fromSample" (F5).
+ *
+ * The id is therefore written only by a PASSING check, which is what makes its presence the signal.
  */
 export function templateStepValid(selection: { mode: TemplateMode; templateId: number | null }): boolean {
   if (selection.mode === "unselected") return false;
-  if (selection.mode === "pick") return selection.templateId !== null;
+  if (selection.mode === "pick" || selection.mode === "fromSample") return selection.templateId !== null;
   return true;
 }
 

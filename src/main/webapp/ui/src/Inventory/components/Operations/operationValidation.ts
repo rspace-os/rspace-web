@@ -1,6 +1,8 @@
-import { toCommonUnit } from "@/stores/definitions/Units";
+import { categoryOfUnit, toCommonUnit } from "@/stores/definitions/Units";
+import type { UnitCategory } from "@/stores/stores/UnitStore";
 import type { InventoryOperation, OperationInputConfig } from "./operationsConfig";
-import type { OperationInputs, OperationQuantity } from "./types";
+import type { OperationInputs, OperationQuantity, PerSubsampleAmounts } from "./types";
+import { UNSET_UNIT } from "./types";
 
 /**
  * Most subsamples one operation may create: mirrors the server's cap on an explicit subSamples list
@@ -61,10 +63,7 @@ export function temperatureBelowMin(input: OperationInputConfig, value: Operatio
  * @ValidTemperature / the storability check (Copilot review, PR #1090). Pure and shared by
  * detailsValid (gating) and the field's inline error.
  */
-export function temperatureNotStorable(
-  input: OperationInputConfig,
-  value: OperationQuantity | undefined,
-): boolean {
+export function temperatureNotStorable(input: OperationInputConfig, value: OperationQuantity | undefined): boolean {
   if (input.type !== "temperature") return false;
   if (!value || !Number.isFinite(value.numericValue)) return false;
   return value.numericValue < -273.15 || !amountIsStorable(value.numericValue);
@@ -150,6 +149,108 @@ export function quantityExceedsOrigin(
   originQuantity: OperationQuantity | null,
 ): boolean {
   if (!taken || !Number.isFinite(taken.numericValue) || taken.unitId <= 0) return false;
+  // Cross-category input is answered explicitly rather than by accident. Each side converts to the
+  // atomic unit of its OWN category, so a millilitre amount against a gram origin would compare
+  // picolitres with picograms and report a meaningless larger-or-smaller. "Not exceeding" is the
+  // right answer here because it is not an over-removal: it is a category mismatch, which
+  // reconcileRestoredQuantities repairs and the endpoint rejects outright.
+  const takenCategory = categoryOfUnit(taken.unitId);
+  if (originQuantity && takenCategory !== categoryOfUnit(originQuantity.unitId)) return false;
+  if (takenCategory === null) return false;
   const originCommon = originQuantity ? toCommonUnit(originQuantity.numericValue, originQuantity.unitId) : 0;
   return toCommonUnit(taken.numericValue, taken.unitId) > originCommon;
+}
+
+/**
+ * Repairs a restored "remember this process" bundle whose saved units belong to a different
+ * measurement category than the run it is being reused on.
+ *
+ * A bundle is keyed by operation plus process name only (`rememberKey`), so the same saved bundle is
+ * offered on any origin. Nothing downstream catches the mismatch: `detailsValid` only asks that a
+ * unit is set, and `quantityExceedsOrigin` compares each side inside its own category. So a bundle
+ * remembered on a volume origin, reused on a mass origin, made `allStepsValid()` true and offered
+ * one-click Perform on a request the endpoint is certain to reject (amountTakenCategoryMismatch).
+ *
+ * Each restored quantity is reset only if its own category is wrong, so the template, documentation,
+ * text inputs and every compatible amount survive. The STORED bundle is untouched: reusing it later
+ * on a matching origin must still get the full one-click path.
+ */
+export function reconcileRestoredQuantities({
+  values,
+  perSubsampleAmounts,
+  amountTakenFrom,
+  eachAmountFrom,
+  originUnitId,
+  createdCategory,
+  perOriginUnitIds,
+}: {
+  values: OperationInputs;
+  perSubsampleAmounts: PerSubsampleAmounts;
+  amountTakenFrom?: string | null;
+  eachAmountFrom?: string | null;
+  /** The unit the amount taken must be measured in: the representative origin's own. */
+  originUnitId: number;
+  /**
+   * The category the CREATED amount must be in: the restored template's when a template came back
+   * with the bundle, else the origin's. Absent leaves the created amount alone.
+   */
+  createdCategory: UnitCategory | null | undefined;
+  /** Each origin's own unit, by global id, for per-origin amounts. */
+  perOriginUnitIds: Record<string, number>;
+}): { values: OperationInputs; perSubsampleAmounts: PerSubsampleAmounts } {
+  const originCategory = categoryOfUnit(originUnitId);
+  const wrongCategory = (quantity: unknown, expected: UnitCategory | null | undefined): boolean => {
+    // No expected category means we cannot tell, and an unknown category is never grounds for
+    // discarding what the user saved: a missing origin unit would otherwise reset every amount.
+    if (!expected) return false;
+    const unitId = (quantity as OperationQuantity | undefined)?.unitId;
+    if (typeof unitId !== "number" || unitId <= 0) return false;
+    // BOTH sides must be known before they can differ. categoryOfUnit only knows volume, mass and
+    // dimensionless ids, while the expected category comes from a server-supplied unit list that
+    // also has temperature, molarity and concentration - so "actual !== expected" reported a
+    // mismatch for every unit this module does not enumerate, wiping a perfectly good saved amount
+    // on, say, a molarity template every single time (parallel review, I9). An unrecognised unit is
+    // left alone instead: unknown is not the same as wrong.
+    const actual = categoryOfUnit(unitId);
+    return actual !== null && actual !== expected;
+  };
+
+  let reconciled = values;
+  if (amountTakenFrom && wrongCategory(values[amountTakenFrom], originCategory)) {
+    // Unit CLEARED, not defaulted to the origin's. Defaulting produced a valid amount, so nothing
+    // downstream blocked and the one-click fast path stayed armed on a number the user never chose:
+    // a bundle remembering 50 mL, reused on a gram origin, silently removed 1 g (parallel review,
+    // C4). An unset unit makes detailsValid false, so the wizard walks the amounts step and the
+    // user chooses the amount in the right category - the same treatment the created amount below
+    // already gets.
+    const taken = values[amountTakenFrom] as OperationQuantity | undefined;
+    reconciled = {
+      ...reconciled,
+      [amountTakenFrom]: { numericValue: taken?.numericValue ?? 1, unitId: UNSET_UNIT },
+    };
+  }
+  if (eachAmountFrom && wrongCategory(values[eachAmountFrom], createdCategory)) {
+    // Unit cleared rather than defaulted, mirroring the cross-category template pick
+    // (onTemplateSelectionChange): an unset unit blocks the fast path so the user walks the amounts
+    // step, which offers the right category's units.
+    const each = values[eachAmountFrom] as OperationQuantity | undefined;
+    reconciled = {
+      ...reconciled,
+      [eachAmountFrom]: { numericValue: each?.numericValue ?? 1, unitId: UNSET_UNIT },
+    };
+  }
+
+  const reconciledPerOrigin: PerSubsampleAmounts = {};
+  for (const [globalId, amount] of Object.entries(perSubsampleAmounts)) {
+    const unitId = perOriginUnitIds[globalId];
+    // An amount for an origin this run does not include is left as it is: it belongs to the stored
+    // bundle, not to this request, and dropping it here would silently edit the saved bundle.
+    const expected = typeof unitId === "number" ? categoryOfUnit(unitId) : null;
+    // Cleared rather than defaulted, for the same reason as amountTaken above.
+    reconciledPerOrigin[globalId] = wrongCategory(amount, expected)
+      ? { numericValue: amount?.numericValue ?? 1, unitId: UNSET_UNIT }
+      : amount;
+  }
+
+  return { values: reconciled, perSubsampleAmounts: reconciledPerOrigin };
 }

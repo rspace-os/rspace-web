@@ -75,6 +75,11 @@ export type OperationNewSample = {
 
 export type OperationOriginUpdate = {
   id: number;
+  /** How `amountTaken` was decided, which is what lets the backend compare-and-swap it. "all" means
+   * the amount IS the origin's whole quantity as this client read it, so the backend rejects the
+   * request with 409 if the live quantity has since changed rather than emptying an origin the user
+   * never saw. "explicit" amounts are user-entered and carry no such claim. */
+  amountMode: "explicit" | "all";
   amountTaken: OperationQuantity;
   /** Custom fields to add to the origin subsample itself (e.g. Destroy's disposed date). Omitted when
    * the operation adds none, so an ordinary decrement-only origin update is unchanged. */
