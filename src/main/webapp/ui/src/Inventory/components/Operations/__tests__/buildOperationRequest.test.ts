@@ -60,7 +60,9 @@ describe("buildOperationRequest (Derive)", () => {
   });
 
   it("sets the origin to its absolute after-quantity", () => {
-    expect(request.origins).toEqual([{ id: 100, amountTaken: { numericValue: 0.6, unitId: 3 } }]);
+    expect(request.origins).toEqual([
+      { id: 100, amountMode: "explicit", amountTaken: { numericValue: 0.6, unitId: 3 } },
+    ]);
   });
 
   it("refuses to build a request for a fractional or excessive child count", () => {
@@ -222,7 +224,7 @@ describe("buildOperationRequest (operation that does not decrement the origin)",
   });
 
   it("sends the origin with a zero amount taken (not an empty origins array)", () => {
-    expect(request.origins).toEqual([{ id: 100, amountTaken: { numericValue: 0, unitId: 3 } }]);
+    expect(request.origins).toEqual([{ id: 100, amountMode: "explicit", amountTaken: { numericValue: 0, unitId: 3 } }]);
   });
 });
 
@@ -263,9 +265,9 @@ describe("buildOperationRequest (Pool - multi-origin)", () => {
 
   it("reduces every origin by the same shared amount taken", () => {
     expect(request.origins).toEqual([
-      { id: 1, amountTaken: { numericValue: 1, unitId: 3 } },
-      { id: 2, amountTaken: { numericValue: 1, unitId: 3 } },
-      { id: 3, amountTaken: { numericValue: 1, unitId: 3 } },
+      { id: 1, amountMode: "explicit", amountTaken: { numericValue: 1, unitId: 3 } },
+      { id: 2, amountMode: "explicit", amountTaken: { numericValue: 1, unitId: 3 } },
+      { id: 3, amountMode: "explicit", amountTaken: { numericValue: 1, unitId: 3 } },
     ]);
   });
 
@@ -377,6 +379,7 @@ describe("buildOperationRequest (Destroy - terminal, no output)", () => {
     expect(request.origins).toEqual([
       {
         id: 100,
+        amountMode: "all",
         amountTaken: { numericValue: 2, unitId: 3 },
         extraFields: [
           {
@@ -432,10 +435,37 @@ describe("buildOperationRequest (amount modes, multi-origin)", () => {
       amountMode: "all",
     });
     expect(request.origins).toEqual([
-      { id: 1, amountTaken: { numericValue: 5, unitId: 3 } },
-      { id: 2, amountTaken: { numericValue: 8, unitId: 3 } },
-      { id: 3, amountTaken: { numericValue: 4, unitId: 3 } },
+      { id: 1, amountMode: "all", amountTaken: { numericValue: 5, unitId: 3 } },
+      { id: 2, amountMode: "all", amountTaken: { numericValue: 8, unitId: 3 } },
+      { id: 3, amountMode: "all", amountTaken: { numericValue: 4, unitId: 3 } },
     ]);
+  });
+
+  it("marks 'take all' origins as a whole-origin claim so the backend can compare-and-swap them", () => {
+    // amountTaken alone cannot tell the backend whether 5 was typed by the user or read off the
+    // origin. Only the second case may be rejected as stale, so the mode has to travel with it.
+    const request = buildOperationRequest({
+      operation: poolOp,
+      values,
+      origins,
+      resolveLabel,
+      templateId: null,
+      amountMode: "all",
+    });
+    expect(request.origins.map((o) => o.amountMode)).toEqual(["all", "all", "all"]);
+  });
+
+  it("marks 'per subsample' origins explicit: those amounts are user-entered, not snapshots", () => {
+    const request = buildOperationRequest({
+      operation: poolOp,
+      values,
+      origins,
+      resolveLabel,
+      templateId: null,
+      amountMode: "perSubsample",
+      perSubsampleAmounts: { SS1: { numericValue: 2, unitId: 3 } },
+    });
+    expect(request.origins.map((o) => o.amountMode)).toEqual(["explicit", "explicit", "explicit"]);
   });
 
   it("'per subsample' takes each origin's chosen amount, defaulting a missing one to zero", () => {
@@ -449,10 +479,10 @@ describe("buildOperationRequest (amount modes, multi-origin)", () => {
       perSubsampleAmounts: { SS1: { numericValue: 2, unitId: 3 }, SS2: { numericValue: 4, unitId: 3 } },
     });
     expect(request.origins).toEqual([
-      { id: 1, amountTaken: { numericValue: 2, unitId: 3 } },
-      { id: 2, amountTaken: { numericValue: 4, unitId: 3 } },
+      { id: 1, amountMode: "explicit", amountTaken: { numericValue: 2, unitId: 3 } },
+      { id: 2, amountMode: "explicit", amountTaken: { numericValue: 4, unitId: 3 } },
       // SS3 has no chosen amount, so it takes a zero (no-op) decrement in its own unit.
-      { id: 3, amountTaken: { numericValue: 0, unitId: 3 } },
+      { id: 3, amountMode: "explicit", amountTaken: { numericValue: 0, unitId: 3 } },
     ]);
   });
 
@@ -466,9 +496,9 @@ describe("buildOperationRequest (amount modes, multi-origin)", () => {
       amountMode: "same",
     });
     expect(request.origins).toEqual([
-      { id: 1, amountTaken: { numericValue: 1, unitId: 3 } },
-      { id: 2, amountTaken: { numericValue: 1, unitId: 3 } },
-      { id: 3, amountTaken: { numericValue: 1, unitId: 3 } },
+      { id: 1, amountMode: "explicit", amountTaken: { numericValue: 1, unitId: 3 } },
+      { id: 2, amountMode: "explicit", amountTaken: { numericValue: 1, unitId: 3 } },
+      { id: 3, amountMode: "explicit", amountTaken: { numericValue: 1, unitId: 3 } },
     ]);
   });
 });

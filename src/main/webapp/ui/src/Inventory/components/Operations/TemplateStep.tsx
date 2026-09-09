@@ -40,6 +40,8 @@ function TemplateStep({
   onChange,
   originSampleName,
   parentHasTemplate = true,
+  parentTemplateChecking = false,
+  parentTemplateError = null,
 }: {
   value: TemplateSelection;
   onChange: (value: TemplateSelection) => void;
@@ -47,6 +49,16 @@ function TemplateStep({
   /** Whether the origin's parent sample has its own template. When it does not, the "use parent
    *  template" option is disabled with a hint: the wizard never creates a template (DevDocs/adr/0007). */
   parentHasTemplate?: boolean;
+  /**
+   * Status of the "use parent template" check, which the WIZARD runs, not this step (F5).
+   *
+   * It has to live there: the wizard renders only the active step, so a check owned by this
+   * component never ran while the user was on step one - which is exactly where the one-click fast
+   * path is offered, and it stayed permanently disabled (parallel review, C2). This step only
+   * displays the outcome.
+   */
+  parentTemplateChecking?: boolean;
+  parentTemplateError?: string | null;
 }): React.ReactNode {
   const { t, i18n } = useTranslation("inventory");
   const [checking, setChecking] = React.useState(false);
@@ -67,6 +79,52 @@ function TemplateStep({
     [],
   );
 
+  /**
+   * Runs the mandatory-without-default check against a template and applies the outcome. Shared by
+   * both paths that end in a concrete template, so "use parent template" cannot drift away from the
+   * rules a picked template is held to. `token` identifies the request in `latestPickRef`, so a
+   * superseded lookup (the user switched mode or picked again mid-fetch) is discarded rather than
+   * writing over the newer selection.
+   */
+  const applyTemplateCheck = async (
+    token: string,
+    load: () => Promise<TemplateModel>,
+    describe: (template: TemplateModel) => Partial<TemplateSelection>,
+  ) => {
+    try {
+      const template = await load();
+      if (latestPickRef.current !== token) return;
+      const fields = template.fields.map((f) => ({
+        name: f.name,
+        mandatory: f.mandatory,
+        hasDefault:
+          (f.selectedOptions?.length ?? 0) > 0 ||
+          (f.content !== null && f.content !== undefined && String(f.content).trim() !== ""),
+      }));
+      const { blocked, missingFields } = templateSelectionBlock(fields);
+      if (blocked) {
+        setBlockError(
+          t("operations.template.mandatoryFieldsError", { fields: formatList(missingFields, i18n.language) }),
+        );
+        return;
+      }
+      // Only a PASSING check writes an id, which is what makes templateStepValid's id test the
+      // signal that this step is done. The category comes along so the amounts step offers the
+      // template's units in both modes rather than only after a pick.
+      onChange({ ...value, ...describe(template) });
+    } catch {
+      // The lookup failed (offline, permission change, template deleted): without this the rejection
+      // escaped the detached task unhandled and the user saw only the spinner stop, with no reason
+      // and no way to tell a failed check from a passed one (Copilot review, PR #1090). Leave the
+      // selection cleared so Next stays blocked, and say why.
+      if (latestPickRef.current !== token) return;
+      setBlockError(t("operations.template.lookupFailed"));
+    } finally {
+      // Only the latest request clears the spinner; a superseded lookup leaves it to the newer one.
+      if (latestPickRef.current === token) setChecking(false);
+    }
+  };
+
   const setMode = (mode: TemplateSelection["mode"]) => {
     setBlockError(null);
     // Switching mode abandons any in-flight template lookup: invalidate it (so a late result can't
@@ -79,7 +137,8 @@ function TemplateStep({
       templateId: mode === "pick" ? value.templateId : null,
       templateName: mode === "pick" ? value.templateName : undefined,
       // A non-"pick" mode carries no specific template, so drop any category: the amounts step then
-      // falls back to the origin subsample's category.
+      // falls back to the origin subsample's category. "fromSample" then sets its own below, once
+      // the parent's template has passed the check.
       quantityCategory: mode === "pick" ? value.quantityCategory : undefined,
     });
   };
@@ -100,45 +159,19 @@ function TemplateStep({
     setBlockError(null);
     setChecking(true);
     onChange({ ...value, templateId: null, templateName: template.name });
-    void (async () => {
-      try {
+    void applyTemplateCheck(
+      pickId,
+      async () => {
+        // The picker's search results are partial, so the fields the check reads are fetched here.
         await template.fetchAdditionalInfo();
-        // A newer pick has superseded this one: drop this stale result without touching state.
-        if (latestPickRef.current !== pickId) return;
-        const fields = template.fields.map((f) => ({
-          name: f.name,
-          mandatory: f.mandatory,
-          hasDefault:
-            (f.selectedOptions?.length ?? 0) > 0 ||
-            (f.content !== null && f.content !== undefined && String(f.content).trim() !== ""),
-        }));
-        const { blocked, missingFields } = templateSelectionBlock(fields);
-        if (blocked) {
-          setBlockError(
-            t("operations.template.mandatoryFieldsError", { fields: formatList(missingFields, i18n.language) }),
-          );
-        } else {
-          // Capture the template's quantity category so the amounts step offers this template's units
-          // (mass/volume/...) rather than the origin subsample's.
-          onChange({
-            ...value,
-            templateId: Number(template.id),
-            templateName: template.name,
-            quantityCategory: template.quantityCategory,
-          });
-        }
-      } catch {
-        // The lookup failed (offline, permission change, template deleted): without this the
-        // rejection escaped the detached task unhandled and the user saw only the spinner stop,
-        // with no reason and no way to tell a failed check from a passed one (Copilot review,
-        // PR #1090). Leave the selection cleared so Next stays blocked, and say why.
-        if (latestPickRef.current !== pickId) return;
-        setBlockError(t("operations.template.lookupFailed"));
-      } finally {
-        // Only the latest pick clears the spinner; a superseded lookup leaves it to the newer one.
-        if (latestPickRef.current === pickId) setChecking(false);
-      }
-    })();
+        return template;
+      },
+      () => ({
+        templateId: Number(template.id),
+        templateName: template.name,
+        quantityCategory: template.quantityCategory,
+      }),
+    );
   };
 
   // Hand the picker a referentially stable callback (latest impl via ref), so re-renders of this
@@ -180,19 +213,25 @@ function TemplateStep({
         </Typography>
       ) : null}
       {value.mode === "pick" ? (
-        <>
-          <WizardTemplatePicker
-            setTemplate={handlePickTemplate}
-            selectedTemplateId={value.templateId}
-            selectedTemplateName={value.templateName}
-          />
-          {checking ? <Typography variant="body2">{t("operations.template.checking")}</Typography> : null}
-          {blockError ? (
-            <Typography variant="body2" color="error">
-              {blockError}
-            </Typography>
-          ) : null}
-        </>
+        <WizardTemplatePicker
+          setTemplate={handlePickTemplate}
+          selectedTemplateId={value.templateId}
+          selectedTemplateName={value.templateName}
+        />
+      ) : null}
+      {/* Outside the "pick" branch: "use parent template" is checked too, so it needs the same
+          spinner and the same reason when it blocks, or its failure is silent again. role="status"
+          and role="alert" because both now appear with no user action at all, on the preselected
+          mode, and a screen-reader user would otherwise get no indication why Next is disabled. */}
+      {checking || parentTemplateChecking ? (
+        <Typography variant="body2" role="status">
+          {t("operations.template.checking")}
+        </Typography>
+      ) : null}
+      {(blockError ?? parentTemplateError) ? (
+        <Typography variant="body2" color="error" role="alert">
+          {blockError ?? parentTemplateError}
+        </Typography>
       ) : null}
     </Stack>
   );

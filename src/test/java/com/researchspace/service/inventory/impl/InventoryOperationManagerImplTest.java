@@ -21,6 +21,7 @@ import static org.mockito.Mockito.when;
 
 import com.researchspace.api.v1.model.ApiExtraField;
 import com.researchspace.api.v1.model.ApiExtraField.ExtraFieldTypeEnum;
+import com.researchspace.api.v1.model.ApiInventoryOperationAmountMode;
 import com.researchspace.api.v1.model.ApiInventoryOperationOriginUpdate;
 import com.researchspace.api.v1.model.ApiInventoryOperationPost;
 import com.researchspace.api.v1.model.ApiQuantityInfo;
@@ -31,6 +32,7 @@ import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.model.units.RSUnitDef;
+import com.researchspace.service.inventory.InventoryEditConflictException;
 import com.researchspace.service.inventory.InventoryOperationConfigRegistry;
 import com.researchspace.service.inventory.InventoryOperationManager;
 import java.math.BigDecimal;
@@ -59,6 +61,13 @@ class InventoryOperationManagerImplTest {
     ApiInventoryOperationOriginUpdate origin = new ApiInventoryOperationOriginUpdate();
     origin.setId(id);
     origin.setAmountTaken(amountTaken);
+    return origin;
+  }
+
+  /** An origin whose amount is a claim on the origin's whole quantity ("take all"). */
+  private static ApiInventoryOperationOriginUpdate takeAll(Long id, ApiQuantityInfo amountTaken) {
+    ApiInventoryOperationOriginUpdate origin = origin(id, amountTaken);
+    origin.setAmountMode(ApiInventoryOperationAmountMode.ALL);
     return origin;
   }
 
@@ -330,10 +339,15 @@ class InventoryOperationManagerImplTest {
   private BindException performExpectingRejection(ApiInventoryOperationPost request) {
     BindException rejection =
         assertThrows(BindException.class, () -> manager.performOperation(request, user, NONE));
+    verifyNoMutation();
+    return rejection;
+  }
+
+  /** Nothing was written: every rejection must land before the first mutating collaborator call. */
+  private void verifyNoMutation() {
     verify(subSampleApiMgr, never()).registerApiSubSampleUsage(any(), any(), any());
     verify(subSampleApiMgr, never()).updateApiSubSample(any(), any());
     verify(sampleApiMgr, never()).createNewApiSample(any(), any());
-    return rejection;
   }
 
   @Test
@@ -390,16 +404,161 @@ class InventoryOperationManagerImplTest {
   }
 
   @Test
-  void rejectsOriginEmptyingOperationThatTakesLessThanTheOriginHolds() {
+  void rejectsADeclaredAllDestroyWhoseAmountNoLongerMatchesTheOrigin() {
+    // Destroy declaring "all" is claiming what the origin held when the wizard read it, so a live
+    // quantity that no longer matches means someone changed it in between. That is a 409 to reload
+    // from rather than a 400 to correct: the user typed no amount, so there is no field to fix
+    // (RSDEV-1231). Contrast rejectsAnAbsentAmountModeOnAnEmptyingOperationAsA400NotAConflict,
+    // where the client made no such claim.
     ApiInventoryOperationPost request = new ApiInventoryOperationPost();
     request.setOperationType("destroy");
-    request.setOrigins(List.of(origin(100L, new ApiQuantityInfo(new BigDecimal("3"), 3))));
+    request.setOrigins(List.of(takeAll(100L, new ApiQuantityInfo(new BigDecimal("3"), 3))));
+    originHolds(100L, subSampleHolding("5", 3));
+
+    assertEquals(
+        "errors.inventory.operation.amountTakenStale",
+        assertThrows(
+                InventoryEditConflictException.class,
+                () -> manager.performOperation(request, user, NONE))
+            .getMessageKey());
+    verifyNoMutation();
+  }
+
+  @Test
+  void rejectsTakeAllWhoseAmountNoLongerMatchesTheOrigin() {
+    // The wizard's "take all" serializes the quantity it saw. A concurrent top-up between load and
+    // Perform must not be silently swept into the operation.
+    ApiInventoryOperationPost request = new ApiInventoryOperationPost();
+    request.setOperationType("derive");
+    request.setOrigins(List.of(takeAll(100L, new ApiQuantityInfo(new BigDecimal("5"), 3))));
+    request.setNewSample(new ApiSampleWithFullSubSamples("Derived material"));
+    SubSample entity = subSampleWithParent(900L);
+    when(subSampleApiMgr.assertUserCanEditSubSample(100L, user)).thenReturn(entity);
+    when(subSampleApiMgr.lockSubSampleForEdit(100L, user)).thenReturn(entity);
+    // a concurrent writer topped the origin up from 5 to 8 after the wizard read it
+    when(subSampleApiMgr.getQuantityForUpdate(100L))
+        .thenReturn(new QuantityInfo(new BigDecimal("8"), 3));
+
+    assertEquals(
+        "errors.inventory.operation.amountTakenStale",
+        assertThrows(
+                InventoryEditConflictException.class,
+                () -> manager.performOperation(request, user, NONE))
+            .getMessageKey());
+    verifyNoMutation();
+  }
+
+  @Test
+  void acceptsTakeAllWhoseAmountStillMatchesTheOrigin() throws Exception {
+    ApiInventoryOperationPost request = new ApiInventoryOperationPost();
+    request.setOperationType("derive");
+    request.setOrigins(List.of(takeAll(100L, new ApiQuantityInfo(new BigDecimal("5"), 3))));
+    ApiSampleWithFullSubSamples newSample = new ApiSampleWithFullSubSamples("Derived material");
+    request.setNewSample(newSample);
+    originHolds(100L, subSampleHolding("5", 3));
+    when(sampleApiMgr.createNewApiSample(newSample, user))
+        .thenReturn(new ApiSampleWithFullSubSamples("Derived material"));
+
+    assertDoesNotThrow(() -> manager.performOperation(request, user, NONE));
+    verify(subSampleApiMgr).registerApiSubSampleUsage(eq(100L), any(), eq(user));
+  }
+
+  @Test
+  void acceptsTakeAllSubmittedInADifferentUnitOfTheSameCategory() throws Exception {
+    // The guard is numeric equality after unit conversion, not unit-literal equality: 0.01 l is the
+    // whole of a 10 ml origin, and a client is free to submit either.
+    ApiInventoryOperationPost request = new ApiInventoryOperationPost();
+    request.setOperationType("derive");
+    request.setOrigins(
+        List.of(
+            takeAll(100L, new ApiQuantityInfo(new BigDecimal("0.01"), RSUnitDef.LITRE.getId()))));
+    ApiSampleWithFullSubSamples newSample = new ApiSampleWithFullSubSamples("Derived material");
+    request.setNewSample(newSample);
+    originHolds(100L, subSampleHolding("10", RSUnitDef.MILLI_LITRE.getId()));
+    when(sampleApiMgr.createNewApiSample(newSample, user))
+        .thenReturn(new ApiSampleWithFullSubSamples("Derived material"));
+
+    assertDoesNotThrow(() -> manager.performOperation(request, user, NONE));
+  }
+
+  @Test
+  void doesNotCompareAnExplicitAmountAgainstTheWholeOrigin() throws Exception {
+    // An explicit amount is what the user typed; it is not a claim about the origin's total, so
+    // taking less than the origin holds is the ordinary case and must not conflict.
+    ApiInventoryOperationPost request = new ApiInventoryOperationPost();
+    request.setOperationType("derive");
+    ApiInventoryOperationOriginUpdate origin =
+        origin(100L, new ApiQuantityInfo(new BigDecimal("3"), 3));
+    origin.setAmountMode(ApiInventoryOperationAmountMode.EXPLICIT);
+    request.setOrigins(List.of(origin));
+    ApiSampleWithFullSubSamples newSample = new ApiSampleWithFullSubSamples("Derived material");
+    request.setNewSample(newSample);
+    originHolds(100L, subSampleHolding("5", 3));
+    when(sampleApiMgr.createNewApiSample(newSample, user))
+        .thenReturn(new ApiSampleWithFullSubSamples("Derived material"));
+
+    assertDoesNotThrow(() -> manager.performOperation(request, user, NONE));
+  }
+
+  @Test
+  void acceptsAnAbsentAmountModeOnAnEmptyingOperationThatDoesTakeEverything() throws Exception {
+    // Backward compatibility: a Destroy request predating amountMode carries no mode at all, and
+    // one that takes exactly what the origin holds is still a valid request.
+    ApiInventoryOperationPost request = new ApiInventoryOperationPost();
+    request.setOperationType("destroy");
+    ApiInventoryOperationOriginUpdate origin =
+        origin(100L, new ApiQuantityInfo(new BigDecimal("5"), 3));
+    assertNull(origin.getAmountMode());
+    request.setOrigins(List.of(origin));
+    originHolds(100L, subSampleHolding("5", 3));
+
+    assertDoesNotThrow(() -> manager.performOperation(request, user, NONE));
+  }
+
+  @Test
+  void rejectsAnAbsentAmountModeOnAnEmptyingOperationAsA400NotAConflict() {
+    // The case that distinguishes the two answers, and the one I1 was about. A client predating
+    // amountMode asking Destroy for PART of an origin is making a malformed request: nothing has
+    // changed, so answering 409 "reload and retry" sends it round a loop it can never leave. It
+    // gets the field error it got before the mode existed. Only a DECLARED "all" earns the 409
+    // (rejectsTakeAllWhoseAmountNoLongerMatchesTheOrigin covers that).
+    ApiInventoryOperationPost request = new ApiInventoryOperationPost();
+    request.setOperationType("destroy");
+    ApiInventoryOperationOriginUpdate origin =
+        origin(100L, new ApiQuantityInfo(new BigDecimal("3"), 3));
+    assertNull(origin.getAmountMode());
+    request.setOrigins(List.of(origin));
     originHolds(100L, subSampleHolding("5", 3));
 
     BindException rejection = performExpectingRejection(request);
     assertEquals(
         "errors.inventory.operation.mustEmptyOrigin",
         rejection.getFieldErrors("origins[0].amountTaken").get(0).getCode());
+  }
+
+  @Test
+  void reportsAFieldErrorRatherThanTheConflictWhenARequestHasBoth() {
+    // A 400 is the more actionable answer and needs no reload, so it wins. Throwing the conflict on
+    // sight discarded errors already collected for earlier origins, leaving the caller to reload,
+    // resubmit and only then discover the 400 (parallel review, I4).
+    ApiInventoryOperationPost request = new ApiInventoryOperationPost();
+    request.setOperationType("pool");
+    request.setOrigins(
+        List.of(
+            origin(100L, new ApiQuantityInfo(new BigDecimal("1"), 3)),
+            takeAll(200L, new ApiQuantityInfo(new BigDecimal("5"), 3))));
+    request.setNewSample(new ApiSampleWithFullSubSamples("Pooled material"));
+    originHolds(100L, subSampleHolding("0", 3)); // empty: a collected field error
+    SubSample stale = subSampleWithParent(901L);
+    when(subSampleApiMgr.assertUserCanEditSubSample(200L, user)).thenReturn(stale);
+    when(subSampleApiMgr.lockSubSampleForEdit(200L, user)).thenReturn(stale);
+    when(subSampleApiMgr.getQuantityForUpdate(200L))
+        .thenReturn(new QuantityInfo(new BigDecimal("8"), 3)); // stale whole-origin claim
+
+    BindException rejection = performExpectingRejection(request);
+    assertEquals(
+        "errors.inventory.operation.originEmpty",
+        rejection.getFieldErrors("origins[0].id").get(0).getCode());
   }
 
   @Test

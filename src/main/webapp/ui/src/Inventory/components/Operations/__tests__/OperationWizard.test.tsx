@@ -54,13 +54,30 @@ const operationHandlers = [
 ];
 
 const performSearch = vi.fn();
+// The wizard loads the origin sample's own template to validate "use parent template" (F5). Default
+// to a template with no defaultless mandatory field, i.e. a passing check.
+const getTemplate = vi.fn(() =>
+  Promise.resolve({
+    id: 9,
+    name: "Parent template",
+    quantityCategory: "volume",
+    fields: [{ name: "Passage number", mandatory: true, content: "1", selectedOptions: null }],
+  }),
+);
 const addAlert = vi.fn();
 vi.mock("@/stores/stores/getRootStore", () => ({
   default: () => ({
     authStore: { isSynchronizing: false },
-    searchStore: { search: { performSearch } },
+    searchStore: { search: { performSearch }, getTemplate },
     uiStore: { addAlert },
-    unitStore: { getUnit: () => ({ label: "ml" }) },
+    // Category-aware, matching stores/definitions/Units: the wizard reconciles a restored bundle
+    // against the origin's category, so a mock without one silently skipped that whole path.
+    unitStore: {
+      getUnit: (id: number) => ({
+        label: id === 7 ? "g" : "ml",
+        category: id === 7 ? "mass" : "volume",
+      }),
+    },
   }),
 }));
 vi.mock("@/util/alerts", () => ({ showToastWhilstPending: (_msg: string, p: Promise<unknown>) => p }));
@@ -173,13 +190,20 @@ vi.mock("../TemplateStep", () => ({
   default: ({
     value,
     onChange,
+    parentTemplateChecking,
+    parentTemplateError,
   }: {
     value: { mode: string; templateId: number | null };
     onChange: (v: unknown) => void;
+    parentTemplateChecking?: boolean;
+    parentTemplateError?: string | null;
   }) => (
     <div>
       <span data-testid="tmpl-mode">{value.mode}</span>
       <span data-testid="tmpl-id">{String(value.templateId)}</span>
+      {/* The wizard owns the parent-template check now, so its status is observable here. */}
+      <span data-testid="tmpl-checking">{String(Boolean(parentTemplateChecking))}</span>
+      <span data-testid="tmpl-parent-error">{parentTemplateError ?? ""}</span>
       <button
         type="button"
         data-testid="tmpl-pick5"
@@ -228,6 +252,10 @@ beforeEach(() => {
   taken.length = 0;
   performSearch.mockClear();
   addAlert.mockClear();
+  // Cleared, not reset: mockResolvedValueOnce/mockRejectedValueOnce in individual tests would
+  // otherwise leak into the next one, and a stale call count would make "was the parent template
+  // loaded at all" assertions meaningless.
+  getTemplate.mockClear();
   server.use(...operationHandlers);
 });
 
@@ -309,7 +337,117 @@ describe("OperationWizard step flow", () => {
     await fillDerive(user, "dna");
     await user.click(nextButton()); // details -> template
     expect(screen.getByTestId("tmpl-mode")).toHaveTextContent("fromSample");
+    // Preselected AND validated by the wizard: the parent's template can have a defaultless
+    // mandatory field just as a picked one can, so it is checked, and a passing check writes the id
+    // that enables Next (F5).
+    await waitFor(() => expect(screen.getByTestId("tmpl-id")).toHaveTextContent("9"));
     expect(nextButton()).toBeEnabled();
+    expect(getTemplate).toHaveBeenCalledWith(9, null, expect.anything());
+  });
+
+  it("validates the parent template at step one, so the one-click fast path is still offered", async () => {
+    // The gate (templateStepValid) is evaluated for EVERY step, but the wizard renders only the
+    // active one. A check owned by TemplateStep therefore never ran while the user was on step one,
+    // which is exactly where the fast path lives, so Perform was permanently disabled for the most
+    // common template mode (parallel review, C2). The check belongs to the wizard for that reason.
+    prefs.store.INVENTORY_OPERATION_PROCESS_VALUES = {
+      "derive dna": {
+        values: { count: 2, eachAmount: { numericValue: 1, unitId: 3 }, amountTaken: { numericValue: 1, unitId: 3 } },
+        template: { mode: "fromSample", templateId: null },
+        documentation: null,
+      },
+    };
+    const user = userEvent.setup();
+    const origin = makeMockSubSample({});
+    origin.sample.templateId = 9;
+    render(<OperationWizard open onClose={vi.fn()} origins={[origin]} />);
+    await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
+    await user.type(screen.getByTestId("proc"), "dna");
+
+    // Never navigated to the template step, yet the check ran and Perform is offered.
+    await waitFor(() => expect(screen.getByRole("button", { name: /wizard\.perform/i })).toBeInTheDocument());
+    expect(getTemplate).toHaveBeenCalledWith(9, null, expect.anything());
+  });
+
+  it("blocks and explains when the parent template has a defaultless mandatory field", async () => {
+    getTemplate.mockResolvedValueOnce({
+      id: 9,
+      name: "Parent template",
+      quantityCategory: "volume",
+      // A mandatory field with no default: normal on a parent, and unusable for a new sample.
+      fields: [{ name: "Batch", mandatory: true, content: "", selectedOptions: null }],
+    });
+    const user = userEvent.setup();
+    const origin = makeMockSubSample({});
+    origin.sample.templateId = 9;
+    render(<OperationWizard open onClose={vi.fn()} origins={[origin]} />);
+    await fillDerive(user, "dna");
+    await user.click(nextButton()); // details -> template
+
+    // No id written, so Next stays disabled, and the step is told WHY rather than left silent.
+    await waitFor(() => expect(screen.getByTestId("tmpl-parent-error")).toHaveTextContent(/mandatoryFieldsError/));
+    expect(screen.getByTestId("tmpl-id")).toHaveTextContent("null");
+    expect(nextButton()).toBeDisabled();
+  });
+
+  it("explains a failed parent-template lookup instead of disabling Next silently", async () => {
+    getTemplate.mockRejectedValueOnce(new Error("gone"));
+    const user = userEvent.setup();
+    const origin = makeMockSubSample({});
+    origin.sample.templateId = 9;
+    render(<OperationWizard open onClose={vi.fn()} origins={[origin]} />);
+    await fillDerive(user, "dna");
+    await user.click(nextButton());
+
+    await waitFor(() => expect(screen.getByTestId("tmpl-parent-error")).toHaveTextContent(/lookupFailed/));
+    expect(nextButton()).toBeDisabled();
+  });
+
+  it("drops a restored 'use parent template' bundle when this run has no parent template", async () => {
+    // Reachable whenever a bundle is reused on a different origin, or on a Pool where "the parent"
+    // is ambiguous. Left as it was, the step wanted a validated id nothing could supply and the
+    // radio is disabled in that state, so Next stuck with no spinner, no message and nothing the
+    // user could change (parallel review, C3). Falling back to "unselected" asks for the one thing
+    // that resolves it.
+    prefs.store.INVENTORY_OPERATION_PROCESS_VALUES = {
+      "derive dna": {
+        values: { count: 2, eachAmount: { numericValue: 1, unitId: 3 }, amountTaken: { numericValue: 1, unitId: 3 } },
+        template: { mode: "fromSample", templateId: null },
+        documentation: null,
+      },
+    };
+    const user = userEvent.setup();
+    const origin = makeMockSubSample({});
+    origin.sample.templateId = null; // no parent template for this run
+    render(<OperationWizard open onClose={vi.fn()} origins={[origin]} />);
+    await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
+    await user.type(screen.getByTestId("proc"), "dna");
+    await user.click(nextButton()); // details -> template
+
+    expect(screen.getByTestId("tmpl-mode")).toHaveTextContent("unselected");
+    expect(screen.getByTestId("tmpl-parent-error")).toHaveTextContent("");
+    expect(getTemplate).not.toHaveBeenCalled();
+    // And an explicit choice still resolves it, so the wizard is not stuck.
+    await user.click(screen.getByTestId("tmpl-pick5"));
+    expect(nextButton()).toBeEnabled();
+  });
+
+  it("keeps the rest of the template selection when the check writes the parent's id", async () => {
+    // The check used to run from a closure frozen at the step's mount render, so a passing result
+    // wrote a stale snapshot of the whole selection and could revert a mode the user had since
+    // changed (parallel review, I7). A functional update writes only the id and category.
+    const user = userEvent.setup();
+    const origin = makeMockSubSample({});
+    origin.sample.templateId = 9;
+    render(<OperationWizard open onClose={vi.fn()} origins={[origin]} />);
+    await fillDerive(user, "dna");
+    await user.click(nextButton()); // details -> template
+    await waitFor(() => expect(screen.getByTestId("tmpl-id")).toHaveTextContent("9"));
+
+    // The user picks a specific template instead; the earlier fromSample result must not come back.
+    await user.click(screen.getByTestId("tmpl-pick5"));
+    expect(screen.getByTestId("tmpl-mode")).toHaveTextContent("pick");
+    expect(screen.getByTestId("tmpl-id")).toHaveTextContent("5");
   });
 
   it("prefills the amount units from the origin subsample", async () => {
@@ -735,6 +873,71 @@ describe("OperationWizard remember bundle", () => {
     // the loaded remember flag itself is observable on the confirm step / fast path (tested below)
     expect(screen.getByTestId("count")).toHaveTextContent("4");
     expect(screen.getByTestId("each-amount")).toHaveTextContent('{"numericValue":7,"unitId":3}');
+  });
+
+  it("resets a restored bundle's amounts when its units belong to another category", async () => {
+    // The bundle key is operation + process name only, so a bundle saved on a millilitre origin is
+    // offered on a gram one. Left alone it makes every step read as valid and offers one-click
+    // Perform on a request the endpoint is certain to reject (amountTakenCategoryMismatch).
+    prefs.store.INVENTORY_OPERATION_PROCESS_VALUES = {
+      "derive dna": {
+        values: {
+          count: 4,
+          eachAmount: { numericValue: 7, unitId: 3 },
+          amountTaken: { numericValue: 2, unitId: 3 },
+        },
+        template: null,
+        documentation: null,
+      },
+    };
+    const user = userEvent.setup();
+    render(
+      <OperationWizard
+        open
+        onClose={vi.fn()}
+        origins={[makeMockSubSample({ quantity: { numericValue: 10, unitId: 7 } })]}
+      />,
+    );
+    await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
+    await user.type(screen.getByTestId("proc"), "dna");
+
+    // BOTH amounts have their unit cleared (unitId 0), not defaulted to the origin's. A defaulted
+    // unit is a valid amount, so nothing downstream blocked and the one-click fast path stayed armed
+    // on a number the user never chose - it would have removed 1 g where the bundle says 2 mL
+    // (parallel review, C4). An unset unit forces the amounts step, where the user picks the amount
+    // in the right category. The saved numbers are kept so the user sees what to re-enter.
+    expect(screen.getByTestId("amount-taken")).toHaveTextContent('{"numericValue":2,"unitId":0}');
+    expect(screen.getByTestId("each-amount")).toHaveTextContent('{"numericValue":7,"unitId":0}');
+    // Everything not measured in the wrong units survives.
+    expect(screen.getByTestId("count")).toHaveTextContent("4");
+  });
+
+  it("keeps a restored bundle intact when its units are a different unit of the SAME category", async () => {
+    prefs.store.INVENTORY_OPERATION_PROCESS_VALUES = {
+      "derive dna": {
+        values: {
+          count: 4,
+          eachAmount: { numericValue: 7, unitId: 4 },
+          amountTaken: { numericValue: 2, unitId: 4 },
+        },
+        template: null,
+        documentation: null,
+      },
+    };
+    const user = userEvent.setup();
+    render(
+      <OperationWizard
+        open
+        onClose={vi.fn()}
+        origins={[makeMockSubSample({ quantity: { numericValue: 10, unitId: 3 } })]}
+      />,
+    );
+    await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
+    await user.type(screen.getByTestId("proc"), "dna");
+
+    // Litres on a millilitre origin is a unit choice, not a mismatch.
+    expect(screen.getByTestId("amount-taken")).toHaveTextContent('{"numericValue":2,"unitId":4}');
+    expect(screen.getByTestId("each-amount")).toHaveTextContent('{"numericValue":7,"unitId":4}');
   });
 
   it("resets to blank defaults (unticked) for a new, unsaved process name", async () => {
