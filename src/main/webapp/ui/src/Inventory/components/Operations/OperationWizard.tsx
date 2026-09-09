@@ -19,11 +19,12 @@ import useUiPreference, { PREFERENCES } from "@/hooks/api/useUiPreference";
 import useViewportDimensions from "@/hooks/browser/useViewportDimensions";
 import { formatList } from "@/modules/common/i18n/listFormat";
 import { mkAlert } from "@/stores/contexts/Alert";
-import { CELSIUS, toCommonUnit } from "@/stores/definitions/Units";
+import { CELSIUS, categoryOfUnit, toCommonUnit } from "@/stores/definitions/Units";
 import AlwaysNewFactory from "@/stores/models/Factory/AlwaysNewFactory";
 import { getUnitId, getValue } from "@/stores/models/HasQuantity";
 import type SubSampleModel from "@/stores/models/SubSampleModel";
 import getRootStore from "@/stores/stores/getRootStore";
+import type { UnitCategory } from "@/stores/stores/UnitStore";
 import { showToastWhilstPending } from "@/util/alerts";
 import { getApiErrorDetail, getErrorMessage } from "@/util/error";
 import ContextDialog from "../ContextMenu/ContextDialog";
@@ -171,9 +172,22 @@ function OperationWizard({
   // logic - units, the derived name base, over-removal - unchanged. Multi-origin specifics (all the
   // origins, the shared amount, the per-origin links) are threaded in only where they differ.
   const origin = representativeOrigin(origins);
+  // The measurement category of an origin, derived from its unit id through the static unit table
+  // rather than read off SubSampleModel.quantityCategory. That getter goes through the unit store
+  // and THROWS ("Could not get unit category") whenever the store holds no entry for the id, which
+  // is every id on a fresh profile: UnitStore seeds itself from localStorage, so it stays empty
+  // until GET /units has resolved once. ProcessAction mounts this wizard as soon as the selection
+  // is processable, not only while the dialog is open, so that throw took out the whole context
+  // menu before the operation picker had appeared (Copilot review, PR #1090). categoryOfUnit needs
+  // no store, so it is right immediately, and it answers null rather than throwing for an unset or
+  // unrecognised unit - which is also the honest answer for an origin holding no quantity at all.
+  const categoryOf = (subSample: SubSampleModel): UnitCategory | null => categoryOfUnit(getUnitId(subSample.quantity));
+  const originCategory = categoryOf(origin);
   // Pool requires every selected origin to share one measurement category (the shared amount is in one
   // unit); the picker only enables Pool when this holds, but keep it here for the picker's own gating.
-  const allSameCategory = origins.every((o) => o.quantityCategory === origins[0].quantityCategory);
+  // An undeterminable category is not a match: it must leave Pool disabled rather than enable it on
+  // the accident of two nulls comparing equal.
+  const allSameCategory = originCategory !== null && origins.every((o) => categoryOf(o) === originCategory);
   // On small viewports (phones/tablets) the horizontal label row gets cramped, so fall back to the
   // classic vertical stepper (labels stacked, active step's content inline beneath its label).
   const { isViewportSmall } = useViewportDimensions();
@@ -248,7 +262,7 @@ function OperationWizard({
     : new Set();
   // The amounts step offers the chosen template's units, or the origin subsample's when no specific
   // template is picked.
-  const amountCategory = templateSelection.quantityCategory ?? origin.quantityCategory;
+  const amountCategory = templateSelection.quantityCategory ?? originCategory;
   // Only "use parent template" needs the parent's template; when the parent has none, that option is
   // disabled and the user must pick an existing template or none. A multi-origin operation (Pool) has
   // several parent samples, so "use parent template" is ambiguous and always disabled for it.
@@ -371,16 +385,13 @@ function OperationWizard({
       amountTakenFrom: op.effect.amountTakenFrom,
       eachAmountFrom: op.effect.eachAmountFrom,
       originUnitId: getUnitId(origin.quantity),
-      // NOT origin.quantityCategory: that getter throws when the unit store has no entry for the
-      // unit, which happens on a fresh profile while GET /units is still in flight, and for an
-      // origin with no quantity at all (unit id 0). Both would throw inside the operation-select
-      // click handler, before the "origin holds nothing" guard downstream ever runs (parallel
-      // review, I10). An undeterminable category means "leave the amounts alone", which
-      // reconcileRestoredQuantities already treats as such.
-      createdCategory:
-        restoredTemplate.quantityCategory ??
-        getRootStore().unitStore.getUnit(getUnitId(origin.quantity))?.category ??
-        null,
+      // originCategory, never origin.quantityCategory: the store-backed getter throws for a unit the
+      // store has no entry for, which is every unit on a fresh profile and any origin holding no
+      // quantity at all (unit id 0). That threw inside the operation-select click handler, before
+      // the "origin holds nothing" guard downstream ever ran (parallel review, I10). An
+      // undeterminable category means "leave the amounts alone", which reconcileRestoredQuantities
+      // already treats as such.
+      createdCategory: restoredTemplate.quantityCategory ?? originCategory,
       perOriginUnitIds: Object.fromEntries(origins.map((o) => [o.globalId ?? "", getUnitId(o.quantity)])),
     });
 
@@ -513,8 +524,8 @@ function OperationWizard({
   // the origin always stays in the origin's own category, so its unit is kept.
   const onTemplateSelectionChange = (next: TemplateSelection) => {
     const eachAmountFrom = operation?.effect.eachAmountFrom;
-    const previousCategory = templateSelection.quantityCategory ?? origin.quantityCategory;
-    const nextCategory = next.quantityCategory ?? origin.quantityCategory;
+    const previousCategory = templateSelection.quantityCategory ?? originCategory;
+    const nextCategory = next.quantityCategory ?? originCategory;
     if (eachAmountFrom && nextCategory !== previousCategory) {
       setValues((v) => {
         const each = v[eachAmountFrom] as OperationQuantity | undefined;
@@ -782,7 +793,7 @@ function OperationWizard({
           values={values}
           onChange={onDetailsChange}
           section="amounts"
-          unitCategories={[amountCategory]}
+          unitCategories={amountCategory ? [amountCategory] : []}
           origins={origins}
           amountMode={amountMode}
           onAmountModeChange={setAmountMode}
