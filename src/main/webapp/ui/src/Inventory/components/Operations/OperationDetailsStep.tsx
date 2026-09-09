@@ -13,7 +13,7 @@ import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useTranslation } from "react-i18next";
 import UnitSelect from "@/components/Inputs/UnitSelect";
-import { CELSIUS } from "@/stores/definitions/Units";
+import { CELSIUS, categoryOfUnit } from "@/stores/definitions/Units";
 import { getUnitId, getValue } from "@/stores/models/HasQuantity";
 import type SubSampleModel from "@/stores/models/SubSampleModel";
 import {
@@ -168,10 +168,14 @@ function OperationDetailsStep({
     const currentUnitId = isTemperature ? CELSIUS : (quantity?.unitId ?? originUnitId);
     // The amount taken FROM the origin must stay in the origin subsample's own measurement type (you
     // remove mass from a mass sample), even when a template overrides the created amount's units.
+    // Derived from the unit id through the static unit table, not from origin.quantityCategory:
+    // that getter throws when the unit store has no entry for the id, which is the state of a fresh
+    // profile until GET /units resolves (Copilot review, PR #1090). No category means no unit is
+    // offerable yet, so the list is empty rather than a throw.
+    const originCategory = categoryOfUnit(originUnitId);
+    const originCategories = originCategory ? [originCategory] : [];
     const categoriesForInput =
-      input.key === operation.effect.amountTakenFrom
-        ? [origin.quantityCategory]
-        : (unitCategories ?? [origin.quantityCategory]);
+      input.key === operation.effect.amountTakenFrom ? originCategories : (unitCategories ?? originCategories);
     const numericValue = (raw: number) => (isTemperature ? raw : Math.min(MAX_QUANTITY, Math.max(0, raw)));
     // The amount taken cannot exceed what the origin currently holds (DevDocs/adr/0007). Flag it inline on the
     // amount-taken field; the wizard blocks Next on the same condition.
