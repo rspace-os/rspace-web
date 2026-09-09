@@ -119,11 +119,14 @@ export class AuditTrailPage extends BasePage {
 
   async hitCount(): Promise<number> {
     const text = await this.page.getByText("You found", { exact: false }).innerText();
-    const count = Number(text.trim().split(" ")[2]);
-    if (!Number.isInteger(count)) {
-      throw new Error(`hitCount: could not parse hits text "${text}"`);
+    const numberToken = text
+      .trim()
+      .split(" ")
+      .find((word) => word !== "" && Number.isInteger(Number(word)));
+    if (numberToken === undefined) {
+      throw new Error(`hitCount: could not find a number in hits text "${text}"`);
     }
-    return count;
+    return Number(numberToken);
   }
 
   get resultRows(): Locator {

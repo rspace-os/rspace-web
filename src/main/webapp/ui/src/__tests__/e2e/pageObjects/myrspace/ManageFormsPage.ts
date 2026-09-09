@@ -29,7 +29,7 @@ export class ManageFormsPage extends BasePage {
   }
 
   formRow(name: string): Locator {
-    return rowWithLink(this.formsTable, this.page, name);
+    return rowWithLink(this.formsTable, name);
   }
 
   async showAllForms(): Promise<void> {

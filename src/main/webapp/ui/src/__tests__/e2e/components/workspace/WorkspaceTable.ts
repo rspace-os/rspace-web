@@ -28,7 +28,7 @@ export class WorkspaceTable {
   }
 
   row(name: string): Locator {
-    return rowWithLink(this.root, this.page, name);
+    return rowWithLink(this.root, name);
   }
 
   checkbox(name: string): Locator {

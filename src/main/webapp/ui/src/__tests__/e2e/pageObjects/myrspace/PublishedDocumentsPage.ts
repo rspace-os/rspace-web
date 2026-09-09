@@ -10,7 +10,7 @@ export class PublishedDocumentsPage extends BasePage {
   }
 
   row(name: string): Locator {
-    return rowWithLink(this.page, this.page, name);
+    return rowWithLink(this.page, name);
   }
 
   publicLink(name: string): Locator {
