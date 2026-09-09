@@ -1,6 +1,5 @@
 package com.researchspace.api.v1.model;
 
-import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import java.util.ArrayList;
@@ -25,8 +24,6 @@ import lombok.NoArgsConstructor;
  */
 @Data
 @NoArgsConstructor
-// Strict binding, for the reason given on ApiInventoryOperationPost: an unrecognised property on an
-// origin is a caller believing this request does something to that origin which it does not.
 @JsonPropertyOrder({"id", "amountMode", "amountTaken", "extraFields"})
 public class ApiInventoryOperationOriginUpdate {
 
@@ -41,10 +38,4 @@ public class ApiInventoryOperationOriginUpdate {
 
   @JsonProperty("extraFields")
   private List<ApiExtraField> extraFields = new ArrayList<>();
-
-  /** Rejects any property an origin update does not declare. See ApiInventoryOperationPost. */
-  @JsonAnySetter
-  void rejectUnknownProperty(String name, Object ignoredValue) {
-    throw new UnknownOperationPropertyException(name);
-  }
 }
