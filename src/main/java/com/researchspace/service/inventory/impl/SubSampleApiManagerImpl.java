@@ -308,6 +308,14 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
       // refresh), so the value the subtraction starts from is read as a scalar under the lock:
       // what the last committed writer stored.
       QuantityInfo orgQuantity = subSampleDao.getQuantityForUpdate(dbSubSample.getId());
+
+      // The entity's version is that same snapshot. A decrement that committed while this request
+      // waited for the lock advanced the row past it, so bumping the cached number would reissue a
+      // version the earlier decrement already used and make the stock state it labelled
+      // unaddressable (Codex review, PR #1090). Read the committed version as a scalar under the
+      // lock, like the quantity, so the bump below lands on top of it.
+      dbSubSample.refreshVersionFromLockedRow(
+          subSampleDao.getVersionForUpdate(dbSubSample.getId()));
       QuantityInfo newQuantity = qUtils.sum(Arrays.asList(orgQuantity, usedQuantity.negate()));
 
       // if usage is larger than remaining quantity set remaining to zero, in the stored unit
