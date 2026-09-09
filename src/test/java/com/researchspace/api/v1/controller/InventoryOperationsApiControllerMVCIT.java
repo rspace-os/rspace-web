@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.researchspace.api.v1.model.ApiExtraField;
+import com.researchspace.api.v1.model.ApiField.ApiFieldType;
+import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiSample;
 import com.researchspace.api.v1.model.ApiSampleTemplate;
 import com.researchspace.api.v1.model.ApiSampleTemplatePost;
@@ -22,6 +24,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -300,6 +303,79 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
   }
 
   /** Derive's declared provenance link back to one origin, as the wizard builds it. */
+  @Test
+  public void passageIntoATemplateThatAlreadyDeclaresTheCounterFieldMergesInsteadOfDuplicating()
+      throws Exception {
+    // A Passage template may legitimately declare its own "Passage number" field. The operation
+    // generates a field of that name too, so the created sample used to end up with two and
+    // assertNoDuplicateFieldNames rejected the whole request: every Passage onto such a template
+    // failed, and the wizard could not rename the generated field (Codex review, PR #1090).
+    // Renaming it would clear the rejection but strand the counter, which finds the previous number
+    // by name, so the value has to land in the inherited field instead.
+    ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
+    int unitId = origin.getQuantity().getUnitId();
+    ApiSampleTemplatePost templatePost = new ApiSampleTemplatePost();
+    templatePost.setName("passage template with its own counter");
+    templatePost.setDefaultUnitId(unitId);
+    templatePost
+        .getFields()
+        .add(createBasicApiSampleField("Passage number", ApiFieldType.TEXT, ""));
+    MvcResult templateResult =
+        mockMvc
+            .perform(
+                createBuilderForPostWithJSONBody(apiKey, "/sampleTemplates", anyUser, templatePost))
+            .andExpect(status().isCreated())
+            .andReturn();
+    ApiSampleTemplate template = getFromJsonResponseBody(templateResult, ApiSampleTemplate.class);
+
+    String operationJson =
+        "{\"operationType\":\"passage\",\"origins\":[{\"id\":"
+            + origin.getId()
+            + ",\"amountTaken\":{\"numericValue\":0,\"unitId\":"
+            + unitId
+            + "}}],\"newSample\":{\"name\":\"Passaged\",\"templateId\":"
+            + template.getId()
+            + ",\"extraFields\":[{\"name\":\"Passaged from\",\"type\":\"link\","
+            + "\"newFieldRequest\":true,"
+            + "\"operationFieldKey\":\"operations.passage.linkFieldName\","
+            + "\"link\":{\"relationType\":\"IsDerivedFrom\",\"targetGlobalId\":\""
+            + origin.getGlobalId()
+            + "\",\"versionPin\":null}},"
+            + "{\"name\":\"Passage number\",\"type\":\"text\",\"newFieldRequest\":true,"
+            + "\"operationFieldKey\":\"operations.passage.numberField\",\"content\":\"4\"}],"
+            + "\"subSamples\":[{\"quantity\":{\"numericValue\":1,\"unitId\":"
+            + unitId
+            + "}}]}}";
+
+    MvcResult result =
+        mockMvc
+            .perform(
+                createBuilderForPostWithJSONBody(apiKey, "/operations", anyUser, operationJson))
+            .andExpect(status().isCreated())
+            .andReturn();
+
+    ApiSampleWithFullSubSamples created =
+        getFromJsonResponseBody(result, ApiSampleWithFullSubSamples.class);
+    ApiSample reloaded = sampleApiMgr.getApiSampleById(created.getId(), anyUser);
+    long counterFields =
+        Stream.concat(
+                reloaded.getFields().stream().map(ApiInventoryEntityField::getName),
+                reloaded.getExtraFields().stream().map(ApiExtraField::getName))
+            .filter(name -> "Passage number".equalsIgnoreCase(name == null ? "" : name.trim()))
+            .count();
+    assertEquals(1, counterFields, "the created sample must hold exactly one Passage number field");
+    // and it is the inherited one, carrying the operation's value, so the next Passage's
+    // name-based counter lookup still finds it.
+    assertEquals(
+        "4",
+        reloaded.getFields().stream()
+            .filter(f -> "Passage number".equals(f.getName()))
+            .map(ApiInventoryEntityField::getContent)
+            .findFirst()
+            .orElse(null),
+        "the operation's value must land in the template's own field");
+  }
+
   private String deriveLinkJson(String targetGlobalId) {
     return "{\"name\":\"Is Derived From using process: PCR\","
         + "\"type\":\"link\",\"newFieldRequest\":true,"

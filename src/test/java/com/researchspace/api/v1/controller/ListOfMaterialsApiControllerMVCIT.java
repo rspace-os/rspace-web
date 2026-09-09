@@ -343,6 +343,88 @@ public class ListOfMaterialsApiControllerMVCIT extends API_MVC_InventoryTestBase
         () -> "parent total should be 8 g after two 1 g deductions, got " + reloaded.getQuantity());
   }
 
+  @Test
+  public void parallelListsExhaustingOneSubSampleNeverResurrectItsStock() throws Exception {
+    // Both lists load the subsample at 5 g before either takes its row lock, and each asks for the
+    // whole 5 g. The winner commits 0 g; the loser then reads 0 g as its locked scalar, so its
+    // usage clamps to zero and it deducts nothing. Its cached entity still holds the stale 5 g,
+    // though, so anything that dirties that instance makes Hibernate's full-row flush write 5 g
+    // back and resurrect stock that was already used up (Codex review, PR #1090). The invariant is
+    // the final quantity, not which request won.
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+    MvcResult sampleResult =
+        mockMvc
+            .perform(
+                createBuilderForPostWithJSONBody(
+                    apiKey,
+                    "/samples",
+                    anyUser,
+                    "{\"name\":\"lom"
+                        + " exhaust\",\"subSamples\":[{\"quantity\":{\"numericValue\":5,\"unitId\":7}}]}"))
+            .andExpect(status().isCreated())
+            .andReturn();
+    ApiSampleWithFullSubSamples sample =
+        mvcUtils.getFromJsonResponseBody(sampleResult, ApiSampleWithFullSubSamples.class);
+    Long subSampleId = sample.getSubSamples().get(0).getId();
+    Long firstFieldId =
+        createBasicDocumentInRootFolderWithText(anyUser, "lom exhaust 1")
+            .getFields()
+            .get(0)
+            .getId();
+    Long secondFieldId =
+        createBasicDocumentInRootFolderWithText(anyUser, "lom exhaust 2")
+            .getFields()
+            .get(0)
+            .getId();
+
+    ExecutorService pool = Executors.newFixedThreadPool(2);
+    List<Integer> statuses = new ArrayList<>();
+    try {
+      List<Callable<Integer>> posts =
+          List.of(
+              () -> postListOfMaterialsUsing(apiKey, anyUser, firstFieldId, subSampleId, "5"),
+              () -> postListOfMaterialsUsing(apiKey, anyUser, secondFieldId, subSampleId, "5"));
+      for (Future<Integer> future : pool.invokeAll(posts)) {
+        statuses.add(future.get());
+      }
+    } finally {
+      pool.shutdown();
+    }
+
+    assertTrue(
+        statuses.stream().noneMatch(status -> status >= 500),
+        () -> "no 5xx from two lists exhausting one subsample, got " + statuses);
+    assertEquals(
+        "0 g",
+        getSubSample(apiKey, anyUser, subSampleId).getQuantity().toQuantityInfo().toPlainString(),
+        () -> "the exhausted subsample must stay empty, got statuses " + statuses);
+  }
+
+  /** Posts a list of materials using the given amount in grams, returning the HTTP status. */
+  private int postListOfMaterialsUsing(
+      String apiKey, User user, Long elnFieldId, Long subSampleId, String grams) throws Exception {
+    String usage =
+        "{ \"invRec\": { \"id\": "
+            + subSampleId
+            + ", \"type\":\"SUBSAMPLE\" },"
+            + " \"usedQuantity\": { \"numericValue\": \""
+            + grams
+            + "\", \"unitId\": 7},"
+            + " \"updateInventoryQuantity\": true }";
+    String newListJson =
+        "{ \"name\": \"exhausting list\", \"elnFieldId\": "
+            + elnFieldId
+            + ", \"materials\": ["
+            + usage
+            + "] }";
+    return mockMvc
+        .perform(createBuilderForPostWithJSONBody(apiKey, "/listOfMaterials", user, newListJson))
+        .andReturn()
+        .getResponse()
+        .getStatus();
+  }
+
   /** Posts a list of materials using 1 g of the given subsample, returning the HTTP status. */
   private int postListOfMaterialsDeducting(
       String apiKey, User user, Long elnFieldId, Long subSampleId) throws Exception {
