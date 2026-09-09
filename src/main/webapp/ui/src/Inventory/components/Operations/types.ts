@@ -33,8 +33,13 @@ export type OperationInputs = Record<string, OperationInputValue>;
 /**
  * The definition key that produced a field. Resolved field names interpolate user input
  * ({processName}, {originName}) and are localized, so the backend matches an operation request's
- * fields to the definition by this key rather than by name (see DevDocs/adr/0007). Request-only:
- * the backend never persists or echoes it back.
+ * fields to the definition by this key rather than by name (see DevDocs/adr/0007).
+ *
+ * Persisted and echoed back, NOT request-only: the key is stored on the extra field and returned on
+ * GET, which is what lets a later operation identify a field an earlier one generated regardless of
+ * the locale its name was rendered in (F6, e.g. the Passage counter). Only the operations endpoint
+ * may set it. A field absorbed into an inherited TEMPLATE field carries no key, since
+ * InventoryEntityField has no such column; that gap is a documented follow-up in DevDocs/adr/0007.
  */
 export type OperationFieldKey = { operationFieldKey: string };
 

@@ -12,6 +12,8 @@ import com.fasterxml.jackson.databind.introspect.BeanPropertyDefinition;
 import com.researchspace.api.v1.model.ApiBarcode;
 import com.researchspace.api.v1.model.ApiContainerLocation;
 import com.researchspace.api.v1.model.ApiExtraField;
+import com.researchspace.api.v1.model.ApiInventoryDOI;
+import com.researchspace.api.v1.model.ApiInventoryFile;
 import com.researchspace.api.v1.model.ApiInventoryLink;
 import com.researchspace.api.v1.model.ApiInventoryOperationAmountMode;
 import com.researchspace.api.v1.model.ApiInventoryOperationOriginUpdate;
@@ -777,7 +779,13 @@ class InventoryOperationPostValidatorTest {
                 "newSampleSubSampleTargetLocations",
                 sample ->
                     sample.setNewSampleSubSampleTargetLocations(
-                        new ArrayList<>(List.of(new ApiTargetLocation())))));
+                        new ArrayList<>(List.of(new ApiTargetLocation())))),
+            // Inherited from ApiInventoryRecordInfo and writable, but sample creation never applies
+            // it, so accepting it would perform a different operation than the one requested
+            // (Copilot review, PR #1090).
+            new Undeclared(
+                "attachments",
+                sample -> sample.setAttachments(new ArrayList<>(List.of(new ApiInventoryFile())))));
     for (Undeclared smuggled : undeclared) {
       ApiInventoryOperationPost request = aliquotRequest();
       smuggled.smuggle().accept(request.getNewSample());
@@ -827,7 +835,18 @@ class InventoryOperationPostValidatorTest {
             new Undeclared("iconId", subSample -> subSample.setIconId(424242L)),
             new Undeclared(
                 "parentLocation",
-                subSample -> subSample.setParentLocation(new ApiContainerLocation())));
+                subSample -> subSample.setParentLocation(new ApiContainerLocation())),
+            // Both are inherited from ApiInventoryRecordInfo and bindable, but
+            // createSubSampleFromIncomingApiSample persists neither, so a request carrying them
+            // would be silently accepted against a strict contract (Copilot review, PR #1090).
+            new Undeclared(
+                "attachments",
+                subSample ->
+                    subSample.setAttachments(new ArrayList<>(List.of(new ApiInventoryFile())))),
+            new Undeclared(
+                "identifiers",
+                subSample ->
+                    subSample.setIdentifiers(new ArrayList<>(List.of(new ApiInventoryDOI())))));
     for (Undeclared smuggled : undeclared) {
       ApiInventoryOperationPost request = aliquotRequest();
       smuggled.smuggle().accept(request.getNewSample().getSubSamples().get(0));
