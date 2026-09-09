@@ -55,4 +55,16 @@ public interface SubSampleDao extends GenericDao<SubSample, Long> {
    *     quantity
    */
   QuantityInfo getQuantityForUpdate(Long subSampleId);
+
+  /**
+   * One subsample's user-facing version, read with a row lock ({@code SELECT ... FOR UPDATE}) so it
+   * is the committed value rather than the transaction's snapshot. A scalar for the same reason as
+   * {@link #getQuantityForUpdate}: two operations can both load the entity at version N before
+   * either takes the lock, and {@code lockRowForUpdate} hands the waiter back that same cached
+   * instance, so the entity's own version field is stale by the time the lock is granted.
+   *
+   * @return the committed version, or null when the subsample does not exist; callers lock and
+   *     404-check the subsample first
+   */
+  Long getVersionForUpdate(Long subSampleId);
 }

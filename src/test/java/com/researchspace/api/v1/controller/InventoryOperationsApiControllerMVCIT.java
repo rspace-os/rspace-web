@@ -783,6 +783,60 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
         () -> "one created sample per 201, got statuses " + statuses);
   }
 
+  @Test
+  public void parallelDecrementsEachGetTheirOwnAddressableVersion() throws Exception {
+    // Every decrement is a content edit, so each must advance the subsample's user-facing version
+    // and leave the stock state it produced retrievable by that version. Two requests can both load
+    // the entity before either takes the row lock, and lockRowForUpdate hands the waiter back that
+    // same cached instance, so before the committed version was read as a scalar under the lock
+    // both
+    // bumped the same stale number: one version was reused and the intermediate stock state it
+    // labelled became unaddressable (Codex review, PR #1090).
+    ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
+    String operationJson = aliquotJson(origin, isPartOfLinkJson(origin.getGlobalId()));
+
+    List<Integer> statuses = fireConcurrentOperationRequests(operationJson, 5);
+
+    long successes = statuses.stream().filter(status -> status == 201).count();
+    assertEquals(5, successes, () -> "all five aliquots should succeed, got " + statuses);
+    // A freshly created subsample is at version 1, so five committed decrements end at 6.
+    long finalVersion = 1 + successes;
+    ApiSubSample live = subSampleApiManager.getApiSubSampleById(origin.getId(), anyUser);
+    ApiSubSample atFinalVersion =
+        subSampleApiManager.getApiSubSampleVersion(origin.getId(), finalVersion, anyUser);
+    assertNotNull(
+        atFinalVersion,
+        () ->
+            "version "
+                + finalVersion
+                + " should exist after "
+                + successes
+                + " decrements, got statuses "
+                + statuses);
+    assertEquals(
+        0,
+        live.getQuantity()
+            .getNumericValue()
+            .compareTo(atFinalVersion.getQuantity().getNumericValue()),
+        "the last version should hold the live quantity");
+
+    // Each decrement's own state is addressable, and no two share a version: a reused number would
+    // make two of these resolve to the same stock value.
+    List<java.math.BigDecimal> quantitiesByVersion = new ArrayList<>();
+    for (long version = 2; version <= finalVersion; version++) {
+      ApiSubSample atVersion =
+          subSampleApiManager.getApiSubSampleVersion(origin.getId(), version, anyUser);
+      final long addressed = version;
+      assertNotNull(
+          atVersion, () -> "version " + addressed + " should be addressable, statuses " + statuses);
+      quantitiesByVersion.add(atVersion.getQuantity().getNumericValue().stripTrailingZeros());
+    }
+    assertEquals(
+        successes,
+        quantitiesByVersion.stream().distinct().count(),
+        () -> "each version should hold a distinct stock value, got " + quantitiesByVersion);
+  }
+
   // --- code review (2026-09-03) reproductions: each is a field-scoped 400 leaving the origin
   // untouched, where it used to be a 422 or a 201 with wrong data ---
 

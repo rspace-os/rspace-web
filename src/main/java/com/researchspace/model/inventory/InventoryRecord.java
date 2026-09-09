@@ -487,6 +487,25 @@ public abstract class InventoryRecord {
     version++;
   }
 
+  /**
+   * Adopts the version committed to this record's row, read as a scalar under its row lock.
+   *
+   * <p>A pessimistic writer loads the entity before it waits for the lock, and Hibernate serves the
+   * post-lock read from the persistence context, so the instance still carries the version its
+   * transaction started with. If another writer committed meanwhile, bumping that stale number
+   * reissues a version the earlier edit already used, and the state it labelled stops being
+   * addressable (Codex review, PR #1090). Never moves the version backwards: a row that has not
+   * advanced leaves it untouched, so the caller's own {@link #increaseVersion()} still yields the
+   * ordinary +1.
+   *
+   * @param committedVersion the version read under the lock, ignored when null
+   */
+  public void refreshVersionFromLockedRow(Long committedVersion) {
+    if (committedVersion != null && committedVersion > version) {
+      version = committedVersion;
+    }
+  }
+
   @Transient
   public GlobalIdentifier getOid() {
     return new GlobalIdentifier(getGlobalIdPrefix(), getId());
