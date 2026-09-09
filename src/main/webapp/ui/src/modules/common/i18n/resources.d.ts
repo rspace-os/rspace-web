@@ -6908,7 +6908,6 @@ export default interface Resources {
           "mandatoryFieldEmpty": "Field ''{0}'' is mandatory, but provided value was empty",
           "mandatoryFieldNoSelection": "Field ''{0}'' is mandatory, but no option is provided",
           "notFound": "No inventory entity field with id: {0}",
-          "operationFieldKeyForbidden": "Only an Inventory operation may set operationFieldKey on a field.",
           "validation": "{0}"
         },
         "file": {
@@ -6998,6 +6997,7 @@ export default interface Resources {
         "notEnabled": "Inventory is not enabled on this RSpace instance.",
         "operation": {
           "amountModeMustBeAll": "This operation empties its origins, so the amount taken cannot be an explicit amount.",
+          "amountModeNotApplicable": "This operation does not take from its origins, so the amount taken cannot be a whole-origin claim.",
           "amountTakenCategoryMismatch": "The amount taken must use the origin's measurement category (e.g. millilitres from a volume origin).",
           "amountTakenExceedsOrigin": "Cannot take more from an origin than it currently holds.",
           "amountTakenInvalid": "Each origin must specify a non-negative amount, with a unit, to take from it.",
@@ -7012,11 +7012,13 @@ export default interface Resources {
           "documentationLinkTargetInvalid": "A documentation link must target an ELN document, notebook or Gallery file.",
           "duplicateOrigin": "An origin subsample may appear at most once in an operation.",
           "extraFieldCountMaximum": "This operation accepts at most {0} extra fields on the sample it creates.",
+          "fieldKeyMissing": "A field on this operation is missing its operationFieldKey.",
           "fieldKeyUnknown": "The field [{0}] is not one this operation declares.",
           "linkToOriginRequired": "The new sample must include a {0} link back to origin subsample {1}.",
           "mustEmptyOrigin": "This operation must take the origin's entire remaining quantity.",
           "newSampleForbidden": "This operation does not create a sample, so newSample must be omitted.",
           "newSampleRequired": "This operation creates a sample, so newSample is required.",
+          "operationTypeRequired": "An operation type is required.",
           "originCategoryMismatch": "All origin subsamples must use the same measurement category (e.g. all volume or all mass).",
           "originCountExact": "This operation requires exactly one origin subsample.",
           "originCountMaximum": "This operation accepts at most {0} origin subsamples.",
@@ -7036,9 +7038,10 @@ export default interface Resources {
           "subSampleQuantityInvalid": "Each new subsample must hold a quantity greater than zero, with a unit.",
           "subSampleQuantityTooPrecise": "Each new subsample quantity supports at most 3 decimal places.",
           "subSampleTotalNotStorable": "The new subsamples add up to more than a sample quantity can hold.",
-          "subSamplesRequired": "The new sample must include at least {0} subsample(s).",
+          "subSamplesRequired": "The new sample must include at least {0, plural, one {# subsample} other {# subsamples}}.",
           "tooManyOrigins": "This operation accepts at most {max} origin subsamples.",
           "undeclaredProperty": "This operation does not accept [{0}] on the sample it creates.",
+          "unknownPropertiesTruncated": "{0} further unrecognised properties were not listed.",
           "unknownProperty": "This operation does not accept the property [{0}].",
           "unknownType": "Unknown operation type [{0}]."
         },

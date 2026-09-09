@@ -1566,7 +1566,8 @@ paths:
         (`{processName}`, `{originName}`) - so the server matches fields to the definition by this
         key, never by name. A field with a missing or unrecognised key is rejected with 400, as is
         a definition-declared field that is missing, duplicated, or of the wrong type. The key is
-        request-only: it is never persisted and never appears in a response.
+        persisted and returned on GET, so a later run of the same operation identifies the previous
+        generation by key rather than by its localized name; only this endpoint may set it.
 
 
         ## What the new sample may carry
@@ -1797,7 +1798,8 @@ paths:
             for Aliquot, one for Pool), a newSample on Destroy or a missing one elsewhere, a zero
             amount for a decrementing operation or a non-zero amount for Passage, an origin that
             currently holds nothing, over-removal (taking more than an origin holds), a Destroy
-            amount that does not equal the origin's current quantity, a storage temperature
+            amount that does not equal the origin's current quantity when no amountMode was sent
+            (with amountMode "all" the same mismatch is a 409, see below), a storage temperature
             missing or outside the operation's configured bounds (Cryopreserve at most -18°C,
             Revive 4°C to 120°C, compared unit-aware), or a new sample missing the operation's
             provenance link back to an origin.
@@ -1829,6 +1831,18 @@ paths:
 
 
             The origins are left unchanged.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: >
+            The request was valid against the state the client read, but an origin changed in
+            between. Returned with error code EDIT_CONFLICT when an origin declares
+            amountMode "all" and the amount taken no longer equals that origin's live quantity:
+            the operation would otherwise empty an origin the user never saw. Nothing is applied;
+            the whole request rolls back. The remedy is to reload the origins and re-submit, not to
+            correct a field, which is what distinguishes this from the 400 above.
           content:
             application/json:
               schema:
@@ -4834,6 +4848,19 @@ components:
         - id
         - amountTaken
       properties:
+        amountMode:
+          type: string
+          enum: [explicit, all]
+          description: >
+            How the client decided amountTaken, which turns the amount into a compare-and-swap
+            guard when it is "all". "explicit" is an amount the user chose. "all" claims the amount
+            equals the origin's entire current quantity: the server compares it against the live
+            locked quantity and returns 409 EDIT_CONFLICT if the origin changed since the client
+            read it, rather than emptying an origin the user never saw. Omit for the pre-existing
+            behaviour, which is treated as "explicit" except on an origin-emptying operation
+            (Destroy), where a whole-origin claim is the only possible meaning. An operation that
+            takes nothing from its origins (Passage) rejects "all" with 400.
+          example: all
         id:
           type: integer
           format: int64
@@ -4859,11 +4886,15 @@ components:
     InventoryOperationNewSample:
       description: >
         The new sample to create, assembled entirely by the client. Unlike the POST /samples
-        payload this is a whitelist: only the properties listed here are accepted, and any other
-        sample property is rejected with 400. The operation's relation link(s) and text fields are
-        placed on the sample itself, never on the subsamples it creates.
+        payload this is a whitelist: the properties listed here are what an operation can carry, and
+        any other sample property that shapes the created sample - sharing, placement, tags,
+        barcodes, identifiers, images, description, sample source, expiry date, template field
+        values, attachments - is rejected with 400 naming the property. Read-back metadata the
+        sample DTO also declares (id, globalId, owner, created, deleted, _links and the rest) binds
+        but is ignored rather than rejected, so a client may send a GET representation back
+        unchanged. The operation's relation link(s) and text fields are placed on the sample
+        itself, never on the subsamples it creates.
       type: object
-      additionalProperties: false
       required:
         - name
       properties:
@@ -4919,8 +4950,9 @@ components:
         One subsample the operation creates. It carries a quantity only: the operation's links and
         text fields belong to the sample, so extra fields, notes, tags and placement on a subsample
         are rejected with 400.
+        Read-back metadata the subsample DTO declares binds but is ignored rather than
+        rejected; the properties named above are rejected with 400.
       type: object
-      additionalProperties: false
       properties:
         quantity:
           allOf:
@@ -4932,8 +4964,9 @@ components:
         definition by its operationFieldKey. Set newFieldRequest true to add a new field. A
         provenance LINK field sets type "link" and a link object; a plain field sets type "text"
         (or "number") and content.
+        Read-back metadata the extra-field DTO declares (id, globalId, parentGlobalId,
+        lastModified, modifiedBy, _links) binds but is ignored rather than rejected.
       type: object
-      additionalProperties: false
       required:
         - name
         - newFieldRequest
@@ -4950,7 +4983,9 @@ components:
           description: >
             The key of the definition entry that produced this field: a link spec's fieldNameKey,
             a text or origin field's nameKey, or the fixed "operations.documentationLink" for the
-            optional documentation link. Request-only; never persisted or returned.
+            optional documentation link. Persisted and returned on GET, so a later run of the same
+            operation identifies the previous generation by key rather than by its localized name.
+            Only this endpoint may set it; other endpoints ignore it.
           example: operations.derive.linkFieldName
         type:
           type: string

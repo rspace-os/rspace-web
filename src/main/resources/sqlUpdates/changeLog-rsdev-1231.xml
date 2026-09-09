@@ -15,8 +15,10 @@
 
     Nullable, with null meaning "not owned by any operation definition" - which is every field
     created by hand and every field that predates this column, so there is nothing to backfill.
-    Only the operations endpoint may write a non-null value; every other endpoint that binds
-    ApiExtraField rejects one (InventoryFieldValidator).
+    Only the operations endpoint may write a non-null value. Every other endpoint that binds
+    ApiExtraField ignores an incoming key rather than rejecting it, because the API returns this
+    column and rejecting broke read-modify-write; enforcement is at the single write point in
+    ApiExtraFieldsHelper, gated on a flag no client can bind.
   -->
   <changeSet id="2026-09-09a-a" context="run" author="neil">
     <comment>RSDEV-1231 add operationFieldKey to ExtraField</comment>

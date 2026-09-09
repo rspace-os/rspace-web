@@ -1,6 +1,7 @@
 /** RSpace API Access your RSpace Inventory programmatically. */
 package com.researchspace.api.v1.model;
 
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
@@ -15,7 +16,9 @@ import com.researchspace.model.inventory.field.ExtraField;
 import com.researchspace.model.inventory.field.ExtraLinkField;
 import com.researchspace.model.inventory.field.InventoryLink;
 import com.researchspace.model.record.IActiveUserStrategy;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -41,7 +44,34 @@ import org.apache.commons.lang3.StringUtils;
   "parentGlobalId",
   "_links"
 })
-public class ApiExtraField extends IdentifiableNameableApiObject {
+public class ApiExtraField extends IdentifiableNameableApiObject
+    implements UnknownPropertyCapturing {
+
+  /**
+   * Names of request properties this object does not declare; see {@link UnknownPropertyCapturing}.
+   * Declared here rather than on a shared base class: an any-setter suppresses Jackson's
+   * registration of ignorable property names for the whole class, so putting one on
+   * IdentifiableNameableApiObject applied that side effect to every API DTO beneath it (parallel
+   * review). Only the DTOs the operations payload actually contains capture.
+   */
+  // No @ToString.Exclude here: this class's @ToString already uses the old-style of={"type"},
+  // which excludes every other field, and Lombok rejects mixing that with the new-style form.
+  @JsonIgnore @EqualsAndHashCode.Exclude
+  private final List<String> unknownProperties = new ArrayList<>();
+
+  /**
+   * Records an unrecognised property's NAME and discards its value.
+   *
+   * <p>The value parameter is {@code Void}, not {@code Object}, deliberately. An any-setter's value
+   * IS deserialized before the method body runs, so {@code Object} would build a
+   * LinkedHashMap/ArrayList graph for the whole unknown subtree only to drop it, turning a body of
+   * junk keys into heap amplification. {@code Void} routes Jackson to NullifyingDeserializer, which
+   * skips the subtree exactly as unknown-property handling did before (parallel review).
+   */
+  @JsonAnySetter
+  private void captureUnknownProperty(String name, Void ignoredValue) {
+    UnknownPropertyCapturing.capture(unknownProperties, name);
+  }
 
   @JsonProperty("type")
   private ExtraFieldTypeEnum type;
@@ -86,10 +116,12 @@ public class ApiExtraField extends IdentifiableNameableApiObject {
    * the API and has to recognise the previous generation's field to continue from it, which
    * matching on the localized name cannot do reliably.
    *
-   * <p>Only the operations endpoint may SET it. Every other endpoint binding this DTO rejects a
-   * non-null value with a field-scoped 400 rather than ignoring it: a silently dropped key would be
-   * inconsistent with the caller's intent, and an accepted one would masquerade as
-   * operation-created.
+   * <p>Only the operations endpoint may PERSIST it. Every other endpoint binding this DTO IGNORES a
+   * value rather than rejecting it: rejecting broke read-modify-write, because the API returns this
+   * key and a client sending a GET representation back would have been 400ed for a value it never
+   * chose. Enforcement is therefore at the single write point, gated on {@link
+   * #operationFieldKeyVerified}, which no client can set. Do not add a rejection elsewhere: that
+   * was tried and reverted twice.
    */
   @JsonProperty("operationFieldKey")
   private String operationFieldKey;

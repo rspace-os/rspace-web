@@ -23,8 +23,8 @@ import lombok.ToString;
  * origin still serializes the full quantity it saw, and the endpoint checks that against the live
  * locked quantity: a mismatch means the origin changed between wizard load and Perform, and the
  * request is rejected with 409 rather than emptying an origin the user never saw. Absent on the
- * wire it defaults to EXPLICIT, so every request accepted before this field existed keeps its
- * current meaning. See DevDocs/adr/0007.
+ * wire it binds to null, a third state distinct from both modes: it earns no compare-and-swap, so
+ * every request accepted before this field existed keeps its current meaning. See DevDocs/adr/0007.
  */
 @Data
 @NoArgsConstructor
@@ -38,12 +38,18 @@ public class ApiInventoryOperationOriginUpdate implements UnknownPropertyCapturi
   @JsonIgnore @EqualsAndHashCode.Exclude @ToString.Exclude
   private final List<String> unknownProperties = new ArrayList<>();
 
-  /** Records an unrecognised property's NAME and discards its value. */
+  /**
+   * Records an unrecognised property's NAME and discards its value.
+   *
+   * <p>The value parameter is {@code Void}, not {@code Object}, deliberately. An any-setter's value
+   * IS deserialized before the method body runs, so {@code Object} would build a
+   * LinkedHashMap/ArrayList graph for the whole unknown subtree only to drop it, turning a body of
+   * junk keys into heap amplification. {@code Void} routes Jackson to NullifyingDeserializer, which
+   * skips the subtree exactly as unknown-property handling did before (parallel review).
+   */
   @JsonAnySetter
-  private void captureUnknownProperty(String name, Object ignoredValue) {
-    if (unknownProperties.size() < UnknownPropertyCapturing.MAX_CAPTURED_UNKNOWN_PROPERTIES) {
-      unknownProperties.add(name);
-    }
+  private void captureUnknownProperty(String name, Void ignoredValue) {
+    UnknownPropertyCapturing.capture(unknownProperties, name);
   }
 
   @JsonProperty("id")

@@ -1,7 +1,7 @@
 package com.researchspace.api.v1.controller;
 
-import static com.researchspace.api.v1.controller.InventoryOperationPostValidator.MAX_EXTRA_FIELDS;
-import static com.researchspace.api.v1.controller.InventoryOperationPostValidator.MAX_SUBSAMPLES;
+import static com.researchspace.api.v1.controller.OperationValidationSupport.MAX_EXTRA_FIELDS;
+import static com.researchspace.api.v1.controller.OperationValidationSupport.MAX_SUBSAMPLES;
 import static com.researchspace.api.v1.controller.OperationValidationSupport.fieldsWithKey;
 import static com.researchspace.api.v1.controller.OperationValidationSupport.quantityUtils;
 import static com.researchspace.api.v1.controller.OperationValidationSupport.rejectDeclaredField;
@@ -104,8 +104,8 @@ class OperationNewSampleValidator {
         && newSample.getExtraFields().stream().anyMatch(Objects::isNull)) {
       errors.rejectValue(
           "newSample.extraFields",
-          "errors.inventory.operation.fieldKeyUnknown",
-          new Object[] {null},
+          "errors.inventory.operation.fieldKeyMissing",
+          null,
           "This field is not one the operation declares.");
       return;
     }
@@ -456,7 +456,9 @@ class OperationNewSampleValidator {
       if (!declaredKeys.contains(field.getOperationFieldKey())) {
         errors.rejectValue(
             String.format("newSample.extraFields[%d].operationFieldKey", index),
-            "errors.inventory.operation.fieldKeyUnknown",
+            field.getOperationFieldKey() == null
+                ? "errors.inventory.operation.fieldKeyMissing"
+                : "errors.inventory.operation.fieldKeyUnknown",
             new Object[] {field.getOperationFieldKey()},
             "This field is not one the operation declares.");
       } else {

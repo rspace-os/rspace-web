@@ -437,9 +437,13 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
    * template counter and the next Passage would read the empty one. Merging keeps one field of that
    * name carrying the operation's value, so the lookup still works with or without a template.
    *
-   * <p>Only fields the operation generated are merged, identified by their {@code
-   * operationFieldKey}: a user's own extra field on POST /samples keeps the existing duplicate-name
-   * rejection rather than silently overwriting template content. Link fields are never merged in
+   * <p>Only fields the operation generated are merged, identified by the {@code
+   * operationFieldKeyVerified} flag rather than by the key itself: a user's own extra field on POST
+   * /samples keeps the existing duplicate-name rejection rather than silently overwriting template
+   * content. The raw key is client-writable on every endpoint by design (rejecting it elsewhere
+   * broke read-modify-write for API clients), so it is not evidence an operation produced the
+   * field; only {@code InventoryOperationPostValidator} sets the flag, and only after checking the
+   * key against that operation's own definition (parallel review). Link fields are never merged in
    * either direction, because a link holds a structured {@code InventoryLink} rather than text.
    * Names are matched the way the uniqueness check compares them, trimmed and case-insensitively,
    * or a collision it would reject could survive this merge.
@@ -465,6 +469,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
     while (generated.hasNext()) {
       ApiExtraField field = generated.next();
       if (field == null
+          || !field.isOperationFieldKeyVerified()
           || StringUtils.isBlank(field.getOperationFieldKey())
           || ExtraFieldTypeEnum.LINK.equals(field.getType())
           || StringUtils.isBlank(field.getName())) {

@@ -68,7 +68,9 @@ Files:
     `ProcessAction`).
 - Backend (generic, do not edit per operation):
   `com.researchspace.api.v1.controller.InventoryOperationsApiController`,
-  `InventoryOperationPostValidator`,
+  `InventoryOperationPostValidator` (the payload root; it delegates by region to
+  `OperationOriginValidator` and `OperationNewSampleValidator`, with the rules they
+  share in `OperationValidationSupport`),
   `com.researchspace.service.inventory.InventoryOperationManager(+Impl)`,
   DTOs `ApiInventoryOperationPost` / `ApiInventoryOperationOriginUpdate`.
 
@@ -206,8 +208,9 @@ Extra fields are matched to the definition **by key, not by name**: display name
 localized and interpolate user input, so `buildOperationRequest` stamps every field it
 builds with `operationFieldKey` — a link spec's `fieldNameKey`, a text/origin field's
 `nameKey`, or the fixed `operations.documentationLink` for the optional documentation
-link. `ApiExtraField.operationFieldKey` is write-only: never persisted, never returned,
-ignored by every other endpoint. Each declared link spec must produce exactly one link
+link. `ApiExtraField.operationFieldKey` is persisted and returned on GET, so a later run
+matches the previous generation by key; only this endpoint may set it, and every other
+endpoint ignores an incoming value. Each declared link spec must produce exactly one link
 per origin; each declared text field and each declared origin field must appear exactly
 once, of the declared type; an operation declaring no `originFields` accepts none (which
 also closes the self-link route). Computed content is **shape-checked, not recomputed**:

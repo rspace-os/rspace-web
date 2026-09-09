@@ -1,17 +1,20 @@
 package com.researchspace.api.v1.controller;
 
-import static com.researchspace.api.v1.controller.InventoryOperationPostValidator.COMPUTED_CONTENT_SHAPES;
-
 import com.researchspace.api.v1.model.ApiExtraField;
 import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.units.QuantityUtils;
 import com.researchspace.service.inventory.InventoryOperationConfig;
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
+import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.validation.Errors;
 
@@ -24,6 +27,48 @@ import org.springframework.validation.Errors;
 final class OperationValidationSupport {
 
   private OperationValidationSupport() {}
+
+  /**
+   * Ceilings on the other lists this validator walks repeatedly. The DTO's {@code @Size} caps the
+   * subsamples but only records a violation: validation continued through every per-subsample pass.
+   * {@code extraFields} has no DTO cap at all, on the new sample (where {@link
+   * OperationNewSampleValidator#validateDeclaredLinks} scans it once per origin, O(origins x
+   * fields) of work on a public endpoint) or on each origin (where every entry costs a
+   * shared-field-validator pass plus a declared-spec scan). Each list is checked before its first
+   * traversal and returns (Copilot review, PR #1090).
+   */
+  static final int MAX_SUBSAMPLES = 100;
+
+  static final int MAX_EXTRA_FIELDS = 100;
+
+  private static final Pattern POSITIVE_INTEGER = Pattern.compile("0*[1-9]\\d*");
+
+  /**
+   * What each computed function promises about the content of the field it feeds. The backend
+   * checks the shape rather than recomputing the value (DevDocs/adr/0007): the parent field an
+   * {@code increment} counts from is findable only by its localized name, and a {@code today}
+   * recomputed server-side would fight the client's timezone. A function with no rule here is left
+   * unchecked; the registry test pins the shipped set.
+   */
+  // Package-private so InventoryOperationPostValidatorTest can pin these names against
+  // InventoryOperationConfig.INTERPRETED_COMPUTED_FUNCTIONS, which the registry rejects unknown
+  // functions with at construction. The two sets must stay identical: a name here but not there
+  // boots a definition whose content check silently does nothing.
+  static final Map<String, Predicate<String>> COMPUTED_CONTENT_SHAPES =
+      Map.of(
+          "increment",
+          content -> POSITIVE_INTEGER.matcher(content).matches(),
+          "today",
+          OperationValidationSupport::isIsoDate);
+
+  private static boolean isIsoDate(String content) {
+    try {
+      LocalDate.parse(content, DateTimeFormatter.ISO_LOCAL_DATE);
+      return true;
+    } catch (DateTimeParseException e) {
+      return false;
+    }
+  }
 
   /** Stateless, so one instance serves every caller. */
   static final QuantityUtils quantityUtils = new QuantityUtils();

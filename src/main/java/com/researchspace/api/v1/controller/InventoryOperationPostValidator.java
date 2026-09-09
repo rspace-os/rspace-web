@@ -6,17 +6,12 @@ import com.researchspace.api.v1.model.UnknownPropertyCapturing;
 import com.researchspace.service.inventory.ApiExtraFieldsHelper;
 import com.researchspace.service.inventory.InventoryOperationConfig;
 import com.researchspace.service.inventory.InventoryOperationConfigRegistry;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiConsumer;
-import java.util.function.Predicate;
-import java.util.regex.Pattern;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
@@ -49,46 +44,15 @@ public class InventoryOperationPostValidator implements Validator {
   static final int MAX_ORIGINS = 100;
 
   /**
-   * Ceilings on the other lists this validator walks repeatedly. The DTO's {@code @Size} caps the
-   * subsamples but only records a violation: validation continued through every per-subsample pass.
-   * {@code extraFields} has no DTO cap at all, on the new sample (where {@link
-   * OperationNewSampleValidator#validateDeclaredLinks} scans it once per origin, O(origins x
-   * fields) of work on a public endpoint) or on each origin (where every entry costs a
-   * shared-field-validator pass plus a declared-spec scan). Each list is checked before its first
-   * traversal and returns (Copilot review, PR #1090).
+   * Ceiling on unknown-property errors reported for one request. {@link
+   * UnknownPropertyCapturing#MAX_CAPTURED_UNKNOWN_PROPERTIES} caps names per OBJECT, which does not
+   * bound the response, because nothing bounds the number of objects: the walk deliberately runs
+   * before MAX_ORIGINS and MAX_EXTRA_FIELDS so a typo is reported even in a structurally broken
+   * request, and each error costs a reflective field read plus a message resolution. Without this a
+   * body of junk keys amplifies into an unbounded error list (parallel review). A caller with this
+   * many typos does not need the rest enumerated, only to be told there are more.
    */
-  static final int MAX_SUBSAMPLES = 100;
-
-  static final int MAX_EXTRA_FIELDS = 100;
-
-  private static final Pattern POSITIVE_INTEGER = Pattern.compile("0*[1-9]\\d*");
-
-  /**
-   * What each computed function promises about the content of the field it feeds. The backend
-   * checks the shape rather than recomputing the value (DevDocs/adr/0007): the parent field an
-   * {@code increment} counts from is findable only by its localized name, and a {@code today}
-   * recomputed server-side would fight the client's timezone. A function with no rule here is left
-   * unchecked; the registry test pins the shipped set.
-   */
-  // Package-private so InventoryOperationPostValidatorTest can pin these names against
-  // InventoryOperationConfig.INTERPRETED_COMPUTED_FUNCTIONS, which the registry rejects unknown
-  // functions with at construction. The two sets must stay identical: a name here but not there
-  // boots a definition whose content check silently does nothing.
-  static final Map<String, Predicate<String>> COMPUTED_CONTENT_SHAPES =
-      Map.of(
-          "increment",
-          content -> POSITIVE_INTEGER.matcher(content).matches(),
-          "today",
-          InventoryOperationPostValidator::isIsoDate);
-
-  private static boolean isIsoDate(String content) {
-    try {
-      LocalDate.parse(content, DateTimeFormatter.ISO_LOCAL_DATE);
-      return true;
-    } catch (DateTimeParseException e) {
-      return false;
-    }
-  }
+  static final int MAX_REPORTED_UNKNOWN_PROPERTIES = 50;
 
   private final InventoryOperationConfigRegistry operationConfigs;
 
@@ -131,7 +95,9 @@ public class InventoryOperationPostValidator implements Validator {
     if (configForKey.isEmpty()) {
       errors.rejectValue(
           "operationType",
-          "errors.inventory.operation.unknownType",
+          StringUtils.isBlank(request.getOperationType())
+              ? "errors.inventory.operation.operationTypeRequired"
+              : "errors.inventory.operation.unknownType",
           new Object[] {request.getOperationType()},
           "Unknown operation type.");
       return;
@@ -196,29 +162,42 @@ public class InventoryOperationPostValidator implements Validator {
    * levels a client actually sends are visited; a quantity is a leaf of numbers and needs no pass.
    */
   private static void rejectUnknownProperties(ApiInventoryOperationPost request, Errors errors) {
-    rejectCaptured(errors, "", request);
+    Budget budget = new Budget();
+    rejectCaptured(errors, "", request, budget);
     forEachAt(
         request.getOrigins(),
         "origins",
         (path, origin) -> {
-          rejectCaptured(errors, path, origin);
+          rejectCaptured(errors, path, origin, budget);
           forEachAt(
               origin.getExtraFields(),
               path + ".extraFields",
-              (fieldPath, field) -> rejectCaptured(errors, fieldPath, field));
+              (fieldPath, field) -> rejectCaptured(errors, fieldPath, field, budget));
         });
     ApiSampleWithFullSubSamples newSample = request.getNewSample();
     if (newSample != null) {
-      rejectCaptured(errors, "newSample", newSample);
+      rejectCaptured(errors, "newSample", newSample, budget);
       forEachAt(
           newSample.getSubSamples(),
           "newSample.subSamples",
-          (path, subSample) -> rejectCaptured(errors, path, subSample));
+          (path, subSample) -> rejectCaptured(errors, path, subSample, budget));
       forEachAt(
           newSample.getExtraFields(),
           "newSample.extraFields",
-          (path, field) -> rejectCaptured(errors, path, field));
+          (path, field) -> rejectCaptured(errors, path, field, budget));
     }
+    if (budget.unreported > 0) {
+      errors.reject(
+          "errors.inventory.operation.unknownPropertiesTruncated",
+          new Object[] {budget.unreported},
+          "Further unrecognised properties were not listed.");
+    }
+  }
+
+  /** How many unknown-property errors are left to report, and how many were skipped. */
+  private static final class Budget {
+    private int remaining = MAX_REPORTED_UNKNOWN_PROPERTIES;
+    private int unreported;
   }
 
   /** Visits each non-null element of a nullable list, at {@code path[index]}. */
@@ -239,9 +218,18 @@ public class InventoryOperationPostValidator implements Validator {
    * part of the payload the property was on. An empty path is the request itself, which is not a
    * field of anything and so becomes a global error.
    */
-  private static void rejectCaptured(Errors errors, String path, UnknownPropertyCapturing object) {
+  private static void rejectCaptured(
+      Errors errors, String path, UnknownPropertyCapturing object, Budget budget) {
     for (String property : object.getUnknownProperties()) {
-      Object[] arguments = new Object[] {property};
+      if (budget.remaining <= 0) {
+        budget.unreported++;
+        continue;
+      }
+      budget.remaining--;
+      // Truncated because the name is echoed back to the caller and a property name is bounded only
+      // by Jackson's 50,000-character limit; enough to identify the typo is enough.
+      Object[] arguments =
+          new Object[] {StringUtils.abbreviate(property, MAX_REPORTED_NAME_LENGTH)};
       String defaultMessage = "This operation does not accept this property.";
       if (path.isEmpty()) {
         errors.reject("errors.inventory.operation.unknownProperty", arguments, defaultMessage);
@@ -251,4 +239,7 @@ public class InventoryOperationPostValidator implements Validator {
       }
     }
   }
+
+  /** How much of an unrecognised property's name is echoed back in the error. */
+  private static final int MAX_REPORTED_NAME_LENGTH = 64;
 }

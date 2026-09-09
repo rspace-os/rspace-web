@@ -252,10 +252,19 @@ beforeEach(() => {
   taken.length = 0;
   performSearch.mockClear();
   addAlert.mockClear();
-  // Cleared, not reset: mockResolvedValueOnce/mockRejectedValueOnce in individual tests would
-  // otherwise leak into the next one, and a stale call count would make "was the parent template
-  // loaded at all" assertions meaningless.
-  getTemplate.mockClear();
+  // Reset, not merely cleared: mockClear drops call history but LEAVES a queued
+  // mockResolvedValueOnce/mockRejectedValueOnce, so an unconsumed Once would be handed to the next
+  // test, which matters because one test here asserts getTemplate is never called (parallel
+  // review). mockReset also restores the implementation passed to vi.fn.
+  getTemplate.mockReset();
+  getTemplate.mockImplementation(() =>
+    Promise.resolve({
+      id: 9,
+      name: "Parent template",
+      quantityCategory: "volume",
+      fields: [{ name: "Passage number", mandatory: true, content: "1", selectedOptions: null }],
+    }),
+  );
   server.use(...operationHandlers);
 });
 

@@ -2,6 +2,7 @@ package com.researchspace.api.v1.model;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -243,5 +244,39 @@ class ApiInventoryOperationPostBindingTest {
                         "{\"operationFieldKey\":\"operations.passage.numberField\"}",
                         ApiExtraField.class))
             .getOperationFieldKey());
+  }
+
+  @Test
+  void capturesNothingWhenAWholeSampleResponseIsSentStraightBack() {
+    // The wider version of the ApiExtraField round trip. newSample and its subsamples inherit a
+    // large surface from ApiInventoryRecordInfo, and a client assembling newSample from a GET
+    // representation must not be 400ed for a property the API itself returned (parallel review).
+    ApiSampleWithFullSubSamples sample = new ApiSampleWithFullSubSamples("round trip");
+    sample.getSubSamples().add(new ApiSubSample("child"));
+    sample.getExtraFields().add(new ApiExtraField(ApiExtraField.ExtraFieldTypeEnum.TEXT));
+
+    ApiSampleWithFullSubSamples returned =
+        assertDoesNotThrow(
+            () ->
+                apiMapper.readValue(
+                    apiMapper.writeValueAsString(sample), ApiSampleWithFullSubSamples.class));
+
+    assertEquals(List.of(), returned.getUnknownProperties(), "sample");
+    assertEquals(List.of(), returned.getSubSamples().get(0).getUnknownProperties(), "subsample");
+    assertEquals(List.of(), returned.getExtraFields().get(0).getUnknownProperties(), "extra field");
+  }
+
+  @Test
+  void doesNotCaptureOnApiObjectsOutsideTheOperationsPayload() {
+    // The capture used to sit on IdentifiableNameableApiObject, the base of every API DTO. An
+    // any-setter suppresses Jackson's registration of ignorable property names for the whole class
+    // and deserializes the unknown value before discarding it, so that placement applied both side
+    // effects to the entire v1 API for a feature scoped to one endpoint (parallel review).
+    assertFalse(
+        UnknownPropertyCapturing.class.isAssignableFrom(IdentifiableNameableApiObject.class),
+        "the shared base class must not capture: only the operations payload DTOs do");
+    assertDoesNotThrow(
+        () -> apiMapper.readValue("{\"name\":\"f\",\"nope\":1}", ApiFolder.class),
+        "an unrelated DTO must still ignore unknown properties exactly as before");
   }
 }
