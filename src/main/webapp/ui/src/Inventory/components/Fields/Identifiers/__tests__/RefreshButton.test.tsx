@@ -41,10 +41,48 @@ describe("RefreshButton", () => {
     expect(vi.mocked(refresh)).toHaveBeenCalled();
   });
 
-  test.each(["draft", "created", "declined", "findable"] as const)("renders nothing when the state is %s", (state) => {
+  /*
+   * The three states that close a B2INST review without publishing are terminal at the provider,
+   * so those are the whole of what has nothing left to pull.
+   */
+  test.each(["declined", "cancelled", "expired"] as const)("renders nothing when the state is %s", (state) => {
     render(
       <ThemeProvider theme={materialTheme}>
         <RefreshButton identifier={submittedPidinst({ state })} />
+      </ThemeProvider>,
+    );
+    expect(screen.queryByRole("button", { name: REFRESH })).not.toBeInTheDocument();
+  });
+
+  /*
+   * A draft or created record's status is still decided at B2INST: it can be submitted for review
+   * or deleted in the B2INST UI, and a created review can be accepted by a curator, none of which
+   * reaches RSpace any other way (RSDEV-1326).
+   */
+  test.each(["draft", "created"] as const)("renders for a B2INST identifier in state %s", (state) => {
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <RefreshButton identifier={submittedPidinst({ state })} />
+      </ThemeProvider>,
+    );
+    expect(screen.getByRole("button", { name: REFRESH })).toBeVisible();
+  });
+
+  /*
+   * A DataCite identifier never has a provider read to make: refreshIdentifier returns the record
+   * untouched for it, because its state only changes through RSpace's own publish and retract. The
+   * check has to be on the provider, since "draft" is a state both of them use, and an IGSN sample
+   * would otherwise grow a button that reports success having done nothing.
+   */
+  test.each([
+    ["DATACITE_IGSN", "draft"],
+    ["DATACITE_IGSN", "findable"],
+    ["PIDINST_DATACITE", "draft"],
+    ["PIDINST_DATACITE", "registered"],
+  ] as const)("renders nothing for a %s identifier in state %s", (doiType, state) => {
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <RefreshButton identifier={submittedPidinst({ doiType, state })} />
       </ThemeProvider>,
     );
     expect(screen.queryByRole("button", { name: REFRESH })).not.toBeInTheDocument();

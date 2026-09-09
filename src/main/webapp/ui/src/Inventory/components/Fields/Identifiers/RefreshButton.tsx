@@ -6,6 +6,7 @@ import { getErrorMessage } from "@/util/error";
 import CustomTooltip from "../../../../components/CustomTooltip";
 import { mkAlert } from "../../../../stores/contexts/Alert";
 import type { Identifier } from "../../../../stores/definitions/Identifier";
+import { B2INST_CLOSED_REVIEW_STATES } from "../../../../stores/definitions/Identifier";
 import useStores from "../../../../stores/use-stores";
 
 type RefreshButtonArgs = {
@@ -14,15 +15,16 @@ type RefreshButtonArgs = {
 };
 
 /**
- * Pulls the identifier's current review status from the provider (RSDEV-1260). Rendered while the
- * B2INST community review is open ("submitted"), when the outcome is decided outside RSpace and
- * this is the one useful action, and it stays offered once that review has been accepted.
+ * Pulls the identifier's current review status from the provider (RSDEV-1260). Offered for a
+ * B2INST identifier whenever its community review can still move, which is every state except the
+ * three that close it without publishing. It used to be offered for "submitted" alone, plus an
+ * accepted record that had not yet reported its Handle (Copilot review, PR 1066), and was widened
+ * to accepted and then to draft on Nico's request (RSDEV-1326).
  *
- * An accepted record keeps it because acceptance reads the minted ePIC PID out of the published
- * record's `pids` block, which can come back without one, and refresh is the only action that can
- * pick it up afterwards; the landing page and record URLs B2INST holds can equally move after
- * publication. It used to retire as soon as a Handle was present, which left no way to re-read
- * either (Copilot review, PR 1066; RSDEV-1326).
+ * The status of a B2INST record is decided outside RSpace at every point: a draft can be submitted
+ * for review, or deleted, in the B2INST UI; a created review can be accepted by a curator; and an
+ * accepted record's minted ePIC PID, landing page and record page can all still arrive or move.
+ * None of that reaches RSpace any other way.
  */
 function RefreshButton({ identifier, disabled }: RefreshButtonArgs): React.ReactNode {
   const [refreshing, setRefreshing] = React.useState(false);
@@ -30,17 +32,20 @@ function RefreshButton({ identifier, disabled }: RefreshButtonArgs): React.React
   const { uiStore } = useStores();
 
   /*
-   * Only a B2INST review has a status held outside RSpace: "submitted" while the curator decides,
-   * and "accepted" afterwards. DataCite state changes only through RSpace's own publish and
-   * retract calls, so for those there is never anything to pull.
+   * A review closed without publishing - declined, cancelled, expired - is terminal at B2INST, so
+   * that is the whole of what has nothing left to pull. The provider check is what makes "draft"
+   * safe to include: both providers use that state, and for DataCite the server makes no provider
+   * call at all, since its state only ever changes through RSpace's own publish and retract. Every
+   * IGSN draft would otherwise grow a button that reports success having done nothing.
    */
-  const refreshable = identifier.state === "submitted" || identifier.state === "accepted";
+  const refreshable =
+    identifier.doiType === "PIDINST_B2INST" && !B2INST_CLOSED_REVIEW_STATES.includes(identifier.state);
 
   /*
    * A linked identifier is a PID another party minted. RSpace holds no provider-side record of its
    * own for it, so refresh is refused with 422 exactly like publish and retract (ADR 0009), and
-   * offering the action would only produce that error. Until now that was hidden here by accident,
-   * because an imported PID arrives with its Handle already resolved.
+   * offering the action would only produce that error. It has to be withheld on the flag: an
+   * imported PID is accepted and arrives with its Handle, so nothing else here excludes it.
    */
   if (identifier.linked || !refreshable) return null;
 
