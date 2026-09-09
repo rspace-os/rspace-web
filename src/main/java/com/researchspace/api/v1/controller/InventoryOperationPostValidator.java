@@ -1,15 +1,19 @@
 package com.researchspace.api.v1.controller;
 
 import com.researchspace.api.v1.model.ApiInventoryOperationPost;
+import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
+import com.researchspace.api.v1.model.UnknownPropertyCapturing;
 import com.researchspace.service.inventory.ApiExtraFieldsHelper;
 import com.researchspace.service.inventory.InventoryOperationConfig;
 import com.researchspace.service.inventory.InventoryOperationConfigRegistry;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import org.apache.commons.collections.CollectionUtils;
@@ -115,6 +119,11 @@ public class InventoryOperationPostValidator implements Validator {
   public void validate(Object target, Errors errors) {
     ApiInventoryOperationPost request = (ApiInventoryOperationPost) target;
 
+    // Reported first and never skipped by a later early return: a property no DTO declares was
+    // dropped during binding, so every rule below has been evaluated against a request that is not
+    // the one the caller sent.
+    rejectUnknownProperties(request, errors);
+
     // The operation key names the definition every other rule comes from, so an unknown key is
     // rejected alone: there is nothing meaningful to validate the rest of the request against.
     Optional<InventoryOperationConfig> configForKey =
@@ -172,5 +181,74 @@ public class InventoryOperationPostValidator implements Validator {
 
     originValidator.validateOrigins(request, config, errors);
     newSampleValidator.validateNewSample(request, config, errors);
+  }
+
+  /**
+   * Reports every property the request body carried that no DTO declares (F7). The API's mapper has
+   * FAIL_ON_UNKNOWN_PROPERTIES off, so binding drops such a key silently, and afterwards a dropped
+   * key is indistinguishable from an optional one the caller omitted: no presence rule can see it.
+   * Each object in the payload captures the NAME at binding instead ({@link
+   * UnknownPropertyCapturing}), and this turns those into ordinary field errors, aggregated with
+   * every other error in the one 400.
+   *
+   * <p>A walk of its own rather than a call inside each region's rules, because those return early
+   * on the first structural problem while an unknown property must be reported either way. Only the
+   * levels a client actually sends are visited; a quantity is a leaf of numbers and needs no pass.
+   */
+  private static void rejectUnknownProperties(ApiInventoryOperationPost request, Errors errors) {
+    rejectCaptured(errors, "", request);
+    forEachAt(
+        request.getOrigins(),
+        "origins",
+        (path, origin) -> {
+          rejectCaptured(errors, path, origin);
+          forEachAt(
+              origin.getExtraFields(),
+              path + ".extraFields",
+              (fieldPath, field) -> rejectCaptured(errors, fieldPath, field));
+        });
+    ApiSampleWithFullSubSamples newSample = request.getNewSample();
+    if (newSample != null) {
+      rejectCaptured(errors, "newSample", newSample);
+      forEachAt(
+          newSample.getSubSamples(),
+          "newSample.subSamples",
+          (path, subSample) -> rejectCaptured(errors, path, subSample));
+      forEachAt(
+          newSample.getExtraFields(),
+          "newSample.extraFields",
+          (path, field) -> rejectCaptured(errors, path, field));
+    }
+  }
+
+  /** Visits each non-null element of a nullable list, at {@code path[index]}. */
+  private static <T> void forEachAt(List<T> list, String path, BiConsumer<String, T> visit) {
+    if (list == null) {
+      return;
+    }
+    for (int index = 0; index < list.size(); index++) {
+      T element = list.get(index);
+      if (element != null) {
+        visit.accept(String.format("%s[%d]", path, index), element);
+      }
+    }
+  }
+
+  /**
+   * One error per captured name, scoped to the object that carried it, so the response says which
+   * part of the payload the property was on. An empty path is the request itself, which is not a
+   * field of anything and so becomes a global error.
+   */
+  private static void rejectCaptured(Errors errors, String path, UnknownPropertyCapturing object) {
+    for (String property : object.getUnknownProperties()) {
+      Object[] arguments = new Object[] {property};
+      String defaultMessage = "This operation does not accept this property.";
+      if (path.isEmpty()) {
+        errors.reject("errors.inventory.operation.unknownProperty", arguments, defaultMessage);
+      } else {
+        errors.rejectValue(
+            path, "errors.inventory.operation.unknownProperty", arguments, defaultMessage);
+      }
+    }
   }
 }
