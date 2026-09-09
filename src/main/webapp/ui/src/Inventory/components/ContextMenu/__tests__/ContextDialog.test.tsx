@@ -48,4 +48,19 @@ describe("ContextDialog", () => {
     await clickBackdrop();
     expect(onClose).not.toHaveBeenCalled();
   });
+
+  it("still closes on Escape when disableBackdropClick is set", async () => {
+    // The guard narrows on reason === "backdropClick" precisely so Escape keeps working. Written
+    // as `if (disableBackdropClick) return;` it would trap a keyboard user in the operation wizard,
+    // the only component that sets the prop, and both backdrop tests above would still pass
+    // (parallel review).
+    const onClose = vi.fn();
+    render(
+      <ContextDialog open onClose={onClose} disableBackdropClick>
+        <div data-testid="body" />
+      </ContextDialog>,
+    );
+    await userEvent.setup().keyboard("{Escape}");
+    expect(onClose).toHaveBeenCalled();
+  });
 });

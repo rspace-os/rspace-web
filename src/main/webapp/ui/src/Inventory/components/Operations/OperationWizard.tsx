@@ -311,7 +311,7 @@ function OperationWizard({
           setParentTemplateError(
             t("operations.template.mandatoryFieldsError", {
               count: missingFields.length,
-              fields: formatList(missingFields, i18n.language),
+              fields: formatList(missingFields, i18n.resolvedLanguage ?? i18n.language),
             }),
           );
           return;
