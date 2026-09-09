@@ -280,7 +280,17 @@ function OperationWizard({
     templateSelection.templateId === null;
 
   React.useEffect(() => {
-    if (!needsParentTemplateCheck || parentTemplateId === null) return;
+    if (!needsParentTemplateCheck || parentTemplateId === null) {
+      // The check is no longer wanted, typically because the user switched to a picked template
+      // while a lookup was outstanding. Advance the token so that lookup's result is discarded, and
+      // release the status it owned: otherwise a late rejection reported lookupFailed against the
+      // mode just switched TO, and "checking" stayed true until a request whose answer no longer
+      // matters happened to settle (Copilot review, PR #1090).
+      parentCheckIdRef.current++;
+      setParentTemplateError(null);
+      setParentTemplateChecking(false);
+      return;
+    }
     const checkId = ++parentCheckIdRef.current;
     setParentTemplateError(null);
     setParentTemplateChecking(true);
