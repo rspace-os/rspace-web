@@ -17,8 +17,10 @@ import { useTranslation } from "react-i18next";
 import SubmitSpinnerButton from "@/components/SubmitSpinnerButton";
 import useUiPreference, { PREFERENCES } from "@/hooks/api/useUiPreference";
 import useViewportDimensions from "@/hooks/browser/useViewportDimensions";
+import { formatList } from "@/modules/common/i18n/listFormat";
 import { mkAlert } from "@/stores/contexts/Alert";
 import { CELSIUS, toCommonUnit } from "@/stores/definitions/Units";
+import AlwaysNewFactory from "@/stores/models/Factory/AlwaysNewFactory";
 import { getUnitId, getValue } from "@/stores/models/HasQuantity";
 import type SubSampleModel from "@/stores/models/SubSampleModel";
 import getRootStore from "@/stores/stores/getRootStore";
@@ -40,7 +42,13 @@ import {
   resolveProcessName,
   usesAmountModes,
 } from "./operationsConfig";
-import { amountIsStorable, amountTakenExceedsOrigin, detailsValid, quantityExceedsOrigin } from "./operationValidation";
+import {
+  amountIsStorable,
+  amountTakenExceedsOrigin,
+  detailsValid,
+  quantityExceedsOrigin,
+  reconcileRestoredQuantities,
+} from "./operationValidation";
 import { addProcessName, processNameDefaultAfterPerform, rememberKey } from "./processNames";
 import { normalizeProcessValues, type ProcessValues, processValuesAfterPerform } from "./processValues";
 import { derivedSampleName, firstAvailableName } from "./sampleNaming";
@@ -48,6 +56,7 @@ import TemplateStep, { type TemplateSelection } from "./TemplateStep";
 import {
   initialTemplateSelection,
   resolveTemplateId,
+  templateSelectionBlock,
   templateSelectionFor,
   templateSelectionToDefault,
   templateStepValid,
@@ -156,7 +165,7 @@ function OperationWizard({
   /** The selected origin subsamples: one for a single-origin operation, two or more for Pool. */
   origins: Array<SubSampleModel>;
 }): React.ReactNode {
-  const { t } = useTranslation(["inventory", "common"]);
+  const { t, i18n } = useTranslation(["inventory", "common"]);
   const resolveLabel = resolveLabelFrom(t);
   // The representative origin (the smallest; see representativeOrigin) drives the single-origin wizard
   // logic - units, the derived name base, over-removal - unchanged. Multi-origin specifics (all the
@@ -245,11 +254,124 @@ function OperationWizard({
   // several parent samples, so "use parent template" is ambiguous and always disabled for it.
   const parentHasTemplate = !operation?.requiresMultiple && (origin.sample.templateId ?? null) !== null;
 
+  // Loads the origin sample's own template so the template step can hold "use parent template" to
+  // the same mandatory-without-default check a picked template goes through (F5). GET
+  // /sampleTemplates/{id} returns the fields the check reads, so no second fetch is needed.
+  // Referentially stable per parent template id: TemplateStep's mount effect keys on this callback,
+  // so a fresh identity each render would re-run the lookup continuously.
+  const parentTemplateId = origin.sample.templateId ?? null;
+
+  // The "use parent template" check lives HERE, not in TemplateStep, because the gate it feeds
+  // (templateStepValid, via allStepsValid) is evaluated on every step including step one, while the
+  // wizard renders only the ACTIVE step. A check owned by the step therefore never ran for the
+  // one-click fast path, leaving Perform permanently disabled for the most common template mode
+  // (parallel review, C2). The step now only displays this status.
+  const [parentTemplateError, setParentTemplateError] = React.useState<string | null>(null);
+  const [parentTemplateChecking, setParentTemplateChecking] = React.useState(false);
+  // Monotonic, not a fixed sentinel: two overlapping lookups previously carried the same token, so
+  // a late failure could overwrite an earlier success with a "lookup failed" message on a selection
+  // that had actually passed (parallel review, I8).
+  const parentCheckIdRef = React.useRef(0);
+
+  const needsParentTemplateCheck =
+    parentHasTemplate &&
+    parentTemplateId !== null &&
+    templateSelection.mode === "fromSample" &&
+    templateSelection.templateId === null;
+
+  React.useEffect(() => {
+    if (!needsParentTemplateCheck || parentTemplateId === null) return;
+    const checkId = ++parentCheckIdRef.current;
+    setParentTemplateError(null);
+    setParentTemplateChecking(true);
+    void (async () => {
+      try {
+        const template = await getRootStore().searchStore.getTemplate(parentTemplateId, null, new AlwaysNewFactory());
+        if (checkId !== parentCheckIdRef.current) return;
+        const { blocked, missingFields } = templateSelectionBlock(
+          template.fields.map((f) => ({
+            name: f.name,
+            mandatory: f.mandatory,
+            hasDefault:
+              (f.selectedOptions?.length ?? 0) > 0 ||
+              (f.content !== null && f.content !== undefined && String(f.content).trim() !== ""),
+          })),
+        );
+        if (blocked) {
+          setParentTemplateError(
+            t("operations.template.mandatoryFieldsError", {
+              fields: formatList(missingFields, i18n.language),
+            }),
+          );
+          return;
+        }
+        // Only a PASSING check writes the id, which is what makes templateStepValid's id test the
+        // signal that this step is done. Functional update, so a concurrent change to another part
+        // of the selection is not clobbered by a stale snapshot (parallel review, I7).
+        setTemplateSelection((previous) =>
+          previous.mode === "fromSample"
+            ? { ...previous, templateId: parentTemplateId, quantityCategory: template.quantityCategory }
+            : previous,
+        );
+      } catch {
+        if (checkId !== parentCheckIdRef.current) return;
+        setParentTemplateError(t("operations.template.lookupFailed"));
+      } finally {
+        if (checkId === parentCheckIdRef.current) setParentTemplateChecking(false);
+      }
+    })();
+  }, [needsParentTemplateCheck, parentTemplateId, t, i18n.language]);
+
   // The base the derived sample name is built from: the origin's own sample name for a single-origin
   // operation, or the operation's label for a multi-origin one (Pool combines several samples, so no
   // single origin name applies - it becomes just "Pool", de-duplicated).
   const sampleNameBase = (op: InventoryOperation): string =>
     op.requiresMultiple ? resolveLabel(op.labelKey) : origin.sample.name;
+
+  /**
+   * A restored template selection, with "use parent template" dropped when this run has no parent
+   * template to use.
+   *
+   * That combination is reachable whenever a bundle is reused on a different origin, or on a Pool
+   * (where "the parent" is ambiguous, so parentHasTemplate is forced false). Left as it was, the
+   * step demanded a validated template id that nothing could ever supply, and the radio is disabled
+   * in that state, so Next stayed disabled with no spinner, no message and no way for the user to
+   * change anything (parallel review, C3). Falling back to "unselected" asks for the one thing that
+   * does resolve it: an explicit choice.
+   */
+  const restoredTemplateSelection = (remembered: TemplateSelection): TemplateSelection =>
+    remembered.mode === "fromSample" && !parentHasTemplate
+      ? { ...initialTemplateSelection(parentHasTemplate), remember: remembered.remember }
+      : remembered;
+
+  // Binds reconcileRestoredQuantities to this run's origins. The amount taken is checked against
+  // the representative origin (the same one the amounts step validates against); the created
+  // amount against the restored template's category when a template came back, else the origin's;
+  // and each per-origin amount against that origin's own unit.
+  const reconcileForOrigins = (
+    op: InventoryOperation,
+    restoredTemplate: TemplateSelection,
+    vals: OperationInputs,
+    perOrigin: PerSubsampleAmounts,
+  ) =>
+    reconcileRestoredQuantities({
+      values: vals,
+      perSubsampleAmounts: perOrigin,
+      amountTakenFrom: op.effect.amountTakenFrom,
+      eachAmountFrom: op.effect.eachAmountFrom,
+      originUnitId: getUnitId(origin.quantity),
+      // NOT origin.quantityCategory: that getter throws when the unit store has no entry for the
+      // unit, which happens on a fresh profile while GET /units is still in flight, and for an
+      // origin with no quantity at all (unit id 0). Both would throw inside the operation-select
+      // click handler, before the "origin holds nothing" guard downstream ever runs (parallel
+      // review, I10). An undeterminable category means "leave the amounts alone", which
+      // reconcileRestoredQuantities already treats as such.
+      createdCategory:
+        restoredTemplate.quantityCategory ??
+        getRootStore().unitStore.getUnit(getUnitId(origin.quantity))?.category ??
+        null,
+      perOriginUnitIds: Object.fromEntries(origins.map((o) => [o.globalId ?? "", getUnitId(o.quantity)])),
+    });
 
   // The saved bundle for a given values set, and the wizard state (values + template + documentation +
   // whether remember is on) that a process name resolves to: its saved bundle if one exists, else the
@@ -258,12 +380,25 @@ function OperationWizard({
     const bundle = normalizeProcessValues(processValues?.[rememberKey(op, vals)]);
     const base = freshValues(op, origin, vals);
     if (bundle) {
+      const restoredTemplate = restoredTemplateSelection(templateSelectionFor(bundle.template));
+      // A bundle is keyed by operation + process name only, so a bundle saved on a volume origin is
+      // offered on a mass one. Repair any restored amount whose category no longer fits before it
+      // reaches the form, or the wizard offers one-click Perform on a request the endpoint rejects.
+      const reconciled = reconcileForOrigins(
+        op,
+        restoredTemplate,
+        {
+          ...base,
+          ...bundle.values,
+        },
+        bundle.perSubsampleAmounts ?? {},
+      );
       return {
-        values: { ...base, ...bundle.values },
-        templateSelection: templateSelectionFor(bundle.template),
+        values: reconciled.values,
+        templateSelection: restoredTemplate,
         documentation: bundle.documentation,
         amountMode: bundle.amountMode ?? resolveDefaultAmountMode(op),
-        perSubsampleAmounts: bundle.perSubsampleAmounts ?? {},
+        perSubsampleAmounts: reconciled.perSubsampleAmounts,
         remember: true,
       };
     }
@@ -336,11 +471,20 @@ function OperationWizard({
     if (checked) {
       const bundle = normalizeProcessValues(processValues?.[rememberKey(operation, values)]);
       if (bundle) {
-        setValues((v) => ({ ...v, ...bundle.values }));
-        setTemplateSelection(templateSelectionFor(bundle.template));
+        // Same reconciliation as the load path: ticking the box restores the same bundle, so it can
+        // carry the same cross-category amounts.
+        const restoredTemplate = restoredTemplateSelection(templateSelectionFor(bundle.template));
+        const reconciled = reconcileForOrigins(
+          operation,
+          restoredTemplate,
+          { ...values, ...bundle.values },
+          bundle.perSubsampleAmounts ?? {},
+        );
+        setValues(reconciled.values);
+        setTemplateSelection(restoredTemplate);
         setDocumentation(bundle.documentation);
         setAmountMode(bundle.amountMode ?? resolveDefaultAmountMode(operation));
-        setPerSubsampleAmounts(bundle.perSubsampleAmounts ?? {});
+        setPerSubsampleAmounts(reconciled.perSubsampleAmounts);
       }
     } else {
       setValues((v) => freshValues(operation, origin, v));
@@ -614,6 +758,8 @@ function OperationWizard({
           onChange={onTemplateSelectionChange}
           originSampleName={origin.sample.name}
           parentHasTemplate={parentHasTemplate}
+          parentTemplateChecking={parentTemplateChecking}
+          parentTemplateError={parentTemplateError}
         />
       );
     }

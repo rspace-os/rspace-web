@@ -79,11 +79,35 @@ public class ApiExtraField extends IdentifiableNameableApiObject {
    * Identifies which entry of an operation definition produced this field, so the operations
    * endpoint can whitelist a request against the definition it names (DevDocs/adr/0007). Resolved
    * field names interpolate user input ({@code {processName}}, {@code {originName}}) and are
-   * localized, so the definition key travels on the wire instead. Request-only: never persisted,
-   * never serialized back, and ignored by every other endpoint.
+   * localized, so the definition key travels on the wire instead.
+   *
+   * <p>Read-write, and persisted (RSDEV-1231). It has to come BACK on GET because it is the field's
+   * stable identity across runs of an operation: the next run reads the parent sample's fields over
+   * the API and has to recognise the previous generation's field to continue from it, which
+   * matching on the localized name cannot do reliably.
+   *
+   * <p>Only the operations endpoint may SET it. Every other endpoint binding this DTO rejects a
+   * non-null value with a field-scoped 400 rather than ignoring it: a silently dropped key would be
+   * inconsistent with the caller's intent, and an accepted one would masquerade as
+   * operation-created.
    */
-  @JsonProperty(value = "operationFieldKey", access = Access.WRITE_ONLY)
+  @JsonProperty("operationFieldKey")
   private String operationFieldKey;
+
+  /**
+   * Whether {@link #operationFieldKey} has been checked against the operation definition that is
+   * allowed to declare it, and may therefore be persisted.
+   *
+   * <p>{@code @JsonIgnore}, so no client can set it and no other endpoint does: the operations
+   * endpoint's validator is the only writer (InventoryOperationPostValidator, which already
+   * whitelists every key against the specific operation's definition), and ApiExtraFieldsHelper
+   * persists the key only when this is set. That makes "only an operation may claim to have
+   * generated a field" true by CONSTRUCTION rather than by every other endpoint remembering to
+   * reject one. Enumerating the endpoints to police was tried first and leaked: the sample- and
+   * instrument-template validators do not go through the shared extra-field validation at all, so a
+   * template request could persist a forged key (parallel review, C1).
+   */
+  @JsonIgnore private boolean operationFieldKeyVerified;
 
   /** The data type of this field */
   public enum ExtraFieldTypeEnum {
@@ -125,6 +149,9 @@ public class ApiExtraField extends IdentifiableNameableApiObject {
     setDeleted(field.isDeleted());
     setContent(field.getData());
     setGlobalId(field.getOid().toString());
+    // The stable identity of an operation-generated field, so the next run of that operation can
+    // recognise the previous generation's field by key rather than by its localized name.
+    setOperationFieldKey(field.getOperationFieldKey());
     if (field instanceof ExtraLinkField && ((ExtraLinkField) field).getLink() != null) {
       setLink(new ApiInventoryLink(((ExtraLinkField) field).getLink()));
     }

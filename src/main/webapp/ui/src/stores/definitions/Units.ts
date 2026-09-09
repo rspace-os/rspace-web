@@ -1,6 +1,7 @@
 import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";
 import { match } from "../../util/Util";
+import type { UnitCategory } from "../stores/UnitStore";
 
 /**
  * @module
@@ -84,6 +85,26 @@ const isMass = (q: QuantityUnitId) => Object.values(massIds).includes(q);
  * Checks where a quantity's unit is one that comes in a discrete amount.
  */
 const isUnitless = (q: QuantityUnitId) => Object.values(unitlessIds).includes(q);
+
+/**
+ * The measurement category a unit belongs to, or null for a unit id this module does not know.
+ *
+ * Built from the same predicates the rest of this module uses, so there is exactly one unit-to-
+ * category table. Callers that hold a bare unit id (rather than a record carrying its own
+ * `quantityCategory`) need this to tell whether two quantities are even comparable: adding a
+ * millilitre to a gram is not a smaller-or-larger question, it is a different measurement.
+ *
+ * Returns null rather than throwing, unlike `atomicUnitOfSameCategory`: the callers are validating
+ * possibly-stale stored input, where an unrecognised unit is an answer ("not this category") rather
+ * than a programming error. `UNSET_UNIT` and any other sentinel therefore come back as null.
+ */
+export const categoryOfUnit = (id: QuantityUnitId): UnitCategory | null =>
+  match<void, () => UnitCategory | null>([
+    [() => isVolume(id), () => "volume"],
+    [() => isMass(id), () => "mass"],
+    [() => isUnitless(id), () => "dimensionless"],
+    [() => true, () => null],
+  ])()();
 
 /**
  * For each category of quantity, there is a smallest unit of that category
