@@ -113,6 +113,14 @@ export function buildOperationRequest(params: {
   const fullQuantity = (origin: OperationOrigin): OperationQuantity =>
     origin.quantity ? { ...origin.quantity } : { numericValue: 0, unitId: eachAmountUnit ?? UNSET_UNIT };
 
+  // Whether this request's amount is a snapshot of the origin's whole quantity rather than something
+  // the user typed. Exactly the two branches of amountTakenFor that call fullQuantity: Destroy
+  // (emptiesOrigin) and the runtime "take all" mode. The backend uses it to compare-and-swap the
+  // amount against the live quantity, so a "take all" built from a stale wizard load is rejected as
+  // a 409 instead of emptying an origin someone else has since topped up. "same" and "perSubsample"
+  // amounts are user-entered, so they are "explicit" and carry no such claim.
+  const takesWholeOrigin = effect.emptiesOrigin || amountMode === "all";
+
   // The amount to take from a given origin (DevDocs/adr/0007):
   // - `emptiesOrigin` (Destroy) and the runtime "take all" mode both take the origin's own full
   //   current quantity, so its volume ends at zero.
@@ -123,7 +131,7 @@ export function buildOperationRequest(params: {
   //   untouched (Passage) has no amountTakenFrom and takes zero: the backend treats a 0 decrement as a
   //   no-op (SubSampleApiManagerImpl returns early), so the origin is still linked/permission-checked.
   const amountTakenFor = (origin: OperationOrigin): OperationQuantity => {
-    if (effect.emptiesOrigin || amountMode === "all") return fullQuantity(origin);
+    if (takesWholeOrigin) return fullQuantity(origin);
     if (amountMode === "perSubsample") {
       const chosen = perSubsampleAmounts[origin.globalId];
       return chosen
@@ -147,6 +155,7 @@ export function buildOperationRequest(params: {
 
   const originUpdates: Array<OperationOriginUpdate> = origins.map((origin) => ({
     id: origin.id,
+    amountMode: takesWholeOrigin ? "all" : "explicit",
     amountTaken: amountTakenFor(origin),
     ...(originFields.length ? { extraFields: originFields } : {}),
   }));
