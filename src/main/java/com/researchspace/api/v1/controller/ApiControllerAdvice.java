@@ -2,6 +2,7 @@ package com.researchspace.api.v1.controller;
 
 import com.researchspace.api.v1.auth.ApiAuthenticationException;
 import com.researchspace.api.v1.auth.ApiRuntimeException;
+import com.researchspace.api.v1.model.UnknownOperationPropertyException;
 import com.researchspace.api.v1.throttling.FileUploadLimitExceededException;
 import com.researchspace.apiutils.ApiError;
 import com.researchspace.apiutils.ApiErrorCodes;
@@ -16,6 +17,7 @@ import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.archive.export.ExportFailureException;
 import com.researchspace.service.chemistry.ChemistryClientException;
 import com.researchspace.service.chemistry.StoichiometryException;
+import com.researchspace.service.inventory.InventoryEditConflictException;
 import jakarta.ws.rs.NotFoundException;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -30,7 +32,9 @@ import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.orm.hibernate5.HibernateJdbcException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
@@ -94,6 +98,70 @@ public class ApiControllerAdvice extends RestControllerAdvice {
             ApiErrorCodes.EDIT_CONFLICT.getCode(),
             ex.getLocalizedMessage(),
             "");
+    return new ResponseEntity<Object>(apiError, new HttpHeaders(), apiError.getStatus());
+  }
+
+  // 400: an unrecognised property on the operations endpoint's own request body. Overrides the
+  // inherited handler ONLY for that cause: the base implementation reports
+  // ex.getLocalizedMessage(), which for a @JsonAnySetter rejection is untranslated English plus
+  // Jackson's reference chain naming the DTO class and package (RSDEV-1231). Anything else falls
+  // through to the inherited behaviour unchanged.
+  @Override
+  protected ResponseEntity<Object> handleHttpMessageNotReadable(
+      final HttpMessageNotReadableException ex,
+      final HttpHeaders headers,
+      final HttpStatusCode status,
+      final WebRequest request) {
+    UnknownOperationPropertyException unknownProperty = findUnknownPropertyCause(ex);
+    if (unknownProperty == null) {
+      return super.handleHttpMessageNotReadable(ex, headers, status, request);
+    }
+    logException(ex);
+    String resolvedMessage =
+        messages.getMessage(
+            UnknownOperationPropertyException.MESSAGE_KEY,
+            new Object[] {unknownProperty.getPropertyName()});
+    final ApiError apiError =
+        new ApiError(
+            HttpStatus.BAD_REQUEST,
+            ApiErrorCodes.ILLEGAL_ARGUMENT.getCode(),
+            resolvedMessage,
+            UnknownOperationPropertyException.MESSAGE_KEY,
+            resolvedMessage);
+    return new ResponseEntity<>(apiError, new HttpHeaders(), apiError.getStatus());
+  }
+
+  /** The unknown-property rejection somewhere in the cause chain Jackson wrapped it in, or null. */
+  private static UnknownOperationPropertyException findUnknownPropertyCause(Throwable ex) {
+    for (Throwable cause = ex; cause != null; cause = cause.getCause()) {
+      if (cause instanceof UnknownOperationPropertyException unknownProperty) {
+        return unknownProperty;
+      }
+      if (cause.getCause() == cause) {
+        return null;
+      }
+    }
+    return null;
+  }
+
+  // 409: a write that lost a race the application itself detected, rather than one the database
+  // reported. The operations endpoint's take-all guard raises this when the origin's live quantity
+  // no longer matches the snapshot the client submitted (RSDEV-1231). Its own message key is
+  // resolved here so the response tells the caller to reload, which the generic concurrent-update
+  // text below does not.
+  @ResponseStatus(HttpStatus.CONFLICT)
+  @ExceptionHandler(InventoryEditConflictException.class)
+  public ResponseEntity<Object> handleInventoryEditConflict(
+      final InventoryEditConflictException ex, final WebRequest request) {
+    logException(ex);
+    String resolvedMessage = messages.getMessage(ex.getMessageKey(), ex.getArgs());
+    final ApiError apiError =
+        new ApiError(
+            HttpStatus.CONFLICT,
+            ApiErrorCodes.EDIT_CONFLICT.getCode(),
+            resolvedMessage,
+            ex.getMessageKey(),
+            resolvedMessage);
     return new ResponseEntity<Object>(apiError, new HttpHeaders(), apiError.getStatus());
   }
 
