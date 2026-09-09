@@ -2,6 +2,9 @@ package com.researchspace.service.inventory.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.api.v1.model.ApiInventoryEditLock;
@@ -126,6 +129,31 @@ class SubSampleApiManagerImplUsageVersionTest {
     subSampleApiMgr.registerApiSubSampleUsage(100L, millilitres("1"), user);
 
     assertEquals(4L, cached.getVersion());
+  }
+
+  @Test
+  void aUsageClampedToZeroAgainstExhaustedStockNeverTouchesTheStaleEntity() {
+    // Two List of Materials saves both load 10 ml at version 3. The first exhausts the subsample
+    // and
+    // commits 0 ml at version 5. This one then reads 0 as the locked scalar, so its positive usage
+    // clamps to zero and quantityChanged is false: nothing is saved. But its cached entity still
+    // holds the stale 10 ml, so anything that dirties that instance makes Hibernate's full-row
+    // flush write the 10 ml back and resurrect the exhausted stock (Codex review, PR #1090).
+    // Refreshing the version here is exactly such a mutation, so a no-op must leave the entity
+    // untouched.
+    SubSample cached = subSampleAtVersion(3L);
+    when(subSampleDao.exists(100L)).thenReturn(true);
+    when(subSampleDao.get(100L)).thenReturn(cached);
+    trackerGrantsTheLock();
+    when(subSampleDao.lockRowForUpdate(100L)).thenReturn(cached);
+    when(subSampleDao.getQuantityForUpdate(100L)).thenReturn(millilitres("0"));
+    // The exhausting writer committed version 5 alongside the 0 ml.
+    lenient().when(subSampleDao.getVersionForUpdate(100L)).thenReturn(5L);
+
+    subSampleApiMgr.registerApiSubSampleUsage(100L, millilitres("1"), user);
+
+    assertEquals(3L, cached.getVersion(), "a no-op must not advance or dirty the version");
+    verify(subSampleDao, never()).save(any(SubSample.class));
   }
 
   @Test
