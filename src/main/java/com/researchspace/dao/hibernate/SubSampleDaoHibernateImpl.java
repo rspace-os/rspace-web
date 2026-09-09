@@ -152,4 +152,13 @@ public class SubSampleDaoHibernateImpl extends InventoryDaoHibernate<SubSample, 
     }
     return new QuantityInfo((BigDecimal) row[0], ((Number) row[1]).intValue());
   }
+
+  @Override
+  public Long getVersionForUpdate(Long subSampleId) {
+    return getSession()
+        .createQuery("select ss.version from SubSample ss where ss.id = :id", Long.class)
+        .setParameter("id", subSampleId)
+        .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+        .uniqueResult();
+  }
 }
