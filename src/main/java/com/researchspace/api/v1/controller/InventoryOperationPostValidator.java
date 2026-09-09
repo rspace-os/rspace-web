@@ -557,10 +557,10 @@ public class InventoryOperationPostValidator implements Validator {
    * The new sample is a whitelist, not a general sample POST: an operation request may only carry
    * the properties its definition declares (DevDocs/adr/0007, superseding the earlier partial
    * rules). Everything else - sharing, placement, tags, barcodes, images, template field values,
-   * per-subsample notes and fields - is content no operation definition describes, so it is
-   * rejected naming the property rather than silently stripped. Name, templateId, quantity,
-   * subSamples and extraFields are validated by their own rules; storage temperatures are allowed
-   * only for an operation that declares a temperature input.
+   * per-subsample notes and fields, attachments and identifiers - is content no operation
+   * definition describes, so it is rejected naming the property rather than silently stripped.
+   * Name, templateId, quantity, subSamples and extraFields are validated by their own rules;
+   * storage temperatures are allowed only for an operation that declares a temperature input.
    */
   private void rejectUndeclaredNewSampleContent(
       ApiSampleWithFullSubSamples newSample, InventoryOperationConfig config, Errors errors) {
@@ -569,6 +569,10 @@ public class InventoryOperationPostValidator implements Validator {
     rejectIfPresent(errors, "newSample.tags", newSample.getTags());
     rejectIfPresent(errors, "newSample.barcodes", newSample.getBarcodes());
     rejectIfPresent(errors, "newSample.identifiers", newSample.getIdentifiers());
+    // Inherited from ApiInventoryRecordInfo and writable, but sample creation never applies it, so
+    // accepting it would perform a different operation than the one requested (Copilot review, PR
+    // #1090).
+    rejectIfPresent(errors, "newSample.attachments", newSample.getAttachments());
     rejectIfPresent(errors, "newSample.sharingMode", newSample.getSharingMode());
     rejectIfPresent(errors, "newSample.sharedWith", newSample.getSharedWith());
     rejectIfPresent(errors, "newSample.newBase64Image", newSample.getNewBase64Image());
@@ -605,6 +609,10 @@ public class InventoryOperationPostValidator implements Validator {
       rejectIfPresent(errors, path + "newBase64Image", subSample.getNewBase64Image());
       rejectIfPresent(errors, path + "parentContainers", subSample.getParentContainers());
       rejectIfPresent(errors, path + "parentLocation", subSample.getParentLocation());
+      // Both inherited and bindable, but createSubSampleFromIncomingApiSample persists neither, so
+      // silently accepting them would break the strict contract (Copilot review, PR #1090).
+      rejectIfPresent(errors, path + "attachments", subSample.getAttachments());
+      rejectIfPresent(errors, path + "identifiers", subSample.getIdentifiers());
     }
   }
 
