@@ -43,7 +43,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.shiro.SecurityUtils;
@@ -348,18 +347,39 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
   }
 
   /**
-   * The shape of a key inside the UI settings object, matching the names the client declares in its
-   * PREFERENCES map. The key is written verbatim into the user's single settings column, so an
-   * unconstrained one lets a caller fill that column with arbitrary names until it reaches the TEXT
-   * limit, after which every keyed write for that user fails for good.
+   * The keys a UI settings object may hold: exactly the names the client declares in its
+   * PREFERENCES map (src/main/webapp/ui/src/hooks/api/useUiPreference.tsx). Adding a preference
+   * there means adding it here.
+   *
+   * <p>An allowlist rather than a syntax rule, because the key is written verbatim into the user's
+   * single settings column and nothing ever deletes one. A rule that only constrained the shape (an
+   * uppercase identifier, say) would still leave the key space unbounded, so a caller could invent
+   * name after name until the accumulated junk brought the column to its TEXT limit, at which point
+   * the oversize guard rejects EVERY later keyed write for that user, permanently. A closed set has
+   * no such growth: each write either replaces a known key or is refused (Copilot review, PR
+   * #1090).
    */
-  private static final Pattern UI_JSON_SETTINGS_KEY = Pattern.compile("[A-Z0-9_]{1,64}");
+  private static final Set<String> UI_JSON_SETTINGS_KEYS =
+      Set.of(
+          "GALLERY_VIEW_MODE",
+          "GALLERY_SORT_BY",
+          "GALLERY_SORT_ORDER",
+          "GALLERY_PICKER_INITIAL_SECTION",
+          "GALLERY_SIDEBAR_OPEN",
+          "INVENTORY_FORM_SECTIONS_EXPANDED",
+          "INVENTORY_HIDDEN_RIGHT_PANEL",
+          "INVENTORY_OPERATION_PROCESS_VALUES",
+          "INVENTORY_OPERATION_PROCESS_NAMES",
+          "INVENTORY_OPERATION_PROCESS_NAME_DEFAULTS",
+          "SYSADMIN_USERS_TABLE_COLUMNS");
 
   @Override
   @CachePut(value = "com.researchspace.model.UserPreference", key = "#subject + 'UI_JSON_SETTINGS'")
   @CacheEvict(value = CacheNames.INTEGRATION_INFO, key = "#subject + 'UI_JSON_SETTINGS'")
   public UserPreference mergeUiJsonSetting(String key, String valueJson, String subject) {
-    if (key == null || !UI_JSON_SETTINGS_KEY.matcher(key).matches()) {
+    // Null-checked separately: Set.of is an immutable set, whose contains(null) throws NPE rather
+    // than answering false.
+    if (key == null || !UI_JSON_SETTINGS_KEYS.contains(key)) {
       throw new IllegalArgumentException(
           messages.getMessage("errors.preference.invalidKey", new Object[] {key}));
     }
