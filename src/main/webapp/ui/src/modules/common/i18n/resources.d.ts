@@ -4051,7 +4051,7 @@ export default interface Resources {
         "fromSample": "Use the parent sample's template",
         "loadingTemplates": "Loading templates…",
         "lookupFailed": "This template could not be checked. Try choosing it again.",
-        "mandatoryFieldsError": "This template cannot be used: the required field(s) {fields} have no default value. Choose another template.",
+        "mandatoryFieldsError": "{count, plural, one {This template cannot be used: the required field {fields} has no default value. Choose another template.} other {This template cannot be used: the required fields {fields} have no default value. Choose another template.}}",
         "noTemplates": "No templates found",
         "none": "No template",
         "parentHasNoTemplate": "The parent sample has no template, so this option is unavailable. Choose an existing template or none.",

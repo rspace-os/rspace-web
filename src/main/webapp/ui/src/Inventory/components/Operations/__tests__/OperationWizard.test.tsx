@@ -808,6 +808,37 @@ describe("OperationWizard step flow", () => {
     await user.type(screen.getByTestId("proc"), "dna");
     expect(screen.getByRole("heading", { name: "Derive: dna" })).toBeInTheDocument();
   });
+
+  it("inflects the parent-template block for one field and for several", async () => {
+    // The same message as TemplateStep's own pick error, so the count has to arrive from this call
+    // site too; "field(s) ... have" was a parenthetical plural no other language can follow
+    // (PR #963 review). cimode renders the key alone, so only English shows the inflection.
+    for (const [fields, expected] of [
+      [["Batch"], "the required field Batch has no default value"],
+      [["Batch", "Concentration"], "the required fields Batch and Concentration have no default value"],
+    ] as Array<[Array<string>, string]>) {
+      getTemplate.mockResolvedValueOnce({
+        id: 9,
+        name: "Parent template",
+        quantityCategory: "volume",
+        fields: fields.map((name) => ({ name, mandatory: true, content: "", selectedOptions: null })),
+      });
+      const user = userEvent.setup();
+      const origin = makeMockSubSample({});
+      origin.sample.templateId = 9;
+      const { unmount } = render(
+        <InEnglish>
+          <OperationWizard open onClose={vi.fn()} origins={[origin]} />
+        </InEnglish>,
+      );
+      await user.click(await screen.findByRole("button", { name: /^Derive/ }));
+      await user.type(screen.getByTestId("proc"), "dna");
+      await user.click(screen.getByTestId("fill-amounts"));
+      await user.click(screen.getByRole("button", { name: "Next" })); // details -> template
+      await waitFor(() => expect(screen.getByTestId("tmpl-parent-error")).toHaveTextContent(expected));
+      unmount();
+    }
+  });
 });
 
 describe("OperationWizard remember bundle", () => {
