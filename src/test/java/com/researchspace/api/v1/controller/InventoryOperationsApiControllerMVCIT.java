@@ -865,9 +865,15 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
     // and leave the stock state it produced retrievable by that version. Two requests can both load
     // the entity before either takes the row lock, and lockRowForUpdate hands the waiter back that
     // same cached instance, so before the committed version was read as a scalar under the lock
-    // both
-    // bumped the same stale number: one version was reused and the intermediate stock state it
-    // labelled became unaddressable (Codex review, PR #1090).
+    // both bumped the same stale number: one version was reused and the intermediate stock state
+    // it labelled became unaddressable (Codex review, PR #1090).
+    //
+    // This is also the only check covering the flush ordering that read depends on. The scalar read
+    // is an HQL query against the SubSample table, and Hibernate's AUTO flush writes pending
+    // changes to that table before running it, so dirtying the entity first would flush the stale
+    // version and the query would read back this transaction's own value. Mocked DAO tests have no
+    // flush and cannot see that; SubSampleApiManagerImplUsageVersionTest only models it (third
+    // Codex review, PR #1090).
     ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
     String operationJson = aliquotJson(origin, isPartOfLinkJson(origin.getGlobalId()));
 
