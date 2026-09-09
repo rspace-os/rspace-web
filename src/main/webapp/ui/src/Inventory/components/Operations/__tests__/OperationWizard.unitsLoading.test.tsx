@@ -4,7 +4,9 @@ import { HttpResponse, http } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { makeMockSubSample } from "@/stores/models/__tests__/SubSampleModel/mocking";
+import OperationDetailsStep from "../OperationDetailsStep";
 import OperationWizard from "../OperationWizard";
+import { parseOperationsConfig } from "../operationsConfig";
 import { rawConfig } from "./testOperations";
 
 /*
@@ -25,7 +27,9 @@ vi.mock("@/stores/stores/getRootStore", () => ({
     authStore: { isSynchronizing: false },
     searchStore: { search: { performSearch: vi.fn() }, getTemplate: vi.fn(() => Promise.resolve(null)) },
     uiStore: { addAlert: vi.fn() },
-    unitStore: { getUnit: () => undefined },
+    // A real UnitStore in this state: seeded from an empty localStorage, so getUnit misses for
+    // every id and every category is empty until GET /units resolves.
+    unitStore: { getUnit: () => undefined, unitsOfCategory: () => [] },
   }),
 }));
 
@@ -42,6 +46,13 @@ vi.mock("../../ContextMenu/ContextDialog", () => ({
   default: ({ open, children }: { open: boolean; children: React.ReactNode }) => (open ? <div>{children}</div> : null),
 }));
 
+/** The Pool definition from the real config, the one operation with a per-subsample amount mode. */
+const poolOperation = (() => {
+  const pool = parseOperationsConfig(rawConfig).find((o) => o.key === "pool");
+  if (!pool) throw new Error("the test config must declare pool");
+  return pool;
+})();
+
 function render(ui: React.ReactElement) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return renderWithoutQueryClient(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
@@ -55,6 +66,28 @@ describe("OperationWizard while the unit store is still loading", () => {
   it("mounts for a closed dialog without dereferencing the unit store", () => {
     expect(() =>
       render(<OperationWizard open={false} onClose={vi.fn()} origins={[makeMockSubSample({})]} />),
+    ).not.toThrow();
+  });
+
+  it("renders the per-subsample amount inputs without dereferencing the unit store", () => {
+    // Pool -> Per subsample renders one amount input per origin, each with its own unit select.
+    // That select asked the origin for its category through the throwing getter, so the amounts
+    // step crashed while /units was still in flight (Copilot review, PR #1090).
+    expect(() =>
+      render(
+        <OperationDetailsStep
+          operation={poolOperation}
+          origin={makeMockSubSample({})}
+          origins={[makeMockSubSample({}), makeMockSubSample({})]}
+          values={{}}
+          onChange={vi.fn()}
+          section="amounts"
+          amountMode="perSubsample"
+          perSubsampleAmounts={{}}
+          onPerSubsampleAmountsChange={vi.fn()}
+          onAmountModeChange={vi.fn()}
+        />,
+      ),
     ).not.toThrow();
   });
 
