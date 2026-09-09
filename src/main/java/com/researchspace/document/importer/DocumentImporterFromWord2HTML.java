@@ -11,9 +11,11 @@ import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.StructuredDocument;
+import com.researchspace.service.DocumentAlreadyEditedException;
 import com.researchspace.service.FieldManager;
 import com.researchspace.service.MediaContentMismatchException;
 import com.researchspace.service.MediaManager;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RecordManager;
 import java.io.File;
 import java.io.FileInputStream;
@@ -27,10 +29,12 @@ import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 
 public class DocumentImporterFromWord2HTML implements RSpaceDocumentCreator {
 
   private @Autowired RecordManager recMgr;
+  private @Autowired MessageSourceUtils messages;
   private @Autowired MediaManager mediaMgr;
   private @Autowired RichTextUpdater richTextUpdater;
   private @Autowired FieldManager fieldMgr;
@@ -101,14 +105,26 @@ public class DocumentImporterFromWord2HTML implements RSpaceDocumentCreator {
       throws FileNotFoundException, IOException {
 
     Field textField = strucDoc.getFields().get(0);
+    importImages(creator, contentFolder, images, imageFolder, strucDoc);
+    textField.setFieldData(doc.body().html());
+    return recMgr.save(strucDoc, creator).asStrucDoc();
+  }
 
+  private void importImages(
+      User creator,
+      File contentFolder,
+      Elements images,
+      Folder imageFolder,
+      StructuredDocument strucDoc)
+      throws IOException {
+    Field textField = strucDoc.getFields().get(0);
     for (Element img : images) {
       String src = img.attr("src");
       String wordStyle = img.attr("style");
       File imageFile = new File(contentFolder, src);
-      FileInputStream fis = new FileInputStream(imageFile);
+
       String displayName = strucDoc.getName() + "-" + src;
-      try {
+      try (FileInputStream fis = new FileInputStream(imageFile)) {
         EcatImage savedImage = mediaMgr.saveNewImage(displayName, fis, creator, imageFolder);
         replaceCurrImageTagWithRSpaceImgTag(textField, img, wordStyle, savedImage);
         fieldMgr.addMediaFileLink(savedImage.getId(), creator, textField.getId(), true);
@@ -116,9 +132,6 @@ public class DocumentImporterFromWord2HTML implements RSpaceDocumentCreator {
         log.warn("Image {} could not be saved to RSpace, skipping: {}", src, e.getMessage());
       }
     }
-    textField.setFieldData(doc.body().html());
-    // changes proagated to fields in single transaction for audit trail
-    return recMgr.save(strucDoc, creator).asStrucDoc();
   }
 
   private void replaceCurrImageTagWithRSpaceImgTag(
@@ -128,5 +141,35 @@ public class DocumentImporterFromWord2HTML implements RSpaceDocumentCreator {
     Element tag = docx.getElementsByTag("img").get(0);
     tag.attr("style", wordStyle + tag.attr("style"));
     img.replaceWith(tag);
+  }
+
+  @Override
+  @Transactional(rollbackFor = Exception.class)
+  public BaseRecord replace(
+      Long toReplaceId, ContentProvider provider, String origDocName, User user)
+      throws IOException, DocumentAlreadyEditedException {
+    StructuredDocument document = recMgr.getRecordWithFields(toReplaceId, user).asStrucDoc();
+    permUtils.assertIsPermitted(
+        document,
+        PermissionType.WRITE,
+        user,
+        messages.getMessage("workspace.word.import.updateAction"));
+    if (!document.isBasicDocument()) {
+      throw new IllegalArgumentException(
+          messages.getMessage("workspace.word.import.basicDocumentRequired"));
+    }
+    if (document.isSigned() || document.isDeleted() || !document.isEditable()) {
+      throw new IllegalArgumentException(
+          messages.getMessage("workspace.word.import.targetNotEditable"));
+    }
+    Document html = Jsoup.parse(provider.getTextFieldSource(), null, "");
+    // Flush pending autosaves before replacing the content.
+    // This also checks whether another user is editing the document.
+    recMgr.saveStructuredDocument(toReplaceId, user.getUsername(), false, null);
+    importImages(user, provider.getContentFolder(), html.getElementsByTag("img"), null, document);
+    // Use the regular edit path to sanitize HTML and synchronize attachment/internal links.
+    recMgr.saveTemporaryDocument(document.getFields().get(0), user, html.body().html());
+    recMgr.saveStructuredDocument(toReplaceId, user.getUsername(), false, null);
+    return document;
   }
 }

@@ -179,7 +179,7 @@ $(document).ready(function(e) {
       initWordChooserDlg();
       $('#createFromWord').click( function (e){
         e.preventDefault();
-        openWordChooserDlg({
+        openWordChooserDlg(getDocIdNameAndType, {
           title: RS.msg("legacyjs.workspace.notebookEditor.importWordTitle"),
           fileType: RS.msg("legacyjs.workspace.notebookEditor.wordFileType")
         });

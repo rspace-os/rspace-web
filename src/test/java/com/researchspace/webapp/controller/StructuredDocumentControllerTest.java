@@ -87,6 +87,7 @@ import org.springframework.web.multipart.MultipartFile;
 @ExtendWith(MockitoExtension.class)
 public class StructuredDocumentControllerTest {
 
+  @Mock private org.springframework.context.ApplicationEventPublisher publisher;
   @Mock private UserManager userMgr;
   @Mock private RecordManager recordMgr;
   @Mock private SharingHandler recordShareHandler;
@@ -123,6 +124,7 @@ public class StructuredDocumentControllerTest {
     strucDocCtrller.setMessageSource(new MessageSourceUtils(new JsonMessageSource()));
     strucDocCtrller.setServletContext(new MockServletContext());
     strucDocCtrller.setAuditService(auditTrail);
+    strucDocCtrller.setPublisher(publisher);
     strucDocCtrller.setAuditManager(auditMgr);
     strucDocCtrller.setBaseRecordMgr(baseRecordMgr);
     strucDocCtrller.setPermissionUtils(permissionUtils);
@@ -536,7 +538,7 @@ public class StructuredDocumentControllerTest {
     parentFolder.setId(1L);
 
     AjaxReturnObject<List<RecordInformation>> resp =
-        strucDocCtrller.createSDFromWordFile(parentFolder.getId(), files, null, session);
+        strucDocCtrller.createSDFromWordFile(parentFolder.getId(), files, null, null, session);
     verifyWordImportNotAttempted();
     assertNull(resp.getData());
     assertNotNull(resp.getErrorMsg());
@@ -562,19 +564,19 @@ public class StructuredDocumentControllerTest {
         .thenReturn(false);
 
     AjaxReturnObject<List<RecordInformation>> res =
-        strucDocCtrller.createSDFromWordFile(parentFolder.getId(), files, null, session);
+        strucDocCtrller.createSDFromWordFile(parentFolder.getId(), files, null, null, session);
     verifyFileImporterCalled(multipart);
     assertThat(res.getData(), contains(equalTo(created.toRecordInfo())));
     verifyNoInteractions(recordShareHandler);
 
     whenCreatingDoc(multipart).thenThrow(new RuntimeException());
-    res = strucDocCtrller.createSDFromWordFile(parentFolder.getId(), files, null, session);
+    res = strucDocCtrller.createSDFromWordFile(parentFolder.getId(), files, null, null, session);
     assertEquals(0, res.getData().size());
     assertThat(res.getErrorMsg().getErrorMessages().size(), is(1));
     verifyNoInteractions(recordShareHandler);
 
     whenCreatingDoc(multipart).thenReturn(null);
-    res = strucDocCtrller.createSDFromWordFile(parentFolder.getId(), files, null, session);
+    res = strucDocCtrller.createSDFromWordFile(parentFolder.getId(), files, null, null, session);
     assertEquals(0, res.getData().size());
     assertThat(res.getErrorMsg().getErrorMessages().size(), is(1));
     verifyNoInteractions(recordShareHandler);
@@ -604,11 +606,74 @@ public class StructuredDocumentControllerTest {
         .thenReturn(true);
 
     AjaxReturnObject<List<RecordInformation>> res =
-        strucDocCtrller.createSDFromWordFile(parentFolder.getId(), files, null, session);
+        strucDocCtrller.createSDFromWordFile(parentFolder.getId(), files, null, null, session);
     verifyFileImporterCalled(multipart);
     assertThat(res.getData(), contains(equalTo(created.toRecordInfo())));
     verify(recordShareHandler)
         .shareIntoSharedFolderOrNotebook(user, parentFolder, created.getId(), null);
+  }
+
+  @Test
+  public void missingWordUploadReturnsValidationError() throws IOException {
+    getAuthenticatedUser();
+    var result = strucDocCtrller.createSDFromWordFile(1L, null, null, null, session);
+    assertTrue(result.getErrorMsg().hasErrorMessages());
+    verifyNoInteractions(fileimporter, recordMgr, fMgr);
+  }
+
+  @Test
+  public void updateFromWordKeepsIdentityAndDoesNotReshare() throws Exception {
+    getAuthenticatedUser();
+    StructuredDocument target =
+        TestFactory.createAnySDForUser(
+            new com.researchspace.model.record.RecordFactory().createBasicDocumentForm(user), user);
+    target.setId(2L);
+    Folder parent = TestFactory.createAFolder("parent", user);
+    parent.setId(1L);
+    MultipartFile file =
+        new MockMultipartFile(
+            "wordXfile", "update.docx", "application/octet-stream", new byte[] {1});
+    when(recordMgr.exists(2L)).thenReturn(true);
+    when(recordMgr.get(2L)).thenReturn(target);
+    when(permissionUtils.isPermitted(target, PermissionType.WRITE, user)).thenReturn(true);
+    when(fMgr.getFolder(1L, user)).thenReturn(parent);
+    when(permissionUtils.isRecordAccessPermitted(user, parent, PermissionType.READ))
+        .thenReturn(true);
+    when(fileimporter.replace(Mockito.any(InputStream.class), eq(user), eq(2L), eq("update.docx")))
+        .thenReturn(target);
+    var result = strucDocCtrller.createSDFromWordFile(1L, List.of(file), 2L, null, session);
+    assertEquals(2L, result.getData().get(0).getId());
+    assertTrue(!result.getErrorMsg().hasErrorMessages());
+    verifyNoInteractions(recordShareHandler);
+    verifyWordImportNotAttempted();
+  }
+
+  @Test
+  public void invalidWordReplacementTargetsNeverReachConverter() throws Exception {
+    getAuthenticatedUser();
+    StructuredDocument target =
+        TestFactory.createAnySDForUser(
+            new com.researchspace.model.record.RecordFactory().createBasicDocumentForm(user), user);
+    target.setId(2L);
+    MultipartFile file =
+        new MockMultipartFile(
+            "wordXfile", "update.docx", "application/octet-stream", new byte[] {1});
+    when(recordMgr.exists(2L)).thenReturn(true);
+    when(recordMgr.get(2L)).thenReturn(target);
+    var files = List.of(file);
+    var result = strucDocCtrller.createSDFromWordFile(1L, files, 2L, null, session);
+    assertTrue(result.getErrorMsg().hasErrorMessages());
+    when(permissionUtils.isPermitted(target, PermissionType.WRITE, user)).thenReturn(true);
+    result = strucDocCtrller.createSDFromWordFile(1L, List.of(file, file), 2L, null, session);
+    assertTrue(result.getErrorMsg().hasErrorMessages());
+    target.setRecordDeleted(true);
+    result = strucDocCtrller.createSDFromWordFile(1L, files, 2L, null, session);
+    assertTrue(result.getErrorMsg().hasErrorMessages());
+    target.setRecordDeleted(false);
+    target.getForm().setSystemForm(false);
+    result = strucDocCtrller.createSDFromWordFile(1L, files, 2L, null, session);
+    assertTrue(result.getErrorMsg().hasErrorMessages());
+    verifyNoInteractions(fileimporter, fMgr, recordShareHandler);
   }
 
   private void verifyFileImporterCalled(MultipartFile multipart) throws IOException {

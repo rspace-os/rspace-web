@@ -65,6 +65,7 @@ import com.researchspace.service.impl.RecordEditorTracker;
 import com.researchspace.session.UserSessionTracker;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
@@ -169,18 +170,45 @@ public class StructuredDocumentController extends BaseController {
   @ResponseBody
   public AjaxReturnObject<List<RecordInformation>> createSDFromWordFile(
       @PathVariable("parentId") Long parentFolderId,
-      @RequestParam("wordXfile") List<MultipartFile> wordFiles,
+      @RequestParam(value = "wordXfile", required = false) List<MultipartFile> wordFiles,
+      @RequestParam(value = "recordToReplaceId", required = false) Long recordToReplaceId,
       @RequestParam(value = "grandParentId", required = false) String grandParentFolderId,
       HttpSession session)
       throws IOException {
     Long grandParentId = convertToLongOrNull(grandParentFolderId);
     User user = userManager.getAuthenticatedUserInSession();
-    log.info("Creating RSpace docs from {} submitted files", wordFiles.size());
 
     ErrorList el = new ErrorList();
-    if (!isFileUploaded(wordFiles)) {
+    if (wordFiles == null || !isFileUploaded(wordFiles)) {
       el.addErrorMsg(getText("workspace.word.import.noFilesError"));
       return new AjaxReturnObject<List<RecordInformation>>(null, el);
+    }
+
+    if (recordToReplaceId != null) {
+      if (!recordManager.exists(recordToReplaceId)) {
+        el.addErrorMsg(getText("workspace.word.import.notAuthorized"));
+        return new AjaxReturnObject<List<RecordInformation>>(null, el);
+      }
+      Record target = recordManager.get(recordToReplaceId);
+      if (target == null || !permissionUtils.isPermitted(target, PermissionType.WRITE, user)) {
+        el.addErrorMsg(getText("workspace.word.import.notAuthorized"));
+        return new AjaxReturnObject<List<RecordInformation>>(null, el);
+      }
+      if (!target.isStructuredDocument() || !target.asStrucDoc().isBasicDocument()) {
+        el.addErrorMsg(getText("workspace.word.import.basicDocumentRequired"));
+        return new AjaxReturnObject<List<RecordInformation>>(null, el);
+      }
+      if (target.isSigned()
+          || target.isDeleted()
+          || target.isDeletedForUser(user)
+          || !target.isEditable()) {
+        el.addErrorMsg(getText("workspace.word.import.targetNotEditable"));
+        return new AjaxReturnObject<List<RecordInformation>>(null, el);
+      }
+      if (wordFiles.size() > 1) {
+        el.addErrorMsg(getText("workspace.word.import.oneFileRequired"));
+        return new AjaxReturnObject<List<RecordInformation>>(null, el);
+      }
     }
 
     Folder originalParentFolder = folderManager.getFolder(parentFolderId, user);
@@ -191,7 +219,7 @@ public class StructuredDocumentController extends BaseController {
             wordFiles.size() * 10, getText("workspace.word.import.progressStarted"));
     session.setAttribute(BATCH_WORDIMPORT_PROGRESS, progress);
     for (MultipartFile mf : wordFiles) {
-      try {
+      try (InputStream input = mf.getInputStream()) {
         BaseRecord createdOrUpdated = null;
         Optional<ExternalFileImporter> importer = getFileImporterForMultipartFile(mf);
         if (!importer.isPresent()) {
@@ -205,22 +233,24 @@ public class StructuredDocumentController extends BaseController {
           continue;
         }
         createdOrUpdated =
-            importer
-                .get()
-                .create(
-                    mf.getInputStream(),
-                    user,
-                    originalParentFolder,
-                    null,
-                    mf.getOriginalFilename());
+            recordToReplaceId == null
+                ? importer
+                    .get()
+                    .create(input, user, originalParentFolder, null, mf.getOriginalFilename())
+                : importer.get().replace(input, user, recordToReplaceId, mf.getOriginalFilename());
         if (createdOrUpdated != null) {
           rc.add(createdOrUpdated.toRecordInfo());
-          if (recordManager.isSharedFolderOrSharedNotebookWithoutCreatePermission(
-              user, originalParentFolder)) {
+          if (recordToReplaceId == null
+              && recordManager.isSharedFolderOrSharedNotebookWithoutCreatePermission(
+                  user, originalParentFolder)) {
             recordShareHandler.shareIntoSharedFolderOrNotebook(
                 user, originalParentFolder, createdOrUpdated.getId(), grandParentId);
           }
-          publisher.publishEvent(createGenericEvent(user, createdOrUpdated, AuditAction.CREATE));
+          publisher.publishEvent(
+              createGenericEvent(
+                  user,
+                  createdOrUpdated,
+                  recordToReplaceId == null ? AuditAction.CREATE : AuditAction.WRITE));
         } else {
           String error =
               getText(
@@ -234,7 +264,7 @@ public class StructuredDocumentController extends BaseController {
                 "workspace.word.import.createFailedWithReason",
                 new Object[] {mf.getOriginalFilename(), e.getMessage()});
         el.addErrorMsg(error);
-        log.error(error);
+        log.error(error, e);
       }
       progress.worked(10);
       progress.setDescription(

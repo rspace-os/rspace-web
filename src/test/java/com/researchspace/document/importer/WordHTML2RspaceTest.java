@@ -60,6 +60,31 @@ public class WordHTML2RspaceTest extends SpringTransactionalTest {
   }
 
   @Test
+  public void replacementPreservesIdentityAndSynchronizesImages() throws Exception {
+    User user = createAndSaveRandomUser();
+    initialiseContentWithEmptyContent(user);
+    logoutAndLoginAs(user);
+    Folder root = folderDao.getRootRecordForUser(user);
+    StructuredDocument target = recordMgr.createBasicDocument(root.getId(), user);
+    target.setName("Keep this name");
+    recordMgr.save(target, user);
+    Long fieldId = target.getFields().get(0).getId();
+    HTMLContentProvider provider = new HTMLContentProvider(word2rspaceFolder, wordHtml);
+    var updated = creator.replace(target.getId(), provider, "different.docx", user);
+    assertEquals(target.getId(), updated.getId());
+    assertEquals("Keep this name", updated.getName());
+    assertEquals(fieldId, updated.asStrucDoc().getFields().get(0).getId());
+    assertEquals(NUM_IMAGES_IN_HTML, getImagesFromTextField(updated.asStrucDoc()).size());
+    // Replacing again retires old links while retaining them for revision history.
+    updated = creator.replace(target.getId(), provider, "different.docx", user);
+    assertEquals(NUM_IMAGES_IN_HTML, getImagesFromTextField(updated.asStrucDoc()).size());
+    var attachments = fieldMgr.getFieldAttachments(fieldId);
+    assertEquals(
+        NUM_IMAGES_IN_HTML, attachments.stream().filter(link -> !link.isDeleted()).count());
+    assertEquals(NUM_IMAGES_IN_HTML, attachments.stream().filter(link -> link.isDeleted()).count());
+  }
+
+  @Test
   public void imageFilesCreatedFromWordCanBeReadBySharees() throws Exception {
     User pi = createAndSaveAPi();
     User any = createAndSaveRandomUser();

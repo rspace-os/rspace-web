@@ -292,3 +292,21 @@ The system supports various configuration options through:
 - `ArchivalImportConfig`: Controls import behavior and overrides
 - `@Value` annotations: External configuration properties
 - User permissions and context: Security and access control
+
+## Update from Word
+
+With Word conversion enabled, the Workspace Create menu's From Word dialog can
+update one selected Basic Document. In the notebook editor it can update the
+current entry. Importing new documents remains the default.
+
+The multipart endpoint `/workspace/editor/structuredDocument/ajax/createFromWord/{parentId}`
+accepts an optional `recordToReplaceId`. Updates accept one file and require write
+access to an unsigned, undeleted Basic Document. The document ID, name, field ID,
+and existing sharing are retained. Replacement uses the normal edit/save path
+for HTML sanitization, attachment/internal-link synchronization, and revision
+history; another user's edit lock blocks the update. Conversion errors leave the
+existing document content unchanged. Removed images remain in the Gallery;
+obsolete field attachment links are marked deleted and retained for revision history.
+
+Focused regression checks: `mvn test -Dfast=true -Dtest=StructuredDocumentControllerTest,MSWordExporterTest,RSpaceDocumentCreatorTest`
+and, with a test database, `mvn test -Dtest=WordHTML2RspaceTest`.
