@@ -309,13 +309,6 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
       // what the last committed writer stored.
       QuantityInfo orgQuantity = subSampleDao.getQuantityForUpdate(dbSubSample.getId());
 
-      // The entity's version is that same snapshot. A decrement that committed while this request
-      // waited for the lock advanced the row past it, so bumping the cached number would reissue a
-      // version the earlier decrement already used and make the stock state it labelled
-      // unaddressable (Codex review, PR #1090). Read the committed version as a scalar under the
-      // lock, like the quantity, so the bump below lands on top of it.
-      dbSubSample.refreshVersionFromLockedRow(
-          subSampleDao.getVersionForUpdate(dbSubSample.getId()));
       QuantityInfo newQuantity = qUtils.sum(Arrays.asList(orgQuantity, usedQuantity.negate()));
 
       // if usage is larger than remaining quantity set remaining to zero, in the stored unit
@@ -331,6 +324,18 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
               || !orgQuantity.getUnitId().equals(newQuantity.getUnitId());
       if (quantityChanged) {
         dbSubSample.setQuantity(newQuantity);
+        // The entity's version is this transaction's snapshot too. A decrement that committed while
+        // this request waited for the lock advanced the row past it, so bumping the cached number
+        // would reissue a version the earlier decrement already used and make the stock state it
+        // labelled unaddressable (Codex review, PR #1090). The committed version is read as a
+        // scalar under the lock, like the quantity, so the bump below lands on top of it.
+        //
+        // Strictly inside this branch: it mutates the entity, and the entity still carries this
+        // transaction's stale quantity. Dirtying it on the no-op path would make Hibernate's
+        // full-row flush write that stale quantity back and resurrect stock a concurrent writer had
+        // exhausted, even though nothing was deducted (second Codex review, PR #1090).
+        dbSubSample.refreshVersionFromLockedRow(
+            subSampleDao.getVersionForUpdate(dbSubSample.getId()));
         increaseVersionOncePerTransaction(dbSubSample);
         registerSubSampleModification(user, dbSubSample);
         dbSubSample = subSampleDao.save(dbSubSample);
