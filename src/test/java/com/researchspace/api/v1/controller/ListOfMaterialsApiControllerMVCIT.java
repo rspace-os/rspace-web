@@ -351,6 +351,15 @@ public class ListOfMaterialsApiControllerMVCIT extends API_MVC_InventoryTestBase
     // though, so anything that dirties that instance makes Hibernate's full-row flush write 5 g
     // back and resurrect stock that was already used up (Codex review, PR #1090). The invariant is
     // the final quantity, not which request won.
+    //
+    // Read a green run carefully: the assertions hold under EVERY interleaving, so this test does
+    // not fail spuriously, but it only REPRODUCES the bug when the second request loads the entity
+    // before the first commits. If the two happen to serialise, the second loads a fresh 0 g, there
+    // is no stale instance to dirty, and this passes without exercising the defect at all. Making
+    // that deterministic would need both transactions parked at a barrier between load and commit,
+    // i.e. test scaffolding inside registerApiSubSampleUsage, which is not worth it here. So this
+    // is an end-to-end backstop, not the guard: the precise, deterministic check is
+    // SubSampleApiManagerImplUsageVersionTest, which forces the stale-entity state directly.
     User anyUser = createInitAndLoginAnyUser();
     String apiKey = createNewApiKeyForUser(anyUser);
     MvcResult sampleResult =
