@@ -9,6 +9,7 @@ import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.dto.DocAttachmentSummaryInfo;
 import com.researchspace.model.record.BaseRecord;
+import com.researchspace.model.sort.RecordSort;
 import java.util.List;
 import org.hibernate.Session;
 import org.springframework.stereotype.Repository;
@@ -59,31 +60,28 @@ public class EcatDocumentFileDaoHibernate extends GenericDaoHibernate<EcatDocume
   }
 
   private String generateOrderBy(PaginationCriteria<BaseRecord> pg) {
-    String orderBy = pg.getOrderBy();
-    SortOrder sortOrder = pg.getSortOrder();
-    String orderBySuffix = "";
-    if (orderBy != null) {
-      if (orderBy.equalsIgnoreCase("name")) {
-        if (isAsc(sortOrder)) {
-          orderBySuffix = " order by doc.editInfo.name asc";
-        } else if (isDesc(sortOrder)) {
-          orderBySuffix = " order by doc.editInfo.name desc";
-        }
-      } else if (orderBy.equalsIgnoreCase("modificationDateMillis")) {
-        if (isAsc(sortOrder)) {
-          orderBySuffix = " order by doc.editInfo.modificationDate asc";
-        } else if (isDesc(sortOrder)) {
-          orderBySuffix = " order by doc.editInfo.modificationDate desc";
-        }
-      } else if (orderBy.equalsIgnoreCase("creationDateMillis")) {
-        if (isAsc(sortOrder)) {
-          orderBySuffix = " order by doc.editInfo.creationDate asc";
-        } else if (isDesc(sortOrder)) {
-          orderBySuffix = " order by doc.editInfo.creationDate desc";
-        }
-      }
+    String column;
+    switch (RecordSort.fromRequest(pg.getOrderBy())) {
+      case NAME:
+        column = "doc.editInfo.name";
+        break;
+      case CREATION_DATE:
+      case CREATION_DATE_MILLIS:
+        column = "doc.editInfo.creationDate";
+        break;
+      case MODIFICATION_DATE:
+      case MODIFICATION_DATE_MILLIS:
+      default:
+        column = "doc.editInfo.modificationDate";
+        break;
     }
-    return orderBySuffix;
+    SortOrder sortOrder = pg.getSortOrder();
+    if (isAsc(sortOrder)) {
+      return " order by " + column + " asc";
+    } else if (isDesc(sortOrder)) {
+      return " order by " + column + " desc";
+    }
+    return "";
   }
 
   private boolean isDesc(SortOrder sortOrder) {

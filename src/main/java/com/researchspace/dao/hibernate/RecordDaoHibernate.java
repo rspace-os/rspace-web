@@ -2,7 +2,6 @@ package com.researchspace.dao.hibernate;
 
 import static com.researchspace.core.util.TransformerUtils.toSet;
 
-import com.axiope.search.SearchUtils;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SearchResultsImpl;
 import com.researchspace.core.util.SortOrder;
@@ -19,6 +18,7 @@ import com.researchspace.model.record.Record;
 import com.researchspace.model.record.RecordInformation;
 import com.researchspace.model.record.RecordToFolder;
 import com.researchspace.model.record.StructuredDocument;
+import com.researchspace.model.sort.RecordSort;
 import com.researchspace.model.views.RSpaceDocView;
 import com.researchspace.model.views.RecordTypeFilter;
 import com.researchspace.service.impl.CustomFormAppInitialiser;
@@ -153,7 +153,8 @@ public class RecordDaoHibernate extends GenericDaoHibernate<Record, Long> implem
     long totalHits = getChildRecordCount(parentId, recordFilter);
     // regular HQL OK for SDoc search
     Query<BaseRecord> query;
-    if (pgCrit.getOrderBy() != null && pgCrit.getOrderBy().contains("template")) {
+    RecordSort sort = RecordSort.fromRequest(pgCrit.getOrderBy());
+    if (sort == RecordSort.TEMPLATE) {
       final String structDocsInFolderQuery =
           "select r from StructuredDocument r join r.parents folders "
               + "where folders.folder.id = :parentId "
@@ -169,7 +170,7 @@ public class RecordDaoHibernate extends GenericDaoHibernate<Record, Long> implem
                   + RECORDS_IN_FOLDER_QUERY_WITH_IMAGE_FETCH
                   + createInClause(recordFilter)
                   + "  "
-                  + makeOrderBy(pgCrit),
+                  + makeOrderBy(sort, pgCrit.getSortOrder()),
               BaseRecord.class);
     }
     query.setMaxResults(pgCrit.getResultsPerPage());
@@ -179,38 +180,34 @@ public class RecordDaoHibernate extends GenericDaoHibernate<Record, Long> implem
     return new SearchResultsImpl<>(br, pgCrit, totalHits);
   }
 
-  // BaseRecord properties that live in the embedded EditInfo component. Hibernate 6 no longer
-  // resolves them implicitly, so only these fields get the explicit path prefix; anything else is
-  // passed through unchanged.
-  private static final Set<String> EDIT_INFO_ORDER_BY_FIELDS =
-      Set.of(
-          "name",
-          "description",
-          "createdBy",
-          "modifiedBy",
-          "creationDate",
-          "creationDateMillis",
-          "modificationDate",
-          "modificationDateMillis");
-
-  static String makeOrderBy(PaginationCriteria<? extends BaseRecord> pgCrit) {
-    String orderBy;
-    if (!StringUtils.isEmpty(pgCrit.getOrderBy()) && pgCrit.isOrderBySafe(pgCrit.getOrderBy())) {
-      String field = pgCrit.getOrderBy();
-      if (EDIT_INFO_ORDER_BY_FIELDS.contains(field)) {
-        field = "editInfo." + field;
-      }
-      // Qualify with the 'br' alias to avoid ambiguity when a JOIN FETCH introduces a second
-      // from-element that also exposes BaseRecord attributes (e.g. EcatImage.originalImage).
-      orderBy = " order by br." + field + " " + pgCrit.getSortOrder();
-    } else {
-      orderBy =
-          " order by br.editInfo."
-              + SearchUtils.BASE_RECORD_ORDER_BY_LAST_MODIFIED
-              + " "
-              + SortOrder.DESC;
+  /**
+   * Order clause for folder listings. Paths are qualified with the 'br' alias to avoid ambiguity
+   * when a JOIN FETCH introduces a second from-element that also exposes BaseRecord attributes
+   * (e.g. EcatImage.originalImage). Template ordering needs a different query, see the caller.
+   */
+  static String makeOrderBy(RecordSort sort, SortOrder sortOrder) {
+    String field;
+    switch (sort) {
+      case NAME:
+        field = "name";
+        break;
+      case CREATION_DATE:
+        field = "creationDate";
+        break;
+      case CREATION_DATE_MILLIS:
+        field = "creationDateMillis";
+        break;
+      case MODIFICATION_DATE:
+        field = "modificationDate";
+        break;
+      case MODIFICATION_DATE_MILLIS:
+        field = "modificationDateMillis";
+        break;
+      case TEMPLATE:
+      default:
+        return " order by br.editInfo.modificationDateMillis " + SortOrder.DESC;
     }
-    return orderBy;
+    return " order by br.editInfo." + field + " " + sortOrder;
   }
 
   @Override

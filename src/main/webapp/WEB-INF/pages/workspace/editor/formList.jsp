@@ -74,7 +74,7 @@
             </a>
           </th>
           <th>
-            <a href="#" class="orderByLink" data-orderby='owner.username' data-sortorder='ASC'>
+            <a href="#" class="orderByLink" data-orderby='owner' data-sortorder='ASC'>
               <spring:message code="workspace.list.owner.header"/>
             </a>
           </th>

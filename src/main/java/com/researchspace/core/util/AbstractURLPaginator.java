@@ -53,7 +53,7 @@ public abstract class AbstractURLPaginator implements URLGenerator {
     }
     String url = generateURL(0);
     if (pgCrit != null) {
-      pgCrit.setOrderByWithoutChecks(originalRecordsPerPage);
+      pgCrit.setOrderBy(originalRecordsPerPage);
     }
     return url;
   }

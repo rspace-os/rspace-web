@@ -5,6 +5,7 @@ import com.researchspace.core.util.LoggingUtils;
 import com.researchspace.core.util.RequestUtil;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.permissions.SecurityLogger;
+import com.researchspace.model.sort.UnknownSortKeyException;
 import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.MessageSourceUtils;
 import jakarta.servlet.http.HttpServletRequest;
@@ -283,6 +284,8 @@ public class ControllerExceptionHandler implements IControllerExceptionHandler {
             request, response, e, tstamp, errorId)) {
           logWarningFor(getConstraintViolationMessage((ConstraintViolationException) e), errorId);
         }
+      } else if (e instanceof UnknownSortKeyException) {
+        logWarningFor(e.getMessage(), errorId);
       } else {
         if (!visitor.visitorHasHandledGeneralRSpaceExceptionLogging(
             request, response, e, tstamp, errorId)) {
@@ -324,6 +327,9 @@ public class ControllerExceptionHandler implements IControllerExceptionHandler {
         ModelAndView m = new ModelAndView(NON_AJAX_ERROR_VIEW_NAME);
         m.addObject(EXCEPTION_MESSAGE_ATTR_NAME, getExceptionMessage(e));
         addTimeStampAndErrorId(tstamp, errorId, m);
+        if (e instanceof UnknownSortKeyException) {
+          response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+        }
         return m;
       } else {
         return visitedValue;
@@ -348,7 +354,7 @@ public class ControllerExceptionHandler implements IControllerExceptionHandler {
   }
 
   private void logWarningFor(String message, String errorId) {
-    log.warn("Expected exception type in controller:errorId-[{}]. [{}]. {}", errorId, message);
+    log.warn("Expected exception type in controller:errorId-[{}]. [{}]", errorId, message);
   }
 
   private static void addTimeStampAndErrorId(String tstamp, String errorId, ModelAndView m) {
@@ -359,6 +365,8 @@ public class ControllerExceptionHandler implements IControllerExceptionHandler {
   private static void setErrorResponseStatus(HttpServletResponse response, Exception e) {
     if (isSecurityException(e)) {
       response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+    } else if (e instanceof UnknownSortKeyException) {
+      response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
     } else {
       response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
     }
@@ -389,6 +397,14 @@ public class ControllerExceptionHandler implements IControllerExceptionHandler {
       return messages.getMessage("errors.page.unavailableResource");
     } else if (e instanceof ConstraintViolationException) {
       return getConstraintViolationMessage(((ConstraintViolationException) e));
+    } else if (e instanceof UnknownSortKeyException) {
+      UnknownSortKeyException sortException = (UnknownSortKeyException) e;
+      return messages.getMessage(
+          "errors.invalidOrderByClause",
+          new Object[] {
+            sortException.getRequestedKey(),
+            ListFormatUtils.formatList(sortException.getAllowedKeys())
+          });
     } else {
       StringBuffer message = new StringBuffer();
       while (e != null) {

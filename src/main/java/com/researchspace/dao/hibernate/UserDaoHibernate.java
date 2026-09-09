@@ -24,6 +24,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.UserProfile;
 import com.researchspace.model.dtos.UserRoleView;
 import com.researchspace.model.dtos.UserSearchCriteria;
+import com.researchspace.model.sort.UserSort;
 import com.researchspace.model.views.UserStatistics;
 import com.researchspace.model.views.UserView;
 import jakarta.persistence.criteria.CriteriaBuilder;
@@ -307,15 +308,33 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
   }
 
   private String safeOrderBy(PaginationCriteria<User> pgCrit) {
-    if (StringUtils.isBlank(pgCrit.getOrderBy())) {
-      return "";
-    }
-    if (!pgCrit.isOrderBySafe(pgCrit.getOrderBy())) {
-      log.warn("Ignoring unsafe orderBy value in community user listing");
-      return " order by u.id"; // stable fallback so paging stays deterministic
-    }
     return String.format(
-        ORDER_BY_QUERY_FORMAT, pgCrit.getOrderBy(), pgCrit.getSortOrder().toString());
+        ORDER_BY_QUERY_FORMAT,
+        userColumn(UserSort.fromRequest(pgCrit.getOrderBy())),
+        pgCrit.getSortOrder().toString());
+  }
+
+  /** The User property a sort key orders by. Usage keys are aggregates, so they fall back. */
+  private static String userColumn(UserSort sort) {
+    switch (sort) {
+      case FIRST_NAME:
+        return FIRST_NAME;
+      case USERNAME:
+        return USERNAME;
+      case EMAIL:
+        return "email";
+      case AFFILIATION:
+        return "affiliation";
+      case CREATION_DATE:
+        return "creationDate";
+      case LAST_LOGIN:
+        return "lastLogin";
+      case LAST_NAME:
+      case FILE_USAGE:
+      case RECORD_COUNT:
+      default:
+        return LAST_NAME;
+    }
   }
 
   @Override
@@ -465,25 +484,17 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
       CriteriaBuilder builder,
       Root<User> root,
       CriteriaQuery<?> query) {
-    if (pgCrit.getOrderBy() == null) {
-      return;
-    }
-    if (!pgCrit.isOrderBySafe(pgCrit.getOrderBy())) {
-      log.warn("Ignoring unsafe orderBy value in user search");
-      // stable fallback so paging stays deterministic
-      query.orderBy(builder.asc(root.get("id")));
-      return;
-    }
+    String column = userColumn(UserSort.fromRequest(pgCrit.getOrderBy()));
     List<Order> orders = new ArrayList<>();
     if (SortOrder.ASC.equals(pgCrit.getSortOrder())) {
-      orders.add(builder.asc(root.get(pgCrit.getOrderBy())));
-      if (pgCrit.getOrderBy().equalsIgnoreCase(LAST_NAME)) {
+      orders.add(builder.asc(root.get(column)));
+      if (LAST_NAME.equals(column)) {
         orders.add(builder.asc(root.get(FIRST_NAME)));
         orders.add(builder.asc(root.get(USERNAME)));
       }
     } else {
-      orders.add(builder.desc(root.get(pgCrit.getOrderBy())));
-      if (pgCrit.getOrderBy().equalsIgnoreCase(LAST_NAME)) {
+      orders.add(builder.desc(root.get(column)));
+      if (LAST_NAME.equals(column)) {
         orders.add(builder.desc(root.get(FIRST_NAME)));
         orders.add(builder.desc(root.get(USERNAME)));
       }
