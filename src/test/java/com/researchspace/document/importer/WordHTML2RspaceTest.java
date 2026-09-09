@@ -1,6 +1,7 @@
 package com.researchspace.document.importer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.linkedelements.FieldContents;
@@ -82,6 +83,22 @@ public class WordHTML2RspaceTest extends SpringTransactionalTest {
     assertEquals(
         NUM_IMAGES_IN_HTML, attachments.stream().filter(link -> !link.isDeleted()).count());
     assertEquals(NUM_IMAGES_IN_HTML, attachments.stream().filter(link -> link.isDeleted()).count());
+  }
+
+  @Test
+  public void replacementRejectsDocumentDeletedForOwner() throws Exception {
+    User user = createAndSaveRandomUser();
+    initialiseContentWithEmptyContent(user);
+    logoutAndLoginAs(user);
+    Folder root = folderDao.getRootRecordForUser(user);
+    StructuredDocument target = recordMgr.createBasicDocument(root.getId(), user);
+    recordMgr.save(target, user);
+    target.getParents().iterator().next().markRecordInFolderDeleted(true);
+    HTMLContentProvider provider = new HTMLContentProvider(word2rspaceFolder, wordHtml);
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> creator.replace(target.getId(), provider, "different.docx", user));
   }
 
   @Test

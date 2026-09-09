@@ -201,6 +201,7 @@ public class StructuredDocumentController extends BaseController {
       if (target.isSigned()
           || target.isDeleted()
           || target.isDeletedForUser(user)
+          || target.isDeletedForUser(target.getOwner())
           || !target.isEditable()) {
         el.addErrorMsg(getText("workspace.word.import.targetNotEditable"));
         return new AjaxReturnObject<List<RecordInformation>>(null, el);

@@ -670,6 +670,17 @@ public class StructuredDocumentControllerTest {
     result = strucDocCtrller.createSDFromWordFile(1L, files, 2L, null, session);
     assertTrue(result.getErrorMsg().hasErrorMessages());
     target.setRecordDeleted(false);
+    User owner = TestFactory.createAnyUser("owner");
+    target.setOwner(owner);
+    StructuredDocument ownerDeletedTarget = Mockito.spy(target);
+    Mockito.doReturn(false).when(ownerDeletedTarget).isDeletedForUser(user);
+    Mockito.doReturn(true).when(ownerDeletedTarget).isDeletedForUser(owner);
+    when(recordMgr.get(2L)).thenReturn(ownerDeletedTarget);
+    when(permissionUtils.isPermitted(ownerDeletedTarget, PermissionType.WRITE, user))
+        .thenReturn(true);
+    result = strucDocCtrller.createSDFromWordFile(1L, files, 2L, null, session);
+    assertTrue(result.getErrorMsg().hasErrorMessages());
+    when(recordMgr.get(2L)).thenReturn(target);
     target.getForm().setSystemForm(false);
     result = strucDocCtrller.createSDFromWordFile(1L, files, 2L, null, session);
     assertTrue(result.getErrorMsg().hasErrorMessages());

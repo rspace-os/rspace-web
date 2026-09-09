@@ -158,7 +158,11 @@ public class DocumentImporterFromWord2HTML implements RSpaceDocumentCreator {
       throw new IllegalArgumentException(
           messages.getMessage("workspace.word.import.basicDocumentRequired"));
     }
-    if (document.isSigned() || document.isDeleted() || !document.isEditable()) {
+    if (document.isSigned()
+        || document.isDeleted()
+        || document.isDeletedForUser(user)
+        || document.isDeletedForUser(document.getOwner())
+        || !document.isEditable()) {
       throw new IllegalArgumentException(
           messages.getMessage("workspace.word.import.targetNotEditable"));
     }
