@@ -34,4 +34,14 @@ public interface UnknownPropertyCapturing {
    */
   @JsonIgnore
   List<String> getUnknownProperties();
+
+  /**
+   * Records one unrecognised name, up to the cap. Shared so the cap is defined once rather than
+   * once per implementing DTO.
+   */
+  static void capture(List<String> captured, String name) {
+    if (captured.size() < MAX_CAPTURED_UNKNOWN_PROPERTIES) {
+      captured.add(name);
+    }
+  }
 }

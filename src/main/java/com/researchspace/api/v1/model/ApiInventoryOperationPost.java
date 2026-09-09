@@ -37,12 +37,18 @@ public class ApiInventoryOperationPost implements UnknownPropertyCapturing {
   @JsonIgnore @EqualsAndHashCode.Exclude @ToString.Exclude
   private final List<String> unknownProperties = new ArrayList<>();
 
-  /** Records an unrecognised property's NAME and discards its value. */
+  /**
+   * Records an unrecognised property's NAME and discards its value.
+   *
+   * <p>The value parameter is {@code Void}, not {@code Object}, deliberately. An any-setter's value
+   * IS deserialized before the method body runs, so {@code Object} would build a
+   * LinkedHashMap/ArrayList graph for the whole unknown subtree only to drop it, turning a body of
+   * junk keys into heap amplification. {@code Void} routes Jackson to NullifyingDeserializer, which
+   * skips the subtree exactly as unknown-property handling did before (parallel review).
+   */
   @JsonAnySetter
-  private void captureUnknownProperty(String name, Object ignoredValue) {
-    if (unknownProperties.size() < UnknownPropertyCapturing.MAX_CAPTURED_UNKNOWN_PROPERTIES) {
-      unknownProperties.add(name);
-    }
+  private void captureUnknownProperty(String name, Void ignoredValue) {
+    UnknownPropertyCapturing.capture(unknownProperties, name);
   }
 
   @JsonProperty("operationType")
