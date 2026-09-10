@@ -27,12 +27,12 @@ import static com.researchspace.service.IntegrationsHandler.SLACK_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.ZENODO_APP_NAME;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import com.researchspace.core.util.ListFormatUtils;
 import com.researchspace.model.User;
 import com.researchspace.model.dto.IntegrationInfo;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.model.preference.URLPreferenceValidator;
-import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.impl.IntegrationsHandlerImpl;
 import com.researchspace.session.SessionAttributeUtils;
 import jakarta.servlet.http.HttpSession;
