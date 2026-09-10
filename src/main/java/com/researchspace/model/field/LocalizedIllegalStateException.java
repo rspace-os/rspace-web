@@ -1,12 +1,10 @@
 package com.researchspace.model.field;
 
-import org.springframework.context.MessageSourceResolvable;
+import java.util.function.BiFunction;
 
 /** Illegal state whose user-facing text is resolved at an application boundary. */
 public class LocalizedIllegalStateException extends IllegalStateException
-    implements MessageSourceResolvable {
-
-  private static final long serialVersionUID = -7880961943929307680L;
+    implements LocalizedException {
 
   private final String code;
   private final Object[] arguments;
@@ -18,17 +16,7 @@ public class LocalizedIllegalStateException extends IllegalStateException
   }
 
   @Override
-  public String[] getCodes() {
-    return new String[] {code};
-  }
-
-  @Override
-  public Object[] getArguments() {
-    return arguments;
-  }
-
-  @Override
-  public String getDefaultMessage() {
-    return null;
+  public String resolve(BiFunction<String, Object[], String> resolver) {
+    return resolver.apply(code, arguments);
   }
 }

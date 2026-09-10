@@ -258,15 +258,6 @@ public enum Preference {
   }
 
   /**
-   * @deprecated use {@link #getInvalidExceptionForValue(String)} for localizable arguments.
-   */
-  @Deprecated
-  public String getInvalidErrorMessageForValue(String value) {
-    LocalizedIllegalArgumentException exception = getInvalidExceptionForValue(value);
-    return exception == null ? null : exception.getMessage();
-  }
-
-  /**
    * Boolean test as to whether the supplied value is valid for this preference
    *
    * @param value

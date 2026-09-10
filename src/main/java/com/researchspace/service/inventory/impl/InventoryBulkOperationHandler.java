@@ -26,6 +26,7 @@ import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.apiutils.ApiError;
 import com.researchspace.apiutils.ApiErrorCodes;
 import com.researchspace.model.User;
+import com.researchspace.model.field.LocalizedException;
 import com.researchspace.model.field.LocalizedIllegalArgumentException;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.inventory.InventoryMoveHelper;
@@ -176,15 +177,12 @@ public class InventoryBulkOperationHandler {
       return apiControllerAdvice.getApiErrorFromBindException(bindException);
     }
     Throwable exceptionToResolve =
-        e instanceof LocalizedIllegalArgumentException || e instanceof MessageSourceResolvable
-            ? e
-            : cause;
+        e instanceof LocalizedException || e instanceof MessageSourceResolvable ? e : cause;
     String errorMessage =
-        exceptionToResolve instanceof LocalizedIllegalArgumentException localized
-            ? messages.getMessage(localized)
-            : exceptionToResolve instanceof MessageSourceResolvable resolvable
-                ? messages.getMessage(resolvable)
-                : e.getMessage();
+        exceptionToResolve instanceof LocalizedException
+                || exceptionToResolve instanceof MessageSourceResolvable
+            ? messages.getExceptionMessage(exceptionToResolve)
+            : e.getMessage();
     return new ApiError(
         HttpStatus.BAD_REQUEST,
         ApiErrorCodes.INVALID_FIELD.getCode(),
@@ -238,8 +236,8 @@ public class InventoryBulkOperationHandler {
           return subSamplesApiController.updateSubSample(
               recInfo.getId(), (ApiSubSample) recInfo, errors, user);
         default:
-          throw new IllegalArgumentException(
-              "bulk update doesn't support records of type: " + recInfo.getType());
+          throw new LocalizedIllegalArgumentException(
+              "errors.inventory.bulk.updateUnsupportedType", recInfo.getType());
       }
     } catch (BindException be) {
       throw new IllegalArgumentException(be);
@@ -263,8 +261,8 @@ public class InventoryBulkOperationHandler {
       case INSTRUMENT_TEMPLATE:
         return instrumentTemplatesApiController.deleteInstrumentTemplate(recInfo.getId(), user);
       default:
-        throw new IllegalArgumentException(
-            "bulk delete doesn't support records of type: " + recInfo.getType());
+        throw new LocalizedIllegalArgumentException(
+            "errors.inventory.bulk.deleteUnsupportedType", recInfo.getType());
     }
   }
 
@@ -285,8 +283,8 @@ public class InventoryBulkOperationHandler {
         return instrumentTemplatesApiController.restoreDeletedInstrumentTemplate(
             recInfo.getId(), user);
       default:
-        throw new IllegalArgumentException(
-            "bulk restore doesn't support records of type: " + recInfo.getType());
+        throw new LocalizedIllegalArgumentException(
+            "errors.inventory.bulk.restoreUnsupportedType", recInfo.getType());
     }
   }
 
@@ -307,8 +305,8 @@ public class InventoryBulkOperationHandler {
       case INSTRUMENT_TEMPLATE:
         return instrumentTemplatesApiController.duplicate(recInfo.getId(), user);
       default:
-        throw new IllegalArgumentException(
-            "bulk duplicate doesn't support records of type: " + recInfo.getType());
+        throw new LocalizedIllegalArgumentException(
+            "errors.inventory.bulk.duplicateUnsupportedType", recInfo.getType());
     }
   }
 
@@ -321,8 +319,8 @@ public class InventoryBulkOperationHandler {
       case INSTRUMENT:
         return instrumentsApiController.updateToLatestTemplateVersion(recInfo.getId(), user);
       default:
-        throw new IllegalArgumentException(
-            "update to latest template doesn't support records of type: " + recInfo.getType());
+        throw new LocalizedIllegalArgumentException(
+            "errors.inventory.bulk.templateUpdateUnsupportedType", recInfo.getType());
     }
   }
 
@@ -349,8 +347,8 @@ public class InventoryBulkOperationHandler {
           return instrumentTemplatesApiController.changeInstrumentTemplateOwner(
               recInfo.getId(), (ApiInstrumentTemplate) recInfo, errors, user);
         default:
-          throw new IllegalArgumentException(
-              "bulk owner change doesn't support records of type: " + recInfo.getType());
+          throw new LocalizedIllegalArgumentException(
+              "errors.inventory.bulk.ownerChangeUnsupportedType", recInfo.getType());
       }
     } catch (BindException be) {
       throw new IllegalArgumentException(be);
@@ -363,8 +361,8 @@ public class InventoryBulkOperationHandler {
 
     boolean onErrorStopWithException = bulkOpConfig.isOnErrorStopWithException();
     if (!onErrorStopWithException) {
-      throw new IllegalArgumentException(
-          "operationType: " + bulkOpConfig.getOperationType() + " doesn't allow rollback option");
+      throw new LocalizedIllegalArgumentException(
+          "errors.inventory.bulk.rollbackUnsupported", bulkOpConfig.getOperationType());
     }
 
     ApiInventoryBulkOperationResult result = new ApiInventoryBulkOperationResult();

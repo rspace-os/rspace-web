@@ -4,7 +4,6 @@ import com.ibm.icu.text.ListFormatter;
 import com.researchspace.api.v1.model.ApiField;
 import com.researchspace.api.v1.model.ApiFieldToModelFieldFactory;
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
-import com.researchspace.model.field.LocalizedIllegalArgumentException;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.MessageSourceUtils;
@@ -57,17 +56,11 @@ abstract class InstrumentTemplateFieldValidator implements Validator {
     if (apiTemplateField.getType() != null) {
       try {
         apiFieldToModelFieldFactory.apiInventoryFieldToModelField(apiTemplateField);
-      } catch (LocalizedIllegalArgumentException e) {
-        errors.rejectValue(
-            "content",
-            "errors.inventory.template.invalidFieldContent",
-            new Object[] {messages.getMessage(e)},
-            null);
       } catch (IllegalArgumentException e) {
         errors.rejectValue(
             "content",
             "errors.inventory.template.invalidFieldContent",
-            new Object[] {e.getMessage()},
+            new Object[] {messages.getExceptionMessage(e)},
             null);
       }
     }

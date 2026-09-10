@@ -9,14 +9,5 @@ public interface PreferenceValidator {
    */
   LocalizedIllegalArgumentException getExceptionIfInvalid(String value);
 
-  /**
-   * @deprecated use {@link #getExceptionIfInvalid(String)} so arguments can be localized.
-   */
-  @Deprecated
-  default String getMsgIfInvalid(String value) {
-    LocalizedIllegalArgumentException exception = getExceptionIfInvalid(value);
-    return exception == null ? null : exception.getMessage();
-  }
-
   PreferenceValidator ALWAYS_TRUE = value -> null;
 }

@@ -4,9 +4,8 @@ import java.util.Arrays;
 import java.util.function.BiFunction;
 
 /** Illegal argument whose user-facing text is resolved at an application boundary. */
-public class LocalizedIllegalArgumentException extends IllegalArgumentException {
-
-  private static final long serialVersionUID = -6265721901924491487L;
+public class LocalizedIllegalArgumentException extends IllegalArgumentException
+    implements LocalizedException {
 
   private final String code;
   private final Object[] arguments;
@@ -30,6 +29,7 @@ public class LocalizedIllegalArgumentException extends IllegalArgumentException 
   }
 
   /** Resolves this exception and any model validation errors nested inside it. */
+  @Override
   public String resolve(BiFunction<String, Object[], String> resolver) {
     Object[] resolvedArguments = arguments;
     if (nestedErrors != null) {
