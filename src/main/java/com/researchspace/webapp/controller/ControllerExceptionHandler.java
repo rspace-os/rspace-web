@@ -8,7 +8,6 @@ import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.field.LocalizedException;
 import com.researchspace.model.permissions.SecurityLogger;
 import com.researchspace.model.sort.UnknownSortKeyException;
-import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.MessageSourceUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

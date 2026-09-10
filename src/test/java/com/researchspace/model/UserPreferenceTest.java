@@ -118,16 +118,14 @@ public class UserPreferenceTest {
 
     IllegalArgumentException iae =
         Assertions.assertThrows(
-            IllegalArgumentException.class,
-            () -> clientSettings.setValue(longStringValue));
+            IllegalArgumentException.class, () -> clientSettings.setValue(longStringValue));
     assertEquals("validation.settings.valueTooLong", iae.getMessage());
 
     UserPreference jsonSettings = createUserPref(Preference.UI_JSON_SETTINGS);
     jsonSettings.setValue(longStringValue);
     iae =
         Assertions.assertThrows(
-            IllegalArgumentException.class,
-            () -> jsonSettings.setValue(veryLongStringValue));
+            IllegalArgumentException.class, () -> jsonSettings.setValue(veryLongStringValue));
     assertEquals("validation.settings.textTooLong", iae.getMessage());
   }
 }
