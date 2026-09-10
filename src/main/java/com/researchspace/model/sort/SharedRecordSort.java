@@ -4,7 +4,9 @@ package com.researchspace.model.sort;
 public enum SharedRecordSort implements SortKey {
   NAME("name"),
   SHAREE("sharee"),
-  CREATION_DATE("creationDate");
+  CREATION_DATE("creationDate"),
+  CREATION_DATE_MILLIS("creationDateMillis"),
+  MODIFICATION_DATE_MILLIS("modificationDateMillis");
 
   private final String key;
 

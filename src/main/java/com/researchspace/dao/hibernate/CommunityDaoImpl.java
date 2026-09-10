@@ -113,6 +113,9 @@ public class CommunityDaoImpl extends GenericDaoHibernate<Community, Long> imple
     CommunitySort sort = CommunitySort.fromRequest(pgCrit.getOrderBy());
     Path<?> path;
     switch (sort) {
+      case UNIQUE_NAME:
+        path = root.get("uniqueName");
+        break;
       case DISPLAY_NAME:
       default:
         path = root.get("displayName");

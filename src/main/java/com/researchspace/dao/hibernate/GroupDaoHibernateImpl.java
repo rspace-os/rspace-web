@@ -232,6 +232,9 @@ public class GroupDaoHibernateImpl extends GenericDaoHibernate<Group, Long> impl
       case MEMBER_COUNT:
         path = root.get("memberCount");
         break;
+      case UNIQUE_NAME:
+        path = root.get("uniqueName");
+        break;
       case CREATION_DATE:
         path = root.get("creationDate");
         break;
