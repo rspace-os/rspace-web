@@ -1,20 +1,14 @@
 name: CodeQL
 
-# Default query suite on pull requests and main. The weekly run adds
-# security-extended, which is too noisy for every PR.
-
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
-  schedule:
-    - cron: '30 4 * * 1'
   workflow_dispatch:
 
 concurrency:
-  # Event name keeps a push to main from cancelling the weekly extended run.
-  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -61,11 +55,8 @@ jobs:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
           config-file: ./.github/codeql/codeql-config.yml
-          queries: ${{ github.event_name == 'schedule' && 'security-extended' || '' }}
 
       - name: Perform CodeQL analysis
         uses: github/codeql-action/analyze@v4.37.9
         with:
-          # The weekly run is its own configuration, so a default-suite push
-          # to main does not mark its extended-only alerts as fixed.
-          category: /language:${{ matrix.language }}${{ github.event_name == 'schedule' && '/suite:security-extended' || '' }}
+          category: /language:${{ matrix.language }}

@@ -1,7 +1,7 @@
 # CodeQL code scanning
 
-`.github/workflows/codeql.yml` runs GitHub CodeQL on every pull request to `main`, every push to
-`main`, and weekly. Results appear on the pull request as the `CodeQL` check and in the
+`.github/workflows/codeql.yml` runs GitHub CodeQL on every pull request to `main` and every push to
+`main`. Results appear on the pull request as the `CodeQL` check and in the
 repository's Security tab under Code scanning.
 
 ## What is scanned
@@ -12,9 +12,7 @@ JavaScript/TypeScript, and GitHub Actions workflows. Paths are set in
 `src/main/webapp/ui/src`; the legacy JavaScript under `src/main/webapp/scripts` is mostly
 vendored and is excluded until its first-party files are triaged.
 
-Pull requests and pushes run CodeQL's default query suite. The weekly run adds the
-`security-extended` suite, which has more queries and more false positives, so it is kept off the
-pull request path.
+Pull requests and pushes run CodeQL's default query suite.
 
 ## When the check fails
 
