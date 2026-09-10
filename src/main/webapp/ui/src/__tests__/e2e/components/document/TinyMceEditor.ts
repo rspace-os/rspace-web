@@ -7,15 +7,17 @@ export class TinyMceEditor {
   private readonly body: Locator;
   readonly container: Locator;
   private readonly menubar: Locator;
+  readonly editorId: string;
 
   constructor(
     private readonly page: Page,
-    readonly editorId: string,
+    readonly fieldId: string,
   ) {
-    this.frame = page.frameLocator(`iframe#${editorId}_ifr`);
+    this.editorId = `rtf_${fieldId}`;
+    this.frame = page.frameLocator(`iframe#${this.editorId}_ifr`);
     this.body = this.frame.locator("body#tinymce");
     // TinyMCE exposes stable classes but no semantic editor-container or menubar roles.
-    this.container = page.locator("div.tox-tinymce").filter({ has: page.locator(`iframe#${editorId}_ifr`) });
+    this.container = page.locator("div.tox-tinymce").filter({ has: page.locator(`iframe#${this.editorId}_ifr`) });
     this.menubar = this.container.locator(".tox-menubar");
   }
 
@@ -64,6 +66,16 @@ export class TinyMceEditor {
     ]);
     if (!response.ok()) {
       throw new Error(`Saving field failed: ${response.status()} ${response.statusText()}`);
+    }
+  }
+
+  async saveAndFinishEditing(): Promise<void> {
+    const [response] = await Promise.all([
+      this.page.waitForResponse((res) => res.url().includes("/ajax/saveStructuredDocument")),
+      this.page.locator(`#stopEdit_${this.fieldId}`).click(),
+    ]);
+    if (!response.ok()) {
+      throw new Error(`Save and View failed: ${response.status()} ${response.statusText()}`);
     }
   }
 

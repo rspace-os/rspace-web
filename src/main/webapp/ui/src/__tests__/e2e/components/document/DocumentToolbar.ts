@@ -38,20 +38,20 @@ export class DocumentToolbar {
   }
 
   async saveAndNew(): Promise<void> {
-    await this.saveMenuButton.click();
-    const before = this.page.url();
-    await Promise.all([
-      this.page.waitForURL((url) => url.toString() !== before),
-      this.page.getByRole("menuitem", { name: "Save & New", exact: true }).click(),
-    ]);
+    await this.saveAndNavigate("Save & New");
   }
 
   async saveAndClone(): Promise<void> {
+    await this.saveAndNavigate("Save & Clone");
+  }
+
+  /** Save-menu items that leave the current document, landing on a different URL. */
+  private async saveAndNavigate(menuItemName: "Save & New" | "Save & Clone"): Promise<void> {
     await this.saveMenuButton.click();
     const before = this.page.url();
     await Promise.all([
       this.page.waitForURL((url) => url.toString() !== before),
-      this.page.getByRole("menuitem", { name: "Save & Clone", exact: true }).click(),
+      this.page.getByRole("menuitem", { name: menuItemName, exact: true }).click(),
     ]);
   }
 

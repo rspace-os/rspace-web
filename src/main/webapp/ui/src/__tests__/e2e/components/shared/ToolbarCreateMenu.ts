@@ -30,6 +30,11 @@ export class ToolbarCreateMenu {
     await this.select(CREATE_ACCESSIBLE_NAME[item]);
   }
 
+  /**
+   * The Create menu sometimes lists a form directly as a menu item, and sometimes only
+   * exposes it via "From Form" > the "Choose a form" picker dialog. Handle both so
+   * callers don't need to know which applies to a given form.
+   */
   async createFromCustomForm(name: string): Promise<void> {
     await this.createButton.click();
     const menu = this.page.getByRole("menu").filter({ visible: true });

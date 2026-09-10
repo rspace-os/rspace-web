@@ -91,11 +91,15 @@ dynamicUserTest.describe("Document CRUD", () => {
     "As a user, I can export a document to PDF from the document view",
     async ({ pageWorkspace, pageGallery, componentExportWizard }) => {
       const docName = uniqueName("e2e-doc-export");
+      const content = alphaNumericUnique("e2eDocExportContent");
 
-      const doc = await dynamicUserTest.step("Given an Experiment-form document exists", async () => {
+      const doc = await dynamicUserTest.step("Given an Experiment-form document with content exists", async () => {
         await pageWorkspace.open();
         const created = await pageWorkspace.createDocumentFromForm(MULTI_FIELD_FORM);
         await created.rename(docName);
+        const field = await created.editField("Method", 0);
+        await field.fill(content);
+        await field.saveAndFinishEditing();
         return created;
       });
 
@@ -114,17 +118,23 @@ dynamicUserTest.describe("Document CRUD", () => {
         await componentExportWizard.submit();
       });
 
-      await dynamicUserTest.step("Then a new PDF appears in Gallery > Exports", async () => {
-        await expect
-          .poll(
-            async () => {
-              await pageGallery.openInSection("Exports");
-              return pageGallery.fileCell(`${docName}.pdf`).isVisible();
-            },
-            { timeout: 45_000 },
-          )
-          .toBe(true);
-      });
+      await dynamicUserTest.step(
+        "Then a new PDF appears in Gallery > Exports, containing the document's content",
+        async () => {
+          const fileName = `${docName}.pdf`;
+          await expect
+            .poll(
+              async () => {
+                await pageGallery.openInSection("Exports");
+                return pageGallery.fileCell(fileName).isVisible();
+              },
+              { timeout: 45_000 },
+            )
+            .toBe(true);
+          const text = await pageGallery.downloadAndExtractText(fileName);
+          expect(text).toContain(content);
+        },
+      );
     },
   );
 });

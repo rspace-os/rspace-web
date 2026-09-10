@@ -73,7 +73,7 @@ export class DocumentPage extends BasePage {
       }
       await editorIframe.waitFor({ state: "visible", timeout: 10_000 });
     }).toPass({ timeout: 45_000 });
-    return new TinyMceEditor(this.page, editorId).waitForReady();
+    return new TinyMceEditor(this.page, fieldId).waitForReady();
   }
 
   async getStructuredFieldValue(fieldName: string, index = 0): Promise<Locator> {

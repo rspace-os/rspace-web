@@ -1,4 +1,4 @@
-import type { Browser, BrowserContextOptions, Page } from "@playwright/test";
+import type { Browser, BrowserContext, BrowserContextOptions, Page } from "@playwright/test";
 import { GroupInvitationBanner } from "@/__tests__/e2e/components/system/groups/GroupInvitationBanner";
 import { createDynamicUser } from "@/__tests__/e2e/createDynamicUser";
 import { test as sysadminSessionTest } from "@/__tests__/e2e/fixtures/flows/sysadminSessions";
@@ -43,14 +43,14 @@ export async function loginInNewContext(
   browserContextOptions: BrowserContextOptions,
   username: string,
   password: string,
-): Promise<{ page: Page; close: () => Promise<void> }> {
-  const ctx = await browser.newContext({ ...browserContextOptions, storageState: undefined });
-  const page = await ctx.newPage();
+): Promise<{ page: Page; context: BrowserContext; close: () => Promise<void> }> {
+  const context = await browser.newContext({ ...browserContextOptions, storageState: undefined });
+  const page = await context.newPage();
   const loginPage = new LoginPage(page);
   await loginPage.open();
   await loginPage.login(username, password);
   await page.waitForURL((url) => url.pathname === "/workspace");
-  return { page, close: () => ctx.close() };
+  return { page, context, close: () => context.close() };
 }
 
 /** Logs the named dynamic user into a fresh browser context and wires up their own WorkspacePage. */

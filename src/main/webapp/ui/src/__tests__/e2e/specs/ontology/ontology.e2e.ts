@@ -86,6 +86,7 @@ test.describe("Tagging and Ontology", () => {
   });
 
   test("As a user, tags I define in an ontology document appear as tag suggestions when tagging another document", async ({
+    page,
     pageWorkspace,
     pageDocument,
   }) => {
@@ -101,12 +102,21 @@ test.describe("Tagging and Ontology", () => {
       await field.save();
     });
 
-    await test.step("Then those tags, with key= groups expanded, appear as suggestions when tagging another document", async () => {
-      await pageWorkspace.open();
-      const editor = await pageWorkspace.createBasicDocument();
-      await expect
-        .poll(() => editor.header.getSuggestedTags(), { timeout: 30_000, intervals: [3_000] })
-        .toEqual(expect.arrayContaining(expectedSuggestions));
+    const editor =
+      await test.step("Then those tags, with key= groups expanded, appear as suggestions when tagging another document", async () => {
+        await pageWorkspace.open();
+        const created = await pageWorkspace.createBasicDocument();
+        await expect
+          .poll(() => created.header.getSuggestedTags(), { timeout: 30_000, intervals: [3_000] })
+          .toEqual(expect.arrayContaining(expectedSuggestions));
+        return created;
+      });
+
+    await test.step("When I select one of the suggestions instead of typing it, it's applied as a real tag", async () => {
+      await editor.header.selectSuggestedTag("key=d");
+      await page.goto(`/workspace/editor/structuredDocument/${editor.getId()}`);
+      await pageDocument.isLoaded();
+      expect(await pageDocument.header.getTags()).toContain("key=d");
     });
   });
 
@@ -344,10 +354,6 @@ test.describe("Tagging and Ontology", () => {
     });
 
     await test.step("Then Add/Remove Tags shows no common tags across the selection, and adding one applies it to all three", async () => {
-      // addRemoveTags() already waits for getTagsForRecords to resolve before returning, so
-      // this asserts the dialog's first opening directly — retrying past a wrong first result
-      // would hide the exact stale-fetch race documented in
-      // .claude/automation/tag-dialog-stale-fetch-race-2026-08-31.md instead of catching it.
       const dialog = await pageWorkspace.selectionBar.addRemoveTags();
       expect(await dialog.noCommonTagsAreDisplayed()).toBe(true);
       await dialog.addTag(tagShared);
@@ -493,6 +499,156 @@ test.describe("Tagging and Ontology", () => {
       const otherTag = alphaNumericUnique("e2eEnforceOtherPi");
       await pageDocument.header.addForbiddenTag(otherTag);
       expect(await pageDocument.header.tagInfoDialogText.innerText()).toBe(ENFORCED_MESSAGE);
+    });
+  });
+
+  test("As a member of two groups, enforcement from either group applies, and only a group-level share (not an individual one) unblocks its tags", async ({
+    browser,
+    browserContextOptions,
+    appUser,
+    pageWorkspace,
+    pageDocument,
+    pageGroupView,
+    clientSysadmin,
+  }) => {
+    test.setTimeout(150_000);
+    const enforcingGroupName = uniqueName("e2e-multi-enforce-group");
+    const otherGroupName = uniqueName("e2e-multi-other-group");
+    const ontologyDocName = uniqueName("e2e-multi-enforce-doc");
+    const ontologyTag = alphaNumericUnique("e2eMultiEnforceTag");
+
+    const { enforcingGroupId, memberUsername } =
+      await test.step("Given a PI and a member who belong to two of the PI's groups, neither enforcing ontologies yet", async () => {
+        const { username: memberUsername } = await createDynamicUser(
+          clientSysadmin,
+          "ROLE_USER",
+          "e2eMultiMember",
+          "MultiMember",
+        );
+        const enforcingGroup = await clientSysadmin.createGroup({
+          displayName: enforcingGroupName,
+          type: "LAB_GROUP",
+          users: [
+            { username: appUser.username, roleInGroup: "PI" },
+            { username: memberUsername, roleInGroup: "DEFAULT" },
+          ],
+        });
+        await clientSysadmin.createGroup({
+          displayName: otherGroupName,
+          type: "LAB_GROUP",
+          users: [
+            { username: appUser.username, roleInGroup: "PI" },
+            { username: memberUsername, roleInGroup: "DEFAULT" },
+          ],
+        });
+        return { enforcingGroupId: enforcingGroup.id, memberUsername };
+      });
+
+    await test.step("When the PI enables Enforce Ontologies on only one of the two shared groups", async () => {
+      await pageGroupView.open(enforcingGroupId);
+      await pageGroupView.toggleEnforceOntologies();
+      expect(await pageGroupView.isOntologiesEnforced()).toBe(true);
+    });
+
+    const member = await loginAsWorkspaceUser(browser, browserContextOptions, memberUsername);
+    try {
+      const memberWorkspace = member.workspace;
+
+      await test.step("Then the member is blocked from free-text tags, even via their other, non-enforcing group", async () => {
+        await memberWorkspace.open();
+        const editor = await memberWorkspace.createBasicDocument();
+        await editor.header.addForbiddenTag(ontologyTag);
+        expect(await editor.header.tagInfoDialogText.innerText()).toBe(ENFORCED_MESSAGE);
+      });
+
+      const editor = await test.step("Given the member has a document open to check suggestions on", async () => {
+        await memberWorkspace.open();
+        return memberWorkspace.createBasicDocument();
+      });
+
+      await test.step("Then the member sees no suggestions before the PI has shared any ontology file", async () => {
+        expect(await editor.header.getSuggestedTags()).not.toContain(ontologyTag);
+      });
+
+      await test.step("When the PI creates an ontology document defining that tag and shares it with the member individually, at Edit", async () => {
+        await pageWorkspace.open();
+        await pageWorkspace.toolbar.createMenu.createFromCustomForm("RSpace Tags from Ontologies");
+        await pageDocument.isLoaded();
+        await pageDocument.header.rename(ontologyDocName);
+        const field = await pageDocument.editField(ONTOLOGY_FIELD_NAME);
+        await field.typeLines([ontologyTag]);
+        await field.save();
+
+        await pageWorkspace.open();
+        await pageWorkspace.searchBar.search(ontologyDocName);
+        await pageWorkspace.table.selectRecord(ontologyDocName);
+        const shareDialog = await pageWorkspace.selectionBar.share();
+        await shareDialog.addRecipient(memberUsername);
+        await shareDialog.setPermission(memberUsername, "EDIT");
+        await shareDialog.save();
+      });
+
+      await test.step("Then the member still sees no suggestions — an individual share doesn't satisfy enforcement", async () => {
+        expect(await editor.header.getSuggestedTags()).not.toContain(ontologyTag);
+      });
+
+      await test.step("When the PI instead shares the ontology document with the enforcing group, at Edit", async () => {
+        await pageWorkspace.open();
+        await pageWorkspace.searchBar.search(ontologyDocName);
+        await pageWorkspace.table.selectRecord(ontologyDocName);
+        const shareDialog = await pageWorkspace.selectionBar.share();
+        await shareDialog.addRecipient(enforcingGroupName);
+        await shareDialog.setPermission(enforcingGroupName, "EDIT");
+        await shareDialog.save();
+      });
+
+      await test.step("Then the member now sees and can use the group-shared tag", async () => {
+        await expect
+          .poll(() => editor.header.getSuggestedTags(), { timeout: 30_000, intervals: [3_000] })
+          .toContain(ontologyTag);
+        await editor.header.addTag(ontologyTag);
+        await member.page.goto(`/workspace/editor/structuredDocument/${editor.getId()}`);
+        const reopened = new DocumentPage(member.page);
+        await reopened.isLoaded();
+        expect(await reopened.header.getTags()).toContain(ontologyTag);
+      });
+    } finally {
+      await member.close();
+    }
+  });
+
+  test("As a user, tags added to a notebook entry persist and display correctly after reopening the notebook", async ({
+    pageWorkspace,
+    pageNotebook,
+    clientFolders,
+    clientDocuments,
+  }) => {
+    const notebookName = uniqueName("e2e-ont-nb-tags");
+    const tag1 = uniqueName("e2e-ont-nb-tag1");
+    const tag2 = uniqueName("e2e-ont-nb-tag2");
+
+    await test.step("Given a notebook with one entry exists", async () => {
+      const notebook = await clientFolders.create({ name: notebookName, notebook: true });
+      await clientDocuments.create({ name: "Entry 1", parentFolderId: notebook.id });
+    });
+
+    await test.step("When I open the entry and tag it", async () => {
+      await pageWorkspace.open();
+      await pageWorkspace.table.openNotebook(notebookName);
+      await pageNotebook.isLoaded();
+      await pageNotebook.showAllEntries();
+      await pageNotebook.entryThumbnail("Entry 1").click();
+      await pageNotebook.header.addTag(tag1);
+      await pageNotebook.header.addTag(tag2);
+    });
+
+    await test.step("Then the tags are shown, and survive a fresh navigation back into the entry — proving they're read from the DB, not stale in-page state", async () => {
+      await pageWorkspace.open();
+      await pageWorkspace.table.openNotebook(notebookName);
+      await pageNotebook.isLoaded();
+      await pageNotebook.showAllEntries();
+      await pageNotebook.entryThumbnail("Entry 1").click();
+      expect(await pageNotebook.header.getTags()).toEqual(expect.arrayContaining([tag1, tag2]));
     });
   });
 });

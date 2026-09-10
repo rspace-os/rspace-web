@@ -1,5 +1,4 @@
 import { createDynamicUser } from "../createDynamicUser";
-import { LoginPage } from "../pageObjects/auth/LoginPage";
 import { WorkspacePage } from "../pageObjects/workspace/WorkspacePage";
 import { DYNAMIC_USER_PASSWORD } from "../testData";
 import { test } from "./flows";
@@ -20,21 +19,20 @@ export const dynamicUserTest = test.extend<DynamicUserFixtures>({
     await use({ username, password: DYNAMIC_USER_PASSWORD, apiKey, roles: ["ROLE_PI", "ROLE_USER"] });
   },
   storageState: async ({ appUser, browser, browserContextOptions }, use) => {
-    // Manual contexts must set baseURL and clear the project's seed-user storage state.
-    const ctx = await browser.newContext({ ...browserContextOptions, storageState: undefined });
+    const { context, page, close } = await loginInNewContext(
+      browser,
+      browserContextOptions,
+      appUser.username,
+      appUser.password,
+    );
     try {
-      const page = await ctx.newPage();
-      const loginPage = new LoginPage(page);
-      await loginPage.open();
-      await loginPage.login(appUser.username, appUser.password);
-      await page.waitForURL((url) => url.pathname === "/workspace");
       const workspace = new WorkspacePage(page);
       if (!(await workspace.isLoaded())) {
         throw new Error(`Workspace did not load after authenticating dynamic user '${appUser.username}'.`);
       }
-      await use(await ctx.storageState());
+      await use(await context.storageState());
     } finally {
-      await ctx.close();
+      await close();
     }
   },
 

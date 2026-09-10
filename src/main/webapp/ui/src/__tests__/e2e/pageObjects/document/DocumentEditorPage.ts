@@ -75,7 +75,7 @@ export class DocumentEditorPage extends DocumentPage {
     const fieldId = await resolveFieldId(this.page, fieldName, index, "getField");
     const editorId = `rtf_${fieldId}`;
     await this.page.locator(`iframe#${editorId}_ifr`).waitFor({ state: "visible" });
-    return new TinyMceEditor(this.page, editorId).waitForReady();
+    return new TinyMceEditor(this.page, fieldId).waitForReady();
   }
 
   async saveAndView(): Promise<DocumentPage> {

@@ -20,7 +20,7 @@ export class NotebookEntryStrip {
   }
 
   async clickEntry(name: string): Promise<void> {
-    await this.entryThumbnail(name).click();
+    await this.navigateAndWaitForEntryChange(this.entryThumbnail(name));
   }
 
   async next(): Promise<void> {
@@ -31,11 +31,11 @@ export class NotebookEntryStrip {
     await this.navigateAndWaitForEntryChange(this.prevButton);
   }
 
-  private async navigateAndWaitForEntryChange(button: Locator): Promise<void> {
+  private async navigateAndWaitForEntryChange(target: Locator): Promise<void> {
     const before = await this.entryCounter.innerText();
     await Promise.all([
       this.page.waitForResponse((res) => res.url().includes("/journal/ajax/retrieveEntry")),
-      button.click(),
+      target.click(),
     ]);
     await this.entryCounter.filter({ hasNotText: before }).waitFor({ state: "visible" });
   }

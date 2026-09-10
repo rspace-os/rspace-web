@@ -94,6 +94,23 @@ export class DocumentHeader {
     return texts.map((text) => text.trim()).filter((text) => text.length > 0 && text !== "&nbsp;");
   }
 
+  /** Adds a tag by clicking it from the suggestions dropdown, rather than typing it as free text. */
+  async selectSuggestedTag(tag: string): Promise<void> {
+    await this.openTagEditor();
+    await this.tagInput.click();
+    const option = this.page
+      .locator(".ui-autocomplete li.ui-menu-item")
+      .filter({ has: this.page.getByText(tag, { exact: true }) });
+    await option.first().waitFor({ state: "visible" });
+    const [response] = await Promise.all([
+      this.page.waitForResponse((res) => res.url().includes("/tagRecord")),
+      option.first().click(),
+    ]);
+    if (!response.ok()) {
+      throw new Error(`Selecting suggested tag '${tag}' failed: ${response.status()} ${response.statusText()}`);
+    }
+  }
+
   async openRecordInfo(): Promise<RecordInfoDialog> {
     await this.recordInfoLink.click();
     const dialog = new RecordInfoDialog(this.page);

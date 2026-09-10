@@ -1,19 +1,7 @@
 import { expect } from "@playwright/test";
-import { dynamicUserTest as test } from "@/__tests__/e2e/fixtures/dynamicUser";
-import type { GalleryPage } from "@/__tests__/e2e/pageObjects/gallery/GalleryPage";
-import { extractPdfText } from "@/__tests__/e2e/pdf";
+import { dynamicUserTest } from "@/__tests__/e2e/fixtures/dynamicUser";
+import { test } from "@/__tests__/e2e/fixtures/flows";
 import { alphaNumericUnique, TINY_PNG, uniqueName } from "@/__tests__/e2e/testData";
-
-/** Selects the named file in the currently-open Gallery section, downloads it, and reads its PDF text. */
-async function downloadAndExtractPdfText(gallery: GalleryPage, fileName: string): Promise<string> {
-  await gallery.selectFile(fileName);
-  const download = await gallery.downloadSelected();
-  const path = await download.path();
-  if (!path) {
-    throw new Error(`Download of "${fileName}" did not save to a local path.`);
-  }
-  return extractPdfText(path);
-}
 
 test.describe("Notebook CRUD", () => {
   test("As a user, I can create a notebook and add, rename, and delete entries", async ({
@@ -139,165 +127,6 @@ test.describe("Notebook CRUD", () => {
         expect(await pageNotebook.isEntryVisibleInRibbon("Entry 2")).toBe(true);
         expect(await pageNotebook.isEntryVisibleInRibbon("Entry 1")).toBe(false);
       }).toPass();
-    });
-  });
-
-  test("As a user, the all-entries ribbon visibility setting persists across reopening the notebook", async ({
-    pageWorkspace,
-    pageNotebook,
-    clientFolders,
-    clientDocuments,
-  }) => {
-    const notebookName = uniqueName("e2e-nb-ribbon");
-
-    await test.step("Given a notebook with three entries exists", async () => {
-      const notebook = await clientFolders.create({ name: notebookName, notebook: true });
-      for (const name of ["Entry 1", "Entry 2", "Entry 3"]) {
-        await clientDocuments.create({ name, parentFolderId: notebook.id, fields: [{ content: name }] });
-      }
-    });
-
-    await test.step("When I open the notebook and hide the ribbon", async () => {
-      await pageWorkspace.open();
-      await pageWorkspace.table.openNotebook(notebookName);
-      await pageNotebook.isLoaded();
-      await pageNotebook.showAllEntries();
-      await expect(pageNotebook.ribbon).toBeVisible();
-      await pageNotebook.hideAllEntries();
-      await expect(pageNotebook.ribbon).toBeHidden();
-    });
-
-    await test.step("Then the ribbon stays hidden after reopening the notebook", async () => {
-      await pageWorkspace.open();
-      await pageWorkspace.table.openNotebook(notebookName);
-      await pageNotebook.isLoaded();
-      await expect(pageNotebook.ribbon).toBeHidden();
-    });
-
-    await test.step("When I show the ribbon again", async () => {
-      await pageNotebook.showAllEntries();
-      await expect(pageNotebook.ribbon).toBeVisible();
-    });
-
-    await test.step("Then it stays visible after reopening the notebook", async () => {
-      await pageWorkspace.open();
-      await pageWorkspace.table.openNotebook(notebookName);
-      await pageNotebook.isLoaded();
-      await expect(pageNotebook.ribbon).toBeVisible();
-    });
-  });
-
-  test("As a user, I can export a whole notebook to PDF", async ({
-    pageWorkspace,
-    pageGallery,
-    componentExportWizard,
-    componentNotifications,
-    clientFolders,
-    clientDocuments,
-  }) => {
-    const notebookName = uniqueName("e2e-nb-export");
-    const entry1Content = alphaNumericUnique("e2eNbExportEntry1Content");
-    const entry2Content = alphaNumericUnique("e2eNbExportEntry2Content");
-
-    await test.step("Given a notebook with entries exists", async () => {
-      const notebook = await clientFolders.create({ name: notebookName, notebook: true });
-      await clientDocuments.create({
-        name: "Entry 1",
-        parentFolderId: notebook.id,
-        fields: [{ content: entry1Content }],
-      });
-      await clientDocuments.create({
-        name: "Entry 2",
-        parentFolderId: notebook.id,
-        fields: [{ content: entry2Content }],
-      });
-    });
-
-    await test.step("And Gallery > Exports starts empty for this fresh account", async () => {
-      await pageGallery.openInSection("Exports");
-      expect(await pageGallery.itemsCount()).toBe(0);
-    });
-
-    await test.step("When I export the whole notebook as a PDF", async () => {
-      await pageWorkspace.open();
-      await pageWorkspace.table.selectRecord(notebookName);
-      await pageWorkspace.selectionBar.clickAction("Export");
-      await componentExportWizard.waitForOpen();
-      await componentExportWizard.selectFormat("pdf");
-      await componentExportWizard.next();
-      await componentExportWizard.submit();
-    });
-
-    await test.step("Then the export completes and the PDF appears in Gallery > Exports, containing both entries' content", async () => {
-      // The export runs as an async job reported via the notification bell (see
-      // galleryOperations.e2e.ts) rather than polling the Gallery listing directly.
-      await componentNotifications.waitForBadgeCountInUI(1);
-      // The export wizard pre-fills "File name" with the exported record's own name.
-      const fileName = `${notebookName}.pdf`;
-      await pageGallery.openInSection("Exports");
-      await pageGallery.waitForFile(fileName);
-      const text = await downloadAndExtractPdfText(pageGallery, fileName);
-      expect(text).toContain(entry1Content);
-      expect(text).toContain(entry2Content);
-    });
-  });
-
-  test("As a user, I can export a single entry to PDF from within the notebook view", async ({
-    pageWorkspace,
-    pageNotebook,
-    pageGallery,
-    componentExportWizard,
-    componentNotifications,
-    clientFolders,
-    clientDocuments,
-  }) => {
-    test.setTimeout(90_000);
-    const notebookName = uniqueName("e2e-nb-export-entry");
-    const entryName = uniqueName("e2e-nb-export-entry1");
-    const otherEntryName = uniqueName("e2e-nb-export-entry2");
-    const selectedContent = alphaNumericUnique("e2eNbExportSelectedContent");
-    const otherContent = alphaNumericUnique("e2eNbExportOtherContent");
-
-    await test.step("Given a notebook with two entries exists", async () => {
-      const notebook = await clientFolders.create({ name: notebookName, notebook: true });
-      await clientDocuments.create({
-        name: entryName,
-        parentFolderId: notebook.id,
-        fields: [{ content: selectedContent }],
-      });
-      await clientDocuments.create({
-        name: otherEntryName,
-        parentFolderId: notebook.id,
-        fields: [{ content: otherContent }],
-      });
-    });
-
-    await test.step("When I export just the selected entry from within the notebook", async () => {
-      await pageWorkspace.open();
-      await pageWorkspace.table.openNotebook(notebookName);
-      await pageNotebook.isLoaded();
-      await pageNotebook.showAllEntries();
-      await pageNotebook.entryThumbnail(entryName).click();
-
-      await expect(async () => {
-        await pageNotebook.toolbar.actions.exportButton.click();
-        await componentExportWizard.waitForOpen();
-      }).toPass({ timeout: 15_000 });
-      await componentExportWizard.selectFormat("pdf");
-      await componentExportWizard.next();
-
-      await componentExportWizard.fillFileName(entryName);
-      await componentExportWizard.submit();
-    });
-
-    await test.step("Then the export completes and the PDF appears in Gallery > Exports, containing only the selected entry's content", async () => {
-      await componentNotifications.waitForBadgeCountInUI(1);
-      const fileName = `${entryName}.pdf`;
-      await pageGallery.openInSection("Exports");
-      await pageGallery.waitForFile(fileName);
-      const text = await downloadAndExtractPdfText(pageGallery, fileName);
-      expect(text).toContain(selectedContent);
-      expect(text).not.toContain(otherContent);
     });
   });
 
@@ -516,4 +345,173 @@ test.describe("Notebook CRUD", () => {
       await expect(pageNotebook.entryThumbnail("Entry 2")).toBeVisible();
     });
   });
+});
+
+dynamicUserTest.describe("Notebook export and persisted view state", () => {
+  dynamicUserTest(
+    "As a user, the all-entries ribbon visibility setting persists across reopening the notebook",
+    async ({ pageWorkspace, pageNotebook, clientFolders, clientDocuments }) => {
+      const notebookName = uniqueName("e2e-nb-ribbon");
+
+      await dynamicUserTest.step("Given a notebook with three entries exists", async () => {
+        const notebook = await clientFolders.create({ name: notebookName, notebook: true });
+        for (const name of ["Entry 1", "Entry 2", "Entry 3"]) {
+          await clientDocuments.create({ name, parentFolderId: notebook.id, fields: [{ content: name }] });
+        }
+      });
+
+      await dynamicUserTest.step("When I open the notebook and hide the ribbon", async () => {
+        await pageWorkspace.open();
+        await pageWorkspace.table.openNotebook(notebookName);
+        await pageNotebook.isLoaded();
+        await pageNotebook.showAllEntries();
+        await expect(pageNotebook.ribbon).toBeVisible();
+        await pageNotebook.hideAllEntries();
+        await expect(pageNotebook.ribbon).toBeHidden();
+      });
+
+      await dynamicUserTest.step("Then the ribbon stays hidden after reopening the notebook", async () => {
+        await pageWorkspace.open();
+        await pageWorkspace.table.openNotebook(notebookName);
+        await pageNotebook.isLoaded();
+        await expect(pageNotebook.ribbon).toBeHidden();
+      });
+
+      await dynamicUserTest.step("When I show the ribbon again", async () => {
+        await pageNotebook.showAllEntries();
+        await expect(pageNotebook.ribbon).toBeVisible();
+      });
+
+      await dynamicUserTest.step("Then it stays visible after reopening the notebook", async () => {
+        await pageWorkspace.open();
+        await pageWorkspace.table.openNotebook(notebookName);
+        await pageNotebook.isLoaded();
+        await expect(pageNotebook.ribbon).toBeVisible();
+      });
+    },
+  );
+
+  dynamicUserTest(
+    "As a user, I can export a whole notebook to PDF",
+    async ({
+      pageWorkspace,
+      pageGallery,
+      componentExportWizard,
+      componentNotifications,
+      clientFolders,
+      clientDocuments,
+    }) => {
+      const notebookName = uniqueName("e2e-nb-export");
+      const entry1Content = alphaNumericUnique("e2eNbExportEntry1Content");
+      const entry2Content = alphaNumericUnique("e2eNbExportEntry2Content");
+
+      await dynamicUserTest.step("Given a notebook with entries exists", async () => {
+        const notebook = await clientFolders.create({ name: notebookName, notebook: true });
+        await clientDocuments.create({
+          name: "Entry 1",
+          parentFolderId: notebook.id,
+          fields: [{ content: entry1Content }],
+        });
+        await clientDocuments.create({
+          name: "Entry 2",
+          parentFolderId: notebook.id,
+          fields: [{ content: entry2Content }],
+        });
+      });
+
+      await dynamicUserTest.step("And Gallery > Exports starts empty for this fresh account", async () => {
+        await pageGallery.openInSection("Exports");
+        expect(await pageGallery.itemsCount()).toBe(0);
+      });
+
+      await dynamicUserTest.step("When I export the whole notebook as a PDF", async () => {
+        await pageWorkspace.open();
+        await pageWorkspace.table.selectRecord(notebookName);
+        await pageWorkspace.selectionBar.clickAction("Export");
+        await componentExportWizard.waitForOpen();
+        await componentExportWizard.selectFormat("pdf");
+        await componentExportWizard.next();
+        await componentExportWizard.submit();
+      });
+
+      await dynamicUserTest.step(
+        "Then the export completes and the PDF appears in Gallery > Exports, containing both entries' content",
+        async () => {
+          await componentNotifications.waitForBadgeCountInUI(1);
+          // The export wizard pre-fills "File name" with the exported record's own name.
+          const fileName = `${notebookName}.pdf`;
+          await pageGallery.openInSection("Exports");
+          await pageGallery.waitForFile(fileName);
+          const text = await pageGallery.downloadAndExtractText(fileName);
+          expect(text).toContain(entry1Content);
+          expect(text).toContain(entry2Content);
+        },
+      );
+    },
+  );
+
+  dynamicUserTest(
+    "As a user, I can export a single entry to PDF from within the notebook view",
+    async ({
+      pageWorkspace,
+      pageNotebook,
+      pageGallery,
+      componentExportWizard,
+      componentNotifications,
+      clientFolders,
+      clientDocuments,
+    }) => {
+      dynamicUserTest.setTimeout(90_000);
+      const notebookName = uniqueName("e2e-nb-export-entry");
+      const entryName = uniqueName("e2e-nb-export-entry1");
+      const otherEntryName = uniqueName("e2e-nb-export-entry2");
+      const selectedContent = alphaNumericUnique("e2eNbExportSelectedContent");
+      const otherContent = alphaNumericUnique("e2eNbExportOtherContent");
+
+      await dynamicUserTest.step("Given a notebook with two entries exists", async () => {
+        const notebook = await clientFolders.create({ name: notebookName, notebook: true });
+        await clientDocuments.create({
+          name: entryName,
+          parentFolderId: notebook.id,
+          fields: [{ content: selectedContent }],
+        });
+        await clientDocuments.create({
+          name: otherEntryName,
+          parentFolderId: notebook.id,
+          fields: [{ content: otherContent }],
+        });
+      });
+
+      await dynamicUserTest.step("When I export just the selected entry from within the notebook", async () => {
+        await pageWorkspace.open();
+        await pageWorkspace.table.openNotebook(notebookName);
+        await pageNotebook.isLoaded();
+        await pageNotebook.showAllEntries();
+        await pageNotebook.selectEntry(entryName);
+
+        await expect(async () => {
+          await pageNotebook.toolbar.actions.exportButton.click();
+          await componentExportWizard.waitForOpen();
+        }).toPass({ timeout: 15_000 });
+        await componentExportWizard.selectFormat("pdf");
+        await componentExportWizard.next();
+
+        await componentExportWizard.fillFileName(entryName);
+        await componentExportWizard.submit();
+      });
+
+      await dynamicUserTest.step(
+        "Then the export completes and the PDF appears in Gallery > Exports, containing only the selected entry's content",
+        async () => {
+          await componentNotifications.waitForBadgeCountInUI(1);
+          const fileName = `${entryName}.pdf`;
+          await pageGallery.openInSection("Exports");
+          await pageGallery.waitForFile(fileName);
+          const text = await pageGallery.downloadAndExtractText(fileName);
+          expect(text).toContain(selectedContent);
+          expect(text).not.toContain(otherContent);
+        },
+      );
+    },
+  );
 });

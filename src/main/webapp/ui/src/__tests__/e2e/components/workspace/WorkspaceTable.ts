@@ -63,7 +63,10 @@ export class WorkspaceTable {
   }
 
   async openNotebook(name: string): Promise<void> {
-    await this.row(name).getByRole("link").first().click();
+    // The row's name link (recordNameCell, matched by openRecord()) browses into a notebook
+    // as a folder at /workspace/{id}. Only the icon link, rendered by recod_glyphicon.tag
+    // with this stable "notebook" class, opens the notebook editor at /notebookEditor/{id}.
+    await this.row(name).locator("a.notebook").click();
   }
 
   async openInfoFor(name: string): Promise<RecordInfoDialog> {

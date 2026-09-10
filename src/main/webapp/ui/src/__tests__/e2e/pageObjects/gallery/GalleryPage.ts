@@ -10,6 +10,7 @@ import { GallerySortMenu } from "@/__tests__/e2e/components/gallery/GallerySortM
 import { GalleryVersionHistoryDialog } from "@/__tests__/e2e/components/gallery/GalleryVersionHistoryDialog";
 import { GalleryViewsMenu } from "@/__tests__/e2e/components/gallery/GalleryViewsMenu";
 import { ShareDialog } from "@/__tests__/e2e/components/shared/ShareDialog";
+import { extractPdfText } from "@/__tests__/e2e/pdf";
 import { ArgosImportDialogComponent } from "@/modules/argos/__tests__/pageObjects/ArgosImportDialogComponent";
 import { DMPAssistantImportDialogComponent } from "@/modules/dmpassistant/__tests__/pageObjects/DMPAssistantImportDialogComponent";
 import { DMPOnlineImportDialogComponent } from "@/modules/dmponline/__tests__/pageObjects/DMPOnlineImportDialogComponent";
@@ -152,6 +153,17 @@ export class GalleryPage extends BasePage {
       this.actions.menuItem("Download").click(),
     ]);
     return download;
+  }
+
+  /** Selects the named file, downloads it, and reads its PDF text content, page by page. */
+  async downloadAndExtractText(fileName: string): Promise<string> {
+    await this.selectFile(fileName);
+    const download = await this.downloadSelected();
+    const path = await download.path();
+    if (!path) {
+      throw new Error(`Download of "${fileName}" did not save to a local path.`);
+    }
+    return extractPdfText(path);
   }
 
   async uploadNewVersionOfSelected(filePath: string): Promise<void> {

@@ -17,17 +17,19 @@ export class SigningDialogComponent {
   }
 
   async signWithoutWitness(password: string): Promise<void> {
-    await this.dialog.getByRole("button", { name: "Sign", exact: true }).click();
-    await this.dialog.getByRole("textbox", { name: "Password:" }).fill(password);
-    await this.dialog.getByRole("button", { name: "Proceed" }).click();
-    await this.dialog.waitFor({ state: "hidden" });
-    await this.signedStatuses.first().waitFor({ state: "visible" });
+    await this.completeSigning(password);
   }
 
   /** Selects a witness by username from the (already-shared) document's witness list before signing. */
   async signWithWitness(password: string, witnessUsername: string): Promise<void> {
+    await this.completeSigning(password, witnessUsername);
+  }
+
+  private async completeSigning(password: string, witnessUsername?: string): Promise<void> {
     await this.dialog.getByRole("button", { name: "Sign", exact: true }).click();
-    await this.dialog.getByRole("checkbox", { name: witnessUsername }).check();
+    if (witnessUsername !== undefined) {
+      await this.dialog.getByRole("checkbox", { name: witnessUsername }).check();
+    }
     await this.dialog.getByRole("textbox", { name: "Password:" }).fill(password);
     await this.dialog.getByRole("button", { name: "Proceed" }).click();
     await this.dialog.waitFor({ state: "hidden" });

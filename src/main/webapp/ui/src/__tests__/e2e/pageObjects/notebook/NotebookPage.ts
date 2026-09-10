@@ -1,4 +1,4 @@
-import type { Locator, Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 import { DocumentHeader } from "@/__tests__/e2e/components/document/DocumentHeader";
 import { signedStatusLocator } from "@/__tests__/e2e/components/document/SignedStatus";
 import { SigningDialogComponent } from "@/__tests__/e2e/components/document/SigningDialogComponent";
@@ -137,21 +137,29 @@ export class NotebookPage extends BasePage {
     return dialog;
   }
 
-  /** Toggles the entry ribbon open, matching whatever its current visible label is. */
+  /**
+   * Toggles the entry ribbon open, matching whatever its current visible label is.
+   * A prior mutation (e.g. deleteEntry()) can still be settling the toggle/ribbon
+   * client-side even after its own network activity has finished.
+   */
   async showAllEntries(): Promise<void> {
-    const toggle = this.page.getByText("Show All Entries", { exact: true });
-    if (await toggle.isVisible()) {
-      await toggle.click();
-      await this.ribbon.waitFor({ state: "visible" });
-    }
+    await expect(async () => {
+      const toggle = this.page.getByText("Show All Entries", { exact: true });
+      if (await toggle.isVisible().catch(() => false)) {
+        await toggle.click();
+      }
+      await this.ribbon.waitFor({ state: "visible", timeout: 3_000 });
+    }).toPass({ timeout: 15_000 });
   }
 
   async hideAllEntries(): Promise<void> {
-    const toggle = this.page.getByText("Hide All Entries", { exact: true });
-    if (await toggle.isVisible()) {
-      await toggle.click();
-      await this.ribbon.waitFor({ state: "hidden" });
-    }
+    await expect(async () => {
+      const toggle = this.page.getByText("Hide All Entries", { exact: true });
+      if (await toggle.isVisible().catch(() => false)) {
+        await toggle.click();
+      }
+      await this.ribbon.waitFor({ state: "hidden", timeout: 3_000 });
+    }).toPass({ timeout: 15_000 });
   }
 
   /** Deletes the currently-open entry and confirms the dialog. */
@@ -181,6 +189,11 @@ export class NotebookPage extends BasePage {
 
   async nextEntry(): Promise<void> {
     await this.entryStrip.next();
+  }
+
+  /** Switches the active entry to the named one via its ribbon thumbnail. */
+  async selectEntry(name: string): Promise<void> {
+    await this.entryStrip.clickEntry(name);
   }
 
   entryThumbnail(name: string): Locator {
