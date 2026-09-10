@@ -1,5 +1,6 @@
 package com.researchspace.dao;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -28,19 +29,19 @@ public class SampleDaoTest extends SpringTransactionalTest {
     newSubSample.moveToNewParent(workbench);
     sample.getSubSamples().add(newSubSample);
     Sample createdSample = sampleDao.persistNewSample(sample);
-    assertEquals(initialCount + 1, sampleDao.getAllDistinct().size());
+    assertThat(sampleDao.getAllDistinct()).hasSize(initialCount + 1);
 
     Sample retrievedSample = sampleDao.get(createdSample.getId());
     assertEquals(createdSample, retrievedSample);
     assertNotNull(retrievedSample.getSubSamples());
-    assertEquals(2, retrievedSample.getSubSamples().size());
+    assertThat(retrievedSample.getSubSamples()).hasSize(2);
 
     retrievedSample.setDescription("updated");
     Sample updatedSample = sampleDao.save(retrievedSample);
     assertEquals(createdSample, updatedSample);
 
-    assertEquals(initialCount + 1, sampleDao.getAllDistinct().size());
+    assertThat(sampleDao.getAllDistinct()).hasSize(initialCount + 1);
     sampleDao.remove(updatedSample.getId());
-    assertEquals(initialCount, sampleDao.getAllDistinct().size());
+    assertThat(sampleDao.getAllDistinct()).hasSize(initialCount);
   }
 }

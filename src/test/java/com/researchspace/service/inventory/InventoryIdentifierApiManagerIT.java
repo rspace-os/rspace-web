@@ -1,5 +1,6 @@
 package com.researchspace.service.inventory;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -37,15 +38,15 @@ public class InventoryIdentifierApiManagerIT extends RealTransactionSpringTestBa
     User user = createInitAndLoginAnyUser();
 
     ApiSampleWithFullSubSamples createdSample = createComplexSampleForUser(user);
-    assertEquals(10, createdSample.getFields().size());
-    assertEquals(1, createdSample.getTags().size());
-    assertEquals(0, createdSample.getIdentifiers().size());
+    assertThat(createdSample.getFields()).hasSize(10);
+    assertThat(createdSample.getTags()).hasSize(1);
+    assertThat(createdSample.getIdentifiers()).isEmpty();
 
     ApiInventoryRecordInfo updatedSample =
         inventoryIdentifierApiMgr.registerNewIdentifier(createdSample.getOid(), user);
-    assertEquals(10, ((ApiSample) updatedSample).getFields().size());
-    assertEquals(1, updatedSample.getTags().size());
-    assertEquals(1, updatedSample.getIdentifiers().size());
+    assertThat(((ApiSample) updatedSample).getFields()).hasSize(10);
+    assertThat(updatedSample.getTags()).hasSize(1);
+    assertThat(updatedSample.getIdentifiers()).hasSize(1);
     ApiInventoryDOI sampleDoi = updatedSample.getIdentifiers().get(0);
     assertEquals("Material Sample", sampleDoi.getResourceType());
     assertEquals("draft", sampleDoi.getState());
@@ -57,7 +58,7 @@ public class InventoryIdentifierApiManagerIT extends RealTransactionSpringTestBa
     String publicLink = sampleFoundByDoiId.getActiveIdentifiers().get(0).getPublicLink();
     assertNotNull(sampleFoundByDoiId);
     assertEquals(createdSample.getGlobalId(), sampleFoundByDoiId.getOid().getIdString());
-    assertEquals(1, sampleFoundByDoiId.getActiveIdentifiers().size());
+    assertThat(sampleFoundByDoiId.getActiveIdentifiers()).hasSize(1);
     assertEquals(sampleDoi.getId(), sampleFoundByDoiId.getActiveIdentifiers().get(0).getId());
     // identifier was not published yet, so inventory record cannot be found by public link
     assertNull(inventoryIdentifierApiMgr.findPublishedItemVersionByPublicLink(publicLink));
@@ -71,9 +72,9 @@ public class InventoryIdentifierApiManagerIT extends RealTransactionSpringTestBa
         inventoryIdentifierApiMgr.findPublishedItemVersionByPublicLink(publicLink);
     assertNotNull(publishedRecord);
     assertEquals("myComplexSample", publishedRecord.getName());
-    assertEquals(10, ((ApiSample) publishedRecord).getFields().size());
-    assertEquals(1, publishedRecord.getTags().size());
-    assertEquals(1, publishedRecord.getIdentifiers().size());
+    assertThat(((ApiSample) publishedRecord).getFields()).hasSize(10);
+    assertThat(publishedRecord.getTags()).hasSize(1);
+    assertThat(publishedRecord.getIdentifiers()).hasSize(1);
 
     // update the sample's name
     ApiSample sampleUpdate = new ApiSample();

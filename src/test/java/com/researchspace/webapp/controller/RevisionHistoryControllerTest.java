@@ -1,5 +1,6 @@
 package com.researchspace.webapp.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -195,7 +196,7 @@ public class RevisionHistoryControllerTest {
         revisionHistoryCtrller.getRevisionsJson(sd2.getId(), mockPrincipal);
     assertNotNull(revisionsResponse);
     List<RecordInformation> revisions = revisionsResponse.getData();
-    assertEquals(2, revisions.size());
+    assertThat(revisions).hasSize(2);
     assertEquals(Long.valueOf(11), revisions.get(0).getRevision());
   }
 

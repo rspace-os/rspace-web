@@ -1,9 +1,9 @@
 package com.researchspace.webapp.integrations.fieldmark;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -100,7 +100,7 @@ public class FieldmarkApiControllerTest {
   public void testGetNotebooksSuccessful() throws BindException {
     List<FieldmarkNotebook> result = fieldmarkApiController.getNotebooks(goodUser);
     assertNotNull(result);
-    assertEquals(1, result.size());
+    assertThat(result).hasSize(1);
     assertEquals("1726126204618-rspace-igsn-demo", result.get(0).getProjectId());
   }
 
@@ -149,7 +149,7 @@ public class FieldmarkApiControllerTest {
             () ->
                 fieldmarkApiController.importNotebook(WRONG_NOTEBOOK_REQ, bindingResult, goodUser),
             "FieldmarkApiController did not throw the exception, but it was needed");
-    assertTrue(thrown.getMessage().contains("Unauthorized"));
+    assertThat(thrown.getMessage()).contains("Unauthorized");
   }
 
   @Test

@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -108,20 +109,19 @@ public class InventoryImportApiControllerMVCIT extends API_MVC_InventoryTestBase
     ApiSampleTemplatePost templateInfo = parseResult.getTemplateInfo();
     assertEquals("antibody_import_real_data", templateInfo.getName());
     assertTrue(templateInfo.isTemplate());
-    assertEquals(17, templateInfo.getFields().size());
+    assertThat(templateInfo.getFields()).hasSize(17);
     assertEquals(ApiFieldType.STRING, templateInfo.getFields().get(0).getType());
     assertEquals("_Name", templateInfo.getFields().get(0).getName());
     assertEquals(ApiFieldType.RADIO, templateInfo.getFields().get(3).getType());
-    assertEquals(
-        List.of("mouse", "rabbit"), templateInfo.getFields().get(3).getDefinition().getOptions());
-    assertEquals(17, parseResult.getFieldNameForColumnName().size());
-    assertEquals("_Name", parseResult.getFieldNameForColumnName().get("Name"));
-    assertEquals(17, parseResult.getRadioOptionsForColumn().size());
-    assertEquals(
-        List.of("1:100", "1:100, 1:250", "1:200; 1:500", "1:500"),
-        parseResult.getRadioOptionsForColumn().get("Dilution"));
-    assertTrue(parseResult.getQuantityUnitForColumn().isEmpty()); // no column matches quantity
-    assertEquals(15, parseResult.getColumnsWithoutBlankValue().size());
+    assertThat(templateInfo.getFields().get(3).getDefinition().getOptions())
+        .containsExactly("mouse", "rabbit");
+    assertThat(parseResult.getFieldNameForColumnName()).hasSize(17);
+    assertThat(parseResult.getFieldNameForColumnName()).containsEntry("Name", "_Name");
+    assertThat(parseResult.getRadioOptionsForColumn()).hasSize(17);
+    assertThat(parseResult.getRadioOptionsForColumn())
+        .containsEntry("Dilution", List.of("1:100", "1:100, 1:250", "1:200; 1:500", "1:500"));
+    assertThat(parseResult.getQuantityUnitForColumn()).isEmpty(); // no column matches quantity
+    assertThat(parseResult.getColumnsWithoutBlankValue()).hasSize(15);
     assertEquals(
         List.of(
             "Name",
@@ -144,7 +144,7 @@ public class InventoryImportApiControllerMVCIT extends API_MVC_InventoryTestBase
 
     /* correct the issue with LocalDateDeserialiser setting expiry date to
      * LocalDateDeserialiser.NULL_DATE when decoding response body */
-    assertEquals("-999999999-01-01", templateInfo.getExpiryDate().toString());
+    assertThat(templateInfo.getExpiryDate()).hasToString("-999999999-01-01");
     templateInfo.setExpiryDate(null);
 
     // remove first suggested template field that will be used for name
@@ -228,14 +228,13 @@ public class InventoryImportApiControllerMVCIT extends API_MVC_InventoryTestBase
     ApiSampleTemplatePost templateInfo = parseResult.getTemplateInfo();
     assertEquals("antibody_import_all_columns", templateInfo.getName());
     assertTrue(templateInfo.isTemplate());
-    assertEquals(12, templateInfo.getFields().size());
+    assertThat(templateInfo.getFields()).hasSize(12);
     assertEquals(ApiFieldType.STRING, templateInfo.getFields().get(0).getType());
     assertEquals("_Name", templateInfo.getFields().get(0).getName());
     assertEquals(ApiFieldType.TEXT, templateInfo.getFields().get(1).getType());
     assertEquals(ApiFieldType.RADIO, templateInfo.getFields().get(2).getType());
-    assertEquals(
-        List.of("monoclonal", "polyclonal"),
-        templateInfo.getFields().get(2).getDefinition().getOptions());
+    assertThat(templateInfo.getFields().get(2).getDefinition().getOptions())
+        .containsExactly("monoclonal", "polyclonal");
     assertEquals(ApiFieldType.NUMBER, templateInfo.getFields().get(3).getType());
     assertEquals(ApiFieldType.STRING, templateInfo.getFields().get(4).getType());
     assertEquals(ApiFieldType.DATE, templateInfo.getFields().get(5).getType());
@@ -245,19 +244,18 @@ public class InventoryImportApiControllerMVCIT extends API_MVC_InventoryTestBase
     assertEquals(ApiFieldType.URI, templateInfo.getFields().get(9).getType());
     assertEquals(ApiFieldType.STRING, templateInfo.getFields().get(10).getType());
     assertEquals(ApiFieldType.URI, templateInfo.getFields().get(11).getType());
-    assertEquals(11, parseResult.getRadioOptionsForColumn().size());
-    assertEquals(
-        List.of("14:00", "15:00"), parseResult.getRadioOptionsForColumn().get("Creation Time"));
-    assertEquals(
-        List.of("2030-01-04", "2030-12-22", "2031-12-23"),
-        parseResult.getRadioOptionsForColumn().get("Best Before"));
-    assertEquals(2, parseResult.getQuantityUnitForColumn().size());
-    assertEquals(
-        RSUnitDef.DIMENSIONLESS.getId(), parseResult.getQuantityUnitForColumn().get("Internal id"));
-    assertEquals(
-        RSUnitDef.MILLI_GRAM.getId(), parseResult.getQuantityUnitForColumn().get("Quantity"));
+    assertThat(parseResult.getRadioOptionsForColumn()).hasSize(11);
+    assertThat(parseResult.getRadioOptionsForColumn())
+        .containsEntry("Creation Time", List.of("14:00", "15:00"));
+    assertThat(parseResult.getRadioOptionsForColumn())
+        .containsEntry("Best Before", List.of("2030-01-04", "2030-12-22", "2031-12-23"));
+    assertThat(parseResult.getQuantityUnitForColumn()).hasSize(2);
+    assertThat(parseResult.getQuantityUnitForColumn())
+        .containsEntry("Internal id", RSUnitDef.DIMENSIONLESS.getId());
+    assertThat(parseResult.getQuantityUnitForColumn())
+        .containsEntry("Quantity", RSUnitDef.MILLI_GRAM.getId());
     assertEquals(Integer.valueOf(5), parseResult.getRowsCount());
-    assertEquals("identifier", parseResult.getFieldMappings().get("Igsn"));
+    assertThat(parseResult.getFieldMappings()).containsEntry("Igsn", "identifier");
 
     // remove suggested template field that will be mapped to quantity
     templateInfo.getFields().remove(10);
@@ -274,7 +272,7 @@ public class InventoryImportApiControllerMVCIT extends API_MVC_InventoryTestBase
 
     /* correct the issue with LocalDateDeserialiser setting expiry date to
      * LocalDateDeserialiser.NULL_DATE when decoding response body */
-    assertEquals("-999999999-01-01", templateInfo.getExpiryDate().toString());
+    assertThat(templateInfo.getExpiryDate()).hasToString("-999999999-01-01");
     templateInfo.setExpiryDate(null);
 
     /* chagne default template quantity unit to one suggested for 'Quantity' column */
@@ -328,18 +326,18 @@ public class InventoryImportApiControllerMVCIT extends API_MVC_InventoryTestBase
     assertNotNull(sampleResults);
     assertTrue(sampleResults.isTemplateCreated());
     assertEquals(0, sampleResults.getErrorCount());
-    assertEquals(5, sampleResults.getResults().size());
+    assertThat(sampleResults.getResults()).hasSize(5);
     ApiSampleWithFullSubSamples firstSample =
         (ApiSampleWithFullSubSamples) sampleResults.getResults().get(0).getRecord();
     assertEquals("Sample1", firstSample.getName());
-    assertEquals("2030-12-22", firstSample.getExpiryDate().toString());
+    assertThat(firstSample.getExpiryDate()).hasToString("2030-12-22");
     assertEquals(SampleSource.VENDOR_SUPPLIED, firstSample.getSampleSource());
     assertEquals("5 mg", firstSample.getQuantity().toQuantityInfo().toPlainString());
     assertEquals(null, firstSample.getFields().get(1).getContent());
-    assertEquals(List.of("monoclonal"), firstSample.getFields().get(1).getSelectedOptions());
+    assertThat(firstSample.getFields().get(1).getSelectedOptions()).containsExactly("monoclonal");
     assertEquals("https://researchspace.com", firstSample.getFields().get(5).getContent());
     assertNotNull(firstSample.getIdentifiers());
-    assertEquals(1, firstSample.getIdentifiers().size());
+    assertThat(firstSample.getIdentifiers()).hasSize(1);
     assertEquals("10.82316/k8xy-6y85", firstSample.getIdentifiers().get(0).getDoi());
     assertEquals(InventoryBulkOperationStatus.COMPLETED, sampleResults.getStatus());
   }
@@ -376,7 +374,7 @@ public class InventoryImportApiControllerMVCIT extends API_MVC_InventoryTestBase
     assertFalse(sampleResults.isTemplateCreated());
     assertEquals(InventoryBulkOperationStatus.COMPLETED, sampleResults.getStatus());
 
-    assertEquals(9, sampleResults.getResults().size());
+    assertThat(sampleResults.getResults()).hasSize(9);
     ApiSampleWithFullSubSamples firstSample =
         (ApiSampleWithFullSubSamples) sampleResults.getResults().get(0).getRecord();
     assertEquals("TestSample1", firstSample.getName());
@@ -384,7 +382,7 @@ public class InventoryImportApiControllerMVCIT extends API_MVC_InventoryTestBase
     ApiSampleWithFullSubSamples ninthSample =
         (ApiSampleWithFullSubSamples) sampleResults.getResults().get(8).getRecord();
     assertEquals("TestSample9", ninthSample.getName());
-    assertEquals(1, ninthSample.getFields().get(9).getSelectedOptions().size());
+    assertThat(ninthSample.getFields().get(9).getSelectedOptions()).hasSize(1);
     assertEquals("optionB", ninthSample.getFields().get(9).getSelectedOptions().get(0));
   }
 
@@ -403,7 +401,7 @@ public class InventoryImportApiControllerMVCIT extends API_MVC_InventoryTestBase
             .andReturn();
     assertNotNull(result.getResolvedException());
     ApiError error = getErrorFromJsonResponseBody(result, ApiError.class);
-    assertEquals(2, error.getErrors().size());
+    assertThat(error.getErrors()).hasSize(2);
     assertApiErrorContainsMessage(error, "'templateInfo' property must be provided");
     assertApiErrorContainsMessage(error, "'fieldMappings' property must be provided");
 
@@ -420,7 +418,7 @@ public class InventoryImportApiControllerMVCIT extends API_MVC_InventoryTestBase
             .andReturn();
     assertNotNull(result.getResolvedException());
     error = getErrorFromJsonResponseBody(result, ApiError.class);
-    assertEquals(1, error.getErrors().size());
+    assertThat(error.getErrors()).hasSize(1);
     assertApiErrorContainsMessage(error, "'fieldMappings' property must be provided");
 
     // fieldMappings present but not pointing to "name" column
@@ -438,7 +436,7 @@ public class InventoryImportApiControllerMVCIT extends API_MVC_InventoryTestBase
             .andReturn();
     assertNotNull(result.getResolvedException());
     error = getErrorFromJsonResponseBody(result, ApiError.class);
-    assertEquals(1, error.getErrors().size());
+    assertThat(error.getErrors()).hasSize(1);
     assertApiErrorContainsMessage(error, "'fieldMappings' property must be provided");
   }
 
@@ -621,10 +619,10 @@ public class InventoryImportApiControllerMVCIT extends API_MVC_InventoryTestBase
         getFromJsonResponseBody(result, ApiInventoryImportSampleParseResult.class);
     assertNotNull(parseResult);
     assertNull(parseResult.getTemplateInfo());
-    assertEquals(
-        List.of("Name", "Alternative name", "Import identifier", "Parent container"),
-        parseResult.getColumnNames());
-    assertEquals(List.of("Name", "Alternative name"), parseResult.getColumnsWithoutBlankValue());
+    assertThat(parseResult.getColumnNames())
+        .containsExactly("Name", "Alternative name", "Import identifier", "Parent container");
+    assertThat(parseResult.getColumnsWithoutBlankValue())
+        .containsExactly("Name", "Alternative name");
     assertEquals(Integer.valueOf(5), parseResult.getRowsCount());
 
     /*
@@ -651,7 +649,9 @@ public class InventoryImportApiControllerMVCIT extends API_MVC_InventoryTestBase
     ApiContainer defaultImportContainer = importResult.getDefaultContainer();
     assertNotNull(defaultImportContainer);
     String defaultImportContainerName = defaultImportContainer.getName();
-    assertTrue(defaultImportContainerName.startsWith("imported items"), defaultImportContainerName);
+    assertThat(defaultImportContainerName)
+        .as(defaultImportContainerName)
+        .startsWith("imported items");
     assertEquals(
         "Default container for items imported from CSV file(s): "
             + "<br> * container_import_all_columns.csv  ",
@@ -663,7 +663,7 @@ public class InventoryImportApiControllerMVCIT extends API_MVC_InventoryTestBase
     ApiInventoryBulkOperationResult containerResults = importResult.getContainerResult();
     assertNotNull(containerResults);
     assertEquals(0, containerResults.getErrorCount());
-    assertEquals(5, containerResults.getResults().size());
+    assertThat(containerResults.getResults()).hasSize(5);
     assertEquals(InventoryBulkOperationStatus.COMPLETED, containerResults.getStatus());
     // verify imported containers
     ApiContainer firstContainer = (ApiContainer) containerResults.getResults().get(0).getRecord();
@@ -718,7 +718,9 @@ public class InventoryImportApiControllerMVCIT extends API_MVC_InventoryTestBase
     ApiContainer defaultImportContainer = importResult.getDefaultContainer();
     assertNotNull(defaultImportContainer);
     String defaultImportContainerName = defaultImportContainer.getName();
-    assertTrue(defaultImportContainerName.startsWith("imported items"), defaultImportContainerName);
+    assertThat(defaultImportContainerName)
+        .as(defaultImportContainerName)
+        .startsWith("imported items");
     assertEquals(
         "Default container for items imported from CSV file(s): "
             + "<br> * container_import_all_columns.csv <br> * sample_import_into_containers.csv ",
@@ -791,7 +793,7 @@ public class InventoryImportApiControllerMVCIT extends API_MVC_InventoryTestBase
     ApiSampleWithFullSubSamples createdSample =
         (ApiSampleWithFullSubSamples) sampleResults.getResults().get(0).getRecord();
     assertNotNull(createdSample.getId());
-    assertEquals(2, createdSample.getSubSamples().size());
+    assertThat(createdSample.getSubSamples()).hasSize(2);
     ApiInventoryImportSubSampleImportResult subSampleResults = importResult.getSubSampleResult();
     assertNotNull(subSampleResults);
     assertEquals(InventoryBulkOperationStatus.COMPLETED, subSampleResults.getStatus());
@@ -847,9 +849,9 @@ public class InventoryImportApiControllerMVCIT extends API_MVC_InventoryTestBase
         (ApiSubSample) subSampleResults.getResults().get(0).getRecord();
     assertNotNull(createdSubSample1.getId());
     assertEquals(preexistingSample.getGlobalId(), createdSubSample1.getSampleInfo().getGlobalId());
-    assertTrue(
-        createdSubSample1.getParentContainer().getName().startsWith("imported items"),
-        createdSubSample1.getParentContainer().getName());
+    assertThat(createdSubSample1.getParentContainer().getName())
+        .as(createdSubSample1.getParentContainer().getName())
+        .startsWith("imported items");
     ApiSubSample createdSubSample2 =
         (ApiSubSample) subSampleResults.getResults().get(1).getRecord();
     assertNotNull(createdSubSample2.getId());
@@ -903,7 +905,9 @@ public class InventoryImportApiControllerMVCIT extends API_MVC_InventoryTestBase
     ApiContainer defaultImportContainer = importResult.getDefaultContainer();
     assertNotNull(defaultImportContainer);
     String defaultImportContainerName = defaultImportContainer.getName();
-    assertTrue(defaultImportContainerName.startsWith("imported items"), defaultImportContainerName);
+    assertThat(defaultImportContainerName)
+        .as(defaultImportContainerName)
+        .startsWith("imported items");
     assertEquals(
         "Default container for items imported from CSV file(s): <br> *"
             + " container_import_all_columns.csv <br> * sample_import_into_containers.csv <br> *"
@@ -961,7 +965,7 @@ public class InventoryImportApiControllerMVCIT extends API_MVC_InventoryTestBase
     ApiInventoryBulkOperationResult containerResults = importResult.getContainerResult();
     assertNotNull(containerResults);
     assertEquals(0, containerResults.getErrorCount());
-    assertEquals(5, containerResults.getResults().size());
+    assertThat(containerResults.getResults()).hasSize(5);
     ApiContainer firstContainer = (ApiContainer) containerResults.getResults().get(0).getRecord();
     assertEquals("Container1", firstContainer.getName());
     assertEquals(4, firstContainer.getContentSummary().getTotalCount());

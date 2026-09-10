@@ -1,5 +1,6 @@
 package com.researchspace.search.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.File;
@@ -17,6 +18,6 @@ class IndexableFileLocatorTest {
     IndexableFileLocator loc = new IndexableFileLocator(dummyFileStore);
     List<File> toIndex = new ArrayList<>();
     loc.doExtractFiles(topFolder, toIndex);
-    assertEquals(EXPECTED_INDEXABLE_FILES, toIndex.size());
+    assertThat(toIndex).hasSize(EXPECTED_INDEXABLE_FILES);
   }
 }

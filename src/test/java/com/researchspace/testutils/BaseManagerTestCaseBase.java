@@ -2,7 +2,7 @@ package com.researchspace.testutils;
 
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static com.researchspace.core.util.TransformerUtils.toSet;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.axiope.search.IFileIndexer;
 import com.researchspace.Constants;
@@ -1203,7 +1203,7 @@ public abstract class BaseManagerTestCaseBase {
    * @param msg A String that is the output of a Velocity template rendering.
    */
   protected void assertVelocityVariablesReplaced(String msg) {
-    assertFalse(msg.contains("$"));
+    assertThat(msg).doesNotContain("$");
   }
 
   /**

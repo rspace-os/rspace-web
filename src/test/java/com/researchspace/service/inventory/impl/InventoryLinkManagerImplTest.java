@@ -1,5 +1,6 @@
 package com.researchspace.service.inventory.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -124,7 +125,7 @@ public class InventoryLinkManagerImplTest extends SpringTransactionalTest {
     List<ApiInventoryReferencingItem> rows =
         linkManager.findReferencingItems(target.getGlobalId(), user);
 
-    assertEquals(0, rows.size());
+    assertThat(rows).isEmpty();
   }
 
   @Test

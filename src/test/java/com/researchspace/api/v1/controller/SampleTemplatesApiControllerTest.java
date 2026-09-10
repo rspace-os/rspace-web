@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -53,9 +54,9 @@ public class SampleTemplatesApiControllerTest extends SpringTransactionalTest {
     InventoryApiPaginationCriteria apiPgCrit = null;
     ApiSampleTemplateSearchResult foundTemplates =
         templatesApi.getTemplatesForUser(apiPgCrit, null, mockBindingResult, testUser);
-    assertTrue(foundTemplates.getTotalHits().intValue() > 1);
-    assertTrue(foundTemplates.getTemplates().size() > 1);
-    assertEquals(1, foundTemplates.getLinks().size());
+    assertThat(foundTemplates.getTotalHits().intValue()).isGreaterThan(1);
+    assertThat(foundTemplates.getTemplates().size()).isGreaterThan(1);
+    assertThat(foundTemplates.getLinks()).hasSize(1);
 
     // check details of a first template
     Optional<ApiSampleTemplateInfo> complexTemplateInfoOpt =
@@ -65,22 +66,22 @@ public class SampleTemplatesApiControllerTest extends SpringTransactionalTest {
                     ContentInitializerForDevRunManager.COMPLEX_SAMPLE_TEMPLATE_NAME.equals(
                         st.getName()))
             .findFirst();
-    assertTrue(complexTemplateInfoOpt.isPresent());
+    assertThat(complexTemplateInfoOpt).isPresent();
     ApiSampleTemplateInfo complexTemplateInfo = complexTemplateInfoOpt.get();
     assertEquals(
         ContentInitializerForDevRunManager.COMPLEX_SAMPLE_TEMPLATE_NAME,
         complexTemplateInfo.getName());
     assertEquals("aliquot", complexTemplateInfo.getSubSampleAlias().getAlias());
     assertNotNull(complexTemplateInfo.getModifiedByFullName());
-    assertEquals(4, complexTemplateInfo.getLinks().size()); // self + 3 images
+    assertThat(complexTemplateInfo.getLinks()).hasSize(4); // self + 3 images
 
     // pagination, second page
     apiPgCrit = new InventoryApiPaginationCriteria(1, 1, null);
     ApiSampleTemplateSearchResult paginatedTemplates =
         templatesApi.getTemplatesForUser(apiPgCrit, null, mockBindingResult, testUser);
-    assertTrue(paginatedTemplates.getTotalHits().intValue() > 1);
-    assertEquals(1, paginatedTemplates.getTemplates().size());
-    assertTrue(paginatedTemplates.getLinks().size() > 1);
+    assertThat(paginatedTemplates.getTotalHits().intValue()).isGreaterThan(1);
+    assertThat(paginatedTemplates.getTemplates()).hasSize(1);
+    assertThat(paginatedTemplates.getLinks().size()).isGreaterThan(1);
   }
 
   @Test
@@ -147,7 +148,7 @@ public class SampleTemplatesApiControllerTest extends SpringTransactionalTest {
     assertEquals("test template", createdTemplate.getName());
     Long createdTemplateId = createdTemplate.getId();
     assertNotNull(createdTemplateId);
-    assertEquals(2, createdTemplate.getFields().size());
+    assertThat(createdTemplate.getFields()).hasSize(2);
 
     // prepare update request
     ApiSampleTemplate templateUpdate = new ApiSampleTemplate();
@@ -215,14 +216,14 @@ public class SampleTemplatesApiControllerTest extends SpringTransactionalTest {
     assertEquals("test template", createdTemplate.getName());
     assertEquals("portion", createdTemplate.getSubSampleAlias().getAlias());
     assertEquals(RSUnitDef.GRAM.getId(), createdTemplate.getDefaultUnitId());
-    assertEquals(2, createdTemplate.getFields().size());
+    assertThat(createdTemplate.getFields()).hasSize(2);
     ApiInventoryEntityField firstField = createdTemplate.getFields().get(0);
     assertEquals("my string", firstField.getName());
     ApiInventoryEntityField secondField = createdTemplate.getFields().get(1);
     assertEquals("my radio", secondField.getName());
     assertEquals(null, secondField.getContent());
-    assertEquals(List.of("2"), secondField.getSelectedOptions());
-    assertEquals(List.of("1", "2", "3"), secondField.getDefinition().getOptions());
+    assertThat(secondField.getSelectedOptions()).containsExactly("2");
+    assertThat(secondField.getDefinition().getOptions()).containsExactly("1", "2", "3");
 
     // update the template: delete first field, update radio options of the second, add a third
     ApiSampleTemplate templateUpdates = new ApiSampleTemplate();
@@ -247,14 +248,14 @@ public class SampleTemplatesApiControllerTest extends SpringTransactionalTest {
         templatesApi.updateSampleTemplate(
             createdTemplate.getId(), templateUpdates, bindingResult, testUser);
     assertNotNull(updatedTemplate);
-    assertEquals(2, updatedTemplate.getFields().size());
+    assertThat(updatedTemplate.getFields()).hasSize(2);
     firstField = updatedTemplate.getFields().get(0);
     assertEquals("my number", firstField.getName());
     secondField = updatedTemplate.getFields().get(1);
     assertEquals("my radio", secondField.getName());
     assertEquals(null, secondField.getContent());
-    assertEquals(List.of("2"), secondField.getSelectedOptions());
-    assertEquals(List.of("2", "3", "4"), secondField.getDefinition().getOptions());
+    assertThat(secondField.getSelectedOptions()).containsExactly("2");
+    assertThat(secondField.getDefinition().getOptions()).containsExactly("2", "3", "4");
   }
 
   @Test
@@ -266,7 +267,7 @@ public class SampleTemplatesApiControllerTest extends SpringTransactionalTest {
 
     // create new template
     ApiSampleTemplate createdTemplate = createSampleTemplateWithRadioAndNumericFields(testUser);
-    assertEquals(2, createdTemplate.getFields().size());
+    assertThat(createdTemplate.getFields()).hasSize(2);
 
     // create a couple of samples from the template
     ApiSampleWithFullSubSamples apiSample1 =
@@ -307,18 +308,18 @@ public class SampleTemplatesApiControllerTest extends SpringTransactionalTest {
         sampleApiMgr.updateApiSampleTemplate(templateUpdates, testUser);
     assertNotNull(updatedTemplate);
     assertEquals(2, updatedTemplate.getVersion());
-    assertEquals(3, updatedTemplate.getFields().size());
+    assertThat(updatedTemplate.getFields()).hasSize(3);
     assertEquals("my text", updatedTemplate.getFields().get(0).getName());
 
     // retrieve samples, should point to previous version
     ApiSample retrievedSample1 = sampleApiMgr.getApiSampleById(createdSample1.getId(), testUser);
     assertEquals(createdTemplate.getId(), retrievedSample1.getTemplateId());
     assertEquals(1, retrievedSample1.getTemplateVersion());
-    assertEquals(2, retrievedSample1.getFields().size());
+    assertThat(retrievedSample1.getFields()).hasSize(2);
     ApiSample retrievedSample2 = sampleApiMgr.getApiSampleById(createdSample2.getId(), testUser);
     assertEquals(createdTemplate.getId(), retrievedSample2.getTemplateId());
     assertEquals(1, retrievedSample2.getTemplateVersion());
-    assertEquals(2, retrievedSample2.getFields().size());
+    assertThat(retrievedSample2.getFields()).hasSize(2);
 
     // run all-samples update
     ApiInventoryBulkOperationResult updateResult =
@@ -330,12 +331,12 @@ public class SampleTemplatesApiControllerTest extends SpringTransactionalTest {
     retrievedSample1 = sampleApiMgr.getApiSampleById(createdSample1.getId(), testUser);
     assertEquals(createdTemplate.getId(), retrievedSample1.getTemplateId());
     assertEquals(2, retrievedSample1.getTemplateVersion());
-    assertEquals(3, retrievedSample1.getFields().size());
+    assertThat(retrievedSample1.getFields()).hasSize(3);
     assertEquals("my text", retrievedSample1.getFields().get(0).getName());
     retrievedSample2 = sampleApiMgr.getApiSampleById(createdSample2.getId(), testUser);
     assertEquals(createdTemplate.getId(), retrievedSample2.getTemplateId());
     assertEquals(2, retrievedSample2.getTemplateVersion());
-    assertEquals(3, retrievedSample2.getFields().size());
+    assertThat(retrievedSample2.getFields()).hasSize(3);
     assertEquals("my text", retrievedSample2.getFields().get(0).getName());
 
     // run all-samples update again

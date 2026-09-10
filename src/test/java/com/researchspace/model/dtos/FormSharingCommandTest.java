@@ -1,5 +1,6 @@
 package com.researchspace.model.dtos;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -20,8 +21,8 @@ public class FormSharingCommandTest {
     assertNotNull(form.getAccessControl());
     FormSharingCommand tsc = new FormSharingCommand(form);
     assertEquals(1L, tsc.getFormId().longValue());
-    assertEquals(PermissionType.NONE.toString(), tsc.getGroupOptions().get(0));
-    assertEquals(PermissionType.NONE.toString(), tsc.getWorldOptions().get(0));
+    assertThat(tsc.getGroupOptions()).element(0).isEqualTo(PermissionType.NONE.toString());
+    assertThat(tsc.getWorldOptions()).element(0).isEqualTo(PermissionType.NONE.toString());
   }
 
   @Test

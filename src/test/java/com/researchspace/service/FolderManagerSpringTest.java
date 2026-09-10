@@ -1,8 +1,8 @@
 package com.researchspace.service;
 
 import static com.researchspace.core.util.MediaUtils.IMAGES_MEDIA_FLDER_NAME;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -163,11 +163,10 @@ public class FolderManagerSpringTest extends SpringTransactionalTest {
             .getGroupOrIndividualShrdFolderRootFromSharedSubfolder(grpSubFolder.getId(), null, user)
             .get());
     // a folder not a subfolder of group folder will return null.
-    assertFalse(
-        folderMgr
-            .getGroupOrIndividualShrdFolderRootFromSharedSubfolder(
-                userLabGroupFolder.getId(), null, user)
-            .isPresent());
+    assertThat(
+            folderMgr.getGroupOrIndividualShrdFolderRootFromSharedSubfolder(
+                userLabGroupFolder.getId(), null, user))
+        .isNotPresent();
 
     // now check the same type of assertion, but for individual shared folders
     Folder individSharedFolderRoot = folderDao.getIndividualSharedItemsFolderForUser(user);

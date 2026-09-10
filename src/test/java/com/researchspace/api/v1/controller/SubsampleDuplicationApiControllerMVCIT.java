@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -68,11 +69,11 @@ public class SubsampleDuplicationApiControllerMVCIT extends API_MVC_InventoryTes
             .andExpect(status().isCreated())
             .andReturn();
     ApiSubSample[] copy = getFromJsonResponseBody(result, ApiSubSample[].class);
-    assertEquals(6, copy.length);
+    assertThat(copy).hasSize(6);
 
     ApiSample updatedSample = sampleApiMgr.getApiSampleById(basicSample.getId(), anyUser);
     assertEquals("999.999 µl", updatedSample.getQuantity().toQuantityInfo().toPlainString());
-    assertEquals(7, updatedSample.getSubSamples().size());
+    assertThat(updatedSample.getSubSamples()).hasSize(7);
     assertEquals(
         "142.857 µl",
         updatedSample.getSubSamples().get(0).getQuantity().toQuantityInfo().toPlainString());

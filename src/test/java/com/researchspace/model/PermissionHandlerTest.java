@@ -1,6 +1,6 @@
 package com.researchspace.model;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -19,9 +19,8 @@ public class PermissionHandlerTest {
     permissionStrings.add("COMMS:READ:property_name=REQUESTJOINEXISTINGCOLLABGROUP");
 
     permHandler.setPermissionStrings(permissionStrings);
-    assertEquals(
-        permHandler.getPermissions().size(),
-        permHandler.getPermissionStrings().size(),
-        "invariants not kept");
+    assertThat(permHandler.getPermissionStrings())
+        .as("invariants not kept")
+        .hasSize(permHandler.getPermissions().size());
   }
 }

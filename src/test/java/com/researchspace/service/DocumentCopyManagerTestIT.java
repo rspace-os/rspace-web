@@ -1,5 +1,6 @@
 package com.researchspace.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
@@ -88,7 +89,7 @@ public class DocumentCopyManagerTestIT extends SpringTransactionalTest {
 
     StructuredDocument linkTarget = createBasicDocumentInRootFolderWithText(user, "linkTargetDoc");
     addInternalLinkToField(txtFld, linkTarget);
-    assertEquals(1, internalLinkDao.getLinksPointingToRecord(linkTarget.getId()).size());
+    assertThat(internalLinkDao.getLinksPointingToRecord(linkTarget.getId())).hasSize(1);
 
     InputStream molInput = getClass().getResourceAsStream("/TestResources/Amfetamine.mol");
     String chemElementMolString = IOUtils.toString(molInput, StandardCharsets.UTF_8);
@@ -112,14 +113,14 @@ public class DocumentCopyManagerTestIT extends SpringTransactionalTest {
     Field txtFldCpy = copy.getTextFields().get(0);
     List<EcatImageAnnotation> anns =
         imageAnnotationDao.getAllImageAnnotationsFromField(txtFldCpy.getId());
-    assertEquals(2, anns.size());
+    assertThat(anns).hasSize(2);
     // annotation points to new field and record
     assertEquals(txtFldCpy.getId(), anns.get(0).getParentId());
     assertEquals(copy, anns.get(0).getRecord());
     // sketch should not contain original ID
     assertNotEquals(txtFldCpy.getId(), sketch.getId());
     // internal link entity should be copied
-    assertEquals(2, internalLinkDao.getLinksPointingToRecord(linkTarget.getId()).size());
+    assertThat(internalLinkDao.getLinksPointingToRecord(linkTarget.getId())).hasSize(2);
 
     // now we'll alter the original, and check that the copy is unaffected.
     final String originalAnnotation = ann.getAnnotations();
@@ -134,9 +135,9 @@ public class DocumentCopyManagerTestIT extends SpringTransactionalTest {
     assertEquals(originalAnnotation, copyAnnotation.getAnnotations());
 
     // check chem element was copied
-    assertEquals(originalChemEls + 1, chemDao.getAll().size());
+    assertThat(chemDao.getAll()).hasSize(originalChemEls + 1);
     List<RSChemElement> copiedEls = chemDao.getAllChemElementsFromField(txtFldCpy.getId());
-    assertEquals(1, copiedEls.size());
+    assertThat(copiedEls).hasSize(1);
     assertEquals(copy, copiedEls.get(0).getRecord());
     assertNotEquals(copiedEls.get(0).getId(), origChemElement.getId());
 
@@ -148,9 +149,9 @@ public class DocumentCopyManagerTestIT extends SpringTransactionalTest {
     assertEquals(originalChemString, origChemElement.getChemElements());
 
     // check math element was copied
-    assertEquals(originalMathEls + 1, mathDao.getAll().size());
+    assertThat(mathDao.getAll()).hasSize(originalMathEls + 1);
     List<RSMath> mathCopiedEls = mathDao.getAllMathElementsFromField(txtFldCpy.getId());
-    assertEquals(1, mathCopiedEls.size());
+    assertThat(mathCopiedEls).hasSize(1);
     assertEquals(copy, mathCopiedEls.get(0).getRecord());
     assertNotSame(mathCopiedEls.get(0).getId(), origMath.getId());
 
@@ -162,7 +163,7 @@ public class DocumentCopyManagerTestIT extends SpringTransactionalTest {
 
     // check the comment was copied
     List<EcatComment> copiedComments = commentsDao.getCommentAll(txtFldCpy.getId());
-    assertEquals(1, copiedComments.size());
+    assertThat(copiedComments).hasSize(1);
     assertEquals(copy, copiedComments.get(0).getRecord());
     assertEquals(commentText, copiedComments.get(0).getItems().get(0).getItemContent());
 
@@ -175,7 +176,7 @@ public class DocumentCopyManagerTestIT extends SpringTransactionalTest {
     // now, update comment and check original comment still unchanged.
     List<EcatComment> originalComments = commentsDao.getCommentAll(txtFld.getId());
     EcatComment comment1 = originalComments.get(0);
-    assertEquals(1, comment1.getItems().size());
+    assertThat(comment1.getItems()).hasSize(1);
     assertEquals(commentText, comment1.getItems().get(0).getItemContent());
 
     flushDatabaseState();
@@ -218,12 +219,12 @@ public class DocumentCopyManagerTestIT extends SpringTransactionalTest {
     Field copiedField = copy.getTextFields().get(0);
     List<RSChemElement> copiedChemElements =
         chemDao.getAllChemElementsFromField(copiedField.getId());
-    assertEquals(1, copiedChemElements.size());
+    assertThat(copiedChemElements).hasSize(1);
 
     List<StoichiometryDTO> copiedRefs =
         new StoichiometryReader()
             .extractStoichiometriesFromFieldContents(copiedField.getFieldData());
-    assertEquals(1, copiedRefs.size());
+    assertThat(copiedRefs).hasSize(1);
     assertNotEquals(originalStoichiometry.getId(), copiedRefs.get(0).getId());
     assertNull(copiedRefs.get(0).getRevision());
 
@@ -254,7 +255,7 @@ public class DocumentCopyManagerTestIT extends SpringTransactionalTest {
     List<StoichiometryDTO> copiedRefs =
         new StoichiometryReader()
             .extractStoichiometriesFromFieldContents(copiedField.getFieldData());
-    assertEquals(1, copiedRefs.size());
+    assertThat(copiedRefs).hasSize(1);
     assertNotEquals(originalStoichiometry.getId(), copiedRefs.get(0).getId());
     assertNull(copiedRefs.get(0).getRevision());
 

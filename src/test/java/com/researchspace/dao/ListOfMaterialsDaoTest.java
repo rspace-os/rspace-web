@@ -1,5 +1,6 @@
 package com.researchspace.dao;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -41,13 +42,13 @@ public class ListOfMaterialsDaoTest extends SpringTransactionalTest {
 
     ListOfMaterials retrievedLom = listOfMaterialsDao.get(savedLom.getId());
     assertEquals(savedLom, retrievedLom);
-    assertEquals(2, retrievedLom.getMaterials().size());
+    assertThat(retrievedLom.getMaterials()).hasSize(2);
 
     savedLom.getMaterials().remove(0);
     savedLom = listOfMaterialsDao.save(savedLom);
 
     retrievedLom = listOfMaterialsDao.get(savedLom.getId());
-    assertEquals(1, retrievedLom.getMaterials().size());
+    assertThat(retrievedLom.getMaterials()).hasSize(1);
 
     int finalCount = listOfMaterialsDao.getAllDistinct().size();
     assertEquals(initialCount + 1, finalCount);

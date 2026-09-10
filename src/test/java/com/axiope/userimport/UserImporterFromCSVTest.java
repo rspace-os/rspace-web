@@ -1,5 +1,6 @@
 package com.axiope.userimport;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -80,7 +81,7 @@ public class UserImporterFromCSVTest {
 
     String INVALID_ROLE2 = "Fred, Blogs, fbloggs@gmail.com,S,,";
     UserImportResult users8 = parseCSVLines(INVALID_ROLE2);
-    assertEquals(0, users8.getParsedUsers().size());
+    assertThat(users8.getParsedUsers()).isEmpty();
     assertTrue(users8.getErrors().hasErrorMessages());
     String errorMsg = users8.getErrors().getErrorMessages().get(0);
     assertEquals("system.csvImport.user.unrecognisedRole", errorMsg);
@@ -91,19 +92,19 @@ public class UserImporterFromCSVTest {
     String OK = "Fred, Blogs, fbloggs@gmail.com, ROLE_USER,,";
     List<UserRegistrationInfo> users = parseCSVLines(OK).getParsedUsers();
 
-    assertEquals(1, users.size());
+    assertThat(users).hasSize(1);
     UserRegistrationInfo okUser = users.iterator().next();
-    assertTrue(okUser.getUsername().contains("fblogs"));
+    assertThat(okUser.getUsername()).contains("fblogs");
 
     String OK_BLANK = OK + "\n \n	 \n" + OK;
     UserImportResult okResults = parseCSVLines(OK_BLANK);
-    assertEquals(2, okResults.getParsedUsers().size());
+    assertThat(okResults.getParsedUsers()).hasSize(2);
     assertFalse(okResults.getErrors().hasErrorMessages());
 
     String DUPLICATE_WITH_COMMENT =
         "## Following lines contain duplicate users.\n" + OK + "\n" + OK;
     UserImportResult okResults2 = parseCSVLines(DUPLICATE_WITH_COMMENT);
-    assertEquals(2, okResults2.getParsedUsers().size());
+    assertThat(okResults2.getParsedUsers()).hasSize(2);
     assertFalse(okResults2.getErrors().hasErrorMessages());
 
     // if username is valid and specified, it is unchanged:
@@ -115,23 +116,23 @@ public class UserImporterFromCSVTest {
     String COMPLETE = "Fred, Blogs, fbloggs@gmail.com, ROLE_USER,uname,";
     String COMPLETE_DUPLICATE = COMPLETE + "\n" + COMPLETE;
     List<UserRegistrationInfo> users3 = parseCSVLines(COMPLETE_DUPLICATE).getParsedUsers();
-    assertEquals(2, users3.size());
+    assertThat(users3).hasSize(2);
 
     String NO_EMAIL = "Fred, Blogs,, ROLE_USER,,";
     UserImportResult noEmailUser = parseCSVLines(NO_EMAIL);
-    assertEquals(1, noEmailUser.getParsedUsers().size());
+    assertThat(noEmailUser.getParsedUsers()).hasSize(1);
 
     String NO_ROLE = "Fred, Blogs, fbloggs@gmail.com,,,";
     UserImportResult noRoleUser = parseCSVLines(NO_ROLE);
-    assertEquals(1, noRoleUser.getParsedUsers().size());
+    assertThat(noRoleUser.getParsedUsers()).hasSize(1);
 
     String ONLY_5_FIELDS = "Fred, Blogs, fbloggs@gmail.com, ROLE_USER,";
     List<UserRegistrationInfo> invalidUsers = parseCSVLines(ONLY_5_FIELDS).getParsedUsers();
-    assertEquals(0, invalidUsers.size());
+    assertThat(invalidUsers).isEmpty();
 
     String NO_USERNAME_AND_NO_INFO_TO_MAKE_ONE = " , , fbloggs@gmail.com, ROLE_USER,,";
     UserImportResult invalidUsers2 = parseCSVLines(NO_USERNAME_AND_NO_INFO_TO_MAKE_ONE);
-    assertEquals(0, invalidUsers2.getParsedUsers().size());
+    assertThat(invalidUsers2.getParsedUsers()).isEmpty();
     assertTrue(invalidUsers2.getErrors().hasErrorMessages());
   }
 
@@ -158,15 +159,16 @@ public class UserImporterFromCSVTest {
 
     ErrorList errors = result.getErrors();
     assertTrue(errors.hasErrorMessages());
-    assertEquals(
-        "system.csvImport.community.wrongNumberOfFields", errors.getErrorMessages().get(0));
+    assertThat(errors.getErrorMessages())
+        .element(0)
+        .isEqualTo("system.csvImport.community.wrongNumberOfFields");
 
     String line2 = "#Communities\n" + "community, unknown lab"; // unknown labGroup name
     UserImportResult result2 = parseCSVLines(line2);
 
     ErrorList errors2 = result2.getErrors();
     assertTrue(errors2.hasErrorMessages());
-    assertEquals("system.csvImport.unknownLabGroup", errors2.getErrorMessages().get(0));
+    assertThat(errors2.getErrorMessages()).element(0).isEqualTo("system.csvImport.unknownLabGroup");
   }
 
   @Test
@@ -176,15 +178,16 @@ public class UserImporterFromCSVTest {
 
     ErrorList errors = result.getErrors();
     assertTrue(errors.hasErrorMessages());
-    assertEquals(
-        "system.csvImport.communityAdmin.wrongNumberOfFields", errors.getErrorMessages().get(0));
+    assertThat(errors.getErrorMessages())
+        .element(0)
+        .isEqualTo("system.csvImport.communityAdmin.wrongNumberOfFields");
 
     line = "#Community Admins\n" + "community, unknownAdmin"; // unknown admin
     result = parseCSVLines(line);
 
     errors = result.getErrors();
     assertTrue(errors.hasErrorMessages());
-    assertEquals("system.csvImport.unknownUsername", errors.getErrorMessages().get(0));
+    assertThat(errors.getErrorMessages()).element(0).isEqualTo("system.csvImport.unknownUsername");
   }
 
   @Test
@@ -200,14 +203,14 @@ public class UserImporterFromCSVTest {
             + "test community, testadmin";
 
     UserImportResult result = parseCSVLines(line);
-    assertEquals(1, result.getParsedCommunities().size());
+    assertThat(result.getParsedCommunities()).hasSize(1);
     assertFalse(result.getErrors().hasErrorMessages());
 
     CommunityPublicInfo parsedCommunity = result.getParsedCommunities().get(0);
     assertEquals("test community", parsedCommunity.getDisplayName());
-    assertTrue(parsedCommunity.getUniqueName().startsWith("testcommunity"));
-    assertEquals("testadmin", parsedCommunity.getAdmins().get(0));
-    assertEquals("test lab", parsedCommunity.getLabGroups().get(0));
+    assertThat(parsedCommunity.getUniqueName()).startsWith("testcommunity");
+    assertThat(parsedCommunity.getAdmins()).element(0).isEqualTo("testadmin");
+    assertThat(parsedCommunity.getLabGroups()).element(0).isEqualTo("test lab");
   }
 
   private UserImportResult parseCSVLines(String lines) {
@@ -227,7 +230,7 @@ public class UserImporterFromCSVTest {
     UserImportResult users = importer.getUsersToSignup(logins);
 
     assertFalse(users.getErrors().hasErrorMessages());
-    assertEquals(3, users.getParsedGroups().size()); // 3 groups formed.
+    assertThat(users.getParsedGroups()).hasSize(3); // 3 groups formed.
   }
 
   private void setupImporter() {

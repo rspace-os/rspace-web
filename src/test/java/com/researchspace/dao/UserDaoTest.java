@@ -1,5 +1,6 @@
 package com.researchspace.dao;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.researchspace.Constants;
@@ -55,7 +56,7 @@ public class UserDaoTest extends BaseDaoTestCase {
     User user = userDao.get(-1L);
 
     assertNotNull(user);
-    assertEquals(2, user.getRoles().size()); // pi and user
+    assertThat(user.getRoles()).hasSize(2); // pi and user
     assertTrue(user.isEnabled());
   }
 
@@ -110,7 +111,7 @@ public class UserDaoTest extends BaseDaoTestCase {
     flush();
 
     user = userDao.get(-1L);
-    assertEquals(INITIAL_ROLE_COUNT + 1, user.getRoles().size());
+    assertThat(user.getRoles()).hasSize(INITIAL_ROLE_COUNT + 1);
 
     // add the same role twice - should result in no additional role
     user.addRole(role);
@@ -118,14 +119,14 @@ public class UserDaoTest extends BaseDaoTestCase {
     flush();
 
     user = userDao.get(-1L);
-    assertEquals(INITIAL_ROLE_COUNT + 1, user.getRoles().size(), "more than 2 roles");
+    assertThat(user.getRoles()).as("more than 2 roles").hasSize(INITIAL_ROLE_COUNT + 1);
 
     user.getRoles().remove(role);
     userDao.saveUser(user);
     flush();
 
     user = userDao.get(-1L);
-    assertEquals(INITIAL_ROLE_COUNT, user.getRoles().size());
+    assertThat(user.getRoles()).hasSize(INITIAL_ROLE_COUNT);
   }
 
   @Test
@@ -147,32 +148,24 @@ public class UserDaoTest extends BaseDaoTestCase {
   @Test
   public void testPreferences() {
     User user = userDao.get(-1L);
-    assertEquals(0, user.getUserPreferences().size());
+    assertThat(user.getUserPreferences()).isEmpty();
     UserPreference up =
         new UserPreference(Preference.NOTIFICATION_DOCUMENT_EDITED_PREF, user, "true");
     user.setPreference(up);
     userDao.save(user);
 
     User u2 = userDao.get(-1L);
-    assertEquals(1, u2.getUserPreferences().size());
-    assertTrue(
-        u2.getUserPreferences()
-            .iterator()
-            .next()
-            .getValue()
-            .equalsIgnoreCase(Boolean.TRUE.toString()));
+    assertThat(u2.getUserPreferences()).hasSize(1);
+    assertThat(u2.getUserPreferences().iterator().next().getValue())
+        .isEqualToIgnoringCase(Boolean.TRUE.toString());
 
     // alter prefs
     up.setValue("false");
     userDao.save(u2);
     User u3 = userDao.get(-1L);
-    assertEquals(1, u3.getUserPreferences().size());
-    assertTrue(
-        u3.getUserPreferences()
-            .iterator()
-            .next()
-            .getValue()
-            .equalsIgnoreCase(Boolean.FALSE.toString()));
+    assertThat(u3.getUserPreferences()).hasSize(1);
+    assertThat(u3.getUserPreferences().iterator().next().getValue())
+        .isEqualToIgnoringCase(Boolean.FALSE.toString());
   }
 
   @Test
@@ -194,12 +187,12 @@ public class UserDaoTest extends BaseDaoTestCase {
     // not retrieved
     pi1.setEnabled(true);
     userDao.save(pi1);
-    assertEquals(enabledB4 + 1, userDao.getUsers().size());
+    assertThat(userDao.getUsers()).hasSize(enabledB4 + 1);
     // now is retrieved
     pi1.setEnabled(false);
 
     userDao.save(pi1);
-    assertEquals(enabledB4, userDao.getUsers().size());
+    assertThat(userDao.getUsers()).hasSize(enabledB4);
   }
 
   @Test
@@ -223,14 +216,14 @@ public class UserDaoTest extends BaseDaoTestCase {
     grpdao.save(g2);
 
     Set<User> pisAndAdmins = userDao.getAllGroupPis(null);
-    assertEquals(pisAndAdminsPriorToTest.size() + 2, pisAndAdmins.size());
-    assertTrue(pisAndAdmins.contains(pi2));
-    assertTrue(pisAndAdmins.contains(pi1));
-    assertFalse(pisAndAdmins.contains(u2));
+    assertThat(pisAndAdmins).hasSize(pisAndAdminsPriorToTest.size() + 2);
+    assertThat(pisAndAdmins).contains(pi2);
+    assertThat(pisAndAdmins).contains(pi1);
+    assertThat(pisAndAdmins).doesNotContain(u2);
 
     Set<User> matchingPisAndAdmins = userDao.getAllGroupPis("uniquePI");
-    assertEquals(1, matchingPisAndAdmins.size());
-    assertTrue(matchingPisAndAdmins.contains(pi1));
+    assertThat(matchingPisAndAdmins).hasSize(1);
+    assertThat(matchingPisAndAdmins).contains(pi1);
   }
 
   @Test
@@ -243,7 +236,7 @@ public class UserDaoTest extends BaseDaoTestCase {
     // anonymous user excluded from search
     assertEquals(userDao.getAll().size() - 1, results.getTotalHits().intValue());
     // assumes we get more users than can be paginated
-    assertEquals(pgCrit.getResultsPerPage().intValue(), results.getResults().size());
+    assertThat(results.getResults()).hasSize(pgCrit.getResultsPerPage().intValue());
 
     pgCrit.setResultsPerPage(50000); // make sure we get all users so we get genuine first and
     // last by sort order
@@ -376,8 +369,8 @@ public class UserDaoTest extends BaseDaoTestCase {
     User newAdmin = createAndSaveAdminUser();
 
     List<User> availableAdmins = userDao.getAvailableAdminsForCommunity();
-    assertEquals(B4count_admins + 1, availableAdmins.size());
-    assertTrue(availableAdmins.contains(newAdmin));
+    assertThat(availableAdmins).hasSize(B4count_admins + 1);
+    assertThat(availableAdmins).contains(newAdmin);
     // now disable admin account, should not be retrieved
     newAdmin.setEnabled(false);
     userDao.save(newAdmin);
@@ -398,7 +391,7 @@ public class UserDaoTest extends BaseDaoTestCase {
     // admins
     List<User> availableAdminsAfter = userDao.getAvailableAdminsForCommunity();
     assertEquals(B4count_admins, getAvailableAdminCount());
-    assertFalse(availableAdminsAfter.contains(newAdmin));
+    assertThat(availableAdminsAfter).doesNotContain(newAdmin);
   }
 
   int getAvailableAdminCount() {
@@ -441,29 +434,29 @@ public class UserDaoTest extends BaseDaoTestCase {
     ISearchResults<User> results = userDao.listUsersInCommunity(comm.getId(), pgCrit);
     final int EXPECTED_HITS = 11;
     assertEquals(EXPECTED_HITS, results.getTotalHits().longValue());
-    assertEquals(EXPECTED_HITS, results.getResults().size());
+    assertThat(results.getResults()).hasSize(EXPECTED_HITS);
     // no duplicates
-    assertEquals(EXPECTED_HITS, new HashSet<>(results.getResults()).size());
-    assertTrue(results.getResults().contains(pi));
-    assertTrue(results.getResults().contains(tg.getPi()));
-    assertTrue(results.getResults().contains(tg2.getPi()));
-    assertTrue(results.getResults().contains(u2));
+    assertThat(new HashSet<>(results.getResults())).hasSize(EXPECTED_HITS);
+    assertThat(results.getResults()).contains(pi);
+    assertThat(results.getResults()).contains(tg.getPi());
+    assertThat(results.getResults()).contains(tg2.getPi());
+    assertThat(results.getResults()).contains(u2);
 
     assertTrue(userDao.isUserInAdminsCommunity(pi.getUsername(), comm.getId()));
 
-    assertEquals(EXPECTED_HITS, userDao.getUserIdsInAdminsCommunity(admin).size());
+    assertThat(userDao.getUserIdsInAdminsCommunity(admin)).hasSize(EXPECTED_HITS);
 
     UserSearchCriteria sc = new UserSearchCriteria();
     sc.setAllFields(tg.getUserByPrefix("u1").getUsername());
     pgCrit.setSearchCriteria(sc);
     ISearchResults<User> filtered = userDao.listUsersInCommunity(comm.getId(), pgCrit);
     assertEquals(1, filtered.getTotalHits().intValue());
-    assertEquals(1, filtered.getResults().size());
+    assertThat(filtered.getResults()).hasSize(1);
 
     sc.setAllFields(tg.getUserByPrefix("u1").getUsername().substring(1, 7));
     ISearchResults<User> filtered2 = userDao.listUsersInCommunity(comm.getId(), pgCrit);
     assertEquals(1, filtered2.getTotalHits().intValue());
-    assertEquals(1, filtered2.getResults().size());
+    assertThat(filtered2.getResults()).hasSize(1);
 
     // test ordering
     pgCrit.setSortOrder(SortOrder.DESC);
@@ -547,16 +540,16 @@ public class UserDaoTest extends BaseDaoTestCase {
     user.setEmail(getRandomAlphabeticString("ooooaaaggg") + "@rspace.com");
     // check user can be identified
     List<User> foundByFirstName = userDao.searchUsers(user.getFirstName().substring(1, 16));
-    assertEquals(1, foundByFirstName.size());
+    assertThat(foundByFirstName).hasSize(1);
     assertEquals(user, foundByFirstName.get(0));
     List<User> foundByLastName = userDao.searchUsers(user.getLastName().substring(1, 16));
-    assertEquals(1, foundByLastName.size());
+    assertThat(foundByLastName).hasSize(1);
     assertEquals(user, foundByLastName.get(0));
     List<User> foundByEmail = userDao.searchUsers(user.getEmail().substring(1, 16));
-    assertEquals(1, foundByEmail.size());
+    assertThat(foundByEmail).hasSize(1);
     assertEquals(user, foundByEmail.get(0));
     List<User> foundByUsername = userDao.searchUsers(user.getUsername().substring(1, 12));
-    assertEquals(1, foundByUsername.size());
+    assertThat(foundByUsername).hasSize(1);
     assertEquals(user, foundByUsername.get(0));
   }
 
@@ -582,7 +575,7 @@ public class UserDaoTest extends BaseDaoTestCase {
 
     ISearchResults<User> res1 = userDao.searchUsers(pgCrit);
     assertEquals(5, res1.getHitsPerPage());
-    assertEquals(5, res1.getResults().size());
+    assertThat(res1.getResults()).hasSize(5);
     long totalCount = res1.getTotalHits();
     assertEquals("admin", res1.getResults().get(0).getUsername());
 
@@ -613,20 +606,20 @@ public class UserDaoTest extends BaseDaoTestCase {
     pgCrit.setSearchCriteria(userSearchCriteria);
 
     // make sure there are no duplicates
-    assertEquals(5, userDao.searchUsers(pgCrit).getResults().size());
+    assertThat(userDao.searchUsers(pgCrit).getResults()).hasSize(5);
 
     // check no results handled gracefully
     userSearchCriteria.setAllFields("xxxxxxx");
     pgCrit.setSearchCriteria(userSearchCriteria);
-    assertEquals(0, userDao.searchUsers(pgCrit).getResults().size());
+    assertThat(userDao.searchUsers(pgCrit).getResults()).isEmpty();
 
     // filter by temp users - none yet
     userSearchCriteria = new UserSearchCriteria();
     userSearchCriteria.setTempAccountsOnly(true);
     pgCrit.setSearchCriteria(userSearchCriteria);
-    assertEquals(0, userDao.searchUsers(pgCrit).getResults().size());
+    assertThat(userDao.searchUsers(pgCrit).getResults()).isEmpty();
     createAndSaveTmpUserIfNotExists("tmp");
-    assertEquals(1, userDao.searchUsers(pgCrit).getResults().size());
+    assertThat(userDao.searchUsers(pgCrit).getResults()).hasSize(1);
 
     pgCrit.setSearchCriteria(null);
     flush();
@@ -684,14 +677,14 @@ public class UserDaoTest extends BaseDaoTestCase {
     g1.addMember(u2, RoleInGroup.DEFAULT);
     grpdao.save(g1);
     List<User> userList = userDao.getViewableUsersByRole(pi);
-    assertEquals(n3, userList.size());
+    assertThat(userList).hasSize(n3);
     List<User> ownerList = userDao.getViewableSharedRecordOwners(pi);
-    assertEquals(0, ownerList.size());
+    assertThat(ownerList).isEmpty();
 
     User admin = createAndSaveAdminUser();
     initialiseContentWithEmptyContent(admin);
     logoutAndLoginAs(admin);
-    assertEquals(1, userDao.getViewableUsersByRole(admin).size());
+    assertThat(userDao.getViewableUsersByRole(admin)).hasSize(1);
   }
 
   @Test
@@ -701,7 +694,7 @@ public class UserDaoTest extends BaseDaoTestCase {
         new TokenBasedVerification(
             user.getEmail(), null, TokenBasedVerificationType.PASSWORD_CHANGE);
     upc = userDao.saveTokenBasedVerification(upc);
-    assertEquals(user.getUsername(), userDao.getUsernameByToken(upc.getToken()).get());
+    assertThat(userDao.getUsernameByToken(upc.getToken())).contains(user.getUsername());
   }
 
   @Test

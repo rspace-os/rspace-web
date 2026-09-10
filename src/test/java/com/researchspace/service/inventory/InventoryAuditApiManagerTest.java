@@ -1,8 +1,8 @@
 package com.researchspace.service.inventory;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInventoryRecordRevisionList;
@@ -31,7 +31,7 @@ public class InventoryAuditApiManagerTest extends SpringTransactionalTest {
 
     ApiInventoryRecordRevisionList revisions =
         inventoryAuditMgr.getInventoryRecordRevisions(sample);
-    assertTrue(revisions.getRevisions().isEmpty()); // won't find, but should complete fine
+    assertThat(revisions.getRevisions()).isEmpty(); // won't find, but should complete fine
     assertEquals(0, revisions.getRevisionsCount());
 
     ApiSample singleRevision = inventoryAuditMgr.getApiSampleRevision(basicSample.getId(), 1L);

@@ -1,5 +1,6 @@
 package com.researchspace.dao;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -44,7 +45,7 @@ public class GroupDaoHibernateTest extends SpringTransactionalTest {
     g.addMember(u1, RoleInGroup.PI);
     grpDao.save(g);
     assertNotNull(grpdao.getByUniqueName(uniqueName));
-    assertEquals(1, ugDao.findByUserId(u1.getId()).size());
+    assertThat(ugDao.findByUserId(u1.getId())).hasSize(1);
   }
 
   @Test
@@ -114,7 +115,7 @@ public class GroupDaoHibernateTest extends SpringTransactionalTest {
     pgCrit.setResultsPerPage(10);
     ISearchResults<Group> grps = grpDao.list(pgCrit);
 
-    assertEquals(10, grps.getResults().size());
+    assertThat(grps.getResults()).hasSize(10);
 
     Group grpX = grpDao.getGroupWithCommunities(grp.getId());
     // tests query syntax; avoidance of lazyloading needs truemulti-transaction test
@@ -129,7 +130,7 @@ public class GroupDaoHibernateTest extends SpringTransactionalTest {
     Group grp = createGroup("group", u1);
     Group grp2 = createGroup("group2", u2);
     List<Group> results = grpDao.getGroups(Arrays.asList(new Long[] {grp2.getId(), grp.getId()}));
-    assertEquals(2, results.size());
+    assertThat(results).hasSize(2);
   }
 
   @Test
@@ -165,7 +166,7 @@ public class GroupDaoHibernateTest extends SpringTransactionalTest {
     // so cg has 2 members; u2 and u4 should be available to add
     // but not u5, who does not exist in a group
     List<UserView> users = grpDao.getCandidateMembersOfCollabGroup(cg1.getId());
-    assertEquals(2, users.size());
+    assertThat(users).hasSize(2);
     // these are the two lab group members that aren't currently in the CG.
     assertTrue(userViewHasUser(u2, users));
     assertTrue(userViewHasUser(u4, users));

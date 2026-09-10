@@ -1,7 +1,7 @@
 package com.researchspace.webapp.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -59,7 +59,7 @@ public class RoRSysAdminControllerMVCIT extends MVCTestBase {
             .perform(get(rorSysadminUrl + "existingGlobalRoRID"))
             .andExpect(status().is2xxSuccessful())
             .andReturn();
-    assertEquals("", result.getResponse().getContentAsString());
+    assertThat(result.getResponse().getContentAsString()).isEmpty();
   }
 
   @Test
@@ -69,7 +69,7 @@ public class RoRSysAdminControllerMVCIT extends MVCTestBase {
             .perform(get(rorPublicUrl + "existingGlobalRoRID"))
             .andExpect(status().is2xxSuccessful())
             .andReturn();
-    assertEquals("", result.getResponse().getContentAsString());
+    assertThat(result.getResponse().getContentAsString()).isEmpty();
   }
 
   @Test
@@ -79,7 +79,7 @@ public class RoRSysAdminControllerMVCIT extends MVCTestBase {
             .perform(get(rorPublicUrl + "existingGlobalRoRName"))
             .andExpect(status().is2xxSuccessful())
             .andReturn();
-    assertEquals("", result.getResponse().getContentAsString());
+    assertThat(result.getResponse().getContentAsString()).isEmpty();
   }
 
   @Test
@@ -89,7 +89,7 @@ public class RoRSysAdminControllerMVCIT extends MVCTestBase {
             .perform(get(rorSysadminUrl + "existingGlobalRoRName"))
             .andExpect(status().is2xxSuccessful())
             .andReturn();
-    assertEquals("", result.getResponse().getContentAsString());
+    assertThat(result.getResponse().getContentAsString()).isEmpty();
   }
 
   @Test
@@ -129,9 +129,8 @@ public class RoRSysAdminControllerMVCIT extends MVCTestBase {
             .perform(get(rorSysadminUrl + "rorForID/" + validRorOne + 1))
             .andExpect(status().is2xxSuccessful())
             .andReturn();
-    assertEquals(
-        "https://ror.org/038xqyz771 is not a valid ROR",
-        result.getModelAndView().getModel().get("exceptionMessage"));
+    assertThat(result.getModelAndView().getModel())
+        .containsEntry("exceptionMessage", "https://ror.org/038xqyz771 is not a valid ROR");
   }
 
   @Test
@@ -165,11 +164,8 @@ public class RoRSysAdminControllerMVCIT extends MVCTestBase {
             .perform(post(rorSysadminUrl + "rorForID/" + validRorOne))
             .andExpect(status().is2xxSuccessful())
             .andReturn();
-    assertTrue(
-        result
-            .getResolvedException()
-            .getMessage()
-            .contains("Unauthorized role manipulation attempt"));
+    assertThat(result.getResolvedException().getMessage())
+        .contains("Unauthorized role manipulation attempt");
   }
 
   @Test
@@ -184,7 +180,7 @@ public class RoRSysAdminControllerMVCIT extends MVCTestBase {
             .perform(get(rorSysadminUrl + "existingGlobalRoRID"))
             .andExpect(status().is2xxSuccessful())
             .andReturn();
-    assertEquals("", result.getResponse().getContentAsString());
+    assertThat(result.getResponse().getContentAsString()).isEmpty();
   }
 
   @Test
@@ -196,42 +192,39 @@ public class RoRSysAdminControllerMVCIT extends MVCTestBase {
             .perform(delete(rorSysadminUrl + "rorForID"))
             .andExpect(status().is2xxSuccessful())
             .andReturn();
-    assertTrue(
-        result
-            .getResolvedException()
-            .getMessage()
-            .contains("Unauthorized role manipulation attempt"));
+    assertThat(result.getResolvedException().getMessage())
+        .contains("Unauthorized role manipulation attempt");
   }
 
   private void checkV2Country(JsonNode rorDetails) {
-    assertTrue(
-        rorDetails.get("locations").findValues("country_name", new ArrayList<>()).stream()
-            .map(n -> n.toString())
-            .collect(Collectors.toList())
-            .contains("\"United Kingdom\""));
+    assertThat(
+            rorDetails.get("locations").findValues("country_name", new ArrayList<>()).stream()
+                .map(n -> n.toString())
+                .collect(Collectors.toList()))
+        .contains("\"United Kingdom\"");
   }
 
   private void checkV2City(JsonNode rorDetails) {
-    assertTrue(
-        rorDetails.get("locations").findValues("name", new ArrayList<>()).stream()
-            .map(n -> n.toString())
-            .collect(Collectors.toList())
-            .contains("\"Edinburgh\""));
+    assertThat(
+            rorDetails.get("locations").findValues("name", new ArrayList<>()).stream()
+                .map(n -> n.toString())
+                .collect(Collectors.toList()))
+        .contains("\"Edinburgh\"");
   }
 
   private void checkV2Names(JsonNode rorDetails) {
-    assertTrue(
-        rorDetails.get("names").findValues("value", new ArrayList<>()).stream()
-            .map(n -> n.toString())
-            .collect(Collectors.toList())
-            .contains("\"Research Space\""));
+    assertThat(
+            rorDetails.get("names").findValues("value", new ArrayList<>()).stream()
+                .map(n -> n.toString())
+                .collect(Collectors.toList()))
+        .contains("\"Research Space\"");
   }
 
   private void checkV2Links(JsonNode rorDetails) {
-    assertTrue(
-        rorDetails.get("links").findValues("value", new ArrayList<>()).stream()
-            .map(n -> n.toString())
-            .collect(Collectors.toList())
-            .contains("\"https://www.researchspace.com\""));
+    assertThat(
+            rorDetails.get("links").findValues("value", new ArrayList<>()).stream()
+                .map(n -> n.toString())
+                .collect(Collectors.toList()))
+        .contains("\"https://www.researchspace.com\"");
   }
 }

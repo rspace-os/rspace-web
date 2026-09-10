@@ -1,7 +1,7 @@
 package com.researchspace.linkedelements;
 
 import static com.researchspace.core.util.FieldParserConstants.ATTACHMENT_CLASSNAME;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.researchspace.dao.EcatDocumentFileDao;
 import com.researchspace.model.EcatDocumentFile;
@@ -38,9 +38,11 @@ public class AttchmentConverterTest extends AbstractParserTest {
     Element toconvert = getElementToConvert(elementHTml, ATTACHMENT_CLASSNAME);
     Mockito.when(docDao.getSafeNull(3L)).thenReturn(Optional.of(attachment));
     attachmentConverter.jsoup2LinkableElement(contents, toconvert);
-    assertEquals(attachment, contents.getElements(EcatDocumentFile.class).getElements().get(0));
-    assertEquals(1, contents.getElements(EcatDocumentFile.class).getLinks().size());
-    assertEquals(1, contents.getElements(EcatDocumentFile.class).getPairs().size());
+    assertThat(contents.getElements(EcatDocumentFile.class).getElements())
+        .element(0)
+        .isEqualTo(attachment);
+    assertThat(contents.getElements(EcatDocumentFile.class).getLinks()).hasSize(1);
+    assertThat(contents.getElements(EcatDocumentFile.class).getPairs()).hasSize(1);
   }
 
   @Test
@@ -58,8 +60,10 @@ public class AttchmentConverterTest extends AbstractParserTest {
     Mockito.when(auditDao.getObjectForRevision(EcatDocumentFile.class, 3L, 24L))
         .thenReturn(new AuditedEntity<EcatDocumentFile>(attachment, 24L));
     attachmentConverter.jsoup2LinkableElement(contents, toconvert);
-    assertEquals(1, contents.getElements(EcatDocumentFile.class).getElements().size());
-    assertEquals(attachment, contents.getElements(EcatDocumentFile.class).getElements().get(0));
-    assertEquals(1, contents.getElements(EcatDocumentFile.class).getLinks().size());
+    assertThat(contents.getElements(EcatDocumentFile.class).getElements()).hasSize(1);
+    assertThat(contents.getElements(EcatDocumentFile.class).getElements())
+        .element(0)
+        .isEqualTo(attachment);
+    assertThat(contents.getElements(EcatDocumentFile.class).getLinks()).hasSize(1);
   }
 }

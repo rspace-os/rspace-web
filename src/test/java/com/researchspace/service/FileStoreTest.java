@@ -2,6 +2,7 @@ package com.researchspace.service;
 
 import static com.researchspace.service.FileDuplicateStrategy.AS_NEW;
 import static org.apache.commons.io.IOUtils.readLines;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -117,12 +118,12 @@ public class FileStoreTest extends SpringTransactionalTest {
 
     FileInputStream fis3 = new FileInputStream(resource2);
 
-    assertEquals(0, fileStoreMetaMgr.findProperties(wheres).size());
+    assertThat(fileStoreMetaMgr.findProperties(wheres)).isEmpty();
     URI uri3 = fileStore.save(fp2, fis3, "testText.txt", FileDuplicateStrategy.ERROR);
-    assertEquals(1, fileStoreMetaMgr.findProperties(wheres).size());
+    assertThat(fileStoreMetaMgr.findProperties(wheres)).hasSize(1);
 
     assertNotNull(uri3);
-    assertTrue(uri3.toString().contains("v2"));
+    assertThat(uri3.toString()).contains("v2");
     fis3.close();
 
     // update file content
@@ -173,7 +174,7 @@ public class FileStoreTest extends SpringTransactionalTest {
     assertTrue(fileStore.exists(fp));
     File found = fileStore.findFile(fp);
 
-    assertEquals(found.getName(), file.getName(), "found file isn't the same as original!");
+    assertThat(file).as("found file isn't the same as original!").hasName(found.getName());
 
     // change properties so doesn't exist...
     fp.setFileCategory("pdf2");
@@ -218,12 +219,12 @@ public class FileStoreTest extends SpringTransactionalTest {
     List<File> filestoreFileAndFolder = Arrays.asList(found, parentFolder);
     Optional<Integer> folderOnListRemovedFilesCount =
         fileStore.removeUserFilestoreFiles(filestoreFileAndFolder);
-    assertFalse(folderOnListRemovedFilesCount.isPresent());
+    assertThat(folderOnListRemovedFilesCount).isNotPresent();
 
     // let's try with just a file on a list
     List<File> filestoreFile = Arrays.asList(found);
     Optional<Integer> removedFilesCount = fileStore.removeUserFilestoreFiles(filestoreFile);
-    assertTrue(removedFilesCount.isPresent());
+    assertThat(removedFilesCount).isPresent();
     assertEquals(1, removedFilesCount.get().intValue());
     assertFalse(fileStore.exists(fp));
     assertTrue(fileStore.exists(fp2));
@@ -231,7 +232,7 @@ public class FileStoreTest extends SpringTransactionalTest {
     // subsequent remove does nothing
     Optional<Integer> subsequentRemovedFilesCount =
         fileStore.removeUserFilestoreFiles(filestoreFile);
-    assertTrue(subsequentRemovedFilesCount.isPresent());
+    assertThat(subsequentRemovedFilesCount).isPresent();
     assertEquals(0, subsequentRemovedFilesCount.get().intValue());
   }
 }

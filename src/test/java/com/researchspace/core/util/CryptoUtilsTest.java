@@ -1,8 +1,8 @@
 package com.researchspace.core.util;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
 import org.junit.jupiter.api.Test;
@@ -14,8 +14,8 @@ public class CryptoUtilsTest {
     for (int i = 20; i < 200; ++i) {
       byte[] key1 = CryptoUtils.generateRandomKey(i);
       byte[] key2 = CryptoUtils.generateRandomKey(i);
-      assertTrue(key1.length * 8 >= i);
-      assertTrue(key2.length * 8 >= i);
+      assertThat(key1.length * 8).isGreaterThanOrEqualTo(i);
+      assertThat(key2.length * 8).isGreaterThanOrEqualTo(i);
       assertFalse(Arrays.equals(key1, key2));
     }
   }

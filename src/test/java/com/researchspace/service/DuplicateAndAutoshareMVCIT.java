@@ -1,6 +1,7 @@
 package com.researchspace.service;
 
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -126,10 +127,9 @@ public class DuplicateAndAutoshareMVCIT extends MVCTestBase {
     userCreateDocumentAndDuplicate(nikdenik4); // HTTP call
 
     // THEN
-    assertEquals(
-        initialSize + 1,
-        recordSharingManager.getSharedRecordsForUser(nikdenik4).size(),
-        "The file has not been autoshared after being duplicated");
+    assertThat(recordSharingManager.getSharedRecordsForUser(nikdenik4))
+        .as("The file has not been autoshared after being duplicated")
+        .hasSize(initialSize + 1);
   }
 
   private void createUsersAndsGroups() throws Exception {

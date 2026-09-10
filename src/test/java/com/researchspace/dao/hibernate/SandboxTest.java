@@ -1,5 +1,6 @@
 package com.researchspace.dao.hibernate;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -99,7 +100,7 @@ public class SandboxTest extends SpringTransactionalTest {
                 List.of(
                     forwardSlashPath.getRelPath().replace("/", ""), backslashPathWithoutSeparators))
             .list();
-    assertEquals(2, retrievedPaths.size());
+    assertThat(retrievedPaths).hasSize(2);
   }
 
   @Test

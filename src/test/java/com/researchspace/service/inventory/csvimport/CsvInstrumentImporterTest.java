@@ -1,10 +1,9 @@
 package com.researchspace.service.inventory.csvimport;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
@@ -61,14 +60,14 @@ public class CsvInstrumentImporterTest extends SpringTransactionalTest {
 
     assertNotNull(parseResult);
     assertEquals(2, parseResult.getRowsCount());
-    assertEquals(2, parseResult.getColumnNames().size());
-    assertTrue(parseResult.getColumnNames().contains("Serial Number"));
-    assertTrue(parseResult.getColumnNames().contains("Calibration"));
+    assertThat(parseResult.getColumnNames()).hasSize(2);
+    assertThat(parseResult.getColumnNames()).contains("Serial Number");
+    assertThat(parseResult.getColumnNames()).contains("Calibration");
 
     ApiInstrumentTemplatePost suggestedTemplate = parseResult.getTemplateInfo();
     assertNotNull(suggestedTemplate);
     assertEquals("microscopes", suggestedTemplate.getName());
-    assertEquals(2, suggestedTemplate.getFields().size());
+    assertThat(suggestedTemplate.getFields()).hasSize(2);
   }
 
   @Test
@@ -82,7 +81,7 @@ public class CsvInstrumentImporterTest extends SpringTransactionalTest {
             IllegalArgumentException.class,
             () -> instrumentCsvImporter.parseInstrumentsCsvFile("e.csv", empty, user));
 
-    assertTrue(iae.getMessage().contains("CSV file seems to be empty"), iae.getMessage());
+    assertThat(iae.getMessage()).as(iae.getMessage()).contains("CSV file seems to be empty");
   }
 
   @Test
@@ -108,10 +107,10 @@ public class CsvInstrumentImporterTest extends SpringTransactionalTest {
 
     instrumentCsvImporter.readCsvIntoImportResult(csv, mappings, importResult, user);
 
-    assertEquals(2, instrumentResult.getResults().size());
+    assertThat(instrumentResult.getResults()).hasSize(2);
     ApiInstrument first = (ApiInstrument) instrumentResult.getResults().get(0).getRecord();
     assertEquals("Microscope-A", first.getName());
-    assertEquals(1, first.getFields().size());
+    assertThat(first.getFields()).hasSize(1);
     assertEquals("sn-1", first.getFields().get(0).getContent());
     assertEquals(template.getId(), first.getTemplateId());
   }
@@ -134,9 +133,9 @@ public class CsvInstrumentImporterTest extends SpringTransactionalTest {
     instrumentCsvImporter.readCsvIntoImportResult(csv, mappings, importResult, user);
 
     // The row should land as an error, not a successful result
-    assertFalse(instrumentResult.getResults().isEmpty());
-    assertTrue(
-        instrumentResult.getResults().stream().anyMatch(r -> r.getError() != null),
-        "expected at least one error result for sample-only mapping");
+    assertThat(instrumentResult.getResults()).isNotEmpty();
+    assertThat(instrumentResult.getResults())
+        .as("expected at least one error result for sample-only mapping")
+        .anyMatch(r -> r.getError() != null);
   }
 }

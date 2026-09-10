@@ -1,5 +1,6 @@
 package com.researchspace.model.comms;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -8,7 +9,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,8 +27,7 @@ public class MessageOrRequestTest {
     for (MessageType mt : MessageType.values()) {
       assertFalse(StringUtils.isBlank(mt.getLabel()));
       if (mt.equals(MessageType.REQUEST_EXTERNAL_SHARE)) {
-        assertFalse(
-            ArrayUtils.contains(mt.getValidStatusesByRecipient(), CommunicationStatus.REPLIED));
+        assertThat(mt.getValidStatusesByRecipient()).doesNotContain(CommunicationStatus.REPLIED);
       }
     }
   }
@@ -109,7 +108,7 @@ public class MessageOrRequestTest {
     String tooLongMessage = maxLengthMessage + testShortMessage;
     mor.setMessage(tooLongMessage);
     assertNotEquals(tooLongMessage, mor.getMessage());
-    assertEquals(Communication.MESSAGE_COLUMN_LENGTH, mor.getMessage().length());
-    assertTrue(mor.getMessage().endsWith("..."));
+    assertThat(mor.getMessage()).hasSize(Communication.MESSAGE_COLUMN_LENGTH);
+    assertThat(mor.getMessage()).endsWith("...");
   }
 }

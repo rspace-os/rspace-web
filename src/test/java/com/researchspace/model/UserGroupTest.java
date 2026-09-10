@@ -1,5 +1,6 @@
 package com.researchspace.model;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -58,7 +59,7 @@ public class UserGroupTest {
     usergroup2.setUser(u2);
     set.add(usergroup2);
     set.add(usergroup);
-    assertEquals(2, set.size());
+    assertThat(set).hasSize(2);
   }
 
   @Test
@@ -68,10 +69,10 @@ public class UserGroupTest {
     assertEquals(ug1, ug2);
     Set<UserGroup> set = new HashSet<>();
     set.addAll(TransformerUtils.toList(ug1, ug2));
-    assertEquals(1, set.size());
+    assertThat(set).hasSize(1);
     // group is null
     ug1.setUser(u);
     ug2.setUser(u);
-    assertEquals(1, set.size());
+    assertThat(set).hasSize(1);
   }
 }

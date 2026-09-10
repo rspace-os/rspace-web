@@ -1,6 +1,6 @@
 package com.researchspace.webapp.integrations.protocolsio;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -134,6 +134,6 @@ public class PIOComponentDiscoverabilityIT {
             log.warn("Unknown Component: {}", component);
           });
     }
-    assertTrue(unknownComponents.isEmpty());
+    assertThat(unknownComponents).isEmpty();
   }
 }

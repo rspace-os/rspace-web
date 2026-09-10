@@ -10,6 +10,7 @@ import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTest
 import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.WF_EXT_ID;
 import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.WORKFLOWTHATWASUSED;
 import static com.researchspace.model.externalWorkflows.ExternalWorkFlowData.ExternalService.GALAXY;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
@@ -106,8 +107,8 @@ public class ArchiveExternalWorkFlowDataTest {
     assertEquals(DEFAULT_WORKFLOW_ID, invocation.getWorkFlowId());
 
     assertEquals(DEFAULT_INVOCATION_ID, invocation.getId());
-    assertEquals(1, invocations.size());
-    assertEquals(1, invocation.getDataIds().size());
+    assertThat(invocations).hasSize(1);
+    assertThat(invocation.getDataIds()).hasSize(1);
     assertEquals(1, invocation.getDataIds().iterator().next().longValue());
     return invocation;
   }

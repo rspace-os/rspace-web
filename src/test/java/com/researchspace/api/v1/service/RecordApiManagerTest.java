@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -67,10 +68,9 @@ public class RecordApiManagerTest extends SpringTransactionalTest {
     Long docId = recordApiMgr.createNewDocument(apiDoc, anyForm, admin);
     StructuredDocument newCreatedDoc = (StructuredDocument) recordMgr.get(docId);
 
-    assertEquals(2, newCreatedDoc.getParentFolders().size());
-    assertTrue(newCreatedDoc.getParentFolders().stream().anyMatch(f -> f.equals(sharedFolder)));
-    assertTrue(
-        newCreatedDoc.getParentFolders().stream().anyMatch(f -> f.getName().equals("Api Inbox")));
+    assertThat(newCreatedDoc.getParentFolders()).hasSize(2);
+    assertThat(newCreatedDoc.getParentFolders()).anyMatch(f -> f.equals(sharedFolder));
+    assertThat(newCreatedDoc.getParentFolders()).anyMatch(f -> f.getName().equals("Api Inbox"));
   }
 
   @Test
@@ -104,10 +104,9 @@ public class RecordApiManagerTest extends SpringTransactionalTest {
     Long docId = recordApiMgr.createNewDocument(apiDoc, anyForm, admin);
     StructuredDocument newCreatedDoc = (StructuredDocument) recordMgr.get(docId);
 
-    assertEquals(1, newCreatedDoc.getParentFolders().size());
-    assertTrue(newCreatedDoc.getParentFolders().stream().anyMatch(f -> f.equals(sharedNotebook)));
-    assertTrue(
-        newCreatedDoc.getParentFolders().stream().anyMatch(f -> f.getName().equals("notebook")));
+    assertThat(newCreatedDoc.getParentFolders()).hasSize(1);
+    assertThat(newCreatedDoc.getParentFolders()).anyMatch(f -> f.equals(sharedNotebook));
+    assertThat(newCreatedDoc.getParentFolders()).anyMatch(f -> f.getName().equals("notebook"));
   }
 
   @Test

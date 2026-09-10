@@ -1,5 +1,6 @@
 package com.researchspace.service.metadata;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -35,9 +36,9 @@ class DataCiteYamlSidecarFileGeneratorTest {
 
     GeneratedSidecarFile result = generator.generate(ctx);
 
-    assertTrue(
-        result.getFilename().endsWith(".sidecar.yaml"),
-        "sidecar filename should end with .sidecar.yaml, was: " + result.getFilename());
+    assertThat(result.getFilename())
+        .as("sidecar filename should end with .sidecar.yaml, was: " + result.getFilename())
+        .endsWith(".sidecar.yaml");
 
     JsonNode root = yaml.readTree(result.getContent());
     assertEquals("ltds-datacite4.3", root.path("schemaVersion").path("value").asText());
@@ -63,7 +64,7 @@ class DataCiteYamlSidecarFileGeneratorTest {
     int yearAfter = Year.now().getValue();
 
     assertEquals("Dataset", root.path("types").path("resourceTypeGeneral").path("value").asText());
-    assertEquals("", root.path("types").path("resourceType").path("value").asText());
+    assertThat(root.path("types").path("resourceType").path("value").asText()).isEmpty();
     assertEquals(
         "Leibniz Supercomputing Centre",
         root.path("publisher").path("name").path("value").asText());
@@ -185,7 +186,7 @@ class DataCiteYamlSidecarFileGeneratorTest {
 
     JsonNode related = yaml.readTree(generator.generate(ctx).getContent()).path("relatedItems");
 
-    assertEquals(2, related.size());
+    assertThat(related).hasSize(2);
     JsonNode first = related.path(0);
     assertEquals("Dataset", first.path("relatedItemType").path("value").asText());
     assertEquals("HasPart", first.path("relationType").path("value").asText());

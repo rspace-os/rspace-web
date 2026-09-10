@@ -1,6 +1,6 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.researchspace.testutils.SpringTransactionalTest;
 import jakarta.servlet.http.HttpServletRequest;
@@ -25,6 +25,6 @@ public class BrowserCacheAdviceInterceptorTest extends SpringTransactionalTest {
     ServletInvocableHandlerMethod handler =
         new ServletInvocableHandlerMethod(sysAdminCtrller, method);
     interceptor.postHandle(request, response, handler, null);
-    assertTrue(response.getHeader("Expires").contains("1970"), response.getHeader("Expires"));
+    assertThat(response.getHeader("Expires")).as(response.getHeader("Expires")).contains("1970");
   }
 }

@@ -1,6 +1,7 @@
 package com.researchspace.dao;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -67,7 +68,7 @@ public class RecordSharingDaoTest extends BaseDaoTestCase {
         anyRecord,
         rShareDao.findRecordsSharedWithUserOrGroup(grp.getId(), toList(anyRecord.getId())).get(0));
     // unshared record id returns empty set
-    assertEquals(0, rShareDao.findRecordsSharedWithUserOrGroup(grp.getId(), toList(-200L)).size());
+    assertThat(rShareDao.findRecordsSharedWithUserOrGroup(grp.getId(), toList(-200L))).isEmpty();
   }
 
   @Test
@@ -87,22 +88,21 @@ public class RecordSharingDaoTest extends BaseDaoTestCase {
     RecordGroupSharing rgs2 = new RecordGroupSharing(grp2, anyRecord);
     rShareDao.save(rgs2);
 
-    assertEquals(1, rShareDao.getRecordsSharedByUserToGroup(user, grp2).size());
-    assertEquals(1, rShareDao.getRecordsSharedByUserToGroup(user, grp).size());
+    assertThat(rShareDao.getRecordsSharedByUserToGroup(user, grp2)).hasSize(1);
+    assertThat(rShareDao.getRecordsSharedByUserToGroup(user, grp)).hasSize(1);
 
     // but only 1 record shared
-    assertEquals(1, rShareDao.getSharedRecordsForUser(user).size());
+    assertThat(rShareDao.getSharedRecordsForUser(user)).hasSize(1);
 
     // when asked about all users or groups with access should return both
-    assertEquals(2, rShareDao.getUsersOrGroupsWithRecordAccess(anyRecord.getId()).size());
+    assertThat(rShareDao.getUsersOrGroupsWithRecordAccess(anyRecord.getId())).hasSize(2);
 
     // when asked about sharing status should also return both groups
-    assertEquals(2, rShareDao.getRecordGroupSharingsForRecord(anyRecord.getId()).size());
+    assertThat(rShareDao.getRecordGroupSharingsForRecord(anyRecord.getId())).hasSize(2);
 
     // confirm multi-id method variant
-    assertEquals(
-        2, rShareDao.getRecordGroupSharingsForRecordIds(List.of(anyRecord.getId())).size());
-    assertEquals(0, rShareDao.getRecordGroupSharingsForRecordIds(List.of()).size());
+    assertThat(rShareDao.getRecordGroupSharingsForRecordIds(List.of(anyRecord.getId()))).hasSize(2);
+    assertThat(rShareDao.getRecordGroupSharingsForRecordIds(List.of())).isEmpty();
   }
 
   @Test
@@ -173,13 +173,8 @@ public class RecordSharingDaoTest extends BaseDaoTestCase {
 
   private void assertFirstHitNameStartsWith(
       PaginationCriteria<RecordGroupSharing> pg, String prefix) {
-    assertTrue(
-        rShareDao
-            .listSharedRecordsForUser(user, pg)
-            .getFirstResult()
-            .getShared()
-            .getName()
-            .startsWith(prefix));
+    assertThat(rShareDao.listSharedRecordsForUser(user, pg).getFirstResult().getShared().getName())
+        .startsWith(prefix);
   }
 
   @Test
@@ -194,14 +189,14 @@ public class RecordSharingDaoTest extends BaseDaoTestCase {
     List<Long> recordIds =
         toList(r).stream().map(new ObjectToIdPropertyTransformer()).collect(Collectors.toList());
     List<Long> ids = rShareDao.findSharedRecords(recordIds);
-    assertTrue(ids.isEmpty());
+    assertThat(ids).isEmpty();
 
     RecordGroupSharing rgs2 = new RecordGroupSharing(grp2, r);
     rShareDao.save(rgs2);
     assertNotNull(rShareDao.get(rgs2.getId()));
     // assertEquals(1, rShareDao.getRecordsSharedByGroup(grp2.getId()));
     ids = rShareDao.findSharedRecords(recordIds);
-    assertTrue(ids.size() == 1);
+    assertThat(ids).hasSize(1);
     assertEquals(ids.get(0), r.getId());
   }
 }

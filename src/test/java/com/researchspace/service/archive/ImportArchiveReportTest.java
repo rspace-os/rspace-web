@@ -1,5 +1,6 @@
 package com.researchspace.service.archive;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -21,7 +22,7 @@ public class ImportArchiveReportTest {
     assertFalse(report.isValidationComplete());
     assertFalse(report.isSuccessful());
     assertFalse(report.isValidationSuccessful());
-    assertTrue(report.getImportedRecords().isEmpty());
+    assertThat(report.getImportedRecords()).isEmpty();
     assertFalse(report.getErrorList().hasErrorMessages());
   }
 

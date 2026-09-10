@@ -1,6 +1,6 @@
 package com.researchspace.service;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -29,39 +29,39 @@ class FilestoreAclCheckerTest {
 
   @Test
   void parseList_nullOrEmpty_returnsEmpty() {
-    assertTrue(FilestoreAclChecker.parseList(null).isEmpty());
-    assertTrue(FilestoreAclChecker.parseList("").isEmpty());
-    assertTrue(FilestoreAclChecker.parseList("   ").isEmpty());
+    assertThat(FilestoreAclChecker.parseList(null)).isEmpty();
+    assertThat(FilestoreAclChecker.parseList("")).isEmpty();
+    assertThat(FilestoreAclChecker.parseList("   ")).isEmpty();
   }
 
   @Test
   void parseList_singleToken() {
     Set<String> tokens = FilestoreAclChecker.parseList("alice");
-    assertEquals(1, tokens.size());
-    assertTrue(tokens.contains("alice"));
+    assertThat(tokens).hasSize(1);
+    assertThat(tokens).contains("alice");
   }
 
   @Test
   void parseList_multipleTokensTrimsWhitespace() {
     Set<String> tokens = FilestoreAclChecker.parseList("  alice ,  bob  ");
-    assertEquals(2, tokens.size());
-    assertTrue(tokens.contains("alice"));
-    assertTrue(tokens.contains("bob"));
+    assertThat(tokens).hasSize(2);
+    assertThat(tokens).contains("alice");
+    assertThat(tokens).contains("bob");
   }
 
   @Test
   void parseList_dropsEmptyTokens() {
     Set<String> tokens = FilestoreAclChecker.parseList("alice,,bob,");
-    assertEquals(2, tokens.size());
-    assertTrue(tokens.contains("alice"));
-    assertTrue(tokens.contains("bob"));
+    assertThat(tokens).hasSize(2);
+    assertThat(tokens).contains("alice");
+    assertThat(tokens).contains("bob");
   }
 
   @Test
   void parseList_everyoneSentinel() {
     Set<String> tokens = FilestoreAclChecker.parseList("*");
-    assertEquals(1, tokens.size());
-    assertTrue(tokens.contains("*"));
+    assertThat(tokens).hasSize(1);
+    assertThat(tokens).contains("*");
   }
 
   // --- canRead / canWrite, authType=NONE ---

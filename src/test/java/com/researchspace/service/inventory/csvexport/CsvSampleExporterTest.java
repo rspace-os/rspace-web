@@ -1,7 +1,7 @@
 package com.researchspace.service.inventory.csvexport;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.archive.ExportScope;
 import com.researchspace.core.util.ISearchResults;
@@ -52,7 +52,7 @@ public class CsvSampleExporterTest extends SpringTransactionalTest {
     List<String> csvColumnNames =
         sampleExporter.writeSampleCsvHeaderIntoOutput(
             List.of(testSample), exportMode, null, outputStream);
-    assertEquals(14, csvColumnNames.size());
+    assertThat(csvColumnNames).hasSize(14);
     String csvHeaderLineForSubSamples = outputStream.toString();
     String expectedColumnNamesLine =
         "Global ID,Name,Tags,Owner,Description,"
@@ -88,20 +88,21 @@ public class CsvSampleExporterTest extends SpringTransactionalTest {
     List<String> csvColumnNames =
         sampleExporter.writeSampleCsvHeaderIntoOutput(
             exampleSamples.getResults(), exportMode, null, outputStream);
-    assertEquals(23, csvColumnNames.size());
+    assertThat(csvColumnNames).hasSize(23);
     String csvHeaderLineForSamples = outputStream.toString();
     String expectedHeaderLineStart =
         "Global ID,Name,Tags,Owner,Description,Parent Template (Global ID),Parent Template"
             + " (name),Total Quantity,Expiry Date,Sample Source,Storage Temperature (min),Storage"
             + " Temperature (max),\"MyNumber (NUMBER, IT";
-    assertTrue(
-        csvHeaderLineForSamples.startsWith(expectedHeaderLineStart), csvHeaderLineForSamples);
+    assertThat(csvHeaderLineForSamples)
+        .as(csvHeaderLineForSamples)
+        .startsWith(expectedHeaderLineStart);
 
     String csvFragmentForSamples =
         sampleExporter.getCsvFragmentForSamples(exampleSamples.getResults(), exportMode).toString();
-    assertTrue(csvFragmentForSamples.startsWith(expectedHeaderLineStart), csvFragmentForSamples);
-    assertTrue(csvFragmentForSamples.contains(",Basic Sample,"), csvFragmentForSamples);
-    assertTrue(csvFragmentForSamples.contains(",Complex Sample #1,"), csvFragmentForSamples);
+    assertThat(csvFragmentForSamples).as(csvFragmentForSamples).startsWith(expectedHeaderLineStart);
+    assertThat(csvFragmentForSamples).as(csvFragmentForSamples).contains(",Basic Sample,");
+    assertThat(csvFragmentForSamples).as(csvFragmentForSamples).contains(",Complex Sample #1,");
   }
 
   @Test
@@ -111,9 +112,9 @@ public class CsvSampleExporterTest extends SpringTransactionalTest {
         sampleExporter
             .getCsvCommentFragmentForSamples(ExportScope.USER, CsvExportMode.COMPACT, user)
             .toString();
-    assertTrue(csvComment.startsWith("# " + sampleExporter.getCsvCommentHeader()), csvComment);
-    assertTrue(csvComment.contains("# Exported content: SAMPLES"), csvComment);
-    assertTrue(csvComment.contains("# Export scope: USER"), csvComment);
-    assertTrue(csvComment.contains("# Export mode: COMPACT"), csvComment);
+    assertThat(csvComment).as(csvComment).startsWith("# " + sampleExporter.getCsvCommentHeader());
+    assertThat(csvComment).as(csvComment).contains("# Exported content: SAMPLES");
+    assertThat(csvComment).as(csvComment).contains("# Export scope: USER");
+    assertThat(csvComment).as(csvComment).contains("# Export mode: COMPACT");
   }
 }

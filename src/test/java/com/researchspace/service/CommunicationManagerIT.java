@@ -2,6 +2,7 @@ package com.researchspace.service;
 
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static com.researchspace.core.util.TransformerUtils.toSet;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -207,8 +208,8 @@ public class CommunicationManagerIT extends RealTransactionSpringTestBase {
 
     User p1updated = userMgr.get(pi1.getId());
     User p2updated = userMgr.get(pi2.getId());
-    assertEquals(2, p1updated.getGroups().size());
-    assertEquals(2, p2updated.getGroups().size());
+    assertThat(p1updated.getGroups()).hasSize(2);
+    assertThat(p2updated.getGroups()).hasSize(2);
 
     // check that PIs are PIs in their collab groups as well
     Set<Group> allGroups = p1updated.getGroups();
@@ -230,8 +231,8 @@ public class CommunicationManagerIT extends RealTransactionSpringTestBase {
     grpMgr.removeGroup(collabGrpId, sysadmin);
     User p1updated1 = userMgr.get(pi1.getId());
     User p2updated1 = userMgr.get(pi2.getId());
-    assertEquals(1, p1updated1.getGroups().size());
-    assertEquals(1, p2updated1.getGroups().size());
+    assertThat(p1updated1.getGroups()).hasSize(1);
+    assertThat(p2updated1.getGroups()).hasSize(1);
   }
 
   @Test
@@ -569,7 +570,7 @@ public class CommunicationManagerIT extends RealTransactionSpringTestBase {
             piUser.getUsername(),
             null,
             (CommunicationTargetFinderPolicy) applicationContext.getBean("allUserPolicy"));
-    assertEquals(expectedUsersCount, recips.size());
+    assertThat(recips).hasSize(expectedUsersCount);
 
     createRootFolderForUsers(other, other2);
     Group grp1 = createGroupForUsersWithDefaultPi(piUser, other);
@@ -586,7 +587,7 @@ public class CommunicationManagerIT extends RealTransactionSpringTestBase {
 
     // we can send message about this record to other groups menbers of the
     // record's owner + the owner themselves
-    assertEquals(2, recips.size());
+    assertThat(recips).hasSize(2);
 
     // now let's change group permission on record to read only - now none
     // else in the group can actually make changes to a record, so shouldn't
@@ -601,14 +602,14 @@ public class CommunicationManagerIT extends RealTransactionSpringTestBase {
         communicationMgr.getPotentialRecipientsOfRequest(
             record, MessageType.REQUEST_RECORD_REVIEW, piUser.getUsername(), null, null);
 
-    assertEquals(1, recips3.size());
+    assertThat(recips3).hasSize(1);
 
     // this is a general message, we can send it to anyone in any of our groups.
     Set<User> recips2 =
         communicationMgr.getPotentialRecipientsOfRequest(
             null, MessageType.SIMPLE_MESSAGE, piUser.getUsername(), null, null);
 
-    assertEquals(2, recips2.size());
+    assertThat(recips2).hasSize(2);
   }
 
   @Test
@@ -619,11 +620,11 @@ public class CommunicationManagerIT extends RealTransactionSpringTestBase {
     communicationMgr.systemNotify(
         NotificationType.PROCESS_FAILED, "msg", sender.getUsername(), false);
     StringAppenderForTestLogging log = configureTestLogger(DevBroadCaster.getLogger());
-    assertTrue(log.logContents.isEmpty());
+    assertThat(log.logContents).isEmpty();
 
     communicationMgr.systemNotify(
         NotificationType.PROCESS_FAILED, "msg", sender.getUsername(), true);
-    assertFalse(log.logContents.isEmpty());
+    assertThat(log.logContents).isNotEmpty();
   }
 
   @Test

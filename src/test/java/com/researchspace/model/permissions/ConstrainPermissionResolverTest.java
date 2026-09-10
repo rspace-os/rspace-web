@@ -1,5 +1,6 @@
 package com.researchspace.model.permissions;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -76,7 +77,7 @@ public class ConstrainPermissionResolverTest {
   public void testResolvePermissionWithIds() {
     ConstraintBasedPermission p = resolver.resolvePermission(TEST_STRING2);
     IdConstraint idConstraint = p.getIdConstraint();
-    assertEquals(4, idConstraint.getId().size());
+    assertThat(idConstraint.getId()).hasSize(4);
   }
 
   @Test

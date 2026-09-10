@@ -1,5 +1,6 @@
 package com.researchspace.dao.hibernate;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -42,11 +43,12 @@ public class TableIdGeneratorConfigTest extends BaseDaoTestCase {
                 offenders.add(descriptor.getEntityName());
               }
             });
-    assertTrue(
-        offenders.isEmpty(),
-        "Entities allocating ids from the shared \"default\" segment (add a named @TableGenerator"
-            + " to each): "
-            + offenders);
+    assertThat(offenders)
+        .as(
+            "Entities allocating ids from the shared \"default\" segment (add a named"
+                + " @TableGenerator to each): "
+                + offenders)
+        .isEmpty();
   }
 
   @Test

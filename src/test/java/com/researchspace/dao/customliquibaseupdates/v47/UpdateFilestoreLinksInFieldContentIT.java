@@ -1,9 +1,7 @@
 package com.researchspace.dao.customliquibaseupdates.v47;
 
 import static com.researchspace.dao.customliquibaseupdates.v47.UpdateFilestoreLinksInFieldContent.OLD_LINK_MATCHER;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.researchspace.dao.customliquibaseupdates.AbstractDBHelpers;
 import com.researchspace.model.User;
@@ -68,7 +66,7 @@ public class UpdateFilestoreLinksInFieldContentIT extends AbstractDBHelpers {
     openTransaction();
     List<TextField> textFieldsWithLinks = getAllTextFieldsWithLinks(OLD_LINK_MATCHER);
     commitTransaction();
-    assertEquals(initTextFields.size() + 2, textFieldsWithLinks.size());
+    assertThat(textFieldsWithLinks).hasSize(initTextFields.size() + 2);
 
     // call the updater
     updater.setUp();
@@ -91,12 +89,14 @@ public class UpdateFilestoreLinksInFieldContentIT extends AbstractDBHelpers {
   }
 
   private void assertOldStyleLink(String fieldContent) {
-    assertTrue(fieldContent.contains("<a class=\"nfs_file\""), fieldContent);
-    assertFalse(fieldContent.contains("<a class=\"nfs_file mceNonEditable\""), fieldContent);
+    assertThat(fieldContent).as(fieldContent).contains("<a class=\"nfs_file\"");
+    assertThat(fieldContent)
+        .as(fieldContent)
+        .doesNotContain("<a class=\"nfs_file mceNonEditable\"");
   }
 
   private void assertNewStyleLink(String fieldContent) {
-    assertFalse(fieldContent.contains("<a class=\"nfs_file\""), fieldContent);
-    assertTrue(fieldContent.contains("<a class=\"nfs_file mceNonEditable\""), fieldContent);
+    assertThat(fieldContent).as(fieldContent).doesNotContain("<a class=\"nfs_file\"");
+    assertThat(fieldContent).as(fieldContent).contains("<a class=\"nfs_file mceNonEditable\"");
   }
 }

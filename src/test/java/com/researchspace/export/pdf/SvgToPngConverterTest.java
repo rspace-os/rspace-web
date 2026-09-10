@@ -1,7 +1,6 @@
 package com.researchspace.export.pdf;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.TestRunnerController;
@@ -29,9 +28,9 @@ public class SvgToPngConverterTest {
     File tempFile = File.createTempFile("svgconversiontest", ".png");
     OutputStream ostream = new FileOutputStream(tempFile);
     new SvgToPngConverter().convert(SIMPLEST_SVG, ostream);
-    assertTrue(
-        SIMPLEST_SVG_CONVERTED_LENGTH <= tempFile.length(),
-        "unexpected .png file size after conversion from .svg");
+    assertThat(tempFile.length())
+        .as("unexpected .png file size after conversion from .svg")
+        .isGreaterThanOrEqualTo((long) SIMPLEST_SVG_CONVERTED_LENGTH);
   }
 
   @Test
@@ -41,7 +40,9 @@ public class SvgToPngConverterTest {
 
     OutputStream ostream = new FileOutputStream(tempFile);
     new SvgToPngConverter().convert(svg, ostream);
-    assertTrue(475 <= tempFile.length(), "unexpected .png file size after conversion from .svg");
+    assertThat(tempFile.length())
+        .as("unexpected .png file size after conversion from .svg")
+        .isGreaterThanOrEqualTo(475L);
   }
 
   @Test
@@ -51,7 +52,9 @@ public class SvgToPngConverterTest {
 
     OutputStream ostream = new FileOutputStream(tempFile);
     new SvgToPngConverter().convert(svg, ostream);
-    assertTrue(7883 <= tempFile.length(), "unexpected .png file size after conversion from .svg");
+    assertThat(tempFile.length())
+        .as("unexpected .png file size after conversion from .svg")
+        .isGreaterThanOrEqualTo(7883L);
   }
 
   @Test
@@ -59,9 +62,9 @@ public class SvgToPngConverterTest {
 
     String html = RSpaceTestUtils.loadTextResourceFromPdfDir("basicWithSvgObject.html");
     String expectedImg = "<img src=\"simpleEquation.png\" width=\"216\" height=\"42\" />\n  </div>";
-    assertFalse(html.contains(expectedImg));
+    assertThat(html).doesNotContain(expectedImg);
 
     html = new SvgToPngConverter().replaceSvgObjectWithImg(html);
-    assertTrue(html.contains(expectedImg), "expected img tag, but was: " + html);
+    assertThat(html).as("expected img tag, but was: " + html).contains(expectedImg);
   }
 }

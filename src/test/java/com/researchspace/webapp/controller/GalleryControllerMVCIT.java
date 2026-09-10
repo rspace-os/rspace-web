@@ -4,6 +4,7 @@ import static com.researchspace.core.util.MediaUtils.CHEMISTRY_MEDIA_FLDER_NAME;
 import static com.researchspace.core.util.MediaUtils.DOCUMENT_MEDIA_FLDER_NAME;
 import static com.researchspace.core.util.MediaUtils.IMAGES_MEDIA_FLDER_NAME;
 import static com.researchspace.testutils.RSpaceTestUtils.getAnyPdf;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -133,8 +134,8 @@ public class GalleryControllerMVCIT extends MVCTestBase {
             .andExpect(status().isOk())
             .andReturn();
     ModelMap modelMap = result.getModelAndView().getModelMap();
-    assertEquals(audioFolderId, modelMap.get("currentFolderId"));
-    assertEquals(MediaUtils.AUDIO_MEDIA_FLDER_NAME, modelMap.get("mediaType"));
+    assertThat(modelMap).containsEntry("currentFolderId", audioFolderId);
+    assertThat(modelMap).containsEntry("mediaType", MediaUtils.AUDIO_MEDIA_FLDER_NAME);
     assertNull(result.getResolvedException());
   }
 
@@ -154,8 +155,8 @@ public class GalleryControllerMVCIT extends MVCTestBase {
             .andReturn();
 
     ModelMap modelMap = result.getModelAndView().getModelMap();
-    assertEquals(imageFolderId, modelMap.get("currentFolderId"));
-    assertEquals(MediaUtils.IMAGES_MEDIA_FLDER_NAME, modelMap.get("mediaType"));
+    assertThat(modelMap).containsEntry("currentFolderId", imageFolderId);
+    assertThat(modelMap).containsEntry("mediaType", MediaUtils.IMAGES_MEDIA_FLDER_NAME);
     assertNull(result.getResolvedException());
   }
 
@@ -454,7 +455,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
 
     List<RSChemElement> chemElements =
         rsChemElementManager.getRSChemElementsLinkedToFile(chemInfo.getId(), user);
-    assertEquals(1, chemElements.size());
+    assertThat(chemElements).hasSize(1);
 
     // upload second picture file, but for the same id
     MockMultipartFile mf2 =
@@ -479,7 +480,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
 
     List<RSChemElement> chemsAfterNewVersion =
         rsChemElementManager.getRSChemElementsLinkedToFile(chemInfo.getId(), user);
-    assertEquals(1, chemsAfterNewVersion.size());
+    assertThat(chemsAfterNewVersion).hasSize(1);
 
     // check updated media file details
     assertEquals(chemInfo.getId(), updatedChemInfo.getId());
@@ -612,7 +613,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
     StructuredDocument doc = createBasicDocumentInRootFolderWithText(user, "any");
     EcatDocumentFile attachment =
         addAttachmentDocumentToField(getAnyPdf(), doc.getFields().get(0), user);
-    assertEquals(1, mediaMgr.getIdsOfLinkedDocuments(attachment.getId(), user).size());
+    assertThat(mediaMgr.getIdsOfLinkedDocuments(attachment.getId(), user)).hasSize(1);
     Field updated = fieldMgr.getWithLoadedMediaLinks(doc.getFields().get(0).getId(), user).get();
 
     doInTransaction(
@@ -620,19 +621,19 @@ public class GalleryControllerMVCIT extends MVCTestBase {
           removeAttachmentFromField(attachment, updated, user);
         });
     // don't show linked docs once link deleted from field
-    assertEquals(0, mediaMgr.getIdsOfLinkedDocuments(attachment.getId(), user).size());
+    assertThat(mediaMgr.getIdsOfLinkedDocuments(attachment.getId(), user)).isEmpty();
 
     EcatDocumentFile attachment2 =
         addAttachmentDocumentToField(
             RSpaceTestUtils.getAnyAttachment(), doc.getFields().get(0), user);
 
-    assertEquals(1, mediaMgr.getIdsOfLinkedDocuments(attachment2.getId(), user).size());
+    assertThat(mediaMgr.getIdsOfLinkedDocuments(attachment2.getId(), user)).hasSize(1);
     assertEquals(
         doc.getId(), mediaMgr.getIdsOfLinkedDocuments(attachment2.getId(), user).get(0).getId());
 
     // don't show deleted docs
     recordDeletionMgr.deleteRecord(doc.getParent().getId(), doc.getId(), user);
-    assertEquals(0, mediaMgr.getIdsOfLinkedDocuments(attachment.getId(), user).size());
+    assertThat(mediaMgr.getIdsOfLinkedDocuments(attachment.getId(), user)).isEmpty();
   }
 
   @Test
@@ -722,9 +723,8 @@ public class GalleryControllerMVCIT extends MVCTestBase {
     AjaxReturnObject<GalleryData> data =
         galleryController.getUploadedFiles(DOCUMENT_MEDIA_FLDER_NAME, 0, true, pgcrit, null);
     assertEquals(5, data.getData().getItems().getHits().intValue());
-    assertTrue(
-        data.getData().getItems().getResults().stream()
-            .allMatch(folderItem -> folderItem.getType().equals("Folder")));
+    assertThat(data.getData().getItems().getResults())
+        .allMatch(folderItem -> folderItem.getType().equals("Folder"));
   }
 
   @Test

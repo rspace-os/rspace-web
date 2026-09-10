@@ -1,5 +1,6 @@
 package com.researchspace.service.aws.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -123,7 +124,7 @@ public class S3UtilitiesTest {
 
     List<S3FolderContentItem> items = impl.listFolderContents("folder");
 
-    assertEquals(3, items.size());
+    assertThat(items).hasSize(3);
     // Page 1: file1.txt
     assertEquals("file1.txt", items.get(0).getName());
     assertFalse(items.get(0).isFolder());
@@ -154,7 +155,7 @@ public class S3UtilitiesTest {
 
     List<S3FolderContentItem> items = impl.listFolderContents("folder");
 
-    assertEquals(1, items.size());
+    assertThat(items).hasSize(1);
     // S3 wraps the ETag in quotes; we surface it as a bare identifier.
     assertEquals("b2c3d4e5f6789012", items.get(0).getEtag());
     assertEquals("STANDARD", items.get(0).getStorageClass());
@@ -184,7 +185,7 @@ public class S3UtilitiesTest {
 
     List<S3FolderContentItem> items = impl.listFolderContents("");
 
-    assertEquals(2, items.size());
+    assertThat(items).hasSize(2);
     // common prefixes (folders) come before files, per implementation order
     assertEquals("topfolder", items.get(0).getName());
     assertTrue(items.get(0).isFolder());
@@ -200,7 +201,7 @@ public class S3UtilitiesTest {
     S3FolderContentItem root = impl.getObjectDetails("");
 
     assertTrue(root.isFolder());
-    assertEquals("", root.getName());
+    assertThat(root.getName()).isEmpty();
   }
 
   @Test

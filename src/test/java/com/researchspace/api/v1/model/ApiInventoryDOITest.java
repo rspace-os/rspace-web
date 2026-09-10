@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.model;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -55,10 +56,10 @@ class ApiInventoryDOITest {
 
     String json = new ObjectMapper().writeValueAsString(doi);
 
-    assertTrue(
-        json.contains("\"providerUrl\":\"https://b2inst-test.gwdg.de/uploads/k2j9p-7yh21\""));
-    assertTrue(json.contains("\"publicUrl\":\"https://doi.org/10.1234/abc\""));
-    assertTrue(json.contains("\"url\":\"https://rspace.example.com/globalId/IN5\""));
+    assertThat(json)
+        .contains("\"providerUrl\":\"https://b2inst-test.gwdg.de/uploads/k2j9p-7yh21\"");
+    assertThat(json).contains("\"publicUrl\":\"https://doi.org/10.1234/abc\"");
+    assertThat(json).contains("\"url\":\"https://rspace.example.com/globalId/IN5\"");
   }
 
   /**
@@ -156,12 +157,13 @@ class ApiInventoryDOITest {
     assertNotNull(first);
     // 16 random bytes, base64url-encoded without padding. Length alone is only a proxy, so the two
     // properties that actually matter are asserted directly.
-    assertEquals(22, first.length());
-    assertTrue(
-        first.matches("[A-Za-z0-9_-]+"),
-        "must be safe as a URL path segment: it becomes /public/inventory/<suffix>, is persisted as"
-            + " publicLink and is registered with a provider; got: "
-            + first);
+    assertThat(first).hasSize(22);
+    assertThat(first)
+        .as(
+            "must be safe as a URL path segment: it becomes /public/inventory/<suffix>, is"
+                + " persisted as publicLink and is registered with a provider; got: "
+                + first)
+        .matches("[A-Za-z0-9_-]+");
 
     ApiInventoryDOI second = new ApiInventoryDOI();
     second.generatePublicLinkSuffix();
@@ -177,7 +179,7 @@ class ApiInventoryDOITest {
   void publicLinkSuffixIsNeitherSerializedNorDeserializable() throws Exception {
     ApiInventoryDOI doi = new ApiInventoryDOI();
     doi.generatePublicLinkSuffix();
-    assertFalse(new ObjectMapper().writeValueAsString(doi).contains("publicLinkSuffix"));
+    assertThat(new ObjectMapper().writeValueAsString(doi)).doesNotContain("publicLinkSuffix");
 
     ApiInventoryDOI incoming =
         new ObjectMapper()

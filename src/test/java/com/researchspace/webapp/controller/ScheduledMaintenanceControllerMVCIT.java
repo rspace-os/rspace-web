@@ -1,6 +1,7 @@
 package com.researchspace.webapp.controller;
 
 import static com.researchspace.core.util.JacksonUtil.toJson;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -116,7 +117,7 @@ public class ScheduledMaintenanceControllerMVCIT extends MVCTestBase {
                     .principal(sysUserPrincipal))
             .andReturn();
     String nextMaintenance = nextMaintenanceResult.getResponse().getContentAsString();
-    assertEquals("", nextMaintenance, "next maintenance should be empty");
+    assertThat(nextMaintenance).as("next maintenance should be empty").isEmpty();
   }
 
   @Test
@@ -328,11 +329,8 @@ public class ScheduledMaintenanceControllerMVCIT extends MVCTestBase {
                     .content(toJson(post)))
             .andReturn();
     assertInstanceOf(IllegalArgumentException.class, createResult.getResolvedException());
-    assertTrue(
-        createResult
-            .getResolvedException()
-            .getMessage()
-            .contains(String.valueOf(User.DEFAULT_MAXFIELD_LEN)));
+    assertThat(createResult.getResolvedException().getMessage())
+        .contains(String.valueOf(User.DEFAULT_MAXFIELD_LEN));
   }
 
   private String tooLongMessage() {

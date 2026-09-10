@@ -6,10 +6,9 @@ import static com.researchspace.webapp.controller.ExportControllerTest.createExp
 import static com.researchspace.webapp.controller.ExportControllerTest.createExportConfig;
 import static com.researchspace.webapp.controller.ExportControllerTest.createExportConfigForUser;
 import static com.researchspace.webapp.controller.ExportControllerTest.createExportRaidAndElnArchiveConfigSelectionForProjectGroup;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.http.MediaType.APPLICATION_JSON_UTF8;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -291,19 +290,20 @@ public class ExportControllerMVCIT extends MVCTestBase {
       String actualExportedManifest =
           new String(mapFileByName.get("manifest.txt"), StandardCharsets.UTF_8);
       String raidIdentifierUrl = exportRequestDTO.getRaidAssociated().getRaid().getRaidIdentifier();
-      assertFalse(
-          actualExportedManifest.contains("ProjectID:" + raidIdentifierUrl),
-          "RAiD has been found inside the manifest.txt, but it should not have");
+      assertThat(actualExportedManifest)
+          .as("RAiD has been found inside the manifest.txt, but it should not have")
+          .doesNotContain("ProjectID:" + raidIdentifierUrl);
 
       // assert entries into RO-crate
       String actualRoCrate = new String(mapFileByName.get("ro-crate-metadata.json"));
       String projectId = "#project-" + projectGroup.getDisplayName() + "-" + projectGroup.getId();
       actualRoCrate = flattenJson(actualRoCrate);
-      assertFalse(actualRoCrate.contains("\"isPartOf\":{\"@id\":\"" + projectId + "\"}"));
-      assertFalse(actualRoCrate.contains("\"name\":\"" + projectGroup.getDisplayName() + "\""));
-      assertFalse(actualRoCrate.contains("\"url\":\"" + raidIdentifierUrl + "\""));
-      assertFalse(actualRoCrate.contains("\"@id\":\"" + projectId + "\"}"));
-      assertFalse(actualRoCrate.contains("\"@type\":\"ResearchProject\"}"));
+      assertThat(actualRoCrate).doesNotContain("\"isPartOf\":{\"@id\":\"" + projectId + "\"}");
+      assertThat(actualRoCrate)
+          .doesNotContain("\"name\":\"" + projectGroup.getDisplayName() + "\"");
+      assertThat(actualRoCrate).doesNotContain("\"url\":\"" + raidIdentifierUrl + "\"");
+      assertThat(actualRoCrate).doesNotContain("\"@id\":\"" + projectId + "\"}");
+      assertThat(actualRoCrate).doesNotContain("\"@type\":\"ResearchProject\"}");
     } finally {
       raIDServiceManager.unbindRaidFromGroupAndSave(pi1, projectGroup.getId());
     }
@@ -356,19 +356,19 @@ public class ExportControllerMVCIT extends MVCTestBase {
       String actualExportedManifest =
           new String(mapFileByName.get("manifest.txt"), StandardCharsets.UTF_8);
       String raidIdentifierUrl = exportRequestDTO.getRaidAssociated().getRaid().getRaidIdentifier();
-      assertTrue(
-          actualExportedManifest.contains("ProjectID:" + raidIdentifierUrl),
-          "RAiD not fount inside the manifest.txt");
+      assertThat(actualExportedManifest)
+          .as("RAiD not fount inside the manifest.txt")
+          .contains("ProjectID:" + raidIdentifierUrl);
 
       // assert entries into RO-crate
       String actualRoCrate = new String(mapFileByName.get("ro-crate-metadata.json"));
       String projectId = "#project-" + projectGroup.getDisplayName() + "-" + projectGroup.getId();
       actualRoCrate = flattenJson(actualRoCrate);
-      assertTrue(actualRoCrate.contains("\"isPartOf\":[{\"@id\":\"" + projectId + "\"}"));
-      assertTrue(actualRoCrate.contains("\"name\":\"" + projectGroup.getDisplayName() + "\""));
-      assertTrue(actualRoCrate.contains("\"url\":\"" + raidIdentifierUrl + "\""));
-      assertTrue(actualRoCrate.contains("\"@id\":\"" + projectId + "\""));
-      assertTrue(actualRoCrate.contains("\"@type\":\"ResearchProject\""));
+      assertThat(actualRoCrate).contains("\"isPartOf\":[{\"@id\":\"" + projectId + "\"}");
+      assertThat(actualRoCrate).contains("\"name\":\"" + projectGroup.getDisplayName() + "\"");
+      assertThat(actualRoCrate).contains("\"url\":\"" + raidIdentifierUrl + "\"");
+      assertThat(actualRoCrate).contains("\"@id\":\"" + projectId + "\"");
+      assertThat(actualRoCrate).contains("\"@type\":\"ResearchProject\"");
     } finally {
       raIDServiceManager.unbindRaidFromGroupAndSave(pi1, projectGroup.getId());
     }

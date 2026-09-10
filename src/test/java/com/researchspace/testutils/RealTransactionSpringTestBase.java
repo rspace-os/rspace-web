@@ -4,6 +4,7 @@ import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static com.researchspace.model.preference.Preference.NOTIFICATION_DOCUMENT_DELETED_PREF;
 import static com.researchspace.model.preference.Preference.NOTIFICATION_DOCUMENT_SHARED_PREF;
 import static com.researchspace.model.preference.Preference.NOTIFICATION_DOCUMENT_UNSHARED_PREF;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -1122,7 +1123,7 @@ public class RealTransactionSpringTestBase extends BaseManagerTestCaseBase
     // check that shared doc is in shared records.
     List<RecordGroupSharing> rgs = sharingMgr.getSharedRecordsForUser(sharer);
     List<BaseRecord> sharedRecords = getSharedRecordsFromList(rgs);
-    assertTrue(sharedRecords.contains(documentOrNotebook));
+    assertThat(sharedRecords).contains(documentOrNotebook);
 
     doInTransaction(
         () -> {

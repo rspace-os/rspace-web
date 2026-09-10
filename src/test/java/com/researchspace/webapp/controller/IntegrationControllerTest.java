@@ -1,5 +1,6 @@
 package com.researchspace.webapp.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -49,7 +50,7 @@ public class IntegrationControllerTest {
         .thenReturn(new IntegrationInfo());
     AjaxReturnObject<Map<String, IntegrationInfo>> infos =
         integrationCtrller.getAllIntegrationsInfo(new MockPrincipal(subject.getUsername()));
-    assertEquals(INTEGRATIONS_AMOUNT, infos.getData().size());
+    assertThat(infos.getData()).hasSize(INTEGRATIONS_AMOUNT);
   }
 
   @Test

@@ -1,7 +1,7 @@
 package com.researchspace.webapp.integrations.raid;
 
 import static java.net.URLEncoder.encode;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -62,14 +62,13 @@ public class RaIDOAuthControllerMVCIT extends API_MVC_TestBase {
             .andReturn();
 
     String actualRedirectedUrl = result.getResponse().getRedirectedUrl();
-    assertTrue(
-        actualRedirectedUrl.contains(
-            "https://demo.raid.org/realms/raid/protocol/openid-connect/auth?"));
-    assertTrue(actualRedirectedUrl.contains("client_id=rspace"));
-    assertTrue(
-        actualRedirectedUrl.contains(
+    assertThat(actualRedirectedUrl)
+        .contains("https://demo.raid.org/realms/raid/protocol/openid-connect/auth?");
+    assertThat(actualRedirectedUrl).contains("client_id=rspace");
+    assertThat(actualRedirectedUrl)
+        .contains(
             "redirect_uri="
-                + encode("http://localhost:8080/apps/raid/callback", StandardCharsets.UTF_8)));
+                + encode("http://localhost:8080/apps/raid/callback", StandardCharsets.UTF_8));
     assertTrue(actualRedirectedUrl.contains("response_type=code"));
     assertTrue(actualRedirectedUrl.contains("scope=openid"));
     assertTrue(actualRedirectedUrl.contains("state=" + SERVER_ALIAS));
@@ -91,9 +90,9 @@ public class RaIDOAuthControllerMVCIT extends API_MVC_TestBase {
             .andExpect(status().is(200)) // end point exists
             .andReturn();
 
-    assertTrue(result.getResponse().getForwardedUrl().contains(URL_CONNECTED));
+    assertThat(result.getResponse().getForwardedUrl()).contains(URL_CONNECTED);
 
-    assertEquals(SERVER_ALIAS, result.getModelAndView().getModel().get("connectionAlias"));
+    assertThat(result.getModelAndView().getModel()).containsEntry("connectionAlias", SERVER_ALIAS);
     assertNull(result.getModelAndView().getModel().get("connectionError"));
   }
 
@@ -113,11 +112,10 @@ public class RaIDOAuthControllerMVCIT extends API_MVC_TestBase {
             .andExpect(status().is(200)) // end point exists
             .andReturn();
 
-    assertTrue(result.getResponse().getForwardedUrl().contains(URL_CONNECTED));
+    assertThat(result.getResponse().getForwardedUrl()).contains(URL_CONNECTED);
 
-    assertTrue(
-        ((String) result.getModelAndView().getModel().get("connectionError"))
-            .contains(RAID_EXCEPTION_MESSAGE));
+    assertThat(((String) result.getModelAndView().getModel().get("connectionError")))
+        .contains(RAID_EXCEPTION_MESSAGE);
   }
 
   @Test
@@ -131,9 +129,9 @@ public class RaIDOAuthControllerMVCIT extends API_MVC_TestBase {
             .andExpect(status().is(200)) // end point exists
             .andReturn();
 
-    assertTrue(result.getResponse().getForwardedUrl().contains(URL_CONNECTED));
+    assertThat(result.getResponse().getForwardedUrl()).contains(URL_CONNECTED);
 
-    assertEquals(SERVER_ALIAS, result.getModelAndView().getModel().get("connectionAlias"));
+    assertThat(result.getModelAndView().getModel()).containsEntry("connectionAlias", SERVER_ALIAS);
     assertNull(result.getModelAndView().getModel().get("connectionError"));
   }
 
@@ -148,11 +146,10 @@ public class RaIDOAuthControllerMVCIT extends API_MVC_TestBase {
             .andExpect(status().is(200)) // end point exists
             .andReturn();
 
-    assertTrue(result.getResponse().getForwardedUrl().contains(URL_CONNECTED));
+    assertThat(result.getResponse().getForwardedUrl()).contains(URL_CONNECTED);
 
-    assertTrue(
-        ((String) result.getModelAndView().getModel().get("connectionError"))
-            .contains(RAID_EXCEPTION_MESSAGE));
+    assertThat(((String) result.getModelAndView().getModel().get("connectionError")))
+        .contains(RAID_EXCEPTION_MESSAGE);
   }
 
   @Test

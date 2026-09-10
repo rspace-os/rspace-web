@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -88,7 +89,7 @@ class SystemSettingsApiControllerUnitTest {
   void getReturnsBothPidinstProvidersWithB2instMappedFields() {
     ApiInventorySystemSettings settings = controller.getInventorySettings(request, sysadmin);
 
-    assertEquals(2, settings.getIdentifiersSettings().get(InventorySettingType.PIDINST).size());
+    assertThat(settings.getIdentifiersSettings().get(InventorySettingType.PIDINST)).hasSize(2);
     IdentifierSettings b2inst =
         settings.findByProvider(IdentifierType.PIDINST_B2INST).orElseThrow();
     // B2INST reuses the IdentifierSettings shape: username <- community.id, password <- token
@@ -97,7 +98,7 @@ class SystemSettingsApiControllerUnitTest {
     assertEquals("https://b2inst-test.gwdg.de", b2inst.getServerUrl());
     // repositoryPrefix is unused for B2INST; it must serialize as "" (the IdentifierSettings
     // contract is a String) rather than null, so clients never see "repositoryPrefix": null.
-    assertEquals("", b2inst.getRepositoryPrefix());
+    assertThat(b2inst.getRepositoryPrefix()).isEmpty();
   }
 
   @Test

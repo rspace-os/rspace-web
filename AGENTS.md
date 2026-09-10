@@ -162,15 +162,25 @@ did not.
 To assert on an exception message, nest the call rather than introducing a local:
 
 ```java
-assertTrue(
-    assertThrows(IllegalStateException.class, () -> foo()).getMessage()
-        .contains("expected text"));
+assertThat(assertThrows(IllegalStateException.class, () -> foo()).getMessage())
+    .contains("expected text");
 ```
 
-Assertions come from `org.junit.jupiter.api.Assertions` only; direct Hamcrest
-assertions are prohibited. Hamcrest remains on the test classpath as compile
-support for Spring's matcher-typed MockMvc signatures. Spring's MockMvc
-assertion helpers have typed replacements on `MVCTestBase`:
+Assertions come from `org.junit.jupiter.api.Assertions`. AssertJ's `assertThat`
+is permitted only for collection, map, string-content, `Optional`,
+numeric-comparison and file assertions: `hasSize`, `contains`,
+`containsExactly`, `containsEntry`, `isEmpty`, `isNotEmpty`, `isPresent`,
+`startsWith`, `isGreaterThan`, `isCloseTo`, `exists` and the like.
+
+Never chain AssertJ into an assertion JUnit already names: `isEqualTo`,
+`isTrue`, `isFalse`, `isNull`, `isNotNull`, `isSameAs` and `isInstanceOf` only
+restate `assertEquals`/`assertTrue`/`assertNull`/`assertSame`/`assertInstanceOf`,
+so use the JUnit form and leave existing ones alone. Exception checks stay on
+`assertThrows`; do not use `assertThatThrownBy`.
+
+Direct Hamcrest assertions are prohibited. Hamcrest remains on the test
+classpath as compile support for Spring's matcher-typed MockMvc signatures.
+Spring's MockMvc assertion helpers have typed replacements on `MVCTestBase`:
 `viewNameContains`, `modelAttributeContains`, `modelAttributeDoesNotContain`
 and `headerContains`.
 

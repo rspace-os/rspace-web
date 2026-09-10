@@ -1,6 +1,6 @@
 package com.researchspace.dao;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.researchspace.model.core.RecordType;
@@ -13,27 +13,27 @@ public class RecordTypeFilterTest {
   @Test
   public void testRecordTypeFilterIncludeAll() {
     RecordTypeFilter rtf = new RecordTypeFilter(EnumSet.allOf(RecordType.class), true);
-    assertEquals(EnumSet.allOf(RecordType.class).size(), rtf.getWantedTypes().size());
+    assertThat(rtf.getWantedTypes()).hasSize(EnumSet.allOf(RecordType.class).size());
   }
 
   @Test
   public void testRecordTypeFilterIncludeSeveral() {
     RecordTypeFilter rtf =
         new RecordTypeFilter(EnumSet.of(RecordType.MEDIA_FILE, RecordType.NORMAL), true);
-    assertEquals(2, rtf.getWantedTypes().size());
+    assertThat(rtf.getWantedTypes()).hasSize(2);
   }
 
   @Test
   public void testHandlesEmptySet() {
     RecordTypeFilter rtf = new RecordTypeFilter(EnumSet.noneOf(RecordType.class), true);
-    assertEquals(0, rtf.getWantedTypes().size());
+    assertThat(rtf.getWantedTypes()).isEmpty();
   }
 
   @Test
   public void testHandlesExclude() {
     RecordTypeFilter rtf =
         new RecordTypeFilter(EnumSet.of(RecordType.MEDIA_FILE, RecordType.NORMAL), false);
-    assertEquals(EnumSet.allOf(RecordType.class).size() - 2, rtf.getWantedTypes().size());
+    assertThat(rtf.getWantedTypes()).hasSize(EnumSet.allOf(RecordType.class).size() - 2);
   }
 
   @Test

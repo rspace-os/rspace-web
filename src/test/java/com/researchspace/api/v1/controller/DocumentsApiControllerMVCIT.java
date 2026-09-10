@@ -4,8 +4,8 @@ import static com.researchspace.api.v1.controller.ApiDocSearchConfig.MAX_QUERY_L
 import static com.researchspace.core.util.TransformerUtils.toList;
 import static com.researchspace.testutils.RSpaceTestUtils.logout;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -130,7 +130,7 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
             .andReturn();
     ApiDocumentSearchResult noDocs =
         getFromJsonResponseBody(invalidQuery4, ApiDocumentSearchResult.class);
-    assertEquals(0, noDocs.getDocuments().size()); // 11th page is empty
+    assertThat(noDocs.getDocuments()).isEmpty(); // 11th page is empty
   }
 
   @Test
@@ -326,12 +326,12 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
     assertNotNull(apiDoc.getParentFolderId());
     assertEquals(1, getMediaFileCount(apiDoc));
     ApiFile file = apiDoc.getFields().get(0).getFiles().get(0);
-    assertTrue(
-        file.getLinks().stream().anyMatch(link -> link.getRel().equals(ApiLinkItem.SELF_REL)),
-        "No self link for file " + file.getId());
-    assertTrue(
-        file.getLinks().stream().anyMatch(link -> link.getRel().equals(ApiLinkItem.ENCLOSURE_REL)),
-        "No self link for file " + file.getId());
+    assertThat(file.getLinks())
+        .as("No self link for file " + file.getId())
+        .anyMatch(link -> link.getRel().equals(ApiLinkItem.SELF_REL));
+    assertThat(file.getLinks())
+        .as("No self link for file " + file.getId())
+        .anyMatch(link -> link.getRel().equals(ApiLinkItem.ENCLOSURE_REL));
     apiModelTestUtils.assertApiDocumentMatchSDoc(apiDoc, doc);
 
     // now simulate user deleting the attachment in UI
@@ -387,8 +387,8 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
     assertNotNull(apiDoc);
     assertNotNull(apiDoc.getParentFolderId());
     List<ApiListOfMaterials> lomInApiDoc = apiDoc.getFields().get(0).getListsOfMaterials();
-    assertEquals(1, lomInApiDoc.size());
-    assertEquals(4, lomInApiDoc.get(0).getMaterials().size());
+    assertThat(lomInApiDoc).hasSize(1);
+    assertThat(lomInApiDoc.get(0).getMaterials()).hasSize(4);
     ApiInventoryRecordInfo usedContainer = lomInApiDoc.get(0).getMaterials().get(0).getRecord();
     assertEquals("listContainer", usedContainer.getName());
     ApiInventoryRecordInfo usedSample = lomInApiDoc.get(0).getMaterials().get(1).getRecord();
@@ -531,7 +531,7 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
     Boolean deleted = doInTransaction(() -> documentIsDeleted(simpleDocId));
     assertTrue(deleted);
     // and no edit lock:
-    assertFalse(tracker.isEditing(recordMgr.get(simpleDocId)).isPresent());
+    assertThat(tracker.isEditing(recordMgr.get(simpleDocId))).isNotPresent();
     // and can't retrieve:
     this.mockMvc.perform(getDocById(anyUser, apiKey, simpleDocId)).andExpect(status().isNotFound());
   }
@@ -567,7 +567,7 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
     ApiDocument docFromEmptyRequest = getFromJsonResponseBody(result, ApiDocument.class);
     assertNotNull(docFromEmptyRequest.getId());
     assertEquals("API all fields form", docFromEmptyRequest.getForm().getName());
-    assertEquals(7, docFromEmptyRequest.getFields().size());
+    assertThat(docFromEmptyRequest.getFields()).hasSize(7);
     for (int i = 0; i < 7; i++) {
       if (i == 1) {
         // field 1 is choice field, and its value is passed to api client in simplified format
@@ -595,7 +595,7 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
             .andReturn();
     ApiDocument docFromSimpleRequest = getFromJsonResponseBody(result, ApiDocument.class);
     assertNotNull(docFromSimpleRequest.getId());
-    assertEquals(7, docFromEmptyRequest.getFields().size());
+    assertThat(docFromEmptyRequest.getFields()).hasSize(7);
     for (int i = 0; i < 7; i++) {
       if (i == 1) {
         assertEquals("a,c", docFromEmptyRequest.getFields().get(i).getContent());
@@ -631,7 +631,7 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
             .andReturn();
     ApiDocument created = getFromJsonResponseBody(result, ApiDocument.class);
     // assert link to SD is made.
-    assertEquals(1, internalLinkMgr.getLinksPointingToRecord(sd.getId()).size());
+    assertThat(internalLinkMgr.getLinksPointingToRecord(sd.getId())).hasSize(1);
   }
 
   @Test
@@ -649,7 +649,7 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
             .andExpect(status().isBadRequest())
             .andReturn();
     Exception exception = result.getResolvedException();
-    assertTrue(exception.getMessage().contains("Name cannot be longer than 255 characters"));
+    assertThat(exception.getMessage()).contains("Name cannot be longer than 255 characters");
 
     // basic doc with field provided, but content pointing to unaccessible attachment
     json = "{ \"fields\" : [ { \"content\": \"my attachment <fileId=1234567890>\" } ] }";
@@ -791,8 +791,8 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
             .andExpect(status().isCreated())
             .andReturn();
     // assert that media-field link is established
-    assertEquals(
-        initialLinkCount + 1, mediaMgr.getIdsOfLinkedDocuments(image.getId(), anyUser).size());
+    assertThat(mediaMgr.getIdsOfLinkedDocuments(image.getId(), anyUser))
+        .hasSize(initialLinkCount + 1);
   }
 
   @Test
@@ -853,17 +853,13 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
     if (!present) {
       doInTransaction(
           () ->
-              assertFalse(
-                  folderDao
-                      .getApiFolderForContentType(anyUser.getUsername(), anyUser)
-                      .isPresent()));
+              assertThat(folderDao.getApiFolderForContentType(anyUser.getUsername(), anyUser))
+                  .isNotPresent());
     } else {
       doInTransaction(
           () ->
-              assertTrue(
-                  folderDao
-                      .getApiFolderForContentType(anyUser.getUsername(), anyUser)
-                      .isPresent()));
+              assertThat(folderDao.getApiFolderForContentType(anyUser.getUsername(), anyUser))
+                  .isPresent());
     }
   }
 
@@ -897,8 +893,8 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
             .andExpect(status().isBadRequest())
             .andReturn();
     Exception exception = result.getResolvedException();
-    assertTrue(
-        exception.getMessage().contains("Document tags cannot be longer than 8000 characters"));
+    assertThat(exception.getMessage())
+        .contains("Document tags cannot be longer than 8000 characters");
 
     // create a document and request edit lock
     EditStatus editStatus = recordMgr.requestRecordEdit(doc.getId(), anyUser, activeUsers);
@@ -940,12 +936,13 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
             .andReturn();
     ApiDocument created = getFromJsonResponseBody(result, ApiDocument.class);
     assertNotNull(created.getId());
-    assertEquals(1, created.getFields().size());
+    assertThat(created.getFields()).hasSize(1);
     String actual = created.getFields().get(0).getContent();
     Document doc = Jsoup.parse(actual);
     Elements elements = doc.select("img.chem");
-    assertEquals(
-        1, elements.size(), "unexpected number of chem replacements, actual content: \n" + actual);
+    assertThat(elements)
+        .as("unexpected number of chem replacements, actual content: \n" + actual)
+        .hasSize(1);
     assertTrue(elements.first().select("img.chem").hasAttr("data-chemfileid"));
   }
 

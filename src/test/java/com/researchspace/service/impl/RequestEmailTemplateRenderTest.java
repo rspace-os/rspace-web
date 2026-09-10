@@ -1,7 +1,6 @@
 package com.researchspace.service.impl;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.researchspace.model.Group;
 import com.researchspace.model.User;
@@ -70,12 +69,11 @@ public class RequestEmailTemplateRenderTest {
 
     String html = render("request.vm", baseModel(mor));
 
-    assertFalse(html.contains("???"));
-    assertTrue(
-        html.contains(
-            "The RSpace Principal Investigator \"<b>" + originator.getFullName() + "</b>\""));
-    assertTrue(html.contains("sent you a request on"));
-    assertTrue(html.contains("In order to join the Lab Group \"<b>Chemistry Lab</b>\""));
+    assertThat(html).doesNotContain("???");
+    assertThat(html)
+        .contains("The RSpace Principal Investigator \"<b>" + originator.getFullName() + "</b>\"");
+    assertThat(html).contains("sent you a request on");
+    assertThat(html).contains("In order to join the Lab Group \"<b>Chemistry Lab</b>\"");
   }
 
   @Test
@@ -89,9 +87,9 @@ public class RequestEmailTemplateRenderTest {
 
     String html = render("request.vm", baseModel(mor));
 
-    assertFalse(html.contains("???"));
-    assertTrue(html.contains("The RSpace User \"<b>" + originator.getFullName() + "</b>\""));
-    assertTrue(html.contains("In order to join the Project Group \"<b>Battery Project</b>\""));
+    assertThat(html).doesNotContain("???");
+    assertThat(html).contains("The RSpace User \"<b>" + originator.getFullName() + "</b>\"");
+    assertThat(html).contains("In order to join the Project Group \"<b>Battery Project</b>\"");
   }
 
   @Test
@@ -101,11 +99,10 @@ public class RequestEmailTemplateRenderTest {
 
     String text = EmailHtmlToPlainText.toPlainText(render("request.vm", baseModel(mor)));
 
-    assertFalse(text.contains("???"));
-    assertFalse(text.contains("<"));
-    assertTrue(text.contains("RSpace Request from"));
-    assertTrue(
-        text.contains(
-            "The RSpace User \"" + originator.getFullName() + "\" sent you a request on"));
+    assertThat(text).doesNotContain("???");
+    assertThat(text).doesNotContain("<");
+    assertThat(text).contains("RSpace Request from");
+    assertThat(text)
+        .contains("The RSpace User \"" + originator.getFullName() + "\" sent you a request on");
   }
 }

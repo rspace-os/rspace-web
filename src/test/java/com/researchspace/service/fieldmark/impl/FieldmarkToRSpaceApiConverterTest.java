@@ -3,6 +3,7 @@ package com.researchspace.service.fieldmark.impl;
 import static com.researchspace.service.fieldmark.impl.FieldmarkToRSpaceApiConverter.createContainerRequest;
 import static com.researchspace.service.fieldmark.impl.FieldmarkToRSpaceApiConverter.createSampleRequest;
 import static com.researchspace.service.fieldmark.impl.FieldmarkToRSpaceApiConverter.createSampleTemplateRequest;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -85,7 +86,7 @@ public class FieldmarkToRSpaceApiConverterTest {
     assertEquals(user.getUsername(), underTest.getOwner().getUsername());
     assertEquals(underTest.getName(), "Container RSpace IGSN Demo - 2025-08-20 10:53:26");
 
-    assertEquals(13, underTest.getExtraFields().size());
+    assertThat(underTest.getExtraFields()).hasSize(13);
     assertEquals("item name", underTest.getExtraFields().get(0).getName());
     assertEquals("projectId", underTest.getExtraFields().get(1).getName());
     assertEquals("leadInstitution", underTest.getExtraFields().get(2).getName());

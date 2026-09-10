@@ -1,8 +1,8 @@
 package com.researchspace.integrations.galaxy.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.galaxy.model.output.upload.DatasetCollection;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlowData;
@@ -34,7 +34,7 @@ public class GalaxySummaryStatusReportTest {
     List<GalaxySummaryStatusReport> reports =
         GalaxySummaryStatusReport.createForInvocationsAndForDataAlone(
             Set.of(invocationDetails), workflowDataList);
-    assertEquals(1, reports.size(), "List should contain 1 item");
+    assertThat(reports).as("List should contain 1 item").hasSize(1);
     GalaxySummaryStatusReport report = reports.get(0);
     makeGalaxyReportSummaryAssertions(report, "1", "Running");
   }
@@ -82,7 +82,7 @@ public class GalaxySummaryStatusReportTest {
     List<GalaxySummaryStatusReport> reports =
         GalaxySummaryStatusReport.createForInvocationsAndForDataAlone(
             invocationDetails, workflowDataList);
-    assertEquals(2, reports.size(), "List should contain 1 item");
+    assertThat(reports).as("List should contain 1 item").hasSize(2);
     GalaxySummaryStatusReport report1 = reports.get(0);
     makeGalaxyReportSummaryAssertions(report1, "1", "Running");
     GalaxySummaryStatusReport report2 = reports.get(1);
@@ -121,7 +121,7 @@ public class GalaxySummaryStatusReportTest {
     List<GalaxySummaryStatusReport> reports =
         GalaxySummaryStatusReport.createForInvocationsAndForDataAlone(
             invocationDetails, workflowDataList);
-    assertEquals(3, reports.size(), "List should contain 1 item");
+    assertThat(reports).as("List should contain 1 item").hasSize(3);
     GalaxySummaryStatusReport report1 = reports.get(0);
     makeGalaxyReportSummaryAssertions(report1, "1", "Running");
     GalaxySummaryStatusReport report2 = reports.get(1);
@@ -148,9 +148,9 @@ public class GalaxySummaryStatusReportTest {
     Map<String, List<ExternalWorkFlowData>> result =
         GalaxySummaryStatusReport.groupByHistoryId(workflowDataList);
 
-    assertEquals(1, result.size(), "Map should contain 1 entries");
-    assertTrue(result.containsKey("history1"), "Map should contain key 'history1'");
-    assertEquals(1, result.get("history1").size(), "List for history1 should contain 1 items");
+    assertThat(result).as("Map should contain 1 entries").hasSize(1);
+    assertThat(result).as("Map should contain key 'history1'").containsKey("history1");
+    assertThat(result.get("history1")).as("List for history1 should contain 1 items").hasSize(1);
 
     List<ExternalWorkFlowData> history1Items = result.get("history1");
     assertEquals("data1", history1Items.get(0).getExtId());
@@ -169,9 +169,9 @@ public class GalaxySummaryStatusReportTest {
     Map<String, List<ExternalWorkFlowData>> result =
         GalaxySummaryStatusReport.groupByHistoryId(workflowDataList);
 
-    assertEquals(1, result.size(), "Map should contain 1 entries");
-    assertTrue(result.containsKey("history1"), "Map should contain key 'history1'");
-    assertEquals(2, result.get("history1").size(), "List for history1 should contain 2 items");
+    assertThat(result).as("Map should contain 1 entries").hasSize(1);
+    assertThat(result).as("Map should contain key 'history1'").containsKey("history1");
+    assertThat(result.get("history1")).as("List for history1 should contain 2 items").hasSize(2);
 
     List<ExternalWorkFlowData> history1Items = result.get("history1");
     assertEquals("data1", history1Items.get(0).getExtId());
@@ -191,11 +191,11 @@ public class GalaxySummaryStatusReportTest {
     Map<String, List<ExternalWorkFlowData>> result =
         GalaxySummaryStatusReport.groupByHistoryId(workflowDataList);
 
-    assertEquals(2, result.size(), "Map should contain 2 entries");
-    assertTrue(result.containsKey("history1"), "Map should contain key 'history1'");
-    assertTrue(result.containsKey("history2"), "Map should contain key 'history2'");
-    assertEquals(1, result.get("history1").size(), "List for history1 should contain 1 items");
-    assertEquals(1, result.get("history2").size(), "List for history2 should contain 1 item");
+    assertThat(result).as("Map should contain 2 entries").hasSize(2);
+    assertThat(result).as("Map should contain key 'history1'").containsKey("history1");
+    assertThat(result).as("Map should contain key 'history2'").containsKey("history2");
+    assertThat(result.get("history1")).as("List for history1 should contain 1 items").hasSize(1);
+    assertThat(result.get("history2")).as("List for history2 should contain 1 item").hasSize(1);
 
     List<ExternalWorkFlowData> history1Items = result.get("history1");
     assertEquals("data1", history1Items.get(0).getExtId());
@@ -220,11 +220,11 @@ public class GalaxySummaryStatusReportTest {
     Map<String, List<ExternalWorkFlowData>> result =
         GalaxySummaryStatusReport.groupByHistoryId(workflowDataList);
 
-    assertEquals(2, result.size(), "Map should contain 2 entries");
-    assertTrue(result.containsKey("history1"), "Map should contain key 'history1'");
-    assertTrue(result.containsKey("history2"), "Map should contain key 'history2'");
-    assertEquals(2, result.get("history1").size(), "List for history1 should contain 2 items");
-    assertEquals(1, result.get("history2").size(), "List for history2 should contain 1 item");
+    assertThat(result).as("Map should contain 2 entries").hasSize(2);
+    assertThat(result).as("Map should contain key 'history1'").containsKey("history1");
+    assertThat(result).as("Map should contain key 'history2'").containsKey("history2");
+    assertThat(result.get("history1")).as("List for history1 should contain 2 items").hasSize(2);
+    assertThat(result.get("history2")).as("List for history2 should contain 1 item").hasSize(1);
 
     List<ExternalWorkFlowData> history1Items = result.get("history1");
     assertEquals("data1", history1Items.get(0).getExtId());

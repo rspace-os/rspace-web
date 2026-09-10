@@ -1,7 +1,7 @@
 package com.researchspace.service.inventory.csvexport;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.archive.ExportScope;
 import com.researchspace.model.User;
@@ -45,19 +45,19 @@ public class CsvInstrumentTemplateExporterTest extends SpringTransactionalTest {
         instrumentTemplateExporter.writeInstrumentCsvHeaderIntoOutput(
             List.of(template), exportMode, null, outputStream);
     // 5 base columns + 0 instance-only props (dropped on template) + 2 extra fields = 7
-    assertEquals(7, csvColumnNames.size());
+    assertThat(csvColumnNames).hasSize(7);
     // template-only override drops the parent-template global id from template-field column names;
     // ExtraField columns still carry the owning record's global id (here NT7).
     String expectedHeader =
         "Global ID,Name,Tags,Owner,Description,"
             + "\"serialNumber (TEXT, NT7)\",\"calibration (NUMBER, NT7)\"\n";
-    assertEquals(expectedHeader, outputStream.toString());
+    assertThat(outputStream).hasToString(expectedHeader);
 
     outputStream = new ByteArrayOutputStream();
     instrumentTemplateExporter.writeInstrumentCsvDetailsIntoOutput(
         template, csvColumnNames, exportMode, null, outputStream);
     String expectedRow = "NT7,microscope-template,optics,,,SN-default,0.0\n";
-    assertEquals(expectedRow, outputStream.toString());
+    assertThat(outputStream).hasToString(expectedRow);
 
     String csvFragment =
         instrumentTemplateExporter
@@ -72,7 +72,7 @@ public class CsvInstrumentTemplateExporterTest extends SpringTransactionalTest {
         instrumentTemplateExporter
             .getCsvFragmentForInstruments(List.of(), CsvExportMode.FULL)
             .toString();
-    assertEquals("", csvFragment);
+    assertThat(csvFragment).isEmpty();
   }
 
   @Test
@@ -83,10 +83,11 @@ public class CsvInstrumentTemplateExporterTest extends SpringTransactionalTest {
             .getCsvCommentFragmentForInstrumentTemplates(
                 ExportScope.USER, CsvExportMode.COMPACT, user)
             .toString();
-    assertTrue(
-        csvComment.startsWith("# " + instrumentTemplateExporter.getCsvCommentHeader()), csvComment);
-    assertTrue(csvComment.contains("# Exported content: INSTRUMENT_TEMPLATES"), csvComment);
-    assertTrue(csvComment.contains("# Export scope: USER"), csvComment);
-    assertTrue(csvComment.contains("# Export mode: COMPACT"), csvComment);
+    assertThat(csvComment)
+        .as(csvComment)
+        .startsWith("# " + instrumentTemplateExporter.getCsvCommentHeader());
+    assertThat(csvComment).as(csvComment).contains("# Exported content: INSTRUMENT_TEMPLATES");
+    assertThat(csvComment).as(csvComment).contains("# Export scope: USER");
+    assertThat(csvComment).as(csvComment).contains("# Export mode: COMPACT");
   }
 }

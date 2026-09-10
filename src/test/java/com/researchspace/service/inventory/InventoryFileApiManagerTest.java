@@ -1,5 +1,6 @@
 package com.researchspace.service.inventory;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -63,7 +64,7 @@ public class InventoryFileApiManagerTest extends SpringTransactionalTest {
     assertEquals(
         ContentInitializerForDevRunManager.EXAMPLE_TOP_IMAGE_CONTAINER_NAME,
         imageContainerInfo.getName());
-    assertEquals(1, imageContainerInfo.getAttachments().size());
+    assertThat(imageContainerInfo.getAttachments()).hasSize(1);
     ApiInventoryFile defaultAttachment = imageContainerInfo.getAttachments().get(0);
     assertEquals(
         ContentInitializerForDevRunManager.EXAMPLE_TOP_IMAGE_CONTAINER_ATTACHMENT_NAME,
@@ -82,7 +83,7 @@ public class InventoryFileApiManagerTest extends SpringTransactionalTest {
     User user = createInitAndLoginAnyUser();
     ApiSampleWithFullSubSamples apiSample = createBasicSampleForUser(user);
     SampleEntity dbSample = sampleApiMgr.getSampleById(apiSample.getId(), user);
-    assertEquals(0, dbSample.getAttachedFiles().size());
+    assertThat(dbSample.getAttachedFiles()).isEmpty();
 
     // add file attachment
     InventoryFile attachedFile = addFileAttachmentToInventoryItem(dbSample.getOid(), user);
@@ -96,14 +97,14 @@ public class InventoryFileApiManagerTest extends SpringTransactionalTest {
 
     // verify attachment added
     dbSample = sampleApiMgr.getSampleById(apiSample.getId(), user);
-    assertEquals(2, dbSample.getAttachedFiles().size());
+    assertThat(dbSample.getAttachedFiles()).hasSize(2);
     assertNull(dbSample.getAttachedFiles().get(0).getMediaFileGlobalIdentifier());
     assertNotNull(dbSample.getAttachedFiles().get(1).getMediaFileGlobalIdentifier());
 
     // copy inventory item
     ApiSampleWithFullSubSamples copiedSample = sampleApiMgr.duplicate(apiSample.getId(), user);
     SampleEntity dbSampleCopy = sampleApiMgr.getSampleById(copiedSample.getId(), user);
-    assertEquals(2, dbSampleCopy.getAttachedFiles().size());
+    assertThat(dbSampleCopy.getAttachedFiles()).hasSize(2);
 
     // delete attachment from original sample
     inventoryFileApiMgr.markInventoryFileAsDeleted(attachedFile.getId(), user);
@@ -111,11 +112,11 @@ public class InventoryFileApiManagerTest extends SpringTransactionalTest {
 
     // verify attachment deleted from original sample
     dbSample = sampleApiMgr.getSampleById(apiSample.getId(), user);
-    assertEquals(0, dbSample.getAttachedFiles().size());
+    assertThat(dbSample.getAttachedFiles()).isEmpty();
 
     // verify attachment present on a copy
     dbSampleCopy = sampleApiMgr.getSampleById(copiedSample.getId(), user);
-    assertEquals(2, dbSampleCopy.getAttachedFiles().size());
+    assertThat(dbSampleCopy.getAttachedFiles()).hasSize(2);
   }
 
   @Test
@@ -130,7 +131,7 @@ public class InventoryFileApiManagerTest extends SpringTransactionalTest {
     List<ApiInventoryReferencingItem> rows =
         inventoryFileApiMgr.findAttachingItems(galleryFileGlobalId, user);
 
-    assertEquals(1, rows.size());
+    assertThat(rows).hasSize(1);
     assertEquals(sample.getGlobalId(), rows.get(0).getSourceGlobalId());
     // attachments have no DataCite relation; the label is added client-side
     assertNull(rows.get(0).getRelationType());
@@ -145,7 +146,7 @@ public class InventoryFileApiManagerTest extends SpringTransactionalTest {
     List<ApiInventoryReferencingItem> rows =
         inventoryFileApiMgr.findAttachingItems(image.getOid().getIdString(), user);
 
-    assertEquals(0, rows.size());
+    assertThat(rows).isEmpty();
   }
 
   @Test
@@ -174,7 +175,7 @@ public class InventoryFileApiManagerTest extends SpringTransactionalTest {
     List<ApiInventoryReferencingItem> rows =
         inventoryFileApiMgr.findAttachingItems(galleryFileGlobalId, user);
 
-    assertEquals(1, rows.size());
+    assertThat(rows).hasSize(1);
     assertEquals(sample.getGlobalId(), rows.get(0).getSourceGlobalId());
   }
 
@@ -189,7 +190,7 @@ public class InventoryFileApiManagerTest extends SpringTransactionalTest {
     inventoryFileApiMgr.markInventoryFileAsDeleted(galleryAttachment.getId(), user);
 
     // a soft-deleted attachment must not surface as a back-reference
-    assertEquals(0, inventoryFileApiMgr.findAttachingItems(galleryFileGlobalId, user).size());
+    assertThat(inventoryFileApiMgr.findAttachingItems(galleryFileGlobalId, user)).isEmpty();
   }
 
   @Test
@@ -237,7 +238,7 @@ public class InventoryFileApiManagerTest extends SpringTransactionalTest {
         assertThrows(
             NotFoundException.class,
             () -> inventoryFileApiMgr.getInventoryFileById(attachmentId, otherUser));
-    assertTrue(nfe.getMessage().startsWith(expectedAttachmentNotFoundMsg));
+    assertThat(nfe.getMessage()).startsWith(expectedAttachmentNotFoundMsg);
 
     // user outside group cannot attach file
     GlobalIdentifier sampleId = new GlobalIdentifier(piSample.getGlobalId());
@@ -250,7 +251,7 @@ public class InventoryFileApiManagerTest extends SpringTransactionalTest {
                   inventoryFileApiMgr.attachNewInventoryFileToInventoryRecord(
                       sampleId, "Picture1.png", input, otherUser));
     }
-    assertTrue(nfe.getMessage().startsWith(expectedItemNotFoundMsg));
+    assertThat(nfe.getMessage()).startsWith(expectedItemNotFoundMsg);
 
     // pi can delete the attachment
     inventoryFileApiMgr.markInventoryFileAsDeleted(attachment.getId(), pi);
@@ -259,6 +260,6 @@ public class InventoryFileApiManagerTest extends SpringTransactionalTest {
         assertThrows(
             NotFoundException.class,
             () -> inventoryFileApiMgr.markInventoryFileAsDeleted(attachmentId, otherUser));
-    assertTrue(nfe.getMessage().startsWith(expectedAttachmentNotFoundMsg));
+    assertThat(nfe.getMessage()).startsWith(expectedAttachmentNotFoundMsg);
   }
 }

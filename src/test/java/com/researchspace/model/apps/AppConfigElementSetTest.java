@@ -1,6 +1,7 @@
 package com.researchspace.model.apps;
 
 import static com.researchspace.model.system.SystemPropertyTestFactory.createAPropertyDescriptor;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -40,7 +41,7 @@ public class AppConfigElementSetTest {
     AppConfigElement el1 = new AppConfigElement(desc1);
     AppConfigElement el2 = new AppConfigElement(desc2);
     set1.setConfigElements(TransformerUtils.toSet(el1, el2));
-    assertEquals(2, set1.getProperties().size());
+    assertThat(set1.getProperties()).hasSize(2);
     assertTrue(set1.getProperties().contains(pd1) && set1.getProperties().contains(pd2));
   }
 

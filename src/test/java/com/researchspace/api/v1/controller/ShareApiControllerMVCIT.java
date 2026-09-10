@@ -1,6 +1,7 @@
 package com.researchspace.api.v1.controller;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -392,7 +393,7 @@ public class ShareApiControllerMVCIT extends API_MVC_TestBase {
             .andReturn();
 
     ApiSharingResult shareResult = getFromJsonResponseBody(createResult, ApiSharingResult.class);
-    assertEquals(1, shareResult.getShareInfos().size());
+    assertThat(shareResult.getShareInfos()).hasSize(1);
 
     // Share doc with user from 2nd group
     SharePost userSharePost =
@@ -423,7 +424,7 @@ public class ShareApiControllerMVCIT extends API_MVC_TestBase {
     assertEquals(toShare.getName(), docShares.getSharedDocName());
 
     List<DocumentShares.Share> directShares = docShares.getDirectShares();
-    assertEquals(2, directShares.size());
+    assertThat(directShares).hasSize(2);
 
     DocumentShares.Share groupShare =
         docShares.getDirectShares().stream()
@@ -511,21 +512,21 @@ public class ShareApiControllerMVCIT extends API_MVC_TestBase {
         listSharesWithSharedItemIds(
             sharer, apiKey, List.of(docToShare.getId(), userWorkspaceFolder.getId()));
     assertEquals(1, apiShareSearchResult.getTotalHits().intValue());
-    assertEquals(1, apiShareSearchResult.getShares().size());
+    assertThat(apiShareSearchResult.getShares()).hasSize(1);
     ApiShareInfo sharedDocInfo = apiShareSearchResult.getShares().get(0);
     assertEquals(docToShare.getId(), sharedDocInfo.getSharedItemId());
     assertNotNull(sharedDocInfo.getId());
-    assertFalse(sharedDocInfo.getLinks().isEmpty());
+    assertThat(sharedDocInfo.getLinks()).isNotEmpty();
 
     // list shares for shared subfolder (should return one pseudo-share element)
     ApiShareSearchResultWithFolderShares apiShareSearchResultWithFolders =
         listSharesWithSharedItemIds(sharer, apiKey, List.of(sharedSubFolder.getId()));
     assertEquals(1, apiShareSearchResultWithFolders.getTotalHits().intValue());
-    assertEquals(1, apiShareSearchResultWithFolders.getFolderShares().size());
+    assertThat(apiShareSearchResultWithFolders.getFolderShares()).hasSize(1);
     ApiShareInfo sharedFolderInfo = apiShareSearchResultWithFolders.getFolderShares().get(0);
     assertEquals(sharedSubFolder.getId(), sharedFolderInfo.getSharedItemId());
     assertNull(sharedFolderInfo.getId()); // pseudo-item without id
-    assertTrue(sharedFolderInfo.getLinks().isEmpty()); // no self link
+    assertThat(sharedFolderInfo.getLinks()).isEmpty(); // no self link
 
     // list shares for two docs and two shared folders
     apiShareSearchResultWithFolders =
@@ -605,7 +606,7 @@ public class ShareApiControllerMVCIT extends API_MVC_TestBase {
                 getAllSharesResult.getResponse().getContentAsString(), new TypeReference<>() {});
 
     assertEquals(toShare.getId(), docShares.getSharedDocId());
-    assertEquals(1L, docShares.getDirectShares().size());
+    assertThat(docShares.getDirectShares()).hasSize(1);
     assertEquals(owner.getId(), docShares.getDirectShares().get(0).getSharerId());
     assertEquals(owner.getDisplayName(), docShares.getDirectShares().get(0).getSharerName());
 
@@ -629,7 +630,7 @@ public class ShareApiControllerMVCIT extends API_MVC_TestBase {
                 getAllSharesResult.getResponse().getContentAsString(), new TypeReference<>() {});
 
     assertEquals(toShare.getId(), docShares.getSharedDocId());
-    assertEquals(1L, docShares.getDirectShares().size());
+    assertThat(docShares.getDirectShares()).hasSize(1);
     assertNull(docShares.getDirectShares().get(0).getSharerId());
     assertNull(docShares.getDirectShares().get(0).getSharerName());
   }

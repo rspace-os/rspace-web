@@ -1,8 +1,8 @@
 package com.researchspace.chemistry;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
@@ -104,8 +104,8 @@ public class ChemistryServiceTest {
     assertEquals(4, actual.getEndHit());
     assertEquals(10, actual.getTotalHitCount());
     assertEquals(2, actual.getTotalPageCount());
-    assertEquals(5, actual.getPagedRecords().size());
-    assertTrue(searchedItems.containsAll(actual.getPagedRecords()));
+    assertThat(actual.getPagedRecords()).hasSize(5);
+    assertThat(searchedItems).containsAll(actual.getPagedRecords());
 
     // 1st page when splitting for pages of 4
     actual = chemistryService.searchChemicals(chemQuery, searchType, 0, 4, user);
@@ -113,7 +113,7 @@ public class ChemistryServiceTest {
     assertEquals(3, actual.getEndHit());
     assertNull(actual.getTotalHitCount()); // total calculations were cut off
     assertNull(actual.getTotalPageCount()); // total calculations were cut off
-    assertEquals(4, actual.getPagedRecords().size());
+    assertThat(actual.getPagedRecords()).hasSize(4);
 
     // 2nd page when splitting for pages of 4
     actual = chemistryService.searchChemicals(chemQuery, searchType, 1, 4, user);
@@ -121,7 +121,7 @@ public class ChemistryServiceTest {
     assertEquals(7, actual.getEndHit());
     assertEquals(10, actual.getTotalHitCount()); // no cutoff at page-before-last
     assertEquals(3, actual.getTotalPageCount()); // no cutoff at page-before-last
-    assertEquals(4, actual.getPagedRecords().size());
+    assertThat(actual.getPagedRecords()).hasSize(4);
 
     // 3rd page when splitting for pages of 4
     actual = chemistryService.searchChemicals(chemQuery, searchType, 2, 4, user);
@@ -129,7 +129,7 @@ public class ChemistryServiceTest {
     assertEquals(9, actual.getEndHit());
     assertEquals(10, actual.getTotalHitCount()); // no cutoff at last page
     assertEquals(3, actual.getTotalPageCount()); // no cutoff at last page
-    assertEquals(2, actual.getPagedRecords().size());
+    assertThat(actual.getPagedRecords()).hasSize(2);
   }
 
   @Test

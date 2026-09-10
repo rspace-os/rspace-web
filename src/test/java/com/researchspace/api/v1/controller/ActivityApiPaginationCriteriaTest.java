@@ -2,9 +2,9 @@ package com.researchspace.api.v1.controller;
 
 import static com.researchspace.api.v1.controller.ActivityApiPaginationCriteria.DATE_ASC_API_PARAM;
 import static com.researchspace.api.v1.controller.ActivityApiPaginationCriteria.DATE_DESC_API_PARAM;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.api.v1.model.ApiSortEnum;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,8 +44,8 @@ public class ActivityApiPaginationCriteriaTest {
   public void testToMap() {
     eventPgCrit = new ActivityApiPaginationCriteria(1, 10, DATE_ASC_API_PARAM);
     MultiValueMap<String, String> map = eventPgCrit.toMap();
-    assertTrue(map.containsKey("pageNumber"));
-    assertTrue(map.containsKey("pageSize"));
-    assertTrue(map.containsKey("orderBy"));
+    assertThat(map).containsKey("pageNumber");
+    assertThat(map).containsKey("pageSize");
+    assertThat(map).containsKey("orderBy");
   }
 }

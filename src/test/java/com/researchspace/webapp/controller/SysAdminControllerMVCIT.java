@@ -3,6 +3,7 @@ package com.researchspace.webapp.controller;
 import static com.researchspace.core.testutil.MockLoggingUtils.assertNoLogging;
 import static com.researchspace.session.SessionAttributeUtils.USER_INFO;
 import static com.researchspace.session.UserSessionTracker.USERS_KEY;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -156,7 +157,7 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
   private void assertDuplicateEmailOrUsername(MvcResult result) throws IOException {
     Map response = parseJSONObjectFromResponseStream(result);
     assertNull(response.get("data"));
-    assertTrue(result.getResponse().getContentAsString().contains(DUPLICATE_EMAILOR_UNAME_MSG));
+    assertThat(result.getResponse().getContentAsString()).contains(DUPLICATE_EMAILOR_UNAME_MSG);
   }
 
   private MockHttpServletRequestBuilder addUserParams(
@@ -192,8 +193,8 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
     communityMgr.addGroupToCommunity(g1.getId(), comm1.getId(), admin);
     communityMgr.addGroupToCommunity(g2.getId(), comm1.getId(), admin);
     // sanity check
-    assertEquals(
-        2, communityMgr.getCommunityWithAdminsAndGroups(comm1.getId()).getLabGroups().size());
+    assertThat(communityMgr.getCommunityWithAdminsAndGroups(comm1.getId()).getLabGroups())
+        .hasSize(2);
     // basic default listing
     MockPrincipal adminPrincipal = new MockPrincipal(admin.getUsername());
     MvcResult result =
@@ -208,7 +209,7 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
                     .principal(adminPrincipal))
             .andReturn();
     UserInfoListDTO uui2 = getUserListFromMvcResult(result2);
-    assertEquals(2, uui2.getResults().size());
+    assertThat(uui2.getResults()).hasSize(2);
     assertEquals(2, uui2.getTotalHits().intValue());
 
     // now lets order by recordcount
@@ -219,7 +220,7 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
                     .principal(adminPrincipal))
             .andReturn();
     UserInfoListDTO uui3 = getUserListFromMvcResult(result3);
-    assertEquals(2, uui3.getResults().size());
+    assertThat(uui3.getResults()).hasSize(2);
     assertEquals(2, uui3.getTotalHits().intValue());
 
     // what happens if admin user is not assigned to community?
@@ -234,7 +235,7 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
                     .principal(new MockPrincipal(newadmin.getUsername())))
             .andReturn();
     UserInfoListDTO uui4 = getUserListFromMvcResult(result4);
-    assertEquals(0, uui4.getResults().size());
+    assertThat(uui4.getResults()).isEmpty();
     assertEquals(0, uui4.getTotalHits().intValue());
 
     MvcResult result5 =
@@ -244,7 +245,7 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
                     .principal(new MockPrincipal(newadmin.getUsername())))
             .andReturn();
     UserInfoListDTO uui5 = getUserListFromMvcResult(result5);
-    assertEquals(0, uui5.getResults().size());
+    assertThat(uui5.getResults()).isEmpty();
     assertEquals(0, uui5.getTotalHits().intValue());
   }
 
@@ -288,7 +289,7 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
                 get("/system/ajax/getAllCommunities").principal(new MockPrincipal(SYS_ADMIN_UNAME)))
             .andReturn();
     Map data = parseJSONObjectFromResponseStream(result);
-    assertEquals(communityCount, ((List) data.get("data")).size());
+    assertThat(((List) data.get("data"))).hasSize(communityCount);
   }
 
   @Test
@@ -315,7 +316,7 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
             .andExpect(status().isOk())
             .andReturn();
     UserInfoListDTO uui2 = getUserListFromMvcResult(result2);
-    assertTrue(uui2.getResults().stream().anyMatch(info -> info.getCreationDate() != null));
+    assertThat(uui2.getResults()).anyMatch(info -> info.getCreationDate() != null);
     // should be 1 person in FS now
     assertEquals(initialList + 1, uui2.getTotalHits().intValue());
 
@@ -331,7 +332,7 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
             .andReturn();
     UserInfoListDTO uui3 = getUserListFromMvcResult(result3);
     // should be 3 person with records now
-    assertTrue(uui3.getTotalHits().intValue() > 0);
+    assertThat(uui3.getTotalHits().intValue()).isGreaterThan(0);
   }
 
   @Test
@@ -588,7 +589,7 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
     User createdUser = userMgr.getUserByUsername(userToCreate.getUsername());
     EcatImage image = addImageToGallery(createdUser);
     File imageFile = new File(new URI(image.getFileUri()));
-    assertTrue(imageFile.exists());
+    assertThat(imageFile).exists();
 
     MockHttpServletRequestBuilder removeBuilder =
         post("/system/ajax/removeUserAccount")
@@ -597,9 +598,9 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
 
     MvcResult removeResult = mockMvc.perform(removeBuilder).andExpect(status().isOk()).andReturn();
     String removeResultString = removeResult.getResponse().getContentAsString();
-    assertTrue(
-        removeResultString.contains("] deleted\""),
-        "expected remove success: " + removeResultString);
+    assertThat(removeResultString)
+        .as("expected remove success: " + removeResultString)
+        .contains("] deleted\"");
     assertFalse(imageFile.exists());
   }
 
@@ -624,7 +625,7 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
             .perform(buildOKUserRequest(admin, newusername, password, grp))
             .andExpect(status().isOk())
             .andReturn();
-    assertTrue(result.getResponse().getContentAsString().contains("Success"));
+    assertThat(result.getResponse().getContentAsString()).contains("Success");
 
     String resultString = result.getResponse().getContentAsString();
     assertSuccessResponse(resultString);
@@ -786,7 +787,7 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
   }
 
   private void assertSuccessResponse(String resultString) {
-    assertTrue(resultString.contains("Success"), "Result string was " + resultString);
+    assertThat(resultString).as("Result string was " + resultString).contains("Success");
   }
 
   @Test
@@ -849,7 +850,7 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
             nonSsoSysAdmin.getUsername(), RemoteUserRetrievalPolicy.SSO_DUMMY_PASSWORD);
     AuthenticationException ae =
         assertThrows(AuthenticationException.class, () -> subject.login(credentials));
-    assertTrue(ae.getMessage().contains("could not be authenticated"));
+    assertThat(ae.getMessage()).contains("could not be authenticated");
 
     // provided non-sso password should be the one to use
     logoutAndLoginAs(nonSsoSysAdmin, NON_SSO_SYSADMIN_PASSWORD);
@@ -1026,20 +1027,16 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
             .andReturn();
     assertNull(result.getResolvedException());
     Map data = parseJSONObjectFromResponseStream(result);
-    assertEquals(4, data.size());
+    assertThat(data).hasSize(4);
     assertNotNull(data.get("userStats"));
     assertNotNull(data.get("pgCrit"));
     assertNotNull(data.get("userInfo"));
     assertNotNull(data.get("pagination"));
 
     UsageListingDTO responseDTO = getFromJsonResponseBody(result, UsageListingDTO.class);
-    assertTrue(
-        responseDTO
-            .getUserStats()
-            .getAvailableSeats()
-            .startsWith(
-                "214748")); // integer.MAX_VALUE minus number of created users, which could vary
+    assertThat(responseDTO.getUserStats().getAvailableSeats())
+        .startsWith("214748"); // integer.MAX_VALUE minus number of created users, which could vary
     assertEquals(Integer.valueOf(10), responseDTO.getPgCrit().getResultsPerPage());
-    assertEquals(10, responseDTO.getUserInfo().getResults().size());
+    assertThat(responseDTO.getUserInfo().getResults()).hasSize(10);
   }
 }

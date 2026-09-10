@@ -1,5 +1,6 @@
 package com.researchspace.archive.model;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -18,9 +19,9 @@ public class ArchiveUsersTest {
 
     ArchiveUsers fromXml = ArchiveTestUtils.writeToXMLAndReadFromXML(testData.getArchiveInfo());
     Iterator<User> it = fromXml.getUsers().iterator();
-    assertEquals(2, fromXml.getUserGroups().size());
-    assertEquals(1, fromXml.getGroups().size());
-    assertEquals(1, fromXml.getCommunities().size());
+    assertThat(fromXml.getUserGroups()).hasSize(2);
+    assertThat(fromXml.getGroups()).hasSize(1);
+    assertThat(fromXml.getCommunities()).hasSize(1);
     User userRead = it.next();
     assertEquals(testData.getUser(), userRead);
     assertTrue(userRead.isInSameGroupAs(testData.getAdmin()));
@@ -31,6 +32,6 @@ public class ArchiveUsersTest {
     assertEquals(testData.getGroup(), inCommunity.getLabGroups().iterator().next());
     assertEquals(testData.getAdmin(), inCommunity.getAdmins().iterator().next());
     // profiles
-    assertEquals(1, fromXml.getProfiles().size());
+    assertThat(fromXml.getProfiles()).hasSize(1);
   }
 }

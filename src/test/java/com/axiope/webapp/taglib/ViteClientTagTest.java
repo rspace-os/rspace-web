@@ -1,8 +1,8 @@
 package com.axiope.webapp.taglib;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 import jakarta.servlet.jsp.JspException;
@@ -68,15 +68,15 @@ public class ViteClientTagTest {
     tag.setPageContext(pageContext);
 
     assertEquals(TagSupport.SKIP_BODY, tag.doStartTag());
-    assertTrue(
-        output.toString().contains("type=\"module\" src=\"/ui/dist/@vite/client\""),
-        "Expected /ui/dist/@vite/client script tag, got: " + output);
-    assertTrue(
-        output.toString().contains("/ui/dist/@react-refresh"),
-        "Expected React refresh preamble, got: " + output);
-    assertTrue(
-        output.toString().contains("window.__vite_plugin_react_preamble_installed__ = true;"),
-        "Expected React refresh marker, got: " + output);
+    assertThat(output.toString())
+        .as("Expected /ui/dist/@vite/client script tag, got: " + output)
+        .contains("type=\"module\" src=\"/ui/dist/@vite/client\"");
+    assertThat(output.toString())
+        .as("Expected React refresh preamble, got: " + output)
+        .contains("/ui/dist/@react-refresh");
+    assertThat(output.toString())
+        .as("Expected React refresh marker, got: " + output)
+        .contains("window.__vite_plugin_react_preamble_installed__ = true;");
   }
 
   @Test
@@ -135,6 +135,6 @@ public class ViteClientTagTest {
     tag.doStartTag();
     int lengthAfterFirst = output.getBuffer().length();
     tag.doStartTag();
-    assertEquals(lengthAfterFirst, output.getBuffer().length());
+    assertThat(output.getBuffer()).hasSize(lengthAfterFirst);
   }
 }

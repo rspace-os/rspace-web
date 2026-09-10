@@ -1,5 +1,6 @@
 package com.researchspace.model;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -45,10 +46,10 @@ public class EcatCommentTest {
     // check basic add
     cmmnt.addCommentItem(item);
     assertNotNull(item.getEcatComment());
-    assertEquals(1, cmmnt.getItems().size());
+    assertThat(cmmnt.getItems()).hasSize(1);
     // now do full copy and ensure relationships are separate
     EcatComment fullCopy = cmmnt.getCopyWithCopiedCommentItems();
-    assertEquals(1, fullCopy.getItems().size());
+    assertThat(fullCopy.getItems()).hasSize(1);
     EcatCommentItem copiedItem = fullCopy.getItems().get(0);
     assertEquals(fullCopy, copiedItem.getEcatComment());
   }

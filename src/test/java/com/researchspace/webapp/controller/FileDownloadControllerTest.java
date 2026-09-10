@@ -1,5 +1,6 @@
 package com.researchspace.webapp.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -326,7 +327,7 @@ public class FileDownloadControllerTest {
         .thenReturn(Optional.of(fp));
     ctrller.streamFilePropertyDirect(SignatureId, filePropertyId, resp);
     resp.getOutputStream().flush();
-    assertTrue(resp.getContentAsByteArray().length > EXPECTED_FILE_SIZE);
+    assertThat(resp.getContentAsByteArray().length).isGreaterThan(EXPECTED_FILE_SIZE);
   }
 
   @Test
@@ -342,7 +343,7 @@ public class FileDownloadControllerTest {
         () -> ctrller.streamFilePropertyDirect(SignatureId, filePropertyId, resp));
     // file store retrieve not called if there is no FileProperty
     verify(fileStore, never()).retrieve(Mockito.any(FileProperty.class));
-    assertEquals(0, resp.getContentAsByteArray().length);
+    assertThat(resp.getContentAsByteArray()).isEmpty();
   }
 
   // TODO Add this to base test class

@@ -1,5 +1,6 @@
 package com.researchspace.webapp.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -66,7 +67,7 @@ public class RecordSharingControllerIT extends RealTransactionSpringTestBase {
         PaginationCriteria.createForClass(RecordGroupSharing.class, null, "ASC", 0L, 5),
         new SharedRecordSearchCriteria());
     List<RecordGroupSharing> rgs = getListOfSharedRecords();
-    assertEquals(1, rgs.size());
+    assertThat(rgs).hasSize(1);
   }
 
   @Test
@@ -77,7 +78,7 @@ public class RecordSharingControllerIT extends RealTransactionSpringTestBase {
 
     recordSharingCtrller.list(model, mockPrincipal, createPagCrit());
     List<RecordGroupSharing> rgs = getListOfSharedRecords();
-    assertEquals(1, rgs.size());
+    assertThat(rgs).hasSize(1);
     assertEquals(setup.structuredDocument, rgs.get(0).getShared());
     assertEquals(setup.group, rgs.get(0).getSharee());
     assertEquals(PermissionType.WRITE, rgs.get(0).getPermType());
@@ -91,7 +92,7 @@ public class RecordSharingControllerIT extends RealTransactionSpringTestBase {
     ModelAndView mv =
         recordSharingCtrller.listPublished(model, () -> setup.user.getUsername(), createPagCrit());
     List<RecordGroupSharing> rgs = getListOfSharedRecords();
-    assertEquals(1, rgs.size());
+    assertThat(rgs).hasSize(1);
     assertEquals(setup.structuredDocument, rgs.get(0).getShared());
     assertNotNull(rgs.get(0).getPublicLink());
     assertEquals(PermissionType.READ, rgs.get(0).getPermType());
@@ -139,7 +140,7 @@ public class RecordSharingControllerIT extends RealTransactionSpringTestBase {
       piCreated = rgs.get(0);
       memberCreated = rgs.get(1);
     }
-    assertEquals(2, rgs.size());
+    assertThat(rgs).hasSize(2);
     assertEquals(setup.structuredDocument, piCreated.getShared());
     assertNotNull(piCreated.getPublicLink());
     assertEquals(PermissionType.READ, piCreated.getPermType());
@@ -169,7 +170,7 @@ public class RecordSharingControllerIT extends RealTransactionSpringTestBase {
         rgs, (r1, r2) -> r2.getSharedBy().getUsername().compareTo(r1.getSharedBy().getUsername()));
     // Sysadmin can see all published docs
     // Results are ordered by created descending
-    assertEquals(2, rgs.size());
+    assertThat(rgs).hasSize(2);
     assertEquals(setup1.structuredDocument, rgs.get(0).getShared());
     assertNotNull(rgs.get(1).getPublicLink());
     assertEquals(PermissionType.READ, rgs.get(0).getPermType());
@@ -209,7 +210,7 @@ public class RecordSharingControllerIT extends RealTransactionSpringTestBase {
     communityServiceManager.addGroupToCommunity(setup2.group.getId(), community2.getId(), sysadmin);
     ModelAndView mv = recordSharingCtrller.listPublished(model, () -> "dev4", createPagCrit());
     List<RecordGroupSharing> rgs = getListOfSharedRecords();
-    assertEquals(1, rgs.size());
+    assertThat(rgs).hasSize(1);
     assertEquals(setup1.structuredDocument, rgs.get(0).getShared());
     assertNotNull(rgs.get(0).getPublicLink());
     assertEquals(PermissionType.READ, rgs.get(0).getPermType());
@@ -240,7 +241,7 @@ public class RecordSharingControllerIT extends RealTransactionSpringTestBase {
     recordSharingCtrller.list(model, mockPrincipal, createPagCrit());
     List<RecordGroupSharing> rgs2 = getListOfSharedRecords();
     // no longer in listing
-    assertEquals(0, rgs2.size());
+    assertThat(rgs2).isEmpty();
   }
 
   @Test

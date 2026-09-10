@@ -1,9 +1,9 @@
 package com.researchspace.webapp.integrations.owncloud;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -236,7 +236,7 @@ public class OwnCloudControllerMVCIT extends MVCTestBase {
             .andExpect(view().name("connect/connected"))
             .andReturn();
 
-    assertTrue(getConnectionError(authErrorResult).contains("Error connecting to ownCloud"));
+    assertThat(getConnectionError(authErrorResult)).contains("Error connecting to ownCloud");
 
     /* OAuth authorization without security token in session */
     MvcResult noTokenInSessionResult =
@@ -247,7 +247,7 @@ public class OwnCloudControllerMVCIT extends MVCTestBase {
             .andExpect(view().name("connect/connected"))
             .andReturn();
 
-    assertTrue(getConnectionError(noTokenInSessionResult).contains("Error connecting to ownCloud"));
+    assertThat(getConnectionError(noTokenInSessionResult)).contains("Error connecting to ownCloud");
 
     //		/* requesting security token for session without user */
     MvcResult unauthorizedTokenResult =

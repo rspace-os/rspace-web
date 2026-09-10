@@ -1,7 +1,7 @@
 package com.researchspace.webapp.controller;
 
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -210,14 +210,14 @@ public class ImageControllerMVCIT extends MVCTestBase {
 
     List<Map> imageInfoList = getFromJsonResponseBody(response, List.class);
     assertNotNull(imageInfoList);
-    assertEquals(1, imageInfoList.size());
+    assertThat(imageInfoList).hasSize(1);
 
     Map imageInfo = imageInfoList.get(0);
     assertEquals(image.getId() + "", imageInfo.get("id") + "");
-    assertEquals(image.getWidth(), imageInfo.get("width"));
-    assertEquals(image.getHeight(), imageInfo.get("height"));
-    assertEquals(image.getName(), imageInfo.get("name"));
-    assertEquals(image.getDescription(), imageInfo.get("description"));
+    assertThat(imageInfo).containsEntry("width", image.getWidth());
+    assertThat(imageInfo).containsEntry("height", image.getHeight());
+    assertThat(imageInfo).containsEntry("name", image.getName());
+    assertThat(imageInfo).containsEntry("description", image.getDescription());
   }
 
   private MockHttpServletRequestBuilder getImageToAnnotate(final Field fld, EcatImage image) {
@@ -310,7 +310,7 @@ public class ImageControllerMVCIT extends MVCTestBase {
             .getResponse()
             .getContentAsByteArray();
 
-    assertArrayEquals(dataOldUrl, dataNewUrl);
+    assertThat(dataNewUrl).containsExactly(dataOldUrl);
     Image fullImage = getImageFromBytes(dataNewUrl);
 
     // expected width of annotated image, asserts that it was created OK

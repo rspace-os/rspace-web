@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -104,7 +105,7 @@ public class InventoryBulkOperationsApiControllerTest extends SpringTransactiona
     assertEquals("my sample", deletedSample.getName());
     assertTrue(deletedSample.isDeleted());
     // when retrieving deleted subsample, last active subsamples are also present
-    assertEquals(1, deletedSample.getSubSamples().size());
+    assertThat(deletedSample.getSubSamples()).hasSize(1);
     ApiContainer deletedContainer =
         containerApiMgr.getApiContainerById(createdContainer.getId(), testUser);
     assertEquals("my container", deletedContainer.getName());
@@ -163,7 +164,7 @@ public class InventoryBulkOperationsApiControllerTest extends SpringTransactiona
     assertEquals(1, createResult.getSuccessCountBeforeFirstError());
     assertEquals(1, createResult.getErrorCount());
     ApiError firstError = createResult.getResults().get(1).getError();
-    assertEquals(1, firstError.getErrors().size());
+    assertThat(firstError.getErrors()).hasSize(1);
     assertEquals(
         "storageTempMin: Invalid temperature - must be a temperature measurement greater than"
             + " absolute zero",
@@ -218,8 +219,8 @@ public class InventoryBulkOperationsApiControllerTest extends SpringTransactiona
     assertEquals(0, moveResult.getSuccessCountBeforeFirstError());
     assertEquals(1, moveResult.getErrorCount());
     ApiError firstError = moveResult.getResults().get(0).getError();
-    assertEquals(1, firstError.getErrors().size());
-    assertTrue(firstError.getErrors().get(0).contains("can't hold record of type: CONTAINER"));
+    assertThat(firstError.getErrors()).hasSize(1);
+    assertThat(firstError.getErrors().get(0)).contains("can't hold record of type: CONTAINER");
     assertEquals(InventoryBulkOperationStatus.REVERTED_ON_ERROR, moveResult.getStatus());
   }
 
@@ -242,12 +243,12 @@ public class InventoryBulkOperationsApiControllerTest extends SpringTransactiona
     assertEquals(2, createResult.getErrorCount());
     assertEquals(InventoryBulkOperationStatus.COMPLETED, createResult.getStatus());
     ApiError firstError = createResult.getResults().get(0).getError();
-    assertEquals(1, firstError.getErrors().size());
+    assertThat(firstError.getErrors()).hasSize(1);
     assertEquals(
         "description: description cannot be greater than 250 characters.",
         firstError.getErrors().get(0));
     ApiError secondError = createResult.getResults().get(1).getError();
-    assertEquals(2, secondError.getErrors().size());
+    assertThat(secondError.getErrors()).hasSize(2);
     assertEquals("name: name is a required field.", secondError.getErrors().get(0));
     assertEquals(
         "description: description cannot be greater than 250 characters.",
@@ -265,7 +266,7 @@ public class InventoryBulkOperationsApiControllerTest extends SpringTransactiona
     newSample.setSubSamples(Arrays.asList(subSample1, subSample2, subSample3));
     ApiSampleWithFullSubSamples createdSample =
         sampleApiMgr.createNewApiSample(newSample, testUser);
-    assertEquals(3, createdSample.getSubSamples().size());
+    assertThat(createdSample.getSubSamples()).hasSize(3);
 
     // created subsamples ids
     Long subSampleId1 = createdSample.getSubSamples().get(0).getId();

@@ -3,8 +3,7 @@ package com.axiope.service.cfg;
 import static com.researchspace.auth.ApiRealm.API_REALM_NAME;
 import static com.researchspace.auth.ExternalAuthPassThruRealm.EXT_OAUTH_REAM_NAME;
 import static com.researchspace.auth.SSOPassThruRealm.SSO_REALM_NAME;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.researchspace.auth.GlobalInitSysadminRealm;
 import com.researchspace.auth.LdapRealm;
@@ -123,41 +122,36 @@ public class SecurityRealmConfigTest {
     @Autowired RealmSecurityManager realmMgr;
 
     void assertAPIRealm() {
-      assertTrue(realmMgr.getRealms().stream().anyMatch(r -> r.getName().equals(API_REALM_NAME)));
+      assertThat(realmMgr.getRealms().stream()).anyMatch(r -> r.getName().equals(API_REALM_NAME));
     }
 
     void assertStandardRealm() {
-      assertTrue(
-          realmMgr.getRealms().stream()
-              .anyMatch(r -> r.getName().equals(ShiroRealm.DEFAULT_USER_PASSWD_REALM)));
+      assertThat(realmMgr.getRealms().stream())
+          .anyMatch(r -> r.getName().equals(ShiroRealm.DEFAULT_USER_PASSWD_REALM));
     }
 
     void assertSSORealm() {
-      assertTrue(realmMgr.getRealms().stream().anyMatch(r -> r.getName().equals(SSO_REALM_NAME)));
+      assertThat(realmMgr.getRealms().stream()).anyMatch(r -> r.getName().equals(SSO_REALM_NAME));
     }
 
     void assertSlackRealm() {
-      assertTrue(
-          realmMgr.getRealms().stream()
-              .anyMatch(r -> r.getName().equals(SlackRealm.SLACK_REALM_NAME)));
+      assertThat(realmMgr.getRealms().stream())
+          .anyMatch(r -> r.getName().equals(SlackRealm.SLACK_REALM_NAME));
     }
 
     void assertWopiRealm() {
-      assertTrue(
-          realmMgr.getRealms().stream()
-              .anyMatch(r -> r.getName().equals(WopiRealm.WOPI_REALM_NAME)));
+      assertThat(realmMgr.getRealms().stream())
+          .anyMatch(r -> r.getName().equals(WopiRealm.WOPI_REALM_NAME));
     }
 
     void assertLdapRealm() {
-      assertTrue(
-          realmMgr.getRealms().stream()
-              .anyMatch(r -> r.getName().equals(LdapRealm.LDAP_REALM_NAME)));
+      assertThat(realmMgr.getRealms().stream())
+          .anyMatch(r -> r.getName().equals(LdapRealm.LDAP_REALM_NAME));
     }
 
     void assertGlobalInitRealm() {
-      assertTrue(
-          realmMgr.getRealms().stream()
-              .anyMatch(r -> r.getName().equals(GlobalInitSysadminRealm.REALM_NAME)));
+      assertThat(realmMgr.getRealms().stream())
+          .anyMatch(r -> r.getName().equals(GlobalInitSysadminRealm.REALM_NAME));
     }
   }
 
@@ -166,7 +160,7 @@ public class SecurityRealmConfigTest {
   public class StandaloneEnterpriseProdConfigTest extends ProdSecurityTestBase {
     @Test
     public void testRealm() {
-      assertEquals(4, realmMgr.getRealms().size());
+      assertThat(realmMgr.getRealms()).hasSize(4);
       assertStandardRealm();
       assertAPIRealm();
       assertSlackRealm();
@@ -180,7 +174,7 @@ public class SecurityRealmConfigTest {
   public class StandaloneLdapEnterpriseProdConfigTest extends ProdSecurityTestBase {
     @Test
     public void testRealm() {
-      assertEquals(5, realmMgr.getRealms().size());
+      assertThat(realmMgr.getRealms()).hasSize(5);
       assertStandardRealm();
       assertLdapRealm();
       assertAPIRealm();
@@ -194,10 +188,10 @@ public class SecurityRealmConfigTest {
   public class CommunityProdConfigTest extends ProdSecurityTestBase {
     @Test
     public void testRealm() {
-      assertEquals(5, realmMgr.getRealms().size());
+      assertThat(realmMgr.getRealms()).hasSize(5);
       assertAPIRealm();
-      assertTrue(
-          realmMgr.getRealms().stream().anyMatch(r -> r.getName().equals(EXT_OAUTH_REAM_NAME)));
+      assertThat(realmMgr.getRealms().stream())
+          .anyMatch(r -> r.getName().equals(EXT_OAUTH_REAM_NAME));
       assertSlackRealm();
       assertGlobalInitRealm();
     }
@@ -208,7 +202,7 @@ public class SecurityRealmConfigTest {
   public class SSOProdConfigTest extends ProdSecurityTestBase {
     @Test
     public void testRealm() {
-      assertEquals(4, realmMgr.getRealms().size());
+      assertThat(realmMgr.getRealms()).hasSize(4);
       assertAPIRealm();
       assertSSORealm();
       assertSlackRealm();
@@ -222,7 +216,7 @@ public class SecurityRealmConfigTest {
   public class SSOAdminLoginProdConfigTest extends ProdSecurityTestBase {
     @Test
     public void testRealm() {
-      assertEquals(5, realmMgr.getRealms().size());
+      assertThat(realmMgr.getRealms()).hasSize(5);
       assertAPIRealm();
       assertSSORealm();
       assertStandardRealm();
@@ -236,7 +230,7 @@ public class SecurityRealmConfigTest {
   public class CollaboraProdConfigTest extends ProdSecurityTestBase {
     @Test
     public void testRealm() {
-      assertEquals(5, realmMgr.getRealms().size());
+      assertThat(realmMgr.getRealms()).hasSize(5);
       assertAPIRealm();
       assertSlackRealm();
       assertWopiRealm();
@@ -250,7 +244,7 @@ public class SecurityRealmConfigTest {
   public class MsOfficeProdConfigTest extends ProdSecurityTestBase {
     @Test
     public void testRealm() {
-      assertEquals(5, realmMgr.getRealms().size());
+      assertThat(realmMgr.getRealms()).hasSize(5);
       assertAPIRealm();
       assertSlackRealm();
       assertWopiRealm();

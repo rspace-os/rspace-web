@@ -3,8 +3,8 @@ package com.researchspace.webapp.controller;
 import static com.researchspace.core.util.TransformerUtils.toList;
 import static com.researchspace.testutils.SystemPropertyTestFactory.createAnyAppWithConfigElements;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -323,29 +323,20 @@ public class ExportControllerTest {
         "redirect:/import/archiveImportReport",
         exportController.importArchive(oKfile, session, redirectAttributesMap, principal),
         "Success redirect not sent");
-    assertFalse(
-        redirectAttributesMap
-            .getFlashAttributes()
-            .keySet()
-            .contains(ExportController.IMPORT_FORM_ERROR_ATTR_NAME));
+    assertThat(redirectAttributesMap.getFlashAttributes().keySet())
+        .doesNotContain(ExportController.IMPORT_FORM_ERROR_ATTR_NAME);
     // now test error scenarios: empty file rejected
     MultipartFile EMPTYfile =
         new MockMultipartFile("archive.zip", "archive.zip", "zip", new byte[] {});
     exportController.importArchive(EMPTYfile, session, redirectAttributesMap, principal);
-    assertTrue(
-        redirectAttributesMap
-            .getFlashAttributes()
-            .keySet()
-            .contains(ExportController.IMPORT_FORM_ERROR_ATTR_NAME));
+    assertThat(redirectAttributesMap.getFlashAttributes().keySet())
+        .contains(ExportController.IMPORT_FORM_ERROR_ATTR_NAME);
     redirectAttributesMap.getFlashAttributes().clear();
     // non-zip file rejected
     MultipartFile NON_ZIPfile = new MockMultipartFile("image.png", "image.png", "png", any_bytes);
     exportController.importArchive(NON_ZIPfile, session, redirectAttributesMap, principal);
-    assertTrue(
-        redirectAttributesMap
-            .getFlashAttributes()
-            .keySet()
-            .contains(ExportController.IMPORT_FORM_ERROR_ATTR_NAME));
+    assertThat(redirectAttributesMap.getFlashAttributes().keySet())
+        .contains(ExportController.IMPORT_FORM_ERROR_ATTR_NAME);
     redirectAttributesMap.getFlashAttributes().clear();
   }
 
@@ -368,8 +359,8 @@ public class ExportControllerTest {
             Mockito.any(ImportStrategy.class)))
         .thenThrow(new RuntimeException());
     exportController.importArchive(OKfile, session, ra, principal);
-    assertTrue(
-        ra.getFlashAttributes().keySet().contains(ExportController.IMPORT_FORM_ERROR_ATTR_NAME));
+    assertThat(ra.getFlashAttributes().keySet())
+        .contains(ExportController.IMPORT_FORM_ERROR_ATTR_NAME);
     ra.getFlashAttributes().clear();
   }
 
@@ -590,24 +581,24 @@ public class ExportControllerTest {
     ServerPath path = new ServerPath();
     path.setServerFilePath("");
     Set<ConstraintViolation<Object>> violations = validator.validate(path);
-    assertTrue(violations.size() > 0);
+    assertThat(violations.size()).isGreaterThan(0);
     path.setServerFilePath("/fff'gggg");
     violations = validator.validate(path);
-    assertTrue(violations.size() > 0);
+    assertThat(violations.size()).isGreaterThan(0);
 
     path.setServerFilePath("/fffgggg.png"); // not a zip
     violations = validator.validate(path);
-    assertTrue(violations.size() > 0);
+    assertThat(violations.size()).isGreaterThan(0);
 
     String TOO_LONG_PATH = randomAlphabetic(252);
     path.setServerFilePath("/" + TOO_LONG_PATH + ".zip");
     violations = validator.validate(path);
-    assertTrue(violations.size() > 0);
+    assertThat(violations.size()).isGreaterThan(0);
     String Max_PATH = randomAlphabetic(251) + ".zip"; // max path component on linux + 4 for .zip
     for (String validPath : toList("/abc.zip", "/a/b/c.zip", "/" + Max_PATH)) {
       path.setServerFilePath(validPath);
       violations = validator.validate(path);
-      assertTrue(violations.size() == 0, "Path " + validPath + " should be valid");
+      assertThat(violations).as("Path " + validPath + " should be valid").isEmpty();
     }
   }
 

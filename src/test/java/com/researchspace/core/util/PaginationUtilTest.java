@@ -1,8 +1,8 @@
 package com.researchspace.core.util;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 import java.util.Map;
@@ -15,7 +15,7 @@ public class PaginationUtilTest {
     IPagination<Object> pgCrit = BasicPaginationCriteria.createDefaultForClass(Object.class);
     DefaultURLPaginator pg = new DefaultURLPaginator("/a", pgCrit);
     List<PaginationObject> pos = PaginationUtil.generateRecordsPerPageListing(pg, "any");
-    assertEquals(4, pos.size());
+    assertThat(pos).hasSize(4);
   }
 
   @Test
@@ -27,10 +27,10 @@ public class PaginationUtilTest {
     assertNotNull(rc);
     assertEquals("orderByNameLink", rc.keySet().iterator().next());
     assertNotNull(rc.get("orderByNameLink"));
-    assertTrue(rc.get("orderByNameLink").getLink().contains("name"));
+    assertThat(rc.get("orderByNameLink").getLink()).contains("name");
     // if no properties a re passed in, thi sis handled gracefully
     Map<String, PaginationObject> rc2 =
         PaginationUtil.generateOrderByLinks(null, urlGenerator, null);
-    assertTrue(rc2.isEmpty());
+    assertThat(rc2).isEmpty();
   }
 }

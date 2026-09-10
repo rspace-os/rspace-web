@@ -1,8 +1,8 @@
 package com.researchspace.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -50,7 +50,7 @@ class LegacyJavascriptMessageCatalogueTest {
     Set<String> missingKeys = new TreeSet<>(referencedKeys);
     missingKeys.removeAll(messages.keySet());
 
-    assertFalse(referencedKeys.isEmpty());
+    assertThat(referencedKeys).isNotEmpty();
     assertEquals(Set.of(), missingKeys);
   }
 

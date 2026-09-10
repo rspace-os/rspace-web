@@ -1,8 +1,8 @@
 package com.researchspace.dao;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.api.v1.model.ApiInstrumentTemplate;
 import com.researchspace.core.util.ISearchResults;
@@ -114,12 +114,11 @@ public class InstrumentTemplateDaoTest extends SpringTransactionalTest {
     ISearchResults<InstrumentTemplate> results =
         instrumentTemplateDao.getTemplatesForUser(pgCrit, null, null, null, observer);
 
-    assertTrue(
-        results.getResults().stream()
-            .anyMatch(t -> t.getOwner().getUsername().equals(finalDefaultOwner)),
-        "a non-owner must see the default owner's (locked) template");
-    assertTrue(
-        results.getResults().stream().noneMatch(t -> t.getId().equals(privateTemplate.getId())),
-        "a non-owner must not see a non-default-owner's private template");
+    assertThat(results.getResults())
+        .as("a non-owner must see the default owner's (locked) template")
+        .anyMatch(t -> t.getOwner().getUsername().equals(finalDefaultOwner));
+    assertThat(results.getResults())
+        .as("a non-owner must not see a non-default-owner's private template")
+        .noneMatch(t -> t.getId().equals(privateTemplate.getId()));
   }
 }

@@ -1,7 +1,7 @@
 package com.researchspace.linkedelements;
 
 import static com.researchspace.core.util.FieldParserConstants.IMAGE_DROPPED_CLASS_NAME;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.researchspace.dao.EcatImageAnnotationDao;
@@ -79,8 +79,8 @@ public class ImageConverterTest extends AbstractParserTest {
     Mockito.when(auditDao.getObjectForRevision(EcatImage.class, 2L, 23L))
         .thenReturn(new AuditedEntity<EcatImage>(image, 23L));
     imageConverter.jsoup2LinkableElement(contents, toconvert);
-    assertEquals(1, contents.getElements(EcatImage.class).getElements().size());
-    assertEquals(image, contents.getElements(EcatImage.class).getElements().get(0));
-    assertEquals(1, contents.getElements(EcatImage.class).getLinks().size());
+    assertThat(contents.getElements(EcatImage.class).getElements()).hasSize(1);
+    assertThat(contents.getElements(EcatImage.class).getElements()).element(0).isEqualTo(image);
+    assertThat(contents.getElements(EcatImage.class).getLinks()).hasSize(1);
   }
 }

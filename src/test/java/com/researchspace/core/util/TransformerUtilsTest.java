@@ -5,6 +5,7 @@ import static com.researchspace.core.util.TransformerUtils.toList;
 import static com.researchspace.core.util.TransformerUtils.toSet;
 import static com.researchspace.core.util.TransformerUtils.transform;
 import static com.researchspace.core.util.TransformerUtils.transformToString;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -39,21 +40,21 @@ public class TransformerUtilsTest {
                 return toTransform;
               }
             });
-    assertEquals(1, transformed.size());
+    assertThat(transformed).hasSize(1);
   }
 
   @Test
   public void testToSet() {
-    assertEquals(1, toSet(new Object()).size());
-    assertEquals(0, toSet(null).size());
-    assertEquals(0, toSet(new Object[] {}).size());
+    assertThat(toSet(new Object())).hasSize(1);
+    assertThat(toSet(null)).isEmpty();
+    assertThat(toSet(new Object[] {})).isEmpty();
   }
 
   @Test
   public void testToList() {
-    assertEquals(1, toList(new Object()).size());
-    assertEquals(0, toList(null).size());
-    assertEquals(0, toList(new Object[] {}).size());
+    assertThat(toList(new Object())).hasSize(1);
+    assertThat(toList(null)).isEmpty();
+    assertThat(toList(new Object[] {})).isEmpty();
   }
 
   @Test
@@ -70,8 +71,8 @@ public class TransformerUtilsTest {
   public void testTransformToString() throws Exception {
     final Any any = new Any();
     final List<Any> anys = toList(any);
-    assertEquals("abcde", transformToString(anys, "x").get(0));
-    assertEquals(0, transformToString(new ArrayList<>(), "x").size());
+    assertThat(transformToString(anys, "x")).element(0).isEqualTo("abcde");
+    assertThat(transformToString(new ArrayList<>(), "x")).isEmpty();
     assertThrows(IllegalArgumentException.class, () -> transformToString(anys, "y"));
   }
 }

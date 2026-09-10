@@ -1,5 +1,6 @@
 package com.researchspace.service.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -38,17 +39,17 @@ public class BioPortalOntologiesServiceTest {
     doThrow(RuntimeException.class)
         .when(bioOntologiesClientMock)
         .getBioOntologyData(any(String.class));
-    assertEquals(0, testee.getBioOntologyDataForQuery("abc").size());
+    assertThat(testee.getBioOntologyDataForQuery("abc")).isEmpty();
   }
 
   @Test
   public void shouldReturnEmptyListWhenNoBioData() {
-    assertEquals(0, testee.getBioOntologyDataForQuery("").size());
+    assertThat(testee.getBioOntologyDataForQuery("")).isEmpty();
   }
 
   @Test
   public void shouldReturnEmptyListWhenFilterTermLessThanTwoChars() {
-    assertEquals(0, testee.getBioOntologyDataForQuery("aa").size());
+    assertThat(testee.getBioOntologyDataForQuery("aa")).isEmpty();
   }
 
   @Test

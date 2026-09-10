@@ -1,6 +1,7 @@
 package com.researchspace.service.impl;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -223,9 +224,9 @@ public class UserDeletionManagerTest {
     when(deletedResourcesHelper.isUserResourcesListWriteable()).thenReturn(false);
     userRemovable = userDeletionMgr.isUserRemovable(toDelete.getId(), noRestriction(), sysadmin1);
     assertFalse(userRemovable.isSucceeded());
-    assertTrue(
-        userRemovable.getMessage().startsWith("sysadmin.delete.user.resourceList.folder points to"),
-        "was: " + userRemovable.getMessage());
+    assertThat(userRemovable.getMessage())
+        .as("was: " + userRemovable.getMessage())
+        .startsWith("sysadmin.delete.user.resourceList.folder points to");
   }
 
   @Test

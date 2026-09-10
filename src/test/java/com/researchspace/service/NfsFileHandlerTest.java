@@ -1,8 +1,7 @@
 package com.researchspace.service;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -77,8 +76,8 @@ public class NfsFileHandlerTest extends SpringTransactionalTest {
         nfsFileHandler.downloadNfsFileToRSpace(testTarget1, nfsClient);
     File downloadedFile = downloadedFileDetails.getLocalFile();
     assertNotNull(downloadedFile);
-    assertTrue(downloadedFile.exists());
-    assertEquals(testFileDetails.getName(), downloadedFile.getName()); // name from nfsFileDetails
-    assertEquals(13248L, downloadedFile.length()); // length of simpleExcel.xlsx file
+    assertThat(downloadedFile).exists();
+    assertThat(downloadedFile).hasName(testFileDetails.getName()); // name from nfsFileDetails
+    assertThat(downloadedFile).hasSize(13248L); // length of simpleExcel.xlsx file
   }
 }

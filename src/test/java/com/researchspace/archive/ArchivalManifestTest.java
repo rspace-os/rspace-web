@@ -1,5 +1,6 @@
 package com.researchspace.archive;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -20,9 +21,9 @@ public class ArchivalManifestTest {
 
   @Test
   public void testAddItem() {
-    assertTrue(manifest.getItems().isEmpty());
+    assertThat(manifest.getItems()).isEmpty();
     manifest.addItem("name", "value");
-    assertEquals(1, manifest.getItems().size());
+    assertThat(manifest.getItems()).hasSize(1);
   }
 
   @Test
@@ -65,6 +66,6 @@ public class ArchivalManifestTest {
     toAdd.put("a", "b");
     toAdd.put("c", "d");
     manifest.addAll(toAdd);
-    assertEquals(2, manifest.getItems().size());
+    assertThat(manifest.getItems()).hasSize(2);
   }
 }

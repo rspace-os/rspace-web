@@ -1,5 +1,6 @@
 package com.researchspace.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -167,12 +168,12 @@ public class PermissionUtilsTest {
         new SearchResultsImpl<RSForm>(templates, 0, (long) templates.size());
     // filters in place
     permissionUtils.filter(srchResults, PermissionType.READ, user);
-    assertEquals(2, srchResults.getResults().size());
+    assertThat(srchResults.getResults()).hasSize(2);
 
     permissionUtilsTSS.isPermitted = false;
     // filters in place
     permissionUtils.filter(srchResults, PermissionType.READ, user);
-    assertEquals(0, srchResults.getResults().size());
+    assertThat(srchResults.getResults()).isEmpty();
   }
 
   List<RSForm> createListOfForms() {
@@ -193,12 +194,12 @@ public class PermissionUtilsTest {
     permissionUtilsTSS.isPermitted = true;
     // filters in place
     permissionUtils.filter(templates, PermissionType.READ, user);
-    assertEquals(2, templates.size());
+    assertThat(templates).hasSize(2);
 
     permissionUtilsTSS.isPermitted = false;
     // filters in place
     permissionUtils.filter(templates, PermissionType.READ, user);
-    assertEquals(0, templates.size());
+    assertThat(templates).isEmpty();
   }
 
   @Test

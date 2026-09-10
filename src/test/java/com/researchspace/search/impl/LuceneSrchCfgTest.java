@@ -2,7 +2,7 @@ package com.researchspace.search.impl;
 
 import static com.axiope.search.SearchConstants.RECORDS_SEARCH_OPTION;
 import static com.researchspace.testutils.TestFactory.createNRecords;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -34,7 +34,7 @@ public class LuceneSrchCfgTest extends LuceneSrchCfgTestBase {
 
   @Test
   public void testGettingSelectedRecordId() {
-    assertTrue(luceneCfg.getSelectedRecordIds().isEmpty());
+    assertThat(luceneCfg.getSelectedRecordIds()).isEmpty();
 
     mutableCfg.setOptions(
         new String[] {RECORDS_SEARCH_OPTION, RECORDS_SEARCH_OPTION, RECORDS_SEARCH_OPTION});
@@ -42,8 +42,8 @@ public class LuceneSrchCfgTest extends LuceneSrchCfgTestBase {
     luceneCfg = new LuceneSrchCfg(mutableCfg, termListFactory);
 
     Set<Long> records = luceneCfg.getSelectedRecordIds();
-    assertEquals(5, records.size());
-    assertTrue(records.containsAll(List.of(159L, 160L, 161L, 162L, 163L)));
-    assertEquals(5, records.size()); // duplicate entries removed
+    assertThat(records).hasSize(5);
+    assertThat(records).containsAll(List.of(159L, 160L, 161L, 162L, 163L));
+    assertThat(records).hasSize(5); // duplicate entries removed
   }
 }

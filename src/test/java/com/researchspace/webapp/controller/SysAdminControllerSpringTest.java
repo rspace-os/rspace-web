@@ -1,6 +1,6 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -39,7 +39,7 @@ public class SysAdminControllerSpringTest extends SpringTransactionalTest {
   public void testDisableUserAccount() throws Exception {
     final User user = createAndSaveUserIfNotExists(getRandomAlphabeticString(null));
     assertTrue(user.isEnabled());
-    assertEquals(0, userMgr.getAccountEventsForUser(user).size());
+    assertThat(userMgr.getAccountEventsForUser(user)).isEmpty();
     logoutAndLoginAsSysAdmin();
     final MockPrincipal principal = new MockPrincipal(SYS_ADMIN_UNAME);
     final Model model = new ExtendedModelMap();
@@ -47,11 +47,11 @@ public class SysAdminControllerSpringTest extends SpringTransactionalTest {
 
     User updated = userMgr.get(user.getId());
     assertFalse(updated.isEnabled());
-    assertTrue(
-        userMgr.getAccountEventsForUser(user).stream()
-            .filter(event -> AccountEventType.DISABLED.equals(event.getAccountEventType()))
-            .findAny()
-            .isPresent());
+    assertThat(
+            userMgr.getAccountEventsForUser(user).stream()
+                .filter(event -> AccountEventType.DISABLED.equals(event.getAccountEventType()))
+                .findAny())
+        .isPresent();
     final Model model2 = new ExtendedModelMap();
 
     // now we'll mock the license being exceeded - should get exception thrown
@@ -68,7 +68,7 @@ public class SysAdminControllerSpringTest extends SpringTransactionalTest {
                   LicenseExceededException.class,
                   () -> sysCtrller.setUserAccountEnablement(userId, true))
               .getMessage();
-      assertTrue(message.contains(customMessage), message);
+      assertThat(message).as(message).contains(customMessage);
     } finally {
       sysCtrller.setLicenseService(licenseService);
       props.setLicenseExceededCustomMessage(defaultMessage);

@@ -1,8 +1,7 @@
 package com.researchspace.service.archive;
 
 import static com.researchspace.testutils.RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.never;
 
 import com.researchspace.archive.ArchivalDocumentParserRef;
@@ -40,7 +39,7 @@ public class FormImporterTest {
     ArchivalForm form = new ArchivalForm();
     ref.setArchivalForm(form);
     ref.setFileList(TransformerUtils.toList(iconFile));
-    assertTrue(importer.findIconFile(ref, 123L).isPresent());
+    assertThat(importer.findIconFile(ref, 123L)).isPresent();
   }
 
   @Test
@@ -54,7 +53,7 @@ public class FormImporterTest {
     ref.setFileList(TransformerUtils.toList(iconFile));
     Mockito.when(imgDao.saveIconEntity(Mockito.any(IconEntity.class), Mockito.eq(Boolean.TRUE)))
         .thenReturn(new IconEntity());
-    assertTrue(importer.createFormIcon(ref, 2L).isPresent());
+    assertThat(importer.createFormIcon(ref, 2L)).isPresent();
     Mockito.verify(imgDao).saveIconEntity(Mockito.any(IconEntity.class), Mockito.eq(Boolean.TRUE));
   }
 
@@ -67,7 +66,7 @@ public class FormImporterTest {
     form.setFormId(OLD_FORM_ID);
     ref.setArchivalForm(form);
     ref.setFileList(TransformerUtils.toList(iconFile));
-    assertFalse(importer.createFormIcon(ref, 2L).isPresent());
+    assertThat(importer.createFormIcon(ref, 2L)).isNotPresent();
     Mockito.verify(imgDao, never())
         .saveIconEntity(Mockito.any(IconEntity.class), Mockito.eq(Boolean.TRUE));
   }

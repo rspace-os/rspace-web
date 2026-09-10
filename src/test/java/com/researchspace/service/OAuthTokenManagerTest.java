@@ -1,5 +1,6 @@
 package com.researchspace.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -83,7 +84,7 @@ public class OAuthTokenManagerTest extends SpringTransactionalTest {
     ServiceOperationResult<NewOAuthTokenResponse> response =
         tokenManager.createNewToken(clientId, clientSecret, user, OAuthTokenType.UI_TOKEN);
     assertTrue(response.isSucceeded());
-    assertEquals(1, tokenManager.getTokensForUser(user).size());
+    assertThat(tokenManager.getTokensForUser(user)).hasSize(1);
     assertEquals(
         CryptoUtils.hashToken(response.getEntity().getAccessToken()),
         tokenManager.getTokensForUser(user).get(0).getHashedAccessToken());
@@ -94,7 +95,7 @@ public class OAuthTokenManagerTest extends SpringTransactionalTest {
     // create another one for the same user, tokens are updated
     response = tokenManager.createNewToken(clientId, clientSecret, user, OAuthTokenType.UI_TOKEN);
     assertTrue(response.isSucceeded());
-    assertEquals(1, tokenManager.getTokensForUser(user).size());
+    assertThat(tokenManager.getTokensForUser(user)).hasSize(1);
     assertEquals(
         CryptoUtils.hashToken(response.getEntity().getAccessToken()),
         tokenManager.getTokensForUser(user).get(0).getHashedAccessToken());
@@ -191,7 +192,7 @@ public class OAuthTokenManagerTest extends SpringTransactionalTest {
     NewOAuthTokenResponse refreshedToken = response.getEntity();
 
     // create another for same user, tokens are updated
-    assertEquals(1, tokenManager.getTokensForUser(user).size());
+    assertThat(tokenManager.getTokensForUser(user)).hasSize(1);
     assertEquals(
         CryptoUtils.hashToken(refreshedToken.getAccessToken()),
         tokenManager.getTokensForUser(user).get(0).getHashedAccessToken());
@@ -236,12 +237,12 @@ public class OAuthTokenManagerTest extends SpringTransactionalTest {
 
     tokenManager.createNewToken(
         app.getClientId(), app.getUnhashedClientSecret(), user, OAuthTokenType.API_GENERATED_TOKEN);
-    assertEquals(1, tokenManager.getTokensForUser(user).size());
+    assertThat(tokenManager.getTokensForUser(user)).hasSize(1);
 
     ServiceOperationResult<OAuthToken> tokenRemovedResult =
         tokenManager.removeToken(user, app.getClientId());
     assertTrue(tokenRemovedResult.isSucceeded());
-    assertEquals(0, tokenManager.getTokensForUser(user).size());
+    assertThat(tokenManager.getTokensForUser(user)).isEmpty();
   }
 
   @Test
@@ -258,22 +259,22 @@ public class OAuthTokenManagerTest extends SpringTransactionalTest {
     tokenManager.createNewToken(
         app.getClientId(), app.getUnhashedClientSecret(), normalUser2, OAuthTokenType.UI_TOKEN);
 
-    assertEquals(1, tokenManager.getTokensForUser(normalUser1).size());
-    assertEquals(1, tokenManager.getTokensForUser(normalUser2).size());
-    assertEquals(2, tokenDao.listTokensForClient(app.getClientId()).size());
+    assertThat(tokenManager.getTokensForUser(normalUser1)).hasSize(1);
+    assertThat(tokenManager.getTokensForUser(normalUser2)).hasSize(1);
+    assertThat(tokenDao.listTokensForClient(app.getClientId())).hasSize(2);
 
     // removal of all tokens is restricted to the app developer
     tokenManager.removeAllTokens(normalUser1, app.getClientId());
 
-    assertEquals(1, tokenManager.getTokensForUser(normalUser1).size());
-    assertEquals(1, tokenManager.getTokensForUser(normalUser2).size());
-    assertEquals(2, tokenDao.listTokensForClient(app.getClientId()).size());
+    assertThat(tokenManager.getTokensForUser(normalUser1)).hasSize(1);
+    assertThat(tokenManager.getTokensForUser(normalUser2)).hasSize(1);
+    assertThat(tokenDao.listTokensForClient(app.getClientId())).hasSize(2);
 
     tokenManager.removeAllTokens(appDeveloper, app.getClientId());
 
-    assertEquals(0, tokenManager.getTokensForUser(normalUser1).size());
-    assertEquals(0, tokenManager.getTokensForUser(normalUser2).size());
-    assertEquals(0, tokenDao.listTokensForClient(app.getClientId()).size());
+    assertThat(tokenManager.getTokensForUser(normalUser1)).isEmpty();
+    assertThat(tokenManager.getTokensForUser(normalUser2)).isEmpty();
+    assertThat(tokenDao.listTokensForClient(app.getClientId())).isEmpty();
   }
 
   @Test
@@ -311,13 +312,13 @@ public class OAuthTokenManagerTest extends SpringTransactionalTest {
 
     ServiceOperationResult<OAuthToken> expired = tokenManager.authenticate(token.getAccessToken());
     assertFalse(expired.isSucceeded());
-    assertTrue(expired.getMessage().contains("expired"), expired.getMessage());
+    assertThat(expired.getMessage()).as(expired.getMessage()).contains("expired");
 
     // Forge jwt tokens with information that should be rejected
 
     Optional<OAuthToken> actualToken =
         tokenDao.findByRefreshTokenHash(CryptoUtils.hashToken(token.getRefreshToken()));
-    assertTrue(actualToken.isPresent());
+    assertThat(actualToken).isPresent();
     String refreshTokenHash = actualToken.get().getHashedRefreshToken();
 
     // Expiry in the past
@@ -331,7 +332,7 @@ public class OAuthTokenManagerTest extends SpringTransactionalTest {
             .compact();
     expired = tokenManager.authenticate(expiredJwtToken);
     assertFalse(expired.isSucceeded());
-    assertTrue(expired.getMessage().contains("expired"), expired.getMessage());
+    assertThat(expired.getMessage()).as(expired.getMessage()).contains("expired");
 
     // Wrong signature
     String badSignatureJwtToken =

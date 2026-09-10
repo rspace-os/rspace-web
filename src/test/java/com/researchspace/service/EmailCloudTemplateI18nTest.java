@@ -1,7 +1,6 @@
 package com.researchspace.service;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Map;
 import java.util.stream.Stream;
@@ -22,7 +21,7 @@ class EmailCloudTemplateI18nTest {
     String output = templates.render(templateCase.template(), templateCase.model());
 
     for (String expected : templateCase.expected()) {
-      assertTrue(output.contains(expected), () -> "Missing '" + expected + "' in: " + output);
+      assertThat(output).as(() -> "Missing '" + expected + "' in: " + output).contains(expected);
     }
   }
 
@@ -37,8 +36,8 @@ class EmailCloudTemplateI18nTest {
                 "group", new FakeGroup("Smith Lab"),
                 "acceptanceLink", LOGIN_LINK));
 
-    assertTrue(output.contains(LOGIN_LINK), output);
-    assertFalse(output.contains("<a"), output);
+    assertThat(output).as(output).contains(LOGIN_LINK);
+    assertThat(output).as(output).doesNotContain("<a");
   }
 
   private static Stream<TemplateCase> templateCases() {

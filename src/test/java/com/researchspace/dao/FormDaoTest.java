@@ -1,6 +1,7 @@
 package com.researchspace.dao;
 
 import static com.researchspace.model.PaginationCriteria.createDefaultForClass;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -84,7 +85,7 @@ public class FormDaoTest extends BaseDaoTestCase {
             .setParameter("name", "aa")
             .list();
 
-    assertEquals(5, allFormsCalledAA.size());
+    assertThat(allFormsCalledAA).hasSize(5);
     for (RSForm aForm : allFormsCalledAA) {
       Long aFormCreationDate = aForm.getCreationDate();
       assertNotNull(aFormCreationDate);
@@ -107,7 +108,7 @@ public class FormDaoTest extends BaseDaoTestCase {
     formDao.save(copy);
 
     List<RSForm> ts2 = formDao.getAll();
-    assertEquals(B4_count + 1, ts2.size());
+    assertThat(ts2).hasSize(B4_count + 1);
     assertEquals(
         new Version(1L), formDao.getMostRecentVersionForForm(toCopy.getStableID()).getVersion());
   }
@@ -269,7 +270,7 @@ public class FormDaoTest extends BaseDaoTestCase {
 
     clearPermissions(user);
     // check we now can't access anything
-    assertTrue(getPublishedForms(user, PermissionType.READ, true).getResults().isEmpty());
+    assertThat(getPublishedForms(user, PermissionType.READ, true).getResults()).isEmpty();
 
     // test access by simple property permission
     ConstraintBasedPermission simpleProperty =
@@ -448,8 +449,8 @@ public class FormDaoTest extends BaseDaoTestCase {
     List<Long> newOwnerForms = getFormIdsOwnedByUser(newOwner);
 
     // original owner has 4 forms, new owner has none
-    assertEquals(4, originalUserForms.size());
-    assertEquals(0, newOwnerForms.size());
+    assertThat(originalUserForms).hasSize(4);
+    assertThat(newOwnerForms).isEmpty();
 
     formDao.transferOwnershipOfForms(originalOwner, newOwner, originalUserForms);
     flush();
@@ -459,7 +460,7 @@ public class FormDaoTest extends BaseDaoTestCase {
     // new owners forms match those which used to be owned by the original user
     assertEquals(originalUserForms, newOwnerFormsPostTransfer);
     // original owner has no forms
-    assertEquals(0, originalOwnerFormsPostTransfer.size());
+    assertThat(originalOwnerFormsPostTransfer).isEmpty();
   }
 
   private List<Long> getFormIdsOwnedByUser(User owner) {
@@ -488,7 +489,7 @@ public class FormDaoTest extends BaseDaoTestCase {
     Record u1Record = recordFactory.createStructuredDocument("doc", u1, u1Form);
     recordDao.save(u1Record);
     // no forms returned as the doc was created by the form creator
-    assertTrue(formDao.getFormsUsedByOtherUsers(u1).isEmpty());
+    assertThat(formDao.getFormsUsedByOtherUsers(u1)).isEmpty();
 
     // login and create doc as u2, based on u1 form
     logoutAndLoginAs(u2);
@@ -497,7 +498,7 @@ public class FormDaoTest extends BaseDaoTestCase {
 
     // u1 now has 1 form used by other users
     List<RSForm> u1FormsUsedByOthers = formDao.getFormsUsedByOtherUsers(u1);
-    assertEquals(1, u1FormsUsedByOthers.size());
+    assertThat(u1FormsUsedByOthers).hasSize(1);
     assertEquals(u1Form.getId(), u1FormsUsedByOthers.get(0).getId());
   }
 

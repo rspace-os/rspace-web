@@ -1,5 +1,6 @@
 package com.researchspace.webapp.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -130,7 +131,7 @@ public class SysAdminConfigControllerMVCIT extends MVCTestBase {
       throws Exception, JsonParseException, JsonMappingException, IOException {
     MvcResult result = getIpAddresses();
     List<WhiteListedSysAdminIPAddress> ips = getIpsFromResponse(result);
-    assertEquals(expected, ips.size());
+    assertThat(ips).hasSize(expected);
     return ips;
   }
 

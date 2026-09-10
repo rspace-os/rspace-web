@@ -1,6 +1,6 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -52,7 +52,7 @@ public class SVGMathControllerMVCIT extends MVCTestBase {
             .andExpect(status().is2xxSuccessful())
             .andReturn();
     final int EXPECTED_BYTELENGTH = transientMath.getMathSvg().getData().length;
-    assertEquals(EXPECTED_BYTELENGTH, getResult.getResponse().getContentAsByteArray().length);
+    assertThat(getResult.getResponse().getContentAsByteArray()).hasSize(EXPECTED_BYTELENGTH);
 
     // unknown ID
     final long NOT_EXISTS_ID = -123L;

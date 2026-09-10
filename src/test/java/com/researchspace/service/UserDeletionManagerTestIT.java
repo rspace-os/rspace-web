@@ -1,5 +1,6 @@
 package com.researchspace.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -214,7 +215,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
 
     // let's keep handle to attachment file
     File attachmentOnFilestore = new File(new URI(added.getFileUri()));
-    assertTrue(attachmentOnFilestore.exists());
+    assertThat(attachmentOnFilestore).exists();
 
     // let's save the content as a snippet too
     recordMgr.createSnippet("testSnip", field.getFieldData(), tempuser);
@@ -231,7 +232,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     assertUserNotExist(tempuser);
 
     // attachment file is still on filestore
-    assertTrue(attachmentOnFilestore.exists());
+    assertThat(attachmentOnFilestore).exists();
 
     // call removal of user's filestore resources
     ServiceOperationResult<Integer> deleteResourcesResult =
@@ -344,9 +345,9 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     ServiceOperationResult<User> report =
         userDeletionMgr.removeUser(piToDelete.getId(), policy, sysadmin);
     assertFalse(report.isSucceeded());
-    assertTrue(
-        report.getMessage().contains("Sorry, cannot remove the only admin or PI"),
-        report.getMessage());
+    assertThat(report.getMessage())
+        .as(report.getMessage())
+        .contains("Sorry, cannot remove the only admin or PI");
   }
 
   @Test
@@ -995,7 +996,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     assertEquals(sysadmin, transferredTemplate.getOwner());
 
     Folder userFolder = findDeletedUsersTemplateFolder(userToDelete, sysadmin);
-    assertTrue(folderMgr.getFolderChildrenIds(userFolder).contains(template.getId()));
+    assertThat(folderMgr.getFolderChildrenIds(userFolder)).contains(template.getId());
 
     assertNotNull(recordMgr.get(piDoc.getId()));
   }
@@ -1034,7 +1035,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     assertEquals(sysadmin, transferredTemplate.getOwner());
 
     Folder userFolder = findDeletedUsersTemplateFolder(userToDelete, sysadmin);
-    assertTrue(folderMgr.getFolderChildrenIds(userFolder).contains(template.getId()));
+    assertThat(folderMgr.getFolderChildrenIds(userFolder)).contains(template.getId());
 
     assertNotNull(recordMgr.get(userBDoc.getId()));
   }
@@ -1095,7 +1096,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
         recordMgr.getGalleryMediaFolderForUser(MediaUtils.IMAGES_MEDIA_FLDER_NAME, sysadmin);
     Folder galleryUserFolder =
         findDeletedUsersSubfolder(galleryImagesFolder, userToDelete, sysadmin);
-    assertTrue(folderMgr.getFolderChildrenIds(galleryUserFolder).contains(image.getId()));
+    assertThat(folderMgr.getFolderChildrenIds(galleryUserFolder)).contains(image.getId());
   }
 
   @Test
@@ -1141,7 +1142,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     assertEquals(sysadmin, ((StructuredDocument) recordMgr.get(template.getId())).getOwner());
 
     Folder userFolder = findDeletedUsersTemplateFolder(userToDelete, sysadmin);
-    assertTrue(folderMgr.getFolderChildrenIds(userFolder).contains(template.getId()));
+    assertThat(folderMgr.getFolderChildrenIds(userFolder)).contains(template.getId());
 
     assertNotNull(recordMgr.get(userBDocFromForm.getId()));
     assertNotNull(recordMgr.get(userBDocFromTemplate.getId()));

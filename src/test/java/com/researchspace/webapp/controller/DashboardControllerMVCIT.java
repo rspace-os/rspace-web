@@ -1,6 +1,6 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
@@ -202,6 +202,6 @@ public class DashboardControllerMVCIT extends MVCTestBase {
   private void assertNResults(MvcResult result, int expectedResults) {
     List<MessageOrRequest> messagesList =
         (List<MessageOrRequest>) result.getModelAndView().getModelMap().get("messages");
-    assertEquals(expectedResults, messagesList.size());
+    assertThat(messagesList).hasSize(expectedResults);
   }
 }

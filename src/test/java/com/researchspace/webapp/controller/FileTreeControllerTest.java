@@ -1,6 +1,6 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.core.util.ISearchResults;
@@ -58,7 +58,7 @@ public class FileTreeControllerTest {
         .thenReturn(noGallery());
     ExtendedModelMap results = new ExtendedModelMap();
     fileTreeController.listFilesInModel("/", false, results, mockPrincipal);
-    assertEquals(1, getListFromModel(results, "records", TreeViewItem.class).size());
+    assertThat(getListFromModel(results, "records", TreeViewItem.class)).hasSize(1);
   }
 
   @Test
@@ -72,7 +72,7 @@ public class FileTreeControllerTest {
     ExtendedModelMap results = new ExtendedModelMap();
     fileTreeController.listFilesInModel("/", false, results, mockPrincipal);
     // gallery folder is removed
-    assertEquals(1, getListFromModel(results, "records", TreeViewItem.class).size());
+    assertThat(getListFromModel(results, "records", TreeViewItem.class)).hasSize(1);
 
     // check it's also removed for searching subfolders too -RSPAc-1494
 
@@ -82,7 +82,7 @@ public class FileTreeControllerTest {
         .thenReturn(galleryFolderPlusNormalItem());
     fileTreeController.listFilesInModel("-2", false, results, mockPrincipal);
     // gallery folder is removed as we
-    assertEquals(1, getListFromModel(results, "records", TreeViewItem.class).size());
+    assertThat(getListFromModel(results, "records", TreeViewItem.class)).hasSize(1);
   }
 
   private void standardSetup(Principal mockPRincipal) {

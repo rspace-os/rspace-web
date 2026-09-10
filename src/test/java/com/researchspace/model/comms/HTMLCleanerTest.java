@@ -1,5 +1,6 @@
 package com.researchspace.model.comms;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -26,9 +27,9 @@ public class HTMLCleanerTest {
     String plain = "Plain text with no html";
     assertEquals(plain, rtu.cleanHTMLStrict(plain, true));
     String plainWithNewline = "Plain text \n with newline";
-    assertTrue(
-        rtu.cleanHTMLStrict(plainWithNewline, true).contains("<br>"),
-        rtu.cleanHTMLStrict(plainWithNewline, true));
+    assertThat(rtu.cleanHTMLStrict(plainWithNewline, true))
+        .as(rtu.cleanHTMLStrict(plainWithNewline, true))
+        .contains("<br>");
 
     String basicHTML = "Simple html <a href='http://www.google.com'>Google</a>";
     assertTrue(
@@ -55,13 +56,13 @@ public class HTMLCleanerTest {
     String taggedhttp = rtu.cleanHTMLStrict(basicLink, true);
     String EXPECTED =
         "<a href='http://www.google.com' rel='nofollow' class='word-wrap' target='_blank'>";
-    assertTrue(taggedhttp.contains(EXPECTED), taggedhttp);
+    assertThat(taggedhttp).as(taggedhttp).contains(EXPECTED);
 
     String basicLink2 = "http://www.google.com google";
     String taggedhttp2 = rtu.cleanHTMLStrict(basicLink2, true);
     String EXPECTED2 =
         "<a href='http://www.google.com' rel='nofollow' class='word-wrap' target='_blank'>";
-    assertTrue(taggedhttp2.contains(EXPECTED2), taggedhttp2);
+    assertThat(taggedhttp2).as(taggedhttp2).contains(EXPECTED2);
 
     String twoLinks = "http://www.google.com google http://www.bbc.co.uk bbc";
     String taggedtwoLinks = rtu.cleanHTMLStrict(twoLinks, true);
@@ -75,9 +76,9 @@ public class HTMLCleanerTest {
     String httpsLink = "Simple link https://www.google.com ";
     String taggedhttps = rtu.cleanHTMLStrict(httpsLink, true);
     EXPECTED = "<a href='https://www.google.com' rel='nofollow' class='word-wrap' target='_blank'>";
-    assertTrue(taggedhttps.contains(EXPECTED), taggedhttps);
+    assertThat(taggedhttps).as(taggedhttps).contains(EXPECTED);
 
     taggedhttps = rtu.cleanHTMLStrict(httpsLink, false);
-    assertFalse(taggedhttps.contains(EXPECTED), taggedhttps);
+    assertThat(taggedhttps).as(taggedhttps).doesNotContain(EXPECTED);
   }
 }
