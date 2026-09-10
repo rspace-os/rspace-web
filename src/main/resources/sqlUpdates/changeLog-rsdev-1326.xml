@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+  <changeSet id="2026-09-10-rsdev1326-index-doi-type-identifier" context="run" author="nico">
+    <preConditions onFail="MARK_RAN">
+      <not>
+        <indexExists tableName="DigitalObjectIdentifier"
+          indexName="idx_DigitalObjectIdentifier_type_identifier"/>
+      </not>
+    </preConditions>
+
+    <comment>RSDEV-1326: index DigitalObjectIdentifier on (type, identifier). The PIDINST lookup
+      asks "is this PID already linked here?" for a whole page of provider hits at once, and the
+      table carried an index only on publicLink, so every one of those was a full scan of a table
+      that grows with every IGSN ever allocated, bulk allocations included.
+
+      Written as raw SQL rather than createIndex because the identifier column needs a prefix
+      length and Liquibase cannot express one. 190 characters of utf8mb4 is 760 bytes, which with
+      the 4-byte int keeps the key under the 767-byte limit of the older InnoDB row formats a
+      long-lived deployment may still be using; the full 255 would be 1024 and would fail there.
+      DOIs and Handles are far shorter than 190, so discrimination is unaffected.
+
+      Equality column first: type is always an equality match and identifier is matched by IN over
+      the page. deleted is left out deliberately - it is a bit column with two values, so it earns
+      nothing in the key and is cheap to filter afterwards.</comment>
+
+    <sql>
+      ALTER TABLE DigitalObjectIdentifier
+      ADD INDEX idx_DigitalObjectIdentifier_type_identifier (type, identifier(190));
+    </sql>
+
+    <rollback>
+      <sql>
+        ALTER TABLE DigitalObjectIdentifier
+        DROP INDEX idx_DigitalObjectIdentifier_type_identifier;
+      </sql>
+    </rollback>
+  </changeSet>
+
+</databaseChangeLog>
