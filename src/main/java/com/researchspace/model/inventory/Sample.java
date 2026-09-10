@@ -46,6 +46,9 @@ public class Sample extends SampleEntity {
   @Setter(value = AccessLevel.PROTECTED)
   private Long sTemplateLinkedVersion;
 
+  /** Whether other users are permitted to request this sample. */
+  private boolean requestable;
+
   static final Set<String> RESERVED_FIELD_NAMES =
       Collections.unmodifiableSet(
           Stream.concat(

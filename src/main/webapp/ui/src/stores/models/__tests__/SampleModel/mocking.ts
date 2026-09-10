@@ -22,6 +22,7 @@ export const sampleAttrs = (attrs?: Readonly<Partial<SampleAttrs>>): SampleAttrs
   tags: null,
   sampleSource: "LAB_CREATED",
   expiryDate: null,
+  requestable: false,
   iconId: null,
   owner: null,
   created: null,

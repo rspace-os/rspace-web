@@ -3439,6 +3439,7 @@ export default interface Resources {
       "notes": "Notes",
       "overview": "Overview",
       "parentSample": "Parent Sample",
+      "requests": "Requests",
       "sampleFields": "Sample Fields",
       "samples": "Samples",
       "samplesBeingEdited": "Samples being edited"
@@ -4221,6 +4222,9 @@ export default interface Resources {
       "imageAlt": "What the sample looks like",
       "newImageAlt": "What the new sample looks like",
       "permissionsExplanation": "Sample permission settings affect all of its subsamples, and cannot be set for individual subsamples.",
+      "requestsSection": {
+        "allowRequestsLabel": "Allow other users to request this sample"
+      },
       "subsamplesSection": {
         "tapToPreview": "Tap one of the {plural} in the search section to preview it below.",
         "title": "{count} {alias}"
@@ -4288,6 +4292,11 @@ export default interface Resources {
           "helperText": "Please enter a unique name, no longer than 32 characters.",
           "invalidLength": "Please enter minimum 1 and maximum 32 characters.",
           "name": "Name"
+        },
+        "requestable": {
+          "label": "Requestable",
+          "no": "All items",
+          "yes": "Requestable only"
         },
         "saveSearch": {
           "defaultName": "New saved search",
@@ -4384,6 +4393,7 @@ export default interface Resources {
         "benchOwner": "Bench Owner: {owner}",
         "contentsOf": "Contents of: {globalId}",
         "owner": "Owner: {owner}",
+        "requestable": "Requestable only",
         "status": "Status: {status}",
         "type": "Type: {type}",
         "unknown": "Unknown"

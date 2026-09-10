@@ -50,6 +50,7 @@ import org.springframework.web.util.UriComponentsBuilder;
   "templateId",
   "templateVersion",
   "template",
+  "requestable",
   "revisionId",
   "version",
   "historicalVersion",
@@ -74,6 +75,9 @@ public class ApiSampleInfo extends ApiInventoryRecordInfo {
 
   /* to use when generating image/thumbnail links on controller level, but not sent to front-end */
   @JsonIgnore private boolean templateImageAvailable;
+
+  @JsonProperty("requestable")
+  private boolean requestable;
 
   @JsonProperty("subSampleAlias")
   private ApiSubSampleAlias subSampleAlias;
@@ -139,6 +143,7 @@ public class ApiSampleInfo extends ApiInventoryRecordInfo {
       // the cast still needs the real instance: lazy references (e.g. Envers revision reads)
       // are proxies typed to the abstract SampleEntity root
       Sample nonTemplateSample = unproxy(sample, Sample.class);
+      setRequestable(nonTemplateSample.isRequestable());
       // may be null if the sample isn't created from a template.
       if (nonTemplateSample.getSTemplate() != null) {
         setTemplateId(nonTemplateSample.getSTemplate().getId());
@@ -174,6 +179,13 @@ public class ApiSampleInfo extends ApiInventoryRecordInfo {
     if (sampleSource != null && !sampleSource.equals(sample.getSampleSource())) {
       sample.setSampleSource(sampleSource);
       contentChanged = true;
+    }
+    if (sample.isSample()) {
+      Sample nonTemplateSample = unproxy(sample, Sample.class);
+      if (nonTemplateSample.isRequestable() != requestable) {
+        nonTemplateSample.setRequestable(requestable);
+        contentChanged = true;
+      }
     }
     // set if is different. Nullify if is explicit null request
     if (expiryDate != null && !expiryDate.equals(sample.getExpiryDate())) {
@@ -249,6 +261,7 @@ public class ApiSampleInfo extends ApiInventoryRecordInfo {
     limitedViewCopy.setTemplateId(getTemplateId());
     limitedViewCopy.setTemplateVersion(getTemplateVersion());
     limitedViewCopy.setTemplateImageAvailable(isTemplateImageAvailable());
+    limitedViewCopy.setRequestable(isRequestable());
     limitedViewCopy.setStorageTempMin(getStorageTempMin());
     limitedViewCopy.setStorageTempMax(getStorageTempMax());
     limitedViewCopy.setExpiryDate(getExpiryDate());

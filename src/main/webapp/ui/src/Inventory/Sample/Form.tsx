@@ -1,10 +1,15 @@
+import FormControlLabel from "@mui/material/FormControlLabel";
+import Switch from "@mui/material/Switch";
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useTranslation } from "react-i18next";
+import { useDeploymentProperty } from "../../hooks/api/useDeploymentProperty";
 import type { Person } from "../../stores/definitions/Person";
 import SampleModel from "../../stores/models/SampleModel";
 import useStores from "../../stores/use-stores";
+import * as FetchingData from "../../util/fetchingData";
+import * as Parser from "../../util/parsers";
 import { capitaliseJustFirstChar } from "../../util/Util";
 import AccessPermissions from "../components/Fields/AccessPermissions";
 import AttachmentsField from "../components/Fields/Attachments/Attachments";
@@ -98,6 +103,33 @@ const DetailsSection = observer(({ activeResult }: { activeResult: SampleModel }
   );
 });
 
+const RequestsSection = observer(({ activeResult }: { activeResult: SampleModel }) => {
+  const { t } = useTranslation("inventory");
+  const sampleRequestsAvailable = FetchingData.getSuccessValue(useDeploymentProperty("sampleRequests.available"))
+    .flatMap(Parser.isString)
+    .map((value) => value === "ALLOWED")
+    .orElse(false);
+
+  if (!sampleRequestsAvailable) return null;
+
+  return (
+    <StepperPanel icon="sample" title={t("formSections.requests")} sectionName="requests" recordType="sample">
+      <FormControlLabel
+        control={
+          <Switch
+            checked={activeResult.requestable}
+            onChange={({ target: { checked } }) => activeResult.setAttributesDirty({ requestable: checked })}
+            color="primary"
+            disabled={!activeResult.isFieldEditable("requestable")}
+            slotProps={{ input: { role: "checkbox" } }}
+          />
+        }
+        label={t("sample.requestsSection.allowRequestsLabel")}
+      />
+    </StepperPanel>
+  );
+});
+
 const MoreFieldsSection = observer(({ activeResult }: { activeResult: SampleModel }) => {
   const { t } = useTranslation("inventory");
   const formSectionError = useFormSectionError({
@@ -181,6 +213,7 @@ function Form(): React.ReactNode {
           >
             <AccessPermissions fieldOwner={activeResult} additionalExplanation={t("sample.permissionsExplanation")} />
           </StepperPanel>
+          <RequestsSection activeResult={activeResult} />
           <MoreFieldsSection activeResult={activeResult} />
           {activeResult.state === "preview" ? (
             <StepperPanel

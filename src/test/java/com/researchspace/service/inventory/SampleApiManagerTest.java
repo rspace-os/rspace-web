@@ -790,6 +790,28 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     assertTrue(sampleRetrievedByOtherUser.isClearedForPublicView());
 
     /*
+     * check that "requestable" search bypasses ownership/group scoping entirely
+     */
+
+    // mark testUser's sample as requestable by other users
+    ApiSample requestableUpdate = new ApiSample();
+    requestableUpdate.setId(testUserSample.getId());
+    requestableUpdate.setRequestable(true);
+    sampleApiMgr.updateApiSample(requestableUpdate, testUser);
+
+    // otherUser, who is outside testUser's group and normally only sees their own sample, can
+    // now see testUser's sample too when filtering by requestable=true. The result set isn't
+    // asserted to be exactly this one sample, as other requestable samples may pre-exist in the
+    // database; the bypass of ownership/group scoping is what's under test here.
+    ApiSampleSearchResult otherUserRequestableResult =
+        sampleApiMgr.getSamplesForUser(null, null, null, true, otherUser);
+    List<Long> otherUserRequestableResultIds =
+        otherUserRequestableResult.getSamples().stream()
+            .map(ApiSampleInfo::getId)
+            .collect(Collectors.toList());
+    assertTrue(otherUserRequestableResultIds.contains(testUserSample.getId()));
+
+    /*
      * check visibility for community admin administering the group
      */
 

@@ -22,6 +22,7 @@ type SampleSections = {
   identifiers: boolean;
   attachments: boolean;
   permissions: boolean;
+  requests: boolean;
   customFields: boolean;
   subsamples: boolean;
 };
@@ -106,6 +107,7 @@ const defaultFormSectionExpandedState = (): FormSectionsState =>
       identifiers: false,
       attachments: false,
       permissions: false,
+      requests: false,
       customFields: false,
       subsamples: true,
     },

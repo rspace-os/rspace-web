@@ -26,4 +26,16 @@
         </insert>
     </changeSet>
 
+    <changeSet id="2026-09-09a" context="run" author="mrowe-tan">
+        <comment>Add requestable column to Sample table (RSDEV-1309)</comment>
+        <addColumn tableName="Sample">
+            <column name="requestable" type="bit" defaultValueNumeric="0"/>
+        </addColumn>
+        <addColumn tableName="Sample_AUD">
+            <column name="requestable" type="bit" defaultValueNumeric="0">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
 </databaseChangeLog>

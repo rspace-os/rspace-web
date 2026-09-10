@@ -60,6 +60,7 @@ const DEFAULT_TEMPLATE: TemplateAttrs = {
   tags: "",
   sampleSource: "LAB_CREATED",
   expiryDate: null,
+  requestable: false,
   iconId: null,
   owner: null,
   created: null,

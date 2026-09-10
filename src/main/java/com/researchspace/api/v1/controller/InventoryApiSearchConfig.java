@@ -52,6 +52,14 @@ public class InventoryApiSearchConfig extends ApiSearchConfig {
   private String deletedItems;
 
   /**
+   * Limits Sample search results to samples with a matching {@code requestable} value. When {@code
+   * true}, this is an instance-wide search across all requestable Samples, regardless of the
+   * requesting user's own permissions, ownership, or group membership.
+   */
+  @JsonProperty("requestable")
+  private Boolean requestable;
+
+  /**
    * Inspect query string for tags: and modify the search term if it contains values we substitute -
    * eg '/'
    *
@@ -122,6 +130,9 @@ public class InventoryApiSearchConfig extends ApiSearchConfig {
     }
     if (deletedItems != null) {
       rc.add("deletedItems", deletedItems);
+    }
+    if (requestable != null) {
+      rc.add("requestable", requestable.toString());
     }
     return rc;
   }

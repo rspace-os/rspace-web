@@ -1453,6 +1453,29 @@ export default class Search implements SearchInterface {
     if (doSearch) this.performSearch();
   }
 
+  /*
+   * Filtering by "requestable" is an instance-wide search across all Samples,
+   * regardless of owner or group, so enabling it clears any owner/bench/
+   * container/free-text-query scoping that may currently be applied. Clearing
+   * the query also ensures the search always hits the simple "samples" listing
+   * endpoint, which is the only one that currently supports this filter.
+   */
+  setRequestable(value: boolean | null, doSearch: boolean = true) {
+    if (value) {
+      this.setTypeFilter("SAMPLE", false);
+      this.setParentGlobalId(null, false);
+      this.setOwner(null, false);
+      this.setBench(null, false);
+      this.staticFetcher.setAttributes({ query: "" });
+      this.dynamicFetcher.setAttributes({ query: "" });
+      this.cacheFetcher.setAttributes({ query: "" });
+    }
+    this.staticFetcher.setRequestable(value);
+    this.dynamicFetcher.setRequestable(value);
+    this.cacheFetcher.setRequestable(value);
+    if (doSearch) this.performSearch();
+  }
+
   get benchSearch(): boolean {
     return globalIdDefinitions.bench.pattern.test(this.fetcher.parentGlobalId ?? "");
   }
