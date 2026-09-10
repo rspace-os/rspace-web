@@ -1,13 +1,14 @@
-import type { Locator, Page } from "@playwright/test";
+import type { Locator } from "@playwright/test";
 
 /**
- * A row keyed by an exact-named link inside it (record, form, whatever). As
- * unique as the name you pass: it returns every match, so callers expecting
- * one result need a genuinely unique name (`uniqueName()`); callers expecting
- * several (e.g. after duplicating a record) should assert the count instead.
+ * Finds rows containing a link with the exact accessible name.
+ * Scope container to the target table; duplicate names match multiple rows.
  */
-export function rowWithLink(scope: Locator | Page, name: string): Locator {
-  // Locators know their Page via `.page()`; Page itself doesn't, which is how we tell them apart.
-  const page = "page" in scope ? scope.page() : scope;
-  return scope.getByRole("row").filter({ has: page.getByRole("link", { name, exact: true }) });
+export function rowWithLink(container: Locator, name: string): Locator {
+  return container.getByRole("row").filter({
+    has: container.page().getByRole("link", {
+      name,
+      exact: true,
+    }),
+  });
 }

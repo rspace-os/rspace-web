@@ -9,8 +9,12 @@ export class PublishedDocumentsPage extends BasePage {
     await this.page.getByRole("heading", { name: "My Group's Published Documents" }).waitFor({ state: "visible" });
   }
 
+  get resultsTable(): Locator {
+    return this.page.getByRole("table");
+  }
+
   row(name: string): Locator {
-    return rowWithLink(this.page, name);
+    return rowWithLink(this.resultsTable, name);
   }
 
   publicLink(name: string): Locator {

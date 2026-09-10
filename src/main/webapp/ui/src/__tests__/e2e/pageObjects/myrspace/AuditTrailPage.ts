@@ -109,9 +109,13 @@ export class AuditTrailPage extends BasePage {
     // Every engine hides the payload somewhere different: Chromium/Firefox hand it over as a
     // "download" then shred the response body, WebKit keeps the body but never says "download".
     const context = this.page.context();
-    const downloadPromise = context.waitForEvent("download").catch(() => null);
+    const settleTimeout = 15_000;
+    const downloadPromise = context.waitForEvent("download", { timeout: settleTimeout }).catch(() => null);
     const responsePromise = context
-      .waitForEvent("response", (res) => res.url().includes("/audit/download"))
+      .waitForEvent("response", {
+        predicate: (res) => res.url().includes("/audit/download"),
+        timeout: settleTimeout,
+      })
       .catch(() => null);
 
     await this.page.getByRole("button", { name: "Download Audit Report" }).click();
