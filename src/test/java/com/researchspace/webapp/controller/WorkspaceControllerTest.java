@@ -3,6 +3,7 @@ package com.researchspace.webapp.controller;
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static com.researchspace.core.util.TransformerUtils.toList;
 import static com.researchspace.session.UserSessionTracker.USERS_KEY;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -341,8 +342,8 @@ public class WorkspaceControllerTest extends SpringTransactionalTest {
   public void testValidateFolderName() throws Exception {
     workspaceController.setRecordManager(recordManagerStub);
     String tooLong = getRandomName(256);
-    assertEquals(
-        WorkspaceController.NAME_MAX_LENGTH, workspaceController.abbreviateName(tooLong).length());
+    assertThat(workspaceController.abbreviateName(tooLong))
+        .hasSize(WorkspaceController.NAME_MAX_LENGTH);
   }
 
   @Test

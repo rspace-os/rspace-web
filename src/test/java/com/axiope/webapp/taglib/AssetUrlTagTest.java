@@ -1,11 +1,11 @@
 package com.axiope.webapp.taglib;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 import jakarta.servlet.jsp.JspException;
@@ -84,8 +84,8 @@ public class AssetUrlTagTest {
     AssetUrlTag.ProductionUrlCache cache =
         (AssetUrlTag.ProductionUrlCache)
             servletContext.getAttribute(AssetUrlTag.PRODUCTION_URL_CACHE_ATTR);
-    assertEquals(1, cache.urls.size());
-    assertTrue(cache.urls.containsValue("/scripts/global.js?v=2.23.0"));
+    assertThat(cache.urls).hasSize(1);
+    assertThat(cache.urls).containsValue("/scripts/global.js?v=2.23.0");
 
     output.getBuffer().setLength(0);
     AssetUrlTag second = new AssetUrlTag();
@@ -98,7 +98,7 @@ public class AssetUrlTagTest {
         cache,
         servletContext.getAttribute(AssetUrlTag.PRODUCTION_URL_CACHE_ATTR),
         "the cache must be reused, not rebuilt per invocation");
-    assertEquals(1, cache.urls.size());
+    assertThat(cache.urls).hasSize(1);
   }
 
   @Test
@@ -142,8 +142,9 @@ public class AssetUrlTagTest {
     assertEquals(TagSupport.SKIP_BODY, tag.doStartTag());
 
     String first = output.toString();
-    assertTrue(
-        first.matches("/scripts/global\\.js\\?v=.+"), "expected ?v=<uuid> but was: " + first);
+    assertThat(first)
+        .as("expected ?v=<uuid> but was: " + first)
+        .matches("/scripts/global\\.js\\?v=.+");
 
     output.getBuffer().setLength(0);
     AssetUrlTag second = new AssetUrlTag();
@@ -249,9 +250,9 @@ public class AssetUrlTagTest {
 
     assertEquals(TagSupport.SKIP_BODY, tag.doStartTag());
 
-    assertTrue(
-        output.toString().matches("/styles/theme\\.css\\?v=.+"),
-        "expected ?v=<uuid> but was: " + output);
+    assertThat(output.toString())
+        .as("expected ?v=<uuid> but was: " + output)
+        .matches("/styles/theme\\.css\\?v=.+");
   }
 
   @Test

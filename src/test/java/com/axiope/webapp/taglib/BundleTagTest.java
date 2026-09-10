@@ -1,7 +1,7 @@
 package com.axiope.webapp.taglib;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -114,11 +114,11 @@ public class BundleTagTest {
     tag.setBundle("appBar");
 
     assertEquals(TagSupport.SKIP_BODY, tag.doStartTag());
-    assertTrue(
-        output.toString().contains("rel=\"stylesheet\" href=\"/ui/dist/assets/appBar.css\""));
-    assertTrue(
-        output.toString().contains("rel=\"modulepreload\" href=\"/ui/dist/chunks/shared.js\""));
-    assertTrue(output.toString().contains("type=\"module\" src=\"/ui/dist/appBar-abc123.js\""));
+    assertThat(output.toString())
+        .contains("rel=\"stylesheet\" href=\"/ui/dist/assets/appBar.css\"");
+    assertThat(output.toString())
+        .contains("rel=\"modulepreload\" href=\"/ui/dist/chunks/shared.js\"");
+    assertThat(output.toString()).contains("type=\"module\" src=\"/ui/dist/appBar-abc123.js\"");
   }
 
   @Test
@@ -201,11 +201,9 @@ public class BundleTagTest {
     i18nTag.setPageContext(pageContext);
 
     assertEquals(TagSupport.SKIP_BODY, i18nTag.doStartTag());
-    assertTrue(output.toString().contains("type=\"module\" src=\"/ui/dist/@vite/client\""));
-    assertTrue(
-        output
-            .toString()
-            .contains("<script src=\"/ui/dist/src/modules/common/i18n/legacyI18n.ts\"></script>"));
+    assertThat(output.toString()).contains("type=\"module\" src=\"/ui/dist/@vite/client\"");
+    assertThat(output.toString())
+        .contains("<script src=\"/ui/dist/src/modules/common/i18n/legacyI18n.ts\"></script>");
   }
 
   @Test
@@ -225,7 +223,7 @@ public class BundleTagTest {
 
     assertEquals(TagSupport.SKIP_BODY, tag.doStartTag());
     assertEquals(TagSupport.SKIP_BODY, tag.doStartTag());
-    assertEquals(3, renderedAssets.size());
+    assertThat(renderedAssets).hasSize(3);
   }
 
   @Test
@@ -234,10 +232,8 @@ public class BundleTagTest {
     stubServletContext();
     tag.setBundle("apps");
 
-    assertTrue(
-        assertThrows(JspException.class, () -> tag.doStartTag())
-            .getMessage()
-            .contains("No bundle manifest entry found for bundle: apps"));
+    assertThat(assertThrows(JspException.class, () -> tag.doStartTag()).getMessage())
+        .contains("No bundle manifest entry found for bundle: apps");
   }
 
   @Test
@@ -346,7 +342,7 @@ public class BundleTagTest {
     realTag.setBundle("appBar");
 
     assertEquals(TagSupport.SKIP_BODY, realTag.doStartTag());
-    assertTrue(output.toString().contains("type=\"module\" src=\"/ui/dist/appBar-abc123.js\""));
+    assertThat(output.toString()).contains("type=\"module\" src=\"/ui/dist/appBar-abc123.js\"");
     verify(servletContext)
         .setAttribute(eq(BundleTag.MANIFEST_CACHE_ATTR), any(BundleTag.ChunkManifest.class));
   }
@@ -390,13 +386,13 @@ public class BundleTagTest {
     realTag.setBundle("appBar");
 
     assertEquals(TagSupport.SKIP_BODY, realTag.doStartTag());
-    assertTrue(output.toString().contains("src=\"/ui/dist/appBar-first.js\""));
+    assertThat(output.toString()).contains("src=\"/ui/dist/appBar-first.js\"");
     assertEquals(1, realTag.refreshCount);
 
     output.getBuffer().setLength(0);
     request.clearAttributes();
     assertEquals(TagSupport.SKIP_BODY, realTag.doStartTag());
-    assertTrue(output.toString().contains("src=\"/ui/dist/appBar-second.js\""));
+    assertThat(output.toString()).contains("src=\"/ui/dist/appBar-second.js\"");
     assertEquals(2, realTag.refreshCount);
   }
 
@@ -429,11 +425,11 @@ public class BundleTagTest {
     realTag.setBundle("appBar");
 
     assertEquals(TagSupport.SKIP_BODY, realTag.doStartTag());
-    assertFalse(output.toString().contains("/ui/dist/@react-refresh"));
-    assertFalse(
-        output.toString().contains("window.__vite_plugin_react_preamble_installed__ = true;"));
-    assertTrue(output.toString().contains("src=\"/ui/dist/@vite/client\""));
-    assertTrue(output.toString().contains("src=\"/ui/dist/src/eln/AppBar.tsx\""));
+    assertThat(output.toString()).doesNotContain("/ui/dist/@react-refresh");
+    assertThat(output.toString())
+        .doesNotContain("window.__vite_plugin_react_preamble_installed__ = true;");
+    assertThat(output.toString()).contains("src=\"/ui/dist/@vite/client\"");
+    assertThat(output.toString()).contains("src=\"/ui/dist/src/eln/AppBar.tsx\"");
   }
 
   @Test

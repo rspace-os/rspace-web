@@ -1,5 +1,6 @@
 package com.researchspace.service.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -116,7 +117,7 @@ public class NfsManagerImplTest {
 
     List<NfsFileSystemInfo> infos = nfsManager.getActiveFileSystemInfos(testUser);
 
-    assertEquals(1, infos.size());
+    assertThat(infos).hasSize(1);
     NfsUserPermissions perms = infos.get(0).getUserPermissions();
     assertNotNull(perms);
     assertEquals(true, perms.isCanRead());
@@ -166,7 +167,7 @@ public class NfsManagerImplTest {
 
     List<NfsFileStoreInfo> infos = nfsManager.getFileStoreInfosForUser(testUser);
 
-    assertEquals(1, infos.size());
+    assertThat(infos).hasSize(1);
     NfsUserPermissions perms = infos.get(0).getUserPermissions();
     assertNotNull(perms);
     assertEquals(true, perms.isCanRead());

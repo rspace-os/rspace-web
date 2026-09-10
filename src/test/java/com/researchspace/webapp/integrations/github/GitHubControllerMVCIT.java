@@ -1,10 +1,10 @@
 package com.researchspace.webapp.integrations.github;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.jsonPath;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
@@ -113,7 +113,8 @@ public class GitHubControllerMVCIT extends MVCTestBase {
             .andExpect(status().isOk())
             .andExpect(view().name("connect/connected"))
             .andReturn();
-    assertEquals(GITHUB_ACCESS_TOKEN, result.getModelAndView().getModel().get("connectionToken"));
+    assertThat(result.getModelAndView().getModel())
+        .containsEntry("connectionToken", GITHUB_ACCESS_TOKEN);
   }
 
   @Test
@@ -205,7 +206,7 @@ public class GitHubControllerMVCIT extends MVCTestBase {
     List<GitHubController.TreeNode> nodes =
         (List<TreeNode>) result.getModelAndView().getModel().get("treeNodes");
 
-    assertEquals(2, nodes.size());
+    assertThat(nodes).hasSize(2);
 
     // Initialize expected node 1
     TreeNode expectedNode1 = new TreeNode();
@@ -222,7 +223,9 @@ public class GitHubControllerMVCIT extends MVCTestBase {
     expectedNode2.setSha("main");
     expectedNode2.setType("tree");
 
-    assertTrue(nodes.contains(expectedNode1) && nodes.contains(expectedNode2));
+    assertThat(nodes).contains(expectedNode1);
+
+    assertThat(nodes).contains(expectedNode2);
   }
 
   @Test
@@ -259,7 +262,7 @@ public class GitHubControllerMVCIT extends MVCTestBase {
     List<GitHubController.TreeNode> nodes =
         (List<TreeNode>) result.getModelAndView().getModel().get("treeNodes");
 
-    assertEquals(1, nodes.size());
+    assertThat(nodes).hasSize(1);
 
     // Initialize expected node 1
     TreeNode expectedNode1 = new TreeNode();
@@ -269,6 +272,6 @@ public class GitHubControllerMVCIT extends MVCTestBase {
     expectedNode1.setSha("3afd81aae1693c6782a2a4329516045bc6708592");
     expectedNode1.setType("blob");
 
-    assertTrue(nodes.contains(expectedNode1));
+    assertThat(nodes).contains(expectedNode1);
   }
 }

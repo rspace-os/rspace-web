@@ -1,5 +1,6 @@
 package com.researchspace.service.inventory;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -202,7 +203,7 @@ public class InventoryIdentifierApiManagerRelatedIdentifierTest extends SpringTr
 
     List<DataCiteDoiAttributes.RelatedIdentifier> onPublish =
         requireSentRelatedIdentifiers("publish");
-    assertEquals(2, onPublish.size());
+    assertThat(onPublish).hasSize(2);
     assertNamesTheLinkedRecord(onPublish.get(0), "Measurement Technique", techniqueId);
     assertNamesTheLinkedRecord(onPublish.get(1), "Calibration", calibrationId);
 
@@ -216,7 +217,7 @@ public class InventoryIdentifierApiManagerRelatedIdentifierTest extends SpringTr
 
     List<DataCiteDoiAttributes.RelatedIdentifier> onRetract =
         requireSentRelatedIdentifiers("retract");
-    assertEquals(2, onRetract.size());
+    assertThat(onRetract).hasSize(2);
     assertNamesTheLinkedRecord(onRetract.get(0), "Measurement Technique", techniqueId);
     assertNamesTheLinkedRecord(onRetract.get(1), "Calibration", calibrationId);
   }
@@ -245,7 +246,9 @@ public class InventoryIdentifierApiManagerRelatedIdentifierTest extends SpringTr
     inventoryIdentifierApiMgr.publishIdentifier(instrumentOid, user);
 
     List<DataCiteDoiAttributes.RelatedIdentifier> sent = requireSentRelatedIdentifiers("publish");
-    assertEquals(1, sent.size(), "the cleared Measurement technique field must not be registered");
+    assertThat(sent)
+        .as("the cleared Measurement technique field must not be registered")
+        .hasSize(1);
     assertNamesTheLinkedRecord(sent.get(0), "Calibration", calibrationId);
   }
 
@@ -274,7 +277,7 @@ public class InventoryIdentifierApiManagerRelatedIdentifierTest extends SpringTr
 
     List<DataCiteDoiAttributes.RelatedIdentifier> sent = lastSentRelatedIdentifiers();
     assertNotNull(sent, "both fields cleared must clear the property with [], not leave it absent");
-    assertEquals(0, sent.size());
+    assertThat(sent).isEmpty();
   }
 
   /**
@@ -297,7 +300,7 @@ public class InventoryIdentifierApiManagerRelatedIdentifierTest extends SpringTr
     List<B2instRelatedIdentifier> sent =
         b2instDummy.getDoiSentToB2inst().getMetadata().getRelatedIdentifier();
     assertNotNull(sent, "no RelatedIdentifier reached B2INST at draft-register time");
-    assertEquals(2, sent.size());
+    assertThat(sent).hasSize(2);
     assertEquals("Measurement Technique", sent.get(0).getRelatedIdentifierName());
     assertEquals("IsDescribedBy", sent.get(0).getRelationType());
     assertEquals("URL", sent.get(0).getRelatedIdentifierType());

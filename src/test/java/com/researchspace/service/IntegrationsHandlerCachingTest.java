@@ -5,6 +5,7 @@ import static com.researchspace.service.IntegrationsHandler.FIELDMARK_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.FIELDMARK_USER_TOKEN;
 import static com.researchspace.service.IntegrationsHandler.PROTOCOLS_IO_APP_NAME;
 import static com.researchspace.service.impl.IntegrationsHandlerImpl.MASKED_TOKEN;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -198,7 +199,7 @@ public class IntegrationsHandlerCachingTest extends SpringTransactionalTest {
     IntegrationInfo reloaded = integrationsHandler.getIntegration(anyUser, FIELDMARK_APP_NAME);
     IntegrationInfo reloadedCached =
         integrationsHandler.getIntegration(anyUser, FIELDMARK_APP_NAME);
-    assertEquals(MASKED_TOKEN, reloaded.getOptions().get(FIELDMARK_USER_TOKEN));
+    assertThat(reloaded.getOptions()).containsEntry(FIELDMARK_USER_TOKEN, MASKED_TOKEN);
     // sanity check that it is now being cached again
     assertSame(reloadedCached, reloaded);
 

@@ -1,6 +1,7 @@
 package com.researchspace.model.record;
 
 import static com.researchspace.model.record.Folder.SHARED_FOLDER_NAME;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -51,11 +52,11 @@ public class FolderTest {
 
   @Test
   public void addRecordToChildren() throws IllegalAddChildOperation {
-    assertEquals(0, f.getChildren().size());
+    assertThat(f.getChildren()).isEmpty();
     sleep(1);
     Folder c1 = new Folder();
     f.addChild(c1, anyuser);
-    assertEquals(1, f.getChildren().size());
+    assertThat(f.getChildren()).hasSize(1);
     assertEquals(f, c1.getParent());
   }
 
@@ -77,14 +78,14 @@ public class FolderTest {
 
   @Test
   public void removeRecord() throws IllegalAddChildOperation {
-    assertEquals(0, f.getChildren().size());
+    assertThat(f.getChildren()).isEmpty();
     sleep(1);
     Folder c1 = new Folder();
     f.addChild(c1, anyuser);
-    assertEquals(1, f.getChildren().size());
+    assertThat(f.getChildren()).hasSize(1);
     f.removeChild(c1);
     assertNull(c1.getParent());
-    assertEquals(0, f.getChildren().size());
+    assertThat(f.getChildren()).isEmpty();
   }
 
   @Test
@@ -99,7 +100,7 @@ public class FolderTest {
     assertNotNull(t2Copy);
     assertEquals(t2.getDocTag(), t2Copy.getDocTag());
     assertNotNull(t3Copy);
-    assertEquals(2, t3Copy.getChildrens().size());
+    assertThat(t3Copy.getChildrens()).hasSize(2);
   }
 
   @Test
@@ -337,14 +338,14 @@ public class FolderTest {
   public void getAllAncestors() throws InterruptedException, IllegalAddChildOperation {
     Folder root = makeNestedFolders();
     List<Folder> folders = sd.getAllAncestors();
-    assertEquals(3, folders.size());
+    assertThat(folders).hasSize(3);
     Folder x = TestFactory.createAFolder("parent2", anyuser);
     x.addChild(sd, anyuser, true);
-    assertEquals(4, sd.getAllAncestors().size());
+    assertThat(sd.getAllAncestors()).hasSize(4);
 
     // create artificial cycle in folder structure, ensure that getAllAncestors can handle it
     folders.get(0).doAddToParentsOnly(root, anyuser);
-    assertEquals(4, sd.getAllAncestors().size());
+    assertThat(sd.getAllAncestors()).hasSize(4);
   }
 
   @Test

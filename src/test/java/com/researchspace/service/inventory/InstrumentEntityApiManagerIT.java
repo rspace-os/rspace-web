@@ -1,5 +1,6 @@
 package com.researchspace.service.inventory;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -130,8 +131,7 @@ public class InstrumentEntityApiManagerIT extends RealTransactionSpringTestBase 
             null,
             InventorySearchDeletedOption.DELETED_ONLY,
             testUser);
-    assertTrue(
-        withDeleted.getInstruments().stream().anyMatch(i -> i.getId().equals(created.getId())));
+    assertThat(withDeleted.getInstruments()).anyMatch(i -> i.getId().equals(created.getId()));
 
     ApiInstrument restored = instrumentApiMgr.restoreDeletedInstrument(created.getId(), testUser);
     assertFalse(restored.isDeleted());
@@ -166,8 +166,7 @@ public class InstrumentEntityApiManagerIT extends RealTransactionSpringTestBase 
             testUser);
 
     assertTrue(result.getTotalHits() >= 1);
-    assertTrue(
-        result.getInstruments().stream().anyMatch(i -> i.getName().equals("listed-it-instrument")));
+    assertThat(result.getInstruments()).anyMatch(i -> i.getName().equals("listed-it-instrument"));
   }
 
   @Test

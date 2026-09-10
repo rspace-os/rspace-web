@@ -1,9 +1,9 @@
 package com.researchspace.service.inventory.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
@@ -97,7 +97,7 @@ class InventoryFileApiManagerImplAttachingTest {
 
     List<ApiInventoryReferencingItem> rows = manager.findAttachingItems("GL5", actor);
 
-    assertEquals(1, rows.size());
+    assertThat(rows).hasSize(1);
     ApiInventoryReferencingItem row = rows.get(0);
     assertEquals("SA1", row.getSourceGlobalId());
     assertEquals("My sample", row.getSourceName());
@@ -119,7 +119,7 @@ class InventoryFileApiManagerImplAttachingTest {
 
     List<ApiInventoryReferencingItem> rows = manager.findAttachingItems("GL5", actor);
 
-    assertEquals(1, rows.size());
+    assertThat(rows).hasSize(1);
     assertEquals("IT9", rows.get(0).getSourceGlobalId());
   }
 
@@ -134,7 +134,7 @@ class InventoryFileApiManagerImplAttachingTest {
     when(inventoryFileDao.findByMediaFileId(5L)).thenReturn(List.of(first, second));
     when(invPermissions.canUserReadInventoryRecord(sample, actor)).thenReturn(true);
 
-    assertEquals(2, manager.findAttachingItems("GL5", actor).size());
+    assertThat(manager.findAttachingItems("GL5", actor)).hasSize(2);
   }
 
   @Test
@@ -154,7 +154,7 @@ class InventoryFileApiManagerImplAttachingTest {
 
     List<ApiInventoryReferencingItem> rows = manager.findAttachingItems("GL5", actor);
 
-    assertEquals(1, rows.size());
+    assertThat(rows).hasSize(1);
     assertEquals("SA10", rows.get(0).getSourceGlobalId());
   }
 
@@ -165,7 +165,7 @@ class InventoryFileApiManagerImplAttachingTest {
     InventoryFile attachment = recordAttachment(deleted);
     when(inventoryFileDao.findByMediaFileId(5L)).thenReturn(List.of(attachment));
 
-    assertTrue(manager.findAttachingItems("GL5", actor).isEmpty());
+    assertThat(manager.findAttachingItems("GL5", actor)).isEmpty();
   }
 
   @Test
@@ -176,7 +176,7 @@ class InventoryFileApiManagerImplAttachingTest {
     InventoryFile orphan = recordAttachment(null);
     when(inventoryFileDao.findByMediaFileId(5L)).thenReturn(List.of(orphan));
 
-    assertTrue(manager.findAttachingItems("GL5", actor).isEmpty());
+    assertThat(manager.findAttachingItems("GL5", actor)).isEmpty();
   }
 
   @Test

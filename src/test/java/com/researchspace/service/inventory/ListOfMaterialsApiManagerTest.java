@@ -1,6 +1,7 @@
 package com.researchspace.service.inventory;
 
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -74,9 +75,9 @@ public class ListOfMaterialsApiManagerTest extends SpringTransactionalTest {
 
     List<ApiListOfMaterials> foundLoms =
         lomManager.getListOfMaterialsForFieldId(basicDocFieldId, testUser);
-    assertEquals(0, foundLoms.size());
+    assertThat(foundLoms).isEmpty();
     foundLoms = lomManager.getListOfMaterialsForInvRecGlobalId(basicSubSampleOid, testUser);
-    assertEquals(0, foundLoms.size());
+    assertThat(foundLoms).isEmpty();
 
     // add new lom
     ApiListOfMaterials newLom = new ApiListOfMaterials();
@@ -86,20 +87,20 @@ public class ListOfMaterialsApiManagerTest extends SpringTransactionalTest {
         basicSubSample, basicSubSample.getQuantity(), false); // add subsample usage
     ApiListOfMaterials createdLom = lomManager.createNewListOfMaterials(newLom, testUser);
     assertNotNull(createdLom.getId());
-    assertEquals(1, createdLom.getMaterials().size());
+    assertThat(createdLom.getMaterials()).hasSize(1);
     ApiMaterialUsage createdSubSampleUsage = createdLom.getMaterials().get(0);
     assertEquals("mySubSample", createdSubSampleUsage.getRecord().getName());
     assertEquals("5 g", createdSubSampleUsage.getUsedQuantity().toQuantityInfo().toPlainString());
-    assertEquals(3, createdSubSampleUsage.getRecord().getPermittedActions().size());
+    assertThat(createdSubSampleUsage.getRecord().getPermittedActions()).hasSize(3);
     Mockito.verify(mockPublisher).publishEvent(Mockito.any(ListOfMaterialsCreationEvent.class));
 
     // check lom can be found when querying for field loms or by id
     foundLoms = lomManager.getListOfMaterialsForFieldId(basicDocFieldId, testUser);
-    assertEquals(1, foundLoms.size());
+    assertThat(foundLoms).hasSize(1);
     assertNull(
         foundLoms.get(0).getElnDocument()); // not populated when searching with doc/field ids
     foundLoms = lomManager.getListOfMaterialsForInvRecGlobalId(basicSubSampleOid, testUser);
-    assertEquals(1, foundLoms.size());
+    assertThat(foundLoms).hasSize(1);
     assertNotNull(
         foundLoms.get(0).getElnDocument()); // not populated when searching with doc/field ids
 
@@ -118,9 +119,9 @@ public class ListOfMaterialsApiManagerTest extends SpringTransactionalTest {
     // verify updated fine
     secondLom = lomManager.getListOfMaterialsById(secondLomId, testUser);
     assertEquals("updatedName", secondLom.getName());
-    assertEquals(1, secondLom.getMaterials().size());
+    assertThat(secondLom.getMaterials()).hasSize(1);
     assertEquals("mySample", secondLom.getMaterials().get(0).getRecord().getName());
-    assertEquals(3, secondLom.getMaterials().get(0).getRecord().getPermittedActions().size());
+    assertThat(secondLom.getMaterials().get(0).getRecord().getPermittedActions()).hasSize(3);
     Mockito.verify(mockPublisher).publishEvent(Mockito.any(ListOfMaterialsEditingEvent.class));
 
     // delete
@@ -129,9 +130,9 @@ public class ListOfMaterialsApiManagerTest extends SpringTransactionalTest {
         assertThrows(
             NotFoundException.class,
             () -> lomManager.getListOfMaterialsById(secondLomId, testUser));
-    assertTrue(nfe.getMessage().contains("possibly it has been deleted"), nfe.getMessage());
+    assertThat(nfe.getMessage()).as(nfe.getMessage()).contains("possibly it has been deleted");
     foundLoms = lomManager.getListOfMaterialsForFieldId(basicDocFieldId, testUser);
-    assertEquals(0, foundLoms.size());
+    assertThat(foundLoms).isEmpty();
     Mockito.verify(mockPublisher).publishEvent(Mockito.any(ListOfMaterialsDeleteEvent.class));
 
     Mockito.verifyNoMoreInteractions(mockPublisher);
@@ -148,7 +149,7 @@ public class ListOfMaterialsApiManagerTest extends SpringTransactionalTest {
         createBasicListOfMaterialsForUserAndDocField(testUser, basicDocField, null);
     Long createdLomId = createdLom.getId();
     ApiListOfMaterials latestLom = lomManager.getListOfMaterialsById(createdLomId, testUser);
-    assertEquals(0, latestLom.getMaterials().size());
+    assertThat(latestLom.getMaterials()).isEmpty();
 
     ApiSampleWithFullSubSamples basicSample = createBasicSampleForUser(testUser);
     ApiSubSample basicSubSample = basicSample.getSubSamples().get(0);
@@ -163,7 +164,7 @@ public class ListOfMaterialsApiManagerTest extends SpringTransactionalTest {
 
     latestLom = lomManager.getListOfMaterialsById(createdLomId, testUser);
     assertEquals(updatedLom, latestLom);
-    assertEquals(1, latestLom.getMaterials().size());
+    assertThat(latestLom.getMaterials()).hasSize(1);
     assertEquals("mySubSample", latestLom.getMaterials().get(0).getRecord().getName());
     assertEquals(
         "5 g", latestLom.getMaterials().get(0).getUsedQuantity().toQuantityInfo().toPlainString());
@@ -181,7 +182,7 @@ public class ListOfMaterialsApiManagerTest extends SpringTransactionalTest {
 
     latestLom = lomManager.getListOfMaterialsById(createdLomId, testUser);
     assertEquals(updatedLom, latestLom);
-    assertEquals(1, latestLom.getMaterials().size());
+    assertThat(latestLom.getMaterials()).hasSize(1);
     assertEquals("mySubSample", latestLom.getMaterials().get(0).getRecord().getName());
     assertEquals(
         "3.5 g",
@@ -198,7 +199,7 @@ public class ListOfMaterialsApiManagerTest extends SpringTransactionalTest {
 
     latestLom = lomManager.getListOfMaterialsById(createdLomId, testUser);
     assertEquals(updatedLom, latestLom);
-    assertEquals(3, latestLom.getMaterials().size());
+    assertThat(latestLom.getMaterials()).hasSize(3);
     assertEquals("mySubSample", latestLom.getMaterials().get(0).getRecord().getName());
     assertEquals("myComplexSample", latestLom.getMaterials().get(1).getRecord().getName());
     assertEquals("listContainer", latestLom.getMaterials().get(2).getRecord().getName());
@@ -230,7 +231,7 @@ public class ListOfMaterialsApiManagerTest extends SpringTransactionalTest {
 
     ApiListOfMaterials latestLom = lomManager.getListOfMaterialsById(createdLomId, testUser);
     assertEquals(updatedLom, latestLom);
-    assertEquals(1, latestLom.getMaterials().size());
+    assertThat(latestLom.getMaterials()).hasSize(1);
     assertEquals("mySubSample", latestLom.getMaterials().get(0).getRecord().getName());
     assertEquals(
         "5 g", latestLom.getMaterials().get(0).getUsedQuantity().toQuantityInfo().toPlainString());
@@ -320,7 +321,7 @@ public class ListOfMaterialsApiManagerTest extends SpringTransactionalTest {
     // no LoM yet
     List<ApiListOfMaterials> foundLoms =
         lomManager.getListOfMaterialsForInvRecGlobalId(instrumentOid, testUser);
-    assertEquals(0, foundLoms.size());
+    assertThat(foundLoms).isEmpty();
 
     // create LoM with instrument (no quantity)
     ApiListOfMaterials newLom = new ApiListOfMaterials();
@@ -329,7 +330,7 @@ public class ListOfMaterialsApiManagerTest extends SpringTransactionalTest {
     newLom.addMaterialUsage(instrument, null, false);
     ApiListOfMaterials createdLom = lomManager.createNewListOfMaterials(newLom, testUser);
     assertNotNull(createdLom.getId());
-    assertEquals(1, createdLom.getMaterials().size());
+    assertThat(createdLom.getMaterials()).hasSize(1);
     Mockito.verify(mockPublisher).publishEvent(Mockito.any(ListOfMaterialsCreationEvent.class));
 
     // fetch by id: instrument record info must be enriched (name, permittedActions)
@@ -338,7 +339,7 @@ public class ListOfMaterialsApiManagerTest extends SpringTransactionalTest {
     ApiInventoryRecordInfo instrumentRecord = instrumentUsage.getRecord();
     assertEquals("myInstrument", instrumentRecord.getName());
     assertEquals(instrument.getGlobalId(), instrumentRecord.getGlobalId());
-    assertFalse(instrumentRecord.getPermittedActions().isEmpty());
+    assertThat(instrumentRecord.getPermittedActions()).isNotEmpty();
     assertNull(instrumentUsage.getUsedQuantity()); // instruments have no quantity
 
     // findLomsByInvRecGlobalId runs a native SQL query, so pending inserts must be flushed for it
@@ -346,7 +347,7 @@ public class ListOfMaterialsApiManagerTest extends SpringTransactionalTest {
     flushDatabaseState();
     // find LoM via instrument globalId
     foundLoms = lomManager.getListOfMaterialsForInvRecGlobalId(instrumentOid, testUser);
-    assertEquals(1, foundLoms.size());
+    assertThat(foundLoms).hasSize(1);
     assertNotNull(foundLoms.get(0).getElnDocument());
 
     // remove instrument from LoM: an explicit empty materials list clears all materials,
@@ -360,7 +361,7 @@ public class ListOfMaterialsApiManagerTest extends SpringTransactionalTest {
     // flush the material removal so the native-query search reflects it within this transaction
     flushDatabaseState();
     foundLoms = lomManager.getListOfMaterialsForInvRecGlobalId(instrumentOid, testUser);
-    assertEquals(0, foundLoms.size());
+    assertThat(foundLoms).isEmpty();
   }
 
   @Test
@@ -383,7 +384,7 @@ public class ListOfMaterialsApiManagerTest extends SpringTransactionalTest {
         basicSubSample, basicSubSample.getQuantity(), false); // add subsample usage
     ApiListOfMaterials createdLom = lomManager.createNewListOfMaterials(newLom, testUser);
     assertNotNull(createdLom.getId());
-    assertEquals(2, createdLom.getMaterials().size());
+    assertThat(createdLom.getMaterials()).hasSize(2);
     assertEquals("mySample", createdLom.getMaterials().get(0).getRecord().getName());
     assertEquals("mySubSample", createdLom.getMaterials().get(1).getRecord().getName());
 
@@ -391,14 +392,14 @@ public class ListOfMaterialsApiManagerTest extends SpringTransactionalTest {
     GlobalIdentifier basicSampleOid = new GlobalIdentifier(basicSample.getGlobalId());
     List<ApiListOfMaterials> foundLoms =
         lomManager.getListOfMaterialsForDocId(basicDoc.getId(), testUser);
-    assertEquals(1, foundLoms.size());
-    assertEquals(2, foundLoms.get(0).getMaterials().size());
+    assertThat(foundLoms).hasSize(1);
+    assertThat(foundLoms.get(0).getMaterials()).hasSize(2);
 
     // check lom can be found when querying for deleted item's id (PRT-605)
     GlobalIdentifier basicSubSampleOid = new GlobalIdentifier(basicSubSample.getGlobalId());
     foundLoms = lomManager.getListOfMaterialsForInvRecGlobalId(basicSubSampleOid, testUser);
-    assertEquals(1, foundLoms.size());
-    assertEquals(2, foundLoms.get(0).getMaterials().size());
+    assertThat(foundLoms).hasSize(1);
+    assertThat(foundLoms.get(0).getMaterials()).hasSize(2);
   }
 
   @Test
@@ -436,15 +437,16 @@ public class ListOfMaterialsApiManagerTest extends SpringTransactionalTest {
     NotFoundException nfe =
         assertThrows(
             NotFoundException.class, () -> lomManager.createNewListOfMaterials(newLom, testUser));
-    assertTrue(
-        nfe.getMessage().contains("or you do not have permission to access it"), nfe.getMessage());
+    assertThat(nfe.getMessage())
+        .as(nfe.getMessage())
+        .contains("or you do not have permission to access it");
 
     // sanity-check: testUser can add LoM with limited-read container fine
     newLom.getMaterials().clear();
     newLom.addMaterialUsage(piContainer, null, false);
     ApiListOfMaterials createdLom = lomManager.createNewListOfMaterials(newLom, testUser);
     assertNotNull(createdLom.getId());
-    assertEquals(1, createdLom.getMaterials().size());
+    assertThat(createdLom.getMaterials()).hasSize(1);
 
     // user sholdn't be able to update the lom with subcontainer either
     ApiListOfMaterials lomUpdate = new ApiListOfMaterials();
@@ -454,8 +456,9 @@ public class ListOfMaterialsApiManagerTest extends SpringTransactionalTest {
     nfe =
         assertThrows(
             NotFoundException.class, () -> lomManager.updateListOfMaterials(lomUpdate, testUser));
-    assertTrue(
-        nfe.getMessage().contains("or you do not have permission to access it"), nfe.getMessage());
+    assertThat(nfe.getMessage())
+        .as(nfe.getMessage())
+        .contains("or you do not have permission to access it");
   }
 
   @Test
@@ -499,7 +502,7 @@ public class ListOfMaterialsApiManagerTest extends SpringTransactionalTest {
         createdSubSample2, createdSubSample1.getQuantity(), false); // add subsample usage
     ApiListOfMaterials createdLom = lomManager.createNewListOfMaterials(newLom, piUser);
     assertNotNull(createdLom.getId());
-    assertEquals(3, createdLom.getMaterials().size());
+    assertThat(createdLom.getMaterials()).hasSize(3);
 
     // sanity-check that lom and items on it are non-readeable by testUser
     assertFalse(lomManager.canUserAccessApiLom(basicDocFieldId, testUser, PermissionType.READ));
@@ -535,13 +538,13 @@ public class ListOfMaterialsApiManagerTest extends SpringTransactionalTest {
 
     // should be able to retrieve lom by id id
     ApiListOfMaterials foundLom = lomManager.getListOfMaterialsById(createdLom.getId(), testUser);
-    assertEquals(3, foundLom.getMaterials().size());
+    assertThat(foundLom.getMaterials()).hasSize(3);
     // items should have permittedAction populated to 'LIMITED_READ'
     ApiInventoryRecordInfo containerOnLomListing = foundLom.getMaterials().get(0).getRecord();
     assertEquals(
         apiSubContainer.getGlobalId(),
         containerOnLomListing.getGlobalId()); // not visible in limited view
-    assertEquals(1, containerOnLomListing.getPermittedActions().size());
+    assertThat(containerOnLomListing.getPermittedActions()).hasSize(1);
     assertEquals(
         ApiInventoryRecordInfo.ApiInventoryRecordPermittedAction.LIMITED_READ,
         containerOnLomListing.getPermittedActions().get(0));
@@ -551,7 +554,7 @@ public class ListOfMaterialsApiManagerTest extends SpringTransactionalTest {
     assertEquals(
         createdSample1.getGlobalId(),
         sampleOnLomListing.getGlobalId()); // not visible in limited view
-    assertEquals(1, sampleOnLomListing.getPermittedActions().size());
+    assertThat(sampleOnLomListing.getPermittedActions()).hasSize(1);
     assertEquals(
         ApiInventoryRecordInfo.ApiInventoryRecordPermittedAction.LIMITED_READ,
         sampleOnLomListing.getPermittedActions().get(0));
@@ -561,7 +564,7 @@ public class ListOfMaterialsApiManagerTest extends SpringTransactionalTest {
     assertEquals(
         createdSubSample2.getGlobalId(),
         subSampleOnLomListing.getGlobalId()); // not visible in limited view
-    assertEquals(1, subSampleOnLomListing.getPermittedActions().size());
+    assertThat(subSampleOnLomListing.getPermittedActions()).hasSize(1);
     assertEquals(
         ApiInventoryRecordInfo.ApiInventoryRecordPermittedAction.LIMITED_READ,
         subSampleOnLomListing.getPermittedActions().get(0));

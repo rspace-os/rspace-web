@@ -1,8 +1,8 @@
 package com.researchspace.webapp.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -50,7 +50,7 @@ public class DirectoryControllerMVCIT extends MVCTestBase {
             .andExpect(model().attributeExists("pageReload"))
             .andReturn();
     ISearchResults<PublicUserList> uui = getUserListFromModel(result);
-    assertTrue(uui.getTotalHits().intValue() > 0);
+    assertThat(uui.getTotalHits().intValue()).isGreaterThan(0);
   }
 
   @Test
@@ -143,7 +143,7 @@ public class DirectoryControllerMVCIT extends MVCTestBase {
             .andReturn();
     ISearchResults<PublicUserList> uui = getUserListFromModel(result);
     int totalHits = uui.getTotalHits().intValue();
-    assertTrue(totalHits > 0);
+    assertThat(totalHits).isGreaterThan(0);
     PublicUserList first = uui.getFirstResult();
     assertEquals(zzzUser.getLastName(), first.getUserInfo().getLastName());
 
@@ -189,7 +189,7 @@ public class DirectoryControllerMVCIT extends MVCTestBase {
             .andExpect(status().isOk())
             .andReturn();
     ISearchResults<Group> res = getGroupListFromModel(result);
-    assertTrue(res.getTotalHits() > 0);
+    assertThat(res.getTotalHits()).isGreaterThan(0);
     for (Group group : res.getResults()) {
       assertNotNull(group.getCommunity()); // check is loaded with no LazyLoading exceptions
     }
@@ -202,7 +202,7 @@ public class DirectoryControllerMVCIT extends MVCTestBase {
             .andExpect(status().isOk())
             .andReturn();
     ISearchResults<Group> groupsVisibleToAdmin = getGroupListFromModel(result);
-    assertTrue(groupsVisibleToAdmin.getTotalHits() > 0);
+    assertThat(groupsVisibleToAdmin.getTotalHits()).isGreaterThan(0);
   }
 
   @Test
@@ -267,7 +267,7 @@ public class DirectoryControllerMVCIT extends MVCTestBase {
             .andReturn();
 
     ISearchResults<Community> res = getCommunityListFromModel(result);
-    assertTrue(res.getTotalHits() > 0);
+    assertThat(res.getTotalHits()).isGreaterThan(0);
 
     // now let's retrieve a single community view
     MvcResult communityView =

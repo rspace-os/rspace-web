@@ -1,5 +1,6 @@
 package com.researchspace.dao.customliquibaseupdates.v29;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -84,10 +85,10 @@ public class UpdateReferencesInSnippetAttachments0_29IT extends AbstractDBHelper
     openTransaction();
     List<Snippet> newSnippets = getAllSnippets();
     newSnippets.removeAll(initSnippets);
-    assertEquals(3, newSnippets.size());
-    assertEquals(0, newSnippets.get(0).getLinkedMediaFiles().size());
-    assertEquals(0, newSnippets.get(1).getLinkedMediaFiles().size());
-    assertEquals(0, newSnippets.get(2).getLinkedMediaFiles().size());
+    assertThat(newSnippets).hasSize(3);
+    assertThat(newSnippets.get(0).getLinkedMediaFiles()).isEmpty();
+    assertThat(newSnippets.get(1).getLinkedMediaFiles()).isEmpty();
+    assertThat(newSnippets.get(2).getLinkedMediaFiles()).isEmpty();
     commitTransaction();
 
     // assert annotation/chemicals/comments are added and are pointing to snippet through parent id
@@ -107,13 +108,13 @@ public class UpdateReferencesInSnippetAttachments0_29IT extends AbstractDBHelper
     openTransaction();
     List<Snippet> updatedSnippets = getAllSnippets();
     updatedSnippets.removeAll(initSnippets);
-    assertEquals(3, updatedSnippets.size());
+    assertThat(updatedSnippets).hasSize(3);
     for (Snippet updatedSnip : updatedSnippets) {
       if (snip3.getId().equals(updatedSnip.getId())) {
-        assertEquals(0, updatedSnip.getLinkedMediaFiles().size());
+        assertThat(updatedSnip.getLinkedMediaFiles()).isEmpty();
       } else {
         // snip1 has an image, snip2 image with annotation
-        assertEquals(1, updatedSnip.getLinkedMediaFiles().size());
+        assertThat(updatedSnip.getLinkedMediaFiles()).hasSize(1);
         RecordAttachment recordAttachment =
             (RecordAttachment) updatedSnip.getLinkedMediaFiles().toArray()[0];
         assertEquals(updatedSnip, recordAttachment.getRecord());

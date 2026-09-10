@@ -1,7 +1,7 @@
 package com.researchspace.service.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.archive.ExportScope;
@@ -120,16 +120,16 @@ public class PdfWordExportManagerImplTest {
 
   private void assertExportName(String expected) throws IOException {
     ExportOperationDetails details = pdfExporter.createExportOperationDetails(config);
-    assertTrue(
-        details.getConcatenatedExportFile().getName().matches(expected + "[\\w-]{8,12}\\.pdf"),
-        "name is " + details.getConcatenatedExportFile().getName());
+    assertThat(details.getConcatenatedExportFile().getName())
+        .as("name is " + details.getConcatenatedExportFile().getName())
+        .matches(expected + "[\\w-]{8,12}\\.pdf");
   }
 
   private void assertIdExtractorReturned(Folder folder) {
-    assertTrue(pdfExporter.getIdExtractorForFolder(config, anyUser, folder, false).isPresent());
+    assertThat(pdfExporter.getIdExtractorForFolder(config, anyUser, folder, false)).isPresent();
   }
 
   private void assertIdExtractorNotReturned(Folder folder) {
-    assertFalse(pdfExporter.getIdExtractorForFolder(config, anyUser, folder, false).isPresent());
+    assertThat(pdfExporter.getIdExtractorForFolder(config, anyUser, folder, false)).isNotPresent();
   }
 }

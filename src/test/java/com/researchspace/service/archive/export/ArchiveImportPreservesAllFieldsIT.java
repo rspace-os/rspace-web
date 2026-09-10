@@ -2,7 +2,7 @@ package com.researchspace.service.archive.export;
 
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static com.researchspace.core.util.progress.ProgressMonitor.NULL_MONITOR;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.researchspace.archive.ArchivalImportConfig;
 import com.researchspace.archive.ArchiveManifest;
@@ -186,16 +186,17 @@ public class ArchiveImportPreservesAllFieldsIT extends RealTransactionSpringTest
       }
     }
 
-    assertTrue(
-        failures.isEmpty(),
-        String.format(
-            "RSDEV-1140: archive import dropped or reordered field content on %d check(s) across %d"
-                + " imports of %d documents (%d fields each). Failures:%n%s",
-            failures.size(),
-            IMPORT_ITERATIONS,
-            NUM_FORMS,
-            FIELDS_PER_FORM,
-            String.join("\n", failures)));
+    assertThat(failures)
+        .as(
+            String.format(
+                "RSDEV-1140: archive import dropped or reordered field content on %d check(s)"
+                    + " across %d imports of %d documents (%d fields each). Failures:%n%s",
+                failures.size(),
+                IMPORT_ITERATIONS,
+                NUM_FORMS,
+                FIELDS_PER_FORM,
+                String.join("\n", failures)))
+        .isEmpty();
   }
 
   private StructuredDocument findImportedDoc(ImportArchiveReport report, String name, User user) {

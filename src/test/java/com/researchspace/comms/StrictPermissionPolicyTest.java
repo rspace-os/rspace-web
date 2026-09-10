@@ -1,10 +1,8 @@
 package com.researchspace.comms;
 
 import static com.researchspace.testutils.TestFactory.createAnyRecord;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertIterableEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.Group;
 import com.researchspace.model.RecordGroupSharing;
@@ -19,7 +17,6 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.testutils.TestFactory;
-import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,9 +34,9 @@ public class StrictPermissionPolicyTest extends SpringTransactionalTest {
     Record sd1 = createAnyRecord(any);
     Set<User> recipients =
         policy.findPotentialTargetsFor(MessageType.REQUEST_RECORD_REVIEW, sd1, null, any);
-    assertIterableEquals(List.of(any), recipients);
+    assertThat(recipients).containsExactly(any);
     recipients = policy.findPotentialTargetsFor(MessageType.REQUEST_RECORD_WITNESS, sd1, null, any);
-    assertTrue(recipients.isEmpty());
+    assertThat(recipients).isEmpty();
   }
 
   @Test
@@ -58,10 +55,10 @@ public class StrictPermissionPolicyTest extends SpringTransactionalTest {
 
     Set<User> recipients =
         policy.findPotentialTargetsFor(MessageType.REQUEST_RECORD_WITNESS, entry, null, u1);
-    assertTrue(recipients.contains(pi1));
+    assertThat(recipients).contains(pi1);
     Set<User> recipients2 =
         policy.findPotentialTargetsFor(MessageType.REQUEST_RECORD_REVIEW, entry, null, u1);
-    assertTrue(recipients2.contains(pi1));
+    assertThat(recipients2).contains(pi1);
 
     // but a pi sharing notebook should also see this:
     logoutAndLoginAs(pi2);
@@ -72,10 +69,10 @@ public class StrictPermissionPolicyTest extends SpringTransactionalTest {
 
     recipients =
         policy.findPotentialTargetsFor(MessageType.REQUEST_RECORD_WITNESS, entry2, null, pi2);
-    assertEquals(Set.of(pi1, u1), recipients);
+    assertThat(recipients).containsExactlyInAnyOrder(pi1, u1);
     recipients2 =
         policy.findPotentialTargetsFor(MessageType.REQUEST_RECORD_REVIEW, entry2, null, pi2);
-    assertEquals(Set.of(pi1, pi2, u1), recipients2);
+    assertThat(recipients2).containsExactlyInAnyOrder(pi1, pi2, u1);
   }
 
   @Test
@@ -98,25 +95,25 @@ public class StrictPermissionPolicyTest extends SpringTransactionalTest {
     // before sharing your pi should be on the list:
     Set<User> recipients3 =
         policy.findPotentialTargetsFor(MessageType.REQUEST_RECORD_WITNESS, sd1, null, docOwner);
-    assertTrue(recipients3.contains(pi));
-    assertEquals(1, recipients3.size());
+    assertThat(recipients3).contains(pi);
+    assertThat(recipients3).hasSize(1);
     sharingMgr.shareRecord(docOwner, sd1.getId(), new ShareConfigElement[] {cfg});
 
     // just need read permission for witnessing, so expect 2 people in list (self is excluded)
     Set<User> recipients =
         policy.findPotentialTargetsFor(MessageType.REQUEST_RECORD_WITNESS, sd1, null, docOwner);
-    assertEquals(Set.of(pi, otherGrpMember), recipients);
+    assertThat(recipients).containsExactlyInAnyOrder(pi, otherGrpMember);
 
     // self and pi can review
     Set<User> recipients2 =
         policy.findPotentialTargetsFor(MessageType.REQUEST_RECORD_REVIEW, sd1, null, docOwner);
-    assertEquals(Set.of(pi, docOwner), recipients2);
+    assertThat(recipients2).containsExactlyInAnyOrder(pi, docOwner);
 
     // if search term is passed, only matching user is returned
     Set<User> matchingRecipients =
         policy.findPotentialTargetsFor(
             MessageType.REQUEST_RECORD_REVIEW, sd1, pi.getUsername().substring(0, 4), docOwner);
-    assertEquals(1, matchingRecipients.size());
+    assertThat(matchingRecipients).hasSize(1);
     assertEquals(pi, matchingRecipients.toArray()[0]);
 
     // RSDEV-992: a blank term must behave exactly like no term (and not scan the users table)
@@ -130,8 +127,8 @@ public class StrictPermissionPolicyTest extends SpringTransactionalTest {
 
     Set<User> recipients4 =
         policy.findPotentialTargetsFor(MessageType.REQUEST_RECORD_REVIEW, sd1, null, docOwner);
-    assertFalse(recipients4.contains(notInGroup));
-    assertEquals(Set.of(pi, docOwner, otherGrpMember), recipients4);
+    assertThat(recipients4).doesNotContain(notInGroup);
+    assertThat(recipients4).containsExactlyInAnyOrder(pi, docOwner, otherGrpMember);
     RSpaceTestUtils.logout();
 
     // now let's disable other - shouldn't appear on potential targets list
@@ -140,8 +137,8 @@ public class StrictPermissionPolicyTest extends SpringTransactionalTest {
     logoutAndLoginAs(docOwner);
     Set<User> recipients5 =
         policy.findPotentialTargetsFor(MessageType.REQUEST_RECORD_REVIEW, sd1, null, docOwner);
-    assertEquals(2, recipients5.size());
-    assertFalse(recipients5.contains(otherGrpMember));
+    assertThat(recipients5).hasSize(2);
+    assertThat(recipients5).doesNotContain(otherGrpMember);
 
     // RSPAC-697
     // create another group with pi and add Pis to each others group.
@@ -159,8 +156,8 @@ public class StrictPermissionPolicyTest extends SpringTransactionalTest {
     pi2 = userDao.get(pi2.getId());
     Set<User> recipients6 =
         policy.findPotentialTargetsFor(MessageType.REQUEST_RECORD_REVIEW, pi2Doc, null, pi2);
-    assertEquals(1, recipients6.size());
-    assertIterableEquals(List.of(pi2), recipients6);
+    assertThat(recipients6).hasSize(1);
+    assertThat(recipients6).containsExactly(pi2);
   }
 
   private void initUsersWithEmptyContent(User... users) throws IllegalAddChildOperation {

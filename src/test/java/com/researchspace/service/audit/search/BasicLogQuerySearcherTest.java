@@ -1,5 +1,6 @@
 package com.researchspace.service.audit.search;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.researchspace.core.util.BasicPaginationCriteria;
@@ -76,22 +77,18 @@ public class BasicLogQuerySearcherTest {
     pgCrit.setOrderBy("date");
     pgCrit.setSortOrder(SortOrder.ASC);
     ISearchResults<AuditTrailSearchResult> results6 = searcher.search(pgCrit, cfg);
-    Assertions.assertEquals(
-        inputFormat.parse("2014-05-16 12:49:53").toString(),
-        results6.getFirstResult().getEvent().getTimestamp().toString());
-    Assertions.assertEquals(
-        inputFormat.parse("2014-05-19 16:06:27").toString(),
-        results6.getLastResult().getEvent().getTimestamp().toString());
+    assertThat(results6.getFirstResult().getEvent().getTimestamp())
+        .hasToString(inputFormat.parse("2014-05-16 12:49:53").toString());
+    assertThat(results6.getLastResult().getEvent().getTimestamp())
+        .hasToString(inputFormat.parse("2014-05-19 16:06:27").toString());
 
     // date ascending
     pgCrit.setSortOrder(SortOrder.DESC);
     ISearchResults<AuditTrailSearchResult> results7 = searcher.search(pgCrit, cfg);
-    Assertions.assertEquals(
-        inputFormat.parse("2014-05-19 16:06:27").toString(),
-        results7.getFirstResult().getEvent().getTimestamp().toString());
-    Assertions.assertEquals(
-        inputFormat.parse("2014-05-16 12:49:53").toString(),
-        results7.getLastResult().getEvent().getTimestamp().toString());
+    assertThat(results7.getFirstResult().getEvent().getTimestamp())
+        .hasToString(inputFormat.parse("2014-05-19 16:06:27").toString());
+    assertThat(results7.getLastResult().getEvent().getTimestamp())
+        .hasToString(inputFormat.parse("2014-05-16 12:49:53").toString());
 
     // check null is handled gracefully
     pgCrit.setOrderBy(null);
@@ -117,13 +114,13 @@ public class BasicLogQuerySearcherTest {
     cfg.addUsernameTerm("sysadmin1");
 
     ISearchResults<AuditTrailSearchResult> sysAdminresults = searcher.search(pgCrit, cfg);
-    Assertions.assertEquals(2, sysAdminresults.getResults().size());
+    assertThat(sysAdminresults.getResults()).hasSize(2);
 
     cfg.clear();
     cfg.addUsernameTerm("user1b");
     cfg.setDomains(EnumSet.of(AuditDomain.GROUP));
     ISearchResults<AuditTrailSearchResult> user1bResults2 = searcher.search(pgCrit, cfg);
-    Assertions.assertEquals(1, user1bResults2.getResults().size());
+    assertThat(user1bResults2.getResults()).hasSize(1);
     Assertions.assertEquals(
         user1bResults2.getResults().get(0), sysAdminresults.getResults().get(1));
   }
@@ -141,7 +138,7 @@ public class BasicLogQuerySearcherTest {
     ISearchResults<AuditTrailSearchResult> results =
         searcher.search(
             BasicPaginationCriteria.createDefaultForClass(AuditTrailSearchResult.class), cfg);
-    Assertions.assertEquals(3, results.getResults().size());
+    assertThat(results.getResults()).hasSize(3);
     Assertions.assertEquals(3, results.getTotalHits().intValue());
 
     // date range is outside log range
@@ -150,7 +147,7 @@ public class BasicLogQuerySearcherTest {
     ISearchResults<AuditTrailSearchResult> results2 =
         searcher.search(
             BasicPaginationCriteria.createDefaultForClass(AuditTrailSearchResult.class), cfg);
-    Assertions.assertEquals(0, results2.getResults().size());
+    assertThat(results2.getResults()).isEmpty();
     Assertions.assertEquals(0, results2.getTotalHits().intValue());
     final int TOTAL_HITS = 28;
     // now check that date range is inclusive
@@ -174,27 +171,26 @@ public class BasicLogQuerySearcherTest {
     cfg.clear();
 
     ISearchResults<AuditTrailSearchResult> results4 = searcher.search(pgCrit, cfg);
-    Assertions.assertEquals(pgCrit.getResultsPerPage().intValue(), results4.getResults().size());
+    assertThat(results4.getResults()).hasSize(pgCrit.getResultsPerPage().intValue());
     Assertions.assertEquals(TOTAL_HITS, results4.getTotalHits().intValue());
 
     // now lets check pagination, for last page we should get less results
     pgCrit.setPageNumber((long) (TOTAL_HITS / IPagination.DEFAULT_RESULTS_PERPAGE));
     ISearchResults<AuditTrailSearchResult> results7 = searcher.search(pgCrit, cfg);
-    Assertions.assertEquals(
-        TOTAL_HITS % IPagination.DEFAULT_RESULTS_PERPAGE, results7.getResults().size());
+    assertThat(results7.getResults()).hasSize(TOTAL_HITS % IPagination.DEFAULT_RESULTS_PERPAGE);
 
     pgCrit.setPageNumber(0L);
     cfg.clear();
     cfg.setOid("SD6997"); // should be unique look up
     final int EXPECTED_HIT_COUNT = 2;
     ISearchResults<AuditTrailSearchResult> results5 = searcher.search(pgCrit, cfg);
-    Assertions.assertEquals(EXPECTED_HIT_COUNT, results5.getResults().size());
+    assertThat(results5.getResults()).hasSize(EXPECTED_HIT_COUNT);
     Assertions.assertEquals(EXPECTED_HIT_COUNT, results5.getTotalHits().intValue());
 
     cfg.setOid("SD699"); // should be no hits
     final int EXPECTED_HIT_COUNT2 = 0;
     ISearchResults<AuditTrailSearchResult> results6 = searcher.search(pgCrit, cfg);
-    Assertions.assertEquals(EXPECTED_HIT_COUNT2, results6.getResults().size());
+    assertThat(results6.getResults()).hasSize(EXPECTED_HIT_COUNT2);
   }
 
   @Test
@@ -203,7 +199,7 @@ public class BasicLogQuerySearcherTest {
     searcher.setLogFilePrefix("RSLogs");
     AuditTrailSearchElement cfg = new AuditTrailSearchElement();
     ISearchResults<AuditTrailSearchResult> results4 = searcher.search(pgCrit, cfg);
-    Assertions.assertTrue(results4.getResults().stream().allMatch(utcTimeStamp()));
+    assertThat(results4.getResults()).allMatch(utcTimeStamp());
   }
 
   private Predicate<? super AuditTrailSearchResult> utcTimeStamp() {

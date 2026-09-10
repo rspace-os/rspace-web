@@ -1,5 +1,6 @@
 package com.researchspace.service.inventory.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -181,7 +182,7 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
     ApiSampleWithFullSubSamples sample1 =
         (ApiSampleWithFullSubSamples) sampleImportResult.getResults().get(0).getRecord();
     assertEquals("testName3", sample1.getName());
-    assertEquals(3, sample1.getFields().size());
+    assertThat(sample1.getFields()).hasSize(3);
     assertEquals("testContent", sample1.getFields().get(0).getContent());
     assertEquals(null, sample1.getFields().get(1).getContent());
     assertEquals(List.of("yes"), sample1.getFields().get(1).getSelectedOptions());
@@ -200,7 +201,7 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
         (ApiSampleWithFullSubSamples) sampleImportResult.getResults().get(1).getRecord();
     assertEquals("testName4", sample2.getName());
     assertEquals(null, sample2.getDescription());
-    assertEquals(3, sample2.getFields().size());
+    assertThat(sample2.getFields()).hasSize(3);
     assertEquals("testContent2", sample2.getFields().get(0).getContent());
     assertEquals(null, sample2.getFields().get(1).getContent());
     assertEquals(List.of("no"), sample2.getFields().get(1).getSelectedOptions());
@@ -260,11 +261,11 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
     sample1 = (ApiSampleWithFullSubSamples) sampleImportResult.getResults().get(0).getRecord();
     assertEquals("testName5", sample1.getName());
     assertEquals("desc1", sample1.getDescription());
-    assertTrue(sample1.getTags().isEmpty());
+    assertThat(sample1.getTags()).isEmpty();
     assertEquals(LocalDate.of(2030, 1, 1), sample1.getExpiryDate());
     assertEquals(SampleSource.OTHER, sample1.getSampleSource());
     assertEquals("200 g", sample1.getQuantity().toQuantityInfo().toPlainString());
-    assertEquals(3, sample1.getFields().size());
+    assertThat(sample1.getFields()).hasSize(3);
     assertEquals("testContent1", sample1.getFields().get(0).getContent());
     assertEquals(null, sample1.getFields().get(1).getContent());
     assertEquals(List.of("yes"), sample1.getFields().get(1).getSelectedOptions());
@@ -279,7 +280,7 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
     assertEquals(null, sample2.getExpiryDate());
     assertEquals(SampleSource.VENDOR_SUPPLIED, sample2.getSampleSource());
     assertEquals("5.25 µg", sample2.getQuantity().toQuantityInfo().toPlainString());
-    assertEquals(3, sample2.getFields().size());
+    assertThat(sample2.getFields()).hasSize(3);
     assertEquals("testContent2", sample2.getFields().get(0).getContent());
     assertEquals(null, sample2.getFields().get(1).getContent());
     assertEquals(List.of("no"), sample2.getFields().get(1).getSelectedOptions());
@@ -305,18 +306,18 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
     // phase)
     assertNotNull(parseResult.getTemplateInfo());
     // check suggested column names
-    assertEquals(4, parseResult.getFieldNameForColumnName().size());
-    assertEquals("_Name", parseResult.getFieldNameForColumnName().get("Name"));
+    assertThat(parseResult.getFieldNameForColumnName()).hasSize(4);
+    assertThat(parseResult.getFieldNameForColumnName()).containsEntry("Name", "_Name");
     // check suggested radio options
-    assertEquals(4, parseResult.getRadioOptionsForColumn().size());
-    assertEquals(1, parseResult.getRadioOptionsForColumn().get("Data").size());
+    assertThat(parseResult.getRadioOptionsForColumn()).hasSize(4);
+    assertThat(parseResult.getRadioOptionsForColumn().get("Data")).hasSize(1);
     assertEquals("TestData", parseResult.getRadioOptionsForColumn().get("Data").get(0));
-    assertEquals("identifier", parseResult.getFieldMappings().get("Igsn"));
+    assertThat(parseResult.getFieldMappings()).containsEntry("Igsn", "identifier");
 
     // check suggested quantity unit type for column
-    assertEquals(1, parseResult.getQuantityUnitForColumn().size());
-    assertEquals(
-        RSUnitDef.MILLI_GRAM.getId(), parseResult.getQuantityUnitForColumn().get("Quantity"));
+    assertThat(parseResult.getQuantityUnitForColumn()).hasSize(1);
+    assertThat(parseResult.getQuantityUnitForColumn())
+        .containsEntry("Quantity", RSUnitDef.MILLI_GRAM.getId());
     // check non-blank columns
     assertEquals(List.of("Name", "Data", "Igsn"), parseResult.getColumnsWithoutBlankValue());
     // check rows count
@@ -344,7 +345,7 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
         assertThrows(
             IllegalArgumentException.class,
             () -> importMgr.parseSamplesCsvFile("myFile", emptyFileCsvIS, testUser));
-    assertTrue(iae.getMessage().contains("CSV file seems to be empty"), iae.getMessage());
+    assertThat(iae.getMessage()).as(iae.getMessage()).contains("CSV file seems to be empty");
 
     // 3. only one line provided - parsing shouldn't succeed as empty file is an obvious data
     // problem
@@ -353,7 +354,9 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
         assertThrows(
             IllegalArgumentException.class,
             () -> importMgr.parseSamplesCsvFile("myFile", oneLineCsvIS, testUser));
-    assertTrue(iae.getMessage().contains("CSV file seems to have just one line"), iae.getMessage());
+    assertThat(iae.getMessage())
+        .as(iae.getMessage())
+        .contains("CSV file seems to have just one line");
   }
 
   @Test
@@ -525,7 +528,7 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
 
     // check errors
     List<String> firstLineErrors = sampleResult.getResults().get(0).getError().getErrors();
-    assertEquals(3, firstLineErrors.size());
+    assertThat(firstLineErrors).hasSize(3);
     assertEquals("name: name is a required field.", firstLineErrors.get(0));
     assertEquals(
         "fields: Field 'myText (mandatory - no default value)' is mandatory, but provided value was"
@@ -536,7 +539,7 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
             + " provided",
         firstLineErrors.get(2));
     List<String> secondLineErrors = sampleResult.getResults().get(1).getError().getErrors();
-    assertEquals(4, secondLineErrors.size());
+    assertThat(secondLineErrors).hasSize(4);
     assertEquals(
         "fields: Field 'myText (mandatory - with default value)' is mandatory, but provided value"
             + " was empty",
@@ -758,7 +761,9 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
     // default workbench container should be created
     assertNotNull(importResult.getDefaultContainer());
     String defaultImportContainerName = importResult.getDefaultContainer().getName();
-    assertTrue(defaultImportContainerName.startsWith("imported items"), defaultImportContainerName);
+    assertThat(defaultImportContainerName)
+        .as(defaultImportContainerName)
+        .startsWith("imported items");
 
     // result object should list used template and created samples
     assertNotNull(sampleImportResult.getTemplate().getRecord());
@@ -837,9 +842,9 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
     assertEquals("testSubSample3", subSampleResult.getResults().get(2).getRecord().getName());
     assertEquals("testSubSample4", subSampleResult.getResults().get(3).getRecord().getName());
     // 2 records marked for putting into parent container during import process
-    assertEquals(2, subSampleResult.getResultNumberToParentContainerImportIdMap().size());
+    assertThat(subSampleResult.getResultNumberToParentContainerImportIdMap()).hasSize(2);
     // 4 records marked for putting into parent sample
-    assertEquals(4, subSampleResult.getResultNumberToParentSampleImportIdMap().size());
+    assertThat(subSampleResult.getResultNumberToParentSampleImportIdMap()).hasSize(4);
 
     // test updating subsample results after importing samples
     // simulate imported samples
@@ -945,14 +950,16 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
     // default workbench container should be created
     assertNotNull(importResult.getDefaultContainer());
     String defaultImportContainerName = importResult.getDefaultContainer().getName();
-    assertTrue(defaultImportContainerName.startsWith("imported items"), defaultImportContainerName);
+    assertThat(defaultImportContainerName)
+        .as(defaultImportContainerName)
+        .startsWith("imported items");
 
     // first sample should have 3 non-default subsamples
     ApiSampleWithFullSubSamples createdSample1 =
         (ApiSampleWithFullSubSamples) sampleImportResult.getResults().get(0).getRecord();
     assertEquals("TestSample1", createdSample1.getName());
     assertEquals("3 ml", createdSample1.getQuantity().toQuantityInfo().toPlainString());
-    assertEquals(3, createdSample1.getSubSamples().size());
+    assertThat(createdSample1.getSubSamples()).hasSize(3);
     assertEquals("TestSubSample1", createdSample1.getSubSamples().get(0).getName());
     // known issue: samples results show workbench as a parent of non-default subsamples
     assertTrue(createdSample1.getSubSamples().get(0).getParentContainer().isWorkbench());
@@ -963,7 +970,7 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
     ApiSampleWithFullSubSamples createdSample2 =
         (ApiSampleWithFullSubSamples) sampleImportResult.getResults().get(1).getRecord();
     assertEquals("TestSample2", createdSample2.getName());
-    assertEquals(1, createdSample2.getSubSamples().size());
+    assertThat(createdSample2.getSubSamples()).hasSize(1);
     assertEquals("TestSample2.01", createdSample2.getSubSamples().get(0).getName());
     // parent of default sample shown correctly
     assertEquals(
@@ -974,7 +981,7 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
     ApiSampleWithFullSubSamples createdSample3 =
         (ApiSampleWithFullSubSamples) sampleImportResult.getResults().get(2).getRecord();
     assertEquals("TestSample3", createdSample3.getName());
-    assertEquals(1, createdSample3.getSubSamples().size());
+    assertThat(createdSample3.getSubSamples()).hasSize(1);
     assertEquals("TestSubSample2", createdSample3.getSubSamples().get(0).getName());
 
     // subsample results show correct parent though parent
@@ -1100,28 +1107,28 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
             + "or user has no permission to move items into it",
         errorMsg);
     errorMsg = subSampleResult.getResults().get(5).getError().getErrors().get(0);
-    assertTrue(
-        errorMsg.contains(
-            "is a grid container, but CSV import only supports import into list-type containers"),
-        errorMsg);
+    assertThat(errorMsg)
+        .as(errorMsg)
+        .contains(
+            "is a grid container, but CSV import only supports import into list-type containers");
     errorMsg = subSampleResult.getResults().get(7).getError().getErrors().get(0);
     assertEquals(
         "quantity: Subsample quantity '5 mg' is incompatible with quantity unit used by parent"
             + " sample (MILLI_LITRE)",
         errorMsg);
     errorMsg = subSampleResult.getResults().get(7).getError().getErrors().get(1);
-    assertTrue(
-        errorMsg.contains("doesn't exist, or user has no permission to move items into it"),
-        errorMsg);
+    assertThat(errorMsg)
+        .as(errorMsg)
+        .contains("doesn't exist, or user has no permission to move items into it");
     errorMsg = subSampleResult.getResults().get(8).getError().getErrors().get(0);
     assertEquals(
         "id: Parent sample with global id 'SA0' doesn't exist, or user has no permission to add new"
             + " subsamples into it",
         errorMsg);
     errorMsg = subSampleResult.getResults().get(9).getError().getErrors().get(0);
-    assertTrue(
-        errorMsg.contains("doesn't exist, or user has no permission to add new subsamples into it"),
-        errorMsg);
+    assertThat(errorMsg)
+        .as(errorMsg)
+        .contains("doesn't exist, or user has no permission to add new subsamples into it");
   }
 
   @Test
@@ -1162,8 +1169,8 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
     assertEquals("testContainer4", processingResult.getResults().get(3).getRecord().getName());
     assertEquals("testContainer5", processingResult.getResults().get(4).getRecord().getName());
     // 3 records marked for putting into parent container during import process
-    assertEquals(3, processingResult.getResultNumberToParentContainerImportIdMap().size());
-    assertEquals(1, processingResult.getResultNumberToParentContainerGlobalIdMap().size());
+    assertThat(processingResult.getResultNumberToParentContainerImportIdMap()).hasSize(3);
+    assertThat(processingResult.getResultNumberToParentContainerGlobalIdMap()).hasSize(1);
 
     // test import of converted lines
     ApiInventoryImportResult csvProcessingResult = new ApiInventoryImportResult(testUser);
@@ -1174,7 +1181,9 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
     // default workbench container should be created
     assertNotNull(importResult.getDefaultContainer());
     String defaultImportContainerName = importResult.getDefaultContainer().getName();
-    assertTrue(defaultImportContainerName.startsWith("imported items"), defaultImportContainerName);
+    assertThat(defaultImportContainerName)
+        .as(defaultImportContainerName)
+        .startsWith("imported items");
 
     ApiInventoryImportPartialResult containerImportResult = importResult.getContainerResult();
     assertEquals(5, containerImportResult.getSuccessCount());
@@ -1182,9 +1191,9 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
     assertEquals("testContainer1", containerImportResult.getResults().get(0).getRecord().getName());
     assertNotNull(
         containerImportResult.getResults().get(0).getRecord().getId()); // should be set now
-    assertFalse(
-        containerImportResult.getResults().get(0).getRecord().getTags().isEmpty(),
-        "Tags have not being correctly set");
+    assertThat(containerImportResult.getResults().get(0).getRecord().getTags())
+        .as("Tags have not being correctly set")
+        .isNotEmpty();
     assertEquals(
         "tag1", containerImportResult.getResults().get(0).getRecord().getTags().get(0).getValue());
     assertEquals(
@@ -1352,12 +1361,9 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
         assertThrows(
             InventoryImportException.class,
             () -> importMgr.importSubSamplesIntoPreexistingSamples(importResult, subSampleResult));
-    assertTrue(
-        iie.getMessage()
-            .startsWith(
-                "Inventory record with id ["
-                    + otherUserSample.getId()
-                    + "] could not be retrieved"),
-        iie.getMessage());
+    assertThat(iie.getMessage())
+        .as(iie.getMessage())
+        .startsWith(
+            "Inventory record with id [" + otherUserSample.getId() + "] could not be retrieved");
   }
 }

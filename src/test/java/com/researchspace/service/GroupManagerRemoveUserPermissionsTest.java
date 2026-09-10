@@ -1,7 +1,7 @@
 package com.researchspace.service;
 
 import static com.researchspace.testutils.TestGroup.LABADMIN_PREFIX;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.researchspace.model.Group;
@@ -133,7 +133,7 @@ public class GroupManagerRemoveUserPermissionsTest extends GroupPermissionsTestB
   }
 
   private void assertGroupMemberCount(final int expectedGrpMemberCount, Group grp) {
-    assertEquals(expectedGrpMemberCount, grpMgr.getGroup(grp.getId()).getMembers().size());
+    assertThat(grpMgr.getGroup(grp.getId()).getMembers()).hasSize(expectedGrpMemberCount);
   }
 
   private void assertRemoveUserNotAuthorised(TestGroup testgrp, String userPrefix, User subject)

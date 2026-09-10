@@ -1,5 +1,6 @@
 package com.researchspace.webapp.integrations.b2inst;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -374,9 +375,11 @@ class B2instConnectorImplTest {
     B2instConnectionException thrown =
         assertThrows(B2instConnectionException.class, () -> connector.registerDoi(draft));
 
-    assertFalse(thrown.getReason().contains("TOK123"), "the token must not reach the reason");
-    assertTrue(thrown.getReason().contains("***"), "it should be redacted, not dropped");
-    assertFalse(thrown.getMessage().contains("TOK123"), "nor the logged message");
+    assertThat(thrown.getReason())
+        .as("the token must not reach the reason")
+        .doesNotContain("TOK123");
+    assertThat(thrown.getReason()).as("it should be redacted, not dropped").contains("***");
+    assertThat(thrown.getMessage()).as("nor the logged message").doesNotContain("TOK123");
   }
 
   @Test
@@ -392,7 +395,7 @@ class B2instConnectorImplTest {
     B2instConnectionException thrown =
         assertThrows(B2instConnectionException.class, () -> connector.registerDoi(draft));
 
-    assertFalse(thrown.getReason().contains("TOK123"));
+    assertThat(thrown.getReason()).doesNotContain("TOK123");
   }
 
   @Test
@@ -403,13 +406,13 @@ class B2instConnectorImplTest {
     B2instConnectionException thrown =
         assertThrows(B2instConnectionException.class, () -> connector.publishDoi("k2j9p-7yh21"));
 
-    assertTrue(
-        thrown.getMessage().contains("pidinst.b2inst.community.id"),
-        "the developer message should name the property, for the logs");
+    assertThat(thrown.getMessage())
+        .as("the developer message should name the property, for the logs")
+        .contains("pidinst.b2inst.community.id");
     assertNotNull(thrown.getReason(), "a provider failure must always carry a reason");
-    assertFalse(
-        thrown.getReason().contains("pidinst.b2inst.community.id"),
-        "the reason is shown to a user and must not disclose an internal property name");
+    assertThat(thrown.getReason())
+        .as("the reason is shown to a user and must not disclose an internal property name")
+        .doesNotContain("pidinst.b2inst.community.id");
   }
 
   @Test
@@ -527,9 +530,9 @@ class B2instConnectorImplTest {
             .filter(message -> message.contains("B2INST error response"))
             .findFirst()
             .orElseThrow();
-    assertTrue(warning.contains("No usable failure reason"));
-    assertTrue(warning.contains("..."));
-    assertTrue(warning.length() < 700);
+    assertThat(warning).contains("No usable failure reason");
+    assertThat(warning).contains("...");
+    assertThat(warning.length()).isLessThan(700);
   }
 
   @Test
@@ -571,10 +574,9 @@ class B2instConnectorImplTest {
     B2instConnectionException ex =
         assertThrows(B2instConnectionException.class, () -> connector.publishDoi("k2j9p-7yh21"));
 
-    assertTrue(
-        ex.getMessage()
-            .startsWith("Error submitting B2INST record k2j9p-7yh21 for community review: "));
-    assertTrue(ex.getMessage().contains("connect timed out"));
+    assertThat(ex.getMessage())
+        .startsWith("Error submitting B2INST record k2j9p-7yh21 for community review: ");
+    assertThat(ex.getMessage()).contains("connect timed out");
     server.verify();
   }
 
@@ -642,8 +644,8 @@ class B2instConnectorImplTest {
             .filter(message -> message.contains("B2INST error response"))
             .findFirst()
             .orElseThrow();
-    assertFalse(warning.contains("TOK123"));
-    assertTrue(warning.contains("***"));
+    assertThat(warning).doesNotContain("TOK123");
+    assertThat(warning).contains("***");
   }
 
   /**
@@ -693,7 +695,7 @@ class B2instConnectorImplTest {
 
     Optional<B2instRequestResponse> review = connector.getReviewOf("k2j9p-7yh21");
 
-    assertTrue(review.isPresent());
+    assertThat(review).isPresent();
     assertEquals("declined", review.get().getStatus());
     server.verify();
   }
@@ -708,7 +710,7 @@ class B2instConnectorImplTest {
         .andExpect(method(HttpMethod.GET))
         .andRespond(withStatus(HttpStatus.NOT_FOUND));
 
-    assertTrue(connector.getReviewOf("k2j9p-7yh21").isEmpty());
+    assertThat(connector.getReviewOf("k2j9p-7yh21")).isEmpty();
     server.verify();
   }
 
@@ -729,10 +731,10 @@ class B2instConnectorImplTest {
 
     Optional<B2instDraftRecord> record = connector.getPublishedRecord("k2j9p-7yh21");
 
-    assertTrue(record.isPresent());
+    assertThat(record).isPresent();
     assertEquals(
         "https://b2inst-test.gwdg.de/records/k2j9p-7yh21", record.get().getLinks().getSelfHtml());
-    assertTrue(record.get().getPids().containsKey("epic"));
+    assertThat(record.get().getPids()).containsKey("epic");
     server.verify();
   }
 
@@ -750,8 +752,8 @@ class B2instConnectorImplTest {
         .andExpect(method(HttpMethod.GET))
         .andRespond(withStatus(HttpStatus.NOT_FOUND));
 
-    assertTrue(connector.getPublishedRecord("k2j9p-7yh21").isEmpty());
-    assertTrue(connector.getDraftRecord("k2j9p-7yh21").isEmpty());
+    assertThat(connector.getPublishedRecord("k2j9p-7yh21")).isEmpty();
+    assertThat(connector.getDraftRecord("k2j9p-7yh21")).isEmpty();
     server.verify();
   }
 

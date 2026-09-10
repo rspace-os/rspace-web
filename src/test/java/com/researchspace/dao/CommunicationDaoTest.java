@@ -5,6 +5,7 @@ import static com.researchspace.testutils.CommsTestUtils.createAGroupRequest;
 import static com.researchspace.testutils.CommsTestUtils.createARequest;
 import static com.researchspace.testutils.CommsTestUtils.createAnyNotification;
 import static com.researchspace.testutils.CommsTestUtils.createRequestOfType;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -68,31 +69,26 @@ public class CommunicationDaoTest extends BaseDaoTestCase {
     saveNMessages(2, sender, MessageType.SIMPLE_MESSAGE, target);
     // this won't be listed by default, it's not in the standard list
     saveNMessages(1, sender, MessageType.REQUEST_CREATE_LAB_GROUP, target);
-    assertEquals(
-        2, dao.getActiveRequestsAndMessagesForUser(target, getDefaultPgCrit()).getResults().size());
+    assertThat(dao.getActiveRequestsAndMessagesForUser(target, getDefaultPgCrit()).getResults())
+        .hasSize(2);
 
     // now we'llconfigure to get these messages
     MessageTypeFilter filter =
         new MessageTypeFilter(EnumSet.of(MessageType.REQUEST_CREATE_LAB_GROUP));
-    assertEquals(
-        1,
-        dao.getActiveRequestsAndMessagesForUser(target, getDefaultPgCrit(), filter)
-            .getResults()
-            .size());
+    assertThat(
+            dao.getActiveRequestsAndMessagesForUser(target, getDefaultPgCrit(), filter)
+                .getResults())
+        .hasSize(1);
 
     // check that null or empty filter is handled gracefully; if it is we
     // get all results
-    assertEquals(
-        3,
-        dao.getActiveRequestsAndMessagesForUser(target, getDefaultPgCrit(), null)
-            .getResults()
-            .size());
+    assertThat(
+            dao.getActiveRequestsAndMessagesForUser(target, getDefaultPgCrit(), null).getResults())
+        .hasSize(3);
     filter = new MessageTypeFilter(EnumSet.noneOf(MessageType.class));
-    assertEquals(
-        3,
-        dao.getActiveRequestsAndMessagesForUser(target, getDefaultPgCrit(), null)
-            .getResults()
-            .size());
+    assertThat(
+            dao.getActiveRequestsAndMessagesForUser(target, getDefaultPgCrit(), null).getResults())
+        .hasSize(3);
   }
 
   @Test
@@ -109,8 +105,8 @@ public class CommunicationDaoTest extends BaseDaoTestCase {
     saveNMessages(5, target, MessageType.SIMPLE_MESSAGE, sender, target2);
 
     // sanity check
-    assertEquals(5, dao.getActiveRequestsAndMessagesForUser(sender, pgcrit).getResults().size());
-    assertEquals(7, dao.getActiveRequestsAndMessagesForUser(target, pgcrit).getResults().size());
+    assertThat(dao.getActiveRequestsAndMessagesForUser(sender, pgcrit).getResults()).hasSize(5);
+    assertThat(dao.getActiveRequestsAndMessagesForUser(target, pgcrit).getResults()).hasSize(7);
     pgcrit.setOrderBy("communication.creationTime");
     pgcrit.setSortOrder(SortOrder.ASC);
     pgcrit.setGetAllResults();
@@ -118,7 +114,7 @@ public class CommunicationDaoTest extends BaseDaoTestCase {
         dao.getAllSentAndReceivedSimpleMessagesForUser(sender, pgcrit);
 
     // Paginated, but get all the results because pgcrit.setGetAllResults();
-    assertEquals(12, results.getResults().size());
+    assertThat(results.getResults()).hasSize(12);
     // Check the total hits (count) is 12;
     assertEquals(12, results.getTotalHits().intValue());
     assertSearchResultsAreDistinct(results);
@@ -145,16 +141,15 @@ public class CommunicationDaoTest extends BaseDaoTestCase {
 
     PaginationCriteria<CommunicationTarget> pgcrit = getDefaultPgCrit();
     // sanity check
-    assertEquals(
-        IPagination.DEFAULT_RESULTS_PERPAGE,
-        dao.getActiveRequestsAndMessagesForUser(sender, pgcrit).getResults().size());
-    assertEquals(7, dao.getActiveRequestsAndMessagesForUser(target, pgcrit).getResults().size());
+    assertThat(dao.getActiveRequestsAndMessagesForUser(sender, pgcrit).getResults())
+        .hasSize(IPagination.DEFAULT_RESULTS_PERPAGE);
+    assertThat(dao.getActiveRequestsAndMessagesForUser(target, pgcrit).getResults()).hasSize(7);
 
     pgcrit.setOrderBy("communication.creationTime");
     pgcrit.setSortOrder(SortOrder.ASC);
     ISearchResults<MessageOrRequest> results =
         dao.getAllSentAndReceivedSimpleMessagesForUser(sender, pgcrit);
-    assertEquals(IPagination.DEFAULT_RESULTS_PERPAGE, results.getResults().size());
+    assertThat(results.getResults()).hasSize(IPagination.DEFAULT_RESULTS_PERPAGE);
     assertEquals(IPagination.DEFAULT_RESULTS_PERPAGE + 7, results.getTotalHits().intValue());
     assertSearchResultsAreDistinct(results);
 
@@ -187,10 +182,10 @@ public class CommunicationDaoTest extends BaseDaoTestCase {
 
     Communication opened = dao.get(message.getId());
     assertNotNull(opened.getCreationTime());
-    assertEquals(1, opened.getRecipients().size());
+    assertThat(opened.getRecipients()).hasSize(1);
     assertEquals(CommunicationStatus.NEW, opened.getRecipients().iterator().next().getStatus());
-    assertEquals(
-        Notification.MAX_MESSAGE_LENGTH, ((Notification) opened).getNotificationMessage().length());
+    assertThat(((Notification) opened).getNotificationMessage())
+        .hasSize(Notification.MAX_MESSAGE_LENGTH);
   }
 
   @Test
@@ -377,7 +372,7 @@ public class CommunicationDaoTest extends BaseDaoTestCase {
     assertEquals(toTest.get(2), res.getResults().get(1));
     assertEquals(toTest.get(1), res.getResults().get(2));
     // Return all sent requests (even request with completion date null)
-    assertEquals(3, res.getResults().size());
+    assertThat(res.getResults()).hasSize(3);
 
     // Now Order ascending so => 1,2,0
     sentMsgesPC.setSortOrder(SortOrder.ASC);
@@ -386,7 +381,7 @@ public class CommunicationDaoTest extends BaseDaoTestCase {
     assertEquals(toTest.get(2), res.getResults().get(1));
     assertEquals(toTest.get(0), res.getResults().get(2));
     // Return all sent requests (even request with completion date null)
-    assertEquals(3, res.getResults().size());
+    assertThat(res.getResults()).hasSize(3);
   }
 
   @Test
@@ -442,7 +437,7 @@ public class CommunicationDaoTest extends BaseDaoTestCase {
     dao.save(msg);
 
     Communication msg2 = dao.get(msg.getId());
-    assertEquals(1, msg2.getRecipients().size());
+    assertThat(msg2.getRecipients()).hasSize(1);
     assertEquals(CommunicationStatus.NEW, msg2.getRecipients().iterator().next().getStatus());
   }
 
@@ -458,7 +453,7 @@ public class CommunicationDaoTest extends BaseDaoTestCase {
 
     Communication msg2 = dao.get(msg.getId());
     assertTrue(msg2 instanceof GroupMessageOrRequest);
-    assertEquals(1, msg2.getRecipients().size());
+    assertThat(msg2.getRecipients()).hasSize(1);
     assertEquals(CommunicationStatus.NEW, msg2.getRecipients().iterator().next().getStatus());
   }
 

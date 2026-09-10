@@ -4,6 +4,7 @@ import static com.researchspace.Constants.PI_ROLE;
 import static com.researchspace.Constants.SYSADMIN_ROLE;
 import static com.researchspace.core.util.TransformerUtils.toList;
 import static com.researchspace.service.UserFolderCreator.SHARED_SNIPPETS_FOLDER_PREFIX;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -89,8 +90,8 @@ public class GroupManagerTest extends SpringTransactionalTest {
     Group g1reloaded = grpMgr.getGroup(g1.getId());
     assertEquals(g1, g1reloaded);
     // should be associated with default comunity
-    assertTrue(
-        communityMgr.get(Community.DEFAULT_COMMUNITY_ID).getLabGroups().contains(g1reloaded));
+    assertThat(communityMgr.get(Community.DEFAULT_COMMUNITY_ID).getLabGroups())
+        .contains(g1reloaded);
     assertEquals(Community.DEFAULT_COMMUNITY_ID, g1reloaded.getCommunity().getId());
   }
 
@@ -120,31 +121,31 @@ public class GroupManagerTest extends SpringTransactionalTest {
     grpMgr.setRoleForUser(group.getId(), pi2.getId(), RoleInGroup.PI.name(), sysadmin);
 
     /* pis can see group and member's folder, but not other pi's */
-    assertEquals(2, folderDao.getLabGroupFolderForUser(pi).getChildren().size());
+    assertThat(folderDao.getLabGroupFolderForUser(pi).getChildren()).hasSize(2);
 
     // demote pi to normal user - can only see group's folder
     grpMgr.setRoleForUser(group.getId(), pi.getId(), RoleInGroup.DEFAULT.name(), sysadmin);
-    assertEquals(1, folderDao.getLabGroupFolderForUser(pi).getChildren().size());
+    assertThat(folderDao.getLabGroupFolderForUser(pi).getChildren()).hasSize(1);
 
     // promote to Lab Admin - still only see group's folder
     grpMgr.setRoleForUser(group.getId(), pi.getId(), RoleInGroup.RS_LAB_ADMIN.name(), sysadmin);
-    assertEquals(1, folderDao.getLabGroupFolderForUser(pi).getChildren().size());
+    assertThat(folderDao.getLabGroupFolderForUser(pi).getChildren()).hasSize(1);
 
     logoutAndLoginAs(pi2);
     // add 'view all' lab admin permission - can see group's and member's folder
     grpMgr.authorizeLabAdminToViewAll(pi.getId(), pi2, group.getId(), true);
-    assertEquals(2, folderDao.getLabGroupFolderForUser(pi).getChildren().size());
+    assertThat(folderDao.getLabGroupFolderForUser(pi).getChildren()).hasSize(2);
 
     // remove 'view all' lab admin permission - can only see group's folder
     grpMgr.authorizeLabAdminToViewAll(pi.getId(), pi2, group.getId(), false);
-    assertEquals(1, folderDao.getLabGroupFolderForUser(pi).getChildren().size());
+    assertThat(folderDao.getLabGroupFolderForUser(pi).getChildren()).hasSize(1);
 
     // add 'view all' lab admin permission again, then remove from the group (RSPAC-1116)
     grpMgr.authorizeLabAdminToViewAll(pi.getId(), pi2, group.getId(), true);
-    assertEquals(2, folderDao.getLabGroupFolderForUser(pi).getChildren().size());
+    assertThat(folderDao.getLabGroupFolderForUser(pi).getChildren()).hasSize(2);
     grpMgr.removeUserFromGroup(pi.getUsername(), group.getId(), pi2);
     // no user nor group folder
-    assertEquals(0, folderDao.getLabGroupFolderForUser(pi).getChildren().size());
+    assertThat(folderDao.getLabGroupFolderForUser(pi).getChildren()).isEmpty();
   }
 
   @Test
@@ -198,7 +199,7 @@ public class GroupManagerTest extends SpringTransactionalTest {
 
     // now test reloaded
     Group g2 = grpMgr.getGroup(g1.getId());
-    assertEquals(1, g2.getPermissions().size());
+    assertThat(g2.getPermissions()).hasSize(1);
     ConstraintBasedPermission reloaded =
         (ConstraintBasedPermission) g2.getPermissions().iterator().next();
     assertEquals(reloaded.toString(), permOb.toString());
@@ -207,7 +208,7 @@ public class GroupManagerTest extends SpringTransactionalTest {
     g2.removePermission(reloaded);
     grpMgr.saveGroup(g2, user);
     Group g3 = grpMgr.getGroup(g1.getId());
-    assertTrue(g3.getPermissions().isEmpty());
+    assertThat(g3.getPermissions()).isEmpty();
   }
 
   @Test
@@ -318,10 +319,10 @@ public class GroupManagerTest extends SpringTransactionalTest {
     Community comm = createAndSaveCommunity(communityAdmin, "any.id");
     // now log on as community admin, can see no groups
     logoutAndLoginAs(communityAdmin);
-    assertEquals(0, grpMgr.list(communityAdmin, pgCrit).getResults().size());
+    assertThat(grpMgr.list(communityAdmin, pgCrit).getResults()).isEmpty();
     communityMgr.addGroupToCommunity(g1.getId(), comm.getId(), communityAdmin);
     // now can see the added group
-    assertEquals(1, grpMgr.list(communityAdmin, pgCrit).getResults().size());
+    assertThat(grpMgr.list(communityAdmin, pgCrit).getResults()).hasSize(1);
   }
 
   @Test
@@ -409,7 +410,7 @@ public class GroupManagerTest extends SpringTransactionalTest {
     g1.setDisplayName("newdisplay");
     g1 = grpMgr.saveGroup(g1, admin);
     Folder labFolder = folderDao.getSharedFolderForGroup(g1);
-    assertTrue(labFolder.getName().contains("newdisplay"));
+    assertThat(labFolder.getName()).contains("newdisplay");
     String updatedName = new DefaultGroupNamingStrategy().getSharedGroupName(g1);
     assertEquals(updatedName, labFolder.getName());
     assertFalse(updatedName.equals(expectedName));
@@ -597,9 +598,9 @@ public class GroupManagerTest extends SpringTransactionalTest {
     // labadmin can't view other users unshared docs
     assertAdminRead(labAdmin, false, userSdoc);
     // getViewableUsers include only themselve
-    assertEquals(1, userDao.getViewableUsersByRole(labAdmin).size());
+    assertThat(userDao.getViewableUsersByRole(labAdmin)).hasSize(1);
     // there is only a group folder in their Shared -> Lab Groups
-    assertEquals(1, folderDao.getLabGroupFolderForUser(labAdmin).getChildrens().size());
+    assertThat(folderDao.getLabGroupFolderForUser(labAdmin).getChildrens()).hasSize(1);
 
     // pi should be able to authorize lab admin to view all
     logoutAndLoginAs(labGroupPI);
@@ -610,9 +611,9 @@ public class GroupManagerTest extends SpringTransactionalTest {
     assertAdminRead(authorisedAdmin, true, userSdoc, otherSdoc);
     assertAdminRead(authorisedAdmin, false, piSdoc);
     // also getViewableUsers includes these 2 users + himself
-    assertEquals(3, userDao.getViewableUsersByRole(labAdmin).size());
+    assertThat(userDao.getViewableUsersByRole(labAdmin)).hasSize(3);
     // and they can see both user folders in their Shared -> Lab Groups
-    assertEquals(3, folderDao.getLabGroupFolderForUser(labAdmin).getChildrens().size());
+    assertThat(folderDao.getLabGroupFolderForUser(labAdmin).getChildrens()).hasSize(3);
 
     // now a new user will be added to group
     final User newuser = createAndSaveRandomUser();
@@ -627,8 +628,8 @@ public class GroupManagerTest extends SpringTransactionalTest {
     assertAdminRead(authorisedAdmin, true, userSdoc, otherSdoc);
     assertAdminRead(authorisedAdmin, true, newuserdoc);
     assertAdminRead(authorisedAdmin, true, newuserRootFolder);
-    assertEquals(4, userDao.getViewableUsersByRole(labAdmin).size());
-    assertEquals(4, folderDao.getLabGroupFolderForUser(labAdmin).getChildrens().size());
+    assertThat(userDao.getViewableUsersByRole(labAdmin)).hasSize(4);
+    assertThat(folderDao.getLabGroupFolderForUser(labAdmin).getChildrens()).hasSize(4);
 
     // now remove newuser from group, permission will be revoked
     logoutAndLoginAs(labGroupPI);
@@ -636,8 +637,8 @@ public class GroupManagerTest extends SpringTransactionalTest {
     assertAdminRead(authorisedAdmin, false, newuserdoc);
     assertAdminRead(authorisedAdmin, false, newuserRootFolder);
     assertAdminRead(authorisedAdmin, true, userSdoc, otherSdoc);
-    assertEquals(3, userDao.getViewableUsersByRole(labAdmin).size());
-    assertEquals(3, folderDao.getLabGroupFolderForUser(labAdmin).getChildrens().size());
+    assertThat(userDao.getViewableUsersByRole(labAdmin)).hasSize(3);
+    assertThat(folderDao.getLabGroupFolderForUser(labAdmin).getChildrens()).hasSize(3);
 
     // remove one of the original users 'other'
     logoutAndLoginAs(labGroupPI);
@@ -645,53 +646,53 @@ public class GroupManagerTest extends SpringTransactionalTest {
     // 'user' should still be visible
     assertAdminRead(authorisedAdmin, false, otherSdoc);
     assertAdminRead(authorisedAdmin, true, userSdoc);
-    assertEquals(2, userDao.getViewableUsersByRole(labAdmin).size());
-    assertEquals(2, folderDao.getLabGroupFolderForUser(labAdmin).getChildrens().size());
+    assertThat(userDao.getViewableUsersByRole(labAdmin)).hasSize(2);
+    assertThat(folderDao.getLabGroupFolderForUser(labAdmin).getChildrens()).hasSize(2);
 
     // add 'other' back so there are 2 users + admin + Pi again
     logoutAndLoginAs(labGroupPI);
     grpMgr.addUserToGroup(other.getUsername(), grp.getId(), RoleInGroup.DEFAULT);
-    assertEquals(3, userDao.getViewableUsersByRole(labAdmin).size());
-    assertEquals(3, folderDao.getLabGroupFolderForUser(labAdmin).getChildrens().size());
+    assertThat(userDao.getViewableUsersByRole(labAdmin)).hasSize(3);
+    assertThat(folderDao.getLabGroupFolderForUser(labAdmin).getChildrens()).hasSize(3);
 
     // now demote lab admin back to member role
     grpMgr.setRoleForUser(grp.getId(), labAdmin.getId(), RoleInGroup.DEFAULT.name(), labGroupPI);
     assertAdminRead(authorisedAdmin, false, userSdoc, otherSdoc);
-    assertEquals(1, userDao.getViewableUsersByRole(labAdmin).size());
-    assertEquals(1, folderDao.getLabGroupFolderForUser(labAdmin).getChildrens().size());
+    assertThat(userDao.getViewableUsersByRole(labAdmin)).hasSize(1);
+    assertThat(folderDao.getLabGroupFolderForUser(labAdmin).getChildrens()).hasSize(1);
 
     // and promote back to lab admin...
     logoutAndLoginAs(labGroupPI);
     grpMgr.setRoleForUser(
         grp.getId(), labAdmin.getId(), RoleInGroup.RS_LAB_ADMIN.name(), labGroupPI);
-    assertEquals(1, userDao.getViewableUsersByRole(labAdmin).size());
-    assertEquals(1, folderDao.getLabGroupFolderForUser(labAdmin).getChildrens().size());
+    assertThat(userDao.getViewableUsersByRole(labAdmin)).hasSize(1);
+    assertThat(folderDao.getLabGroupFolderForUser(labAdmin).getChildrens()).hasSize(1);
 
     // and promote back to lab admin with 'view all'
     authorisedAdmin =
         grpMgr.authorizeLabAdminToViewAll(labAdmin.getId(), labGroupPI, grp.getId(), true);
-    assertEquals(3, userDao.getViewableUsersByRole(labAdmin).size());
-    assertEquals(3, folderDao.getLabGroupFolderForUser(labAdmin).getChildrens().size());
+    assertThat(userDao.getViewableUsersByRole(labAdmin)).hasSize(3);
+    assertThat(folderDao.getLabGroupFolderForUser(labAdmin).getChildrens()).hasSize(3);
 
     // now add 'newuser' user to the group againusers again...
     grpMgr.addUserToGroup(newuser.getUsername(), grp.getId(), RoleInGroup.DEFAULT);
     assertAdminRead(authorisedAdmin, true, newuserdoc, otherSdoc);
-    assertEquals(4, userDao.getViewableUsersByRole(labAdmin).size());
-    assertEquals(4, folderDao.getLabGroupFolderForUser(labAdmin).getChildrens().size());
+    assertThat(userDao.getViewableUsersByRole(labAdmin)).hasSize(4);
+    assertThat(folderDao.getLabGroupFolderForUser(labAdmin).getChildrens()).hasSize(4);
 
     // now revoke read all permission:
     logoutAndLoginAs(labGroupPI);
     authorisedAdmin =
         grpMgr.authorizeLabAdminToViewAll(labAdmin.getId(), labGroupPI, grp.getId(), false);
     assertAdminRead(authorisedAdmin, false, newuserdoc, otherSdoc);
-    assertEquals(1, userDao.getViewableUsersByRole(labAdmin).size());
-    assertEquals(1, folderDao.getLabGroupFolderForUser(labAdmin).getChildrens().size());
+    assertThat(userDao.getViewableUsersByRole(labAdmin)).hasSize(1);
+    assertThat(folderDao.getLabGroupFolderForUser(labAdmin).getChildrens()).hasSize(1);
     // and restore again
     logoutAndLoginAs(labGroupPI);
     authorisedAdmin =
         grpMgr.authorizeLabAdminToViewAll(labAdmin.getId(), labGroupPI, grp.getId(), true);
     assertAdminRead(authorisedAdmin, true, newuserdoc, otherSdoc);
-    assertEquals(4, folderDao.getLabGroupFolderForUser(labAdmin).getChildrens().size());
+    assertThat(folderDao.getLabGroupFolderForUser(labAdmin).getChildrens()).hasSize(4);
 
     // lad admin can't view all in a collaboration group.
     final User otherGrpPi = createAndSaveAPi();
@@ -712,7 +713,7 @@ public class GroupManagerTest extends SpringTransactionalTest {
     grpMgr.removeGroup(grp.getId(), sysadmin);
 
     assertAdminRead(authorisedAdmin, false, newuserdoc, otherSdoc);
-    assertEquals(1, userDao.getViewableUsersByRole(labAdmin).size());
+    assertThat(userDao.getViewableUsersByRole(labAdmin)).hasSize(1);
   }
 
   // RSPAC-1113
@@ -743,26 +744,26 @@ public class GroupManagerTest extends SpringTransactionalTest {
     grpMgr.authorizeLabAdminToViewAll(labAdmin.getId(), pi, group2.getId(), true);
 
     /* pi and lab admin can see both groups and member's folder */
-    assertEquals(4, folderDao.getLabGroupFolderForUser(pi).getChildren().size());
-    assertEquals(3, folderDao.getLabGroupFolderForUser(labAdmin).getChildren().size());
+    assertThat(folderDao.getLabGroupFolderForUser(pi).getChildren()).hasSize(4);
+    assertThat(folderDao.getLabGroupFolderForUser(labAdmin).getChildren()).hasSize(3);
     /* member can see both groups */
-    assertEquals(2, folderDao.getLabGroupFolderForUser(member).getChildren().size());
+    assertThat(folderDao.getLabGroupFolderForUser(member).getChildren()).hasSize(2);
 
     /* remove user from one of the groups */
     grpMgr.removeUserFromGroup(member.getUsername(), group.getId(), pi);
     /* pi and lab admin can still see member's folder */
-    assertEquals(4, folderDao.getLabGroupFolderForUser(pi).getChildren().size());
-    assertEquals(3, folderDao.getLabGroupFolderForUser(labAdmin).getChildren().size());
+    assertThat(folderDao.getLabGroupFolderForUser(pi).getChildren()).hasSize(4);
+    assertThat(folderDao.getLabGroupFolderForUser(labAdmin).getChildren()).hasSize(3);
     /* member can see only one group */
-    assertEquals(1, folderDao.getLabGroupFolderForUser(member).getChildren().size());
+    assertThat(folderDao.getLabGroupFolderForUser(member).getChildren()).hasSize(1);
 
     /* remove user from second group */
     grpMgr.removeUserFromGroup(member.getUsername(), group2.getId(), pi);
     /* pi and lab admin can no longer see member's folder */
-    assertEquals(3, folderDao.getLabGroupFolderForUser(pi).getChildren().size());
-    assertEquals(2, folderDao.getLabGroupFolderForUser(labAdmin).getChildren().size());
+    assertThat(folderDao.getLabGroupFolderForUser(pi).getChildren()).hasSize(3);
+    assertThat(folderDao.getLabGroupFolderForUser(labAdmin).getChildren()).hasSize(2);
     /* member can't see any group folder */
-    assertEquals(0, folderDao.getLabGroupFolderForUser(member).getChildren().size());
+    assertThat(folderDao.getLabGroupFolderForUser(member).getChildren()).isEmpty();
   }
 
   @Test
@@ -1053,18 +1054,18 @@ public class GroupManagerTest extends SpringTransactionalTest {
     assertNotNull(group.getId());
     // verify that the group is returned for user 1 being a member of the group
     logoutAndLoginAs(userMember);
-    assertTrue(grpMgr.getGroupInfoById(group.getId()).isPresent());
+    assertThat(grpMgr.getGroupInfoById(group.getId())).isPresent();
 
     // verify that the group is returned for piUser as if he is not member of the group
     logoutAndLoginAs(userPi);
-    assertTrue(grpMgr.getGroupInfoById(group.getId()).isPresent());
+    assertThat(grpMgr.getGroupInfoById(group.getId())).isPresent();
 
     /// create and save another user (not being member of the group)
     // then verify user2 has no groups
     User userNotMember = TestFactory.createAnyUser(getRandomAlphabeticString("u2"));
     userMgr.save(userNotMember);
     logoutAndLoginAs(userNotMember);
-    assertFalse(grpMgr.getGroupInfoById(group.getId()).isPresent());
+    assertThat(grpMgr.getGroupInfoById(group.getId())).isNotPresent();
 
     // create and save a sysadmin user (not being part of the group)
     // then verify the group is returned
@@ -1074,6 +1075,6 @@ public class GroupManagerTest extends SpringTransactionalTest {
     userSysadmin.setRoles(Set.of(roleManager.getRole(SYSADMIN_ROLE)));
     userMgr.save(userSysadmin);
     logoutAndLoginAs(userSysadmin);
-    assertTrue(grpMgr.getGroupInfoById(group.getId()).isPresent());
+    assertThat(grpMgr.getGroupInfoById(group.getId())).isPresent();
   }
 }

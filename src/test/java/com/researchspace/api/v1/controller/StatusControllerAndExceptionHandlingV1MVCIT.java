@@ -2,6 +2,7 @@ package com.researchspace.api.v1.controller;
 
 import static com.researchspace.api.v1.controller.API_VERSION.ONE;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
@@ -142,7 +143,7 @@ public class StatusControllerAndExceptionHandlingV1MVCIT extends API_MVC_TestBas
     log.info(csvResponse);
 
     String[] lines = API_ModelTestUtils.parseCSVResponseToLines(csvResponse);
-    assertEquals(2, lines.length); // 1 header row and 1 error row
+    assertThat(lines).hasSize(2); // 1 header row and 1 error row
     final int ERROR_PROPERTY_COUNT = 5; // includes commas in error message;
     API_ModelTestUtils.assertRowAndColumnCountForApiError(csvResponse, 2, ERROR_PROPERTY_COUNT);
 

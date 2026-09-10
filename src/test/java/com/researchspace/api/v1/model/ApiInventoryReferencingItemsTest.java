@@ -1,7 +1,7 @@
 package com.researchspace.api.v1.model;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
@@ -18,7 +18,7 @@ class ApiInventoryReferencingItemsTest {
 
     String json = mapper.writeValueAsString(wrapper);
 
-    assertTrue(json.contains("\"referencingItems\":[]"));
+    assertThat(json).contains("\"referencingItems\":[]");
   }
 
   @Test
@@ -36,10 +36,10 @@ class ApiInventoryReferencingItemsTest {
 
     String json = mapper.writeValueAsString(wrapper);
 
-    assertTrue(json.contains("\"sourceGlobalId\":\"SA77\""));
-    assertTrue(json.contains("\"relationType\":\"IsCalibratedBy\""));
-    assertTrue(json.contains("\"sourceType\":\"SAMPLE\""));
-    assertTrue(json.contains("\"modifiedAt\":\"1970-01-01"));
+    assertThat(json).contains("\"sourceGlobalId\":\"SA77\"");
+    assertThat(json).contains("\"relationType\":\"IsCalibratedBy\"");
+    assertThat(json).contains("\"sourceType\":\"SAMPLE\"");
+    assertThat(json).contains("\"modifiedAt\":\"1970-01-01");
   }
 
   @Test
@@ -50,7 +50,7 @@ class ApiInventoryReferencingItemsTest {
             + "\"versionPin\":null,\"modifiedAt\":\"1970-01-01T00:00:00.000Z\"}]}";
     ApiInventoryReferencingItems parsed =
         mapper.readValue(json, ApiInventoryReferencingItems.class);
-    assertEquals(1, parsed.getReferencingItems().size());
+    assertThat(parsed.getReferencingItems()).hasSize(1);
     assertEquals("SS9", parsed.getReferencingItems().get(0).getSourceGlobalId());
   }
 }

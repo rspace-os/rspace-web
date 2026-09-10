@@ -1,8 +1,8 @@
 package com.researchspace.service.inventory.csvimport;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -89,7 +89,7 @@ public class InventoryItemCsvImporterTest extends SpringTransactionalTest {
             () ->
                 sampleCsvImporter.readCsvIntoImportResult(
                     blankCsv, nameColumnMapping, processingResult, user));
-    assertTrue(iae.getMessage().contains("CSV file seems to be empty"), iae.getMessage());
+    assertThat(iae.getMessage()).as(iae.getMessage()).contains("CSV file seems to be empty");
 
     // invalid mapping for csv file ('Name' column not found)
     InputStream oneSampleCsvIS = IOUtils.toInputStream("Sample Name\nTestSample");
@@ -99,9 +99,9 @@ public class InventoryItemCsvImporterTest extends SpringTransactionalTest {
             () ->
                 sampleCsvImporter.readCsvIntoImportResult(
                     oneSampleCsvIS, nameColumnMapping, processingResult, user));
-    assertTrue(
-        iae.getMessage().contains("Couldn't find 'Name' among columns in CSV file"),
-        iae.getMessage());
+    assertThat(iae.getMessage())
+        .as(iae.getMessage())
+        .contains("Couldn't find 'Name' among columns in CSV file");
 
     // duplicated column name
     InputStream duplicateColumnNamesIS = IOUtils.toInputStream("Name,Data,Data\nTestSample,,");
@@ -111,7 +111,9 @@ public class InventoryItemCsvImporterTest extends SpringTransactionalTest {
             () ->
                 sampleCsvImporter.readCsvIntoImportResult(
                     duplicateColumnNamesIS, nameColumnMapping, processingResult, user));
-    assertTrue(iae.getMessage().contains("CSV file has repeating column names"), iae.getMessage());
+    assertThat(iae.getMessage())
+        .as(iae.getMessage())
+        .contains("CSV file has repeating column names");
 
     // verify happy case works
     InputStream twoLinesCsv = IOUtils.toInputStream("Name\nTestSample\nTestSample2\nTestSample3");
@@ -140,9 +142,9 @@ public class InventoryItemCsvImporterTest extends SpringTransactionalTest {
               () ->
                   sampleCsvImporter.readCsvIntoImportResult(
                       threeSampleCsvIS, nameColumnMapping, processingResult, user));
-      assertTrue(
-          iae.getMessage().contains("CSV file is too long, import limit is set to 2 samples."),
-          iae.getMessage());
+      assertThat(iae.getMessage())
+          .as(iae.getMessage())
+          .contains("CSV file is too long, import limit is set to 2 samples.");
     } finally {
       sampleCsvImporter.setCsvLinesLimit(defaultLinesLimit);
     }
@@ -159,9 +161,9 @@ public class InventoryItemCsvImporterTest extends SpringTransactionalTest {
               () ->
                   subSampleCsvImporter.readCsvIntoImportResult(
                       threeSampleCsvIS, nameColumnMapping, processingResult, user));
-      assertTrue(
-          iae.getMessage().contains("CSV file is too long, import limit is set to 2 subsamples."),
-          iae.getMessage());
+      assertThat(iae.getMessage())
+          .as(iae.getMessage())
+          .contains("CSV file is too long, import limit is set to 2 subsamples.");
     } finally {
       subSampleCsvImporter.setCsvLinesLimit(defaultLinesLimit);
     }
@@ -178,9 +180,9 @@ public class InventoryItemCsvImporterTest extends SpringTransactionalTest {
               () ->
                   containerCsvImporter.readCsvIntoImportResult(
                       threeSampleCsvIS, nameColumnMapping, processingResult, user));
-      assertTrue(
-          iae.getMessage().contains("CSV file is too long, import limit is set to 2 containers."),
-          iae.getMessage());
+      assertThat(iae.getMessage())
+          .as(iae.getMessage())
+          .contains("CSV file is too long, import limit is set to 2 containers.");
     } finally {
       containerCsvImporter.setCsvLinesLimit(defaultLinesLimit);
     }
@@ -214,13 +216,13 @@ public class InventoryItemCsvImporterTest extends SpringTransactionalTest {
     InputStream containerIS = IOUtils.toInputStream("Igsn\n10.12345/nico-test");
     ApiInventoryImportParseResult parseResult =
         containerCsvImporter.readCsvIntoParseResults(containerIS, user);
-    assertEquals(1, parseResult.getFieldMappings().size());
-    assertEquals("identifier", parseResult.getFieldMappings().get("Igsn"));
+    assertThat(parseResult.getFieldMappings()).hasSize(1);
+    assertThat(parseResult.getFieldMappings()).containsEntry("Igsn", "identifier");
 
     // confirm field mapping for Igsn to identifier is NOT DONE
     containerIS = IOUtils.toInputStream("Igsn\n11.12345/nico-test");
     parseResult = containerCsvImporter.readCsvIntoParseResults(containerIS, user);
-    assertTrue(parseResult.getFieldMappings().isEmpty());
+    assertThat(parseResult.getFieldMappings()).isEmpty();
   }
 
   @Test
@@ -256,12 +258,12 @@ public class InventoryItemCsvImporterTest extends SpringTransactionalTest {
     verify(mockIdenitfierManager, times(2))
         .findIdentifiers(eq("draft"), eq(false), anyString(), eq(false), eq(user));
 
-    assertEquals(1, sampleProcessingResult.getResults().get(0).getRecord().getIdentifiers().size());
+    assertThat(sampleProcessingResult.getResults().get(0).getRecord().getIdentifiers()).hasSize(1);
     assertEquals(
         DOI_1,
         sampleProcessingResult.getResults().get(0).getRecord().getIdentifiers().get(0).getDoi());
 
-    assertEquals(1, sampleProcessingResult.getResults().get(1).getRecord().getIdentifiers().size());
+    assertThat(sampleProcessingResult.getResults().get(1).getRecord().getIdentifiers()).hasSize(1);
     assertEquals(
         DOI_2,
         sampleProcessingResult.getResults().get(1).getRecord().getIdentifiers().get(0).getDoi());
@@ -300,15 +302,9 @@ public class InventoryItemCsvImporterTest extends SpringTransactionalTest {
     verify(mockIdenitfierManager, times(2))
         .findIdentifiers(eq("draft"), eq(false), anyString(), eq(false), eq(user));
 
-    assertEquals(
-        1,
-        processingResult
-            .getSubSampleResult()
-            .getResults()
-            .get(0)
-            .getRecord()
-            .getIdentifiers()
-            .size());
+    assertThat(
+            processingResult.getSubSampleResult().getResults().get(0).getRecord().getIdentifiers())
+        .hasSize(1);
     assertEquals(
         DOI_1,
         processingResult
@@ -320,15 +316,9 @@ public class InventoryItemCsvImporterTest extends SpringTransactionalTest {
             .get(0)
             .getDoi());
 
-    assertEquals(
-        1,
-        processingResult
-            .getSubSampleResult()
-            .getResults()
-            .get(1)
-            .getRecord()
-            .getIdentifiers()
-            .size());
+    assertThat(
+            processingResult.getSubSampleResult().getResults().get(1).getRecord().getIdentifiers())
+        .hasSize(1);
     assertEquals(
         DOI_2,
         processingResult
@@ -374,15 +364,9 @@ public class InventoryItemCsvImporterTest extends SpringTransactionalTest {
     verify(mockIdenitfierManager, times(2))
         .findIdentifiers(eq("draft"), eq(false), anyString(), eq(false), eq(user));
 
-    assertEquals(
-        1,
-        processingResult
-            .getContainerResult()
-            .getResults()
-            .get(0)
-            .getRecord()
-            .getIdentifiers()
-            .size());
+    assertThat(
+            processingResult.getContainerResult().getResults().get(0).getRecord().getIdentifiers())
+        .hasSize(1);
     assertEquals(
         DOI_1,
         processingResult
@@ -394,15 +378,9 @@ public class InventoryItemCsvImporterTest extends SpringTransactionalTest {
             .get(0)
             .getDoi());
 
-    assertEquals(
-        1,
-        processingResult
-            .getContainerResult()
-            .getResults()
-            .get(1)
-            .getRecord()
-            .getIdentifiers()
-            .size());
+    assertThat(
+            processingResult.getContainerResult().getResults().get(1).getRecord().getIdentifiers())
+        .hasSize(1);
     assertEquals(
         DOI_2,
         processingResult

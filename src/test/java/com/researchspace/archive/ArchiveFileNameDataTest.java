@@ -1,7 +1,6 @@
 package com.researchspace.archive;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.model.core.IRSpaceDoc;
@@ -25,7 +24,7 @@ public class ArchiveFileNameDataTest {
     when(record.isMediaRecord()).thenReturn(false);
     when(record.isStructuredDocument()).thenReturn(true);
     ArchiveFileNameData fname = new ArchiveFileNameData(record, null);
-    assertEquals(53, fname.toFileName().length());
-    assertFalse(fname.toFileName().contains("."), fname.toFileName()); // ellipses truncated
+    assertThat(fname.toFileName()).hasSize(53);
+    assertThat(fname.toFileName()).as(fname.toFileName()).doesNotContain("."); // ellipses truncated
   }
 }

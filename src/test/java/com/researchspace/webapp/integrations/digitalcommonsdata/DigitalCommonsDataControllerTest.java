@@ -2,6 +2,7 @@ package com.researchspace.webapp.integrations.digitalcommonsdata;
 
 import static com.researchspace.service.IntegrationsHandler.DIGITAL_COMMONS_DATA_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.PROVIDER_USER_ID;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -97,13 +98,13 @@ public class DigitalCommonsDataControllerTest extends SpringTransactionalTest {
         digitalCommonsDataController.connect(new BindingAwareModelMap(), principal);
 
     UserConnection actualConnection = getUserConnection(testUser);
-    assertTrue(((RedirectView) result.getView()).getUrl().contains("data.mendeley.com"));
+    assertThat(((RedirectView) result.getView()).getUrl()).contains("data.mendeley.com");
     assertEquals("DigitalCommonsData Client Access Secret", actualConnection.getDisplayName());
     assertNotNull(actualConnection.getExpireTime());
-    assertFalse(actualConnection.getAccessToken().contains("ACCESS_TOKEN"));
-    assertTrue(actualConnection.getAccessToken().contains("TEMP"));
+    assertThat(actualConnection.getAccessToken()).doesNotContain("ACCESS_TOKEN");
+    assertThat(actualConnection.getAccessToken()).contains("TEMP");
     assertNotNull(actualConnection.getSecret());
-    assertFalse(actualConnection.getSecret().isBlank());
+    assertThat(actualConnection.getSecret()).isNotBlank();
   }
 
   @Test
@@ -140,7 +141,7 @@ public class DigitalCommonsDataControllerTest extends SpringTransactionalTest {
         digitalCommonsDataController.callback(params, new BindingAwareModelMap(), principal);
     actualConnection = getUserConnection(testUser);
 
-    assertTrue(result.contains("connected"));
+    assertThat(result).contains("connected");
     assertEquals("DigitalCommonsData access token", actualConnection.getDisplayName());
     assertNotNull(actualConnection.getExpireTime());
     assertEquals("NEW_ACCESS_TOKEN", actualConnection.getAccessToken());
@@ -177,7 +178,7 @@ public class DigitalCommonsDataControllerTest extends SpringTransactionalTest {
         digitalCommonsDataController.refreshToken(new BindingAwareModelMap(), principal);
     UserConnection actualConnection = getUserConnection(testUser);
 
-    assertTrue(result.contains("connected"));
+    assertThat(result).contains("connected");
     assertEquals("DigitalCommonsData refreshed access token", actualConnection.getDisplayName());
     assertNotNull(actualConnection.getExpireTime());
     assertEquals("NEW_ACCESS_TOKEN", actualConnection.getAccessToken());
@@ -258,7 +259,7 @@ public class DigitalCommonsDataControllerTest extends SpringTransactionalTest {
     assertNotNull(actualConnection);
     assertEquals("ACCESS_TOKEN", actualConnection.getAccessToken());
     assertEquals("REFRESH_TOKEN", actualConnection.getRefreshToken());
-    assertEquals("299", actualConnection.getExpireTime().toString());
+    assertThat(actualConnection.getExpireTime()).hasToString("299");
     assertEquals("DigitalCommonsData access token", actualConnection.getDisplayName());
   }
 

@@ -4,6 +4,7 @@ import static com.researchspace.Constants.ADMIN_ROLE;
 import static com.researchspace.Constants.SYSADMIN_ROLE;
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static com.researchspace.webapp.filter.RemoteUserRetrievalPolicy.SSO_DUMMY_PASSWORD;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -89,8 +90,8 @@ public class SysAdminUserRegistrationControllerMVCIT extends MVCTestBase {
             .andReturn();
 
     UserImportResult importResults = getFromJsonResponseBody(result, UserImportResult.class);
-    assertEquals(3, importResults.getParsedUsers().size());
-    assertEquals(3, importResults.getParsedGroups().size());
+    assertThat(importResults.getParsedUsers()).hasSize(3);
+    assertThat(importResults.getParsedGroups()).hasSize(3);
     assertFalse(importResults.getErrors().hasErrorMessages());
   }
 
@@ -115,8 +116,8 @@ public class SysAdminUserRegistrationControllerMVCIT extends MVCTestBase {
             .andReturn();
 
     UserImportResult importResults = getFromJsonResponseBody(result, UserImportResult.class);
-    assertEquals(3, importResults.getParsedUsers().size());
-    assertEquals(3, importResults.getParsedGroups().size());
+    assertThat(importResults.getParsedUsers()).hasSize(3);
+    assertThat(importResults.getParsedGroups()).hasSize(3);
     assertFalse(importResults.getErrors().hasErrorMessages());
   }
 
@@ -154,20 +155,20 @@ public class SysAdminUserRegistrationControllerMVCIT extends MVCTestBase {
     propertyHolder.setLdapEnabled("false");
 
     UserImportResult importResults = getFromJsonResponseBody(result, UserImportResult.class);
-    assertEquals(3, importResults.getParsedUsers().size());
+    assertThat(importResults.getParsedUsers()).hasSize(3);
     assertFalse(importResults.getErrors().hasErrorMessages());
 
     UserRegistrationInfo unexistingUserInfo = importResults.getParsedUsers().get(0);
     assertEquals("unexistingLdapUser", unexistingUserInfo.getUsername());
-    assertEquals("", unexistingUserInfo.getFirstName());
-    assertEquals("", unexistingUserInfo.getLastName());
-    assertEquals("", unexistingUserInfo.getEmail());
+    assertThat(unexistingUserInfo.getFirstName()).isEmpty();
+    assertThat(unexistingUserInfo.getLastName()).isEmpty();
+    assertThat(unexistingUserInfo.getEmail()).isEmpty();
 
     UserRegistrationInfo exceptionalUserInfo = importResults.getParsedUsers().get(1);
     assertEquals("exceptionalLdapUser", exceptionalUserInfo.getUsername());
-    assertEquals("", exceptionalUserInfo.getFirstName());
-    assertEquals("", exceptionalUserInfo.getLastName());
-    assertEquals("", exceptionalUserInfo.getEmail());
+    assertThat(exceptionalUserInfo.getFirstName()).isEmpty();
+    assertThat(exceptionalUserInfo.getLastName()).isEmpty();
+    assertThat(exceptionalUserInfo.getEmail()).isEmpty();
 
     UserRegistrationInfo ldapUserInfo = importResults.getParsedUsers().get(2);
     assertEquals("ldapUser", ldapUserInfo.getUsername());
@@ -192,8 +193,8 @@ public class SysAdminUserRegistrationControllerMVCIT extends MVCTestBase {
             .andReturn();
 
     UserImportResult importResults = getFromJsonResponseBody(result, UserImportResult.class);
-    assertEquals(0, importResults.getParsedUsers().size());
-    assertEquals(0, importResults.getParsedGroups().size());
+    assertThat(importResults.getParsedUsers()).isEmpty();
+    assertThat(importResults.getParsedGroups()).isEmpty();
     assertTrue(importResults.getErrors().hasErrorMessages());
   }
 
@@ -215,7 +216,7 @@ public class SysAdminUserRegistrationControllerMVCIT extends MVCTestBase {
     // check the messages
     Map resultMap = parseJSONObjectFromResponseStream(result);
     List<String> resultMsgs = (List<String>) resultMap.get("data");
-    assertEquals(1, resultMsgs.size()); // 1x complete
+    assertThat(resultMsgs).hasSize(1); // 1x complete
     assertEquals(BATCH_REGISTRATION_COMPLETE_MSG, resultMsgs.get(0));
   }
 
@@ -246,7 +247,7 @@ public class SysAdminUserRegistrationControllerMVCIT extends MVCTestBase {
     // check the messages
     Map resultMap = parseJSONObjectFromResponseStream(result);
     List<String> resultMsgs = (List<String>) resultMap.get("data");
-    assertEquals(3, resultMsgs.size());
+    assertThat(resultMsgs).hasSize(3);
     assertEquals(BATCH_REGISTRATION_COMPLETE_MSG, resultMsgs.get(2));
     //    	asssertErrorListEmpty(resultMap);
 
@@ -295,8 +296,8 @@ public class SysAdminUserRegistrationControllerMVCIT extends MVCTestBase {
     // check the messages
     Map resultMap = parseJSONObjectFromResponseStream(result);
     List<String> resultMsgs = (List<String>) resultMap.get("data");
-    assertEquals(
-        6, resultMsgs.size()); // 2x userCreated, 1x groupCreated, 2x userNotified, 1x complete
+    assertThat(resultMsgs)
+        .hasSize(6); // 2x userCreated, 1x groupCreated, 2x userNotified, 1x complete
     assertEquals(BATCH_REGISTRATION_COMPLETE_MSG, resultMsgs.get(5));
     // asssertErrorListEmpty(resultMap);
   }
@@ -350,13 +351,13 @@ public class SysAdminUserRegistrationControllerMVCIT extends MVCTestBase {
     // check the messages
     Map resultMap = parseJSONObjectFromResponseStream(result);
     List<String> resultMsgs = (List<String>) resultMap.get("data");
-    assertEquals(
-        7, resultMsgs.size()); // 2x userCreated & notified, group & comm created, import success
+    assertThat(resultMsgs)
+        .hasSize(7); // 2x userCreated & notified, group & comm created, import success
 
     Community retrievedCommunity = getCommunityByDisplayName(communityName);
     assertNotNull(retrievedCommunity);
-    assertEquals(1, retrievedCommunity.getAdmins().size());
-    assertEquals(1, retrievedCommunity.getLabGroups().size());
+    assertThat(retrievedCommunity.getAdmins()).hasSize(1);
+    assertThat(retrievedCommunity.getLabGroups()).hasSize(1);
   }
 
   private Community getCommunityByDisplayName(String string) {
@@ -425,7 +426,7 @@ public class SysAdminUserRegistrationControllerMVCIT extends MVCTestBase {
     // all problems should be reported
     ErrorList errorList = mvcUtils.getErrorListFromAjaxReturnObject(result);
     List<String> errorMsgs = errorList.getErrorMessages();
-    assertEquals(12, errorMsgs.size());
+    assertThat(errorMsgs).hasSize(12);
     assertEquals(
         "U.user1.username.Username must be at least 6 alphanumeric characters.", errorMsgs.get(0));
     assertEquals("U.user1.email.Email is a required field.", errorMsgs.get(1));
@@ -494,7 +495,7 @@ public class SysAdminUserRegistrationControllerMVCIT extends MVCTestBase {
     // check the messages
     Map resultMap2 = parseJSONObjectFromResponseStream(result2);
     List<String> resultMsgs2 = (List<String>) resultMap2.get("data");
-    assertEquals(3, resultMsgs2.size());
+    assertThat(resultMsgs2).hasSize(3);
     assertEquals(BATCH_REGISTRATION_COMPLETE_MSG, resultMsgs2.get(2));
   }
 
@@ -549,7 +550,7 @@ public class SysAdminUserRegistrationControllerMVCIT extends MVCTestBase {
     // all problems should be reported
     ErrorList errorList = mvcUtils.getErrorListFromAjaxReturnObject(result);
     List<String> errorMsgs = errorList.getErrorMessages();
-    assertEquals(7, errorMsgs.size());
+    assertThat(errorMsgs).hasSize(7);
     assertEquals(
         "G.group1un.pi.No PI was chosen. Every group must have an associated PI.",
         errorMsgs.get(1));
@@ -595,7 +596,7 @@ public class SysAdminUserRegistrationControllerMVCIT extends MVCTestBase {
 
     ErrorList errorList = mvcUtils.getErrorListFromAjaxReturnObject(result);
     List<String> errorMsgs = errorList.getErrorMessages();
-    assertEquals(3, errorMsgs.size());
+    assertThat(errorMsgs).hasSize(3);
     assertEquals("C.testCommunity2.admins.Unknown user [unknownUsername].", errorMsgs.get(0));
     assertEquals(
         "C.testCommunity2.admins.User [testPIuser] needs Community Admin role.", errorMsgs.get(1));

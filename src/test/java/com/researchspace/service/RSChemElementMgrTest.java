@@ -1,5 +1,6 @@
 package com.researchspace.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
@@ -141,11 +142,11 @@ public class RSChemElementMgrTest {
     when(chemDao.getChemElementsForReadOnlyAndClearDBSession(res.getChemicalHits().subList(3, 4)))
         .thenReturn(List.of(chemElement4));
     List<ChemSearchedItem> searchHits = chemElementManager.search("", "", 10, user);
-    assertEquals(4, searchHits.size());
+    assertThat(searchHits).hasSize(4);
 
     // cutoff at 3 - manager will only return 3 elems
     searchHits = chemElementManager.search("", "", 3, user);
-    assertEquals(3, searchHits.size());
+    assertThat(searchHits).hasSize(3);
 
     /* reduce db query pagination to 1, with cutoff at 2 - the chemDao should only be called twice,
     i.e. paginated db queries should stop as soon as searchResultLimit is reached */
@@ -155,7 +156,7 @@ public class RSChemElementMgrTest {
         .thenReturn(List.of(chemElement2));
     chemElementManager.setChemSearchChemIdsPageSize(1);
     searchHits = chemElementManager.search("", "", 2, user);
-    assertEquals(2, searchHits.size());
+    assertThat(searchHits).hasSize(2);
     // verify no further calls after cutoff
     verify(chemDao, times(1))
         .getChemElementsForReadOnlyAndClearDBSession(res.getChemicalHits().subList(0, 1));

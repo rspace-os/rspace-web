@@ -1,6 +1,7 @@
 package com.researchspace.service.inventory;
 
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -61,25 +62,25 @@ public class InventoryPermissionUtilsTest extends SpringTransactionalTest {
     // testuser can see items of members of both groups
     List<String> usernames =
         invPermissionUtils.getUsernameOfUserAndAllMembersOfTheirGroups(testUser);
-    assertEquals(4, usernames.size());
-    assertTrue(usernames.contains(pi1.getUsername()));
-    assertTrue(usernames.contains(pi2.getUsername()));
-    assertTrue(usernames.contains(testUser.getUsername()));
-    assertTrue(usernames.contains(userInGroup2.getUsername()));
-    assertFalse(usernames.contains(userOutsideGroups.getUsername()));
+    assertThat(usernames).hasSize(4);
+    assertThat(usernames).contains(pi1.getUsername());
+    assertThat(usernames).contains(pi2.getUsername());
+    assertThat(usernames).contains(testUser.getUsername());
+    assertThat(usernames).contains(userInGroup2.getUsername());
+    assertThat(usernames).doesNotContain(userOutsideGroups.getUsername());
 
     // pi of one group can see only that group's items
     usernames = invPermissionUtils.getUsernameOfUserAndAllMembersOfTheirGroups(pi1);
-    assertEquals(2, usernames.size());
-    assertTrue(usernames.contains(pi1.getUsername()));
-    assertFalse(usernames.contains(pi2.getUsername()));
-    assertTrue(usernames.contains(testUser.getUsername()));
-    assertFalse(usernames.contains(userInGroup2.getUsername()));
-    assertFalse(usernames.contains(userOutsideGroups.getUsername()));
+    assertThat(usernames).hasSize(2);
+    assertThat(usernames).contains(pi1.getUsername());
+    assertThat(usernames).doesNotContain(pi2.getUsername());
+    assertThat(usernames).contains(testUser.getUsername());
+    assertThat(usernames).doesNotContain(userInGroup2.getUsername());
+    assertThat(usernames).doesNotContain(userOutsideGroups.getUsername());
 
     // another user can see just their stuff
     usernames = invPermissionUtils.getUsernameOfUserAndAllMembersOfTheirGroups(userOutsideGroups);
-    assertEquals(1, usernames.size());
+    assertThat(usernames).hasSize(1);
     assertEquals(userOutsideGroups.getUsername(), usernames.get(0));
   }
 
@@ -150,8 +151,8 @@ public class InventoryPermissionUtilsTest extends SpringTransactionalTest {
 
     // assert the lab admins are setup as expected, i.e. one with view all can read docs of testUser
     group1 = grpMgr.getGroup(group1.getId());
-    assertEquals(2, group1.getUsersByRole(RoleInGroup.RS_LAB_ADMIN).size());
-    assertEquals(1, group1.getLabAdminsWithViewAllPermission().size());
+    assertThat(group1.getUsersByRole(RoleInGroup.RS_LAB_ADMIN)).hasSize(2);
+    assertThat(group1.getLabAdminsWithViewAllPermission()).hasSize(1);
     StructuredDocument testUserDoc = createBasicDocumentInRootFolderWithText(testUser, "any");
     logoutAndLoginAs(labAdmin);
     assertFalse(permissionUtils.isPermitted(testUserDoc, PermissionType.READ, labAdmin));
@@ -406,7 +407,7 @@ public class InventoryPermissionUtilsTest extends SpringTransactionalTest {
     SampleEntity sampleSA1 = sampleApiMgr.getSampleById(apiSampleSA1.getId(), userE);
     assertEquals("SA1", sampleSA1.getName());
     assertEquals(InventorySharingMode.OWNER_GROUPS, sampleSA1.getSharingMode());
-    assertEquals(2, sampleSA1.getSubSamples().size());
+    assertThat(sampleSA1.getSubSamples()).hasSize(2);
     assertEquals("SS1", sampleSA1.getSubSamples().get(0).getName());
     assertEquals("SS2", sampleSA1.getSubSamples().get(1).getName());
     SubSample subSampleSS1 = sampleSA1.getSubSamples().get(0);
@@ -657,7 +658,7 @@ public class InventoryPermissionUtilsTest extends SpringTransactionalTest {
     SampleEntity sampleSA1 = sampleApiMgr.getSampleById(apiSampleSA1.getId(), userA);
     assertEquals("SA1", sampleSA1.getName());
     assertEquals(InventorySharingMode.OWNER_GROUPS, sampleSA1.getSharingMode());
-    assertEquals(1, sampleSA1.getSubSamples().size());
+    assertThat(sampleSA1.getSubSamples()).hasSize(1);
     SubSample subSampleSS1 = sampleSA1.getSubSamples().get(0);
     assertEquals(containerC1.getId(), subSampleSS1.getParentContainer().getId());
     assertEquals(InventorySharingMode.OWNER_GROUPS, subSampleSS1.getSharingMode());
