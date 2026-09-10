@@ -275,4 +275,45 @@ class ApiInventoryDOITest {
     dto.applyChangesToDatabaseDOI(persisted);
     assertFalse(persisted.isLinked(), "an existing row's origin is immutable");
   }
+
+  /**
+   * The invariant behind the missing landing page, held where it cannot be routed around. Skipping
+   * the LOCAL_URL in ApiIdentifiersHelper covers the import path, but this method writes the
+   * property again from the DTO's own url, so anything that arrives carrying one would put an
+   * RSpace address on an identifier RSpace does not serve a page for (ADR 0009). Nothing sets that
+   * url on a linked identifier today - three separate facts in three classes see to it - which is
+   * exactly why it is worth pinning here rather than relying on them all staying true.
+   */
+  @Test
+  void aLinkedIdentifierNeverTakesAnRSpaceLandingPageEvenIfTheDtoCarriesOne() {
+    ApiInventoryDOI dto = new ApiInventoryDOI();
+    dto.setLinked(true);
+    dto.setDoi("21.11157/44b18238-bba1-4b42-abcc-975017181420");
+    dto.setDoiType(IdentifierType.PIDINST_B2INST.name());
+    dto.setUrl("https://rspace.example.org/public/inventory/suffix1234567890");
+
+    DigitalObjectIdentifier created = new DigitalObjectIdentifier(null, null, "suffix1234567890");
+    dto.applyChangesToDatabaseDOI(created);
+
+    assertTrue(created.isLinked());
+    assertNull(
+        created.getOtherData(DigitalObjectIdentifier.IdentifierOtherProperty.LOCAL_URL),
+        "a linked identifier must not carry an RSpace landing page");
+  }
+
+  /** The same write still happens for an identifier RSpace minted itself. */
+  @Test
+  void anUnlinkedIdentifierStillTakesTheUrlTheDtoCarries() {
+    ApiInventoryDOI dto = new ApiInventoryDOI();
+    dto.setDoi("10.1234/minted-here");
+    dto.setDoiType(IdentifierType.IGSN_DATACITE.name());
+    dto.setUrl("https://rspace.example.org/public/inventory/suffix1234567890");
+
+    DigitalObjectIdentifier created = new DigitalObjectIdentifier(null, null, "suffix1234567890");
+    dto.applyChangesToDatabaseDOI(created);
+
+    assertEquals(
+        "https://rspace.example.org/public/inventory/suffix1234567890",
+        created.getOtherData(DigitalObjectIdentifier.IdentifierOtherProperty.LOCAL_URL));
+  }
 }

@@ -559,7 +559,11 @@ public class ApiInventoryDOI extends LinkableApiObject {
         contentChanged = true;
       }
     }
-    if (getUrl() != null) {
+    // never for a linked identifier: RSpace serves no public page for one (ADR 0009), so a
+    // LOCAL_URL on it is an address that resolves to a permanent 404. markLinked above has
+    // already run, so the flag is reliable here. ApiIdentifiersHelper skips writing one on the
+    // import path too; this is the invariant, that is the shortcut.
+    if (getUrl() != null && !dbIdentifier.isLinked()) {
       if (!getUrl().equals(dbIdentifier.getOtherData(IdentifierOtherProperty.LOCAL_URL))) {
         dbIdentifier.addOtherData(IdentifierOtherProperty.LOCAL_URL, getUrl());
         contentChanged = true;

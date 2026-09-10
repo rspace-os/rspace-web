@@ -510,34 +510,34 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
                   marginBottom: "12px",
                 }}
               >
-                <Grid>
-                  <CustomTooltip
-                    title={
-                      id.linked
-                        ? t("fields.identifiers.list.tooltips.previewUnavailableLinked")
-                        : id.isValid
+                {/* withdrawn, not disabled, for a linked PID: there is no RSpace page to
+                    preview, and Publish and Refresh already withdraw for the same reason */}
+                {!id.linked && (
+                  <Grid>
+                    <CustomTooltip
+                      title={
+                        id.isValid
                           ? t("fields.identifiers.list.tooltips.previewPage")
                           : t("fields.identifiers.list.tooltips.missingData")
-                    }
-                  >
-                    <Button
-                      color="callToAction"
-                      variant="outlined"
-                      size="small"
-                      onClick={() => void handlePreview(id)}
-                      disabled={
-                        activeResult.state === "edit" ||
-                        !id.isValid ||
-                        // no RSpace page exists for a linked PID, so there is nothing to preview
-                        id.linked ||
-                        // the preview dialog contains a publish action
-                        Boolean(activeResult.historicalVersion)
                       }
                     >
-                      {t("fields.identifiers.list.preview")}
-                    </Button>
-                  </CustomTooltip>
-                </Grid>
+                      <Button
+                        color="callToAction"
+                        variant="outlined"
+                        size="small"
+                        onClick={() => void handlePreview(id)}
+                        disabled={
+                          activeResult.state === "edit" ||
+                          !id.isValid ||
+                          // the preview dialog contains a publish action
+                          Boolean(activeResult.historicalVersion)
+                        }
+                      >
+                        {t("fields.identifiers.list.preview")}
+                      </Button>
+                    </CustomTooltip>
+                  </Grid>
+                )}
                 <Grid>
                   <PublishButton
                     identifier={id}

@@ -138,6 +138,10 @@ public class ApiIdentifiersHelper {
     parentInvRec.addIdentifier(existingDoi);
   }
 
+  /**
+   * Needs no linked guard, unlike the register path above: its only production caller is bulk IGSN
+   * allocation, which builds every DTO itself, and a linked identifier cannot reach it.
+   */
   public DigitalObjectIdentifier createDoiToSave(ApiInventoryDOI apiIdentifier, User creator) {
     DigitalObjectIdentifier newDoi =
         new DigitalObjectIdentifier(null, null, apiIdentifier.getPublicLinkSuffix());

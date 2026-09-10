@@ -801,7 +801,6 @@
           "notPublished": "Not published yet",
           "pidinstNotRetractable": "B2INST instrument PIDs cannot be retracted or deleted once the record has been sent for community review.",
           "previewPage": "Preview Landing Page",
-          "previewUnavailableLinked": "A linked PID has no RSpace landing page to preview",
           "refresh": "Check the current status of the community review",
           "retract": "Retract"
         }

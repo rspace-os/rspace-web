@@ -263,6 +263,9 @@ class PidinstRecordMapperTest {
     assertEquals(
         "https://hdl.handle.net/21.11157/44b18238-bba1-4b42-abcc-975017181420", doi.getPublicUrl());
     assertEquals("https://b2inst.gwdg.de/records/tpqdy-6zd98", doi.getProviderUrl());
+    // the property the no-RSpace-landing-page guard depends on: nothing downstream can write a
+    // LOCAL_URL from a url the DTO never carried
+    assertNull(doi.getUrl(), "a linked identifier carries no RSpace address of its own");
     assertEquals("Instrument", doi.getResourceTypeGeneral());
     // getURLSafeSecureRandomString takes a byte count, so 16 bytes is a 22-char base64url
     // suffix; what matters here is only that one was generated, as the attach path

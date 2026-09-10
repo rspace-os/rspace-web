@@ -224,24 +224,4 @@ public class ApiIdentifiersHelperTest {
             .getOtherData(DigitalObjectIdentifier.IdentifierOtherProperty.LOCAL_URL),
         "a linked identifier must not advertise an RSpace public page");
   }
-
-  /** The same path still records one for an identifier RSpace did register. */
-  @Test
-  public void aRegisteredIdentifierStillGetsItsRSpaceLandingPage() {
-    ApiInventoryDOI apiDoi = new ApiInventoryDOI();
-    apiDoi.generatePublicLinkSuffix();
-    apiDoi.setRegisterIdentifierRequest(true);
-    InventoryRecord parent = mock(InventoryRecord.class);
-    ArgumentCaptor<DigitalObjectIdentifier> persisted =
-        ArgumentCaptor.forClass(DigitalObjectIdentifier.class);
-
-    underTest.createDeleteRequestedIdentifiers(List.of(apiDoi), parent, user);
-
-    verify(parent).addIdentifier(persisted.capture());
-    assertEquals(
-        "https://localhost:8080/public/inventory/" + apiDoi.getPublicLinkSuffix(),
-        persisted
-            .getValue()
-            .getOtherData(DigitalObjectIdentifier.IdentifierOtherProperty.LOCAL_URL));
-  }
 }

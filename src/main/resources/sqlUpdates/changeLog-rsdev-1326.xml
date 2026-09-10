@@ -18,18 +18,33 @@
       that grows with every IGSN ever allocated, bulk allocations included.
 
       Written as raw SQL rather than createIndex because the identifier column needs a prefix
-      length and Liquibase cannot express one. 190 characters of utf8mb4 is 760 bytes, which with
-      the 4-byte int keeps the key under the 767-byte limit of the older InnoDB row formats a
-      long-lived deployment may still be using; the full 255 would be 1024 and would fail there.
-      DOIs and Handles are far shorter than 190, so discrimination is unaffected.
+      length, which Liquibase's createIndex cannot express (createIndex plus modifySql/replace
+      would, at the cost of being harder to read than the statement itself). 190 characters of
+      utf8mb4 is 760 bytes, under the 767-byte PER-COLUMN prefix limit of the REDUNDANT and
+      COMPACT row formats a long-lived deployment may still be using - the total key length is a
+      separate 3072-byte budget this is nowhere near. The full 255 would be 1020 bytes on the
+      column and would fail there. DOIs and Handles are far shorter than 190, so nothing loses
+      discrimination.
 
-      Equality column first: type is always an equality match and identifier is matched by IN over
-      the page. deleted is left out deliberately - it is a bit column with two values, so it earns
-      nothing in the key and is cheap to filter afterwards.</comment>
+      The prefixed part must come last, which is what forces the order rather than mere tidiness:
+      a prefixed key part cannot be seen through, so any part positioned after it is unusable.
+      (identifier(190), type) would leave type dead weight; this way both parts work, with type
+      taking the equality match and identifier the IN over the page.
+
+      deleted is left out because (type, identifier) already narrows to about one row and the
+      query selects whole entities, so a prefix index can never cover it and the row fetch happens
+      regardless - deleted in the key would buy nothing. That holds while soft-deleted duplicates
+      of one (type, identifier) stay few, which ADR 0009 accepts. Neither query can satisfy its
+      ORDER BY id from this index either, so a small filesort remains in both.
+
+      ALGORITHM=INPLACE, LOCK=NONE is stated rather than left to the default so MariaDB fails
+      loudly if some future row format or engine setting cannot add the index without copying the
+      table, instead of silently rebuilding it while the application is starting.</comment>
 
     <sql>
       ALTER TABLE DigitalObjectIdentifier
-      ADD INDEX idx_DigitalObjectIdentifier_type_identifier (type, identifier(190));
+      ADD INDEX idx_DigitalObjectIdentifier_type_identifier (type, identifier(190)),
+      ALGORITHM=INPLACE, LOCK=NONE;
     </sql>
 
     <rollback>

@@ -89,7 +89,7 @@ describe("Identifiers section", () => {
           <IdentifiersList activeResult={historicalSample} />
         </ThemeProvider>,
       );
-      expect(screen.getByRole("button", { name: "inventory:fields.identifiers.list.preview" })).toBeDisabled();
+      expect(screen.getByRole("button", { name: PREVIEW })).toBeDisabled();
       expect(screen.getByRole("button", { name: REPUBLISH })).toBeDisabled();
       expect(screen.getByRole("button", { name: RETRACT })).toBeDisabled();
     });
@@ -479,12 +479,14 @@ describe("Identifiers section", () => {
   });
 
   /*
-   * RSDEV-1326. An imported PID is minted outside RSpace, which owns nothing on the provider side.
-   * So the row must offer no publish action, must not claim details are missing, and must offer
-   * Unlink rather than Retract: the server refuses publish, retract and refresh on a linked
-   * identifier with a 422 (ADR 0009) but deliberately still allows the delete that removes the
-   * link. Both registries behave the same way, hence the parameterised describe: a linked DataCite
-   * PID is findable, so nothing else in the row would have disabled its Retract button.
+   * RSDEV-1326. An imported PID is minted outside RSpace, which owns nothing on the provider side,
+   * so the server refuses publish, retract and refresh on it with a 422 (ADR 0009). The row
+   * therefore withdraws Publish, Refresh and Preview, shows Retract disabled, never shows Delete
+   * (unlinking stays an API operation for now), and claims no missing details.
+   *
+   * Both registries are exercised, hence the parameterised describe: a linked DataCite PID is
+   * findable, so nothing else in the row would have disabled its Retract button, and every one of
+   * these used to be wrong for that case alone.
    */
   describe.each([
     { registry: "B2INST", doiType: "PIDINST_B2INST", state: "accepted" },
@@ -498,6 +500,8 @@ describe("Identifiers section", () => {
           doiType,
           state,
           linked: true,
+          // the server stores no RSpace landing page for a linked identifier
+          url: null,
           publisher: "",
           publicationYear: "",
         },
@@ -529,6 +533,7 @@ describe("Identifiers section", () => {
        * findable, so nothing else in the row disabled this button and pressing it always 422'd.
        */
       expect(retract).toBeDisabled();
+      expect(screen.queryByRole("button", { name: DELETE })).not.toBeInTheDocument();
     });
 
     test("no RSpace landing page is advertised or offered for preview", () => {
@@ -545,7 +550,7 @@ describe("Identifiers section", () => {
       expect(container).toHaveTextContent("fields.identifiers.list.stateInfo.linkedPidinst");
       expect(container).not.toHaveTextContent("fields.identifiers.list.stateInfo.findablePidinst");
       expect(container).not.toHaveTextContent("fields.identifiers.list.stateInfo.pidinstAccepted");
-      expect(screen.getByRole("button", { name: PREVIEW })).toBeDisabled();
+      expect(screen.queryByRole("button", { name: PREVIEW })).not.toBeInTheDocument();
     });
 
     test("no minting metadata section, so nothing claims details are missing", () => {

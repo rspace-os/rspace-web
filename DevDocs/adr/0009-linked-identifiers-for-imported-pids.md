@@ -122,7 +122,7 @@ and API field names were ported instead.
   search still returns the global published registry, not the account's own drafts.
 - `identifier` has no unique key (soft-deleted rows keep their value and MariaDB has no
   partial indexes), so two concurrent imports of one PID can both succeed; accepted. There is a
-  non-unique index on `(type, identifier)` for the lookup itself, which is about speed, not
+  non-unique index on `(type, identifier(190))` for the lookup itself, which is about speed, not
   uniqueness: without it every hit on a page of search results scanned the whole table.
 - The lookup shares the provider's availability: a provider outage disables lookup as
   well as registration, and the 10-minute result cache is evicted whenever the

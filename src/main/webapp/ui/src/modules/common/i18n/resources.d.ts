@@ -3051,12 +3051,11 @@ export default interface Resources {
           "tooltips": {
             "deleteClosedReview": "Delete this identifier so a new one can be registered",
             "deleteDraft": "Delete Draft",
+            "linkedReadOnly": "This PID was minted outside RSpace, so RSpace cannot publish, retract or refresh it. Removing the link is an API operation.",
             "missingData": "Some missing data",
             "notPublished": "Not published yet",
-            "linkedReadOnly": "This PID was minted outside RSpace, so RSpace cannot publish, retract or refresh it. Removing the link is an API operation.",
-          "pidinstNotRetractable": "B2INST instrument PIDs cannot be retracted or deleted once the record has been sent for community review.",
+            "pidinstNotRetractable": "B2INST instrument PIDs cannot be retracted or deleted once the record has been sent for community review.",
             "previewPage": "Preview Landing Page",
-            "previewUnavailableLinked": "A linked PID has no RSpace landing page to preview",
             "refresh": "Check the current status of the community review",
             "retract": "Retract"
           }
@@ -6809,7 +6808,7 @@ export default interface Resources {
           "linkedReadOnly": "This identifier was minted outside RSpace and is only linked to this instrument. It cannot be published, retracted or refreshed from RSpace; delete it to remove the link.",
           "mintingUnsupportedType": "unsupported type for minting: {0}",
           "pidinstAlreadyLinked": "This PID is already linked to instrument {0}.",
-        "pidinstImportPidRequired": "A PID is required to import an instrument.",
+          "pidinstImportPidRequired": "A PID is required to import an instrument.",
           "pidinstMandatoryMissing": "The registry record has no {0}, which the \"Instrument (PIDINST 1.0)\" template requires, so it cannot be imported.",
           "pidinstNotFound": "No published instrument record was found for \"{0}\" at the enabled PIDINST provider.",
           "refreshNoIdentifier": "This item has no identifier to refresh. Register an identifier before refreshing its status.",
