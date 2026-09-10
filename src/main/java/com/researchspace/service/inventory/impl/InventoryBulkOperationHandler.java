@@ -1,6 +1,6 @@
 package com.researchspace.service.inventory.impl;
 
-import static com.researchspace.service.ListFormatUtils.formatList;
+import static com.researchspace.core.util.ListFormatUtils.formatList;
 
 import com.ibm.icu.text.ListFormatter;
 import com.researchspace.api.v1.controller.ApiControllerAdvice;

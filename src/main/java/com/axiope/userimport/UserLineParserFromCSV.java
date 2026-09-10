@@ -2,10 +2,10 @@ package com.axiope.userimport;
 
 import com.ibm.icu.text.ListFormatter;
 import com.researchspace.Constants;
+import com.researchspace.core.util.ListFormatUtils;
 import com.researchspace.model.Role;
 import com.researchspace.model.dto.UserRegistrationInfo;
 import com.researchspace.properties.IPropertyHolder;
-import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.MessageSourceUtils;
 import java.util.Arrays;
 import java.util.Set;

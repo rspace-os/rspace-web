@@ -1,5 +1,6 @@
 package com.researchspace.webapp.controller;
 
+import com.researchspace.core.util.ListFormatUtils;
 import com.researchspace.model.ChemElementsFormat;
 import com.researchspace.model.EcatChemistryFile;
 import com.researchspace.model.PaginationCriteria;
@@ -15,7 +16,6 @@ import com.researchspace.model.dtos.chemistry.ConvertedStructureDto;
 import com.researchspace.model.dtos.chemistry.ElementalAnalysisDTO;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.service.ChemistryService;
-import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.impl.RSChemService.ChemicalSearchResults;
 import jakarta.validation.Valid;
 import java.io.ByteArrayInputStream;

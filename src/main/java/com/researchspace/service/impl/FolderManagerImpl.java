@@ -7,6 +7,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import com.researchspace.core.util.CollectionFilter;
 import com.researchspace.core.util.ISearchResults;
+import com.researchspace.core.util.ListFormatUtils;
 import com.researchspace.core.util.MediaUtils;
 import com.researchspace.dao.FolderDao;
 import com.researchspace.dao.RecordDao;
@@ -46,7 +47,6 @@ import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.CommunityServiceManager;
 import com.researchspace.service.DefaultRecordContext;
 import com.researchspace.service.FolderManager;
-import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RecordContext;
 import com.researchspace.service.RecordManager;
