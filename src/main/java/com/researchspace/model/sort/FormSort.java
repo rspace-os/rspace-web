@@ -7,6 +7,8 @@ public enum FormSort implements SortKey {
   PUBLISHING_STATE("publishingState"),
   MODIFICATION_DATE("modificationDate"),
   CREATION_DATE("creationDate"),
+  CREATION_DATE_MILLIS("creationDateMillis"),
+  MODIFICATION_DATE_MILLIS("modificationDateMillis"),
   ID("id");
 
   private final String key;

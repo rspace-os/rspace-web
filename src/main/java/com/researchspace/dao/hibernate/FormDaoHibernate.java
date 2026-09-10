@@ -324,6 +324,10 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
         return ", form.modificationDate ";
       case CREATION_DATE:
         return ", form.creationDate ";
+      case CREATION_DATE_MILLIS:
+        return ", form.creationDateMillis ";
+      case MODIFICATION_DATE_MILLIS:
+        return ", form.modificationDateMillis ";
       case NAME:
         return ", form.name ";
       case ID:
@@ -347,6 +351,12 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
         break;
       case CREATION_DATE:
         column = "creationDate";
+        break;
+      case CREATION_DATE_MILLIS:
+        column = "creationDateMillis";
+        break;
+      case MODIFICATION_DATE_MILLIS:
+        column = "modificationDateMillis";
         break;
       case NAME:
         column = "name";

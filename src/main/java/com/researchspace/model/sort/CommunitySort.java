@@ -2,7 +2,8 @@ package com.researchspace.model.sort;
 
 /** Sort keys for community listings. */
 public enum CommunitySort implements SortKey {
-  DISPLAY_NAME("displayName");
+  DISPLAY_NAME("displayName"),
+  UNIQUE_NAME("uniqueName");
 
   private final String key;
 

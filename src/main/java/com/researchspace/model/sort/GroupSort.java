@@ -6,6 +6,7 @@ package com.researchspace.model.sort;
  */
 public enum GroupSort implements SortKey {
   DISPLAY_NAME("displayName"),
+  UNIQUE_NAME("uniqueName"),
   MEMBER_COUNT("memberCount"),
   OWNER("owner"),
   USAGE("usage"),

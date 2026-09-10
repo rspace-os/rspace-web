@@ -420,6 +420,10 @@ public class RecordGroupSharingDaoHibernateImpl
             + " rgs.sharee.lastName))";
       case CREATION_DATE:
         return "rgs.creationDate";
+      case CREATION_DATE_MILLIS:
+        return "rgs.shared.editInfo.creationDateMillis";
+      case MODIFICATION_DATE_MILLIS:
+        return "rgs.shared.editInfo.modificationDateMillis";
       case NAME:
       default:
         return "rgs.shared.editInfo.name";
