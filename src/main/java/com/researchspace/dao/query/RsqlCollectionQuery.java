@@ -205,21 +205,22 @@ public final class RsqlCollectionQuery {
     if (membership.includeAllUsers()) {
       applicable.add(assignment + ".audienceKey = :" + state.add(ResourceAudience.ALL_USERS));
     }
-    String where =
-        assignment
-            + ".resourceAccess.id = "
-            + alias
-            + "."
-            + membership.resourceAccessIdPath()
-            + " AND "
-            + assignment
-            + ".roleKey IN :"
-            + state.add(membership.readableRoleKeys())
-            + " AND ("
-            + String.join(" OR ", applicable)
-            + ")";
+    StringBuilder where =
+        new StringBuilder(assignment)
+            .append(".resourceAccess.id = ")
+            .append(alias)
+            .append(".")
+            .append(membership.resourceAccessIdPath())
+            .append(" AND ")
+            .append(assignment)
+            .append(".roleKey IN :")
+            .append(state.add(membership.readableRoleKeys()))
+            .append(" AND (")
+            .append(String.join(" OR ", applicable))
+            .append(")");
     return "EXISTS "
-        + state.addSubquery(new Subquery(ResourceRoleAssignment.class, assignment, where));
+        + state.addSubquery(
+            new Subquery(ResourceRoleAssignment.class, assignment, where.toString()));
   }
 
   private String compileLogical(
