@@ -95,6 +95,7 @@ test.describe("Auditing (ELN)", () => {
     await pageAuditTrail.checkAction("CREATE");
     await pageAuditTrail.submitQuery();
     await expect(pageAuditTrail.rowsWithName(name).first()).toBeVisible();
+    expect(await pageAuditTrail.actionForRow(name)).toBe("CREATE");
   });
 
   test("As a user, I can download the audit report as a CSV file", async ({

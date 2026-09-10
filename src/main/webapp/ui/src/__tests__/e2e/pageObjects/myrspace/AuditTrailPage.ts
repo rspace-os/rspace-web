@@ -44,20 +44,21 @@ export class AuditTrailPage extends BasePage {
     await this.submitButton.waitFor({ state: "visible" });
   }
 
-  async filterByGlobalId(globalId: string): Promise<void> {
-    if (!(await this.globalIdInput.isVisible())) {
-      await this.page.getByRole("link", { name: "Identifiers" }).click();
-      await this.globalIdInput.waitFor({ state: "visible" });
+  private async openSection(sectionName: string, indicator: Locator, exact = false): Promise<void> {
+    if (!(await indicator.isVisible())) {
+      await this.page.getByRole("link", { name: sectionName, exact }).click();
+      await indicator.waitFor({ state: "visible" });
     }
+  }
+
+  async filterByGlobalId(globalId: string): Promise<void> {
+    await this.openSection("Identifiers", this.globalIdInput);
     await this.globalIdInput.fill(globalId);
   }
 
   async checkAction(action: AuditAction): Promise<void> {
     const checkbox = this.page.getByRole("checkbox", { name: action, exact: true });
-    if (!(await checkbox.isVisible())) {
-      await this.page.getByRole("link", { name: "Actions" }).click();
-      await checkbox.waitFor({ state: "visible" });
-    }
+    await this.openSection("Actions", checkbox);
     await checkbox.check();
   }
 
@@ -70,10 +71,7 @@ export class AuditTrailPage extends BasePage {
 
   async setDomains(domains: AuditDomain[]): Promise<void> {
     const first = this.page.getByRole("checkbox", { name: "ELN", exact: true });
-    if (!(await first.isVisible())) {
-      await this.page.getByRole("link", { name: "Activity areas" }).click();
-      await first.waitFor({ state: "visible" });
-    }
+    await this.openSection("Activity areas", first);
     for (const domain of ["ELN", "Inventory", "Other"] as const) {
       const checkbox = this.page.getByRole("checkbox", { name: domain, exact: true });
       if (domains.includes(domain)) {
@@ -86,20 +84,14 @@ export class AuditTrailPage extends BasePage {
 
   async filterByDateRange(from?: string, to?: string): Promise<void> {
     const fromInput = this.page.getByRole("textbox", { name: "from", exact: true });
-    if (!(await fromInput.isVisible())) {
-      await this.page.getByRole("link", { name: "Date range" }).click();
-      await fromInput.waitFor({ state: "visible" });
-    }
+    await this.openSection("Date range", fromInput);
     if (from !== undefined) await fromInput.fill(from);
     if (to !== undefined) await this.page.getByRole("textbox", { name: "to", exact: true }).fill(to);
   }
 
   async filterByUser(username: string): Promise<void> {
     const userInput = this.page.getByRole("textbox", { name: "Enter a user or users to audit" });
-    if (!(await userInput.isVisible())) {
-      await this.page.getByRole("link", { name: "Users", exact: true }).click();
-      await userInput.waitFor({ state: "visible" });
-    }
+    await this.openSection("Users", userInput, true);
     await userInput.fill(username);
     const suggestions = this.page.locator(".ui-autocomplete:visible");
     await suggestions.getByRole("listitem").filter({ hasText: username }).first().click();
@@ -152,6 +144,18 @@ export class AuditTrailPage extends BasePage {
 
   rowsWithName(name: string): Locator {
     return this.resultRows.filter({ hasText: name });
+  }
+
+  private async columnIndex(headerName: string): Promise<number> {
+    const headers = await this.page.locator("#renderedTable").getByRole("columnheader").allInnerTexts();
+    const index = headers.findIndex((header) => header.trim() === headerName);
+    if (index === -1) throw new Error(`columnIndex: no "${headerName}" column header found`);
+    return index;
+  }
+
+  async actionForRow(name: string): Promise<string> {
+    const columnIndex = await this.columnIndex("Action");
+    return (await this.rowsWithName(name).first().getByRole("cell").nth(columnIndex).innerText()).trim();
   }
 
   resourceLink(name: string): Locator {

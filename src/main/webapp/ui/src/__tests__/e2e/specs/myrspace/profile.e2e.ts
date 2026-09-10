@@ -80,6 +80,23 @@ test.describe("My RSpace profile", () => {
     expect(await new StatusClient(apiContext, newKey).isApiKeyValid()).toBe(true);
   });
 
+  test("As a user, I can regenerate my API key without revoking it first", async ({
+    pageMyRSpace,
+    appUser,
+    apiContext,
+    clientStatus,
+  }) => {
+    await pageMyRSpace.open();
+    const profile = await pageMyRSpace.openProfile();
+    expect(await profile.isApiKeyManagementVisible()).toBe(true);
+    expect(await clientStatus.isApiKeyValid()).toBe(true);
+
+    const newKey = await profile.regenerateApiKey(appUser.password);
+    expect(newKey).not.toBe(appUser.apiKey);
+    expect(await clientStatus.isApiKeyValid()).toBe(false);
+    expect(await new StatusClient(apiContext, newKey).isApiKeyValid()).toBe(true);
+  });
+
   test("As a user, I can change my password", async ({ page, pageMyRSpace, pageLogin, appUser }) => {
     const newPassword = "NewPassword123";
     await pageMyRSpace.open();
@@ -101,6 +118,9 @@ test.describe("My RSpace profile", () => {
 
     await profile.header.logOut();
     await pageLogin.open();
+    await pageLogin.login(appUser.username, appUser.password);
+    await expect(pageLogin.invalidCredentialsError).toBeVisible();
+
     await pageLogin.login(appUser.username, newPassword);
     await page.waitForURL((url) => url.pathname === "/workspace");
   });
