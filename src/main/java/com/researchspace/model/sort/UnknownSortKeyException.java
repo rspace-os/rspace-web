@@ -7,8 +7,6 @@ import lombok.Getter;
 @Getter
 public class UnknownSortKeyException extends IllegalArgumentException {
 
-  private static final long serialVersionUID = 1L;
-
   private final String requestedKey;
   private final List<String> allowedKeys;
 

@@ -1,7 +1,6 @@
 package com.researchspace.model.sort;
 
 import java.util.Arrays;
-import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -31,10 +30,7 @@ public interface SortKey {
         return candidate;
       }
     }
-    throw new UnknownSortKeyException(raw, keysOf(type));
-  }
-
-  static <E extends Enum<E> & SortKey> List<String> keysOf(Class<E> type) {
-    return Arrays.stream(type.getEnumConstants()).map(SortKey::key).toList();
+    throw new UnknownSortKeyException(
+        raw, Arrays.stream(type.getEnumConstants()).map(SortKey::key).toList());
   }
 }

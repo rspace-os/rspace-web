@@ -310,63 +310,43 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
     return sb.toString();
   }
 
-  /**
-   * Extra select-list entry for the native form listing query, so the sort column is visible to the
-   * ORDER BY applied after the union. Sorting by id needs nothing extra.
-   */
-  static String sortSelectColumn(FormSort sort) {
+  /** The column a sort key orders the native form listing by. */
+  static String sortColumn(FormSort sort) {
     switch (sort) {
       case OWNER:
-        return ", owner.username ";
+        return "owner.username";
       case PUBLISHING_STATE:
-        return ", form.publishingState ";
+        return "publishingState";
       case MODIFICATION_DATE:
-        return ", form.modificationDate ";
+        return "modificationDate";
       case CREATION_DATE:
-        return ", form.creationDate ";
+        return "creationDate";
       case CREATION_DATE_MILLIS:
-        return ", form.creationDateMillis ";
+        return "creationDateMillis";
       case MODIFICATION_DATE_MILLIS:
-        return ", form.modificationDateMillis ";
+        return "modificationDateMillis";
       case NAME:
-        return ", form.name ";
+        return "name";
       case ID:
       default:
-        return "";
+        return "id";
     }
   }
 
-  /** Builds the ORDER BY clause for the native form listing query. */
-  static String makeOrderBy(FormSort sort, SortOrder sortOrder) {
-    String column;
-    switch (sort) {
-      case OWNER:
-        column = "owner.username";
-        break;
-      case PUBLISHING_STATE:
-        column = "publishingState";
-        break;
-      case MODIFICATION_DATE:
-        column = "modificationDate";
-        break;
-      case CREATION_DATE:
-        column = "creationDate";
-        break;
-      case CREATION_DATE_MILLIS:
-        column = "creationDateMillis";
-        break;
-      case MODIFICATION_DATE_MILLIS:
-        column = "modificationDateMillis";
-        break;
-      case NAME:
-        column = "name";
-        break;
-      case ID:
-      default:
-        column = "id";
-        break;
+  /**
+   * Extra select-list entry so the sort column is visible to the ORDER BY applied after the union.
+   * Sorting by id needs nothing extra.
+   */
+  static String sortSelectColumn(FormSort sort) {
+    if (sort == FormSort.ID) {
+      return "";
     }
-    return " order by " + column + " " + (sortOrder == null ? "" : sortOrder);
+    String column = sortColumn(sort);
+    return ", " + (sort == FormSort.OWNER ? column : "form." + column) + " ";
+  }
+
+  static String makeOrderBy(FormSort sort, SortOrder sortOrder) {
+    return " order by " + sortColumn(sort) + " " + (sortOrder == null ? "" : sortOrder);
   }
 
   private String join(Collection<?> ids, boolean quote) {

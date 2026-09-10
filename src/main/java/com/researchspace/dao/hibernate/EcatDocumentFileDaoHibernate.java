@@ -75,21 +75,8 @@ public class EcatDocumentFileDaoHibernate extends GenericDaoHibernate<EcatDocume
         column = "doc.editInfo.modificationDate";
         break;
     }
-    SortOrder sortOrder = pg.getSortOrder();
-    if (isAsc(sortOrder)) {
-      return " order by " + column + " asc";
-    } else if (isDesc(sortOrder)) {
-      return " order by " + column + " desc";
-    }
-    return "";
-  }
-
-  private boolean isDesc(SortOrder sortOrder) {
-    return SortOrder.DESC.equals(sortOrder);
-  }
-
-  private boolean isAsc(SortOrder sortOrder) {
-    return SortOrder.ASC.equals(sortOrder);
+    String direction = SortOrder.ASC.equals(pg.getSortOrder()) ? "asc" : "desc";
+    return " order by " + column + " " + direction;
   }
 
   private long getTotalEcatDocumentFileByURIhql(
