@@ -21,7 +21,7 @@ import materialTheme from "../../../../../theme";
 const PUBLISH = "common:actions.publish";
 const REPUBLISH = "common:actions.republish";
 const RETRACT = "inventory:fields.identifiers.list.deleteOrRetract.retract";
-const UNLINK = "inventory:fields.identifiers.list.deleteOrRetract.unlink";
+const PREVIEW = "inventory:fields.identifiers.list.preview";
 const DELETE = "inventory:fields.identifiers.list.deleteOrRetract.delete";
 
 const sample1: InventoryRecord = makeMockSample();
@@ -515,18 +515,37 @@ describe("Identifiers section", () => {
       expect(screen.queryByRole("button", { name: REPUBLISH })).not.toBeInTheDocument();
     });
 
-    test("Unlink is offered and enabled, and Retract is not offered at all", () => {
+    test("Retract is offered but disabled, whichever registry minted the PID", () => {
       render(
         <ThemeProvider theme={materialTheme}>
           <IdentifiersList activeResult={linkedInstrument()} />
         </ThemeProvider>,
       );
-      const unlink = screen.getByRole("button", { name: UNLINK });
-      expect(unlink).toBeInTheDocument();
-      // deleting is the one thing the server allows on a linked identifier, so it must be
-      // reachable; a Retract here would be a guaranteed 422
-      expect(unlink).toBeEnabled();
-      expect(screen.queryByRole("button", { name: RETRACT })).not.toBeInTheDocument();
+      const retract = screen.getByRole("button", { name: RETRACT });
+      expect(retract).toBeInTheDocument();
+      /*
+       * ADR 0009 keeps unlinking an API-only operation for now, so the panel must not offer it.
+       * What it must not do either is offer an action the server refuses: a linked DataCite PID is
+       * findable, so nothing else in the row disabled this button and pressing it always 422'd.
+       */
+      expect(retract).toBeDisabled();
+    });
+
+    test("no RSpace landing page is advertised or offered for preview", () => {
+      const { container } = render(
+        <ThemeProvider theme={materialTheme}>
+          <IdentifiersList activeResult={linkedInstrument()} />
+        </ThemeProvider>,
+      );
+      /*
+       * The server serves no public page for a linked identifier, so the panel must not explain it
+       * as one or offer to preview it. Both used to happen, because an imported PID carries the
+       * provider's own findable/accepted state.
+       */
+      expect(container).toHaveTextContent("fields.identifiers.list.stateInfo.linkedPidinst");
+      expect(container).not.toHaveTextContent("fields.identifiers.list.stateInfo.findablePidinst");
+      expect(container).not.toHaveTextContent("fields.identifiers.list.stateInfo.pidinstAccepted");
+      expect(screen.getByRole("button", { name: PREVIEW })).toBeDisabled();
     });
 
     test("no minting metadata section, so nothing claims details are missing", () => {

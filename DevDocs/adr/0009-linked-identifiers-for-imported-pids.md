@@ -105,10 +105,18 @@ and API field names were ported instead.
   such route is exposed here: `/api/records/{id}/requests` accepts no POST, and every candidate
   `delete-request` path 404s. So "RSpace never deletes a linked identifier at the provider" is a
   choice that the provider also enforces, not merely a policy of ours.
-- The UI offers no way to unlink, and that is intended for now (Nico, 2026-09-09): for a
-  linked `accepted` B2INST identifier the row shows Retract, disabled, and never Delete, so
-  removing a link needs the API (`DELETE /identifiers/{id}`, which the server allows in every
-  state). Revisit in RSDEV-1325 if users need to unlink from the page.
+- The UI offers no way to unlink, and that is intended for now (Nico, 2026-09-09): the row shows
+  Retract, disabled, and never Delete, so removing a link needs the API (`DELETE
+  /identifiers/{id}`, which the server allows in every state). Revisit in RSDEV-1325 if users need
+  to unlink from the page.
+  - The disabling is now explicit rather than incidental. It used to hold only for B2INST, where
+    the review-state rule happened to disable the button; a linked DataCite PID is `findable`, so
+    nothing caught it and the row offered an enabled Retract that the server answers with 422.
+    The panel keys on `linked` directly, so the rule holds for both registries.
+  - For the same reason the row offers no Preview and explains the identifier with its own
+    sentence: a linked PID resolves at its registry, and `findPublishedItemVersionByPublicLink`
+    serves no RSpace page for it. No `LOCAL_URL` is stored for a linked identifier either, since
+    that address surfaced over the API as its `url` and resolved to a permanent 404.
 - Registration credentials are used for read-only searches; verified on
   b2inst-test.gwdg.de and api.test.datacite.org (September 2026) that an authenticated
   search still returns the global published registry, not the account's own drafts.

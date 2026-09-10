@@ -308,10 +308,18 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
   const StateInfo = ({
     identifierState,
     identifierUrl,
+    isLinked,
   }: {
     identifierState: PublishingState;
     identifierUrl: string | null | undefined;
+    isLinked: boolean;
   }): ReactNode => {
+    /*
+     * Checked before any state, because a linked PID carries the provider's own state - findable
+     * or accepted - and every explanation for those describes an RSpace landing page that
+     * findPublishedItemVersionByPublicLink deliberately refuses to serve for it (ADR 0009).
+     */
+    if (isLinked) return <>{t("fields.identifiers.list.stateInfo.linkedPidinst")}</>;
     if (identifierState === "draft")
       return (
         <>
@@ -429,7 +437,7 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
           </Alert>
         )}
         {activeResult.identifiers.map((id) => {
-          const deletable = id.linked || id.state === "draft" || isDeletableClosedReview(id);
+          const deletable = id.state === "draft" || isDeletableClosedReview(id);
           return (
             <Grid key={id.doi} sx={{ width: "100%" }}>
               <Grid
@@ -505,9 +513,11 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
                 <Grid>
                   <CustomTooltip
                     title={
-                      id.isValid
-                        ? t("fields.identifiers.list.tooltips.previewPage")
-                        : t("fields.identifiers.list.tooltips.missingData")
+                      id.linked
+                        ? t("fields.identifiers.list.tooltips.previewUnavailableLinked")
+                        : id.isValid
+                          ? t("fields.identifiers.list.tooltips.previewPage")
+                          : t("fields.identifiers.list.tooltips.missingData")
                     }
                   >
                     <Button
@@ -518,6 +528,8 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
                       disabled={
                         activeResult.state === "edit" ||
                         !id.isValid ||
+                        // no RSpace page exists for a linked PID, so there is nothing to preview
+                        id.linked ||
                         // the preview dialog contains a publish action
                         Boolean(activeResult.historicalVersion)
                       }
@@ -536,7 +548,7 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
                   <CustomTooltip
                     title={
                       id.linked
-                        ? t("fields.identifiers.list.tooltips.linkedUnlink")
+                        ? t("fields.identifiers.list.tooltips.linkedReadOnly")
                         : id.state === "draft"
                           ? t("fields.identifiers.list.tooltips.deleteDraft")
                           : isDeletableClosedReview(id)
@@ -555,16 +567,15 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
                       onClick={deletable ? () => handleDelete(id) : () => handleRetract(id)}
                       disabled={
                         activeResult.state === "edit" ||
-                        (!id.linked &&
-                          (id.state === "registered" || (isB2instBeyondDraft(id) && !isDeletableClosedReview(id)))) ||
+                        id.linked ||
+                        id.state === "registered" ||
+                        (isB2instBeyondDraft(id) && !isDeletableClosedReview(id)) ||
                         Boolean(activeResult.historicalVersion)
                       }
                     >
-                      {id.linked
-                        ? t("fields.identifiers.list.deleteOrRetract.unlink")
-                        : deletable
-                          ? t("fields.identifiers.list.deleteOrRetract.delete")
-                          : t("fields.identifiers.list.deleteOrRetract.retract")}
+                      {deletable
+                        ? t("fields.identifiers.list.deleteOrRetract.delete")
+                        : t("fields.identifiers.list.deleteOrRetract.retract")}
                     </Button>
                   </CustomTooltip>
                 </Grid>
@@ -582,7 +593,7 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
                 )}
               </Grid>
               <Alert severity="info" sx={{ width: "100%", mb: 1 }}>
-                <StateInfo identifierState={id.state} identifierUrl={id.url} />{" "}
+                <StateInfo identifierState={id.state} identifierUrl={id.url} isLinked={id.linked} />{" "}
                 <a
                   href={helpDocsArticleUrl(isInstrument ? "pidinstIdentifiers" : "igsnIdentifiers")}
                   target="_blank"

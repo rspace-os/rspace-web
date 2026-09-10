@@ -3004,8 +3004,7 @@ export default interface Resources {
         "list": {
           "deleteOrRetract": {
             "delete": "Delete",
-            "retract": "Retract",
-            "unlink": "Unlink"
+            "retract": "Retract"
           },
           "editFirst": "To update any details, press Edit first.",
           "headers": {
@@ -3026,6 +3025,7 @@ export default interface Resources {
             "draftPidinst": "This PIDINST is a Draft. Metadata can be specified, but no information is publicly available.",
             "findable": "This IGSN ID is Findable. The IGSN ID is a citable URL that redirects to the <externalLink href=\"{link}\">RSpace landing page</externalLink>. The metadata is publicly available through the landing page, DataCite Commons and the DataCite APIs.",
             "findablePidinst": "This PIDINST is Findable. The PIDINST is a citable URL that redirects to the <externalLink href=\"{link}\">RSpace landing page</externalLink>. The metadata is publicly available through the landing page, DataCite Commons and the DataCite APIs.",
+            "linkedPidinst": "This PIDINST was minted outside RSpace and is linked to this instrument. It resolves at its own registry, not on an RSpace page, and RSpace does not publish or update it.",
             "pidinstAccepted": "This PIDINST ID is Accepted. The PIDINST ID is a citable ePIC Handle that redirects to the <externalLink href=\"{link}\">registered landing page</externalLink>. The metadata is publicly available through that page and the instrument's B2INST record.",
             "pidinstCancelled": "The submission was cancelled before review. The instrument PID remains a draft. You can delete this identifier and register a new one.",
             "pidinstCreated": "The review request was created but has not been submitted to the community yet. Press Publish to submit it.",
@@ -3053,9 +3053,10 @@ export default interface Resources {
             "deleteDraft": "Delete Draft",
             "missingData": "Some missing data",
             "notPublished": "Not published yet",
-            "linkedUnlink": "This PID was minted outside RSpace. Deleting it removes the link; the registry record is untouched.",
+            "linkedReadOnly": "This PID was minted outside RSpace, so RSpace cannot publish, retract or refresh it. Removing the link is an API operation.",
           "pidinstNotRetractable": "B2INST instrument PIDs cannot be retracted or deleted once the record has been sent for community review.",
             "previewPage": "Preview Landing Page",
+            "previewUnavailableLinked": "A linked PID has no RSpace landing page to preview",
             "refresh": "Check the current status of the community review",
             "retract": "Retract"
           }
