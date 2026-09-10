@@ -1016,6 +1016,31 @@ class B2instConnectorImplTest {
     server.verify();
   }
 
+  /**
+   * The whole query must reach B2INST exactly as the user typed it, and must not be able to add a
+   * parameter of its own. Only the alphanumeric case was covered, which is the one case that cannot
+   * show a double-encoding bug: handing RestTemplate a pre-encoded String makes it treat that
+   * String as a URI template and encode it a second time, so a space would arrive as %2520.
+   */
+  @Test
+  void searchRecordsSendsAQueryWithDelimitersExactlyOnceEncoded() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    server
+        .expect(
+            requestTo(
+                "https://b2inst-test.gwdg.de/api/records"
+                    + "?q=Zeiss%20microscope%20%26size%3D999%20100%25%20%23top&size=50"))
+        .andExpect(method(HttpMethod.GET))
+        .andRespond(
+            withSuccess("{\"hits\":{\"hits\":[],\"total\":0}}", MediaType.APPLICATION_JSON));
+
+    connector.searchRecords("Zeiss microscope &size=999 100% #top", 50);
+
+    server.verify();
+  }
+
   @Test
   void getRecordByHandleReadsThePublishedRecordUnderTheHandleSuffix() {
     connector.reloadClient();

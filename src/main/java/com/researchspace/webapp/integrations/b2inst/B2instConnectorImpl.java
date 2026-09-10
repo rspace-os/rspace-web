@@ -12,6 +12,7 @@ import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.SystemPropertyManager;
 import com.researchspace.service.SystemPropertyName;
 import jakarta.annotation.PostConstruct;
+import java.net.URI;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -368,14 +369,22 @@ public class B2instConnectorImpl implements B2instConnector {
   public B2instSearchResult searchRecords(String query, int size) {
     // /api/records is the PUBLISHED index, which is the whole of what may be imported: the
     // account's own drafts live under /api/user/records and are deliberately not searched
-    String url =
+    /*
+     * A URI, not a String. RestTemplate treats a String as a URI template and encodes it again, so
+     * the percent sequences produced by encode() were themselves encoded and a space reached
+     * B2INST as %2520 - every multi-word search looked for a literal "a%20b". Handing it an
+     * already-built URI skips that second pass. The encoding still holds the safety property:
+     * Spring's QUERY_PARAM type escapes '=' and '&', so a query cannot add or override a
+     * parameter, and the host comes only from the pidinst.b2inst.* sysadmin properties.
+     */
+    URI url =
         UriComponentsBuilder.fromUriString(apiBase())
             .pathSegment("records")
             .queryParam("q", query)
             .queryParam("size", size)
             .build()
             .encode()
-            .toUriString();
+            .toUri();
     try {
       B2instSearchResult result = restTemplate.getForObject(url, B2instSearchResult.class);
       return result == null ? new B2instSearchResult() : result;
