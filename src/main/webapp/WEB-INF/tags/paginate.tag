@@ -33,10 +33,10 @@
       <c:otherwise>
       	<c:choose>
       		<c:when test="${empty omitATagLinkId or omitATagLinkId eq 'false'}">
-            <a class="${page.className}" data-page-name="${page.name}" id="page_${page.link}" href="${href}">${pageLabel}</a>
+            <a class="${page.className}" data-first-page="${page.name eq 'First'}" data-last-page="${page.name eq 'Last'}" id="page_${page.link}" href="${href}">${pageLabel}</a>
       		</c:when>
       		<c:otherwise>
-            <a class="${page.className}" data-page-name="${page.name}" data-pageNumber="${page.pageNumber}" href="${href}">${pageLabel}</a>
+            <a class="${page.className}" data-first-page="${page.name eq 'First'}" data-last-page="${page.name eq 'Last'}" data-pageNumber="${page.pageNumber}" href="${href}">${pageLabel}</a>
       		</c:otherwise>
       	</c:choose>
       </c:otherwise>

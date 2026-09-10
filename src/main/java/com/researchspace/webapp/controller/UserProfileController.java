@@ -922,7 +922,7 @@ public class UserProfileController extends BaseController {
 
     List<GroupInfo> groups =
         profileUser.getGroups().stream()
-            .map(g -> new GroupInfo(g, getText(g.getRoleForUser(profileUser).getLabelKey())))
+            .map(g -> new GroupInfo(g, g.getRoleForUser(profileUser)))
             .collect(toList());
     UserProfile up = userProfileManager.getUserProfile(profileUser);
     Long profileImageId = getProfileImageId(up);

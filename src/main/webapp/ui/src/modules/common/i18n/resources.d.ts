@@ -1669,6 +1669,8 @@ export default interface Resources {
       "openProfile": "Open profile",
       "roleAt": "{role} at",
       "roles": {
+        "groupOwner": "Group Owner",
+        "labAdmin": "Lab Admin",
         "pi": "PI",
         "user": "User"
       },
