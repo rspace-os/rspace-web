@@ -31,47 +31,45 @@ public class ResourceAccessDirectoryDaoHibernate implements ResourceAccessDirect
     String pattern = "%" + escapeLike(query.toLowerCase(Locale.ROOT)) + "%";
     Session session = sessionFactory.getCurrentSession();
     boolean sysadmin = subject.hasSysadminRole();
-    String userScope =
-        sysadmin
-            ? ""
-            : " and exists (select candidateMembership.id from UserGroup candidateMembership "
-                + "where candidateMembership.user.id = user.id and candidateMembership.group.id "
-                + "in (select ownMembership.group.id from UserGroup ownMembership "
-                + "where ownMembership.user.id = :subjectId))";
+    StringBuilder userQuery =
+        new StringBuilder("select user from User user where user.enabled = true ")
+            .append("and (lower(user.username) like :query escape '\\' ")
+            .append("or lower(user.firstName) like :query escape '\\' ")
+            .append("or lower(user.lastName) like :query escape '\\')");
+    if (!sysadmin) {
+      userQuery
+          .append(" and exists (select candidateMembership.id from UserGroup candidateMembership ")
+          .append("where candidateMembership.user.id = user.id and candidateMembership.group.id ")
+          .append("in (select ownMembership.group.id from UserGroup ownMembership ")
+          .append("where ownMembership.user.id = :subjectId))");
+    }
+    userQuery.append(" order by lower(user.lastName), lower(user.firstName), lower(user.username)");
     var users =
         session
-            .createQuery(
-                "select user from User user where user.enabled = true "
-                    + "and (lower(user.username) like :query escape '\\' "
-                    + "or lower(user.firstName) like :query escape '\\' "
-                    + "or lower(user.lastName) like :query escape '\\')"
-                    + userScope
-                    + " order by lower(user.lastName), lower(user.firstName), lower(user.username)",
-                User.class)
+            .createQuery(userQuery.toString(), User.class)
             .setParameter("query", pattern)
             .setMaxResults(limit);
     if (!sysadmin) {
       users.setParameter("subjectId", subject.getId());
     }
 
-    String groupScope =
-        sysadmin
-            ? ""
-            : " and exists (select membership.id from UserGroup membership "
-                + "where membership.group.id = accessGroup.id "
-                + "and membership.user.id = :subjectId)";
+    StringBuilder groupQuery =
+        new StringBuilder("select accessGroup from Group accessGroup ")
+            .append("where exists (select enabledMembership.id from UserGroup enabledMembership ")
+            .append("where enabledMembership.group.id = accessGroup.id ")
+            .append("and enabledMembership.user.enabled = true) ")
+            .append("and (lower(accessGroup.displayName) like :query escape '\\' ")
+            .append("or lower(accessGroup.uniqueName) like :query escape '\\')");
+    if (!sysadmin) {
+      groupQuery
+          .append(" and exists (select membership.id from UserGroup membership ")
+          .append("where membership.group.id = accessGroup.id ")
+          .append("and membership.user.id = :subjectId)");
+    }
+    groupQuery.append(" order by lower(accessGroup.displayName), accessGroup.id");
     var groups =
         session
-            .createQuery(
-                "select accessGroup from Group accessGroup "
-                    + "where exists (select enabledMembership.id from UserGroup enabledMembership "
-                    + "where enabledMembership.group.id = accessGroup.id "
-                    + "and enabledMembership.user.enabled = true) "
-                    + "and (lower(accessGroup.displayName) like :query escape '\\' "
-                    + "or lower(accessGroup.uniqueName) like :query escape '\\')"
-                    + groupScope
-                    + " order by lower(accessGroup.displayName), accessGroup.id",
-                Group.class)
+            .createQuery(groupQuery.toString(), Group.class)
             .setParameter("query", pattern)
             .setMaxResults(limit);
     if (!sysadmin) {
@@ -121,17 +119,16 @@ public class ResourceAccessDirectoryDaoHibernate implements ResourceAccessDirect
 
   private static List<User> assignableUsers(
       Session session, Set<Long> ids, Long subjectId, boolean sysadmin) {
-    String scope =
-        sysadmin
-            ? ""
-            : " and exists (select candidateMembership.id from UserGroup candidateMembership "
-                + "where candidateMembership.user.id = user.id and candidateMembership.group.id "
-                + "in (select ownMembership.group.id from UserGroup ownMembership "
-                + "where ownMembership.user.id = :subjectId))";
-    var query =
-        session.createQuery(
-            "select user from User user where user.id in :ids and user.enabled = true" + scope,
-            User.class);
+    StringBuilder hql =
+        new StringBuilder(
+            "select user from User user where user.id in :ids and user.enabled = true");
+    if (!sysadmin) {
+      hql.append(" and exists (select candidateMembership.id from UserGroup candidateMembership ")
+          .append("where candidateMembership.user.id = user.id and candidateMembership.group.id ")
+          .append("in (select ownMembership.group.id from UserGroup ownMembership ")
+          .append("where ownMembership.user.id = :subjectId))");
+    }
+    var query = session.createQuery(hql.toString(), User.class);
     query.setParameter("ids", ids);
     if (!sysadmin) {
       query.setParameter("subjectId", subjectId);
@@ -141,20 +138,17 @@ public class ResourceAccessDirectoryDaoHibernate implements ResourceAccessDirect
 
   private static List<Group> assignableGroups(
       Session session, Set<Long> ids, Long subjectId, boolean sysadmin) {
-    String scope =
-        sysadmin
-            ? ""
-            : " and exists (select membership.id from UserGroup membership "
-                + "where membership.group.id = accessGroup.id "
-                + "and membership.user.id = :subjectId)";
-    var query =
-        session.createQuery(
-            "select accessGroup from Group accessGroup where accessGroup.id in :ids "
-                + "and exists (select enabledMembership.id from UserGroup enabledMembership "
-                + "where enabledMembership.group.id = accessGroup.id "
-                + "and enabledMembership.user.enabled = true)"
-                + scope,
-            Group.class);
+    StringBuilder hql =
+        new StringBuilder("select accessGroup from Group accessGroup where accessGroup.id in :ids ")
+            .append("and exists (select enabledMembership.id from UserGroup enabledMembership ")
+            .append("where enabledMembership.group.id = accessGroup.id ")
+            .append("and enabledMembership.user.enabled = true)");
+    if (!sysadmin) {
+      hql.append(" and exists (select membership.id from UserGroup membership ")
+          .append("where membership.group.id = accessGroup.id ")
+          .append("and membership.user.id = :subjectId)");
+    }
+    var query = session.createQuery(hql.toString(), Group.class);
     query.setParameter("ids", ids);
     if (!sysadmin) {
       query.setParameter("subjectId", subjectId);
