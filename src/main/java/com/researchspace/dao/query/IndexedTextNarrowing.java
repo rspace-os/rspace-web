@@ -1,9 +1,9 @@
 package com.researchspace.dao.query;
 
 import com.researchspace.model.collection.CollectionDescription;
-import com.researchspace.model.collection.CollectionDescription.Operator;
-import com.researchspace.model.collection.CollectionDescription.Relationship;
 import com.researchspace.model.collection.FilterExpression;
+import com.researchspace.model.collection.Operator;
+import com.researchspace.model.collection.Relationship;
 import com.researchspace.model.collection.RelationshipTarget;
 import com.researchspace.model.collection.ResolvedRuntimeField;
 import com.researchspace.model.collection.ResourceRequest;

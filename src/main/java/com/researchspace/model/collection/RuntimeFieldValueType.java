@@ -1,7 +1,6 @@
 package com.researchspace.model.collection;
 
 import com.researchspace.core.util.JacksonUtil;
-import com.researchspace.model.collection.CollectionDescription.Operator;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;

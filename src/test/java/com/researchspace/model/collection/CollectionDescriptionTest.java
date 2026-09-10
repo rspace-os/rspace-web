@@ -6,11 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.researchspace.model.collection.CollectionDescription.Field;
-import com.researchspace.model.collection.CollectionDescription.FieldSchema;
-import com.researchspace.model.collection.CollectionDescription.Operator;
-import com.researchspace.model.collection.CollectionDescription.Sort;
-import com.researchspace.model.collection.CollectionDescription.WriteOperation;
 import java.time.Instant;
 import java.util.Date;
 import java.util.LinkedHashMap;
@@ -197,7 +192,7 @@ class CollectionDescriptionTest {
 
   @Test
   void describesAWritablePolymorphicRelationship() {
-    CollectionDescription.Relationship<TestEntity> relationship = relationship();
+    Relationship<TestEntity> relationship = relationship();
 
     assertTrue(relationship.writableOn(WriteOperation.CREATE));
     assertTrue(relationship.acceptsInput(WriteOperation.UPDATE, RelationshipInputForm.OBJECT));
@@ -218,7 +213,7 @@ class CollectionDescriptionTest {
             List.of(relationship),
             "id",
             List.of(new Sort("id", true)));
-    CollectionDescription.RelationshipSchema schema = description.schema().relationships().get(0);
+    RelationshipSchema schema = description.schema().relationships().get(0);
     assertEquals(List.of("instruments"), schema.targetResources());
     assertTrue(schema.requiredOnCreate());
     assertFalse(schema.selfReferenceAllowed());
@@ -237,7 +232,7 @@ class CollectionDescriptionTest {
     assertThrows(
         IllegalArgumentException.class,
         () ->
-            CollectionDescription.Relationship.polymorphicToOne(
+            Relationship.polymorphicToOne(
                 "target",
                 CollectionFieldTypes.longNumber(),
                 List.of(instrument, instrument),
@@ -245,7 +240,7 @@ class CollectionDescriptionTest {
     assertThrows(
         IllegalArgumentException.class,
         () ->
-            CollectionDescription.Relationship.polymorphicToOne(
+            Relationship.polymorphicToOne(
                 "target",
                 CollectionFieldTypes.longNumber(),
                 List.of(
@@ -271,8 +266,8 @@ class CollectionDescriptionTest {
         NullPointerException.class, () -> new ResolvedResourceReference<>(reference, null));
   }
 
-  private static CollectionDescription.Relationship<TestEntity> relationship() {
-    return CollectionDescription.Relationship.polymorphicToOne(
+  private static Relationship<TestEntity> relationship() {
+    return Relationship.polymorphicToOne(
             "target",
             CollectionFieldTypes.longNumber(),
             List.of(
@@ -314,9 +309,7 @@ class CollectionDescriptionTest {
                 "id",
                 List.of(new Sort("id", true)),
                 AccessPolicy.authenticated(),
-                List.of(
-                    new CollectionDescription.InternalFilter(
-                        "id", "id", CollectionFieldTypes.longNumber()))));
+                List.of(new InternalFilter("id", "id", CollectionFieldTypes.longNumber()))));
   }
 
   @Test
@@ -338,9 +331,7 @@ class CollectionDescriptionTest {
         "id",
         List.of(new Sort("id", true)),
         AccessPolicy.authenticated(),
-        List.of(
-            new CollectionDescription.InternalFilter(
-                "sharingAcl", "sharingACL.acl", CollectionFieldTypes.text())));
+        List.of(new InternalFilter("sharingAcl", "sharingACL.acl", CollectionFieldTypes.text())));
   }
 
   private static Field<TestEntity, Long> idField() {

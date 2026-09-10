@@ -25,15 +25,6 @@ import java.util.Set;
  */
 public final class ExtraFieldIdentity {
 
-  /**
-   * Most characters of a name this API will publish.
-   *
-   * <p>The name is carried inside the selector, and a selector goes in a {@code where} expression
-   * whose length is bounded. A longer name is excluded rather than truncated, because a truncated
-   * name is a different definition that would silently match the wrong fields.
-   */
-  public static final int MAX_NAME_LENGTH = 128;
-
   private static final String ID_PREFIX = "XF";
 
   private static final Map<FieldType, Character> TYPE_CODES =
@@ -54,12 +45,11 @@ public final class ExtraFieldIdentity {
   /**
    * The ID for one definition, or null when it cannot be published.
    *
-   * @return null for an unpublished type, a blank name or a name over {@link #MAX_NAME_LENGTH}, so
-   *     a caller writing index values or building a catalog skips it the same way
+   * @return null for an unpublished type or a blank name
    */
   public static String encode(String name, FieldType type) {
     Character code = type == null ? null : TYPE_CODES.get(type);
-    if (code == null || name == null || name.isEmpty() || name.length() > MAX_NAME_LENGTH) {
+    if (code == null || name == null || name.isEmpty()) {
       return null;
     }
     return ID_PREFIX + code + HexFormat.of().formatHex(name.getBytes(StandardCharsets.UTF_8));
@@ -79,7 +69,7 @@ public final class ExtraFieldIdentity {
     }
     try {
       String name = decodeUtf8(HexFormat.of().parseHex(hex));
-      return name.isEmpty() || name.length() > MAX_NAME_LENGTH ? null : new Definition(name, type);
+      return name.isEmpty() ? null : new Definition(name, type);
     } catch (IllegalArgumentException | CharacterCodingException malformed) {
       return null;
     }

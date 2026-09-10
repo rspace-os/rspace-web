@@ -5,12 +5,14 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
             http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
 
-    <!--  used to apply liquibase DB schema changes -->
+    <!-- Applies the Liquibase schema changes at startup. -->
     <bean depends-on="appContextRetriever, loggingInitializer" id="liquibase" class="liquibase.integration.spring.SpringLiquibase">
         <property name="dataSource" ref="dataSource" />
         <property name="changeLog" value="classpath:sqlUpdates/liquibase-master.xml" />
-        <!-- Runtime Liquibase contexts. This file is excluded from Maven filtering (see pom.xml),
-            so ${liquibase.context} resolves from deployment.properties at runtime. -->
+        <!-- Runtime Liquibase contexts. The pom excludes this file from Maven filtering and
+             re-adds it unfiltered, so ${liquibase.context} resolves from deployment.properties
+             when the server starts. The copy under src/test/resources is filtered, so there
+             Maven substitutes the same placeholder at build time. -->
         <property name="contexts" value="${liquibase.context}" />
     </bean>
 
@@ -28,40 +30,36 @@
     			hibernate.cache.use_second_level_cache=true
     			hibernate.cache.use_query_cache=true
     			hibernate.cache.region.factory_class=org.hibernate.cache.jcache.JCacheRegionFactory
-    			<!-- hibernate-jcache only reads the hibernate.javax.cache.* keys (JCache itself was
-    			     never migrated to the jakarta namespace). The uri is resolved as a classpath
-    			     resource by Hibernate's ClassLoaderService, so no classpath: prefix. With a wrong
-    			     key/uri Hibernate silently falls back to an EMPTY default CacheManager and every
-    			     region becomes an untuned create-warn default (unlimited size, no expiry);
+    			<!-- hibernate-jcache reads only the hibernate.javax.cache.* keys, because JCache never
+    			     moved to the jakarta namespace. Hibernate's ClassLoaderService resolves the uri as a
+    			     classpath resource, so it takes no classpath: prefix. Given a wrong key or uri,
+    			     Hibernate falls back to an empty default CacheManager without raising an error, and
+    			     every region becomes an untuned create-warn default with unlimited size and no expiry.
     			     SecondLevelCacheTestIT guards this wiring. -->
     			hibernate.javax.cache.provider=org.ehcache.jsr107.EhcacheCachingProvider
     			hibernate.javax.cache.uri=ehcache.xml
-    			<!-- The hibernate-jcache default, made explicit and pinned by
-    			     EhcacheRegionConfigTest: a region absent from ehcache.xml is created
-    			     untuned (unbounded heap, no expiry) with only a logged warning, rather
-    			     than failing startup. EhcacheRegionConfigTest keeps ehcache.xml complete
-    			     so this should never fire. -->
+    			<!-- The hibernate-jcache default, made explicit and pinned by EhcacheRegionConfigTest.
+    			     When ehcache.xml has no matching region, Hibernate creates one untuned, with unbounded
+    			     heap and no expiry, and logs a warning instead of failing startup.
+    			     EhcacheRegionConfigTest keeps ehcache.xml complete, so that path should never run. -->
     			hibernate.javax.cache.missing_cache_strategy=create-warn
 			hibernate.search.indexing.plan.synchronization.strategy=sync
-			<!-- Index mappings this repository owns. The shared model library is annotated for
-			     Hibernate Search 5, whose annotations Search 7 ignores, so anything this
-			     deployment actually indexes is declared programmatically here. -->
-    			<!-- Id generation for TABLE-strategy entities: every such entity carries an explicit
-    			     @TableGenerator, keyed to its own row in hibernate_sequences.
-    			     Generators declared without pkColumnValue segment by the entity's physical table
-    			     name (Hibernate defaults prefer_entity_table_as_segment_value=true for
-    			     annotation-defined table generators), preserving the one-counter-per-table layout
-    			     Hibernate 5 used. The two TABLE_PER_CLASS hierarchies (AbstractUserOrGroupImpl,
-    			     Communication) pin pkColumnValue explicitly because sibling tables must share one
-    			     counter. changeLog-rsdev-444.xml re-seeds every row above its table's MAX(id) on
-    			     upgrade, so allocation cannot collide with pre-upgrade ids. Do NOT add a bare
-    			     @GeneratedValue(strategy=TABLE) without a generator: it would allocate from a
-    			     shared "default" segment (TableIdGeneratorConfigTest guards this). See
-    			     DevDocs/DeveloperNotes/UpgradingToSpring6.md ("What the upgrade does to the
-    			     database"). -->
+			<!-- Index mappings live on the entities themselves, as annotations from
+			     org.hibernate.search.mapper.pojo. Lucene analysis is configured by
+			     RSpaceLuceneAnalysisConfigurer, which hibernate.cfg.xml names. -->
+    			<!-- Id generation for TABLE-strategy entities. Every such entity carries an explicit
+    			     @TableGenerator keyed to its own row in hibernate_sequences. Where a generator declares
+    			     no pkColumnValue, Hibernate segments it by the entity's physical table name, because
+    			     prefer_entity_table_as_segment_value defaults to true for annotation-defined table
+    			     generators. That keeps the one counter per table layout Hibernate 5 used.
+    			     The two TABLE_PER_CLASS hierarchies, AbstractUserOrGroupImpl and Communication, pin
+    			     pkColumnValue explicitly because sibling tables must share one counter. On upgrade,
+    			     changeLog-rsdev-444.xml re-seeds every row above its table's MAX(id), so allocation
+    			     cannot collide with pre-upgrade ids. Do NOT add a bare @GeneratedValue(strategy=TABLE)
+    			     without a generator. It would allocate from a shared "default" segment, which
+    			     TableIdGeneratorConfigTest fails on. See DevDocs/DeveloperNotes/UpgradingToSpring6.md,
+    			     "What the migration changes in the database". -->
     		</value>
-    		<!-- Turn batching off for better error messages under PostgreSQL -->
-    		<!-- hibernate.jdbc.batch_size=0 -->
     	</property>
     </bean>
 

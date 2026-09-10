@@ -1,6 +1,5 @@
 package com.researchspace.model.collection;
 
-import com.researchspace.model.collection.CollectionDescription.Operator;
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;

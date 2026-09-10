@@ -1,11 +1,6 @@
 package com.researchspace.model.collection;
 
 import com.researchspace.model.User;
-import com.researchspace.model.collection.CollectionDescription.Field;
-import com.researchspace.model.collection.CollectionDescription.InternalFilter;
-import com.researchspace.model.collection.CollectionDescription.Relationship;
-import com.researchspace.model.collection.CollectionDescription.Sort;
-import com.researchspace.model.collection.CollectionDescription.WriteOperation;
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;

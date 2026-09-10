@@ -4,15 +4,6 @@
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
 
-  <changeSet id="extra-field-name-text" author="rspace" context="run">
-    <comment>
-      Allow future extra-field names to exceed the legacy varchar limit. The runtime catalog still
-      publishes only names up to 128 characters, so its indexes can use that bounded prefix.
-    </comment>
-    <modifyDataType tableName="ExtraField" columnName="name" newDataType="TEXT"/>
-    <modifyDataType tableName="ExtraField_AUD" columnName="name" newDataType="TEXT"/>
-  </changeSet>
-
   <changeSet id="extra-field-name-index" author="rspace" context="run">
     <preConditions onFail="MARK_RAN">
       <not>
@@ -20,7 +11,7 @@
       </not>
     </preConditions>
     <comment>
-      Index the published name prefix, deletion flag, and subtype used by runtime-field discovery.
+      Index the name prefix, deletion flag, and subtype used by runtime-field discovery.
     </comment>
     <sql>
       CREATE INDEX ix_extrafield_name_deleted ON ExtraField (name(128), deleted, DTYPE)
@@ -34,7 +25,7 @@
       </not>
     </preConditions>
     <comment>
-      Index the owning instrument followed by the published name prefix and deletion flag.
+      Index the owning instrument followed by the name prefix and deletion flag.
     </comment>
     <sql>
       CREATE INDEX ix_extrafield_instr_name

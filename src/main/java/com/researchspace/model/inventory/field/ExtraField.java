@@ -7,8 +7,6 @@ import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.InventoryRecordConnectedEntity;
 import com.researchspace.model.record.EditInfo;
 import com.researchspace.model.record.IActiveUserStrategy;
-import jakarta.persistence.AttributeOverride;
-import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -66,9 +64,6 @@ public abstract class ExtraField extends InventoryRecordConnectedEntity implemen
   }
 
   @Embedded
-  @AttributeOverride(
-      name = "name",
-      column = @Column(name = "name", nullable = false, columnDefinition = "TEXT"))
   public EditInfo getEditInfo() {
     return editInfo;
   }

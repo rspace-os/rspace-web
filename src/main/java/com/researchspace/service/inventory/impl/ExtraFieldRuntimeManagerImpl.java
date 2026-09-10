@@ -43,8 +43,6 @@ public class ExtraFieldRuntimeManagerImpl<T> implements ExtraFieldRuntimeManager
 
   public static final String NAMESPACE = RuntimeFieldNamespaces.EXTRA_FIELDS;
 
-  static final int MAX_NAME_LENGTH = ExtraFieldIdentity.MAX_NAME_LENGTH;
-
   private static final Set<FieldType> PUBLISHED_TYPES = ExtraFieldIdentity.publishedTypes();
 
   private final ExtraFieldDao extraFieldDao;
@@ -174,7 +172,7 @@ public class ExtraFieldRuntimeManagerImpl<T> implements ExtraFieldRuntimeManager
     List<RuntimeFieldDefinition> definitions = new ArrayList<>(rows.size());
     for (ExtraFieldRow row : rows) {
       RuntimeFieldValueType type = valueType(row.type());
-      if (type == null || row.name().length() > MAX_NAME_LENGTH) {
+      if (type == null) {
         continue;
       }
       String id = encode(row);

@@ -10,7 +10,6 @@ import static org.mockito.Mockito.when;
 
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
-import com.researchspace.model.collection.CollectionDescription.Operator;
 import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.Test;

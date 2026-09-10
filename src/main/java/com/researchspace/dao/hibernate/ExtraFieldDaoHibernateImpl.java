@@ -5,7 +5,6 @@ import com.researchspace.dao.query.RsqlCollectionQuery;
 import com.researchspace.model.collection.QueryConstraint;
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.field.ExtraField;
-import com.researchspace.model.inventory.field.ExtraFieldIdentity;
 import jakarta.persistence.Query;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -62,9 +61,7 @@ public class ExtraFieldDaoHibernateImpl implements ExtraFieldDao {
             .append(FIELD_ALIAS)
             .append(" where ")
             .append(common(scope, access))
-            .append(" and char_length(")
-            .append(NAME)
-            .append(") <= :maximumNameLength and ")
+            .append(" and ")
             .append(typeRestriction(types));
     if (hydrating) {
       hql.append(" and ").append(NAME).append(" in :names");
@@ -74,7 +71,6 @@ public class ExtraFieldDaoHibernateImpl implements ExtraFieldDao {
     hql.append(" order by ").append(NAME).append(" asc, type(").append(FIELD_ALIAS).append(") asc");
     Query query = sessionFactory.getCurrentSession().createQuery(hql.toString(), Object[].class);
     bind(query, access);
-    query.setParameter("maximumNameLength", ExtraFieldIdentity.MAX_NAME_LENGTH);
     if (hydrating) {
       query.setParameter(
           "names",
@@ -115,29 +111,26 @@ public class ExtraFieldDaoHibernateImpl implements ExtraFieldDao {
     if (parentIds.isEmpty() || definitions.isEmpty()) {
       return values;
     }
-    String hql =
-        "select "
-            + FIELD_ALIAS
-            + "."
-            + scope.parentProperty()
-            + ".id, "
-            + NAME
-            + ", type("
-            + FIELD_ALIAS
-            + "), "
-            + VALUE
-            + " from ExtraField "
-            + FIELD_ALIAS
-            + " where "
-            + FIELD_ALIAS
-            + ".deleted = false and "
-            + FIELD_ALIAS
-            + "."
-            + scope.parentProperty()
-            + ".id in :parentIds and "
-            + NAME
-            + " in :names";
-    Query query = sessionFactory.getCurrentSession().createQuery(hql, Object[].class);
+    String parent = FIELD_ALIAS + "." + scope.parentProperty();
+    StringBuilder hql =
+        new StringBuilder("select ")
+            .append(parent)
+            .append(".id, ")
+            .append(NAME)
+            .append(", type(")
+            .append(FIELD_ALIAS)
+            .append("), ")
+            .append(VALUE)
+            .append(" from ExtraField ")
+            .append(FIELD_ALIAS)
+            .append(" where ")
+            .append(FIELD_ALIAS)
+            .append(".deleted = false and ")
+            .append(parent)
+            .append(".id in :parentIds and ")
+            .append(NAME)
+            .append(" in :names");
+    Query query = sessionFactory.getCurrentSession().createQuery(hql.toString(), Object[].class);
     query.setParameter("parentIds", parentIds);
     query.setParameter(
         "names",
@@ -160,21 +153,26 @@ public class ExtraFieldDaoHibernateImpl implements ExtraFieldDao {
 
   private String common(ExtraFieldScope scope, RsqlCollectionQuery.Predicate access) {
     String parentId = FIELD_ALIAS + "." + scope.parentProperty() + ".id";
-    return FIELD_ALIAS
-        + ".deleted = false and "
-        + parentId
-        + " is not null and exists (select 1 from "
-        + scope.parentEntity().getSimpleName()
-        + " "
-        + PARENT_ALIAS
-        + " where "
-        + PARENT_ALIAS
-        + "."
-        + scope.parentDescription().requireField(scope.parentDescription().idField()).property()
-        + " = "
-        + parentId
-        + (access == null ? "" : " and " + access.expression())
-        + ")";
+    String parentIdProperty =
+        scope.parentDescription().requireField(scope.parentDescription().idField()).property();
+    StringBuilder hql =
+        new StringBuilder(FIELD_ALIAS)
+            .append(".deleted = false and ")
+            .append(parentId)
+            .append(" is not null and exists (select 1 from ")
+            .append(scope.parentEntity().getSimpleName())
+            .append(" ")
+            .append(PARENT_ALIAS)
+            .append(" where ")
+            .append(PARENT_ALIAS)
+            .append(".")
+            .append(parentIdProperty)
+            .append(" = ")
+            .append(parentId);
+    if (access != null) {
+      hql.append(" and ").append(access.expression());
+    }
+    return hql.append(")").toString();
   }
 
   private RsqlCollectionQuery.Predicate access(ExtraFieldScope scope, QueryConstraint constraint) {

@@ -98,6 +98,11 @@ public record OpenApiSchemaDocumentation(
     return new Builder();
   }
 
+  /** The common case: a title, a description and one example. */
+  public static OpenApiSchemaDocumentation of(String title, String description, String example) {
+    return builder().title(title).description(description).example(example).build();
+  }
+
   public static final class Builder {
     private String title;
     private String description;

@@ -4,12 +4,12 @@ import com.researchspace.model.collection.AccessFunction;
 import com.researchspace.model.collection.AccessPolicy;
 import com.researchspace.model.collection.AccessResult;
 import com.researchspace.model.collection.CollectionDescription;
-import com.researchspace.model.collection.CollectionDescription.Field;
-import com.researchspace.model.collection.CollectionDescription.Operator;
-import com.researchspace.model.collection.CollectionDescription.Sort;
 import com.researchspace.model.collection.CollectionFieldTypes;
+import com.researchspace.model.collection.Field;
 import com.researchspace.model.collection.FilterExpression;
 import com.researchspace.model.collection.OpenApiSchemaDocumentation;
+import com.researchspace.model.collection.Operator;
+import com.researchspace.model.collection.Sort;
 import com.researchspace.model.inventory.Instrument;
 import java.util.List;
 import java.util.Set;
@@ -35,11 +35,13 @@ public final class ApiV2InstrumentResource {
         List.<Field<Instrument, ?>>of(
             Field.<Instrument, Long>readOnly(
                     "id", "id", CollectionFieldTypes.longNumber(), Instrument::getId)
-                .documented(documentation("Instrument ID", "Stable instrument identifier.", "123")),
+                .documented(
+                    OpenApiSchemaDocumentation.of(
+                        "Instrument ID", "Stable instrument identifier.", "123")),
             Field.<Instrument, String>readOnly(
                     "name", "editInfo.name", CollectionFieldTypes.text(255), Instrument::getName)
                 .documented(
-                    documentation(
+                    OpenApiSchemaDocumentation.of(
                         "Name", "Display name of the instrument.", "Confocal microscope")),
             Field.<Instrument, String>readOnly(
                     "globalId",
@@ -48,7 +50,9 @@ public final class ApiV2InstrumentResource {
                     Instrument::getGlobalIdentifier)
                 // Derived from the ID, so there is no column to filter or sort on.
                 .withQueryCapabilities(false, false)
-                .documented(documentation("Global ID", "RSpace global identifier.", "IN123")),
+                .documented(
+                    OpenApiSchemaDocumentation.of(
+                        "Global ID", "RSpace global identifier.", "IN123")),
             Field.<Instrument, String>readOnly(
                     "parentContainerName",
                     "parentLocation.container.editInfo.name",
@@ -60,11 +64,15 @@ public final class ApiV2InstrumentResource {
                 .allowNull()
                 .withQueryCapabilities(false, false)
                 .documented(
-                    deprecatedDocumentation(
-                        "Location",
-                        "Deprecated. Display name of the instrument's immediate parent container. "
-                            + "A future parentContainer relationship will replace this field.",
-                        "Imaging lab")),
+                    OpenApiSchemaDocumentation.builder()
+                        .title("Location")
+                        .description(
+                            "Deprecated. Display name of the instrument's immediate parent "
+                                + "container. A future parentContainer relationship will replace "
+                                + "this field.")
+                        .example("Imaging lab")
+                        .deprecated()
+                        .build()),
             Field.<Instrument, String>readOnly(
                     "parentContainerGlobalId",
                     "parentLocation.container.globalIdentifier",
@@ -76,17 +84,20 @@ public final class ApiV2InstrumentResource {
                 .allowNull()
                 .withQueryCapabilities(false, false)
                 .documented(
-                    deprecatedDocumentation(
-                        "Location global ID",
-                        "Deprecated. RSpace global identifier of the instrument's immediate parent "
-                            + "container. A future parentContainer relationship will replace this "
-                            + "field.",
-                        "IC456")),
+                    OpenApiSchemaDocumentation.builder()
+                        .title("Location global ID")
+                        .description(
+                            "Deprecated. RSpace global identifier of the instrument's immediate "
+                                + "parent container. A future parentContainer relationship will "
+                                + "replace this field.")
+                        .example("IC456")
+                        .deprecated()
+                        .build()),
             Field.<Instrument, Boolean>readOnly(
                     "deleted", "deleted", CollectionFieldTypes.bool(), Instrument::isDeleted)
                 .withQueryCapabilities(true, false)
                 .documented(
-                    documentation(
+                    OpenApiSchemaDocumentation.of(
                         "Deleted", "True when the instrument is in the trash.", "false"))),
         List.of(),
         "id",
@@ -114,17 +125,5 @@ public final class ApiV2InstrumentResource {
             context.isAuthenticated()
                 ? AccessResult.allowedWhere(notDeleted)
                 : AccessResult.denied(AccessPolicy.AUTHENTICATION_REQUIRED));
-  }
-
-  private static OpenApiSchemaDocumentation documentation(
-      String title, String description, String example) {
-    return new OpenApiSchemaDocumentation(
-        title, description, example, null, null, null, List.of(), false);
-  }
-
-  private static OpenApiSchemaDocumentation deprecatedDocumentation(
-      String title, String description, String example) {
-    return new OpenApiSchemaDocumentation(
-        title, description, example, null, null, null, List.of(), true);
   }
 }

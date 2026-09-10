@@ -12,18 +12,19 @@ import com.researchspace.model.collection.AccessFunction;
 import com.researchspace.model.collection.AccessPolicy;
 import com.researchspace.model.collection.AccessResult;
 import com.researchspace.model.collection.CollectionDescription;
-import com.researchspace.model.collection.CollectionDescription.Field;
-import com.researchspace.model.collection.CollectionDescription.Operator;
-import com.researchspace.model.collection.CollectionDescription.Sort;
 import com.researchspace.model.collection.CollectionFieldTypes;
 import com.researchspace.model.collection.CollectionQueryException;
 import com.researchspace.model.collection.CollectionQueryLimits;
+import com.researchspace.model.collection.Field;
 import com.researchspace.model.collection.FilterExpression;
+import com.researchspace.model.collection.Operator;
+import com.researchspace.model.collection.Relationship;
 import com.researchspace.model.collection.RelationshipReadAccess;
 import com.researchspace.model.collection.RelationshipTarget;
 import com.researchspace.model.collection.ResourceReference;
 import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.model.collection.RsqlFilterParser;
+import com.researchspace.model.collection.Sort;
 import com.researchspace.model.collection.SplitReferenceBinding;
 import java.time.Instant;
 import java.util.Date;
@@ -323,7 +324,7 @@ class RsqlCollectionQueryTest {
         Related.class,
         List.of(Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), Related::id)),
         List.of(
-            CollectionDescription.Relationship.polymorphicToOne(
+            Relationship.polymorphicToOne(
                 "target",
                 CollectionFieldTypes.longNumber(),
                 List.of(

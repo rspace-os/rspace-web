@@ -1,7 +1,7 @@
 package com.researchspace.inventory.model;
 
-import com.researchspace.model.collection.CollectionDescription.InternalFilter;
 import com.researchspace.model.collection.CollectionFieldTypes;
+import com.researchspace.model.collection.InternalFilter;
 import com.researchspace.model.inventory.InventoryRecord.InventorySharingMode;
 import java.util.List;
 

@@ -23,7 +23,7 @@ public final class ResourceRegistry {
   /** Registry-owned interpretation of {@code relationship.scalarField}. */
   public record RelationshipQueryPath(
       String selector,
-      CollectionDescription.Relationship<?> relationship,
+      Relationship<?> relationship,
       String targetField,
       List<TargetQueryField> targets,
       FilterSelector.RelationshipProperty<?> filterSelector) {
@@ -217,7 +217,7 @@ public final class ResourceRegistry {
                               validateCompatibleTargetFields(
                                   source, relationship, targetField, targets);
                               FilterSelector.Property<?> representative = targets.get(0).property();
-                              Set<CollectionDescription.Operator> operators =
+                              Set<Operator> operators =
                                   new LinkedHashSet<>(
                                       FilterSelector.relationshipTargetFieldOperators());
                               targets.forEach(
@@ -241,7 +241,7 @@ public final class ResourceRegistry {
 
   private static void validateCompatibleTargetFields(
       CollectionDescription<?> source,
-      CollectionDescription.Relationship<?> relationship,
+      Relationship<?> relationship,
       String targetField,
       List<TargetQueryField> targets) {
     CollectionFieldType<?> first = targets.get(0).property().type();

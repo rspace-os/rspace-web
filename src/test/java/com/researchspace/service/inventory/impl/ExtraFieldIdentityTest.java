@@ -63,9 +63,9 @@ class ExtraFieldIdentityTest {
   }
 
   @Test
-  void refusesANameTooLongToCarryInAQuery() {
-    String longName = "x".repeat(ExtraFieldRuntimeManagerImpl.MAX_NAME_LENGTH + 1);
+  void roundTripsNamesLongerThanTheFormerRuntimeFieldLimit() {
+    String longName = "x".repeat(129);
 
-    assertNull(roundTrip(longName, FieldType.TEXT));
+    assertEquals(new ExtraFieldRow(longName, FieldType.TEXT), roundTrip(longName, FieldType.TEXT));
   }
 }

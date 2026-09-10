@@ -1,19 +1,26 @@
 package com.researchspace.dao.query;
 
+import static com.researchspace.dao.query.RsqlSqlFragments.escapeLike;
+import static com.researchspace.dao.query.RsqlSqlFragments.jsonQuoted;
+import static com.researchspace.dao.query.RsqlSqlFragments.like;
+import static com.researchspace.dao.query.RsqlSqlFragments.referencePair;
+import static com.researchspace.dao.query.RsqlSqlFragments.symbol;
+import static com.researchspace.dao.query.RsqlSqlFragments.wildcardPattern;
+import static com.researchspace.dao.query.RsqlSqlFragments.wordsLike;
+
 import com.blazebit.persistence.CommonQueryBuilder;
-import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.model.collection.AccessResult;
 import com.researchspace.model.collection.CollectionDescription;
-import com.researchspace.model.collection.CollectionDescription.Operator;
 import com.researchspace.model.collection.CollectionQueryException;
 import com.researchspace.model.collection.FilterExpression;
 import com.researchspace.model.collection.FilterSelector;
 import com.researchspace.model.collection.FilterSelector.RelationshipComponent;
+import com.researchspace.model.collection.Operator;
 import com.researchspace.model.collection.QueryConstraint;
+import com.researchspace.model.collection.Relationship;
 import com.researchspace.model.collection.RelationshipReadAccess;
 import com.researchspace.model.collection.RelationshipTarget;
 import com.researchspace.model.collection.ResolvedRuntimeField;
-import com.researchspace.model.collection.ResourceReference;
 import com.researchspace.model.collection.ResourceRegistry.RelationshipQueryPath;
 import com.researchspace.model.collection.ResourceRegistry.TargetQueryField;
 import com.researchspace.model.collection.RuntimeFieldBinding;
@@ -21,8 +28,6 @@ import com.researchspace.model.collection.RuntimeFieldSelection;
 import com.researchspace.model.collection.RuntimeFieldValueType;
 import com.researchspace.model.collection.SplitReferenceBinding;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -84,15 +89,16 @@ public final class RsqlCollectionQuery {
     if (constraint == null) {
       return null;
     }
-    State state = new State(parameterPrefix, targets, RuntimeFieldSelection.empty(), false);
+    RsqlCompilationState state =
+        new RsqlCompilationState(parameterPrefix, targets, RuntimeFieldSelection.empty(), false);
     return new Predicate(compileConstraint(constraint, state), state.parameters, state.subqueries);
   }
 
   /** Compiles the SQL-level read rule for one described relationship. */
   public Predicate compileReadableRelationship(
       String relationshipName, RelationshipReadAccess targets) {
-    State state =
-        new State(
+    RsqlCompilationState state =
+        new RsqlCompilationState(
             parameterPrefix,
             java.util.Objects.requireNonNull(targets, "Target access"),
             RuntimeFieldSelection.empty(),
@@ -110,7 +116,8 @@ public final class RsqlCollectionQuery {
     if (filter == null) {
       return null;
     }
-    State state = new State(parameterPrefix, targets, runtime, enforceComplexityLimit);
+    RsqlCompilationState state =
+        new RsqlCompilationState(parameterPrefix, targets, runtime, enforceComplexityLimit);
     return new Predicate(compile(filter, state), state.parameters, state.subqueries);
   }
 
@@ -139,7 +146,7 @@ public final class RsqlCollectionQuery {
     }
   }
 
-  private String compile(FilterExpression filter, State state) {
+  private String compile(FilterExpression filter, RsqlCompilationState state) {
     if (filter instanceof FilterExpression.Comparison comparison) {
       return compileComparison(comparison, state);
     }
@@ -152,7 +159,7 @@ public final class RsqlCollectionQuery {
     throw new IllegalStateException("Unsupported filter expression " + filter.getClass());
   }
 
-  private String compileConstraint(QueryConstraint constraint, State state) {
+  private String compileConstraint(QueryConstraint constraint, RsqlCompilationState state) {
     if (constraint instanceof FilterExpression filter) {
       return compile(filter, state);
     }
@@ -166,7 +173,7 @@ public final class RsqlCollectionQuery {
   }
 
   private String compileConstraintLogical(
-      List<QueryConstraint> children, String separator, State state) {
+      List<QueryConstraint> children, String separator, RsqlCompilationState state) {
     return children.stream()
         .map(child -> compileConstraint(child, state))
         .reduce((left, right) -> left + separator + right)
@@ -174,7 +181,8 @@ public final class RsqlCollectionQuery {
         .orElseThrow();
   }
 
-  private String compileLogical(List<FilterExpression> children, String separator, State state) {
+  private String compileLogical(
+      List<FilterExpression> children, String separator, RsqlCompilationState state) {
     return children.stream()
         .map(child -> compile(child, state))
         .reduce((left, right) -> left + separator + right)
@@ -182,7 +190,8 @@ public final class RsqlCollectionQuery {
         .orElseThrow(() -> new CollectionQueryException(CollectionQueryException.Reason.SYNTAX));
   }
 
-  private String compileComparison(FilterExpression.Comparison comparison, State state) {
+  private String compileComparison(
+      FilterExpression.Comparison comparison, RsqlCompilationState state) {
     ResolvedRuntimeField runtimeField = state.runtime.find(comparison.field());
     if (runtimeField != null) {
       String relationship = state.runtime.relationshipFor(comparison.field());
@@ -213,7 +222,9 @@ public final class RsqlCollectionQuery {
   }
 
   private String compileRuntimeField(
-      FilterExpression.Comparison comparison, ResolvedRuntimeField field, State state) {
+      FilterExpression.Comparison comparison,
+      ResolvedRuntimeField field,
+      RsqlCompilationState state) {
     return compileRuntimeField(
         comparison,
         field,
@@ -225,7 +236,7 @@ public final class RsqlCollectionQuery {
       FilterExpression.Comparison comparison,
       ResolvedRuntimeField field,
       String parentIdPath,
-      State state) {
+      RsqlCompilationState state) {
     Operator operator = comparison.operator();
     if (!field.definition().operators().contains(operator)) {
       throw new CollectionQueryException(CollectionQueryException.Reason.OPERATOR);
@@ -255,9 +266,8 @@ public final class RsqlCollectionQuery {
       FilterExpression.Comparison comparison,
       ResolvedRuntimeField field,
       String relationshipName,
-      State state) {
-    CollectionDescription.Relationship<?> relationship =
-        description.requireRelationship(relationshipName);
+      RsqlCompilationState state) {
+    Relationship<?> relationship = description.requireRelationship(relationshipName);
     if (relationship.targets().size() != 1) {
       throw new CollectionQueryException(CollectionQueryException.Reason.FIELD);
     }
@@ -274,7 +284,7 @@ public final class RsqlCollectionQuery {
       FilterExpression.Comparison comparison,
       ResolvedRuntimeField field,
       String valuePath,
-      State state) {
+      RsqlCompilationState state) {
     Operator operator = comparison.operator();
     String present = "(" + valuePath + " IS NOT NULL AND " + valuePath + " <> '')";
     if (operator == Operator.EXISTS) {
@@ -290,7 +300,7 @@ public final class RsqlCollectionQuery {
   }
 
   private String numericComparison(
-      FilterExpression.Comparison comparison, String valuePath, State state) {
+      FilterExpression.Comparison comparison, String valuePath, RsqlCompilationState state) {
     String numeric = NUMERIC + "(" + valuePath + ")";
     Operator operator = comparison.operator();
     if (operator == Operator.IN || operator == Operator.NOT_IN) {
@@ -308,7 +318,7 @@ public final class RsqlCollectionQuery {
   }
 
   private String textComparison(
-      FilterExpression.Comparison comparison, String valuePath, State state) {
+      FilterExpression.Comparison comparison, String valuePath, RsqlCompilationState state) {
     Operator operator = comparison.operator();
     if (operator == Operator.IN || operator == Operator.NOT_IN) {
       String parameter = state.add(comparison.values());
@@ -333,7 +343,7 @@ public final class RsqlCollectionQuery {
   }
 
   private String choiceMembership(
-      FilterExpression.Comparison comparison, String valuePath, State state) {
+      FilterExpression.Comparison comparison, String valuePath, RsqlCompilationState state) {
     List<String> disjuncts = new ArrayList<>();
     for (Object value : comparison.values()) {
       state.recordLikePredicate();
@@ -346,12 +356,10 @@ public final class RsqlCollectionQuery {
     return "(" + String.join(" OR ", disjuncts) + ")";
   }
 
-  private static String jsonQuoted(String value) {
-    return JacksonUtil.toJson(value);
-  }
-
   private String compileProperty(
-      FilterExpression.Comparison comparison, FilterSelector.Property<?> property, State state) {
+      FilterExpression.Comparison comparison,
+      FilterSelector.Property<?> property,
+      RsqlCompilationState state) {
     Operator operator = comparison.operator();
     String path = alias + "." + property.property();
     if (operator == Operator.EXISTS) {
@@ -390,7 +398,8 @@ public final class RsqlCollectionQuery {
    * registration and its DAO add that rule. A subquery receives neither. If the subquery omits the
    * rule, a caller can find unreadable records by observing which rows match.
    */
-  private String compileRelationshipField(FilterExpression.Comparison comparison, State state) {
+  private String compileRelationshipField(
+      FilterExpression.Comparison comparison, RsqlCompilationState state) {
     RelationshipQueryPath path =
         state
             .targets
@@ -416,7 +425,7 @@ public final class RsqlCollectionQuery {
       FilterExpression.Comparison comparison,
       RelationshipQueryPath path,
       TargetQueryField targetField,
-      State state) {
+      RsqlCompilationState state) {
     RelationshipTarget<?> target = targetField.target();
     CollectionDescription<?> targetDescription = state.targets.description(target.resourceName());
     if (targetDescription == null) {
@@ -455,11 +464,11 @@ public final class RsqlCollectionQuery {
   }
 
   private List<String> correlation(
-      CollectionDescription.Relationship<?> relationship,
+      Relationship<?> relationship,
       RelationshipTarget<?> target,
       CollectionDescription<?> targetDescription,
       String targetAlias,
-      State state) {
+      RsqlCompilationState state) {
     SplitReferenceBinding<?, ?, ?> binding = relationship.binding();
     List<String> conjuncts = new ArrayList<>();
     conjuncts.add(
@@ -479,7 +488,7 @@ public final class RsqlCollectionQuery {
   private String compileRelationship(
       FilterExpression.Comparison comparison,
       FilterSelector.RelationshipPart<?> selector,
-      State state) {
+      RsqlCompilationState state) {
     String readable = compileReadableRelationship(selector.relationship(), state);
     SplitReferenceBinding<?, ?, ?> binding = selector.relationship().binding();
     String kindPath = alias + "." + binding.kindProperty();
@@ -504,7 +513,7 @@ public final class RsqlCollectionQuery {
   }
 
   private String compileReadableRelationship(
-      CollectionDescription.Relationship<?> relationship, State state) {
+      Relationship<?> relationship, RsqlCompilationState state) {
     List<String> readableTargets = new ArrayList<>();
     for (RelationshipTarget<?> target : relationship.targets()) {
       CollectionDescription<?> targetDescription = state.targets.description(target.resourceName());
@@ -538,7 +547,10 @@ public final class RsqlCollectionQuery {
   }
 
   private String compileReference(
-      FilterExpression.Comparison comparison, String kindPath, String idPath, State state) {
+      FilterExpression.Comparison comparison,
+      String kindPath,
+      String idPath,
+      RsqlCompilationState state) {
     Operator operator = comparison.operator();
     if (operator == Operator.EXISTS) {
       boolean exists = Boolean.TRUE.equals(comparison.values().get(0));
@@ -557,119 +569,5 @@ public final class RsqlCollectionQuery {
       case NOT_EQUAL, NOT_IN -> "NOT " + pairs;
       default -> throw new CollectionQueryException(CollectionQueryException.Reason.OPERATOR);
     };
-  }
-
-  private static String referencePair(Object value, String kindPath, String idPath, State state) {
-    if (!(value instanceof ResourceReference<?, ?> reference)) {
-      throw new CollectionQueryException(CollectionQueryException.Reason.VALUE);
-    }
-    return "("
-        + kindPath
-        + " = :"
-        + state.add(reference.kind())
-        + " AND "
-        + idPath
-        + " = :"
-        + state.add(reference.id())
-        + ")";
-  }
-
-  private static String symbol(Operator operator) {
-    return switch (operator) {
-      case EQUAL -> "=";
-      case NOT_EQUAL -> "<>";
-      case GREATER_THAN -> ">";
-      case GREATER_THAN_OR_EQUAL -> ">=";
-      case LESS_THAN -> "<";
-      case LESS_THAN_OR_EQUAL -> "<=";
-      default -> throw new CollectionQueryException(CollectionQueryException.Reason.OPERATOR);
-    };
-  }
-
-  private static String wordsLike(String path, String value, State state) {
-    return Arrays.stream(value.trim().split("\\s+"))
-        .map(
-            word -> {
-              state.recordLikePredicate();
-              return like(path, state.add("%" + escapeLike(word) + "%"), false);
-            })
-        .reduce((left, right) -> left + " AND " + right)
-        .map(expression -> "(" + expression + ")")
-        .orElseThrow(() -> new CollectionQueryException(CollectionQueryException.Reason.VALUE));
-  }
-
-  private static String like(String path, String parameter, boolean negated) {
-    return "LOWER("
-        + path
-        + ") "
-        + (negated ? "NOT LIKE" : "LIKE")
-        + " LOWER(:"
-        + parameter
-        + ") ESCAPE '!'";
-  }
-
-  // ponytail: '*' is always a wildcard here, so a value containing a literal '*' can never be
-  // matched by EQUAL/NOT_EQUAL. Add a '\*' escape convention in RsqlFilterParser if that's needed.
-  private static String wildcardPattern(String value) {
-    return escapeLike(value).replace('*', '%');
-  }
-
-  private static String escapeLike(String value) {
-    return value.replace("!", "!!").replace("%", "!%").replace("_", "!_");
-  }
-
-  private static final class State {
-
-    private final String prefix;
-    private final RelationshipReadAccess targets;
-    private final RuntimeFieldSelection runtime;
-    private final boolean enforceComplexityLimit;
-    private int sequence;
-    private int likePredicates;
-    private int targetAliases;
-    private final Map<String, Object> parameters = new LinkedHashMap<>();
-    private final Map<String, Subquery> subqueries = new LinkedHashMap<>();
-
-    private State(
-        String prefix,
-        RelationshipReadAccess targets,
-        RuntimeFieldSelection runtime,
-        boolean enforceComplexityLimit) {
-      this.prefix = prefix;
-      this.targets = targets;
-      this.runtime = runtime;
-      this.enforceComplexityLimit = enforceComplexityLimit;
-    }
-
-    /** A distinct alias per subquery, so nested targets cannot shadow each other. */
-    private String nextTargetAlias() {
-      return prefix + "Target" + targetAliases++;
-    }
-
-    /** Folds a separately compiled predicate in, keeping its already-distinct parameter names. */
-    private String merge(Predicate predicate) {
-      parameters.putAll(predicate.parameters());
-      subqueries.putAll(predicate.subqueries());
-      return predicate.expression();
-    }
-
-    /** A placeholder distinct from the subquery's own entity alias, which Blaze also parses. */
-    private String addSubquery(Subquery subquery) {
-      String name = subquery.alias() + "Sub";
-      subqueries.put(name, subquery);
-      return name;
-    }
-
-    private String add(Object value) {
-      String name = prefix + sequence++;
-      parameters.put(name, value);
-      return name;
-    }
-
-    private void recordLikePredicate() {
-      if (enforceComplexityLimit && ++likePredicates > MAX_LIKE_PREDICATES) {
-        throw new CollectionQueryException(CollectionQueryException.Reason.COMPLEXITY);
-      }
-    }
   }
 }

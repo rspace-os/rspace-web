@@ -1,6 +1,5 @@
 package com.researchspace.model.collection;
 
-import com.researchspace.model.collection.CollectionDescription.Relationship;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -404,7 +403,7 @@ public final class ResourceRenderer {
       Map<String, Object> document, CollectionDescription<?> description, FieldSelection fields) {
     Map<String, Object> selected = new LinkedHashMap<>();
     description.fields().stream()
-        .map(CollectionDescription.Field::name)
+        .map(Field::name)
         .filter(field -> fields.includes(field, description.idField()))
         .filter(document::containsKey)
         .forEach(field -> selected.put(field, document.get(field)));

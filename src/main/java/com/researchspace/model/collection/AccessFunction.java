@@ -147,10 +147,7 @@ public interface AccessFunction {
           }
           return AccessResult.allowedWhere(
               new FilterExpression.Comparison(
-                  idField,
-                  CollectionDescription.Operator.EQUAL,
-                  List.of(context.user().getId()),
-                  false));
+                  idField, Operator.EQUAL, List.of(context.user().getId()), false));
         });
   }
 

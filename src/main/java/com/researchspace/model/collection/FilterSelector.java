@@ -1,6 +1,5 @@
 package com.researchspace.model.collection;
 
-import com.researchspace.model.collection.CollectionDescription.Operator;
 import java.util.Objects;
 import java.util.Set;
 
@@ -123,8 +122,7 @@ public sealed interface FilterSelector<T>
     }
   }
 
-  record RelationshipPart<T>(
-      String name, CollectionDescription.Relationship<T> relationship, RelationshipComponent part)
+  record RelationshipPart<T>(String name, Relationship<T> relationship, RelationshipComponent part)
       implements FilterSelector<T> {
 
     private static final Set<Operator> OPERATORS =

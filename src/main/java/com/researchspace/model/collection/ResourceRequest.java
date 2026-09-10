@@ -1,6 +1,5 @@
 package com.researchspace.model.collection;
 
-import com.researchspace.model.collection.CollectionDescription.Sort;
 import java.util.List;
 import java.util.Objects;
 

@@ -1,6 +1,5 @@
 package com.researchspace.model.collection;
 
-import com.researchspace.model.collection.CollectionDescription.WriteOperation;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;

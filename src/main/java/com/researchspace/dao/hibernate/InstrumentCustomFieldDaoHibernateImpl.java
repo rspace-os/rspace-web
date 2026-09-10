@@ -107,26 +107,26 @@ public class InstrumentCustomFieldDaoHibernateImpl implements InstrumentCustomFi
     query.whereExpression(DEFINITION_ALIAS + ".type IN :publishedTypes");
     query.setParameter("publishedTypes", types);
     query.whereExpression(DEFINITION_ALIAS + ".templateField IS NULL");
-    String correlation =
-        COPY_ALIAS
-            + ".templateField.id = "
-            + DEFINITION_ALIAS
-            + ".id"
-            + " AND "
-            + COPY_ALIAS
-            + ".deleted = false"
-            + " AND "
-            + COPY_ALIAS
-            + ".instrumentEntity.id = "
-            + INSTRUMENT_ALIAS
-            + ".id";
+    StringBuilder correlation =
+        new StringBuilder(COPY_ALIAS)
+            .append(".templateField.id = ")
+            .append(DEFINITION_ALIAS)
+            .append(".id AND ")
+            .append(COPY_ALIAS)
+            .append(".deleted = false AND ")
+            .append(COPY_ALIAS)
+            .append(".instrumentEntity.id = ")
+            .append(INSTRUMENT_ALIAS)
+            .append(".id");
+    if (predicate != null) {
+      correlation.append(" AND ").append(predicate.expression());
+    }
     query
         .whereExists()
         .from(InventoryEntityField.class, COPY_ALIAS)
         .from(Instrument.class, INSTRUMENT_ALIAS)
         .select("1")
-        .whereExpression(
-            predicate == null ? correlation : correlation + " AND " + predicate.expression())
+        .whereExpression(correlation.toString())
         .end();
     if (!ids.isEmpty()) {
       query.whereExpression(DEFINITION_ALIAS + ".id IN :requestedIds");

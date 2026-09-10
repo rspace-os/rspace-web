@@ -5,9 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.researchspace.model.collection.CollectionDescription.Field;
-import com.researchspace.model.collection.CollectionDescription.Relationship;
-import com.researchspace.model.collection.CollectionDescription.Sort;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -88,7 +85,7 @@ class ResourceRegistryTest {
 
   @Test
   void exposesFieldAndRelationshipSchemaMetadata() {
-    CollectionDescription.ResourceSchema schema = PARENTS.schema();
+    ResourceSchema schema = PARENTS.schema();
 
     assertEquals("parents", schema.name());
     assertEquals(Parent.class, schema.entityType());
@@ -279,7 +276,7 @@ class ResourceRegistryTest {
             Node.class,
             nodes.fields(),
             List.of(
-                CollectionDescription.Relationship.polymorphicToOne(
+                Relationship.polymorphicToOne(
                     "target",
                     CollectionFieldTypes.longNumber(),
                     List.of(new RelationshipTarget<>("nodes", NodeKind.NODE, "IN", String.class)),
@@ -303,7 +300,7 @@ class ResourceRegistryTest {
             Node.class,
             nodes.fields(),
             List.of(
-                CollectionDescription.Relationship.polymorphicToOne(
+                Relationship.polymorphicToOne(
                     "target",
                     CollectionFieldTypes.longNumber(),
                     List.of(
@@ -336,7 +333,7 @@ class ResourceRegistryTest {
             Node.class,
             nodes().fields(),
             List.of(
-                CollectionDescription.Relationship.polymorphicToOne(
+                Relationship.polymorphicToOne(
                     "target",
                     CollectionFieldTypes.longNumber(),
                     List.of(
@@ -389,7 +386,7 @@ class ResourceRegistryTest {
             Left.class,
             List.of(Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), Left::id)),
             List.of(
-                CollectionDescription.Relationship.polymorphicToOne(
+                Relationship.polymorphicToOne(
                     "right",
                     CollectionFieldTypes.longNumber(),
                     List.of(
@@ -403,7 +400,7 @@ class ResourceRegistryTest {
             Right.class,
             List.of(Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), Right::id)),
             List.of(
-                CollectionDescription.Relationship.polymorphicToOne(
+                Relationship.polymorphicToOne(
                     "left",
                     CollectionFieldTypes.longNumber(),
                     List.of(
@@ -480,7 +477,7 @@ class ResourceRegistryTest {
         Node.class,
         nodes().fields(),
         List.of(
-            CollectionDescription.Relationship.polymorphicToOne(
+            Relationship.polymorphicToOne(
                 "target",
                 CollectionFieldTypes.longNumber(),
                 targets,
@@ -499,7 +496,7 @@ class ResourceRegistryTest {
         Node.class,
         List.of(Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), Node::id)),
         List.of(
-            CollectionDescription.Relationship.polymorphicToOne(
+            Relationship.polymorphicToOne(
                 "target",
                 CollectionFieldTypes.longNumber(),
                 List.of(new RelationshipTarget<>("nodes", NodeKind.NODE, "IN", Node.class)),

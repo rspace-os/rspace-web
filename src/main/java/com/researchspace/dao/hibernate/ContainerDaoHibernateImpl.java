@@ -223,27 +223,27 @@ public class ContainerDaoHibernateImpl extends InventoryDaoHibernate<Container, 
     String childSubSample =
         getInventoryReadPermissionSqlPredicate(
             actor, groupMembers, groupNames, List.of(), "childSubSample.sample.");
-    String hql =
-        "select container.id from Container container "
-            + "where container.id in (:containerIds) and container.deleted=false and ("
-            + directContainer
-            + " or exists (select location.id from ContainerLocation location "
-            + "join location.storedContainer childContainer "
-            + "where location.container=container and childContainer.deleted=false and "
-            + childContainer
-            + ") or exists (select location.id from ContainerLocation location "
-            + "join location.storedInstrument childInstrument "
-            + "where location.container=container and childInstrument.deleted=false and "
-            + childInstrument
-            + ") or exists (select location.id from ContainerLocation location "
-            + "join location.storedSubSample childSubSample "
-            + "where location.container=container and childSubSample.deleted=false and "
-            + childSubSample
-            + "))";
+    StringBuilder hql =
+        new StringBuilder("select container.id from Container container ")
+            .append("where container.id in (:containerIds) and container.deleted=false and (")
+            .append(directContainer)
+            .append(" or exists (select location.id from ContainerLocation location ")
+            .append("join location.storedContainer childContainer ")
+            .append("where location.container=container and childContainer.deleted=false and ")
+            .append(childContainer)
+            .append(") or exists (select location.id from ContainerLocation location ")
+            .append("join location.storedInstrument childInstrument ")
+            .append("where location.container=container and childInstrument.deleted=false and ")
+            .append(childInstrument)
+            .append(") or exists (select location.id from ContainerLocation location ")
+            .append("join location.storedSubSample childSubSample ")
+            .append("where location.container=container and childSubSample.deleted=false and ")
+            .append(childSubSample)
+            .append("))");
     Query<Long> query =
         sessionFactory
             .getCurrentSession()
-            .createQuery(hql, Long.class)
+            .createQuery(hql.toString(), Long.class)
             .setParameterList("containerIds", containerIds);
     addQueryParams(null, actor, query, visibleOwners, groupMembers, groupNames);
     return new LinkedHashSet<>(query.list());

@@ -6,13 +6,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.inventory.model.ApiV2InstrumentResource;
 import com.researchspace.model.collection.CollectionDescription;
-import com.researchspace.model.collection.CollectionDescription.Field;
-import com.researchspace.model.collection.CollectionDescription.Operator;
-import com.researchspace.model.collection.CollectionDescription.Sort;
 import com.researchspace.model.collection.CollectionFieldTypes;
+import com.researchspace.model.collection.Field;
 import com.researchspace.model.collection.FieldSelection;
 import com.researchspace.model.collection.FilterExpression;
 import com.researchspace.model.collection.IncludeTree;
+import com.researchspace.model.collection.Operator;
+import com.researchspace.model.collection.Relationship;
 import com.researchspace.model.collection.RelationshipTarget;
 import com.researchspace.model.collection.ResolvedRuntimeField;
 import com.researchspace.model.collection.ResourceFieldSelections;
@@ -23,6 +23,7 @@ import com.researchspace.model.collection.RuntimeFieldDefinition;
 import com.researchspace.model.collection.RuntimeFieldNamespaces;
 import com.researchspace.model.collection.RuntimeFieldSelection;
 import com.researchspace.model.collection.RuntimeFieldValueType;
+import com.researchspace.model.collection.Sort;
 import com.researchspace.model.collection.SplitReferenceBinding;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.field.ExtraTextField;
@@ -259,7 +260,7 @@ class IndexedTextNarrowingTest {
         Related.class,
         List.of(Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), Related::id)),
         List.of(
-            CollectionDescription.Relationship.polymorphicToOne(
+            Relationship.polymorphicToOne(
                 "target",
                 CollectionFieldTypes.longNumber(),
                 List.of(

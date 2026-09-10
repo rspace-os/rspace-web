@@ -9,7 +9,6 @@ import static cz.jirutka.rsql.parser.ast.RSQLOperators.LESS_THAN_OR_EQUAL;
 import static cz.jirutka.rsql.parser.ast.RSQLOperators.NOT_EQUAL;
 import static cz.jirutka.rsql.parser.ast.RSQLOperators.NOT_IN;
 
-import com.researchspace.model.collection.CollectionDescription.Operator;
 import cz.jirutka.rsql.parser.RSQLParser;
 import cz.jirutka.rsql.parser.RSQLParserException;
 import cz.jirutka.rsql.parser.ast.AndNode;
@@ -225,7 +224,7 @@ public final class RsqlFilterParser {
     if (dot <= 0 || dot == name.length() - 1) {
       return null;
     }
-    CollectionDescription.Relationship<?> relationship =
+    Relationship<?> relationship =
         description.findRelationship(name.substring(0, dot)).orElse(null);
     if (relationship == null || relationship.targets().size() != 1) {
       return null;
