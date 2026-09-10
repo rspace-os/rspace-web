@@ -1,5 +1,6 @@
 package com.researchspace.netfiles.s3;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -122,7 +123,7 @@ public class S3NfsClientTest {
 
     IOException ex =
         assertThrows(IOException.class, () -> client.uploadFile(source, "dest/folder"));
-    assertTrue(ex.getMessage().contains("already exists"));
+    assertThat(ex.getMessage()).contains("already exists");
     verify(s3Utilities, never()).uploadToS3(any(), any(), any());
   }
 
@@ -188,7 +189,7 @@ public class S3NfsClientTest {
     NfsFileTreeNode root = client.createFileTree("", null, null);
 
     verify(s3Utilities).listFolderContents("");
-    assertEquals(1, root.getNodes().size());
+    assertThat(root.getNodes()).hasSize(1);
   }
 
   @Test
@@ -397,7 +398,7 @@ public class S3NfsClientTest {
         assertThrows(
             IOException.class,
             () -> client.copyObject("source/huge.bin", dest.client, "dest/huge.bin"));
-    assertTrue(ex.getMessage().contains("5"));
+    assertThat(ex.getMessage()).contains("5");
     verify(dest.mockS3Utilities, never()).copyObjectFromBucket(any(), any(), any(), any());
   }
 
@@ -411,7 +412,7 @@ public class S3NfsClientTest {
         assertThrows(
             IOException.class,
             () -> client.copyObject("source/file.txt", dest.client, "dest/file.txt"));
-    assertTrue(ex.getMessage().contains("already exists"));
+    assertThat(ex.getMessage()).contains("already exists");
     verify(dest.mockS3Utilities, never()).copyObjectFromBucket(any(), any(), any(), any());
   }
 
@@ -427,7 +428,7 @@ public class S3NfsClientTest {
         assertThrows(
             IOException.class,
             () -> client.copyObject("source/photos", dest.client, "dest/photos"));
-    assertTrue(ex.getMessage().contains("already exists"));
+    assertThat(ex.getMessage()).contains("already exists");
     verify(dest.mockS3Utilities, never()).copyObjectFromBucket(any(), any(), any(), any());
   }
 
@@ -478,7 +479,7 @@ public class S3NfsClientTest {
     assertEquals("testTarget", rootNode.getFileName());
     assertEquals("testTopLevelFolder/testTarget", rootNode.getNodePath());
     assertTrue(rootNode.getIsFolder());
-    assertEquals(1, rootNode.getNodes().size());
+    assertThat(rootNode.getNodes()).hasSize(1);
 
     NfsFileTreeNode child = rootNode.getNodes().get(0);
     assertEquals("test1.txt", child.getFileName());
@@ -570,7 +571,7 @@ public class S3NfsClientTest {
     assertEquals("folder", details.getName());
     assertEquals("test/folder", details.getFileSystemFullPath());
     assertEquals("test", details.getFileSystemParentPath());
-    assertEquals(2, details.getContent().size());
+    assertThat(details.getContent()).hasSize(2);
 
     NfsResourceDetails res1 = details.getContent().get(0);
     assertEquals("file1.txt", res1.getName());

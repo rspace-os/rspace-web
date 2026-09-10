@@ -1,7 +1,7 @@
 package com.researchspace.api.v1.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -52,22 +52,22 @@ public class InstrumentsApiControllerTest extends SpringTransactionalTest {
     assertEquals("controller instrument", created.getName());
     assertNotNull(created.getOwner());
     assertEquals(testUser.getUsername(), created.getOwner().getUsername());
-    assertFalse(created.getLinks().isEmpty());
-    assertTrue(created.getLinkOfType(ApiLinkItem.SELF_REL).isPresent());
-    assertTrue(
-        created
-            .getLinkOfType(ApiLinkItem.SELF_REL)
-            .orElseThrow(() -> new IllegalStateException("missing self link"))
-            .getLink()
-            .endsWith("/api/inventory/v1/instruments/" + created.getId()));
+    assertThat(created.getLinks()).isNotEmpty();
+    assertThat(created.getLinkOfType(ApiLinkItem.SELF_REL)).isPresent();
+    assertThat(
+            created
+                .getLinkOfType(ApiLinkItem.SELF_REL)
+                .orElseThrow(() -> new IllegalStateException("missing self link"))
+                .getLink())
+        .endsWith("/api/inventory/v1/instruments/" + created.getId());
 
     ApiInstrument retrieved = instrumentsApi.getInstrumentById(created.getId(), testUser);
     assertNotNull(retrieved);
     assertEquals(created.getId(), retrieved.getId());
     assertEquals(created.getName(), retrieved.getName());
     assertEquals(testUser.getUsername(), retrieved.getOwner().getUsername());
-    assertFalse(retrieved.getLinks().isEmpty());
-    assertTrue(retrieved.getLinkOfType(ApiLinkItem.SELF_REL).isPresent());
+    assertThat(retrieved.getLinks()).isNotEmpty();
+    assertThat(retrieved.getLinkOfType(ApiLinkItem.SELF_REL)).isPresent();
   }
 
   @Test
@@ -133,8 +133,8 @@ public class InstrumentsApiControllerTest extends SpringTransactionalTest {
             NotFoundException.class,
             () -> instrumentsApi.getInstrumentById(Long.MAX_VALUE, testUser));
 
-    assertTrue(notFoundException.getMessage().contains("Inventory Instrument"));
-    assertTrue(notFoundException.getMessage().contains(Long.toString(Long.MAX_VALUE)));
+    assertThat(notFoundException.getMessage()).contains("Inventory Instrument");
+    assertThat(notFoundException.getMessage()).contains(Long.toString(Long.MAX_VALUE));
   }
 
   /**

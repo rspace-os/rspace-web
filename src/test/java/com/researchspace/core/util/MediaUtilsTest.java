@@ -4,6 +4,7 @@ import static com.researchspace.core.util.MediaUtils.DOCUMENT_MEDIA_FLDER_NAME;
 import static com.researchspace.core.util.MediaUtils.IMAGES_MEDIA_FLDER_NAME;
 import static com.researchspace.core.util.MediaUtils.extractFileTypeFromPath;
 import static com.researchspace.core.util.MediaUtils.getSupportedFileTypesForGallerySection;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -12,7 +13,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
 import java.util.List;
-import org.apache.commons.lang3.ArrayUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -30,7 +30,7 @@ class MediaUtilsTest {
   @ParameterizedTest
   @MethodSource("getInsertableGalleryMediaFolders")
   void getExtensionsForGalleryFiles(String galleryFolder) {
-    assertTrue(getSupportedFileTypesForGallerySection(galleryFolder).length > 0);
+    assertThat(getSupportedFileTypesForGallerySection(galleryFolder)).hasSizeGreaterThan(0);
   }
 
   static String[] getInsertableGalleryMediaFolders() {
@@ -39,16 +39,12 @@ class MediaUtilsTest {
 
   @Test
   void getExtensionsForImageGallery() {
-    assertTrue(
-        ArrayUtils.contains(
-            getSupportedFileTypesForGallerySection(IMAGES_MEDIA_FLDER_NAME), "png"));
+    assertThat(getSupportedFileTypesForGallerySection(IMAGES_MEDIA_FLDER_NAME)).contains("png");
   }
 
   @Test
   void getExtensionsForDocumentGallery() {
-    assertTrue(
-        ArrayUtils.contains(
-            getSupportedFileTypesForGallerySection(DOCUMENT_MEDIA_FLDER_NAME), "md"));
+    assertThat(getSupportedFileTypesForGallerySection(DOCUMENT_MEDIA_FLDER_NAME)).contains("md");
   }
 
   @Test
@@ -76,9 +72,8 @@ class MediaUtilsTest {
 
   @Test
   void testDMPsNotUploadable() {
-    assertFalse(
-        Arrays.stream(getInsertableGalleryMediaFolders())
-            .anyMatch(s -> s.equals(MediaUtils.DMP_MEDIA_FLDER_NAME)));
+    assertThat(Arrays.stream(getInsertableGalleryMediaFolders()))
+        .noneMatch(s -> s.equals(MediaUtils.DMP_MEDIA_FLDER_NAME));
   }
 
   @Test
@@ -114,13 +109,13 @@ class MediaUtilsTest {
   @Test
   void getUniqueFileName() {
     String originalFileName = "abcde.pdf";
-    assertTrue(MediaUtils.makeFileNameUnique(originalFileName).matches("abcde_\\d+\\.pdf"));
+    assertThat(MediaUtils.makeFileNameUnique(originalFileName)).matches("abcde_\\d+\\.pdf");
   }
 
   @Test
   void supportedDNATypes() {
     List<String> dnaNameStrings = MediaUtils.supportedDNATypes();
-    assertTrue(dnaNameStrings.contains("gb"));
+    assertThat(dnaNameStrings).contains("gb");
     assertThrows(UnsupportedOperationException.class, () -> dnaNameStrings.add("pdb"));
   }
 }

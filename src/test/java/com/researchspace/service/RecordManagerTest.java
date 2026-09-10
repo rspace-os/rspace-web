@@ -7,6 +7,7 @@ import static com.researchspace.core.util.TransformerUtils.toSet;
 import static com.researchspace.model.record.BaseRecord.DEFAULT_VARCHAR_LENGTH;
 import static com.researchspace.testutils.RSpaceTestUtils.login;
 import static com.researchspace.testutils.RSpaceTestUtils.logoutCurrUserAndLoginAs;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -157,12 +158,12 @@ public class RecordManagerTest extends SpringTransactionalTest {
     final int galleryFolders = 8;
     Folder mediaRecord = folderDao.getGalleryRootFolderForUser(user);
     assertTrue(mediaRecord.isSystemFolder());
-    assertEquals(galleryFolders, mediaRecord.getChildren().size());
-    assertTrue(mediaRecord.getSubfolders().stream().allMatch(subF -> subF.isSystemFolder()));
+    assertThat(mediaRecord.getChildren()).hasSize(galleryFolders);
+    assertThat(mediaRecord.getSubfolders()).allMatch(subF -> subF.isSystemFolder());
 
     Folder imges = recordMgr.getGalleryMediaFolderForUser(IMAGES_MEDIA_FLDER_NAME, user);
     Set<BaseRecord> imgGalleryContent = imges.getChildrens();
-    assertEquals(2, imgGalleryContent.size()); // 'examples' folder + apifolder only
+    assertThat(imgGalleryContent).hasSize(2); // 'examples' folder + apifolder only
 
     Folder examplesGallery =
         (Folder)
@@ -198,7 +199,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
         recordMgr.listFolderRecords(root.getId(), DEFAULT_RECORD_PAGINATION);
     assertEquals((int) totalRecordNumber, res.getTotalHits().intValue());
 
-    assertEquals(IPagination.DEFAULT_RESULTS_PERPAGE, res.getResults().size());
+    assertThat(res.getResults()).hasSize(IPagination.DEFAULT_RESULTS_PERPAGE);
     assertEquals((res.getTotalHits().intValue() / defPag) + 1, res.getTotalPages().intValue());
 
     // last page should have less elements
@@ -334,12 +335,12 @@ public class RecordManagerTest extends SpringTransactionalTest {
     String newName = "newname";
     Folder copied = folderMgr.copy(cf1.getId(), user, newName).getParentCopy();
     flushDatabaseState();
-    assertEquals(cf1.getChildren().size(), copied.getChildren().size());
+    assertThat(copied.getChildren()).hasSize(cf1.getChildren().size());
     assertEquals(newName, copied.getName());
 
     Folder f = folderDao.getRootRecordForUser(user);
     // original + copy
-    assertEquals(numberb4 + 1, f.getChildren().size());
+    assertThat(f.getChildren()).hasSize(numberb4 + 1);
     assertEquals(
         numb4InDB + 1,
         recordMgr
@@ -410,13 +411,13 @@ public class RecordManagerTest extends SpringTransactionalTest {
     // create snippet
     Snippet snippet = recordMgr.createSnippet("testSnip", field.getFieldData(), user);
     // check record attachment was created
-    assertEquals(1, snippet.getLinkedMediaFiles().size());
+    assertThat(snippet.getLinkedMediaFiles()).hasSize(1);
 
     // create new document
     StructuredDocument targetDoc = createBasicDocumentInRootFolderWithText(user, "text1");
     Field targetField = targetDoc.getFields().get(0);
     // check record attachments are initially empty
-    assertEquals(0, targetField.getLinkedMediaFiles().size());
+    assertThat(targetField.getLinkedMediaFiles()).isEmpty();
 
     // insert snippet
     recordMgr.copySnippetIntoField(snippet.getId(), targetField.getId(), user);
@@ -424,7 +425,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
     // check correct field attachments are created
     Field updatedTargetField = fieldDao.get(targetField.getId());
     Set<FieldAttachment> targetLinkedMedia = updatedTargetField.getLinkedMediaFiles();
-    assertEquals(1, targetLinkedMedia.size());
+    assertThat(targetLinkedMedia).hasSize(1);
 
     FieldAttachment firstTargetAttachment = (FieldAttachment) targetLinkedMedia.toArray()[0];
     EcatMediaFile firstTargetMediaFile = firstTargetAttachment.getMediaFile();
@@ -485,12 +486,12 @@ public class RecordManagerTest extends SpringTransactionalTest {
     addUsersToGroup(pi, gp);
     logoutAndLoginAs(pi);
     StructuredDocument doc = createBasicDocumentInRootFolderWithText(pi, "text1");
-    assertEquals(1, doc.getParents().size());
+    assertThat(doc.getParents()).hasSize(1);
     assertEquals(pi.getRootFolder().getId(), doc.getParent().getId());
 
     // share a document with group
     doc = shareRecordWithGroup(pi, gp, doc).getShared().asStrucDoc();
-    assertEquals(2, doc.getParents().size());
+    assertThat(doc.getParents()).hasSize(2);
 
     // copy the doc and assert it's in the right folder
     RecordCopyResult result = recordMgr.copy(doc.getId(), "PIcopy", pi, null);
@@ -512,7 +513,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
     // create snippet
     Snippet snippet = recordMgr.createSnippet("testSnip", field.getFieldData(), user);
     // check there is single record attachment for image that is annotated
-    assertEquals(1, snippet.getLinkedMediaFiles().size());
+    assertThat(snippet.getLinkedMediaFiles()).hasSize(1);
 
     // create new document
     StructuredDocument targetDoc = createBasicDocumentInRootFolderWithText(user, "text1");
@@ -521,7 +522,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
     // check no annotations linked yet
     List<EcatImageAnnotation> initialAnnotations =
         imageAnnotationDao.getAllImageAnnotationsFromField(targetField.getId());
-    assertEquals(0, initialAnnotations.size());
+    assertThat(initialAnnotations).isEmpty();
 
     // insert snippet
     recordMgr.copySnippetIntoField(snippet.getId(), targetField.getId(), user);
@@ -529,7 +530,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
     // check the sketch was also copied fine
     List<EcatImageAnnotation> finalAnnotations =
         imageAnnotationDao.getAllImageAnnotationsFromField(targetField.getId());
-    assertEquals(2, finalAnnotations.size());
+    assertThat(finalAnnotations).hasSize(2);
 
     EcatImageAnnotation copiedImageAnnotation = finalAnnotations.get(0);
     assertNotEquals(imageAnnotation.getId(), copiedImageAnnotation.getId());
@@ -542,7 +543,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
     // check that field attachment is created for image
     Field updatedTargetField = fieldDao.get(targetField.getId());
     Set<FieldAttachment> targetLinkedMedia = updatedTargetField.getLinkedMediaFiles();
-    assertEquals(1, targetLinkedMedia.size());
+    assertThat(targetLinkedMedia).hasSize(1);
   }
 
   @Test
@@ -590,16 +591,15 @@ public class RecordManagerTest extends SpringTransactionalTest {
     StructuredDocument child =
         recordMgr.createNewStructuredDocument(root.getId(), anyForm.getId(), user);
 
-    assertEquals(
-        anyForm.getNumActiveFields(),
-        fieldDao.getFieldFromStructuredDocument(child.getId()).size());
+    assertThat(fieldDao.getFieldFromStructuredDocument(child.getId()))
+        .hasSize(anyForm.getNumActiveFields());
     EcatComment commnt = createCommentWithItem();
     commnt.setParentId(child.getId());
     commnt.setRecord(child);
     commentManager.addComment(commnt);
     // mgr.requestRecordEdit(child.getId(), TESTUSER,
     // Collections.EMPTY_SET);
-    assertEquals(1, commentManager.getCommentAll(child.getId()).size());
+    assertThat(commentManager.getCommentAll(child.getId())).hasSize(1);
 
     flushDatabaseState();
     long numAfterInDB =
@@ -617,7 +617,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
       // since a record can belong to multiple folders, if it is shared
       StructuredDocument childDeleted = (StructuredDocument) recordMgr.get(child.getId());
       assertFalse(childDeleted.isDeleted());
-      assertEquals(1, childDeleted.getParents().size());
+      assertThat(childDeleted.getParents()).hasSize(1);
       RecordToFolder rtf = childDeleted.getParents().iterator().next();
       assertEquals(root, rtf.getFolder());
       assertTrue(rtf.isRecordInFolderDeleted());
@@ -627,10 +627,10 @@ public class RecordManagerTest extends SpringTransactionalTest {
     }
 
     // check comments are NOT deleted too
-    assertEquals(1, commentManager.getCommentAll(child.getId()).size());
+    assertThat(commentManager.getCommentAll(child.getId())).hasSize(1);
     // check fields NOT deleted too.
 
-    assertEquals(numFields, fieldDao.getFieldFromStructuredDocument(child.getId()).size());
+    assertThat(fieldDao.getFieldFromStructuredDocument(child.getId())).hasSize(numFields);
 
     // check form is NOT deleted
     long numFormsAfterDelete = formDao.getAll().size();
@@ -706,7 +706,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
     // retrieve latest doc/field
     Field latestField =
         recordMgr.getRecordWithFields(basicDoc.getId(), user).asStrucDoc().getFields().get(0);
-    assertEquals(1, latestField.getListsOfMaterials().size());
+    assertThat(latestField.getListsOfMaterials()).hasSize(1);
     assertEquals("basic list of materials", latestField.getListsOfMaterials().get(0).getName());
     assertEquals(
         "mySubSample",
@@ -738,7 +738,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
     // retrieve latest doc/field again
     latestField =
         recordMgr.getRecordWithFields(basicDoc.getId(), user).asStrucDoc().getFields().get(0);
-    assertEquals(1, latestField.getListsOfMaterials().size());
+    assertThat(latestField.getListsOfMaterials()).hasSize(1);
     assertEquals("updated", latestField.getListsOfMaterials().get(0).getName());
 
     // now delete list of materials
@@ -747,7 +747,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
     // retrieve latest doc/field again
     latestField =
         recordMgr.getRecordWithFields(basicDoc.getId(), user).asStrucDoc().getFields().get(0);
-    assertEquals(0, latestField.getListsOfMaterials().size());
+    assertThat(latestField.getListsOfMaterials()).isEmpty();
   }
 
   @Test
@@ -836,7 +836,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
     // copied document should point to copied annotation, not the original one
     List<EcatImageAnnotation> anns =
         imageAnnotationDao.getAllImageAnnotationsFromField(txtFldCpy.getId());
-    assertEquals(1, anns.size());
+    assertThat(anns).hasSize(1);
     assertNotEquals(ann.getId(), anns.get(0).getId());
     assertNotEquals(txtFld.getFieldData(), txtFldCpy.getFieldData());
   }
@@ -867,11 +867,11 @@ public class RecordManagerTest extends SpringTransactionalTest {
     Folder child2 = folderMgr.createNewFolder(root.getId(), "xxx", user);
     assertEquals("xxx", child2.getName());
 
-    assertEquals(numberb4 + 2, root.getChildren().size());
+    assertThat(root.getChildren()).hasSize(numberb4 + 2);
 
     ISearchResults<BaseRecord> noChildrens =
         recordMgr.listFolderRecords(child.getId(), DEFAULT_RECORD_PAGINATION);
-    assertEquals(0, noChildrens.getResults().size());
+    assertThat(noChildrens.getResults()).isEmpty();
   }
 
   @Test
@@ -1089,8 +1089,8 @@ public class RecordManagerTest extends SpringTransactionalTest {
     long numAfterInTarget =
         recordMgr.listFolderRecords(target.getId(), DEFAULT_RECORD_PAGINATION).getTotalHits();
     StructuredDocument child2 = (StructuredDocument) recordMgr.get(child.getId());
-    assertTrue(child2.getFolders().contains(target));
-    assertFalse(child2.getFolders().contains(root));
+    assertThat(child2.getFolders()).contains(target);
+    assertThat(child2.getFolders()).doesNotContain(root);
     assertEquals(1, numAfterInTarget);
   }
 
@@ -1169,7 +1169,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
     assertEquals(fieldsafter, fieldsb4);
 
     field = child.getFields().get(0);
-    assertFalse(field.getData().contains("new data"));
+    assertThat(field.getData()).doesNotContain("new data");
 
     StructuredDocument child2 = (StructuredDocument) recordMgr.get(child.getId());
     logoutAndLoginAs(user);
@@ -1244,7 +1244,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
 
     StructuredDocument doc2 = recordMgr.get(doc.getId()).asStrucDoc();
     String newName = doc2.getName();
-    assertEquals(DEFAULT_VARCHAR_LENGTH, newName.length());
+    assertThat(newName).hasSize(DEFAULT_VARCHAR_LENGTH);
     // newlines removed
     assertTrue(recordMgr.renameRecord("a\nb", doc.getId(), user));
     newName = "a b";
@@ -1338,13 +1338,13 @@ public class RecordManagerTest extends SpringTransactionalTest {
     recordMgr.requestRecordEdit(docId, user, anySessionTracker());
     recordMgr.saveStructuredDocument(docId, user.getUsername(), false, warnings);
     assertTrue(warnings.hasErrorMessages());
-    assertEquals(1, warnings.getErrorMessages().size());
+    assertThat(warnings.getErrorMessages()).hasSize(1);
     assertEquals("content.not.changed", warnings.getErrorMessages().get(0));
 
     // try another save - with temporary field being created, but content unchanged
     recordMgr.saveTemporaryDocument(child2.getFields().get(0), user, "new data");
     recordMgr.saveStructuredDocument(docId, user.getUsername(), true, warnings);
-    assertEquals(2, warnings.getErrorMessages().size());
+    assertThat(warnings.getErrorMessages()).hasSize(2);
     assertEquals("content.not.changed", warnings.getErrorMessages().get(1));
 
     // check requires authorisation
@@ -1417,7 +1417,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
     User other = createAndSaveUserIfNotExists(getRandomAlphabeticString("other"));
     initialiseContentWithEmptyContent(other);
     other.getRootFolder().addChild(sd, other);
-    assertEquals(2, sd.getParentFolders().size());
+    assertThat(sd.getParentFolders()).hasSize(2);
     // but owner folder still returned.
     assertEquals(user.getRootFolder(), recordMgr.getParentFolderOfRecordOwner(sd.getId(), user));
   }
@@ -1427,10 +1427,10 @@ public class RecordManagerTest extends SpringTransactionalTest {
     Record r1 = createBasicDocumentInRootFolderWithText(user, "r1");
     Record r2 = createBasicDocumentInRootFolderWithText(user, "r2");
     List<RSpaceDocView> hits = recordMgr.getAllFrom(toSet(r1.getId(), r2.getId()));
-    assertEquals(2, hits.size());
+    assertThat(hits).hasSize(2);
     // check no hits handled OK
     List<RSpaceDocView> hits2 = recordMgr.getAllFrom(toSet(-123456l)); // unknown
-    assertEquals(0, hits2.size());
+    assertThat(hits2).isEmpty();
     // no search terms?
 
     assertThrows(IllegalArgumentException.class, () -> recordMgr.getAllFrom(Collections.EMPTY_SET));
@@ -1438,7 +1438,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
     // folders are returned as well!
     Folder f1 = createFolder("any2", user.getRootFolder(), user);
     List<RSpaceDocView> hits4 = recordMgr.getAllFrom(toSet(f1.getId(), r1.getId(), r2.getId()));
-    assertEquals(3, hits4.size());
+    assertThat(hits4).hasSize(3);
   }
 
   @Test
@@ -1480,7 +1480,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
     assertTrue(template1.hasType(RecordType.TEMPLATE));
     assertFalse(template1.isInvisible());
     assertEquals(doc1.getForm(), template1.getForm());
-    assertEquals(EXPECTED_FORMS, formDao.getAll().size());
+    assertThat(formDao.getAll()).hasSize(EXPECTED_FORMS);
 
     // create new document from template
     Long targetFolderId = newUser.getRootFolder().getId();
@@ -1488,14 +1488,14 @@ public class RecordManagerTest extends SpringTransactionalTest {
     RecordCopyResult fromTemplateResult =
         recordMgr.createFromTemplate(template1.getId(), newName, newUser, targetFolderId);
     StructuredDocument doc2FromTemplate1 = (StructuredDocument) fromTemplateResult.getUniqueCopy();
-    assertTrue(doc2FromTemplate1.getDeltaStr().contains(template1.getGlobalIdentifier()));
-    assertTrue(doc2FromTemplate1.getDeltaStr().contains(DeltaType.CREATED_FROM_TEMPLATE.name()));
+    assertThat(doc2FromTemplate1.getDeltaStr()).contains(template1.getGlobalIdentifier());
+    assertThat(doc2FromTemplate1.getDeltaStr()).contains(DeltaType.CREATED_FROM_TEMPLATE.name());
     assertTrue(doc2FromTemplate1.hasType(RecordType.NORMAL));
     assertFalse(doc2FromTemplate1.hasType(RecordType.TEMPLATE));
     assertEquals(newName, doc2FromTemplate1.getName());
-    assertEquals(EXPECTED_FORMS, formDao.getAll().size());
+    assertThat(formDao.getAll()).hasSize(EXPECTED_FORMS);
     assertEquals(doc1.getForm(), doc2FromTemplate1.getForm());
-    assertEquals(1, doc2FromTemplate1.getParentFolders().size());
+    assertThat(doc2FromTemplate1.getParentFolders()).hasSize(1);
     assertEquals(targetFolderId, doc2FromTemplate1.getParent().getId());
     assertEquals(template1, doc2FromTemplate1.getTemplate());
 
@@ -1555,23 +1555,23 @@ public class RecordManagerTest extends SpringTransactionalTest {
     // now search by name:
     GalleryFilterCriteria filter = new GalleryFilterCriteria("0_name");
     results = listGallery(images, filter, user);
-    assertEquals(1, results.getResults().size(), "should get single search hit");
+    assertThat(results.getResults()).as("should get single search hit").hasSize(1);
     assertEquals(images[0], results.getFirstResult(), "should match with image of same name");
 
     filter = new GalleryFilterCriteria("0_na");
     results = listGallery(images, filter, user);
-    assertEquals(1, results.getResults().size(), "should get single search hit for partial term");
+    assertThat(results.getResults()).as("should get single search hit for partial term").hasSize(1);
     assertEquals(images[0], results.getFirstResult(), "should match with image of same name");
 
     // search by gallery global Id
     filter = new GalleryFilterCriteria(images[0].getGlobalIdentifier());
     results = listGallery(images, filter, user);
-    assertEquals(1, results.getResults().size(), "should get single search hit for global Id");
+    assertThat(results.getResults()).as("should get single search hit for global Id").hasSize(1);
 
     // search by non-gallery global id fails gracefully
     filter = new GalleryFilterCriteria("SD12345");
     results = listGallery(images, filter, user);
-    assertEquals(0, results.getResults().size(), "should get no hits");
+    assertThat(results.getResults()).as("should get no hits").isEmpty();
 
     //		// now add tiff file to gallery and check uploaded OK
     // for unknown reason this works in application but not intest....
@@ -1682,7 +1682,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
     WorkspaceFilters filteres = new WorkspaceFilters();
     filteres.setViewableItemsFilter(true);
     List<BaseRecord> hits = recordMgr.getFilteredRecordsList(filteres, mainGrp.getPi());
-    assertFalse(hits.stream().anyMatch(br -> br.getId().equals(doc.getId())));
+    assertThat(hits).noneMatch(br -> br.getId().equals(doc.getId()));
   }
 
   // rspac-2084
@@ -1714,14 +1714,14 @@ public class RecordManagerTest extends SpringTransactionalTest {
     filters.setViewableItemsFilter(true);
     List<BaseRecord> hitsSeenByPi = recordMgr.getFilteredRecordsList(filters, piOfGroupUser);
     // should not be able to see any records belonging to other PI, but can see other user
-    assertEquals(2, hitsSeenByPi.size());
-    assertTrue(hitsSeenByPi.stream().noneMatch(br -> br.getOwner().equals(otherPiGroupMember)));
+    assertThat(hitsSeenByPi).hasSize(2);
+    assertThat(hitsSeenByPi).noneMatch(br -> br.getOwner().equals(otherPiGroupMember));
 
     // other group member just sees their own documents
     logoutAndLoginAs(otherGrpMember);
     List<BaseRecord> hitsSeenByOtherMember =
         recordMgr.getFilteredRecordsList(filters, otherGrpMember);
-    assertEquals(1, hitsSeenByOtherMember.size());
+    assertThat(hitsSeenByOtherMember).hasSize(1);
     // should not be able to see any records belonging to anyone else
     assertTrue(hitsSeenByOtherMember.get(0).getOwner().equals(otherGrpMember));
 
@@ -1733,7 +1733,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
 
   @Test
   public void getSafeNull() {
-    assertFalse(recordMgr.getSafeNull(Long.MIN_VALUE).isPresent());
+    assertThat(recordMgr.getSafeNull(Long.MIN_VALUE)).isNotPresent();
   }
 
   @Test
@@ -1748,19 +1748,18 @@ public class RecordManagerTest extends SpringTransactionalTest {
     EcatMediaFile emf = addImageToGallery(any);
     List<Long> anyUserIds = TransformerUtils.transform(toList(basic1, emf), r -> r.getId());
     List retrieved = recordMgr.getAuthorisedRecordsById(anyUserIds, any, PermissionType.READ);
-    assertEquals(2, retrieved.size());
-    assertTrue(retrieved.contains(basic1));
-    assertTrue(retrieved.contains(emf));
+    assertThat(retrieved).hasSize(2);
+    assertThat(retrieved).contains(basic1);
+    assertThat(retrieved).contains(emf);
 
     // empty list handled
-    assertTrue(
-        recordMgr
-            .getAuthorisedRecordsById(Collections.emptyList(), any, PermissionType.READ)
-            .isEmpty());
+    assertThat(
+            recordMgr.getAuthorisedRecordsById(Collections.emptyList(), any, PermissionType.READ))
+        .isEmpty();
 
     // unauthorised not included
     logoutAndLoginAs(user);
-    assertTrue(recordMgr.getAuthorisedRecordsById(anyUserIds, user, PermissionType.READ).isEmpty());
+    assertThat(recordMgr.getAuthorisedRecordsById(anyUserIds, user, PermissionType.READ)).isEmpty();
   }
 
   @Test
@@ -1817,7 +1816,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
 
     final Notebook sharedNotebook = folderMgr.getNotebook(notebookId);
     assertTrue(sharedNotebook.isShared());
-    assertTrue(sharedNotebook.getChildrens().isEmpty());
+    assertThat(sharedNotebook.getChildrens()).isEmpty();
 
     StructuredDocument newCreatedDocument =
         recordMgr.createNewStructuredDocument(notebookId, anyForm.getId(), user);
@@ -1849,12 +1848,12 @@ public class RecordManagerTest extends SpringTransactionalTest {
     // user creates a document and shares it into pi's notebook
     logoutAndLoginAs(user);
     BaseRecord doc = createBasicDocumentInRootFolderWithText(user, "any");
-    assertEquals(1, doc.getParents().size());
+    assertThat(doc.getParents()).hasSize(1);
 
     shareRecordIntoGroupNotebook(doc, sharedNotebook, labGroup, user).get().getShared();
     // user's doc know understand it has two parents now
     doc = recordMgr.get(doc.getId());
-    assertEquals(2, doc.getParents().size());
+    assertThat(doc.getParents()).hasSize(2);
     // shared notebook should show two entries now
     sharedNotebook = folderMgr.getNotebook(sharedNotebook.getId());
     assertEquals(2, sharedNotebook.getEntryCount());

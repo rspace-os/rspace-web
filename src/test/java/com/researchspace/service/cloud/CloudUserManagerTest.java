@@ -1,6 +1,7 @@
 package com.researchspace.service.cloud;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -107,7 +108,7 @@ public class CloudUserManagerTest extends SpringTransactionalTest {
 
   @Test
   public void createInvitedUserListRemovesDuplicates() {
-    assertEquals(1, cloudUserMgr.createInvitedUserList(toList("x@rc.com", "x@rc.com")).size());
+    assertThat(cloudUserMgr.createInvitedUserList(toList("x@rc.com", "x@rc.com"))).hasSize(1);
   }
 
   @Test

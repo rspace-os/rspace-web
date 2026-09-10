@@ -1,5 +1,6 @@
 package com.researchspace.service.inventory;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -194,8 +195,8 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
     // owner should have read, update and transfer permissions
     assertNotNull(created.getPermittedActions());
     assertTrue(created.getPermittedActions().size() >= 2);
-    assertTrue(created.getPermittedActions().contains(ApiInventoryRecordPermittedAction.READ));
-    assertTrue(created.getPermittedActions().contains(ApiInventoryRecordPermittedAction.UPDATE));
+    assertThat(created.getPermittedActions()).contains(ApiInventoryRecordPermittedAction.READ);
+    assertThat(created.getPermittedActions()).contains(ApiInventoryRecordPermittedAction.UPDATE);
   }
 
   @Test
@@ -210,7 +211,7 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
 
     ApiInstrument created = instrumentApiMgr.createNewApiInstrument(request, testUser);
     assertNotNull(created);
-    assertEquals(1, created.getExtraFields().size());
+    assertThat(created.getExtraFields()).hasSize(1);
     assertEquals("extra content", created.getExtraFields().get(0).getContent());
   }
 
@@ -252,14 +253,14 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
 
     ApiInstrument created = instrumentApiMgr.createNewApiInstrument(request, testUser);
     assertNotNull(created.getTags());
-    assertFalse(created.getTags().isEmpty());
+    assertThat(created.getTags()).isNotEmpty();
   }
 
   @Test
   public void createInstrumentFromTemplateCopiesFieldsAndLinksTemplate() {
     ApiInstrumentTemplate template = createBasicInstrumentTemplateForUser(testUser);
     assertTrue(template.isTemplate());
-    assertEquals(1, template.getFields().size());
+    assertThat(template.getFields()).hasSize(1);
 
     ApiInstrument request = new ApiInstrument();
     request.setName("from-template");
@@ -272,7 +273,7 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
     assertEquals(template.getVersion(), created.getTemplateVersion());
     assertFalse(created.isTemplate());
     // fields copied from the template (1 in basic template)
-    assertEquals(1, created.getFields().size());
+    assertThat(created.getFields()).hasSize(1);
     assertEquals(template.getFields().get(0).getName(), created.getFields().get(0).getName());
   }
 
@@ -455,7 +456,7 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
     assertTrue(created.isTemplate());
     assertEquals("created template", created.getName());
     assertEquals(1L, (long) created.getVersion());
-    assertEquals(1, created.getFields().size());
+    assertThat(created.getFields()).hasSize(1);
     verify(mockPublisher).publishEvent(Mockito.any(InventoryCreationEvent.class));
     assertTrue(instrumentApiMgr.instrumentTemplateExists(created.getId()));
 
@@ -479,8 +480,8 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
 
     assertNotNull(result);
     assertTrue(result.getTotalHits() >= 1);
-    assertTrue(result.getTemplates().stream().allMatch(t -> t.isTemplate()));
-    assertTrue(result.getTemplates().stream().anyMatch(t -> t.getId().equals(template.getId())));
+    assertThat(result.getTemplates()).allMatch(t -> t.isTemplate());
+    assertThat(result.getTemplates()).anyMatch(t -> t.getId().equals(template.getId()));
   }
 
   @Test
@@ -530,7 +531,7 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
     ApiInstrumentTemplate updated =
         instrumentApiMgr.updateApiInstrumentTemplate(template, testUser);
 
-    assertEquals(1, updated.getFields().size());
+    assertThat(updated.getFields()).hasSize(1);
     assertEquals("added", updated.getFields().get(0).getName());
   }
 
@@ -630,8 +631,7 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
         instrumentApiMgr.updateInstrumentToLatestTemplateVersion(instrument.getId(), testUser);
     assertEquals(updatedTemplate.getVersion(), resynced.getTemplateVersion());
     // instrument now carries the new field
-    assertTrue(
-        resynced.getFields().stream().anyMatch(f -> "extra-template-field".equals(f.getName())));
+    assertThat(resynced.getFields()).anyMatch(f -> "extra-template-field".equals(f.getName()));
   }
 
   @Test
@@ -696,10 +696,8 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
     ApiInstrument lagging = instrumentApiMgr.createNewApiInstrument(instrumentReq, testUser);
 
     // Initially no lagging instruments (instrument is on latest version)
-    assertTrue(
-        instrumentApiMgr
-            .getInstrumentsLinkingOldTemplateVersion(template.getId(), testUser)
-            .isEmpty());
+    assertThat(instrumentApiMgr.getInstrumentsLinkingOldTemplateVersion(template.getId(), testUser))
+        .isEmpty();
 
     // Bump the template — now the existing instrument is lagging
     template.setDescription("new description");
@@ -707,7 +705,7 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
 
     List<ApiInventoryRecordInfo> lagged =
         instrumentApiMgr.getInstrumentsLinkingOldTemplateVersion(template.getId(), testUser);
-    assertEquals(1, lagged.size());
+    assertThat(lagged).hasSize(1);
     assertEquals(lagging.getId(), lagged.get(0).getId());
   }
 
@@ -1108,8 +1106,7 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
 
     assertNotNull(result);
     assertTrue(result.getTotalHits() >= 1);
-    assertTrue(
-        result.getInstruments().stream().anyMatch(i -> i.getName().equals("listed-instrument")));
+    assertThat(result.getInstruments()).anyMatch(i -> i.getName().equals("listed-instrument"));
   }
 
   @Test
@@ -1267,7 +1264,7 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
     assertNotNull(copy.getId());
     // permittedActions is set by populateOutgoingApiInstrumentEntity; empty without the call
     assertNotNull(copy.getPermittedActions());
-    assertFalse(copy.getPermittedActions().isEmpty());
+    assertThat(copy.getPermittedActions()).isNotEmpty();
     // owner is also populated by the helper
     assertNotNull(copy.getOwner());
     assertEquals(testUser.getUsername(), copy.getOwner().getUsername());
@@ -1292,7 +1289,7 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
 
     assertNotNull(created.getId());
     assertTrue(instrumentApiMgr.instrumentTemplateExists(created.getId()));
-    assertEquals(1, created.getFields().size());
+    assertThat(created.getFields()).hasSize(1);
     assertEquals("Status", created.getFields().get(0).getName());
     assertEquals(ApiFieldType.RADIO, created.getFields().get(0).getType());
   }

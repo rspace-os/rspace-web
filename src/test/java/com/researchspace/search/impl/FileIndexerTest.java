@@ -1,8 +1,8 @@
 package com.researchspace.search.impl;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.axiope.search.FileSearchResult;
@@ -48,7 +48,7 @@ public class FileIndexerTest {
 
     assertTrue(indexer.isInitialised());
     assertEquals(0, indexer.getWriter().getDocStats().numDocs);
-    assertFalse(staleIndexFile.exists());
+    assertThat(staleIndexFile).doesNotExist();
   }
 
   @Test
@@ -60,7 +60,7 @@ public class FileIndexerTest {
 
     assertTrue(indexer.isInitialised());
     assertEquals(0, indexer.getWriter().getDocStats().numDocs);
-    assertFalse(staleIndexFile.exists());
+    assertThat(staleIndexFile).doesNotExist();
   }
 
   @Test

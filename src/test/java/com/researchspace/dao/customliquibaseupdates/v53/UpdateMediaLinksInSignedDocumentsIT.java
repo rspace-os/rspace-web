@@ -1,5 +1,6 @@
 package com.researchspace.dao.customliquibaseupdates.v53;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.dao.customliquibaseupdates.AbstractDBHelpers;
@@ -76,7 +77,7 @@ public class UpdateMediaLinksInSignedDocumentsIT extends AbstractDBHelpers {
 
     // ensure that only first record has a new revision, and the revision date is from time of
     // signing
-    assertEquals(doc1HistoryBefore.size() + 1, doc1HistoryAfter.size());
+    assertThat(doc1HistoryAfter).hasSize(doc1HistoryBefore.size() + 1);
     BaseRecord currentDoc1RevisionBefore =
         doc1HistoryBefore.get(doc1HistoryBefore.size() - 1).getEntity();
     BaseRecord currentDoc1RevisionAfter =
@@ -85,9 +86,9 @@ public class UpdateMediaLinksInSignedDocumentsIT extends AbstractDBHelpers {
         currentDoc1RevisionBefore.getModificationDate(),
         currentDoc1RevisionAfter.getModificationDate());
 
-    assertEquals(doc2HistoryBefore.size(), doc2HistoryAfter.size());
-    assertEquals(doc3HistoryBefore.size(), doc3HistoryAfter.size());
-    assertEquals(doc4HistoryBefore.size(), doc4HistoryAfter.size());
+    assertThat(doc2HistoryAfter).hasSize(doc2HistoryBefore.size());
+    assertThat(doc3HistoryAfter).hasSize(doc3HistoryBefore.size());
+    assertThat(doc4HistoryAfter).hasSize(doc4HistoryBefore.size());
 
     // run liquibase update again, that shouldn't create any new revisions
     updater = new UpdateMediaLinksInSignedDocument();
@@ -99,9 +100,9 @@ public class UpdateMediaLinksInSignedDocumentsIT extends AbstractDBHelpers {
     List<AuditedRecord> doc2HistoryAfterSecondRun = auditManager.getHistory(doc2, null);
     List<AuditedRecord> doc3HistoryAfterSecondRun = auditManager.getHistory(doc3, null);
     List<AuditedRecord> doc4HistoryAfterSecondRun = auditManager.getHistory(doc4, null);
-    assertEquals(doc1HistoryAfter.size(), doc1HistoryAfterSecondRun.size());
-    assertEquals(doc2HistoryAfter.size(), doc2HistoryAfterSecondRun.size());
-    assertEquals(doc3HistoryAfter.size(), doc3HistoryAfterSecondRun.size());
-    assertEquals(doc4HistoryAfter.size(), doc4HistoryAfterSecondRun.size());
+    assertThat(doc1HistoryAfterSecondRun).hasSize(doc1HistoryAfter.size());
+    assertThat(doc2HistoryAfterSecondRun).hasSize(doc2HistoryAfter.size());
+    assertThat(doc3HistoryAfterSecondRun).hasSize(doc3HistoryAfter.size());
+    assertThat(doc4HistoryAfterSecondRun).hasSize(doc4HistoryAfter.size());
   }
 }

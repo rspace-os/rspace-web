@@ -1,5 +1,6 @@
 package com.researchspace.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Date;
@@ -21,9 +22,9 @@ class EmailTemplateI18nTest {
     model.put("groupType", "lab group");
     model.put("groupName", "Smith Lab");
     String out = templates.render("groupInvitationAccepted.vm", model);
-    assertTrue(
-        out.contains("Jane Doe has accepted your invitation to join the lab group Smith Lab."),
-        "rendered: " + out);
+    assertThat(out)
+        .as("rendered: " + out)
+        .contains("Jane Doe has accepted your invitation to join the lab group Smith Lab.");
   }
 
   @Test
@@ -65,9 +66,10 @@ class EmailTemplateI18nTest {
     model.put("runAs", new FakeUser("Jane Doe", "jane@example.com"));
     model.put("systemUser", new FakeUser("Admin User", "admin@example.com"));
     String out = templates.renderPlainText("adminRunningAsUserNotification.vm", model);
-    assertTrue(out.contains("Hello Jane Doe,"), "rendered: " + out);
-    assertTrue(
-        out.contains("please contact the RSpace admin at admin@example.com"), "rendered: " + out);
+    assertThat(out).as("rendered: " + out).contains("Hello Jane Doe,");
+    assertThat(out)
+        .as("rendered: " + out)
+        .contains("please contact the RSpace admin at admin@example.com");
   }
 
   @Test
@@ -78,12 +80,14 @@ class EmailTemplateI18nTest {
     model.put("newLabGroup", new FakeGroup(42L));
     model.put("baseURL", "https://rspace.example.com");
     String out = templates.render("promoteToPIComplete.vm", model);
-    assertTrue(out.contains("Hello Dr. Smith,"), "rendered: " + out);
-    assertTrue(
-        out.contains("The RSpace system administrator has set you up with a PI role."),
-        "rendered: " + out);
-    assertTrue(out.contains("https://rspace.example.com/groups/view/42"), "rendered: " + out);
-    assertTrue(out.contains("https://rspace.example.com/userform?userId=99"), "rendered: " + out);
+    assertThat(out).as("rendered: " + out).contains("Hello Dr. Smith,");
+    assertThat(out)
+        .as("rendered: " + out)
+        .contains("The RSpace system administrator has set you up with a PI role.");
+    assertThat(out).as("rendered: " + out).contains("https://rspace.example.com/groups/view/42");
+    assertThat(out)
+        .as("rendered: " + out)
+        .contains("https://rspace.example.com/userform?userId=99");
   }
 
   @Test
@@ -95,13 +99,14 @@ class EmailTemplateI18nTest {
     model.put("message", "Please check this error.");
     model.put("logLines", List.of("Error: something went wrong", "at line 42"));
     String out = templates.render("supportLogFiles.vm", model);
-    assertTrue(
-        out.contains(
-            "Sysadmin One (sysadmin@example.com) generated an RSpace server error log file on"),
-        "rendered: " + out);
-    assertTrue(
-        out.contains("The following message was sent from Sysadmin One"), "rendered: " + out);
-    assertTrue(out.contains("END OF LOGS"), "rendered: " + out);
+    assertThat(out)
+        .as("rendered: " + out)
+        .contains(
+            "Sysadmin One (sysadmin@example.com) generated an RSpace server error log file on");
+    assertThat(out)
+        .as("rendered: " + out)
+        .contains("The following message was sent from Sysadmin One");
+    assertThat(out).as("rendered: " + out).contains("END OF LOGS");
   }
 
   public static class FakeUser {

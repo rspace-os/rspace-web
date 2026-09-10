@@ -1,5 +1,6 @@
 package com.researchspace.export.pdf;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 import org.jsoup.nodes.Element;
@@ -29,23 +30,18 @@ public class HTMLUnicodeFontTest {
     // test various CSS font declarations are handled correctly and only font-family name is
     // replaced
     HTMLUnicodeFontProcesser p = createHtmlUnicodeFontProcesser();
-    assertTrue(
-        p.apply("<p>\u060e</p>").contains("<span style=\"font-family: unifont;\">\u060e</span>"));
-    assertTrue(
-        p.apply("<p style=\"font-family:Lucida Sans Unicode;font-style:bold;\">\u060e</p>")
-            .contains("<span style=\"font-family: unifont;font-style:bold;\">\u060e</span>"));
-    assertTrue(
-        p.apply("<p style=\"font-size: 24pt;\">\u060e</p>")
-            .contains("<span style=\"font-size: 24pt;font-family: unifont;\">\u060e</span>"));
-    assertTrue(
-        p.apply("<p style=\"font: italic bold 12px/30px Georgia, serif;\">\u060e</p>")
-            .contains("<span style=\"font: italic bold 12px/30px unifont, serif;\">\u060e</span>"));
-    assertTrue(
-        p.apply("<p style=\"font: oblique 300 12px/30px Georgia, serif;\">\u060e</p>")
-            .contains("<span style=\"font: oblique 300 12px/30px unifont, serif;\">\u060e</span>"));
-    assertTrue(
-        p.apply("<p style=\"font: oblique 300 12em Georgia Sans, serif;\">\u060e</p>")
-            .contains("<span style=\"font: oblique 300 12em unifont, serif;\">\u060e</span>"));
+    assertThat(p.apply("<p>\u060e</p>"))
+        .contains("<span style=\"font-family: unifont;\">\u060e</span>");
+    assertThat(p.apply("<p style=\"font-family:Lucida Sans Unicode;font-style:bold;\">\u060e</p>"))
+        .contains("<span style=\"font-family: unifont;font-style:bold;\">\u060e</span>");
+    assertThat(p.apply("<p style=\"font-size: 24pt;\">\u060e</p>"))
+        .contains("<span style=\"font-size: 24pt;font-family: unifont;\">\u060e</span>");
+    assertThat(p.apply("<p style=\"font: italic bold 12px/30px Georgia, serif;\">\u060e</p>"))
+        .contains("<span style=\"font: italic bold 12px/30px unifont, serif;\">\u060e</span>");
+    assertThat(p.apply("<p style=\"font: oblique 300 12px/30px Georgia, serif;\">\u060e</p>"))
+        .contains("<span style=\"font: oblique 300 12px/30px unifont, serif;\">\u060e</span>");
+    assertThat(p.apply("<p style=\"font: oblique 300 12em Georgia Sans, serif;\">\u060e</p>"))
+        .contains("<span style=\"font: oblique 300 12em unifont, serif;\">\u060e</span>");
   }
 
   String ascii = "a"; // basic ascii
@@ -119,9 +115,9 @@ public class HTMLUnicodeFontTest {
     Element p = createPTagWithText(emptyBlock);
     fontProcessor.processElement(p);
     assertEquals(0, p.childrenSize());
-    assertEquals(1, p.textNodes().size());
+    assertThat(p.textNodes()).hasSize(1);
     // whitespace is truncated by jsoup
-    assertEquals(1, p.textNodes().get(0).text().length());
+    assertThat(p.textNodes().get(0).text()).hasSize(1);
   }
 
   @Test
@@ -143,7 +139,7 @@ public class HTMLUnicodeFontTest {
   }
 
   private void assertNoStyleAttribute(Element el) {
-    assertTrue(el.attr("style").isEmpty());
+    assertThat(el.attr("style")).isEmpty();
   }
 
   private Element createPTagWithText(String plainText1) {

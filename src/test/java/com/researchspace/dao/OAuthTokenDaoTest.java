@@ -1,5 +1,6 @@
 package com.researchspace.dao;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -56,18 +57,18 @@ public class OAuthTokenDaoTest extends SpringTransactionalTest {
   public void listTokensForUser() {
     OAuthToken validToken = createValidOAuthToken(anyUser);
     validToken = tokenDao.save(validToken);
-    assertEquals(1, tokenDao.listTokensForUser(anyUser.getId()).size());
+    assertThat(tokenDao.listTokensForUser(anyUser.getId())).hasSize(1);
     final long UNKNOWN_USER_ID = -2000L;
 
-    assertEquals(0, tokenDao.listTokensForUser(UNKNOWN_USER_ID).size());
+    assertThat(tokenDao.listTokensForUser(UNKNOWN_USER_ID)).isEmpty();
   }
 
   @Test
   public void listTokensForClient() {
     OAuthToken validToken = createValidOAuthToken(anyUser);
     validToken = tokenDao.save(validToken);
-    assertEquals(1, tokenDao.listTokensForClient(anyClientId).size());
-    assertEquals(0, tokenDao.listTokensForClient("unknownclient").size());
+    assertThat(tokenDao.listTokensForClient(anyClientId)).hasSize(1);
+    assertThat(tokenDao.listTokensForClient("unknownclient")).isEmpty();
   }
 
   private OAuthToken createValidOAuthToken(User user) {

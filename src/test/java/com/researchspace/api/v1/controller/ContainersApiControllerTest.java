@@ -1,6 +1,7 @@
 package com.researchspace.api.v1.controller;
 
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -81,11 +82,11 @@ public class ContainersApiControllerTest extends SpringTransactionalTest {
     assertEquals(0, listContainer.getContentSummary().getSubSampleCount());
     assertEquals(3, listContainer.getContentSummary().getContainerCount());
     assertEquals(exampleContentUser.getFullName(), listContainer.getModifiedByFullName());
-    assertEquals(1, listContainer.getLinks().size());
+    assertThat(listContainer.getLinks()).hasSize(1);
     ApiLinkItem containerLink = listContainer.getLinks().get(0);
     assertEquals(ApiLinkItem.SELF_REL, containerLink.getRel());
-    assertTrue(
-        containerLink.getLink().endsWith("/api/inventory/v1/containers/" + listContainer.getId()));
+    assertThat(containerLink.getLink())
+        .endsWith("/api/inventory/v1/containers/" + listContainer.getId());
 
     // retrieve details of a container, including its content
     ApiContainer retrievedListContainer =
@@ -95,7 +96,7 @@ public class ContainersApiControllerTest extends SpringTransactionalTest {
         ContentInitializerForDevRunManager.EXAMPLE_TOP_LIST_CONTAINER_NAME,
         retrievedListContainer.getName());
     assertNull(retrievedListContainer.getParentContainer());
-    assertEquals(3, retrievedListContainer.getLocations().size());
+    assertThat(retrievedListContainer.getLocations()).hasSize(3);
     ApiContainerInfo subcontainer =
         (ApiContainerInfo) retrievedListContainer.getLocations().get(0).getContent();
     assertEquals("box #1 (list container)", subcontainer.getName());
@@ -116,7 +117,7 @@ public class ContainersApiControllerTest extends SpringTransactionalTest {
     assertEquals(
         ContentInitializerForDevRunManager.EXAMPLE_TOP_LIST_CONTAINER_NAME,
         retrievedSubContainer.getParentContainer().getName());
-    assertEquals(4, retrievedSubContainer.getLocations().size());
+    assertThat(retrievedSubContainer.getLocations()).hasSize(4);
 
     // retrieve image container, check thumbnail and attachment
     ApiContainerInfo imageContainer = userContainers.getContainers().get(0);
@@ -124,22 +125,22 @@ public class ContainersApiControllerTest extends SpringTransactionalTest {
         ContentInitializerForDevRunManager.EXAMPLE_TOP_IMAGE_CONTAINER_NAME,
         imageContainer.getName());
     assertTrue(imageContainer.isImageContainer());
-    assertEquals(1, imageContainer.getAttachments().size());
+    assertThat(imageContainer.getAttachments()).hasSize(1);
     assertEquals(
         ContentInitializerForDevRunManager.EXAMPLE_TOP_IMAGE_CONTAINER_ATTACHMENT_NAME,
         imageContainer.getAttachments().get(0).getName());
     List<ApiLinkItem> imageContainerLinks = imageContainer.getLinks();
-    assertEquals(4, imageContainerLinks.size()); // self/image/thumbnail/locations links
+    assertThat(imageContainerLinks).hasSize(4); // self/image/thumbnail/locations links
 
     ResponseEntity<byte[]> bytes =
         containersApi.getContainerThumbnail(imageContainer.getId(), exampleContentUser);
-    assertEquals(3177, bytes.getBody().length);
-    assertEquals("image/jpeg", bytes.getHeaders().getContentType().toString());
+    assertThat(bytes.getBody()).hasSize(3177);
+    assertThat(bytes.getHeaders().getContentType()).hasToString("image/jpeg");
 
     // retrieve default locations, should be defined but empty
     ApiContainer retrievedImageContainer =
         containersApi.getContainerById(imageContainer.getId(), true, exampleContentUser);
-    assertEquals(4, retrievedImageContainer.getLocations().size());
+    assertThat(retrievedImageContainer.getLocations()).hasSize(4);
     assertEquals(227, retrievedImageContainer.getLocations().get(0).getCoordX());
     assertEquals(114, retrievedImageContainer.getLocations().get(0).getCoordY());
     assertNull(retrievedImageContainer.getLocations().get(0).getContent());
@@ -226,12 +227,12 @@ public class ContainersApiControllerTest extends SpringTransactionalTest {
     updated =
         containersApi.updateContainer(
             retrievedContainer.getId(), retrievedContainer, mockBindingResult, testUser);
-    assertEquals("", updated.getDBStringFromTags());
+    assertThat(updated.getDBStringFromTags()).isEmpty();
     retrievedContainer.setApiTagInfo(null);
     updated =
         containersApi.updateContainer(
             retrievedContainer.getId(), retrievedContainer, mockBindingResult, testUser);
-    assertEquals("", updated.getDBStringFromTags());
+    assertThat(updated.getDBStringFromTags()).isEmpty();
   }
 
   @Test
@@ -295,8 +296,8 @@ public class ContainersApiControllerTest extends SpringTransactionalTest {
     ApiContainer retrievedContainer =
         containersApi.getContainerById(createdContainer.getId(), true, testUser);
     assertEquals(ContainerApiManagerImpl.CONTAINER_DEFAULT_NAME, retrievedContainer.getName());
-    assertEquals(0, retrievedContainer.getExtraFields().size());
-    assertEquals(0, retrievedContainer.getBarcodes().size());
+    assertThat(retrievedContainer.getExtraFields()).isEmpty();
+    assertThat(retrievedContainer.getBarcodes()).isEmpty();
 
     // change name, add new extra field
     ApiContainer containerUpdate = new ApiContainer();
@@ -309,12 +310,12 @@ public class ContainersApiControllerTest extends SpringTransactionalTest {
     ApiContainer updatedContainer =
         containersApi.updateContainer(
             retrievedContainer.getId(), containerUpdate, mockBindingResult, testUser);
-    assertEquals(1, updatedContainer.getLinks().size());
+    assertThat(updatedContainer.getLinks()).hasSize(1);
     retrievedContainer = containersApi.getContainerById(createdContainer.getId(), true, testUser);
     assertEquals(updatedContainer, retrievedContainer);
     assertEquals("updated name", retrievedContainer.getName());
-    assertEquals(1, updatedContainer.getExtraFields().size());
-    assertEquals(0, updatedContainer.getBarcodes().size());
+    assertThat(updatedContainer.getExtraFields()).hasSize(1);
+    assertThat(updatedContainer.getBarcodes()).isEmpty();
     assertEquals(0, retrievedContainer.getContentSummary().getTotalCount());
 
     ApiExtraField newlyAddedExtraField = retrievedContainer.getExtraFields().get(0);
@@ -335,7 +336,7 @@ public class ContainersApiControllerTest extends SpringTransactionalTest {
             retrievedContainer.getId(), containerUpdate, mockBindingResult, testUser);
     retrievedContainer = containersApi.getContainerById(createdContainer.getId(), true, testUser);
     assertEquals(updatedContainer, retrievedContainer);
-    assertEquals(1, retrievedContainer.getExtraFields().size());
+    assertThat(retrievedContainer.getExtraFields()).hasSize(1);
     assertEquals("updated field content", retrievedContainer.getExtraFields().get(0).getContent());
 
     // add content to the container: a subsample and another container
@@ -355,7 +356,7 @@ public class ContainersApiControllerTest extends SpringTransactionalTest {
     subContainer.setParentContainer(retrievedContainer);
     ApiContainer createdSubContainer =
         containersApi.createNewContainer(subContainer, mockBindingResult, testUser);
-    assertEquals(3, createdSubContainer.getLinks().size()); // self + images
+    assertThat(createdSubContainer.getLinks()).hasSize(3); // self + images
 
     // reload details of the container, check expected details of the content
     retrievedContainer = containersApi.getContainerById(createdContainer.getId(), true, testUser);
@@ -364,7 +365,7 @@ public class ContainersApiControllerTest extends SpringTransactionalTest {
     ApiInventoryRecordInfo contentInFirstLocation =
         retrievedContainer.getLocations().get(0).getContent();
     assertEquals(createdSubSample.getGlobalId(), contentInFirstLocation.getGlobalId());
-    assertEquals(3, contentInFirstLocation.getLinks().size());
+    assertThat(contentInFirstLocation.getLinks()).hasSize(3);
     // verify image links are pointing to image of parent sample
     assertEquals(
         2,
@@ -375,7 +376,7 @@ public class ContainersApiControllerTest extends SpringTransactionalTest {
     ApiInventoryRecordInfo contentInSecondLocation =
         retrievedContainer.getLocations().get(1).getContent();
     assertEquals(createdSubContainer.getGlobalId(), contentInSecondLocation.getGlobalId());
-    assertEquals(3, contentInSecondLocation.getLinks().size());
+    assertThat(contentInSecondLocation.getLinks()).hasSize(3);
   }
 
   @Test
@@ -401,14 +402,14 @@ public class ContainersApiControllerTest extends SpringTransactionalTest {
     ApiContainer retrievedContainer =
         containersApi.getContainerById(createdContainer.getId(), true, testUser);
     assertEquals(ContainerApiManagerImpl.CONTAINER_DEFAULT_NAME, retrievedContainer.getName());
-    assertEquals(1, retrievedContainer.getBarcodes().size());
+    assertThat(retrievedContainer.getBarcodes()).hasSize(1);
 
     // assert a few barcode details
     ApiBarcode firstBarcode = retrievedContainer.getBarcodes().get(0);
     assertEquals(barcodeRequest.getData(), firstBarcode.getData());
     assertEquals(barcodeRequest.getDescription(), firstBarcode.getDescription());
     assertEquals(barcodeRequest.getFormat(), firstBarcode.getFormat());
-    assertEquals(1, firstBarcode.getLinks().size());
+    assertThat(firstBarcode.getLinks()).hasSize(1);
     assertEquals(
         "http://localhost:8080/api/inventory/v1/barcodes?content=123-defaultBarcode&barcodeType=QR",
         firstBarcode.getLinkOfType(ApiLinkItem.ENCLOSURE_REL).get().getLink());
@@ -429,11 +430,11 @@ public class ContainersApiControllerTest extends SpringTransactionalTest {
     ApiContainer updatedContainer =
         containersApi.updateContainer(
             retrievedContainer.getId(), containerUpdate, mockBindingResult, testUser);
-    assertEquals(1, updatedContainer.getLinks().size());
+    assertThat(updatedContainer.getLinks()).hasSize(1);
     retrievedContainer = containersApi.getContainerById(createdContainer.getId(), true, testUser);
     assertEquals(updatedContainer, retrievedContainer);
     assertEquals("updated name", retrievedContainer.getName());
-    assertEquals(2, updatedContainer.getBarcodes().size());
+    assertThat(updatedContainer.getBarcodes()).hasSize(2);
 
     // check 1st barcode updated
     firstBarcode = updatedContainer.getBarcodes().get(0);
@@ -455,10 +456,10 @@ public class ContainersApiControllerTest extends SpringTransactionalTest {
     updatedContainer =
         containersApi.updateContainer(
             retrievedContainer.getId(), containerUpdate, mockBindingResult, testUser);
-    assertEquals(1, updatedContainer.getLinks().size());
+    assertThat(updatedContainer.getLinks()).hasSize(1);
     retrievedContainer = containersApi.getContainerById(createdContainer.getId(), true, testUser);
     assertEquals(updatedContainer, retrievedContainer);
-    assertEquals(1, updatedContainer.getBarcodes().size());
+    assertThat(updatedContainer.getBarcodes()).hasSize(1);
   }
 
   @Test
@@ -472,7 +473,7 @@ public class ContainersApiControllerTest extends SpringTransactionalTest {
     ApiContainer createdContainer =
         containersApi.createNewContainer(imageContainerWithoutImage, mockBindingResult, testUser);
     assertTrue(createdContainer.isImageContainer());
-    assertEquals(1, createdContainer.getLinks().size()); // only self link
+    assertThat(createdContainer.getLinks()).hasSize(1); // only self link
 
     // create container with png base64 image (for main image and locations)
     ApiContainer imageContainer = new ApiContainer("imageContainer", ContainerType.IMAGE);
@@ -494,7 +495,7 @@ public class ContainersApiControllerTest extends SpringTransactionalTest {
     createdContainer =
         containersApi.createNewContainer(imageContainer, mockBindingResult, testUser);
     assertTrue(createdContainer.isImageContainer());
-    assertEquals(4, createdContainer.getLinks().size()); // self/image/thumbnail/locationsImg link
+    assertThat(createdContainer.getLinks()).hasSize(4); // self/image/thumbnail/locationsImg link
     Long containerId = createdContainer.getId();
     assertNotNull(containerId);
     Container container = containerMgr.getContainerById(containerId, testUser);
@@ -514,7 +515,7 @@ public class ContainersApiControllerTest extends SpringTransactionalTest {
     assertTrue(
         bodyLength == 117 || bodyLength == 129,
         "unexpected body size: " + bodyLength); // different results depending on jdk version
-    assertEquals("image/x-png", bytes.getHeaders().getContentType().toString());
+    assertThat(bytes.getHeaders().getContentType()).hasToString("image/x-png");
 
     // update with jpeg file
     String base64Jpeg =
@@ -553,8 +554,8 @@ public class ContainersApiControllerTest extends SpringTransactionalTest {
 
     // check jpg thumbnail retrieval
     bytes = containersApi.getContainerThumbnail(containerId, testUser);
-    assertEquals(1682, bytes.getBody().length);
-    assertEquals("image/jpeg", bytes.getHeaders().getContentType().toString());
+    assertThat(bytes.getBody()).hasSize(1682);
+    assertThat(bytes.getHeaders().getContentType()).hasToString("image/jpeg");
   }
 
   @Test
@@ -570,7 +571,7 @@ public class ContainersApiControllerTest extends SpringTransactionalTest {
     // subcontainer to move around
     ApiContainer movingBox = createBasicContainerForUser(testUser, "moving subcontainer");
     assertEquals(workbench.getId(), movingBox.getParentContainer().getId());
-    assertEquals(1, movingBox.getParentContainers().size());
+    assertThat(movingBox.getParentContainers()).hasSize(1);
 
     workbench = getWorkbenchForUser(testUser);
     int initialWorkbenchCount = workbench.getContentSummary().getTotalCount();
@@ -583,7 +584,7 @@ public class ContainersApiControllerTest extends SpringTransactionalTest {
         containersApi.updateContainer(
             movingBox.getId(), updateRequest, mockBindingResult, testUser);
     assertEquals(listContainer.getId(), updatedMovingBox.getParentContainer().getId());
-    assertEquals(2, updatedMovingBox.getParentContainers().size());
+    assertThat(updatedMovingBox.getParentContainers()).hasSize(2);
 
     // verify target container updated
     workbench = getWorkbenchForUser(testUser);
@@ -598,7 +599,7 @@ public class ContainersApiControllerTest extends SpringTransactionalTest {
         containersApi.updateContainer(
             movingBox.getId(), updateRequest, mockBindingResult, testUser);
     assertEquals(imageContainer.getId(), updatedMovingBox.getParentContainer().getId());
-    assertEquals(2, updatedMovingBox.getParentContainers().size());
+    assertThat(updatedMovingBox.getParentContainers()).hasSize(2);
 
     // verify source and target containers updated
     listContainer = containersApi.getContainerById(listContainer.getId(), true, testUser);
@@ -613,7 +614,7 @@ public class ContainersApiControllerTest extends SpringTransactionalTest {
         containersApi.updateContainer(
             movingBox.getId(), updateRequest, mockBindingResult, testUser);
     assertEquals(listContainer.getId(), updatedMovingBox.getParentContainer().getId());
-    assertEquals(2, updatedMovingBox.getParentContainers().size());
+    assertThat(updatedMovingBox.getParentContainers()).hasSize(2);
 
     // verify source and target containers updated
     listContainer = containersApi.getContainerById(listContainer.getId(), true, testUser);

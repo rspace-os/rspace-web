@@ -1,10 +1,9 @@
 package com.researchspace.webapp.filter;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.webapp.filter.RemoteUserRetrievalPolicy.RemoteUserAttribute;
 import org.junit.jupiter.api.BeforeEach;
@@ -57,21 +56,20 @@ public class OpenIdRemoteUserPolicyTest {
     openIdPolicy.setLastNameClaim("OIDC_CLAIM_family_name");
 
     assertNotNull(openIdPolicy.getOtherRemoteAttributes(req));
-    assertTrue(openIdPolicy.getOtherRemoteAttributes(req).isEmpty());
+    assertThat(openIdPolicy.getOtherRemoteAttributes(req)).isEmpty();
 
     req.addHeader("OIDC_CLAIM_email", "someone@somewhere.com");
     req.addHeader("OIDC_CLAIM_given_name", "Mark");
     req.addHeader("OIDC_CLAIM_family_name", "Smith");
     req.addHeader("OIDC_CLAIM_unknown", "unknown");
 
-    assertFalse(openIdPolicy.getOtherRemoteAttributes(req).isEmpty());
-    assertEquals(3, openIdPolicy.getOtherRemoteAttributes(req).size());
-    assertEquals(
-        "someone@somewhere.com",
-        openIdPolicy.getOtherRemoteAttributes(req).get(RemoteUserAttribute.EMAIL));
-    assertEquals(
-        "Mark", openIdPolicy.getOtherRemoteAttributes(req).get(RemoteUserAttribute.FIRST_NAME));
-    assertEquals(
-        "Smith", openIdPolicy.getOtherRemoteAttributes(req).get(RemoteUserAttribute.LAST_NAME));
+    assertThat(openIdPolicy.getOtherRemoteAttributes(req)).isNotEmpty();
+    assertThat(openIdPolicy.getOtherRemoteAttributes(req)).hasSize(3);
+    assertThat(openIdPolicy.getOtherRemoteAttributes(req))
+        .containsEntry(RemoteUserAttribute.EMAIL, "someone@somewhere.com");
+    assertThat(openIdPolicy.getOtherRemoteAttributes(req))
+        .containsEntry(RemoteUserAttribute.FIRST_NAME, "Mark");
+    assertThat(openIdPolicy.getOtherRemoteAttributes(req))
+        .containsEntry(RemoteUserAttribute.LAST_NAME, "Smith");
   }
 }

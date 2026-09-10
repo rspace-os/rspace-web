@@ -1,5 +1,6 @@
 package com.researchspace.model.permissions;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -27,7 +28,7 @@ public class IdConstraintTest {
     createConstraintFromLongArray(new Long[] {2L, 3L, 1L});
     ids.clear();
     Set<Long> constraintIds = constraint.getId();
-    assertEquals(3, constraintIds.size());
+    assertThat(constraintIds).hasSize(3);
     assertEquals(1L, constraintIds.iterator().next().longValue());
 
     assertThrows(UnsupportedOperationException.class, () -> constraintIds.clear());

@@ -1,6 +1,7 @@
 package com.researchspace.webapp.integrations.protocolsio;
 
 import static org.apache.commons.io.FileUtils.readFileToString;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -67,7 +68,7 @@ public class ProtocolsIOControllerMVCIT extends MVCTestBase {
             .andReturn();
     ProtocolsIOController.PIOResponse recordInformation =
         getFromJsonAjaxReturnObject(result, ProtocolsIOController.PIOResponse.class);
-    assertEquals(1, recordInformation.getResults().size());
+    assertThat(recordInformation.getResults()).hasSize(1);
     // check 2 images are imported - we don't import duplicates
     assertEquals(initialImageCount + 2, getCountOfEntityTable("EcatImage").intValue());
     String docContentString = getFieldData(anyUser, recordInformation);
@@ -127,6 +128,6 @@ public class ProtocolsIOControllerMVCIT extends MVCTestBase {
     assertEquals(parent.getId().intValue(), getJsonPathValue(result, "$.data.importFolderId"));
     String contentString =
         fieldMgr.getFieldsByRecordId(newDoc.getId(), anyUser).get(0).getFieldData();
-    assertTrue(contentString.contains("colorimetric"));
+    assertThat(contentString).contains("colorimetric");
   }
 }

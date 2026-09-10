@@ -1,6 +1,7 @@
 package com.researchspace.webapp.controller;
 
 import static com.researchspace.Constants.SYSADMIN_ROLE;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -97,13 +98,13 @@ public class SysAdminControllerTest {
     comm.addLabGroup(grpGroup);
     when(commService.getCommunityWithAdminsAndGroups(1L)).thenReturn(comm);
     AjaxReturnObject<List<GroupListResult>> resultAjaxReturnObject = ctrller.getLabGroups(1L);
-    assertEquals(1, resultAjaxReturnObject.getData().size());
+    assertThat(resultAjaxReturnObject.getData()).hasSize(1);
     assertNotNull(resultAjaxReturnObject.getData().get(0).getPiFullname());
 
     // handle group with no PI. e.g. an empty group
     assertTrue(grpGroup.removeMember(piUser));
     resultAjaxReturnObject = ctrller.getLabGroups(1L);
-    assertEquals(1, resultAjaxReturnObject.getData().size());
+    assertThat(resultAjaxReturnObject.getData()).hasSize(1);
     assertEquals("No PI set", resultAjaxReturnObject.getData().get(0).getPiAffiliation());
     assertEquals("No PI set", resultAjaxReturnObject.getData().get(0).getPiFullname());
   }

@@ -3,6 +3,7 @@ package com.researchspace.service.impl;
 import static com.researchspace.testutils.TestFactory.createAFolder;
 import static com.researchspace.testutils.TestFactory.createANotebookWithNEntries;
 import static com.researchspace.testutils.TestFactory.createAnyUser;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -52,7 +53,7 @@ public class DeleteFolderFromSharedFolderPolicyTest {
     grpSharedFolder.addChild(toDelete, anyUser);
     DeletionPlan plan =
         deletionOrderPolicy.calculateDeletionOrder(toDelete, toDelete.getParent(), anyUser);
-    assertEquals(1, plan.size());
+    assertThat(plan).hasSize(1);
     assertEquals(toDelete, plan.getFinalElementToRemove());
     assertEquals(toDelete, plan.iterator().next());
   }
@@ -78,7 +79,7 @@ public class DeleteFolderFromSharedFolderPolicyTest {
     toDelete.addChild(nb, anyUser);
     DeletionPlan plan =
         deletionOrderPolicy.calculateDeletionOrder(toDelete, toDelete.getParent(), anyUser);
-    assertEquals(2, plan.size()); // folder and nb but not entries
+    assertThat(plan).hasSize(2); // folder and nb but not entries
     assertEquals(toDelete, plan.getFinalElementToRemove());
     assertEquals(nb, plan.iterator().next());
   }

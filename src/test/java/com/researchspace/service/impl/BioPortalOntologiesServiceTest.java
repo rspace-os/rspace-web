@@ -1,5 +1,6 @@
 package com.researchspace.service.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -34,25 +35,25 @@ class BioPortalOntologiesServiceTest {
     doThrow(new RestClientException("boom"))
         .when(bioOntologiesClientMock)
         .search(any(String.class));
-    assertEquals(0, testee.getBioOntologyDataForQuery("abc").size());
+    assertThat(testee.getBioOntologyDataForQuery("abc")).isEmpty();
   }
 
   @Test
   void shouldSwallowUnexpectedMappingExceptions() {
     doThrow(RuntimeException.class).when(bioOntologiesClientMock).search(any(String.class));
-    assertEquals(0, testee.getBioOntologyDataForQuery("abc").size());
+    assertThat(testee.getBioOntologyDataForQuery("abc")).isEmpty();
   }
 
   @Test
   void shouldReturnEmptyListWhenNoFilterTerm() {
-    assertEquals(0, testee.getBioOntologyDataForQuery("").size());
+    assertThat(testee.getBioOntologyDataForQuery("")).isEmpty();
     verify(bioOntologiesClientMock, never()).search(anyString());
   }
 
   @Test
   void shouldReturnEmptyListWhenFilterTermIsTwoCharsOrFewer() {
-    assertEquals(0, testee.getBioOntologyDataForQuery("a").size());
-    assertEquals(0, testee.getBioOntologyDataForQuery("aa").size());
+    assertThat(testee.getBioOntologyDataForQuery("a")).isEmpty();
+    assertThat(testee.getBioOntologyDataForQuery("aa")).isEmpty();
     verify(bioOntologiesClientMock, never()).search(anyString());
   }
 

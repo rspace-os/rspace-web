@@ -1,6 +1,6 @@
 package com.researchspace.dao.hibernate;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -43,15 +43,15 @@ public class NameDateFilterTest {
     pgCrit.setOrderByIfNull("name");
     WorkspaceListingConfig input = createANameSearchInput(pgCrit);
     ndf.generateCountQueryString(input, pname, pval);
-    assertEquals(pname.size(), pval.size());
-    assertEquals(5, pname.size());
+    assertThat(pval).hasSameSizeAs(pname);
+    assertThat(pname).hasSize(5);
 
     pname.clear();
     pval.clear();
     String from2 = ndf.generateRetrieveQueryString(input, pname, pval);
-    assertEquals(pname.size(), pval.size());
-    assertEquals(5, pname.size());
-    assertTrue(from2.contains(" order by name"));
+    assertThat(pval).hasSameSizeAs(pname);
+    assertThat(pname).hasSize(5);
+    assertThat(from2).contains(" order by name");
   }
 
   @Test

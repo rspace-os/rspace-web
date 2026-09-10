@@ -1,7 +1,7 @@
 package com.researchspace.api.v1.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -122,9 +122,9 @@ public class InstrumentTemplateDefaultLinkMVCIT extends API_MVC_InventoryTestBas
     instrumentApiManager.updateInstrumentToLatestTemplateVersion(created.getId(), anyUser);
 
     ApiInstrument synced = instrumentApiManager.getApiInstrumentById(created.getId(), anyUser);
-    assertFalse(
-        synced.getFields().stream().anyMatch(f -> ApiFieldType.LINK.equals(f.getType())),
-        "the propagated delete should remove the link field from the instrument");
+    assertThat(synced.getFields())
+        .as("the propagated delete should remove the link field from the instrument")
+        .noneMatch(f -> ApiFieldType.LINK.equals(f.getType()));
 
     assertTrue(
         linkRowIsDeleted(instrumentLinkRowId),

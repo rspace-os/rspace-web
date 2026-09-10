@@ -1,5 +1,7 @@
 package com.researchspace.webapp.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -103,7 +105,7 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
         getFromJsonResponseBody(result, StoichiometryMoleculeDTO.class);
     assertEquals("CCC", molecule.getSmiles());
     assertEquals("C3 H8", molecule.getFormula());
-    assertEquals(44.1, molecule.getMolecularWeight(), 0.01);
+    assertThat(molecule.getMolecularWeight()).isCloseTo(44.1, within(0.01));
     // should be null as entities haven't been saved yet
     assertNull(molecule.getId());
     assertNull(molecule.getRsChemElementId());
@@ -287,7 +289,7 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
 
     String responseContent = failResult.getResponse().getContentAsString();
     assertEquals(HttpStatus.BAD_REQUEST.value(), failResult.getResponse().getStatus());
-    assertTrue(responseContent.contains("Stoichiometry already exists for reaction chemId="));
+    assertThat(responseContent).contains("Stoichiometry already exists for reaction chemId=");
   }
 
   @Test
@@ -441,7 +443,7 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
     // check agent added
     StoichiometryDTO updatedAfterAdd =
         getFromJsonResponseBody(updateResult, StoichiometryDTO.class);
-    assertEquals(4, updatedAfterAdd.getMolecules().size());
+    assertThat(updatedAfterAdd.getMolecules()).hasSize(4);
     StoichiometryMoleculeDTO agent =
         updatedAfterAdd.getMolecules().stream()
             .filter(m -> "CCO".equals(m.getSmiles()))
@@ -490,7 +492,7 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
             .andReturn();
 
     StoichiometryDTO afterAdd = getFromJsonResponseBody(addResult, StoichiometryDTO.class);
-    assertEquals(originalCount + 1, afterAdd.getMolecules().size());
+    assertThat(afterAdd.getMolecules()).hasSize(originalCount + 1);
 
     // Remove the added agent by keeping only the original molecule(s)
     StoichiometryUpdateDTO deleteAgentDTO = new StoichiometryUpdateDTO();
@@ -517,9 +519,8 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
 
     StoichiometryDTO updatedAfterDelete =
         getFromJsonResponseBody(removeAgentResult, StoichiometryDTO.class);
-    assertEquals(originalCount, updatedAfterDelete.getMolecules().size());
-    assertFalse(
-        updatedAfterDelete.getMolecules().stream().anyMatch(m -> "CCO".equals(m.getSmiles())));
+    assertThat(updatedAfterDelete.getMolecules()).hasSize(originalCount);
+    assertThat(updatedAfterDelete.getMolecules()).noneMatch(m -> "CCO".equals(m.getSmiles()));
   }
 
   @Test
@@ -556,7 +557,7 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
             .andReturn();
 
     String body = result.getResponse().getContentAsString();
-    assertTrue(body.contains("Molecule ID -999 not found in existing stoichiometry molecules"));
+    assertThat(body).contains("Molecule ID -999 not found in existing stoichiometry molecules");
   }
 
   @Test
@@ -597,7 +598,7 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
             .andReturn();
 
     StoichiometryDTO afterUpdate = getFromJsonResponseBody(result, StoichiometryDTO.class);
-    assertTrue(afterUpdate.getMolecules().stream().anyMatch(m -> "CC".equals(m.getSmiles())));
+    assertThat(afterUpdate.getMolecules()).anyMatch(m -> "CC".equals(m.getSmiles()));
   }
 
   @Test
@@ -633,7 +634,7 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
             .andReturn();
 
     String body = result.getResponse().getContentAsString();
-    assertTrue(body.contains("New molecule requires a SMILES string"));
+    assertThat(body).contains("New molecule requires a SMILES string");
   }
 
   @Test
@@ -667,9 +668,9 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
                       .header("apiKey", apiKey))
               .andExpect(status().isConflict())
               .andReturn();
-      assertTrue(
-          conflictResult.getResponse().getContentAsString().contains(user.getUsername()),
-          "409 body should name the user holding the lock");
+      assertThat(conflictResult.getResponse().getContentAsString())
+          .as("409 body should name the user holding the lock")
+          .contains(user.getUsername());
 
       // Without updateFieldHtml=true the same call must succeed even though the lock is held.
       mockMvc
@@ -751,10 +752,10 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
             .andExpect(status().isInternalServerError())
             .andReturn();
     String body = result.getResponse().getContentAsString();
-    assertTrue(
-        body.contains(
+    assertThat(body)
+        .contains(
             "Object of class [com.researchspace.model.stoichiometry.Stoichiometry] with identifier"
-                + " [-999]: not found"));
+                + " [-999]: not found");
   }
 
   @Test
@@ -788,10 +789,10 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
             .andReturn();
 
     String body = result.getResponse().getContentAsString();
-    assertTrue(
-        body.contains(
+    assertThat(body)
+        .contains(
             "Object of class [com.researchspace.model.RSChemElement] with identifier [-999]: not"
-                + " found"));
+                + " found");
   }
 
   @Test
@@ -839,7 +840,7 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
     assertEquals(sample.getGlobalId(), updatedMol.getInventoryLink().getInventoryItemGlobalId());
 
     long revisionAfterCreate = getLatestStoichiometryRevisionId(createdStoichiometry.getId());
-    assertTrue(revisionAfterCreate > revisionBeforeCreate);
+    assertThat(revisionAfterCreate).isGreaterThan(revisionBeforeCreate);
 
     // 2. Remove link via PUT
     moleculeUpdate.setInventoryLink(null);

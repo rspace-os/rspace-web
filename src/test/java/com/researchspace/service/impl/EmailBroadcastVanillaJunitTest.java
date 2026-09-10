@@ -1,9 +1,9 @@
 package com.researchspace.service.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.comms.Communication;
 import com.researchspace.service.EmailBroadcast;
@@ -48,9 +48,9 @@ public class EmailBroadcastVanillaJunitTest {
         new EmailBroadcastImpl.EmailConfig(
             List.of(), new EmailContent("subject", "<html>hello</html>", "hello"), null);
     Multipart multi = emailerBroadcastImpl.generateMultipartContent(plainTextConfig);
-    assertTrue(multi.getBodyPart(0).getContentType().startsWith("text/plain"));
+    assertThat(multi.getBodyPart(0).getContentType()).startsWith("text/plain");
     assertEquals("text/html; charset=UTF-8", multi.getBodyPart(1).getContentType());
-    assertEquals("hello", multi.getBodyPart(0).getContent().toString());
+    assertThat(multi.getBodyPart(0).getContent()).hasToString("hello");
   }
 
   @Test
@@ -84,6 +84,6 @@ public class EmailBroadcastVanillaJunitTest {
             recipients, new EmailContent("subject", "<p>hello</p>", "hello"), null);
 
     assertEquals(List.of("user@example.com"), config.addresses());
-    assertEquals(2, recipients.size());
+    assertThat(recipients).hasSize(2);
   }
 }

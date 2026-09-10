@@ -1,5 +1,6 @@
 package com.researchspace.model.inventory;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -50,8 +51,8 @@ public class SampleTest {
     assertEquals(InventoryRecord.InventoryRecordType.SAMPLE, sample.getType());
     assertTrue(sample.isSample());
     assertFalse(sample.isSampleTemplate());
-    assertEquals(1, sample.getAttachedFiles().size());
-    assertEquals(1, sample.getActiveBarcodes().size());
+    assertThat(sample.getAttachedFiles()).hasSize(1);
+    assertThat(sample.getActiveBarcodes()).hasSize(1);
     assertEquals(1, sample.getActiveSubSamplesCount());
     assertEquals(1, sample.getVersion());
     assertEquals(1, sample.getSubSamples().get(0).getVersion());
@@ -102,10 +103,10 @@ public class SampleTest {
     assertNotNull(copy.getThumbnailFileProperty());
     assertEquals(sample.getImageFileProperty(), copy.getImageFileProperty());
     assertEquals(sample.getThumbnailFileProperty(), copy.getThumbnailFileProperty());
-    assertEquals(1, copy.getSubSamples().size());
+    assertThat(copy.getSubSamples()).hasSize(1);
     assertEquals(1, copy.getActiveSubSamplesCount());
-    assertEquals(1, copy.getActiveExtraFields().size());
-    assertEquals(1, copy.getAttachedFiles().size());
+    assertThat(copy.getActiveExtraFields()).hasSize(1);
+    assertThat(copy.getAttachedFiles()).hasSize(1);
 
     assertEquals(sample.getName() + "_COPY", copy.getName());
     assertEquals(sample.getTotalQuantity(), copy.getTotalQuantity());
@@ -118,15 +119,15 @@ public class SampleTest {
   @Test
   @DisplayName("Use OID Distinguish samples from templates")
   public void globalId() {
-    assertTrue(sample.getGlobalIdentifier().startsWith("SA"));
+    assertThat(sample.getGlobalIdentifier()).startsWith("SA");
     assertEquals(sample.getOid().getPrefix(), GlobalIdPrefix.SA);
 
     SampleTemplate template = sample.copyToTemplate(anyUser);
     template.setId(6L);
-    assertTrue(template.getGlobalIdentifier().startsWith("IT"));
+    assertThat(template.getGlobalIdentifier()).startsWith("IT");
     assertTrue(template.getOid().getPrefix().equals(GlobalIdPrefix.IT));
-    assertFalse(template.getOid().toString().endsWith("v1"));
-    assertTrue(template.getOidWithVersion().toString().endsWith("v1"));
+    assertThat(template.getOid().toString()).doesNotEndWith("v1");
+    assertThat(template.getOidWithVersion().toString()).endsWith("v1");
   }
 
   @Test
@@ -149,7 +150,7 @@ public class SampleTest {
 
   @Test
   public void igsnIdentifier() {
-    assertEquals(1, sample.getIdentifiers().size());
+    assertThat(sample.getIdentifiers()).hasSize(1);
     DigitalObjectIdentifier identifier = sample.getIdentifiers().get(0);
     assertEquals(
         "{\"CREATOR_NAME\":\"testCreator\",\"SUBJECTS\":\"[\\\"subject1\\\",\\\"subject2\\\"]\"}",
@@ -164,7 +165,7 @@ public class SampleTest {
     identifier.addOtherData(IdentifierOtherProperty.PUBLISHER, "testPublisher");
     identifier.addOtherListData(
         DigitalObjectIdentifier.IdentifierOtherListProperty.DESCRIPTIONS, List.of("desc1"));
-    assertEquals(1, sample.getIdentifiers().size());
+    assertThat(sample.getIdentifiers()).hasSize(1);
     assertEquals(
         "{\"CREATOR_NAME\":\"testCreator\",\"SUBJECTS\":\"[\\\"subject1\\\",\\\"subject2\\\"]\""
             + ",\"PUBLISHER\":\"testPublisher\",\"DESCRIPTIONS\":\"[\\\"desc1\\\"]\"}",
@@ -172,7 +173,7 @@ public class SampleTest {
     assertEquals("testPublisher", identifier.getOtherData(IdentifierOtherProperty.PUBLISHER));
 
     // null handled fine
-    assertEquals(1, sample.getIdentifiers().size());
+    assertThat(sample.getIdentifiers()).hasSize(1);
     identifier.setOtherDataJsonString(null);
     assertNull(identifier.getOtherDataJsonString());
     assertNull(identifier.getOtherData(IdentifierOtherProperty.CREATOR_NAME));
@@ -223,7 +224,7 @@ public class SampleTest {
     SampleTemplate template = sample.copyToTemplate(anyUser);
     Sample newSample = template.copyFromTemplate(anyUser);
     assertEquals(SubSampleName.ALIQUOT.getDisplayName(), newSample.getSubSampleAlias());
-    assertEquals(0, newSample.getActiveFields().size());
+    assertThat(newSample.getActiveFields()).isEmpty();
     assertEquals(1, newSample.getSTemplateLinkedVersion());
 
     // try updating to latest template version - no changes found
@@ -249,7 +250,7 @@ public class SampleTest {
     updateResult = newSample.updateToLatestTemplateVersion();
     assertTrue(updateResult);
     assertEquals("piece", newSample.getSubSampleAlias());
-    assertEquals(2, newSample.getActiveFields().size());
+    assertThat(newSample.getActiveFields()).hasSize(2);
     assertEquals("radio", newSample.getActiveFields().get(0).getName());
     assertEquals("text", newSample.getActiveFields().get(1).getName());
     assertEquals(2, newSample.getSTemplateLinkedVersion());
@@ -282,8 +283,8 @@ public class SampleTest {
     SampleTemplate template = sample.copyToTemplate(anyUser);
 
     // no fields to start with
-    assertEquals(0, template.getFields().size());
-    assertEquals(0, template.getActiveFields().size());
+    assertThat(template.getFields()).isEmpty();
+    assertThat(template.getActiveFields()).isEmpty();
     assertEquals(0, template.getCurrMaxColIndex());
 
     // add two fields
@@ -295,8 +296,8 @@ public class SampleTest {
     template.addSampleField(textField);
 
     // check added fields
-    assertEquals(2, template.getFields().size());
-    assertEquals(2, template.getActiveFields().size());
+    assertThat(template.getFields()).hasSize(2);
+    assertThat(template.getActiveFields()).hasSize(2);
     assertEquals(2, template.getCurrMaxColIndex());
     assertEquals("number", template.getActiveFields().get(0).getName());
     assertEquals(1, template.getActiveFields().get(0).getColumnIndex());
@@ -306,10 +307,10 @@ public class SampleTest {
     // delete a field
     template.deleteSampleField(numberField, true);
     template.refreshActiveFieldsAndColumnIndex();
-    assertEquals(2, template.getFields().size());
+    assertThat(template.getFields()).hasSize(2);
     assertTrue(template.getFields().get(0).isDeleted());
     assertTrue(template.getFields().get(0).isDeleteOnSampleUpdate());
-    assertEquals(1, template.getActiveFields().size());
+    assertThat(template.getActiveFields()).hasSize(1);
     assertEquals(1, template.getCurrMaxColIndex());
     assertEquals("text", template.getActiveFields().get(0).getName());
     assertEquals(1, template.getActiveFields().get(0).getColumnIndex());

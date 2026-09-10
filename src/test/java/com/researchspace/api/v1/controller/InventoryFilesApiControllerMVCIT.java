@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -43,7 +44,7 @@ public class InventoryFilesApiControllerMVCIT extends API_MVC_InventoryTestBase 
     String apiKey = createNewApiKeyForUser(anyUser);
 
     ApiContainer apiContainer = createBasicContainerForUser(anyUser);
-    assertEquals(0, apiContainer.getAttachments().size());
+    assertThat(apiContainer.getAttachments()).isEmpty();
 
     // upload file as attachment to container
     MockMultipartFile originalFile = picture1();
@@ -67,7 +68,7 @@ public class InventoryFilesApiControllerMVCIT extends API_MVC_InventoryTestBase 
     assertNull(result.getResolvedException());
     byte[] responseBytes = result.getResponse().getContentAsByteArray();
     assertNotNull(responseBytes);
-    assertEquals(47326, responseBytes.length);
+    assertThat(responseBytes).hasSize(47326);
 
     // check latest container lists the file
     MvcResult retrieveResult =
@@ -75,7 +76,7 @@ public class InventoryFilesApiControllerMVCIT extends API_MVC_InventoryTestBase 
             .perform(getContainerById(anyUser, apiKey, apiContainer.getId(), false))
             .andReturn();
     apiContainer = getFromJsonResponseBody(retrieveResult, ApiContainer.class);
-    assertEquals(1, apiContainer.getAttachments().size());
+    assertThat(apiContainer.getAttachments()).hasSize(1);
 
     // delete the file
     result = doFileDelete(anyUser, apiKey, attachmentId);
@@ -87,7 +88,7 @@ public class InventoryFilesApiControllerMVCIT extends API_MVC_InventoryTestBase 
             .perform(getContainerById(anyUser, apiKey, apiContainer.getId(), false))
             .andReturn();
     apiContainer = getFromJsonResponseBody(retrieveResult, ApiContainer.class);
-    assertEquals(0, apiContainer.getAttachments().size());
+    assertThat(apiContainer.getAttachments()).isEmpty();
   }
 
   @Tag("chemistry")
@@ -97,7 +98,7 @@ public class InventoryFilesApiControllerMVCIT extends API_MVC_InventoryTestBase 
     String apiKey = createNewApiKeyForUser(anyUser);
 
     ApiContainer apiContainer = createBasicContainerForUser(anyUser);
-    assertEquals(0, apiContainer.getAttachments().size());
+    assertThat(apiContainer.getAttachments()).isEmpty();
 
     // upload file as attachment to container
     MockMultipartFile originalFile = getChemicalMockFile();

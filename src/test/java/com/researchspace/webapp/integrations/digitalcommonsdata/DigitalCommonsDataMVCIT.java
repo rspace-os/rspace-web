@@ -1,10 +1,9 @@
 package com.researchspace.webapp.integrations.digitalcommonsdata;
 
 import static com.researchspace.service.IntegrationsHandler.DIGITAL_COMMONS_DATA_APP_NAME;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -59,11 +58,8 @@ public class DigitalCommonsDataMVCIT extends API_MVC_TestBase {
             .andExpect(status().is(302))
             .andReturn();
 
-    assertTrue(
-        result
-            .getResponse()
-            .getRedirectedUrl()
-            .contains("https://auth.data.mendeley.com/oauth2/authorize?response_type=code"));
+    assertThat(result.getResponse().getRedirectedUrl())
+        .contains("https://auth.data.mendeley.com/oauth2/authorize?response_type=code");
 
     String accessToken =
         userConnectionManager
@@ -71,7 +67,7 @@ public class DigitalCommonsDataMVCIT extends API_MVC_TestBase {
             .get()
             .getAccessToken();
     assertNotNull(accessToken);
-    assertFalse(accessToken.isBlank());
+    assertThat(accessToken).isNotBlank();
     assertEquals("TEMP", accessToken);
   }
 
@@ -269,8 +265,8 @@ public class DigitalCommonsDataMVCIT extends API_MVC_TestBase {
     Optional<UserConnection> optUserConn =
         userConnectionManager.findByUserNameProviderName(
             user.getUsername(), DIGITAL_COMMONS_DATA_APP_NAME);
-    assertTrue(optUserConn.isPresent());
-    assertFalse(optUserConn.get().getSecret().isBlank());
+    assertThat(optUserConn).isPresent();
+    assertThat(optUserConn.get().getSecret()).isNotBlank();
     result =
         mockMvc
             .perform(
@@ -283,16 +279,16 @@ public class DigitalCommonsDataMVCIT extends API_MVC_TestBase {
     redirectUrlString = result.getResponse().getForwardedUrl();
 
     // since there is no user login, the Mendeley end point returns an internal server error
-    assertTrue(redirectUrlString.contains("connect/connected"));
+    assertThat(redirectUrlString).contains("connect/connected");
 
     optUserConn =
         userConnectionManager.findByUserNameProviderName(
             user.getUsername(), DIGITAL_COMMONS_DATA_APP_NAME);
-    assertTrue(optUserConn.isPresent());
-    assertFalse(optUserConn.get().getSecret().isBlank());
+    assertThat(optUserConn).isPresent();
+    assertThat(optUserConn.get().getSecret()).isNotBlank();
 
     // since there is no user login the token has not been updated
-    assertTrue(optUserConn.get().getAccessToken().startsWith("TEMP"));
+    assertThat(optUserConn.get().getAccessToken()).startsWith("TEMP");
   }
 
   private HttpHeaders addAuthorizationHeaders(String accessToken) {
