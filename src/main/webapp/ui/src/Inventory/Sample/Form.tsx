@@ -110,7 +110,7 @@ const RequestsSection = observer(({ activeResult }: { activeResult: SampleModel 
     .map((value) => value === "ALLOWED")
     .orElse(false);
 
-  if (!sampleRequestsAvailable) return null;
+  if (!sampleRequestsAvailable || !activeResult.currentUserIsOwner) return null;
 
   return (
     <StepperPanel icon="sample" title={t("formSections.requests")} sectionName="requests" recordType="sample">

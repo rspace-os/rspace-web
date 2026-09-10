@@ -811,6 +811,16 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
             .collect(Collectors.toList());
     assertTrue(otherUserRequestableResultIds.contains(testUserSample.getId()));
 
+    // pi has edit permission on testUser's sample (asserted earlier), but is not its owner, and
+    // so cannot change whether it is requestable
+    ApiSample nonOwnerRequestableUpdate = new ApiSample();
+    nonOwnerRequestableUpdate.setId(testUserSample.getId());
+    nonOwnerRequestableUpdate.setRequestable(false);
+    sampleApiMgr.updateApiSample(nonOwnerRequestableUpdate, pi);
+    ApiSample sampleAfterNonOwnerAttempt =
+        sampleApiMgr.getApiSampleById(testUserSample.getId(), testUser);
+    assertTrue(sampleAfterNonOwnerAttempt.isRequestable());
+
     /*
      * check visibility for community admin administering the group
      */
