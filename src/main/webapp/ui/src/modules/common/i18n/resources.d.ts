@@ -6846,9 +6846,17 @@ export default interface Resources {
         },
         "bulk": {
           "creationUnsupportedType": "Bulk creation only supports records with the ''type'' field set to {0}; was: {1}.",
+          "deleteUnsupportedType": "Bulk delete does not support records of type: {0}",
+          "duplicateUnsupportedType": "Bulk duplicate does not support records of type: {0}",
+          "moveUnsupportedType": "Bulk move does not support records of type: {0}",
           "operationTypeRequired": "Bulk operation must specify operationType",
+          "ownerChangeUnsupportedType": "Bulk owner change does not support records of type: {0}",
           "recordCount": "Bulk operation must specify at least 1, at most 100 records",
-          "recordsRequired": "Bulk operation must specify list of records"
+          "recordsRequired": "Bulk operation must specify list of records",
+          "restoreUnsupportedType": "Bulk restore does not support records of type: {0}",
+          "rollbackUnsupported": "Operation type {0} does not allow the rollback option",
+          "templateUpdateUnsupportedType": "Update to latest template does not support records of type: {0}",
+          "updateUnsupportedType": "Bulk update does not support records of type: {0}"
         },
         "container": {
           "deletion": {

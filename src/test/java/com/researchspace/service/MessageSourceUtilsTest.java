@@ -2,6 +2,12 @@ package com.researchspace.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import com.researchspace.api.v1.auth.ApiAuthenticationException;
+import com.researchspace.api.v1.auth.ApiRuntimeException;
+import com.researchspace.model.field.LocalizedIllegalArgumentException;
+import com.researchspace.model.field.LocalizedIllegalStateException;
+import com.researchspace.model.field.LocalizedUnsupportedOperationException;
+import com.researchspace.service.chemistry.ChemistryClientException;
 import java.util.List;
 import java.util.Locale;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,6 +28,21 @@ class MessageSourceUtilsTest {
     assertEquals(
         "Name is a required field.",
         messages.getMessage("errors.required", new Object[] {"Name"}, enUS));
+  }
+
+  @Test
+  void resolvesEveryCodedExceptionThroughTheSameContract() {
+    for (Throwable exception :
+        List.of(
+            new ApiRuntimeException("errors.required", "Name"),
+            new ApiAuthenticationException("errors.required", "Name"),
+            new MediaContentMismatchException("errors.required", "Name"),
+            new ChemistryClientException("errors.required", new Object[] {"Name"}),
+            new LocalizedIllegalArgumentException("errors.required", "Name"),
+            new LocalizedIllegalStateException("errors.required", "Name"),
+            new LocalizedUnsupportedOperationException("errors.required", "Name"))) {
+      assertEquals("Name is a required field.", messages.getExceptionMessage(exception));
+    }
   }
 
   @Test

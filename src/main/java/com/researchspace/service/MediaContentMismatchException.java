@@ -1,6 +1,8 @@
 package com.researchspace.service;
 
+import com.researchspace.model.field.LocalizedException;
 import java.io.IOException;
+import java.util.function.BiFunction;
 import lombok.Getter;
 
 /**
@@ -11,16 +13,22 @@ import lombok.Getter;
  * the form its own clients expect.
  */
 @Getter
-public class MediaContentMismatchException extends IOException {
+public class MediaContentMismatchException extends IOException implements LocalizedException {
 
   private static final long serialVersionUID = 1L;
 
   private final String errorCode;
+
   private final Object[] args;
 
   public MediaContentMismatchException(String errorCode, Object... args) {
     super(errorCode);
     this.errorCode = errorCode;
     this.args = args;
+  }
+
+  @Override
+  public String resolve(BiFunction<String, Object[], String> resolver) {
+    return resolver.apply(errorCode, args);
   }
 }

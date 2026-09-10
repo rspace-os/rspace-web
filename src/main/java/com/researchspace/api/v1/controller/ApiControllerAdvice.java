@@ -48,8 +48,8 @@ public class ApiControllerAdvice extends RestControllerAdvice {
   public ResponseEntity<Object> handleAuth(final Exception ex, final WebRequest request) {
     final String error = messages.getMessage("errors.authorization.apiError");
     final String message =
-        ex instanceof ApiAuthenticationException authException
-            ? messages.getMessage(authException.getMessageKey(), authException.getArgs())
+        ex instanceof ApiAuthenticationException
+            ? messages.getExceptionMessage(ex)
             : ex.getLocalizedMessage();
     final ApiError apiError =
         new ApiError(HttpStatus.UNAUTHORIZED, ApiErrorCodes.AUTH.getCode(), message, error);
@@ -124,7 +124,7 @@ public class ApiControllerAdvice extends RestControllerAdvice {
   public ResponseEntity<Object> handleApiRuntimeException(
       final ApiRuntimeException ex, final WebRequest request) {
     log.error("api runtime error: " + ex.getErrorCode() + ": " + StringUtils.join(ex.getArgs()));
-    String resolvedMessage = messages.getMessage(ex.getErrorCode(), ex.getArgs());
+    String resolvedMessage = messages.getExceptionMessage(ex);
     final ApiError apiError =
         new ApiError(
             HttpStatus.UNPROCESSABLE_ENTITY,
@@ -166,7 +166,7 @@ public class ApiControllerAdvice extends RestControllerAdvice {
   public ResponseEntity<Object> handleMediaContentMismatch(
       final MediaContentMismatchException ex, final WebRequest request) {
     log.warn("rejected upload: {}", StringUtils.join(ex.getArgs(), ", "));
-    String resolvedMessage = messages.getMessage(ex.getErrorCode(), ex.getArgs());
+    String resolvedMessage = messages.getExceptionMessage(ex);
     final ApiError apiError =
         new ApiError(
             HttpStatus.UNPROCESSABLE_ENTITY,
@@ -230,7 +230,7 @@ public class ApiControllerAdvice extends RestControllerAdvice {
   public ResponseEntity<Object> handleChemistryClientException(
       ChemistryClientException ex, WebRequest request) {
     HttpStatus status = ex.getStatus() != null ? ex.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
-    String resolvedMessage = messages.getMessage(ex.getMessageKey(), ex.getArgs());
+    String resolvedMessage = messages.getExceptionMessage(ex);
     ApiError apiError = new ApiError(status, 50001, resolvedMessage, "");
     return new ResponseEntity<>(apiError, new HttpHeaders(), apiError.getStatus());
   }

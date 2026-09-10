@@ -85,23 +85,6 @@
         </attribute>
     </tag>
 
-     <tag>
-        <name>roleInGroup</name>
-        <tag-class>com.axiope.webapp.taglib.UserRoleInGroup</tag-class>
-        <attribute>
-            <name>user</name>
-            <required>true</required>
-            <rtexprvalue>true</rtexprvalue>
-            <type>com.researchspace.model.User</type>
-        </attribute>
-        <attribute>
-            <name>group</name>
-            <required>true</required>
-            <rtexprvalue>true</rtexprvalue>
-            <type>com.researchspace.model.Group</type>
-        </attribute>
-    </tag>
-
     <tag>
         <name>hasDeploymentProperty</name>
         <tag-class>com.axiope.webapp.taglib.DeploymentPropertyTag</tag-class>
