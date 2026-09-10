@@ -196,14 +196,20 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
         caller.getGroups().stream().map(Group::getId).collect(Collectors.toSet());
     if (bookingGroupIds.isEmpty()) bookingGroupIds = Set.of(-1L);
 
-    String bookingAccess =
-        caller.hasSysadminRole()
-            ? "1=1"
-            : "exists (select assignment.id from ResourceRoleAssignment assignment where"
-                + " assignment.resourceAccess=configuration.resourceAccess and assignment.roleKey"
-                + " in (:readableRoleKeys) and (assignment.user.id=:bookingUserId or"
-                + " assignment.group.id in (:bookingGroupIds) or"
-                + " assignment.audienceKey=:bookingAudience))";
+    String bookingAccess;
+    if (caller.hasSysadminRole()) {
+      bookingAccess = "1=1";
+    } else {
+      bookingAccess =
+          new StringBuilder(
+                  "exists (select assignment.id from ResourceRoleAssignment assignment where")
+              .append(
+                  " assignment.resourceAccess=configuration.resourceAccess and assignment.roleKey")
+              .append(" in (:readableRoleKeys) and (assignment.user.id=:bookingUserId or")
+              .append(" assignment.group.id in (:bookingGroupIds) or")
+              .append(" assignment.audienceKey=:bookingAudience))")
+              .toString();
+    }
     String containerAccess =
         readableContainerPredicate(caller, groupMembers, groupNames, visibleOwners, "parent");
     String nameFilter =
@@ -211,16 +217,19 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
             ? ""
             : " and lower(parent.editInfo.name) like :locationQuery escape '\\'";
     String fromAndWhere =
-        " from BookingConfiguration configuration, Instrument instrument "
-            + "join instrument.parentLocation location join location.container parent "
-            + "where type(instrument)=Instrument and instrument.deleted=false "
-            + "and configuration.state=:configurationState and configuration.enabled=true "
-            + "and configuration.target.type=:targetType and configuration.target.id=instrument.id "
-            + "and location.storedInstrument.id=instrument.id and parent.deleted=false and "
-            + bookingAccess
-            + " and "
-            + containerAccess
-            + nameFilter;
+        new StringBuilder(" from BookingConfiguration configuration, Instrument instrument ")
+            .append("join instrument.parentLocation location join location.container parent ")
+            .append("where type(instrument)=Instrument and instrument.deleted=false ")
+            .append("and configuration.state=:configurationState and configuration.enabled=true ")
+            .append(
+                "and configuration.target.type=:targetType and"
+                    + " configuration.target.id=instrument.id ")
+            .append("and location.storedInstrument.id=instrument.id and parent.deleted=false and ")
+            .append(bookingAccess)
+            .append(" and ")
+            .append(containerAccess)
+            .append(nameFilter)
+            .toString();
 
     Query<Long> countQuery =
         getSession().createQuery("select count(distinct parent.id)" + fromAndWhere, Long.class);
@@ -414,24 +423,25 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
 
   @Override
   public List<Instrument> searchEligibleBookingTargets(String query, int limit, User subject) {
-    String ownerScope = subject.hasSysadminRole() ? "" : " and instrument.owner.id = :subjectId";
     boolean byGlobalId = query.matches("(?i)IN[0-9]+");
     String searchPredicate =
         byGlobalId
             ? "concat('IN', cast(instrument.id as string)) = :query"
             : "lower(instrument.editInfo.name) like :query escape '\\'";
+    StringBuilder hql =
+        new StringBuilder("from Instrument instrument where type(instrument) = Instrument and")
+            .append(" instrument.deleted = false and ")
+            .append(searchPredicate)
+            .append(" and not exists (select configuration.id from")
+            .append(" BookingConfiguration configuration where configuration.target.type =")
+            .append(" :targetType and configuration.target.id = instrument.id");
+    if (!subject.hasSysadminRole()) {
+      hql.append(" and instrument.owner.id = :subjectId");
+    }
+    hql.append(" order by lower(instrument.editInfo.name), instrument.id");
     Query<Instrument> targetQuery =
         getSession()
-            .createQuery(
-                "from Instrument instrument where type(instrument) = Instrument and"
-                    + " instrument.deleted = false and "
-                    + searchPredicate
-                    + " and not exists (select configuration.id from"
-                    + " BookingConfiguration configuration where configuration.target.type ="
-                    + " :targetType and configuration.target.id = instrument.id)"
-                    + ownerScope
-                    + " order by lower(instrument.editInfo.name), instrument.id",
-                Instrument.class)
+            .createQuery(hql.toString(), Instrument.class)
             .setParameter(
                 "query",
                 byGlobalId
