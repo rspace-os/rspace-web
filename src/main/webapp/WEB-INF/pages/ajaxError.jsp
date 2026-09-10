@@ -11,7 +11,7 @@
 	<%-- show contents of error list, which may not be set. --%>
 	<c:if test="${not empty errors}">
 		<c:forEach items="${errors.errorMessages}" var="error">
- 			${error}
+ 			<c:out value="${error}"/>
  		<p />
 		</c:forEach>
 	</c:if>
