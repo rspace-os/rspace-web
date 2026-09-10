@@ -28,7 +28,7 @@
 				</ul>
 				<spring:message code="errors.page.contactSupportNotice"/>
                         <p><spring:message code="errors.page.idAtTimestamp" arguments="${errorId},${tstamp}"/></p>
-                        <pre class="message"> ${exceptionMessage}</pre>
+                        <pre class="message"> <c:out value="${exceptionMessage}"/></pre>
                 <% } else if ((Exception)request.getAttribute("jakarta.servlet.error.exception") != null) { %>
                     <pre class="message"><spring:message code="errors.page.unhandledExceptionNotice"/></pre>
                  <% } %>

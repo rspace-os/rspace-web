@@ -4,7 +4,7 @@
 <div id="ajaxError">
 	<spring:message code="errors.ajaxFragment.notice"/> <br />
 	<p />
-	<span id="ajaxErrorMsg">${exceptionMessage}</span>
+	<span id="ajaxErrorMsg"><c:out value="${exceptionMessage}"/></span>
 	<p id="ajaxErrorIdMsg">
 		<span><spring:message code="errors.ajaxFragment.refLabel" arguments="${errorId}"/></span>
 	</p>
