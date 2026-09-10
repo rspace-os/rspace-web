@@ -4,7 +4,7 @@ import com.researchspace.core.util.DateUtil;
 import com.researchspace.core.util.LoggingUtils;
 import com.researchspace.core.util.RequestUtil;
 import com.researchspace.model.field.ErrorList;
-import com.researchspace.model.field.LocalizedIllegalArgumentException;
+import com.researchspace.model.field.LocalizedException;
 import com.researchspace.model.permissions.SecurityLogger;
 import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.MessageSourceUtils;
@@ -395,8 +395,7 @@ public class ControllerExceptionHandler implements IControllerExceptionHandler {
       StringBuffer message = new StringBuffer();
       while (e != null) {
         message.append(messages.getExceptionMessage(e)).append("\n\n");
-        if (e instanceof LocalizedIllegalArgumentException
-            || e instanceof MessageSourceResolvable) {
+        if (e instanceof LocalizedException || e instanceof MessageSourceResolvable) {
           break;
         }
         e = e.getCause();

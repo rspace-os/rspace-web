@@ -1,7 +1,7 @@
 package com.researchspace.service;
 
 import com.researchspace.model.field.ErrorList;
-import com.researchspace.model.field.LocalizedIllegalArgumentException;
+import com.researchspace.model.field.LocalizedException;
 import java.util.List;
 import java.util.Locale;
 import lombok.NoArgsConstructor;
@@ -31,13 +31,13 @@ public class MessageSourceUtils {
     return messages.getMessage(resolvable);
   }
 
-  public String getMessage(LocalizedIllegalArgumentException exception) {
+  public String getMessage(LocalizedException exception) {
     return exception.resolve(this::getMessage);
   }
 
   /** Resolves coded model exceptions and leaves ordinary exception messages unchanged. */
   public String getExceptionMessage(Throwable exception) {
-    if (exception instanceof LocalizedIllegalArgumentException localizedException) {
+    if (exception instanceof LocalizedException localizedException) {
       return getMessage(localizedException);
     }
     if (exception instanceof MessageSourceResolvable resolvable) {

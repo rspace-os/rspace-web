@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.api.v1.controller.InventoryBulkOperationsApiController.InventoryBulkOperationConfig;
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationPost.BulkApiOperationType;
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult;
@@ -106,5 +107,25 @@ class InventoryBulkOperationHandlerGuardTest {
     ApiError error = handler.convertExceptionToApiError(exception);
 
     assertEquals("Could not parse quantity [asdf]", error.getErrors().get(0));
+  }
+
+  @Test
+  void resolvesApiErrorsDirectlyAndThroughWrapperWhilePreservingOrdinaryMessages() {
+    InventoryBulkOperationHandler handler = new InventoryBulkOperationHandler();
+    ReflectionTestUtils.setField(
+        handler, "messages", new MessageSourceUtils(new JsonMessageSource()));
+    RuntimeException coded = new ApiRuntimeException("errors.required", "Name");
+    for (Exception exception : List.of(coded, new RuntimeException("wrapper", coded))) {
+      assertEquals(
+          "Name is a required field.",
+          handler.convertExceptionToApiError(exception).getErrors().get(0));
+    }
+    assertEquals(
+        "outer",
+        handler
+            .convertExceptionToApiError(
+                new RuntimeException("outer", new RuntimeException("inner")))
+            .getErrors()
+            .get(0));
   }
 }

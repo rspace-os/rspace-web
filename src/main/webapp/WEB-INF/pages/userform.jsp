@@ -230,7 +230,7 @@
 									<a href="${groupURL}"> ${grp.displayName}</a>
 								</div>
 									<spring:message code="system:usersPage.columns.role"/>:
-								<rst:roleInGroup group="${grp}" user="${user}" />
+								<spring:message code="${grp.getRoleForUser(user).labelKey}"/>
 							</div>
 						</c:if>
 					</c:forEach>
@@ -251,7 +251,7 @@
                                     <a href="${groupURL}"> ${grp.displayName}</a>
                                 </div>
                                 <spring:message code="system:usersPage.columns.role"/>:
-                                <rst:roleInGroup group="${grp}" user="${user}" />
+                                <spring:message code="${grp.getRoleForUser(user).labelKey}"/>
                             </div>
                         </c:if>
                     </c:forEach>

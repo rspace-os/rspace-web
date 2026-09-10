@@ -1,12 +1,10 @@
 package com.researchspace.model.field;
 
-import org.springframework.context.MessageSourceResolvable;
+import java.util.function.BiFunction;
 
 /** Unsupported operation whose user-facing text is resolved at an application boundary. */
 public class LocalizedUnsupportedOperationException extends UnsupportedOperationException
-    implements MessageSourceResolvable {
-
-  private static final long serialVersionUID = -8883077312372394270L;
+    implements LocalizedException {
 
   private final String code;
   private final Object[] arguments;
@@ -18,17 +16,7 @@ public class LocalizedUnsupportedOperationException extends UnsupportedOperation
   }
 
   @Override
-  public String[] getCodes() {
-    return new String[] {code};
-  }
-
-  @Override
-  public Object[] getArguments() {
-    return arguments;
-  }
-
-  @Override
-  public String getDefaultMessage() {
-    return null;
+  public String resolve(BiFunction<String, Object[], String> resolver) {
+    return resolver.apply(code, arguments);
   }
 }
