@@ -15,16 +15,22 @@ import com.researchspace.archive.ArchiveExternalWorkFlow;
 import com.researchspace.archive.ArchiveManifest;
 import com.researchspace.archive.ArchiveModel;
 import com.researchspace.archive.IArchiveModel;
+import com.researchspace.core.util.ZipExtractionLimitException;
 import com.researchspace.core.util.version.SemanticVersion;
 import com.researchspace.model.ArchivalCheckSum;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.archive.ImportArchiveReport.ValidationResult;
 import com.researchspace.testutils.RSpaceTestUtils;
 import java.io.File;
 import java.io.IOException;
+import java.text.MessageFormat;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.support.StaticMessageSource;
+import org.springframework.test.util.ReflectionTestUtils;
 
 public class ArchiveParseTest {
 
@@ -41,6 +47,7 @@ public class ArchiveParseTest {
 
     ArchiveModelTSS model;
     boolean isZip;
+    ZipExtractionLimitException extractionFailure;
     SemanticVersion appversion;
 
     protected Optional<ArchivalCheckSum> getCheckSum(String uid) {
@@ -70,7 +77,10 @@ public class ArchiveParseTest {
       return isZip;
     }
 
-    protected File extractZipFolder(File zipFile, File outFolder) {
+    protected File extractZipFolder(File zipFile, File outFolder) throws IOException {
+      if (extractionFailure != null) {
+        throw extractionFailure;
+      }
       return anyFolder;
     }
 
@@ -105,6 +115,32 @@ public class ArchiveParseTest {
     assertFalse(report.isValidationSuccessful());
     assertRuleValidationResult(
         report, ImportValidationRule.ZIP_FILE_CAN_UNZIP, ValidationTestResult.FAIL);
+  }
+
+  @Test
+  public void extractionLimitFailureReportsWhichLimitTripped() {
+    parser.isZip = true;
+    parser.extractionFailure =
+        new ZipExtractionLimitException(
+            ZipExtractionLimitException.Limit.EXPANDED_SIZE, 10_000L * 1024 * 1024, "test");
+    StaticMessageSource source = new StaticMessageSource();
+    source.addMessage(
+        "archiveImport.errors.extractionExpandedSizeExceeded",
+        Locale.getDefault(),
+        "expands beyond {0} MB");
+    MessageSourceUtils messages = new MessageSourceUtils();
+    messages.setMessageSource(source);
+    ReflectionTestUtils.setField(parser, "messages", messages);
+    ImportArchiveReport report = new ImportArchiveReport();
+
+    loadArchive(report, new File("any"));
+
+    assertFalse(report.isValidationSuccessful());
+    assertRuleValidationResult(
+        report, ImportValidationRule.ZIP_FILE_CAN_UNZIP, ValidationTestResult.FAIL);
+    assertEquals(
+        List.of(MessageFormat.format("expands beyond {0} MB", 10_000L)),
+        report.getErrorList().getErrorMessages());
   }
 
   @Test

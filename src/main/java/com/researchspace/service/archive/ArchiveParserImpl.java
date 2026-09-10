@@ -25,12 +25,15 @@ import com.researchspace.archive.ExportRecordList;
 import com.researchspace.archive.IArchiveModel;
 import com.researchspace.archive.model.ArchiveUsers;
 import com.researchspace.core.util.XMLReadWriteUtils;
+import com.researchspace.core.util.ZipExtractionLimitException;
+import com.researchspace.core.util.ZipExtractionLimits;
 import com.researchspace.core.util.ZipUtils;
 import com.researchspace.core.util.version.SemanticVersion;
 import com.researchspace.core.util.version.Versionable;
 import com.researchspace.dao.ArchiveDao;
 import com.researchspace.model.ArchivalCheckSum;
 import com.researchspace.model.Version;
+import com.researchspace.service.DiskSpaceChecker;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RSMetaDataManager;
 import jakarta.xml.bind.JAXBException;
@@ -65,6 +68,7 @@ public class ArchiveParserImpl implements IArchiveParser {
   private @Autowired ArchiveDao archiveDao;
   private @Autowired RSMetaDataManager metadataMgr;
   private @Autowired MessageSourceUtils messages;
+  private @Autowired DiskSpaceChecker diskSpaceChecker;
 
   @Qualifier("propertyHolder")
   @Autowired
@@ -79,6 +83,9 @@ public class ArchiveParserImpl implements IArchiveParser {
     if (isZip) {
       try {
         zipFolder = extractZipFolder(zipFile, new File(iconfig.getUnzipPath()));
+      } catch (ZipExtractionLimitException e) {
+        // ZipUtils has already logged the rejection
+        report.getErrorList().addErrorMsg(extractionLimitMessage(e));
       } catch (IOException e) {
         log.warn("Cannot unzip provided archive file, skipping further checks");
       }
@@ -253,7 +260,33 @@ public class ArchiveParserImpl implements IArchiveParser {
 
   protected File extractZipFolder(File zipFile, File outFolder) throws IOException {
     log.info("Extracting {} into {}", zipFile.getAbsolutePath(), outFolder.getAbsolutePath());
-    return new File(ZipUtils.extractZip(zipFile.getAbsolutePath(), outFolder.getAbsolutePath()));
+    // the import shares the export's disk bounds: same partition, same failure mode
+    ZipExtractionLimits limits =
+        ZipExtractionLimits.DEFAULTS.withDiskLimits(
+            diskSpaceChecker.getMaxArchiveSizeMB() * FileUtils.ONE_MB,
+            diskSpaceChecker.getMinSpaceRequiredToStartArchiveExportMB() * FileUtils.ONE_MB);
+    return new File(ZipUtils.extractZip(zipFile, outFolder, limits));
+  }
+
+  private String extractionLimitMessage(ZipExtractionLimitException e) {
+    return switch (e.getLimit()) {
+      case EXPANDED_SIZE ->
+          messages.getMessage(
+              "archiveImport.errors.extractionExpandedSizeExceeded",
+              new Object[] {e.getLimitValue() / FileUtils.ONE_MB});
+      case FREE_DISK_SPACE ->
+          messages.getMessage(
+              "archiveImport.errors.extractionInsufficientDiskSpace",
+              new Object[] {e.getLimitValue() / FileUtils.ONE_MB});
+      case ENTRY_COUNT ->
+          messages.getMessage(
+              "archiveImport.errors.extractionEntryCountExceeded",
+              new Object[] {e.getLimitValue()});
+      case COMPRESSION_RATIO ->
+          messages.getMessage(
+              "archiveImport.errors.extractionCompressionRatioExceeded",
+              new Object[] {e.getLimitValue()});
+    };
   }
 
   private void verifyArchiveChecksum(

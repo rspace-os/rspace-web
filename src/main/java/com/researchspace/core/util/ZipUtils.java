@@ -104,10 +104,12 @@ public class ZipUtils {
    *
    * <p>Extraction is safe against archives that originate from user uploads: an absolute entry name
    * is rejected, and each entry's canonical destination must resolve inside the extraction
-   * directory (covering {@code ..} traversal and backslash variants). A rejection or I/O failure
-   * aborts and removes everything the extraction created; it does not restore pre-existing files
-   * that a failed run has already overwritten, so extract into a fresh directory when the
-   * destination may hold content worth keeping.
+   * directory (covering {@code ..} traversal and backslash variants). Extraction also stops once
+   * the archive exceeds {@link ZipExtractionLimits#DEFAULTS} (bytes written, entry count,
+   * compression ratio, free disk space), so a zip bomb cannot fill the partition. A rejection or
+   * I/O failure aborts and removes everything the extraction created; it does not restore
+   * pre-existing files that a failed run has already overwritten, so extract into a fresh directory
+   * when the destination may hold content worth keeping.
    *
    * @param archivePath path to zip file, e.g., a/b/c/d.archive.zip
    * @param destinationPath The folder into which the zip archive will be extracted.
@@ -124,13 +126,23 @@ public class ZipUtils {
    * @return The name of top-level folder or <code>null</code> if no top-level folder in zip
    */
   public static String extractZip(File archiveFile, File destinationFolder) throws IOException {
+    return extractZip(archiveFile, destinationFolder, ZipExtractionLimits.DEFAULTS);
+  }
+
+  /**
+   * Extracts with caller-supplied limits instead of {@link ZipExtractionLimits#DEFAULTS}.
+   *
+   * @throws ZipExtractionLimitException if a limit is exceeded; anything written is removed first
+   */
+  public static String extractZip(
+      File archiveFile, File destinationFolder, ZipExtractionLimits limits) throws IOException {
     if (!destinationFolder.exists()) {
       boolean dirMade = destinationFolder.mkdir();
       if (!dirMade) {
         throw new IllegalStateException("Couldn't make folder to unzip into");
       }
     }
-    return unzipFolder(archiveFile, destinationFolder);
+    return unzipFolder(archiveFile, destinationFolder, limits);
   }
 
   /**
@@ -141,8 +153,8 @@ public class ZipUtils {
    *
    * @return The name of top-level folder or <code>null</code> if no top-level folder
    */
-  private static String unzipFolder(File archiveFile, File zipDestinationFolder)
-      throws IOException {
+  private static String unzipFolder(
+      File archiveFile, File zipDestinationFolder, ZipExtractionLimits limits) throws IOException {
 
     final int bufferSize = 65536;
     File topLevelDir = null;
@@ -150,13 +162,16 @@ public class ZipUtils {
     String rootPrefix = rootPath.endsWith(File.separator) ? rootPath : rootPath + File.separator;
     // paths this extraction created, so a rejection can remove exactly what it wrote
     Set<File> created = new LinkedHashSet<>();
+    ExtractionBudget budget = new ExtractionBudget(limits, archiveFile, zipDestinationFolder);
 
     try (ZipFile zipFile = new ZipFile(archiveFile)) {
       byte[] buf = new byte[bufferSize];
+      budget.checkFreeDiskSpace();
 
       Enumeration<ZipArchiveEntry> entries = zipFile.getEntries();
       while (entries.hasMoreElements()) {
         ZipArchiveEntry zipEntry = entries.nextElement();
+        budget.countEntry(zipEntry);
         String name = zipEntry.getName();
         name = name.replace('\\', '/');
         if (name.startsWith("/") || name.matches("^[A-Za-z]:.*")) {
@@ -192,12 +207,14 @@ public class ZipUtils {
         if (!destinationFile.exists()) {
           created.add(destinationFile);
         }
+        budget.startEntry(zipEntry);
         try (InputStream entryStream = zipFile.getInputStream(zipEntry);
             FileOutputStream fos = new FileOutputStream(destinationFile)) {
           int n;
           while ((n = entryStream.read(buf)) != -1) {
             if (n > 0) {
               fos.write(buf, 0, n);
+              budget.countWritten(n);
             }
           }
         }
@@ -214,6 +231,76 @@ public class ZipUtils {
     }
 
     return (topLevelDir != null) ? topLevelDir.getAbsolutePath() : null;
+  }
+
+  /**
+   * Tracks what an extraction has written against its {@link ZipExtractionLimits}. The ratio
+   * compares bytes written with the archive file's length.
+   */
+  private static final class ExtractionBudget {
+    private static final long DISK_CHECK_INTERVAL_BYTES = 16L * 1024 * 1024;
+
+    private final ZipExtractionLimits limits;
+    private final long archiveCompressedBytes;
+    private final File destination;
+    private int entries;
+    private long totalWritten;
+    private long writtenSinceDiskCheck;
+    private String entryName = "";
+
+    ExtractionBudget(ZipExtractionLimits limits, File archiveFile, File destination) {
+      this.limits = limits;
+      this.archiveCompressedBytes = Math.max(1, archiveFile.length());
+      this.destination = destination;
+    }
+
+    void countEntry(ZipArchiveEntry entry) throws ZipExtractionLimitException {
+      entries++;
+      if (limits.maxEntries() > 0 && entries > limits.maxEntries()) {
+        throw new ZipExtractionLimitException(
+            ZipExtractionLimitException.Limit.ENTRY_COUNT,
+            limits.maxEntries(),
+            "more than " + limits.maxEntries() + " entries, at " + entry.getName());
+      }
+    }
+
+    void startEntry(ZipArchiveEntry entry) {
+      entryName = entry.getName();
+    }
+
+    void countWritten(int bytes) throws ZipExtractionLimitException {
+      totalWritten += bytes;
+      writtenSinceDiskCheck += bytes;
+      if (limits.maxExpandedBytes() > 0 && totalWritten > limits.maxExpandedBytes()) {
+        throw new ZipExtractionLimitException(
+            ZipExtractionLimitException.Limit.EXPANDED_SIZE,
+            limits.maxExpandedBytes(),
+            "expands past " + limits.maxExpandedBytes() + " bytes at entry " + entryName);
+      }
+      long ratio = limits.maxCompressionRatio();
+      if (ratio > 0
+          && totalWritten > limits.ratioFloorBytes()
+          && totalWritten > ratio * archiveCompressedBytes) {
+        throw new ZipExtractionLimitException(
+            ZipExtractionLimitException.Limit.COMPRESSION_RATIO,
+            ratio,
+            "archive inflates more than " + ratio + " times, at entry " + entryName);
+      }
+      if (writtenSinceDiskCheck >= DISK_CHECK_INTERVAL_BYTES) {
+        writtenSinceDiskCheck = 0;
+        checkFreeDiskSpace();
+      }
+    }
+
+    void checkFreeDiskSpace() throws ZipExtractionLimitException {
+      if (limits.minFreeDiskBytes() > 0
+          && destination.getUsableSpace() < limits.minFreeDiskBytes()) {
+        throw new ZipExtractionLimitException(
+            ZipExtractionLimitException.Limit.FREE_DISK_SPACE,
+            limits.minFreeDiskBytes(),
+            "under " + limits.minFreeDiskBytes() + " bytes free on the destination partition");
+      }
+    }
   }
 
   private static void deleteAll(Set<File> created) {
