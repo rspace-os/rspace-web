@@ -198,17 +198,19 @@ public class BookingConfigurationDaoHibernate
     if (groupIds.isEmpty()) {
       groupIds = Set.of(-1L);
     }
+    String hql =
+        new StringBuilder(
+                "select distinct configuration.target.id from BookingConfiguration configuration")
+            .append(" join configuration.resourceAccess.assignments assignment")
+            .append(" where configuration.state = :state and configuration.enabled = true")
+            .append(" and configuration.target.type = :targetType")
+            .append(" and assignment.roleKey in :readableRoleKeys")
+            .append(" and (assignment.user.id = :userId or assignment.group.id in :groupIds")
+            .append(" or assignment.audienceKey = :audience)")
+            .toString();
     return Set.copyOf(
         getSession()
-            .createQuery(
-                "select distinct configuration.target.id from BookingConfiguration configuration"
-                    + " join configuration.resourceAccess.assignments assignment"
-                    + " where configuration.state = :state and configuration.enabled = true"
-                    + " and configuration.target.type = :targetType"
-                    + " and assignment.roleKey in :readableRoleKeys"
-                    + " and (assignment.user.id = :userId or assignment.group.id in :groupIds"
-                    + " or assignment.audienceKey = :audience)",
-                Long.class)
+            .createQuery(hql, Long.class)
             .setParameter("targetType", BookableTargetType.INSTRUMENT)
             .setParameter("state", BookingConfigurationState.ACTIVE)
             .setParameterList("readableRoleKeys", readableRoleKeys)
