@@ -1,12 +1,12 @@
 package com.researchspace.webapp.controller;
 
 import com.researchspace.core.util.DateUtil;
+import com.researchspace.core.util.ListFormatUtils;
 import com.researchspace.core.util.LoggingUtils;
 import com.researchspace.core.util.RequestUtil;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.field.LocalizedException;
 import com.researchspace.model.permissions.SecurityLogger;
-import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.MessageSourceUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

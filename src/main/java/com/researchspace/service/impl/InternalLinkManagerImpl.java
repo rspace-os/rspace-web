@@ -1,6 +1,7 @@
 package com.researchspace.service.impl;
 
 import com.ibm.icu.text.ListFormatter;
+import com.researchspace.core.util.ListFormatUtils;
 import com.researchspace.dao.FieldDao;
 import com.researchspace.dao.InternalLinkDao;
 import com.researchspace.model.InternalLink;
@@ -11,7 +12,6 @@ import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.InternalLinkManager;
-import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.MessageSourceUtils;
 import java.util.List;
 import org.apache.commons.lang3.Validate;

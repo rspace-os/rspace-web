@@ -4,6 +4,7 @@ import static com.researchspace.service.IntegrationsHandler.PROTOCOLS_IO_APP_NAM
 import static com.researchspace.session.SessionAttributeUtils.USER_INFO;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 
+import com.researchspace.core.util.ListFormatUtils;
 import com.researchspace.core.util.ResponseUtil;
 import com.researchspace.core.util.progress.ProgressMonitor;
 import com.researchspace.core.util.progress.ProgressMonitorImpl;
@@ -35,7 +36,6 @@ import com.researchspace.service.FolderManager;
 import com.researchspace.service.GroupManager;
 import com.researchspace.service.IntegrationsHandler;
 import com.researchspace.service.LicenseService;
-import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.OrganisationManager;
 import com.researchspace.service.RecordManager;

@@ -1,8 +1,8 @@
 package com.researchspace.api.v1.controller;
 
 import com.researchspace.api.v1.controller.InventoryExportApiController.ApiInventoryExportSettingsPost;
+import com.researchspace.core.util.ListFormatUtils;
 import com.researchspace.model.core.GlobalIdentifier;
-import com.researchspace.service.ListFormatUtils;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.collections.CollectionUtils;

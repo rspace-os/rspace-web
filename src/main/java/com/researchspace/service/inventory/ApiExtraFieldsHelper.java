@@ -7,6 +7,7 @@ import com.researchspace.api.v1.model.ApiInstrumentEntity;
 import com.researchspace.api.v1.model.ApiInventoryLink;
 import com.researchspace.api.v1.model.ApiSampleWithoutSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
+import com.researchspace.core.util.ListFormatUtils;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.field.ErrorList;
@@ -76,7 +77,7 @@ public class ApiExtraFieldsHelper implements Validator {
       errors.rejectValue(
           "content",
           "errors.inventory.field.validation",
-          new Object[] {validationErrors.getAllErrorMessagesAsStringsSeparatedBy(", ")},
+          new Object[] {ListFormatUtils.formatList(validationErrors.getErrorMessages())},
           null);
     }
   }

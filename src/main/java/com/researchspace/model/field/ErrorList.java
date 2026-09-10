@@ -1,5 +1,6 @@
 package com.researchspace.model.field;
 
+import com.researchspace.core.util.ListFormatUtils;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -53,12 +54,14 @@ public class ErrorList implements Serializable {
     messageCodes.clear();
   }
 
-  /** Resolves all message codes and joins them without changing this error list. */
-  public String resolveMessagesAndJoin(
-      BiFunction<String, Object[], String> resolver, String delimiter) {
+  /**
+   * Resolves all message codes and joins them into the current locale's list format, without
+   * changing this error list.
+   */
+  public String resolveMessagesAndFormat(BiFunction<String, Object[], String> resolver) {
     List<String> resolved = new ArrayList<>(errorMessages);
     messageCodes.forEach(code -> resolved.add(resolver.apply(code.code(), code.arguments())));
-    return StringUtils.join(resolved, delimiter);
+    return ListFormatUtils.formatList(resolved);
   }
 
   /** Returns a snapshot containing resolved messages and unresolved message codes. */

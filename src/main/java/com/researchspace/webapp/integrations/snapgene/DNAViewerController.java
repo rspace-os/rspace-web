@@ -3,12 +3,12 @@ package com.researchspace.webapp.integrations.snapgene;
 import static com.researchspace.model.preference.HierarchicalPermission.ALLOWED;
 
 import com.researchspace.apiutils.ApiError;
+import com.researchspace.core.util.ListFormatUtils;
 import com.researchspace.core.util.MediaUtils;
 import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.User;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.Record;
-import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.SystemPropertyManager;
 import com.researchspace.service.SystemPropertyName;
 import com.researchspace.snapgene.wclient.SnapgeneWSClient;

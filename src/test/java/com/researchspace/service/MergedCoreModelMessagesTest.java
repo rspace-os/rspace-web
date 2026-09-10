@@ -9,7 +9,9 @@ import com.researchspace.model.comms.MessageType;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.field.LocalizedIllegalArgumentException;
 import com.researchspace.model.preference.Preference;
+import java.util.Locale;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.i18n.LocaleContextHolder;
 
 class MergedCoreModelMessagesTest {
 
@@ -56,5 +58,31 @@ class MergedCoreModelMessagesTest {
     assertEquals(
         "[abc] is invalid for field type Number: Invalid number: abc",
         messages.getMessage(fieldException));
+  }
+
+  /**
+   * Several nested errors are joined by the locale's list format rather than a hard-coded
+   * separator, so the locale is pinned here: {@code en_US} renders two items as "A and B" whereas
+   * other locales differ in both separator and conjunction.
+   */
+  @Test
+  void joinsSeveralNestedValidationErrorsUsingLocaleListFormat() {
+    ErrorList validationErrors = new ErrorList();
+    validationErrors.addErrorMsgCode("validation.inventoryField.invalidNumber", "abc");
+    validationErrors.addErrorMsgCode("validation.inventoryField.optionsNotAllowed");
+
+    LocalizedIllegalArgumentException fieldException =
+        new LocalizedIllegalArgumentException(
+            "validation.inventoryField.invalidForFieldType", validationErrors, "abc", "Number");
+
+    LocaleContextHolder.setLocale(Locale.US);
+    try {
+      assertEquals(
+          "[abc] is invalid for field type Number: Invalid number: abc and Some supplied values"
+              + " are not allowed options",
+          messages.getMessage(fieldException));
+    } finally {
+      LocaleContextHolder.resetLocaleContext();
+    }
   }
 }

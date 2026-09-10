@@ -34,7 +34,7 @@ public class LocalizedIllegalArgumentException extends IllegalArgumentException
     Object[] resolvedArguments = arguments;
     if (nestedErrors != null) {
       resolvedArguments = Arrays.copyOf(arguments, arguments.length + 1);
-      resolvedArguments[arguments.length] = nestedErrors.resolveMessagesAndJoin(resolver, ", ");
+      resolvedArguments[arguments.length] = nestedErrors.resolveMessagesAndFormat(resolver);
     }
     return resolver.apply(code, resolvedArguments);
   }
