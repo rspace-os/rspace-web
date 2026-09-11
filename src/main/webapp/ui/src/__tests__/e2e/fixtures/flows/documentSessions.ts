@@ -8,7 +8,7 @@ import { DirectoryPage } from "@/__tests__/e2e/pageObjects/system/groups/Directo
 import { GroupDetailsPage } from "@/__tests__/e2e/pageObjects/system/groups/GroupDetailsPage";
 import { WorkspacePage } from "@/__tests__/e2e/pageObjects/workspace/WorkspacePage";
 import type { AppUser } from "@/__tests__/e2e/users";
-import { loginInNewContext, refreshOwnSessionAfterGroupChange, test as userSessionTest } from "./userSessions";
+import { loginInNewContext, refreshOwnSessionAfterGroupChange, test as userSessionTest } from "./sessions/userSessions";
 
 type DocumentUser = Pick<AppUser, "username" | "password" | "apiKey">;
 

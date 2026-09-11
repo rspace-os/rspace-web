@@ -1,4 +1,5 @@
 import type { Locator, Page } from "@playwright/test";
+import { PublishDialogComponent } from "@/__tests__/e2e/components/myrspace/PublishDialogComponent";
 import { ShareDialog } from "@/__tests__/e2e/components/shared/ShareDialog";
 import { AddRemoveTagsDialog } from "./AddRemoveTagsDialog";
 import { MoveDialog } from "./MoveDialog";
@@ -129,6 +130,13 @@ export class WorkspaceSelectionBar {
     }
     await this.page.waitForLoadState("networkidle").catch(() => undefined);
     const dialog = new AddRemoveTagsDialog(this.page);
+    await dialog.waitUntilVisible();
+    return dialog;
+  }
+
+  async publish(): Promise<PublishDialogComponent> {
+    await this.item("Publish").getByRole("link", { name: "Publish" }).click();
+    const dialog = new PublishDialogComponent(this.page);
     await dialog.waitUntilVisible();
     return dialog;
   }

@@ -1,7 +1,7 @@
 import type { Browser, BrowserContext, BrowserContextOptions, Page } from "@playwright/test";
 import { GroupInvitationBanner } from "@/__tests__/e2e/components/system/groups/GroupInvitationBanner";
 import { createDynamicUser } from "@/__tests__/e2e/createDynamicUser";
-import { test as sysadminSessionTest } from "@/__tests__/e2e/fixtures/flows/sysadminSessions";
+import { test as sysadminSessionTest } from "@/__tests__/e2e/fixtures/flows/sessions/sysadminSessions";
 import { LoginPage } from "@/__tests__/e2e/pageObjects/auth/LoginPage";
 import { MyRSpacePage } from "@/__tests__/e2e/pageObjects/myrspace/MyRSpacePage";
 import { CreateAccountPage } from "@/__tests__/e2e/pageObjects/system/accounts/CreateAccountPage";
@@ -39,6 +39,13 @@ type UserSessionFixtures = {
   flowUserSession: (username: string, password: string) => Promise<UserSession>;
 };
 
+export async function performLogin(page: Page, username: string, password: string): Promise<void> {
+  const loginPage = new LoginPage(page);
+  await loginPage.open();
+  await loginPage.login(username, password);
+  await page.waitForURL((url) => url.pathname === "/workspace");
+}
+
 export async function loginInNewContext(
   browser: Browser,
   browserContextOptions: BrowserContextOptions,
@@ -48,10 +55,7 @@ export async function loginInNewContext(
   const context = await browser.newContext({ ...browserContextOptions, storageState: undefined });
   try {
     const page = await context.newPage();
-    const loginPage = new LoginPage(page);
-    await loginPage.open();
-    await loginPage.login(username, password);
-    await page.waitForURL((url) => url.pathname === "/workspace");
+    await performLogin(page, username, password);
     return { page, context, close: () => context.close() };
   } catch (error) {
     try {

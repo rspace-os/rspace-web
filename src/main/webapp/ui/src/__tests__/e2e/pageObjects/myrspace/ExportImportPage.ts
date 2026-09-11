@@ -1,8 +1,10 @@
 import type { Locator, Page } from "@playwright/test";
+import { ExportWizardComponent } from "@/__tests__/e2e/components/shared/ExportWizardComponent";
 import { BasePage } from "../BasePage";
 
 export class ExportImportPage extends BasePage {
   readonly path = "/import/archiveImport";
+  static readonly TITLE = "Import and Export Archives | ResearchSpace";
 
   private readonly ontologyForm: Locator;
   readonly ontologyFileChooser: Locator;
@@ -25,10 +27,30 @@ export class ExportImportPage extends BasePage {
     this.ontologyImportButton = this.ontologyForm.getByRole("button", { name: "Import" });
   }
 
+  async waitUntilLoaded(): Promise<void> {
+    await this.page.getByRole("heading", { name: "Export all" }).waitFor({ state: "visible" });
+  }
+
+  /** Waits for the ontology-import section's heading, as opposed to {@link waitUntilLoaded}'s export heading. */
   async isLoaded(): Promise<void> {
     await this.page.getByRole("heading", { name: "Import an ontology file - csv format" }).waitFor({
       state: "visible",
     });
+  }
+
+  get exportAllButton(): Locator {
+    return this.page.getByRole("link", { name: "Export all my work" });
+  }
+
+  async isExportAllButtonVisible(): Promise<boolean> {
+    return this.exportAllButton.isVisible();
+  }
+
+  async exportAll(): Promise<ExportWizardComponent> {
+    await this.exportAllButton.click();
+    const wizard = new ExportWizardComponent(this.page);
+    await wizard.waitForOpen();
+    return wizard;
   }
 
   async importOntologyCsv(

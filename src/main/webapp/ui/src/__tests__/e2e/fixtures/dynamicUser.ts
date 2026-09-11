@@ -1,8 +1,8 @@
 import { createDynamicUser } from "../createDynamicUser";
 import { WorkspacePage } from "../pageObjects/workspace/WorkspacePage";
-import { DYNAMIC_USER_PASSWORD } from "../testData";
+import { DYNAMIC_USER_PASSWORD, uniqueName } from "../testData";
 import { test } from "./flows";
-import { loginInNewContext } from "./flows/userSessions";
+import { loginInNewContext, performLogin } from "./flows/sessions/userSessions";
 
 type CreatableRole = "ROLE_USER" | "ROLE_PI" | "ROLE_ADMIN";
 
@@ -11,6 +11,7 @@ type DynamicUserFixtures = {
     role: CreatableRole,
     namePrefix?: string,
   ) => Promise<{ username: string; apiKey: string; workspace: WorkspacePage }>;
+  flowFreshPiPermissions: (namePrefix?: string) => Promise<{ username: string; apiKey: string; groupName: string }>;
 };
 
 export const dynamicUserTest = test.extend<DynamicUserFixtures>({
@@ -58,5 +59,24 @@ export const dynamicUserTest = test.extend<DynamicUserFixtures>({
         }
       }
     }
+  },
+
+  flowFreshPiPermissions: async ({ appUser, clientSysadmin, flowCreateUser, page, pageWorkspace }, use) => {
+    await use(async (namePrefix = "e2ePublishMember") => {
+      const member = await flowCreateUser("ROLE_USER", namePrefix);
+      const groupName = uniqueName(`${namePrefix}-group`);
+      await clientSysadmin.createGroup({
+        displayName: groupName,
+        type: "LAB_GROUP",
+        users: [
+          { username: appUser.username, roleInGroup: "PI" },
+          { username: member.username, roleInGroup: "DEFAULT" },
+        ],
+      });
+      await pageWorkspace.open();
+      await pageWorkspace.header.logOut();
+      await performLogin(page, appUser.username, appUser.password);
+      return { ...member, groupName };
+    });
   },
 });

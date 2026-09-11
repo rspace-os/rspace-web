@@ -1,4 +1,5 @@
 import { expect, type Locator, type Page } from "@playwright/test";
+import { RecordInfoDialog } from "@/__tests__/e2e/components/shared/RecordInfoDialog";
 import { BasePage } from "../BasePage";
 
 export type SharedRecordPermission = "READ" | "EDIT";
@@ -15,32 +16,81 @@ export class SharedDocumentsPage extends BasePage {
     this.searchButton = page.getByRole("button", { name: "Search", exact: true });
   }
 
-  async isLoaded(): Promise<void> {
+  async waitUntilLoaded(): Promise<void> {
     await this.page.getByRole("heading", { name: "Shared Documents" }).waitFor({ state: "visible" });
+  }
+
+  /** Alias for {@link waitUntilLoaded}. */
+  async isLoaded(): Promise<void> {
+    await this.waitUntilLoaded();
   }
 
   override async open(): Promise<void> {
     await super.open();
-    await this.isLoaded();
+    await this.waitUntilLoaded();
   }
 
-  async search(term: string): Promise<void> {
-    const searchTerm = term.trim();
-    if (!searchTerm) {
-      await this.open();
-      return;
-    }
-    if (searchTerm.length < 3) throw new Error("Shared Documents searches require at least three characters.");
+  get table(): Locator {
+    return this.page.getByRole("table");
+  }
 
-    const oldTable = await this.page.locator("#sharedRecordsListContainer .mainTable").elementHandle();
-    await this.searchInput.fill(searchTerm);
+  async search(query: string): Promise<void> {
+    await this.searchInput.fill(query);
     await this.searchButton.click();
-    if (oldTable) {
-      await this.page.waitForFunction((table) => !table.isConnected, oldTable);
+    await this.page.getByRole("button", { name: "Clear search" }).waitFor({ state: "visible" });
+  }
+
+  async sortByDocumentName(): Promise<void> {
+    await this.table.getByRole("link", { name: "Document name" }).click();
+    await this.page.waitForLoadState("networkidle");
+  }
+
+  async nextPage(): Promise<void> {
+    await this.page.getByRole("link", { name: "2", exact: true }).click();
+    await this.page.waitForLoadState("networkidle");
+  }
+
+  get dataRows(): Locator {
+    return this.table.locator("tbody").getByRole("row");
+  }
+
+  private async columnIndex(headerName: string): Promise<number> {
+    const headers = this.table.getByRole("columnheader");
+    const count = await headers.count();
+    for (let i = 0; i < count; i++) {
+      if ((await headers.nth(i).innerText()).trim() === headerName) return i;
     }
-    // Legacy blockUI.html uses data-test-id, not Playwright's data-testid.
-    await this.page.locator('[data-test-id="blockUIImg"]').waitFor({ state: "hidden" });
-    await expect(this.page.locator("#searchModePanel #message")).toContainText(searchTerm);
+    throw new Error(`columnIndex: no "${headerName}" column header found`);
+  }
+
+  async documentNames(): Promise<string[]> {
+    const rows = this.dataRows;
+    const names: string[] = [];
+    for (let index = 0; index < (await rows.count()); index++) {
+      names.push((await rows.nth(index).locator("a:not(.recordInfoIcon)").first().innerText()).trim());
+    }
+    return names;
+  }
+
+  async rowCount(): Promise<number> {
+    return this.dataRows.count();
+  }
+
+  async uniqueIdAt(index: number): Promise<string> {
+    return (await this.dataRows.nth(index).locator('a[href^="/globalId/"]').innerText()).trim();
+  }
+
+  async sharedWithAt(index: number): Promise<string> {
+    const columnIndex = await this.columnIndex("Shared with");
+    return (await this.dataRows.nth(index).getByRole("cell").nth(columnIndex).innerText()).trim();
+  }
+
+  async openRecordInfo(name: string): Promise<RecordInfoDialog> {
+    const row = this.dataRows.filter({ has: this.page.getByRole("link", { name, exact: true }) });
+    await row.getByRole("link", { name: "Record Info" }).click();
+    const dialog = new RecordInfoDialog(this.page);
+    await dialog.waitUntilVisible();
+    return dialog;
   }
 
   /** A row is uniquely identified by record name + recipient, since the same record can be shared with several recipients. */

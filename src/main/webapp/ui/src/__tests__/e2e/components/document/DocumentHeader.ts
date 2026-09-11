@@ -3,7 +3,6 @@ import { RecordInfoDialog } from "@/__tests__/e2e/components/shared/RecordInfoDi
 
 export class DocumentHeader {
   readonly name: Locator;
-  readonly editNameButton: Locator;
   readonly tags: Locator;
   readonly editTagsButton: Locator;
   readonly tagInput: Locator;
@@ -14,7 +13,6 @@ export class DocumentHeader {
 
   constructor(private readonly page: Page) {
     this.name = page.locator("#recordNameInHeader");
-    this.editNameButton = page.locator("#renameRecordEdit");
     // Legacy jQuery tagit widget: same #notebookTags element for both display and editing.
     this.tags = page.locator("#notebookTags");
     this.editTagsButton = page.getByRole("button", { name: "✏", description: "Edit tags" });
