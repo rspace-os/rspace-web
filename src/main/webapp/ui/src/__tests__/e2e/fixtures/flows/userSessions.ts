@@ -12,6 +12,7 @@ import { SelfServiceLabGroupPage } from "@/__tests__/e2e/pageObjects/system/grou
 import { SystemUsersPage } from "@/__tests__/e2e/pageObjects/system/users/SystemUsersPage";
 import { WorkspacePage } from "@/__tests__/e2e/pageObjects/workspace/WorkspacePage";
 import { alphaNumericUnique, DYNAMIC_USER_PASSWORD } from "@/__tests__/e2e/testData";
+import type { AppUser } from "@/__tests__/e2e/users";
 
 export type SelfServicePiActor = {
   username: string;
@@ -45,22 +46,39 @@ export async function loginInNewContext(
   password: string,
 ): Promise<{ page: Page; context: BrowserContext; close: () => Promise<void> }> {
   const context = await browser.newContext({ ...browserContextOptions, storageState: undefined });
-  const page = await context.newPage();
-  const loginPage = new LoginPage(page);
-  await loginPage.open();
-  await loginPage.login(username, password);
-  await page.waitForURL((url) => url.pathname === "/workspace");
-  return { page, context, close: () => context.close() };
+  try {
+    const page = await context.newPage();
+    const loginPage = new LoginPage(page);
+    await loginPage.open();
+    await loginPage.login(username, password);
+    await page.waitForURL((url) => url.pathname === "/workspace");
+    return { page, context, close: () => context.close() };
+  } catch (error) {
+    try {
+      await context.close();
+    } catch (cleanupError) {
+      console.error("Failed to close the browser context after authentication failed:", cleanupError);
+    }
+    throw error;
+  }
 }
 
-/** Logs the named dynamic user into a fresh browser context and wires up their own WorkspacePage. */
-export async function loginAsWorkspaceUser(
-  browser: Browser,
-  browserContextOptions: BrowserContextOptions,
-  username: string,
-): Promise<{ page: Page; workspace: WorkspacePage; close: () => Promise<void> }> {
-  const { page, close } = await loginInNewContext(browser, browserContextOptions, username, DYNAMIC_USER_PASSWORD);
-  return { page, workspace: new WorkspacePage(page), close };
+/**
+ * Re-authenticates the main `page`/`pageWorkspace` fixtures' own user so Shiro reloads
+ * permissions granted after its original login (e.g. group membership just created) — see
+ * .claude/automation/shiro-authorization-cache-not-refreshed-2026-08-30.md.
+ */
+export async function refreshOwnSessionAfterGroupChange(
+  page: Page,
+  pageWorkspace: WorkspacePage,
+  appUser: Pick<AppUser, "username" | "password">,
+): Promise<void> {
+  await pageWorkspace.open();
+  await pageWorkspace.header.logOut();
+  const loginPage = new LoginPage(page);
+  await loginPage.open();
+  await loginPage.login(appUser.username, appUser.password);
+  await pageWorkspace.open();
 }
 
 export const test = sysadminSessionTest.extend<UserSessionFixtures>({

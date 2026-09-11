@@ -117,6 +117,22 @@ export class GroupDetailsPage extends BasePage {
     return this.memberRow(username).getByRole("link", { name: "Go to User's Home Folder", exact: true });
   }
 
+  async homeFolderId(username: string): Promise<number> {
+    return this.folderId(this.homeFolderLink(username));
+  }
+
+  async sharedFolderId(): Promise<number> {
+    return this.folderId(this.sharedFolderLink);
+  }
+
+  private async folderId(link: Locator): Promise<number> {
+    const href = await link.getAttribute("href");
+    if (!href) throw new Error("Group details has no folder destination.");
+    const id = Number(new URL(href, this.page.url()).pathname.split("/").pop());
+    if (!Number.isSafeInteger(id) || id <= 0) throw new Error(`Invalid folder destination: ${href}`);
+    return id;
+  }
+
   async removeMember(username: string): Promise<void> {
     await this.memberRemoveButton(username).click();
     await this.memberRow(username).waitFor({ state: "hidden" });

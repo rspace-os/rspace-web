@@ -84,12 +84,21 @@ export class DocumentHeader {
 
   async getSuggestedTags(): Promise<string[]> {
     await this.openTagEditor();
-    await this.tagInput.click();
-    const items = this.page.locator(".ui-autocomplete li.ui-menu-item");
-    await items
-      .first()
-      .waitFor({ state: "visible", timeout: 3_000 })
-      .catch(() => undefined);
+    // An open autocomplete menu reuses its results for the same input instead of fetching again.
+    await this.tagInput.press("Escape");
+    const [response] = await Promise.all([
+      this.page.waitForResponse(
+        (res) => new URL(res.url()).pathname === "/workspace/editor/structuredDocument/userTagsAndOntologies",
+      ),
+      this.tagInput.click(),
+    ]);
+    if (!response.ok()) {
+      throw new Error(`Loading suggested tags failed: ${response.status()} ${response.statusText()}`);
+    }
+    // The legacy widget hides this only after applying the response, including an empty result.
+    await this.page.locator("#ajaxTagsLoadingImg").waitFor({ state: "hidden" });
+    // Empty responses close the menu but leave its previous items in the DOM.
+    const items = this.page.locator(".ui-autocomplete li.ui-menu-item").filter({ visible: true });
     const texts = await items.allInnerTexts();
     return texts.map((text) => text.trim()).filter((text) => text.length > 0 && text !== "&nbsp;");
   }

@@ -6,6 +6,7 @@ import { CreateFormPage } from "./CreateFormPage";
 import { DeletedItemsPage } from "./DeletedItemsPage";
 import { ExportImportPage } from "./ExportImportPage";
 import { ManageFormsPage } from "./ManageFormsPage";
+import { SharedDocumentsPage } from "./SharedDocumentsPage";
 
 export class MyRSpacePage extends BasePage {
   readonly path = "/admin";
@@ -42,6 +43,14 @@ export class MyRSpacePage extends BasePage {
     const manageForms = new ManageFormsPage(this.page);
     await manageForms.isLoaded();
     return manageForms;
+  }
+
+  async navigateToSharedDocumentsPage(): Promise<SharedDocumentsPage> {
+    await this.page.getByRole("link", { name: "Shared Documents", exact: true }).click();
+    await this.page.waitForURL("**/record/share/manage**");
+    const sharedDocs = new SharedDocumentsPage(this.page);
+    await sharedDocs.isLoaded();
+    return sharedDocs;
   }
 
   async openExportImport(): Promise<ExportImportPage> {

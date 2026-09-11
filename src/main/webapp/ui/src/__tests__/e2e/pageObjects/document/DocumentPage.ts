@@ -1,11 +1,13 @@
-import { expect, type Locator, type Page } from "@playwright/test";
+import { type Dialog, expect, type Locator, type Page } from "@playwright/test";
 import { AttachmentsSection } from "@/__tests__/e2e/components/document/AttachmentsSection";
 import { resolveFieldId } from "@/__tests__/e2e/components/document/DocumentFieldHelpers";
 import { DocumentHeader } from "@/__tests__/e2e/components/document/DocumentHeader";
 import { DocumentViewToolbar } from "@/__tests__/e2e/components/document/DocumentViewToolbar";
+import { MaterialsDialogComponent } from "@/__tests__/e2e/components/document/MaterialsDialogComponent";
 import { SignDocumentDialogComponent } from "@/__tests__/e2e/components/document/SignDocumentDialogComponent";
 import { signedStatusLocator } from "@/__tests__/e2e/components/document/SignedStatus";
 import { SigningDialogComponent } from "@/__tests__/e2e/components/document/SigningDialogComponent";
+import { StoichiometryTableComponent } from "@/__tests__/e2e/components/document/StoichiometryTableComponent";
 import { TinyMceEditor } from "@/__tests__/e2e/components/document/TinyMceEditor";
 import { WitnessDocumentDialogComponent } from "@/__tests__/e2e/components/document/WitnessDocumentDialogComponent";
 import type { RecordInfoDialog } from "@/__tests__/e2e/components/shared/RecordInfoDialog";
@@ -18,6 +20,8 @@ export class DocumentPage extends BasePage {
   readonly toolbar: DocumentViewToolbar;
   readonly attachments: AttachmentsSection;
   readonly signingDialog: SigningDialogComponent;
+  readonly editingStatus: Locator;
+  readonly lastModifiedDates: Locator;
   private readonly signedStatuses: Locator;
 
   constructor(page: Page) {
@@ -26,6 +30,9 @@ export class DocumentPage extends BasePage {
     this.toolbar = new DocumentViewToolbar(page);
     this.attachments = new AttachmentsSection(page);
     this.signingDialog = new SigningDialogComponent(page);
+    // Legacy JSP status banner; the same indicator covers document and entry editing.
+    this.editingStatus = page.locator("#editingStatus");
+    this.lastModifiedDates = page.getByText("Last modified:", { exact: false });
     this.signedStatuses = signedStatusLocator(page);
   }
 
@@ -47,6 +54,20 @@ export class DocumentPage extends BasePage {
     return (await this.signedStatuses.count()) > 0;
   }
 
+  /** Whether the current user has a pending witness request on this document. */
+  async canWitness(): Promise<boolean> {
+    return this.toolbar.witnessButton.isVisible();
+  }
+
+  /** Whether the document has been fully witnessed (all pending witnesses confirmed). */
+  async isWitnessed(): Promise<boolean> {
+    return this.page.locator("#witnessedStatus").isVisible();
+  }
+
+  async canSign(): Promise<boolean> {
+    return this.toolbar.signButton.isVisible();
+  }
+
   async getFieldViewContent(fieldName: string, index = 0): Promise<Locator> {
     const fieldId = await resolveFieldId(this.page, fieldName, index, "getFieldViewContent");
     const content = this.page.locator(`#div_rtf_${fieldId}`);
@@ -54,11 +75,61 @@ export class DocumentPage extends BasePage {
     return content;
   }
 
+  async equationInField(fieldName: string, index = 0): Promise<Locator> {
+    const content = await this.getFieldViewContent(fieldName, index);
+    // TinyMCE equations expose their persisted LaTeX on this application-owned element.
+    return content.locator(".rsEquation");
+  }
+
+  /** A saved reaction table renders read-only, directly in the field, once the document is reopened. */
+  async getStoichiometryTable(fieldName: string, index = 0): Promise<StoichiometryTableComponent> {
+    const content = await this.getFieldViewContent(fieldName, index);
+    return new StoichiometryTableComponent(content);
+  }
+
+  async openListOfMaterials(name: string, fieldIndex = 0): Promise<MaterialsDialogComponent> {
+    await this.page
+      .getByRole("button", { name: "Show list of materials associated with this field", exact: true })
+      .nth(fieldIndex)
+      .click();
+    await this.page.getByRole("menuitem", { name: `1: ${name}`, exact: true }).click();
+    const dialog = new MaterialsDialogComponent(this.page);
+    await dialog.waitForOpen();
+    return dialog;
+  }
+
   /** Reads an "Ontologies" field's tag list in view mode: one tag per rendered <p>. */
   async getOntologyTags(index = 0): Promise<string[]> {
     const field = await this.getFieldViewContent("Ontologies", index);
     const lines = await field.locator("p").allInnerTexts();
     return lines.map((line) => line.trim()).filter((line) => line.length > 0);
+  }
+
+  /** Reads the external ontology metadata and term identities written by the CSV importer. */
+  async getImportedOntology(index = 0): Promise<{
+    name: string;
+    version: string;
+    terms: Array<{ label: string; uri: string }>;
+  }> {
+    const field = await this.getFieldViewContent("Ontologies", index);
+    // OntologyDocManager stores this serialization as the field's displayed text.
+    const [name, version, ...terms] = (await field.innerText()).trim().split("__RSP_EXTONT_TAG_DELIM__");
+    const namePrefix = "__RSP_EXTONT_NAME__";
+    const versionPrefix = "__RSP_EXTONT_VERSION__";
+    if (!name?.startsWith(namePrefix) || !version?.startsWith(versionPrefix)) {
+      throw new Error("Imported ontology is missing its name or version metadata.");
+    }
+    return {
+      name: name.slice(namePrefix.length),
+      version: version.slice(versionPrefix.length),
+      terms: terms.map((term) => {
+        const parts = term.split("__RSP_EXTONT_URL_DELIM__");
+        if (parts.length !== 2 || !parts[0] || !parts[1]) {
+          throw new Error(`Imported ontology term has no unique label/URI pair: ${term}`);
+        }
+        return { label: parts[0], uri: parts[1] };
+      }),
+    };
   }
 
   async editField(fieldName: string, index = 0): Promise<TinyMceEditor> {
@@ -98,6 +169,19 @@ export class DocumentPage extends BasePage {
   async reload(): Promise<void> {
     await this.page.goto(this.page.url().split("?")[0]);
     await this.isLoaded();
+  }
+
+  /** Leaves editing without an explicit Save; completed autosaves remain available for recovery. */
+  async leaveWithoutSaving(): Promise<void> {
+    const handleDialog = (dialog: Dialog): Promise<void> =>
+      dialog.type() === "beforeunload" ? dialog.accept() : dialog.dismiss();
+    this.page.on("dialog", handleDialog);
+    try {
+      await this.page.goto("/workspace");
+      await this.page.waitForURL((url) => url.pathname === "/workspace");
+    } finally {
+      this.page.off("dialog", handleDialog);
+    }
   }
 
   async saveAsTemplate(templateName: string): Promise<void> {

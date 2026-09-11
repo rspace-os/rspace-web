@@ -6,6 +6,7 @@ import { WorkspaceRenameDialog } from "./WorkspaceRenameDialog";
 import { awaitTableRefresh } from "./WorkspaceTable";
 
 export type SelectionBarAction =
+  | "Create Document"
   | "Duplicate"
   | "Move"
   | "Rename"
@@ -85,6 +86,26 @@ export class WorkspaceSelectionBar {
     const dialog = new MoveDialog(this.page);
     await dialog.waitUntilVisible();
     return dialog;
+  }
+
+  async duplicate(): Promise<void> {
+    await awaitTableRefresh(this.page, async () => {
+      const [response] = await Promise.all([
+        this.page.waitForResponse((res) => new URL(res.url()).pathname === "/workspace/ajax/copy"),
+        this.clickAction("Duplicate"),
+      ]);
+      if (!response.ok()) throw new Error(`Duplicate failed: ${response.status()} ${response.statusText()}`);
+    });
+  }
+
+  async createDocumentFromTemplate(newName: string): Promise<void> {
+    await this.item("Create Document").click();
+    const dialog = this.page.getByRole("dialog", { name: "Create Document from Template", exact: true });
+    await dialog.getByRole("textbox", { name: "Document name:" }).fill(newName);
+    await Promise.all([
+      this.page.waitForURL("**/workspace/editor/structuredDocument/**"),
+      dialog.getByRole("button", { name: "Create", exact: true }).click(),
+    ]);
   }
 
   async exportAsCsv(): Promise<void> {

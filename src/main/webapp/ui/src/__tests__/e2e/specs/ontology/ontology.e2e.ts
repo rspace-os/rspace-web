@@ -3,8 +3,7 @@ import { fileURLToPath } from "node:url";
 import { expect } from "@playwright/test";
 import { createDynamicUser } from "@/__tests__/e2e/createDynamicUser";
 import { dynamicUserTest as test } from "@/__tests__/e2e/fixtures/dynamicUser";
-import { loginAsWorkspaceUser } from "@/__tests__/e2e/fixtures/flows/userSessions";
-import { DocumentPage } from "@/__tests__/e2e/pageObjects/document/DocumentPage";
+import { test as sessionTest } from "@/__tests__/e2e/fixtures/flows";
 import { alphaNumericUnique, uniqueName } from "@/__tests__/e2e/testData";
 
 const currentDir = dirname(fileURLToPath(import.meta.url));
@@ -16,7 +15,6 @@ const ENFORCED_MESSAGE = "Ontologies are enforced, tag values must come from ont
 
 test.describe("Tagging and Ontology", () => {
   test("As a user, tags I add to a document appear in my account's auto-generated ontology file, are shown on the document, and can be removed", async ({
-    page,
     pageWorkspace,
     pageDocument,
   }) => {
@@ -67,16 +65,14 @@ test.describe("Tagging and Ontology", () => {
     });
 
     await test.step("Then no tags remain, even after reloading", async () => {
-      await page.reload();
-      await pageDocument.isLoaded();
+      await pageDocument.reload();
       expect(await pageDocument.header.getTags()).toEqual([]);
     });
 
     await test.step("When I try to add tags containing forbidden characters", async () => {
       for (const forbidden of ["<tag1>", "tag/2", "tag\\3"]) {
         await pageDocument.header.addForbiddenTag(forbidden);
-        await page.reload();
-        await pageDocument.isLoaded();
+        await pageDocument.reload();
       }
     });
 
@@ -86,7 +82,6 @@ test.describe("Tagging and Ontology", () => {
   });
 
   test("As a user, tags I define in an ontology document appear as tag suggestions when tagging another document", async ({
-    page,
     pageWorkspace,
     pageDocument,
   }) => {
@@ -114,8 +109,8 @@ test.describe("Tagging and Ontology", () => {
 
     await test.step("When I select one of the suggestions instead of typing it, it's applied as a real tag", async () => {
       await editor.header.selectSuggestedTag("key=d");
-      await page.goto(`/workspace/editor/structuredDocument/${editor.getId()}`);
-      await pageDocument.isLoaded();
+      await editor.saveAndView();
+      await pageWorkspace.openDocument(editor.getId());
       expect(await pageDocument.header.getTags()).toContain("key=d");
     });
   });
@@ -148,148 +143,114 @@ test.describe("Tagging and Ontology", () => {
       expect(await pageDocument.isSigned()).toBe(true);
     });
 
-    await test.step("And it contains the tags from the CSV's data column, not its URI column", async () => {
-      const field = await pageDocument.getFieldViewContent("Ontologies");
-      const fieldText = await field.innerText();
-      for (const tag of ["e2eCsvTagAlpha", "e2eCsvTagBeta", "e2eCsvTagGamma"]) {
-        expect(fieldText).toContain(tag);
-      }
+    await test.step("And it preserves every term's URI and ontology metadata, excluding the CSV header", async () => {
+      expect(await pageDocument.getImportedOntology()).toEqual({
+        name: ontologyName,
+        version: ontologyVersion,
+        terms: [
+          { label: "e2eCsvTagAlpha", uri: "http://example.org/ont/0001" },
+          { label: "e2eCsvTagBeta", uri: "http://example.org/ont/0002" },
+          { label: "e2eCsvTagGamma", uri: "http://example.org/ont/0003" },
+        ],
+      });
     });
   });
 
-  test("As a user, an ontology document I share individually is read-only for the recipient, but editable when shared with a group at Edit permission, and its tags are suggested to both", async ({
-    browser,
-    browserContextOptions,
-    clientSysadmin,
-  }) => {
-    const groupName = uniqueName("e2e-ont-share-group");
-    const visibilityGroupName = uniqueName("e2e-ont-visibility-group");
-    const ontologyDocName = uniqueName("e2e-ont-share-doc");
-    const tag1 = uniqueName("e2e-ont-share-tag1");
-    const tag2 = uniqueName("e2e-ont-share-tag2");
+  sessionTest(
+    "As a user, an ontology document I share individually is read-only for the recipient, but editable when shared with a group at Edit permission, and its tags are suggested to both",
+    async ({ flowDocumentSession, clientSysadmin }) => {
+      // Three authenticated actors and both suggestion/edit journeys take about a minute.
+      sessionTest.setTimeout(90_000);
+      const groupName = uniqueName("e2e-ont-share-group");
+      const visibilityGroupName = uniqueName("e2e-ont-visibility-group");
+      const ontologyDocName = uniqueName("e2e-ont-share-doc");
+      const tag1 = uniqueName("e2e-ont-share-tag1");
+      const tag2 = uniqueName("e2e-ont-share-tag2");
+      const editedTag = uniqueName("e2e-ont-share-edited-tag");
 
-    const { ownerUsername, readUsername, editUsername } =
-      await test.step("Given an owner, a read-only recipient, and a grouped edit recipient exist", async () => {
-        const { username: ownerUsername } = await createDynamicUser(
-          clientSysadmin,
-          "ROLE_PI",
-          "e2eOntOwner",
-          "OntOwner",
-        );
-        const { username: readUsername } = await createDynamicUser(
-          clientSysadmin,
-          "ROLE_USER",
-          "e2eOntRead",
-          "OntRead",
-        );
-        const { username: editUsername } = await createDynamicUser(
-          clientSysadmin,
-          "ROLE_USER",
-          "e2eOntEdit",
-          "OntEdit",
-        );
-        await clientSysadmin.createGroup({
-          displayName: groupName,
-          type: "LAB_GROUP",
-          users: [
-            { username: ownerUsername, roleInGroup: "PI" },
-            { username: editUsername, roleInGroup: "DEFAULT" },
-          ],
+      const { ownerUser, readUser, editUser } =
+        await test.step("Given an owner, a read-only recipient, and a grouped edit recipient exist", async () => {
+          const ownerUser = await createDynamicUser(clientSysadmin, "ROLE_PI", "e2eOntOwner", "OntOwner");
+          const readUser = await createDynamicUser(clientSysadmin, "ROLE_USER", "e2eOntRead", "OntRead");
+          const editUser = await createDynamicUser(clientSysadmin, "ROLE_USER", "e2eOntEdit", "OntEdit");
+          await clientSysadmin.createGroup({
+            displayName: groupName,
+            type: "LAB_GROUP",
+            users: [
+              { username: ownerUser.username, roleInGroup: "PI" },
+              { username: editUser.username, roleInGroup: "DEFAULT" },
+            ],
+          });
+
+          await clientSysadmin.createGroup({
+            displayName: visibilityGroupName,
+            type: "LAB_GROUP",
+            users: [
+              { username: ownerUser.username, roleInGroup: "PI" },
+              { username: readUser.username, roleInGroup: "DEFAULT" },
+            ],
+          });
+          return { ownerUser, readUser, editUser };
         });
 
-        await clientSysadmin.createGroup({
-          displayName: visibilityGroupName,
-          type: "LAB_GROUP",
-          users: [
-            { username: ownerUsername, roleInGroup: "PI" },
-            { username: readUsername, roleInGroup: "DEFAULT" },
-          ],
-        });
-        return { ownerUsername, readUsername, editUsername };
-      });
+      const owner = await flowDocumentSession(ownerUser);
 
-    const owner = await loginAsWorkspaceUser(browser, browserContextOptions, ownerUsername);
-    try {
-      const ownerWorkspace = owner.workspace;
-      const ownerDocument = new DocumentPage(owner.page);
-
-      await test.step("When the owner creates an ontology document with two tags", async () => {
-        await ownerWorkspace.open();
-        await ownerWorkspace.toolbar.createMenu.createFromCustomForm("RSpace Tags from Ontologies");
-        await ownerDocument.isLoaded();
-        await ownerDocument.header.rename(ontologyDocName);
-        const field = await ownerDocument.editField(ONTOLOGY_FIELD_NAME);
+      const ontologyId = await test.step("When the owner creates an ontology document with two tags", async () => {
+        await owner.workspace.toolbar.createMenu.createFromCustomForm("RSpace Tags from Ontologies");
+        await owner.document.isLoaded();
+        await owner.document.header.rename(ontologyDocName);
+        const field = await owner.document.editField(ONTOLOGY_FIELD_NAME);
         await field.typeLines([tag1, tag2]);
-        await field.save();
+        await field.saveAndFinishEditing();
+        return owner.document.getId();
       });
 
       await test.step("And shares it individually at Read, and with the group at Edit", async () => {
-        await expect
-          .poll(async () => {
-            await ownerWorkspace.open();
-            await ownerWorkspace.searchBar.search(ontologyDocName);
-            return ownerWorkspace.table.rowCount();
-          })
-          .toBeGreaterThan(0);
-
-        await ownerWorkspace.table.selectRecord(ontologyDocName);
-        const shareDialog = await ownerWorkspace.selectionBar.share();
-        await shareDialog.addRecipient(readUsername);
-        await shareDialog.setPermission(readUsername, "READ");
+        await owner.workspace.searchFor(ontologyDocName);
+        await owner.workspace.table.selectRecord(ontologyDocName);
+        const shareDialog = await owner.workspace.selectionBar.share();
+        await shareDialog.addRecipient(readUser.username);
+        await shareDialog.setPermission(readUser.username, "READ");
         await shareDialog.addRecipient(groupName);
         await shareDialog.setPermission(groupName, "EDIT");
         await shareDialog.save();
       });
-    } finally {
-      await owner.close();
-    }
 
-    const read = await loginAsWorkspaceUser(browser, browserContextOptions, readUsername);
-    try {
-      const readWorkspace = read.workspace;
-      const readDocument = new DocumentPage(read.page);
+      const read = await flowDocumentSession(readUser);
 
       await test.step("Then the read-only recipient sees the shared tags suggested on their own documents", async () => {
-        await readWorkspace.open();
-        const editor = await readWorkspace.createBasicDocument();
+        const editor = await read.workspace.createBasicDocument();
         await expect.poll(() => editor.header.getSuggestedTags()).toEqual(expect.arrayContaining([tag1, tag2]));
       });
 
       await test.step("And the shared ontology document itself is read-only for them", async () => {
-        await readWorkspace.open();
-        await readWorkspace.searchBar.search(ontologyDocName);
-        await readWorkspace.table.openRecord(ontologyDocName);
-        await readDocument.isLoaded();
-        expect(await readDocument.isReadOnly()).toBe(true);
+        await read.workspace.openDocument(ontologyId);
+        expect(await read.document.isReadOnly()).toBe(true);
       });
-    } finally {
-      await read.close();
-    }
 
-    const edit = await loginAsWorkspaceUser(browser, browserContextOptions, editUsername);
-    try {
-      const editWorkspace = edit.workspace;
-      const editDocument = new DocumentPage(edit.page);
+      const edit = await flowDocumentSession(editUser);
 
       await test.step("Then the grouped edit recipient also sees the shared tags suggested", async () => {
-        await editWorkspace.open();
-        const editor = await editWorkspace.createBasicDocument();
+        const editor = await edit.workspace.createBasicDocument();
         await expect
           .poll(() => editor.header.getSuggestedTags(), { timeout: 30_000, intervals: [3_000] })
           .toEqual(expect.arrayContaining([tag1, tag2]));
       });
 
-      await test.step("And the shared ontology document is not read-only for them", async () => {
-        await editWorkspace.open();
-        await editWorkspace.searchBar.search(ontologyDocName);
-        await editWorkspace.table.openRecord(ontologyDocName);
-        await editDocument.isLoaded();
-        expect(await editDocument.isReadOnly()).toBe(false);
+      await test.step("When the grouped edit recipient changes a tag in the shared ontology and saves it", async () => {
+        await edit.workspace.openDocument(ontologyId);
+        const field = await edit.document.editField(ONTOLOGY_FIELD_NAME);
+        await field.fill("");
+        await field.typeLines([tag1, editedTag]);
+        await field.saveAndFinishEditing();
       });
-    } finally {
-      await edit.close();
-    }
-  });
+
+      await test.step("Then the owner sees the saved change when reopening the ontology", async () => {
+        const document = await owner.workspace.openDocument(ontologyId);
+        expect(await document.getOntologyTags()).toEqual([tag1, editedTag]);
+      });
+    },
+  );
 
   test("As a user, I can tag a notebook, folder, and document individually and via bulk multi-select, and search by tag", async ({
     pageWorkspace,
@@ -383,10 +344,8 @@ test.describe("Tagging and Ontology", () => {
   });
 
   test("As a PI, enforcing ontologies blocks free-text tags for group members, and sharing an ontology file with the group allows its tags through", async ({
-    browser,
-    browserContextOptions,
+    flowDocumentSession,
     appUser,
-    page,
     pageWorkspace,
     pageDocument,
     pageGroupView,
@@ -397,22 +356,17 @@ test.describe("Tagging and Ontology", () => {
     const ontologyDocName = uniqueName("e2e-enforce-ont-doc");
     const ontologyTag = alphaNumericUnique("e2eEnforceTag");
 
-    const { groupId, memberUsername } = await test.step("Given a PI and a grouped member exist", async () => {
-      const { username: memberUsername } = await createDynamicUser(
-        clientSysadmin,
-        "ROLE_USER",
-        "e2eEnfMember",
-        "EnfMember",
-      );
+    const { groupId, memberUser } = await test.step("Given a PI and a grouped member exist", async () => {
+      const memberUser = await createDynamicUser(clientSysadmin, "ROLE_USER", "e2eEnfMember", "EnfMember");
       const group = await clientSysadmin.createGroup({
         displayName: groupName,
         type: "LAB_GROUP",
         users: [
           { username: appUser.username, roleInGroup: "PI" },
-          { username: memberUsername, roleInGroup: "DEFAULT" },
+          { username: memberUser.username, roleInGroup: "DEFAULT" },
         ],
       });
-      return { groupId: group.id, memberUsername };
+      return { groupId: group.id, memberUser };
     });
 
     await test.step("When the PI enables Enforce Ontologies for the group", async () => {
@@ -432,56 +386,51 @@ test.describe("Tagging and Ontology", () => {
       await editor.editToolbar.saveAndClose();
     });
 
-    const member = await loginAsWorkspaceUser(browser, browserContextOptions, memberUsername);
-    try {
-      const memberWorkspace = member.workspace;
+    const member = await flowDocumentSession(memberUser);
 
-      const memberDoc = await test.step("Then the grouped member cannot add a free-text tag", async () => {
-        await memberWorkspace.open();
-        const editor = await memberWorkspace.createBasicDocument();
-        await editor.header.addForbiddenTag(ontologyTag);
-        expect(await editor.header.tagInfoDialogText.innerText()).toBe(ENFORCED_MESSAGE);
-        expect(await editor.header.getTags()).toEqual([]);
-        return editor;
-      });
+    const memberDoc = await test.step("Then the grouped member cannot add a free-text tag", async () => {
+      await member.workspace.open();
+      const editor = await member.workspace.createBasicDocument();
+      await editor.header.addForbiddenTag(ontologyTag);
+      expect(await editor.header.tagInfoDialogText.innerText()).toBe(ENFORCED_MESSAGE);
+      expect(await editor.header.getTags()).toEqual([]);
+      return editor;
+    });
 
-      await test.step("When the PI creates an ontology document defining that tag, and shares it with the group", async () => {
-        await pageWorkspace.open();
-        await pageWorkspace.toolbar.createMenu.createFromCustomForm("RSpace Tags from Ontologies");
-        await pageDocument.isLoaded();
-        await pageDocument.header.rename(ontologyDocName);
-        const field = await pageDocument.editField(ONTOLOGY_FIELD_NAME);
-        await field.typeLines([ontologyTag]);
-        await field.save();
+    await test.step("When the PI creates an ontology document defining that tag, and shares it with the group", async () => {
+      await pageWorkspace.open();
+      await pageWorkspace.toolbar.createMenu.createFromCustomForm("RSpace Tags from Ontologies");
+      await pageDocument.isLoaded();
+      await pageDocument.header.rename(ontologyDocName);
+      const field = await pageDocument.editField(ONTOLOGY_FIELD_NAME);
+      await field.typeLines([ontologyTag]);
+      await field.save();
 
-        await pageWorkspace.open();
-        await pageWorkspace.searchBar.search(ontologyDocName);
-        await pageWorkspace.table.selectRecord(ontologyDocName);
-        const shareDialog = await pageWorkspace.selectionBar.share();
-        await shareDialog.addRecipient(groupName);
-        await shareDialog.setPermission(groupName, "EDIT");
-        await shareDialog.save();
-      });
+      await pageWorkspace.open();
+      await pageWorkspace.searchBar.search(ontologyDocName);
+      await pageWorkspace.table.selectRecord(ontologyDocName);
+      const shareDialog = await pageWorkspace.selectionBar.share();
+      await shareDialog.addRecipient(groupName);
+      await shareDialog.setPermission(groupName, "EDIT");
+      await shareDialog.save();
+    });
 
-      await test.step("Then the member can now add that ontology-derived tag", async () => {
-        await member.page.reload();
+    await test.step("Then the member can now add that ontology-derived tag", async () => {
+      await member.document.reload();
 
-        await expect
-          .poll(() => memberDoc.header.getSuggestedTags(), { timeout: 30_000, intervals: [3_000] })
-          .toContain(ontologyTag);
-        await memberDoc.header.addTag(ontologyTag);
-        await member.page.reload();
-        expect(await memberDoc.header.getTags()).toContain(ontologyTag);
-      });
+      await expect
+        .poll(() => memberDoc.header.getSuggestedTags(), { timeout: 30_000, intervals: [3_000] })
+        .toContain(ontologyTag);
+      await memberDoc.header.addTag(ontologyTag);
+      await member.document.reload();
+      expect(await memberDoc.header.getTags()).toContain(ontologyTag);
+    });
 
-      await test.step("And still cannot add an unrelated free-text tag", async () => {
-        const otherTag = alphaNumericUnique("e2eEnforceOther");
-        await memberDoc.header.addForbiddenTag(otherTag);
-        expect(await memberDoc.header.tagInfoDialogText.innerText()).toBe(ENFORCED_MESSAGE);
-      });
-    } finally {
-      await member.close();
-    }
+    await test.step("And still cannot add an unrelated free-text tag", async () => {
+      const otherTag = alphaNumericUnique("e2eEnforceOther");
+      await memberDoc.header.addForbiddenTag(otherTag);
+      expect(await memberDoc.header.tagInfoDialogText.innerText()).toBe(ENFORCED_MESSAGE);
+    });
 
     await test.step("Then the PI can also add the ontology-derived tag, but still not an unrelated one", async () => {
       await pageWorkspace.open();
@@ -493,7 +442,7 @@ test.describe("Tagging and Ontology", () => {
         .poll(() => pageDocument.header.getSuggestedTags(), { timeout: 30_000, intervals: [3_000] })
         .toContain(ontologyTag);
       await pageDocument.header.addTag(ontologyTag);
-      await page.reload();
+      await pageDocument.reload();
       expect(await pageDocument.header.getTags()).toContain(ontologyTag);
 
       const otherTag = alphaNumericUnique("e2eEnforceOtherPi");
@@ -503,8 +452,7 @@ test.describe("Tagging and Ontology", () => {
   });
 
   test("As a member of two groups, enforcement from either group applies, and only a group-level share (not an individual one) unblocks its tags", async ({
-    browser,
-    browserContextOptions,
+    flowDocumentSession,
     appUser,
     pageWorkspace,
     pageDocument,
@@ -517,20 +465,15 @@ test.describe("Tagging and Ontology", () => {
     const ontologyDocName = uniqueName("e2e-multi-enforce-doc");
     const ontologyTag = alphaNumericUnique("e2eMultiEnforceTag");
 
-    const { enforcingGroupId, memberUsername } =
+    const { enforcingGroupId, memberUser } =
       await test.step("Given a PI and a member who belong to two of the PI's groups, neither enforcing ontologies yet", async () => {
-        const { username: memberUsername } = await createDynamicUser(
-          clientSysadmin,
-          "ROLE_USER",
-          "e2eMultiMember",
-          "MultiMember",
-        );
+        const memberUser = await createDynamicUser(clientSysadmin, "ROLE_USER", "e2eMultiMember", "MultiMember");
         const enforcingGroup = await clientSysadmin.createGroup({
           displayName: enforcingGroupName,
           type: "LAB_GROUP",
           users: [
             { username: appUser.username, roleInGroup: "PI" },
-            { username: memberUsername, roleInGroup: "DEFAULT" },
+            { username: memberUser.username, roleInGroup: "DEFAULT" },
           ],
         });
         await clientSysadmin.createGroup({
@@ -538,10 +481,10 @@ test.describe("Tagging and Ontology", () => {
           type: "LAB_GROUP",
           users: [
             { username: appUser.username, roleInGroup: "PI" },
-            { username: memberUsername, roleInGroup: "DEFAULT" },
+            { username: memberUser.username, roleInGroup: "DEFAULT" },
           ],
         });
-        return { enforcingGroupId: enforcingGroup.id, memberUsername };
+        return { enforcingGroupId: enforcingGroup.id, memberUser };
       });
 
     await test.step("When the PI enables Enforce Ontologies on only one of the two shared groups", async () => {
@@ -550,71 +493,69 @@ test.describe("Tagging and Ontology", () => {
       expect(await pageGroupView.isOntologiesEnforced()).toBe(true);
     });
 
-    const member = await loginAsWorkspaceUser(browser, browserContextOptions, memberUsername);
-    try {
-      const memberWorkspace = member.workspace;
+    const member = await flowDocumentSession(memberUser);
 
-      await test.step("Then the member is blocked from free-text tags, even via their other, non-enforcing group", async () => {
-        await memberWorkspace.open();
-        const editor = await memberWorkspace.createBasicDocument();
-        await editor.header.addForbiddenTag(ontologyTag);
-        expect(await editor.header.tagInfoDialogText.innerText()).toBe(ENFORCED_MESSAGE);
-      });
+    await test.step("Then the member is blocked from free-text tags, even via their other, non-enforcing group", async () => {
+      await member.workspace.open();
+      const editor = await member.workspace.createBasicDocument();
+      await editor.header.addForbiddenTag(ontologyTag);
+      expect(await editor.header.tagInfoDialogText.innerText()).toBe(ENFORCED_MESSAGE);
+    });
 
-      const editor = await test.step("Given the member has a document open to check suggestions on", async () => {
-        await memberWorkspace.open();
-        return memberWorkspace.createBasicDocument();
-      });
+    const editor = await test.step("Given the member has a document open to check suggestions on", async () => {
+      await member.workspace.open();
+      return member.workspace.createBasicDocument();
+    });
 
-      await test.step("Then the member sees no suggestions before the PI has shared any ontology file", async () => {
-        expect(await editor.header.getSuggestedTags()).not.toContain(ontologyTag);
-      });
+    await test.step("Then the member sees no suggestions before the PI has shared any ontology file", async () => {
+      expect(await editor.header.getSuggestedTags()).not.toContain(ontologyTag);
+    });
 
-      await test.step("When the PI creates an ontology document defining that tag and shares it with the member individually, at Edit", async () => {
-        await pageWorkspace.open();
-        await pageWorkspace.toolbar.createMenu.createFromCustomForm("RSpace Tags from Ontologies");
-        await pageDocument.isLoaded();
-        await pageDocument.header.rename(ontologyDocName);
-        const field = await pageDocument.editField(ONTOLOGY_FIELD_NAME);
-        await field.typeLines([ontologyTag]);
-        await field.save();
+    await test.step("When the PI creates an ontology document defining that tag and shares it with the member individually, at Edit", async () => {
+      await pageWorkspace.open();
+      await pageWorkspace.toolbar.createMenu.createFromCustomForm("RSpace Tags from Ontologies");
+      await pageDocument.isLoaded();
+      await pageDocument.header.rename(ontologyDocName);
+      const field = await pageDocument.editField(ONTOLOGY_FIELD_NAME);
+      await field.typeLines([ontologyTag]);
+      await field.save();
 
-        await pageWorkspace.open();
-        await pageWorkspace.searchBar.search(ontologyDocName);
-        await pageWorkspace.table.selectRecord(ontologyDocName);
-        const shareDialog = await pageWorkspace.selectionBar.share();
-        await shareDialog.addRecipient(memberUsername);
-        await shareDialog.setPermission(memberUsername, "EDIT");
-        await shareDialog.save();
-      });
+      await pageWorkspace.open();
+      await pageWorkspace.searchBar.search(ontologyDocName);
+      await pageWorkspace.table.selectRecord(ontologyDocName);
+      const shareDialog = await pageWorkspace.selectionBar.share();
+      await shareDialog.addRecipient(memberUser.username);
+      await shareDialog.setPermission(memberUser.username, "EDIT");
+      await shareDialog.save();
+    });
 
-      await test.step("Then the member still sees no suggestions — an individual share doesn't satisfy enforcement", async () => {
-        expect(await editor.header.getSuggestedTags()).not.toContain(ontologyTag);
-      });
+    await test.step("Then the individually shared tag is neither suggested nor accepted for the member", async () => {
+      expect(await editor.header.getSuggestedTags()).not.toContain(ontologyTag);
+      await editor.header.addForbiddenTag(ontologyTag);
+      await expect(editor.header.tagInfoDialogText).toHaveText(ENFORCED_MESSAGE);
+      await editor.saveAndView();
+      const document = await member.workspace.openDocument(editor.getId());
+      expect(await document.header.getTags()).not.toContain(ontologyTag);
+    });
 
-      await test.step("When the PI instead shares the ontology document with the enforcing group, at Edit", async () => {
-        await pageWorkspace.open();
-        await pageWorkspace.searchBar.search(ontologyDocName);
-        await pageWorkspace.table.selectRecord(ontologyDocName);
-        const shareDialog = await pageWorkspace.selectionBar.share();
-        await shareDialog.addRecipient(enforcingGroupName);
-        await shareDialog.setPermission(enforcingGroupName, "EDIT");
-        await shareDialog.save();
-      });
+    await test.step("When the PI instead shares the ontology document with the enforcing group, at Edit", async () => {
+      await pageWorkspace.open();
+      await pageWorkspace.searchBar.search(ontologyDocName);
+      await pageWorkspace.table.selectRecord(ontologyDocName);
+      const shareDialog = await pageWorkspace.selectionBar.share();
+      await shareDialog.addRecipient(enforcingGroupName);
+      await shareDialog.setPermission(enforcingGroupName, "EDIT");
+      await shareDialog.save();
+    });
 
-      await test.step("Then the member now sees and can use the group-shared tag", async () => {
-        await expect
-          .poll(() => editor.header.getSuggestedTags(), { timeout: 30_000, intervals: [3_000] })
-          .toContain(ontologyTag);
-        await editor.header.addTag(ontologyTag);
-        await member.page.goto(`/workspace/editor/structuredDocument/${editor.getId()}`);
-        const reopened = new DocumentPage(member.page);
-        await reopened.isLoaded();
-        expect(await reopened.header.getTags()).toContain(ontologyTag);
-      });
-    } finally {
-      await member.close();
-    }
+    await test.step("Then the member now sees and can use the group-shared tag", async () => {
+      await expect
+        .poll(() => editor.header.getSuggestedTags(), { timeout: 30_000, intervals: [3_000] })
+        .toContain(ontologyTag);
+      await editor.header.addTag(ontologyTag);
+      const reopened = await member.workspace.openDocument(editor.getId());
+      expect(await reopened.header.getTags()).toContain(ontologyTag);
+    });
   });
 
   test("As a user, tags added to a notebook entry persist and display correctly after reopening the notebook", async ({
@@ -637,7 +578,7 @@ test.describe("Tagging and Ontology", () => {
       await pageWorkspace.table.openNotebook(notebookName);
       await pageNotebook.isLoaded();
       await pageNotebook.showAllEntries();
-      await pageNotebook.entryThumbnail("Entry 1").click();
+      await pageNotebook.selectEntry("Entry 1");
       await pageNotebook.header.addTag(tag1);
       await pageNotebook.header.addTag(tag2);
     });
@@ -647,7 +588,7 @@ test.describe("Tagging and Ontology", () => {
       await pageWorkspace.table.openNotebook(notebookName);
       await pageNotebook.isLoaded();
       await pageNotebook.showAllEntries();
-      await pageNotebook.entryThumbnail("Entry 1").click();
+      await pageNotebook.selectEntry("Entry 1");
       expect(await pageNotebook.header.getTags()).toEqual(expect.arrayContaining([tag1, tag2]));
     });
   });

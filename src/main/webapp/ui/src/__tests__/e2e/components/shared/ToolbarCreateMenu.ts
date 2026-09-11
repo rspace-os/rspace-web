@@ -21,13 +21,27 @@ const CREATE_ACCESSIBLE_NAME: Record<CreateMenuItem, string> = {
 
 export class ToolbarCreateMenu {
   readonly createButton: Locator;
+  readonly availableActions: Locator;
+  private readonly menu: Locator;
 
   constructor(private readonly page: Page) {
     this.createButton = page.getByRole("button", { name: "Create a record", exact: true });
+    this.menu = page.getByRole("menu").filter({ visible: true });
+    this.availableActions = this.menu.getByRole("menuitem");
   }
 
   async create(item: CreateMenuItem): Promise<void> {
     await this.select(CREATE_ACCESSIBLE_NAME[item]);
+  }
+
+  async open(): Promise<void> {
+    await this.createButton.click();
+    await expect(this.menu).toBeVisible();
+  }
+
+  async close(): Promise<void> {
+    await this.menu.press("Escape");
+    await this.menu.waitFor({ state: "hidden" });
   }
 
   /**

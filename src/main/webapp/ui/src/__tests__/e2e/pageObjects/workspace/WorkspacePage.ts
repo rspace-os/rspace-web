@@ -2,6 +2,7 @@ import type { Locator, Page } from "@playwright/test";
 import { AppHeader } from "@/__tests__/e2e/components/shared/AppHeader";
 import { MessagesAndRequestsDialogComponent } from "@/__tests__/e2e/components/shared/MessagesAndRequestsDialogComponent";
 import type { RecordInfoDialog } from "@/__tests__/e2e/components/shared/RecordInfoDialog";
+import type { SharePermission } from "@/__tests__/e2e/components/shared/ShareDialog";
 import { CreateFolderDialog } from "@/__tests__/e2e/components/workspace/CreateFolderDialog";
 import { CreateNotebookDialog } from "@/__tests__/e2e/components/workspace/CreateNotebookDialog";
 import { WorkspacePagination } from "@/__tests__/e2e/components/workspace/WorkspacePagination";
@@ -40,6 +41,29 @@ export class WorkspacePage extends BasePage {
 
   override async open(folderId?: number): Promise<void> {
     await this.page.goto(folderId !== undefined ? `${this.path}/${folderId}` : this.path);
+  }
+
+  async searchFor(name: string): Promise<void> {
+    await this.open();
+    await this.searchBar.search(name);
+  }
+
+  async shareRecord(
+    name: string,
+    share: { recipient: string; permission: SharePermission; location?: string[] },
+  ): Promise<void> {
+    await this.searchFor(name);
+    await this.table.selectRecord(name);
+    const dialog = await this.selectionBar.share();
+    await dialog.addRecipient(share.recipient);
+    await dialog.setPermission(share.recipient, share.permission);
+    if (share.location) await dialog.chooseLocation(share.recipient, share.location);
+    await dialog.save();
+  }
+
+  async openSharedFolder(group: { sharedFolderId: number; name: string }): Promise<void> {
+    await this.open(group.sharedFolderId);
+    await this.waitUntilBreadcrumbShows(`${group.name}_SHARED`);
   }
 
   async isLoaded(): Promise<boolean> {
@@ -169,6 +193,13 @@ export class WorkspacePage extends BasePage {
     const picker = new WorkspaceTemplatePickerDialog(this.page);
     await picker.waitUntilVisible();
     await picker.createFromTemplate(templateName, newDocName);
+    const editor = new DocumentEditorPage(this.page);
+    await editor.isLoaded();
+    return editor;
+  }
+
+  async createDocumentFromSelectedTemplate(newDocName: string): Promise<DocumentEditorPage> {
+    await this.selectionBar.createDocumentFromTemplate(newDocName);
     const editor = new DocumentEditorPage(this.page);
     await editor.isLoaded();
     return editor;

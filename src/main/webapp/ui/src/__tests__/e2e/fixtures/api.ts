@@ -3,6 +3,7 @@ import { request } from "@playwright/test";
 import { DocumentsClient } from "../api/clients/DocumentsClient";
 import { FilesClient } from "../api/clients/FilesClient";
 import { FoldersClient } from "../api/clients/FoldersClient";
+import { FormsClient } from "../api/clients/FormsClient";
 import { InventoryClient } from "../api/clients/InventoryClient";
 import { MailpitClient } from "../api/clients/MailpitClient";
 import { SnippetsClient } from "../api/clients/SnippetsClient";
@@ -16,6 +17,7 @@ type ApiFixtures = {
   clientDocuments: DocumentsClient;
   clientFiles: FilesClient;
   clientFolders: FoldersClient;
+  clientForms: FormsClient;
   clientInventory: InventoryClient;
   clientSnippets: SnippetsClient;
   clientSysadmin: SysadminClient;
@@ -43,6 +45,9 @@ export const apiTest = uiTest.extend<ApiFixtures>({
   },
   clientFolders: async ({ apiContext, appUser }, use) => {
     await use(new FoldersClient(apiContext, appUser.apiKey));
+  },
+  clientForms: async ({ apiContext, appUser }, use) => {
+    await use(new FormsClient(apiContext, appUser.apiKey));
   },
   clientInventory: async ({ apiContext, appUser }, use) => {
     await use(new InventoryClient(apiContext, appUser.apiKey));

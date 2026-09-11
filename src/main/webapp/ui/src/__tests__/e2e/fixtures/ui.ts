@@ -6,6 +6,7 @@ import { OrcidProfilePage } from "@/modules/orcid/__tests__/pageObjects/OrcidPro
 import { SlackDialogComponent } from "@/modules/slack/__tests__/pageObjects/SlackDialogComponent";
 import { SlackShareDialogComponent } from "@/modules/slack/__tests__/pageObjects/SlackShareDialogComponent";
 import { storageStatePath } from "../authState";
+import { CustomDocumentFields } from "../components/document/CustomDocumentFields";
 import { ExportWizardComponent } from "../components/shared/ExportWizardComponent";
 import { NotificationsDialogComponent } from "../components/shared/NotificationsDialogComponent";
 import { ToastsComponent } from "../components/shared/ToastsComponent";
@@ -18,6 +19,7 @@ import { ResetPasswordPage } from "../pageObjects/auth/ResetPasswordPage";
 import { SignupPage } from "../pageObjects/auth/SignupPage";
 import { DocumentEditorPage } from "../pageObjects/document/DocumentEditorPage";
 import { DocumentPage } from "../pageObjects/document/DocumentPage";
+import { DocumentRevisionsPage } from "../pageObjects/document/DocumentRevisionsPage";
 import { GalleryPage } from "../pageObjects/gallery/GalleryPage";
 import { GroupViewPage } from "../pageObjects/groups/GroupViewPage";
 import { IdentifiersPage } from "../pageObjects/inventory/IdentifiersPage";
@@ -42,6 +44,8 @@ type UiFixtures = {
   pageApps: AppsPage;
   pageWorkspace: WorkspacePage;
   pageDocument: DocumentPage;
+  pageDocumentRevisions: DocumentRevisionsPage;
+  componentDocumentFields: CustomDocumentFields;
   pageDocumentEditor: DocumentEditorPage;
   pageGallery: GalleryPage;
   pageGroupView: GroupViewPage;
@@ -83,6 +87,8 @@ export const uiTest = base.extend<E2EOptions & UiFixtures>({
   pageApps: pageFixture(AppsPage),
   pageWorkspace: pageFixture(WorkspacePage),
   pageDocument: pageFixture(DocumentPage),
+  pageDocumentRevisions: pageFixture(DocumentRevisionsPage),
+  componentDocumentFields: pageFixture(CustomDocumentFields),
   pageDocumentEditor: pageFixture(DocumentEditorPage),
   pageGallery: pageFixture(GalleryPage),
   pageGroupView: pageFixture(GroupViewPage),

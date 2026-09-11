@@ -26,7 +26,8 @@ export class AddRemoveTagsDialog {
   /** Existing tag chips currently applied — excludes the "Add Tag" control itself. */
   async getTags(): Promise<string[]> {
     const chips = await this.root.getByRole("button").allInnerTexts();
-    return chips.filter((text) => text !== "Add Tag" && text !== "Cancel" && text !== "Save");
+    const controlLabels = new Set(["add tag", "cancel", "save"]);
+    return chips.filter((text) => !controlLabels.has(text.trim().toLowerCase()));
   }
 
   /** Adds a tag by exact text — selects a matching suggestion if one appears, else free-text via Enter. */

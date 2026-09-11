@@ -5,7 +5,6 @@ import { alphaNumericUnique, TINY_PNG, uniqueName } from "@/__tests__/e2e/testDa
 
 test.describe("Notebook CRUD", () => {
   test("As a user, I can create a notebook and add, rename, and delete entries", async ({
-    page,
     pageWorkspace,
     pageNotebook,
   }) => {
@@ -17,7 +16,7 @@ test.describe("Notebook CRUD", () => {
     });
 
     await test.step("Then it starts empty", async () => {
-      await expect(page.getByText("There are no entries to display.").first()).toBeVisible();
+      await expect(pageNotebook.emptyState).toBeVisible();
     });
 
     const editor1 = await test.step("When I add a first entry and give it a name", async () => {
@@ -50,7 +49,7 @@ test.describe("Notebook CRUD", () => {
     });
 
     await test.step("When I delete the second entry", async () => {
-      await pageNotebook.entryThumbnail("Entry 2").click();
+      await pageNotebook.selectEntry("Entry 2");
       await pageNotebook.deleteEntry();
     });
 
@@ -62,7 +61,6 @@ test.describe("Notebook CRUD", () => {
   });
 
   test("As a user, I can edit an existing entry's content directly from the notebook view", async ({
-    page,
     pageWorkspace,
     pageNotebook,
     clientFolders,
@@ -92,9 +90,9 @@ test.describe("Notebook CRUD", () => {
       await pageWorkspace.table.openNotebook(notebookName);
       await pageNotebook.isLoaded();
       await pageNotebook.showAllEntries();
-      await pageNotebook.entryThumbnail("Entry 1").click();
+      await pageNotebook.selectEntry("Entry 1");
 
-      await expect(page.locator("p", { hasText: content })).toBeVisible();
+      await expect(pageNotebook.entryContent).toContainText(content);
     });
   });
 
@@ -138,14 +136,15 @@ test.describe("Notebook CRUD", () => {
     clientFiles,
   }) => {
     const notebookName = uniqueName("e2e-nb-images");
-    const image1 = { name: "image1.png", mimeType: "image/png", buffer: TINY_PNG };
-    const image2 = { name: "image2.png", mimeType: "image/png", buffer: TINY_PNG };
+    const image1 = { name: `${uniqueName("e2e-nb-image1")}.png`, mimeType: "image/png", buffer: TINY_PNG };
+    const image2 = { name: `${uniqueName("e2e-nb-image2")}.png`, mimeType: "image/png", buffer: TINY_PNG };
 
-    await test.step("Given a notebook entry and two gallery images exist", async () => {
+    const uploadedImages = await test.step("Given a notebook entry and two gallery images exist", async () => {
       const notebook = await clientFolders.create({ name: notebookName, notebook: true });
       await clientDocuments.create({ name: "Entry 1", parentFolderId: notebook.id, fields: [{ content: "text" }] });
-      await clientFiles.uploadFile(image1);
-      await clientFiles.uploadFile(image2);
+      const uploadedImage1 = await clientFiles.uploadFile(image1);
+      const uploadedImage2 = await clientFiles.uploadFile(image2);
+      return [uploadedImage1, uploadedImage2];
     });
 
     await test.step("When I open the entry and insert both images from the gallery", async () => {
@@ -159,12 +158,10 @@ test.describe("Notebook CRUD", () => {
       await picker.selectItems([image1.name, image2.name]);
       await picker.add();
 
-      await test.step("Then both distinct images are inserted", async () => {
+      await test.step("Then the two uploaded images are inserted", async () => {
         const field = await editor.getField("", 0);
-        await expect.poll(() => field.countImages()).toBe(2);
-
-        const sourceIds = await field.getImageSourceIds();
-        expect(new Set(sourceIds).size).toBe(2);
+        const expectedSourceIds = uploadedImages.map(({ id }) => String(id)).sort();
+        await expect.poll(async () => (await field.getImageSourceIds()).sort()).toEqual(expectedSourceIds);
       });
     });
   });
@@ -200,7 +197,7 @@ test.describe("Notebook CRUD", () => {
     });
 
     await test.step("When I open Entry 1 and use Save & Clone", async () => {
-      await pageNotebook.entryThumbnail("Entry 1").click();
+      await pageNotebook.selectEntry("Entry 1");
       const editor = await pageNotebook.enterEditMode();
       const cloned = await editor.saveAndClone();
 
@@ -233,7 +230,6 @@ test.describe("Notebook CRUD", () => {
   });
 
   test("As a user, I can create notebook entries from an existing form and from a saved template", async ({
-    page,
     pageWorkspace,
     pageNotebook,
   }) => {
@@ -287,8 +283,8 @@ test.describe("Notebook CRUD", () => {
     });
 
     await test.step("And reopening the templated entry shows the template's seeded content, proving it wasn't created blank", async () => {
-      await pageNotebook.entryThumbnail(templatedEntryName).click();
-      await expect(page.locator("p", { hasText: templateContent })).toBeVisible();
+      await pageNotebook.selectEntry(templatedEntryName);
+      await expect(pageNotebook.entryContent).toContainText(templateContent);
     });
   });
 
@@ -487,6 +483,9 @@ dynamicUserTest.describe("Notebook export and persisted view state", () => {
         await pageWorkspace.table.openNotebook(notebookName);
         await pageNotebook.isLoaded();
         await pageNotebook.showAllEntries();
+        await pageNotebook.selectEntry(entryName);
+
+        // Re-selecting the active entry must also leave it ready for the export action.
         await pageNotebook.selectEntry(entryName);
 
         await expect(async () => {

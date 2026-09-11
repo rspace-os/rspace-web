@@ -72,7 +72,6 @@ export class GalleryPage extends BasePage {
       .first()
       .waitFor({ state: "visible" });
     if (await this.fileGrid.isVisible().catch(() => false)) return;
-    if (await emptyState.isVisible().catch(() => false)) return;
     await this.views.switchToGridOrEmpty();
   }
 

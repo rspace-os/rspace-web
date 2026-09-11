@@ -1,128 +1,162 @@
 import { expect } from "@playwright/test";
+import type { DocumentsClient } from "@/__tests__/e2e/api/clients/DocumentsClient";
 import { createDynamicUser } from "@/__tests__/e2e/createDynamicUser";
 import { dynamicUserTest as test } from "@/__tests__/e2e/fixtures/dynamicUser";
-import { loginAsWorkspaceUser } from "@/__tests__/e2e/fixtures/flows/userSessions";
-import { NotebookPage } from "@/__tests__/e2e/pageObjects/notebook/NotebookPage";
-import { DYNAMIC_USER_PASSWORD, uniqueName } from "@/__tests__/e2e/testData";
+import { alphaNumericUnique, uniqueName } from "@/__tests__/e2e/testData";
+
+async function expectSignedContentProtected(
+  client: DocumentsClient,
+  id: number,
+  expectedContent: string,
+): Promise<void> {
+  const document = await client.getById(id);
+  expect(document.fields).toHaveLength(1);
+  expect(document.fields[0].content).toContain(expectedContent);
+
+  await expect(
+    client.update(id, {
+      name: document.name,
+      fields: [{ id: document.fields[0].id, content: "Attempted change to signed content" }],
+    }),
+  ).rejects.toMatchObject({
+    status: 400,
+    body: { errors: [`doc: Document ${id} is signed and cannot be altered`] },
+  });
+  const unchanged = await client.getById(id);
+  expect(unchanged.fields).toEqual(document.fields);
+}
 
 test.describe("Notebook sharing and signing", () => {
   test("A document owner can sign entries without a witness, and a PI can sign a shared entry with a witness", async ({
-    browser,
-    browserContextOptions,
+    flowDocumentSession,
     appUser,
     pageWorkspace,
     pageNotebook,
     clientSysadmin,
+    clientDocuments,
   }) => {
     test.setTimeout(120_000);
     const groupName = uniqueName("e2e-sign-group");
 
-    const docOwnerUsername =
-      await test.step("Given a document owner exists in the same lab group as the PI", async () => {
-        const { username } = await createDynamicUser(clientSysadmin, "ROLE_USER", "e2eSignOwner", "SignOwner");
-        await clientSysadmin.createGroup({
-          displayName: groupName,
-          type: "LAB_GROUP",
-          users: [
-            { username: appUser.username, roleInGroup: "PI" },
-            { username, roleInGroup: "DEFAULT" },
-          ],
-        });
-        return username;
+    const docOwner = await test.step("Given a document owner exists in the same lab group as the PI", async () => {
+      const user = await createDynamicUser(clientSysadmin, "ROLE_USER", "e2eSignOwner", "SignOwner");
+      await clientSysadmin.createGroup({
+        displayName: groupName,
+        type: "LAB_GROUP",
+        users: [
+          { username: appUser.username, roleInGroup: "PI" },
+          { username: user.username, roleInGroup: "DEFAULT" },
+        ],
       });
+      return user;
+    });
 
-    const owner = await loginAsWorkspaceUser(browser, browserContextOptions, docOwnerUsername);
-    try {
-      const ownerWorkspace = owner.workspace;
-      const ownerNotebook = new NotebookPage(owner.page);
+    const owner = await flowDocumentSession(docOwner);
+    const firstContent = alphaNumericUnique("FirstUnsignedEntry");
+    const secondContent = alphaNumericUnique("SecondSignedEntry");
+    const editedFirstContent = alphaNumericUnique("EditedUnsignedEntry");
 
-      const notebookName = uniqueName("e2e-sign-nb");
-      await test.step("When the document owner creates a notebook with two entries", async () => {
-        await ownerWorkspace.createNotebook(notebookName);
-        const entry1 = await ownerNotebook.addEntry();
-        await entry1.editToolbar.saveAndClose();
-        await ownerNotebook.isLoaded();
-        const entry2 = await ownerNotebook.addEntry();
-        await entry2.editToolbar.saveAndClose();
-        await ownerNotebook.isLoaded();
-      });
+    const notebookName = uniqueName("e2e-sign-nb");
+    const entries = await test.step("When the document owner creates a notebook with two entries", async () => {
+      await owner.workspace.createNotebook(notebookName);
+      const entry1 = await owner.notebook.addEntry();
+      const firstId = entry1.getId();
+      await (await entry1.getField("", 0)).fill(firstContent);
+      await entry1.editToolbar.saveAndClose();
+      await owner.notebook.isLoaded();
+      const entry2 = await owner.notebook.addEntry();
+      const secondId = entry2.getId();
+      await (await entry2.getField("", 0)).fill(secondContent);
+      await entry2.editToolbar.saveAndClose();
+      await owner.notebook.isLoaded();
+      return { firstId, secondId };
+    });
 
-      await test.step("And signs the currently-selected entry without a witness", async () => {
-        await ownerNotebook.sign(DYNAMIC_USER_PASSWORD);
-      });
+    await test.step("And signs the currently-selected entry without a witness", async () => {
+      await owner.notebook.sign(docOwner.password);
+    });
 
-      await test.step("Then that entry is marked signed and can no longer be re-signed", async () => {
-        expect(await ownerNotebook.isSigned()).toBe(true);
-        expect(await ownerNotebook.canSign()).toBe(false);
-      });
+    await test.step("Then that entry is marked signed and can no longer be re-signed", async () => {
+      expect(await owner.notebook.isSigned()).toBe(true);
+      expect(await owner.notebook.canSign()).toBe(false);
+      await expectSignedContentProtected(owner.documents, entries.secondId, secondContent);
+    });
 
-      await test.step("And the other entry is still unsigned", async () => {
-        await ownerNotebook.previousEntry();
-        expect(await ownerNotebook.isSigned()).toBe(false);
-        expect(await ownerNotebook.canSign()).toBe(true);
-      });
+    await test.step("And the other entry is still unsigned", async () => {
+      await owner.notebook.previousEntry();
+      expect(await owner.notebook.isSigned()).toBe(false);
+      expect(await owner.notebook.canSign()).toBe(true);
+      const editor = await owner.notebook.enterEditMode();
+      expect(editor.getId()).toBe(entries.firstId);
+      await (await editor.getField("", 0)).fill(editedFirstContent);
+      await editor.editToolbar.saveAndClose();
+      await owner.notebook.isLoaded();
+      expect((await owner.documents.getById(entries.firstId)).fields[0].content).toContain(editedFirstContent);
+    });
 
-      await test.step("When the document owner signs the second entry too", async () => {
-        await ownerNotebook.sign(DYNAMIC_USER_PASSWORD);
-        expect(await ownerNotebook.isSigned()).toBe(true);
-        expect(await ownerNotebook.canSign()).toBe(false);
-      });
+    await test.step("When the document owner signs the second entry too", async () => {
+      await owner.notebook.sign(docOwner.password);
+      expect(await owner.notebook.isSigned()).toBe(true);
+      expect(await owner.notebook.canSign()).toBe(false);
+      await expectSignedContentProtected(owner.documents, entries.firstId, editedFirstContent);
+    });
 
-      const sharedNotebookName = uniqueName("e2e-sign-shared-nb");
-      await test.step("Given the PI creates and shares a notebook with the group", async () => {
-        await pageWorkspace.open();
-        await pageWorkspace.createNotebook(sharedNotebookName);
-        const entry = await pageNotebook.addEntry();
-        await entry.editToolbar.saveAndClose();
-        await pageNotebook.isLoaded();
-        await pageWorkspace.open();
-        await pageWorkspace.table.selectRecord(sharedNotebookName);
-        const shareDialog = await pageWorkspace.selectionBar.share();
-        await shareDialog.addRecipient(groupName);
-        await shareDialog.setPermission(groupName, "EDIT");
-        await shareDialog.save();
-      });
+    const sharedNotebookName = uniqueName("e2e-sign-shared-nb");
+    const sharedContent = alphaNumericUnique("SharedSignedEntry");
+    const sharedEntryId = await test.step("Given the PI creates and shares a notebook with the group", async () => {
+      await pageWorkspace.open();
+      await pageWorkspace.createNotebook(sharedNotebookName);
+      const entry = await pageNotebook.addEntry();
+      const id = entry.getId();
+      await (await entry.getField("", 0)).fill(sharedContent);
+      await entry.editToolbar.saveAndClose();
+      await pageNotebook.isLoaded();
+      await pageWorkspace.open();
+      await pageWorkspace.table.selectRecord(sharedNotebookName);
+      const shareDialog = await pageWorkspace.selectionBar.share();
+      await shareDialog.addRecipient(groupName);
+      await shareDialog.setPermission(groupName, "EDIT");
+      await shareDialog.save();
+      return id;
+    });
 
-      await test.step("When the PI signs the shared entry with the document owner as witness", async () => {
-        await pageWorkspace.table.openNotebook(sharedNotebookName);
-        await pageNotebook.isLoaded();
-        await pageNotebook.signWithWitness(appUser.password, docOwnerUsername);
-      });
+    await test.step("When the PI signs the shared entry with the document owner as witness", async () => {
+      await pageWorkspace.table.openNotebook(sharedNotebookName);
+      await pageNotebook.isLoaded();
+      await pageNotebook.signWithWitness(appUser.password, docOwner.username);
+    });
 
-      await test.step("Then the entry is marked signed and can no longer be re-signed, awaiting the witness", async () => {
-        expect(await pageNotebook.isSigned()).toBe(true);
-        expect(await pageNotebook.canSign()).toBe(false);
-        expect(await pageNotebook.isWitnessed()).toBe(false);
-      });
+    await test.step("Then the entry is marked signed and can no longer be re-signed, awaiting the witness", async () => {
+      expect(await pageNotebook.isSigned()).toBe(true);
+      expect(await pageNotebook.canSign()).toBe(false);
+      expect(await pageNotebook.isWitnessed()).toBe(false);
+      await expectSignedContentProtected(clientDocuments, sharedEntryId, sharedContent);
+    });
 
-      await test.step("When the document owner, as witness, confirms the signing", async () => {
-        await ownerWorkspace.open();
-        await ownerWorkspace.searchBar.search(sharedNotebookName);
-        await ownerWorkspace.table.openNotebook(sharedNotebookName);
-        await ownerNotebook.isLoaded();
-        expect(await ownerNotebook.canWitness()).toBe(true);
-        await ownerNotebook.confirmWitness(DYNAMIC_USER_PASSWORD);
-      });
+    await test.step("When the document owner, as witness, confirms the signing", async () => {
+      await owner.workspace.open();
+      await owner.workspace.searchBar.search(sharedNotebookName);
+      await owner.workspace.table.openNotebook(sharedNotebookName);
+      await owner.notebook.isLoaded();
+      expect(await owner.notebook.canWitness()).toBe(true);
+      await owner.notebook.confirmWitness(docOwner.password);
+    });
 
-      await test.step("Then the entry is fully witnessed", async () => {
-        expect(await ownerNotebook.isWitnessed()).toBe(true);
-        expect(await ownerNotebook.canWitness()).toBe(false);
-      });
+    await test.step("Then the entry is fully witnessed", async () => {
+      expect(await owner.notebook.isWitnessed()).toBe(true);
+      expect(await owner.notebook.canWitness()).toBe(false);
+    });
 
-      await test.step("And the PI sees the same fully-witnessed status on reopening the entry", async () => {
-        await pageWorkspace.open();
-        await pageWorkspace.table.openNotebook(sharedNotebookName);
-        await pageNotebook.isLoaded();
-        expect(await pageNotebook.isWitnessed()).toBe(true);
-      });
-    } finally {
-      await owner.close();
-    }
+    await test.step("And the PI sees the same fully-witnessed status on reopening the entry", async () => {
+      await pageWorkspace.open();
+      await pageWorkspace.table.openNotebook(sharedNotebookName);
+      await pageNotebook.isLoaded();
+      expect(await pageNotebook.isWitnessed()).toBe(true);
+    });
   });
 
   test("A grouped user can share a document and a notebook with their group; the PI then sees them", async ({
-    browser,
-    browserContextOptions,
+    flowDocumentSession,
     appUser,
     pageWorkspace,
     clientSysadmin,
@@ -132,29 +166,19 @@ test.describe("Notebook sharing and signing", () => {
     const docName = uniqueName("e2e-share-doc");
     const notebookName = uniqueName("e2e-share-nb");
 
-    const { groupedUsername, noGroupUsername } =
+    const { groupedUser, noGroupUser } =
       await test.step("Given a grouped user (with the PI) and an ungrouped user each own a document and a notebook", async () => {
-        const { username: groupedUsername } = await createDynamicUser(
-          clientSysadmin,
-          "ROLE_USER",
-          "e2eShareGrouped",
-          "ShareGrouped",
-        );
-        const { username: noGroupUsername } = await createDynamicUser(
-          clientSysadmin,
-          "ROLE_USER",
-          "e2eShareNoGroup",
-          "ShareNoGroup",
-        );
+        const groupedUser = await createDynamicUser(clientSysadmin, "ROLE_USER", "e2eShareGrouped", "ShareGrouped");
+        const noGroupUser = await createDynamicUser(clientSysadmin, "ROLE_USER", "e2eShareNoGroup", "ShareNoGroup");
         await clientSysadmin.createGroup({
           displayName: groupName,
           type: "LAB_GROUP",
           users: [
             { username: appUser.username, roleInGroup: "PI" },
-            { username: groupedUsername, roleInGroup: "DEFAULT" },
+            { username: groupedUser.username, roleInGroup: "DEFAULT" },
           ],
         });
-        return { groupedUsername, noGroupUsername };
+        return { groupedUser, noGroupUser };
       });
 
     const sharedWithPiBefore =
@@ -166,72 +190,64 @@ test.describe("Notebook sharing and signing", () => {
         return count;
       });
 
-    const noGroup = await loginAsWorkspaceUser(browser, browserContextOptions, noGroupUsername);
-    const grouped = await loginAsWorkspaceUser(browser, browserContextOptions, groupedUsername);
-    try {
-      const noGroupWorkspace = noGroup.workspace;
+    const noGroup = await flowDocumentSession(noGroupUser);
+    const grouped = await flowDocumentSession(groupedUser);
 
-      await test.step("Given the ungrouped user has a document and a notebook of their own", async () => {
-        await noGroupWorkspace.open();
-        const doc = await noGroupWorkspace.createBasicDocument();
-        await doc.header.rename(docName);
-        await doc.editToolbar.saveAndClose();
-        await noGroupWorkspace.waitUntilLoaded();
-        await noGroupWorkspace.createNotebook(notebookName);
+    await test.step("Given the ungrouped user has a document and a notebook of their own", async () => {
+      await noGroup.workspace.open();
+      const doc = await noGroup.workspace.createBasicDocument();
+      await doc.header.rename(docName);
+      await doc.editToolbar.saveAndClose();
+      await noGroup.workspace.waitUntilLoaded();
+      await noGroup.workspace.createNotebook(notebookName);
+    });
+
+    await test.step("Then Share is not available to them for either", async () => {
+      await noGroup.workspace.open();
+      await noGroup.workspace.table.selectRecord(docName);
+      expect(await noGroup.workspace.selectionBar.isActionVisible("Share")).toBe(false);
+      await noGroup.workspace.table.deselectRecord(docName);
+      await noGroup.workspace.table.selectRecord(notebookName);
+      expect(await noGroup.workspace.selectionBar.isActionVisible("Share")).toBe(false);
+    });
+
+    await test.step("Given the grouped user has a document and a notebook of their own", async () => {
+      await grouped.workspace.open();
+      const doc = await grouped.workspace.createBasicDocument();
+      await doc.header.rename(docName);
+      await doc.editToolbar.saveAndClose();
+      await grouped.workspace.waitUntilLoaded();
+      const notebook = await grouped.workspace.createNotebook(notebookName);
+
+      await test.step("Then Share is hidden in the notebook editor while it's still empty", async () => {
+        await expect(notebook.toolbar.shareButton).toBeHidden();
       });
+    });
 
-      await test.step("Then Share is not available to them for either", async () => {
-        await noGroupWorkspace.open();
-        await noGroupWorkspace.table.selectRecord(docName);
-        expect(await noGroupWorkspace.selectionBar.isActionVisible("Share")).toBe(false);
-        await noGroupWorkspace.table.deselectRecord(docName);
-        await noGroupWorkspace.table.selectRecord(notebookName);
-        expect(await noGroupWorkspace.selectionBar.isActionVisible("Share")).toBe(false);
-      });
+    await test.step("Then Share is available to them, and they share both with the group", async () => {
+      await grouped.workspace.open();
+      await grouped.workspace.table.selectRecord(docName);
+      expect(await grouped.workspace.selectionBar.isActionVisible("Share")).toBe(true);
+      const docShare = await grouped.workspace.selectionBar.share();
+      await docShare.addRecipient(groupName);
+      await docShare.save();
 
-      const groupedWorkspace = grouped.workspace;
+      await grouped.workspace.open();
+      await grouped.workspace.table.selectRecord(notebookName);
+      expect(await grouped.workspace.selectionBar.isActionVisible("Share")).toBe(true);
+      const nbShare = await grouped.workspace.selectionBar.share();
+      await nbShare.addRecipient(groupName);
+      await nbShare.save();
+    });
 
-      await test.step("Given the grouped user has a document and a notebook of their own", async () => {
-        await groupedWorkspace.open();
-        const doc = await groupedWorkspace.createBasicDocument();
-        await doc.header.rename(docName);
-        await doc.editToolbar.saveAndClose();
-        await groupedWorkspace.waitUntilLoaded();
-        const notebook = await groupedWorkspace.createNotebook(notebookName);
-
-        await test.step("Then Share is hidden in the notebook editor while it's still empty", async () => {
-          await expect(notebook.toolbar.shareButton).toBeHidden();
-        });
-      });
-
-      await test.step("Then Share is available to them, and they share both with the group", async () => {
-        await groupedWorkspace.open();
-        await groupedWorkspace.table.selectRecord(docName);
-        expect(await groupedWorkspace.selectionBar.isActionVisible("Share")).toBe(true);
-        const docShare = await groupedWorkspace.selectionBar.share();
-        await docShare.addRecipient(groupName);
-        await docShare.save();
-
-        await groupedWorkspace.open();
-        await groupedWorkspace.table.selectRecord(notebookName);
-        expect(await groupedWorkspace.selectionBar.isActionVisible("Share")).toBe(true);
-        const nbShare = await groupedWorkspace.selectionBar.share();
-        await nbShare.addRecipient(groupName);
-        await nbShare.save();
-      });
-
-      await test.step("And re-sharing the notebook with the same group is disabled", async () => {
-        await groupedWorkspace.open();
-        await groupedWorkspace.table.selectRecord(notebookName);
-        const reShare = await groupedWorkspace.selectionBar.share();
-        await reShare.search(groupName);
-        expect(await reShare.isOptionDisabled(groupName)).toBe(true);
-        await reShare.close();
-      });
-    } finally {
-      await noGroup.close();
-      await grouped.close();
-    }
+    await test.step("And re-sharing the notebook with the same group is disabled", async () => {
+      await grouped.workspace.open();
+      await grouped.workspace.table.selectRecord(notebookName);
+      const reShare = await grouped.workspace.selectionBar.share();
+      await reShare.search(groupName);
+      expect(await reShare.isOptionDisabled(groupName)).toBe(true);
+      await reShare.close();
+    });
 
     await test.step("Then the PI now sees both the shared document and notebook", async () => {
       await pageWorkspace.open();
@@ -243,21 +259,28 @@ test.describe("Notebook sharing and signing", () => {
   });
 
   test("As a user, I can open a notebook directly by navigating to its global ID URL", async ({
-    page,
     clientFolders,
+    clientDocuments,
+    pageNotebook,
   }) => {
     const notebookName = uniqueName("e2e-globalid-nb");
 
     const notebook = await test.step("Given a notebook exists", async () => {
       return clientFolders.create({ name: notebookName, notebook: true });
     });
+    const entryName = uniqueName("e2e-globalid-entry");
+    const content = alphaNumericUnique("GlobalIdNotebookContent");
+    await clientDocuments.create({ name: entryName, parentFolderId: notebook.id, fields: [{ content }] });
 
     await test.step("When I navigate directly to its global ID URL", async () => {
-      await page.goto(`/globalId/${notebook.globalId}`);
+      await pageNotebook.openByGlobalId(notebook);
     });
 
     await test.step("Then the notebook editor loads", async () => {
-      await page.waitForURL("**/notebookEditor/**");
+      await expect(pageNotebook.header.name).toHaveText(entryName);
+      await expect(pageNotebook.entryContent).toBeVisible();
+      await expect(pageNotebook.entryContent).toContainText(content);
+      expect(await pageNotebook.entryStrip.getEntryCount()).toEqual({ current: 1, total: 1 });
     });
   });
 });

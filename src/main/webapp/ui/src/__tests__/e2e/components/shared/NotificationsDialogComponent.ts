@@ -1,4 +1,4 @@
-import { expect, type Locator, type Page } from "@playwright/test";
+import { type Download, expect, type Locator, type Page } from "@playwright/test";
 import { ToastsComponent } from "./ToastsComponent";
 
 export class NotificationsDialogComponent {
@@ -45,6 +45,26 @@ export class NotificationsDialogComponent {
 
   async getNotificationTexts(): Promise<Array<string>> {
     return this.root.locator("tr.notificationRow").allInnerTexts();
+  }
+
+  /** Polls the notification UI for this export, then follows its real download link. */
+  async downloadExport(fileName: string): Promise<Download> {
+    const notification = this.root.locator("tr.notificationRow").filter({ hasText: fileName });
+    await expect(async () => {
+      await this.bellButton.click();
+      await this.root.waitFor({ state: "visible" });
+      await this.root.getByRole("heading", { name: "My Notifications" }).waitFor({ state: "visible" });
+      if (!(await notification.isVisible())) {
+        await this.close();
+        throw new Error(`The export notification for ${fileName} has not arrived.`);
+      }
+    }).toPass({ timeout: 45_000 });
+    const downloadPrefix = new URL("/export/ajax/downloadArchive/", this.page.url()).href;
+    const [download] = await Promise.all([
+      this.page.waitForEvent("download"),
+      notification.locator(`a[href^="${downloadPrefix}"], a[href^="/export/ajax/downloadArchive/"]`).click(),
+    ]);
+    return download;
   }
 
   // Some pages (e.g. Gallery) render the bell as a plain link to /dashboard rather than a

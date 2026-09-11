@@ -4,6 +4,27 @@ import { tags } from "@/__tests__/e2e/tags";
 import { TINY_PNG, uniqueName } from "@/__tests__/e2e/testData";
 
 test.describe("Gallery sorting and views", { tag: tags.MOBILE }, () => {
+  test("As a user, I can select an image after visiting an empty section from Tree view", async ({
+    pageGallery,
+    clientFiles,
+  }) => {
+    const name = `${uniqueName("e2e-gallery-empty-view")}.png`;
+    await clientFiles.uploadFile({ name, mimeType: "image/png", buffer: TINY_PNG });
+    await pageGallery.open();
+    await pageGallery.isLoaded();
+    await pageGallery.views.switchTo("Tree");
+
+    await pageGallery.openSection("Documents");
+    expect(await pageGallery.itemsCount()).toBe(0);
+
+    await pageGallery.sidebar.openSection("Images");
+    await expect(pageGallery.fileCell("Api Inbox")).toBeVisible();
+    await pageGallery.openFolder("Api Inbox");
+    await pageGallery.waitForFile(name);
+    await pageGallery.selectFile(name);
+    await expect(pageGallery.fileCell(name)).toHaveAttribute("aria-selected", "true");
+  });
+
   test("As a user, I can sort files by Modification Date and by Name, in either direction", async ({
     pageGallery,
     clientFiles,

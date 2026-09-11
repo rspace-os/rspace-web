@@ -21,6 +21,8 @@ export class NotebookPage extends BasePage {
   readonly signingDialog: SigningDialogComponent;
   readonly witnessDialog: WitnessDialogComponent;
   readonly ribbon: Locator;
+  readonly entryContent: Locator;
+  readonly emptyState: Locator;
   private readonly signedStatuses: Locator;
   private readonly witnessedStatus: Locator;
 
@@ -33,6 +35,9 @@ export class NotebookPage extends BasePage {
     this.witnessDialog = new WitnessDialogComponent(page);
     // Legacy jQuery-rendered ribbon container; no stable accessible role or label.
     this.ribbon = page.locator("#journalEntriesRibbon");
+    // The journal renders field headings and bare text in this legacy content panel.
+    this.entryContent = page.locator("#journalPage");
+    this.emptyState = page.getByText("There are no entries to display.").first();
     this.signedStatuses = signedStatusLocator(page);
     this.witnessedStatus = page.locator("#witnessedStatus");
   }
@@ -41,9 +46,15 @@ export class NotebookPage extends BasePage {
     await this.page.waitForURL("**/notebookEditor/**");
     await Promise.race([
       this.entryStrip.entryCounter.waitFor({ state: "visible" }),
-      this.page.getByText("There are no entries to display.").first().waitFor({ state: "visible" }),
+      this.emptyState.waitFor({ state: "visible" }),
     ]);
     await this.page.waitForLoadState("networkidle").catch(() => undefined);
+  }
+
+  async openByGlobalId(notebook: { id: number; globalId: string }): Promise<void> {
+    await this.page.goto(`/globalId/${notebook.globalId}`);
+    await expect(this.page).toHaveURL((url) => url.pathname === `${this.path}/${notebook.id}`);
+    await this.isLoaded();
   }
 
   async enterEditMode(): Promise<DocumentEditorPage> {

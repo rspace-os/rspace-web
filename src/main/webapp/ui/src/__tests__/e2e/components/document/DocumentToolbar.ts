@@ -24,6 +24,16 @@ export class DocumentToolbar {
     }
   }
 
+  async availableSaveActions(): Promise<string[]> {
+    await this.saveMenuButton.click();
+    const menu = this.page.getByRole("menu").filter({ visible: true });
+    await menu.getByRole("menuitem", { name: "Save", exact: true }).waitFor({ state: "visible" });
+    const actions = await menu.getByRole("menuitem").allTextContents();
+    await menu.press("Escape");
+    await menu.waitFor({ state: "hidden" });
+    return actions.map((action) => action.trim());
+  }
+
   async saveAndView(): Promise<void> {
     await this.saveMenuButton.click();
     await this.page.getByRole("menuitem", { name: "Save & View", exact: true }).click();
@@ -55,11 +65,14 @@ export class DocumentToolbar {
     ]);
   }
 
-  async saveAsTemplate(templateName: string): Promise<void> {
+  async saveAsTemplate(templateName: string, fieldsToInclude: string[] = []): Promise<void> {
     await this.saveMenuButton.click();
     await this.page.getByRole("menuitem", { name: "Save as Template", exact: true }).click();
     const dialog = this.page.getByRole("dialog", { name: "Save Template" });
     await dialog.getByRole("textbox", { name: "Template Name" }).fill(templateName);
+    for (const fieldName of fieldsToInclude) {
+      await dialog.getByRole("checkbox", { name: `${fieldName}:`, exact: true }).check();
+    }
     const [response] = await Promise.all([
       this.page.waitForResponse((res) => res.url().includes("/workspace/editor/structuredDocument/saveTemplate")),
       dialog.getByRole("button", { name: "OK" }).click(),

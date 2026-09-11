@@ -45,7 +45,12 @@ export class ShareDialog {
   }
 
   async setPermission(recipientName: string, permission: SharePermission): Promise<void> {
-    const select = this.root.getByRole("combobox", { name: `Set permission for sharing with ${recipientName}` });
+    // A notebook entry can also display its parent's inherited, disabled permission.
+    const select = this.root.getByRole("combobox", {
+      name: `Set permission for sharing with ${recipientName}`,
+      exact: true,
+      disabled: false,
+    });
     await select.click();
     await this.page.getByRole("option", { name: PERMISSION_OPTION_LABEL[permission], exact: true }).click();
   }
@@ -53,6 +58,26 @@ export class ShareDialog {
   async save(): Promise<void> {
     await this.root.getByRole("button", { name: "Save" }).click();
     await this.root.waitFor({ state: "hidden" });
+  }
+
+  /** Selects a location within a group's shared folder; the path includes its root folder. */
+  async chooseLocation(recipientName: string, folderPath: string[]): Promise<void> {
+    if (folderPath.length === 0) throw new Error("A share location must contain at least one folder.");
+    const row = this.root.getByRole("row").filter({
+      has: this.page.getByRole("combobox", {
+        name: `Set permission for sharing with ${recipientName}`,
+        exact: true,
+        disabled: false,
+      }),
+    });
+    await row.getByRole("button", { name: "Change", exact: true }).click();
+    const chooser = this.page.getByRole("dialog", { name: "Select Shared Folder Location", exact: true });
+    for (const name of folderPath) {
+      await chooser.getByText(name, { exact: true }).click();
+    }
+    await chooser.getByRole("button", { name: "Select", exact: true }).click();
+    await chooser.waitFor({ state: "hidden" });
+    await row.getByText(folderPath[folderPath.length - 1], { exact: true }).waitFor({ state: "visible" });
   }
 
   async close(): Promise<void> {
