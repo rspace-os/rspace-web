@@ -4,14 +4,16 @@
 <div id="ajaxError">
 	<spring:message code="errors.ajaxFragment.notice"/> <br />
 	<p />
-	<span id="ajaxErrorMsg"><c:out value="${exceptionMessage}"/></span>
+	<%-- EscapeXmlELResolver escapes every String an EL expression resolves,
+	     so c:out here would escape it a second time --%>
+	<span id="ajaxErrorMsg">${exceptionMessage}</span>
 	<p id="ajaxErrorIdMsg">
 		<span><spring:message code="errors.ajaxFragment.refLabel" arguments="${errorId}"/></span>
 	</p>
 	<%-- show contents of error list, which may not be set. --%>
 	<c:if test="${not empty errors}">
 		<c:forEach items="${errors.errorMessages}" var="error">
- 			<c:out value="${error}"/>
+ 			${error}
  		<p />
 		</c:forEach>
 	</c:if>

@@ -61,4 +61,15 @@ public class ControllerExceptionHandlerUnknownSortKeyTest {
         "Invalid order by clause",
         mav.getModel().get(ControllerExceptionHandler.EXCEPTION_MESSAGE_ATTR_NAME));
   }
+
+  /** error.jsp is no longer an isErrorPage, so nothing downstream sets this status for us. */
+  @Test
+  public void otherPageRequestExceptionsStillGet500() {
+    MockHttpServletResponse response = new MockHttpServletResponse();
+
+    handler.handleExceptions(
+        new MockHttpServletRequest(), response, new IllegalStateException("boom"));
+
+    assertEquals(500, response.getStatus());
+  }
 }
