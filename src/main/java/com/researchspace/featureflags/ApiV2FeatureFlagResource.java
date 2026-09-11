@@ -8,7 +8,7 @@ import com.researchspace.model.collection.AccessPolicy;
 import com.researchspace.model.collection.ApiV2ResourceDefinition;
 import com.researchspace.model.collection.ApiV2ResourceField;
 import com.researchspace.model.collection.CollectionDescription;
-import com.researchspace.model.collection.CollectionDescription.Sort;
+import com.researchspace.model.collection.Sort;
 import java.util.List;
 
 /** Public field allowlist for the Feature Flags REST v2 collection. */

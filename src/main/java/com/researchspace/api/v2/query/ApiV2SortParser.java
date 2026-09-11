@@ -1,9 +1,9 @@
 package com.researchspace.api.v2.query;
 
 import com.researchspace.model.collection.CollectionDescription;
-import com.researchspace.model.collection.CollectionDescription.Sort;
 import com.researchspace.model.collection.CollectionQueryException;
 import com.researchspace.model.collection.CollectionQueryLimits;
+import com.researchspace.model.collection.Sort;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;

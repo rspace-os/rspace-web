@@ -9,11 +9,10 @@ import com.researchspace.api.v2.query.ApiV2ResourceRequestParser;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.AccessPolicy;
 import com.researchspace.model.collection.CollectionDescription;
-import com.researchspace.model.collection.CollectionDescription.Field;
-import com.researchspace.model.collection.CollectionDescription.Sort;
 import com.researchspace.model.collection.CollectionFieldTypes;
 import com.researchspace.model.collection.CollectionMutationLimits;
 import com.researchspace.model.collection.CollectionQueryException;
+import com.researchspace.model.collection.Field;
 import com.researchspace.model.collection.RelationshipTarget;
 import com.researchspace.model.collection.ResolvedRuntimeField;
 import com.researchspace.model.collection.ResourcePage;
@@ -26,6 +25,7 @@ import com.researchspace.model.collection.RuntimeFieldCatalogQuery;
 import com.researchspace.model.collection.RuntimeFieldContext;
 import com.researchspace.model.collection.RuntimeFieldDefinition;
 import com.researchspace.model.collection.RuntimeFieldValueType;
+import com.researchspace.model.collection.Sort;
 import com.researchspace.model.collection.SplitReferenceBinding;
 import java.util.Collection;
 import java.util.EnumSet;
@@ -106,7 +106,7 @@ class ApiV2HoppedRuntimeProjectionTest {
         Node.class,
         List.of(Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), Node::id)),
         List.of(
-            CollectionDescription.Relationship.polymorphicToOne(
+            Relationship.polymorphicToOne(
                     "target",
                     CollectionFieldTypes.longNumber(),
                     List.of(new RelationshipTarget<>("targets", "TARGET", Target.class)),

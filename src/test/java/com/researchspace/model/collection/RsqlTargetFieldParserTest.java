@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
 import com.researchspace.model.booking.ApiV2BookingInstrumentResource;
-import com.researchspace.model.collection.CollectionDescription.Operator;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 

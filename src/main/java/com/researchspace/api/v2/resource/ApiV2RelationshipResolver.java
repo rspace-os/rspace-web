@@ -7,6 +7,7 @@ import com.researchspace.model.collection.DocumentValidationException;
 import com.researchspace.model.collection.DocumentValidationException.Reason;
 import com.researchspace.model.collection.DocumentValidationException.Violation;
 import com.researchspace.model.collection.ParsedDocument;
+import com.researchspace.model.collection.Relationship;
 import com.researchspace.model.collection.RelationshipTarget;
 import com.researchspace.model.collection.ResolvedResourceReference;
 import com.researchspace.model.collection.ResourceReference;
@@ -71,7 +72,7 @@ final class ApiV2RelationshipResolver {
       String errorKey,
       boolean bulkUpdate) {
     Map<String, Object> resolved = new LinkedHashMap<>(document.values());
-    for (CollectionDescription.Relationship<?> relationship : source.relationships()) {
+    for (Relationship<?> relationship : source.relationships()) {
       if (!document.changed(relationship.name())) {
         continue;
       }
@@ -99,7 +100,7 @@ final class ApiV2RelationshipResolver {
 
   private static boolean invalidSelfReference(
       CollectionDescription<?> source,
-      CollectionDescription.Relationship<?> relationship,
+      Relationship<?> relationship,
       RelationshipTarget<?> target,
       ResourceReference<?, ?> reference,
       AccessContext context,

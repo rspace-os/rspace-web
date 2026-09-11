@@ -14,13 +14,14 @@ import com.researchspace.model.collection.AccessDocumentation.AuthenticationRequ
 import com.researchspace.model.collection.AccessPolicy;
 import com.researchspace.model.collection.AccessResult;
 import com.researchspace.model.collection.CollectionDescription;
-import com.researchspace.model.collection.CollectionDescription.WriteOperation;
 import com.researchspace.model.collection.CollectionQueryException;
 import com.researchspace.model.collection.DocumentValidationException;
 import com.researchspace.model.collection.FieldSelection;
 import com.researchspace.model.collection.FilterExpression;
 import com.researchspace.model.collection.IncludeTree;
+import com.researchspace.model.collection.Operator;
 import com.researchspace.model.collection.ParsedDocument;
+import com.researchspace.model.collection.Relationship;
 import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.model.collection.ResourceRenderer.ResolvedTarget;
 import com.researchspace.model.collection.ResourceRequest;
@@ -28,6 +29,7 @@ import com.researchspace.model.collection.RuntimeCollectionFields;
 import com.researchspace.model.collection.RuntimeFieldCatalogPage;
 import com.researchspace.model.collection.RuntimeFieldCatalogQuery;
 import com.researchspace.model.collection.RuntimeFieldContext;
+import com.researchspace.model.collection.WriteOperation;
 import com.researchspace.service.resourceaccess.RemoveSelfResourceAccess;
 import com.researchspace.service.resourceaccess.ReplaceResourceAccess;
 import com.researchspace.service.resourceaccess.ResourceAccessDocument;
@@ -277,8 +279,7 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
     int lastDot = responseField.indexOf('.');
     String relationshipName = responseField.substring(0, lastDot);
     String namespace = responseField.substring(lastDot + 1);
-    CollectionDescription.Relationship<T> relationship =
-        description.findRelationship(relationshipName).orElse(null);
+    Relationship<T> relationship = description.findRelationship(relationshipName).orElse(null);
     if (relationship == null || relationship.targets().size() != 1) {
       return;
     }
@@ -470,7 +471,7 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
     }
     FilterExpression idsFilter =
         new FilterExpression.Comparison(
-            description.idField(), CollectionDescription.Operator.IN, new ArrayList<>(ids), false);
+            description.idField(), Operator.IN, new ArrayList<>(ids), false);
     return ApiV2ReadableTargetSupport.hideAuthorizationFailure(
             actor,
             description.resourceName(),

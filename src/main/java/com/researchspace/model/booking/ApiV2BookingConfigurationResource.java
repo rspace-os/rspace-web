@@ -7,15 +7,16 @@ import com.researchspace.model.collection.AccessPolicy;
 import com.researchspace.model.collection.ApiV2ResourceDefinition;
 import com.researchspace.model.collection.ApiV2ResourceField;
 import com.researchspace.model.collection.CollectionDescription;
-import com.researchspace.model.collection.CollectionDescription.Field;
-import com.researchspace.model.collection.CollectionDescription.Sort;
-import com.researchspace.model.collection.CollectionDescription.WriteOperation;
 import com.researchspace.model.collection.CollectionFieldTypes;
 import com.researchspace.model.collection.CollectionMutationLimits;
+import com.researchspace.model.collection.Field;
 import com.researchspace.model.collection.OpenApiSchemaDocumentation;
+import com.researchspace.model.collection.Relationship;
 import com.researchspace.model.collection.RelationshipTarget;
 import com.researchspace.model.collection.ResourceReference;
+import com.researchspace.model.collection.Sort;
 import com.researchspace.model.collection.SplitReferenceBinding;
+import com.researchspace.model.collection.WriteOperation;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -75,8 +76,8 @@ public record ApiV2BookingConfigurationResource(
   public static final CollectionMutationLimits MUTATION_LIMITS =
       new CollectionMutationLimits(50, 1000);
 
-  private static final CollectionDescription.Relationship<BookingConfiguration> TARGET =
-      CollectionDescription.Relationship.polymorphicToOne(
+  private static final Relationship<BookingConfiguration> TARGET =
+      Relationship.polymorphicToOne(
               "target",
               CollectionFieldTypes.longNumber(),
               List.of(
