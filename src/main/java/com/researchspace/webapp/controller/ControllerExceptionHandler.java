@@ -327,9 +327,11 @@ public class ControllerExceptionHandler implements IControllerExceptionHandler {
         ModelAndView m = new ModelAndView(NON_AJAX_ERROR_VIEW_NAME);
         m.addObject(EXCEPTION_MESSAGE_ATTR_NAME, getExceptionMessage(e));
         addTimeStampAndErrorId(tstamp, errorId, m);
-        if (e instanceof UnknownSortKeyException) {
-          response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-        }
+        // error.jsp used to be an isErrorPage, which made Jasper set 500 for us
+        response.setStatus(
+            e instanceof UnknownSortKeyException
+                ? HttpServletResponse.SC_BAD_REQUEST
+                : HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         return m;
       } else {
         return visitedValue;
