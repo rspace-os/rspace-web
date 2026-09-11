@@ -31,15 +31,13 @@ export type OperationInputValue = string | number | OperationQuantity;
 export type OperationInputs = Record<string, OperationInputValue>;
 
 /**
- * The definition key that produced a field. Resolved field names interpolate user input
- * ({processName}, {originName}) and are localized, so the backend matches an operation request's
- * fields to the definition by this key rather than by name (see DevDocs/adr/0007).
- *
- * Persisted and echoed back, NOT request-only: the key is stored on the extra field and returned on
- * GET, which is what lets a later operation identify a field an earlier one generated regardless of
- * the locale its name was rendered in (F6, e.g. the Passage counter). Only the operations endpoint
- * may set it. A field absorbed into an inherited TEMPLATE field carries no key, since
- * InventoryEntityField has no such column; that gap is a documented follow-up in DevDocs/adr/0007.
+ * The definition key that produced a field. The server stamps it when it builds an operation's
+ * fields; the API returns it on GET and ignores it in every request (it is read-only on the wire),
+ * which is what lets a later operation identify a field an earlier one generated regardless of the
+ * locale its name was rendered in (F6, e.g. the Passage counter). Carried here so the wizard's model
+ * of the server build (buildOperationRequest) describes what the server stores. A field absorbed
+ * into an inherited TEMPLATE field carries no key, since InventoryEntityField has no such column;
+ * that gap is a documented follow-up in DevDocs/adr/0007.
  */
 export type OperationFieldKey = { operationFieldKey: string };
 
@@ -92,9 +90,10 @@ export type OperationOriginUpdate = {
 };
 
 /**
- * The client-assembled shape. No longer POSTed (see OperationInputsRequest): buildOperationRequest
- * still produces it as the wizard's model of the sample the server builds, which the confirmation
- * preview is checked against (plan-operations-server-builds.md, M4).
+ * The wizard's model of what the server builds and stores: buildOperationRequest produces it so the
+ * confirmation preview can be checked against it. It is the shape the endpoint accepted before the
+ * server started building the sample (plan-operations-server-builds.md, M4 and M5); nothing POSTs
+ * it now (see OperationInputsRequest).
  */
 export type OperationRequest = {
   operationType: string;

@@ -1,7 +1,6 @@
 package com.researchspace.service.inventory;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -18,6 +17,7 @@ import com.researchspace.model.record.IRecordFactory;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 
 /**
  * Only an Inventory operation may persist an {@code operationFieldKey} (RSDEV-1231).
@@ -27,12 +27,13 @@ import org.junit.jupiter.api.Test;
  * from it. A caller able to set one could therefore have an unrelated field picked up as a previous
  * generation.
  *
- * <p>The rule is enforced HERE, at the single point that writes the column, gated on a
- * {@code @JsonIgnore} flag only the operations endpoint's validator sets. That is deliberately not
- * the same as asking every other endpoint's validator to reject a key: that was the first design
- * and it leaked, because the sample- and instrument-template validators never call the shared
- * extra-field validation at all (parallel review, C1). A rule that must be remembered in six
- * sibling validators is a rule the seventh will miss.
+ * <p>The rule is enforced at binding: the DTO property is READ_ONLY, so no request body on any
+ * endpoint can put a key on a field, and the write point persists whatever the server's request
+ * builder set. That is deliberately not the same as asking every other endpoint's validator to
+ * reject a key: that was the first design and it leaked, because the sample- and
+ * instrument-template validators never call the shared extra-field validation at all (parallel
+ * review, C1). A rule that must be remembered in six sibling validators is a rule the seventh will
+ * miss.
  */
 class OperationFieldKeyPersistenceTest {
 
@@ -52,16 +53,6 @@ class OperationFieldKeyPersistenceTest {
     helper = new ApiExtraFieldsHelper(recordFactory);
   }
 
-  private static ApiExtraField incomingField(String operationFieldKey, boolean verified) {
-    ApiExtraField field = new ApiExtraField(ExtraFieldTypeEnum.TEXT);
-    field.setName("Passage number");
-    field.setContent("999");
-    field.setNewFieldRequest(true);
-    field.setOperationFieldKey(operationFieldKey);
-    field.setOperationFieldKeyVerified(verified);
-    return field;
-  }
-
   /** The key actually written to the entity for the given incoming field. */
   private String persistedKeyFor(ApiExtraField incoming) {
     SubSample parent = new SubSample();
@@ -70,18 +61,14 @@ class OperationFieldKeyPersistenceTest {
   }
 
   @Test
-  void persistsTheKeyWhenTheOperationsValidatorHasVerifiedIt() {
-    assertEquals(
-        "operations.passage.numberField",
-        persistedKeyFor(incomingField("operations.passage.numberField", true)));
-  }
-
-  @Test
-  void ignoresAKeyNoOperationVerified() {
-    // The forgery route: any endpoint binding extraFields can send this, and several never reach
-    // the shared extra-field validation. The write point drops it, so the field is stored
-    // truthfully as one that no operation generated.
-    assertNull(persistedKeyFor(incomingField("operations.passage.numberField", false)));
+  void persistsTheKeyTheServerSet() {
+    // What the request builder does when it generates a field.
+    ApiExtraField generated = new ApiExtraField(ExtraFieldTypeEnum.TEXT);
+    generated.setName("Passage number");
+    generated.setContent("4");
+    generated.setNewFieldRequest(true);
+    generated.setOperationFieldKey("operations.passage.numberField");
+    assertEquals("operations.passage.numberField", persistedKeyFor(generated));
   }
 
   @Test
@@ -94,20 +81,19 @@ class OperationFieldKeyPersistenceTest {
   }
 
   @Test
-  void theVerifiedFlagCannotBeSetFromJson() throws Exception {
-    // The whole construction rests on this. If a request could verify its own key, gating the
-    // write on the flag would be no protection at all.
-    ApiExtraField bound =
-        new ObjectMapper()
-            .readValue(
-                "{\"type\":\"text\",\"name\":\"X\",\"content\":\"1\",\"newFieldRequest\":true,"
-                    + "\"operationFieldKey\":\"operations.passage.numberField\","
-                    + "\"operationFieldKeyVerified\":true}",
-                ApiExtraField.class);
-
-    assertEquals("operations.passage.numberField", bound.getOperationFieldKey());
-    assertFalse(
-        bound.isOperationFieldKeyVerified(), "a request must not be able to verify its own key");
-    assertNull(persistedKeyFor(bound));
+  void theKeyCannotBeSetFromJson() throws Exception {
+    // The whole construction rests on this. The forgery route is any endpoint binding extraFields,
+    // several of which never reach the shared extra-field validation, so the key is dropped at
+    // binding itself, by the API's mapper and by a strict one alike.
+    for (ObjectMapper mapper :
+        new ObjectMapper[] {Jackson2ObjectMapperBuilder.json().build(), new ObjectMapper()}) {
+      ApiExtraField bound =
+          mapper.readValue(
+              "{\"type\":\"text\",\"name\":\"X\",\"content\":\"1\",\"newFieldRequest\":true,"
+                  + "\"operationFieldKey\":\"operations.passage.numberField\"}",
+              ApiExtraField.class);
+      assertNull(bound.getOperationFieldKey(), "a request must not be able to set the key");
+      assertNull(persistedKeyFor(bound));
+    }
   }
 }

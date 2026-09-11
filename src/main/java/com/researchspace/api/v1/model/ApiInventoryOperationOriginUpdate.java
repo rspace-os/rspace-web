@@ -1,22 +1,17 @@
 package com.researchspace.api.v1.model;
 
-import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import lombok.ToString;
 
 /**
- * One origin subsample and how an Inventory operation updates it. {@code amountTaken} is a positive
- * decrement (not an absolute value): the backend reduces the origin's current quantity by this
- * amount, clamped at zero, so an operation can never increase the origin's volume. {@code
- * extraFields} are custom fields to add to the origin itself (each with {@code newFieldRequest}
- * true), e.g. Destroy's "disposed" date; empty for an ordinary decrement-only origin.
+ * One origin subsample and how an Inventory operation updates it. {@code amountTaken} is a
+ * non-negative decrement (not an absolute value): the backend reduces the origin's current quantity
+ * by this amount, clamped at zero, so an operation can never increase the origin's volume.
  *
  * <p>{@code amountMode} says how the client decided {@code amountTaken}, which turns that amount
  * into a compare-and-swap guard when the answer is "all of it". A client that means to empty the
@@ -28,29 +23,8 @@ import lombok.ToString;
  */
 @Data
 @NoArgsConstructor
-@JsonPropertyOrder({"id", "amountMode", "amountTaken", "extraFields"})
-public class ApiInventoryOperationOriginUpdate implements UnknownPropertyCapturing {
-  /**
-   * Names of request properties this object does not declare; see {@link UnknownPropertyCapturing}.
-   * Inert here: never serialized, excluded from equals and toString, and inspected only by the
-   * operations endpoint's validator.
-   */
-  @JsonIgnore @EqualsAndHashCode.Exclude @ToString.Exclude
-  private final List<String> unknownProperties = new ArrayList<>();
-
-  /**
-   * Records an unrecognised property's NAME and discards its value.
-   *
-   * <p>The value parameter is {@code Void}, not {@code Object}, deliberately. An any-setter's value
-   * IS deserialized before the method body runs, so {@code Object} would build a
-   * LinkedHashMap/ArrayList graph for the whole unknown subtree only to drop it, turning a body of
-   * junk keys into heap amplification. {@code Void} routes Jackson to NullifyingDeserializer, which
-   * skips the subtree exactly as unknown-property handling did before (parallel review).
-   */
-  @JsonAnySetter
-  private void captureUnknownProperty(String name, Void ignoredValue) {
-    UnknownPropertyCapturing.capture(unknownProperties, name);
-  }
+@JsonPropertyOrder({"id", "amountMode", "amountTaken"})
+public class ApiInventoryOperationOriginUpdate {
 
   @JsonProperty("id")
   private Long id;
@@ -61,6 +35,10 @@ public class ApiInventoryOperationOriginUpdate implements UnknownPropertyCapturi
   @JsonProperty("amountTaken")
   private ApiQuantityInfo amountTaken;
 
-  @JsonProperty("extraFields")
-  private List<ApiExtraField> extraFields = new ArrayList<>();
+  /**
+   * Server-side only: the fields the operation definition adds to the origin itself (Destroy's
+   * disposed date), built by the request builder with {@code newFieldRequest} set and applied by
+   * the manager through the ordinary subsample edit. Not on the wire.
+   */
+  @JsonIgnore private List<ApiExtraField> extraFields = new ArrayList<>();
 }

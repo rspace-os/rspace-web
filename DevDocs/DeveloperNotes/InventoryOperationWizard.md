@@ -76,11 +76,12 @@ Files:
     `ProcessAction`).
 - Backend (generic, do not edit per operation):
   `com.researchspace.api.v1.controller.InventoryOperationsApiController`,
-  `InventoryOperationPostValidator` (the payload root; it delegates by region to
-  `OperationOriginValidator` and `OperationNewSampleValidator`, with the rules they
-  share in `OperationValidationSupport`),
-  `com.researchspace.service.inventory.InventoryOperationManager(+Impl)`,
-  DTOs `ApiInventoryOperationPost` / `ApiInventoryOperationOriginUpdate`.
+  `InventoryOperationPostValidator` (the request's structure: origins, their amounts,
+  the documentation target), and in `com.researchspace.service.inventory`:
+  `InventoryOperationInputValidator` (the typed inputs against the definition),
+  `InventoryOperationRequestBuilder` (builds the sample and its fields from the
+  definition), `InventoryOperationManager(+Impl)` (the transactional core), DTOs
+  `ApiInventoryOperationPost` / `ApiInventoryOperationOriginUpdate`.
 
 ## Adding a new operation
 
@@ -91,7 +92,7 @@ Files:
    | `key` | stable id (sent as `operationType`; names the definition the backend validates the request against, DevDocs/adr/0007) |
    | `labelKey`, `descriptionKey` | i18n keys shown in the picker |
    | `requiresMultiple` | `true` for a multi-origin operation (Pool: consumes 2+ subsamples); omit/false = single-origin. The picker shows every operation and enables single-origin ones for exactly one subsample, a `requiresMultiple` one for two or more of the same measurement category (DevDocs/adr/0007) |
-   | `noOutput` | `true` for a **terminal** operation that creates no new sample and only acts on its origins (Destroy). The wizard builds no `newSample`, the validator makes `newSample` optional, and the backend creates nothing and returns null (DevDocs/adr/0007). Its `effect` omits `nameFrom`/`countFrom`/`eachAmountFrom` |
+   | `noOutput` | `true` for a **terminal** operation that creates no new sample and only acts on its origins (Destroy). The server builds no sample; the backend creates nothing and returns null (DevDocs/adr/0007). Its `effect` omits `nameFrom`/`countFrom`/`eachAmountFrom` |
    | `documentationStep` | `true` to offer the optional `IsDocumentedBy` SOP-link step |
    | `steps[]` | explicit ordered subset of wizard steps to show, from `details` \| `template` \| `amounts` \| `documentation` \| `confirm`. Optional; when omitted the default sequence is used (details, template, amounts, documentation if `documentationStep`, confirm). Destroy sets `["confirm"]` — it needs no input, so it goes straight to confirmation (DevDocs/adr/0007) |
    | `inputs[]` | wizard fields: `{ key, type, labelKey, required?, min?, maxCelsius?, minCelsius?, default? }`; `type` is `text` \| `integer` \| `quantity` \| `temperature`. `maxCelsius`/`minCelsius` bound a `temperature` input (Cryopreserve's `storageTemp` is `≤ -18`; Revive's is `4..120`): an out-of-bounds value shows an inline error and blocks the step. `default` (a number) seeds a `temperature` input's opening value, e.g. Revive's `4` so it starts in range (an unconfigured one opens at `-80`) |
@@ -119,16 +120,19 @@ Files:
    user's locale on the frontend and stored as data; use ICU interpolation
    (single braces), never string concatenation. See `FrontendI18nKeys.md`.
 
-3. **Update the OpenAPI spec.** The spec's `operationType` enum
-   (`rspace_api_inventory_specs_2_25_0.yaml`) lists the configured keys, so add
-   the new key there too. (There is only one config file — the backend's — and
-   both sides read it, so there is nothing to sync.)
+3. **No spec change.** The generic endpoint is not in the published OpenAPI spec:
+   the public contract is the typed per-operation endpoints that
+   plan-operations-server-builds.md M6/M7 add, each of which will need its own
+   entry. (There is only one config file — the backend's — and both sides read
+   it, so there is nothing to sync.)
 
 4. That's it. The picker, wizard, request builder, and backend pick the new
    operation up automatically. Add a case to
    `operationsConfig.test.ts` / `buildOperationRequest.test.ts` if the operation
-   has novel effect wiring, and one to `InventoryOperationPostValidatorTest` if it
-   has novel validation shape (a new input type or effect flag).
+   has novel effect wiring, a golden built request to
+   `InventoryOperationPostValidatorTest` for `InventoryOperationRequestBuilderTest` to
+   check the server's build against, and a case to
+   `InventoryOperationInputValidatorTest` if it has a novel input type or rule.
 
 ### Worked example: Cryopreserve
 
@@ -194,45 +198,39 @@ sample).
 
 ## What the backend does
 
-`POST /api/inventory/v1/operations` is a thin, generic coordinator. It validates the
-**complete** request against the operation definition its `operationType` names
-(DevDocs/adr/0007), interpreting its `operations_config.json` — origin count,
-new-sample presence, per-origin amount semantics, configured storage-temperature
-bounds (unit-aware, and equal to each other since one input feeds both), equal child
-quantities when the operation declares one `effect.eachAmountFrom` input (unit-aware:
-0.5 ml equals 500 µl), at least as many subsamples as the count input's `min`, and a
-provenance link back to every origin, which must be carried by an effective
-**link**-typed field (a link payload inside a text-typed or type-omitted field is never
-persisted as a link, so it does not count) — and runs the new sample through the same
-`SampleApiPostValidator` as the public samples endpoint.
+`POST /api/inventory/v1/operations` is a thin, generic coordinator. The request carries
+the origins with the amount taken from each, the values the user typed (`inputs`, keyed
+by the definition's input keys), the template and the documentation target. The
+controller's `InventoryOperationPostValidator` checks the structure against the
+definition `operationType` names (DevDocs/adr/0007): origin count and uniqueness,
+per-origin amount semantics (a real amount unit, storable at 3dp, positive for a
+decrementing operation and zero for one that only links), the amount mode, and the kind
+of record the documentation target names. The manager then validates the inputs against
+the definition's `inputs[]` (`InventoryOperationInputValidator`: required, type,
+`min`/`max`, Celsius bounds on a temperature, storable quantities; errors name the bare
+input key), builds the sample and every generated field from the definition
+(`InventoryOperationRequestBuilder`: N equal subsamples from `count` and `eachAmount`, one
+provenance link per origin, the declared text and origin fields, the computed values),
+and runs the transactional core. The built sample goes through the same
+template-conformance check as the public samples endpoint, inside that transaction.
 
-The request is a **whitelist**, not a superset of the samples POST. Anything the
-definition does not declare is rejected with a field-scoped 400 naming the property,
-never silently stripped: sharing, placement, tags, barcodes, identifiers, images,
-description, sample source, expiry date, template field values, and any per-subsample
-notes, fields or placement. The created subsamples carry a quantity and nothing else.
-
-Extra fields are matched to the definition **by key, not by name**: display names are
-localized and interpolate user input, so the server's `InventoryOperationRequestBuilder`
-(and the wizard's model of it, `buildOperationRequest`) stamps every field it
-builds with `operationFieldKey` — a link spec's `fieldNameKey`, a text/origin field's
-`nameKey`, or the fixed `operations.documentationLink` for the optional documentation
-link. `ApiExtraField.operationFieldKey` is persisted and returned on GET, so a later run
-matches the previous generation by key; only this endpoint may set it, and every other
-endpoint ignores an incoming value. Each declared link spec must produce exactly one link
-per origin; each declared text field and each declared origin field must appear exactly
-once, of the declared type; an operation declaring no `originFields` accepts none (which
-also closes the self-link route). Computed content is **shape-checked, not recomputed**:
-`increment` must be a positive whole number, `today` a valid ISO `yyyy-MM-dd`. A
-declared field fed by a plain input carries free text, required only when that input is
-(Cryopreserve's cryomedium may be blank). The process name is never on the wire, so it
-stays unvalidated.
+Generated field names are resolved server-side in the request's locale from the same
+i18next catalogs the wizard uses (they are on the backend classpath under the
+`inventory:` namespace), interpolating `{processName}` and `{originName}` exactly as the
+wizard's own model of the build does (`buildOperationRequest`, kept for the confirmation
+preview). Every generated field is stamped with `operationFieldKey` (a link spec's
+`fieldNameKey`, a text/origin field's `nameKey`, or the fixed
+`operations.documentationLink`), which is persisted and returned on GET so a later run
+matches the previous generation by key; the property is read-only on the API, so no
+request on any endpoint can set it. Computed values are computed here: `increment` reads
+the origin's parent sample's fields (by key, then by localized name) and `today` resolves
+in the session's timezone.
 
 The
 live-state rules run in `InventoryOperationManagerImpl`, inside the operation's own
 transaction so they hold against the state the mutation sees. The controller's
 template-conformance check runs in that transaction too, handed in as the manager's
-`InTransactionValidation` callback and executed before any origin is read or locked, so
+`BuiltRequestValidation` callback, run on the built request before any origin is read or locked, so
 the template the sample is created from is the one the request was validated against
 (the check stays controller code because it delegates to the shared samples validator,
 a controller-layer class the service must not import). Edit permission is asserted on
@@ -245,19 +243,17 @@ currently hold something, all origins must share one measurement category (a Poo
 an origin-emptying operation (Destroy) must take exactly what the origin holds. In
 that same transaction it then
 **reduces each origin by its amount-taken first**, applies any custom fields the
-request adds to an origin (Destroy's disposed date, via `updateApiSubSample`), and
-creates the new sample + subsamples (reusing `SampleApiManager`). The new sample is
-**forbidden** for a terminal operation (`noOutput`, e.g. Destroy) — the endpoint
-creates nothing and returns null (DevDocs/adr/0007) — and **required** for every other
-operation. The decrement-before-create order (DevDocs/adr/0007) makes the new
+definition adds to an origin (Destroy's disposed date, via `updateApiSubSample`), and
+creates the new sample + subsamples (reusing `SampleApiManager`). A terminal operation
+(`noOutput`, e.g. Destroy) builds no sample: the endpoint creates nothing and returns
+null (DevDocs/adr/0007). The decrement-before-create order (DevDocs/adr/0007) makes the new
 subsample the most-recently-modified record, so it sorts first in a
 modification-date-descending listing (the generic listing default is name-asc, so this
 only shows when that sort is requested). Reducing reuses
 `SubSampleApiManager.registerApiSubSampleUsage`, which subtracts unit-aware and clamps
 at zero as defence-in-depth, so an origin can never be increased. There is still no
 per-operation Java: the rules are read generically from the shared definitions.
-Because the request is client-built, permissions and invariants are enforced
-server-side; it coordinates, it does not blindly trust.
+Permissions and invariants are enforced server-side whatever the client sends.
 
 The over-removal check lives in the manager, not the stateless
 `InventoryOperationPostValidator`, because it needs each origin's live quantity, read
@@ -404,15 +400,19 @@ fields in the wizard is deferred.
   `OperationDetailsStep.test.tsx`, `TemplateStep.test.tsx`. `pnpm test <path>` from the
   repo root.
 - Backend: `InventoryOperationManagerImplTest` (incl. decrement-before-create order),
-  `InventoryOperationPostValidatorTest` (incl. over-removal helper)
+  `InventoryOperationPostValidatorTest` (the request structure; it also holds the golden
+  built request per operation that `InventoryOperationRequestBuilderTest` checks the
+  builder against), `InventoryOperationInputValidatorTest`
   (`mvn test -Dtest=... -Dfast=true`), plus `InventoryOperationsApiControllerMVCIT`
-  (end-to-end, incl. over-removal rejection; run with `mvn verify`).
+  (end-to-end, incl. over-removal rejection and the concurrency rules) and
+  `InventoryOperationsInputsShapeMVCIT` (the records each operation persists, as a golden
+  fingerprint; run with `mvn verify`).
 
 ## Out of scope (current)
 
 Per-origin (unequal) pooling amounts, link-field de-duplication across consecutive
 in-place operations, and list-view entry points. Multi-origin operations (Pool) are
 supported (DevDocs/adr/0007), and terminal operations that create no new sample and add a custom
-field to the origin (Destroy) are supported (DevDocs/adr/0007): the request schema carries origin
-field-adds and an optional new sample. General in-place editing of arbitrary existing
+field to the origin (Destroy) are supported (DevDocs/adr/0007): the server adds the declared
+origin field itself. General in-place editing of arbitrary existing
 origin fields (beyond adding new ones) is still out of scope.
