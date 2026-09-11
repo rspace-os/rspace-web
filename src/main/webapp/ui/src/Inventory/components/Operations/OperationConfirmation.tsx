@@ -13,6 +13,7 @@ import type React from "react";
 import { useTranslation } from "react-i18next";
 import DescriptionList from "@/components/DescriptionList";
 import useStores from "@/stores/use-stores";
+import { withUniqueFieldNames } from "./buildOperationRequest";
 import { applyComputedValues } from "./computedValues";
 import type { DocumentationSelection } from "./DocumentationStep";
 import {
@@ -177,13 +178,25 @@ function OperationConfirmation({
       // buildOperationRequest creates, rather than only the representative origin (DevDocs/adr/0007). A
       // single-origin operation shows its one link name.
       if (operation.requiresMultiple && origins.length && effect.links.length) {
-        const fieldNameKey = effect.links[0].fieldNameKey;
+        const { fieldNameKey, relationType } = effect.links[0];
+        // Two origins may share a name, and the server then suffixes each link name with its target
+        // (as the wizard's own model does); previewing the raw names showed two identical lines
+        // for fields that are stored apart (plan-operations-server-builds.md, M4 preview check).
+        const names = withUniqueFieldNames(
+          origins.map((o) => ({
+            name: resolveLabel(fieldNameKey, { ...values, originName: o.name }),
+            type: "link" as const,
+            newFieldRequest: true as const,
+            operationFieldKey: fieldNameKey,
+            link: { relationType, targetGlobalId: o.globalId, versionPin: null },
+          })),
+        ).map((field) => field.name);
         return {
           label: t("operations.confirm.labels.linkBack"),
           value: (
             <>
-              {origins.map((o) => (
-                <div key={o.globalId}>{resolveLabel(fieldNameKey, { ...values, originName: o.name })}</div>
+              {origins.map((o, index) => (
+                <div key={o.globalId}>{names[index]}</div>
               ))}
             </>
           ),
