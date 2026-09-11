@@ -1,11 +1,13 @@
 package com.researchspace.service.inventory;
 
+import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.model.units.Quantifiable;
 import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.model.units.QuantityUtils;
 import com.researchspace.model.units.RSUnitDef;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import org.springframework.validation.Errors;
 
@@ -21,6 +23,38 @@ public final class InventoryOperationInputValidator {
   private static final QuantityUtils QUANTITY_UTILS = new QuantityUtils();
 
   private InventoryOperationInputValidator() {}
+
+  /**
+   * The inputs with every absent optional input that declares a {@code default} filled in, typed as
+   * the input's type wants it (an integer, a Celsius temperature, text), so a typed facade client
+   * may omit {@code count} or Revive's {@code storageTemp} (M0 D7). Applied before {@link
+   * #validate}, so a default outside its own bounds is still rejected rather than trusted. The
+   * wizard fills the same defaults client-side and always sends them.
+   */
+  public static Map<String, Object> withDefaults(
+      InventoryOperationConfig definition, Map<String, ?> inputs) {
+    Map<String, Object> filled = new LinkedHashMap<>();
+    if (inputs != null) {
+      filled.putAll(inputs);
+    }
+    for (InventoryOperationConfig.Input input : definition.inputs()) {
+      if (input.defaultValue() == null || !isAbsent(filled.get(input.key()))) {
+        continue;
+      }
+      Object value = input.defaultValue();
+      filled.put(
+          input.key(),
+          switch (String.valueOf(input.type())) {
+            case "integer" -> value instanceof Number n ? n.intValue() : value;
+            case "temperature" ->
+                value instanceof Number n
+                    ? new ApiQuantityInfo(new BigDecimal(n.toString()), RSUnitDef.CELSIUS)
+                    : value;
+            default -> value;
+          });
+    }
+    return filled;
+  }
 
   public static void validate(
       InventoryOperationConfig definition, Map<String, ?> inputs, Errors errors) {
