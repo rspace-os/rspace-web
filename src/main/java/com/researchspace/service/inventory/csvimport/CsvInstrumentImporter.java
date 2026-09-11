@@ -1,5 +1,6 @@
 package com.researchspace.service.inventory.csvimport;
 
+import com.researchspace.api.v1.model.ApiField.ApiFieldType;
 import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInstrumentTemplate;
 import com.researchspace.api.v1.model.ApiInstrumentTemplatePost;
@@ -208,6 +209,8 @@ public class CsvInstrumentImporter extends InventoryItemCsvImporter {
             if (!StringUtils.isBlank(value)) {
               if (instrumentField.isOptionsStoringField()) {
                 instrumentField.setSelectedOptions(Arrays.asList(value));
+              } else if (ApiFieldType.LINK.equals(instrumentField.getType())) {
+                instrumentField.setLink(linkParser.parse(value));
               } else {
                 instrumentField.setContent(value);
               }

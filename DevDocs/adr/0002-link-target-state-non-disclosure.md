@@ -35,6 +35,12 @@ knowledge the viewer is not entitled to.
   Open could only produce an error page.
 * Inventory targets ignore `readable` in the UI: every logged-in user retains
   the limited-read view, so Open keeps working and no pill is shown.
+* Amendment (RSDEV-1354, 2026-09-03): because inventory existence is not
+  secret, an inventory target with no record at all (never existed on this
+  server, as with a CSV-imported dangling link, or audit rows purged) is
+  reported as `deleted: true, readable: true` so the card shows
+  "Target deleted". ELN targets keep the conflation above; the pinned unit
+  test now asserts it on an ELN prefix.
 * The gallery "Related inventory items" attachments endpoint (RSDEV-173,
   `GET /workspace/getAttachingInventoryItems/{globalId}`) applies the same
   non-disclosure gate: an unreadable, nonexistent, or malformed target Global ID

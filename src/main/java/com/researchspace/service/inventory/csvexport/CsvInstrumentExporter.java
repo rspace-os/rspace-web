@@ -6,6 +6,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InstrumentEntity;
 import com.researchspace.model.inventory.field.InventoryEntityField;
+import com.researchspace.model.inventory.field.InventoryLinkField;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -164,7 +165,10 @@ public class CsvInstrumentExporter extends InventoryItemCsvExporter {
 
     if (CsvExportMode.FULL.equals(exportMode) && instrument.getActiveFields() != null) {
       for (InventoryEntityField sf : instrument.getActiveFields()) {
-        String valueForProp = sf.getData();
+        String valueForProp =
+            sf instanceof InventoryLinkField
+                ? csvValueForLink(((InventoryLinkField) sf).getLink())
+                : sf.getData();
         int columnIndexForValue = csvColumnNames.indexOf(getColumnNameForInstrumentField(sf));
         if (columnIndexForValue >= 0) {
           itemProperties.set(columnIndexForValue, valueForProp != null ? valueForProp : "");
