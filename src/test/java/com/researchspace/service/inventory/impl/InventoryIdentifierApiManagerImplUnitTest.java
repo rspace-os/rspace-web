@@ -456,6 +456,12 @@ class InventoryIdentifierApiManagerImplUnitTest {
     return doi;
   }
 
+  /**
+   * {@code declined} is not a hypothetical status: it is what B2INST leaves behind when a curator
+   * presses DECLINE, verified against b2inst-test on 2026-09-11 (RSDEV-1326). The request stays
+   * readable, so the status is stored as it stands and the identifier moves to the panel's
+   * closed-review handling. Contrast {@link #refreshFallsBackToDraftWhenOnlyTheDraftSurvives}.
+   */
   @Test
   void refreshPersistsOpenReviewStatusVerbatim() throws Exception {
     InventoryIdentifierApiManagerImpl mgr = new InventoryIdentifierApiManagerImpl();
@@ -500,6 +506,13 @@ class InventoryIdentifierApiManagerImplUnitTest {
         "https://rspace.example.com/public/inventory/" + doi.getPublicLink(), result.getUrl());
   }
 
+  /**
+   * This is what a CANCELLED review looks like, and the reason cancel and decline are not
+   * symmetric: cancelling removes the review from the draft, so the review URL answers 404 while
+   * the draft itself survives, and the identifier drops back to {@code draft} - publishable and
+   * deletable again rather than stuck. Verified against b2inst-test on 2026-09-11 (RSDEV-1326). The
+   * identifier therefore never reaches {@code cancelled} by this route.
+   */
   @Test
   void refreshFallsBackToDraftWhenOnlyTheDraftSurvives() throws Exception {
     InventoryIdentifierApiManagerImpl mgr = new InventoryIdentifierApiManagerImpl();

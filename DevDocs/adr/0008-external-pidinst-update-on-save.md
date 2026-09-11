@@ -193,6 +193,16 @@ anything that is not accepted, so an identifier really can be sitting in
   DataCite side, and a save quietly restores a DOI someone removed there. That
   is consistent with always-push self-healing and is left as is, but it means
   RSpace's record of a DOI, not DataCite's, is what keeps it alive.
+- **CANCEL and DECLINE are not symmetric at B2INST**, verified through its portal on
+  2026-09-11 (RSDEV-1326). Declining a submitted review leaves the request readable, so
+  `refreshIdentifier` stores **`declined`** and the identifiers panel offers Delete. Cancelling
+  one removes it from the draft instead: the review URL 404s, refresh falls through to "a
+  surviving draft" and stores **`draft`**, and the identifier is publishable again. So the state
+  a user lands in is decided by which button the curator pressed, and `cancelled` is not produced
+  by the portal's own Cancel action - the Context above observed that status by another route.
+  `declined` is therefore the closed-review state that actually occurs, which is what makes the
+  UI's closed-review handling everyday behaviour rather than defensive.
+
 - The Context's probe finding - that an identifier can really be sitting in `created`,
   `cancelled`, `declined` or `expired`, because `refreshIdentifier` stores the review's
   status verbatim - is also what decides which states the identifiers panel offers its
