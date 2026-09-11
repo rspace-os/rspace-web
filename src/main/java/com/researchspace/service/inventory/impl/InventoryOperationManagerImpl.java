@@ -62,6 +62,8 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
       String operationKey,
       List<ApiInventoryOperationOriginUpdate> origins,
       Map<String, Object> inputs,
+      Long templateId,
+      String documentedByGlobalId,
       User user,
       BuiltRequestValidation callerValidation)
       throws BindException {
@@ -97,15 +99,25 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
         amountsByGlobalId.put(subSample.getGlobalIdentifier(), origin.getAmountTaken());
       }
     }
+    InventoryOperationRequestBuilder.LabelResolver resolveLabel =
+        InventoryOperationRequestBuilder.messageSourceResolver(
+            messageSource, LocaleContextHolder.getLocale());
     ApiInventoryOperationPost built =
         InventoryOperationRequestBuilder.build(
             InventoryOperationRequestBuilder.Params.builder()
                 .operation(definition)
                 .values(inputs)
                 .origins(builderOrigins)
-                .resolveLabel(
-                    InventoryOperationRequestBuilder.messageSourceResolver(
-                        messageSource, LocaleContextHolder.getLocale()))
+                .resolveLabel(resolveLabel)
+                .templateId(templateId)
+                // The link's display name is the wizard's fixed "Documented by" label, resolved
+                // here in the request's locale exactly like the generated field names.
+                .documentationLink(
+                    documentedByGlobalId == null
+                        ? null
+                        : new InventoryOperationRequestBuilder.DocumentationLink(
+                            resolveLabel.resolve("operations.documentation.fieldName", Map.of()),
+                            documentedByGlobalId))
                 // The origin element owns amountTaken (M3 decision), so the builder is given the
                 // client's per-origin amounts rather than reading one from the inputs.
                 .amountMode(InventoryOperationRequestBuilder.AmountMode.PER_SUBSAMPLE)

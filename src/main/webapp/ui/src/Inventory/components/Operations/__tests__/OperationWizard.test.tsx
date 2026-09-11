@@ -698,7 +698,7 @@ describe("OperationWizard step flow", () => {
     expect(alerts.some((a) => a.variant === "warning" && /refreshFailed/.test(a.title))).toBe(true);
   });
 
-  it("sends a Destroy request with no new sample and the computed disposed date on the origin", async () => {
+  it("sends Destroy as a whole-origin claim with no inputs, leaving the disposed date to the server", async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
     const origin = makeMockSubSample({});
@@ -707,22 +707,42 @@ describe("OperationWizard step flow", () => {
     await user.click(await screen.findByRole("button", { name: /operations\.destroy\.label/i }));
     await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
     await waitFor(() => expect(onClose).toHaveBeenCalled());
-    const request = posted[0] as {
-      operationType: string;
-      newSample: unknown;
-      origins: Array<{
-        amountTaken: { numericValue: number; unitId: number };
-        extraFields?: Array<{ newFieldRequest: boolean; content: string }>;
-      }>;
-    };
-    expect(request.operationType).toBe("destroy");
-    expect(request.newSample).toBeNull();
-    // Destroy empties the origin: the amount taken is its full current quantity
-    expect(request.origins[0].amountTaken).toEqual({ numericValue: 1, unitId: 3 });
-    // ... and stamps the computed ISO disposal date as a new origin field
-    expect(request.origins[0].extraFields?.[0]).toEqual(
-      expect.objectContaining({ newFieldRequest: true, content: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/) }),
+    // Destroy empties the origin: the amount taken is its full current quantity, sent as a
+    // whole-origin claim the server compare-and-swaps. The disposed date is stamped server-side in
+    // the session's timezone (plan-operations-server-builds.md, M4), so nothing about it travels.
+    expect(posted[0]).toEqual({
+      operationType: "destroy",
+      origins: [{ id: 1, amountMode: "all", amountTaken: { numericValue: 1, unitId: 3 } }],
+      inputs: {},
+      templateId: null,
+      documentedByGlobalId: null,
+    });
+  });
+
+  it("names a rejected input by its label rather than the bare key the server reports", async () => {
+    // The inputs shape reports an input error under its bare key ("sampleName: ..."), which is what a
+    // typed client sent but not what the wizard shows; the alert swaps it for the input's label.
+    server.use(
+      http.post(
+        OPERATIONS_URL,
+        () =>
+          HttpResponse.json(
+            { message: "Errors detected: 1", errors: ["sampleName: This operation requires [sampleName]."] },
+            { status: 400 },
+          ),
+        { once: true },
+      ),
     );
+    const user = userEvent.setup();
+    const origin = makeMockSubSample({});
+    vi.spyOn(origin, "fetchAdditionalInfo").mockResolvedValue(undefined);
+    render(<OperationWizard open onClose={vi.fn()} origins={[origin]} />);
+    await reachConfirm(user, "bare key");
+    await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
+    await waitFor(() => expect(addAlert).toHaveBeenCalled());
+    const alert = addAlert.mock.calls[0][0] as { message: string };
+    // cimode renders the label's key; the bare input key is gone from the front of the message
+    expect(alert.message).toMatch(/operations\.fields\.sampleName: This operation requires \[sampleName\]\.$/);
   });
 
   it("blocks the amounts step in per-subsample mode until every origin has an amount", async () => {
@@ -886,28 +906,21 @@ describe("OperationWizard remember bundle", () => {
     await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
 
     await waitFor(() => expect(onClose).toHaveBeenCalled());
-    // Pin the assembled request: the wizard must hand buildOperationRequest's output to the API
-    // with the chosen template and the optional documentation link included.
-    const request = posted[0] as {
-      operationType: string;
-      origins: Array<{ id: number; amountTaken: { numericValue: number; unitId: number } }>;
-      newSample: {
-        templateId: number | null;
-        extraFields: Array<{ link?: { relationType: string; targetGlobalId: string } }>;
-      } | null;
-    };
-    expect(request.operationType).toBe("derive");
-    expect(request.origins).toEqual([expect.objectContaining({ id: 1, amountTaken: { numericValue: 1, unitId: 3 } })]);
-    expect(request.newSample?.templateId).toBe(5);
-    const links = (request.newSample?.extraFields ?? [])
-      .filter((field) => field.link)
-      .map((field) => [field.link?.relationType, field.link?.targetGlobalId]);
-    expect(links).toEqual(
-      expect.arrayContaining([
-        ["IsDerivedFrom", "SS1"],
-        ["IsDocumentedBy", "SD1"],
-      ]),
-    );
+    // Pin the posted request (the inputs shape, plan-operations-server-builds.md M4): the typed
+    // inputs by key, the origin's amount, the chosen template and the documentation target. The
+    // amount taken travels on the origin only, and no sample is assembled client-side.
+    expect(posted[0]).toEqual({
+      operationType: "derive",
+      origins: [{ id: 1, amountMode: "explicit", amountTaken: { numericValue: 1, unitId: 3 } }],
+      inputs: {
+        processName: "dna extraction",
+        sampleName: expect.any(String),
+        count: 1,
+        eachAmount: { numericValue: 5, unitId: 3 },
+      },
+      templateId: 5,
+      documentedByGlobalId: "SD1",
+    });
     expect(prefs.store.INVENTORY_OPERATION_PROCESS_VALUES).toEqual({
       "derive dna extraction": {
         values: { count: 1, eachAmount: { numericValue: 5, unitId: 3 }, amountTaken: { numericValue: 1, unitId: 3 } },
