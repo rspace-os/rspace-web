@@ -14,7 +14,7 @@ import com.researchspace.api.v2.resource.ResourceDeleteOptions;
 import com.researchspace.api.v2.resource.ResourceDeleteResult;
 import com.researchspace.api.v2.resource.ResourceOperation;
 import com.researchspace.model.User;
-import com.researchspace.model.collection.CollectionDescription.Operator;
+import com.researchspace.model.collection.Operator;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.collection.RuntimeCollectionFields;
 import com.researchspace.model.collection.RuntimeFieldCatalogPage;

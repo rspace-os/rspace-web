@@ -691,10 +691,7 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
     }
     com.researchspace.model.collection.FilterExpression self =
         new com.researchspace.model.collection.FilterExpression.Comparison(
-            "id",
-            com.researchspace.model.collection.CollectionDescription.Operator.EQUAL,
-            List.of(actor.getId()),
-            false);
+            "id", com.researchspace.model.collection.Operator.EQUAL, List.of(actor.getId()), false);
     com.researchspace.model.collection.FilterExpression filter =
         request.filter() == null
             ? self
