@@ -1,6 +1,5 @@
 package com.researchspace.api.v1.model;
 
-import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
@@ -10,97 +9,62 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import lombok.ToString;
 
 /**
- * Request to perform a configured Inventory operation.
+ * Request to perform a configured Inventory operation (DevDocs/adr/0007).
  *
- * <p>The frontend assembles this from the fetched operation definitions (GET /operations/config)
- * plus the user's wizard input: a fully-built new sample (its subsamples, custom fields and
- * relation links) plus the amount taken from each origin subsample. The backend applies the whole
- * thing in a single transaction by coordinating existing managers, with no per-operation branching,
- * reducing each origin by its amount-taken (never increasing it). {@code operationType} names the
- * operation definition the request must conform to: the endpoint's validator
- * (InventoryOperationPostValidator, in the controller layer) resolves it against the config and
- * enforces the definition, still generically. See DevDocs/adr/0007.
+ * <p>The client sends the values the user typed ({@code inputs}, keyed by the definition's input
+ * keys), the origin subsamples with the amount taken from each, and the two wizard-level choices
+ * (template, documentation target). The server validates the inputs against the definition {@code
+ * operationType} names, builds the sample and every generated field itself ({@code
+ * InventoryOperationRequestBuilder}) and applies the whole effect in one transaction, reducing each
+ * origin by its amount taken and never increasing it. The built sample travels on {@link
+ * #newSample}, which is not on the wire.
  */
 @Data
 @NoArgsConstructor
-@JsonPropertyOrder({
-  "operationType",
-  "origins",
-  "inputs",
-  "templateId",
-  "documentedByGlobalId",
-  "newSample"
-})
-public class ApiInventoryOperationPost implements UnknownPropertyCapturing {
-  /**
-   * Names of request properties this object does not declare; see {@link UnknownPropertyCapturing}.
-   * Inert here: never serialized, excluded from equals and toString, and inspected only by the
-   * operations endpoint's validator.
-   */
-  @JsonIgnore @EqualsAndHashCode.Exclude @ToString.Exclude
-  private final List<String> unknownProperties = new ArrayList<>();
-
-  /**
-   * Records an unrecognised property's NAME and discards its value.
-   *
-   * <p>The value parameter is {@code Void}, not {@code Object}, deliberately. An any-setter's value
-   * IS deserialized before the method body runs, so {@code Object} would build a
-   * LinkedHashMap/ArrayList graph for the whole unknown subtree only to drop it, turning a body of
-   * junk keys into heap amplification. {@code Void} routes Jackson to NullifyingDeserializer, which
-   * skips the subtree exactly as unknown-property handling did before (parallel review).
-   */
-  @JsonAnySetter
-  private void captureUnknownProperty(String name, Void ignoredValue) {
-    UnknownPropertyCapturing.capture(unknownProperties, name);
-  }
+@JsonPropertyOrder({"operationType", "origins", "inputs", "templateId", "documentedByGlobalId"})
+public class ApiInventoryOperationPost {
 
   @JsonProperty("operationType")
   private String operationType;
 
-  // @Valid on both members: the endpoint binds this DTO as @Valid, and without an explicit cascade
-  // none of the Bean Validation constraints ordinary sample creation enforces (image size, note
-  // length) would apply to an operation's payload.
   // Capped here as well as in InventoryOperationPostValidator (MAX_ORIGINS): the validator's check
-  // runs only after Jackson has materialised every element and the @Valid cascade above has walked
-  // all of them, so the ceiling belongs at binding too.
+  // runs only after Jackson has materialised every element and the @Valid cascade has walked all of
+  // them, so the ceiling belongs at binding too.
   @Valid
   @Size(max = 100, message = "{errors.inventory.operation.tooManyOrigins}")
   @JsonProperty("origins")
   private List<ApiInventoryOperationOriginUpdate> origins = new ArrayList<>();
 
-  @Valid
-  @JsonProperty("newSample")
-  private ApiSampleWithFullSubSamples newSample;
-
   /**
-   * The server-built shape (plan-operations-server-builds.md, M3): the values the user typed, by
-   * the definition's input key, from which the server builds the sample itself. Present selects
-   * this shape and {@code newSample} must be absent; null selects the client-assembled shape above.
-   * Bound as raw JSON values (a quantity arrives as a Map), which the endpoint types against the
-   * definition before validation.
+   * The values the user typed, by the definition's input key. Bound as raw JSON values (a quantity
+   * arrives as a Map), which the endpoint types against the definition before validation. Absent
+   * means no inputs, which is what Destroy declares.
    */
   @JsonProperty("inputs")
   private Map<String, Object> inputs;
 
   /**
-   * Server-built shape only: the template for the sample the server builds; null means ad-hoc.
-   * Numeric like {@code POST /samples} (M0, D4). On the client-assembled shape the template lives
-   * on {@code newSample.templateId} and this is rejected rather than silently ignored.
+   * The template for the sample the server builds; null means ad-hoc. Numeric like {@code POST
+   * /samples} (M0, D4).
    */
   @JsonProperty("templateId")
   private Long templateId;
 
   /**
-   * Server-built shape only: the ELN document, notebook or Gallery file the operation is documented
-   * by, as an {@code IsDocumentedBy} link the server adds to the built sample. Named after the
-   * relation it creates (M0). On the client-assembled shape the link travels in {@code
-   * newSample.extraFields} and this is rejected rather than silently ignored.
+   * The ELN document, notebook or Gallery file the operation is documented by, as an {@code
+   * IsDocumentedBy} link the server adds to the built sample. Named after the relation it creates.
    */
   @JsonProperty("documentedByGlobalId")
   private String documentedByGlobalId;
+
+  /**
+   * Server-side only: the sample the request builder assembled from the definition, the origins and
+   * the inputs, which the manager's transactional core creates; null for a terminal operation
+   * (Destroy). Not on the wire: the API mapper ignores a request property of this name exactly as
+   * it ignores any property no DTO declares.
+   */
+  @JsonIgnore private ApiSampleWithFullSubSamples newSample;
 }

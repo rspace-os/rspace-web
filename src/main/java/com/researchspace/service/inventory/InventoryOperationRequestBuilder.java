@@ -55,8 +55,7 @@ public final class InventoryOperationRequestBuilder {
 
   /**
    * The documentation link is a wizard-level feature rather than a per-operation declaration, so it
-   * carries this fixed key. Duplicated from the controller layer's
-   * OperationNewSampleValidator.DOCUMENTATION_LINK_KEY, which a service class must not import.
+   * carries this fixed key on every output-producing operation.
    */
   static final String DOCUMENTATION_LINK_KEY = "operations.documentationLink";
 
