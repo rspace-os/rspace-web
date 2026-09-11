@@ -1,5 +1,9 @@
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Switch from "@mui/material/Switch";
 import { useTheme } from "@mui/material/styles";
@@ -11,6 +15,7 @@ import { useEffect, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import PadlockIcon from "../../assets/graphics/PadlockIcon";
 import ApiService from "../../common/InvApiService";
+import { Heading } from "../../components/DynamicHeadingLevel";
 import FieldLabel from "../../components/Inputs/FieldLabel";
 import { useDeploymentProperty } from "../../hooks/api/useDeploymentProperty";
 import type { Person } from "../../stores/definitions/Person";
@@ -45,10 +50,15 @@ import Fields from "./Fields/TemplateFields/Fields";
 
 const OverviewSection = observer(({ activeResult }: { activeResult: SampleModel }) => {
   const { t } = useTranslation("inventory");
+  const theme = useTheme();
   const formSectionError = useFormSectionError({
     editing: activeResult.editing,
     globalId: activeResult.globalId,
   });
+  const sampleRequestsAvailable = FetchingData.getSuccessValue(useDeploymentProperty("sampleRequests.available"))
+    .flatMap(Parser.isString)
+    .map((value) => value === "ALLOWED")
+    .orElse(false);
 
   return (
     <StepperPanel
@@ -58,6 +68,39 @@ const OverviewSection = observer(({ activeResult }: { activeResult: SampleModel 
       formSectionError={formSectionError}
       recordType="sample"
     >
+      {sampleRequestsAvailable && activeResult.currentUserIsOwner && (
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 2,
+            p: 1.5,
+            borderRadius: 1,
+            border: `1px solid ${theme.palette.divider}`,
+            backgroundColor: theme.palette.record.sample.lighter,
+          }}
+        >
+          <Box>
+            <Heading sx={{ mt: 0 }}>{t("sample.requestsSection.title")}</Heading>
+            <Typography variant="body2">{t("sample.requestsSection.description")}</Typography>
+          </Box>
+          <FormControlLabel
+            sx={{ m: 0 }}
+            control={
+              <Switch
+                checked={activeResult.requestable}
+                onChange={({ target: { checked } }) => activeResult.setAttributesDirty({ requestable: checked })}
+                color="primary"
+                disabled={!activeResult.isFieldEditable("requestable")}
+                slotProps={{ input: { role: "checkbox" } }}
+              />
+            }
+            label={t("sample.requestsSection.switchLabel")}
+          />
+        </Box>
+      )}
+      <RequestMaterialSection key={activeResult.globalId} activeResult={activeResult} />
       <NameField
         fieldOwner={activeResult}
         record={activeResult}
@@ -111,68 +154,47 @@ const DetailsSection = observer(({ activeResult }: { activeResult: SampleModel }
   );
 });
 
-const RequestsSection = observer(({ activeResult }: { activeResult: SampleModel }) => {
-  const { t } = useTranslation("inventory");
-  const sampleRequestsAvailable = FetchingData.getSuccessValue(useDeploymentProperty("sampleRequests.available"))
-    .flatMap(Parser.isString)
-    .map((value) => value === "ALLOWED")
-    .orElse(false);
-
-  if (!sampleRequestsAvailable || !activeResult.currentUserIsOwner) return null;
-
-  return (
-    <StepperPanel icon="sample" title={t("formSections.requests")} sectionName="requests" recordType="sample">
-      <FormControlLabel
-        control={
-          <Switch
-            checked={activeResult.requestable}
-            onChange={({ target: { checked } }) => activeResult.setAttributesDirty({ requestable: checked })}
-            color="primary"
-            disabled={!activeResult.isFieldEditable("requestable")}
-            slotProps={{ input: { role: "checkbox" } }}
-          />
-        }
-        label={t("sample.requestsSection.allowRequestsLabel")}
-      />
-    </StepperPanel>
-  );
-});
-
 const RequestMaterialSection = observer(({ activeResult }: { activeResult: SampleModel }) => {
-  const { t } = useTranslation("inventory");
+  const { t } = useTranslation(["inventory", "common"]);
   const theme = useTheme();
   const requestTextFieldId = useId();
   const [requestText, setRequestText] = useState("");
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [checkingForExistingRequest, setCheckingForExistingRequest] = useState(true);
-  const [existingRequestStatus, setExistingRequestStatus] = useState<string | null>(null);
+  const [existingRequest, setExistingRequest] = useState<{ status: string; created: string } | null>(null);
   const sampleRequestsAvailable = FetchingData.getSuccessValue(useDeploymentProperty("sampleRequests.available"))
     .flatMap(Parser.isString)
     .map((value) => value === "ALLOWED")
     .orElse(false);
 
   // Check whether the current user already has a request against this sample, so that the
-  // send-a-request form can be replaced with the existing request's status instead. Further UI
+  // request button can be replaced with the existing request's status instead. Further UI
   // enhancements around this (richer status display, etc.) will come later.
   useEffect(() => {
     if (!activeResult.requestable || activeResult.id == null) {
       setCheckingForExistingRequest(false);
-      setExistingRequestStatus(null);
+      setExistingRequest(null);
       return;
     }
     let cancelled = false;
     setCheckingForExistingRequest(true);
-    ApiService.query<{ requests: Array<{ status: string }> }>(
+    ApiService.query<{ requests: Array<{ status: string; created: string }> }>(
       "sampleRequests",
       new URLSearchParams({ sampleId: String(activeResult.id) }),
     )
       .then(({ data }) => {
         if (cancelled) return;
-        setExistingRequestStatus(data.requests[0]?.status ?? null);
+        const mostRecent = data.requests.reduce<{ status: string; created: string } | null>(
+          (latest, request) =>
+            !latest || new Date(request.created).getTime() > new Date(latest.created).getTime() ? request : latest,
+          null,
+        );
+        setExistingRequest(mostRecent);
       })
       .catch((error: unknown) => {
         if (cancelled) return;
         console.error("Failed to check for an existing sample request", error);
-        setExistingRequestStatus(null);
+        setExistingRequest(null);
       })
       .finally(() => {
         if (!cancelled) setCheckingForExistingRequest(false);
@@ -185,15 +207,17 @@ const RequestMaterialSection = observer(({ activeResult }: { activeResult: Sampl
   if (!sampleRequestsAvailable || activeResult.currentUserIsOwner) return null;
 
   // Richer UI responses to the outcome (error state, etc.) are handled separately; for now,
-  // on success the newly-created request's status simply replaces the send-a-request form.
+  // on success the newly-created request's status simply replaces the request button, and the
+  // dialog closes.
   const sendRequest = () => {
     if (!activeResult.globalId) return;
-    void ApiService.post<{ status: string }>("sampleRequests", {
+    void ApiService.post<{ status: string; created: string }>("sampleRequests", {
       sampleGlobalId: activeResult.globalId,
       note: requestText,
     })
       .then(({ data }) => {
-        setExistingRequestStatus(data.status);
+        setExistingRequest(data);
+        setDialogOpen(false);
       })
       .catch((error: unknown) => {
         console.error("Failed to send sample request", error);
@@ -201,36 +225,86 @@ const RequestMaterialSection = observer(({ activeResult }: { activeResult: Sampl
   };
 
   return (
-    <StepperPanel icon="sample" title={t("formSections.requestMaterial")} sectionName="requests" recordType="sample">
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 2,
+        p: 1.5,
+        borderRadius: 1,
+        border: `1px solid ${theme.palette.divider}`,
+        backgroundColor: theme.palette.record.sample.lighter,
+      }}
+    >
       {activeResult.requestable ? (
         <>
-          <Typography variant="body2">
-            {t("sample.requestMaterialSection.reviewText", { owner: activeResult.owner?.fullName ?? "" })}
-          </Typography>
-          {checkingForExistingRequest ? null : existingRequestStatus ? (
-            <Typography variant="body2">{existingRequestStatus}</Typography>
+          <Box>
+            <Heading sx={{ mt: 0 }}>{t("sample.requestMaterialSection.compactTitle")}</Heading>
+            <Typography variant="body2">
+              {existingRequest?.status === "PENDING"
+                ? t("sample.requestMaterialSection.pendingDescription", {
+                    owner: activeResult.owner?.fullName ?? "",
+                  })
+                : t("sample.requestMaterialSection.compactDescription", {
+                    owner: activeResult.owner?.fullName ?? "",
+                  })}
+            </Typography>
+          </Box>
+          {checkingForExistingRequest ? null : existingRequest ? (
+            existingRequest.status === "PENDING" ? (
+              <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 0.5 }}>
+                <Box
+                  sx={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 0.75,
+                    px: 2,
+                    py: 0.75,
+                    borderRadius: 1,
+                    backgroundColor: "rgb(251, 241, 222)",
+                    color: "rgb(183, 121, 31)",
+                    fontSize: "0.8125rem",
+                    fontWeight: 500,
+                  }}
+                >
+                  <Box
+                    component="span"
+                    sx={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: "50%",
+                      backgroundColor: "currentColor",
+                    }}
+                  />
+                  {t("sample.requestMaterialSection.pendingChipLabel")}
+                </Box>
+                <Typography variant="body2">
+                  {t("sample.requestMaterialSection.pendingSentText", {
+                    date: new Date(existingRequest.created).toLocaleDateString(),
+                    owner: activeResult.owner?.fullName ?? "",
+                  })}
+                </Typography>
+              </Box>
+            ) : (
+              <Typography variant="body2">{existingRequest.status}</Typography>
+            )
           ) : (
-            <>
-              <Box>
-                <FieldLabel htmlFor={requestTextFieldId} sx={{ textTransform: "uppercase" }}>
-                  {t("sample.requestMaterialSection.whatYouNeedLabel")}
-                </FieldLabel>
-                <TextField
-                  id={requestTextFieldId}
-                  placeholder={t("sample.requestMaterialSection.whatYouNeedHelperText")}
-                  multiline
-                  minRows={3}
-                  fullWidth
-                  value={requestText}
-                  onChange={({ target: { value } }) => setRequestText(value)}
-                />
-              </Box>
-              <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-                <Button color="primary" variant="outlined" onClick={sendRequest}>
-                  {t("sample.requestMaterialSection.sendRequestButton")}
-                </Button>
-              </Box>
-            </>
+            <Button
+              variant="outlined"
+              onClick={() => setDialogOpen(true)}
+              sx={{
+                color: theme.palette.record.sample.lighter,
+                backgroundColor: theme.palette.primary.main,
+                borderColor: theme.palette.primary.main,
+                "&:hover": {
+                  backgroundColor: theme.palette.primary.dark,
+                  borderColor: theme.palette.primary.dark,
+                },
+              }}
+            >
+              {t("sample.requestMaterialSection.requestSampleButton")}
+            </Button>
           )}
         </>
       ) : (
@@ -246,7 +320,37 @@ const RequestMaterialSection = observer(({ activeResult }: { activeResult: Sampl
           </Box>
         </Box>
       )}
-    </StepperPanel>
+      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} fullWidth maxWidth="sm">
+        <DialogTitle>{t("sample.requestMaterialSection.dialogTitle", { sampleName: activeResult.name })}</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}>
+            <Typography variant="body2">
+              {t("sample.requestMaterialSection.reviewText", { owner: activeResult.owner?.fullName ?? "" })}
+            </Typography>
+            <Box>
+              <FieldLabel htmlFor={requestTextFieldId} sx={{ textTransform: "uppercase" }}>
+                {t("sample.requestMaterialSection.whatYouNeedLabel")}
+              </FieldLabel>
+              <TextField
+                id={requestTextFieldId}
+                placeholder={t("sample.requestMaterialSection.whatYouNeedHelperText")}
+                multiline
+                minRows={3}
+                fullWidth
+                value={requestText}
+                onChange={({ target: { value } }) => setRequestText(value)}
+              />
+            </Box>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDialogOpen(false)}>{t("common:actions.cancel")}</Button>
+          <Button color="primary" variant="contained" onClick={sendRequest}>
+            {t("sample.requestMaterialSection.sendRequestButton")}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
   );
 });
 
@@ -299,12 +403,6 @@ function Form(): React.ReactNode {
         whatLabel={t("recordTypes.sample.lower")}
       />
       <OverviewSection activeResult={activeResult} />
-      {/*
-       * Shown regardless of access level: someone with no read/edit access to
-       * this sample at all may still have found it via an unscoped
-       * "requestable" search, and should be able to request it.
-       */}
-      <RequestMaterialSection key={activeResult.globalId} activeResult={activeResult} />
       {activeResult.readAccessLevel !== "public" && (
         <>
           <DetailsSection activeResult={activeResult} />
@@ -339,7 +437,6 @@ function Form(): React.ReactNode {
           >
             <AccessPermissions fieldOwner={activeResult} additionalExplanation={t("sample.permissionsExplanation")} />
           </StepperPanel>
-          <RequestsSection activeResult={activeResult} />
           <MoreFieldsSection activeResult={activeResult} />
           {activeResult.state === "preview" ? (
             <StepperPanel
