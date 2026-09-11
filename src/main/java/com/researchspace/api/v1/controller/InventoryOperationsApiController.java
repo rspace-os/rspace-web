@@ -1,15 +1,20 @@
 package com.researchspace.api.v1.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.api.v1.InventoryOperationsApi;
 import com.researchspace.api.v1.controller.SamplesApiController.ApiSampleFullPost;
 import com.researchspace.api.v1.model.ApiInventoryOperationPost;
+import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.SampleTemplate;
+import com.researchspace.service.inventory.InventoryOperationConfig;
 import com.researchspace.service.inventory.InventoryOperationConfigRegistry;
 import com.researchspace.service.inventory.InventoryOperationManager;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.NotFoundException;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindException;
@@ -32,6 +37,9 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
   @Autowired InventoryOperationConfigRegistry operationConfigs;
   @Autowired SampleApiPostFullValidator sampleApiPostFullValidator;
 
+  /** Only converts an already-bound Map into a DTO, so it needs none of the API mapper's setup. */
+  private static final ObjectMapper MAPPER = new ObjectMapper();
+
   @Override
   public String getOperationsConfig() {
     return operationConfigs.rawConfigJson();
@@ -45,6 +53,16 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
       throws BindException {
     inputValidator.validate(request, operationPostValidator, errors);
     throwBindExceptionIfErrors(errors);
+    if (request.getInputs() != null) {
+      // The server-built shape (M3): the manager validates the inputs against the definition,
+      // builds the sample, and runs the same core. The template check below runs on what it built.
+      return inventoryOperationManager.performOperation(
+          request.getOperationType(),
+          request.getOrigins(),
+          typedInputs(request),
+          user,
+          built -> validateTemplateConformance(built, user));
+    }
     // The live-state rules (origin currently holds something, amountTaken within it, emptying
     // operations take exactly what it holds) are enforced by the manager INSIDE the operation's
     // transaction, so they hold against the state the mutation sees; the template-conformance check
@@ -54,6 +72,30 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
     // above produce.
     return inventoryOperationManager.performOperation(
         request, user, () -> validateTemplateConformance(request, user));
+  }
+
+  /**
+   * The inputs as the definition types them. Jackson binds a raw {@code Map<String, Object>} value
+   * object to a LinkedHashMap, never to {@link ApiQuantityInfo}, and the input validator rightly
+   * rejects a Map as the wrong type, so each declared quantity or temperature that arrived as a
+   * well-formed object is converted first. Anything else is left as bound for the validator to
+   * judge. (Probed: a JSON number binds as Integer, Long or Double; convertValue turns a Double 0.6
+   * into the BigDecimal 0.6.)
+   */
+  private Map<String, Object> typedInputs(ApiInventoryOperationPost request) {
+    InventoryOperationConfig definition =
+        operationConfigs.get(request.getOperationType()).orElseThrow();
+    Map<String, Object> typed = new LinkedHashMap<>(request.getInputs());
+    for (InventoryOperationConfig.Input input : definition.inputs()) {
+      boolean quantityTyped = "quantity".equals(input.type()) || "temperature".equals(input.type());
+      if (quantityTyped
+          && typed.get(input.key()) instanceof Map<?, ?> raw
+          && raw.get("numericValue") instanceof Number
+          && raw.get("unitId") instanceof Integer) {
+        typed.put(input.key(), MAPPER.convertValue(raw, ApiQuantityInfo.class));
+      }
+    }
+    return typed;
   }
 
   /**

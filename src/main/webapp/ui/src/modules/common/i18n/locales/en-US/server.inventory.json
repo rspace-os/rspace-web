@@ -163,6 +163,8 @@
         "inputNotStorable": "[{0}] supports at most 3 decimal places.",
         "inputRequired": "This operation requires [{0}].",
         "inputWrongType": "[{0}] must be a value of type [{1}].",
+        "newSampleNotAccepted": "Send either inputs or newSample, not both.",
+        "originFieldsNotAccepted": "This shape adds the operation's origin fields itself; do not send origin fields.",
         "linkToOriginRequired": "The new sample must include a {0} link back to origin subsample {1}.",
         "mustEmptyOrigin": "This operation must take the origin's entire remaining quantity.",
         "newSampleForbidden": "This operation does not create a sample, so newSample must be omitted.",

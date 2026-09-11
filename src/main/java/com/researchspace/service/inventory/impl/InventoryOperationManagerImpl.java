@@ -7,27 +7,43 @@ import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.model.User;
+import com.researchspace.model.inventory.SampleEntity;
+import com.researchspace.model.inventory.SubSample;
+import com.researchspace.model.inventory.field.ExtraField;
+import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.units.Quantifiable;
 import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.model.units.QuantityUtils;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.inventory.InventoryEditConflictException;
+import com.researchspace.service.inventory.InventoryOperationConfig;
 import com.researchspace.service.inventory.InventoryOperationConfigRegistry;
+import com.researchspace.service.inventory.InventoryOperationInputValidator;
 import com.researchspace.service.inventory.InventoryOperationManager;
+import com.researchspace.service.inventory.InventoryOperationRequestBuilder;
 import com.researchspace.service.inventory.SampleApiManager;
 import com.researchspace.service.inventory.SubSampleApiManager;
+import com.researchspace.session.SessionTimeZoneUtils;
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Stream;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindException;
+import org.springframework.validation.MapBindingResult;
 import tech.units.indriya.quantity.Quantities;
 
 @Service("inventoryOperationManager")
@@ -36,9 +52,109 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
   @Autowired private SampleApiManager sampleApiMgr;
   @Autowired private SubSampleApiManager subSampleApiMgr;
   @Autowired private InventoryOperationConfigRegistry operationConfigs;
+  @Autowired private MessageSource messageSource;
 
   /** Stateless; one instance per bean, as elsewhere in the codebase. */
   private static final QuantityUtils quantityUtils = new QuantityUtils();
+
+  @Override
+  public ApiSampleWithFullSubSamples performOperation(
+      String operationKey,
+      List<ApiInventoryOperationOriginUpdate> origins,
+      Map<String, Object> inputs,
+      User user,
+      BuiltRequestValidation callerValidation)
+      throws BindException {
+    InventoryOperationConfig definition =
+        operationConfigs
+            .get(operationKey)
+            .orElseThrow(() -> new IllegalArgumentException("unknown operation " + operationKey));
+    // M2 first: an input that fails its declared rule is a 400 before any origin is read. The
+    // errors name the bare input key (M0: a typed facade's field IS the key).
+    MapBindingResult inputErrors = new MapBindingResult(inputs, "apiInventoryOperationPost");
+    InventoryOperationInputValidator.validate(definition, inputs, inputErrors);
+    if (inputErrors.hasErrors()) {
+      throw new BindException(inputErrors);
+    }
+
+    // M1 next: the builder needs each origin's name (link field names), global id (link targets)
+    // and its parent's fields (the Passage counter). Read with the same edit assertion the core
+    // repeats under lock; nothing here is what the compare-and-swap protects.
+    List<InventoryOperationRequestBuilder.Origin> builderOrigins = new ArrayList<>();
+    Map<String, ApiQuantityInfo> amountsByGlobalId = new HashMap<>();
+    for (ApiInventoryOperationOriginUpdate origin : origins) {
+      SubSample subSample = subSampleApiMgr.assertUserCanEditSubSample(origin.getId(), user);
+      builderOrigins.add(
+          new InventoryOperationRequestBuilder.Origin(
+              origin.getId(),
+              subSample.getGlobalIdentifier(),
+              subSample.getName(),
+              subSample.getQuantityInfo() == null
+                  ? null
+                  : new ApiQuantityInfo(subSample.getQuantityInfo()),
+              parentFields(subSample.getSample())));
+      if (origin.getAmountTaken() != null) {
+        amountsByGlobalId.put(subSample.getGlobalIdentifier(), origin.getAmountTaken());
+      }
+    }
+    ApiInventoryOperationPost built =
+        InventoryOperationRequestBuilder.build(
+            InventoryOperationRequestBuilder.Params.builder()
+                .operation(definition)
+                .values(inputs)
+                .origins(builderOrigins)
+                .resolveLabel(
+                    InventoryOperationRequestBuilder.messageSourceResolver(
+                        messageSource, LocaleContextHolder.getLocale()))
+                // The origin element owns amountTaken (M3 decision), so the builder is given the
+                // client's per-origin amounts rather than reading one from the inputs.
+                .amountMode(InventoryOperationRequestBuilder.AmountMode.PER_SUBSAMPLE)
+                .perSubsampleAmounts(amountsByGlobalId)
+                // The session timezone is the browser's, recorded at login (TimezoneAdjuster), so
+                // this is the user's local date; an API-key session has none and gets the server's.
+                .clientToday(
+                    LocalDate.parse(new SessionTimeZoneUtils().formatDateForClient(new Date())))
+                .build());
+    // The builder decides amounts the way the wizard does (a whole-origin operation snapshots the
+    // LIVE quantity); the core must instead compare-and-swap what the CLIENT saw, so every origin
+    // carries the client's own amount and mode into the core. Same order in and out: the builder
+    // emits one update per origin, in the order given.
+    for (int i = 0; i < origins.size(); i++) {
+      built.getOrigins().get(i).setAmountMode(origins.get(i).getAmountMode());
+      built.getOrigins().get(i).setAmountTaken(origins.get(i).getAmountTaken());
+    }
+    // Every generated field's definition key is verified by construction: the server just built it
+    // from the definition. The single persistence gate (ApiExtraFieldsHelper) drops an unverified
+    // key silently, and the template merge in SampleApiManagerImpl skips unverified fields, so the
+    // flag the client-assembled path's validator sets is set here instead. M5 removes the flag.
+    Stream.concat(
+            built.getOrigins().stream().flatMap(origin -> origin.getExtraFields().stream()),
+            built.getNewSample() == null
+                ? Stream.empty()
+                : built.getNewSample().getExtraFields().stream())
+        .forEach(field -> field.setOperationFieldKeyVerified(true));
+    return performOperation(built, user, () -> callerValidation.validate(built));
+  }
+
+  /**
+   * The origin's parent sample's fields a computed value may read: its template-defined fields
+   * (which carry no definition key) and its ad-hoc extra fields, both, as the wizard's
+   * gatherParentFields does.
+   */
+  private static List<InventoryOperationRequestBuilder.ParentField> parentFields(
+      SampleEntity parent) {
+    List<InventoryOperationRequestBuilder.ParentField> fields = new ArrayList<>();
+    for (InventoryEntityField field : parent.getActiveFields()) {
+      fields.add(
+          new InventoryOperationRequestBuilder.ParentField(field.getName(), field.getData(), null));
+    }
+    for (ExtraField field : parent.getActiveExtraFields()) {
+      fields.add(
+          new InventoryOperationRequestBuilder.ParentField(
+              field.getName(), field.getData(), field.getOperationFieldKey()));
+    }
+    return fields;
+  }
 
   @Override
   public ApiSampleWithFullSubSamples performOperation(

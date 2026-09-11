@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Size;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -27,7 +28,7 @@ import lombok.ToString;
  */
 @Data
 @NoArgsConstructor
-@JsonPropertyOrder({"operationType", "origins", "newSample"})
+@JsonPropertyOrder({"operationType", "origins", "inputs", "newSample"})
 public class ApiInventoryOperationPost implements UnknownPropertyCapturing {
   /**
    * Names of request properties this object does not declare; see {@link UnknownPropertyCapturing}.
@@ -68,4 +69,14 @@ public class ApiInventoryOperationPost implements UnknownPropertyCapturing {
   @Valid
   @JsonProperty("newSample")
   private ApiSampleWithFullSubSamples newSample;
+
+  /**
+   * The server-built shape (plan-operations-server-builds.md, M3): the values the user typed, by
+   * the definition's input key, from which the server builds the sample itself. Present selects
+   * this shape and {@code newSample} must be absent; null selects the client-assembled shape above.
+   * Bound as raw JSON values (a quantity arrives as a Map), which the endpoint types against the
+   * definition before validation.
+   */
+  @JsonProperty("inputs")
+  private Map<String, Object> inputs;
 }

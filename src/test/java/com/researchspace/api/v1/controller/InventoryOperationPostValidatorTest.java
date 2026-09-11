@@ -1690,4 +1690,35 @@ class InventoryOperationPostValidatorTest {
             .anyMatch(e -> "errors.inventory.operation.unknownProperty".equals(e.getCode())),
         () -> "the typo must still be reported: " + errors.getAllErrors());
   }
+
+  // --- the server-built shape (M3): inputs present, no client-assembled sample ---
+
+  @Test
+  void inputsShapeIsValidWithoutANewSample() {
+    ApiInventoryOperationPost request = aliquotRequest();
+    request.setNewSample(null);
+    request.setInputs(java.util.Map.of());
+    Errors errors = validate(request);
+    assertFalse(errors.hasErrors(), () -> "unexpected: " + errors.getAllErrors());
+  }
+
+  @Test
+  void inputsShapeRejectsAClientAssembledSampleAlongsideTheInputs() {
+    ApiInventoryOperationPost request = aliquotRequest();
+    request.setInputs(java.util.Map.of());
+    assertSingleErrorWithCode(
+        validate(request), "newSample", "errors.inventory.operation.newSampleNotAccepted");
+  }
+
+  @Test
+  void inputsShapeRejectsClientSuppliedOriginFields() {
+    // Destroy's disposed field is generated server-side under this shape; a client copy would be
+    // silently replaced, so it is rejected instead.
+    ApiInventoryOperationPost request = destroyRequest();
+    request.setInputs(java.util.Map.of());
+    assertSingleErrorWithCode(
+        validate(request),
+        "origins[0].extraFields",
+        "errors.inventory.operation.originFieldsNotAccepted");
+  }
 }
