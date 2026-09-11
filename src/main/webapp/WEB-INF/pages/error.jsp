@@ -1,7 +1,7 @@
-<%-- Not isErrorPage: this is only ever rendered as a Spring view, and the
-     directive made Jasper force a 500 over the status the handler set.
-     The container error pages use the separate /error.jsp at the web root. --%>
-<%@ page language="java" %>
+<%-- isErrorPage makes Jasper set 500 whenever the request carries an error
+     attribute, which is what every page rendering this view relies on for its
+     status. A handler wanting a different status needs its own view. --%>
+<%@ page language="java" isErrorPage="true" %>
 <%@ taglib uri="jakarta.tags.core" prefix="c" %>
 <%@ taglib uri="jakarta.tags.fmt" prefix="fmt" %>
 <%@ taglib uri="jakarta.tags.functions" prefix="fn" %>
