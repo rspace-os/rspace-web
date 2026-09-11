@@ -27,7 +27,9 @@ import org.springframework.validation.Validator;
  * {@code operations_config.json}: the origin list (non-empty, no null entries, within the cap, the
  * definition's cardinality, unique ids), each origin's amount taken and amount mode (a real amount
  * unit, storable at 3dp, positive for a decrementing operation and exactly zero for one that only
- * links, e.g. Passage), and the kind of record a documentation target names.
+ * links, e.g. Passage; absent altogether is accepted where the definition takes nothing or the
+ * whole origin, and the server then supplies it), and the kind of record a documentation target
+ * names.
  *
  * <p>Nothing here looks at a sample: the server builds it from the inputs, which the manager
  * validates against the definition ({@code InventoryOperationInputValidator}). Checks needing an
@@ -181,7 +183,12 @@ public class InventoryOperationPostValidator implements Validator {
             "This operation does not take from its origins, so the amount taken cannot be a"
                 + " whole-origin claim.");
       }
-      if (!isValidAmountTaken(origin.getAmountTaken())) {
+      if (origin.getAmountTaken() == null && config.effect().amountTakenFrom() == null) {
+        // The definition, not the caller, decides what this operation takes: nothing (Passage) or
+        // the whole origin (Destroy). A typed facade sends no amount for either, and the manager's
+        // request builder supplies it from the definition and the origin's live quantity (M0).
+        // The wizard still sends one, which is then checked like any other.
+      } else if (!isValidAmountTaken(origin.getAmountTaken())) {
         errors.rejectValue(
             "amountTaken",
             "errors.inventory.operation.amountTakenInvalid",

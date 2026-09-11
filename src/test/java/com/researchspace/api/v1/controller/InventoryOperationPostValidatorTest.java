@@ -176,6 +176,28 @@ class InventoryOperationPostValidatorTest {
   }
 
   @Test
+  void anAbsentAmountIsAcceptedWhereTheDefinitionDecidesWhatIsTaken() {
+    // A typed facade sends no amount for Passage (takes nothing) or Destroy (takes everything);
+    // the manager's builder supplies it (M6). The wizard still sends one, checked as before.
+    ApiInventoryOperationPost passage = passageRequest();
+    passage.getOrigins().get(0).setAmountTaken(null);
+    assertFalse(validate(passage).hasErrors(), () -> validate(passage).getAllErrors().toString());
+    ApiInventoryOperationPost destroy = destroyRequest();
+    destroy.getOrigins().get(0).setAmountTaken(null);
+    assertFalse(validate(destroy).hasErrors(), () -> validate(destroy).getAllErrors().toString());
+  }
+
+  @Test
+  void anAbsentAmountIsStillRejectedWhereTheOperationTakesFromTheOrigin() {
+    ApiInventoryOperationPost aliquot = aliquotRequest();
+    aliquot.getOrigins().get(0).setAmountTaken(null);
+    assertSingleErrorWithCode(
+        validate(aliquot),
+        "origins[0].amountTaken",
+        "errors.inventory.operation.amountTakenInvalid");
+  }
+
+  @Test
   void everyConfiguredOperationsGoldenRequestPasses() {
     for (ApiInventoryOperationPost request :
         List.of(

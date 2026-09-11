@@ -7020,6 +7020,7 @@ export default interface Resources {
           "originCountMaximum": "This operation accepts at most {0} origin subsamples.",
           "originCountMinimum": "This operation requires at least two origin subsamples.",
           "originEmpty": "An origin subsample that currently holds nothing cannot be operated on.",
+          "originGlobalIdInvalid": "Each origin must be identified by a subsample global id (SS followed by a number), was [{0}].",
           "originIdRequired": "Each origin must identify a subsample by id.",
           "originsRequired": "At least one origin subsample must be provided for the operation.",
           "storageTempAboveMax": "The storage temperature must be at most {0}°C for this operation.",

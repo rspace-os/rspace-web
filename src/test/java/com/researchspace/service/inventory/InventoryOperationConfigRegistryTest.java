@@ -55,6 +55,8 @@ class InventoryOperationConfigRegistryTest {
             .map(InventoryOperationConfig.Link::relationType)
             .toList());
 
+    assertTrue(storageTemp.required(), "M0: a cryopreserved sample has a storage temperature");
+
     InventoryOperationConfig revive = registry.get("revive").orElseThrow();
     InventoryOperationConfig.Input reviveTemp =
         revive.inputs().stream()
@@ -63,6 +65,17 @@ class InventoryOperationConfigRegistryTest {
             .orElseThrow();
     assertEquals(new BigDecimal("4"), reviveTemp.minCelsius());
     assertEquals(new BigDecimal("120"), reviveTemp.maxCelsius());
+    // The declared defaults bind as the JSON values they are (M0 D7); the input validator types
+    // them against the input's type when filling an absent input.
+    assertEquals(4, reviveTemp.defaultValue());
+    assertEquals(
+        1,
+        revive.inputs().stream()
+            .filter(input -> "count".equals(input.key()))
+            .findFirst()
+            .orElseThrow()
+            .defaultValue());
+    assertNull(storageTemp.defaultValue(), "cryopreserve declares no default temperature");
 
     InventoryOperationConfig pool = registry.get("pool").orElseThrow();
     assertTrue(pool.requiresMultiple());
