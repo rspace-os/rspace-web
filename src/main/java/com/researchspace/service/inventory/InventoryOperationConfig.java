@@ -3,6 +3,7 @@ package com.researchspace.service.inventory;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -88,9 +89,30 @@ public record InventoryOperationConfig(
    * the declared text/origin fields then consume. The backend does not recompute it (the inputs are
    * not on the wire and {@code today} would fight client/server timezones, DevDocs/adr/0007); it
    * checks the shape the function promises.
+   *
+   * <p>{@code args} binds how each function argument is sourced, mirroring the wizard's {@code
+   * ComputedArgSource}. The request validator ignores it; {@link InventoryOperationRequestBuilder}
+   * interprets it when building the request server-side (plan-operations-server-builds.md, M1).
    */
   @JsonIgnoreProperties(ignoreUnknown = true)
-  public record Computed(String fn, String into) {}
+  public record Computed(String fn, String into, Map<String, ArgSource> args) {
+    public Computed {
+      args = args == null ? Map.of() : Map.copyOf(args);
+    }
+
+    /** Convenience for callers interested only in the function wiring, not its arguments. */
+    public Computed(String fn, String into) {
+      this(fn, into, null);
+    }
+  }
+
+  /**
+   * One computed-value argument source; exactly one of the three is set in config: a field on the
+   * origin's parent sample (matched by this key, then by its localized name), a wizard input's
+   * current value, or a literal.
+   */
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  public record ArgSource(String parentSampleField, String input, BigDecimal constant) {}
 
   /** A provenance link the new sample must carry back to each origin. */
   @JsonIgnoreProperties(ignoreUnknown = true)

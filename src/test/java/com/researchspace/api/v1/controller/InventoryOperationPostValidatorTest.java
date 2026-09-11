@@ -218,7 +218,7 @@ class InventoryOperationPostValidatorTest {
         origin(100, "0.6"));
   }
 
-  private static ApiInventoryOperationPost passageRequest() {
+  static ApiInventoryOperationPost passageRequest() {
     return request(
         "passage",
         newSample(
@@ -228,7 +228,7 @@ class InventoryOperationPostValidatorTest {
         origin(100, "0"));
   }
 
-  private static ApiInventoryOperationPost poolRequest() {
+  static ApiInventoryOperationPost poolRequest() {
     return request(
         "pool",
         newSample(
@@ -239,14 +239,14 @@ class InventoryOperationPostValidatorTest {
         origin(101, "0.7"));
   }
 
-  private static ApiInventoryOperationPost deriveRequest() {
+  static ApiInventoryOperationPost deriveRequest() {
     return request(
         "derive",
         newSample("Derived", linkTo("operations.derive.linkFieldName", "IsDerivedFrom", 100)),
         origin(100, "0.6"));
   }
 
-  private static ApiInventoryOperationPost cryopreserveRequest() {
+  static ApiInventoryOperationPost cryopreserveRequest() {
     ApiSampleWithFullSubSamples sample =
         newSample(
             "Frozen",
@@ -257,7 +257,7 @@ class InventoryOperationPostValidatorTest {
     return request("cryopreserve", sample, origin(100, "0.6"));
   }
 
-  private static ApiInventoryOperationPost reviveRequest() {
+  static ApiInventoryOperationPost reviveRequest() {
     ApiSampleWithFullSubSamples sample =
         newSample("Revived", linkTo("operations.revive.linkFieldName", "IsDerivedFrom", 100));
     sample.setStorageTempMin(celsius("4"));

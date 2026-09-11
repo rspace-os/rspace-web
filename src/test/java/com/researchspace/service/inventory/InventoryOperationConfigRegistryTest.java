@@ -12,6 +12,7 @@ import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.ByteArrayResource;
@@ -101,8 +102,19 @@ class InventoryOperationConfigRegistryTest {
             .min());
 
     InventoryOperationConfig passage = registry.get("passage").orElseThrow();
+    // args bind too, since the server-side request builder sources each function argument from
+    // them (plan-operations-server-builds.md, M1).
     assertEquals(
-        List.of(new InventoryOperationConfig.Computed("increment", "passageNumber")),
+        List.of(
+            new InventoryOperationConfig.Computed(
+                "increment",
+                "passageNumber",
+                Map.of(
+                    "current",
+                    new InventoryOperationConfig.ArgSource(
+                        "operations.passage.numberField", null, null),
+                    "start",
+                    new InventoryOperationConfig.ArgSource(null, null, new BigDecimal("1"))))),
         passage.effect().computed());
     assertEquals(
         List.of(
