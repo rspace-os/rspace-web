@@ -4,6 +4,7 @@ import static com.researchspace.service.SystemPropertyName.valueOfPropertyName;
 
 import com.researchspace.core.util.DefaultURLPaginator;
 import com.researchspace.core.util.ISearchResults;
+import com.researchspace.core.util.ListFormatUtils;
 import com.researchspace.core.util.PaginationObject;
 import com.researchspace.core.util.PaginationUtil;
 import com.researchspace.model.Community;
@@ -18,7 +19,6 @@ import com.researchspace.model.system.SystemProperty;
 import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.CommunityServiceManager;
-import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.SystemPropertyManager;
 import com.researchspace.service.SystemPropertyPermissionManager;
 import java.util.HashMap;

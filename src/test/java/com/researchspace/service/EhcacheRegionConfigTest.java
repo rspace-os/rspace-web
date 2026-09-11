@@ -132,12 +132,14 @@ public class EhcacheRegionConfigTest {
     String activeContent = readProductionDaoContext().replaceAll("(?s)<!--.*?-->", "");
     Pattern activeProperty =
         Pattern.compile(
-            "(?m)^\\s*hibernate\\.javax\\.cache\\.missing_cache_strategy=create-warn\\s*$");
+            "(?m)(^\\s*hibernate\\.javax\\.cache\\.missing_cache_strategy=create-warn\\s*$|"
+                + "<prop key=\"hibernate\\.javax\\.cache\\.missing_cache_strategy\">"
+                + "create-warn</prop>)");
     assertTrue(
         activeProperty.matcher(activeContent).find(),
         DAO_CONTEXT_RESOURCE
             + " must declare hibernate.javax.cache.missing_cache_strategy=create-warn as an "
-            + "active property line, not just in a comment; if the strategy is being changed "
+            + "active property, not just in a comment; if the strategy is being changed "
             + "deliberately, update this test with it");
   }
 

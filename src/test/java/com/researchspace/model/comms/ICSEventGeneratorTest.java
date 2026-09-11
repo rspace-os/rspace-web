@@ -33,7 +33,7 @@ public class ICSEventGeneratorTest {
     mor.setMessage(" A message");
     Date future = new Date(Instant.now().plus(10, ChronoUnit.DAYS).toEpochMilli());
     mor.setRequestedCompletionDate(future);
-    net.fortuna.ical4j.model.Calendar cal = icalgen.createICalEventFor(mor);
+    net.fortuna.ical4j.model.Calendar cal = icalgen.createICalEventFor(mor, "Request summary");
     cal.validate();
     assertNotNull(cal);
     assertTrue(cal.getComponents().size() > 0);

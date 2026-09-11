@@ -50,7 +50,8 @@
                 <td id="midRequest" valign="top" class="mainMessage">
                     <div style="font-size: 1em;line-height:1.1em;">
                         <span class="messageText">
-                            <c:set var="messageType"><span class="boldtext">${message.messageType.label}</span></c:set>
+                            <spring:message code="${message.messageType.labelKey}" var="messageTypeLabel"/>
+                            <c:set var="messageType"><span class="boldtext">${messageTypeLabel}</span></c:set>
                             <c:if test="${not empty message.record}">
                                 <c:choose>
                                     <c:when test="${message.record.notebook}">

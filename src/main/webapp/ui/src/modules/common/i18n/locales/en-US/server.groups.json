@@ -26,6 +26,17 @@
     "actions": {
       "changeRole": "Change Role"
     },
+    "roles": {
+      "groupOwner": "Group Owner",
+      "labAdmin": "Lab Admin",
+      "pi": "PI",
+      "user": "User"
+    },
+    "types": {
+      "collaborationGroup": "Collaboration Group",
+      "labGroup": "Lab Group",
+      "projectGroup": "Project Group"
+    },
     "create": {
       "configureIntro": "Create and configure a new Group"
     },

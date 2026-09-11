@@ -46,7 +46,7 @@ public class RadioFieldForm extends FieldForm {
         + "]";
   }
 
-  @NotBlank(message = "radio options {errors.required.field}")
+  @NotBlank(message = "{validation.fieldForm.radioOptionsRequired}")
   public String getRadioOption() {
     return radioOption;
   }
@@ -99,7 +99,7 @@ public class RadioFieldForm extends FieldForm {
   public ErrorList validate(String data) {
     ErrorList el = new ErrorList();
     if (data.length() > 0 && !getRadioOptionAsList().contains(data)) {
-      el.addErrorMsg("Invalid data for Radio Field [" + data + "]");
+      el.addErrorMsgCode("validation.fieldData.invalidRadio", data);
     }
     return el;
   }

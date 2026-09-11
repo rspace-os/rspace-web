@@ -104,7 +104,7 @@
                     <c:url value="/groups/view/${grp.id}"
                       var="groupURL"></c:url>
                     <li><a href="${groupURL}">
-                        ${grp.displayName} (${grp.groupType.label})</a></li>
+                        ${grp.displayName} (<spring:message code="${grp.groupType.labelKey}"/>)</a></li>
                   </c:if>
                 </c:forEach>
               </ul>
@@ -345,7 +345,7 @@
               </c:if>
               <%-- can't remove or edit a PI in a lab group --%>
               <td>
-                <span data-test-id="roleInGroup_${ug.user.username}">${ug.roleInGroup.label}</span>
+                <span data-test-id="roleInGroup_${ug.user.username}"><spring:message code="${ug.roleInGroup.labelKey}"/></span>
                 <c:if test="${ug.adminViewDocsEnabled}"> <img src='/images/icons/viewAllFolderIcon.png' style="vertical-align:middle;padding-bottom:2px;" title="<spring:message code='groups.view.permissions.canView'/>" /></c:if>
                 <c:if test="${ug.piCanEditWork}"> <img src='/images/icons/editIcon.png' style="vertical-align:middle;padding-bottom:2px;" title="<spring:message code='groups.view.permissions.canEdit'/>" /></c:if>
               </td>

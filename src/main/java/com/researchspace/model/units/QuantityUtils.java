@@ -3,6 +3,7 @@ package com.researchspace.model.units;
 import static com.researchspace.core.util.TransformerUtils.toList;
 import static org.apache.commons.lang3.Validate.isTrue;
 
+import com.researchspace.model.field.LocalizedIllegalArgumentException;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Collection;
@@ -325,19 +326,15 @@ public class QuantityUtils {
           addSpaceBetweenNumberAndUnitPartOfQuantityString(quantityString);
       parsedQuantity = SimpleQuantityFormat.getInstance().parse(quantityStringWithSpace);
     } catch (MeasurementParseException mpe) {
-      String cause = mpe.getMessage();
-      if ("Parse Error".equals(cause)) {
-        cause += " - " + mpe.getParsedString();
-      }
-      throw new IllegalArgumentException("Cannot parse quantity string: " + cause, mpe);
+      throw new LocalizedIllegalArgumentException(
+          "validation.quantity.parseFailed", mpe, quantityString);
     }
 
     Unit<?> parsedUnit = parsedQuantity.getUnit();
     Optional<RSUnitDef> rsUnitDefOpt = RSUnitDef.getUnitDefByUnit(parsedUnit);
     if (!rsUnitDefOpt.isPresent()) {
-      throw new IllegalArgumentException(
-          String.format(
-              "Cannot parse quantity string: unit not recognized [%s]", parsedUnit.toString()));
+      throw new LocalizedIllegalArgumentException(
+          "validation.quantity.unitUnrecognized", parsedUnit.toString());
     }
     return QuantityInfo.of(
         new BigDecimal(parsedQuantity.getValue().toString()), rsUnitDefOpt.get());

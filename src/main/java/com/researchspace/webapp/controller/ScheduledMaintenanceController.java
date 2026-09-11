@@ -1,10 +1,10 @@
 package com.researchspace.webapp.controller;
 
+import com.researchspace.core.util.ListFormatUtils;
 import com.researchspace.maintenance.model.ScheduledMaintenance;
 import com.researchspace.maintenance.service.MaintenanceManager;
 import com.researchspace.model.User;
 import com.researchspace.model.field.ErrorList;
-import com.researchspace.service.ListFormatUtils;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import java.util.Date;

@@ -856,9 +856,7 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
             IllegalStateException.class,
             () ->
                 sampleApiMgr.updateSampleToLatestTemplateVersion(createdSample.getId(), testUser));
-    assertEquals(
-        "Field [updated radio] value [r1] is invalid according to latest template field definition",
-        iae.getMessage());
+    assertEquals("validation.inventoryField.invalidForLatestTemplate", iae.getMessage());
 
     // update sample's choice field value that is blocking the update
     ApiSample sampleUpdates = new ApiSample();
@@ -1000,10 +998,7 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
             IllegalStateException.class,
             () ->
                 sampleApiMgr.updateSampleToLatestTemplateVersion(createdSample1.getId(), testUser));
-    assertEquals(
-        "Field [updated choice] value [[\"c1\",\"c2\"]] is invalid according to latest template"
-            + " field definition",
-        iae.getMessage());
+    assertEquals("validation.inventoryField.invalidForLatestTemplate", iae.getMessage());
 
     // update sample's choice field value that is blocking the update
     ApiSample sampleUpdates = new ApiSample();

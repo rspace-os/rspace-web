@@ -57,9 +57,8 @@ public class WebConfig extends WebMvcConfigurationSupport {
   private String standalone;
 
   /**
-   * Without this, {@code mvcValidator()} builds its own validator, whose interpolator reads only
-   * {@code ValidationMessages.properties}, and every {@code {some.key}} message reaches the user
-   * with the braces intact.
+   * Without this, {@code mvcValidator()} builds its own validator and does not resolve messages
+   * from the JSON catalogues.
    */
   @Override
   protected Validator getValidator() {

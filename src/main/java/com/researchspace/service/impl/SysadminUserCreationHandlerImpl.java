@@ -5,6 +5,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import com.ibm.icu.text.ListFormatter;
 import com.researchspace.Constants;
+import com.researchspace.core.util.ListFormatUtils;
 import com.researchspace.model.Community;
 import com.researchspace.model.Group;
 import com.researchspace.model.GroupType;
@@ -26,7 +27,6 @@ import com.researchspace.service.EmailContent;
 import com.researchspace.service.GroupManager;
 import com.researchspace.service.IContentInitializer;
 import com.researchspace.service.IGroupCreationStrategy;
-import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.SysadminUserCreationHandler;
 import com.researchspace.service.UserExistsException;

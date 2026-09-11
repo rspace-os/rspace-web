@@ -3,6 +3,7 @@ package com.researchspace.model.inventory.field;
 import com.researchspace.model.audittrail.AuditTrailProperty;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.GlobalIdentifier;
+import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.InventoryRecordConnectedEntity;
 import com.researchspace.model.record.EditInfo;
@@ -138,9 +139,9 @@ public abstract class ExtraField extends InventoryRecordConnectedEntity implemen
   @Transient
   public abstract FieldType getType();
 
-  /** Validates provided data, returns error message if invalid */
+  /** Returns validation errors for {@code data}, or an empty list when it is valid. */
   @Transient
-  public abstract String validateNewData(String data);
+  public abstract ErrorList validateNewData(String data);
 
   @Transient
   public GlobalIdentifier getOid() {

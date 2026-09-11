@@ -14,8 +14,7 @@ import java.lang.annotation.Target;
 @Documented
 public @interface ValidTemperature {
 
-  String message() default
-      "Invalid temperature - must be a temperature measurement greater than absolute zero";
+  String message() default "{validation.quantity.temperatureAboveAbsoluteZero}";
 
   Class<?>[] groups() default {};
 

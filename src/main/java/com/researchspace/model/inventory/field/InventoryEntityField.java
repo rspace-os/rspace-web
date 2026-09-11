@@ -4,6 +4,9 @@ import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.field.FieldType;
+import com.researchspace.model.field.LocalizedIllegalArgumentException;
+import com.researchspace.model.field.LocalizedIllegalStateException;
+import com.researchspace.model.field.LocalizedUnsupportedOperationException;
 import com.researchspace.model.field.ValidatingField;
 import com.researchspace.model.inventory.InstrumentEntity;
 import com.researchspace.model.inventory.InventoryFile;
@@ -199,10 +202,8 @@ public abstract class InventoryEntityField
   public void assertFieldDataValid(String fieldData) {
     ErrorList el = validate(fieldData);
     if (el.hasErrorMessages()) {
-      throw new IllegalArgumentException(
-          String.format(
-              "[%s] is invalid for field type %s: %s",
-              fieldData, getType().getType(), el.getAllErrorMessagesAsStringsSeparatedBy(",")));
+      throw new LocalizedIllegalArgumentException(
+          "validation.inventoryField.invalidForFieldType", el, fieldData, getType().getType());
     }
   }
 
@@ -269,7 +270,8 @@ public abstract class InventoryEntityField
    */
   @Transient
   public void setAttachedFile(InventoryFile file) {
-    throw new UnsupportedOperationException(getType() + " field doesn't support file attachments");
+    throw new LocalizedUnsupportedOperationException(
+        "errors.inventory.field.attachmentUnsupported", getType());
   }
 
   /**
@@ -285,7 +287,7 @@ public abstract class InventoryEntityField
         (getSample() != null && getSample().isTemplate())
             || getInstrumentEntity() != null && getInstrumentEntity().isTemplate();
     if (isMandatory() && !isTemplateField && !isValidValueForMandatoryField(fieldData)) {
-      result.addErrorMsg("Field [" + getName() + "] is mandatory, but no content is provided");
+      result.addErrorMsgCode("validation.inventoryField.mandatoryContentMissing", getName());
     }
     return result;
   }
@@ -360,7 +362,8 @@ public abstract class InventoryEntityField
    */
   public boolean updateToLatestTemplateDefinition() {
     if (templateField == null) {
-      throw new IllegalStateException("Field [" + getName() + "] has no connected template field");
+      throw new LocalizedIllegalStateException(
+          "validation.inventoryField.noConnectedTemplate", getName());
     }
 
     boolean fieldUpdated = false;
@@ -386,11 +389,8 @@ public abstract class InventoryEntityField
       setMandatory(templateField.isMandatory());
       if (requiresValueWhenBecomingMandatoryOnTemplateUpdate()
           && !isValidValueForMandatoryField(getFieldData())) {
-        throw new IllegalStateException(
-            "Field ["
-                + getName()
-                + "] is empty, but "
-                + "is mandatory in latest template field definition");
+        throw new LocalizedIllegalStateException(
+            "validation.inventoryField.mandatoryInLatestTemplate", getName());
       }
       fieldUpdated = true;
     }

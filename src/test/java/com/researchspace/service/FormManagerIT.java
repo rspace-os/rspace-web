@@ -6,6 +6,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.ChoiceFieldDTO;
 import com.researchspace.model.dtos.ChoiceFieldDTOValidatorTest;
@@ -50,30 +51,24 @@ public class FormManagerIT extends RealTransactionSpringTestBase {
 
     ChoiceFieldDTO<ChoiceFieldForm> invalidChoice = ChoiceFieldDTOValidatorTest.createValid();
     invalidChoice.setChoiceValues(null);
-    assertThat(
-        assertThrows(
-                ConstraintViolationException.class,
-                () -> formMgr.createFieldForm(invalidChoice, form.getId(), user))
-            .getMessage(),
-        containsString("choice options is a required field"));
+    CoreTestUtils.assertExceptionThrown(
+        () -> formMgr.createFieldForm(invalidChoice, form.getId(), user),
+        ConstraintViolationException.class,
+        containsString("Choice options are required."));
 
     DateFieldDTO<DateFieldForm> invalidDate = DateFieldDTOValidatorTest.createValid();
     invalidDate.setDateFormat("");
-    assertThat(
-        assertThrows(
-                ConstraintViolationException.class,
-                () -> formMgr.createFieldForm(invalidDate, form.getId(), user))
-            .getMessage(),
-        containsString("format is a required field"));
+    CoreTestUtils.assertExceptionThrown(
+        () -> formMgr.createFieldForm(invalidDate, form.getId(), user),
+        ConstraintViolationException.class,
+        containsString("Date format is required."));
 
     RadioFieldDTO<RadioFieldForm> invalidRadio = RadioFieldDTOValidatorTest.createValid();
     invalidRadio.setRadioValues("   ");
-    assertThat(
-        assertThrows(
-                ConstraintViolationException.class,
-                () -> formMgr.createFieldForm(invalidRadio, form.getId(), user))
-            .getMessage(),
-        containsString("radio options is a required field"));
+    CoreTestUtils.assertExceptionThrown(
+        () -> formMgr.createFieldForm(invalidRadio, form.getId(), user),
+        ConstraintViolationException.class,
+        containsString("Radio options are required."));
 
     TextFieldDTO<TextFieldForm> invalidText = TextFieldDTOValidatorTest.createValid();
     invalidText.setName(randomAlphabetic(MAX_NAME_LENGTH + 1));

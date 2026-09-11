@@ -123,7 +123,7 @@ public class NumberFieldForm extends FieldForm {
     try {
       dataN = Double.parseDouble(data);
     } catch (NumberFormatException nfe) {
-      el.addErrorMsg("Invalid number format [" + data + "].");
+      el.addErrorMsgCode("validation.fieldData.invalidNumberFormat", data);
       return el;
     }
 
@@ -132,26 +132,21 @@ public class NumberFieldForm extends FieldForm {
       if (dpIndx != -1) {
         int dplaces = data.substring(dpIndx).length() - 1;
         if (dplaces > getDecimalPlaces()) {
-          el.addErrorMsg(
-              "Data ["
-                  + data
-                  + "] has too many decimal places (should be ["
-                  + getDecimalPlaces()
-                  + "] ).");
+          el.addErrorMsgCode("validation.fieldData.tooManyDecimalPlaces", data, getDecimalPlaces());
         }
       }
     }
 
     if (getMinNumberValue() != null) {
       if (!defaultValueAndValueIsZero(dataN) && dataN < getMinNumberValue()) {
-        el.addErrorMsg("Data [" + data + "] smaller than minimum [" + getMinNumberValue() + "]");
+        el.addErrorMsgCode("validation.fieldData.numberBelowMinimum", data, getMinNumberValue());
         return el;
       }
     }
 
     if (!defaultValueAndValueIsZero(dataN) && getMaxNumberValue() != null) {
       if (dataN > getMaxNumberValue()) {
-        el.addErrorMsg("Data [" + data + "] greater than maximum [" + getMaxNumberValue() + "]");
+        el.addErrorMsgCode("validation.fieldData.numberAboveMaximum", data, getMaxNumberValue());
         return el;
       }
     }

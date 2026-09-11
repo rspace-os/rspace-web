@@ -73,7 +73,7 @@ public class ReferencingInventoryItemsController {
       return ResponseEntity.ok(result);
     } catch (ApiRuntimeException e) {
       return ResponseEntity.status(HttpStatus.NOT_FOUND)
-          .body(ErrorList.of(messageSource.getMessage(e.getErrorCode(), e.getArgs())));
+          .body(ErrorList.of(messageSource.getExceptionMessage(e)));
     }
   }
 }

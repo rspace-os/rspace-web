@@ -20,31 +20,32 @@
     	<property name="dataSource" ref="dataSource" />
     	<property name="configLocations" value="classpath:hibernate.cfg.xml" />
     	<property name="hibernateProperties">
-    		<value>
-    			hibernate.dialect=${hibernate.dialect}
-    			hibernate.search.backend.type=lucene
-    			hibernate.search.backend.directory.root=${rs.hibernate.searchIndex.folder}
-    			hibernate.search.backend.directory.type=local-filesystem
-    			hibernate.cache.use_second_level_cache=true
-    			hibernate.cache.use_query_cache=true
-    			hibernate.cache.region.factory_class=org.hibernate.cache.jcache.JCacheRegionFactory
-    			<!-- hibernate-jcache only reads the hibernate.javax.cache.* keys (JCache itself was
-    			     never migrated to the jakarta namespace). The uri is resolved as a classpath
-    			     resource by Hibernate's ClassLoaderService, so no classpath: prefix. With a wrong
-    			     key/uri Hibernate silently falls back to an EMPTY default CacheManager and every
-    			     region becomes an untuned create-warn default (unlimited size, no expiry);
-    			     SecondLevelCacheTestIT guards this wiring. -->
-    			hibernate.javax.cache.provider=org.ehcache.jsr107.EhcacheCachingProvider
-    			hibernate.javax.cache.uri=ehcache.xml
-    			<!-- The hibernate-jcache default, made explicit and pinned by
-    			     EhcacheRegionConfigTest: a region absent from ehcache.xml is created
-    			     untuned (unbounded heap, no expiry) with only a logged warning, rather
-    			     than failing startup. EhcacheRegionConfigTest keeps ehcache.xml complete
-    			     so this should never fire. -->
-    			hibernate.javax.cache.missing_cache_strategy=create-warn
-			hibernate.search.indexing.plan.synchronization.strategy=sync
-    			<!-- Id generation for TABLE-strategy entities: every such entity carries an explicit
-    			     @TableGenerator, keyed to its own row in hibernate_sequences.
+			<props>
+				<prop key="hibernate.dialect">${hibernate.dialect}</prop>
+				<prop key="hibernate.search.backend.type">lucene</prop>
+				<prop key="hibernate.search.backend.directory.root">${rs.hibernate.searchIndex.folder}</prop>
+				<prop key="hibernate.search.backend.directory.type">local-filesystem</prop>
+				<prop key="hibernate.cache.use_second_level_cache">true</prop>
+				<prop key="hibernate.cache.use_query_cache">true</prop>
+				<prop key="hibernate.cache.region.factory_class">org.hibernate.cache.jcache.JCacheRegionFactory</prop>
+				<!-- hibernate-jcache only reads the hibernate.javax.cache.* keys (JCache itself was
+				     never migrated to the jakarta namespace). The uri is resolved as a classpath
+				     resource by Hibernate's ClassLoaderService, so no classpath: prefix. With a wrong
+				     key/uri Hibernate silently falls back to an EMPTY default CacheManager and every
+				     region becomes an untuned create-warn default (unlimited size, no expiry);
+				     SecondLevelCacheTestIT guards this wiring. -->
+				<prop key="hibernate.javax.cache.provider">org.ehcache.jsr107.EhcacheCachingProvider</prop>
+				<prop key="hibernate.javax.cache.uri">ehcache.xml</prop>
+				<!-- The hibernate-jcache default, made explicit and pinned by
+				     EhcacheRegionConfigTest: a region absent from ehcache.xml is created
+				     untuned (unbounded heap, no expiry) with only a logged warning, rather
+				     than failing startup. EhcacheRegionConfigTest keeps ehcache.xml complete
+				     so this should never fire. -->
+				<prop key="hibernate.javax.cache.missing_cache_strategy">create-warn</prop>
+				<prop key="hibernate.search.indexing.plan.synchronization.strategy">sync</prop>
+				<prop key="jakarta.persistence.validation.factory">#{@validator}</prop>
+				<!-- Id generation for TABLE-strategy entities: every such entity carries an explicit
+				     @TableGenerator, keyed to its own row in hibernate_sequences.
     			     Generators declared without pkColumnValue segment by the entity's physical table
     			     name (Hibernate defaults prefer_entity_table_as_segment_value=true for
     			     annotation-defined table generators), preserving the one-counter-per-table layout
@@ -53,11 +54,11 @@
     			     counter. changeLog-rsdev-444.xml re-seeds every row above its table's MAX(id) on
     			     upgrade, so allocation cannot collide with pre-upgrade ids. Do NOT add a bare
     			     @GeneratedValue(strategy=TABLE) without a generator: it would allocate from a
-    			     shared "default" segment (TableIdGeneratorConfigTest guards this). See
-    			     DevDocs/DeveloperNotes/UpgradingToSpring6.md ("What the upgrade does to the
-    			     database"). -->
-    		</value>
-    		<!-- Turn batching off for better error messages under PostgreSQL -->
+				     shared "default" segment (TableIdGeneratorConfigTest guards this). See
+				     DevDocs/DeveloperNotes/UpgradingToSpring6.md ("What the upgrade does to the
+				     database"). -->
+			</props>
+			<!-- Turn batching off for better error messages under PostgreSQL -->
     		<!-- hibernate.jdbc.batch_size=0 -->
     	</property>
     </bean>

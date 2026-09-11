@@ -4,8 +4,9 @@ import com.ibm.icu.text.ListFormatter;
 import com.researchspace.api.v1.model.ApiField;
 import com.researchspace.api.v1.model.ApiFieldToModelFieldFactory;
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
+import com.researchspace.core.util.ListFormatUtils;
 import com.researchspace.model.inventory.Instrument;
-import com.researchspace.service.ListFormatUtils;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.inventory.DataCiteRelationType;
 import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
@@ -19,6 +20,7 @@ import org.springframework.validation.Validator;
 abstract class InstrumentTemplateFieldValidator implements Validator {
 
   private @Autowired ApiFieldToModelFieldFactory apiFieldToModelFieldFactory;
+  private @Autowired MessageSourceUtils messages;
 
   private final Set<String> reservedFieldNames = (new Instrument()).getReservedFieldNames();
 
@@ -58,7 +60,7 @@ abstract class InstrumentTemplateFieldValidator implements Validator {
         errors.rejectValue(
             "content",
             "errors.inventory.template.invalidFieldContent",
-            new Object[] {e.getMessage()},
+            new Object[] {messages.getExceptionMessage(e)},
             null);
       }
     }

@@ -29,6 +29,9 @@
     }
   },
   "messages": {
+    "calendar": {
+      "requestFrom": "RS request from {0}"
+    },
     "completionBy": {
       "label": "Due for completion by:"
     },
@@ -47,6 +50,9 @@
     },
     "joinRequest": {
       "toJoin": "To join: {0}"
+    },
+    "moreInfo": {
+      "witnessDocumentSigning": "To proceed, please follow the above link to the document. Then, click on the 'Witness' button."
     },
     "orderBy": {
       "completionDate": "| Completion date",
@@ -78,6 +84,18 @@
       "replied": "REPLIED"
     },
     "title": "My Messages",
+    "types": {
+      "basic": "Basic message",
+      "createCollaborationGroup": "Create a Collaboration Group",
+      "createLabGroupAsPi": "Create LabGroup as PI",
+      "global": "Message to all users",
+      "joinExistingCollaborationGroup": "Join existing collaboration Group",
+      "joinLabGroup": "Join LabGroup",
+      "joinProjectGroup": "Join Project Group",
+      "reviewDocument": "Review document",
+      "shareDocument": "Share document",
+      "witnessDocumentSigning": "Witness document signing"
+    },
     "type": {
       "global": "Global",
       "globalMessageRequest": "Global Message request",
