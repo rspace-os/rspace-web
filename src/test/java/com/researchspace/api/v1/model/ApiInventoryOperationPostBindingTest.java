@@ -2,24 +2,24 @@ package com.researchspace.api.v1.model;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import java.math.BigDecimal;
-import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 
 /**
- * Binding rules for the operations request body (F7).
+ * Binding rules for the operations request body.
  *
  * <p>Every test here reads through a mapper built by {@link Jackson2ObjectMapperBuilder}, the same
- * builder the API's message converter is built from, rather than a bare {@code new ObjectMapper()}.
- * That distinction is the entire point: the builder turns FAIL_ON_UNKNOWN_PROPERTIES OFF, so a bare
- * mapper would pass these tests whether or not the capture works, and the defect would still be
- * live in production.
+ * builder the API's message converter is built from, rather than a bare {@code new ObjectMapper()}:
+ * the builder turns FAIL_ON_UNKNOWN_PROPERTIES off, which is what makes an undeclared property
+ * ignored rather than a 400. Where the strict bare mapper is also used, that is the point being
+ * made: a server-side property must be skipped at binding even by a mapper that rejects unknowns.
  */
 class ApiInventoryOperationPostBindingTest {
 
@@ -27,139 +27,37 @@ class ApiInventoryOperationPostBindingTest {
   private final ObjectMapper apiMapper = Jackson2ObjectMapperBuilder.json().build();
 
   @Test
-  void theApiMapperItselfWouldOtherwiseIgnoreUnknownProperties() {
-    // Pins the premise the capture exists for. If a future Spring or config change makes the shared
-    // mapper strict, this fails and the capture becomes redundant rather than silently
-    // load-bearing.
+  void theApiMapperIgnoresAPropertyNoDtoDeclares() {
+    // Pins the endpoint's behaviour on a mistyped or obsolete property: dropped silently, like on
+    // every other endpoint, since the server builds the sample and a client property cannot change
+    // what it builds. If a future Spring or config change makes the shared mapper strict, this
+    // fails and the contract changes to a binding 400.
     assertDoesNotThrow(
-        () -> apiMapper.readValue("{\"nope\":1}", ApiSampleWithFullSubSamples.class),
-        "binding must not throw on an unknown property; the endpoint's validator reports it");
+        () ->
+            apiMapper.readValue(
+                "{\"operationType\":\"aliquot\",\"origins\":[],\"newSamples\":null}",
+                ApiInventoryOperationPost.class));
   }
 
   @Test
-  void capturesAnUnknownPropertyOnTheRequestRatherThanDroppingIt() {
-    // A mistyped property is a caller believing the request does something it does not. Dropped
-    // silently, it performs a different operation than the one asked for with no indication why.
-    ApiInventoryOperationPost request =
-        assertDoesNotThrow(
-            () ->
-                apiMapper.readValue(
-                    "{\"operationType\":\"aliquot\",\"origins\":[],\"newSamples\":null}",
-                    ApiInventoryOperationPost.class));
-    assertEquals(List.of("newSamples"), request.getUnknownProperties());
-  }
-
-  @Test
-  void capturesAnUnknownPropertyAtEveryLevelOfThePayload() {
-    // The motivating case is newSample.storageTemperature, a typo for storageTempMin/Max:
-    // strictness
-    // on the two operation-owned DTOs alone could never see it, because the sample DTO is shared.
-    ApiInventoryOperationPost request =
-        assertDoesNotThrow(
-            () ->
-                apiMapper.readValue(
-                    "{\"operationType\":\"aliquot\",\"rootTypo\":1,"
-                        + "\"origins\":[{\"id\":1,\"originTypo\":2}],"
-                        + "\"newSample\":{\"name\":\"s\",\"storageTemperature\":3,"
-                        + "\"subSamples\":[{\"subTypo\":4}],"
-                        + "\"extraFields\":[{\"name\":\"f\",\"fieldTypo\":5}]}}",
-                    ApiInventoryOperationPost.class));
-
-    assertEquals(List.of("rootTypo"), request.getUnknownProperties());
-    assertEquals(List.of("originTypo"), request.getOrigins().get(0).getUnknownProperties());
-    assertEquals(List.of("storageTemperature"), request.getNewSample().getUnknownProperties());
-    assertEquals(
-        List.of("subTypo"), request.getNewSample().getSubSamples().get(0).getUnknownProperties());
-    assertEquals(
-        List.of("fieldTypo"),
-        request.getNewSample().getExtraFields().get(0).getUnknownProperties());
-  }
-
-  @Test
-  void capturesNothingFromAResponseBodySentStraightBack() {
-    // The guarantee read-modify-write depends on: a client that GETs a record and sends it back
-    // carries every property the RESPONSE held, and none of those may be reported as unknown.
-    // Rejecting a value the API itself returned is the regression the earlier
-    // endpoint-enumeration attempt caused (parallel review, I2).
-    ApiExtraField field =
-        assertDoesNotThrow(
-            () ->
-                apiMapper.readValue(
-                    "{\"id\":3,\"globalId\":\"IF3\",\"name\":\"Passage number\","
-                        + "\"type\":\"text\",\"content\":\"4\",\"link\":null,"
-                        + "\"lastModified\":null,\"modifiedBy\":null,"
-                        + "\"parentGlobalId\":\"SS1\","
-                        + "\"operationFieldKey\":\"operations.passage.numberField\","
-                        + "\"_links\":[]}",
-                    ApiExtraField.class));
-    assertEquals(
-        List.of(),
-        field.getUnknownProperties(),
-        () -> "a property the API returns must never be reported as unknown");
-  }
-
-  @Test
-  void reportsAPropertyTheDtoHidesFromTheApiAsUnknown() {
-    // Jackson routes a property declared but marked @JsonIgnore to the any-setter, exactly as it
-    // routes an invented one, so the capture cannot tell them apart. That is acceptable BECAUSE a
-    // @JsonIgnore property is absent from every response too, so no client echoing a GET can send
-    // one: reaching this case means the caller invented the key. Pinned rather than worked around,
-    // since the alternative is telling a caller who tried to set the F6 verification flag directly
-    // that it was accepted.
-    ApiExtraField field =
-        assertDoesNotThrow(
-            () ->
-                apiMapper.readValue(
-                    "{\"name\":\"f\",\"operationFieldKeyVerified\":true}", ApiExtraField.class));
-    assertEquals(List.of("operationFieldKeyVerified"), field.getUnknownProperties());
-    assertTrue(
-        !field.isOperationFieldKeyVerified(),
-        "the value must be discarded, not bound: only the validator may set this flag");
-  }
-
-  @Test
-  void capturesTheNameOnlyAndLeavesBoundValuesUntouched() {
-    // The value is discarded, so nothing a caller invents can reach an entity through this list.
-    ApiInventoryOperationOriginUpdate origin =
-        assertDoesNotThrow(
-            () ->
-                apiMapper.readValue(
-                    "{\"id\":7,\"amountTaken\":{\"numericValue\":5,\"unitId\":3},"
-                        + "\"invented\":{\"nested\":\"payload\"}}",
-                    ApiInventoryOperationOriginUpdate.class));
-    assertEquals(List.of("invented"), origin.getUnknownProperties());
-    assertEquals(Long.valueOf(7), origin.getId());
-    assertEquals(0, new BigDecimal("5").compareTo(origin.getAmountTaken().getNumericValue()));
-  }
-
-  @Test
-  void stopsCapturingOnceTheCapIsReachedSoAJunkBodyCannotAmplify() {
-    StringBuilder json = new StringBuilder("{\"operationType\":\"aliquot\"");
-    for (int i = 0; i < UnknownPropertyCapturing.MAX_CAPTURED_UNKNOWN_PROPERTIES * 3; i++) {
-      json.append(",\"junk").append(i).append("\":1");
+  void aClientAssembledSampleAndOriginFieldsAreDroppedAtBinding() {
+    // newSample and origins[].extraFields are the server's: the request builder fills them from
+    // the definition, and the core reads them. Both are @JsonIgnore, so a body in the shape the
+    // endpoint accepted before plan-operations-server-builds.md M5 binds with neither, even under a
+    // mapper that rejects unknown properties (probed: Jackson treats an ignored property as
+    // ignorable, not as unknown).
+    for (ObjectMapper mapper : new ObjectMapper[] {apiMapper, new ObjectMapper()}) {
+      ApiInventoryOperationPost request =
+          assertDoesNotThrow(
+              () ->
+                  mapper.readValue(
+                      "{\"operationType\":\"destroy\",\"origins\":[{\"id\":7,"
+                          + "\"extraFields\":[{\"name\":\"Disposed\",\"type\":\"text\"}]}],"
+                          + "\"newSample\":{\"name\":\"smuggled\"}}",
+                      ApiInventoryOperationPost.class));
+      assertNull(request.getNewSample(), "newSample is not on the wire");
+      assertTrue(request.getOrigins().get(0).getExtraFields().isEmpty(), "origin fields either");
     }
-    ApiInventoryOperationPost request =
-        assertDoesNotThrow(
-            () ->
-                apiMapper.readValue(json.append("}").toString(), ApiInventoryOperationPost.class));
-    assertEquals(
-        UnknownPropertyCapturing.MAX_CAPTURED_UNKNOWN_PROPERTIES,
-        request.getUnknownProperties().size());
-  }
-
-  @Test
-  void capturesNothingFromAConformantRequest() {
-    ApiInventoryOperationPost request =
-        assertDoesNotThrow(
-            () ->
-                apiMapper.readValue(
-                    "{\"operationType\":\"destroy\",\"origins\":[{\"id\":7,"
-                        + "\"amountMode\":\"all\","
-                        + "\"amountTaken\":{\"numericValue\":5,\"unitId\":3},"
-                        + "\"extraFields\":[]}],\"newSample\":null}",
-                    ApiInventoryOperationPost.class));
-    assertEquals(List.of(), request.getUnknownProperties());
-    assertEquals(List.of(), request.getOrigins().get(0).getUnknownProperties());
   }
 
   @Test
@@ -168,16 +66,22 @@ class ApiInventoryOperationPostBindingTest {
         assertDoesNotThrow(
             () ->
                 apiMapper.readValue(
-                    "{\"operationType\":\"destroy\",\"origins\":[{\"id\":7,"
-                        + "\"amountMode\":\"all\","
-                        + "\"amountTaken\":{\"numericValue\":5,\"unitId\":3},"
-                        + "\"extraFields\":[]}],\"newSample\":null}",
+                    "{\"operationType\":\"derive\",\"origins\":[{\"id\":7,"
+                        + "\"amountMode\":\"explicit\","
+                        + "\"amountTaken\":{\"numericValue\":5,\"unitId\":3}}],"
+                        + "\"inputs\":{\"processName\":\"PCR\",\"sampleName\":\"Derived\","
+                        + "\"count\":1,\"eachAmount\":{\"numericValue\":1,\"unitId\":3}},"
+                        + "\"templateId\":42,\"documentedByGlobalId\":\"SD99\"}",
                     ApiInventoryOperationPost.class));
-    assertEquals("destroy", request.getOperationType());
+    assertEquals("derive", request.getOperationType());
     ApiInventoryOperationOriginUpdate origin = request.getOrigins().get(0);
     assertEquals(Long.valueOf(7), origin.getId());
-    assertEquals(ApiInventoryOperationAmountMode.ALL, origin.getAmountMode());
+    assertEquals(ApiInventoryOperationAmountMode.EXPLICIT, origin.getAmountMode());
     assertEquals(0, new BigDecimal("5").compareTo(origin.getAmountTaken().getNumericValue()));
+    assertEquals("PCR", request.getInputs().get("processName"));
+    assertEquals(1, request.getInputs().get("count"));
+    assertEquals(Long.valueOf(42), request.getTemplateId());
+    assertEquals("SD99", request.getDocumentedByGlobalId());
   }
 
   @Test
@@ -212,71 +116,33 @@ class ApiInventoryOperationPostBindingTest {
   }
 
   @Test
-  void neverSerialisesTheCaptureList() {
-    // It is request-side bookkeeping. Serializing it would put it in every API response body and,
-    // worse, make it bindable on the next request.
-    ApiInventoryOperationOriginUpdate origin = new ApiInventoryOperationOriginUpdate();
-    origin.setId(1L);
-    String json = assertDoesNotThrow(() -> apiMapper.writeValueAsString(origin));
-    assertTrue(!json.contains("unknownProperties"), () -> "capture list leaked into: " + json);
-  }
-
-  @Test
-  void extraFieldsSerialiseTheirOperationFieldKeyBackToTheClient() {
-    // It was WRITE_ONLY, which is what made the Passage counter fall back to matching on a
-    // localized NAME: the next run reads the parent's fields over GET, so a key that never comes
-    // back cannot identify the previous generation (RSDEV-1231, F6).
+  void extraFieldsSerialiseTheirOperationFieldKeyButNeverBindIt() {
+    // Serialised, because the next run of an operation reads the parent's fields over GET and needs
+    // the key to identify the previous generation (RSDEV-1231, F6).
     ApiExtraField field = new ApiExtraField(ApiExtraField.ExtraFieldTypeEnum.TEXT);
     field.setName("Passage number");
     field.setOperationFieldKey("operations.passage.numberField");
-
     String json = assertDoesNotThrow(() -> apiMapper.writeValueAsString(field));
     assertTrue(
         json.contains("\"operationFieldKey\":\"operations.passage.numberField\""),
         () -> "key missing from the response body: " + json);
 
-    // And still binds from a request, so the operations endpoint can set it.
-    assertEquals(
-        "operations.passage.numberField",
-        assertDoesNotThrow(
-                () ->
-                    apiMapper.readValue(
-                        "{\"operationFieldKey\":\"operations.passage.numberField\"}",
-                        ApiExtraField.class))
-            .getOperationFieldKey());
-  }
-
-  @Test
-  void capturesNothingWhenAWholeSampleResponseIsSentStraightBack() {
-    // The wider version of the ApiExtraField round trip. newSample and its subsamples inherit a
-    // large surface from ApiInventoryRecordInfo, and a client assembling newSample from a GET
-    // representation must not be 400ed for a property the API itself returned (parallel review).
-    ApiSampleWithFullSubSamples sample = new ApiSampleWithFullSubSamples("round trip");
-    sample.getSubSamples().add(new ApiSubSample("child"));
-    sample.getExtraFields().add(new ApiExtraField(ApiExtraField.ExtraFieldTypeEnum.TEXT));
-
-    ApiSampleWithFullSubSamples returned =
-        assertDoesNotThrow(
-            () ->
-                apiMapper.readValue(
-                    apiMapper.writeValueAsString(sample), ApiSampleWithFullSubSamples.class));
-
-    assertEquals(List.of(), returned.getUnknownProperties(), "sample");
-    assertEquals(List.of(), returned.getSubSamples().get(0).getUnknownProperties(), "subsample");
-    assertEquals(List.of(), returned.getExtraFields().get(0).getUnknownProperties(), "extra field");
-  }
-
-  @Test
-  void doesNotCaptureOnApiObjectsOutsideTheOperationsPayload() {
-    // The capture used to sit on IdentifiableNameableApiObject, the base of every API DTO. An
-    // any-setter suppresses Jackson's registration of ignorable property names for the whole class
-    // and deserializes the unknown value before discarding it, so that placement applied both side
-    // effects to the entire v1 API for a feature scoped to one endpoint (parallel review).
-    assertFalse(
-        UnknownPropertyCapturing.class.isAssignableFrom(IdentifiableNameableApiObject.class),
-        "the shared base class must not capture: only the operations payload DTOs do");
-    assertDoesNotThrow(
-        () -> apiMapper.readValue("{\"name\":\"f\",\"nope\":1}", ApiFolder.class),
-        "an unrelated DTO must still ignore unknown properties exactly as before");
+    // Never bound, on any endpoint: the key is READ_ONLY, so only the server's request builder can
+    // put one on a field, and a client echoing a GET body back is not rejected for carrying it.
+    // Under the strict bare mapper too, which would throw for a genuinely unknown property.
+    for (ObjectMapper mapper : new ObjectMapper[] {apiMapper, new ObjectMapper()}) {
+      ApiExtraField bound =
+          assertDoesNotThrow(
+              () ->
+                  mapper.readValue(
+                      "{\"name\":\"f\",\"operationFieldKey\":\"operations.passage.numberField\"}",
+                      ApiExtraField.class));
+      assertNull(bound.getOperationFieldKey(), "a request must not be able to set the key");
+      assertEquals("f", bound.getName());
+    }
+    assertThrows(
+        UnrecognizedPropertyException.class,
+        () -> new ObjectMapper().readValue("{\"name\":\"f\",\"bogus\":1}", ApiExtraField.class),
+        "control: the strict mapper does reject a property that is genuinely unknown");
   }
 }
