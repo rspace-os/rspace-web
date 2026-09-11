@@ -200,63 +200,73 @@ const IdentifierWrapper = observer(
             </Collapse>
           </section>
         )}
-        <section>
-          <Typography variant="h6" component="h4" sx={{ mb: 1 }}>
-            {t("fields.identifiers.wrapper.inventoryFields.title")}
-          </Typography>
-          <Alert severity="info">
-            <TransRichText
-              i18nKey={
-                isInstrument
-                  ? "inventory:fields.identifiers.wrapper.inventoryFields.alertPidinst"
-                  : "inventory:fields.identifiers.wrapper.inventoryFields.alert"
-              }
-            />
-          </Alert>
-          <FormControlLabel
-            control={
-              <Checkbox
-                disabled={!editable}
-                color="primary"
-                name="include-inventory-fields"
-                value={id.customFieldsOnPublicPage ? "yes" : "no"}
-                checked={id.customFieldsOnPublicPage}
-                onChange={({ target: { checked } }) => {
-                  runInAction(() => {
-                    id.customFieldsOnPublicPage = checked;
-                  });
-                  activeResult.updateIdentifiers();
-                }}
-              />
-            }
-            label={t("fields.identifiers.wrapper.inventoryFields.includeOnPage")}
-          />
-          {editable && (
-            <Typography variant="body2" component="div">
-              {t("fields.identifiers.wrapper.inventoryFields.followingFields")}
-              <ul>
-                <li>{t("fields.identifiers.wrapper.inventoryFields.description")}</li>
-                <li>{t("fields.identifiers.wrapper.inventoryFields.tags")}</li>
-                <li>
-                  {t("fields.identifiers.wrapper.inventoryFields.customFields")}
-                  <ul>
-                    {customFields.map((f) => (
-                      <li key={f.id}>{f.name}</li>
-                    ))}
-                  </ul>
-                </li>
-                <li>
-                  {t("fields.identifiers.wrapper.inventoryFields.extraFields")}
-                  <ul>
-                    {activeResult.extraFields.map((f) => (
-                      <li key={f.id}>{f.name}</li>
-                    ))}
-                  </ul>
-                </li>
-              </ul>
+        {/*
+         * Withheld for a linked identifier, like Preview, Publish and Refresh. The checkbox
+         * chooses what an RSpace landing page shows, and this copy promises "the item's landing
+         * page" and asks the user to check the fields before publishing. A linked PID has neither:
+         * no page is stored for it and findPublishedItemVersionByPublicLink refuses to serve one,
+         * so its public address 404s, and RSpace never publishes it (ADR 0009). Keyed on `linked`
+         * alone - a registered PIDINST of either provider does get a page, so it keeps the choice.
+         */}
+        {!id.linked && (
+          <section>
+            <Typography variant="h6" component="h4" sx={{ mb: 1 }}>
+              {t("fields.identifiers.wrapper.inventoryFields.title")}
             </Typography>
-          )}
-        </section>
+            <Alert severity="info">
+              <TransRichText
+                i18nKey={
+                  isInstrument
+                    ? "inventory:fields.identifiers.wrapper.inventoryFields.alertPidinst"
+                    : "inventory:fields.identifiers.wrapper.inventoryFields.alert"
+                }
+              />
+            </Alert>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  disabled={!editable}
+                  color="primary"
+                  name="include-inventory-fields"
+                  value={id.customFieldsOnPublicPage ? "yes" : "no"}
+                  checked={id.customFieldsOnPublicPage}
+                  onChange={({ target: { checked } }) => {
+                    runInAction(() => {
+                      id.customFieldsOnPublicPage = checked;
+                    });
+                    activeResult.updateIdentifiers();
+                  }}
+                />
+              }
+              label={t("fields.identifiers.wrapper.inventoryFields.includeOnPage")}
+            />
+            {editable && (
+              <Typography variant="body2" component="div">
+                {t("fields.identifiers.wrapper.inventoryFields.followingFields")}
+                <ul>
+                  <li>{t("fields.identifiers.wrapper.inventoryFields.description")}</li>
+                  <li>{t("fields.identifiers.wrapper.inventoryFields.tags")}</li>
+                  <li>
+                    {t("fields.identifiers.wrapper.inventoryFields.customFields")}
+                    <ul>
+                      {customFields.map((f) => (
+                        <li key={f.id}>{f.name}</li>
+                      ))}
+                    </ul>
+                  </li>
+                  <li>
+                    {t("fields.identifiers.wrapper.inventoryFields.extraFields")}
+                    <ul>
+                      {activeResult.extraFields.map((f) => (
+                        <li key={f.id}>{f.name}</li>
+                      ))}
+                    </ul>
+                  </li>
+                </ul>
+              </Typography>
+            )}
+          </section>
+        )}
       </>
     );
   },

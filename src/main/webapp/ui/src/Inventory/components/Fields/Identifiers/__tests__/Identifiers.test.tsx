@@ -63,6 +63,22 @@ describe("Identifiers section", () => {
       expect(container).not.toHaveTextContent("fields.identifiers.wrapper.required.title");
       expect(container).not.toHaveTextContent("fields.identifiers.wrapper.recommended.title");
     });
+
+    /*
+     * A registered PIDINST does get an RSpace landing page, so the Inventory Fields choice is real
+     * here. Pinned because the section is withheld for a LINKED identifier, and that gate must key
+     * on `linked` alone rather than on the provider (RSDEV-1326).
+     */
+    test("the Inventory Fields section is still offered", () => {
+      const instrument1: InventoryRecord = makeMockInstrument();
+      instrument1.identifiers = [{ ...mockIGSNIdentifier("instrument"), doiType: "PIDINST_B2INST" }];
+      const { container } = render(
+        <ThemeProvider theme={materialTheme}>
+          <IdentifiersList activeResult={instrument1} />
+        </ThemeProvider>,
+      );
+      expect(container).toHaveTextContent("fields.identifiers.wrapper.inventoryFields.title");
+    });
   });
   describe("When an instrument has a PIDINST_DATACITE identifier", () => {
     test("Required/Recommended Identifier Properties sections are rendered", () => {
@@ -563,6 +579,28 @@ describe("Identifiers section", () => {
       // record it does not own, so an editable Publisher field would be a lie
       expect(container).not.toHaveTextContent("fields.identifiers.wrapper.required.title");
       expect(container).not.toHaveTextContent("fields.identifiers.missingDetails");
+    });
+
+    /*
+     * The Inventory Fields checkbox chooses what an RSpace landing page shows, and its own copy
+     * promises "the item's landing page" and asks the user to check the fields "before publishing
+     * the PIDINST". A linked identifier has neither: no page is stored for it (`url` is null) and
+     * findPublishedItemVersionByPublicLink refuses to serve one, so the public address 404s, and
+     * RSpace never publishes it. Withdrawn rather than disabled, like Preview, Publish and Refresh
+     * (RSDEV-1326).
+     */
+    test("no Inventory Fields section: there is no RSpace landing page to put them on", () => {
+      const { container } = render(
+        <ThemeProvider theme={materialTheme}>
+          <IdentifiersList activeResult={linkedInstrument()} />
+        </ThemeProvider>,
+      );
+      expect(container).not.toHaveTextContent("fields.identifiers.wrapper.inventoryFields.title");
+      expect(
+        screen.queryByRole("checkbox", {
+          name: "inventory:fields.identifiers.wrapper.inventoryFields.includeOnPage",
+        }),
+      ).not.toBeInTheDocument();
     });
   });
 });
