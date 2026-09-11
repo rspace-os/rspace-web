@@ -1,8 +1,11 @@
 package com.researchspace.service.inventory;
 
+import com.researchspace.api.v1.model.ApiInventoryOperationOriginUpdate;
 import com.researchspace.api.v1.model.ApiInventoryOperationPost;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.model.User;
+import java.util.List;
+import java.util.Map;
 import org.springframework.validation.BindException;
 
 /**
@@ -71,5 +74,44 @@ public interface InventoryOperationManager {
    */
   ApiSampleWithFullSubSamples performOperation(
       ApiInventoryOperationPost request, User user, InTransactionValidation callerValidation)
+      throws BindException;
+
+  /**
+   * As {@link InTransactionValidation}, for the server-built path, where the request the core
+   * executes does not exist until this transaction has built it: the caller's check receives that
+   * built request.
+   */
+  @FunctionalInterface
+  interface BuiltRequestValidation {
+    void validate(ApiInventoryOperationPost built) throws BindException;
+  }
+
+  /**
+   * The server-built path (plan-operations-server-builds.md, M3): validates {@code inputs} against
+   * the definition's declared inputs ({@link InventoryOperationInputValidator}), builds the request
+   * the core executes from the definition, the origins' live state and those inputs ({@link
+   * InventoryOperationRequestBuilder}), then runs the same transactional core as {@link
+   * #performOperation(ApiInventoryOperationPost, User, InTransactionValidation)}, unchanged.
+   *
+   * <p>Each origin element carries its own {@code amountTaken} and {@code amountMode}, exactly as
+   * on the client-assembled shape, and the core validates them against the live locked quantity;
+   * they are not inputs. Precondition as for the client-assembled path: the origin list has passed
+   * the endpoint's structural validation.
+   *
+   * <p>Generated field names resolve in the request's locale ({@code LocaleContextHolder}, M0 D1),
+   * and a {@code today} computed value is the current date in the session's timezone ({@code
+   * SessionTimeZoneUtils}), which the login flow records from the browser.
+   *
+   * @return as the client-assembled overload
+   * @throws BindException when an input fails the definition's rules (field errors named by the
+   *     bare input key, which is the name a typed facade client sends: M0), or as the
+   *     client-assembled overload
+   */
+  ApiSampleWithFullSubSamples performOperation(
+      String operationKey,
+      List<ApiInventoryOperationOriginUpdate> origins,
+      Map<String, Object> inputs,
+      User user,
+      BuiltRequestValidation callerValidation)
       throws BindException;
 }
