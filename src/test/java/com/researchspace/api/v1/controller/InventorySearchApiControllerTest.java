@@ -14,6 +14,7 @@ import com.researchspace.api.v1.model.ApiInventorySearchResult;
 import com.researchspace.api.v1.model.ApiLinkItem;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
+import com.researchspace.dao.SampleTemplateDao;
 import com.researchspace.model.User;
 import com.researchspace.service.impl.ContentInitializerForDevRunManager;
 import com.researchspace.testutils.SpringTransactionalTest;
@@ -30,6 +31,7 @@ public class InventorySearchApiControllerTest extends SpringTransactionalTest {
   private @Autowired SamplesApiController samplesApi;
   private @Autowired ContainersApiController containersApi;
   private @Autowired InventorySearchApiController searchApi;
+  private @Autowired SampleTemplateDao sampleTemplateDao;
 
   private BindingResult mockBindingResult = mock(BindingResult.class);
   private User testUser;

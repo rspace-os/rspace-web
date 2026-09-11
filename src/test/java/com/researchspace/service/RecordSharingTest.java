@@ -10,12 +10,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import com.researchspace.core.util.TransformerUtils;
+import com.researchspace.dao.FormDao;
 import com.researchspace.dao.RecordGroupSharingDao;
 import com.researchspace.model.Group;
 import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.RoleInGroup;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.ShareConfigElement;
+import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.BaseRecord.SharedStatus;
@@ -41,6 +43,8 @@ public class RecordSharingTest extends SpringTransactionalTest {
   private static final String OTHER_USER_PWD = "user";
 
   private @Autowired RecordGroupSharingDao regGrpDao;
+  private @Autowired FormDao formDao;
+  private @Autowired IPermissionUtils permissionUtils;
 
   private Group group;
   private User piUser;

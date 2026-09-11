@@ -54,6 +54,7 @@ import com.researchspace.dao.EcatImageDao;
 import com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother;
 import com.researchspace.linkedelements.FieldContents;
 import com.researchspace.linkedelements.FieldElementLinkPairs;
+import com.researchspace.linkedelements.FieldParser;
 import com.researchspace.model.ArchivalCheckSum;
 import com.researchspace.model.ChemElementsFormat;
 import com.researchspace.model.EcatAudio;
@@ -156,8 +157,8 @@ import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.MethodOrderer.MethodName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.io.TempDir;
@@ -183,6 +184,8 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
   @TempDir public File spareFolder;
 
   private @Autowired ExportImport exportImportMgr;
+  private @Autowired DocumentTagManager documentTagManager;
+  private @Autowired FieldParser fieldParser;
   private @Autowired Collection<ArchiveExportServiceManager> archiverServiceManagers;
   private @Autowired EcatCommentManager commMgr;
   private @Autowired IArchiveParser archiveParser;
@@ -202,6 +205,8 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
   private PostArchiveCompletion standardPostExport;
 
   @Autowired private ExternalWorkFlowDataManager externalWorkFlowDataManager;
+  @Autowired private StoichiometryManager stoichiometryMgr;
+  @Autowired private StoichiometryService stoichiometryService;
   @Autowired private StoichiometryInventoryLinkManager stoichiometryInventoryLinkManager;
 
   @BeforeEach
@@ -685,7 +690,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
   }
 
   @Test
-  @Disabled // requires instance of chemistry service
+  @Tag("chemistry")
   public void checkOldAndNewChemicalImport() throws Exception {
     // want to check that document with external links is imported OK
     final User userToImport = createAndSaveUser(getRandomAlphabeticString("user"));
@@ -845,13 +850,10 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
   }
 
   @Test
-  @Disabled
   public void RSPAC_1807() throws Exception {
     User u2 = createInitAndLoginAnyUser();
-    // 2 folders in Gallery; f1 and f2 wit
     File archiveToImport = RSpaceTestUtils.getResource("archives/demo-export2.zip");
     ArchivalImportConfig importCfg = new ArchivalImportConfig();
-    final int initialFieldCount = countRowsInTable(jdbcTemplate, "Field");
     ImportArchiveReport report =
         exportImportMgr.importArchive(
             fileToMultipartfile(archiveToImport.getName(), archiveToImport),
@@ -861,9 +863,16 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
             importStrategy::doImport);
     assertTrue(report.isSuccessful());
     Set<BaseRecord> records = report.getImportedRecords();
-    final int finalFieldCount = countRowsInTable(jdbcTemplate, "Field");
+    assertEquals(2, records.size());
     assertEquals(
-        initialFieldCount + 37, finalFieldCount, " was " + finalFieldCount + " fields added");
+        Set.of("Demo Document", "Demo Document (fully self-guided version)"),
+        records.stream().map(BaseRecord::getName).collect(Collectors.toSet()));
+    int importedFieldCount = 0;
+    for (BaseRecord record : records) {
+      importedFieldCount +=
+          recordMgr.getRecordWithFields(record.getId(), u2).asStrucDoc().getFields().size();
+    }
+    assertEquals(37, importedFieldCount);
   }
 
   @Test

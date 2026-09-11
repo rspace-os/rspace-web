@@ -28,6 +28,7 @@ import com.researchspace.model.dtos.GroupSearchCriteria;
 import com.researchspace.model.permissions.ConstraintBasedPermission;
 import com.researchspace.model.permissions.ConstraintPermissionResolver;
 import com.researchspace.model.permissions.FormPermissionAdapter;
+import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionDomain;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.permissions.RecordPermissionAdapter;
@@ -60,6 +61,7 @@ public class GroupManagerTest extends SpringTransactionalTest {
 
   @Autowired SystemPropertyManager systemPropertyManager;
   @Autowired SharingHandler sharingHandler;
+  @Autowired IPermissionUtils permissionUtils;
   @Mock private UserContentUpdater userContentUpdaterMock;
   @Autowired private UserContentUpdater userContentUpdaterBean;
 

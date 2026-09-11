@@ -19,6 +19,7 @@ import com.researchspace.b2inst.model.metadata.B2instRelatedIdentifier;
 import com.researchspace.datacite.model.DataCiteDoiAttributes;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdentifier;
+import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.webapp.integrations.b2inst.B2instConnector;
 import com.researchspace.webapp.integrations.b2inst.B2instConnectorDummy;
@@ -29,6 +30,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.util.ReflectionTestUtils;
 
 /**
@@ -47,6 +49,8 @@ public class InventoryIdentifierApiManagerRelatedIdentifierTest extends SpringTr
   private static final String MEASUREMENT_TECHNIQUE = "Measurement technique";
   private static final String CALIBRATION = "Calibration";
 
+  private @Autowired InventoryIdentifierApiManager inventoryIdentifierApiMgr;
+  private @Autowired IPropertyHolder propertyHolder;
   private User user;
   private DataCiteConnectorDummy dataCiteConnectorDummy;
   private Object realB2instConnector;

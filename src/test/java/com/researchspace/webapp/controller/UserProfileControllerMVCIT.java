@@ -50,6 +50,7 @@ import com.researchspace.model.preference.Preference;
 import com.researchspace.model.preference.PreferenceCategory;
 import com.researchspace.model.preference.SettingsType;
 import com.researchspace.model.record.Folder;
+import com.researchspace.properties.IMutablePropertyHolder;
 import com.researchspace.service.GroupManager;
 import com.researchspace.service.SystemPropertyManager;
 import com.researchspace.service.SystemPropertyName;
@@ -81,6 +82,7 @@ import org.springframework.ui.ModelMap;
 public class UserProfileControllerMVCIT extends MVCTestBase {
 
   private @Autowired UserProfileManager userProfileManager;
+  private @Autowired IMutablePropertyHolder propertyHolder;
   private @Autowired SystemPropertyManager systemPropertyManager;
   private @Autowired GroupManager groupManager;
 

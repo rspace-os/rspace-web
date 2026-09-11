@@ -11,6 +11,7 @@ import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.views.ServiceOperationResult;
+import com.researchspace.properties.IMutablePropertyHolder;
 import com.researchspace.testutils.SpringTransactionalTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,6 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class DevOpsManagerTest extends SpringTransactionalTest {
 
   @Autowired private DevOpsManager devOpsMgr;
+  @Autowired private IMutablePropertyHolder propertyHolder;
 
   @BeforeEach
   public void setUp() throws Exception {

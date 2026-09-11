@@ -8,6 +8,7 @@ import com.researchspace.model.Group;
 import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.User;
 import com.researchspace.model.core.RecordType;
+import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.Notebook;
@@ -27,6 +28,7 @@ public class NotebookSharingTest extends SpringTransactionalTest {
   private Group grp;
   private Notebook nb;
   private StructuredDocument notebookentry;
+  @Autowired private IPermissionUtils permissionUtils;
   @Autowired private RecordManager recordManager;
   @Autowired private WorkspacePermissionsDTOBuilder permBuilder;
 
