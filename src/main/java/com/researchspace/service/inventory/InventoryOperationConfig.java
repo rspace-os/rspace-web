@@ -55,6 +55,7 @@ public record InventoryOperationConfig(
       String type,
       boolean required,
       BigDecimal min,
+      BigDecimal max,
       BigDecimal minCelsius,
       BigDecimal maxCelsius) {}
 
