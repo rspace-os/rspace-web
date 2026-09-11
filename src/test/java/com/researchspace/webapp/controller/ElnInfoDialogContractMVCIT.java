@@ -1,5 +1,6 @@
 package com.researchspace.webapp.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -57,7 +58,7 @@ public class ElnInfoDialogContractMVCIT extends API_MVC_InventoryTestBase {
     assertEquals(doc.getId(), info.getId());
     assertEquals(doc.getName(), info.getName());
     assertEquals("Structured Document", info.getType());
-    assertEquals(doc.getGlobalIdentifier(), info.getOid().toString());
+    assertThat(info.getOid()).hasToString(doc.getGlobalIdentifier());
     assertEquals(user.getUsername(), info.getOwnerUsername());
     assertEquals(user.getFullName(), info.getOwnerFullName());
     assertNotNull(info.getCreationDate(), "dialog renders the created date");
@@ -151,7 +152,7 @@ public class ElnInfoDialogContractMVCIT extends API_MVC_InventoryTestBase {
 
     ApiInventoryReferencingItems body =
         getFromJsonResponseBody(result, ApiInventoryReferencingItems.class);
-    assertEquals(1, body.getReferencingItems().size());
+    assertThat(body.getReferencingItems()).hasSize(1);
     assertEquals(
         expectedSource.getGlobalId(), body.getReferencingItems().get(0).getSourceGlobalId());
     assertEquals("References", body.getReferencingItems().get(0).getRelationType());

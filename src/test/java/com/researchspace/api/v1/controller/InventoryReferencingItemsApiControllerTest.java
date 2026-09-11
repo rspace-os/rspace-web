@@ -1,6 +1,6 @@
 package com.researchspace.api.v1.controller;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -60,7 +60,7 @@ class InventoryReferencingItemsApiControllerTest {
   void wrapsManagerResultInResponseObject() {
     when(inventoryLinkManager.findReferencingItems("SD1", user)).thenReturn(List.of());
 
-    assertEquals(
-        0, controller.getReferencingItemsForGlobalId("SD1", user).getReferencingItems().size());
+    assertThat(controller.getReferencingItemsForGlobalId("SD1", user).getReferencingItems())
+        .isEmpty();
   }
 }

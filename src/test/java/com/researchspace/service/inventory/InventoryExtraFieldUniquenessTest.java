@@ -1,6 +1,7 @@
 package com.researchspace.service.inventory;
 
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -193,9 +194,9 @@ public class InventoryExtraFieldUniquenessTest extends SpringTransactionalTest {
         assertThrows(
             IllegalArgumentException.class,
             () -> sampleApiMgr.createNewApiSample(toCreate, testUser));
-    assertTrue(
-        iae.getMessage().contains("'Subsamples'"),
-        "Expected message to mention 'Subsamples', got: " + iae.getMessage());
+    assertThat(iae.getMessage())
+        .as("Expected message to mention 'Subsamples', got: " + iae.getMessage())
+        .contains("'Subsamples'");
   }
 
   @Test
@@ -316,9 +317,9 @@ public class InventoryExtraFieldUniquenessTest extends SpringTransactionalTest {
         assertThrows(
             IllegalArgumentException.class,
             () -> subSampleApiMgr.updateApiSubSample(update, testUser));
-    assertTrue(
-        iae.getMessage().contains("'Notes'"),
-        "Expected message to mention 'Notes', got: " + iae.getMessage());
+    assertThat(iae.getMessage())
+        .as("Expected message to mention 'Notes', got: " + iae.getMessage())
+        .contains("'Notes'");
   }
 
   @Test
@@ -440,9 +441,9 @@ public class InventoryExtraFieldUniquenessTest extends SpringTransactionalTest {
         assertThrows(
             IllegalArgumentException.class,
             () -> containerApiMgr.updateApiContainer(update, testUser));
-    assertTrue(
-        iae.getMessage().contains("'Type'"),
-        "Expected message to mention 'Type', got: " + iae.getMessage());
+    assertThat(iae.getMessage())
+        .as("Expected message to mention 'Type', got: " + iae.getMessage())
+        .contains("'Type'");
   }
 
   @Test

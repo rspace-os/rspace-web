@@ -3,8 +3,8 @@ package com.researchspace.webapp.controller;
 import static com.researchspace.core.util.TransformerUtils.toList;
 import static java.lang.Boolean.TRUE;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -363,7 +363,7 @@ public class StructuredDocumentControllerTest {
     when(fieldManager.getAutoSavedFieldsByRecordId(1L, user)).thenReturn(rc);
 
     // no temp fields, returns empty list
-    assertEquals(0, strucDocCtrller.getAutoSavedFields(field.getId(), mockPrincipal).size());
+    assertThat(strucDocCtrller.getAutoSavedFields(field.getId(), mockPrincipal)).isEmpty();
 
     // now let's set a etmp field into field
     Field tempField = TestFactory.createAnyField();
@@ -551,19 +551,19 @@ public class StructuredDocumentControllerTest {
     AjaxReturnObject<List<RecordInformation>> res =
         strucDocCtrller.createSDFromWordFile(parentFolder.getId(), files, null, session);
     verifyFileImporterCalled(multipart);
-    assertIterableEquals(List.of(created.toRecordInfo()), res.getData());
+    assertThat(res.getData()).containsExactly(created.toRecordInfo());
     verifyNoInteractions(recordShareHandler);
 
     whenCreatingDoc(multipart).thenThrow(new RuntimeException());
     res = strucDocCtrller.createSDFromWordFile(parentFolder.getId(), files, null, session);
-    assertEquals(0, res.getData().size());
-    assertEquals(1, res.getErrorMsg().getErrorMessages().size());
+    assertThat(res.getData()).isEmpty();
+    assertThat(res.getErrorMsg().getErrorMessages()).hasSize(1);
     verifyNoInteractions(recordShareHandler);
 
     whenCreatingDoc(multipart).thenReturn(null);
     res = strucDocCtrller.createSDFromWordFile(parentFolder.getId(), files, null, session);
-    assertEquals(0, res.getData().size());
-    assertEquals(1, res.getErrorMsg().getErrorMessages().size());
+    assertThat(res.getData()).isEmpty();
+    assertThat(res.getErrorMsg().getErrorMessages()).hasSize(1);
     verifyNoInteractions(recordShareHandler);
   }
 
@@ -593,7 +593,7 @@ public class StructuredDocumentControllerTest {
     AjaxReturnObject<List<RecordInformation>> res =
         strucDocCtrller.createSDFromWordFile(parentFolder.getId(), files, null, session);
     verifyFileImporterCalled(multipart);
-    assertIterableEquals(List.of(created.toRecordInfo()), res.getData());
+    assertThat(res.getData()).containsExactly(created.toRecordInfo());
     verify(recordShareHandler)
         .shareIntoSharedFolderOrNotebook(user, parentFolder, created.getId(), null);
   }

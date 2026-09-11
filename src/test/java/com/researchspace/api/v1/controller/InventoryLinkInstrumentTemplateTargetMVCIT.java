@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -81,7 +82,7 @@ public class InventoryLinkInstrumentTemplateTargetMVCIT extends API_MVC_Inventor
             .andReturn();
     ApiInventoryReferencingItems body =
         getFromJsonResponseBody(refs, ApiInventoryReferencingItems.class);
-    assertEquals(1, body.getReferencingItems().size());
+    assertThat(body.getReferencingItems()).hasSize(1);
     assertEquals(source.getGlobalId(), body.getReferencingItems().get(0).getSourceGlobalId());
   }
 }

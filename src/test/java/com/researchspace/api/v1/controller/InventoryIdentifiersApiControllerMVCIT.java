@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -92,7 +93,7 @@ public class InventoryIdentifiersApiControllerMVCIT extends API_MVC_InventoryTes
 
     ApiContainer draftContainer =
         createBasicContainerForUser(anyUser, "container for draft identifier test");
-    assertEquals(0, draftContainer.getIdentifiers().size());
+    assertThat(draftContainer.getIdentifiers()).isEmpty();
 
     ApiInventoryDOI registeredDoi =
         registerNewIdentifier(anyUser, apiKey, draftContainer.getGlobalId());
@@ -102,12 +103,12 @@ public class InventoryIdentifiersApiControllerMVCIT extends API_MVC_InventoryTes
     assertEquals(draftContainer.getGlobalId(), registeredDoi.getAssociatedGlobalId());
 
     draftContainer = containerApiMgr.getApiContainerById(draftContainer.getId(), anyUser);
-    assertEquals(1, draftContainer.getIdentifiers().size());
+    assertThat(draftContainer.getIdentifiers()).hasSize(1);
     assertEquals(registeredDoi.getId(), draftContainer.getIdentifiers().get(0).getId());
 
     deleteDraftDataCiteDoiForItem(anyUser, apiKey, registeredDoi.getId());
     draftContainer = containerApiMgr.getApiContainerById(draftContainer.getId(), anyUser);
-    assertEquals(0, draftContainer.getIdentifiers().size());
+    assertThat(draftContainer.getIdentifiers()).isEmpty();
   }
 
   @Test
@@ -117,14 +118,14 @@ public class InventoryIdentifiersApiControllerMVCIT extends API_MVC_InventoryTes
     String apiKey = createNewApiKeyForUser(anyUser);
 
     ApiContainer apiContainer = createBasicContainerForUser(anyUser);
-    assertEquals(0, apiContainer.getAttachments().size());
+    assertThat(apiContainer.getAttachments()).isEmpty();
 
     List<ApiInventoryDOI> registeredDoiList = bulkRegisterIdentifiers(anyUser, apiKey, 2);
     ApiInventoryDOI firstBulkCreated = registeredDoiList.get(0);
     ApiInventoryDOI secondBulkCreated = registeredDoiList.get(1);
 
     assertNotNull(registeredDoiList);
-    assertEquals(2, registeredDoiList.size());
+    assertThat(registeredDoiList).hasSize(2);
     assertEquals("draft", firstBulkCreated.getState());
     assertNull(firstBulkCreated.getAssociatedGlobalId());
     assertEquals("draft", secondBulkCreated.getState());
@@ -154,12 +155,12 @@ public class InventoryIdentifiersApiControllerMVCIT extends API_MVC_InventoryTes
             null,
             firstBulkCreated.getDoi().substring(0, firstBulkCreated.getDoi().length() - 3));
 
-    assertEquals(2, fetchedUserAll.size());
-    assertEquals(1, fetchedUserDraftNotAssociated.size());
-    assertTrue(fetchedUserFindableNotAssociated.isEmpty());
-    assertEquals(1, fetchedUserAssociated.size());
-    assertEquals(1, fetchedUserSpecificDoi.size());
-    assertEquals(1, fetchedUserSpecificDoiSubstring.size());
+    assertThat(fetchedUserAll).hasSize(2);
+    assertThat(fetchedUserDraftNotAssociated).hasSize(1);
+    assertThat(fetchedUserFindableNotAssociated).isEmpty();
+    assertThat(fetchedUserAssociated).hasSize(1);
+    assertThat(fetchedUserSpecificDoi).hasSize(1);
+    assertThat(fetchedUserSpecificDoiSubstring).hasSize(1);
 
     // cleanup datacite
     assertTrue(deleteDraftDataCiteDoiForItem(anyUser, apiKey, firstBulkCreated.getId()));
@@ -173,7 +174,7 @@ public class InventoryIdentifiersApiControllerMVCIT extends API_MVC_InventoryTes
     String apiKey = createNewApiKeyForUser(anyUser);
 
     ApiContainer apiContainer = createBasicContainerForUser(anyUser);
-    assertEquals(0, apiContainer.getAttachments().size());
+    assertThat(apiContainer.getAttachments()).isEmpty();
 
     ApiInventoryDOI registeredDoi =
         registerNewIdentifier(anyUser, apiKey, apiContainer.getGlobalId());
@@ -191,10 +192,10 @@ public class InventoryIdentifiersApiControllerMVCIT extends API_MVC_InventoryTes
     ApiInventoryDOI publishedDoi = publishDraftIdentifier(anyUser, apiKey, registeredDoi.getId());
     assertNotNull(publishedDoi);
     assertEquals("findable", publishedDoi.getState());
-    assertEquals(1, publishedDoi.getSubjects().size());
-    assertEquals(1, publishedDoi.getDescriptions().size());
-    assertEquals(1, publishedDoi.getAlternateIdentifiers().size());
-    assertEquals(1, publishedDoi.getDates().size());
+    assertThat(publishedDoi.getSubjects()).hasSize(1);
+    assertThat(publishedDoi.getDescriptions()).hasSize(1);
+    assertThat(publishedDoi.getAlternateIdentifiers()).hasSize(1);
+    assertThat(publishedDoi.getDates()).hasSize(1);
 
     ApiInventoryDOI retractedDoi =
         retractPublishedIdentifier(anyUser, apiKey, registeredDoi.getId());

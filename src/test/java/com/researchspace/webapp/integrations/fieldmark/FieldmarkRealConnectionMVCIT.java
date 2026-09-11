@@ -2,7 +2,7 @@ package com.researchspace.webapp.integrations.fieldmark;
 
 import static com.researchspace.service.IntegrationsHandler.FIELDMARK_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.PROVIDER_USER_ID;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -76,7 +76,7 @@ public class FieldmarkRealConnectionMVCIT extends API_MVC_TestBase {
     FieldmarkNotebook[] notebooks =
         new ObjectMapper()
             .readValue(result.getResponse().getContentAsString(), FieldmarkNotebook[].class);
-    assertFalse(notebooks.length == 0, "notebook list is empty");
+    assertThat(notebooks).as("notebook list is empty").isNotEmpty();
     for (FieldmarkNotebook notebook : notebooks) {
       String name = notebook.getName();
       assertNotNull(name, "name is null");

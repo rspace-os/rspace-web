@@ -1,5 +1,6 @@
 package com.researchspace.webapp.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -168,7 +169,7 @@ public class FieldAttachmentHandlingMVCIT extends MVCTestBase {
     // now we restore revision:
     List<AuditedEntity<StructuredDocument>> docs =
         auditMgr.getRevisionsForEntity(StructuredDocument.class, setup.doc.getId());
-    assertEquals(3, docs.size());
+    assertThat(docs).hasSize(3);
     // 2nd revision is the one with the attachment link
     auditMgr.restoreRevisionAsCurrent(docs.get(1).getRevision(), setup.doc.getId());
     // now should no longer be deleted

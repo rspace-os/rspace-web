@@ -1,6 +1,7 @@
 package com.researchspace.service.inventory;
 
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -88,7 +89,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
   public void sampleRetrievalAndPagination() {
     List<ApiInventoryRecordInfo> createdSamples =
         createMultipleSamplesForUser("mySample", 15, testUser);
-    assertEquals(15, createdSamples.size());
+    assertThat(createdSamples).hasSize(15);
     Mockito.verify(mockPublisher, Mockito.times(30))
         .publishEvent(Mockito.any(InventoryCreationEvent.class));
 
@@ -96,7 +97,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     ApiSampleSearchResult defaultSamplesResult =
         sampleApiMgr.getSamplesForUser(null, null, null, testUser);
     assertEquals(15, defaultSamplesResult.getTotalHits().intValue());
-    assertEquals(10, defaultSamplesResult.getSamples().size());
+    assertThat(defaultSamplesResult.getSamples()).hasSize(10);
     assertEquals(0, defaultSamplesResult.getPageNumber().intValue());
     assertEquals("mySample-15", defaultSamplesResult.getSamples().get(0).getName());
 
@@ -106,7 +107,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     ApiSampleSearchResult allSamplesResult =
         sampleApiMgr.getSamplesForUser(pgCrit, null, null, testUser);
     assertEquals(15, allSamplesResult.getTotalHits().intValue());
-    assertEquals(15, allSamplesResult.getSamples().size());
+    assertThat(allSamplesResult.getSamples()).hasSize(15);
     assertEquals(0, allSamplesResult.getPageNumber().intValue());
     assertEquals("mySample-15", allSamplesResult.getSamples().get(0).getName());
 
@@ -118,7 +119,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     ApiSampleSearchResult secondPageResult =
         sampleApiMgr.getSamplesForUser(pgCrit, null, null, testUser);
     assertEquals(15, secondPageResult.getTotalHits().intValue());
-    assertEquals(5, secondPageResult.getSamples().size());
+    assertThat(secondPageResult.getSamples()).hasSize(5);
     assertEquals(1, secondPageResult.getPageNumber().intValue());
     assertEquals("mySample-06", secondPageResult.getSamples().get(0).getName());
 
@@ -127,7 +128,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     pgCrit.setSortOrder(SortOrder.DESC);
     secondPageResult = sampleApiMgr.getSamplesForUser(pgCrit, null, null, testUser);
     assertEquals(15, secondPageResult.getTotalHits().intValue());
-    assertEquals(5, secondPageResult.getSamples().size());
+    assertThat(secondPageResult.getSamples()).hasSize(5);
     assertEquals(1, secondPageResult.getPageNumber().intValue());
     assertEquals("mySample-10", secondPageResult.getSamples().get(0).getName());
 
@@ -139,7 +140,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
   public void saveUpdateNewBasicSample() throws InterruptedException {
     ApiSampleWithFullSubSamples newSample = createBasicSampleForUser(testUser);
     assertNotNull(newSample);
-    assertEquals(3, newSample.getPermittedActions().size());
+    assertThat(newSample.getPermittedActions()).hasSize(3);
     Mockito.verify(mockPublisher, Mockito.times(2))
         .publishEvent(Mockito.any(InventoryCreationEvent.class));
 
@@ -147,10 +148,10 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     assertEquals(newSample.getName(), retrievedSample.getName());
     assertNotNull(retrievedSample.getSubSamples());
     assertEquals(1, retrievedSample.getVersion());
-    assertEquals(3, retrievedSample.getPermittedActions().size());
-    assertEquals(0, retrievedSample.getFields().size());
-    assertEquals(0, retrievedSample.getExtraFields().size());
-    assertEquals(1, retrievedSample.getSubSamples().size());
+    assertThat(retrievedSample.getPermittedActions()).hasSize(3);
+    assertThat(retrievedSample.getFields()).isEmpty();
+    assertThat(retrievedSample.getExtraFields()).isEmpty();
+    assertThat(retrievedSample.getSubSamples()).hasSize(1);
     assertEquals(1, retrievedSample.getSubSamplesCount());
     ApiSubSampleInfo retrievedSubSample = retrievedSample.getSubSamples().get(0);
     assertEquals("mySubSample", retrievedSubSample.getName());
@@ -185,7 +186,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     assertEquals("updated name", userSample.getName());
     assertEquals("updated description", userSample.getDescription());
     assertEquals("updated tags", userSample.getTags().get(0).toString());
-    assertEquals(3, retrievedSample.getPermittedActions().size());
+    assertThat(retrievedSample.getPermittedActions()).hasSize(3);
     assertEquals(2, userSample.getVersion());
     assertEquals(sampleUpdates.getStorageTempMin(), userSample.getStorageTempMin());
     assertEquals(sampleUpdates.getStorageTempMax(), userSample.getStorageTempMax());
@@ -230,20 +231,20 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     ApiSample retrievedSample = sampleApiMgr.getApiSampleById(newSample.getId(), testUser);
     assertEquals("myComplexSample", retrievedSample.getName());
     assertNotNull(retrievedSample.getSubSamples());
-    assertEquals(10, retrievedSample.getFields().size());
+    assertThat(retrievedSample.getFields()).hasSize(10);
     assertEquals("23", retrievedSample.getFields().get(0).getContent());
-    assertEquals(1, retrievedSample.getExtraFields().size());
+    assertThat(retrievedSample.getExtraFields()).hasSize(1);
     assertEquals("3.14", retrievedSample.getExtraFields().get(0).getContent());
-    assertEquals(1, retrievedSample.getSubSamples().size());
+    assertThat(retrievedSample.getSubSamples()).hasSize(1);
     assertEquals(1, retrievedSample.getSubSamplesCount());
-    assertEquals(1, retrievedSample.getTags().size());
+    assertThat(retrievedSample.getTags()).hasSize(1);
     ApiSubSampleInfo retrievedSubSample = retrievedSample.getSubSamples().get(0);
     assertEquals("mySubSample", retrievedSubSample.getName());
 
     ApiSubSample fullRetrievedSubSample =
         subSampleApiMgr.getApiSubSampleById(retrievedSubSample.getId(), testUser);
-    assertEquals(1, fullRetrievedSubSample.getExtraFields().size());
-    assertEquals(1, fullRetrievedSubSample.getNotes().size());
+    assertThat(fullRetrievedSubSample.getExtraFields()).hasSize(1);
+    assertThat(fullRetrievedSubSample.getNotes()).hasSize(1);
 
     // prepare sample update
     ApiSample sampleUpdates = new ApiSample();
@@ -290,12 +291,12 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     sampleApiMgr.updateApiSample(sampleUpdates, testUser);
     retrievedSample = sampleApiMgr.getApiSampleById(newSample.getId(), testUser);
     assertEquals("updated myComplexSample", retrievedSample.getName());
-    assertEquals(10, retrievedSample.getFields().size()); // same number of sample fields
+    assertThat(retrievedSample.getFields()).hasSize(10); // same number of sample fields
     assertEquals("24", retrievedSample.getFields().get(0).getContent());
-    assertEquals(2, retrievedSample.getExtraFields().size()); // increased number of extra fields
+    assertThat(retrievedSample.getExtraFields()).hasSize(2); // increased number of extra fields
     assertEquals("3.15", retrievedSample.getExtraFields().get(0).getContent());
     assertEquals("new field content", retrievedSample.getExtraFields().get(1).getContent());
-    assertEquals(1, retrievedSample.getTags().size()); // the unmodified tag is still there
+    assertThat(retrievedSample.getTags()).hasSize(1); // the unmodified tag is still there
   }
 
   @Test
@@ -387,7 +388,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
 
     ApiSample retrievedSample = sampleApiMgr.getApiSampleById(newSample.getId(), testUser);
     assertEquals("mySample", retrievedSample.getName());
-    assertEquals(0, retrievedSample.getIdentifiers().size());
+    assertThat(retrievedSample.getIdentifiers()).isEmpty();
 
     // prepare sample update that adds an identifier
     ApiSample sampleUpdates = new ApiSample();
@@ -402,7 +403,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     // run the update & retrieve updated sample
     sampleApiMgr.updateApiSample(sampleUpdates, testUser);
     retrievedSample = sampleApiMgr.getApiSampleById(newSample.getId(), testUser);
-    assertEquals(1, retrievedSample.getIdentifiers().size());
+    assertThat(retrievedSample.getIdentifiers()).hasSize(1);
     ApiInventoryDOI createdIdentifier = retrievedSample.getIdentifiers().get(0);
     assertNotNull(createdIdentifier.getId());
     assertEquals("testDOItitle", createdIdentifier.getTitle());
@@ -430,7 +431,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     // run the update
     sampleApiMgr.updateApiSample(sampleUpdates, testUser);
     retrievedSample = sampleApiMgr.getApiSampleById(newSample.getId(), testUser);
-    assertEquals(1, retrievedSample.getIdentifiers().size());
+    assertThat(retrievedSample.getIdentifiers()).hasSize(1);
     ApiInventoryDOI updatedIdentifier = retrievedSample.getIdentifiers().get(0);
     assertEquals(createdIdentifier.getId(), updatedIdentifier.getId());
     assertEquals("an edited title", updatedIdentifier.getTitle());
@@ -448,7 +449,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
 
     ApiSampleWithFullSubSamples createdSample =
         sampleApiMgr.createNewApiSample(newSample, testUser);
-    assertEquals(2, createdSample.getSubSamples().size());
+    assertThat(createdSample.getSubSamples()).hasSize(2);
     assertEquals(2, createdSample.getSubSamplesCount());
     assertEquals("mySample.01", createdSample.getSubSamples().get(0).getName());
     assertEquals("mySample.02", createdSample.getSubSamples().get(1).getName());
@@ -477,7 +478,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
 
     ApiSampleWithFullSubSamples createdSample =
         sampleApiMgr.createNewApiSample(newSample, testUser);
-    assertEquals(2, createdSample.getExtraFields().size());
+    assertThat(createdSample.getExtraFields()).hasSize(2);
     assertEquals(extraNumeric.getContent(), createdSample.getExtraFields().get(0).getContent());
     assertEquals(
         extraEmptyNumeric.getContent(), createdSample.getExtraFields().get(1).getContent());
@@ -636,7 +637,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     assertTrue(deletedSample.isDeleted());
     Mockito.verify(mockPublisher).publishEvent(Mockito.any(InventoryAccessEvent.class));
     /* deleted sample lists subsample that were active pre-deletion */
-    assertEquals(2, deletedSample.getSubSamples().size());
+    assertThat(deletedSample.getSubSamples()).hasSize(2);
     assertEquals(2, deletedSample.getSubSamplesCount());
     assertTrue(deletedSample.getSubSamples().get(1).isDeleted());
     assertTrue(deletedSample.getSubSamples().get(1).isDeleted());
@@ -700,8 +701,8 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     Long sampleId = newSample.getId();
     NotFoundException nfe =
         assertThrows(NotFoundException.class, () -> sampleApiMgr.duplicate(sampleId, otherUser));
-    assertTrue(
-        nfe.getMessage().contains("does not exist, or you do not have permission to access it"));
+    assertThat(nfe.getMessage())
+        .contains("does not exist, or you do not have permission to access it");
 
     // edit permission not needed, pi/sysadmin can duplicate fine
     User sysAdminUser = getSysAdminUser();
@@ -751,7 +752,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     ApiSample fullPiSample = sampleApiMgr.getApiSampleById(retrievedPiSample.getId(), testUser);
     assertFalse(fullPiSample.isClearedForPublicView());
     // testUser have update permission to pi's sample
-    assertEquals(2, fullPiSample.getPermittedActions().size());
+    assertThat(fullPiSample.getPermittedActions()).hasSize(2);
     // testUser can only see public details of other user's sample
     ApiSample sampleRetrievedByTestUser =
         sampleApiMgr.getApiSampleById(otherUserSample.getId(), testUser);
@@ -773,7 +774,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
         sampleApiMgr.getApiSampleById(retrievedTestUserSample.getId(), pi);
     assertEquals(testUserSample.getName(), fullTestUserSample.getName());
     // pi have update and transfer permission to user's sample
-    assertEquals(3, fullTestUserSample.getPermittedActions().size());
+    assertThat(fullTestUserSample.getPermittedActions()).hasSize(3);
     // pi only see public details of other user's sample
     ApiSample sampleRetrievedByPi = sampleApiMgr.getApiSampleById(otherUserSample.getId(), pi);
     assertTrue(sampleRetrievedByPi.isClearedForPublicView());
@@ -811,7 +812,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     fullTestUserSample = sampleApiMgr.getApiSampleById(testUserSample.getId(), commAdmin);
     assertEquals(testUserSample.getName(), fullTestUserSample.getName());
     // community admin only have read access to sample within community
-    assertEquals(1, fullTestUserSample.getPermittedActions().size());
+    assertThat(fullTestUserSample.getPermittedActions()).hasSize(1);
     assertEquals(
         ApiInventoryRecordPermittedAction.READ, fullTestUserSample.getPermittedActions().get(0));
     // community admin will only have public details for sample of user outside the community
@@ -839,7 +840,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
         sampleApiMgr.getApiSampleById(otherUserSample.getId(), sysadmin);
     assertEquals(otherUserSample.getName(), fullOtherUserSample.getName());
     // system admin have only read/transfer access to any sample
-    assertEquals(2, fullOtherUserSample.getPermittedActions().size());
+    assertThat(fullOtherUserSample.getPermittedActions()).hasSize(2);
     assertEquals(
         ApiInventoryRecordPermittedAction.READ, fullOtherUserSample.getPermittedActions().get(0));
     assertEquals(
@@ -908,8 +909,8 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
             PaginationCriteria.createDefaultForClass(Sample.class), null, null, user1);
     assertEquals(1, visibleSamples.getTotalHits());
     assertEquals(user1Sample.getGlobalId(), visibleSamples.getSamples().get(0).getGlobalId());
-    assertEquals(
-        3, visibleSamples.getSamples().get(0).getPermittedActions().size()); // read/edit/transfer
+    assertThat(visibleSamples.getSamples().get(0).getPermittedActions())
+        .hasSize(3); // read/edit/transfer
 
     // user2 is in groupA, shouldn't see any samples
     visibleSamples =
@@ -923,10 +924,10 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
             PaginationCriteria.createDefaultForClass(Sample.class), null, null, user3);
     assertEquals(2, visibleSamples.getTotalHits());
     assertEquals(user3Sample.getGlobalId(), visibleSamples.getSamples().get(0).getGlobalId());
-    assertEquals(
-        3, visibleSamples.getSamples().get(0).getPermittedActions().size()); // read/edit/transfer
+    assertThat(visibleSamples.getSamples().get(0).getPermittedActions())
+        .hasSize(3); // read/edit/transfer
     assertEquals(user1Sample.getGlobalId(), visibleSamples.getSamples().get(1).getGlobalId());
-    assertEquals(2, visibleSamples.getSamples().get(1).getPermittedActions().size()); // read/update
+    assertThat(visibleSamples.getSamples().get(1).getPermittedActions()).hasSize(2); // read/update
 
     // user4 is in groupB, should see own sample, user3's which is group-shared, and user1's which
     // is whitelisted for groupB
@@ -935,12 +936,12 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
             PaginationCriteria.createDefaultForClass(Sample.class), null, null, user4);
     assertEquals(3, visibleSamples.getTotalHits());
     assertEquals(user4Sample.getGlobalId(), visibleSamples.getSamples().get(0).getGlobalId());
-    assertEquals(
-        3, visibleSamples.getSamples().get(0).getPermittedActions().size()); // read/edit/transfer
+    assertThat(visibleSamples.getSamples().get(0).getPermittedActions())
+        .hasSize(3); // read/edit/transfer
     assertEquals(user3Sample.getGlobalId(), visibleSamples.getSamples().get(1).getGlobalId());
-    assertEquals(2, visibleSamples.getSamples().get(1).getPermittedActions().size()); // read/update
+    assertThat(visibleSamples.getSamples().get(1).getPermittedActions()).hasSize(2); // read/update
     assertEquals(user1Sample.getGlobalId(), visibleSamples.getSamples().get(2).getGlobalId());
-    assertEquals(2, visibleSamples.getSamples().get(2).getPermittedActions().size()); // read/update
+    assertThat(visibleSamples.getSamples().get(2).getPermittedActions()).hasSize(2); // read/update
 
     // pi1 should see user1's sample, because they are the user's PI
     visibleSamples =
@@ -948,8 +949,8 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
             PaginationCriteria.createDefaultForClass(Sample.class), null, null, pi1);
     assertEquals(1, visibleSamples.getTotalHits());
     assertEquals(user1Sample.getGlobalId(), visibleSamples.getSamples().get(0).getGlobalId());
-    assertEquals(
-        2, visibleSamples.getSamples().get(0).getPermittedActions().size()); // read/transfer
+    assertThat(visibleSamples.getSamples().get(0).getPermittedActions())
+        .hasSize(2); // read/transfer
 
     // pi2 should see user3's and user4's container, because they are PI of their group, and user1's
     // container, as it's whitelisted
@@ -958,13 +959,13 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
             PaginationCriteria.createDefaultForClass(Sample.class), null, null, pi2);
     assertEquals(3, visibleSamples.getTotalHits());
     assertEquals(user4Sample.getGlobalId(), visibleSamples.getSamples().get(0).getGlobalId());
-    assertEquals(
-        2, visibleSamples.getSamples().get(0).getPermittedActions().size()); // read/transfer
+    assertThat(visibleSamples.getSamples().get(0).getPermittedActions())
+        .hasSize(2); // read/transfer
     assertEquals(user3Sample.getGlobalId(), visibleSamples.getSamples().get(1).getGlobalId());
-    assertEquals(
-        3, visibleSamples.getSamples().get(1).getPermittedActions().size()); // read/edit/transfer
+    assertThat(visibleSamples.getSamples().get(1).getPermittedActions())
+        .hasSize(3); // read/edit/transfer
     assertEquals(user1Sample.getGlobalId(), visibleSamples.getSamples().get(2).getGlobalId());
-    assertEquals(2, visibleSamples.getSamples().get(2).getPermittedActions().size()); // read/edit
+    assertThat(visibleSamples.getSamples().get(2).getPermittedActions()).hasSize(2); // read/edit
 
     // labAdmin is treated as a regular member of groupA, shouldn't see any samples
     visibleSamples =
@@ -981,8 +982,8 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
             labAdminForGroupAWithViewAll);
     assertEquals(1, visibleSamples.getTotalHits());
     assertEquals(user1Sample.getGlobalId(), visibleSamples.getSamples().get(0).getGlobalId());
-    assertEquals(
-        2, visibleSamples.getSamples().get(0).getPermittedActions().size()); // read/transfer
+    assertThat(visibleSamples.getSamples().get(0).getPermittedActions())
+        .hasSize(2); // read/transfer
   }
 
   @Test
@@ -1098,7 +1099,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
         assertThrows(
             IllegalArgumentException.class,
             () -> sampleApiMgr.updateApiSample(testSample, testUser));
-    assertTrue(iae.getMessage().startsWith("Item is currently edited by another user ("));
+    assertThat(iae.getMessage()).startsWith("Item is currently edited by another user (");
 
     // try delete by testUser
     Long sampleId = testSample.getId();
@@ -1106,14 +1107,14 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
         assertThrows(
             IllegalArgumentException.class,
             () -> sampleApiMgr.markSampleAsDeleted(sampleId, false, testUser));
-    assertTrue(iae.getMessage().startsWith("Item is currently edited by another user ("));
+    assertThat(iae.getMessage()).startsWith("Item is currently edited by another user (");
 
     // try transfer by testUser
     iae =
         assertThrows(
             IllegalArgumentException.class,
             () -> sampleApiMgr.changeApiSampleOwner(testSample, testUser));
-    assertTrue(iae.getMessage().startsWith("Item is currently edited by another user ("));
+    assertThat(iae.getMessage()).startsWith("Item is currently edited by another user (");
 
     // pi can edit fine
     ApiSample updatedSample = sampleApiMgr.updateApiSample(testSample, piUser);
@@ -1157,7 +1158,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
         ApiInventoryRecordInfo.ApiInventorySharingMode.OWNER_GROUPS,
         createdSample.getSharingMode());
     assertNotNull(createdSample.getSharedWith());
-    assertEquals(1, createdSample.getSharedWith().size());
+    assertThat(createdSample.getSharedWith()).hasSize(1);
     assertEquals("groupA", createdSample.getSharedWith().get(0).getGroupInfo().getName());
     assertFalse(createdSample.getSharedWith().get(0).isShared());
     assertTrue(createdSample.getSharedWith().get(0).isItemOwnerGroup());
@@ -1178,7 +1179,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     assertEquals(
         ApiInventoryRecordInfo.ApiInventorySharingMode.WHITELIST, updatedSample.getSharingMode());
     assertNotNull(updatedSample.getSharedWith());
-    assertEquals(2, updatedSample.getSharedWith().size());
+    assertThat(updatedSample.getSharedWith()).hasSize(2);
     assertEquals("groupA", updatedSample.getSharedWith().get(0).getGroupInfo().getName());
     assertFalse(
         updatedSample.getSharedWith().get(0).isShared()); // owner's groups are always present
@@ -1190,7 +1191,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     // confirm other user can retrieve and has access to read/edit actions
     sampleRetrievedByOtherUser = sampleApiMgr.getApiSampleById(createdSample.getId(), otherUser);
     assertFalse(sampleRetrievedByOtherUser.isClearedForPublicView());
-    assertEquals(2, sampleRetrievedByOtherUser.getPermittedActions().size());
+    assertThat(sampleRetrievedByOtherUser.getPermittedActions()).hasSize(2);
     assertEquals(
         ApiInventoryRecordPermittedAction.READ,
         sampleRetrievedByOtherUser.getPermittedActions().get(0));
@@ -1223,7 +1224,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     // as user2 try retrieving sample
     ApiSample sampleAsSeenByOtherUser =
         sampleApiMgr.getApiSampleById(createdSample.getId(), otherUser);
-    assertEquals(1, sampleAsSeenByOtherUser.getPermittedActions().size());
+    assertThat(sampleAsSeenByOtherUser.getPermittedActions()).hasSize(1);
     assertEquals(
         ApiInventoryRecordPermittedAction.LIMITED_READ,
         sampleAsSeenByOtherUser.getPermittedActions().get(0));
@@ -1238,7 +1239,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     // compare with sample as seen by the owner
     ApiSample sampleAsSeenByTestUser =
         sampleApiMgr.getApiSampleById(createdSample.getId(), testUser);
-    assertEquals(3, sampleAsSeenByTestUser.getPermittedActions().size());
+    assertThat(sampleAsSeenByTestUser.getPermittedActions()).hasSize(3);
     assertNotNull(sampleAsSeenByTestUser.getFields());
     assertNotNull(sampleAsSeenByTestUser.getExtraFields());
     assertNotNull(sampleAsSeenByTestUser.getSubSamples());

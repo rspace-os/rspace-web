@@ -1,6 +1,8 @@
 package com.researchspace.model.system;
 
 import static com.researchspace.model.system.SystemPropertyTestFactory.createASystemProperty;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -36,7 +38,7 @@ public class SystemPropertyValueTest {
     property.getDescriptor().setType(SettingsType.NUMBER);
     value = new SystemPropertyValue(property);
     value.setValue("123.45");
-    assertEquals(123.45, Double.parseDouble(value.getValue()), 0.01);
+    assertThat(Double.parseDouble(value.getValue())).isCloseTo(123.45, within(0.01));
     property.getDescriptor().setType(SettingsType.STRING);
     value = new SystemPropertyValue(property);
     String ANY_STRING = "can be any string, no restriction";

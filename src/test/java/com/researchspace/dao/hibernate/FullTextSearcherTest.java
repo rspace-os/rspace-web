@@ -1,5 +1,6 @@
 package com.researchspace.dao.hibernate;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.axiope.search.IFullTextSearcher;
@@ -55,7 +56,7 @@ public class FullTextSearcherTest extends BaseDaoTestCase {
     ISearchResults<BaseRecord> repaginated = fts.repaginateResults(cfg, srchRes);
     assertEquals(foldersNumber, repaginated.getTotalHits().longValue());
     assertEquals(0L, repaginated.getPageNumber().longValue());
-    assertEquals(foldersNumber, repaginated.getResults().size());
+    assertThat(repaginated.getResults()).hasSize(foldersNumber);
 
     foldersNumber = IPagination.DEFAULT_RESULTS_PERPAGE;
     res = createNFolders(foldersNumber, u);
@@ -64,7 +65,7 @@ public class FullTextSearcherTest extends BaseDaoTestCase {
     repaginated = fts.repaginateResults(cfg, srchRes);
     assertEquals(foldersNumber, repaginated.getTotalHits().longValue());
     assertEquals(0L, repaginated.getPageNumber().longValue());
-    assertEquals(foldersNumber, repaginated.getResults().size());
+    assertThat(repaginated.getResults()).hasSize(foldersNumber);
 
     foldersNumber = IPagination.DEFAULT_RESULTS_PERPAGE + 1;
     res = createNFolders(foldersNumber, u);
@@ -72,7 +73,7 @@ public class FullTextSearcherTest extends BaseDaoTestCase {
     repaginated = fts.repaginateResults(cfg, srchRes);
     assertEquals(foldersNumber, repaginated.getTotalHits().longValue());
     assertEquals(0L, repaginated.getPageNumber().longValue());
-    assertEquals(IPagination.DEFAULT_RESULTS_PERPAGE, repaginated.getResults().size());
+    assertThat(repaginated.getResults()).hasSize(IPagination.DEFAULT_RESULTS_PERPAGE);
 
     // second page
     srchRes = new SearchResultsImpl<BaseRecord>(res, 1, foldersNumber);
@@ -112,16 +113,16 @@ public class FullTextSearcherTest extends BaseDaoTestCase {
     LuceneSrchCfg cfg = new LuceneSrchCfg(searchConfig, termListFactory);
 
     List<IFieldLinkableElement> results = fts.getElnHibernateList(cfg);
-    assertEquals(1, results.size());
+    assertThat(results).hasSize(1);
 
     searchConfig.setUsernameFilter(TransformerUtils.toList(u2.getUsername(), pi.getUsername()));
     results = fts.getElnHibernateList(cfg);
-    assertEquals(2, results.size());
+    assertThat(results).hasSize(2);
 
     // now set max results to 1:
     searchConfig.setMaxResults(1);
     results = fts.getElnHibernateList(cfg);
-    assertEquals(1, results.size()); // truncated by max results
+    assertThat(results).hasSize(1); // truncated by max results
   }
 
   @Test
@@ -177,19 +178,19 @@ public class FullTextSearcherTest extends BaseDaoTestCase {
     searchConfig.setTerms(new String[] {"unknown"});
     LuceneSrchCfg cfg = new LuceneSrchCfg(searchConfig, termListFactory);
     List<InventoryRecord> results = fts.getLuceneInventoryQueryList(cfg);
-    assertEquals(0, results.size());
+    assertThat(results).isEmpty();
 
     // two samples found for "mysample" name
     searchConfig.setTerms(new String[] {"mysample"});
     cfg = new LuceneSrchCfg(searchConfig, termListFactory);
     results = fts.getLuceneInventoryQueryList(cfg);
-    assertEquals(2, results.size());
+    assertThat(results).hasSize(2);
 
     // all samples and subsamples found in wildcard search "mys*"
     searchConfig.setTerms(new String[] {"mys*"});
     cfg = new LuceneSrchCfg(searchConfig, termListFactory);
     results = fts.getLuceneInventoryQueryList(cfg);
-    assertEquals(4, results.size());
+    assertThat(results).hasSize(4);
     assertEquals("mySubSample", results.get(0).getName());
     assertEquals("mySample #2", results.get(2).getName());
     assertEquals("mySample", results.get(3).getName());
@@ -198,7 +199,7 @@ public class FullTextSearcherTest extends BaseDaoTestCase {
     searchConfig.getPaginationCriteria().setSortOrder(SortOrder.ASC);
     cfg = new LuceneSrchCfg(searchConfig, termListFactory);
     results = fts.getLuceneInventoryQueryList(cfg);
-    assertEquals(4, results.size());
+    assertThat(results).hasSize(4);
     assertEquals("mySample", results.get(0).getName());
     assertEquals("mySample #2", results.get(1).getName());
     assertEquals("mySubSample", results.get(3).getName());
@@ -207,7 +208,7 @@ public class FullTextSearcherTest extends BaseDaoTestCase {
     searchConfig.getPaginationCriteria().setOrderBy(SearchUtils.ORDER_BY_CREATION_DATE);
     cfg = new LuceneSrchCfg(searchConfig, termListFactory);
     results = fts.getLuceneInventoryQueryList(cfg);
-    assertEquals(4, results.size());
+    assertThat(results).hasSize(4);
     /* the test creates sample and subsample almost at the same time,
      * so any specific order assertion sometimes fails on jenkins */
 
@@ -216,7 +217,7 @@ public class FullTextSearcherTest extends BaseDaoTestCase {
     searchConfig.setTerms(new String[] {"test2"});
     cfg = new LuceneSrchCfg(searchConfig, termListFactory);
     results = fts.getLuceneInventoryQueryList(cfg);
-    assertEquals(3, results.size());
+    assertThat(results).hasSize(3);
     assertEquals("my container", results.get(0).getName());
     assertEquals("mySample #2", results.get(1).getName());
     assertEquals("mySubSample", results.get(2).getName());
@@ -226,7 +227,7 @@ public class FullTextSearcherTest extends BaseDaoTestCase {
     searchConfig.setTerms(new String[] {"test2"});
     cfg = new LuceneSrchCfg(searchConfig, termListFactory);
     results = fts.getLuceneInventoryQueryList(cfg);
-    assertEquals(1, results.size());
+    assertThat(results).hasSize(1);
     assertEquals(sample2.getGlobalId(), results.get(0).getGlobalIdentifier());
 
     // just one result if we limit search to subsamples
@@ -237,7 +238,7 @@ public class FullTextSearcherTest extends BaseDaoTestCase {
         });
     cfg = new LuceneSrchCfg(searchConfig, termListFactory);
     results = fts.getLuceneInventoryQueryList(cfg);
-    assertEquals(1, results.size());
+    assertThat(results).hasSize(1);
     assertEquals(apiSubSample.getGlobalId(), results.get(0).getGlobalIdentifier());
 
     // just one result if we limit search to cotainers
@@ -245,7 +246,7 @@ public class FullTextSearcherTest extends BaseDaoTestCase {
     searchConfig.setTerms(new String[] {"test2"});
     cfg = new LuceneSrchCfg(searchConfig, termListFactory);
     results = fts.getLuceneInventoryQueryList(cfg);
-    assertEquals(1, results.size());
+    assertThat(results).hasSize(1);
     assertEquals(topContainer.getGlobalId(), results.get(0).getGlobalIdentifier());
 
     // one result for "desc1"
@@ -254,21 +255,21 @@ public class FullTextSearcherTest extends BaseDaoTestCase {
     searchConfig.setTerms(new String[] {"desc1"});
     cfg = new LuceneSrchCfg(searchConfig, termListFactory);
     results = fts.getLuceneInventoryQueryList(cfg);
-    assertEquals(1, results.size());
+    assertThat(results).hasSize(1);
     assertEquals(sample2.getId(), results.get(0).getId());
 
     // one result for "extra" (from extra field content)
     searchConfig.setTerms(new String[] {"extra"});
     cfg = new LuceneSrchCfg(searchConfig, termListFactory);
     results = fts.getLuceneInventoryQueryList(cfg);
-    assertEquals(1, results.size());
+    assertThat(results).hasSize(1);
     assertEquals(sample1.getId(), results.get(0).getId());
 
     // one result for "note"
     searchConfig.setTerms(new String[] {"note"});
     cfg = new LuceneSrchCfg(searchConfig, termListFactory);
     results = fts.getLuceneInventoryQueryList(cfg);
-    assertEquals(1, results.size());
+    assertThat(results).hasSize(1);
     assertEquals(apiSubSample.getId(), results.get(0).getId());
 
     // search with parentID
@@ -279,7 +280,7 @@ public class FullTextSearcherTest extends BaseDaoTestCase {
     searchConfig.setTerms(new String[] {"s*", "" + topContainer.getId()});
     cfg = new LuceneSrchCfg(searchConfig, termListFactory);
     results = fts.getLuceneInventoryQueryList(cfg);
-    assertEquals(2, results.size());
+    assertThat(results).hasSize(2);
     assertEquals("my subcontainer2", results.get(0).getName());
     assertEquals("my subcontainer3", results.get(1).getName());
   }
@@ -311,17 +312,16 @@ public class FullTextSearcherTest extends BaseDaoTestCase {
     flushToSearchIndices();
     searchConfig.setTerms(new String[] {"picture*"});
     LuceneSrchCfg cfg = new LuceneSrchCfg(searchConfig, termListFactory);
-    assertEquals(
-        0,
-        fts.getLuceneInventoryQueryList(cfg).size(),
-        "no inventory record carries the filename before the attachment is added");
+    assertThat(fts.getLuceneInventoryQueryList(cfg))
+        .as("no inventory record carries the filename before the attachment is added")
+        .isEmpty();
 
     addFileAttachmentToInventoryItem(dbSample.getOid(), u);
     flushToSearchIndices();
 
     cfg = new LuceneSrchCfg(searchConfig, termListFactory);
     List<InventoryRecord> results = fts.getLuceneInventoryQueryList(cfg);
-    assertEquals(1, results.size(), "attachment filename must be searchable via files.fieldData");
+    assertThat(results).as("attachment filename must be searchable via files.fieldData").hasSize(1);
     assertEquals(dbSample.getId(), results.get(0).getId());
   }
 }

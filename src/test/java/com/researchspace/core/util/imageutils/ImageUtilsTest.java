@@ -11,6 +11,7 @@ import static com.researchspace.core.util.imageutils.ImageUtils.scaleBySampling;
 import static java.io.File.createTempFile;
 import static org.apache.commons.io.FileUtils.getTempDirectory;
 import static org.apache.commons.io.FileUtils.openInputStream;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -81,9 +82,9 @@ public class ImageUtilsTest {
 
     BufferedImage original = getBufferedImageFromInputImageStream(is).get();
     final int MAX_WIDTH = 120;
-    assertTrue(original.getWidth() > MAX_WIDTH);
+    assertThat(original.getWidth()).isGreaterThan(MAX_WIDTH);
     BufferedImage scaled = ImageUtils.scale(is2, MAX_WIDTH, "png").get();
-    assertTrue(scaled.getWidth() <= MAX_WIDTH);
+    assertThat(scaled.getWidth()).isLessThanOrEqualTo(MAX_WIDTH);
     is.close();
     is2.close();
   }
@@ -111,7 +112,7 @@ public class ImageUtilsTest {
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     createThumbnail(original, 24, 24, baos, "png");
     is.close();
-    assertTrue(baos.toByteArray().length > 0);
+    assertThat(baos.toByteArray()).hasSizeGreaterThan(0);
   }
 
   @Test
@@ -139,15 +140,15 @@ public class ImageUtilsTest {
     final File outFolder = FileUtils.getTempDirectory();
     // default name
     File newpngFile = convertTiffToPng(new File(tiffFile), outFolder, null);
-    assertTrue(newpngFile.exists());
+    assertThat(newpngFile).exists();
     assertTrue(newpngFile.getName().equals("Picture1.png"));
     // specified name
     newpngFile = convertTiffToPng(new File(tiffFile), outFolder, "xyz");
-    assertTrue(newpngFile.exists());
+    assertThat(newpngFile).exists();
     assertTrue(newpngFile.getName().equals("xyz.png"));
     // specified name wth spaces is ok
     newpngFile = convertTiffToPng(new File(tiffFile), outFolder, "xyz 123 abc");
-    assertTrue(newpngFile.exists());
+    assertThat(newpngFile).exists();
     assertTrue(newpngFile.getName().equals("xyz 123 abc.png"));
   }
 
@@ -155,7 +156,7 @@ public class ImageUtilsTest {
   @DisplayName("Invalid tiff returns empty optional")
   public void badTiff() throws IOException {
     File f = RSpaceCoreTestUtils.getResource("testImages/ImageJError.tiff");
-    assertFalse(getBufferedImageFromTiffFile(f).isPresent());
+    assertThat(getBufferedImageFromTiffFile(f)).isNotPresent();
   }
 
   @Test
@@ -167,7 +168,7 @@ public class ImageUtilsTest {
     fin = new FileInputStream(RSpaceCoreTestUtils.getResource("Picture1.png"));
     BufferedImage img = scaleBySampling(fin, ImageUtils.MAX_PAGE_DISPLAY_WIDTH, "Picture1.jpg");
     assertNotNull(img);
-    assertTrue(img.getWidth() <= ImageUtils.MAX_PAGE_DISPLAY_WIDTH);
+    assertThat(img.getWidth()).isLessThanOrEqualTo(ImageUtils.MAX_PAGE_DISPLAY_WIDTH);
 
     // try sampled scale of tiff file, that seems to work after recent addition of zxing lib
     fin = new FileInputStream(RSpaceCoreTestUtils.getResource("Picture1.tiff"));
@@ -177,7 +178,7 @@ public class ImageUtilsTest {
     BufferedImage tiffImg =
         scaleBySampling(fin, ImageUtils.MAX_PAGE_DISPLAY_WIDTH, "Picture1.tiff");
     assertNotNull(tiffImg);
-    assertTrue(tiffImg.getWidth() <= ImageUtils.MAX_PAGE_DISPLAY_WIDTH);
+    assertThat(tiffImg.getWidth()).isLessThanOrEqualTo(ImageUtils.MAX_PAGE_DISPLAY_WIDTH);
 
     // random non-image file just returns false
     fin = new FileInputStream(RSpaceCoreTestUtils.getResource("xml-with-dtd.xml"));
@@ -319,6 +320,6 @@ public class ImageUtilsTest {
     String exampleImage = ImageUtils.getBase64DataImageFromImageBytes(imageBytes, "png");
 
     assertEquals("png", ImageUtils.getExtensionFromBase64DataImage(exampleImage));
-    assertEquals(83667, ImageUtils.getImageBytesFromBase64DataImage(exampleImage).length);
+    assertThat(ImageUtils.getImageBytesFromBase64DataImage(exampleImage)).hasSize(83667);
   }
 }

@@ -2,12 +2,12 @@ package com.researchspace.service.fieldmark.impl;
 
 import static com.researchspace.fieldmark.model.utils.FieldmarkUtils.createFilesMap;
 import static com.researchspace.service.IntegrationsHandler.FIELDMARK_APP_NAME;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -146,7 +146,7 @@ public class FieldmarkServiceClientAdapterTest {
     verify(userConnectionManager).findByUserNameProviderName(USERNAME, FIELDMARK_APP_NAME);
     verify(fieldmarkClient).getNotebooks(GOOD_ACCESS_TOKEN);
     assertNotNull(result);
-    assertEquals(1, result.size());
+    assertThat(result).hasSize(1);
   }
 
   @Test
@@ -157,7 +157,7 @@ public class FieldmarkServiceClientAdapterTest {
             HttpServerErrorException.class,
             () -> adapterUnderTest.getFieldmarkNotebookList(goodUser),
             "FieldmarkServiceClientAdapterImpl did not throw the exception, but it was needed");
-    assertTrue(thrown.getMessage().contains("Fieldmark server is down"));
+    assertThat(thrown.getMessage()).contains("Fieldmark server is down");
   }
 
   @Test
@@ -167,7 +167,7 @@ public class FieldmarkServiceClientAdapterTest {
             IllegalArgumentException.class,
             () -> adapterUnderTest.getFieldmarkNotebookList(wrongUser),
             "FieldmarkServiceClientAdapterImpl did not throw the exception, but it was needed");
-    assertTrue(thrown.getMessage().contains("No UserConnection exists for"));
+    assertThat(thrown.getMessage()).contains("No UserConnection exists for");
   }
 
   /* testing getFieldmarkNotebook */
@@ -214,16 +214,16 @@ public class FieldmarkServiceClientAdapterTest {
     // check records and fields
     Map<String, FieldmarkRecordDTO> recordsUnderTest = resultUnderTest.getRecords();
     assertNotNull(recordsUnderTest);
-    assertEquals(4, recordsUnderTest.size());
+    assertThat(recordsUnderTest).hasSize(4);
 
     // record 1
-    assertTrue(recordsUnderTest.containsKey("rec-5eb53c21-d7f8-41a7-a8b5-4900e46cf8e0"));
+    assertThat(recordsUnderTest).containsKey("rec-5eb53c21-d7f8-41a7-a8b5-4900e46cf8e0");
     FieldmarkRecordDTO currentRecord =
         recordsUnderTest.get("rec-5eb53c21-d7f8-41a7-a8b5-4900e46cf8e0");
     assertEquals("rec-5eb53c21-d7f8-41a7-a8b5-4900e46cf8e0", currentRecord.getRecordId());
     assertEquals("Sample-12-00009", currentRecord.getIdentifier());
     assertEquals(notebookDTOTimestamp, currentRecord.getTimestamp());
-    assertEquals(11, currentRecord.getFields().size());
+    assertThat(currentRecord.getFields()).hasSize(11);
     assertEquals("00009", currentRecord.getField("Field-ID").getFieldValue());
     assertEquals(
         "Sample-12-00009", currentRecord.getField("hridPrimary-Next-Section").getFieldValue());
@@ -243,12 +243,12 @@ public class FieldmarkServiceClientAdapterTest {
     assertEquals(5, currentRecord.getField("Thickness-mm").getFieldValue());
 
     // record 2
-    assertTrue(recordsUnderTest.containsKey("rec-b189e6ec-b760-4b44-8789-0ddc35d7cde2"));
+    assertThat(recordsUnderTest).containsKey("rec-b189e6ec-b760-4b44-8789-0ddc35d7cde2");
     currentRecord = recordsUnderTest.get("rec-b189e6ec-b760-4b44-8789-0ddc35d7cde2");
     assertEquals("rec-b189e6ec-b760-4b44-8789-0ddc35d7cde2", currentRecord.getRecordId());
     assertEquals("Sample-63-00050", currentRecord.getIdentifier());
     assertEquals(notebookDTOTimestamp, currentRecord.getTimestamp());
-    assertEquals(11, currentRecord.getFields().size());
+    assertThat(currentRecord.getFields()).hasSize(11);
     assertEquals("00050", currentRecord.getField("Field-ID").getFieldValue());
     assertEquals(
         "Sample-63-00050", currentRecord.getField("hridPrimary-Next-Section").getFieldValue());
@@ -275,12 +275,12 @@ public class FieldmarkServiceClientAdapterTest {
     assertEquals(56, currentRecord.getField("Thickness-mm").getFieldValue());
 
     // record 3
-    assertTrue(recordsUnderTest.containsKey("rec-e881323c-d3cb-4393-9784-07b86585675b"));
+    assertThat(recordsUnderTest).containsKey("rec-e881323c-d3cb-4393-9784-07b86585675b");
     currentRecord = recordsUnderTest.get("rec-e881323c-d3cb-4393-9784-07b86585675b");
     assertEquals("rec-e881323c-d3cb-4393-9784-07b86585675b", currentRecord.getRecordId());
     assertEquals("Sample-1-00008", currentRecord.getIdentifier());
     assertEquals(notebookDTOTimestamp, currentRecord.getTimestamp());
-    assertEquals(11, currentRecord.getFields().size());
+    assertThat(currentRecord.getFields()).hasSize(11);
     assertEquals("00008", currentRecord.getField("Field-ID").getFieldValue());
     assertEquals(
         "Sample-1-00008", currentRecord.getField("hridPrimary-Next-Section").getFieldValue());
@@ -309,7 +309,7 @@ public class FieldmarkServiceClientAdapterTest {
             IllegalArgumentException.class,
             () -> adapterUnderTest.getFieldmarkNotebook(wrongUser, GOOD_NOTEBOOK_ID, null),
             "FieldmarkServiceClientAdapterImpl did not throw the exception, but it was needed");
-    assertTrue(thrown.getMessage().contains("No UserConnection exists for"));
+    assertThat(thrown.getMessage()).contains("No UserConnection exists for");
   }
 
   @Test
@@ -319,7 +319,7 @@ public class FieldmarkServiceClientAdapterTest {
             HttpServerErrorException.class,
             () -> adapterUnderTest.getFieldmarkNotebook(goodUser, WRONG_NOTEBOOK_ID, null),
             "FieldmarkServiceClientAdapterImpl did not throw the exception, but it was needed");
-    assertTrue(thrown.getMessage().contains("Unauthorized"));
+    assertThat(thrown.getMessage()).contains("Unauthorized");
 
     verify(userConnectionManager).findByUserNameProviderName(USERNAME, FIELDMARK_APP_NAME);
     verify(fieldmarkClient).getNotebook(GOOD_ACCESS_TOKEN, WRONG_NOTEBOOK_ID);
@@ -338,7 +338,7 @@ public class FieldmarkServiceClientAdapterTest {
         .parseSamplesCsvFile(
             "fieldmarkImport_" + GOOD_NOTEBOOK_ID, csvRecords.getCsvFile(), goodUser);
     assertNotNull(result);
-    assertEquals(1, result.size());
+    assertThat(result).hasSize(1);
     assertEquals(IGSN_CANDIDATE_FIELD_NAME, result.get(0));
   }
 
@@ -354,6 +354,6 @@ public class FieldmarkServiceClientAdapterTest {
         .parseSamplesCsvFile(
             "fieldmarkImport_" + GOOD_NOTEBOOK_ID_NO_IGSN, csvRecords.getCsvFile(), goodUser);
     assertNotNull(result);
-    assertTrue(result.isEmpty());
+    assertThat(result).isEmpty();
   }
 }

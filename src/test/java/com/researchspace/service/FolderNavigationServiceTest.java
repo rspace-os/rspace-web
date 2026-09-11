@@ -1,9 +1,8 @@
 package com.researchspace.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.auth.PermissionUtils;
@@ -50,7 +49,7 @@ public class FolderNavigationServiceTest {
 
     Optional<Folder> result = service.findParentForUser(subject, childFolder);
 
-    assertTrue(result.isPresent());
+    assertThat(result).isPresent();
     assertEquals(parentFolder.getId(), result.get().getId());
   }
 
@@ -68,7 +67,7 @@ public class FolderNavigationServiceTest {
 
     Optional<Folder> result = service.findParentForUser(otherUser, childFolder);
 
-    assertTrue(result.isPresent());
+    assertThat(result).isPresent();
     assertEquals(sharedFolder.getId(), result.get().getId());
   }
 
@@ -81,7 +80,7 @@ public class FolderNavigationServiceTest {
 
     Optional<Folder> result = service.findParentForUser(otherUser, childFolder);
 
-    assertFalse(result.isPresent());
+    assertThat(result).isNotPresent();
   }
 
   @Test
@@ -138,7 +137,7 @@ public class FolderNavigationServiceTest {
 
     List<Folder> path = service.buildPathToRootFolder(level2, subject, null);
 
-    assertEquals(2, path.size());
+    assertThat(path).hasSize(2);
     assertEquals(level1.getId(), path.get(0).getId());
     assertEquals(root.getId(), path.get(1).getId());
   }
@@ -155,7 +154,7 @@ public class FolderNavigationServiceTest {
 
     List<Folder> path = service.buildPathToRootFolder(gallerySubfolder, subject, null);
 
-    assertEquals(1, path.size());
+    assertThat(path).hasSize(1);
     assertEquals(galleryRoot.getId(), path.get(0).getId());
   }
 

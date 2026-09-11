@@ -1,7 +1,7 @@
 package com.researchspace.service.archive.export;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.archive.ExportScope;
 import com.researchspace.archive.model.ArchiveExportConfig;
@@ -49,6 +49,6 @@ public class MessageArchiveDataTest extends SpringTransactionalTest {
     handler.archiveData(aec, tempFolder);
 
     messagesXML = new File(tempFolder, ExportImport.MESSAGES);
-    assertTrue(messagesXML.exists());
+    assertThat(messagesXML).exists();
   }
 }

@@ -1,8 +1,8 @@
 package com.researchspace.core.util.jsonserialisers;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -44,7 +44,7 @@ public class LocalDateSerialisationTest {
     LocalDateTestClass originalDate = new LocalDateTestClass();
     originalDate.expiryDate = DateTimeFormatter.ISO_DATE.parse("2020-01-29", LocalDate::from);
     String json = JacksonUtil.toJson(originalDate);
-    assertTrue(json.contains("2020-01-29"));
+    assertThat(json).contains("2020-01-29");
 
     LocalDateTestClass deserialised = JacksonUtil.fromJson(json, LocalDateTestClass.class);
     assertEquals(originalDate, deserialised);

@@ -1,5 +1,6 @@
 package com.researchspace.service.aws.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -234,7 +235,7 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
     // download img file from subfolder
     s3Utilities.downloadFromS3(
         UNIT_TESTS_FOLDER_NAME + "/" + UNIT_TESTS_SUBFOLDER_NAME + "/" + "test image.png", tmpFile);
-    assertEquals(168434L, tmpFile.length());
+    assertThat(tmpFile).hasSize(168434L);
 
     // cleanup
     tmpFile.delete();
@@ -245,11 +246,11 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
 
     // check the root folder
     List<S3FolderContentItem> items = s3Utilities.listFolderContents("");
-    assertEquals(TOP_LEVEL_FOLDER_CONTENT_COUNT, items.size());
+    assertThat(items).hasSize(TOP_LEVEL_FOLDER_CONTENT_COUNT);
 
     // check the top-level unit tests folder
     items = s3Utilities.listFolderContents(UNIT_TESTS_FOLDER_NAME);
-    assertEquals(UNIT_TESTS_FOLDER_CONTENT_COUNT, items.size());
+    assertThat(items).hasSize(UNIT_TESTS_FOLDER_CONTENT_COUNT);
 
     // find the expected test file and verify its size
     Long testS3TxtFileSize = 13L;
@@ -257,7 +258,7 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
         items.stream()
             .filter(item -> item.getName().equals(testTxtFilename) && !item.isFolder())
             .findFirst();
-    assertTrue(testS3File.isPresent(), "Expected to find file 'testS3File.txt'");
+    assertThat(testS3File).as("Expected to find file 'testS3File.txt'").isPresent();
     assertEquals(
         testS3TxtFileSize, testS3File.get().getSizeInBytes(), "Unexpected testS3File.txt size");
     assertEquals(
@@ -273,18 +274,18 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
         items.stream()
             .filter(item -> item.getName().equals(UNIT_TESTS_SUBFOLDER_NAME) && item.isFolder())
             .findFirst();
-    assertTrue(subfolder.isPresent(), "Expected to find subfolder 'unitTests subfolder'");
+    assertThat(subfolder).as("Expected to find subfolder 'unitTests subfolder'").isPresent();
 
     // check the content of the subfolder
     items =
         s3Utilities.listFolderContents(UNIT_TESTS_FOLDER_NAME + "/" + UNIT_TESTS_SUBFOLDER_NAME);
-    assertEquals(UNIT_TESTS_SUBFOLDER_CONTENT_COUNT, items.size());
+    assertThat(items).hasSize(UNIT_TESTS_SUBFOLDER_CONTENT_COUNT);
 
     // find the expected test image in subfolder
     String testS3PngFile = "test image.png";
     Long testS3PngFileSize = 168434L;
     testS3File = items.stream().filter(item -> item.getName().equals(testS3PngFile)).findFirst();
-    assertTrue(testS3File.isPresent(), "Expected to find file 'test image.png'");
+    assertThat(testS3File).as("Expected to find file 'test image.png'").isPresent();
     assertEquals(
         testS3PngFileSize, testS3File.get().getSizeInBytes(), "Unexpected test image size");
 
@@ -315,14 +316,13 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
           "uploaded object size mismatch");
 
       // verify the user metadata round-trips (the path uploadFromGallery uses for audit metadata)
-      assertEquals(
-          "realConnTestUser",
-          uploaded.getUserMetadata().get(WriteAttribution.META_CREATED_BY),
-          "uploaded object should carry creator metadata");
-      assertEquals(
-          metadata.get(WriteAttribution.META_CREATED_AT),
-          uploaded.getUserMetadata().get(WriteAttribution.META_CREATED_AT),
-          "uploaded object should carry creation-time metadata");
+      assertThat(uploaded.getUserMetadata())
+          .as("uploaded object should carry creator metadata")
+          .containsEntry(WriteAttribution.META_CREATED_BY, "realConnTestUser");
+      assertThat(uploaded.getUserMetadata())
+          .as("uploaded object should carry creation-time metadata")
+          .containsEntry(
+              WriteAttribution.META_CREATED_AT, metadata.get(WriteAttribution.META_CREATED_AT));
 
       // round-trip: download and verify content
       File roundTrip = File.createTempFile("upload-roundtrip", ".txt");
@@ -376,14 +376,14 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
 
       // a no-metadata copy uses S3's COPY directive, which PRESERVES source metadata. The
       // within-filestore move relies on this so a moved item keeps its original created-by/-at.
-      assertEquals(
-          "realConnTestUser",
-          destDetails.getUserMetadata().get(WriteAttribution.META_CREATED_BY),
-          "server-side copy with no metadata should preserve source creator metadata");
-      assertEquals(
-          sourceMetadata.get(WriteAttribution.META_CREATED_AT),
-          destDetails.getUserMetadata().get(WriteAttribution.META_CREATED_AT),
-          "server-side copy with no metadata should preserve source creation-time metadata");
+      assertThat(destDetails.getUserMetadata())
+          .as("server-side copy with no metadata should preserve source creator metadata")
+          .containsEntry(WriteAttribution.META_CREATED_BY, "realConnTestUser");
+      assertThat(destDetails.getUserMetadata())
+          .as("server-side copy with no metadata should preserve source creation-time metadata")
+          .containsEntry(
+              WriteAttribution.META_CREATED_AT,
+              sourceMetadata.get(WriteAttribution.META_CREATED_AT));
     } finally {
       safeDeleteFromS3(S3_WRITE_TESTS_FOLDER_PATH, sourceFileName);
       safeDeleteFromS3(S3_WRITE_TESTS_FOLDER_PATH, destFileName);
@@ -415,11 +415,11 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
       // the placeholder object itself carries the audit metadata
       S3FolderContentItem placeholder = s3Utilities.getObjectDetails(placeholderKey);
       assertTrue(placeholder != null, "folder placeholder object should exist");
-      assertEquals(
-          "realConnTestUser", placeholder.getUserMetadata().get(WriteAttribution.META_CREATED_BY));
-      assertTrue(
-          placeholder.getUserMetadata().containsKey(WriteAttribution.META_CREATED_AT),
-          "created-at metadata should be present");
+      assertThat(placeholder.getUserMetadata())
+          .containsEntry(WriteAttribution.META_CREATED_BY, "realConnTestUser");
+      assertThat(placeholder.getUserMetadata())
+          .as("created-at metadata should be present")
+          .containsKey(WriteAttribution.META_CREATED_AT);
     } finally {
       safeDeleteObject(placeholderKey);
     }
@@ -444,8 +444,9 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
             Instant.now().toString());
     try {
       s3Utilities.createFolder(base, metadata);
-      assertTrue(
-          s3Utilities.listFolderContents(base).isEmpty(), "a newly created folder should be empty");
+      assertThat(s3Utilities.listFolderContents(base))
+          .as("a newly created folder should be empty")
+          .isEmpty();
 
       // an empty folder is a single placeholder object; delete it by its exact key
       s3Utilities.deleteObject(placeholderKey);

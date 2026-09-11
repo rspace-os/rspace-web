@@ -1,7 +1,7 @@
 package com.researchspace.maintenance.model;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,6 +19,6 @@ public class WhiteListedSysAdminIPAddressTest {
     ip2 = new WhiteListedSysAdminIPAddress("abc");
     assertEquals(ip1, ip2);
     assertEquals(ip1.hashCode(), ip2.hashCode());
-    assertTrue(ip1.toString().contains("abc"));
+    assertThat(ip1.toString()).contains("abc");
   }
 }

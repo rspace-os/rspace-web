@@ -1,7 +1,7 @@
 package com.researchspace.api.v1.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInventoryDOI;
@@ -34,7 +34,7 @@ class InventoryPublicApiControllerTest {
     ApiInventoryRecordInfo copy =
         controller.getRecordCopyLimitedToPublishedDetails(instrumentWithOneField(true));
 
-    assertEquals(1, ((ApiInstrument) copy).getFields().size());
+    assertThat(((ApiInstrument) copy).getFields()).hasSize(1);
     assertEquals("Manufacturer", ((ApiInstrument) copy).getFields().get(0).getName());
   }
 
@@ -43,6 +43,6 @@ class InventoryPublicApiControllerTest {
     ApiInventoryRecordInfo copy =
         controller.getRecordCopyLimitedToPublishedDetails(instrumentWithOneField(false));
 
-    assertTrue(((ApiInstrument) copy).getFields().isEmpty());
+    assertThat(((ApiInstrument) copy).getFields()).isEmpty();
   }
 }

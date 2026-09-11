@@ -2,6 +2,7 @@ package com.researchspace.webapp.controller;
 
 import static com.researchspace.testutils.RSpaceTestUtils.logoutCurrUserAndLoginAs;
 import static com.researchspace.testutils.TestRunnerController.isJDK8;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -97,7 +98,7 @@ public class FormControllerAcceptanceMVCIT extends MVCTestBase {
     // included in the count.
     formController.listForms(modelTss, pgCrit, new FormSearchCriteria());
     List<RSForm> res2 = (List<RSForm>) modelTss.get("templates");
-    assertEquals(originalFormCount + 1, res2.size());
+    assertThat(res2).hasSize(originalFormCount + 1);
 
     // create menu should only see published forms, not 'new' ones
     formController.listFormsForCreateMenu(modelTss, pgCrit, 1L);
@@ -112,7 +113,7 @@ public class FormControllerAcceptanceMVCIT extends MVCTestBase {
     formMgr.addFormToUserCreateMenu(piUser, copy.getId(), piUser);
     formController.listFormsForCreateMenu(modelTss, pgCrit, 1L);
     List<RSForm> res4 = (List<RSForm>) modelTss.get("forms");
-    assertEquals(menuCount + 1, res4.size());
+    assertThat(res4).hasSize(menuCount + 1);
   }
 
   private static final String TEST_SEARCH_TERM = "test";
@@ -146,7 +147,7 @@ public class FormControllerAcceptanceMVCIT extends MVCTestBase {
     /* should find both */
     formController.searchForms(modelTss, pgCrit, fsCrit);
     List res2 = (List) modelTss.get("templates");
-    assertEquals(ORIGINAL_FORM_COUNT + 2, res2.size());
+    assertThat(res2).hasSize(ORIGINAL_FORM_COUNT + 2);
 
     /* adding form without test term in name */
     RSForm copy3 = form.copy(new CopyIndependentFormAndFieldFormPolicy());
@@ -163,7 +164,7 @@ public class FormControllerAcceptanceMVCIT extends MVCTestBase {
     /* should not find forms without search term */
     formController.searchForms(modelTss, pgCrit, fsCrit);
     List res3 = (List) modelTss.get("templates");
-    assertEquals(ORIGINAL_FORM_COUNT + 2, res3.size());
+    assertThat(res3).hasSize(ORIGINAL_FORM_COUNT + 2);
 
     /* clean up */
     formMgr.delete(copy.getId(), piUser);
@@ -172,7 +173,7 @@ public class FormControllerAcceptanceMVCIT extends MVCTestBase {
     formMgr.delete(copy4.getId(), piUser);
     formController.searchForms(modelTss, pgCrit, fsCrit);
     List res4 = (List) modelTss.get("templates");
-    assertEquals(ORIGINAL_FORM_COUNT, res4.size());
+    assertThat(res4).hasSize(ORIGINAL_FORM_COUNT);
   }
 
   // rspac-2264
@@ -452,14 +453,14 @@ public class FormControllerAcceptanceMVCIT extends MVCTestBase {
     formController.editForm(model, mockPrincipal, newForm.getId());
     RSForm form2 = getFormFromModel();
     // assertFieldTempalte was deleted - RSPAC-550.
-    assertEquals(NUMFIELDS - 1, form2.getFieldForms().size());
+    assertThat(form2.getFieldForms()).hasSize(NUMFIELDS - 1);
     AjaxReturnObject<Long> abandonedResult =
         formController.abandonUpdateForm(tempform.getId(), mockPrincipal);
     assertNotNull(abandonedResult);
     formController.editForm(model, mockPrincipal, newForm.getId());
     tempform = getFormFromModel();
     // now we're back to the original state.
-    assertEquals(NUMFIELDS, tempform.getFieldForms().size());
+    assertThat(tempform.getFieldForms()).hasSize(NUMFIELDS);
 
     // now we'll add 2 fields, save&delete a field and save it
     tempform = getFormFromModel();
@@ -505,7 +506,7 @@ public class FormControllerAcceptanceMVCIT extends MVCTestBase {
     InputStream is = RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder("Picture1.png");
     byte[] rawBytes = IOUtils.toByteArray(is);
     // this is too big, should be thumbnailed
-    assertEquals(47326, rawBytes.length);
+    assertThat(rawBytes).hasSize(47326);
     MockMultipartFile mf =
         new MockMultipartFile("file", "Picture1.png", "multipart/form-data", rawBytes);
 
@@ -518,7 +519,7 @@ public class FormControllerAcceptanceMVCIT extends MVCTestBase {
     assertEquals(39, ie.getHeight());
     assertEquals("png", ie.getImgType());
 
-    assertEquals(isJDK8() ? 1377 : 1410, ie.getIconImage().length);
+    assertThat(ie.getIconImage()).hasSize(isJDK8() ? 1377 : 1410);
     assertEquals(form.getId(), ie.getParentId());
   }
 

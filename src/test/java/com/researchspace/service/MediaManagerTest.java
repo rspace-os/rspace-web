@@ -1,5 +1,7 @@
 package com.researchspace.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -105,7 +107,7 @@ public class MediaManagerTest extends SpringTransactionalTest {
         mediaMgr.saveMath(
             svgAsString(anyMath), sd.getFields().get(0).getId(), anyMath.getLatex(), null, newUser);
     assertNotNull(savedMath.getId());
-    assertEquals(anyMath.getMathSvg().getData().length, savedMath.getMathSvg().getData().length);
+    assertThat(savedMath.getMathSvg().getData()).hasSameSizeAs(anyMath.getMathSvg().getData());
 
     // update existing math element
     String newLatex = "\\sqrt(x)";
@@ -165,7 +167,7 @@ public class MediaManagerTest extends SpringTransactionalTest {
     double originalAspectRatio = (double) original.getWidth() / (double) original.getHeight();
     double workingImgAspectRatio = (double) scaled.getWidth() / (double) scaled.getHeight();
 
-    assertEquals(originalAspectRatio, workingImgAspectRatio, 0.1);
+    assertThat(workingImgAspectRatio).isCloseTo(originalAspectRatio, within(0.1));
   }
 
   @Test
@@ -254,12 +256,12 @@ public class MediaManagerTest extends SpringTransactionalTest {
     assertNotNull(doc);
     assertEquals(longNameShortExtension, doc.getName());
     String savedFPFilename = doc.getFileProperty().getFileName();
-    assertEquals(BaseRecord.DEFAULT_VARCHAR_LENGTH, savedFPFilename.length());
+    assertThat(savedFPFilename).hasSize(BaseRecord.DEFAULT_VARCHAR_LENGTH);
     String expectedFPFilenameRegex =
         "a{" + (BaseRecord.DEFAULT_VARCHAR_LENGTH - 22) + "}\\.\\.\\._(\\d){13}\\.docx";
-    assertTrue(
-        savedFPFilename.matches(expectedFPFilenameRegex),
-        "unexpected filename: " + savedFPFilename);
+    assertThat(savedFPFilename)
+        .as("unexpected filename: " + savedFPFilename)
+        .matches(expectedFPFilenameRegex);
 
     // very long extension (filename part after last .) scenario
     String shorNameLongExtension =
@@ -274,12 +276,12 @@ public class MediaManagerTest extends SpringTransactionalTest {
     assertNotNull(doc2);
     assertEquals(shorNameLongExtension, doc2.getName());
     String savedFPFilename2 = doc2.getFileProperty().getFileName();
-    assertEquals(BaseRecord.DEFAULT_VARCHAR_LENGTH, savedFPFilename2.length());
+    assertThat(savedFPFilename2).hasSize(BaseRecord.DEFAULT_VARCHAR_LENGTH);
     String expectedFPFilename2Regex =
         "test_(\\d){13}\\.a{" + (BaseRecord.DEFAULT_VARCHAR_LENGTH - 19) + "}";
-    assertTrue(
-        savedFPFilename2.matches(expectedFPFilename2Regex),
-        "unexpected filename: " + savedFPFilename);
+    assertThat(savedFPFilename2)
+        .as("unexpected filename: " + savedFPFilename)
+        .matches(expectedFPFilename2Regex);
   }
 
   @Test
@@ -436,7 +438,7 @@ public class MediaManagerTest extends SpringTransactionalTest {
     logoutAndLoginAs(owner);
     shareRecordWithGroup(owner, group, basicDoc);
     List<RecordGroupSharing> sharingInfos = sharingMgr.getRecordSharingInfo(basicDoc.getId());
-    assertEquals(1, sharingInfos.size());
+    assertThat(sharingInfos).hasSize(1);
     RecordGroupSharing basicDocSharingInfo = sharingInfos.get(0);
 
     // owner can upload new version of attachment

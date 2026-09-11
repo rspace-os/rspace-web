@@ -1,8 +1,8 @@
 package com.researchspace.webapp.integrations.clustermarket;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -90,7 +90,7 @@ public class ClustermarketOAuthServiceTest {
     assertEquals(REFRESH_TOKEN, saved.getRefreshToken());
     assertEquals("RSpace Clustermarket access token", saved.getDisplayName());
     assertEquals(1, saved.getRank());
-    assertTrue(saved.getExpireTime() > EXPIRE_TIME);
+    assertThat(saved.getExpireTime()).isGreaterThan(EXPIRE_TIME);
   }
 
   @Test

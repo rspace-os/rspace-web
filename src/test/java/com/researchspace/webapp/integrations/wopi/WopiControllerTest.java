@@ -1,9 +1,9 @@
 package com.researchspace.webapp.integrations.wopi;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -27,7 +27,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -86,21 +85,22 @@ public class WopiControllerTest extends SpringTransactionalTest {
     assertNotNull(response);
 
     // required properties
-    assertEquals("MSattachment.doc", response.get("BaseFileName"));
-    assertEquals("" + msDoc.getOwner().getId(), response.get("OwnerId"));
-    assertEquals(msDoc.getSize(), response.get("Size"));
-    assertEquals("" + testUser.getId(), response.get("UserId"));
-    assertEquals("1", response.get("Version"));
+    assertThat(response).containsEntry("BaseFileName", "MSattachment.doc");
+    assertThat(response).containsEntry("OwnerId", "" + msDoc.getOwner().getId());
+    assertThat(response).containsEntry("Size", msDoc.getSize());
+    assertThat(response).containsEntry("UserId", "" + testUser.getId());
+    assertThat(response).containsEntry("Version", "1");
 
     // other properties
-    assertEquals("" + testUser.getDisplayName(), response.get("UserFriendlyName"));
-    assertEquals(true, response.get("UserCanWrite"));
-    assertEquals(true, response.get("UserCanRename"));
-    assertEquals(false, response.get("UserCanNotWriteRelative")); // doc extension is convertible
-    assertEquals(true, response.get("LicenseCheckForEditIsEnabled"));
-    assertEquals(
-        propertyHolder.getServerUrl() + "/globalId/" + fileId, response.get("DownloadUrl"));
-    assertEquals(propertyHolder.getServerUrl() + "/logout", response.get("SignoutUrl"));
+    assertThat(response).containsEntry("UserFriendlyName", "" + testUser.getDisplayName());
+    assertThat(response).containsEntry("UserCanWrite", true);
+    assertThat(response).containsEntry("UserCanRename", true);
+    assertThat(response)
+        .containsEntry("UserCanNotWriteRelative", false); // doc extension is convertible
+    assertThat(response).containsEntry("LicenseCheckForEditIsEnabled", true);
+    assertThat(response)
+        .containsEntry("DownloadUrl", propertyHolder.getServerUrl() + "/globalId/" + fileId);
+    assertThat(response).containsEntry("SignoutUrl", propertyHolder.getServerUrl() + "/logout");
   }
 
   @Test
@@ -129,8 +129,8 @@ public class WopiControllerTest extends SpringTransactionalTest {
     Map<String, Object> ownerResponse = wopiController.checkFileInfo(fileId, owner);
     assertEquals(200, resp.getStatus());
     assertNotNull(ownerResponse);
-    assertEquals(true, ownerResponse.get("UserCanWrite"));
-    assertEquals(true, ownerResponse.get("UserCanRename"));
+    assertThat(ownerResponse).containsEntry("UserCanWrite", true);
+    assertThat(ownerResponse).containsEntry("UserCanRename", true);
 
     // verify other user can't view the attachment
     resp = new MockHttpServletResponse();
@@ -151,8 +151,8 @@ public class WopiControllerTest extends SpringTransactionalTest {
     Map<String, Object> otherUserViewResponse = wopiController.checkFileInfo(fileId, otherUser);
     assertEquals(200, resp.getStatus());
     assertNotNull(otherUserViewResponse);
-    assertEquals(false, otherUserViewResponse.get("UserCanWrite"));
-    assertEquals(false, otherUserViewResponse.get("UserCanRename"));
+    assertThat(otherUserViewResponse).containsEntry("UserCanWrite", false);
+    assertThat(otherUserViewResponse).containsEntry("UserCanRename", false);
 
     // re-share the doc for 'edit'
     logoutAndLoginAs(owner);
@@ -166,8 +166,8 @@ public class WopiControllerTest extends SpringTransactionalTest {
     Map<String, Object> otherUserEditResponse = wopiController.checkFileInfo(fileId, otherUser);
     assertEquals(200, resp.getStatus());
     assertNotNull(otherUserEditResponse);
-    assertEquals(true, otherUserEditResponse.get("UserCanWrite"));
-    assertEquals(true, otherUserEditResponse.get("UserCanRename"));
+    assertThat(otherUserEditResponse).containsEntry("UserCanWrite", true);
+    assertThat(otherUserEditResponse).containsEntry("UserCanRename", true);
   }
 
   @Test
@@ -236,7 +236,7 @@ public class WopiControllerTest extends SpringTransactionalTest {
     req.addHeader(WopiController.X_WOPI_OVERRIDE_HEADER, WopiController.OVERRIDE_HEADER_GET_LOCK);
     wopiController.postFileOperations(fileId, testUser, req, resp);
     assertEquals(200, resp.getStatus());
-    assertEquals("", resp.getHeader(WopiController.X_WOPI_LOCK_HEADER));
+    assertThat(resp.getHeader(WopiController.X_WOPI_LOCK_HEADER)).isEmpty();
     verify(testLockHandler).getLock(fileId);
 
     // lock the file
@@ -274,7 +274,7 @@ public class WopiControllerTest extends SpringTransactionalTest {
     req.addHeader(WopiController.X_WOPI_LOCK_HEADER, lockId);
     wopiController.postFileOperations(fileId, testUser, req, resp);
     assertEquals(409, resp.getStatus());
-    assertEquals("", resp.getHeader(WopiController.X_WOPI_LOCK_HEADER));
+    assertThat(resp.getHeader(WopiController.X_WOPI_LOCK_HEADER)).isEmpty();
     verify(testLockHandler).refreshLock(fileId, lockId);
 
     // lock the file
@@ -326,7 +326,7 @@ public class WopiControllerTest extends SpringTransactionalTest {
     req.addHeader(WopiController.X_WOPI_LOCK_HEADER, lockId);
     wopiController.postFileOperations(fileId, testUser, req, resp);
     assertEquals(409, resp.getStatus());
-    assertEquals("", resp.getHeader(WopiController.X_WOPI_LOCK_HEADER));
+    assertThat(resp.getHeader(WopiController.X_WOPI_LOCK_HEADER)).isEmpty();
     verify(testLockHandler).unlock(fileId, lockId);
 
     // lock the file
@@ -380,7 +380,7 @@ public class WopiControllerTest extends SpringTransactionalTest {
     req.addHeader(WopiController.X_WOPI_OLD_LOCK_HEADER, oldLockId);
     wopiController.postFileOperations(fileId, testUser, req, resp);
     assertEquals(409, resp.getStatus());
-    assertEquals("", resp.getHeader(WopiController.X_WOPI_LOCK_HEADER));
+    assertThat(resp.getHeader(WopiController.X_WOPI_LOCK_HEADER)).isEmpty();
     verify(testLockHandler).unlockAndRelock(fileId, oldLockId, newLockId);
 
     // lock the file
@@ -468,7 +468,7 @@ public class WopiControllerTest extends SpringTransactionalTest {
 
     wopiController.putFileOperations(csvFileId, testUser, req, resp);
     assertEquals(409, resp.getStatus());
-    assertEquals("", resp.getHeader(WopiController.X_WOPI_LOCK_HEADER));
+    assertThat(resp.getHeader(WopiController.X_WOPI_LOCK_HEADER)).isEmpty();
 
     // lock the file now, with lockId string
     testLockHandler.lock(csvFileId, lockId);
@@ -503,7 +503,7 @@ public class WopiControllerTest extends SpringTransactionalTest {
     assertEquals(2, updatedMediaFile.getVersion());
 
     Optional<FileInputStream> fis = fileStore.retrieve(updatedMediaFile.getFileProperty());
-    assertTrue(fis.isPresent());
+    assertThat(fis).isPresent();
     String updatedMediaFileContent = IOUtils.toString(fis.get(), "UTF-8");
     assertEquals(updatedContent, updatedMediaFileContent);
   }
@@ -570,7 +570,7 @@ public class WopiControllerTest extends SpringTransactionalTest {
 
     Map<String, Object> fileInfo = wopiController.checkFileInfo(fileId, testUser);
     assertEquals(200, resp.getStatus());
-    assertEquals("1", fileInfo.get("Version"));
+    assertThat(fileInfo).containsEntry("Version", "1");
 
     WopiAccessToken requestToken = accessTokenHandler.createAccessToken(testUser, fileId);
     req.setParameter(WopiController.ACCESS_TOKEN_PARAM_NAME, requestToken.getAccessToken());
@@ -590,23 +590,25 @@ public class WopiControllerTest extends SpringTransactionalTest {
 
     // check response
     assertEquals(200, resp.getStatus());
-    assertEquals(expectedName, response.get("Name")); // saved and returned as utf-8
+    assertThat(response).containsEntry("Name", expectedName); // saved and returned as utf-8
     String responseUrl = response.get("Url").toString();
-    assertTrue(
-        responseUrl.contains("/wopi/files/" + fileId + "?access_token="),
-        "unexpected url: " + responseUrl);
+    assertThat(responseUrl)
+        .as("unexpected url: " + responseUrl)
+        .contains("/wopi/files/" + fileId + "?access_token=");
     String responseHostViewUrl = response.get("HostViewUrl").toString();
-    assertTrue(
-        responseHostViewUrl.contains("/officeOnline/GL"),
-        "unexpected view url: " + responseHostViewUrl);
-    assertTrue(
-        responseHostViewUrl.endsWith("/view"), "unexpected view url: " + responseHostViewUrl);
+    assertThat(responseHostViewUrl)
+        .as("unexpected view url: " + responseHostViewUrl)
+        .contains("/officeOnline/GL");
+    assertThat(responseHostViewUrl)
+        .as("unexpected view url: " + responseHostViewUrl)
+        .endsWith("/view");
     String responseHostEditUrl = response.get("HostEditUrl").toString();
-    assertTrue(
-        responseHostEditUrl.contains("/officeOnline/GL"),
-        "unexpected edit url: " + responseHostEditUrl);
-    assertTrue(
-        responseHostEditUrl.endsWith("/edit"), "unexpected view url: " + responseHostEditUrl);
+    assertThat(responseHostEditUrl)
+        .as("unexpected edit url: " + responseHostEditUrl)
+        .contains("/officeOnline/GL");
+    assertThat(responseHostEditUrl)
+        .as("unexpected view url: " + responseHostEditUrl)
+        .endsWith("/edit");
 
     // check access token in response
     String responseUrlAccessToken =
@@ -620,8 +622,8 @@ public class WopiControllerTest extends SpringTransactionalTest {
     // check subsequent file info response
     Map<String, Object> fileInfoAfterConversion = wopiController.checkFileInfo(fileId, testUser);
     assertEquals(200, resp.getStatus());
-    assertEquals("2", fileInfoAfterConversion.get("Version"));
-    assertEquals(expectedName, fileInfoAfterConversion.get("BaseFileName"));
+    assertThat(fileInfoAfterConversion).containsEntry("Version", "2");
+    assertThat(fileInfoAfterConversion).containsEntry("BaseFileName", expectedName);
 
     // ensure gallery file properties
     GlobalIdentifier globalId = new GlobalIdentifier(fileId);
@@ -639,7 +641,7 @@ public class WopiControllerTest extends SpringTransactionalTest {
 
     Map<String, Object> fileInfo = wopiController.checkFileInfo(fileId, testUser);
     assertEquals(200, resp.getStatus());
-    assertEquals("1", fileInfo.get("Version"));
+    assertThat(fileInfo).containsEntry("Version", "1");
 
     WopiAccessToken requestToken = accessTokenHandler.createAccessToken(testUser, fileId);
     req.setParameter(WopiController.ACCESS_TOKEN_PARAM_NAME, requestToken.getAccessToken());
@@ -653,7 +655,7 @@ public class WopiControllerTest extends SpringTransactionalTest {
 
     Map<String, Object> response = wopiController.postFileOperations(fileId, testUser, req, resp);
     assertEquals(501, resp.getStatus());
-    assertEquals(Collections.emptyMap(), response);
+    assertThat(response).isEmpty();
 
     /* 'save as' flow won't be supported for now
     assertEquals(200, resp.getStatus());

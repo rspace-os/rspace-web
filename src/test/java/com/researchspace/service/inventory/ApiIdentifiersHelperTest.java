@@ -1,5 +1,6 @@
 package com.researchspace.service.inventory;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -52,10 +53,8 @@ public class ApiIdentifiersHelperTest {
 
     DigitalObjectIdentifier result = underTest.createDoiToSave(apiDoi, user);
     assertNotNull(result);
-    assertTrue(
-        result
-            .getOtherData(DigitalObjectIdentifier.IdentifierOtherProperty.LOCAL_URL)
-            .contains("https://localhost:8080/public/inventory/"));
+    assertThat(result.getOtherData(DigitalObjectIdentifier.IdentifierOtherProperty.LOCAL_URL))
+        .contains("https://localhost:8080/public/inventory/");
     assertEquals(user, result.getOwner());
   }
 

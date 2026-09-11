@@ -1,6 +1,7 @@
 package com.researchspace.webapp.filter;
 
 import static com.researchspace.webapp.filter.RemoteUserRetrievalPolicy.SSO_DUMMY_PASSWORD;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -108,13 +109,13 @@ public class SSOShiroFormAuthFilterTest extends SpringTransactionalTest {
 
     propertyHolder.setUserSignup("false");
     assertFalse(filter.isAccessAllowed(req, resp, null));
-    assertEquals(SSOShiroFormAuthFilterExt.SSOINFO_URL, resp.getHeaderValue("Location").toString());
+    assertThat(resp.getHeaderValue("Location")).hasToString(SSOShiroFormAuthFilterExt.SSOINFO_URL);
     assertTrue(hasRemoteUserUsernameSet());
 
     propertyHolder.setUserSignup("true");
     resp = new MockHttpServletResponse();
     assertFalse(filter.isAccessAllowed(req, resp, null));
-    assertEquals(SignupController.SIGNUP_URL, resp.getHeaderValue("Location").toString());
+    assertThat(resp.getHeaderValue("Location")).hasToString(SignupController.SIGNUP_URL);
   }
 
   @Test

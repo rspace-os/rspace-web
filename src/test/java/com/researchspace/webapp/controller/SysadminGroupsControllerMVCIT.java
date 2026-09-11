@@ -2,6 +2,7 @@ package com.researchspace.webapp.controller;
 
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static com.researchspace.testutils.RSpaceTestUtils.logout;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -72,26 +73,26 @@ public class SysadminGroupsControllerMVCIT extends MVCTestBase {
     logoutAndLoginAs(newadmin);
     MvcResult result = basicGroupList();
     List<GroupUsageInfo> grps = getListOfGroupInfo(result);
-    assertEquals(0, grps.size());
+    assertThat(grps).isEmpty();
     User sysadmin = logoutAndLoginAsSysAdmin();
     Community comm = createAndSaveCommunity(newadmin, getRandomName(10));
     addGroupToCommunity(largest, comm, sysadmin);
     logoutAndLoginAs(newadmin);
     result = basicGroupList();
     grps = getListOfGroupInfo(result);
-    assertEquals(1, grps.size());
+    assertThat(grps).hasSize(1);
     assertEquals(largest, grps.get(0).getGroup());
     grps = getListOfGroupInfo(basicAjaxGroupList());
-    assertEquals(1, grps.size());
+    assertThat(grps).hasSize(1);
     assertEquals(largest, grps.get(0).getGroup());
     result = orderByGroupSize(SortOrder.ASC);
     grps = getListOfGroupInfo(result);
-    assertEquals(1, grps.size());
+    assertThat(grps).hasSize(1);
     assertEquals(largest, grps.get(0).getGroup());
 
     result = orderByUsage(SortOrder.ASC, 0);
     grps = getListOfGroupInfo(result);
-    assertEquals(1, grps.size());
+    assertThat(grps).hasSize(1);
   }
 
   @Test
@@ -101,7 +102,7 @@ public class SysadminGroupsControllerMVCIT extends MVCTestBase {
     MvcResult result = basicGroupList();
 
     List<GroupUsageInfo> grps = getListOfGroupInfo(result);
-    assertEquals(10, grps.size());
+    assertThat(grps).hasSize(10);
     // check all data fields are returned
     assertResultFieldsArePopulated(grps);
     // now add search parameter
@@ -112,7 +113,7 @@ public class SysadminGroupsControllerMVCIT extends MVCTestBase {
                     .param(Group.DEFAULT_ORDERBY_FIELD, largest.getDisplayName()))
             .andReturn();
     grps = getListOfGroupInfo(result);
-    assertEquals(1, grps.size());
+    assertThat(grps).hasSize(1);
     // file usage should not be 0
     assertTrue(grps.get(0).getFileUsage() > 0, "fileusage is 0");
     assertTrue(grps.get(0).getPercent() > 0, "usage percent is 0");
@@ -122,7 +123,7 @@ public class SysadminGroupsControllerMVCIT extends MVCTestBase {
             .perform(get(SYSTEM_GROUPS_AJAX_LIST).param("resultsPerPage", "2"))
             .andExpect(model().attributeHasNoErrors())
             .andReturn();
-    assertEquals(2, getListOfGroupInfo(result2).size());
+    assertThat(getListOfGroupInfo(result2)).hasSize(2);
 
     // now sort by group size, this needs to be in  transactional test as executes some SQL that
     // requires DB commits to test
@@ -137,7 +138,7 @@ public class SysadminGroupsControllerMVCIT extends MVCTestBase {
     // check pagination working
     result2 = orderByUsage(SortOrder.DESC, 2);
     grps = getListOfGroupInfo(result2);
-    assertEquals(4, grps.size()); // 12 grps in total.
+    assertThat(grps).hasSize(4); // 12 grps in total.
 
     // now order by usage
     result2 = orderByUsage(SortOrder.DESC, 0);
@@ -149,7 +150,7 @@ public class SysadminGroupsControllerMVCIT extends MVCTestBase {
     assertIsOrderedByUsageAsc(grps);
     result2 = orderByUsage(SortOrder.DESC, 2);
     grps = getListOfGroupInfo(result2);
-    assertEquals(4, grps.size()); // 24 grps in total.
+    assertThat(grps).hasSize(4); // 24 grps in total.
 
     // now order by piname
     result2 = orderByPiLastName(SortOrder.DESC, 0);
@@ -170,7 +171,7 @@ public class SysadminGroupsControllerMVCIT extends MVCTestBase {
     Map data = parseJSONObjectFromResponseStream(result3);
     List results = (List) data.get("data");
     // i.e., all groups are listed
-    assertTrue(results.size() > 10);
+    assertThat(results.size()).isGreaterThan(10);
   }
 
   private Group setUp12groupsandReturnLargest() throws IOException {
@@ -229,53 +230,53 @@ public class SysadminGroupsControllerMVCIT extends MVCTestBase {
 
   private void assertIsOrderedByGroupSizeDesc(List<GroupUsageInfo> grps) {
     for (int i = 0, j = 1; j < grps.size(); i++, j++) {
-      assertTrue(
-          grps.get(i).getGroup().getMemberCount() >= grps.get(j).getGroup().getMemberCount());
+      assertThat(grps.get(i).getGroup().getMemberCount())
+          .isGreaterThanOrEqualTo(grps.get(j).getGroup().getMemberCount());
     }
   }
 
   private void assertIsOrderedByPIDesc(List<GroupUsageInfo> grps) {
     for (int i = 0, j = 1; j < grps.size(); i++, j++) {
-      assertTrue(
-          grps.get(i)
+      assertThat(
+              grps.get(i)
                   .getGroup()
                   .getOwner()
                   .getFullName()
                   .toUpperCase()
-                  .compareTo(grps.get(i).getGroup().getOwner().getFullName().toUpperCase())
-              >= 0);
+                  .compareTo(grps.get(i).getGroup().getOwner().getFullName().toUpperCase()))
+          .isGreaterThanOrEqualTo(0);
     }
   }
 
   private void assertIsOrderedByPIAsc(List<GroupUsageInfo> grps) {
     for (int i = 0, j = 1; j < grps.size(); i++, j++) {
-      assertTrue(
-          grps.get(i)
+      assertThat(
+              grps.get(i)
                   .getGroup()
                   .getOwner()
                   .getFullName()
                   .toUpperCase()
-                  .compareTo(grps.get(i).getGroup().getOwner().getFullName().toUpperCase())
-              <= 0);
+                  .compareTo(grps.get(i).getGroup().getOwner().getFullName().toUpperCase()))
+          .isLessThanOrEqualTo(0);
     }
   }
 
   private void assertIsOrderedByUsageDesc(List<GroupUsageInfo> grps) {
     for (int i = 0, j = 1; j < grps.size(); i++, j++) {
-      assertTrue(grps.get(i).getFileUsage() >= grps.get(j).getFileUsage());
+      assertThat(grps.get(i).getFileUsage()).isGreaterThanOrEqualTo(grps.get(j).getFileUsage());
     }
   }
 
   private void assertIsOrderedByUsageAsc(List<GroupUsageInfo> grps) {
     for (int i = 0, j = 1; j < grps.size(); i++, j++) {
-      assertTrue(grps.get(i).getFileUsage() <= grps.get(j).getFileUsage());
+      assertThat(grps.get(i).getFileUsage()).isLessThanOrEqualTo(grps.get(j).getFileUsage());
     }
   }
 
   private void assertIsOrderedByGroupSizeAsc(List<GroupUsageInfo> grps) {
     for (int i = 0, j = 1; j < grps.size(); i++, j++) {
-      assertTrue(
-          grps.get(i).getGroup().getMemberCount() <= grps.get(j).getGroup().getMemberCount());
+      assertThat(grps.get(i).getGroup().getMemberCount())
+          .isLessThanOrEqualTo(grps.get(j).getGroup().getMemberCount());
     }
   }
 

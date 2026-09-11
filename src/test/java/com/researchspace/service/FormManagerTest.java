@@ -2,6 +2,7 @@ package com.researchspace.service;
 
 import static com.researchspace.testutils.RSpaceTestUtils.logout;
 import static com.researchspace.testutils.RSpaceTestUtils.logoutCurrUserAndLoginAs;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -65,12 +66,12 @@ public class FormManagerTest extends SpringTransactionalTest {
     FormUserMenu menu = formMgr.addFormToUserCreateMenu(user, form.getId(), user);
     assertNotNull(menu);
     assertEquals(menu, userMenuDao.get(menu.getId()));
-    assertEquals(initialCount + 1, userMenuDao.getAll().size());
+    assertThat(userMenuDao.getAll()).hasSize(initialCount + 1);
     // unknown, can't be deleted
     assertFalse(formMgr.removeFormFromUserCreateMenu(user, 123456L, user));
     // known, can be deleted.
     assertTrue(formMgr.removeFormFromUserCreateMenu(user, form.getId(), user));
-    assertEquals(initialCount, userMenuDao.getAll().size());
+    assertThat(userMenuDao.getAll()).hasSize(initialCount);
   }
 
   @Test
@@ -360,7 +361,7 @@ public class FormManagerTest extends SpringTransactionalTest {
     List<RSForm> items = formMgr.getDynamicMenuFormItems(user);
     RSForm[] forms = setUpDBWith5Forms(user);
     // no templates or documents to begin with, except Basic Document
-    assertEquals(1, items.size());
+    assertThat(items).hasSize(1);
 
     // create a single document, its form will now be in the list.
     formMgr.addFormToUserCreateMenu(
@@ -373,7 +374,7 @@ public class FormManagerTest extends SpringTransactionalTest {
     user = userDao.get(user.getId());
 
     items = formMgr.getDynamicMenuFormItems(user);
-    assertEquals(1, items.size());
+    assertThat(items).hasSize(1);
     assertEquals(forms[1], items.get(0));
 
     // create 1 doc of each template
@@ -386,7 +387,7 @@ public class FormManagerTest extends SpringTransactionalTest {
 
     items = formMgr.getDynamicMenuFormItems(user);
 
-    assertEquals(4, items.size());
+    assertThat(items).hasSize(4);
     assertEquals(2, items.indexOf(forms[3]));
 
     // this has now been used twice and will be first
@@ -401,7 +402,7 @@ public class FormManagerTest extends SpringTransactionalTest {
 
     items = formMgr.getDynamicMenuFormItems(user);
     // never > 4 items
-    assertEquals(4, items.size());
+    assertThat(items).hasSize(4);
 
     // t2 is at top of list
     assertEquals(0, items.indexOf(forms[2]));
@@ -419,7 +420,7 @@ public class FormManagerTest extends SpringTransactionalTest {
     createNewDocumentAndSave(user, forms[4]);
 
     items = formMgr.getDynamicMenuFormItems(user);
-    assertEquals(4, items.size());
+    assertThat(items).hasSize(4);
 
     // final ordering
     assertEquals(3, items.indexOf(forms[4]));
@@ -451,15 +452,15 @@ public class FormManagerTest extends SpringTransactionalTest {
         any, formDao.getMostRecentVersionForForm(forms[0].getStableID()).getId(), user);
     // now check that the menu has only one forms, form0;
     List<RSForm> inmenu = formMgr.getDynamicMenuFormItems(any);
-    assertEquals(1, inmenu.size());
+    assertThat(inmenu).hasSize(1);
     assertEquals(new Version(1L), inmenu.get(0).getVersion());
     assertEquals(forms[0].getStableID(), inmenu.get(0).getStableID());
     // a new form was created for new version, so there are now 6 forms in total
-    assertEquals(
-        INITIAL_DISTINCT_FORM_COUNT + NUM_ACTIVE_FORMS + 1, formDao.getAllDistinct().size());
+    assertThat(formDao.getAllDistinct())
+        .hasSize(INITIAL_DISTINCT_FORM_COUNT + NUM_ACTIVE_FORMS + 1);
     // but only 5 active, the previus version is now 'old'
-    assertEquals(
-        INITIAL_CURRENT_FORM_COUNT + NUM_ACTIVE_FORMS, formDao.getAllCurrentNormalForms().size());
+    assertThat(formDao.getAllCurrentNormalForms())
+        .hasSize(INITIAL_CURRENT_FORM_COUNT + NUM_ACTIVE_FORMS);
   }
 
   private void createNewDocumentAndSave(User u, RSForm t) throws Exception {
@@ -529,14 +530,14 @@ public class FormManagerTest extends SpringTransactionalTest {
     user.addPermission(cbp);
     // regular delete works, so long as has permission
     formMgr.delete(form.getId(), user);
-    assertEquals(b4 - 1, formMgr.getAllCurrentNormalForms().size());
+    assertThat(formMgr.getAllCurrentNormalForms()).hasSize(b4 - 1);
 
     // save again in published form
     form.setPublishingState(FormState.PUBLISHED);
     formMgr.save(form, user);
     // published can now be deleted
     formMgr.delete(form.getId(), user);
-    assertEquals(b4 - 1, formMgr.getAllCurrentNormalForms().size());
+    assertThat(formMgr.getAllCurrentNormalForms()).hasSize(b4 - 1);
 
     // but not if used to create a document:
     RSForm form2 = formMgr.save(form, user);
@@ -544,7 +545,7 @@ public class FormManagerTest extends SpringTransactionalTest {
         recordMgr.createNewStructuredDocument(user.getRootFolder().getId(), form2.getId(), user);
     Long formId = form2.getId();
     assertThrows(IllegalArgumentException.class, () -> formMgr.delete(formId, user));
-    assertEquals(b4, formMgr.getAllCurrentNormalForms().size());
+    assertThat(formMgr.getAllCurrentNormalForms()).hasSize(b4);
   }
 
   @Test
@@ -562,7 +563,7 @@ public class FormManagerTest extends SpringTransactionalTest {
 
     // regular delete works, so long as has permission
     formMgr.delete(form.getId(), user);
-    assertEquals(b4 - 1, formMgr.getAllCurrentNormalForms().size());
+    assertThat(formMgr.getAllCurrentNormalForms()).hasSize(b4 - 1);
 
     // re-save
     formMgr.save(form, user);
@@ -740,7 +741,7 @@ public class FormManagerTest extends SpringTransactionalTest {
     RSForm original = formMgr.get(form.getId(), user);
     assertEquals(b4.getVersion().longValue(), original.getVersion().getVersion().longValue());
     assertEquals(ORIGINAL_FIELD_COUNT, original.getNumActiveFields());
-    assertEquals(ORIGINAL_TEMP_COUNT, formMgr.getAllCurrentNormalForms().size());
+    assertThat(formMgr.getAllCurrentNormalForms()).hasSize(ORIGINAL_TEMP_COUNT);
     assertFalse(original.getFieldForms().get(0).getName().equals("XXX"));
 
     // check temporary template is deleted
@@ -810,10 +811,9 @@ public class FormManagerTest extends SpringTransactionalTest {
     assertFalse(newlyVersioned.isTemporary());
     assertEquals(b4.getVersion() + 1, newlyVersioned.getVersion().getVersion().longValue());
     assertEquals(2, newlyVersioned.getNumActiveFields());
-    assertEquals(
-        ORIG_NORMAL_FORM_COUNT + 1,
-        formMgr.getAllCurrentNormalForms().size()); // still 1 current version
-    assertEquals(ORIG_FORM_COUNT + 2, formDao.getAll().size()); // but 2 versions in DB
+    assertThat(formMgr.getAllCurrentNormalForms())
+        .hasSize(ORIG_NORMAL_FORM_COUNT + 1); // still 1 current version
+    assertThat(formDao.getAll()).hasSize(ORIG_FORM_COUNT + 2); // but 2 versions in DB
 
     RSForm oldVersion = formMgr.get(newForm.getId(), user);
     assertEquals(oldVersion, newlyVersioned.getPreviousVersion());
@@ -867,7 +867,7 @@ public class FormManagerTest extends SpringTransactionalTest {
   public void formDynamicMenuShowsBasicDocumentForNewUser() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
     FormMenu menu = formMgr.generateFormMenu(anyUser);
-    assertEquals(1, menu.getMenuToAdd().size());
+    assertThat(menu.getMenuToAdd()).hasSize(1);
     assertEquals(formDao.getBasicDocumentForm(), menu.getMenuToAdd().get(0));
   }
 
@@ -923,7 +923,7 @@ public class FormManagerTest extends SpringTransactionalTest {
 
     // now load the new version
     RSForm newlyVersioned = formMgr.get(form.getId(), user);
-    assertEquals(3, newlyVersioned.getFieldForms().size());
+    assertThat(newlyVersioned.getFieldForms()).hasSize(3);
     assertEquals(sft2.getName(), newlyVersioned.getFieldForms().get(0).getName());
     assertEquals(sft3.getName(), newlyVersioned.getFieldForms().get(1).getName());
     assertEquals(sft1.getName(), newlyVersioned.getFieldForms().get(2).getName());

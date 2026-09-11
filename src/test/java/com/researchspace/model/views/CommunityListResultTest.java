@@ -1,6 +1,6 @@
 package com.researchspace.model.views;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Set;
@@ -30,8 +30,8 @@ public class CommunityListResultTest {
     for (String in : inputs) {
       assertTrue(CommunityListResult.validateMultiCommunityAutocompleteInput(in));
       Set<Long> ids2 = CommunityListResult.getCommunityIdsfromMultiGroupAutocomplete(in);
-      assertEquals(2, ids2.size());
-      assertTrue(ids2.contains(567L));
+      assertThat(ids2).hasSize(2);
+      assertThat(ids2).contains(567L);
     }
   }
 }

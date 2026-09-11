@@ -1,5 +1,6 @@
 package com.researchspace.core.util;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.ByteArrayInputStream;
@@ -38,7 +39,7 @@ class LimitedBytesFromURLRetrieverTest {
     LimitedBytesFromURLRetrieverTSS urlRetriever = new LimitedBytesFromURLRetrieverTSS(100, 10);
     urlRetriever.source = new byte[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}; // 1 too big
     byte[] bytes = urlRetriever.retrieveUrlBytesQuietly(VALID_URL, defaultSupplier);
-    assertArrayEquals(defaultSupplier.get(), bytes);
+    assertThat(bytes).containsExactly(defaultSupplier.get());
   }
 
   @Test
@@ -46,7 +47,7 @@ class LimitedBytesFromURLRetrieverTest {
     LimitedBytesFromURLRetrieverTSS urlRetriever = new LimitedBytesFromURLRetrieverTSS(100, 10);
     urlRetriever.source = new byte[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}; // 10 is max allowed length
     byte[] bytes = urlRetriever.retrieveUrlBytesQuietly(VALID_URL, defaultSupplier);
-    assertArrayEquals(urlRetriever.source, bytes);
+    assertThat(bytes).containsExactly(urlRetriever.source);
   }
 
   @Test
@@ -57,6 +58,6 @@ class LimitedBytesFromURLRetrieverTest {
     int timeoutMillis = 100;
     LimitedBytesFromURLRetriever urlRetriever = new LimitedBytesFromURLRetriever(timeoutMillis, 10);
     byte[] bytes = urlRetriever.retrieveUrlBytesQuietly(INVALID_URL, defaultSupplier);
-    assertArrayEquals(defaultSupplier.get(), bytes);
+    assertThat(bytes).containsExactly(defaultSupplier.get());
   }
 }

@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -76,7 +77,7 @@ public class InventoryVersionsApiMVCIT extends API_MVC_InventoryTestBase {
     assertEquals("SA" + createdSample.getId() + "v1", sampleV1.getGlobalId());
     // permitted actions are evaluated against the live record: the owner gets a full view,
     // not the cleared public one
-    assertTrue(sampleV1.getPermittedActions().contains(ApiInventoryRecordPermittedAction.READ));
+    assertThat(sampleV1.getPermittedActions()).contains(ApiInventoryRecordPermittedAction.READ);
 
     // the current version resolves to the live record, not flagged historical
     result =
@@ -136,7 +137,7 @@ public class InventoryVersionsApiMVCIT extends API_MVC_InventoryTestBase {
     assertTrue(subSampleV1.isHistoricalVersion());
     assertEquals(Long.valueOf(1L), subSampleV1.getVersion());
     assertEquals("SS" + subSampleId + "v1", subSampleV1.getGlobalId());
-    assertTrue(subSampleV1.getPermittedActions().contains(ApiInventoryRecordPermittedAction.READ));
+    assertThat(subSampleV1.getPermittedActions()).contains(ApiInventoryRecordPermittedAction.READ);
 
     // the current version resolves to the live record; the subsample sits in the user's
     // workbench, so this exercises lazy parent-container relations across the
@@ -193,12 +194,11 @@ public class InventoryVersionsApiMVCIT extends API_MVC_InventoryTestBase {
             .andReturn();
     ApiInventoryRecordRevisionList history =
         getFromJsonResponseBody(result, ApiInventoryRecordRevisionList.class);
-    assertEquals(2, history.getRevisions().size());
+    assertThat(history.getRevisions()).hasSize(2);
 
     // the version-2 snapshot has a locations image, exposed as a link
-    assertTrue(
-        history.getRevisions().get(1).getRecord().getLinks().stream()
-            .anyMatch(link -> ApiLinkItem.LOCATIONS_IMAGE_REL.equals(link.getRel())));
+    assertThat(history.getRevisions().get(1).getRecord().getLinks())
+        .anyMatch(link -> ApiLinkItem.LOCATIONS_IMAGE_REL.equals(link.getRel()));
 
     // single revision retrieval, without content
     Long firstRevisionId = history.getRevisions().get(0).getRevisionId();
@@ -231,9 +231,8 @@ public class InventoryVersionsApiMVCIT extends API_MVC_InventoryTestBase {
             .andReturn();
     ApiContainer imageBearingRev = getFromJsonResponseBody(result, ApiContainer.class);
     assertEquals("version two container", imageBearingRev.getName());
-    assertTrue(
-        imageBearingRev.getLinks().stream()
-            .anyMatch(link -> ApiLinkItem.LOCATIONS_IMAGE_REL.equals(link.getRel())));
+    assertThat(imageBearingRev.getLinks())
+        .anyMatch(link -> ApiLinkItem.LOCATIONS_IMAGE_REL.equals(link.getRel()));
 
     // version lookup resolves the historical snapshot
     result =
@@ -251,7 +250,7 @@ public class InventoryVersionsApiMVCIT extends API_MVC_InventoryTestBase {
     assertTrue(containerV1.isHistoricalVersion());
     assertEquals("IC" + container.getId() + "v1", containerV1.getGlobalId());
     assertNull(containerV1.getLocations());
-    assertTrue(containerV1.getPermittedActions().contains(ApiInventoryRecordPermittedAction.READ));
+    assertThat(containerV1.getPermittedActions()).contains(ApiInventoryRecordPermittedAction.READ);
 
     // the current version resolves to the live record, content included
     result =
@@ -323,7 +322,7 @@ public class InventoryVersionsApiMVCIT extends API_MVC_InventoryTestBase {
     assertEquals("version one instrument", instrumentV1.getName());
     assertTrue(instrumentV1.isHistoricalVersion());
     assertEquals("IN" + instrument.getId() + "v1", instrumentV1.getGlobalId());
-    assertTrue(instrumentV1.getPermittedActions().contains(ApiInventoryRecordPermittedAction.READ));
+    assertThat(instrumentV1.getPermittedActions()).contains(ApiInventoryRecordPermittedAction.READ);
 
     // the current version resolves to the live record, not flagged historical
     result =
@@ -413,7 +412,7 @@ public class InventoryVersionsApiMVCIT extends API_MVC_InventoryTestBase {
             .andExpect(status().isOk())
             .andReturn();
     ApiSample publicViewSample = getFromJsonResponseBody(result, ApiSample.class);
-    assertTrue(publicViewSample.getPermittedActions().isEmpty());
+    assertThat(publicViewSample.getPermittedActions()).isEmpty();
     assertNull(publicViewSample.getFields());
     assertNull(publicViewSample.getExtraFields());
 
@@ -428,7 +427,7 @@ public class InventoryVersionsApiMVCIT extends API_MVC_InventoryTestBase {
             .andExpect(status().isOk())
             .andReturn();
     ApiSubSample publicViewSubSample = getFromJsonResponseBody(result, ApiSubSample.class);
-    assertTrue(publicViewSubSample.getPermittedActions().isEmpty());
+    assertThat(publicViewSubSample.getPermittedActions()).isEmpty();
     assertNull(publicViewSubSample.getNotes());
     assertNull(publicViewSubSample.getExtraFields());
 
@@ -443,7 +442,7 @@ public class InventoryVersionsApiMVCIT extends API_MVC_InventoryTestBase {
             .andExpect(status().isOk())
             .andReturn();
     ApiContainer publicViewContainer = getFromJsonResponseBody(result, ApiContainer.class);
-    assertTrue(publicViewContainer.getPermittedActions().isEmpty());
+    assertThat(publicViewContainer.getPermittedActions()).isEmpty();
     assertNull(publicViewContainer.getAttachments());
     assertNull(publicViewContainer.getBarcodes());
 
@@ -458,7 +457,7 @@ public class InventoryVersionsApiMVCIT extends API_MVC_InventoryTestBase {
             .andExpect(status().isOk())
             .andReturn();
     ApiInstrument publicViewInstrument = getFromJsonResponseBody(result, ApiInstrument.class);
-    assertTrue(publicViewInstrument.getPermittedActions().isEmpty());
+    assertThat(publicViewInstrument.getPermittedActions()).isEmpty();
     assertNull(publicViewInstrument.getAttachments());
     assertNull(publicViewInstrument.getBarcodes());
   }
@@ -504,7 +503,7 @@ public class InventoryVersionsApiMVCIT extends API_MVC_InventoryTestBase {
             .andReturn();
     ApiInventoryRecordRevisionList history =
         getFromJsonResponseBody(result, ApiInventoryRecordRevisionList.class);
-    assertEquals(2, history.getRevisions().size());
+    assertThat(history.getRevisions()).hasSize(2);
     assertEquals("template version one", history.getRevisions().get(0).getRecord().getName());
     assertEquals("template version two", history.getRevisions().get(1).getRecord().getName());
 
@@ -562,7 +561,7 @@ public class InventoryVersionsApiMVCIT extends API_MVC_InventoryTestBase {
             .andReturn();
     ApiInventoryRecordRevisionList history =
         getFromJsonResponseBody(result, ApiInventoryRecordRevisionList.class);
-    assertEquals(2, history.getRevisions().size());
+    assertThat(history.getRevisions()).hasSize(2);
     assertEquals(
         "instrument template version one", history.getRevisions().get(0).getRecord().getName());
     assertEquals(

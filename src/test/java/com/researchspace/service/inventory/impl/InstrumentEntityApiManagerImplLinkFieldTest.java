@@ -1,5 +1,6 @@
 package com.researchspace.service.inventory.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -653,7 +654,7 @@ class InstrumentEntityApiManagerImplLinkFieldTest {
     // template there are no structured fields to validate, so the exemption cannot be reached
     ArgumentCaptor<Instrument> captor = ArgumentCaptor.forClass(Instrument.class);
     verify(instrumentDao, times(1)).save(captor.capture());
-    assertTrue(captor.getValue().getActiveFields().isEmpty());
+    assertThat(captor.getValue().getActiveFields()).isEmpty();
   }
 
   @Test

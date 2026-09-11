@@ -1,9 +1,9 @@
 package com.researchspace.api.v1.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiSampleTemplate;
@@ -169,10 +169,9 @@ public class SampleTemplateValidatorTest extends InventoryRecordValidationTestBa
 
     Errors errors = validate(putValidator, put);
 
-    assertTrue(
-        errors.getFieldErrors().stream()
-            .anyMatch(fe -> "errors.inventory.template.invalidRelationType".equals(fe.getCode())),
-        "expected an invalid-relation-type error, got: " + errors.getAllErrors());
+    assertThat(errors.getFieldErrors())
+        .as("expected an invalid-relation-type error, got: " + errors.getAllErrors())
+        .anyMatch(fe -> "errors.inventory.template.invalidRelationType".equals(fe.getCode()));
   }
 
   // --- helpers --------------------------------------------------------------------------

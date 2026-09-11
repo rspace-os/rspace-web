@@ -1,5 +1,6 @@
 package com.researchspace.service.archive.export;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -197,14 +198,14 @@ public class NfsExportContextTest {
     assertEquals(testFolderDetails, downloadedFolderDetails);
 
     // reports an error about broken file
-    assertEquals(1, nfsContext.getErrors().size());
+    assertThat(nfsContext.getErrors()).hasSize(1);
     Entry<String, String> brokenFileErrorDetails =
         nfsContext.getErrors().entrySet().iterator().next();
     assertEquals("11_/test/not_downloadable.txt", brokenFileErrorDetails.getKey());
     assertEquals("download error: test error", brokenFileErrorDetails.getValue());
 
     // folder download messages
-    assertEquals(1, nfsContext.getFolderSummaryMsgs().size());
+    assertThat(nfsContext.getFolderSummaryMsgs()).hasSize(1);
     Entry<String, String> folderSummaryMsg =
         nfsContext.getFolderSummaryMsgs().entrySet().iterator().next();
     assertEquals("11_/test", folderSummaryMsg.getKey());
@@ -228,13 +229,13 @@ public class NfsExportContextTest {
 
   @Test
   public void testNotLoggedIntoFileSystemError() throws IOException {
-    assertEquals(0, nfsContext.getErrors().size());
+    assertThat(nfsContext.getErrors()).isEmpty();
 
     // user not logged in to file system
     NfsResourceDetails notLogged =
         nfsContext.getDownloadedNfsResourceDetails(testNfsFileElem, support);
     assertNull(notLogged);
-    assertEquals(1, nfsContext.getErrors().size());
+    assertThat(nfsContext.getErrors()).hasSize(1);
     assertEquals(
         "user not logged into 'Test FS' File System",
         nfsContext.getErrors().values().iterator().next());
@@ -245,7 +246,7 @@ public class NfsExportContextTest {
     NfsResourceDetails noNfsClient =
         nfsContext.getDownloadedNfsResourceDetails(testNfsFileElem2, support);
     assertNull(noNfsClient);
-    assertEquals(2, nfsContext.getErrors().size());
+    assertThat(nfsContext.getErrors()).hasSize(2);
   }
 
   @Test
@@ -267,7 +268,7 @@ public class NfsExportContextTest {
     NfsResourceDetails tooLargeFile =
         nfsContext.getDownloadedNfsResourceDetails(largeNfsElem, support);
     assertNull(tooLargeFile);
-    assertEquals(1, nfsContext.getErrors().size(), "file not filtered by size");
+    assertThat(nfsContext.getErrors()).as("file not filtered by size").hasSize(1);
     assertEquals(
         "file skipped (file larger than provided size limit)",
         nfsContext.getErrors().values().iterator().next());
@@ -283,7 +284,7 @@ public class NfsExportContextTest {
     NfsResourceDetails excludedExtensionFile =
         nfsContext.getDownloadedNfsResourceDetails(excludedExtensionElem, support);
     assertNull(excludedExtensionFile);
-    assertEquals(1, nfsContext.getErrors().size(), "file not filtered by extension");
+    assertThat(nfsContext.getErrors()).as("file not filtered by extension").hasSize(1);
     assertEquals(
         "file skipped (file extension 'tif' excluded)",
         nfsContext.getErrors().values().iterator().next());
@@ -291,7 +292,7 @@ public class NfsExportContextTest {
 
   @Test
   public void testFailedNfsFileDownload() throws IOException {
-    assertEquals(0, nfsContext.getErrors().size());
+    assertThat(nfsContext.getErrors()).isEmpty();
 
     // login user, set up nfsFileHandler throwing IOException
     when(nfsClient.isUserLoggedIn()).thenReturn(true);
@@ -302,7 +303,7 @@ public class NfsExportContextTest {
     NfsResourceDetails downloadException =
         nfsContext.getDownloadedNfsResourceDetails(testNfsFileElem, support);
     assertNull(downloadException);
-    assertEquals(1, nfsContext.getErrors().size());
+    assertThat(nfsContext.getErrors()).hasSize(1);
   }
 
   @Test
@@ -316,7 +317,7 @@ public class NfsExportContextTest {
     NfsResourceDetails denied =
         nfsContext.getDownloadedNfsResourceDetails(testNfsFileElem, support);
     assertNull(denied);
-    assertEquals(1, nfsContext.getErrors().size());
+    assertThat(nfsContext.getErrors()).hasSize(1);
     assertEquals(
         "no read access to 'Test FS' File System",
         nfsContext.getErrors().values().iterator().next());
@@ -333,7 +334,7 @@ public class NfsExportContextTest {
     NfsResourceDetails denied =
         nfsContext.getDownloadedNfsResourceDetails(testNfsFileElem, support);
     assertNull(denied);
-    assertEquals(1, nfsContext.getErrors().size());
+    assertThat(nfsContext.getErrors()).hasSize(1);
     assertEquals(
         "no read access to 'Test FS' File System",
         nfsContext.getErrors().values().iterator().next());

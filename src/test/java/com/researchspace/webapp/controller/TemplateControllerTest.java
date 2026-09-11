@@ -1,8 +1,7 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.core.util.MediaUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
@@ -25,12 +24,12 @@ public class TemplateControllerTest extends SpringTransactionalTest {
     String docTemplate =
         templateController.getTemplate(TemplateController.INSERTED_DOCUMENT_TEMPLATE);
     assertAllPropsReplaced(docTemplate);
-    assertTrue(docTemplate.contains(MediaUtils.DOCUMENT_MEDIA_FLDER_NAME));
+    assertThat(docTemplate).contains(MediaUtils.DOCUMENT_MEDIA_FLDER_NAME);
 
     String miscTemplate =
         templateController.getTemplate(TemplateController.INSERTED_MISCDOC_TEMPLATE);
     assertAllPropsReplaced(docTemplate);
-    assertTrue(miscTemplate.contains(MediaUtils.MISC_MEDIA_FLDER_NAME));
+    assertThat(miscTemplate).contains(MediaUtils.MISC_MEDIA_FLDER_NAME);
 
     String avTemplate = templateController.getTemplate(TemplateController.INSERTED_AV_TEMPLATE);
     assertAllPropsReplaced(avTemplate);
@@ -63,6 +62,6 @@ public class TemplateControllerTest extends SpringTransactionalTest {
 
   private void assertAllPropsReplaced(String processedTemplate) {
     assertNotNull(processedTemplate);
-    assertFalse(processedTemplate.contains("$")); // check all variable replaced.
+    assertThat(processedTemplate).doesNotContain("$"); // check all variable replaced.
   }
 }

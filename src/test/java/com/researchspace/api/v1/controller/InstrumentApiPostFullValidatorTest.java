@@ -1,8 +1,8 @@
 package com.researchspace.api.v1.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.api.v1.controller.InstrumentsApiController.ApiInstrumentFullPost;
 import com.researchspace.api.v1.model.ApiField.ApiFieldType;
@@ -108,7 +108,7 @@ public class InstrumentApiPostFullValidatorTest extends InventoryRecordValidatio
     assertEquals(1, errors.getErrorCount());
     assertEquals("errors.inventory.field.validation", errors.getGlobalErrors().get(0).getCode());
     String invalidNumberMessage = (String) errors.getGlobalErrors().get(0).getArguments()[0];
-    assertTrue(invalidNumberMessage.contains("Invalid number"));
+    assertThat(invalidNumberMessage).contains("Invalid number");
 
     invalidNumberField.setContent("3.56");
     errors = new BeanPropertyBindingResult(apiInstrumentPost, "apiInstrument");
@@ -180,7 +180,7 @@ public class InstrumentApiPostFullValidatorTest extends InventoryRecordValidatio
 
   private Object getFirstArgument(FieldError fieldError) {
     assertNotNull(fieldError.getArguments());
-    assertTrue(fieldError.getArguments().length > 0);
+    assertThat(fieldError.getArguments().length).isGreaterThan(0);
     return fieldError.getArguments()[0];
   }
 }

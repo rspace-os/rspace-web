@@ -1,5 +1,6 @@
 package com.researchspace.webapp.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -18,7 +19,6 @@ import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.NfsManager;
 import com.researchspace.service.UserManager;
 import com.researchspace.testutils.TestFactory;
-import java.util.List;
 import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -78,8 +78,8 @@ public class NfsSysAdminControllerTest {
   public void saveFileSystem() {
     NfsFileSystemSaveResult result = nfsSystemCtrller.saveFileSystem(nfs);
     assertEquals(12L, result.getFileSystemId().longValue());
-    assertTrue(result.getUnknownReadAllowlistUsernames().isEmpty());
-    assertTrue(result.getUnknownWriteAllowlistUsernames().isEmpty());
+    assertThat(result.getUnknownReadAllowlistUsernames()).isEmpty();
+    assertThat(result.getUnknownWriteAllowlistUsernames()).isEmpty();
     verify(netFilesMgr, atLeastOnce()).saveNfsFileSystem(nfs);
   }
 
@@ -94,8 +94,8 @@ public class NfsSysAdminControllerTest {
 
     NfsFileSystemSaveResult result = nfsSystemCtrller.saveFileSystem(nfs);
 
-    assertEquals(List.of("bob"), result.getUnknownReadAllowlistUsernames());
-    assertEquals(List.of("carol"), result.getUnknownWriteAllowlistUsernames());
+    assertThat(result.getUnknownReadAllowlistUsernames()).containsExactly("bob");
+    assertThat(result.getUnknownWriteAllowlistUsernames()).containsExactly("carol");
     verify(netFilesMgr, atLeastOnce()).saveNfsFileSystem(nfs);
   }
 
@@ -107,9 +107,9 @@ public class NfsSysAdminControllerTest {
     IllegalArgumentException ex =
         Assertions.assertThrows(
             IllegalArgumentException.class, () -> nfsSystemCtrller.saveFileSystem(nfs));
-    Assertions.assertTrue(
-        ex.getMessage().contains("alice"),
-        "expected error to name the duplicated user, got: " + ex.getMessage());
+    assertThat(ex.getMessage())
+        .as("expected error to name the duplicated user, got: " + ex.getMessage())
+        .contains("alice");
     verify(netFilesMgr, never()).saveNfsFileSystem(nfs);
   }
 
@@ -136,8 +136,8 @@ public class NfsSysAdminControllerTest {
 
     NfsFileSystemSaveResult result = nfsSystemCtrller.saveFileSystem(nfs);
 
-    assertTrue(result.getUnknownReadAllowlistUsernames().isEmpty());
-    assertTrue(result.getUnknownWriteAllowlistUsernames().isEmpty());
+    assertThat(result.getUnknownReadAllowlistUsernames()).isEmpty();
+    assertThat(result.getUnknownWriteAllowlistUsernames()).isEmpty();
     verify(netFilesMgr, atLeastOnce()).saveNfsFileSystem(nfs);
   }
 
@@ -148,8 +148,8 @@ public class NfsSysAdminControllerTest {
 
     NfsFileSystemSaveResult result = nfsSystemCtrller.saveFileSystem(nfs);
 
-    assertTrue(result.getUnknownReadAllowlistUsernames().isEmpty());
-    assertTrue(result.getUnknownWriteAllowlistUsernames().isEmpty());
+    assertThat(result.getUnknownReadAllowlistUsernames()).isEmpty();
+    assertThat(result.getUnknownWriteAllowlistUsernames()).isEmpty();
     verify(userMgr, never()).getUserByUsername(Mockito.anyString());
   }
 

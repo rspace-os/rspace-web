@@ -1,6 +1,7 @@
 package com.researchspace.documentconversion.ext;
 
 import static org.apache.commons.io.FilenameUtils.getBaseName;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -68,7 +69,7 @@ public class AsposeWebAppClientTestIT {
     assertNotNull(converted);
     assertEquals(EXPECTED_WORDFILE_TO_HTML_LENGTH, converted.length());
     // html + 3 image files
-    assertEquals(4, tempFolder.listFiles().length);
+    assertThat(tempFolder.listFiles()).hasSize(4);
   }
 
   @Test

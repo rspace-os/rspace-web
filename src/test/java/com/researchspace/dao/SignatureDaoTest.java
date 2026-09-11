@@ -1,5 +1,6 @@
 package com.researchspace.dao;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -35,7 +36,7 @@ public class SignatureDaoTest extends SpringTransactionalTest {
     signatureDao.save(sig);
 
     Signature reloaded = signatureDao.get(sig.getId());
-    assertEquals(1, reloaded.getWitnesses().size());
+    assertThat(reloaded.getWitnesses()).hasSize(1);
     assertNotNull(reloaded.getRecordSigned());
   }
 
@@ -94,7 +95,7 @@ public class SignatureDaoTest extends SpringTransactionalTest {
     signatureDao.save(sig);
 
     Signature saved = signatureDao.getSignatureByRecordId(sig.getRecordSigned().getId());
-    assertTrue(saved.getHashes().isEmpty());
+    assertThat(saved.getHashes()).isEmpty();
 
     FileStoreRoot root = fileStore.getCurrentFileStoreRoot();
     File actualFile = RSpaceTestUtils.getAnyAttachment();
@@ -106,7 +107,7 @@ public class SignatureDaoTest extends SpringTransactionalTest {
     signatureDao.save(sig);
 
     Signature updated = signatureDao.getSignatureByRecordId(sig.getRecordSigned().getId());
-    assertEquals(1, updated.getHashes().size());
+    assertThat(updated.getHashes()).hasSize(1);
 
     SignatureHash savedHash = (SignatureHash) updated.getHashes().toArray()[0];
     assertNotNull(savedHash.getId());
@@ -116,7 +117,7 @@ public class SignatureDaoTest extends SpringTransactionalTest {
     sig.generateRecordContentHash();
     signatureDao.save(sig);
     Signature updated2 = signatureDao.getSignatureByRecordId(sig.getRecordSigned().getId());
-    assertEquals(2, updated2.getHashes().size());
+    assertThat(updated2.getHashes()).hasSize(2);
 
     sig.setHashes(null);
     signatureDao.save(sig);

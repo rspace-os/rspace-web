@@ -1,5 +1,6 @@
 package com.researchspace.model.permissions;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -60,11 +61,11 @@ public class RecordSharingACLTest {
     RecordSharingACL acl = new RecordSharingACL();
     acl.addACLElement(alice, multi);
     acl.addACLElement(piUserInGroup, multi);
-    assertTrue(acl.getString().contains("alice"));
+    assertThat(acl.getString()).contains("alice");
     acl.removeACLsforUserOrGroup(alice);
     assertFalse(acl.isPermitted(alice, PermissionType.READ));
     assertFalse(acl.isPermitted(alice, PermissionType.DELETE));
-    assertFalse(acl.getString().contains("alice"));
+    assertThat(acl.getString()).doesNotContain("alice");
     assertTrue(acl.isPermitted(piUserInGroup, PermissionType.READ));
     assertTrue(acl.isPermitted(piUserInGroup, PermissionType.DELETE));
   }

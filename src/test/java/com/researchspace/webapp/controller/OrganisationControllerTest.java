@@ -1,6 +1,6 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.researchspace.model.Organisation;
 import com.researchspace.testutils.CommunityTestContext;
@@ -30,12 +30,12 @@ public class OrganisationControllerTest extends SpringTransactionalTest {
   public void getApprovedOrganisationsTest() {
 
     List<Organisation> result = organisationController.getApprovedOrganisations("Yunnan").getData();
-    assertFalse(result.isEmpty());
+    assertThat(result).isNotEmpty();
 
     result = organisationController.getApprovedOrganisations("Edinburgh").getData();
-    assertFalse(result.isEmpty());
+    assertThat(result).isNotEmpty();
 
     result = organisationController.getApprovedOrganisations("University of Edinburgh").getData();
-    assertFalse(result.isEmpty());
+    assertThat(result).isNotEmpty();
   }
 }

@@ -1,5 +1,6 @@
 package com.researchspace.service.inventory.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -141,13 +142,13 @@ class RspaceToExternalProviderAdapterImplTest {
     assertEquals("Microscope X", md.getName());
     assertEquals("1.0", md.getSchemaVersion());
     assertEquals("An automatic weather station.", md.getDescription());
-    assertEquals(1, md.getOwner().size());
+    assertThat(md.getOwner()).hasSize(1);
     assertEquals("Arctic Research Institute", md.getOwner().get(0).getOwnerName());
     assertEquals("jane@example.org", md.getOwner().get(0).getOwnerContact());
     assertEquals("Acme Instruments", md.getManufacturer().get(0).getManufacturerName());
     assertEquals("AWS-42", md.getModel().getModelName());
     assertEquals("Weather station", md.getInstrumentType().get(0).getInstrumentTypeName());
-    assertEquals(2, md.getDate().size());
+    assertThat(md.getDate()).hasSize(2);
     assertEquals("2024-02-21", md.getDate().get(0).getDate());
     assertEquals("Commissioned", md.getDate().get(0).getDateType());
     assertEquals("2025-04-23", md.getDate().get(1).getDate());
@@ -510,7 +511,7 @@ class RspaceToExternalProviderAdapterImplTest {
     // mapping ADR 0005 rejected. "Last calibrated" still feeds no PIDINST property at all.
     assertNull(md.getMeasuredVariable());
     assertNull(md.getDate());
-    assertEquals(2, md.getRelatedIdentifier().size());
+    assertThat(md.getRelatedIdentifier()).hasSize(2);
   }
 
   @Test
@@ -665,7 +666,7 @@ class RspaceToExternalProviderAdapterImplTest {
     B2instDoi doi = adapter.buildB2instDoi(instrument, PUBLIC_PAGE);
 
     List<B2instRelatedIdentifier> related = doi.getMetadata().getRelatedIdentifier();
-    assertEquals(2, related.size());
+    assertThat(related).hasSize(2);
     // Measurement Technique first, Calibration second, as in the ticket's example payloads.
     // relationType is always IsDescribedBy, whatever the link stores: PIDINST's vocabulary has
     // no IsDocumentedBy/IsCalibratedBy (ADR 0007).
@@ -807,7 +808,7 @@ class RspaceToExternalProviderAdapterImplTest {
 
     List<B2instRelatedIdentifier> related =
         adapter.buildB2instDoi(instrument, PUBLIC_PAGE).getMetadata().getRelatedIdentifier();
-    assertEquals(1, related.size());
+    assertThat(related).hasSize(1);
     assertEquals("Measurement Technique", related.get(0).getRelatedIdentifierName());
   }
 
@@ -824,7 +825,7 @@ class RspaceToExternalProviderAdapterImplTest {
 
     List<DataCiteDoiAttributes.RelatedIdentifier> related =
         result.getAttributes().getRelatedIdentifiers();
-    assertEquals(2, related.size());
+    assertThat(related).hasSize(2);
     assertEquals("IsDescribedBy", related.get(0).getRelationType());
     assertEquals(SERVER + "/globalId/IN114", related.get(0).getRelatedIdentifier());
     assertEquals("URL", related.get(0).getRelatedIdentifierType());
@@ -938,7 +939,7 @@ class RspaceToExternalProviderAdapterImplTest {
             .valueToTree(adapter.buildDataCiteDoi(doi, templateShapedInstrument()))
             .at("/attributes/relatedIdentifiers");
     assertTrue(cleared.isArray(), "the clear must serialize as [], not null");
-    assertEquals(0, cleared.size());
+    assertThat(cleared).hasSize(0);
   }
 
   @Test

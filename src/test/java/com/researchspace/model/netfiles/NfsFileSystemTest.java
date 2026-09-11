@@ -1,7 +1,7 @@
 package com.researchspace.model.netfiles;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
@@ -51,12 +51,12 @@ public class NfsFileSystemTest {
 
     NfsFileSystemInfo sambaInfo = sambaFileSystem.toFileSystemInfo();
     assertEquals("SAMBA", sambaInfo.getClientType());
-    assertTrue(sambaInfo.getOptions().isEmpty());
+    assertThat(sambaInfo.getOptions()).isEmpty();
 
     sambaFileSystem.setClientType(NfsClientType.SMBJ);
     NfsFileSystemInfo smbjInfo = sambaFileSystem.toFileSystemInfo();
     assertEquals("SMBJ", smbjInfo.getClientType());
-    assertEquals(1, smbjInfo.getOptions().size());
+    assertThat(smbjInfo.getOptions()).hasSize(1);
     assertEquals(
         "testShare", smbjInfo.getOptions().get(NfsFileSystemOption.SAMBA_SHARE_NAME.toString()));
   }

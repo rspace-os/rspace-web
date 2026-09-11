@@ -1,9 +1,9 @@
 package com.researchspace.ldap;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.SignupSource;
 import com.researchspace.model.User;
@@ -50,13 +50,13 @@ public class UserLdapRepoTest extends SpringTransactionalTest {
 
     var exception1 =
         assertThrows(IllegalStateException.class, () -> userLdapRepo.findUserByUsername("user"));
-    assertTrue(exception1.getMessage().contains("LDAP not configured"));
+    assertThat(exception1.getMessage()).contains("LDAP not configured");
     var exception2 =
         assertThrows(IllegalStateException.class, () -> userLdapRepo.authenticate("user", "pass"));
-    assertTrue(exception2.getMessage().contains("LDAP not configured"));
+    assertThat(exception2.getMessage()).contains("LDAP not configured");
     var exception3 =
         assertThrows(IllegalStateException.class, () -> userLdapRepo.signupLdapUser(null));
-    assertTrue(exception3.getMessage().contains("LDAP not configured"));
+    assertThat(exception3.getMessage()).contains("LDAP not configured");
   }
 
   @Test
@@ -138,7 +138,7 @@ public class UserLdapRepoTest extends SpringTransactionalTest {
         assertThrows(
             IllegalArgumentException.class,
             () -> spyUserLdapRepo.retrieveSidForLdapUser(testUsername));
-    assertTrue(exception4.getMessage().contains("non-ldap"));
+    assertThat(exception4.getMessage()).contains("non-ldap");
 
     // run for ldap user without sid
     String retrievedSID = spyUserLdapRepo.retrieveSidForLdapUser(testUser2.getUsername());
@@ -150,6 +150,6 @@ public class UserLdapRepoTest extends SpringTransactionalTest {
         assertThrows(
             IllegalArgumentException.class,
             () -> spyUserLdapRepo.retrieveSidForLdapUser(testUsername3));
-    assertTrue(exception5.getMessage().contains("user with SID"));
+    assertThat(exception5.getMessage()).contains("user with SID");
   }
 }

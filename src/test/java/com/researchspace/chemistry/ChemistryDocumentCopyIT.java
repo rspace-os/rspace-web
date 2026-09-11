@@ -1,6 +1,6 @@
 package com.researchspace.chemistry;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.researchspace.model.ChemSearchedItem;
 import com.researchspace.model.RSChemElement;
@@ -36,7 +36,7 @@ public class ChemistryDocumentCopyIT extends RealTransactionSpringTestBase {
     // confirm 1 search result when searching for the chemical structure
     List<ChemSearchedItem> searchHits =
         chemElementManager.search(chem.getSmilesString(), "EXACT", 1000, user);
-    assertEquals(1, searchHits.size());
+    assertThat(searchHits).hasSize(1);
 
     // copy the doc
     recordManager.copy(doc.getId(), "copy", user, user.getRootFolder().getId());
@@ -44,6 +44,6 @@ public class ChemistryDocumentCopyIT extends RealTransactionSpringTestBase {
     // confirm 2 search results
     List<ChemSearchedItem> searchHitsAfterCopy =
         chemElementManager.search(chem.getSmilesString(), "EXACT", 1000, user);
-    assertEquals(2, searchHitsAfterCopy.size());
+    assertThat(searchHitsAfterCopy).hasSize(2);
   }
 }

@@ -2,8 +2,8 @@ package com.researchspace.service;
 
 import static com.researchspace.model.dtos.AbstractFormFieldDTO.MAX_NAME_LENGTH;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.ChoiceFieldDTO;
@@ -51,7 +51,7 @@ public class FormManagerIT extends RealTransactionSpringTestBase {
         assertThrows(
             ConstraintViolationException.class,
             () -> formMgr.createFieldForm(invalidChoice, formId, user));
-    assertTrue(exception1.getMessage().contains("choice options is a required field"));
+    assertThat(exception1.getMessage()).contains("choice options is a required field");
 
     DateFieldDTO<DateFieldForm> invalidDate = DateFieldDTOValidatorTest.createValid();
     invalidDate.setDateFormat("");
@@ -59,7 +59,7 @@ public class FormManagerIT extends RealTransactionSpringTestBase {
         assertThrows(
             ConstraintViolationException.class,
             () -> formMgr.createFieldForm(invalidDate, formId, user));
-    assertTrue(exception2.getMessage().contains("format is a required field"));
+    assertThat(exception2.getMessage()).contains("format is a required field");
 
     RadioFieldDTO<RadioFieldForm> invalidRadio = RadioFieldDTOValidatorTest.createValid();
     invalidRadio.setRadioValues("   ");
@@ -67,7 +67,7 @@ public class FormManagerIT extends RealTransactionSpringTestBase {
         assertThrows(
             ConstraintViolationException.class,
             () -> formMgr.createFieldForm(invalidRadio, formId, user));
-    assertTrue(exception3.getMessage().contains("radio options is a required field"));
+    assertThat(exception3.getMessage()).contains("radio options is a required field");
 
     TextFieldDTO<TextFieldForm> invalidText = TextFieldDTOValidatorTest.createValid();
     invalidText.setName(randomAlphabetic(MAX_NAME_LENGTH + 1));
@@ -75,6 +75,6 @@ public class FormManagerIT extends RealTransactionSpringTestBase {
         assertThrows(
             ConstraintViolationException.class,
             () -> formMgr.createFieldForm(invalidText, formId, user));
-    assertTrue(exception4.getMessage().contains("size must be between"));
+    assertThat(exception4.getMessage()).contains("size must be between");
   }
 }

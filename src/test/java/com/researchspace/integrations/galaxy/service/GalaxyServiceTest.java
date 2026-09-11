@@ -21,6 +21,7 @@ import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTest
 import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.createWorkflowInvocationSummaryStatusResponseForState;
 import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.makeGalaxyDataAssertions;
 import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother.makeGalaxyDataAssertionsWithInvocation;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -275,7 +276,7 @@ public class GalaxyServiceTest {
     List<GalaxySummaryStatusReport> result =
         galaxyService.getSummaryGalaxyDataForRSpaceField(1L, user);
 
-    assertEquals(0, result.size());
+    assertThat(result).isEmpty();
     verify(externalWorkFlowDataManager)
         .findWorkFlowDataByRSpaceContainerIdAndServiceType(
             1L, ExternalWorkFlowData.ExternalService.GALAXY);
@@ -299,7 +300,7 @@ public class GalaxyServiceTest {
     List<GalaxySummaryStatusReport> result =
         galaxyService.getSummaryGalaxyDataForRSpaceField(1L, user);
 
-    assertEquals(1, result.size());
+    assertThat(result).hasSize(1);
     verify(externalWorkFlowDataManager)
         .findWorkFlowDataByRSpaceContainerIdAndServiceType(
             1L, ExternalWorkFlowData.ExternalService.GALAXY);
@@ -331,7 +332,7 @@ public class GalaxyServiceTest {
     List<GalaxySummaryStatusReport> result =
         galaxyService.getSummaryGalaxyDataForRSpaceField(1L, user);
 
-    assertEquals(1, result.size());
+    assertThat(result).hasSize(1);
     verify(externalWorkFlowDataManager)
         .findWorkFlowDataByRSpaceContainerIdAndServiceType(
             1L, ExternalWorkFlowData.ExternalService.GALAXY);
@@ -365,7 +366,7 @@ public class GalaxyServiceTest {
     andNonPreExistingWorkFlowIsSavedToDB(testExternalWorkFlowData, INVOCATION_ID_1);
     List<GalaxySummaryStatusReport> result =
         galaxyService.getSummaryGalaxyDataForRSpaceField(1L, user);
-    assertEquals(1, result.size());
+    assertThat(result).hasSize(1);
     verify(externalWorkFlowDataManager)
         .findWorkFlowDataByRSpaceContainerIdAndServiceType(
             1L, ExternalWorkFlowData.ExternalService.GALAXY);
@@ -396,7 +397,7 @@ public class GalaxyServiceTest {
     andNonPreExistingWorkFlowIsSavedToDB(testExternalWorkFlowData, INVOCATION_ID_1);
     List<GalaxySummaryStatusReport> result =
         galaxyService.getSummaryGalaxyDataForRSpaceField(1L, user);
-    assertEquals(1, result.size());
+    assertThat(result).hasSize(1);
     verify(externalWorkFlowDataManager)
         .findWorkFlowDataByRSpaceContainerIdAndServiceType(
             1L, ExternalWorkFlowData.ExternalService.GALAXY);
@@ -427,7 +428,7 @@ public class GalaxyServiceTest {
     andNonPreExistingWorkFlowIsSavedToDB(testExternalWorkFlowData, INVOCATION_ID_1);
     List<GalaxySummaryStatusReport> result =
         galaxyService.getSummaryGalaxyDataForRSpaceField(1L, user);
-    assertEquals(1, result.size());
+    assertThat(result).hasSize(1);
     verify(externalWorkFlowDataManager)
         .findWorkFlowDataByRSpaceContainerIdAndServiceType(
             1L, ExternalWorkFlowData.ExternalService.GALAXY);
@@ -458,7 +459,7 @@ public class GalaxyServiceTest {
     verifyNoMoreInteractions(client);
     List<GalaxySummaryStatusReport> result =
         galaxyService.getSummaryGalaxyDataForRSpaceField(1L, user);
-    assertEquals(1, result.size());
+    assertThat(result).hasSize(1);
     verify(externalWorkFlowDataManager)
         .findWorkFlowDataByRSpaceContainerIdAndServiceType(
             1L, ExternalWorkFlowData.ExternalService.GALAXY);
@@ -581,7 +582,7 @@ public class GalaxyServiceTest {
         testExternalWorkFlowDataNotPreexisting, INVOCATION_ID_1 + "_not_pre");
     List<GalaxySummaryStatusReport> result =
         galaxyService.getSummaryGalaxyDataForRSpaceField(1L, user);
-    assertEquals(2, result.size());
+    assertThat(result).hasSize(2);
     verify(externalWorkFlowDataManager)
         .findWorkFlowDataByRSpaceContainerIdAndServiceType(
             1L, ExternalWorkFlowData.ExternalService.GALAXY);

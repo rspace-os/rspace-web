@@ -1,5 +1,6 @@
 package com.researchspace.webapp.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -91,7 +92,7 @@ public class NotebookEditorControllerMVCIT extends MVCTestBase {
             .andReturn();
     assertNull(result.getResolvedException());
     assertNotNull(result.getModelAndView());
-    assertEquals(nb.getId(), result.getModelAndView().getModel().get("selectedNotebookId"));
+    assertThat(result.getModelAndView().getModel()).containsEntry("selectedNotebookId", nb.getId());
     assertTrue(
         ((ActionPermissionsDTO) result.getModelAndView().getModel().get("permDTO"))
             .isCreateRecord());
@@ -107,7 +108,7 @@ public class NotebookEditorControllerMVCIT extends MVCTestBase {
             .andReturn();
     assertNull(result.getResolvedException());
     assertNotNull(result.getModelAndView());
-    assertEquals(nb.getId(), result.getModelAndView().getModel().get("selectedNotebookId"));
+    assertThat(result.getModelAndView().getModel()).containsEntry("selectedNotebookId", nb.getId());
     assertFalse(
         ((ActionPermissionsDTO) result.getModelAndView().getModel().get("permDTO"))
             .isCreateRecord());

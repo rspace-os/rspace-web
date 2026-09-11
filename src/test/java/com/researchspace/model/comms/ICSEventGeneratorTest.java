@@ -1,7 +1,7 @@
 package com.researchspace.model.comms;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.record.TestFactory;
 import java.io.IOException;
@@ -36,6 +36,6 @@ public class ICSEventGeneratorTest {
     net.fortuna.ical4j.model.Calendar cal = icalgen.createICalEventFor(mor);
     cal.validate();
     assertNotNull(cal);
-    assertTrue(cal.getComponents().size() > 0);
+    assertThat(cal.getComponents()).hasSizeGreaterThan(0);
   }
 }

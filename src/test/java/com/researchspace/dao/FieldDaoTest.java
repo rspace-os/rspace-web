@@ -2,7 +2,7 @@ package com.researchspace.dao;
 
 // import org.compass.core.CompassTemplate;
 // import org.compass.gps.CompassGps;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.researchspace.model.User;
@@ -28,8 +28,8 @@ public class FieldDaoTest extends SpringTransactionalTest {
     initialiseContentWithEmptyContent(u);
     StructuredDocument sd = createBasicDocumentInRootFolderWithText(u, "text");
 
-    assertEquals(1, dao.findByTextContent("tex").size());
-    assertEquals(1, dao.findByTextContent("ext").size());
+    assertThat(dao.findByTextContent("tex")).hasSize(1);
+    assertThat(dao.findByTextContent("ext")).hasSize(1);
   }
 
   @AfterEach

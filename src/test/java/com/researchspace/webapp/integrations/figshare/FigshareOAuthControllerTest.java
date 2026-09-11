@@ -1,8 +1,8 @@
 package com.researchspace.webapp.integrations.figshare;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -95,8 +95,8 @@ class FigshareOAuthControllerTest {
   void connect() throws UnsupportedEncodingException {
     when(propertyHolder.getServerUrl()).thenReturn(serverUrl);
     RedirectView view = figOauthCtrllerTSS.connect();
-    assertTrue(view.getUrl().contains("myrspace.com"));
-    assertTrue(view.getUrl().contains("apps%2Ffigshare%2Fredirect_uri"));
+    assertThat(view.getUrl()).contains("myrspace.com");
+    assertThat(view.getUrl()).contains("apps%2Ffigshare%2Fredirect_uri");
   }
 
   @Test

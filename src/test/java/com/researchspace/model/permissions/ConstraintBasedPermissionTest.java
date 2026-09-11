@@ -1,6 +1,6 @@
 package com.researchspace.model.permissions;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -74,7 +74,7 @@ public class ConstraintBasedPermissionTest {
     toSort.add(userPermission2);
     toSort.add(userPermission);
     Collections.sort(toSort);
-    assertEquals(userPermission, toSort.get(0));
+    assertThat(toSort).element(0).isEqualTo(userPermission);
 
     // now set domains the same, alter type
     userPermission2.setDomain(PermissionDomain.RECORD);
@@ -82,7 +82,7 @@ public class ConstraintBasedPermissionTest {
     userPermission.addPermissionType(PermissionType.WRITE);
 
     Collections.sort(toSort);
-    assertEquals(userPermission2, toSort.get(0));
+    assertThat(toSort).element(0).isEqualTo(userPermission2);
   }
 
   @Test
@@ -248,10 +248,10 @@ public class ConstraintBasedPermissionTest {
     long slowEnd = sw.getTime();
     long slowElapsed = slowEnd - slowStart;
 
-    assertEquals(NUM_INDIVIDUAL_PERMS, allPerms.size());
+    assertThat(allPerms).hasSize(NUM_INDIVIDUAL_PERMS);
     new ConstraintPermissionResolver().flattenRecordReadWritePermissions(allPerms);
     final int EXPECTED_PERM_COUNT_AFTER_FLATTENING = 18;
-    assertEquals(EXPECTED_PERM_COUNT_AFTER_FLATTENING, allPerms.size());
+    assertThat(allPerms).hasSize(EXPECTED_PERM_COUNT_AFTER_FLATTENING);
 
     inf.setObjectPermissions(new HashSet<>(allPerms));
     long speededStart = sw.getTime();

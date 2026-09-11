@@ -1,11 +1,11 @@
 package com.researchspace.webapp.integrations.dmpassistant;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -195,9 +195,9 @@ class DMPAssistantControllerTest {
     mockServer.verify();
     assertEquals("connect/connected", result);
     String connectionError = (String) model.getAttribute("connectionError");
-    assertTrue(
-        connectionError.contains("empty body"),
-        "Expected a descriptive empty-body message but was: " + connectionError);
+    assertThat(connectionError)
+        .as("Expected a descriptive empty-body message but was: " + connectionError)
+        .contains("empty body");
     verify(userConnectionManager, never()).save(any(UserConnection.class));
   }
 
@@ -535,9 +535,9 @@ class DMPAssistantControllerTest {
             || surfaced.contains("<html")
             || surfaced.contains("<script"),
         "HTML body must not leak into the user-facing error message but was: " + surfaced);
-    assertFalse(
-        surfaced.contains("cloudflare"),
-        "Upstream challenge content must not leak into the user-facing error message");
+    assertThat(surfaced)
+        .as("Upstream challenge content must not leak into the user-facing error message")
+        .doesNotContain("cloudflare");
   }
 
   private void stubAccessToken(String token) {

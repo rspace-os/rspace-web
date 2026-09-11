@@ -1,7 +1,7 @@
 package com.researchspace.service;
 
 import static com.researchspace.testutils.RSpaceTestUtils.logoutCurrUserAndLoginAs;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -170,10 +170,10 @@ public class RecordDeletionManagerTest extends SpringTransactionalTest {
     recordDeletionMgr.deleteFolder(root.getId(), f.getId(), user);
 
     Folder deletedf1 = folderDao.get(f.getId());
-    assertEquals(1, deletedf1.getChildren().size()); // still is a child - reln is till there
+    assertThat(deletedf1.getChildren()).hasSize(1); // still is a child - reln is till there
 
     Folder deletedf2 = folderDao.get(f2.getId());
-    assertEquals(1, deletedf2.getChildren().size()); // still is a child - reln is till there
+    assertThat(deletedf2.getChildren()).hasSize(1); // still is a child - reln is till there
     Record deletedsdoc = recordDao.get(sdoc.getId());
     assertTrue(deletedsdoc.isDeleted());
     assertTrue(deletedsdoc.getParents().iterator().next().isRecordInFolderDeleted());
@@ -191,10 +191,10 @@ public class RecordDeletionManagerTest extends SpringTransactionalTest {
     var dmpUser = new DMPUser(user, new DmpDto("DMPid23", "somet title"));
     dmpUser.setDmpDownloadFile(ecatDocumentFile);
     dmpMgr.save(dmpUser);
-    assertEquals(1, dmpMgr.findDMPsForUser(user).size());
+    assertThat(dmpMgr.findDMPsForUser(user)).hasSize(1);
 
     recordDeletionMgr.deleteRecord(null, ecatDocumentFile.getId(), user);
-    assertEquals(0, dmpMgr.findDMPsForUser(user).size());
+    assertThat(dmpMgr.findDMPsForUser(user)).isEmpty();
   }
 
   private RecordInformation uploadImageIntoRspace(String name) throws IOException {

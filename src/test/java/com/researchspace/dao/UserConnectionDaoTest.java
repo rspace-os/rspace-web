@@ -1,8 +1,7 @@
 package com.researchspace.dao;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.oauth.UserConnectionId;
@@ -25,18 +24,18 @@ public class UserConnectionDaoTest extends SpringTransactionalTest {
     UserConnection conn = new UserConnection(id, "accessToken");
     conn.setRefreshToken("refreshToken");
     userConnectionDao.save(conn);
-    assertEquals(initialCount + 1, userConnectionDao.getAllDistinct().size());
+    assertThat(userConnectionDao.getAllDistinct()).hasSize(initialCount + 1);
 
     UserConnection retrieved = userConnectionDao.get(id);
     assertEquals(conn, retrieved);
 
-    assertFalse(
-        userConnectionDao.findByUserNameProviderName("unknownUser", "unknownProvider").isPresent());
-    assertTrue(
-        userConnectionDao.findByUserNameProviderName(RSPACEUSERNAME, PROVIDER_NAME).isPresent());
+    assertThat(userConnectionDao.findByUserNameProviderName("unknownUser", "unknownProvider"))
+        .isNotPresent();
+    assertThat(userConnectionDao.findByUserNameProviderName(RSPACEUSERNAME, PROVIDER_NAME))
+        .isPresent();
 
     assertEquals(1, userConnectionDao.deleteByUserAndProvider(RSPACEUSERNAME, PROVIDER_NAME));
-    assertEquals(initialCount, userConnectionDao.getAllDistinct().size());
+    assertThat(userConnectionDao.getAllDistinct()).hasSize(initialCount);
   }
 
   @Test
@@ -47,21 +46,21 @@ public class UserConnectionDaoTest extends SpringTransactionalTest {
     UserConnection conn = new UserConnection(id, "accessToken");
     conn.setRefreshToken("refreshToken");
     userConnectionDao.save(conn);
-    assertEquals(initialCount + 1, userConnectionDao.getAllDistinct().size());
+    assertThat(userConnectionDao.getAllDistinct()).hasSize(initialCount + 1);
 
     UserConnection retrieved = userConnectionDao.get(id);
     assertEquals(conn, retrieved);
 
-    assertFalse(
-        userConnectionDao.findByUserNameProviderName("unknownUser", DISCRIMINANT).isPresent());
-    assertTrue(
-        userConnectionDao
-            .findByUserNameProviderName(RSPACEUSERNAME, PROVIDER_NAME, DISCRIMINANT)
-            .isPresent());
+    assertThat(userConnectionDao.findByUserNameProviderName("unknownUser", DISCRIMINANT))
+        .isNotPresent();
+    assertThat(
+            userConnectionDao.findByUserNameProviderName(
+                RSPACEUSERNAME, PROVIDER_NAME, DISCRIMINANT))
+        .isPresent();
 
     assertEquals(
         1, userConnectionDao.deleteByUserAndProvider(RSPACEUSERNAME, PROVIDER_NAME, DISCRIMINANT));
-    assertEquals(initialCount, userConnectionDao.getAllDistinct().size());
+    assertThat(userConnectionDao.getAllDistinct()).hasSize(initialCount);
   }
 
   @Test
@@ -88,10 +87,10 @@ public class UserConnectionDaoTest extends SpringTransactionalTest {
             + 1);
     userConnectionDao.save(conn3);
 
-    assertEquals(initialCount + 3, userConnectionDao.getAllDistinct().size());
+    assertThat(userConnectionDao.getAllDistinct()).hasSize(initialCount + 3);
 
-    assertEquals(
-        3, userConnectionDao.findListByUserNameProviderName(RSPACEUSERNAME, PROVIDER_NAME).size());
+    assertThat(userConnectionDao.findListByUserNameProviderName(RSPACEUSERNAME, PROVIDER_NAME))
+        .hasSize(3);
     assertEquals(
         Optional.of(3),
         userConnectionDao.findMaxRankByUserNameProviderName(RSPACEUSERNAME, PROVIDER_NAME));
@@ -99,10 +98,10 @@ public class UserConnectionDaoTest extends SpringTransactionalTest {
     List<UserConnection> listConnections =
         userConnectionDao.findListByUserNameProviderName(RSPACEUSERNAME, PROVIDER_NAME);
     for (UserConnection currentUserConnection : listConnections) {
-      assertTrue(currentUserConnection.getAccessToken().startsWith("accessToken")); // decrypt works
+      assertThat(currentUserConnection.getAccessToken()).startsWith("accessToken"); // decrypt works
     }
 
     assertEquals(3, userConnectionDao.deleteByUserAndProvider(RSPACEUSERNAME, PROVIDER_NAME));
-    assertEquals(initialCount, userConnectionDao.getAllDistinct().size());
+    assertThat(userConnectionDao.getAllDistinct()).hasSize(initialCount);
   }
 }

@@ -1,6 +1,6 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -45,9 +45,9 @@ public class GlobalLookupControllerMVCIT extends MVCTestBase {
       assertRedirect(nbVersionGid, NotebookEditorController.ROOT_URL);
       fail("expected redirect error on global identifier: " + nbVersionGid);
     } catch (AssertionError ae) {
-      assertTrue(
-          ae.getMessage().contains("but: was \"error\""),
-          "expected redirect to 'error', but msg was: " + ae.getMessage());
+      assertThat(ae.getMessage())
+          .as("expected redirect to 'error', but msg was: " + ae.getMessage())
+          .contains("but: was \"error\"");
     }
 
     GlobalIdentifier flGid = new GlobalIdentifier(GlobalIdPrefix.FL, 12345L);

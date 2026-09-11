@@ -1,6 +1,7 @@
 package com.researchspace.service.inventory;
 
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -90,7 +91,7 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
     ISearchResults<ApiContainerInfo> defaultContainerResult =
         containerApiMgr.getTopContainersForUser(pgCrit, null, null, testUser);
     assertEquals(2, defaultContainerResult.getTotalHits().intValue());
-    assertEquals(2, defaultContainerResult.getResults().size());
+    assertThat(defaultContainerResult.getResults()).hasSize(2);
     assertEquals(
         ContentInitializerForDevRunManager.EXAMPLE_TOP_LIST_CONTAINER_NAME,
         defaultContainerResult.getResults().get(0).getName());
@@ -127,29 +128,29 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
     assertNotNull(topImageContainer.getImageFileProperty());
     assertNotNull(topImageContainer.getThumbnailFileProperty());
     assertTrue(topImageContainer.isImageLayoutContainer());
-    assertEquals(1, topImageContainer.getAttachedFiles().size());
+    assertThat(topImageContainer.getAttachedFiles()).hasSize(1);
     assertEquals(
         ContentInitializerForDevRunManager.EXAMPLE_TOP_IMAGE_CONTAINER_ATTACHMENT_NAME,
         topImageContainer.getAttachedFiles().get(0).getFileName());
 
     // that's somehow still reacheable through spring transactional test, even with lazy
     // initialization
-    assertEquals(3, topListContainer.getLocations().size());
-    assertEquals(3, topListContainer.getStoredContainers().size());
+    assertThat(topListContainer.getLocations()).hasSize(3);
+    assertThat(topListContainer.getStoredContainers()).hasSize(3);
     Container subcontainer1A = topListContainer.getStoredContainers().get(0);
-    assertEquals(3, subcontainer1A.getStoredContainers().size());
+    assertThat(subcontainer1A.getStoredContainers()).hasSize(3);
     Container subcontainer1B = topListContainer.getStoredContainers().get(1);
-    assertEquals(0, subcontainer1B.getStoredContainers().size());
+    assertThat(subcontainer1B.getStoredContainers()).isEmpty();
     assertTrue(subcontainer1B.isGridLayoutContainer());
     Container subcontainer1C = topListContainer.getStoredContainers().get(2);
-    assertEquals(0, subcontainer1C.getStoredContainers().size());
+    assertThat(subcontainer1C.getStoredContainers()).isEmpty();
     assertTrue(subcontainer1B.isGridLayoutContainer());
 
     // get top containers ordered by global id desc
     pgCrit.setOrderBy(SearchUtils.ORDER_BY_GLOBAL_ID);
     defaultContainerResult = containerApiMgr.getTopContainersForUser(pgCrit, null, null, testUser);
     assertEquals(2, defaultContainerResult.getTotalHits().intValue());
-    assertEquals(2, defaultContainerResult.getResults().size());
+    assertThat(defaultContainerResult.getResults()).hasSize(2);
     assertEquals(
         "4-drawer storage unit (image container)",
         defaultContainerResult.getResults().get(0).getName());
@@ -166,7 +167,7 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
     assertNotNull(retrievedSubContainer.getId());
     assertEquals("box #1 (list container)", retrievedSubContainer.getName());
     assertEquals(4, retrievedSubContainer.getContentSummary().getTotalCount());
-    assertEquals(4, retrievedSubContainer.getLocations().size());
+    assertThat(retrievedSubContainer.getLocations()).hasSize(4);
 
     // stored items should be initialized
     ApiInventoryRecordInfo subSubcontainer =
@@ -185,7 +186,7 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
     ApiContainer retrievedSubSubContainer =
         containerApiMgr.getApiContainerById(subSubcontainer.getId(), testUser);
     assertNotNull(retrievedSubSubContainer);
-    assertEquals(2, retrievedSubSubContainer.getParentContainers().size());
+    assertThat(retrievedSubSubContainer.getParentContainers()).hasSize(2);
     assertEquals(
         subcontainer1A.getId(), retrievedSubSubContainer.getParentContainers().get(0).getId());
     assertEquals(
@@ -232,7 +233,7 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
     assertEquals(
         ContentInitializerForDevRunManager.EXAMPLE_TOP_IMAGE_CONTAINER_NAME,
         userContainersResult.getResults().get(2).getName());
-    assertEquals(2, piContainerInfo.getPermittedActions().size());
+    assertThat(piContainerInfo.getPermittedActions()).hasSize(2);
 
     // can limit to just pi's containers
     userContainersResult =
@@ -252,7 +253,7 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
             null,
             PaginationCriteria.createDefaultForClass(InventoryRecord.class),
             testUser);
-    assertEquals(2, containerContent.getRecords().size());
+    assertThat(containerContent.getRecords()).hasSize(2);
     // ... and limit the search to particular owner
     containerContent =
         containerApiMgr.searchForContentOfContainer(
@@ -261,7 +262,7 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
             null,
             PaginationCriteria.createDefaultForClass(InventoryRecord.class),
             testUser);
-    assertEquals(1, containerContent.getRecords().size());
+    assertThat(containerContent.getRecords()).hasSize(1);
     assertEquals("user's subsample", containerContent.getRecords().get(0).getName());
 
     // check visibility as a pi
@@ -273,7 +274,7 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
         ContentInitializerForDevRunManager.EXAMPLE_TOP_LIST_CONTAINER_NAME,
         piContainersResult.getResults().get(0).getName());
     assertEquals("pi's cont", piContainersResult.getResults().get(1).getName());
-    assertEquals(3, piContainersResult.getResults().get(1).getPermittedActions().size());
+    assertThat(piContainersResult.getResults().get(1).getPermittedActions()).hasSize(3);
     assertEquals(
         ContentInitializerForDevRunManager.EXAMPLE_TOP_IMAGE_CONTAINER_NAME,
         piContainersResult.getResults().get(2).getName());
@@ -469,7 +470,7 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
     ApiContainer retrievedPiContainer =
         containerApiMgr.getApiContainerById(piContainer1.getId(), otherUser);
     assertEquals("pi's cont 1", retrievedPiContainer.getName());
-    assertEquals(1, retrievedPiContainer.getPermittedActions().size());
+    assertThat(retrievedPiContainer.getPermittedActions()).hasSize(1);
     // can query that container's content, but just get limited view
     ApiInventorySearchResult containerContentSeenByOtherUser =
         containerApiMgr.searchForContentOfContainer(
@@ -494,8 +495,8 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
     NotFoundException nfe =
         assertThrows(
             NotFoundException.class, () -> containerApiMgr.duplicate(piContainerId, otherUser));
-    assertTrue(
-        nfe.getMessage().contains("does not exist, or you do not have permission to access it"));
+    assertThat(nfe.getMessage())
+        .contains("does not exist, or you do not have permission to access it");
   }
 
   @Test
@@ -568,8 +569,8 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
     assertNull(retrievedDefaultContainer.getImageFileProperty());
     assertNull(retrievedDefaultContainer.getThumbnailFileProperty());
     assertEquals(1, retrievedDefaultContainer.getContentCount());
-    assertEquals(1, retrievedDefaultContainer.getLocations().size()); // auto-created one
-    assertEquals(1, retrievedDefaultContainer.getStoredContainers().size());
+    assertThat(retrievedDefaultContainer.getLocations()).hasSize(1); // auto-created one
+    assertThat(retrievedDefaultContainer.getStoredContainers()).hasSize(1);
 
     Container retrievedCustomContainer = retrievedDefaultContainer.getStoredContainers().get(0);
     Long retrievedCustomContainerId = retrievedCustomContainer.getId();
@@ -577,8 +578,8 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
     assertEquals(newCustomContainer.getName(), retrievedCustomContainer.getName());
     assertEquals(newCustomContainer.getDescription(), retrievedCustomContainer.getDescription());
     assertEquals(newCustomContainer.getDBStringFromTags(), retrievedCustomContainer.getTags());
-    assertEquals(1, retrievedCustomContainer.getActiveExtraFields().size());
-    assertEquals(2, retrievedCustomContainer.getLocations().size());
+    assertThat(retrievedCustomContainer.getActiveExtraFields()).hasSize(1);
+    assertThat(retrievedCustomContainer.getLocations()).hasSize(2);
     assertEquals(2, retrievedCustomContainer.getContentCount());
 
     Container retrievedSubContainer = retrievedCustomContainer.getStoredContainers().get(0);
@@ -640,9 +641,9 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
         updatedContainer.getLastModifiedMillis()
             > retrievedLocationsContainer.getLastModifiedMillis());
     assertEquals(testUser.getFullName(), updatedContainer.getModifiedByFullName());
-    assertEquals(1, updatedContainer.getExtraFields().size());
-    assertEquals(1, updatedContainer.getBarcodes().size());
-    assertEquals(0, updatedContainer.getLocations().size());
+    assertThat(updatedContainer.getExtraFields()).hasSize(1);
+    assertThat(updatedContainer.getBarcodes()).hasSize(1);
+    assertThat(updatedContainer.getLocations()).isEmpty();
     // the content update bumps the user-facing version
     assertEquals(2L, updatedContainer.getVersion());
     Mockito.verify(mockPublisher, Mockito.times(2))
@@ -659,7 +660,7 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
         .publishEvent(Mockito.any(InventoryEditingEvent.class));
 
     updatedContainer = containerApiMgr.getApiContainerById(savedContainer.getId(), testUser);
-    assertEquals(0, updatedContainer.getLocations().size());
+    assertThat(updatedContainer.getLocations()).isEmpty();
     assertTrue(updatedContainer.isGridContainer());
     assertTrue(updatedContainer.getCanStoreContainers());
     assertEquals(12, updatedContainer.getGridLayout().getColumnsNumber());
@@ -704,7 +705,7 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
     Container savedLocationsContainer =
         containerApiMgr.getContainerById(newImageContainer.getId(), testUser);
     assertTrue(savedLocationsContainer.isImageLayoutContainer());
-    assertEquals(2, savedLocationsContainer.getLocations().size());
+    assertThat(savedLocationsContainer.getLocations()).hasSize(2);
     assertEquals(2, savedLocationsContainer.getLocationsCount());
     ApiContainer retrievedLocationsContainer =
         containerApiMgr.getApiContainerById(savedLocationsContainer.getId(), testUser);
@@ -736,7 +737,7 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
 
     ApiContainer updatedContainer =
         containerApiMgr.getApiContainerById(savedLocationsContainer.getId(), testUser);
-    assertEquals(1, updatedContainer.getLocations().size());
+    assertThat(updatedContainer.getLocations()).hasSize(1);
     assertEquals(1, savedLocationsContainer.getLocationsCount());
     ApiContainerLocationWithContent updatedLocation = updatedContainer.getLocations().get(0);
     assertEquals(UPDATED_COORD_X, updatedLocation.getCoordX());
@@ -783,7 +784,7 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
 
     ApiContainer updatedImageContainer =
         containerApiMgr.getApiContainerById(savedImageContainer.getId(), testUser);
-    assertEquals(2, updatedImageContainer.getLocations().size());
+    assertThat(updatedImageContainer.getLocations()).hasSize(2);
 
     /*
      * change content flag of a container that already has given content
@@ -932,7 +933,9 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
       containerApiMgr.createNewApiContainer(otherSubContainer, testUser);
       fail("was able to save into occupied location");
     } catch (IllegalArgumentException iae) {
-      assertTrue(iae.getMessage().contains("is already taken by the record: IC"), iae.getMessage());
+      assertThat(iae.getMessage())
+          .as(iae.getMessage())
+          .contains("is already taken by the record: IC");
     }
   }
 
@@ -1133,7 +1136,7 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
         .publishEvent(Mockito.any(InventoryMoveEvent.class));
 
     subContainer = containerApiMgr.getApiContainerById(subContainer.getId(), testUser);
-    assertEquals(3, subContainer.getParentContainers().size());
+    assertThat(subContainer.getParentContainers()).hasSize(3);
     assertEquals(subContainer2.getId(), subContainer.getParentContainers().get(0).getId());
     assertEquals(topLevelContainer.getId(), subContainer.getParentContainers().get(1).getId());
     assertEquals(workbench.getId(), subContainer.getParentContainers().get(2).getId());
@@ -1240,7 +1243,7 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
     IllegalArgumentException iae =
         assertThrows(
             IllegalArgumentException.class, () -> containerApiMgr.duplicate(workbenchId, testUser));
-    assertTrue(iae.getMessage().endsWith("is a workbench"));
+    assertThat(iae.getMessage()).endsWith("is a workbench");
   }
 
   @Test
@@ -1326,7 +1329,7 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
         assertThrows(
             IllegalArgumentException.class,
             () -> containerApiMgr.updateApiContainer(testContainer, testUser));
-    assertTrue(iae.getMessage().startsWith("Item is currently edited by another user ("));
+    assertThat(iae.getMessage()).startsWith("Item is currently edited by another user (");
 
     // try delete by testUser
     Long containerId = testContainer.getId();
@@ -1334,14 +1337,14 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
         assertThrows(
             IllegalArgumentException.class,
             () -> containerApiMgr.markContainerAsDeleted(containerId, testUser));
-    assertTrue(iae.getMessage().startsWith("Item is currently edited by another user ("));
+    assertThat(iae.getMessage()).startsWith("Item is currently edited by another user (");
 
     // try transfer by testUser
     iae =
         assertThrows(
             IllegalArgumentException.class,
             () -> containerApiMgr.changeApiContainerOwner(testContainer, testUser));
-    assertTrue(iae.getMessage().startsWith("Item is currently edited by another user ("));
+    assertThat(iae.getMessage()).startsWith("Item is currently edited by another user (");
 
     // pi can edit fine
     ApiContainer updatedContainer = containerApiMgr.updateApiContainer(testContainer, piUser);
@@ -1506,7 +1509,7 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
     ApiContainer createdContainer = createBasicContainerForUser(testUser);
     assertEquals(ApiInventorySharingMode.OWNER_GROUPS, createdContainer.getSharingMode());
     assertNotNull(createdContainer.getSharedWith());
-    assertEquals(1, createdContainer.getSharedWith().size());
+    assertThat(createdContainer.getSharedWith()).hasSize(1);
     assertEquals("groupA", createdContainer.getSharedWith().get(0).getGroupInfo().getName());
     assertFalse(createdContainer.getSharedWith().get(0).isShared());
 
@@ -1520,7 +1523,7 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
     assertNotNull(updatedContainer);
     assertEquals(ApiInventorySharingMode.WHITELIST, updatedContainer.getSharingMode());
     assertNotNull(updatedContainer.getSharedWith());
-    assertEquals(2, updatedContainer.getSharedWith().size());
+    assertThat(updatedContainer.getSharedWith()).hasSize(2);
     assertEquals("groupA", updatedContainer.getSharedWith().get(0).getGroupInfo().getName());
     assertFalse(
         updatedContainer.getSharedWith().get(0).isShared()); // owner's groups are always present
@@ -1551,7 +1554,7 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
     // as other user try retrieving the shared container
     ApiContainer containerAsSeenByOtherUser =
         containerApiMgr.getApiContainerById(apiContainer.getId(), otherUser);
-    assertEquals(2, containerAsSeenByOtherUser.getPermittedActions().size());
+    assertThat(containerAsSeenByOtherUser.getPermittedActions()).hasSize(2);
     assertEquals(
         ApiInventoryRecordInfo.ApiInventoryRecordPermittedAction.READ,
         containerAsSeenByOtherUser.getPermittedActions().get(0));
@@ -1560,7 +1563,7 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
         containerAsSeenByOtherUser.getPermittedActions().get(1));
     ApiContainerInfo subContainerInfoAsSeenByOtherUser =
         (ApiContainerInfo) containerAsSeenByOtherUser.getStoredContent().get(0);
-    assertEquals(1, subContainerInfoAsSeenByOtherUser.getPermittedActions().size());
+    assertThat(subContainerInfoAsSeenByOtherUser.getPermittedActions()).hasSize(1);
     assertEquals(
         ApiInventoryRecordInfo.ApiInventoryRecordPermittedAction.LIMITED_READ,
         subContainerInfoAsSeenByOtherUser.getPermittedActions().get(0));
@@ -1574,7 +1577,7 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
     // as otherUser try retrieving the subcontainer
     ApiContainer subContainerAsSeenByOtherUser =
         containerApiMgr.getApiContainerById(apiSubContainer.getId(), otherUser);
-    assertEquals(1, subContainerAsSeenByOtherUser.getPermittedActions().size());
+    assertThat(subContainerAsSeenByOtherUser.getPermittedActions()).hasSize(1);
     assertEquals(
         ApiInventoryRecordInfo.ApiInventoryRecordPermittedAction.LIMITED_READ,
         subContainerAsSeenByOtherUser.getPermittedActions().get(0));
@@ -1591,7 +1594,7 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
     // compare with subcontainer as seen by the owner
     ApiContainer subContainerAsSeenByTestUser =
         containerApiMgr.getApiContainerById(apiSubContainer.getId(), testUser);
-    assertEquals(3, subContainerAsSeenByTestUser.getPermittedActions().size());
+    assertThat(subContainerAsSeenByTestUser.getPermittedActions()).hasSize(3);
     assertNotNull(subContainerAsSeenByTestUser.getModifiedBy());
     assertNotNull(subContainerAsSeenByTestUser.getExtraFields());
     assertNotNull(subContainerAsSeenByTestUser.getLocations());
@@ -1613,10 +1616,10 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
     ApiContainer apiContainer = createBasicContainerForUser(testUser, "c1", List.of(groupA));
     ApiContainer containerAsSeenByTestUser =
         containerApiMgr.getApiContainerById(apiContainer.getId(), testUser);
-    assertEquals(3, containerAsSeenByTestUser.getPermittedActions().size());
+    assertThat(containerAsSeenByTestUser.getPermittedActions()).hasSize(3);
     ApiContainer containerAsSeenByOtherUser =
         containerApiMgr.getApiContainerById(apiContainer.getId(), otherUser);
-    assertEquals(2, containerAsSeenByOtherUser.getPermittedActions().size());
+    assertThat(containerAsSeenByOtherUser.getPermittedActions()).hasSize(2);
 
     // now delete the group
     User sysadmin = logoutAndLoginAsSysAdmin();
@@ -1629,6 +1632,6 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
 
     // can be read by test user fine
     containerAsSeenByTestUser = containerApiMgr.getApiContainerById(apiContainer.getId(), testUser);
-    assertEquals(3, containerAsSeenByTestUser.getPermittedActions().size());
+    assertThat(containerAsSeenByTestUser.getPermittedActions()).hasSize(3);
   }
 }

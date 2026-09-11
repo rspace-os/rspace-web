@@ -14,6 +14,8 @@ import static com.researchspace.testutils.ArchiveTestUtils.assertPredicateOnHtml
 import static com.researchspace.testutils.ArchiveTestUtils.getAllHTMLFilesInArchive;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.join;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -330,9 +332,9 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
         exportImportMgr
             .asyncExportGroupToArchive(cfg, labAdmin, group.getId(), anyURI(), standardPostExport)
             .get();
-    assertTrue(archive.getArchivedRecords().contains(publicUserDocument));
-    assertTrue(archive.getArchivedRecords().contains(publicLabAdminDocument));
-    assertFalse(archive.getArchivedRecords().contains(privatePIDocument));
+    assertThat(archive.getArchivedRecords()).contains(publicUserDocument);
+    assertThat(archive.getArchivedRecords()).contains(publicLabAdminDocument);
+    assertThat(archive.getArchivedRecords()).doesNotContain(privatePIDocument);
   }
 
   private ISearchResults<BaseRecord> searchByNameAndOwner(String name, User owner)
@@ -350,7 +352,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     File surrogateExport = RSpaceTestUtils.getResource("archives/v22.zip");
     FileUtils.copyFileToDirectory(surrogateExport, tempExportFolder, false);
     // sanity check that copy worked OK
-    assertTrue(new File(tempExportFolder, surrogateExport.getName()).exists());
+    assertThat(new File(tempExportFolder, surrogateExport.getName())).exists();
     ArchivalCheckSum acs = TestFactory.createAnArchivalChecksum();
     acs.setExporter(exporter);
     acs.setZipName(surrogateExport.getName());
@@ -358,7 +360,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     acs.setUid(getRandomName(10));
 
     mgr.save(acs);
-    assertEquals(initialExportCount + 1, mgr.getCurrentArchiveMetadatas().size());
+    assertThat(mgr.getCurrentArchiveMetadatas()).hasSize(initialExportCount + 1);
 
     // assert should be removed.
     // just ensure it is set to be deleted.
@@ -367,7 +369,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
 
     exportImportMgr.removeOldArchives();
     // file should be removed, and DB query should be OK
-    assertEquals(initialExportCount, mgr.getCurrentArchiveMetadatas().size());
+    assertThat(mgr.getCurrentArchiveMetadatas()).hasSize(initialExportCount);
     assertFalse(new File(tempExportFolder, surrogateExport.getName()).exists());
   }
 
@@ -424,9 +426,8 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     assertEquals(
         2, recordMgr.listFolderRecords(docTopFlder.getId(), brPg()).getTotalHits().intValue());
     // and 2 folders in image folder
-    assertTrue(
-        recordMgr.listFolderRecords(imageTopFlder.getId(), brPg()).getResults().stream()
-            .allMatch(br -> br.isFolder()));
+    assertThat(recordMgr.listFolderRecords(imageTopFlder.getId(), brPg()).getResults())
+        .allMatch(br -> br.isFolder());
   }
 
   private PaginationCriteria<BaseRecord> brPg() {
@@ -513,10 +514,9 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     assertEquals("documentTag", importedComplex.getDocTag());
     RSForm importedForm = importedComplex.getForm();
     RSForm originalForm = sd.getForm();
-    assertEquals(
-        importedForm.getFieldForms().size(),
-        originalForm.getFieldForms().size(),
-        "Imported form has different field count!");
+    assertThat(originalForm.getFieldForms())
+        .as("Imported form has different field count!")
+        .hasSameSizeAs(importedForm.getFieldForms());
 
     Field original = complexDoc.getFields().get(0);
     Field importedData = importedComplex.getFields().get(0);
@@ -534,7 +534,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
 
     // find created notebook
     Set<Notebook> importedNotebooks = report.getImportedNotebooks();
-    assertEquals(1, importedNotebooks.size());
+    assertThat(importedNotebooks).hasSize(1);
     Notebook importedNotebook = importedNotebooks.stream().findFirst().get();
     assertEquals("testNotebook", importedNotebook.getName());
     assertEquals("notebookTag", importedNotebook.getDocTag());
@@ -572,7 +572,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     Collection<File> archiveContents =
         FileUtils.listFiles(zipFolder, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
     ArchiveManifest am = ArchiveTestUtils.getManifest(zipFolder);
-    assertTrue(am.stringify().contains("a description"));
+    assertThat(am.stringify()).contains("a description");
     assertNoUnsubstitutedVelocityVariables(zipFolder);
     assertTrue(hasFileWithNAmePrefix(userToExport.getUsername(), zipFolder));
     assertEquals(notficationCount + 1, getNewNotificationCount(userToExport));
@@ -658,11 +658,8 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
             NULL_MONITOR,
             importStrategy::doImport);
     assertTrue(report.isSuccessful());
-    assertTrue(
-        report
-            .getInfoList()
-            .getAllErrorMessagesAsStringsSeparatedBy(",")
-            .contains(userToExport.getUsername()));
+    assertThat(report.getInfoList().getAllErrorMessagesAsStringsSeparatedBy(","))
+        .contains(userToExport.getUsername());
     int addedCount = getFieldAttachmentCount() - b4ImportCount;
 
     // RSPAC-1081
@@ -707,7 +704,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
             importStrategy::doImport);
     assertTrue(report.isSuccessful());
     Set<BaseRecord> imported = report.getImportedRecords();
-    assertEquals(1, imported.size());
+    assertThat(imported).hasSize(1);
     assertChemElementCreated(initialStructureCount);
     RSChemElement importedMolChem =
         assertImportedChemElementCanBeFieldParsed(imported, ChemElementsFormat.MOL);
@@ -725,7 +722,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
             importStrategy::doImport);
     assertTrue(report_v61.isSuccessful());
     Set<BaseRecord> imported_v61 = report_v61.getImportedRecords();
-    assertEquals(1, imported_v61.size());
+    assertThat(imported_v61).hasSize(1);
     assertChemElementCreated(currentStructureCount);
     RSChemElement importedMrvChem =
         assertImportedChemElementCanBeFieldParsed(imported_v61, ChemElementsFormat.MRV);
@@ -774,7 +771,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
             .get();
     File zipFolder = extractZipArchive(result);
     // 3 index files + 1 exported
-    assertEquals(4, ArchiveTestUtils.getAllHTMLFilesInArchive(zipFolder).size());
+    assertThat(ArchiveTestUtils.getAllHTMLFilesInArchive(zipFolder)).hasSize(4);
   }
 
   @Test
@@ -860,7 +857,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
             importStrategy::doImport);
     assertTrue(report.isSuccessful());
     Set<BaseRecord> records = report.getImportedRecords();
-    assertEquals(2, records.size());
+    assertThat(records).hasSize(2);
     assertEquals(
         Set.of("Demo Document", "Demo Document (fully self-guided version)"),
         records.stream().map(BaseRecord::getName).collect(Collectors.toSet()));
@@ -1056,7 +1053,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     File zipFolder = extractZipArchive(result);
     int EXPECTED_FILE_COUNT = 8; // 6 default files + 1 data file + Comment.gif
     Collection<File> archiveContents = ArchiveTestUtils.getAllFilesInArchive(zipFolder);
-    assertEquals(EXPECTED_FILE_COUNT, archiveContents.size());
+    assertThat(archiveContents).hasSize(EXPECTED_FILE_COUNT);
   }
 
   private ExportSelection getSingleRecordExportSelection(Long id, String type) {
@@ -1097,7 +1094,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
                   result.getExportFile(), new ImportArchiveReport(), importCfg);
             });
 
-    assertEquals(2, model.getCurrentVersions().size());
+    assertThat(model.getCurrentVersions()).hasSize(2);
     // rspac-1265 - check that linked document is the correct version
     ArchivalDocumentParserRef ref = model.findCurrentDocArchiveByName(sdoc.getName()).get(0);
     ArchivalGalleryMetadata meta =
@@ -1106,7 +1103,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
         ArchiveTestUtils.archiveContainsFile(tempImportFolder2, meta.getLinkFile() + ".xml"));
 
     Collection<File> archiveContents = ArchiveTestUtils.getAllFilesInArchive(zipFolder);
-    assertEquals(29, archiveContents.size());
+    assertThat(archiveContents).hasSize(29);
     assertTrue(ArchiveTestUtils.archiveContainsFile(tempImportFolder2, image.getFileName()));
     assertTrue(ArchiveTestUtils.archiveContainsFile(tempImportFolder2, updatedImage.getFileName()));
   }
@@ -1265,7 +1262,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     List<StoichiometryDTO> importedInDocRtfGData =
         new StoichiometryReader()
             .extractStoichiometriesFromFieldContents(importedTextField.getFieldData());
-    assertEquals(1, importedInDocRtfGData.size());
+    assertThat(importedInDocRtfGData).hasSize(1);
     // rtf data of field has been updated by post-import fixup to have the new stoichiometry's ID
     // and its actual Envers revision.
     assertEquals(importedStoichiometry.getId(), importedInDocRtfGData.get(0).getId());
@@ -1273,7 +1270,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     Long expectedRevision =
         stoichiometryService.getById(importedStoichiometry.getId(), null, u1).getRevision();
     assertEquals(expectedRevision, importedInDocRtfGData.get(0).getRevision());
-    assertEquals(importedStoichiometry.getMolecules().size(), stoichiometry.getMolecules().size());
+    assertThat(stoichiometry.getMolecules()).hasSameSizeAs(importedStoichiometry.getMolecules());
     if (!importedStoichiometry.getMolecules().isEmpty()) {
       assertTrue(importedStoichiometry.getMolecules().get(0).getInventoryLink() == null);
     }
@@ -1387,7 +1384,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
         "Imported reaction-less stoichiometry must not have a parent reaction");
 
     // Molecules survived the round-trip — this is the bug RSDEV-1091 fixes
-    assertEquals(2, importedStoichiometry.getMolecules().size());
+    assertThat(importedStoichiometry.getMolecules()).hasSize(2);
 
     StoichiometryMolecule importedEthanol =
         importedStoichiometry.getMolecules().stream()
@@ -1397,7 +1394,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     assertEquals("CCO", importedEthanol.getSmiles());
     assertEquals("C2H6O", importedEthanol.getFormula());
     assertEquals(MoleculeRole.REACTANT, importedEthanol.getRole());
-    assertEquals(46.07, importedEthanol.getMolecularWeight(), 0.001);
+    assertThat(importedEthanol.getMolecularWeight()).isCloseTo(46.07, within(0.001));
     assertTrue(importedEthanol.getLimitingReagent());
     assertNotNull(
         importedEthanol.getRsChemElement(),
@@ -1423,7 +1420,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
         new StoichiometryReader()
             .extractStoichiometriesFromFieldContents(
                 importedDoc.getField("testTextField").getFieldData());
-    assertEquals(1, importedRtfData.size());
+    assertThat(importedRtfData).hasSize(1);
     assertEquals(importedStoichiometry.getId(), importedRtfData.get(0).getId());
   }
 
@@ -1465,13 +1462,11 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     StructuredDocument imported = report.getImportedRecords().iterator().next().asStrucDoc();
     List<Field> textFields =
         imported.getFields().stream().filter(f -> f.isTextField()).collect(toList());
-    assertEquals(1, textFields.size());
-    assertEquals(
-        1,
-        externalWorkFlowDataManager
-            .findWorkFlowDataByRSpaceContainerIdAndServiceType(
-                textFields.get(0).getId(), ExternalService.GALAXY)
-            .size());
+    assertThat(textFields).hasSize(1);
+    assertThat(
+            externalWorkFlowDataManager.findWorkFlowDataByRSpaceContainerIdAndServiceType(
+                textFields.get(0).getId(), ExternalService.GALAXY))
+        .hasSize(1);
   }
 
   private Elements getImageTagsInDocument(String content) {
@@ -1620,7 +1615,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
             NULL_MONITOR,
             importStrategy::doImport);
     assertTrue(report.isSuccessful());
-    assertEquals(1, report.getRecordInfo().size());
+    assertThat(report.getRecordInfo()).hasSize(1);
 
     // check attachments of imported unsigned doc
     Long importedDocId = report.getRecordInfo().get(0).getId();
@@ -1634,7 +1629,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
                 false)
             .asStrucDoc();
     Field importedField = importedDoc.getFields().get(0);
-    assertEquals(4, importedField.getLinkedMediaFiles().size());
+    assertThat(importedField.getLinkedMediaFiles()).hasSize(4);
 
     /*
      * signed doc export
@@ -1694,7 +1689,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
                 false)
             .asStrucDoc();
     Field importedField2 = importedDoc2.getFields().get(0);
-    assertEquals(4, importedField2.getLinkedMediaFiles().size());
+    assertThat(importedField2.getLinkedMediaFiles()).hasSize(4);
   }
 
   @Test
@@ -1826,8 +1821,8 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
             .map(ri -> ri.getId())
             .collect(Collectors.toList());
     // imported A links to imported B and C
-    assertTrue(a_linkedIds.stream().anyMatch(id -> id.equals(importeddocB.getId())));
-    assertTrue(a_linkedIds.stream().anyMatch(id -> id.equals(importeddocC.getId())));
+    assertThat(a_linkedIds).anyMatch(id -> id.equals(importeddocB.getId()));
+    assertThat(a_linkedIds).anyMatch(id -> id.equals(importeddocC.getId()));
     FieldContents dcontents =
         fieldParser.findFieldElementsInContent(importeddocD.getFields().get(0).getFieldData());
     List<Long> d_linkedIds =
@@ -1835,8 +1830,8 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
             .map(ri -> ri.getId())
             .collect(Collectors.toList());
     // imported D links to imported B and A
-    assertTrue(d_linkedIds.stream().anyMatch(id -> id.equals(importeddocB.getId())));
-    assertTrue(d_linkedIds.stream().anyMatch(id -> id.equals(importeddocA.getId())));
+    assertThat(d_linkedIds).anyMatch(id -> id.equals(importeddocB.getId()));
+    assertThat(d_linkedIds).anyMatch(id -> id.equals(importeddocA.getId()));
   }
 
   // gets preloaded fields
@@ -1926,7 +1921,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
             .get();
     File zipFolder = extractZipArchive(result);
     Collection<File> htmlFiles = ArchiveTestUtils.getAllHTMLFilesInArchive(zipFolder);
-    assertEquals(4, htmlFiles.size()); // index + nfs -z + exported, i.e not 4
+    assertThat(htmlFiles).hasSize(4); // index + nfs -z + exported, i.e not 4
     assertTrue(
         assertPredicateOnHtmlFile(
             zipFolder,
@@ -1949,7 +1944,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
 
     File zipFolder2 = extractZipArchive(result2, tempImportFolder2);
     Collection<File> htmlFiles2 = getAllHTMLFilesInArchive(zipFolder2);
-    assertEquals(5, htmlFiles2.size()); // A+B exported, internal link made
+    assertThat(htmlFiles2).hasSize(5); // A+B exported, internal link made
     assertTrue(
         assertPredicateOnHtmlFile(
             zipFolder2,
@@ -1985,7 +1980,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
             .get();
     File zipFolder = extractZipArchive(result);
     Collection<File> xmlFiles = ArchiveTestUtils.getAllXMLFilesInArchive(zipFolder);
-    assertEquals(5, xmlFiles.size()); // 2 default + 3 for exported media items
+    assertThat(xmlFiles).hasSize(5); // 2 default + 3 for exported media items
 
     ArchivalImportConfig importCfg = createDefaultArchiveImportConfig(u1, tempImportFolder2);
     ImportArchiveReport importReport =
@@ -2084,23 +2079,23 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     String fieldData = importedDoc.getFirstFieldData();
     // document links should be made relative again
     String expectedTargetDocLink = "href=\"/globalId/" + targetDoc.getGlobalIdentifier();
-    assertTrue(fieldData.contains(expectedTargetDocLink), fieldData);
+    assertThat(fieldData).as(fieldData).contains(expectedTargetDocLink);
     String expectedTargetFolderLink = "href=\"/globalId/" + folder.getGlobalIdentifier();
-    assertTrue(fieldData.contains(expectedTargetFolderLink), fieldData);
+    assertThat(fieldData).as(fieldData).contains(expectedTargetFolderLink);
     String expectedTargetNotebookLink = "href=\"/globalId/" + notebook.getGlobalIdentifier();
-    assertTrue(fieldData.contains(expectedTargetNotebookLink), fieldData);
+    assertThat(fieldData).as(fieldData).contains(expectedTargetNotebookLink);
 
     // the absolute URL in external link should be imported, and the span.internalLinkAbsoluteUrl
     // added
-    assertTrue(
-        fieldData.contains(externalServerUrl + "/globalId/" + firstDoc.getGlobalIdentifier()),
-        fieldData);
+    assertThat(fieldData)
+        .as(fieldData)
+        .contains(externalServerUrl + "/globalId/" + firstDoc.getGlobalIdentifier());
 
     // the absolute link to itself should be made relative
     String expectedFirstDocLink = "href=\"/globalId/" + firstDoc.getGlobalIdentifier();
-    assertTrue(fieldData.contains(expectedFirstDocLink), fieldData);
+    assertThat(fieldData).as(fieldData).contains(expectedFirstDocLink);
     // there should be no more references to current server url left in field content
-    assertFalse(fieldData.contains(currentServerUrl), fieldData);
+    assertThat(fieldData).as(fieldData).doesNotContain(currentServerUrl);
   }
 
   @Test
@@ -2122,8 +2117,8 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     String orgFolderLinkFragment = "href=\"/globalId/" + folder.getGlobalIdentifier();
     String orgNotebookLinkFragment = "href=\"/globalId/" + notebook.getGlobalIdentifier();
     String orgFieldData = docField.getData();
-    assertTrue(orgFieldData.contains(orgFolderLinkFragment), orgFieldData);
-    assertTrue(orgFieldData.contains(orgNotebookLinkFragment), orgFieldData);
+    assertThat(orgFieldData).as(orgFieldData).contains(orgFolderLinkFragment);
+    assertThat(orgFieldData).as(orgFieldData).contains(orgNotebookLinkFragment);
 
     int initialRecords =
         recordMgr.listFolderRecords(rootFolder.getId(), brPg()).getTotalHits().intValue();
@@ -2141,8 +2136,8 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
         exportImportMgr
             .asyncExportSelectionToArchive(exportSelection, cfg, user, anyURI(), standardPostExport)
             .get();
-    assertEquals(1, result.getArchivedRecords().size()); // one record
-    assertEquals(2, result.getArchivedFolders().size()); // folder and notebook
+    assertThat(result.getArchivedRecords()).hasSize(1); // one record
+    assertThat(result.getArchivedFolders()).hasSize(2); // folder and notebook
     List<Long> originalWorkspaceIds =
         recordMgr.listFolderRecords(rootFolder.getId(), brPg()).getResults().stream()
             .map(BaseRecord::getId)
@@ -2182,13 +2177,13 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
 
     /* internal links should point to newly created folder and notebook, and not to old ids */
     String expectedTargetFolderLink = "href=\"/globalId/" + importedFolder.getGlobalIdentifier();
-    assertTrue(importedFieldData.contains(expectedTargetFolderLink), importedFieldData);
-    assertFalse(importedFieldData.contains(orgFolderLinkFragment), importedFieldData);
+    assertThat(importedFieldData).as(importedFieldData).contains(expectedTargetFolderLink);
+    assertThat(importedFieldData).as(importedFieldData).doesNotContain(orgFolderLinkFragment);
 
     String expectedTargetNotebookLink =
         "href=\"/globalId/" + importedNotebook.getGlobalIdentifier();
-    assertTrue(importedFieldData.contains(expectedTargetNotebookLink), importedFieldData);
-    assertFalse(importedFieldData.contains(orgNotebookLinkFragment), importedFieldData);
+    assertThat(importedFieldData).as(importedFieldData).contains(expectedTargetNotebookLink);
+    assertThat(importedFieldData).as(importedFieldData).doesNotContain(orgNotebookLinkFragment);
   }
 
   @Test
@@ -2225,8 +2220,9 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
           .get();
       fail("expected to fail as archive size above the limit");
     } catch (Exception e) {
-      assertTrue(
-          e.getMessage().contains("DiskSpaceLimitException"), "unexpected msg: " + e.getMessage());
+      assertThat(e.getMessage())
+          .as("unexpected msg: " + e.getMessage())
+          .contains("DiskSpaceLimitException");
     }
 
     // restore max archive limit
@@ -2384,7 +2380,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
             .get();
 
     // check link included in results
-    assertEquals(2, resultHtml.getArchivedNfsFiles().size());
+    assertThat(resultHtml.getArchivedNfsFiles()).hasSize(2);
     Iterator<ArchivalNfsFile> htmlNfsFilesIterator = resultHtml.getArchivedNfsFiles().iterator();
     ArchivalNfsFile nfsFileInHtml = htmlNfsFilesIterator.next();
     assertTrue(nfsFileInHtml.isAddedToArchive());
@@ -2395,7 +2391,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     assertNull(nfsFolderInHtml.getErrorMsg());
 
     String nfsFileHtmlArchiveName = nfsFileInHtml.getArchivePath();
-    assertTrue(nfsFileHtmlArchiveName.endsWith(testAnyFile.getName()));
+    assertThat(nfsFileHtmlArchiveName).endsWith(testAnyFile.getName());
 
     // assert nfs file is part of html archive
     File zipFolderHtml = extractZipArchive(resultHtml);
@@ -2411,10 +2407,11 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     assertEquals(Integer.valueOf(1), newNotifications.getHits());
     Notification htmlNotification = newNotifications.getFirstResult();
     String htmlExportNotificationMsg = htmlNotification.getNotificationMessage();
-    assertTrue(htmlExportNotificationMsg.contains("-html-"), htmlExportNotificationMsg);
-    assertTrue(htmlExportNotificationMsg.contains("/export/report/"), htmlExportNotificationMsg);
-    assertTrue(
-        htmlExportNotificationMsg.contains("2 linked filestore items"), htmlExportNotificationMsg);
+    assertThat(htmlExportNotificationMsg).as(htmlExportNotificationMsg).contains("-html-");
+    assertThat(htmlExportNotificationMsg).as(htmlExportNotificationMsg).contains("/export/report/");
+    assertThat(htmlExportNotificationMsg)
+        .as(htmlExportNotificationMsg)
+        .contains("2 linked filestore items");
     NotificationData htmlNotificationData = htmlNotification.getNotificationDataObject();
     assertNotNull(htmlNotificationData);
     String htmlDownloadLink =
@@ -2441,11 +2438,11 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
             .get();
 
     // check link included in results
-    assertEquals(2, resultXml.getArchivedNfsFiles().size());
+    assertThat(resultXml.getArchivedNfsFiles()).hasSize(2);
     ArchivalNfsFile nfsFileInXml = resultXml.getArchivedNfsFiles().iterator().next();
     assertTrue(nfsFileInXml.isAddedToArchive());
     String nfsFileXmlArchiveName = nfsFileInHtml.getArchivePath();
-    assertTrue(nfsFileXmlArchiveName.endsWith(testAnyFile.getName()));
+    assertThat(nfsFileXmlArchiveName).endsWith(testAnyFile.getName());
 
     File zipFolderXml = extractZipArchive(resultXml);
     // assert nfs file is part of xml archive
@@ -2461,10 +2458,11 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     assertEquals(Integer.valueOf(2), newNotifications.getHits());
     Notification xmlNotification = newNotifications.getLastResult();
     String xmlExportNotificationMsg = xmlNotification.getNotificationMessage();
-    assertTrue(xmlExportNotificationMsg.contains("-xml-"), xmlExportNotificationMsg);
-    assertTrue(xmlExportNotificationMsg.contains("/export/report/"), xmlExportNotificationMsg);
-    assertTrue(
-        xmlExportNotificationMsg.contains("2 linked filestore items"), xmlExportNotificationMsg);
+    assertThat(xmlExportNotificationMsg).as(xmlExportNotificationMsg).contains("-xml-");
+    assertThat(xmlExportNotificationMsg).as(xmlExportNotificationMsg).contains("/export/report/");
+    assertThat(xmlExportNotificationMsg)
+        .as(xmlExportNotificationMsg)
+        .contains("2 linked filestore items");
 
     NotificationData xmlNotificationData = xmlNotification.getNotificationDataObject();
     assertNotNull(xmlNotificationData);
@@ -2504,7 +2502,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
             .get();
 
     String html = FileUtils.readFileToString(exportedDoc, Charset.defaultCharset());
-    assertTrue(html.contains(imgHtml));
+    assertThat(html).contains(imgHtml);
   }
 
   @Test
@@ -2536,7 +2534,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
             .get();
 
     String html = FileUtils.readFileToString(exportedDoc, Charset.defaultCharset());
-    assertFalse(html.contains("access=9XoFHn1w"));
+    assertThat(html).doesNotContain("access=9XoFHn1w");
   }
 
   @Test
@@ -2613,7 +2611,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
             .get();
 
     // check links included in results
-    assertEquals(3, resultHtml.getArchivedNfsFiles().size());
+    assertThat(resultHtml.getArchivedNfsFiles()).hasSize(3);
     Iterator<ArchivalNfsFile> htmlNfsFilesIterator = resultHtml.getArchivedNfsFiles().iterator();
     // txt file should be added
     ArchivalNfsFile txtFileInHtml = htmlNfsFilesIterator.next();
@@ -2641,10 +2639,11 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     assertEquals(Integer.valueOf(1), newNotifications.getHits());
     Notification htmlNotification = newNotifications.getFirstResult();
     String htmlExportNotificationMsg = htmlNotification.getNotificationMessage();
-    assertTrue(htmlExportNotificationMsg.contains("-html-"), htmlExportNotificationMsg);
-    assertTrue(htmlExportNotificationMsg.contains("/export/report/"), htmlExportNotificationMsg);
-    assertTrue(
-        htmlExportNotificationMsg.contains("1 linked filestore item"), htmlExportNotificationMsg);
+    assertThat(htmlExportNotificationMsg).as(htmlExportNotificationMsg).contains("-html-");
+    assertThat(htmlExportNotificationMsg).as(htmlExportNotificationMsg).contains("/export/report/");
+    assertThat(htmlExportNotificationMsg)
+        .as(htmlExportNotificationMsg)
+        .contains("1 linked filestore item");
     NotificationData htmlNotificationData = htmlNotification.getNotificationDataObject();
     assertNotNull(htmlNotificationData);
     String htmlDownloadLink =
@@ -2675,7 +2674,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
             .get();
     File zipFolder = extractZipArchive(resultXml);
     Collection<File> allFiles = ArchiveTestUtils.getAllFilesInArchive(zipFolder);
-    assertTrue(allFiles.stream().anyMatch(f -> matchesGalleryFile(ecatImage, f)));
+    assertThat(allFiles).anyMatch(f -> matchesGalleryFile(ecatImage, f));
   }
 
   // asserts that a gallery file like 'abc.png' matches a file in the export like 'abc_1234467.png',
@@ -2720,10 +2719,11 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     assertEquals(Integer.valueOf(1), newNotifications.getHits());
     Notification htmlNotification = newNotifications.getFirstResult();
     String htmlExportNotificationMsg = htmlNotification.getNotificationMessage();
-    assertTrue(htmlExportNotificationMsg.contains("-html-"), htmlExportNotificationMsg);
-    assertTrue(htmlExportNotificationMsg.contains("/export/report/"), htmlExportNotificationMsg);
-    assertTrue(
-        htmlExportNotificationMsg.contains("http://www.google.com"), htmlExportNotificationMsg);
+    assertThat(htmlExportNotificationMsg).as(htmlExportNotificationMsg).contains("-html-");
+    assertThat(htmlExportNotificationMsg).as(htmlExportNotificationMsg).contains("/export/report/");
+    assertThat(htmlExportNotificationMsg)
+        .as(htmlExportNotificationMsg)
+        .contains("http://www.google.com");
     NotificationData htmlNotificationData = htmlNotification.getNotificationDataObject();
     assertNotNull(htmlNotificationData);
 

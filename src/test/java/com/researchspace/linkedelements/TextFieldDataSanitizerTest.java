@@ -1,7 +1,7 @@
 package com.researchspace.linkedelements;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.testutils.SpringTransactionalTest;
@@ -23,13 +23,13 @@ public class TextFieldDataSanitizerTest extends SpringTransactionalTest {
   public void jsoupFiltersRSPAC_592() {
     String scriptHtml = "<p>text</p><img src=\"/image/123\"><script>alert(1);</script>";
     String cleaned = fieldDataSanitizer.cleanData(scriptHtml);
-    assertFalse(cleaned.contains("<script>alert(1);</script>"));
-    assertTrue(cleaned.contains("<img src=\"/image/123\" />"));
+    assertThat(cleaned).doesNotContain("<script>alert(1);</script>");
+    assertThat(cleaned).contains("<img src=\"/image/123\" />");
 
     String imageHtml = "<p>text</p><img src=\"javascript:alert(1);\"><script>alert(1);</script>";
     cleaned = fieldDataSanitizer.cleanData(imageHtml);
-    assertFalse(cleaned.contains("<script>alert(1);</script>"));
-    assertFalse(cleaned.contains("javascript:alert(1);"));
+    assertThat(cleaned).doesNotContain("<script>alert(1);</script>");
+    assertThat(cleaned).doesNotContain("javascript:alert(1);");
 
     // check data-attributes OK
     String dataHtml =
@@ -76,15 +76,15 @@ public class TextFieldDataSanitizerTest extends SpringTransactionalTest {
 
     String newHTml = "<img src=\"image.png\" onerror=\"alert('1');\">";
     newHTml = fieldDataSanitizer.cleanData(newHTml);
-    assertFalse(newHTml.contains("alert"));
+    assertThat(newHTml).doesNotContain("alert");
   }
 
   @Test
   public void HTMLTagFiltersRSPAC_1572() {
     String scriptHtml = "<p>text</p><img src=\"/image/123\"><script>alert(1);</script>";
     String cleaned = fieldDataSanitizer.textDataOnly(scriptHtml);
-    assertFalse(cleaned.contains("<script>"));
-    assertFalse(cleaned.contains("</script>"));
+    assertThat(cleaned).doesNotContain("<script>");
+    assertThat(cleaned).doesNotContain("</script>");
 
     String imageHtml = "<p>text</p><img src=\"javascript:alert(1);\"><script>alert(1);</script>";
     cleaned = fieldDataSanitizer.textDataOnly(imageHtml);
@@ -161,7 +161,7 @@ public class TextFieldDataSanitizerTest extends SpringTransactionalTest {
             + " allowfullscreen>\n"
             + "</iframe></div>";
     cleaned = fieldDataSanitizer.cleanData(youtubeEmbedHtml);
-    assertTrue(cleaned.contains("youtubeTest"), "was: " + cleaned);
+    assertThat(cleaned).as("was: " + cleaned).contains("youtubeTest");
     assertTrue(
         cleaned.contains("iframe")
             && cleaned.contains("src=\"https://www.youtube.com/embed/YkRldqVfTJo\"")
@@ -185,7 +185,7 @@ public class TextFieldDataSanitizerTest extends SpringTransactionalTest {
             + "</p>\n"
             + "</iframe>";
     cleaned = fieldDataSanitizer.cleanData(joveEmbedHtml);
-    assertTrue(cleaned.contains("joveTest"), "was: " + cleaned);
+    assertThat(cleaned).as("was: " + cleaned).contains("joveTest");
     assertTrue(
         cleaned.contains("iframe")
             && cleaned.contains(

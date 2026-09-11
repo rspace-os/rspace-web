@@ -1,6 +1,7 @@
 package com.researchspace.service.impl;
 
 import static com.researchspace.testutils.TestRunnerController.isJDK8;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -71,7 +72,7 @@ public class EcatMediaFactoryTest {
   @Test
   public void generateEcatImage() throws Exception {
     File file = RSpaceTestUtils.getResource("Picture1.png");
-    assertTrue(file.exists());
+    assertThat(file).exists();
     User user = TestFactory.createAnyUser("user");
     FileProperty fp = new FileProperty();
 

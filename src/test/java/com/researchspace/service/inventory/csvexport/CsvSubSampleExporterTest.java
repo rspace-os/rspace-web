@@ -1,7 +1,7 @@
 package com.researchspace.service.inventory.csvexport;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.archive.ExportScope;
 import com.researchspace.model.User;
@@ -70,7 +70,7 @@ public class CsvSubSampleExporterTest extends SpringTransactionalTest {
     List<String> csvColumnNames =
         subSampleExporter.writeSubSampleCsvHeaderIntoOutput(
             List.of(testSubSample, testSubSample2), exportMode, null, outputStream);
-    assertEquals(13, csvColumnNames.size());
+    assertThat(csvColumnNames).hasSize(13);
     String csvHeaderLineForSubSamples = outputStream.toString();
     String expectedColumnNamesLine =
         "Global ID,Name,Tags,Owner,Description,"
@@ -109,7 +109,7 @@ public class CsvSubSampleExporterTest extends SpringTransactionalTest {
     csvColumnNames =
         subSampleExporter.writeSubSampleCsvHeaderIntoOutput(
             List.of(testSubSample, testSubSample2), exportMode, null, outputStream);
-    assertEquals(9, csvColumnNames.size());
+    assertThat(csvColumnNames).hasSize(9);
     csvHeaderLineForSubSamples = outputStream.toString();
     expectedColumnNamesLine =
         "Global ID,Name,Tags,Owner,Description,Parent Sample (Global ID),Parent Container (Global"
@@ -144,7 +144,7 @@ public class CsvSubSampleExporterTest extends SpringTransactionalTest {
     // empty notes array
     List<SubSampleNote> notes = new ArrayList<>();
     String notesAsCsv = subSampleExporter.convertNotesToCsvStringValue(notes);
-    assertEquals("", notesAsCsv);
+    assertThat(notesAsCsv).isEmpty();
 
     // single note
     SubSampleNote testNote1 = new SubSampleNote("note content", testUser);
@@ -177,10 +177,12 @@ public class CsvSubSampleExporterTest extends SpringTransactionalTest {
         subSampleExporter
             .getCsvCommentFragmentForSubSamples(ExportScope.SELECTION, CsvExportMode.FULL, testUser)
             .toString();
-    assertTrue(csvComment.startsWith("# " + subSampleExporter.getCsvCommentHeader()), csvComment);
-    assertTrue(csvComment.contains("# Exported content: SUBSAMPLES"), csvComment);
-    assertTrue(csvComment.contains("# Export scope: SELECTION"), csvComment);
-    assertTrue(csvComment.contains("# Export mode: FULL"), csvComment);
-    assertTrue(csvComment.contains("# RSpace URL: http"), csvComment);
+    assertThat(csvComment)
+        .as(csvComment)
+        .startsWith("# " + subSampleExporter.getCsvCommentHeader());
+    assertThat(csvComment).as(csvComment).contains("# Exported content: SUBSAMPLES");
+    assertThat(csvComment).as(csvComment).contains("# Export scope: SELECTION");
+    assertThat(csvComment).as(csvComment).contains("# Export mode: FULL");
+    assertThat(csvComment).as(csvComment).contains("# RSpace URL: http");
   }
 }

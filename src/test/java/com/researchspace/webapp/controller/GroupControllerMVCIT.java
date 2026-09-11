@@ -2,6 +2,7 @@ package com.researchspace.webapp.controller;
 
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static com.researchspace.testutils.TestGroup.LABADMIN_PREFIX;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -107,7 +108,7 @@ public class GroupControllerMVCIT extends MVCTestBase {
     Group g1 = createGroupForUsers(pi1, pi1.getUsername(), "", pi1);
 
     logoutAndLoginAs(pi1);
-    assertEquals(1, grpMgr.getGroupEventsForGroup(pi1, g1).size()); // pi added
+    assertThat(grpMgr.getGroupEventsForGroup(pi1, g1)).hasSize(1); // pi added
     User toAdd = createAndSaveUser(getRandomAlphabeticString("other"));
     initUser(toAdd);
 
@@ -122,11 +123,11 @@ public class GroupControllerMVCIT extends MVCTestBase {
                 .param("id", g1.getId() + "")
                 .param("memberString", toAdd.getUsername()))
         .andReturn();
-    assertEquals(2, grpMgr.getGroupEventsForGroup(pi1, g1).size()); // toAdd added
+    assertThat(grpMgr.getGroupEventsForGroup(pi1, g1)).hasSize(2); // toAdd added
 
     // make sure group can be deleted.
     grpMgr.removeGroup(g1.getId(), pi1);
-    assertEquals(0, grpMgr.getGroupEventsForGroup(pi1, g1).size()); // no rows after deletion
+    assertThat(grpMgr.getGroupEventsForGroup(pi1, g1)).isEmpty(); // no rows after deletion
     var groupId = g1.getId();
 
     assertThrows(ObjectRetrievalFailureException.class, () -> grpMgr.getGroup(groupId));
@@ -141,7 +142,7 @@ public class GroupControllerMVCIT extends MVCTestBase {
     Group g1 = createProjectGroupForUsers(pi1, pi1.getUsername(), "", pi1);
 
     logoutAndLoginAs(pi1);
-    assertEquals(1, grpMgr.getGroupEventsForGroup(pi1, g1).size()); // pi added
+    assertThat(grpMgr.getGroupEventsForGroup(pi1, g1)).hasSize(1); // pi added
     User toAdd = createAndSaveUser(getRandomAlphabeticString("other"));
     initUser(toAdd);
 
@@ -156,7 +157,7 @@ public class GroupControllerMVCIT extends MVCTestBase {
                 .param("id", g1.getId() + "")
                 .param("memberString", toAdd.getUsername()))
         .andReturn();
-    assertEquals(2, grpMgr.getGroupEventsForGroup(pi1, g1).size()); // toAdd added
+    assertThat(grpMgr.getGroupEventsForGroup(pi1, g1)).hasSize(2); // toAdd added
 
     raIDServiceManager.bindRaidToGroupAndSave(
         pi1,
@@ -171,7 +172,7 @@ public class GroupControllerMVCIT extends MVCTestBase {
 
     // make sure group can be deleted.
     grpMgr.removeGroup(g1.getId(), pi1);
-    assertEquals(0, grpMgr.getGroupEventsForGroup(pi1, g1).size()); // no rows after deletion
+    assertThat(grpMgr.getGroupEventsForGroup(pi1, g1)).isEmpty(); // no rows after deletion
     var groupId = g1.getId();
 
     assertThrows(ObjectRetrievalFailureException.class, () -> grpMgr.getGroup(groupId));
@@ -189,7 +190,7 @@ public class GroupControllerMVCIT extends MVCTestBase {
         mvcUtils.getFromJsonResponseBodyByTypeRef(
             result, new TypeReference<List<UserRoleView>>() {});
     // The anonymous user does not get returned by the getAllUsers endpoint
-    assertEquals(expected - 1, resultsList.size());
+    assertThat(resultsList).size().isEqualTo(expected - 1);
   }
 
   @Test
@@ -203,7 +204,7 @@ public class GroupControllerMVCIT extends MVCTestBase {
     String NEW_PROFILE_TEXT = "new profilex";
     MvcResult result = postNewProfile(pi1, g1, NEW_PROFILE_TEXT);
     Map data = parseJSONObjectFromResponseStream(result);
-    assertEquals(true, data.get("data"));
+    assertThat(data).containsEntry("data", true);
     // assert profile is updated:
     g1 = grpMgr.getGroup(g1.getId());
     assertEquals(NEW_PROFILE_TEXT, g1.getProfileText());
@@ -219,7 +220,7 @@ public class GroupControllerMVCIT extends MVCTestBase {
     // no text, rejected
     MvcResult result2 = postNewProfile(pi1, g1, "");
     Map data3 = parseJSONObjectFromResponseStream(result2);
-    assertTrue(data3.containsKey("errorMsg"));
+    assertThat(data3).containsKey("errorMsg");
   }
 
   private MvcResult postNewProfile(User user, Group g1, String profile) throws Exception {
@@ -271,8 +272,7 @@ public class GroupControllerMVCIT extends MVCTestBase {
     MvcResult result = postSuccessfully(piOfNewGroup, user, GROUP_DISPLAY_NAME, SYS_ADMIN_UNAME);
     Group savedGroup = getGroupByName(GROUP_DISPLAY_NAME);
     assertEquals(initialGrpCount + 1, getGroupCount());
-    assertEquals(
-        initialGroupEvents + 2, grpMgr.getGroupEventsForGroup(sysadmin, savedGroup).size());
+    assertThat(grpMgr.getGroupEventsForGroup(sysadmin, savedGroup)).hasSize(initialGroupEvents + 2);
 
     User admin = createAndSaveUser(getRandomAlphabeticString("admin"), Role.ADMIN_ROLE.getName());
     User otherAdmin =
@@ -415,9 +415,9 @@ public class GroupControllerMVCIT extends MVCTestBase {
         () -> {
           // now check that grp folder is added to newusers LabGroups folder
           Folder grpFolder = folderDao.getLabGroupFolderForUser(newUser);
-          assertEquals(1, grpFolder.getChildrens().size());
+          assertThat(grpFolder.getChildrens()).hasSize(1);
           Folder piRoot = folderDao.getLabGroupFolderForUser(piUser);
-          assertEquals(2, piRoot.getChildrens().size()); // shared + newUser's home folders
+          assertThat(piRoot.getChildrens()).hasSize(2); // shared + newUser's home folders
         });
   }
 
@@ -425,7 +425,7 @@ public class GroupControllerMVCIT extends MVCTestBase {
   public void sysadminDirectAddUsersToGroup() throws Exception {
     // this adds 2 users
     GroupSetUp setup = setUpDocumentGroupForPIUserAndShareRecord();
-    assertEquals(2, grpMgr.getGroupEventsForGroup(null, setup.group).size());
+    assertThat(grpMgr.getGroupEventsForGroup(null, setup.group)).hasSize(2);
 
     // let's add two users at once
     User newUser = createAndSaveUser(getRandomName(5) + "newuser");
@@ -447,8 +447,8 @@ public class GroupControllerMVCIT extends MVCTestBase {
         .andReturn();
     // now query event log either through manager...
     final int expectedGroupEventCount = 4;
-    assertEquals(
-        expectedGroupEventCount, grpMgr.getGroupEventsForGroup(sysadminUser, setup.group).size());
+    assertThat(grpMgr.getGroupEventsForGroup(sysadminUser, setup.group))
+        .hasSize(expectedGroupEventCount);
     // or via GET
     MvcResult result =
         mockMvc
@@ -527,7 +527,7 @@ public class GroupControllerMVCIT extends MVCTestBase {
     doInTransaction(
         () -> {
           Folder otherLabGroupFolder = folderDao.getLabGroupFolderForUser(setup.user);
-          assertEquals(1, otherLabGroupFolder.getChildren().size());
+          assertThat(otherLabGroupFolder.getChildren()).hasSize(1);
         });
 
     // now user removes other from group
@@ -538,7 +538,7 @@ public class GroupControllerMVCIT extends MVCTestBase {
     doInTransaction(
         () -> {
           Folder otherLabGroupFolder = folderDao.getLabGroupFolderForUser(setup.user);
-          assertEquals(0, otherLabGroupFolder.getChildren().size());
+          assertThat(otherLabGroupFolder.getChildren()).isEmpty();
         });
 
     logoutAndLoginAs(setup.user);
@@ -633,10 +633,10 @@ public class GroupControllerMVCIT extends MVCTestBase {
     Group g1 =
         createGroupForUsers(pi1, pi1.getUsername(), admin1.getUsername(), pi1, admin1, member1);
     // sanity check that setup is OK
-    assertEquals(3, g1.getMembers().size());
-    assertTrue(g1.getAdminUsers().contains(admin1));
-    assertTrue(g1.getPiusers().contains(pi1));
-    assertTrue(g1.getDefaultUsers().contains(member1));
+    assertThat(g1.getMembers()).hasSize(3);
+    assertThat(g1.getAdminUsers()).contains(admin1);
+    assertThat(g1.getPiusers()).contains(pi1);
+    assertThat(g1.getDefaultUsers()).contains(member1);
 
     // member can't change role:
     logoutAndLoginAs(member1);
@@ -674,10 +674,8 @@ public class GroupControllerMVCIT extends MVCTestBase {
             .andReturn();
     Map json3 = parseJSONObjectFromResponseStream(res3);
     assertTrue(json3.get("errorMsg") != null);
-    assertTrue(
-        res3.getResponse()
-            .getContentAsString()
-            .contains(getMsgFromResourceBundler("groups.edit.errors.invalidRoleName")));
+    assertThat(res3.getResponse().getContentAsString())
+        .contains(getMsgFromResourceBundler("groups.edit.errors.invalidRoleName"));
 
     // try to change user role to unknown role, fails gracefully:
     MvcResult res4 =
@@ -689,10 +687,8 @@ public class GroupControllerMVCIT extends MVCTestBase {
             .andReturn();
     Map json4 = parseJSONObjectFromResponseStream(res4);
     assertTrue(json4.get("errorMsg") != null);
-    assertTrue(
-        res4.getResponse()
-            .getContentAsString()
-            .contains(getMsgFromResourceBundler("groups.edit.errors.invalidRoleName")));
+    assertThat(res4.getResponse().getContentAsString())
+        .contains(getMsgFromResourceBundler("groups.edit.errors.invalidRoleName"));
 
     // finally, we should succeed - pi can alter user->lab admin role, for
     // example
@@ -728,10 +724,8 @@ public class GroupControllerMVCIT extends MVCTestBase {
             .andReturn();
     Map json7 = parseJSONObjectFromResponseStream(res7);
     assertTrue(json7.get("errorMsg") != null);
-    assertTrue(
-        res7.getResponse()
-            .getContentAsString()
-            .contains(getMsgFromResourceBundler("groups.edit.errors.cannotRemoveLastAdminOrPi")));
+    assertThat(res7.getResponse().getContentAsString())
+        .contains(getMsgFromResourceBundler("groups.edit.errors.cannotRemoveLastAdminOrPi"));
 
     // now let's update to a labdmin with view all permissions
     logoutAndLoginAs(pi1);
@@ -781,15 +775,15 @@ public class GroupControllerMVCIT extends MVCTestBase {
     doInTransaction(
         () -> {
           // assert that member1 has collab group folder appear in his collabGroups folder
-          assertEquals(
-              1, folderDao.getCollaborationGroupsSharedFolderForUser(member1).getChildren().size());
+          assertThat(folderDao.getCollaborationGroupsSharedFolderForUser(member1).getChildren())
+              .hasSize(1);
 
           // and assert that member 1.s home folder doesn't NOT appear in other PIs
           // folder.
           Folder member1Root = folderDao.getRootRecordForUser(member1);
-          assertEquals(1, member1Root.getParents().size()); //
+          assertThat(member1Root.getParents()).hasSize(1); //
           for (Folder parent : member1Root.getParentFolders()) {
-            assertFalse(parent.getOwner().equals(pi2));
+            assertThat(parent.getOwner()).isNotEqualTo(pi2);
           }
         });
 
@@ -807,7 +801,7 @@ public class GroupControllerMVCIT extends MVCTestBase {
 
     // now it only has 1 member:
     Group collabGRou2 = grpMgr.getGroup(collabGrp.getId());
-    assertEquals(1, collabGRou2.getMembers().size());
+    assertThat(collabGRou2.getMembers()).hasSize(1);
     assertEquals(pi2, collabGRou2.getMembers().iterator().next());
 
     // now pi2 will remove himself; this will delete the group:
@@ -836,14 +830,14 @@ public class GroupControllerMVCIT extends MVCTestBase {
     newPi = userMgr.getUserByUsername(newPi.getUsername(), true);
     Set<ConstraintBasedPermission> piGroupPermissions = assertNewPIHasGRoupPIPerms(newPi, updated);
     assertEquals(newPi, updated.getPiusers().iterator().next());
-    assertFalse(updated.getPiusers().contains(testgroup.getPi()));
+    assertThat(updated.getPiusers()).doesNotContain(testgroup.getPi());
 
     User oldPi = userMgr.get(testgroup.getPi().getId());
     assertTrue(oldPi.hasRoleInGroup(updated, RoleInGroup.DEFAULT));
     logoutAndLoginAs(newPi);
     // new pi can create collab groups.
     Group collabGroup = createCollabGroupBetweenGroups(updated, group3.getGroup());
-    assertEquals(2, collabGroup.getMembers().size());
+    assertThat(collabGroup.getMembers()).hasSize(2);
     // check new PI has acquired permissions
     newPi = userMgr.getUserByUsername(newPi.getUsername(), true);
 
@@ -884,10 +878,8 @@ public class GroupControllerMVCIT extends MVCTestBase {
             .andReturn();
     List<Map<String, Object>> toInvite = getFromJsonAjaxReturnObject(result, List.class);
     // list doesn't have already existing members
-    assertFalse(
-        toInvite.stream()
-            .anyMatch(user -> existingUsernamesInGroup.contains(user.get("username"))));
-    assertEquals(totalUsers - existingGroupSize, toInvite.size());
+    assertThat(toInvite).noneMatch(user -> existingUsernamesInGroup.contains(user.get("username")));
+    assertThat(toInvite).hasSize(totalUsers - existingGroupSize);
 
     // non-PI gets Auth error
     User groupMember = testgroup.getUserByPrefix("u1");
@@ -900,7 +892,7 @@ public class GroupControllerMVCIT extends MVCTestBase {
             .andExpect(status().isUnauthorized())
             .andReturn();
     ErrorList el = getErrorListFromAjaxReturnObject(result);
-    assertTrue(el.getAllErrorMessagesAsStringsSeparatedBy(",").length() > 0);
+    assertThat(el.getAllErrorMessagesAsStringsSeparatedBy(",").length()).isGreaterThan(0);
   }
 
   private void enablePiEditAll(User sysadmin) {
@@ -918,7 +910,7 @@ public class GroupControllerMVCIT extends MVCTestBase {
             .filter(cbp -> !cbp.getString().matches("FORM:CREATE:?"))
             .collect(Collectors.toList());
     for (Permission cbp : totest) {
-      assertFalse(reducedPerms.contains(cbp));
+      assertThat(reducedPerms).doesNotContain(cbp);
     }
   }
 
@@ -930,7 +922,7 @@ public class GroupControllerMVCIT extends MVCTestBase {
       if (!allPerms.contains(cbp)) {
         log.warn("new pi does not have permission {}", cbp);
       }
-      assertTrue(allPerms.contains(cbp));
+      assertThat(allPerms).contains(cbp);
     }
     return piGroupPermissions;
   }
@@ -976,7 +968,7 @@ public class GroupControllerMVCIT extends MVCTestBase {
             .param("memberString", userInvitedByAdmin.getUsername()));
 
     userInvitedByAdmin = userMgr.getUserByUsername(userInvitedByAdmin.getUsername(), true);
-    assertEquals(1, userInvitedByAdmin.getAutoshareGroups().size());
+    assertThat(userInvitedByAdmin.getAutoshareGroups()).hasSize(1);
 
     mockMvc.perform(
         post("/groups/admin/addUser")
@@ -985,7 +977,7 @@ public class GroupControllerMVCIT extends MVCTestBase {
             .param("memberString", piInvitedByAdmin.getUsername()));
 
     piInvitedByAdmin = userMgr.getUserByUsername(piInvitedByAdmin.getUsername(), true);
-    assertEquals(0, piInvitedByAdmin.getAutoshareGroups().size());
+    assertThat(piInvitedByAdmin.getAutoshareGroups()).isEmpty();
 
     // Add a regular user and a PI to the group as a PI
 
@@ -1009,7 +1001,7 @@ public class GroupControllerMVCIT extends MVCTestBase {
     reqUpdateMgr.updateStatus(
         userInvitedByPi.getUsername(), CommunicationStatus.COMPLETED, mor.getId(), "Added");
     userInvitedByPi = userMgr.getUserByUsername(userInvitedByPi.getUsername(), true);
-    assertEquals(1, userInvitedByPi.getAutoshareGroups().size());
+    assertThat(userInvitedByPi.getAutoshareGroups()).hasSize(1);
 
     logoutAndLoginAs(pi);
     mockMvc.perform(
@@ -1028,7 +1020,7 @@ public class GroupControllerMVCIT extends MVCTestBase {
     reqUpdateMgr.updateStatus(
         piInvitedByPi.getUsername(), CommunicationStatus.COMPLETED, mor2.getId(), "Added");
     piInvitedByPi = userMgr.getUserByUsername(piInvitedByPi.getUsername(), true);
-    assertEquals(0, piInvitedByPi.getAutoshareGroups().size());
+    assertThat(piInvitedByPi.getAutoshareGroups()).isEmpty();
 
     // Disable group-wide autoshare
 
@@ -1182,8 +1174,8 @@ public class GroupControllerMVCIT extends MVCTestBase {
         post(urlTemplate, group.getId()).principal(subject::getUsername);
 
     MvcResult result = mockMvc.perform(requestBuilder).andExpect(status().isOk()).andReturn();
-    assertTrue(
-        result.getResponse().getContentAsString().contains("Only PI can allow group publication"));
+    assertThat(result.getResponse().getContentAsString())
+        .contains("Only PI can allow group publication");
     group = grpMgr.getGroup(group.getId());
     assertEquals(expectedPublicationAllowedStatus, group.isPublicationAllowed());
   }

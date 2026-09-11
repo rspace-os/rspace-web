@@ -1,5 +1,6 @@
 package com.researchspace.auth;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -43,8 +44,8 @@ public class SSORunAsAcquiresAllPermissionsTest extends SpringTransactionalTest 
     // assert runAs has worked
     assertEquals(target.getUsername(), getSubject().getPrincipal().toString());
     // and is using correct realm
-    assertTrue(
-        getSubject().getPrincipals().getRealmNames().contains(SSOPassThruRealm.SSO_REALM_NAME));
+    assertThat(getSubject().getPrincipals().getRealmNames())
+        .contains(SSOPassThruRealm.SSO_REALM_NAME);
 
     // and that run as has picked permissions
     assertTrue(permissionUtils.isPermitted("FORM:CREATE"));

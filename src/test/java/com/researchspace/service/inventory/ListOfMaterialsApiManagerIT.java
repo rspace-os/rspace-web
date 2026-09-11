@@ -1,5 +1,6 @@
 package com.researchspace.service.inventory;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -43,7 +44,7 @@ public class ListOfMaterialsApiManagerIT extends RealTransactionSpringTestBase {
         basicSubSample, basicSubSample.getQuantity(), false); // add subsample usage
     ApiListOfMaterials createdLom = lomManager.createNewListOfMaterials(newLom, testUser);
     assertNotNull(createdLom.getId());
-    assertEquals(1, createdLom.getMaterials().size());
+    assertThat(createdLom.getMaterials()).hasSize(1);
     assertEquals("mySubSample", createdLom.getMaterials().get(0).getRecord().getName());
 
     // update doc field name (to add doc revision)
@@ -66,7 +67,7 @@ public class ListOfMaterialsApiManagerIT extends RealTransactionSpringTestBase {
 
     // check doc history & retrieve loms at each revision
     List<AuditedRecord> docHistory = auditManager.getHistory(updatedDoc, null);
-    assertEquals(6, docHistory.size());
+    assertThat(docHistory).hasSize(6);
 
     AuditedRecord docRevision1 = docHistory.get(0);
     assertEquals(
@@ -87,7 +88,7 @@ public class ListOfMaterialsApiManagerIT extends RealTransactionSpringTestBase {
             createdLom.getId(), docRevision2.getRevision().longValue());
     assertNotNull(lomAtRev2);
     assertEquals("newLom", lomAtRev2.getName());
-    assertEquals(1, lomAtRev2.getMaterials().size());
+    assertThat(lomAtRev2.getMaterials()).hasSize(1);
     assertEquals("mySubSample", lomAtRev2.getMaterials().get(0).getRecord().getName());
 
     AuditedRecord docRevision3 = docHistory.get(2);
@@ -109,7 +110,7 @@ public class ListOfMaterialsApiManagerIT extends RealTransactionSpringTestBase {
             createdLom.getId(), docRevision4.getRevision().longValue());
     assertNotNull(lomAtRev4);
     assertEquals("updatedLom", lomAtRev4.getName());
-    assertEquals(1, lomAtRev4.getMaterials().size());
+    assertThat(lomAtRev4.getMaterials()).hasSize(1);
     assertEquals("mySample", lomAtRev4.getMaterials().get(0).getRecord().getName());
 
     AuditedRecord docRevision5 = docHistory.get(4);

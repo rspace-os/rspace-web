@@ -1,5 +1,6 @@
 package com.researchspace.service.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -123,7 +124,7 @@ public class RecordEditorTrackerTest {
     // another user can't unlock a record owned by a user
     tracker.unlockRecord(r1, u1, sessionIDPRovider);
     assertEquals(EditStatus.CANNOT_EDIT_OTHER_EDITING, attemptEdit(r1.getId(), u1, activeusers));
-    assertEquals(u2.getUsername(), tracker.isEditing(r1).get());
+    assertThat(tracker.isEditing(r1)).contains(u2.getUsername());
   }
 
   @Test
@@ -178,7 +179,7 @@ public class RecordEditorTrackerTest {
           EditStatus es = attemptEdit(r.getId(), user, activeusers);
           if (es.equals(EditStatus.EDIT_MODE)) {
             synchronized (reporter) {
-              assertTrue(reporter.get(r) == null || reporter.get(r).equals(username));
+              assertThat(reporter.get(r)).isIn(null, username);
               reporter.put(r.getId(), user.getUsername());
             }
           } else {
@@ -217,27 +218,27 @@ public class RecordEditorTrackerTest {
   public void testGetViewersForRecord() {
     Set<String> viewers = tracker.getViewersForRecord(r1.getId());
     assertNotNull(viewers); // should not return null
-    assertTrue(viewers.isEmpty());
+    assertThat(viewers).isEmpty();
     assertThrows(UnsupportedOperationException.class, () -> viewers.add("new user"));
   }
 
   @Test
   public void testAddRemoveViewersForRecord() {
     tracker.addViewerToRecord(r1, u1.getUsername());
-    assertEquals(1, tracker.getViewersForRecord(r1.getId()).size());
+    assertThat(tracker.getViewersForRecord(r1.getId())).hasSize(1);
     assertEquals(u1.getUsername(), tracker.getViewersForRecord(r1.getId()).iterator().next());
 
     // add again - should ignore duplicates
     tracker.addViewerToRecord(r1, u1.getUsername());
-    assertEquals(1, tracker.getViewersForRecord(r1.getId()).size());
+    assertThat(tracker.getViewersForRecord(r1.getId())).hasSize(1);
 
     // should be no viewers now
     tracker.removeViewerFromRecord(r1, u1.getUsername());
-    assertEquals(0, tracker.getViewersForRecord(r1.getId()).size());
+    assertThat(tracker.getViewersForRecord(r1.getId())).isEmpty();
   }
 
   @Test
   public void testNoNPEIfRemovingLoggedOutUser() {
-    assertEquals("", tracker.unlockRecord(r1, null, sessionIDPRovider));
+    assertThat(tracker.unlockRecord(r1, null, sessionIDPRovider)).isEmpty();
   }
 }

@@ -1,9 +1,8 @@
 package com.researchspace.api.v1.model;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.api.v1.model.ApiInventorySystemSettings.IdentifierSettings;
@@ -35,10 +34,10 @@ class ApiInventorySystemSettingsTest {
 
     String json = mapper.writeValueAsString(settings);
 
-    assertTrue(json.contains("\"identifiersSettings\""), json);
-    assertTrue(json.contains("\"IGSN\":["), json); // value is now a JSON array
-    assertTrue(json.contains("\"provider\":\"IGSN_DATACITE\""), json);
-    assertFalse(json.contains("\"datacite\""), json);
+    assertThat(json).as(json).contains("\"identifiersSettings\"");
+    assertThat(json).as(json).contains("\"IGSN\":["); // value is now a JSON array
+    assertThat(json).as(json).contains("\"provider\":\"IGSN_DATACITE\"");
+    assertThat(json).as(json).doesNotContain("\"datacite\"");
   }
 
   @Test
@@ -53,7 +52,7 @@ class ApiInventorySystemSettingsTest {
     Set<IdentifierSettings> pidinst =
         settings.getIdentifiersSettings().get(InventorySettingType.PIDINST);
     assertNotNull(pidinst);
-    assertEquals(2, pidinst.size());
+    assertThat(pidinst).hasSize(2);
     IdentifierSettings b2inst =
         settings.findByProvider(IdentifierType.PIDINST_B2INST).orElseThrow();
     assertEquals("comm", b2inst.getUsername());
@@ -68,17 +67,17 @@ class ApiInventorySystemSettingsTest {
     settings.addSetting(
         InventorySettingType.PIDINST, settings(IdentifierType.PIDINST_B2INST, "comm", "tok"));
 
-    assertEquals(2, settings.getIdentifiersSettings().get(InventorySettingType.PIDINST).size());
+    assertThat(settings.getIdentifiersSettings().get(InventorySettingType.PIDINST)).hasSize(2);
     assertEquals(
         IdentifierType.PIDINST_B2INST,
         settings.findByProvider(IdentifierType.PIDINST_B2INST).orElseThrow().getProvider());
-    assertTrue(settings.findByProvider(IdentifierType.IGSN_DATACITE).isEmpty());
+    assertThat(settings.findByProvider(IdentifierType.IGSN_DATACITE)).isEmpty();
   }
 
   @Test
   void identifiersSettingsMapEmptyByDefault() {
     ApiInventorySystemSettings settings = new ApiInventorySystemSettings();
     assertNotNull(settings.getIdentifiersSettings());
-    assertTrue(settings.getIdentifiersSettings().isEmpty());
+    assertThat(settings.getIdentifiersSettings()).isEmpty();
   }
 }

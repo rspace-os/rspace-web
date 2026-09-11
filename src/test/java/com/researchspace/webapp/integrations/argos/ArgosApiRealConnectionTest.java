@@ -1,7 +1,7 @@
 package com.researchspace.webapp.integrations.argos;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import com.researchspace.argos.model.ArgosDMP;
@@ -36,7 +36,7 @@ public class ArgosApiRealConnectionTest {
   public void listPlansTest() {
     try {
       DataTableData<ArgosDMPListing> list = argosClient.listPlans(10, 0, null, null, null, null);
-      assertTrue(list.getData().size() >= 0);
+      assertThat(list.getData().size()).isGreaterThanOrEqualTo(0);
     } catch (MalformedURLException | URISyntaxException e) {
       fail("argosClient.listPlans threw an exception.");
     }

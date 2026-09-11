@@ -1,8 +1,8 @@
 package com.researchspace.webapp.integrations.wopi;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
@@ -31,22 +31,23 @@ public class WopiDiscoveryXmlParsingTest extends SpringTransactionalTest {
     XmlWopiDiscovery data = processor.parseDiscoveryXml(reader);
 
     // Validate proof key info got read correctly
-    assertTrue(
-        data.getProofKey().getOldValue().startsWith("BgIAAAAkAABSU0Ex"),
-        data.getProofKey().getOldValue());
-    assertTrue(
-        data.getProofKey().getOldModulus().startsWith("pZriWYzVpQzWb"),
-        data.getProofKey().getOldModulus());
+    assertThat(data.getProofKey().getOldValue())
+        .as(data.getProofKey().getOldValue())
+        .startsWith("BgIAAAAkAABSU0Ex");
+    assertThat(data.getProofKey().getOldModulus())
+        .as(data.getProofKey().getOldModulus())
+        .startsWith("pZriWYzVpQzWb");
     assertEquals("AQAB", data.getProofKey().getOldExponent());
-    assertTrue(
-        data.getProofKey().getValue().startsWith("BgIAAACkAABSU0E"), data.getProofKey().getValue());
-    assertTrue(
-        data.getProofKey().getModulus().startsWith("nHUB27M5goCTt"),
-        data.getProofKey().getModulus());
+    assertThat(data.getProofKey().getValue())
+        .as(data.getProofKey().getValue())
+        .startsWith("BgIAAACkAABSU0E");
+    assertThat(data.getProofKey().getModulus())
+        .as(data.getProofKey().getModulus())
+        .startsWith("nHUB27M5goCTt");
     assertEquals("AQAB", data.getProofKey().getExponent());
 
     // Validate apps
-    assertEquals(8, data.getApps().size());
+    assertThat(data.getApps()).hasSize(8);
     XmlApp excel = data.getApps().get(0);
     assertEquals("Excel", excel.getName());
     assertEquals("WordPrague", data.getApps().get(7).getName());

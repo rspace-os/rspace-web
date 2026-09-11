@@ -1,5 +1,6 @@
 package com.researchspace.model.inventory;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -49,7 +50,7 @@ public class ContainerTest {
             IllegalArgumentException.class,
             () -> listContainer.createNewImageContainerLocation(2, 2));
     assertEquals("LIST container cannot add locations directly", iae.getMessage());
-    assertEquals(0, listContainer.getLocations().size());
+    assertThat(listContainer.getLocations()).isEmpty();
     assertEquals(0, listContainer.getLocationsCount());
 
     // try adding subsample to unspecified location for each container - only allowed for list
@@ -59,7 +60,7 @@ public class ContainerTest {
     assertEquals(1, listContainer.getContentCount());
     assertEquals(1, listContainer.getContentCountSubSamples());
     assertEquals(0, listContainer.getContentCountContainers());
-    assertEquals(1, listContainer.getLocations().size());
+    assertThat(listContainer.getLocations()).hasSize(1);
     assertEquals(0, listContainer.getLocationsCount());
 
     // try adding subsample to location with coordinates for each container - allowed for grid/image
@@ -70,7 +71,7 @@ public class ContainerTest {
             () -> listContainer.addToNewLocationWithCoords(subSample, 2, 2));
     assertEquals("LIST container can't use explicit location coordinates", iae.getMessage());
     assertEquals(1, listContainer.getContentCount()); // previously added
-    assertEquals(1, listContainer.getLocations().size());
+    assertThat(listContainer.getLocations()).hasSize(1);
     assertEquals(0, listContainer.getLocationsCount());
   }
 
@@ -87,7 +88,7 @@ public class ContainerTest {
             IllegalArgumentException.class,
             () -> gridContainer6by4.createNewImageContainerLocation(2, 2));
     assertEquals("GRID container cannot add locations directly", iae.getMessage());
-    assertEquals(0, gridContainer6by4.getLocations().size());
+    assertThat(gridContainer6by4.getLocations()).isEmpty();
     assertEquals(24, gridContainer6by4.getLocationsCount());
 
     // try adding subsample to unspecified location for each container - only allowed for list
@@ -100,7 +101,7 @@ public class ContainerTest {
         "GRID container cannot store content without providing specific coordinates",
         iae.getMessage());
     assertEquals(0, gridContainer6by4.getContentCount());
-    assertEquals(0, gridContainer6by4.getLocations().size());
+    assertThat(gridContainer6by4.getLocations()).isEmpty();
 
     // for grid container: try adding subsample to location with wrong coordinates
     iae =
@@ -111,7 +112,7 @@ public class ContainerTest {
         "Requested new location (7,2) is outside grid container dimensions (columns:6, rows:4)",
         iae.getMessage());
     assertEquals(0, gridContainer6by4.getContentCount());
-    assertEquals(0, gridContainer6by4.getLocations().size());
+    assertThat(gridContainer6by4.getLocations()).isEmpty();
 
     iae =
         Assertions.assertThrows(
@@ -121,7 +122,7 @@ public class ContainerTest {
         "Requested new location (2,5) is outside grid container dimensions (columns:6, rows:4)",
         iae.getMessage());
     assertEquals(0, gridContainer6by4.getContentCount());
-    assertEquals(0, gridContainer6by4.getLocations().size());
+    assertThat(gridContainer6by4.getLocations()).isEmpty();
 
     // try adding subsample to location with coordinates for each container - allowed for grid/image
     // containers
@@ -129,7 +130,7 @@ public class ContainerTest {
     assertEquals(1, gridContainer6by4.getContentCount());
     assertEquals(1, gridContainer6by4.getContentCountSubSamples());
     assertEquals(0, gridContainer6by4.getContentCountContainers());
-    assertEquals(1, gridContainer6by4.getLocations().size());
+    assertThat(gridContainer6by4.getLocations()).hasSize(1);
   }
 
   @Test
@@ -140,7 +141,7 @@ public class ContainerTest {
     imageContainer.setId(3L);
 
     imageContainer.createNewImageContainerLocation(2, 2);
-    assertEquals(1, imageContainer.getLocations().size());
+    assertThat(imageContainer.getLocations()).hasSize(1);
     assertEquals(1, imageContainer.getLocationsCount());
 
     // try adding subsample to unspecified location for each container - only allowed for list
@@ -153,7 +154,7 @@ public class ContainerTest {
         "IMAGE container cannot store content without providing specific coordinates",
         iae.getMessage());
     assertEquals(0, imageContainer.getContentCount());
-    assertEquals(1, imageContainer.getLocations().size());
+    assertThat(imageContainer.getLocations()).hasSize(1);
 
     // try adding subsample to location with coordinates for each container - allowed for grid/image
     // containers
@@ -164,11 +165,11 @@ public class ContainerTest {
     assertEquals(
         "Image container must provide target location id, not coordinates", iae.getMessage());
     assertEquals(0, imageContainer.getContentCount());
-    assertEquals(1, imageContainer.getLocations().size());
+    assertThat(imageContainer.getLocations()).hasSize(1);
     // image container can add using location though
     imageContainer.setRecordInLocation(subSample, imageContainer.getLocations().get(0));
     assertEquals(1, imageContainer.getContentCount());
-    assertEquals(1, imageContainer.getLocations().size());
+    assertThat(imageContainer.getLocations()).hasSize(1);
   }
 
   @Test
@@ -192,7 +193,7 @@ public class ContainerTest {
     assertEquals(2, listContainer1.getContentCount());
     assertEquals(1, listContainer1.getContentCountSubSamples());
     assertEquals(1, listContainer1.getContentCountContainers());
-    assertEquals(2, listContainer1.getLocations().size());
+    assertThat(listContainer1.getLocations()).hasSize(2);
 
     // to another list container
     Container listContainer2 = Container.createListContainer(true, true, true);
@@ -203,9 +204,9 @@ public class ContainerTest {
     movingContainer.moveToNewParent(listContainer2);
     assertEquals(listContainer2.getId(), movingContainer.getParentId());
     assertEquals(0, listContainer1.getContentCount());
-    assertEquals(0, listContainer1.getLocations().size());
+    assertThat(listContainer1.getLocations()).isEmpty();
     assertEquals(2, listContainer2.getContentCount());
-    assertEquals(2, listContainer2.getLocations().size());
+    assertThat(listContainer2.getLocations()).hasSize(2);
 
     // to grid container
     Container gridContainer6by4 = Container.createGridContainer(6, 4, false, true, false);
@@ -220,9 +221,9 @@ public class ContainerTest {
             () -> movingContainer.moveToNewParentWithCoords(gridContainer6by4, 2, 3));
     assertEquals("Container IC3 can't hold record of type: CONTAINER", iae.getMessage());
     assertEquals(0, listContainer2.getContentCount());
-    assertEquals(0, listContainer2.getLocations().size());
+    assertThat(listContainer2.getLocations()).isEmpty();
     assertEquals(1, gridContainer6by4.getContentCount());
-    assertEquals(2, gridContainer6by4.getLocations().size());
+    assertThat(gridContainer6by4.getLocations()).hasSize(2);
 
     // to image container
     Container imageContainer = Container.createImageContainer(true, true, true);
@@ -247,7 +248,7 @@ public class ContainerTest {
     assertEquals(imageLocation2.getId(), movingContainer.getParentLocation().getId());
     assertEquals(0, gridContainer6by4.getContentCount());
     assertEquals(2, imageContainer.getContentCount());
-    assertEquals(3, imageContainer.getLocations().size());
+    assertThat(imageContainer.getLocations()).hasSize(3);
 
     // to another location inside image container
     subSample.moveToNewParentAndLocation(imageContainer, imageLocation3);
@@ -257,7 +258,7 @@ public class ContainerTest {
     assertEquals(imageContainer.getId(), movingContainer.getParentId());
     assertEquals(imageLocation1.getId(), movingContainer.getParentLocation().getId());
     assertEquals(2, imageContainer.getContentCount());
-    assertEquals(3, imageContainer.getLocations().size());
+    assertThat(imageContainer.getLocations()).hasSize(3);
 
     // back to original list container
     subSample.moveToNewParent(listContainer1);
@@ -266,17 +267,17 @@ public class ContainerTest {
     assertEquals(listContainer1.getId(), movingContainer.getParentId());
     assertEquals(2, listContainer1.getContentCount());
     assertEquals(0, imageContainer.getContentCount());
-    assertEquals(3, imageContainer.getLocations().size());
+    assertThat(imageContainer.getLocations()).hasSize(3);
 
     // remove subcontainer and add it again
     movingContainer.removeFromCurrentParent();
     assertNull(movingContainer.getParentId());
     assertEquals(1, listContainer1.getContentCount());
-    assertEquals(1, listContainer1.getLocations().size());
+    assertThat(listContainer1.getLocations()).hasSize(1);
     movingContainer.moveToNewParent(listContainer1);
     assertEquals(listContainer1.getId(), movingContainer.getParentId());
     assertEquals(2, listContainer1.getContentCount());
-    assertEquals(2, listContainer1.getLocations().size());
+    assertThat(listContainer1.getLocations()).hasSize(2);
   }
 
   @Test
@@ -291,12 +292,12 @@ public class ContainerTest {
     SubSample subSample = new SubSample();
     listContainer.addToNewLocation(subSample);
     assertEquals(1, listContainer.getContentCount());
-    assertEquals(1, listContainer.getLocations().size());
+    assertThat(listContainer.getLocations()).hasSize(1);
 
     Container copy = listContainer.copy(anyUser);
 
     assertEquals(0, copy.getContentCount());
-    assertEquals(0, copy.getLocations().size());
+    assertThat(copy.getLocations()).isEmpty();
     assertTrue(copy.isCanStoreSamples());
     assertFalse(copy.isCanStoreContainers());
     // copy is unattached, has no parent.
@@ -338,16 +339,16 @@ public class ContainerTest {
     imgContainer.getLocations().get(0).setId(5L);
     imgContainer.setRecordInLocation(subSample, imgContainer.getLocations().get(0));
     assertEquals(1, imgContainer.getContentCount());
-    assertEquals(2, imgContainer.getLocations().size());
+    assertThat(imgContainer.getLocations()).hasSize(2);
     assertEquals(2, imgContainer.getLocationsCount());
 
     Container copy = imgContainer.copy(anyUser);
-    assertTrue(copy.getName().contains("_COPY"));
+    assertThat(copy.getName()).contains("_COPY");
     // locations are copied, but are empty
     assertEquals(0, copy.getContentCount());
-    assertEquals(2, copy.getLocations().size());
+    assertThat(copy.getLocations()).hasSize(2);
     // container locations are new:
-    assertTrue(copy.getLocations().stream().allMatch(cl -> cl.getId() == null));
+    assertThat(copy.getLocations().stream()).allMatch(cl -> cl.getId() == null);
 
     // copy is unattached, has no parent.
     assertNull(copy.getParentLocation());
@@ -388,14 +389,14 @@ public class ContainerTest {
     SubSample subSample = new SubSample();
     gridContainer.addToNewLocationWithCoords(subSample, 3, 6);
     assertEquals(1, gridContainer.getContentCount());
-    assertEquals(1, gridContainer.getLocations().size());
+    assertThat(gridContainer.getLocations()).hasSize(1);
     assertEquals(40, gridContainer.getLocationsCount());
 
     Container copy = gridContainer.copy(anyUser);
 
     // grid dimensions are copied, but are empty.
     assertEquals(0, copy.getContentCount());
-    assertEquals(0, copy.getLocations().size());
+    assertThat(copy.getLocations()).isEmpty();
     assertEquals(origGridCol, copy.getGridLayoutColumnsNumber());
     assertEquals(origGridRow, copy.getGridLayoutRowsNumber());
     assertTrue(copy.isCanStoreSamples());

@@ -1,9 +1,9 @@
 package com.researchspace.model.record;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.field.FieldForm;
 import org.junit.jupiter.api.AfterEach;
@@ -39,7 +39,7 @@ public class TemporaryCopyLinkedToOriginalCopyPolicyTest {
     assertNull(ftCpy.getTempFieldForm());
     assertEquals(ftCpy, ft.getTempFieldForm());
 
-    assertTrue(copy.getCreationDateAsDate().after(t1.getCreationDateAsDate()));
+    assertThat(copy.getCreationDateAsDate()).isAfter(t1.getCreationDateAsDate());
 
     assertEquals(t1.getNumActiveFields(), copy.getNumActiveFields());
     assertEquals(t1.getNumAllFields(), copy.getNumAllFields());

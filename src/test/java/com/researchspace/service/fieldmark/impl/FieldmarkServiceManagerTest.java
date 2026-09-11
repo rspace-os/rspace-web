@@ -2,10 +2,10 @@ package com.researchspace.service.fieldmark.impl;
 
 import static com.researchspace.service.fieldmark.impl.FieldmarkToRSpaceApiConverterTest.getPreBuiltSample;
 import static com.researchspace.service.fieldmark.impl.FieldmarkToRSpaceApiConverterTest.getPreBuiltSampleTemplate;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -179,7 +179,7 @@ public class FieldmarkServiceManagerTest extends SpringTransactionalTest {
   public void testGetNotebooksSuccessful() {
     List<FieldmarkNotebook> result = fieldmarkServiceManagerImpl.getFieldmarkNotebookList(goodUser);
     assertNotNull(result);
-    assertEquals(1, result.size());
+    assertThat(result).hasSize(1);
     assertEquals("1726126204618-rspace-igsn-demo", result.get(0).getProjectId());
   }
 
@@ -190,7 +190,7 @@ public class FieldmarkServiceManagerTest extends SpringTransactionalTest {
             FieldmarkImportException.class,
             () -> fieldmarkServiceManagerImpl.getFieldmarkNotebookList(wrongUser),
             "FieldmarkServiceManager did not throw the exception, but it was needed");
-    assertTrue(thrown.getMessage().contains("Internal Server Error"));
+    assertThat(thrown.getMessage()).contains("Internal Server Error");
   }
 
   @Test
@@ -200,14 +200,10 @@ public class FieldmarkServiceManagerTest extends SpringTransactionalTest {
             FieldmarkImportException.class,
             () -> fieldmarkServiceManagerImpl.importNotebook(GOOD_NOTEBOOK_REQ, wrongUser),
             "FieldmarkServiceManager did not throw the exception, but it was needed");
-    assertTrue(
-        thrown
-            .getMessage()
-            .contains(
-                "The notebookID \""
-                    + GOOD_NOTEBOOK_REQ.getNotebookId()
-                    + "\" has not being imported"));
-    assertTrue(thrown.getMessage().contains("No disk space left"));
+    assertThat(thrown.getMessage())
+        .contains(
+            "The notebookID \"" + GOOD_NOTEBOOK_REQ.getNotebookId() + "\" has not being imported");
+    assertThat(thrown.getMessage()).contains("No disk space left");
   }
 
   @Test
@@ -223,8 +219,8 @@ public class FieldmarkServiceManagerTest extends SpringTransactionalTest {
             () -> fieldmarkServiceManagerImpl.importNotebook(GOOD_NOTEBOOK_REQ, goodUser),
             "FieldmarkServiceManager did not throw the exception, but it was needed");
 
-    assertTrue(thrown.getMessage().contains("The notebook cannot be fetched"));
-    assertTrue(thrown.getMessage().contains("Internal Server Error"));
+    assertThat(thrown.getMessage()).contains("The notebook cannot be fetched");
+    assertThat(thrown.getMessage()).contains("Internal Server Error");
   }
 
   public void testImportNotebookRaisesClientHttpException() {
@@ -233,7 +229,7 @@ public class FieldmarkServiceManagerTest extends SpringTransactionalTest {
             BindException.class,
             () -> fieldmarkServiceManagerImpl.importNotebook(WRONG_NOTEBOOK_REQ, goodUser),
             "FieldmarkServiceManager did not throw the exception, but it was needed");
-    assertTrue(thrown.getMessage().contains("Unauthorized"));
+    assertThat(thrown.getMessage()).contains("Unauthorized");
   }
 
   @Test
@@ -267,7 +263,7 @@ public class FieldmarkServiceManagerTest extends SpringTransactionalTest {
     assertEquals("IC32777", result.getContainerGlobalId());
     assertEquals("IT65536", result.getSampleTemplateGlobalId());
     assertEquals("Container RSpace IGSN Demo - 2025-08-20 10:53:26", result.getContainerName());
-    assertEquals(1, result.getSampleGlobalIds().size());
-    assertEquals(FIELD_GLOBAL_IDENTIFIER, result.getSampleGlobalIds().stream().findFirst().get());
+    assertThat(result.getSampleGlobalIds()).hasSize(1);
+    assertThat(result.getSampleGlobalIds().stream().findFirst()).contains(FIELD_GLOBAL_IDENTIFIER);
   }
 }

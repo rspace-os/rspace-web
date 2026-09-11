@@ -2,9 +2,9 @@ package com.researchspace.webapp.controller;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
 import static com.researchspace.testutils.TestFactory.createAnyRecord;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SearchResultsImpl;
@@ -49,11 +49,9 @@ public class AuditTrailSearchResultCsvGeneratorTest {
     ResponseEntity<String> results =
         auditTrailSearchResultCsvGenerator.convertToCsv(emptyResults, defaultSearchConfig());
     assertEquals(2, countLines(results));
-    assertFalse(
-        results
-            .getBody()
-            .contains(auditTrailSearchResultCsvGenerator.getMaxResultsExceededMessage()),
-        results.getBody());
+    assertThat(results.getBody())
+        .as(results.getBody())
+        .doesNotContain(auditTrailSearchResultCsvGenerator.getMaxResultsExceededMessage());
   }
 
   @Test
@@ -69,7 +67,7 @@ public class AuditTrailSearchResultCsvGeneratorTest {
     assertEquals(3, countLines(results));
     // desc column of 1st result row
     String desc = getCellByRowColumn(results, 2, 6);
-    assertTrue(desc.startsWith("From Examples (FL160) to user5e (FL155)"), desc);
+    assertThat(desc).as(desc).startsWith("From Examples (FL160) to user5e (FL155)");
   }
 
   @Test
@@ -85,7 +83,7 @@ public class AuditTrailSearchResultCsvGeneratorTest {
         auditTrailSearchResultCsvGenerator.convertToCsv(validResults, defaultSearchConfig());
     assertEquals(3, countLines(results));
     String desc = getCellByRowColumn(results, 2, 6);
-    assertTrue(desc.startsWith("1 item exported: 30495"), desc);
+    assertThat(desc).as(desc).startsWith("1 item exported: 30495");
   }
 
   @Test
@@ -137,14 +135,12 @@ public class AuditTrailSearchResultCsvGeneratorTest {
     ResponseEntity<String> results =
         auditTrailSearchResultCsvGenerator.convertToCsv(validResults, defaultSearchConfig());
     assertEquals(3, countLines(results));
-    assertFalse(
-        results
-            .getBody()
-            .contains(auditTrailSearchResultCsvGenerator.getMaxResultsExceededMessage()),
-        results.getBody());
+    assertThat(results.getBody())
+        .as(results.getBody())
+        .doesNotContain(auditTrailSearchResultCsvGenerator.getMaxResultsExceededMessage());
     String id = getCellByRowColumn(results, 2, 4);
-    assertFalse(id.contains("25"), id);
-    assertFalse(results.getBody().contains(aRecord.getName()), results.getBody());
+    assertThat(id).as(id).doesNotContain("25");
+    assertThat(results.getBody()).as(results.getBody()).doesNotContain(aRecord.getName());
   }
 
   @Test
@@ -155,14 +151,12 @@ public class AuditTrailSearchResultCsvGeneratorTest {
     ResponseEntity<String> csvResponse =
         auditTrailSearchResultCsvGenerator.convertToCsv(results, defaultSearchConfig());
     assertEquals(3, countLines(csvResponse));
-    assertFalse(
-        csvResponse
-            .getBody()
-            .contains(auditTrailSearchResultCsvGenerator.getMaxResultsExceededMessage()),
-        csvResponse.getBody());
+    assertThat(csvResponse.getBody())
+        .as(csvResponse.getBody())
+        .doesNotContain(auditTrailSearchResultCsvGenerator.getMaxResultsExceededMessage());
     String id = getCellByRowColumn(csvResponse, 2, 4);
-    assertTrue(id.contains("25"), id);
-    assertTrue(csvResponse.getBody().contains(aRecord.getName()), csvResponse.getBody());
+    assertThat(id).as(id).contains("25");
+    assertThat(csvResponse.getBody()).as(csvResponse.getBody()).contains(aRecord.getName());
   }
 
   private AuditTrailUISearchConfig defaultSearchConfig() {
@@ -177,11 +171,9 @@ public class AuditTrailSearchResultCsvGeneratorTest {
     ResponseEntity<String> csvResponse =
         auditTrailSearchResultCsvGenerator.convertToCsv(results, defaultSearchConfig());
     assertEquals(3, countLines(csvResponse));
-    assertTrue(
-        csvResponse
-            .getBody()
-            .contains(auditTrailSearchResultCsvGenerator.getMaxResultsExceededMessage()),
-        csvResponse.getBody());
+    assertThat(csvResponse.getBody())
+        .as(csvResponse.getBody())
+        .contains(auditTrailSearchResultCsvGenerator.getMaxResultsExceededMessage());
   }
 
   private Record createRecordWithId(Long id) {

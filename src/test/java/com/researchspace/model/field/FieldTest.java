@@ -2,6 +2,7 @@ package com.researchspace.model.field;
 
 import static com.researchspace.model.record.TestFactory.createEcatAudio;
 import static com.researchspace.model.record.TestFactory.createEcatImage;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -176,7 +177,8 @@ public class FieldTest {
     Thread.sleep(10L);
     Field copy = (Field) toTest.shallowCopy();
     assertNull(copy.getId());
-    assertTrue(new Date(copy.getModificationDate()).after(new Date(toTest.getModificationDate())));
+    assertThat(new Date(copy.getModificationDate()))
+        .isAfter(new Date(toTest.getModificationDate()));
     assertEquals(toTest.getColumnIndex(), copy.getColumnIndex());
     assertEquals(toTest.getName(), copy.getName());
     assertEquals(toTest.getFieldData(), copy.getFieldData());
@@ -203,13 +205,13 @@ public class FieldTest {
     fieldList.add(b);
 
     List<Field> onlyTempFields = Field.getNewListOfTempFields(fieldList, false);
-    assertEquals(1, onlyTempFields.size(), "list should include only temp fields");
-    assertEquals(bTemp, onlyTempFields.get(0), "only temp field");
+    assertThat(onlyTempFields).as("list should include only temp fields").hasSize(1);
+    assertThat(onlyTempFields).as("only temp field").element(0).isEqualTo(bTemp);
 
     List<Field> tempAndNotTempFields = Field.getNewListOfTempFields(fieldList, true);
-    assertEquals(2, tempAndNotTempFields.size(), "list should include also non-temp fields");
-    assertEquals(a, tempAndNotTempFields.get(0), "first non-temp field");
-    assertEquals(bTemp, tempAndNotTempFields.get(1), "second temp field");
+    assertThat(tempAndNotTempFields).as("list should include also non-temp fields").hasSize(2);
+    assertThat(tempAndNotTempFields).as("first non-temp field").element(0).isEqualTo(a);
+    assertThat(tempAndNotTempFields).as("second temp field").element(1).isEqualTo(bTemp);
   }
 
   @Test
@@ -228,10 +230,10 @@ public class FieldTest {
     b.setTempField(bTemp);
 
     List<Field> tempFieldModifiedAfter5 = Field.getTempFieldsModifiedAfter(fieldList, 5L);
-    assertEquals(1, tempFieldModifiedAfter5.size(), "should be one field modified after 5");
+    assertThat(tempFieldModifiedAfter5).as("should be one field modified after 5").hasSize(1);
 
     List<Field> tempFieldsModifiedAfter10 = Field.getTempFieldsModifiedAfter(fieldList, 10L);
-    assertEquals(0, tempFieldsModifiedAfter10.size(), "should be no fields modified after 10");
+    assertThat(tempFieldsModifiedAfter10).as("should be no fields modified after 10").isEmpty();
   }
 
   @Test
@@ -258,7 +260,7 @@ public class FieldTest {
     Field anyField = createFieldTSS();
     EcatImage image = TestFactory.createEcatImage(2L);
     Optional<FieldAttachment> fa = anyField.addMediaFileLink(image);
-    assertTrue(fa.isPresent());
+    assertThat(fa).isPresent();
     assertFalse(fa.get().isDeleted());
     assertEquals(anyField, fa.get().getField());
     assertEquals(image, fa.get().getMediaFile());
@@ -266,9 +268,9 @@ public class FieldTest {
     assertEquals(anyField, image.getLinkedFields().iterator().next().getField());
 
     // not added twice
-    assertFalse(anyField.addMediaFileLink(image).isPresent());
-    assertEquals(1, anyField.getLinkedMediaFiles().size());
-    assertEquals(1, image.getLinkedFields().size());
+    assertThat(anyField.addMediaFileLink(image)).isNotPresent();
+    assertThat(anyField.getLinkedMediaFiles()).hasSize(1);
+    assertThat(image.getLinkedFields()).hasSize(1);
   }
 
   @Test
@@ -288,7 +290,7 @@ public class FieldTest {
 
     // trying to mark a non-existent association just returns empty optional
     EcatAudio nonAssociatedFile = createEcatAudio(3L, anyUser);
-    assertFalse(anyField.setMediaFileLinkDeleted(nonAssociatedFile, true).isPresent());
+    assertThat(anyField.setMediaFileLinkDeleted(nonAssociatedFile, true)).isNotPresent();
   }
 
   @Test
@@ -318,14 +320,14 @@ public class FieldTest {
     FieldAttachment removed = anyField.removeMediaFileLink(image).get();
     assertNull(removed.getField());
     assertNull(removed.getMediaFile());
-    assertEquals(1, anyField.getLinkedMediaFiles().size());
-    assertEquals(0, image.getLinkedFields().size());
-    assertEquals(1, anotherFile.getLinkedFields().size());
+    assertThat(anyField.getLinkedMediaFiles()).hasSize(1);
+    assertThat(image.getLinkedFields()).isEmpty();
+    assertThat(anotherFile.getLinkedFields()).hasSize(1);
     // trying to remove non-associated file returns empty()
     EcatAudio nonAssociatedFile = createEcatAudio(3L, anyUser);
-    assertFalse(anyField.removeMediaFileLink(nonAssociatedFile).isPresent());
+    assertThat(anyField.removeMediaFileLink(nonAssociatedFile)).isNotPresent();
 
     // trying to remove image again returns empty()
-    assertFalse(anyField.removeMediaFileLink(image).isPresent());
+    assertThat(anyField.removeMediaFileLink(image)).isNotPresent();
   }
 }

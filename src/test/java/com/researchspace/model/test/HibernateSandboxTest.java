@@ -2,6 +2,8 @@ package com.researchspace.model.test;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
 import static org.apache.commons.collections4.CollectionUtils.isEqualCollection;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -176,7 +178,7 @@ class HibernateSandboxTest extends HibernateTest {
     sample.addSampleField(uriField);
     sample = dao.update(sample, Sample.class);
     assertEquals(expectedFieldCount, dao.count("InventoryEntityField"));
-    assertEquals(expectedFieldCount, getAllEntityFields().size());
+    assertThat(getAllEntityFields()).hasSize(expectedFieldCount);
 
     List<FieldType> actualTypes = getOrderedSampleFieldTypes(getAllEntityFields(), sample.getId());
     assertTrue(isEqualCollection(actualTypes, expectedFieldOrder));
@@ -236,7 +238,7 @@ class HibernateSandboxTest extends HibernateTest {
     saveSampleInContainer(complexSample);
     // save a copy
     copy = saveSampleInContainer(copy);
-    assertEquals(complexSample.getActiveFields().size(), copy.getActiveFields().size());
+    assertThat(copy.getActiveFields()).hasSize(complexSample.getActiveFields().size());
     for (int i = 0; i < complexSample.getActiveFields().size(); i++) {
       InventoryEntityField origF = complexSample.getActiveFields().get(i);
       InventoryEntityField copyF = copy.getActiveFields().get(i);
@@ -451,7 +453,7 @@ class HibernateSandboxTest extends HibernateTest {
     assertEquals(
         sample.getTotalQuantity().getNumericValue().doubleValue(),
         reloaded.getTotalQuantity().getNumericValue().doubleValue());
-    assertEquals(1, reloaded.getSubSamples().size());
+    assertThat(reloaded.getSubSamples()).hasSize(1);
   }
 
   @Test()
@@ -470,19 +472,19 @@ class HibernateSandboxTest extends HibernateTest {
     copy = dao.save(copy, SubSample.class);
     sample = dao.update(sample, Sample.class);
     assertEquals(sample, copy.getSample());
-    assertTrue(copy.getActiveExtraFields().stream().allMatch(ef -> ef.getId() != null));
-    assertTrue(copy.getNotes().stream().allMatch(note -> note.getId() != null));
+    assertThat(copy.getActiveExtraFields().stream()).allMatch(ef -> ef.getId() != null);
+    assertThat(copy.getNotes().stream()).allMatch(note -> note.getId() != null);
     // ids are different
     Set<Long> originalNotes =
         originalSS.getNotes().stream().map(SubSampleNote::getId).collect(Collectors.toSet());
-    assertTrue(copy.getNotes().stream().noneMatch(n -> originalNotes.contains(n.getId())));
+    assertThat(copy.getNotes().stream()).noneMatch(n -> originalNotes.contains(n.getId()));
 
     Set<Long> originalFields =
         originalSS.getActiveExtraFields().stream()
             .map(ExtraField::getId)
             .collect(Collectors.toSet());
-    assertTrue(
-        copy.getActiveExtraFields().stream().noneMatch(n -> originalFields.contains(n.getId())));
+    assertThat(copy.getActiveExtraFields().stream())
+        .noneMatch(n -> originalFields.contains(n.getId()));
     // saving name of original does not alter new name
     String originalName = originalSS.getName();
     originalSS.setName("newname");
@@ -619,10 +621,8 @@ class HibernateSandboxTest extends HibernateTest {
     // try setting quantity of individual subsamples instead
 
     sample.getSubSamples().get(0).setQuantity(quantity5L);
-    assertEquals(
-        quantity5L.getNumericValue().doubleValue(),
-        sample.getTotalQuantity().getNumericValue().doubleValue(),
-        0.001);
+    assertThat(sample.getTotalQuantity().getNumericValue().doubleValue())
+        .isCloseTo(quantity5L.getNumericValue().doubleValue(), within(0.001));
     sample.getSubSamples().get(1).setQuantity(quantity100ML);
     assertEquals("5.1 l", sample.getTotalQuantity().toPlainString());
     // retrieve
@@ -642,7 +642,7 @@ class HibernateSandboxTest extends HibernateTest {
 
     Sample savedSample = saveSampleInContainer(sample);
     SubSample savedSubSample = savedSample.getSubSamples().get(0);
-    assertEquals(1, savedSubSample.getNotes().size());
+    assertThat(savedSubSample.getNotes()).hasSize(1);
     SubSampleNote savedNote = savedSubSample.getNotes().get(0);
     assertEquals("test note", savedNote.getContent());
     assertEquals(u, savedNote.getCreatedBy());
@@ -698,7 +698,7 @@ class HibernateSandboxTest extends HibernateTest {
 
     // verify all created
     List<Container> allContainers = dao.getAll(Container.class, "Container");
-    assertEquals(initContainersCount + 3, allContainers.size());
+    assertThat(allContainers).hasSize(initContainersCount + 3);
 
     // load container and try checking the content
     Container loadedContainer = dao.load(savedContainer.getId(), Container.class);
@@ -795,7 +795,7 @@ class HibernateSandboxTest extends HibernateTest {
     allContentContainer.addToNewLocation(subSample);
     allContentContainer.addToNewLocation(instrument);
     dao.save(allContentContainer, Container.class);
-    assertEquals(3, allContentContainer.getLocations().size());
+    assertThat(allContentContainer.getLocations()).hasSize(3);
 
     // try disabling either canStoreSamples or canStoreContainers or canStoreInstruments flag
     allContentContainer.setCanStoreSamples(false);
@@ -867,9 +867,9 @@ class HibernateSandboxTest extends HibernateTest {
     Container copy = container.copy(testUser);
     copy = dao.save(copy, Container.class);
     assertFalse(copy.getId().equals(container.getId()));
-    assertTrue(copy.getLocations().size() > 0);
+    assertThat(copy.getLocations()).hasSizeGreaterThan(0);
 
-    assertEquals(container.getLocations().size(), copy.getLocations().size());
+    assertThat(copy.getLocations()).hasSize(container.getLocations().size());
   }
 
   @Test
@@ -897,7 +897,7 @@ class HibernateSandboxTest extends HibernateTest {
     ListOfMaterials savedLom = dao.save(lom, ListOfMaterials.class);
     assertNotNull(savedLom.getId());
     assertEquals(GlobalIdPrefix.LM, savedLom.getOid().getPrefix());
-    assertEquals(2, savedLom.getMaterials().size());
+    assertThat(savedLom.getMaterials()).hasSize(2);
     assertEquals(
         GlobalIdPrefix.SA,
         savedLom.getMaterials().get(0).getInventoryRecord().getOid().getPrefix());
@@ -921,7 +921,7 @@ class HibernateSandboxTest extends HibernateTest {
             lomToInit -> {
               lomToInit.getMaterials().size();
             });
-    assertEquals(3, reloadedLom.getMaterials().size());
+    assertThat(reloadedLom.getMaterials()).hasSize(3);
     assertEquals(
         GlobalIdPrefix.IC,
         reloadedLom.getMaterials().get(2).getInventoryRecord().getOid().getPrefix());
@@ -936,7 +936,7 @@ class HibernateSandboxTest extends HibernateTest {
             lomToInit -> {
               lomToInit.getMaterials().size();
             });
-    assertEquals(2, reloadedLom.getMaterials().size());
+    assertThat(reloadedLom.getMaterials()).hasSize(2);
 
     // try saving incorrect material usage - linked to both sample and container
     MaterialUsage incorrectMU = rf.createMaterialUsage(savedLom, savedContainer, null);
@@ -991,7 +991,7 @@ class HibernateSandboxTest extends HibernateTest {
 
     // verify
     assertNotNull(sample.getId());
-    assertEquals(2, sample.getAttachedFiles().size());
+    assertThat(sample.getAttachedFiles()).hasSize(2);
     InventoryFile savedInvFile = sample.getAttachedFiles().get(0);
     assertNotNull(savedInvFile.getId());
     assertNull(savedInvFile.getMediaFileGlobalIdentifier());
@@ -1039,7 +1039,7 @@ class HibernateSandboxTest extends HibernateTest {
     sample = saveSampleInContainer(sample);
 
     assertNotNull(sample.getId());
-    assertEquals(1, sample.getActiveIdentifiers().size());
+    assertThat(sample.getActiveIdentifiers()).hasSize(1);
     DigitalObjectIdentifier savedIgsn = sample.getActiveIdentifiers().get(0);
     assertNotNull(savedIgsn.getId());
     assertEquals(DigitalObjectIdentifier.IdentifierType.IGSN_DATACITE, savedIgsn.getType());
@@ -1105,7 +1105,7 @@ class HibernateSandboxTest extends HibernateTest {
     Basket savedBasket = dao.save(basket, Basket.class);
     assertNotNull(savedBasket.getId());
     assertEquals(GlobalIdPrefix.BA, savedBasket.getOid().getPrefix());
-    assertEquals(1, savedBasket.getItems().size());
+    assertThat(savedBasket.getItems()).hasSize(1);
     assertEquals(1, savedBasket.getItemCount());
     assertEquals(
         GlobalIdPrefix.SA, savedBasket.getItems().get(0).getInventoryRecord().getOid().getPrefix());
@@ -1123,7 +1123,7 @@ class HibernateSandboxTest extends HibernateTest {
             basketToInit -> {
               basketToInit.getItems().size();
             });
-    assertEquals(2, reloadedBasket.getItems().size());
+    assertThat(reloadedBasket.getItems()).hasSize(2);
     assertEquals(2, reloadedBasket.getItemCount());
     assertEquals(
         GlobalIdPrefix.SA,
@@ -1143,7 +1143,7 @@ class HibernateSandboxTest extends HibernateTest {
             basketToInit -> {
               basketToInit.getItems().size();
             });
-    assertEquals(1, reloadedBasket.getItems().size());
+    assertThat(reloadedBasket.getItems()).hasSize(1);
     assertEquals(1, reloadedBasket.getItemCount());
     assertEquals(
         GlobalIdPrefix.SS,
@@ -1172,8 +1172,8 @@ class HibernateSandboxTest extends HibernateTest {
     assertEquals(InventorySharingMode.WHITELIST, reloadedSample.getSharingMode());
     assertNotNull(reloadedSample.getSharingACL());
     assertEquals(user.getUsername() + "=RECORD:WRITE:", reloadedSample.getSharingACL().getString());
-    assertEquals(1, reloadedSample.getSharedWithUniqueNames().size());
-    assertEquals(user.getUsername(), reloadedSample.getSharedWithUniqueNames().get(0));
+    assertThat(reloadedSample.getSharedWithUniqueNames()).hasSize(1);
+    assertThat(reloadedSample.getSharedWithUniqueNames()).element(0).isEqualTo(user.getUsername());
     assertEquals(user.getUsername(), reloadedSample.getSharedWithUniqueNamesString());
     // changing sample permissions is reflected on subsample permissions
     assertEquals(

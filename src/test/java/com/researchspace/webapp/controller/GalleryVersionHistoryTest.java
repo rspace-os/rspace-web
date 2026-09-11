@@ -1,5 +1,6 @@
 package com.researchspace.webapp.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -80,7 +81,7 @@ public class GalleryVersionHistoryTest {
     GalleryVersionHistory history = controller.getVersionHistory(MEDIA_ID).getData();
 
     assertEquals(2, history.revisionsCount());
-    assertEquals(2, history.revisions().size());
+    assertThat(history.revisions()).hasSize(2);
     assertEquals(10L, history.revisions().get(0).revisionId());
     assertEquals(Long.valueOf(1L), history.revisions().get(0).item().version());
     assertEquals(20L, history.revisions().get(1).revisionId());
@@ -160,9 +161,8 @@ public class GalleryVersionHistoryTest {
 
     GalleryVersionHistory history = controller.getVersionHistory(MEDIA_ID).getData();
 
-    assertTrue(
-        history.revisions().stream()
-            .allMatch(r -> "Alice Smith".equals(r.item().modifiedByFullName())));
+    assertThat(history.revisions())
+        .allMatch(r -> "Alice Smith".equals(r.item().modifiedByFullName()));
     // three revisions by the same user must not mean three lookups
     verify(userManager, Mockito.times(1)).getFullNameByUsername("alice");
   }
@@ -191,7 +191,7 @@ public class GalleryVersionHistoryTest {
 
     assertNull(response.getErrorMsg());
     assertEquals(0, response.getData().revisionsCount());
-    assertTrue(response.getData().revisions().isEmpty());
+    assertThat(response.getData().revisions()).isEmpty();
   }
 
   @Test

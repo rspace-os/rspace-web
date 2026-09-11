@@ -1,7 +1,6 @@
 package com.researchspace.service.impl;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -71,9 +70,9 @@ public class TransactionAdviceStartupCheckTest {
 
     List<String> offenders = check.findBeansMissingTransactionAdvice(beanFactory);
 
-    assertEquals(2, offenders.size());
-    assertTrue(offenders.stream().anyMatch(o -> o.startsWith("classAnnotated ")));
-    assertTrue(offenders.stream().anyMatch(o -> o.startsWith("methodAnnotated ")));
+    assertThat(offenders).hasSize(2);
+    assertThat(offenders).anyMatch(o -> o.startsWith("classAnnotated "));
+    assertThat(offenders).anyMatch(o -> o.startsWith("methodAnnotated "));
   }
 
   @Test
@@ -82,8 +81,8 @@ public class TransactionAdviceStartupCheckTest {
 
     List<String> offenders = check.findBeansMissingTransactionAdvice(beanFactory);
 
-    assertEquals(1, offenders.size());
-    assertTrue(offenders.get(0).startsWith("proxiedNoTx "));
+    assertThat(offenders).hasSize(1);
+    assertThat(offenders.get(0)).startsWith("proxiedNoTx ");
   }
 
   @Test
@@ -93,9 +92,9 @@ public class TransactionAdviceStartupCheckTest {
 
     List<String> offenders = check.findBeansMissingTransactionAdvice(beanFactory);
 
-    assertEquals(2, offenders.size());
-    assertTrue(offenders.stream().anyMatch(o -> o.startsWith("interfaceClassAnnotated ")));
-    assertTrue(offenders.stream().anyMatch(o -> o.startsWith("interfaceMethodAnnotated ")));
+    assertThat(offenders).hasSize(2);
+    assertThat(offenders).anyMatch(o -> o.startsWith("interfaceClassAnnotated "));
+    assertThat(offenders).anyMatch(o -> o.startsWith("interfaceMethodAnnotated "));
   }
 
   @Test
@@ -104,7 +103,7 @@ public class TransactionAdviceStartupCheckTest {
     beanFactory.registerSingleton(
         "methodAnnotatedWithTx", proxied(new MethodAnnotatedService(), true));
 
-    assertTrue(check.findBeansMissingTransactionAdvice(beanFactory).isEmpty());
+    assertThat(check.findBeansMissingTransactionAdvice(beanFactory)).isEmpty();
   }
 
   @Test
@@ -112,13 +111,13 @@ public class TransactionAdviceStartupCheckTest {
     beanFactory.registerSingleton("plain", new PlainService());
     beanFactory.registerSingleton("plainProxied", proxied(new PlainService(), false));
 
-    assertTrue(check.findBeansMissingTransactionAdvice(beanFactory).isEmpty());
+    assertThat(check.findBeansMissingTransactionAdvice(beanFactory)).isEmpty();
   }
 
   @Test
   public void beansOutsideApplicationPackagesAreIgnored() {
     beanFactory.registerSingleton("someInfrastructureBean", new StringBuilder());
 
-    assertTrue(check.findBeansMissingTransactionAdvice(beanFactory).isEmpty());
+    assertThat(check.findBeansMissingTransactionAdvice(beanFactory)).isEmpty();
   }
 }

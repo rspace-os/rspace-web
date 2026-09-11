@@ -1,7 +1,7 @@
 package com.researchspace.dao;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -33,7 +33,7 @@ public class GenericDaoTest extends BaseDaoTestCase {
   @Test
   public void testGetThrowsExceptionIfObjectNotFound() {
     final Long UNKNOWNID = -1234556L;
-    assertFalse(genericDao.getSafeNull(UNKNOWNID).isPresent());
+    assertThat(genericDao.getSafeNull(UNKNOWNID)).isNotPresent();
     assertThrows(ObjectRetrievalFailureException.class, () -> genericDao.get(-UNKNOWNID));
   }
 

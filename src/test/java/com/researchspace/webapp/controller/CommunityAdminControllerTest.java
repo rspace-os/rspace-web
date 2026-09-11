@@ -1,5 +1,6 @@
 package com.researchspace.webapp.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -125,7 +126,7 @@ public class CommunityAdminControllerTest {
     String view = controller.editCommunity(model, comm, errors);
 
     verify(mockCommService).save(comm);
-    assertTrue(view.contains(CommunityAdminController.REDIRECT_SYSTEM_COMMUNITY));
+    assertThat(view).contains(CommunityAdminController.REDIRECT_SYSTEM_COMMUNITY);
     assertFalse(errors.hasErrors());
 
     Mockito.reset(mockCommService);
@@ -136,7 +137,7 @@ public class CommunityAdminControllerTest {
     view = controller.editCommunity(model, comm, errors);
     verify(mockCommService, Mockito.never()).save(comm);
     verify(mockCommService, Mockito.never()).get(1L);
-    assertFalse(view.contains(CommunityAdminController.REDIRECT_SYSTEM_COMMUNITY));
+    assertThat(view).doesNotContain(CommunityAdminController.REDIRECT_SYSTEM_COMMUNITY);
     // has errors
     assertTrue(errors.hasErrors());
   }

@@ -1,6 +1,7 @@
 package com.researchspace.api.v1.controller;
 
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -75,8 +76,8 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
     ApiSampleSearchResult allSamples = getFromJsonResponseBody(result, ApiSampleSearchResult.class);
     assertNotNull(allSamples);
     assertEquals(3, allSamples.getTotalHits().intValue());
-    assertEquals(3, allSamples.getSamples().size());
-    assertEquals(1, allSamples.getLinks().size());
+    assertThat(allSamples.getSamples()).hasSize(3);
+    assertThat(allSamples.getLinks()).hasSize(1);
 
     // pagination - first page
     result =
@@ -91,9 +92,9 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
     ApiSampleSearchResult paginatedSamplesFirstPage =
         getFromJsonResponseBody(result, ApiSampleSearchResult.class);
     assertEquals(3, paginatedSamplesFirstPage.getTotalHits().intValue());
-    assertEquals(1, paginatedSamplesFirstPage.getSamples().size());
+    assertThat(paginatedSamplesFirstPage.getSamples()).hasSize(1);
     assertEquals("myComplexSample", paginatedSamplesFirstPage.getSamples().get(0).getName());
-    assertEquals(3, paginatedSamplesFirstPage.getLinks().size());
+    assertThat(paginatedSamplesFirstPage.getLinks()).hasSize(3);
 
     // pagination - 3rd page
     result =
@@ -108,9 +109,9 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
     ApiSampleSearchResult paginatedSamplesLastPage =
         getFromJsonResponseBody(result, ApiSampleSearchResult.class);
     assertEquals(3, paginatedSamplesLastPage.getTotalHits().intValue());
-    assertEquals(1, paginatedSamplesLastPage.getSamples().size());
+    assertThat(paginatedSamplesLastPage.getSamples()).hasSize(1);
     assertEquals("mySample", paginatedSamplesLastPage.getSamples().get(0).getName());
-    assertEquals(3, paginatedSamplesLastPage.getLinks().size());
+    assertThat(paginatedSamplesLastPage.getLinks()).hasSize(3);
   }
 
   @Test
@@ -136,11 +137,11 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
     ApiSample apiSample = getFromJsonResponseBody(result, ApiSample.class);
     assertNotNull(apiSample);
     assertEquals(sample.getId(), apiSample.getId());
-    assertEquals(0, apiSample.getFields().size());
+    assertThat(apiSample.getFields()).isEmpty();
     ApiSubSampleInfo apiSubSample = apiSample.getSubSamples().get(0);
     assertNotNull(apiSubSample);
     assertEquals("mySubSample", apiSubSample.getName());
-    assertEquals(3, apiSubSample.getParentContainers().size());
+    assertThat(apiSubSample.getParentContainers()).hasSize(3);
     assertEquals(subContainer.getId(), apiSubSample.getParentContainers().get(0).getId());
     assertEquals(topContainer.getId(), apiSubSample.getParentContainers().get(1).getId());
     assertEquals(workbench.getId(), apiSubSample.getParentContainers().get(2).getId());
@@ -156,10 +157,10 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
     assertNotNull(retrievedComplexSample);
     assertEquals(complexSample.getId(), retrievedComplexSample.getId());
     // check fields
-    assertEquals(NUM_FIELDS_IN_COMPLEX_SAMPLE, retrievedComplexSample.getFields().size());
+    assertThat(retrievedComplexSample.getFields()).hasSize(NUM_FIELDS_IN_COMPLEX_SAMPLE);
     ApiField dateField = retrievedComplexSample.getFields().get(0);
     assertEquals(ApiFieldType.NUMBER, dateField.getType());
-    assertEquals(1, retrievedComplexSample.getExtraFields().size());
+    assertThat(retrievedComplexSample.getExtraFields()).hasSize(1);
     // check subsample
     ApiSubSampleInfo complexSubSample = retrievedComplexSample.getSubSamples().get(0);
     assertNotNull(complexSubSample);
@@ -211,7 +212,7 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
     assertNull(sampleFromEmptyRequest.getTemplateId());
     assertEquals(anyUser.getUsername(), sampleFromEmptyRequest.getCreatedBy());
     assertEquals(anyUser.getUsername(), sampleFromEmptyRequest.getModifiedBy());
-    assertEquals(1, sampleFromEmptyRequest.getSubSamples().size());
+    assertThat(sampleFromEmptyRequest.getSubSamples()).hasSize(1);
     assertEquals(1, sampleFromEmptyRequest.getSubSamplesCount());
     verifyAuditAction(AuditAction.CREATE, 2);
 
@@ -233,12 +234,12 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
 
     assertNotNull(sampleFromSimpleRequest.getId());
     assertEquals("My MVCIT Sample2", sampleFromSimpleRequest.getName());
-    assertEquals(
-        "aTagValue__RSP_EXTONT_URL_DELIM__uriValue__RSP_EXTONT_NAME_DELIM__ontName__RSP_EXTONT_VERSION_DELIM__1",
-        sampleFromSimpleRequest.getTags().get(0).toString());
+    assertThat(sampleFromSimpleRequest.getTags().get(0))
+        .hasToString(
+            "aTagValue__RSP_EXTONT_URL_DELIM__uriValue__RSP_EXTONT_NAME_DELIM__ontName__RSP_EXTONT_VERSION_DELIM__1");
     assertNull(sampleFromSimpleRequest.getTemplateId());
     assertEquals(SampleSource.VENDOR_SUPPLIED, sampleFromSimpleRequest.getSampleSource());
-    assertEquals(0, sampleFromSimpleRequest.getFields().size());
+    assertThat(sampleFromSimpleRequest.getFields()).isEmpty();
     ApiSubSampleInfo createdSubSample = sampleFromSimpleRequest.getSubSamples().get(0);
 
     assertEquals("My MVCIT Sample2.01", createdSubSample.getName());
@@ -335,7 +336,7 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
     assertEquals(anyUser.getUsername(), createdSample.getCreatedBy());
     assertEquals(anyUser.getUsername(), createdSample.getModifiedBy());
     assertEquals("text content", createdTextField.getContent());
-    assertEquals(1, createdSample.getExtraFields().size());
+    assertThat(createdSample.getExtraFields()).hasSize(1);
     ApiExtraField createdExtraField = createdSample.getExtraFields().get(0);
     assertNotNull(createdExtraField);
     assertEquals("3.15", createdExtraField.getContent());
@@ -358,7 +359,7 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
     assertEquals("api edited tags", editedSample.getDBStringFromTags());
     ApiField editedTextField = editedSample.getFields().get(textFieldIndex);
     assertEquals("updated content", editedTextField.getContent());
-    assertEquals(2, editedSample.getExtraFields().size());
+    assertThat(editedSample.getExtraFields()).hasSize(2);
     ApiExtraField editedExtraField = editedSample.getExtraFields().get(0);
     assertEquals("3.1415", editedExtraField.getContent());
     ApiExtraField addedExtraField = editedSample.getExtraFields().get(1);
@@ -372,7 +373,7 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
     editResult = putSampleExpectOK(anyUser, apiKey, createdSample.getId(), sampleUpdateJson);
     editedSample = mvcUtils.getFromJsonResponseBody(editResult, ApiSample.class);
     assertNotNull(editedSample);
-    assertEquals(1, editedSample.getExtraFields().size());
+    assertThat(editedSample.getExtraFields()).hasSize(1);
     assertEquals(addedExtraField.getContent(), editedSample.getExtraFields().get(0).getContent());
 
     // check sample revision history
@@ -390,7 +391,7 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
             .andReturn();
     ApiInventoryRecordRevisionList history =
         getFromJsonResponseBody(result, ApiInventoryRecordRevisionList.class);
-    assertEquals(3, history.getRevisions().size());
+    assertThat(history.getRevisions()).hasSize(3);
 
     // check details of 1st revision
     result =
@@ -408,10 +409,10 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
             .andReturn();
     ApiSample sampleRev1Full = getFromJsonResponseBody(result, ApiSample.class);
     assertEquals("sample1", sampleRev1Full.getName());
-    assertTrue(sampleRev1Full.getTags().isEmpty());
-    assertEquals(10, sampleRev1Full.getFields().size());
+    assertThat(sampleRev1Full.getTags()).isEmpty();
+    assertThat(sampleRev1Full.getFields()).hasSize(10);
     assertEquals("text content", sampleRev1Full.getFields().get(3).getContent());
-    assertEquals(1, sampleRev1Full.getExtraFields().size());
+    assertThat(sampleRev1Full.getExtraFields()).hasSize(1);
 
     // check details of 2nd revision
     result =
@@ -430,7 +431,7 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
     ApiSample sampleRev2Full = getFromJsonResponseBody(result, ApiSample.class);
     assertEquals("api edited tags", sampleRev2Full.getDBStringFromTags());
     assertEquals("updated content", sampleRev2Full.getFields().get(3).getContent());
-    assertEquals(2, sampleRev2Full.getExtraFields().size());
+    assertThat(sampleRev2Full.getExtraFields()).hasSize(2);
 
     // check details of 3rd revision
     result =
@@ -447,7 +448,7 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
             .andExpect(status().isOk())
             .andReturn();
     ApiSample sampleRev3Full = getFromJsonResponseBody(result, ApiSample.class);
-    assertEquals(1, sampleRev3Full.getExtraFields().size());
+    assertThat(sampleRev3Full.getExtraFields()).hasSize(1);
   }
 
   private Optional<SampleTemplate> getComplexSampleTemplate(User user) {
@@ -673,7 +674,7 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
     assertNotNull(foundSamples);
     assertEquals(2, foundSamples.getTotalHits().intValue());
     List<ApiSampleInfo> samples = foundSamples.getSamples();
-    assertEquals(2, samples.size());
+    assertThat(samples).hasSize(2);
     ApiSampleInfo complexSampleInfo =
         samples.stream()
             .filter(
@@ -689,9 +690,9 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
         this.mockMvc.perform(getSampleById(anyUser, apiKey, complexSampleInfo.getId())).andReturn();
     ApiSample complexSample = getFromJsonResponseBody(complexSampleGetResult, ApiSample.class);
     assertNotNull(complexSample);
-    assertEquals(NUM_FIELDS_IN_COMPLEX_SAMPLE, complexSample.getFields().size());
-    assertEquals(1, complexSample.getExtraFields().size());
-    assertEquals(1, complexSample.getSubSamples().size());
+    assertThat(complexSample.getFields()).hasSize(NUM_FIELDS_IN_COMPLEX_SAMPLE);
+    assertThat(complexSample.getExtraFields()).hasSize(1);
+    assertThat(complexSample.getSubSamples()).hasSize(1);
     assertEquals(1, complexSample.getSubSamplesCount());
 
     MvcResult complexSubSampleGetResult =
@@ -701,7 +702,7 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
             .andReturn();
     ApiSubSample complexSubSample =
         getFromJsonResponseBody(complexSubSampleGetResult, ApiSubSample.class);
-    assertEquals(1, complexSubSample.getExtraFields().size());
+    assertThat(complexSubSample.getExtraFields()).hasSize(1);
   }
 
   @Test
@@ -726,7 +727,7 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
     assertNotNull(firstSample.getId());
     assertEquals("createSampleSeriesA", firstSample.getName());
     assertEquals("30 ml", firstSample.getQuantity().toQuantityInfo().toPlainString());
-    assertEquals(3, firstSample.getSubSamples().size());
+    assertThat(firstSample.getSubSamples()).hasSize(3);
     assertEquals(3, firstSample.getSubSamplesCount());
     ApiSubSample firstSubSample = firstSample.getSubSamples().get(0);
     assertEquals("createSampleSeriesA.01", firstSubSample.getName());
@@ -744,7 +745,7 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
     result = this.mockMvc.perform(getSampleById(anyUser, apiKey, firstSample.getId())).andReturn();
     ApiSample sampleWithDeletedSubSample = getFromJsonResponseBody(result, ApiSample.class);
     assertNotNull(sampleWithDeletedSubSample);
-    assertEquals(2, sampleWithDeletedSubSample.getSubSamples().size());
+    assertThat(sampleWithDeletedSubSample.getSubSamples()).hasSize(2);
     assertEquals(2, sampleWithDeletedSubSample.getSubSamplesCount());
     assertEquals(
         "20 ml", sampleWithDeletedSubSample.getQuantity().toQuantityInfo().toPlainString());
@@ -820,8 +821,8 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
             .andExpect(status().isOk())
             .andReturn();
     Map data = parseJSONObjectFromResponseStream(result);
-    assertEquals(false, data.get("valid"));
-    assertEquals("Name is too long (max 255 chars)", data.get("message"));
+    assertThat(data).containsEntry("valid", false);
+    assertThat(data).containsEntry("message", "Name is too long (max 255 chars)");
 
     // non-unique (existing for user) name warning
     name = sample.getName();
@@ -831,8 +832,8 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
             .andExpect(status().isOk())
             .andReturn();
     data = parseJSONObjectFromResponseStream(result);
-    assertEquals(false, data.get("valid"));
-    assertEquals("There is already a sample named [mySample]", data.get("message"));
+    assertThat(data).containsEntry("valid", false);
+    assertThat(data).containsEntry("message", "There is already a sample named [mySample]");
 
     // unique name is fine
     name = sample.getName() + " #2";
@@ -842,7 +843,7 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
             .andExpect(status().isOk())
             .andReturn();
     data = parseJSONObjectFromResponseStream(result);
-    assertEquals(true, data.get("valid"));
+    assertThat(data).containsEntry("valid", true);
   }
 
   private MockHttpServletRequestBuilder getSampleNameValidation(
@@ -861,7 +862,7 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
     String apiKey = createNewApiKeyForUser(anyUser);
     ApiSampleWithFullSubSamples basicSample = createBasicSampleForUser(anyUser);
     ApiContainer basicContainer = createBasicContainerForUser(anyUser);
-    assertFalse(basicSample.getSubSamples().isEmpty());
+    assertThat(basicSample.getSubSamples()).isNotEmpty();
     ApiSubSample subSample = basicSample.getSubSamples().get(0);
     assertFalse(subSample.isStoredInContainer());
     verifyAuditAction(AuditAction.CREATE, 3);
@@ -940,7 +941,7 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
     assertNotNull(apiSample);
     assertFalse(apiSample.isDeleted());
     // subsample that was active during sample deletion is also restored
-    assertEquals(1, apiSample.getSubSamples().size());
+    assertThat(apiSample.getSubSamples()).hasSize(1);
     assertFalse(apiSample.getSubSamples().get(0).isDeleted());
     verifyAuditAction(AuditAction.RESTORE, 2);
 
@@ -965,7 +966,7 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
     assertNotNull(dbSample.getImageFileProperty());
     assertNotNull(dbSample.getThumbnailFileProperty());
     // 2 x image, self and icon
-    assertEquals(4, sample.getLinks().size());
+    assertThat(sample.getLinks()).hasSize(4);
   }
 
   @Test
@@ -1017,19 +1018,15 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
             .andReturn();
     ApiInventoryRecordRevisionList history =
         getFromJsonResponseBody(result, ApiInventoryRecordRevisionList.class);
-    assertEquals(2, history.getRevisions().size());
+    assertThat(history.getRevisions()).hasSize(2);
 
     Long firstRevisionId = history.getRevisions().get(0).getRevisionId();
     ApiSampleInfo sampleRev1 = (ApiSampleInfo) history.getRevisions().get(0).getRecord();
     assertEquals("myComplexSample", sampleRev1.getName());
     assertEquals(1, sampleRev1.getSubSamplesCount());
-    assertEquals(4, sampleRev1.getLinks().size());
-    assertTrue(
-        sampleRev1
-            .getLinkOfType(ApiLinkItem.SELF_REL)
-            .get()
-            .getLink()
-            .endsWith("/revisions/" + firstRevisionId));
+    assertThat(sampleRev1.getLinks()).hasSize(4);
+    assertThat(sampleRev1.getLinkOfType(ApiLinkItem.SELF_REL).get().getLink())
+        .endsWith("/revisions/" + firstRevisionId);
 
     ApiSampleInfo sampleRev2 = (ApiSampleInfo) history.getRevisions().get(1).getRecord();
     assertEquals("updated sample", sampleRev2.getName());
@@ -1048,18 +1045,14 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
             .andReturn();
     ApiSample sampleRev1Full = getFromJsonResponseBody(result, ApiSample.class);
     assertEquals("myComplexSample", sampleRev1Full.getName());
-    assertEquals(10, sampleRev1Full.getFields().size());
-    assertEquals(1, sampleRev1Full.getExtraFields().size());
-    assertEquals(1, sampleRev1Full.getSubSamples().size());
+    assertThat(sampleRev1Full.getFields()).hasSize(10);
+    assertThat(sampleRev1Full.getExtraFields()).hasSize(1);
+    assertThat(sampleRev1Full.getSubSamples()).hasSize(1);
     assertEquals(1, sampleRev1Full.getSubSamplesCount());
     assertEquals("mySubSample", sampleRev1Full.getSubSamples().get(0).getName());
-    assertEquals(4, sampleRev1Full.getLinks().size());
-    assertTrue(
-        sampleRev1Full
-            .getLinkOfType(ApiLinkItem.SELF_REL)
-            .get()
-            .getLink()
-            .endsWith("/revisions/" + firstRevisionId));
+    assertThat(sampleRev1Full.getLinks()).hasSize(4);
+    assertThat(sampleRev1Full.getLinkOfType(ApiLinkItem.SELF_REL).get().getLink())
+        .endsWith("/revisions/" + firstRevisionId);
   }
 
   @Test
@@ -1152,7 +1145,7 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
 
     String responseText = result.getResponse().getContentAsString();
     String expectedErrorMessage = "9:15 is an invalid 24hour time format. Valid format is HH:mm.";
-    assertTrue(responseText.contains(expectedErrorMessage));
+    assertThat(responseText).contains(expectedErrorMessage);
   }
 
   private String makeJsonSampleWithIdAndTime(String id, String time) {

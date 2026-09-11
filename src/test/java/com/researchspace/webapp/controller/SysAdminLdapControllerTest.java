@@ -1,5 +1,6 @@
 package com.researchspace.webapp.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.ldap.UserLdapRepo;
@@ -48,7 +49,7 @@ public class SysAdminLdapControllerTest {
 
     // call user retrieval - only user without sid should be found
     List<String> retrievedUsers = controller.getLdapUsersWithoutSID().getData();
-    assertEquals(1, retrievedUsers.size());
+    assertThat(retrievedUsers).hasSize(1);
     assertEquals(ldapUserNoSid.getUsername(), retrievedUsers.get(0));
   }
 
