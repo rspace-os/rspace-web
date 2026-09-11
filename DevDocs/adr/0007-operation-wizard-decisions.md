@@ -428,3 +428,51 @@ above) without computing it.
   deleted one now leaves two live samples of that name for one owner. There is
   no unique constraint on `Sample.name`, so nothing breaks; the advisory check
   was never a guarantee.
+
+## Amended 2026-09-11: the server builds the sample
+
+Implemented as plan-operations-server-builds.md steps M1 to M5 (RSDEV-1231). The
+client no longer assembles the new sample. The request carries the origins with the
+amount taken from each, the values the user typed (`inputs`, keyed by the definition's
+input keys), the template and the documentation target. The server validates the inputs
+against the definition (`InventoryOperationInputValidator`), builds the sample and every
+generated field itself (`InventoryOperationRequestBuilder`, resolving names in the
+request's locale) and runs the same transactional core. Why: every rule above that
+polices a client-built object graph existed only because the client built it; with the
+server building it, ~1,100 lines of interpretive validation, the property rejection
+list, the unknown-property capture and the verified flag have nothing to police.
+
+What that changes in the sections above:
+
+- **"Why the backend validates against that config copy"**: the request no longer has
+  to match a client-built sample, so the field whitelist matched by `operationFieldKey`,
+  the declared-link and declared-text-field rules, the undeclared-property rejection
+  list and the computed-content shape checks are gone. Computed values are computed
+  server-side (`increment` reads the parent's fields by key, then by localized name;
+  `today` resolves in the session's timezone, which the login flow records from the
+  browser). Server-side resolution of the i18n catalogs, rejected there, is now how
+  names are produced: the catalogs are on the backend classpath (`JsonMessageSource`,
+  `inventory:` namespace) and ICU named-argument formatting matches `i18next-icu`. The
+  structural validator keeps the origin rules and the documentation target's kind; the
+  input validator checks presence, type, `min`/`max`, Celsius bounds and precision by
+  the bare input key.
+- **"An unrecognised property is captured at binding and rejected by the validator"**:
+  removed in full. Nothing a client sends beyond the declared inputs can change what the
+  server builds, so an unknown property is ignored exactly as on every other endpoint.
+  The five DTOs no longer carry an any-setter, which also restores Jackson's
+  ignorable-property handling on them (probed: the API's mapper ignores an unknown
+  property, a strict mapper rejects one, and both skip an `@JsonIgnore` or read-only
+  property present in the body).
+- **"An operation-generated field is identified by its definition key"**: unchanged in
+  substance. The key is now READ_ONLY on `ApiExtraField`, so no request on any endpoint
+  can set it, and the `operationFieldKeyVerified` flag with its persistence gate in
+  `ApiExtraFieldsHelper` is gone: the persisted key is itself the evidence that the
+  server generated the field, which is also what the template-field merge keys on.
+- **"Bean Validation cascades through the request DTO graph"**: `newSample` and an
+  origin's `extraFields` are no longer on the wire (server-side fields the builder
+  fills, `@JsonIgnore`), so the cascade covers `origins` only; the shared sample DTOs
+  keep their constraints for POST /samples.
+- **"Category and precision rules also apply to the created subsamples"**: the created
+  amounts come from the `eachAmount` input (unit and precision checked by the input
+  validator, category against the origin by the core) and there is no top-level
+  quantity on the wire.

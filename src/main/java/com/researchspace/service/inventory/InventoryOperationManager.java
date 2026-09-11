@@ -41,11 +41,13 @@ public interface InventoryOperationManager {
   }
 
   /**
-   * Precondition: the request must already have passed the structural validation the operations
-   * endpoint applies (InventoryOperationPostValidator): every origin carries a non-null id and a
-   * non-null, unit-bearing amountTaken, and origin ids are unique. The implementation dereferences
-   * these without guards, so a future non-controller caller that skips validation would fail
-   * mid-transaction instead of cleanly.
+   * The transactional core, run on a request the server built ({@link #performOperation(String,
+   * List, Map, Long, String, User, BuiltRequestValidation)}). Precondition: the origins must
+   * already have passed the structural validation the operations endpoint applies
+   * (InventoryOperationPostValidator): every origin carries a non-null id and a non-null,
+   * unit-bearing amountTaken, and origin ids are unique. The implementation dereferences these
+   * without guards, so a caller that skips validation would fail mid-transaction instead of
+   * cleanly.
    *
    * <p>The live-state rules (an origin must currently hold something, and the amount taken may not
    * exceed what it holds) are enforced HERE, inside the operation's own transaction, so they hold
@@ -93,10 +95,9 @@ public interface InventoryOperationManager {
    * InventoryOperationRequestBuilder}), then runs the same transactional core as {@link
    * #performOperation(ApiInventoryOperationPost, User, InTransactionValidation)}, unchanged.
    *
-   * <p>Each origin element carries its own {@code amountTaken} and {@code amountMode}, exactly as
-   * on the client-assembled shape, and the core validates them against the live locked quantity;
-   * they are not inputs. Precondition as for the client-assembled path: the origin list has passed
-   * the endpoint's structural validation.
+   * <p>Each origin element carries its own {@code amountTaken} and {@code amountMode}, which the
+   * core validates against the live locked quantity; they are not inputs. Precondition as for the
+   * core overload: the origin list has passed the endpoint's structural validation.
    *
    * <p>Generated field names resolve in the request's locale ({@code LocaleContextHolder}, M0 D1),
    * and a {@code today} computed value is the current date in the session's timezone ({@code
@@ -106,10 +107,9 @@ public interface InventoryOperationManager {
    * @param documentedByGlobalId the ELN record the built sample gets an {@code IsDocumentedBy} link
    *     to (the wizard's documentation step); null for none. The caller has checked it names a
    *     documentable record kind.
-   * @return as the client-assembled overload
+   * @return as the core overload
    * @throws BindException when an input fails the definition's rules (field errors named by the
-   *     bare input key, which is the name a typed facade client sends: M0), or as the
-   *     client-assembled overload
+   *     bare input key, which is the name a typed facade client sends: M0), or as the core overload
    */
   ApiSampleWithFullSubSamples performOperation(
       String operationKey,
