@@ -277,7 +277,7 @@ function toolbarButtonsEventHandler() {
 
   $('#createFromWord').click(function (e) {
     e.preventDefault();
-    openWordChooserDlg({
+    openWordChooserDlg(getSelectedIdsNamesAndTypes, {
       title: RS.msg("legacyjs.workspace.main.importWordTitle"),
       fileType: RS.msg("legacyjs.workspace.main.importWordFileType")
     });
