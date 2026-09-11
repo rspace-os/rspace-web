@@ -72,6 +72,9 @@ public interface IPagination<T> {
    */
   void setOrderBy(String orderByField);
 
+  /** Removes the requested sort key, so {@link #getOrderBy()} returns <code>null</code>. */
+  void clearOrderBy();
+
   /**
    * Getter for whether this sort order should be ascending or descending
    *
