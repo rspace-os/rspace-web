@@ -1,16 +1,20 @@
 package com.researchspace.api.v1.controller;
 
+import com.researchspace.api.v1.model.ApiInventoryOperationAmountMode;
+import com.researchspace.api.v1.model.ApiInventoryOperationOriginUpdate;
 import com.researchspace.api.v1.model.ApiInventoryOperationPost;
-import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
-import com.researchspace.api.v1.model.UnknownPropertyCapturing;
+import com.researchspace.api.v1.model.ApiQuantityInfo;
+import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.GlobalIdentifier;
-import com.researchspace.service.inventory.ApiExtraFieldsHelper;
+import com.researchspace.model.units.QuantityInfo;
+import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.inventory.InventoryOperationConfig;
 import com.researchspace.service.inventory.InventoryOperationConfigRegistry;
-import java.util.List;
+import java.math.BigDecimal;
+import java.util.HashSet;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.BiConsumer;
+import java.util.Set;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
@@ -18,22 +22,16 @@ import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
 
 /**
- * Validates an {@link ApiInventoryOperationPost} against the operation definition its {@code
- * operationType} names (DevDocs/adr/0007). The rules are interpreted generically from the shared
- * {@code operations_config.json} (no per-operation Java): origin cardinality, new-sample presence
- * (a noOutput operation like Destroy creates nothing), per-origin amount semantics (positive for a
- * decrementing operation, exactly zero for one that only links, e.g. Passage), configured
- * storage-temperature bounds (unit-aware), and a provenance link from the new sample back to every
- * origin. The new sample is also run through the same {@link SampleApiPostValidator} the public
- * samples endpoint uses. Checks needing an origin's live quantity are enforced by the manager
- * inside the operation's transaction, not here (DevDocs/adr/0007).
+ * Structural validation of an {@link ApiInventoryOperationPost} against the operation definition
+ * its {@code operationType} names (DevDocs/adr/0007), interpreted generically from the shared
+ * {@code operations_config.json}: the origin list (non-empty, no null entries, within the cap, the
+ * definition's cardinality, unique ids), each origin's amount taken and amount mode (a real amount
+ * unit, storable at 3dp, positive for a decrementing operation and exactly zero for one that only
+ * links, e.g. Passage), and the kind of record a documentation target names.
  *
- * <p>This class owns the root of the payload: resolving {@code operationType} to a definition, and
- * the origin-list checks every later rule depends on (non-empty, no null entries, within the cap,
- * right cardinality). Everything below the root is delegated by payload region to {@link
- * OperationOriginValidator} and {@link OperationNewSampleValidator}, with the rules they share in
- * {@link OperationValidationSupport}. Error codes, field paths and messages are unchanged by that
- * split, so it is invisible on the wire.
+ * <p>Nothing here looks at a sample: the server builds it from the inputs, which the manager
+ * validates against the definition ({@code InventoryOperationInputValidator}). Checks needing an
+ * origin's live quantity are enforced by the manager inside the operation's transaction, not here.
  */
 @Component
 public class InventoryOperationPostValidator implements Validator {
@@ -44,35 +42,14 @@ public class InventoryOperationPostValidator implements Validator {
    */
   static final int MAX_ORIGINS = 100;
 
-  /**
-   * Ceiling on unknown-property errors reported for one request. {@link
-   * UnknownPropertyCapturing#MAX_CAPTURED_UNKNOWN_PROPERTIES} caps names per OBJECT, which does not
-   * bound the response, because nothing bounds the number of objects: the walk deliberately runs
-   * before MAX_ORIGINS and MAX_EXTRA_FIELDS so a typo is reported even in a structurally broken
-   * request, and each error costs a reflective field read plus a message resolution. Without this a
-   * body of junk keys amplifies into an unbounded error list (parallel review). A caller with this
-   * many typos does not need the rest enumerated, only to be told there are more.
-   */
-  static final int MAX_REPORTED_UNKNOWN_PROPERTIES = 50;
+  /** The ELN record kinds the documentation picker offers (ElnFolderBrowser.PICKABLE_TYPES). */
+  static final Set<GlobalIdPrefix> DOCUMENTATION_TARGET_PREFIXES =
+      Set.of(GlobalIdPrefix.SD, GlobalIdPrefix.NB, GlobalIdPrefix.GL);
 
   private final InventoryOperationConfigRegistry operationConfigs;
 
-  /**
-   * Plain collaborators rather than beans: they hold only the validators they delegate to, so they
-   * need no Spring lifecycle, and constructing them here keeps this class's own dependencies the
-   * ones the container already injects.
-   */
-  private final OperationOriginValidator originValidator;
-
-  private final OperationNewSampleValidator newSampleValidator;
-
-  public InventoryOperationPostValidator(
-      InventoryOperationConfigRegistry operationConfigs,
-      SampleApiPostValidator sampleApiPostValidator,
-      ApiExtraFieldsHelper extraFieldsHelper) {
+  public InventoryOperationPostValidator(InventoryOperationConfigRegistry operationConfigs) {
     this.operationConfigs = operationConfigs;
-    this.originValidator = new OperationOriginValidator(extraFieldsHelper);
-    this.newSampleValidator = new OperationNewSampleValidator(sampleApiPostValidator);
   }
 
   @Override
@@ -83,11 +60,6 @@ public class InventoryOperationPostValidator implements Validator {
   @Override
   public void validate(Object target, Errors errors) {
     ApiInventoryOperationPost request = (ApiInventoryOperationPost) target;
-
-    // Reported first and never skipped by a later early return: a property no DTO declares was
-    // dropped during binding, so every rule below has been evaluated against a request that is not
-    // the one the caller sent.
-    rejectUnknownProperties(request, errors);
 
     // The operation key names the definition every other rule comes from, so an unknown key is
     // rejected alone: there is nothing meaningful to validate the rest of the request against.
@@ -123,9 +95,8 @@ public class InventoryOperationPostValidator implements Validator {
     }
     // The ceiling is checked before the cardinality, and returns: an oversized list is the more
     // specific reason (a single-origin operation would otherwise report only "exactly one" and hide
-    // it), and stopping here keeps the per-origin and per-link work bounded by the cap rather than
-    // by whatever the caller sent (Copilot review, PR #1090). Each origin costs a read, a lock and
-    // an update cycle; the batch is capped like the samples endpoint caps newSampleSubSamplesCount.
+    // it), and stopping here keeps the per-origin work bounded by the cap rather than by whatever
+    // the caller sent (Copilot review, PR #1090).
     if (request.getOrigins().size() > MAX_ORIGINS) {
       errors.rejectValue(
           "origins",
@@ -146,32 +117,10 @@ public class InventoryOperationPostValidator implements Validator {
           "This operation requires exactly one origin subsample.");
     }
 
-    originValidator.validateOrigins(request, config, errors);
-    if (request.getInputs() == null) {
-      // The template and documentation target belong to the server-built shape; on this shape they
-      // live on newSample, so a top-level one would be silently ignored (M4). Rejected instead.
-      if (request.getTemplateId() != null) {
-        rejectInputsShapeOnly(errors, "templateId");
-      }
-      if (request.getDocumentedByGlobalId() != null) {
-        rejectInputsShapeOnly(errors, "documentedByGlobalId");
-      }
-      newSampleValidator.validateNewSample(request, config, errors);
-      return;
-    }
-    // The server-built shape (M3): the server builds the sample and every generated field from the
-    // definition, so a client-assembled sample or origin field would be silently replaced. Rejected
-    // instead; the inputs themselves are validated by the manager against the definition.
-    if (request.getNewSample() != null) {
-      errors.rejectValue(
-          "newSample",
-          "errors.inventory.operation.newSampleNotAccepted",
-          "Send either inputs or newSample, not both.");
-    }
-    // Same record kinds the documentation picker offers and the client-assembled shape accepts
-    // (OperationNewSampleValidator.validateDocumentationLink); here the id arrives bare, so a
-    // malformed one is rejected too rather than left to the link validation that shape delegates
-    // to.
+    validateOrigins(request, config, errors);
+
+    // The id arrives bare, so a malformed one is rejected here too; readability of the target is
+    // checked by the shared link validation when the built sample is created.
     if (request.getDocumentedByGlobalId() != null
         && !targetsDocumentableRecord(request.getDocumentedByGlobalId())) {
       errors.rejectValue(
@@ -179,124 +128,131 @@ public class InventoryOperationPostValidator implements Validator {
           "errors.inventory.operation.documentationLinkTargetInvalid",
           "A documentation link must target an ELN document, notebook or Gallery file.");
     }
-    for (int index = 0; index < request.getOrigins().size(); index++) {
-      if (CollectionUtils.isNotEmpty(request.getOrigins().get(index).getExtraFields())) {
+  }
+
+  private static void validateOrigins(
+      ApiInventoryOperationPost request, InventoryOperationConfig config, Errors errors) {
+    // A subsample may appear at most once: each origin's amount taken is validated against that
+    // origin's original quantity, but the manager applies the decrements in order, so the same id
+    // listed twice would be checked twice against the full quantity yet decremented twice (two 6 mL
+    // entries could drain a 10 mL origin past what the over-removal check permits). See
+    // DevDocs/adr/0007.
+    Set<Long> seenIds = new HashSet<>();
+    int index = 0;
+    for (ApiInventoryOperationOriginUpdate origin : request.getOrigins()) {
+      errors.pushNestedPath(String.format("origins[%d]", index++));
+      if (origin.getId() == null) {
         errors.rejectValue(
-            String.format("origins[%d].extraFields", index),
-            "errors.inventory.operation.originFieldsNotAccepted",
-            "This shape adds the operation's origin fields itself.");
+            "id",
+            "errors.inventory.operation.originIdRequired",
+            "Each origin must identify a subsample by id.");
+      } else if (!seenIds.add(origin.getId())) {
+        errors.rejectValue(
+            "id",
+            "errors.inventory.operation.duplicateOrigin",
+            "An origin subsample may appear at most once in an operation.");
       }
+      // An origin-emptying operation (Destroy) means to take the whole origin, so its amount is a
+      // compare-and-swap claim the manager checks against the live quantity. A client that declares
+      // amountMode "explicit" is saying the opposite, that this is an amount the user chose, which
+      // this operation cannot honour: malformed, not conflicted, so a 400 here rather than the
+      // manager's 409 (RSDEV-1231). An ABSENT mode stays acceptable, so requests predating the
+      // field keep working, and it is NOT read as a whole-origin claim: only a DECLARED "all"
+      // earns the compare-and-swap, so an absent mode whose amount does not empty the origin still
+      // gets the mustEmptyOrigin 400 rather than a 409 it could never resolve.
+      if (config.effect().emptiesOrigin()
+          && origin.getAmountMode() == ApiInventoryOperationAmountMode.EXPLICIT) {
+        errors.rejectValue(
+            "amountMode",
+            "errors.inventory.operation.amountModeMustBeAll",
+            "This operation empties its origins, so the amount taken cannot be an explicit"
+                + " amount.");
+      } else if (!config.effect().emptiesOrigin()
+          && config.effect().amountTakenFrom() == null
+          && origin.getAmountMode() == ApiInventoryOperationAmountMode.ALL) {
+        // The mirror of the rule above. An operation that only links to its origins (Passage)
+        // requires an amount of exactly zero, so a whole-origin claim cannot be satisfied: the
+        // manager compare-and-swaps the zero against the live quantity, 409s, and the client
+        // reloads to find nothing changed and resubmits the only payload that validates, forever.
+        // Malformed rather than conflicted, so it is a 400 here (parallel review).
+        errors.rejectValue(
+            "amountMode",
+            "errors.inventory.operation.amountModeNotApplicable",
+            "This operation does not take from its origins, so the amount taken cannot be a"
+                + " whole-origin claim.");
+      }
+      if (!isValidAmountTaken(origin.getAmountTaken())) {
+        errors.rejectValue(
+            "amountTaken",
+            "errors.inventory.operation.amountTakenInvalid",
+            "Each origin must specify a non-negative amount, with a unit, to take from it.");
+      } else if (!RSUnitDef.exists(origin.getAmountTaken().getUnitId())) {
+        // The manager subtracts unit-aware, so an unknown unit would fail there as a 422 rather
+        // than a field-scoped 400 (code review, finding 4).
+        errors.rejectValue(
+            "amountTaken",
+            "errors.inventory.quantity.unitInvalid",
+            new Object[] {origin.getAmountTaken().getUnitId()},
+            "The amount taken must use a known unit.");
+      } else if (!RSUnitDef.getUnitById(origin.getAmountTaken().getUnitId()).isAmount()) {
+        errors.rejectValue(
+            "amountTaken",
+            "errors.inventory.quantity.unitNotAmount",
+            new Object[] {origin.getAmountTaken().getUnitId()},
+            "The amount taken must use an amount unit (volume, mass or count).");
+      } else if (!QuantityInfo.canStoreWithoutRounding(origin.getAmountTaken().getNumericValue())) {
+        // Quantities persist at 3dp (QuantityInfo rounds HALF_UP), so a finer amount would pass the
+        // live-state checks as given yet decrement the origin by the rounded surrogate (0.0004 ml
+        // would take nothing at all). Rejected rather than rounded, like over-removal.
+        errors.rejectValue(
+            "amountTaken",
+            "errors.inventory.operation.amountTakenTooPrecise",
+            "The amount taken supports at most 3 decimal places.");
+      } else if (!config.effect().emptiesOrigin()) {
+        // What the amount taken must be follows the operation's effect (DevDocs/adr/0007): an
+        // operation that decrements its origins (amountTakenFrom configured) must take a positive
+        // amount from each; one that only links to them (e.g. Passage) must take exactly zero. An
+        // origin-emptying operation (Destroy) is compare-and-swapped live in the manager
+        // instead, where the amount must still equal the origin's current quantity.
+        int amountSignum = origin.getAmountTaken().getNumericValue().signum();
+        if (config.effect().amountTakenFrom() != null && amountSignum <= 0) {
+          errors.rejectValue(
+              "amountTaken",
+              "errors.inventory.operation.amountTakenPositive",
+              "This operation takes from each origin, so the amount taken must be greater than"
+                  + " zero.");
+        } else if (config.effect().amountTakenFrom() == null && amountSignum != 0) {
+          errors.rejectValue(
+              "amountTaken",
+              "errors.inventory.operation.amountTakenZero",
+              "This operation does not take from its origins, so the amount taken must be zero.");
+        }
+      }
+      errors.popNestedPath();
     }
   }
 
-  private static void rejectInputsShapeOnly(Errors errors, String field) {
-    errors.rejectValue(
-        field,
-        "errors.inventory.operation.inputsShapeOnly",
-        new Object[] {field},
-        "This property is accepted only alongside inputs.");
+  /**
+   * A valid amount-taken is a non-negative numeric value carrying a real unit. The unit is required
+   * because the manager converts it to a {@link QuantityInfo} (unit-aware subtraction); a null or
+   * non-positive unit would fail there with a 500 rather than a clean 400. The frontend uses a
+   * non-positive unit id (UNSET_UNIT = 0) as an "unset" marker, so the unit id must be present and
+   * greater than zero. A zero numeric value is still allowed (a no-op decrement, e.g. Passage); a
+   * non-positive unit id is not.
+   */
+  private static boolean isValidAmountTaken(ApiQuantityInfo quantity) {
+    return quantity != null
+        && quantity.getNumericValue() != null
+        && quantity.getNumericValue().compareTo(BigDecimal.ZERO) >= 0
+        && quantity.getUnitId() != null
+        && quantity.getUnitId() > 0;
   }
 
   private static boolean targetsDocumentableRecord(String globalId) {
     try {
-      return OperationNewSampleValidator.DOCUMENTATION_TARGET_PREFIXES.contains(
-          new GlobalIdentifier(globalId).getPrefix());
+      return DOCUMENTATION_TARGET_PREFIXES.contains(new GlobalIdentifier(globalId).getPrefix());
     } catch (IllegalArgumentException malformed) {
       return false;
     }
   }
-
-  /**
-   * Reports every property the request body carried that no DTO declares (F7). The API's mapper has
-   * FAIL_ON_UNKNOWN_PROPERTIES off, so binding drops such a key silently, and afterwards a dropped
-   * key is indistinguishable from an optional one the caller omitted: no presence rule can see it.
-   * Each object in the payload captures the NAME at binding instead ({@link
-   * UnknownPropertyCapturing}), and this turns those into ordinary field errors, aggregated with
-   * every other error in the one 400.
-   *
-   * <p>A walk of its own rather than a call inside each region's rules, because those return early
-   * on the first structural problem while an unknown property must be reported either way. Only the
-   * levels a client actually sends are visited; a quantity is a leaf of numbers and needs no pass.
-   */
-  private static void rejectUnknownProperties(ApiInventoryOperationPost request, Errors errors) {
-    Budget budget = new Budget();
-    rejectCaptured(errors, "", request, budget);
-    forEachAt(
-        request.getOrigins(),
-        "origins",
-        (path, origin) -> {
-          rejectCaptured(errors, path, origin, budget);
-          forEachAt(
-              origin.getExtraFields(),
-              path + ".extraFields",
-              (fieldPath, field) -> rejectCaptured(errors, fieldPath, field, budget));
-        });
-    ApiSampleWithFullSubSamples newSample = request.getNewSample();
-    if (newSample != null) {
-      rejectCaptured(errors, "newSample", newSample, budget);
-      forEachAt(
-          newSample.getSubSamples(),
-          "newSample.subSamples",
-          (path, subSample) -> rejectCaptured(errors, path, subSample, budget));
-      forEachAt(
-          newSample.getExtraFields(),
-          "newSample.extraFields",
-          (path, field) -> rejectCaptured(errors, path, field, budget));
-    }
-    if (budget.unreported > 0) {
-      errors.reject(
-          "errors.inventory.operation.unknownPropertiesTruncated",
-          new Object[] {budget.unreported},
-          "Further unrecognised properties were not listed.");
-    }
-  }
-
-  /** How many unknown-property errors are left to report, and how many were skipped. */
-  private static final class Budget {
-    private int remaining = MAX_REPORTED_UNKNOWN_PROPERTIES;
-    private int unreported;
-  }
-
-  /** Visits each non-null element of a nullable list, at {@code path[index]}. */
-  private static <T> void forEachAt(List<T> list, String path, BiConsumer<String, T> visit) {
-    if (list == null) {
-      return;
-    }
-    for (int index = 0; index < list.size(); index++) {
-      T element = list.get(index);
-      if (element != null) {
-        visit.accept(String.format("%s[%d]", path, index), element);
-      }
-    }
-  }
-
-  /**
-   * One error per captured name, scoped to the object that carried it, so the response says which
-   * part of the payload the property was on. An empty path is the request itself, which is not a
-   * field of anything and so becomes a global error.
-   */
-  private static void rejectCaptured(
-      Errors errors, String path, UnknownPropertyCapturing object, Budget budget) {
-    for (String property : object.getUnknownProperties()) {
-      if (budget.remaining <= 0) {
-        budget.unreported++;
-        continue;
-      }
-      budget.remaining--;
-      // Truncated because the name is echoed back to the caller and a property name is bounded only
-      // by Jackson's 50,000-character limit; enough to identify the typo is enough.
-      Object[] arguments =
-          new Object[] {StringUtils.abbreviate(property, MAX_REPORTED_NAME_LENGTH)};
-      String defaultMessage = "This operation does not accept this property.";
-      if (path.isEmpty()) {
-        errors.reject("errors.inventory.operation.unknownProperty", arguments, defaultMessage);
-      } else {
-        errors.rejectValue(
-            path, "errors.inventory.operation.unknownProperty", arguments, defaultMessage);
-      }
-    }
-  }
-
-  /** How much of an unrecognised property's name is echoed back in the error. */
-  private static final int MAX_REPORTED_NAME_LENGTH = 64;
 }

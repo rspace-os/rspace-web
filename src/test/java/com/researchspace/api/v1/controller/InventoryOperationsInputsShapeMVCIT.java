@@ -1,7 +1,6 @@
 package com.researchspace.api.v1.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -29,13 +28,17 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MvcResult;
 
 /**
- * M3's gate (plan-operations-server-builds.md): for each of the seven configured operations, the
- * server-built shape ({@code inputs}) must persist records identical to those the client-assembled
- * shape ({@code newSample}) persists. The client-assembled bodies here are what the wizard sends
- * today, transcribed from buildOperationRequest.ts including the parts M1's builder deliberately
- * omits (amountMode "explicit", the aggregate newSample.quantity, templateId null, empty subsample
- * extraFields), so an identical fingerprint is the first real test of the claim that those parts
- * have no consumer.
+ * For each of the seven configured operations, the records the server persists from the request the
+ * wizard sends, as a golden fingerprint: the created sample (name, derived total, template, storage
+ * range, every extra field with its definition key and link), each of its subsamples, and each
+ * origin's quantity and fields afterwards.
+ *
+ * <p>The fingerprints are the records the client-assembled shape persisted before the server
+ * started building the sample (plan-operations-server-builds.md M3 proved the two shapes identical,
+ * M5 deleted the client-assembled one). The wizard's confirmation preview is checked against the
+ * wizard's own model of the build (OperationConfirmation.test), so this is the only thing tying
+ * that model to what the server actually stores: a change here that is not a deliberate change to
+ * the records is the preview drifting.
  *
  * <p>Not run automatically (extends a real-transaction MVC base).
  */
@@ -58,187 +61,132 @@ public class InventoryOperationsInputsShapeMVCIT extends API_MVC_InventoryTestBa
   }
 
   @Test
-  public void aliquotPersistsIdenticalRecordsFromEitherShape() throws Exception {
-    assertIdenticalRecords(
+  public void aliquotPersistsTheGoldenRecords() throws Exception {
+    assertPersists(
         1,
         o ->
-            oldShape(
+            body(
                 "aliquot",
-                origin(o.get(0), "explicit", q("1", GRAM), null),
-                "Aliquots",
-                2,
-                q("0.5", GRAM),
-                q("1", GRAM),
-                link("Derived from", "operations.aliquot.linkFieldName", "IsPartOf", o.get(0)),
-                null),
-        o ->
-            newShape(
-                "aliquot",
-                origin(o.get(0), "explicit", q("1", GRAM), null),
-                "{\"sampleName\":\"Aliquots\",\"count\":2,\"eachAmount\":" + q("0.5", GRAM) + "}"));
+                origin(o.get(0), "explicit", q("1", GRAM)),
+                "{\"sampleName\":\"Aliquots\",\"count\":2,\"eachAmount\":" + q("0.5", GRAM) + "}"),
+        "sample Aliquots total=1/7 template=null storage=none..none",
+        "  field Derived from|link|null|operations.aliquot.linkFieldName|IsPartOf->ORIGIN0",
+        "  subsample Aliquots.01 quantity=0.5/7 fields=0",
+        "  subsample Aliquots.02 quantity=0.5/7 fields=0",
+        "origin quantity=4/7");
   }
 
   @Test
-  public void passagePersistsIdenticalRecordsFromEitherShape() throws Exception {
-    // The origin's parent carries no passage counter, so both shapes start it at 1.
-    assertIdenticalRecords(
+  public void passagePersistsTheGoldenRecords() throws Exception {
+    // The origin's parent carries no passage counter, so the server starts it at 1.
+    assertPersists(
         1,
         o ->
-            oldShape(
+            body(
                 "passage",
-                origin(o.get(0), "explicit", q("0", GRAM), null),
-                "Passaged",
-                1,
-                q("0.5", GRAM),
-                q("0.5", GRAM),
-                link("Passaged from", "operations.passage.linkFieldName", "IsDerivedFrom", o.get(0))
-                    + ","
-                    + text("Passage number", "operations.passage.numberField", "1"),
-                null),
-        o ->
-            newShape(
-                "passage",
-                origin(o.get(0), "explicit", q("0", GRAM), null),
-                "{\"sampleName\":\"Passaged\",\"count\":1,\"eachAmount\":" + q("0.5", GRAM) + "}"));
+                origin(o.get(0), "explicit", q("0", GRAM)),
+                "{\"sampleName\":\"Passaged\",\"count\":1,\"eachAmount\":" + q("0.5", GRAM) + "}"),
+        "sample Passaged total=0.5/7 template=null storage=none..none",
+        "  field Passaged from|link|null|operations.passage.linkFieldName|IsDerivedFrom->ORIGIN0",
+        "  field Passage number|text|1|operations.passage.numberField|",
+        "  subsample Passaged.01 quantity=0.5/7 fields=0",
+        "origin quantity=5/7");
   }
 
   @Test
-  public void poolPersistsIdenticalRecordsFromEitherShape() throws Exception {
-    // Both origins are named mySubSample, so the wizard disambiguates the two link names by target.
-    assertIdenticalRecords(
+  public void poolPersistsTheGoldenRecords() throws Exception {
+    // Both origins are named mySubSample, so the server disambiguates the two link names by target.
+    assertPersists(
         2,
         o ->
-            oldShape(
+            body(
                 "pool",
-                origin(o.get(0), "explicit", q("1", GRAM), null)
+                origin(o.get(0), "explicit", q("1", GRAM))
                     + ","
-                    + origin(o.get(1), "explicit", q("1", GRAM), null),
-                "Pooled",
-                1,
-                q("2", GRAM),
-                q("2", GRAM),
-                link(
-                        "Pooled from: " + o.get(0).getName() + " (" + o.get(0).getGlobalId() + ")",
-                        "operations.pool.linkFieldName",
-                        "HasPart",
-                        o.get(0))
-                    + ","
-                    + link(
-                        "Pooled from: " + o.get(1).getName() + " (" + o.get(1).getGlobalId() + ")",
-                        "operations.pool.linkFieldName",
-                        "HasPart",
-                        o.get(1)),
-                null),
-        o ->
-            newShape(
-                "pool",
-                origin(o.get(0), "explicit", q("1", GRAM), null)
-                    + ","
-                    + origin(o.get(1), "explicit", q("1", GRAM), null),
-                "{\"sampleName\":\"Pooled\",\"count\":1,\"eachAmount\":" + q("2", GRAM) + "}"));
+                    + origin(o.get(1), "explicit", q("1", GRAM)),
+                "{\"sampleName\":\"Pooled\",\"count\":1,\"eachAmount\":" + q("2", GRAM) + "}"),
+        "sample Pooled total=2/7 template=null storage=none..none",
+        "  field Pooled from: mySubSample (ORIGIN0)|link|null|operations.pool.linkFieldName"
+            + "|HasPart->ORIGIN0",
+        "  field Pooled from: mySubSample (ORIGIN1)|link|null|operations.pool.linkFieldName"
+            + "|HasPart->ORIGIN1",
+        "  subsample Pooled.01 quantity=2/7 fields=0",
+        "origin quantity=4/7",
+        "origin quantity=4/7");
   }
 
   @Test
-  public void derivePersistsIdenticalRecordsFromEitherShape() throws Exception {
-    assertIdenticalRecords(
+  public void derivePersistsTheGoldenRecords() throws Exception {
+    assertPersists(
         1,
         o ->
-            oldShape(
+            body(
                 "derive",
-                origin(o.get(0), "explicit", q("0.6", GRAM), null),
-                "Derived",
-                1,
-                q("0.5", GRAM),
-                q("0.5", GRAM),
-                link(
-                    "Is Derived From using process: PCR",
-                    "operations.derive.linkFieldName",
-                    "IsDerivedFrom",
-                    o.get(0)),
-                null),
-        o ->
-            newShape(
-                "derive",
-                origin(o.get(0), "explicit", q("0.6", GRAM), null),
+                origin(o.get(0), "explicit", q("0.6", GRAM)),
                 "{\"processName\":\"PCR\",\"sampleName\":\"Derived\",\"count\":1,\"eachAmount\":"
                     + q("0.5", GRAM)
-                    + "}"));
+                    + "}"),
+        "sample Derived total=0.5/7 template=null storage=none..none",
+        "  field Is Derived From using process: PCR|link|null|operations.derive.linkFieldName"
+            + "|IsDerivedFrom->ORIGIN0",
+        "  subsample Derived.01 quantity=0.5/7 fields=0",
+        "origin quantity=4.4/7");
   }
 
   @Test
-  public void cryopreservePersistsIdenticalRecordsFromEitherShape() throws Exception {
-    assertIdenticalRecords(
+  public void cryopreservePersistsTheGoldenRecords() throws Exception {
+    assertPersists(
         1,
         o ->
-            oldShape(
+            body(
                 "cryopreserve",
-                origin(o.get(0), "explicit", q("0.6", GRAM), null),
-                "Frozen",
-                1,
-                q("0.5", GRAM),
-                q("0.5", GRAM),
-                link(
-                        "Frozen from",
-                        "operations.cryopreserve.linkFieldName",
-                        "IsDerivedFrom",
-                        o.get(0))
-                    + ","
-                    + text("Cryomedium", "operations.cryopreserve.cryomediumField", "DMSO 10%"),
-                q("-80", CELSIUS)),
-        o ->
-            newShape(
-                "cryopreserve",
-                origin(o.get(0), "explicit", q("0.6", GRAM), null),
+                origin(o.get(0), "explicit", q("0.6", GRAM)),
                 "{\"sampleName\":\"Frozen\",\"count\":1,\"eachAmount\":"
                     + q("0.5", GRAM)
                     + ",\"cryomedium\":\"DMSO 10%\",\"storageTemp\":"
                     + q("-80", CELSIUS)
-                    + "}"));
+                    + "}"),
+        "sample Frozen total=0.5/7 template=null storage=-80/8..-80/8",
+        "  field Frozen from|link|null|operations.cryopreserve.linkFieldName"
+            + "|IsDerivedFrom->ORIGIN0",
+        "  field Cryomedium|text|DMSO 10%|operations.cryopreserve.cryomediumField|",
+        "  subsample Frozen.01 quantity=0.5/7 fields=0",
+        "origin quantity=4.4/7");
   }
 
   @Test
-  public void revivePersistsIdenticalRecordsFromEitherShape() throws Exception {
-    assertIdenticalRecords(
+  public void revivePersistsTheGoldenRecords() throws Exception {
+    assertPersists(
         1,
         o ->
-            oldShape(
+            body(
                 "revive",
-                origin(o.get(0), "explicit", q("0.6", GRAM), null),
-                "Revived",
-                1,
-                q("0.5", GRAM),
-                q("0.5", GRAM),
-                link("Revived from", "operations.revive.linkFieldName", "IsDerivedFrom", o.get(0)),
-                q("4", CELSIUS)),
-        o ->
-            newShape(
-                "revive",
-                origin(o.get(0), "explicit", q("0.6", GRAM), null),
+                origin(o.get(0), "explicit", q("0.6", GRAM)),
                 "{\"sampleName\":\"Revived\",\"count\":1,\"eachAmount\":"
                     + q("0.5", GRAM)
                     + ",\"storageTemp\":"
                     + q("4", CELSIUS)
-                    + "}"));
+                    + "}"),
+        "sample Revived total=0.5/7 template=null storage=4/8..4/8",
+        "  field Revived from|link|null|operations.revive.linkFieldName|IsDerivedFrom->ORIGIN0",
+        "  subsample Revived.01 quantity=0.5/7 fields=0",
+        "origin quantity=4.4/7");
   }
 
   @Test
-  public void destroyPersistsIdenticalRecordsFromEitherShape() throws Exception {
-    // The wizard stamps the disposed date from the browser clock; the server-built path resolves
-    // "today" in the session's timezone, which for an API-key session is the server's.
-    String disposed =
-        text("Disposed", "operations.destroy.disposedField", LocalDate.now().toString());
-    assertIdenticalRecords(
+  public void destroyPersistsTheGoldenRecords() throws Exception {
+    // The server resolves "today" in the session's timezone, which for an API-key session is the
+    // server's, so this expected date and the stored one come from the same clock and zone.
+    assertPersists(
         1,
-        o ->
-            "{\"operationType\":\"destroy\",\"origins\":["
-                + origin(o.get(0), "all", q("5", GRAM), "[" + disposed + "]")
-                + "],\"newSample\":null}",
-        o -> newShape("destroy", origin(o.get(0), "all", q("5", GRAM), null), "{}"));
+        o -> body("destroy", origin(o.get(0), "all", q("5", GRAM)), "{}"),
+        "origin quantity=0/7",
+        "  field Disposed|text|" + LocalDate.now() + "|operations.destroy.disposedField|");
   }
 
   @Test
-  public void templateAndDocumentationTargetTravelTopLevelOnTheInputsShape() throws Exception {
-    // M4: the two wizard-level choices that are not inputs. The server builds the sample from the
+  public void templateAndDocumentationTargetTravelTopLevel() throws Exception {
+    // The two wizard-level choices that are not inputs. The server builds the sample from the
     // template and adds the IsDocumentedBy link itself, named from the shared catalog.
     ApiSampleTemplatePost templatePost = new ApiSampleTemplatePost();
     templatePost.setName("inputs shape template");
@@ -259,7 +207,7 @@ public class InventoryOperationsInputsShapeMVCIT extends API_MVC_InventoryTestBa
     Long sampleId =
         perform(
             "{\"operationType\":\"derive\",\"origins\":["
-                + origin(origin, "explicit", q("0.6", GRAM), null)
+                + origin(origin, "explicit", q("0.6", GRAM))
                 + "],\"inputs\":{\"processName\":\"PCR\",\"sampleName\":\"Documented\",\"count\":1,"
                 + "\"eachAmount\":"
                 + q("0.5", GRAM)
@@ -296,9 +244,9 @@ public class InventoryOperationsInputsShapeMVCIT extends API_MVC_InventoryTestBa
                     apiKey,
                     "/operations",
                     anyUser,
-                    newShape(
+                    body(
                         "aliquot",
-                        origin(origin, "explicit", q("1", GRAM), null),
+                        origin(origin, "explicit", q("1", GRAM)),
                         "{\"count\":2,\"eachAmount\":" + q("0.5", GRAM) + "}")))
             .andExpect(status().isBadRequest())
             .andReturn();
@@ -315,21 +263,16 @@ public class InventoryOperationsInputsShapeMVCIT extends API_MVC_InventoryTestBa
   // --- helpers ---
 
   /**
-   * Performs the client-assembled body against one fresh set of origins and the server-built body
-   * against another, then asserts the persisted records (created sample, its fields and subsamples,
-   * each origin's quantity and fields) are identical once origin global ids are normalised.
+   * Performs the body against fresh origins and asserts the persisted records (created sample, its
+   * fields and subsamples, each origin's quantity and fields) are exactly the golden lines, once
+   * origin global ids are normalised to ORIGIN0, ORIGIN1...
    */
-  private void assertIdenticalRecords(
-      int originCount,
-      Function<List<ApiSubSample>, String> clientAssembled,
-      Function<List<ApiSubSample>, String> serverBuilt)
+  private void assertPersists(
+      int originCount, Function<List<ApiSubSample>, String> body, String... goldenLines)
       throws Exception {
-    List<ApiSubSample> oldOrigins = origins(originCount);
-    String oldRecords = fingerprint(perform(clientAssembled.apply(oldOrigins)), oldOrigins);
-    List<ApiSubSample> newOrigins = origins(originCount);
-    String newRecords = fingerprint(perform(serverBuilt.apply(newOrigins)), newOrigins);
-    assertFalse(oldRecords.isBlank(), "the fingerprint must describe something");
-    assertEquals(oldRecords, newRecords);
+    List<ApiSubSample> origins = origins(originCount);
+    String records = fingerprint(perform(body.apply(origins)), origins);
+    assertEquals(String.join("\n", goldenLines) + "\n", records);
   }
 
   /** Fresh 5 g origins, one per basic sample, all named mySubSample. */
@@ -437,79 +380,18 @@ public class InventoryOperationsInputsShapeMVCIT extends API_MVC_InventoryTestBa
     return "{\"numericValue\":" + value + ",\"unitId\":" + unitId + "}";
   }
 
-  private static String link(String name, String key, String relationType, ApiSubSample target) {
-    return "{\"name\":\""
-        + name
-        + "\",\"type\":\"link\",\"newFieldRequest\":true,\"operationFieldKey\":\""
-        + key
-        + "\",\"link\":{\"relationType\":\""
-        + relationType
-        + "\",\"targetGlobalId\":\""
-        + target.getGlobalId()
-        + "\",\"versionPin\":null}}";
-  }
-
-  private static String text(String name, String key, String content) {
-    return "{\"name\":\""
-        + name
-        + "\",\"type\":\"text\",\"newFieldRequest\":true,\"operationFieldKey\":\""
-        + key
-        + "\",\"content\":\""
-        + content
-        + "\"}";
-  }
-
-  /** One origin element, as both shapes send it; extraFieldsJson is a JSON array or null. */
-  private static String origin(
-      ApiSubSample origin, String amountMode, String amountTakenJson, String extraFieldsJson) {
+  /** One origin element, as the wizard sends it. */
+  private static String origin(ApiSubSample origin, String amountMode, String amountTakenJson) {
     return "{\"id\":"
         + origin.getId()
         + ",\"amountMode\":\""
         + amountMode
         + "\",\"amountTaken\":"
         + amountTakenJson
-        + (extraFieldsJson == null ? "" : ",\"extraFields\":" + extraFieldsJson)
         + "}";
   }
 
-  /** The wizard's client-assembled body for a creating operation (buildOperationRequest.ts). */
-  private static String oldShape(
-      String operationType,
-      String originsJson,
-      String name,
-      int count,
-      String eachAmountJson,
-      String totalJson,
-      String extraFieldsJson,
-      String storageTempJson) {
-    StringBuilder subSamples = new StringBuilder();
-    for (int i = 0; i < count; i++) {
-      subSamples
-          .append(i == 0 ? "" : ",")
-          .append("{\"quantity\":")
-          .append(eachAmountJson)
-          .append(",\"extraFields\":[]}");
-    }
-    return "{\"operationType\":\""
-        + operationType
-        + "\",\"origins\":["
-        + originsJson
-        + "],\"newSample\":{\"name\":\""
-        + name
-        + "\",\"templateId\":null,\"quantity\":"
-        + totalJson
-        + ",\"extraFields\":["
-        + extraFieldsJson
-        + "],\"subSamples\":["
-        + subSamples
-        + "]"
-        + (storageTempJson == null
-            ? ""
-            : ",\"storageTempMin\":" + storageTempJson + ",\"storageTempMax\":" + storageTempJson)
-        + "}}";
-  }
-
-  private static String newShape(String operationType, String originsJson, String inputsJson) {
+  private static String body(String operationType, String originsJson, String inputsJson) {
     return "{\"operationType\":\""
         + operationType
         + "\",\"origins\":["
