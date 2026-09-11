@@ -14,9 +14,12 @@ import com.researchspace.api.v1.service.ExportApiHandler;
 import com.researchspace.api.v1.service.RSFormApiHandler;
 import com.researchspace.api.v1.throttling.APIRequestThrottler;
 import com.researchspace.model.permissions.IPermissionUtils;
+import com.researchspace.model.permissions.IUserPermissionUtils;
 import com.researchspace.service.ApiAvailabilityHandler;
 import com.researchspace.service.FormManager;
 import com.researchspace.service.IconImageManager;
+import com.researchspace.service.OAuthTokenManager;
+import com.researchspace.service.RecordManager;
 import com.researchspace.service.UserApiKeyManager;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Nested;
@@ -47,8 +50,12 @@ public class ProdProfileCanSetFromPropertiesTest {
 
     @Mock FormManager formMgr;
 
+    @Mock IUserPermissionUtils userPermissionUtils;
+    @Mock OAuthTokenManager tokenManager;
+    @Mock RecordManager recordManager;
+
     private void initMocks() {
-      MockitoAnnotations.initMocks(ApiProdConfigTestHelper.class);
+      MockitoAnnotations.openMocks(this);
     }
 
     @Bean
@@ -68,6 +75,24 @@ public class ProdProfileCanSetFromPropertiesTest {
       initMocks();
       return formMgr;
     }
+
+    @Bean
+    IUserPermissionUtils userPermissionUtils() {
+      initMocks();
+      return userPermissionUtils;
+    }
+
+    @Bean
+    OAuthTokenManager oAuthTokenManager() {
+      initMocks();
+      return tokenManager;
+    }
+
+    @Bean
+    RecordManager recordManager() {
+      initMocks();
+      return recordManager;
+    }
   }
 
   @Configuration
@@ -84,7 +109,7 @@ public class ProdProfileCanSetFromPropertiesTest {
     @Mock RSFormApiHandler formApiHandler;
 
     private void initMocks() {
-      MockitoAnnotations.initMocks(ProdApiConfTss.class);
+      MockitoAnnotations.openMocks(this);
     }
 
     @Bean
