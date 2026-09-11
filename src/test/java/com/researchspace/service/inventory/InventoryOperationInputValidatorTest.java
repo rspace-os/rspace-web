@@ -59,6 +59,52 @@ class InventoryOperationInputValidatorTest {
   }
 
   @Test
+  void withDefaultsFillsAnAbsentCountWithTheDeclaredOne() {
+    // M0 D7: a typed facade client may omit count; the server supplies the definition's default,
+    // typed as the integer the validator expects.
+    Map<String, Object> inputs = aliquot();
+    inputs.remove("count");
+    Map<String, Object> filled =
+        InventoryOperationInputValidator.withDefaults(
+            registry.get("aliquot").orElseThrow(), inputs);
+    assertEquals(1, filled.get("count"));
+    assertEquals(List.of(), validate("aliquot", filled).getAllErrors());
+  }
+
+  @Test
+  void withDefaultsFillsRevivesStorageTempAsCelsius() {
+    Map<String, Object> inputs = revive();
+    inputs.remove("storageTemp");
+    Map<String, Object> filled =
+        InventoryOperationInputValidator.withDefaults(registry.get("revive").orElseThrow(), inputs);
+    assertEquals(celsius("4"), filled.get("storageTemp"));
+    assertEquals(List.of(), validate("revive", filled).getAllErrors());
+  }
+
+  @Test
+  void withDefaultsLeavesASuppliedValueAndAnInputWithoutADefaultAlone() {
+    Map<String, Object> inputs = aliquot();
+    inputs.put("count", 7);
+    Map<String, Object> filled =
+        InventoryOperationInputValidator.withDefaults(
+            registry.get("aliquot").orElseThrow(), inputs);
+    assertEquals(7, filled.get("count"));
+    assertEquals(inputs.keySet(), filled.keySet(), "no default is declared for anything else");
+  }
+
+  @Test
+  void cryopreserveRequiresAStorageTemperature() {
+    // M0: storageTemp is required on cryopreserve (a frozen sample has a storage temperature); the
+    // config used to leave it optional, which would have built a Frozen sample with no range.
+    Map<String, Object> inputs = cryopreserve();
+    inputs.remove("storageTemp");
+    assertSingleErrorOn(
+        validate("cryopreserve", inputs),
+        "storageTemp",
+        "errors.inventory.operation.inputRequired");
+  }
+
+  @Test
   void valueBelowTheDeclaredMinimumIsAFieldErrorOnItsKey() {
     Map<String, Object> inputs = aliquot();
     inputs.put("count", 0);

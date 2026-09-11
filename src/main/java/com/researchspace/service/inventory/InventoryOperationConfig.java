@@ -1,6 +1,7 @@
 package com.researchspace.service.inventory;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
@@ -48,7 +49,12 @@ public record InventoryOperationConfig(
    */
   public static final Set<String> INTERPRETED_COMPUTED_FUNCTIONS = Set.of("increment", "today");
 
-  /** A wizard input; only the constraints the backend can check server-side are bound. */
+  /**
+   * A wizard input; the constraints the backend checks server-side, plus {@code default}, the value
+   * the server supplies for an absent optional input on the typed facades (M0 D7: {@code count} 1,
+   * Revive's {@code storageTemp} 4 degC). Bound as the JSON value (a number or a string) and typed
+   * by {@link InventoryOperationInputValidator#withDefaults} against the input's type.
+   */
   @JsonIgnoreProperties(ignoreUnknown = true)
   public record Input(
       String key,
@@ -57,7 +63,8 @@ public record InventoryOperationConfig(
       BigDecimal min,
       BigDecimal max,
       BigDecimal minCelsius,
-      BigDecimal maxCelsius) {}
+      BigDecimal maxCelsius,
+      @JsonProperty("default") Object defaultValue) {}
 
   /** The parts of the operation's effect the backend enforces on the wire format. */
   @JsonIgnoreProperties(ignoreUnknown = true)
