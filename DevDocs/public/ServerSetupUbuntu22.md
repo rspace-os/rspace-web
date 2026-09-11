@@ -30,7 +30,7 @@ file-store which can be a local disk or remote disk array/SAN.
 
 The following services/packages are required by RSpace and are the default packages on Ubuntu22.
 
-* Java JDK 17
+* Java 17 or 21 (JRE is sufficient)
 * Tomcat 9.0.x
 * MariaDB (the default Ubuntu 22 package is 10.6; we recommend switching to 10.11 after installation)
 * Webserver (We recommend Apache 2.4.x)
@@ -78,9 +78,13 @@ Update and install required packages.
 	sudo apt-get update
 	sudo apt-get upgrade
 
-Reboot and repeat if necessary. Now install Java 17 (the default for Ubuntu 22 is Java 11)
+Reboot and repeat if necessary. Now install Java (the default for Ubuntu 22 is Java 11, which RSpace does not support). RSpace runs on Java 17 or 21; pick one and use the matching `JAVA_HOME` below.
 
 	 sudo apt install openjdk-17-jre-headless
+
+or
+
+	 sudo apt install openjdk-21-jre-headless
 
 The following will ask you to set a root password on Ubuntu but not on Debian, so have one ready
 	

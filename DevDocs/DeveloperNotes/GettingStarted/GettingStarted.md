@@ -14,9 +14,11 @@ https://documentation.researchspace.com/article/q5dl9e6oz6-system-requirements-f
 For development you should be able to run all the code and tests fine with Linux/MacOS.  
 
 ### Install required software
-Our build toolchain requires Java 17. Currently using a different Java version to run Maven is not supported because of [spotless not supporting the Maven toolchains plugin](https://github.com/diffplug/spotless/issues/1857).
+RSpace builds and runs on Java 17 or Java 21. The code is compiled for Java 17 (`release 17`), so a WAR built on either JDK runs on both. The Maven build fails fast if Maven itself is started on any other Java version.
 
--   Install Java JDK17 via [Adoptium](https://adoptium.net/temurin/releases/?version=17)
+The JVM that runs Maven must be one of the supported versions too, not just the toolchain JDK, because [Spotless does not use the Maven toolchains plugin](https://github.com/diffplug/spotless/issues/1857).
+
+-   Install Java JDK 21 (or 17) via [Adoptium](https://adoptium.net/temurin/releases/?version=21)
 -   Optionally, install [jenv](https://github.com/jenv/jenv) to manage multiple versions of Java
 -   Install MariaDB 10.11 (the version supported in production). For local development, newer versions (MariaDB 11.x or 12.x) should also work fine (the dockerized RSpace dev stack uses MariaDB 12.3).
 
@@ -51,10 +53,20 @@ path to your java installation.
        <jdkHome>/usr/lib/jvm/java-17-openjdk-amd64</jdkHome>   <!-- path to your local installation -->
      </configuration>
    </toolchain>
+   <toolchain>
+     <type>jdk</type>
+     <provides>
+       <version>21</version>
+       <vendor>openjdk</vendor>
+     </provides>
+     <configuration>
+       <jdkHome>/usr/lib/jvm/java-21-openjdk-amd64</jdkHome>
+     </configuration>
+   </toolchain>
 </toolchains>
 ```
 
-**NOTE:** to use a specific toolchain with maven specify the java properties -Djava-vendor=<vendor> -Djava-version=<version>
+**NOTE:** to use a specific toolchain with maven specify the java properties -Djava-vendor=<vendor> -Djava-version=<version>. The default is 17. Surefire forks the toolchain JDK, not the Maven JVM, so to run the tests on Java 21 you need the 21 toolchain entry above and `-Djava-version=21`; setting only `JAVA_HOME` runs them on 17.
 
 ### Enable git hooks (recommended)
 

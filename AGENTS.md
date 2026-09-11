@@ -29,7 +29,7 @@ bump this project's pinned commit hash.
 
 ## Project shape
 
-RSpace is a Java 17/Spring application with a React/TypeScript frontend and
+RSpace is a Java/Spring application (built for Java 17, runs on 17 or 21) with a React/TypeScript frontend and
 MariaDB:
 
 - Backend: `src/main/java`, tests in `src/test/java`
