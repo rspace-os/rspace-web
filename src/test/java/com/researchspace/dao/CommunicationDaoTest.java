@@ -33,6 +33,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashSet;
@@ -621,6 +622,29 @@ public class CommunicationDaoTest extends BaseDaoTestCase {
     ISearchResults<MessageOrRequest> mor =
         dao.getActiveRequestsAndMessagesForUser(u, paginationCriteria);
     return mor.getTotalHits();
+  }
+
+  @Test
+  public void notificationPagingIsStableWhenCreationTimesTie() throws InterruptedException {
+    originator = createAndSaveUserIfNotExists("source");
+    User target = createAndSaveUserIfNotExists("recipient");
+    // creationTime is a second-granularity datetime, so these all tie
+    saveNNotifications(6, originator, target);
+
+    PaginationCriteria<CommunicationTarget> pc = getDefaultPgCrit();
+    pc.setResultsPerPage(2);
+    List<Long> paged = new ArrayList<>();
+    for (long page = 0; page < 3; page++) {
+      pc.setPageNumber(page);
+      dao.getNewNotificationsForUser(target, pc).getResults().stream()
+          .map(Notification::getId)
+          .forEach(paged::add);
+    }
+
+    assertEquals(6, new HashSet<>(paged).size(), "paging repeated or skipped a notification");
+    List<Long> descending = new ArrayList<>(paged);
+    descending.sort(Comparator.reverseOrder());
+    assertEquals(descending, paged, "tied creationTimes must fall back to descending id");
   }
 
   private PaginationCriteria<CommunicationTarget> getDefaultPgCrit() {

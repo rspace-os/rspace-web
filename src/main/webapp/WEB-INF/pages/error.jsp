@@ -19,7 +19,9 @@
         <div id="content" class="clearfix">
             <div id="main">
                 <h1><spring:message code="errorPage.heading"/></h1>
-                <% if (exception != null) { %>
+                <%-- reached as a Spring view, so the implicit exception is never set;
+                     ControllerExceptionHandler puts the message in the model instead --%>
+                <% if (request.getAttribute("exceptionMessage") != null) { %>
 				<spring:message code="errors.page.reasonsIntro"/>
 				<ul>
 					<li><spring:message code="errors.page.insufficientPermissions"/></li>

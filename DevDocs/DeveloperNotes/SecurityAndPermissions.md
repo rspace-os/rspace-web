@@ -142,18 +142,22 @@ out of a controller will be logged correctly using the
 The `orderBy` request parameter on legacy listings is bound straight onto
 `PaginationCriteria` and used to be concatenated into HQL or SQL. Each listing
 now has a sort enum in `com.researchspace.model.sort` (`UserSort`, `GroupSort`,
-`FormSort`, `RecordSort`, `CommunicationSort` and so on). The enum's
-`fromRequest(String)` method is the only place the request string is compared:
-a blank value gives the listing default and an unknown value throws
+`FormSort`, `RecordSort`, `CommunicationSort` and so on). Before database query
+construction, the enum's `fromRequest(String)` method resolves the request
+string: a blank value gives the listing default and an unknown value throws
 `UnknownSortKeyException`, which `ControllerExceptionHandler` turns into HTTP
 400. DAOs decode the key on entry and build the order clause from a `switch`,
 so no request text reaches query construction.
 
 To add a sort key, add a constant to the listing's enum and a `case` to the
 DAO's switch. Clients send the bare token (`owner`, `sender`, `fileUsage`), not
-a property path. Never read `pgCrit.getOrderBy()` directly in query code:
-`OrderBySafeByConstructionTest` scans the DAO layer and fails the build on any
-read that is not wrapped in `fromRequest(...)`.
+a property path. Never read `pgCrit.getOrderBy()` directly in query code: pass
+it through the listing's enum first. This is a review rule, not something the
+build checks.
+
+In-memory result sorting (`SearchUtils.sortList` and `sortInventoryList`) still
+compares the requested key directly. That is safe because the value never
+reaches query construction.
 
 ## UI notes
 

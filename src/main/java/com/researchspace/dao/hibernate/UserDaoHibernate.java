@@ -310,7 +310,7 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
   private String safeOrderBy(PaginationCriteria<User> pgCrit) {
     return String.format(
         ORDER_BY_QUERY_FORMAT,
-        userColumn(UserSort.fromRequest(pgCrit.getOrderBy())),
+        userColumn(UserSort.fromColumnRequest(pgCrit.getOrderBy())),
         pgCrit.getSortOrder().toString());
   }
 
@@ -484,7 +484,7 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
       CriteriaBuilder builder,
       Root<User> root,
       CriteriaQuery<?> query) {
-    String column = userColumn(UserSort.fromRequest(pgCrit.getOrderBy()));
+    String column = userColumn(UserSort.fromColumnRequest(pgCrit.getOrderBy()));
     List<Order> orders = new ArrayList<>();
     if (SortOrder.ASC.equals(pgCrit.getSortOrder())) {
       orders.add(builder.asc(root.get(column)));
