@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInstrumentTemplate;
+import com.researchspace.inventory.model.ApiV2InstrumentResource;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.AccessContext;
 import com.researchspace.model.collection.AccessContext.Operation;
@@ -171,7 +172,7 @@ public class InstrumentCustomFieldTextSearchIT extends RealTransactionSpringTest
         new ExtraFieldRuntimeManagerImpl<>(
             extraFieldDao,
             Instrument.class,
-            com.researchspace.inventory.model.ApiV2InstrumentResource.DESCRIPTION,
+            ApiV2InstrumentResource.DESCRIPTION,
             "instrumentEntity",
             instrumentReadAccess::check);
     return extraFields

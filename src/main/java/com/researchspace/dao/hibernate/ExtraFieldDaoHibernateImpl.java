@@ -5,11 +5,15 @@ import com.researchspace.dao.query.RsqlCollectionQuery;
 import com.researchspace.model.collection.QueryConstraint;
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.field.ExtraField;
+import com.researchspace.model.inventory.field.ExtraLinkField;
+import com.researchspace.model.inventory.field.ExtraNumberField;
+import com.researchspace.model.inventory.field.ExtraTextField;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -73,8 +77,7 @@ public class ExtraFieldDaoHibernateImpl implements ExtraFieldDao {
     bind(query, access);
     if (hydrating) {
       query.setParameter(
-          "names",
-          wanted.stream().map(ExtraFieldRow::name).collect(java.util.stream.Collectors.toSet()));
+          "names", wanted.stream().map(ExtraFieldRow::name).collect(Collectors.toSet()));
     } else if (search != null) {
       query.setParameter("nameSearch", "%" + escapeLike(search) + "%");
     }
@@ -132,8 +135,7 @@ public class ExtraFieldDaoHibernateImpl implements ExtraFieldDao {
         sessionFactory.getCurrentSession().createQuery(hql.toString(), Object[].class);
     query.setParameter("parentIds", parentIds);
     query.setParameter(
-        "names",
-        definitions.stream().map(ExtraFieldRow::name).collect(java.util.stream.Collectors.toSet()));
+        "names", definitions.stream().map(ExtraFieldRow::name).collect(Collectors.toSet()));
     for (Object[] columns : query.getResultList()) {
       FieldType type = typeOf(columns[2]);
       if (type == null) {
@@ -192,9 +194,9 @@ public class ExtraFieldDaoHibernateImpl implements ExtraFieldDao {
 
   private static Class<?> subtype(FieldType type) {
     return switch (type) {
-      case TEXT -> com.researchspace.model.inventory.field.ExtraTextField.class;
-      case NUMBER -> com.researchspace.model.inventory.field.ExtraNumberField.class;
-      case LINK -> com.researchspace.model.inventory.field.ExtraLinkField.class;
+      case TEXT -> ExtraTextField.class;
+      case NUMBER -> ExtraNumberField.class;
+      case LINK -> ExtraLinkField.class;
       default -> ExtraField.class;
     };
   }
@@ -203,17 +205,17 @@ public class ExtraFieldDaoHibernateImpl implements ExtraFieldDao {
     return types.stream()
         .sorted()
         .map(type -> "type(" + FIELD_ALIAS + ") = " + subtype(type).getSimpleName())
-        .collect(java.util.stream.Collectors.joining(" or ", "(", ")"));
+        .collect(Collectors.joining(" or ", "(", ")"));
   }
 
   private static FieldType typeOf(Object entityType) {
-    if (entityType == com.researchspace.model.inventory.field.ExtraTextField.class) {
+    if (entityType == ExtraTextField.class) {
       return FieldType.TEXT;
     }
-    if (entityType == com.researchspace.model.inventory.field.ExtraNumberField.class) {
+    if (entityType == ExtraNumberField.class) {
       return FieldType.NUMBER;
     }
-    if (entityType == com.researchspace.model.inventory.field.ExtraLinkField.class) {
+    if (entityType == ExtraLinkField.class) {
       return FieldType.LINK;
     }
     return null;

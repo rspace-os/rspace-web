@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verify;
 
 import com.researchspace.dao.RSMetaDataDao;
 import com.researchspace.model.RSMetaData;
+import com.researchspace.model.Version;
 import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.service.impl.GlobalInitManagerImpl;
 import java.util.Arrays;
@@ -92,13 +93,13 @@ public class GlobalInitTest {
     ContextRefreshedEvent event = new ContextRefreshedEvent(ac);
     RSMetaData meta = new RSMetaData();
     meta.setInitialized(true);
-    meta.setDBVersion(new com.researchspace.model.Version(1));
+    meta.setDBVersion(new Version(1));
     Mockito.when(metadao.getAll()).thenReturn(List.of(meta));
     Mockito.when(ac.getEnvironment()).thenReturn(new MockEnvironment());
 
     mgr.onApplicationEvent(event);
 
     verify(mockInitializor, times(1)).onAppVersionUpdate();
-    assertEquals(new com.researchspace.model.Version(2), meta.getDBVersion());
+    assertEquals(new Version(2), meta.getDBVersion());
   }
 }

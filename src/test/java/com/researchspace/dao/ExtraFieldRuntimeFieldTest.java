@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.researchspace.inventory.model.ApiV2InstrumentResource;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.AccessContext;
 import com.researchspace.model.collection.AccessContext.Operation;
@@ -48,7 +49,7 @@ public class ExtraFieldRuntimeFieldTest extends SpringTransactionalTest {
         new ExtraFieldRuntimeManagerImpl<>(
             extraFieldDao,
             Instrument.class,
-            com.researchspace.inventory.model.ApiV2InstrumentResource.DESCRIPTION,
+            ApiV2InstrumentResource.DESCRIPTION,
             "instrumentEntity",
             instrumentReadAccess::check);
   }
