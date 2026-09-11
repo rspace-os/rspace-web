@@ -28,7 +28,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
@@ -80,11 +79,6 @@ public class InstrumentCustomFieldManagerImpl implements InstrumentCustomFieldMa
             query.offset(),
             query.limit());
     return new RuntimeFieldCatalogPage(definitions(page.rows()), page.total(), page.hasMore());
-  }
-
-  @Override
-  public Optional<ResolvedRuntimeField> resolve(String selector, User actor) {
-    return Optional.ofNullable(resolveAll(Set.of(selector), actor).get(selector));
   }
 
   @Override

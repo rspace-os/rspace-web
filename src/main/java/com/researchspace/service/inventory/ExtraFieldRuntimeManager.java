@@ -32,7 +32,9 @@ public interface ExtraFieldRuntimeManager<T> extends RuntimeCollectionFields<T> 
   RuntimeFieldCatalogPage discover(User actor, RuntimeFieldCatalogQuery query);
 
   @Override
-  Optional<ResolvedRuntimeField> resolve(String selector, User actor);
+  default Optional<ResolvedRuntimeField> resolve(String selector, User actor) {
+    return Optional.ofNullable(resolveAll(Set.of(selector), actor).get(selector));
+  }
 
   @Override
   Map<String, ResolvedRuntimeField> resolveAll(Set<String> selectors, User actor);

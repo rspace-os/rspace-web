@@ -40,7 +40,9 @@ public interface RuntimeCollectionFields<T> {
    *
    * @return empty when the selector is malformed, unknown, or not readable by this actor
    */
-  Optional<ResolvedRuntimeField> resolve(String selector, User actor);
+  default Optional<ResolvedRuntimeField> resolve(String selector, User actor) {
+    return Optional.ofNullable(resolveAll(Set.of(selector), actor).get(selector));
+  }
 
   /**
    * Resolves several selectors for this actor in one go.

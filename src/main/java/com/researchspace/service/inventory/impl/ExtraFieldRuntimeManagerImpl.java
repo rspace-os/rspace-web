@@ -27,7 +27,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -92,11 +91,6 @@ public class ExtraFieldRuntimeManagerImpl<T> implements ExtraFieldRuntimeManager
             query.offset(),
             query.limit());
     return new RuntimeFieldCatalogPage(definitions(page.rows()), page.total(), page.hasMore());
-  }
-
-  @Override
-  public Optional<ResolvedRuntimeField> resolve(String selector, User actor) {
-    return Optional.ofNullable(resolveAll(Set.of(selector), actor).get(selector));
   }
 
   @Override

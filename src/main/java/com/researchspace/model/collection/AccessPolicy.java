@@ -36,42 +36,30 @@ public record AccessPolicy(
    * declared a policy.
    */
   public static AccessPolicy authenticated() {
-    return new AccessPolicy(
-        AccessFunction.authenticated(),
-        AccessFunction.authenticated(),
-        AccessFunction.authenticated(),
-        AccessFunction.authenticated(),
-        AccessFunction.authenticated());
+    return all(AccessFunction.authenticated());
   }
 
   /** Anonymous reads and system-administrator writes. */
   public static AccessPolicy publicReadsSysadminWrites() {
-    return new AccessPolicy(
-        AccessFunction.anyone(),
-        AccessFunction.sysadmin(),
-        AccessFunction.sysadmin(),
-        AccessFunction.sysadmin(),
-        AccessFunction.sysadmin());
+    return withWrites(AccessFunction.anyone(), AccessFunction.sysadmin());
   }
 
   /** Authenticated reads and system-administrator writes. */
   public static AccessPolicy authenticatedReadsSysadminWrites() {
-    return new AccessPolicy(
-        AccessFunction.authenticated(),
-        AccessFunction.sysadmin(),
-        AccessFunction.sysadmin(),
-        AccessFunction.sysadmin(),
-        AccessFunction.sysadmin());
+    return withWrites(AccessFunction.authenticated(), AccessFunction.sysadmin());
   }
 
   /** Readable subject to {@code read}, with every mutation refused. */
   public static AccessPolicy readOnly(AccessFunction read) {
-    return new AccessPolicy(
-        read,
-        AccessFunction.never(),
-        AccessFunction.never(),
-        AccessFunction.never(),
-        AccessFunction.never());
+    return withWrites(read, AccessFunction.never());
+  }
+
+  private static AccessPolicy all(AccessFunction function) {
+    return new AccessPolicy(function, function, function, function, function);
+  }
+
+  private static AccessPolicy withWrites(AccessFunction read, AccessFunction write) {
+    return new AccessPolicy(read, write, write, write, write);
   }
 
   public AccessFunction forOperation(AccessContext.Operation operation) {

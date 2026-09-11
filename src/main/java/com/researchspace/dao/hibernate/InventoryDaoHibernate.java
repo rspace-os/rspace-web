@@ -136,6 +136,45 @@ public class InventoryDaoHibernate<T extends InventoryRecord, PK extends Seriali
     return predicate.append(")").toString();
   }
 
+  /** Permission predicate for a container and any readable descendant. */
+  protected String readableContainerPredicate(
+      User caller,
+      List<String> groupMembers,
+      List<String> groupNames,
+      List<String> visibleOwners,
+      String alias) {
+    String direct =
+        getInventoryReadPermissionSqlPredicate(
+            caller, groupMembers, groupNames, visibleOwners, alias + ".");
+    String childContainer =
+        getInventoryReadPermissionSqlPredicate(
+            caller, groupMembers, groupNames, List.of(), "childContainer.");
+    String childInstrument =
+        getInventoryReadPermissionSqlPredicate(
+            caller, groupMembers, groupNames, List.of(), "childInstrument.");
+    String childSubSample =
+        getInventoryReadPermissionSqlPredicate(
+            caller, groupMembers, groupNames, List.of(), "childSubSample.sample.");
+    return "("
+        + direct
+        + " or exists (select childLocation.id from ContainerLocation childLocation "
+        + "join childLocation.storedContainer childContainer where childLocation.container="
+        + alias
+        + " and childContainer.deleted=false and "
+        + childContainer
+        + ") or exists (select childLocation.id from ContainerLocation childLocation "
+        + "join childLocation.storedInstrument childInstrument where childLocation.container="
+        + alias
+        + " and childInstrument.deleted=false and "
+        + childInstrument
+        + ") or exists (select childLocation.id from ContainerLocation childLocation "
+        + "join childLocation.storedSubSample childSubSample where childLocation.container="
+        + alias
+        + " and childSubSample.deleted=false and "
+        + childSubSample
+        + "))";
+  }
+
   protected String getOrderBySqlFragmentForInventoryRecord(
       PaginationCriteria<? extends InventoryRecord> pgCrit) {
     String orderByColumn;

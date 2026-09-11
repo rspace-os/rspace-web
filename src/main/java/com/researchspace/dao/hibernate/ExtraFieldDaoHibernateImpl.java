@@ -5,14 +5,13 @@ import com.researchspace.dao.query.RsqlCollectionQuery;
 import com.researchspace.model.collection.QueryConstraint;
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.field.ExtraField;
-import jakarta.persistence.Query;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.hibernate.SessionFactory;
+import org.hibernate.query.Query;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
@@ -69,7 +68,8 @@ public class ExtraFieldDaoHibernateImpl implements ExtraFieldDao {
       hql.append(" and lower(").append(NAME).append(") like :nameSearch escape '!'");
     }
     hql.append(" order by ").append(NAME).append(" asc, type(").append(FIELD_ALIAS).append(") asc");
-    Query query = sessionFactory.getCurrentSession().createQuery(hql.toString(), Object[].class);
+    Query<Object[]> query =
+        sessionFactory.getCurrentSession().createQuery(hql.toString(), Object[].class);
     bind(query, access);
     if (hydrating) {
       query.setParameter(
@@ -77,15 +77,13 @@ public class ExtraFieldDaoHibernateImpl implements ExtraFieldDao {
           wanted.stream().map(ExtraFieldRow::name).collect(java.util.stream.Collectors.toSet()));
     } else if (search != null) {
       query.setParameter("nameSearch", "%" + escapeLike(search) + "%");
-      query.setFirstResult(offset);
-      query.setMaxResults(limit + 1);
-    } else {
+    }
+    if (!hydrating) {
       query.setFirstResult(offset);
       query.setMaxResults(limit + 1);
     }
     List<ExtraFieldRow> rows = new ArrayList<>(limit + 1);
-    for (Object row : query.getResultList()) {
-      Object[] columns = (Object[]) row;
+    for (Object[] columns : query.getResultList()) {
       FieldType type = typeOf(columns[1]);
       if (type == null || !types.contains(type)) {
         continue;
@@ -130,13 +128,13 @@ public class ExtraFieldDaoHibernateImpl implements ExtraFieldDao {
             .append(".id in :parentIds and ")
             .append(NAME)
             .append(" in :names");
-    Query query = sessionFactory.getCurrentSession().createQuery(hql.toString(), Object[].class);
+    Query<Object[]> query =
+        sessionFactory.getCurrentSession().createQuery(hql.toString(), Object[].class);
     query.setParameter("parentIds", parentIds);
     query.setParameter(
         "names",
         definitions.stream().map(ExtraFieldRow::name).collect(java.util.stream.Collectors.toSet()));
-    for (Object row : query.getResultList()) {
-      Object[] columns = (Object[]) row;
+    for (Object[] columns : query.getResultList()) {
       FieldType type = typeOf(columns[2]);
       if (type == null) {
         continue;
@@ -186,7 +184,7 @@ public class ExtraFieldDaoHibernateImpl implements ExtraFieldDao {
     return predicate;
   }
 
-  private static void bind(Query query, RsqlCollectionQuery.Predicate access) {
+  private static void bind(Query<?> query, RsqlCollectionQuery.Predicate access) {
     if (access != null) {
       access.parameters().forEach(query::setParameter);
     }
@@ -223,11 +221,5 @@ public class ExtraFieldDaoHibernateImpl implements ExtraFieldDao {
 
   private static String escapeLike(String value) {
     return value.replace("!", "!!").replace("%", "!%").replace("_", "!_");
-  }
-
-  static Set<String> names(Set<ExtraFieldRow> rows) {
-    Set<String> names = new LinkedHashSet<>();
-    rows.forEach(row -> names.add(row.name()));
-    return names;
   }
 }

@@ -12,7 +12,6 @@ import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.field.InventoryChoiceField;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.inventory.field.InventoryRadioField;
-import jakarta.persistence.Tuple;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -61,34 +60,26 @@ public class InstrumentCustomFieldDaoHibernateImpl implements InstrumentCustomFi
           "Instrument read rule requires a subquery, which custom-field discovery cannot nest");
     }
     String source = SOURCE_ALIAS;
-    CriteriaBuilder<Tuple> query =
+    CriteriaBuilder<DefinitionRow> query =
         criteriaBuilderFactory
-            .create(sessionFactory.getCurrentSession(), Tuple.class)
+            .create(sessionFactory.getCurrentSession(), DefinitionRow.class)
             .from(InventoryEntityField.class, DEFINITION_ALIAS)
             .innerJoin(DEFINITION_ALIAS + ".instrumentEntity", SOURCE_ALIAS)
-            .select(DEFINITION_ALIAS + ".id")
-            .select(DEFINITION_ALIAS + ".name")
-            .select(DEFINITION_ALIAS + ".type")
-            .select(DEFINITION_ALIAS + ".columnIndex")
-            .select(source + ".id")
-            .select(source + ".editInfo.name");
+            .selectNew(DefinitionRow.class)
+            .with(DEFINITION_ALIAS + ".id")
+            .with(DEFINITION_ALIAS + ".name")
+            .with(DEFINITION_ALIAS + ".type")
+            .with(DEFINITION_ALIAS + ".columnIndex")
+            .with(source + ".id")
+            .with(source + ".editInfo.name")
+            .end();
     restrict(query, predicate, search, ids, types);
     query.orderByAsc(DEFINITION_ALIAS + ".id");
     boolean hydrating = !ids.isEmpty();
     if (!hydrating) {
       query.setFirstResult(offset).setMaxResults(limit + 1);
     }
-    List<DefinitionRow> rows = new ArrayList<>(limit + 1);
-    for (Tuple row : query.getResultList()) {
-      rows.add(
-          new DefinitionRow(
-              (Long) row.get(0),
-              (String) row.get(1),
-              (FieldType) row.get(2),
-              (Integer) row.get(3),
-              (Long) row.get(4),
-              (String) row.get(5)));
-    }
+    List<DefinitionRow> rows = new ArrayList<>(query.getResultList());
     boolean hasMore = !hydrating && rows.size() > limit;
     if (hasMore) {
       rows.remove(rows.size() - 1);

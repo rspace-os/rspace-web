@@ -19,7 +19,6 @@ import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InstrumentParentLocationSummary;
 import com.researchspace.model.inventory.InstrumentReadSummary;
 import com.researchspace.search.customfield.RuntimeFieldTextSearch;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -123,44 +122,6 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
                         (Long) row[1], (String) row[2], (ContainerType) row[3])));
   }
 
-  private String readableContainerPredicate(
-      User caller,
-      List<String> groupMembers,
-      List<String> groupNames,
-      List<String> visibleOwners,
-      String alias) {
-    String direct =
-        getInventoryReadPermissionSqlPredicate(
-            caller, groupMembers, groupNames, visibleOwners, alias + ".");
-    String childContainer =
-        getInventoryReadPermissionSqlPredicate(
-            caller, groupMembers, groupNames, List.of(), "childContainer.");
-    String childInstrument =
-        getInventoryReadPermissionSqlPredicate(
-            caller, groupMembers, groupNames, List.of(), "childInstrument.");
-    String childSubSample =
-        getInventoryReadPermissionSqlPredicate(
-            caller, groupMembers, groupNames, List.of(), "childSubSample.sample.");
-    return "("
-        + direct
-        + " or exists (select childLocation.id from ContainerLocation childLocation "
-        + "join childLocation.storedContainer childContainer where childLocation.container="
-        + alias
-        + " and childContainer.deleted=false and "
-        + childContainer
-        + ") or exists (select childLocation.id from ContainerLocation childLocation "
-        + "join childLocation.storedInstrument childInstrument where childLocation.container="
-        + alias
-        + " and childInstrument.deleted=false and "
-        + childInstrument
-        + ") or exists (select childLocation.id from ContainerLocation childLocation "
-        + "join childLocation.storedSubSample childSubSample where childLocation.container="
-        + alias
-        + " and childSubSample.deleted=false and "
-        + childSubSample
-        + "))";
-  }
-
   @Override
   public Map<Long, InstrumentReadSummary> getReadableSummaries(Set<Long> instrumentIds, User user) {
     if (instrumentIds.isEmpty()) {
@@ -173,11 +134,12 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
     String permission =
         getInventoryReadPermissionSqlPredicate(
             user, groupMembers, groupNames, visibleOwners, "instrument.");
-    Query<Object[]> query =
+    Query<InstrumentReadSummary> query =
         getSession()
             .createQuery(
-                "select instrument.id, instrument.editInfo.name, instrument.deleted, "
-                    + "parent.id, parent.editInfo.name, parent.containerType "
+                "select new com.researchspace.model.inventory.InstrumentReadSummary("
+                    + "instrument.id, instrument.editInfo.name, instrument.deleted, "
+                    + "parent.id, parent.editInfo.name, parent.containerType) "
                     + "from Instrument instrument "
                     + "left join instrument.parentLocation location "
                     + "with location.storedInstrument.id = instrument.id "
@@ -185,20 +147,11 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
                     + "where instrument.id in (:instrumentIds) "
                     + "and instrument.deleted = false and "
                     + permission,
-                Object[].class)
+                InstrumentReadSummary.class)
             .setParameter("instrumentIds", instrumentIds);
     addQueryParams(null, user, query, visibleOwners, groupMembers, groupNames);
     return query
         .getResultStream()
-        .map(
-            row ->
-                new InstrumentReadSummary(
-                    (Long) row[0],
-                    (String) row[1],
-                    (Boolean) row[2],
-                    (Long) row[3],
-                    (String) row[4],
-                    (ContainerType) row[5]))
         .collect(Collectors.toMap(InstrumentReadSummary::id, summary -> summary));
   }
 
@@ -268,7 +221,7 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
     List<String> userGroupMembers =
         invPermissionUtils.getUsernameOfUserAndAllMembersOfTheirGroups(user);
     List<String> userGroupsUniqueNames =
-        user.getGroups().stream().map(Group::getUniqueName).collect(Collectors.toList());
+        user.getGroups().stream().map(Group::getUniqueName).toList();
     List<String> visibleOwners = invPermissionUtils.getOwnersVisibleWithUserRole(user);
     String permittedFragment =
         getOwnedByAndPermittedItemsSqlQueryFragment(
@@ -301,7 +254,7 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
     }
     long totalCount = countQueryWithParams.getSingleResult();
     if (totalCount == 0) {
-      return new SearchResultsImpl<>(new ArrayList<>(), pgCrit, 0);
+      return new SearchResultsImpl<>(List.of(), pgCrit, 0);
     }
 
     Query<Instrument> pageQuery =
@@ -359,7 +312,7 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
     List<String> userGroupMembers =
         invPermissionUtils.getUsernameOfUserAndAllMembersOfTheirGroups(user);
     List<String> userGroupsUniqueNames =
-        user.getGroups().stream().map(Group::getUniqueName).collect(Collectors.toList());
+        user.getGroups().stream().map(Group::getUniqueName).toList();
     List<String> visibleOwners = invPermissionUtils.getOwnersVisibleWithUserRole(user);
     String permittedFragment =
         getOwnedByAndPermittedItemsSqlQueryFragment(
@@ -390,7 +343,7 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
             ownedBy, user, countQuery, visibleOwners, userGroupMembers, userGroupsUniqueNames);
     long totalCount = countQueryWithParams.getSingleResult();
     if (totalCount == 0) {
-      return new SearchResultsImpl<>(new ArrayList<>(), pgCrit, 0);
+      return new SearchResultsImpl<>(List.of(), pgCrit, 0);
     }
 
     Query<Instrument> pageQuery =

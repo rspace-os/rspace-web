@@ -211,35 +211,12 @@ public class ContainerDaoHibernateImpl extends InventoryDaoHibernate<Container, 
     List<String> groupNames =
         actor.getGroups().stream().map(Group::getUniqueName).collect(Collectors.toList());
     List<String> visibleOwners = invPermissionUtils.getOwnersVisibleWithUserRole(actor);
-    String directContainer =
-        getInventoryReadPermissionSqlPredicate(
-            actor, groupMembers, groupNames, visibleOwners, "container.");
-    String childContainer =
-        getInventoryReadPermissionSqlPredicate(
-            actor, groupMembers, groupNames, List.of(), "childContainer.");
-    String childInstrument =
-        getInventoryReadPermissionSqlPredicate(
-            actor, groupMembers, groupNames, List.of(), "childInstrument.");
-    String childSubSample =
-        getInventoryReadPermissionSqlPredicate(
-            actor, groupMembers, groupNames, List.of(), "childSubSample.sample.");
+    String readableContainerPredicate =
+        readableContainerPredicate(actor, groupMembers, groupNames, visibleOwners, "container");
     StringBuilder hql =
         new StringBuilder("select container.id from Container container ")
-            .append("where container.id in (:containerIds) and container.deleted=false and (")
-            .append(directContainer)
-            .append(" or exists (select location.id from ContainerLocation location ")
-            .append("join location.storedContainer childContainer ")
-            .append("where location.container=container and childContainer.deleted=false and ")
-            .append(childContainer)
-            .append(") or exists (select location.id from ContainerLocation location ")
-            .append("join location.storedInstrument childInstrument ")
-            .append("where location.container=container and childInstrument.deleted=false and ")
-            .append(childInstrument)
-            .append(") or exists (select location.id from ContainerLocation location ")
-            .append("join location.storedSubSample childSubSample ")
-            .append("where location.container=container and childSubSample.deleted=false and ")
-            .append(childSubSample)
-            .append("))");
+            .append("where container.id in (:containerIds) and container.deleted=false and ")
+            .append(readableContainerPredicate);
     Query<Long> query =
         sessionFactory
             .getCurrentSession()
