@@ -13,23 +13,24 @@ import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.collection.AccessDocumentation;
 import com.researchspace.model.collection.AccessDocumentation.AuthenticationRequirement;
 import com.researchspace.model.collection.AccessPolicy;
+import com.researchspace.model.collection.AccessPolicySchema;
 import com.researchspace.model.collection.CollectionDescription;
-import com.researchspace.model.collection.CollectionDescription.AccessPolicySchema;
-import com.researchspace.model.collection.CollectionDescription.FieldSchema;
-import com.researchspace.model.collection.CollectionDescription.FilterSchema;
-import com.researchspace.model.collection.CollectionDescription.Operator;
-import com.researchspace.model.collection.CollectionDescription.RelationshipSchema;
-import com.researchspace.model.collection.CollectionDescription.ResourceFieldSchema;
-import com.researchspace.model.collection.CollectionDescription.ResourceSchema;
-import com.researchspace.model.collection.CollectionDescription.WriteOperation;
 import com.researchspace.model.collection.CollectionFieldType;
 import com.researchspace.model.collection.CollectionQueryLimits;
+import com.researchspace.model.collection.FieldSchema;
+import com.researchspace.model.collection.FilterSchema;
 import com.researchspace.model.collection.FilterSelector;
 import com.researchspace.model.collection.OpenApiSchemaDocumentation;
+import com.researchspace.model.collection.Operator;
+import com.researchspace.model.collection.Relationship;
 import com.researchspace.model.collection.RelationshipInputForm;
+import com.researchspace.model.collection.RelationshipSchema;
+import com.researchspace.model.collection.ResourceFieldSchema;
 import com.researchspace.model.collection.ResourceRegistry;
+import com.researchspace.model.collection.ResourceSchema;
 import com.researchspace.model.collection.RuntimeCollectionFields;
 import com.researchspace.model.collection.RuntimeFieldCatalogQuery;
+import com.researchspace.model.collection.WriteOperation;
 import com.researchspace.model.resourceaccess.ResourceRoleSource;
 import com.researchspace.service.resourceaccess.ResourceAccessDocument;
 import com.researchspace.service.resourceaccess.ResourceAccessGrant;
@@ -798,8 +799,7 @@ public final class ApiV2OpenApiGenerator {
   private List<Map<String, Object>> runtimeFieldsExtension(
       ApiV2ResourceRegistration<?, ?> resource) {
     List<Map<String, Object>> namespaces = new ArrayList<>(own(resource));
-    for (CollectionDescription.Relationship<?> relationship :
-        resource.description().relationships()) {
+    for (Relationship<?> relationship : resource.description().relationships()) {
       if (relationship.targets().size() != 1) {
         continue;
       }
@@ -1989,7 +1989,7 @@ public final class ApiV2OpenApiGenerator {
     };
   }
 
-  private static String operatorToken(CollectionDescription.Operator operator) {
+  private static String operatorToken(Operator operator) {
     return switch (operator) {
       case EQUAL -> "==";
       case NOT_EQUAL -> "!=";

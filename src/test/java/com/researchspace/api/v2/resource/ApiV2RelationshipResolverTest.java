@@ -15,12 +15,11 @@ import com.researchspace.model.User;
 import com.researchspace.model.collection.AccessFunction;
 import com.researchspace.model.collection.AccessPolicy;
 import com.researchspace.model.collection.CollectionDescription;
-import com.researchspace.model.collection.CollectionDescription.Field;
-import com.researchspace.model.collection.CollectionDescription.Sort;
 import com.researchspace.model.collection.CollectionFieldTypes;
 import com.researchspace.model.collection.DocumentValidationException;
 import com.researchspace.model.collection.DocumentValidationException.Reason;
 import com.researchspace.model.collection.DocumentValidationException.Violation;
+import com.researchspace.model.collection.Field;
 import com.researchspace.model.collection.FieldSelection;
 import com.researchspace.model.collection.IncludeTree;
 import com.researchspace.model.collection.ParsedDocument;
@@ -29,6 +28,7 @@ import com.researchspace.model.collection.ResolvedResourceReference;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceReference;
 import com.researchspace.model.collection.ResourceRequest;
+import com.researchspace.model.collection.Sort;
 import com.researchspace.model.collection.SplitReferenceBinding;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -170,7 +170,7 @@ class ApiV2RelationshipResolverTest {
     ResourceRequest request =
         new ResourceRequest(
             new com.researchspace.model.collection.FilterExpression.Comparison(
-                "id", CollectionDescription.Operator.IN, List.of(1L, 2L), false),
+                "id", Operator.IN, List.of(1L, 2L), false),
             List.of(),
             new ResourceRequest.Page(1, 20),
             FieldSelection.all(),
@@ -192,7 +192,7 @@ class ApiV2RelationshipResolverTest {
     ResourceRequest request =
         new ResourceRequest(
             new com.researchspace.model.collection.FilterExpression.Comparison(
-                "id", CollectionDescription.Operator.EQUAL, List.of(1L), false),
+                "id", Operator.EQUAL, List.of(1L), false),
             List.of(),
             new ResourceRequest.Page(1, 20),
             FieldSelection.all(),
@@ -219,8 +219,8 @@ class ApiV2RelationshipResolverTest {
   }
 
   private static CollectionDescription<Node> description(boolean selfReferenceAllowed) {
-    CollectionDescription.Relationship<Node> target =
-        CollectionDescription.Relationship.polymorphicToOne(
+    Relationship<Node> target =
+        Relationship.polymorphicToOne(
                 "target",
                 CollectionFieldTypes.longNumber(),
                 List.of(new RelationshipTarget<>("nodes", "NODE", Node.class)),
@@ -259,7 +259,7 @@ class ApiV2RelationshipResolverTest {
         Node.class,
         List.of(Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), Node::id)),
         List.of(
-            CollectionDescription.Relationship.polymorphicToOne(
+            Relationship.polymorphicToOne(
                     "target",
                     CollectionFieldTypes.longNumber(),
                     List.of(new RelationshipTarget<>("targets", "TARGET", Target.class)),

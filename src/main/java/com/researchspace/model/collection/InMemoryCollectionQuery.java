@@ -1,8 +1,5 @@
 package com.researchspace.model.collection;
 
-import java.text.Normalizer;
-import com.researchspace.model.collection.CollectionDescription.Operator;
-import com.researchspace.model.collection.CollectionDescription.Sort;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;

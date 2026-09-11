@@ -14,13 +14,13 @@ import com.researchspace.model.collection.AccessPolicy;
 import com.researchspace.model.collection.AccessResult;
 import com.researchspace.model.collection.ApiV2UserResource;
 import com.researchspace.model.collection.CollectionDescription;
-import com.researchspace.model.collection.CollectionDescription.Operator;
-import com.researchspace.model.collection.CollectionDescription.Sort;
 import com.researchspace.model.collection.CollectionFieldTypes;
 import com.researchspace.model.collection.CollectionQueryException;
 import com.researchspace.model.collection.FilterExpression;
+import com.researchspace.model.collection.Operator;
 import com.researchspace.model.collection.RelationshipReadAccess;
 import com.researchspace.model.collection.ResourceRegistry;
+import com.researchspace.model.collection.Sort;
 import com.researchspace.model.inventory.Instrument;
 import java.util.List;
 import java.util.Set;
@@ -182,8 +182,8 @@ class RelationshipTargetFilterTest {
               evaluations.incrementAndGet();
               return AccessResult.allowedWhere(ACTIVE_ONLY);
             });
-    CollectionDescription.Relationship<TwoTargets> primary =
-        CollectionDescription.Relationship.referenceToOne(
+    Relationship<TwoTargets> primary =
+        Relationship.referenceToOne(
             "primary",
             "instruments",
             CollectionFieldTypes.longNumber(),
@@ -191,8 +191,8 @@ class RelationshipTargetFilterTest {
             TwoTargets::primary,
             Instrument::getId,
             "primaryId");
-    CollectionDescription.Relationship<TwoTargets> secondary =
-        CollectionDescription.Relationship.referenceToOne(
+    Relationship<TwoTargets> secondary =
+        Relationship.referenceToOne(
             "secondary",
             "instruments",
             CollectionFieldTypes.longNumber(),
@@ -204,9 +204,7 @@ class RelationshipTargetFilterTest {
         new CollectionDescription<>(
             "two-targets",
             TwoTargets.class,
-            List.of(
-                CollectionDescription.Field.readOnly(
-                    "id", "id", CollectionFieldTypes.longNumber(), TwoTargets::id)),
+            List.of(Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), TwoTargets::id)),
             List.of(primary, secondary),
             "id",
             List.of(new Sort("id", true)));

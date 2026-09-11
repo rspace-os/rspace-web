@@ -3,22 +3,23 @@ package com.researchspace.model.booking;
 import com.researchspace.model.collection.AccessFunction;
 import com.researchspace.model.collection.AccessPolicy;
 import com.researchspace.model.collection.CollectionDescription;
-import com.researchspace.model.collection.CollectionDescription.Field;
-import com.researchspace.model.collection.CollectionDescription.InternalFilter;
-import com.researchspace.model.collection.CollectionDescription.Sort;
-import com.researchspace.model.collection.CollectionDescription.WriteOperation;
 import com.researchspace.model.collection.CollectionFieldTypes;
+import com.researchspace.model.collection.Field;
+import com.researchspace.model.collection.InternalFilter;
+import com.researchspace.model.collection.Relationship;
 import com.researchspace.model.collection.RelationshipTarget;
 import com.researchspace.model.collection.ResourceReference;
+import com.researchspace.model.collection.Sort;
 import com.researchspace.model.collection.SplitReferenceBinding;
+import com.researchspace.model.collection.WriteOperation;
 import java.util.List;
 import java.util.Locale;
 
 /** Stable REST API v2 shape for one-off time-slot bookings. */
 public final class ApiV2TimeSlotBookingResource {
 
-  private static final CollectionDescription.Relationship<TimeSlotBooking> TARGET =
-      CollectionDescription.Relationship.polymorphicToOne(
+  private static final Relationship<TimeSlotBooking> TARGET =
+      Relationship.polymorphicToOne(
               "target",
               CollectionFieldTypes.longNumber(),
               List.of(
