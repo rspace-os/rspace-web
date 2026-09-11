@@ -60,6 +60,8 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
           request.getOperationType(),
           request.getOrigins(),
           typedInputs(request),
+          request.getTemplateId(),
+          request.getDocumentedByGlobalId(),
           user,
           built -> validateTemplateConformance(built, user));
     }

@@ -40,14 +40,16 @@ operations_config.json (backend) ──► GET /operations/config ──► oper
                                                                 OperationWizard (UI)
                                                                           │  collects inputs
                                                                           ▼
-                                              buildOperationRequest.ts ──► OperationRequest
-                                                                          │  POST
-                                                                          ▼
-                                    POST /api/inventory/v1/operations (thin, generic, atomic)
+                                        buildOperationRequest.ts ──► OperationInputsRequest
+                                                                          │  POST {operationType, origins,
+                                                                          ▼        inputs, templateId,
+                                    POST /api/inventory/v1/operations     documentedByGlobalId}
                                     InventoryOperationsApiController ──► InventoryOperationManager
-                                       validate                           @Transactional:
-                                                                          create Sample + N subsamples
-                                                                          + links + set origin quantity
+                                       validate                           @Transactional: validate inputs,
+                                                                          build the sample from the
+                                                                          definition, create Sample +
+                                                                          N subsamples + links, set
+                                                                          origin quantity
 ```
 
 Files:
@@ -59,9 +61,15 @@ Files:
 - Frontend logic: `src/main/webapp/ui/src/Inventory/components/Operations/`
   - `operationsConfig.ts` — valibot schema (the frontend's source of truth for
     the shape) + `parseOperationsConfig`, applied to the fetched config.
-  - `buildOperationRequest.ts` — pure: (operation + collected values + origin) →
-    request body. Puts provenance and documentation links, and text fields (e.g.
-    Cryomedium), on the new sample only, **never on the created subsamples**.
+  - `buildOperationRequest.ts` — pure. `buildOperationInputsRequest`: (operation +
+    collected values + origins) → the posted body: the declared inputs by key, each
+    origin's amount taken, `templateId` and `documentedByGlobalId`. The server builds
+    the sample from the definition (`InventoryOperationRequestBuilder`), including the
+    computed values. `buildOperationRequest` is the wizard's model of that build (the
+    former client-assembled body) and is only used to check the confirmation preview
+    against it; the model puts provenance and documentation links, and text fields
+    (e.g. Cryomedium), on the new sample only, **never on the created subsamples**,
+    as the server does.
   - `types.ts` — request/response types mirroring the backend DTO.
   - the wizard components (`OperationWizard`, `OperationPicker`,
     `OperationDetailsStep`, `DocumentationStep`, `OperationConfirmation`,
@@ -205,7 +213,8 @@ description, sample source, expiry date, template field values, and any per-subs
 notes, fields or placement. The created subsamples carry a quantity and nothing else.
 
 Extra fields are matched to the definition **by key, not by name**: display names are
-localized and interpolate user input, so `buildOperationRequest` stamps every field it
+localized and interpolate user input, so the server's `InventoryOperationRequestBuilder`
+(and the wizard's model of it, `buildOperationRequest`) stamps every field it
 builds with `operationFieldKey` — a link spec's `fieldNameKey`, a text/origin field's
 `nameKey`, or the fixed `operations.documentationLink` for the optional documentation
 link. `ApiExtraField.operationFieldKey` is persisted and returned on GET, so a later run
@@ -374,8 +383,8 @@ Amounts step's units (above). Three choices, in this order:
 - **No template** — an ad-hoc sample (`templateId: null`).
 
 The choice resolves to a single `templateId` (or null) via `resolveTemplateId` and is
-passed into `buildOperationRequest`; the backend already forwards `newSample.templateId`,
-so this needs no backend change. The choice is remembered as part of the single
+sent as the request's top-level `templateId`, from which the server builds the sample
+(the template-conformance check runs on what it built). The choice is remembered as part of the single
 per-process bundle (see "Remembered process values"), not a separate per-operation
 preference.
 

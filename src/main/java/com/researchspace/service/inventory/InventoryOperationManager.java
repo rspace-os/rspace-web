@@ -102,6 +102,10 @@ public interface InventoryOperationManager {
    * and a {@code today} computed value is the current date in the session's timezone ({@code
    * SessionTimeZoneUtils}), which the login flow records from the browser.
    *
+   * @param templateId the built sample's template; null for an ad-hoc sample
+   * @param documentedByGlobalId the ELN record the built sample gets an {@code IsDocumentedBy} link
+   *     to (the wizard's documentation step); null for none. The caller has checked it names a
+   *     documentable record kind.
    * @return as the client-assembled overload
    * @throws BindException when an input fails the definition's rules (field errors named by the
    *     bare input key, which is the name a typed facade client sends: M0), or as the
@@ -111,6 +115,8 @@ public interface InventoryOperationManager {
       String operationKey,
       List<ApiInventoryOperationOriginUpdate> origins,
       Map<String, Object> inputs,
+      Long templateId,
+      String documentedByGlobalId,
       User user,
       BuiltRequestValidation callerValidation)
       throws BindException;

@@ -54,7 +54,7 @@ class OperationNewSampleValidator {
   private static final String DOCUMENTATION_RELATION_TYPE = "IsDocumentedBy";
 
   /** The ELN record kinds the documentation picker offers (ElnFolderBrowser.PICKABLE_TYPES). */
-  private static final Set<GlobalIdPrefix> DOCUMENTATION_TARGET_PREFIXES =
+  static final Set<GlobalIdPrefix> DOCUMENTATION_TARGET_PREFIXES =
       Set.of(GlobalIdPrefix.SD, GlobalIdPrefix.NB, GlobalIdPrefix.GL);
 
   void validateNewSample(

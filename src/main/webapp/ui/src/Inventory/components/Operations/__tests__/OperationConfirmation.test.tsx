@@ -2,12 +2,15 @@ import { ThemeProvider } from "@mui/material/styles";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { InEnglish } from "@/__tests__/realI18n";
+import { createEnglishI18n, InEnglish } from "@/__tests__/realI18n";
 import appTheme from "@/theme";
+import { buildOperationRequest } from "../buildOperationRequest";
 import OperationConfirmation from "../OperationConfirmation";
 import type { InventoryOperation } from "../operationsConfig";
 import type { TemplateSelection } from "../TemplateStep";
 import type { OperationInputs } from "../types";
+import { resolveLabelFrom } from "../types";
+import { operations } from "./testOperations";
 
 // i18n runs in cimode in tests, so t(key, params) renders the namespaced key with no interpolation;
 // assertions match on the key, which still tells us which branch rendered. Values not passed through
@@ -325,5 +328,97 @@ describe("OperationConfirmation in English", () => {
     );
     expect(screen.getByText("Vial A: 1 ml")).toBeInTheDocument();
     expect(screen.getByText("Vial B: 2.5 ml")).toBeInTheDocument();
+  });
+});
+
+// Since plan-operations-server-builds.md M4 the server builds the record from the typed inputs while
+// this card is computed from them separately, so the two can drift. buildOperationRequest is the
+// wizard's model of that build (its parity with the server is M3's gate,
+// InventoryOperationsInputsShapeMVCIT), so the card is checked against the model here, in English,
+// on the real definitions.
+describe("the confirmation preview matches the model of the server build", () => {
+  const modelLabel = resolveLabelFrom(createEnglishI18n().getFixedT(null, "inventory"));
+  const real = (key: string): InventoryOperation => {
+    const found = operations.find((o) => o.key === key);
+    if (!found) throw new Error(`no configured operation ${key}`);
+    return found;
+  };
+  const noTemplate: TemplateSelection = { mode: "none", templateId: null, remember: false };
+
+  it("shows the link names the server stores for Pool, disambiguated when two origins share a name", () => {
+    const pool = real("pool");
+    const origins = [
+      { id: 1, globalId: "SS1", name: "Aliquot", quantity: { numericValue: 5, unitId: 3 } },
+      { id: 2, globalId: "SS2", name: "Aliquot", quantity: { numericValue: 5, unitId: 3 } },
+    ];
+    const poolValues: OperationInputs = {
+      sampleName: "Pooled",
+      count: 1,
+      eachAmount: { numericValue: 2, unitId: 3 },
+      amountTaken: { numericValue: 1, unitId: 3 },
+    };
+    const model = buildOperationRequest({
+      operation: pool,
+      values: poolValues,
+      origins,
+      resolveLabel: modelLabel,
+      templateId: null,
+    });
+    render(
+      <InEnglish>
+        <ThemeProvider theme={appTheme}>
+          <OperationConfirmation
+            operation={pool}
+            values={poolValues}
+            documentation={null}
+            templateSelection={noTemplate}
+            originSampleName="S1"
+            originName="Aliquot"
+            origins={origins.map(({ globalId, name }) => ({ globalId, name }))}
+          />
+        </ThemeProvider>
+      </InEnglish>,
+    );
+    const modelNames = model.newSample?.extraFields.map((field) => field.name) ?? [];
+    expect(modelNames).toEqual(["Pooled from: Aliquot (SS1)", "Pooled from: Aliquot (SS2)"]);
+    for (const name of modelNames) expect(screen.getByText(name)).toBeInTheDocument();
+    expect(screen.getByText("Pooled")).toBeInTheDocument();
+  });
+
+  it("shows the process-interpolated link name the server stores for Derive", () => {
+    const derive = real("derive");
+    const origin = { id: 1, globalId: "SS1", name: "Vial A", quantity: { numericValue: 5, unitId: 3 } };
+    const deriveValues: OperationInputs = {
+      processName: "PCR",
+      sampleName: "Derived",
+      count: 1,
+      eachAmount: { numericValue: 2, unitId: 3 },
+      amountTaken: { numericValue: 1, unitId: 3 },
+    };
+    const model = buildOperationRequest({
+      operation: derive,
+      values: deriveValues,
+      origins: [origin],
+      resolveLabel: modelLabel,
+      templateId: null,
+    });
+    render(
+      <InEnglish>
+        <ThemeProvider theme={appTheme}>
+          <OperationConfirmation
+            operation={derive}
+            values={deriveValues}
+            documentation={null}
+            templateSelection={noTemplate}
+            originSampleName="S1"
+            originName={origin.name}
+          />
+        </ThemeProvider>
+      </InEnglish>,
+    );
+    const [link] = model.newSample?.extraFields ?? [];
+    expect(link?.name).toBe("Is Derived From using process: PCR");
+    expect(screen.getByText("Is Derived From using process: PCR")).toBeInTheDocument();
+    expect(screen.getByText("Derived")).toBeInTheDocument();
   });
 });
