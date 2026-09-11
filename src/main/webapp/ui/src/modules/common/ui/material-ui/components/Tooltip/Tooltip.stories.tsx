@@ -39,7 +39,7 @@ const meta = {
     ),
     title: {
       control: "text",
-      description: "Tooltip title. Zero-length titles string are never displayed.",
+      description: "Tooltip title. Zero-length title strings are never displayed.",
       table: { category: "Content" },
     },
     children: { control: false },
