@@ -145,9 +145,11 @@ now has a sort enum in `com.researchspace.model.sort` (`UserSort`, `GroupSort`,
 `FormSort`, `RecordSort`, `CommunicationSort` and so on). Before database query
 construction, the enum's `fromRequest(String)` method resolves the request
 string: a blank value gives the listing default and an unknown value throws
-`UnknownSortKeyException`, which `ControllerExceptionHandler` turns into HTTP
-400. DAOs decode the key on entry and build the order clause from a `switch`,
-so no request text reaches query construction.
+`UnknownSortKeyException`. `ControllerExceptionHandler` turns that into HTTP
+400 on an ajax request, which is how listings are re-sorted. A full page load
+gets the error page with the 500 that `error.jsp` produces for every page
+rendering it. DAOs decode the key on entry and build the order clause from a
+`switch`, so no request text reaches query construction.
 
 To add a sort key, add a constant to the listing's enum and a `case` to the
 DAO's switch. Clients send the bare token (`owner`, `sender`, `fileUsage`), not

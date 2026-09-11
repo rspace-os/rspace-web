@@ -49,27 +49,20 @@ public class ControllerExceptionHandlerUnknownSortKeyTest {
         ControllerExceptionHandler.AJAX_DEFAULT_ERROR_MSG + "\nInvalid order by clause", message);
   }
 
+  /**
+   * A page request gets the error view with the same message, but not the 400. error.jsp is an
+   * isErrorPage, so Jasper sets 500 for every page rendering it and the handler cannot override
+   * that. Only the ajax path, which renders ajaxError.jsp, carries the status to the client.
+   */
   @Test
-  public void pageRequestGets400WithTheErrorView() {
+  public void pageRequestGetsTheErrorViewWithoutTheStatus() {
     MockHttpServletResponse response = new MockHttpServletResponse();
 
     ModelAndView mav = handler.handleExceptions(new MockHttpServletRequest(), response, exception);
 
-    assertEquals(400, response.getStatus());
     assertEquals(ControllerExceptionHandler.NON_AJAX_ERROR_VIEW_NAME, mav.getViewName());
     assertEquals(
         "Invalid order by clause",
         mav.getModel().get(ControllerExceptionHandler.EXCEPTION_MESSAGE_ATTR_NAME));
-  }
-
-  /** error.jsp is no longer an isErrorPage, so nothing downstream sets this status for us. */
-  @Test
-  public void otherPageRequestExceptionsStillGet500() {
-    MockHttpServletResponse response = new MockHttpServletResponse();
-
-    handler.handleExceptions(
-        new MockHttpServletRequest(), response, new IllegalStateException("boom"));
-
-    assertEquals(500, response.getStatus());
   }
 }
