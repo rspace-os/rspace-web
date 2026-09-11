@@ -57,5 +57,8 @@ public class ControllerExceptionHandlerUnknownSortKeyTest {
 
     assertEquals(400, response.getStatus());
     assertEquals(ControllerExceptionHandler.NON_AJAX_ERROR_VIEW_NAME, mav.getViewName());
+    assertEquals(
+        "Invalid order by clause",
+        mav.getModel().get(ControllerExceptionHandler.EXCEPTION_MESSAGE_ATTR_NAME));
   }
 }

@@ -9,30 +9,20 @@ import com.axiope.search.SearchConstants;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.dtos.WorkspaceListingConfig;
 import com.researchspace.model.record.BaseRecord;
-import com.researchspace.model.record.RSForm;
 import com.researchspace.model.sort.RecordSort;
 import com.researchspace.model.sort.UnknownSortKeyException;
-import com.researchspace.testutils.TestFactory;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class NameDateFilterTest {
 
-  class NameDateFilterTSS extends NameDateFilterImpl {
-    // overrides  actual database lookup to return a template
-    List<RSForm> searchDBForForms(String[] tms) {
-      return Arrays.asList(new RSForm[] {TestFactory.createAnyForm("any")});
-    }
-  }
-
   NameDateFilterImpl ndf;
 
   @BeforeEach
   public void setUp() throws Exception {
-    ndf = new NameDateFilterTSS();
+    ndf = new NameDateFilterImpl();
   }
 
   @Test
@@ -64,11 +54,6 @@ public class NameDateFilterTest {
     assertThrows(
         UnknownSortKeyException.class,
         () -> ndf.generateRetrieveQueryString(input, new ArrayList<>(), new ArrayList<>()));
-    assertThrows(
-        UnknownSortKeyException.class,
-        () ->
-            ndf.generateFilterStrucDocByFormQuery(
-                input, new ArrayList<>(), new ArrayList<>(), Arrays.asList(1L)));
   }
 
   @Test
@@ -84,13 +69,9 @@ public class NameDateFilterTest {
     pname.clear();
     pval.clear();
     String retrieveQuery = ndf.generateRetrieveQueryString(input, pname, pval);
-    pname.clear();
-    pval.clear();
-    String formQuery = ndf.generateFilterStrucDocByFormQuery(input, pname, pval, Arrays.asList(1L));
 
     assertFalse(countQuery.toLowerCase().contains("order by"));
     assertTrue(retrieveQuery.contains("order by rc.id ASC"));
-    assertTrue(formQuery.contains("order by r.id ASC"));
   }
 
   private WorkspaceListingConfig createANameSearchInput(PaginationCriteria<BaseRecord> pgCrit) {

@@ -1,6 +1,7 @@
 package com.researchspace.model.sort;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -48,6 +49,28 @@ public class SortKeyTest {
     assertThrows(
         UnknownSortKeyException.class,
         () -> CommunicationSort.fromRequest("communication.creationTime"));
+  }
+
+  @Test
+  public void aggregateUserKeysAreRejectedWhenAUserColumnIsRequired() {
+    UnknownSortKeyException e =
+        assertThrows(UnknownSortKeyException.class, () -> UserSort.fromColumnRequest("fileUsage"));
+
+    assertEquals("fileUsage", e.getRequestedKey());
+    assertTrue(e.getAllowedKeys().contains("lastName"));
+    assertFalse(e.getAllowedKeys().contains("fileUsage"));
+    assertFalse(e.getAllowedKeys().contains("recordCount"));
+  }
+
+  @Test
+  public void unknownKeyCannotAddLinesToLogs() {
+    UnknownSortKeyException e =
+        assertThrows(
+            UnknownSortKeyException.class, () -> UserSort.fromRequest("name\r\nforged entry"));
+
+    assertEquals("nameforged entry", e.getRequestedKey());
+    assertFalse(e.getMessage().contains("\r"));
+    assertFalse(e.getMessage().contains("\n"));
   }
 
   @Test

@@ -795,13 +795,10 @@ public class UserProfileControllerMVCIT extends MVCTestBase {
             tg.getPi().getUsername(),
             PaginationCriteria.createDefaultForClass(CommunicationTarget.class));
     // 2 notifications as there are notifications for enabling and disabling autoshare. Both are
-    // created within the same second, so their order is not defined.
+    // created within the same second, so the ID tiebreaker determines their order.
     assertEquals(2, res.getTotalHits().intValue());
-    List<String> messages =
-        res.getResults().stream().map(Notification::getNotificationMessage).toList();
-    assertThat(messages)
-        .anyMatch(m -> m.contains("enabled autosharing"))
-        .anyMatch(m -> m.contains("disabled autosharing"));
+    assertThat(res.getFirstResult().getNotificationMessage()).contains("disabled autosharing");
+    assertThat(res.getLastResult().getNotificationMessage()).contains("enabled autosharing");
 
     String folderName2 = "folderNameTest2";
     logoutAndLoginAs(tg.u1());

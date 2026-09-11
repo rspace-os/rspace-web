@@ -443,7 +443,7 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
         break;
     }
     String direction = SortOrder.ASC.equals(pgCrit.getSortOrder()) ? "asc" : "desc";
-    return " order by " + path + " " + direction;
+    return " order by " + path + " " + direction + ", " + messagePath + ".id " + direction;
   }
 
   private List<Long> getPageFromIdList(List<Long> ids, PaginationCriteria<?> pgCrit) {
