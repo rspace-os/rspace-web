@@ -133,7 +133,11 @@ class OperationOriginValidator {
               "This operation does not take from its origins, so the amount taken must be zero.");
         }
       }
-      validateOriginExtraFields(origin, config, errors);
+      // Under the server-built shape (inputs present) the server adds the declared origin fields
+      // itself and the root validator rejects any the client sends, so the match is not asked here.
+      if (request.getInputs() == null) {
+        validateOriginExtraFields(origin, config, errors);
+      }
       errors.popNestedPath();
     }
   }
