@@ -476,3 +476,20 @@ What that changes in the sections above:
   amounts come from the `eachAmount` input (unit and precision checked by the input
   validator, category against the origin by the core) and there is no top-level
   quantity on the wire.
+
+## Amended 2026-09-11: the seven typed endpoints are the public API
+
+plan-operations-server-builds.md M6 (RSDEV-1231). The generic `POST /operations` stays
+internal and unpublished; the public contract is one typed endpoint per operation,
+`POST /operations/<key>`, in the shapes frozen by M0 (`.claude/operations-facade-design-m0.md`):
+origins by global id, a singular `origin` for the six single-origin operations and
+`origins` for Pool, input fields named exactly after the definition's input keys, numeric
+`templateId`, `documentedByGlobalId`, an optional per-origin `expectedQuantity`
+compare-and-swapped against the live quantity (409 on mismatch), and one response envelope
+of the created sample plus each origin's remaining state. The facades validate shape only
+and reuse the structural validator and the manager unchanged; error paths are renamed to
+the caller's fields on the way out. Three things the core had to learn for this: an origin
+element may carry no `amountTaken` where the definition decides it (Passage takes nothing,
+Destroy takes everything, the builder supplies it), a declared input `default` is applied to
+an absent optional input, and Cryopreserve's `storageTemp` is now `required` in the config
+as M0 specified.

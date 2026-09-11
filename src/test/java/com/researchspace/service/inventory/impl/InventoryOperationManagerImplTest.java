@@ -449,6 +449,40 @@ class InventoryOperationManagerImplTest {
   }
 
   @Test
+  void rejectsAnExpectedQuantityThatNoLongerMatchesTheOriginAsAConflict() {
+    // M0 D5: the typed facades' compare-and-swap. The caller took 1 ml believing the origin held
+    // 10 ml; it holds 5, so the read was stale and the answer is a 409, not a partial take.
+    ApiInventoryOperationOriginUpdate origin = origin(100L, millilitres("1"));
+    origin.setExpectedQuantity(millilitres("10"));
+    ApiInventoryOperationPost request = new ApiInventoryOperationPost();
+    request.setOperationType("derive");
+    request.setOrigins(List.of(origin));
+    request.setNewSample(new ApiSampleWithFullSubSamples("Derived material"));
+    originHolds(100L, subSampleHolding("5", RSUnitDef.MILLI_LITRE.getId()));
+
+    assertEquals(
+        "errors.inventory.operation.amountTakenStale",
+        assertThrows(
+                InventoryEditConflictException.class,
+                () -> manager.performOperation(request, user, NONE))
+            .getMessageKey());
+    verifyNoMutation();
+  }
+
+  @Test
+  void acceptsAnExpectedQuantityThatMatchesTheOriginInAnotherUnitOfItsCategory() throws Exception {
+    ApiInventoryOperationOriginUpdate origin = origin(100L, millilitres("1"));
+    origin.setExpectedQuantity(new ApiQuantityInfo(new BigDecimal("0.005"), RSUnitDef.LITRE));
+    ApiInventoryOperationPost request = new ApiInventoryOperationPost();
+    request.setOperationType("derive");
+    request.setOrigins(List.of(origin));
+    request.setNewSample(new ApiSampleWithFullSubSamples("Derived material"));
+    originHolds(100L, subSampleHolding("5", RSUnitDef.MILLI_LITRE.getId()));
+
+    assertDoesNotThrow(() -> manager.performOperation(request, user, NONE));
+  }
+
+  @Test
   void acceptsTakeAllWhoseAmountStillMatchesTheOrigin() throws Exception {
     ApiInventoryOperationPost request = new ApiInventoryOperationPost();
     request.setOperationType("derive");
@@ -919,6 +953,170 @@ class InventoryOperationManagerImplTest {
     InOrder inOrder = inOrder(check, subSampleApiMgr);
     inOrder.verify(check).validate();
     inOrder.verify(subSampleApiMgr).assertUserCanEditSubSample(100L, user);
+  }
+
+  // --- the server-built path, as the typed facades drive it (M6) ---
+
+  private static final int ML = RSUnitDef.MILLI_LITRE.getId();
+
+  /**
+   * An origin the server-built path can read: name and global id for the generated field names, a
+   * parent with no fields for the computed values, and the same quantity as entity, locked scalar
+   * and builder snapshot.
+   */
+  private void serverBuiltOriginHolds(long originId, String value) {
+    SubSample subSample = subSampleHolding(value, ML);
+    // Every mock read happens BEFORE its when(): a mock call inside thenReturn is unfinished
+    // stubbing.
+    QuantityInfo quantity = subSample.getQuantity();
+    SampleEntity parent = subSample.getSample();
+    when(subSample.getQuantityInfo()).thenReturn(quantity);
+    when(subSample.getGlobalIdentifier()).thenReturn("SS" + originId);
+    when(subSample.getName()).thenReturn("Vial");
+    when(parent.getActiveFields()).thenReturn(List.of());
+    when(parent.getActiveExtraFields()).thenReturn(List.of());
+    originHolds(originId, subSample);
+    // the field names resolve to their default (the key) rather than a real catalog
+    org.springframework.context.MessageSource messages =
+        mock(org.springframework.context.MessageSource.class);
+    when(messages.getMessage(any(String.class), any(), any(String.class), any()))
+        .thenAnswer(invocation -> invocation.getArgument(2));
+    ReflectionTestUtils.setField(manager, "messageSource", messages);
+  }
+
+  /** A facade origin element: an id, optionally an amount, no mode. */
+  private static ApiInventoryOperationOriginUpdate facadeOrigin(long id, ApiQuantityInfo amount) {
+    return origin(id, amount);
+  }
+
+  private static java.util.Map<String, Object> creatingInputs(String name, Integer count) {
+    java.util.Map<String, Object> inputs = new java.util.LinkedHashMap<>();
+    inputs.put("sampleName", name);
+    if (count != null) {
+      inputs.put("count", count);
+    }
+    inputs.put("eachAmount", millilitres("0.5"));
+    return inputs;
+  }
+
+  private ApiSampleWithFullSubSamples createdSample() {
+    ArgumentCaptor<ApiSampleWithFullSubSamples> built =
+        ArgumentCaptor.forClass(ApiSampleWithFullSubSamples.class);
+    verify(sampleApiMgr).createNewApiSample(built.capture(), eq(user));
+    return built.getValue();
+  }
+
+  @Test
+  void aFacadeOriginWithoutAnAmountTakesNothingOnAnOperationThatTakesNothing() throws Exception {
+    // Passage: the facade sends no amount (M0 shape). The builder's zero, in the origin's unit,
+    // must reach the core rather than a null the decrement would dereference.
+    serverBuiltOriginHolds(100L, "5");
+
+    manager.performOperation(
+        "passage",
+        List.of(facadeOrigin(100L, null)),
+        creatingInputs("HeLa p3", 1),
+        null,
+        null,
+        user,
+        built -> {});
+
+    ArgumentCaptor<QuantityInfo> taken = ArgumentCaptor.forClass(QuantityInfo.class);
+    verify(subSampleApiMgr).registerApiSubSampleUsage(eq(100L), taken.capture(), eq(user));
+    assertEquals(0, taken.getValue().getNumericValue().signum());
+    assertEquals(ML, taken.getValue().getUnitId());
+  }
+
+  @Test
+  void aFacadeOriginWithoutAnAmountEmptiesTheOriginOnADestroy() throws Exception {
+    // Destroy: no amount, no expected quantity means "take whatever is there" (M0 D5). The
+    // builder's live snapshot travels under a whole-origin claim, so it is compare-and-swapped.
+    serverBuiltOriginHolds(100L, "5");
+
+    assertNull(
+        manager.performOperation(
+            "destroy",
+            List.of(facadeOrigin(100L, null)),
+            java.util.Map.of(),
+            null,
+            null,
+            user,
+            built -> {}));
+
+    ArgumentCaptor<QuantityInfo> taken = ArgumentCaptor.forClass(QuantityInfo.class);
+    verify(subSampleApiMgr).registerApiSubSampleUsage(eq(100L), taken.capture(), eq(user));
+    assertEquals(0, new BigDecimal("5").compareTo(taken.getValue().getNumericValue()));
+    verify(subSampleApiMgr).updateApiSubSample(any(), eq(user));
+  }
+
+  @Test
+  void aDestroyWhoseExpectedQuantityIsStaleIsAConflictBeforeAnyMutation() {
+    serverBuiltOriginHolds(100L, "5");
+    ApiInventoryOperationOriginUpdate origin = facadeOrigin(100L, null);
+    origin.setExpectedQuantity(millilitres("4"));
+
+    assertThrows(
+        InventoryEditConflictException.class,
+        () ->
+            manager.performOperation(
+                "destroy", List.of(origin), java.util.Map.of(), null, null, user, built -> {}));
+    verifyNoMutation();
+  }
+
+  @Test
+  void theWizardsOwnAmountAndModeStillOverrideTheBuilders() throws Exception {
+    // The generic endpoint's client (the wizard) sends both; the core must compare-and-swap what
+    // the CLIENT saw, so a wizard "all" of 4 ml against a 5 ml origin is a conflict, not a take.
+    serverBuiltOriginHolds(100L, "5");
+    ApiInventoryOperationOriginUpdate origin = takeAll(100L, millilitres("4"));
+
+    assertThrows(
+        InventoryEditConflictException.class,
+        () ->
+            manager.performOperation(
+                "destroy", List.of(origin), java.util.Map.of(), null, null, user, built -> {}));
+    verifyNoMutation();
+  }
+
+  @Test
+  void anAbsentCountDefaultsToOneSubsample() throws Exception {
+    // M0 D7: count is optional on the typed facades with a server default of 1; without the
+    // default the builder refuses a null count and the request would be a 500.
+    serverBuiltOriginHolds(100L, "5");
+    when(sampleApiMgr.createNewApiSample(any(), eq(user)))
+        .thenReturn(new ApiSampleWithFullSubSamples("Aliquots"));
+
+    manager.performOperation(
+        "aliquot",
+        List.of(facadeOrigin(100L, millilitres("1"))),
+        creatingInputs("Aliquots", null),
+        null,
+        null,
+        user,
+        built -> {});
+
+    assertEquals(1, createdSample().getSubSamples().size());
+  }
+
+  @Test
+  void anAbsentReviveStorageTempDefaultsToFourCelsius() throws Exception {
+    serverBuiltOriginHolds(100L, "5");
+    when(sampleApiMgr.createNewApiSample(any(), eq(user)))
+        .thenReturn(new ApiSampleWithFullSubSamples("Revived"));
+
+    manager.performOperation(
+        "revive",
+        List.of(facadeOrigin(100L, millilitres("1"))),
+        creatingInputs("Revived", 1),
+        null,
+        null,
+        user,
+        built -> {});
+
+    ApiSampleWithFullSubSamples created = createdSample();
+    assertEquals(
+        new ApiQuantityInfo(new BigDecimal("4"), RSUnitDef.CELSIUS), created.getStorageTempMin());
+    assertEquals(created.getStorageTempMin(), created.getStorageTempMax());
   }
 
   @Test

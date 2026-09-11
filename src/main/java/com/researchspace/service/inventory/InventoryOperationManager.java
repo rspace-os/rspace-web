@@ -96,8 +96,14 @@ public interface InventoryOperationManager {
    * #performOperation(ApiInventoryOperationPost, User, InTransactionValidation)}, unchanged.
    *
    * <p>Each origin element carries its own {@code amountTaken} and {@code amountMode}, which the
-   * core validates against the live locked quantity; they are not inputs. Precondition as for the
-   * core overload: the origin list has passed the endpoint's structural validation.
+   * core validates against the live locked quantity; they are not inputs. An origin element MAY
+   * carry no amount when the definition itself decides it (an operation that takes nothing, or one
+   * that empties its origins): the builder then supplies zero, or the live quantity under a
+   * whole-origin claim. An element's {@code expectedQuantity}, when set, is compare-and-swapped
+   * against the live locked quantity (M0 D5), raising {@link InventoryEditConflictException} on a
+   * mismatch. Absent optional inputs that declare a {@code default} are filled before validation
+   * (M0 D7). Precondition otherwise as for the core overload: the origin list has passed the
+   * endpoint's structural validation.
    *
    * <p>Generated field names resolve in the request's locale ({@code LocaleContextHolder}, M0 D1),
    * and a {@code today} computed value is the current date in the session's timezone ({@code
