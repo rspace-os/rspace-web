@@ -1,8 +1,8 @@
 package com.researchspace.maintenance.api.v2;
 
 import com.researchspace.maintenance.model.ScheduledMaintenance;
-import com.researchspace.model.collection.CollectionDescription.WriteOperation;
 import com.researchspace.model.collection.ParsedDocument;
+import com.researchspace.model.collection.WriteOperation;
 import java.util.Date;
 import java.util.Map;
 

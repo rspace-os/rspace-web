@@ -9,6 +9,7 @@ import com.researchspace.model.collection.CollectionQueryLimits;
 import com.researchspace.model.collection.FieldSelection;
 import com.researchspace.model.collection.FilterExpression;
 import com.researchspace.model.collection.IncludeTree;
+import com.researchspace.model.collection.Relationship;
 import com.researchspace.model.collection.ResolvedRuntimeField;
 import com.researchspace.model.collection.ResourceFieldSelections;
 import com.researchspace.model.collection.ResourceRegistry;
@@ -405,7 +406,7 @@ public final class ApiV2ResourceRequestParser {
     if (dot <= 0 || dot == selector.length() - 1) {
       return null;
     }
-    CollectionDescription.Relationship<?> relationship =
+    Relationship<?> relationship =
         description.findRelationship(selector.substring(0, dot)).orElse(null);
     if (relationship == null || relationship.targets().size() != 1) {
       return null;

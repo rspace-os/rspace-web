@@ -27,7 +27,7 @@ import com.researchspace.model.collection.ApiV2ResourceDefinition;
 import com.researchspace.model.collection.ApiV2ResourceField;
 import com.researchspace.model.collection.ApiV2ResourceField.AccessPreset;
 import com.researchspace.model.collection.CollectionDescription;
-import com.researchspace.model.collection.CollectionDescription.Sort;
+import com.researchspace.model.collection.Sort;
 import com.researchspace.service.audit.search.AuditTrailSearchResult;
 import jakarta.ws.rs.NotFoundException;
 import java.time.Clock;

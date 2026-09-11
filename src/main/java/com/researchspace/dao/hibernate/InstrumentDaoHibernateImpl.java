@@ -273,7 +273,7 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
     return new ResourcePage<>(locations, total);
   }
 
-  private String readableContainerPredicate(
+  protected String readableContainerPredicate(
       User caller,
       List<String> groupMembers,
       List<String> groupNames,

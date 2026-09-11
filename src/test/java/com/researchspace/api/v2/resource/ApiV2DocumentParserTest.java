@@ -13,18 +13,18 @@ import com.researchspace.model.User;
 import com.researchspace.model.collection.AccessContext;
 import com.researchspace.model.collection.AccessContext.Operation;
 import com.researchspace.model.collection.CollectionDescription;
-import com.researchspace.model.collection.CollectionDescription.Field;
-import com.researchspace.model.collection.CollectionDescription.Sort;
-import com.researchspace.model.collection.CollectionDescription.WriteOperation;
 import com.researchspace.model.collection.CollectionFieldTypes;
 import com.researchspace.model.collection.CollectionMutationLimits;
 import com.researchspace.model.collection.DocumentValidationException;
 import com.researchspace.model.collection.DocumentValidationException.Reason;
 import com.researchspace.model.collection.DocumentValidationException.Violation;
+import com.researchspace.model.collection.Field;
 import com.researchspace.model.collection.ParsedDocument;
 import com.researchspace.model.collection.RelationshipTarget;
 import com.researchspace.model.collection.ResourceReference;
+import com.researchspace.model.collection.Sort;
 import com.researchspace.model.collection.SplitReferenceBinding;
+import com.researchspace.model.collection.WriteOperation;
 import com.researchspace.service.CollectionMutationException;
 import java.time.Instant;
 import java.util.Date;
@@ -345,7 +345,7 @@ class ApiV2DocumentParserTest {
         RelatedDocument.class,
         List.of(Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), RelatedDocument::id)),
         List.of(
-            CollectionDescription.Relationship.polymorphicToOne(
+            Relationship.polymorphicToOne(
                     "target",
                     CollectionFieldTypes.longNumber(),
                     List.of(
