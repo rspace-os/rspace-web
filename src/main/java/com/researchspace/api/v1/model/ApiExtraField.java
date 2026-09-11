@@ -1,7 +1,6 @@
 /** RSpace API Access your RSpace Inventory programmatically. */
 package com.researchspace.api.v1.model;
 
-import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
@@ -16,9 +15,7 @@ import com.researchspace.model.inventory.field.ExtraField;
 import com.researchspace.model.inventory.field.ExtraLinkField;
 import com.researchspace.model.inventory.field.InventoryLink;
 import com.researchspace.model.record.IActiveUserStrategy;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -44,34 +41,7 @@ import org.apache.commons.lang3.StringUtils;
   "parentGlobalId",
   "_links"
 })
-public class ApiExtraField extends IdentifiableNameableApiObject
-    implements UnknownPropertyCapturing {
-
-  /**
-   * Names of request properties this object does not declare; see {@link UnknownPropertyCapturing}.
-   * Declared here rather than on a shared base class: an any-setter suppresses Jackson's
-   * registration of ignorable property names for the whole class, so putting one on
-   * IdentifiableNameableApiObject applied that side effect to every API DTO beneath it (parallel
-   * review). Only the DTOs the operations payload actually contains capture.
-   */
-  // No @ToString.Exclude here: this class's @ToString already uses the old-style of={"type"},
-  // which excludes every other field, and Lombok rejects mixing that with the new-style form.
-  @JsonIgnore @EqualsAndHashCode.Exclude
-  private final List<String> unknownProperties = new ArrayList<>();
-
-  /**
-   * Records an unrecognised property's NAME and discards its value.
-   *
-   * <p>The value parameter is {@code Void}, not {@code Object}, deliberately. An any-setter's value
-   * IS deserialized before the method body runs, so {@code Object} would build a
-   * LinkedHashMap/ArrayList graph for the whole unknown subtree only to drop it, turning a body of
-   * junk keys into heap amplification. {@code Void} routes Jackson to NullifyingDeserializer, which
-   * skips the subtree exactly as unknown-property handling did before (parallel review).
-   */
-  @JsonAnySetter
-  private void captureUnknownProperty(String name, Void ignoredValue) {
-    UnknownPropertyCapturing.capture(unknownProperties, name);
-  }
+public class ApiExtraField extends IdentifiableNameableApiObject {
 
   @JsonProperty("type")
   private ExtraFieldTypeEnum type;
@@ -106,40 +76,21 @@ public class ApiExtraField extends IdentifiableNameableApiObject
   private boolean deleteFieldRequest;
 
   /**
-   * Identifies which entry of an operation definition produced this field, so the operations
-   * endpoint can whitelist a request against the definition it names (DevDocs/adr/0007). Resolved
-   * field names interpolate user input ({@code {processName}}, {@code {originName}}) and are
-   * localized, so the definition key travels on the wire instead.
+   * Identifies which entry of an operation definition produced this field (DevDocs/adr/0007).
+   * Resolved field names interpolate user input ({@code {processName}}, {@code {originName}}) and
+   * are localized, so the definition key is the field's stable identity: the next run of an
+   * operation reads the parent sample's fields over the API and recognises the previous generation
+   * by this key to continue from it. Persisted (RSDEV-1231) and returned on GET.
    *
-   * <p>Read-write, and persisted (RSDEV-1231). It has to come BACK on GET because it is the field's
-   * stable identity across runs of an operation: the next run reads the parent sample's fields over
-   * the API and has to recognise the previous generation's field to continue from it, which
-   * matching on the localized name cannot do reliably.
-   *
-   * <p>Only the operations endpoint may PERSIST it. Every other endpoint binding this DTO IGNORES a
-   * value rather than rejecting it: rejecting broke read-modify-write, because the API returns this
-   * key and a client sending a GET representation back would have been 400ed for a value it never
-   * chose. Enforcement is therefore at the single write point, gated on {@link
-   * #operationFieldKeyVerified}, which no client can set. Do not add a rejection elsewhere: that
-   * was tried and reverted twice.
+   * <p>READ_ONLY: only the server sets it, when it builds an operation's fields
+   * (InventoryOperationRequestBuilder). A value in any request body is ignored at binding rather
+   * than rejected, on every endpoint, so a client that GETs a record and sends it back is not 400ed
+   * for a value it never chose (that rejection was tried and reverted twice). Ignoring it at
+   * binding is what makes "only an operation may claim to have generated a field" true by
+   * construction, with no write point or endpoint validator to remember it.
    */
-  @JsonProperty("operationFieldKey")
+  @JsonProperty(value = "operationFieldKey", access = Access.READ_ONLY)
   private String operationFieldKey;
-
-  /**
-   * Whether {@link #operationFieldKey} has been checked against the operation definition that is
-   * allowed to declare it, and may therefore be persisted.
-   *
-   * <p>{@code @JsonIgnore}, so no client can set it and no other endpoint does: the operations
-   * endpoint's validator is the only writer (InventoryOperationPostValidator, which already
-   * whitelists every key against the specific operation's definition), and ApiExtraFieldsHelper
-   * persists the key only when this is set. That makes "only an operation may claim to have
-   * generated a field" true by CONSTRUCTION rather than by every other endpoint remembering to
-   * reject one. Enumerating the endpoints to police was tried first and leaked: the sample- and
-   * instrument-template validators do not go through the shared extra-field validation at all, so a
-   * template request could persist a forged key (parallel review, C1).
-   */
-  @JsonIgnore private boolean operationFieldKeyVerified;
 
   /** The data type of this field */
   public enum ExtraFieldTypeEnum {

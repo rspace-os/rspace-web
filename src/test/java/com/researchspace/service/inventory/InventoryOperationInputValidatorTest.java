@@ -69,7 +69,7 @@ class InventoryOperationInputValidatorTest {
   @Test
   void valueAboveTheDeclaredMaximumIsAFieldErrorOnItsKey() {
     // 101 is the first count the request builder refuses (MAX_SUBSAMPLES); without this rule it
-    // surfaced as a 500 where the client-assembled shape returns a 400 (M3a).
+    // surfaced as a 500 where the client-assembled shape, since deleted, returned a 400 (M3a).
     Map<String, Object> inputs = aliquot();
     inputs.put("count", 101);
     assertSingleErrorOn(

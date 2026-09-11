@@ -1,9 +1,10 @@
 /**
  * Turns an operation definition plus the user's collected input values into the request the wizard
  * POSTs (buildOperationInputsRequest) and into the wizard's model of the sample the server builds
- * from it (buildOperationRequest, the client-assembled shape the endpoint accepted before
- * plan-operations-server-builds.md M4). The model is what the confirmation preview is checked
- * against, since the preview and the server build can now drift. Pure and operation-agnostic: it
+ * from it (buildOperationRequest, the shape the endpoint accepted before the server started
+ * building the sample itself, plan-operations-server-builds.md M4 and M5). The model is what the
+ * confirmation preview is checked against, since the preview and the server build can drift; its
+ * server-side parity is pinned by InventoryOperationsInputsShapeMVCIT. Pure and operation-agnostic: it
  * only follows the effect spec, so a new operation needs a new config entry, not new code here (see
  * DevDocs/adr/0007).
  *
@@ -35,8 +36,8 @@ import { UNSET_UNIT } from "./types";
 
 /**
  * The documentation link is a wizard-level feature rather than a per-operation declaration, so it
- * carries this fixed key; the backend accepts one on every output-producing operation
- * (OperationNewSampleValidator.DOCUMENTATION_LINK_KEY).
+ * carries this fixed key, the same one the server stamps on the link it builds
+ * (InventoryOperationRequestBuilder.DOCUMENTATION_LINK_KEY).
  */
 const DOCUMENTATION_LINK_KEY = "operations.documentationLink";
 

@@ -130,7 +130,7 @@ describe("ElnFolderBrowser", () => {
 
   it("offers exactly the global-id prefixes the server accepts as a documentation target", async () => {
     // Drift guard for the documentation link (RSDEV-1231): the server rejects an IsDocumentedBy
-    // link whose target is outside OperationNewSampleValidator.DOCUMENTATION_TARGET_PREFIXES
+    // link whose target is outside InventoryOperationPostValidator.DOCUMENTATION_TARGET_PREFIXES
     // (SD, NB, GL), so a fourth pickable type here would only be discoverable as a 400 at Perform.
     const onSelectionChange = vi.fn();
     renderBrowser(onSelectionChange);

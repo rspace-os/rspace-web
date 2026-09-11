@@ -14,7 +14,6 @@ import com.researchspace.api.v1.model.ApiSampleTemplate;
 import com.researchspace.api.v1.model.ApiSampleTemplatePost;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
-import com.researchspace.apiutils.ApiError;
 import com.researchspace.model.User;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.inventory.SubSampleApiManager;
@@ -33,13 +32,12 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MvcResult;
 
 /**
- * End-to-end coverage for the RSDEV-1231 operation wizard endpoint (POST /operations), exercised
- * via a "Derive" request: a single POST must atomically create one new Sample parenting N
- * subsamples, put an IsDerivedFrom link back to the origin on the new Sample, and reduce the origin
- * subsample by the amount taken from it (never increasing it). Every extra field carries the
- * definition key that produced it ({@code operationFieldKey}); the request is whitelisted against
- * that definition, so the created subsamples carry a quantity and nothing else. See
- * DevDocs/adr/0007.
+ * End-to-end coverage for the RSDEV-1231 operation endpoint (POST /operations). A single POST
+ * carries the origins with their amounts and the values the user typed; the server builds one new
+ * Sample parenting N subsamples from them and the operation definition, puts a provenance link back
+ * to each origin on the new Sample, and reduces each origin subsample by the amount taken from it
+ * (never increasing it), all in one transaction. The live-state and concurrency rules of that
+ * transaction are exercised here against a real database. See DevDocs/adr/0007.
  *
  * <p>Authored with the feature; not run automatically (extends a real-transaction MVC base).
  */
@@ -58,6 +56,100 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
     apiKey = createNewApiKeyForUser(anyUser);
   }
 
+  // --- request bodies, in the shape the wizard sends ---
+
+  private static String quantityJson(String value, int unitId) {
+    return "{\"numericValue\":" + value + ",\"unitId\":" + unitId + "}";
+  }
+
+  /** One origin element; a null amountMode leaves the property absent. */
+  private static String originJson(ApiSubSample origin, String amountMode, String amountTakenJson) {
+    return "{\"id\":"
+        + origin.getId()
+        + (amountMode == null ? "" : ",\"amountMode\":\"" + amountMode + "\"")
+        + ",\"amountTaken\":"
+        + amountTakenJson
+        + "}";
+  }
+
+  /** The inputs every creating operation declares. */
+  private static String creatingInputs(String sampleName, int count, String eachAmountJson) {
+    return "\"sampleName\":\""
+        + sampleName
+        + "\",\"count\":"
+        + count
+        + ",\"eachAmount\":"
+        + eachAmountJson;
+  }
+
+  private static String body(String operationType, String originsJson, String inputsJson) {
+    return body(operationType, originsJson, inputsJson, "");
+  }
+
+  /** topLevelExtras is appended verbatim, e.g. {@code ,"templateId":5}. */
+  private static String body(
+      String operationType, String originsJson, String inputsJson, String topLevelExtras) {
+    return "{\"operationType\":\""
+        + operationType
+        + "\",\"origins\":["
+        + originsJson
+        + "],\"inputs\":{"
+        + inputsJson
+        + "}"
+        + topLevelExtras
+        + "}";
+  }
+
+  /** A Derive taking the given amount from the origin into {@code count} children of eachAmount. */
+  private static String deriveJson(
+      ApiSubSample origin,
+      String amountTakenJson,
+      String sampleName,
+      int count,
+      String eachAmountJson,
+      String topLevelExtras) {
+    return body(
+        "derive",
+        originJson(origin, null, amountTakenJson),
+        "\"processName\":\"PCR\"," + creatingInputs(sampleName, count, eachAmountJson),
+        topLevelExtras);
+  }
+
+  /** An Aliquot taking 1 (origin unit) into one 0.5 child. */
+  private static String aliquotJson(ApiSubSample origin) {
+    int unitId = origin.getQuantity().getUnitId();
+    return aliquotJsonWith(origin, quantityJson("1", unitId), quantityJson("0.5", unitId), "");
+  }
+
+  private static String aliquotJsonWith(
+      ApiSubSample origin, String amountTakenJson, String eachAmountJson, String topLevelExtras) {
+    return body(
+        "aliquot",
+        originJson(origin, null, amountTakenJson),
+        creatingInputs("Aliquots", 1, eachAmountJson),
+        topLevelExtras);
+  }
+
+  /** A Pool request over exactly two origins, taking 1 g from each into one 2 g child. */
+  private static String poolJson(String name, ApiSubSample first, ApiSubSample second) {
+    int gram = RSUnitDef.GRAM.getId();
+    return body(
+        "pool",
+        originJson(first, null, quantityJson("1", gram))
+            + ","
+            + originJson(second, null, quantityJson("1", gram)),
+        creatingInputs(name, 1, quantityJson("2", gram)));
+  }
+
+  /** An Aliquot taking the given amount, in the origin's own unit, into one child of the same. */
+  private static String aliquotTakingJson(ApiSubSample origin, String amount) {
+    int unitId = origin.getQuantity().getUnitId();
+    return body(
+        "aliquot",
+        originJson(origin, null, quantityJson(amount, unitId)),
+        creatingInputs("Aliquot of " + origin.getGlobalId(), 1, quantityJson(amount, unitId)));
+  }
+
   @Test
   public void deriveCreatesLinkedSampleAndReducesOriginByAmountTaken() throws Exception {
     // an existing subsample to be the origin of the Derive operation
@@ -68,31 +160,16 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
     Integer unitId = origin.getQuantity().getUnitId();
     java.math.BigDecimal originalAmount = origin.getQuantity().getNumericValue();
 
-    // The frontend assembles this from operations_config.json + the user's input: a fully-built new
-    // sample (2 subsamples, each holding a quantity and nothing else) plus the amount to take from
-    // the origin. Every extra field carries the definition key that produced it.
-    String linkJson =
-        "{\"name\":\"Is Derived From using process: PCR\","
-            + "\"type\":\"link\",\"newFieldRequest\":true,"
-            + "\"operationFieldKey\":\"operations.derive.linkFieldName\","
-            + "\"link\":{\"relationType\":\"IsDerivedFrom\",\"targetGlobalId\":\""
-            + originGlobalId
-            + "\",\"versionPin\":null}}";
-    String subSampleJson = "{\"quantity\":{\"numericValue\":0.5,\"unitId\":" + unitId + "}}";
+    // The wizard sends the typed inputs and the amount to take from the origin; the server builds
+    // the sample (2 subsamples, each holding a quantity and nothing else) and its provenance link.
     String operationJson =
-        "{\"operationType\":\"derive\","
-            + "\"origins\":[{\"id\":"
-            + originId
-            + ",\"amountTaken\":{\"numericValue\":0.6,\"unitId\":"
-            + unitId
-            + "}}],"
-            + "\"newSample\":{\"name\":\"Derived material\",\"extraFields\":["
-            + linkJson
-            + "],\"subSamples\":["
-            + subSampleJson
-            + ","
-            + subSampleJson
-            + "]}}";
+        deriveJson(
+            origin,
+            quantityJson("0.6", unitId),
+            "Derived material",
+            2,
+            quantityJson("0.5", unitId),
+            "");
 
     MvcResult result =
         mockMvc
@@ -110,7 +187,7 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
     assertEquals(originGlobalId, sampleLink.getLink().getTargetGlobalId());
 
     // ... while the created subsamples carry only their quantity: the operation's links and text
-    // fields live on the sample, and a subsample extra field would now be rejected as undeclared.
+    // fields live on the sample.
     assertEquals(2, created.getSubSamples().size());
     for (ApiSubSample ss : created.getSubSamples()) {
       assertTrue(
@@ -131,8 +208,6 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
   public void operationCreatesDerivedSampleFromChosenTemplate() throws Exception {
     ApiSampleWithFullSubSamples source = createBasicSampleForUser(anyUser);
     ApiSubSample origin = source.getSubSamples().get(0);
-    Long originId = origin.getId();
-    String originGlobalId = origin.getGlobalId();
     Integer unitId = origin.getQuantity().getUnitId();
 
     // the user chooses an existing template (option "any") for the derived sample
@@ -147,21 +222,14 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
             .andReturn();
     ApiSampleTemplate template = getFromJsonResponseBody(templateResult, ApiSampleTemplate.class);
 
-    String linkJson = deriveLinkJson(originGlobalId);
     String operationJson =
-        "{\"operationType\":\"derive\","
-            + "\"origins\":[{\"id\":"
-            + originId
-            + ",\"amountTaken\":{\"numericValue\":0.6,\"unitId\":"
-            + unitId
-            + "}}],"
-            + "\"newSample\":{\"name\":\"Derived from template\",\"templateId\":"
-            + template.getId()
-            + ",\"extraFields\":["
-            + linkJson
-            + "],\"subSamples\":[{\"quantity\":{\"numericValue\":0.5,\"unitId\":"
-            + unitId
-            + "}}]}}";
+        deriveJson(
+            origin,
+            quantityJson("0.6", unitId),
+            "Derived from template",
+            1,
+            quantityJson("0.5", unitId),
+            ",\"templateId\":" + template.getId());
 
     MvcResult result =
         mockMvc
@@ -181,31 +249,22 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
   @Test
   public void rejectsTakingMoreThanTheOriginHolds() throws Exception {
     // DevDocs/adr/0007: taking more than the origin currently holds must be rejected (400), not
-    // clamped,
-    // and
-    // must leave the origin untouched.
+    // clamped, and must leave the origin untouched.
     ApiSampleWithFullSubSamples source = createBasicSampleForUser(anyUser);
     ApiSubSample origin = source.getSubSamples().get(0);
     Long originId = origin.getId();
-    String originGlobalId = origin.getGlobalId();
     Integer unitId = origin.getQuantity().getUnitId();
     java.math.BigDecimal originalAmount = origin.getQuantity().getNumericValue();
     java.math.BigDecimal tooMuch = originalAmount.add(java.math.BigDecimal.ONE);
 
     String operationJson =
-        "{\"operationType\":\"derive\","
-            + "\"origins\":[{\"id\":"
-            + originId
-            + ",\"amountTaken\":{\"numericValue\":"
-            + tooMuch.toPlainString()
-            + ",\"unitId\":"
-            + unitId
-            + "}}],"
-            + "\"newSample\":{\"name\":\"Derived material\",\"extraFields\":["
-            + deriveLinkJson(originGlobalId)
-            + "],\"subSamples\":[{\"quantity\":{\"numericValue\":0.5,\"unitId\":"
-            + unitId
-            + "}}]}}";
+        deriveJson(
+            origin,
+            quantityJson(tooMuch.toPlainString(), unitId),
+            "Derived material",
+            1,
+            quantityJson("0.5", unitId),
+            "");
 
     mockMvc
         .perform(createBuilderForPostWithJSONBody(apiKey, "/operations", anyUser, operationJson))
@@ -223,37 +282,25 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
       throws Exception {
     // The atomicity claim (DevDocs/adr/0007) rests on InventoryOperationManager matching the
     // service.inventory.*Manager AOP pointcut; only a real transaction can prove it. Trigger an
-    // in-transaction failure AFTER the origin decrement: the documentation link targets a document
-    // that does not exist, so link creation (assertTargetExistsAndReadable) throws while the new
-    // sample is being assembled, after registerApiSubSampleUsage already ran. Without a working
-    // transaction the origin would silently lose quantity with no sample created.
+    // in-transaction failure AFTER the origin decrement: the documentation target is a document
+    // that does not exist, so creating the IsDocumentedBy link the server builds
+    // (assertTargetExistsAndReadable) throws while the new sample is being assembled, after
+    // registerApiSubSampleUsage already ran. Without a working transaction the origin would
+    // silently lose quantity with no sample created.
     ApiSampleWithFullSubSamples source = createBasicSampleForUser(anyUser);
     ApiSubSample origin = source.getSubSamples().get(0);
     Long originId = origin.getId();
-    String originGlobalId = origin.getGlobalId();
     Integer unitId = origin.getQuantity().getUnitId();
     java.math.BigDecimal originalAmount = origin.getQuantity().getNumericValue();
 
-    String provenanceLink = deriveLinkJson(originGlobalId);
-    String brokenDocumentationLink =
-        "{\"name\":\"SOP\",\"type\":\"link\",\"newFieldRequest\":true,"
-            + "\"operationFieldKey\":\"operations.documentationLink\","
-            + "\"link\":{\"relationType\":\"IsDocumentedBy\",\"targetGlobalId\":\"SD999999999\","
-            + "\"versionPin\":null}}";
     String operationJson =
-        "{\"operationType\":\"derive\","
-            + "\"origins\":[{\"id\":"
-            + originId
-            + ",\"amountTaken\":{\"numericValue\":0.6,\"unitId\":"
-            + unitId
-            + "}}],"
-            + "\"newSample\":{\"name\":\"Rollback probe\",\"extraFields\":["
-            + provenanceLink
-            + ","
-            + brokenDocumentationLink
-            + "],\"subSamples\":[{\"quantity\":{\"numericValue\":0.5,\"unitId\":"
-            + unitId
-            + "}}]}}";
+        deriveJson(
+            origin,
+            quantityJson("0.6", unitId),
+            "Rollback probe",
+            1,
+            quantityJson("0.5", unitId),
+            ",\"documentedByGlobalId\":\"SD999999999\"");
 
     MvcResult result =
         mockMvc
@@ -271,8 +318,6 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
         originalAmount.compareTo(reloadedOrigin.getQuantity().getNumericValue()) == 0,
         "origin quantity must be restored when the operation fails mid-transaction");
   }
-
-  // --- security-review hardening (2026-08-28 reviews): one end-to-end probe per fix ---
 
   /** POST /samples with one subsample holding exactly the given quantity; returns the sample. */
   private ApiSampleWithFullSubSamples createSampleHolding(String name, String value, int unitId)
@@ -293,17 +338,6 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
     return getFromJsonResponseBody(result, ApiSampleWithFullSubSamples.class);
   }
 
-  private String hasPartLinkJson(String targetGlobalId) {
-    return "{\"name\":\"Has Part "
-        + targetGlobalId
-        + "\",\"type\":\"link\",\"newFieldRequest\":true,"
-        + "\"operationFieldKey\":\"operations.pool.linkFieldName\","
-        + "\"link\":{\"relationType\":\"HasPart\",\"targetGlobalId\":\""
-        + targetGlobalId
-        + "\",\"versionPin\":null}}";
-  }
-
-  /** Derive's declared provenance link back to one origin, as the wizard builds it. */
   @Test
   public void passageIntoATemplateThatAlreadyDeclaresTheCounterFieldMergesInsteadOfDuplicating()
       throws Exception {
@@ -330,23 +364,11 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
     ApiSampleTemplate template = getFromJsonResponseBody(templateResult, ApiSampleTemplate.class);
 
     String operationJson =
-        "{\"operationType\":\"passage\",\"origins\":[{\"id\":"
-            + origin.getId()
-            + ",\"amountTaken\":{\"numericValue\":0,\"unitId\":"
-            + unitId
-            + "}}],\"newSample\":{\"name\":\"Passaged\",\"templateId\":"
-            + template.getId()
-            + ",\"extraFields\":[{\"name\":\"Passaged from\",\"type\":\"link\","
-            + "\"newFieldRequest\":true,"
-            + "\"operationFieldKey\":\"operations.passage.linkFieldName\","
-            + "\"link\":{\"relationType\":\"IsDerivedFrom\",\"targetGlobalId\":\""
-            + origin.getGlobalId()
-            + "\",\"versionPin\":null}},"
-            + "{\"name\":\"Passage number\",\"type\":\"text\",\"newFieldRequest\":true,"
-            + "\"operationFieldKey\":\"operations.passage.numberField\",\"content\":\"4\"}],"
-            + "\"subSamples\":[{\"quantity\":{\"numericValue\":1,\"unitId\":"
-            + unitId
-            + "}}]}}";
+        body(
+            "passage",
+            originJson(origin, null, quantityJson("0", unitId)),
+            creatingInputs("Passaged", 1, quantityJson("1", unitId)),
+            ",\"templateId\":" + template.getId());
 
     MvcResult result =
         mockMvc
@@ -365,34 +387,16 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
             .filter(name -> "Passage number".equalsIgnoreCase(name == null ? "" : name.trim()))
             .count();
     assertEquals(1, counterFields, "the created sample must hold exactly one Passage number field");
-    // and it is the inherited one, carrying the operation's value, so the next Passage's
-    // name-based counter lookup still finds it.
+    // and it is the inherited one, carrying the operation's value (the server starts the counter
+    // at 1 when the origin's parent holds none), so the next Passage's counter lookup finds it.
     assertEquals(
-        "4",
+        "1",
         reloaded.getFields().stream()
             .filter(f -> "Passage number".equals(f.getName()))
             .map(ApiInventoryEntityField::getContent)
             .findFirst()
             .orElse(null),
         "the operation's value must land in the template's own field");
-  }
-
-  private String deriveLinkJson(String targetGlobalId) {
-    return "{\"name\":\"Is Derived From using process: PCR\","
-        + "\"type\":\"link\",\"newFieldRequest\":true,"
-        + "\"operationFieldKey\":\"operations.derive.linkFieldName\","
-        + "\"link\":{\"relationType\":\"IsDerivedFrom\",\"targetGlobalId\":\""
-        + targetGlobalId
-        + "\",\"versionPin\":null}}";
-  }
-
-  /** Aliquot's declared provenance link back to its origin. */
-  private String isPartOfLinkJson(String targetGlobalId) {
-    return "{\"name\":\"Derived from\",\"type\":\"link\",\"newFieldRequest\":true,"
-        + "\"operationFieldKey\":\"operations.aliquot.linkFieldName\","
-        + "\"link\":{\"relationType\":\"IsPartOf\",\"targetGlobalId\":\""
-        + targetGlobalId
-        + "\",\"versionPin\":null}}";
   }
 
   @Test
@@ -406,22 +410,12 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
         createSampleHolding("F4a mass", "5", RSUnitDef.GRAM.getId()).getSubSamples().get(0);
 
     String operationJson =
-        "{\"operationType\":\"pool\",\"origins\":["
-            + "{\"id\":"
-            + volumeOrigin.getId()
-            + ",\"amountTaken\":{\"numericValue\":1,\"unitId\":"
-            + RSUnitDef.MILLI_LITRE.getId()
-            + "}},{\"id\":"
-            + massOrigin.getId()
-            + ",\"amountTaken\":{\"numericValue\":1,\"unitId\":"
-            + RSUnitDef.GRAM.getId()
-            + "}}],\"newSample\":{\"name\":\"Mixed pool\",\"extraFields\":["
-            + hasPartLinkJson(volumeOrigin.getGlobalId())
-            + ","
-            + hasPartLinkJson(massOrigin.getGlobalId())
-            + "],\"subSamples\":[{\"quantity\":{\"numericValue\":2,\"unitId\":"
-            + RSUnitDef.MILLI_LITRE.getId()
-            + "}}]}}";
+        body(
+            "pool",
+            originJson(volumeOrigin, null, quantityJson("1", RSUnitDef.MILLI_LITRE.getId()))
+                + ","
+                + originJson(massOrigin, null, quantityJson("1", RSUnitDef.GRAM.getId())),
+            creatingInputs("Mixed pool", 1, quantityJson("2", RSUnitDef.MILLI_LITRE.getId())));
 
     mockMvc
         .perform(createBuilderForPostWithJSONBody(apiKey, "/operations", anyUser, operationJson))
@@ -436,126 +430,6 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
     }
   }
 
-  @Test
-  public void provenanceLinkInsideATextTypedFieldIsRejectedNotSilentlyDropped() throws Exception {
-    // security review finding 7: persistence only creates a link for a link-typed field, so a link
-    // payload in a text-typed field must fail validation (400) rather than 201 with the link gone
-    ApiSampleWithFullSubSamples source = createBasicSampleForUser(anyUser);
-    ApiSubSample origin = source.getSubSamples().get(0);
-    Integer unitId = origin.getQuantity().getUnitId();
-    java.math.BigDecimal originalAmount = origin.getQuantity().getNumericValue();
-
-    String textCarriedLink =
-        "{\"name\":\"Is Derived From\",\"type\":\"text\",\"newFieldRequest\":true,"
-            + "\"operationFieldKey\":\"operations.derive.linkFieldName\","
-            + "\"link\":{\"relationType\":\"IsDerivedFrom\",\"targetGlobalId\":\""
-            + origin.getGlobalId()
-            + "\",\"versionPin\":null}}";
-    String operationJson =
-        "{\"operationType\":\"derive\",\"origins\":[{\"id\":"
-            + origin.getId()
-            + ",\"amountTaken\":{\"numericValue\":0.6,\"unitId\":"
-            + unitId
-            + "}}],\"newSample\":{\"name\":\"Derived material\",\"extraFields\":["
-            + textCarriedLink
-            + "],\"subSamples\":[{\"quantity\":{\"numericValue\":0.5,\"unitId\":"
-            + unitId
-            + "}}]}}";
-
-    mockMvc
-        .perform(createBuilderForPostWithJSONBody(apiKey, "/operations", anyUser, operationJson))
-        .andExpect(status().isBadRequest());
-
-    ApiSubSample reloaded = subSampleApiManager.getApiSubSampleById(origin.getId(), anyUser);
-    assertTrue(
-        originalAmount.compareTo(reloaded.getQuantity().getNumericValue()) == 0,
-        "origin must be unchanged when the provenance link is not an effective link field");
-  }
-
-  @Test
-  public void rejectsUnequalChildQuantitiesForAnEachAmountOperation() throws Exception {
-    // valid-payload review finding 2: the API documents N equal subsamples (one each-amount input
-    // copied to all children); 0.25 + 0.75 must be rejected, not silently persisted
-    ApiSampleWithFullSubSamples source = createBasicSampleForUser(anyUser);
-    ApiSubSample origin = source.getSubSamples().get(0);
-    Integer unitId = origin.getQuantity().getUnitId();
-    java.math.BigDecimal originalAmount = origin.getQuantity().getNumericValue();
-
-    String linkJson = isPartOfLinkJson(origin.getGlobalId());
-    String operationJson =
-        "{\"operationType\":\"aliquot\",\"origins\":[{\"id\":"
-            + origin.getId()
-            + ",\"amountTaken\":{\"numericValue\":1,\"unitId\":"
-            + unitId
-            + "}}],\"newSample\":{\"name\":\"Uneven aliquots\",\"extraFields\":["
-            + linkJson
-            + "],\"subSamples\":["
-            + "{\"quantity\":{\"numericValue\":0.25,\"unitId\":"
-            + unitId
-            + "}},"
-            + "{\"quantity\":{\"numericValue\":0.75,\"unitId\":"
-            + unitId
-            + "}}]}}";
-
-    mockMvc
-        .perform(createBuilderForPostWithJSONBody(apiKey, "/operations", anyUser, operationJson))
-        .andExpect(status().isBadRequest());
-
-    ApiSubSample reloaded = subSampleApiManager.getApiSubSampleById(origin.getId(), anyUser);
-    assertTrue(
-        originalAmount.compareTo(reloaded.getQuantity().getNumericValue()) == 0,
-        "origin must be unchanged when unequal children are rejected");
-  }
-
-  @Test
-  public void originExtraFieldLinkingTheOriginToItselfIsRejected() throws Exception {
-    // valid-payload review finding 1: the create-field path must enforce the self-link rule against
-    // the authoritative parent (the payload's parentGlobalId is client-supplied and was forgeable).
-    // The strict whitelist closes this a second way: Destroy declares only its disposed-date origin
-    // field, so a "Self reference" link field is undeclared content (DevDocs/adr/0007).
-    ApiSampleWithFullSubSamples source = createBasicSampleForUser(anyUser);
-    ApiSubSample origin = source.getSubSamples().get(0);
-    java.math.BigDecimal originalAmount = origin.getQuantity().getNumericValue();
-    Integer unitId = origin.getQuantity().getUnitId();
-
-    String selfLinkField =
-        "{\"name\":\"Self reference\",\"type\":\"link\",\"newFieldRequest\":true,"
-            + "\"link\":{\"relationType\":\"References\",\"targetGlobalId\":\""
-            + origin.getGlobalId()
-            + "\",\"versionPin\":null}}";
-    String operationJson =
-        "{\"operationType\":\"destroy\",\"origins\":[{\"id\":"
-            + origin.getId()
-            + ",\"amountTaken\":{\"numericValue\":"
-            + originalAmount.toPlainString()
-            + ",\"unitId\":"
-            + unitId
-            + "},\"extraFields\":["
-            + selfLinkField
-            + "]}]}";
-
-    MvcResult result =
-        mockMvc
-            .perform(
-                createBuilderForPostWithJSONBody(apiKey, "/operations", anyUser, operationJson))
-            .andReturn();
-    assertTrue(
-        result.getResponse().getStatus() >= 400,
-        "a self-link origin field must not report success, was: "
-            + result.getResponse().getStatus());
-
-    // the rejection rolled the whole operation back: quantity untouched, no self-link persisted
-    ApiSubSample reloaded = subSampleApiManager.getApiSubSampleById(origin.getId(), anyUser);
-    assertTrue(
-        originalAmount.compareTo(reloaded.getQuantity().getNumericValue()) == 0,
-        "origin quantity must be unchanged when the self-link is rejected");
-    assertTrue(
-        reloaded.getExtraFields().stream().allMatch(ef -> ef.getLink() == null),
-        "no self-link field may be persisted on the origin");
-  }
-
-  // --- strict full-definition validation (DevDocs/adr/0007): one probe per review repro ---
-
   /** Posts the body, expects a 400, asserts the origin was left untouched, returns the response. */
   private MvcResult assertRejectedLeavingOriginUnchanged(ApiSubSample origin, String operationJson)
       throws Exception {
@@ -569,176 +443,8 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
     ApiSubSample reloaded = subSampleApiManager.getApiSubSampleById(origin.getId(), anyUser);
     assertTrue(
         before.compareTo(reloaded.getQuantity().getNumericValue()) == 0,
-        "origin must be unchanged when the request does not match its operation definition");
+        "origin must be unchanged when the request is rejected");
     return result;
-  }
-
-  /**
-   * The field paths named by a rejection's error messages ("path: message"). Unchecked so it can be
-   * used inside an assertion's message supplier.
-   */
-  private List<String> rejectedFields(MvcResult result) {
-    try {
-      return getErrorFromJsonResponseBody(result, ApiError.class).getErrors().stream()
-          .map(message -> message.substring(0, Math.max(message.indexOf(':'), 0)))
-          .toList();
-    } catch (Exception unreadableBody) {
-      throw new IllegalStateException("could not read the error response body", unreadableBody);
-    }
-  }
-
-  /** An Aliquot request body with the given extra fields on its new sample. */
-  private String aliquotJson(ApiSubSample origin, String sampleExtraFieldsJson) {
-    return "{\"operationType\":\"aliquot\",\"origins\":[{\"id\":"
-        + origin.getId()
-        + ",\"amountTaken\":{\"numericValue\":1,\"unitId\":"
-        + origin.getQuantity().getUnitId()
-        + "}}],\"newSample\":{\"name\":\"Aliquots\",\"extraFields\":["
-        + sampleExtraFieldsJson
-        + "],\"subSamples\":[{\"quantity\":{\"numericValue\":0.5,\"unitId\":"
-        + origin.getQuantity().getUnitId()
-        + "}}]}}";
-  }
-
-  @Test
-  public void rejectsOriginFieldOnAnOperationThatDeclaresNone() throws Exception {
-    // review repro F5a: only Destroy declares an origin field, so writing one to an Aliquot origin
-    // is content no definition describes
-    ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
-    String undeclaredOriginField =
-        "{\"name\":\"Disposed\",\"type\":\"text\",\"newFieldRequest\":true,"
-            + "\"operationFieldKey\":\"operations.destroy.disposedField\","
-            + "\"content\":\"2026-08-28\"}";
-    String operationJson =
-        "{\"operationType\":\"aliquot\",\"origins\":[{\"id\":"
-            + origin.getId()
-            + ",\"amountTaken\":{\"numericValue\":1,\"unitId\":"
-            + origin.getQuantity().getUnitId()
-            + "},\"extraFields\":["
-            + undeclaredOriginField
-            + "]}],\"newSample\":{\"name\":\"Aliquots\",\"extraFields\":["
-            + isPartOfLinkJson(origin.getGlobalId())
-            + "],\"subSamples\":[{\"quantity\":{\"numericValue\":0.5,\"unitId\":"
-            + origin.getQuantity().getUnitId()
-            + "}}]}}";
-    assertRejectedLeavingOriginUnchanged(origin, operationJson);
-  }
-
-  @Test
-  public void rejectsDestroyWithoutItsDeclaredDisposedField() throws Exception {
-    // review repro F5b: Destroy declares a disposed-date field on each origin; omitting it would
-    // empty the subsample with no record of the disposal
-    ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
-    String operationJson =
-        "{\"operationType\":\"destroy\",\"origins\":[{\"id\":"
-            + origin.getId()
-            + ",\"amountTaken\":{\"numericValue\":"
-            + origin.getQuantity().getNumericValue().toPlainString()
-            + ",\"unitId\":"
-            + origin.getQuantity().getUnitId()
-            + "}}]}";
-    assertRejectedLeavingOriginUnchanged(origin, operationJson);
-  }
-
-  @Test
-  public void rejectsPassageWithoutItsDeclaredPassageNumberField() throws Exception {
-    // review repro F5c: Passage declares a passage-number text field on the new sample
-    ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
-    String linkJson =
-        "{\"name\":\"Passaged from\",\"type\":\"link\",\"newFieldRequest\":true,"
-            + "\"operationFieldKey\":\"operations.passage.linkFieldName\","
-            + "\"link\":{\"relationType\":\"IsDerivedFrom\",\"targetGlobalId\":\""
-            + origin.getGlobalId()
-            + "\",\"versionPin\":null}}";
-    String operationJson =
-        "{\"operationType\":\"passage\",\"origins\":[{\"id\":"
-            + origin.getId()
-            + ",\"amountTaken\":{\"numericValue\":0,\"unitId\":"
-            + origin.getQuantity().getUnitId()
-            + "}}],\"newSample\":{\"name\":\"HeLa p3\",\"extraFields\":["
-            + linkJson
-            + "],\"subSamples\":[{\"quantity\":{\"numericValue\":0.5,\"unitId\":"
-            + origin.getQuantity().getUnitId()
-            + "}}]}}";
-    assertRejectedLeavingOriginUnchanged(origin, operationJson);
-  }
-
-  @Test
-  public void rejectsCryopreserveWithAStorageTemperatureRangeRatherThanOneValue() throws Exception {
-    // review repro F5d: one temperature input feeds both bounds, so a range describes a sample the
-    // operation cannot produce
-    ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
-    String linkJson =
-        "{\"name\":\"Frozen from\",\"type\":\"link\",\"newFieldRequest\":true,"
-            + "\"operationFieldKey\":\"operations.cryopreserve.linkFieldName\","
-            + "\"link\":{\"relationType\":\"IsDerivedFrom\",\"targetGlobalId\":\""
-            + origin.getGlobalId()
-            + "\",\"versionPin\":null}}";
-    String cryomediumJson =
-        "{\"name\":\"Cryomedium\",\"type\":\"text\",\"newFieldRequest\":true,"
-            + "\"operationFieldKey\":\"operations.cryopreserve.cryomediumField\","
-            + "\"content\":\"10% DMSO\"}";
-    String operationJson =
-        "{\"operationType\":\"cryopreserve\",\"origins\":[{\"id\":"
-            + origin.getId()
-            + ",\"amountTaken\":{\"numericValue\":1,\"unitId\":"
-            + origin.getQuantity().getUnitId()
-            + "}}],\"newSample\":{\"name\":\"Frozen cells\","
-            + "\"storageTempMin\":{\"numericValue\":-80,\"unitId\":"
-            + RSUnitDef.CELSIUS.getId()
-            + "},\"storageTempMax\":{\"numericValue\":-20,\"unitId\":"
-            + RSUnitDef.CELSIUS.getId()
-            + "},\"extraFields\":["
-            + linkJson
-            + ","
-            + cryomediumJson
-            + "],\"subSamples\":[{\"quantity\":{\"numericValue\":1,\"unitId\":"
-            + origin.getQuantity().getUnitId()
-            + "}}]}}";
-    assertRejectedLeavingOriginUnchanged(origin, operationJson);
-  }
-
-  @Test
-  public void rejectsSharingSmuggledOntoTheNewSample() throws Exception {
-    // review repro F5e: no operation definition declares sharing, so the endpoint must not be a
-    // back door into it
-    ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
-    String operationJson =
-        aliquotJson(origin, isPartOfLinkJson(origin.getGlobalId()))
-            .replace(
-                "\"newSample\":{\"name\":\"Aliquots\"",
-                "\"newSample\":{\"sharingMode\":\"WHITELIST\",\"name\":\"Aliquots\"");
-    assertRejectedLeavingOriginUnchanged(origin, operationJson);
-  }
-
-  @Test
-  public void rejectsSubSamplePlacementSmuggledOntoTheNewSample() throws Exception {
-    // review repro F5f: the created subsamples go to the workbench; placement is not part of any
-    // operation definition
-    ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
-    String operationJson =
-        "{\"operationType\":\"aliquot\",\"origins\":[{\"id\":"
-            + origin.getId()
-            + ",\"amountTaken\":{\"numericValue\":1,\"unitId\":"
-            + origin.getQuantity().getUnitId()
-            + "}}],\"newSample\":{\"name\":\"Aliquots\",\"extraFields\":["
-            + isPartOfLinkJson(origin.getGlobalId())
-            + "],\"subSamples\":[{\"quantity\":{\"numericValue\":0.5,\"unitId\":"
-            + origin.getQuantity().getUnitId()
-            + "},\"parentLocation\":{\"id\":1}}]}}";
-    assertRejectedLeavingOriginUnchanged(origin, operationJson);
-  }
-
-  @Test
-  public void rejectsAnExtraFieldWithNoDefinitionKey() throws Exception {
-    // Fields are matched by key, not by name: a field the wizard never built carries no key the
-    // definition declares, so it cannot be smuggled in under a plausible display name.
-    ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
-    String unkeyedField =
-        "{\"name\":\"Derived from\",\"type\":\"text\",\"newFieldRequest\":true,"
-            + "\"content\":\"anything\"}";
-    assertRejectedLeavingOriginUnchanged(
-        origin, aliquotJson(origin, isPartOfLinkJson(origin.getGlobalId()) + "," + unkeyedField));
   }
 
   private ApiExtraField findLinkField(List<ApiExtraField> extraFields) {
@@ -791,19 +497,16 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
     // Destroy must take the origin's entire quantity, so only the first of these to commit can
     // still match it; every other request should lose cleanly (400/409), never 500.
     ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
-    String disposedField =
-        "{\"name\":\"Disposed\",\"type\":\"text\",\"newFieldRequest\":true,"
-            + "\"operationFieldKey\":\"operations.destroy.disposedField\",\"content\":\"2026-09-03\"}";
     String operationJson =
-        "{\"operationType\":\"destroy\",\"origins\":[{\"id\":"
-            + origin.getId()
-            + ",\"amountTaken\":{\"numericValue\":"
-            + origin.getQuantity().getNumericValue().toPlainString()
-            + ",\"unitId\":"
-            + origin.getQuantity().getUnitId()
-            + "},\"extraFields\":["
-            + disposedField
-            + "]}]}";
+        body(
+            "destroy",
+            originJson(
+                origin,
+                "all",
+                quantityJson(
+                    origin.getQuantity().getNumericValue().toPlainString(),
+                    origin.getQuantity().getUnitId())),
+            "");
 
     int samplesBefore = sampleCount();
     List<Integer> statuses = fireConcurrentOperationRequests(operationJson, 5);
@@ -853,15 +556,10 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
 
     int unitId = origin.getQuantity().getUnitId();
     String operationJson =
-        "{\"operationType\":\"aliquot\",\"origins\":[{\"id\":"
-            + origin.getId()
-            + ",\"amountMode\":\"all\",\"amountTaken\":"
-            + quantityJson(amountTheWizardSaw.toPlainString(), unitId)
-            + "}],\"newSample\":{\"name\":\"Aliquots\",\"extraFields\":["
-            + isPartOfLinkJson(origin.getGlobalId())
-            + "],\"subSamples\":[{\"quantity\":"
-            + quantityJson("0.5", unitId)
-            + "}]}}";
+        body(
+            "aliquot",
+            originJson(origin, "all", quantityJson(amountTheWizardSaw.toPlainString(), unitId)),
+            creatingInputs("Aliquots", 1, quantityJson("0.5", unitId)));
 
     mockMvc
         .perform(createBuilderForPostWithJSONBody(apiKey, "/operations", anyUser, operationJson))
@@ -882,7 +580,7 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
     // the origin runs out; the race is only over which of them commits first, so none may 500.
     ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
     java.math.BigDecimal originalAmount = origin.getQuantity().getNumericValue();
-    String operationJson = aliquotJson(origin, isPartOfLinkJson(origin.getGlobalId()));
+    String operationJson = aliquotJson(origin);
 
     int samplesBefore = sampleCount();
     List<Integer> statuses = fireConcurrentOperationRequests(operationJson, 5);
@@ -923,7 +621,7 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
     // flush and cannot see that; SubSampleApiManagerImplUsageVersionTest only models it (third
     // Codex review, PR #1090).
     ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
-    String operationJson = aliquotJson(origin, isPartOfLinkJson(origin.getGlobalId()));
+    String operationJson = aliquotJson(origin);
 
     List<Integer> statuses = fireConcurrentOperationRequests(operationJson, 5);
 
@@ -970,26 +668,6 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
   // --- code review (2026-09-03) reproductions: each is a field-scoped 400 leaving the origin
   // untouched, where it used to be a 422 or a 201 with wrong data ---
 
-  /** An Aliquot request body with explicit amount-taken and single-child JSON. */
-  private String aliquotJsonWith(
-      ApiSubSample origin, String amountTakenJson, String subSampleJson, String newSampleExtras) {
-    return "{\"operationType\":\"aliquot\",\"origins\":[{\"id\":"
-        + origin.getId()
-        + ",\"amountTaken\":"
-        + amountTakenJson
-        + "}],\"newSample\":{\"name\":\"Aliquots\","
-        + newSampleExtras
-        + "\"extraFields\":["
-        + isPartOfLinkJson(origin.getGlobalId())
-        + "],\"subSamples\":["
-        + subSampleJson
-        + "]}}";
-  }
-
-  private static String quantityJson(String value, int unitId) {
-    return "{\"numericValue\":" + value + ",\"unitId\":" + unitId + "}";
-  }
-
   @Test
   public void rejectsAmountTakenInAUnitThatDoesNotExist() throws Exception {
     // review repro f4-unknown: used to reach QuantityUtils.sum and surface as a 422
@@ -997,11 +675,7 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
     int unitId = origin.getQuantity().getUnitId();
     assertRejectedLeavingOriginUnchanged(
         origin,
-        aliquotJsonWith(
-            origin,
-            quantityJson("1", 999999),
-            "{\"quantity\":" + quantityJson("0.5", unitId) + "}",
-            ""));
+        aliquotJsonWith(origin, quantityJson("1", 999999), quantityJson("0.5", unitId), ""));
   }
 
   @Test
@@ -1014,7 +688,7 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
         aliquotJsonWith(
             origin,
             quantityJson("1", RSUnitDef.MILLI_LITRE.getId()),
-            "{\"quantity\":" + quantityJson("0.5", unitId) + "}",
+            quantityJson("0.5", unitId),
             ""));
   }
 
@@ -1028,14 +702,13 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
         aliquotJsonWith(
             origin,
             quantityJson("1", unitId),
-            "{\"quantity\":" + quantityJson("0.5", RSUnitDef.MILLI_LITRE.getId()) + "}",
+            quantityJson("0.5", RSUnitDef.MILLI_LITRE.getId()),
             ""));
   }
 
   @Test
   public void rejectsANewSubSampleOutsideTheChosenTemplatesCategory() throws Exception {
-    // review repro f5-template: gram children under a volume template used to be created when a
-    // comparable top-level quantity was sent as a decoy
+    // review repro f5-template: gram children under a volume template used to be created
     ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
     int unitId = origin.getQuantity().getUnitId();
     ApiSampleTemplatePost templatePost = new ApiSampleTemplatePost();
@@ -1053,26 +726,22 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
         aliquotJsonWith(
             origin,
             quantityJson("1", unitId),
-            "{\"quantity\":" + quantityJson("0.5", unitId) + "}",
-            "\"templateId\":"
-                + template.getId()
-                + ",\"quantity\":"
-                + quantityJson("0.5", RSUnitDef.MILLI_LITRE.getId())
-                + ","));
+            quantityJson("0.5", unitId),
+            ",\"templateId\":" + template.getId()));
   }
 
   @Test
   public void rejectsADocumentationLinkToAnInventoryRecord() throws Exception {
     // review repro f6: IsDocumentedBy pointing at the origin subsample itself used to be stored
     ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
-    String documentation =
-        "{\"name\":\"Documented by\",\"type\":\"link\",\"newFieldRequest\":true,"
-            + "\"operationFieldKey\":\"operations.documentationLink\","
-            + "\"link\":{\"relationType\":\"IsDocumentedBy\",\"targetGlobalId\":\""
-            + origin.getGlobalId()
-            + "\",\"versionPin\":null}}";
+    int unitId = origin.getQuantity().getUnitId();
     assertRejectedLeavingOriginUnchanged(
-        origin, aliquotJson(origin, isPartOfLinkJson(origin.getGlobalId()) + "," + documentation));
+        origin,
+        aliquotJsonWith(
+            origin,
+            quantityJson("1", unitId),
+            quantityJson("0.5", unitId),
+            ",\"documentedByGlobalId\":\"" + origin.getGlobalId() + "\""));
   }
 
   @Test
@@ -1082,77 +751,7 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
     int unitId = origin.getQuantity().getUnitId();
     assertRejectedLeavingOriginUnchanged(
         origin,
-        aliquotJsonWith(
-            origin,
-            quantityJson("1", unitId),
-            "{\"quantity\":" + quantityJson("0.0004", unitId) + "}",
-            ""));
-  }
-
-  @Test
-  public void rejectsANameAndIconSmuggledOntoANewSubSample() throws Exception {
-    // review repro f9: both used to be persisted on the created subsample
-    ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
-    int unitId = origin.getQuantity().getUnitId();
-    MvcResult rejection =
-        assertRejectedLeavingOriginUnchanged(
-            origin,
-            aliquotJsonWith(
-                origin,
-                quantityJson("1", unitId),
-                "{\"quantity\":"
-                    + quantityJson("0.5", unitId)
-                    + ",\"name\":\"Injected child name\",\"iconId\":424242}",
-                ""));
-    // both properties are reported, each against the child that carried it, so a client can see
-    // which field to drop rather than a single opaque "bad request"
-    assertTrue(
-        rejectedFields(rejection)
-            .containsAll(List.of("newSample.subSamples[0].name", "newSample.subSamples[0].iconId")),
-        () -> "expected both field paths, got " + rejectedFields(rejection));
-  }
-
-  @Test
-  public void rejectsAnIconSmuggledOntoTheNewSample() throws Exception {
-    // The child's icon is covered above; the sample's own icon is a separate property and no
-    // operation declares it either (code review, finding 9).
-    ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
-    int unitId = origin.getQuantity().getUnitId();
-    MvcResult rejection =
-        assertRejectedLeavingOriginUnchanged(
-            origin,
-            aliquotJsonWith(
-                origin,
-                quantityJson("1", unitId),
-                "{\"quantity\":" + quantityJson("0.5", unitId) + "}",
-                "\"iconId\":424242,"));
-    assertTrue(
-        rejectedFields(rejection).contains("newSample.iconId"),
-        () -> "expected newSample.iconId, got " + rejectedFields(rejection));
-  }
-
-  @Test
-  public void rejectsNullListElementsAsFieldScoped400() throws Exception {
-    // review repro f3: a JSON "[null]" element reached the delegated samples validator and NPEd,
-    // surfacing as a 500. Each must now be a field-scoped 400 naming the list it came from.
-    ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
-    int unitId = origin.getQuantity().getUnitId();
-    String child = "{\"quantity\":" + quantityJson("0.5", unitId) + "}";
-    List<String> bodiesWithANullElement =
-        List.of(
-            aliquotJsonWith(origin, quantityJson("1", unitId), child, "\"tags\":[null],"),
-            aliquotJson(origin, isPartOfLinkJson(origin.getGlobalId()) + ",null"),
-            aliquotJsonWith(origin, quantityJson("1", unitId), "null", ""));
-    for (String body : bodiesWithANullElement) {
-      MvcResult rejection = assertRejectedLeavingOriginUnchanged(origin, body);
-      assertTrue(
-          rejectedFields(rejection).stream().allMatch(field -> field.startsWith("newSample.")),
-          () ->
-              "expected newSample-scoped errors for "
-                  + body
-                  + ", got "
-                  + rejectedFields(rejection));
-    }
+        aliquotJsonWith(origin, quantityJson("1", unitId), quantityJson("0.0004", unitId), ""));
   }
 
   @Test
@@ -1170,7 +769,7 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
                 aliquotJsonWith(
                     origin,
                     quantityJson("1000", RSUnitDef.MILLI_GRAM.getId()),
-                    "{\"quantity\":" + quantityJson("0.5", unitId) + "}",
+                    quantityJson("0.5", unitId),
                     "")))
         .andExpect(status().isCreated());
 
@@ -1183,38 +782,6 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
                 .compareTo(reloaded.getQuantity().getNumericValue())
             == 0,
         () -> "origin should be reduced by 1 g, got " + reloaded.getQuantity().getNumericValue());
-  }
-
-  @Test
-  public void derivesTheCreatedSampleTotalFromItsChildrenNotTheTopLevelQuantity() throws Exception {
-    // The server ignores newSample.quantity when children are posted and sums them instead, which
-    // is why the template check had to reach the children rather than trusting a comparable
-    // top-level value (code review, finding 5). Pinning it here keeps that reasoning testable.
-    ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
-    int unitId = origin.getQuantity().getUnitId();
-    String child = "{\"quantity\":" + quantityJson("0.5", unitId) + "}";
-    MvcResult result =
-        mockMvc
-            .perform(
-                createBuilderForPostWithJSONBody(
-                    apiKey,
-                    "/operations",
-                    anyUser,
-                    aliquotJsonWith(
-                        origin,
-                        quantityJson("1", unitId),
-                        child + "," + child,
-                        "\"quantity\":" + quantityJson("99", unitId) + ",")))
-            .andExpect(status().isCreated())
-            .andReturn();
-
-    ApiSampleWithFullSubSamples created =
-        getFromJsonResponseBody(result, ApiSampleWithFullSubSamples.class);
-    assertEquals(2, created.getSubSamples().size());
-    assertTrue(
-        new java.math.BigDecimal("1").compareTo(created.getQuantity().getNumericValue()) == 0,
-        () -> "expected the two 0.5 children to total 1, got " + created.getQuantity());
-    assertEquals(unitId, created.getQuantity().getUnitId());
   }
 
   @Test
@@ -1252,27 +819,6 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
       assertQuantityIs(c, 5 - bcWon, statuses);
       assertQuantityIs(b, 5 - baWon - bcWon, statuses);
     }
-  }
-
-  /** A Pool request over exactly two origins, taking 1 g from each. */
-  private String poolJson(String name, ApiSubSample first, ApiSubSample second) {
-    return "{\"operationType\":\"pool\",\"origins\":[{\"id\":"
-        + first.getId()
-        + ",\"amountTaken\":"
-        + quantityJson("1", RSUnitDef.GRAM.getId())
-        + "},{\"id\":"
-        + second.getId()
-        + ",\"amountTaken\":"
-        + quantityJson("1", RSUnitDef.GRAM.getId())
-        + "}],\"newSample\":{\"name\":\""
-        + name
-        + "\",\"extraFields\":["
-        + hasPartLinkJson(first.getGlobalId())
-        + ","
-        + hasPartLinkJson(second.getGlobalId())
-        + "],\"subSamples\":[{\"quantity\":"
-        + quantityJson("2", RSUnitDef.GRAM.getId())
-        + "}]}}";
   }
 
   private void assertQuantityIs(ApiSubSample origin, int expected, List<Integer> statuses)
@@ -1364,21 +910,6 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
             .andExpect(status().isCreated())
             .andReturn();
     return getFromJsonResponseBody(result, ApiSampleWithFullSubSamples.class);
-  }
-
-  /** An Aliquot taking the given amount, in the origin's own unit, into one child of the same. */
-  private String aliquotTakingJson(ApiSubSample origin, String amount) {
-    return "{\"operationType\":\"aliquot\",\"origins\":[{\"id\":"
-        + origin.getId()
-        + ",\"amountTaken\":"
-        + quantityJson(amount, origin.getQuantity().getUnitId())
-        + "}],\"newSample\":{\"name\":\"Aliquot of "
-        + origin.getGlobalId()
-        + "\",\"extraFields\":["
-        + isPartOfLinkJson(origin.getGlobalId())
-        + "],\"subSamples\":[{\"quantity\":"
-        + quantityJson(amount, origin.getQuantity().getUnitId())
-        + "}]}}";
   }
 
   /** How many samples the test user can see; the outputs a race actually created. */

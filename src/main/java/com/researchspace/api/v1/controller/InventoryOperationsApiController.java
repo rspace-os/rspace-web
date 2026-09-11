@@ -24,9 +24,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 /**
  * Thin coordinator endpoint for configured Inventory operations. Validates the request's structure,
- * then delegates to the transactional {@link InventoryOperationManager}, which enforces the
- * live-state rules inside its own transaction and performs the whole effect atomically. No
- * per-operation logic lives here (see DevDocs/adr/0007).
+ * then delegates to the transactional {@link InventoryOperationManager}, which validates the inputs
+ * against the definition, builds the sample, enforces the live-state rules inside its own
+ * transaction and performs the whole effect atomically. No per-operation logic lives here (see
+ * DevDocs/adr/0007).
  */
 @ApiController
 public class InventoryOperationsApiController extends BaseApiInventoryController
@@ -53,27 +54,19 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
       throws BindException {
     inputValidator.validate(request, operationPostValidator, errors);
     throwBindExceptionIfErrors(errors);
-    if (request.getInputs() != null) {
-      // The server-built shape (M3): the manager validates the inputs against the definition,
-      // builds the sample, and runs the same core. The template check below runs on what it built.
-      return inventoryOperationManager.performOperation(
-          request.getOperationType(),
-          request.getOrigins(),
-          typedInputs(request),
-          request.getTemplateId(),
-          request.getDocumentedByGlobalId(),
-          user,
-          built -> validateTemplateConformance(built, user));
-    }
-    // The live-state rules (origin currently holds something, amountTaken within it, emptying
-    // operations take exactly what it holds) are enforced by the manager INSIDE the operation's
-    // transaction, so they hold against the state the mutation sees; the template-conformance check
-    // below is handed in and run there too, before any origin is read, so the template the sample
-    // is created from is the one this request was validated against (Copilot review, PR #1090).
-    // Either violation propagates as the same field-scoped 400 BindException the structural checks
-    // above produce.
+    // The manager validates the inputs, builds the sample and runs the transactional core. The
+    // template-conformance check below is handed in and run there too, on what it built and before
+    // any origin is read, so the template the sample is created from is the one this request was
+    // validated against (Copilot review, PR #1090). Either kind of rejection propagates as the same
+    // field-scoped 400 BindException the structural checks above produce.
     return inventoryOperationManager.performOperation(
-        request, user, () -> validateTemplateConformance(request, user));
+        request.getOperationType(),
+        request.getOrigins(),
+        typedInputs(request),
+        request.getTemplateId(),
+        request.getDocumentedByGlobalId(),
+        user,
+        built -> validateTemplateConformance(built, user));
   }
 
   /**
@@ -82,12 +75,15 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
    * rejects a Map as the wrong type, so each declared quantity or temperature that arrived as a
    * well-formed object is converted first. Anything else is left as bound for the validator to
    * judge. (Probed: a JSON number binds as Integer, Long or Double; convertValue turns a Double 0.6
-   * into the BigDecimal 0.6.)
+   * into the BigDecimal 0.6.) Absent inputs are an empty map: Destroy declares none.
    */
   private Map<String, Object> typedInputs(ApiInventoryOperationPost request) {
     InventoryOperationConfig definition =
         operationConfigs.get(request.getOperationType()).orElseThrow();
-    Map<String, Object> typed = new LinkedHashMap<>(request.getInputs());
+    Map<String, Object> typed = new LinkedHashMap<>();
+    if (request.getInputs() != null) {
+      typed.putAll(request.getInputs());
+    }
     for (InventoryOperationConfig.Input input : definition.inputs()) {
       boolean quantityTyped = "quantity".equals(input.type()) || "temperature".equals(input.type());
       if (quantityTyped
@@ -102,19 +98,19 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
 
   /**
    * Template conformance, mirroring POST /samples (SamplesApiController.validateCreateSampleInput):
-   * a template-based new sample must reference a readable template, and its fields and quantity
-   * unit must match that template, so a mismatched field list is a clean 400 instead of a 500
-   * inside the manager transaction. Runs inside the manager's transaction (as its {@code
-   * InTransactionValidation}), so the template it validates is the same one the sample creation
-   * reads.
+   * a template-based sample must reference a readable template, and its fields and quantity unit
+   * must match that template, so a mismatch is a clean 400 instead of a 500 inside the manager
+   * transaction. Runs inside the manager's transaction on the request the server built (as its
+   * {@code BuiltRequestValidation}), so the template it validates is the same one the sample
+   * creation reads.
    */
-  private void validateTemplateConformance(ApiInventoryOperationPost request, User user)
+  private void validateTemplateConformance(ApiInventoryOperationPost built, User user)
       throws BindException {
-    if (request.getNewSample() == null) {
+    if (built.getNewSample() == null) {
       return;
     }
-    BindingResult errors = new BeanPropertyBindingResult(request, "apiInventoryOperationPost");
-    ApiSampleWithFullSubSamples newSample = request.getNewSample();
+    BindingResult errors = new BeanPropertyBindingResult(built, "apiInventoryOperationPost");
+    ApiSampleWithFullSubSamples newSample = built.getNewSample();
     SampleTemplate template = null;
     if (newSample.getTemplateId() != null) {
       try {

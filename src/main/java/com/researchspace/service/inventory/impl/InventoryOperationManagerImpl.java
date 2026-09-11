@@ -35,7 +35,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.stream.Stream;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
@@ -71,15 +70,15 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
         operationConfigs
             .get(operationKey)
             .orElseThrow(() -> new IllegalArgumentException("unknown operation " + operationKey));
-    // M2 first: an input that fails its declared rule is a 400 before any origin is read. The
-    // errors name the bare input key (M0: a typed facade's field IS the key).
+    // Inputs first: one that fails its declared rule is a 400 before any origin is read. The errors
+    // name the bare input key (M0: a typed facade's field IS the key).
     MapBindingResult inputErrors = new MapBindingResult(inputs, "apiInventoryOperationPost");
     InventoryOperationInputValidator.validate(definition, inputs, inputErrors);
     if (inputErrors.hasErrors()) {
       throw new BindException(inputErrors);
     }
 
-    // M1 next: the builder needs each origin's name (link field names), global id (link targets)
+    // Then the builder, which needs each origin's name (link field names), global id (link targets)
     // and its parent's fields (the Passage counter). Read with the same edit assertion the core
     // repeats under lock; nothing here is what the compare-and-swap protects.
     List<InventoryOperationRequestBuilder.Origin> builderOrigins = new ArrayList<>();
@@ -135,16 +134,6 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
       built.getOrigins().get(i).setAmountMode(origins.get(i).getAmountMode());
       built.getOrigins().get(i).setAmountTaken(origins.get(i).getAmountTaken());
     }
-    // Every generated field's definition key is verified by construction: the server just built it
-    // from the definition. The single persistence gate (ApiExtraFieldsHelper) drops an unverified
-    // key silently, and the template merge in SampleApiManagerImpl skips unverified fields, so the
-    // flag the client-assembled path's validator sets is set here instead. M5 removes the flag.
-    Stream.concat(
-            built.getOrigins().stream().flatMap(origin -> origin.getExtraFields().stream()),
-            built.getNewSample() == null
-                ? Stream.empty()
-                : built.getNewSample().getExtraFields().stream())
-        .forEach(field -> field.setOperationFieldKeyVerified(true));
     return performOperation(built, user, () -> callerValidation.validate(built));
   }
 
@@ -198,7 +187,8 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
     // registerApiSubSampleUsage subtracts (unit-aware) and clamps at zero, so an operation can only
     // ever decrease the origin, never increase it. Any custom fields the operation adds to the
     // origin itself (Destroy's disposed date) are applied through the ordinary subsample-edit path,
-    // each marked newFieldRequest by the frontend. Coordinated inside this manager so it joins the
+    // each marked newFieldRequest by the request builder. Coordinated inside this manager so it
+    // joins the
     // one transaction with the sample creation. See DevDocs/adr/0007.
     for (ApiInventoryOperationOriginUpdate origin : originsById) {
       subSampleApiMgr.registerApiSubSampleUsage(

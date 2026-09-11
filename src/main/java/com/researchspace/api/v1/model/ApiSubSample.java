@@ -1,8 +1,6 @@
 /** RSpace Inventory API Access your RSpace Inventory programmatically. */
 package com.researchspace.api.v1.model;
 
-import com.fasterxml.jackson.annotation.JsonAnySetter;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.researchspace.model.User;
@@ -58,32 +56,7 @@ import lombok.ToString;
   "notes",
   "_links"
 })
-public class ApiSubSample extends ApiSubSampleInfoWithSampleInfo
-    implements UnknownPropertyCapturing {
-
-  /**
-   * Names of request properties this object does not declare; see {@link UnknownPropertyCapturing}.
-   * Declared here rather than on a shared base class: an any-setter suppresses Jackson's
-   * registration of ignorable property names for the whole class, so putting one on
-   * IdentifiableNameableApiObject applied that side effect to every API DTO beneath it (parallel
-   * review). Only the DTOs the operations payload actually contains capture.
-   */
-  @JsonIgnore @EqualsAndHashCode.Exclude @ToString.Exclude
-  private final List<String> unknownProperties = new ArrayList<>();
-
-  /**
-   * Records an unrecognised property's NAME and discards its value.
-   *
-   * <p>The value parameter is {@code Void}, not {@code Object}, deliberately. An any-setter's value
-   * IS deserialized before the method body runs, so {@code Object} would build a
-   * LinkedHashMap/ArrayList graph for the whole unknown subtree only to drop it, turning a body of
-   * junk keys into heap amplification. {@code Void} routes Jackson to NullifyingDeserializer, which
-   * skips the subtree exactly as unknown-property handling did before (parallel review).
-   */
-  @JsonAnySetter
-  private void captureUnknownProperty(String name, Void ignoredValue) {
-    UnknownPropertyCapturing.capture(unknownProperties, name);
-  }
+public class ApiSubSample extends ApiSubSampleInfoWithSampleInfo {
 
   // Null list elements ("extraFields": [null]) would 500 in the apply loops; element-level
   // @NotNull turns each into a clean 400 at binding (security review, finding 6).
