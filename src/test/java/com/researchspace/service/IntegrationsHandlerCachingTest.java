@@ -5,11 +5,10 @@ import static com.researchspace.service.IntegrationsHandler.FIELDMARK_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.FIELDMARK_USER_TOKEN;
 import static com.researchspace.service.IntegrationsHandler.PROTOCOLS_IO_APP_NAME;
 import static com.researchspace.service.impl.IntegrationsHandlerImpl.MASKED_TOKEN;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 import com.researchspace.model.User;
 import com.researchspace.model.dto.IntegrationInfo;
@@ -54,15 +53,15 @@ public class IntegrationsHandlerCachingTest extends SpringTransactionalTest {
     IntegrationInfo infoUser2 = integrationsHandler.getIntegration(user2, dropboxPreference.name());
 
     // is cached for 2nd get, keyed by user
-    assertThat(cachedInfoUser1, sameInstance(infoUser1));
-    assertThat(cachedInfoUser1, not(sameInstance(infoUser2)));
+    assertSame(infoUser1, cachedInfoUser1);
+    assertNotSame(infoUser2, cachedInfoUser1);
     // update refreshes cache
     IntegrationInfo newInfoUser1 =
         createNewInfoWithDifferentProperties(dropboxPreference.name(), infoUser1);
     integrationsHandler.updateIntegrationInfo(user1, newInfoUser1);
     IntegrationInfo reloadedNewInfoUser1 =
         integrationsHandler.getIntegration(user1, dropboxPreference.name());
-    assertThat(cachedInfoUser1, not(sameInstance(reloadedNewInfoUser1)));
+    assertNotSame(reloadedNewInfoUser1, cachedInfoUser1);
     assertEquals(reloadedNewInfoUser1, newInfoUser1);
 
     assertThatUpdatingAvailabilityTriggersCacheRefresh(
@@ -90,13 +89,13 @@ public class IntegrationsHandlerCachingTest extends SpringTransactionalTest {
     userMgr.setPreference(pref1, Boolean.FALSE.toString(), user1.getUsername());
     reloadedUser1Info1 = integrationsHandler.getIntegration(user1, pref1.name());
 
-    assertThat(user1Info1, not(sameInstance(reloadedUser1Info1)));
+    assertNotSame(reloadedUser1Info1, user1Info1);
     // but other pref for same user is cached OK
     reloadedUser1Info2 = integrationsHandler.getIntegration(user1, pref2.name());
-    assertThat(user1Info2, sameInstance(reloadedUser1Info2));
+    assertSame(reloadedUser1Info2, user1Info2);
     // but other user pref still cached OK:
     reloadedUser2Info1 = integrationsHandler.getIntegration(user2, pref1.name());
-    assertThat(reloadedUser2Info1, sameInstance(user2Info1));
+    assertSame(user2Info1, reloadedUser2Info1);
   }
 
   // now, we login as sysadmin and alter the availability, via 3 save methods,
@@ -112,17 +111,17 @@ public class IntegrationsHandlerCachingTest extends SpringTransactionalTest {
         user); // doesn't matter if value is different; just saving will trigger cache invalidation
     IntegrationInfo dropboxAvailableReloaded =
         integrationsHandler.getIntegration(user, propertyToUpdate);
-    assertThat(dropboxAvailableReloaded, not(sameInstance(reloaded)));
+    assertNotSame(reloaded, dropboxAvailableReloaded);
     // save by object
     sysPropMger.save(dropboxAvailable, user);
     IntegrationInfo dropboxAvailableReloaded2 =
         integrationsHandler.getIntegration(user, propertyToUpdate);
-    assertThat(dropboxAvailableReloaded2, not(sameInstance(dropboxAvailableReloaded)));
+    assertNotSame(dropboxAvailableReloaded, dropboxAvailableReloaded2);
     // save by id
     sysPropMger.save(dropboxAvailable.getId(), dropboxAvailable.getValue(), user);
     IntegrationInfo dropboxAvailableReloaded3 =
         integrationsHandler.getIntegration(user, propertyToUpdate);
-    assertThat(dropboxAvailableReloaded3, not(sameInstance(dropboxAvailableReloaded2)));
+    assertNotSame(dropboxAvailableReloaded2, dropboxAvailableReloaded3);
 
     // now let's update a child property; should refresh all properties
     SystemPropertyValue dropboxLinking =
@@ -130,7 +129,7 @@ public class IntegrationsHandlerCachingTest extends SpringTransactionalTest {
     sysPropMger.save(dropboxLinking, user);
     IntegrationInfo dropboxAvailableReloaded4 =
         integrationsHandler.getIntegration(user, propertyToUpdate);
-    assertThat(dropboxAvailableReloaded4, not(sameInstance(dropboxAvailableReloaded3)));
+    assertNotSame(dropboxAvailableReloaded3, dropboxAvailableReloaded4);
   }
 
   private IntegrationInfo createNewInfoWithDifferentProperties(
@@ -155,7 +154,7 @@ public class IntegrationsHandlerCachingTest extends SpringTransactionalTest {
     // this will cache the info
     IntegrationInfo info = integrationsHandler.getIntegration(anyUser, PROTOCOLS_IO_APP_NAME);
     IntegrationInfo infoCached = integrationsHandler.getIntegration(anyUser, PROTOCOLS_IO_APP_NAME);
-    assertThat(info, sameInstance(infoCached));
+    assertSame(infoCached, info);
     assertEquals(
         getAccessTokenFromIntegrationInfo(info), getAccessTokenFromIntegrationInfo(infoCached));
 
@@ -167,13 +166,13 @@ public class IntegrationsHandlerCachingTest extends SpringTransactionalTest {
         integrationsHandler.getIntegration(anyUser, PROTOCOLS_IO_APP_NAME);
     assertEquals("newToken", getAccessTokenFromIntegrationInfo(reloaded));
     // sanity check that it is now being cached again
-    assertThat(reloaded, sameInstance(reloadedCached));
+    assertSame(reloadedCached, reloaded);
 
     // now we remove the UserConnection, should evict cache
     userConn.deleteByUserAndProvider(anyUser.getUsername(), PROTOCOLS_IO_APP_NAME);
     IntegrationInfo reloaded2 = integrationsHandler.getIntegration(anyUser, PROTOCOLS_IO_APP_NAME);
     // ... and is now picking up  no UserConnection
-    assertThat(reloaded2, not(sameInstance(reloaded)));
+    assertNotSame(reloaded, reloaded2);
     assertNull(getAccessTokenFromIntegrationInfo(reloaded2));
   }
 
@@ -189,7 +188,7 @@ public class IntegrationsHandlerCachingTest extends SpringTransactionalTest {
     // this will cache the info
     IntegrationInfo info = integrationsHandler.getIntegration(anyUser, FIELDMARK_APP_NAME);
     IntegrationInfo infoCached = integrationsHandler.getIntegration(anyUser, FIELDMARK_APP_NAME);
-    assertThat(info, sameInstance(infoCached));
+    assertSame(infoCached, info);
     assertEquals(
         getAccessTokenFromIntegrationInfo(info), getAccessTokenFromIntegrationInfo(infoCached));
 
@@ -201,13 +200,13 @@ public class IntegrationsHandlerCachingTest extends SpringTransactionalTest {
         integrationsHandler.getIntegration(anyUser, FIELDMARK_APP_NAME);
     assertEquals(MASKED_TOKEN, reloaded.getOptions().get(FIELDMARK_USER_TOKEN));
     // sanity check that it is now being cached again
-    assertThat(reloaded, sameInstance(reloadedCached));
+    assertSame(reloadedCached, reloaded);
 
     // now we remove the UserConnection, should evict cache
     userConn.deleteByUserAndProvider(anyUser.getUsername(), FIELDMARK_APP_NAME);
     IntegrationInfo reloaded2 = integrationsHandler.getIntegration(anyUser, FIELDMARK_APP_NAME);
     // ... and is now picking up  no UserConnection
-    assertThat(reloaded2, not(sameInstance(reloaded)));
+    assertNotSame(reloaded, reloaded2);
     assertNull(reloaded2.getOptions().get(FIELDMARK_USER_TOKEN));
   }
 

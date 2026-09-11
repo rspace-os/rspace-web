@@ -20,7 +20,8 @@ public class MoveAuditEventTest {
   @Test
   public void testGetAuditActionThrowsIAEIfMapNUll() {
     AuditTrailTestObject target = new AuditTrailTestObject();
-    assertThrows(IllegalArgumentException.class, () -> new MoveAuditEvent(user, null, null, target));
+    assertThrows(
+        IllegalArgumentException.class, () -> new MoveAuditEvent(user, null, null, target));
   }
 
   @Test

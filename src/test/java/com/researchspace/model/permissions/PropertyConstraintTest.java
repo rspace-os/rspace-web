@@ -110,20 +110,17 @@ public class PropertyConstraintTest {
 
   @Test
   public void testPropertyConstraintInvalidCharactersThrowsIAE() {
-    assertThrows(
-        IllegalArgumentException.class, () -> new PropertyConstraintTSS("any", "dsds_"));
+    assertThrows(IllegalArgumentException.class, () -> new PropertyConstraintTSS("any", "dsds_"));
   }
 
   @Test
   public void testPropertyConstraintInvalidCharactersThrowsIAE2() {
-    assertThrows(
-        IllegalArgumentException.class, () -> new PropertyConstraintTSS("any", "ds:ds"));
+    assertThrows(IllegalArgumentException.class, () -> new PropertyConstraintTSS("any", "ds:ds"));
   }
 
   @Test
   public void testPropertyConstraintInvalidCharactersThrowsIAE3() {
-    assertThrows(
-        IllegalArgumentException.class, () -> new PropertyConstraintTSS("any", "ds=ds"));
+    assertThrows(IllegalArgumentException.class, () -> new PropertyConstraintTSS("any", "ds=ds"));
   }
 
   PropertyConstraint create(String name, String value) {

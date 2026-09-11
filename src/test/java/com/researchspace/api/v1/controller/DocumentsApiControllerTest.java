@@ -386,12 +386,10 @@ public class DocumentsApiControllerTest extends SpringTransactionalTest {
     var documentId = createdDoc.getId();
     var bindingResult = new BeanPropertyBindingResult(createdDoc, "doc");
 
-    assertThrows(BindException.class, () ->
-            documentsApi.createNewRevision(
-                documentId,
-                secondRevApidDoc,
-                bindingResult,
-                testUser));
+    assertThrows(
+        BindException.class,
+        () ->
+            documentsApi.createNewRevision(documentId, secondRevApidDoc, bindingResult, testUser));
   }
 
   @Test
@@ -745,13 +743,16 @@ public class DocumentsApiControllerTest extends SpringTransactionalTest {
     var documentId = basicDoc.getId();
     var deleteResponse = new MockHttpServletResponse();
 
-    assertThrows(NotFoundException.class, () ->
-            documentsApi.deleteDocumentById(documentId, other, deleteResponse));
+    assertThrows(
+        NotFoundException.class,
+        () -> documentsApi.deleteDocumentById(documentId, other, deleteResponse));
     logoutAndLoginAs(testUser);
     var notebookId = nb.getId();
     var notebookDeleteResponse = new MockHttpServletResponse();
 
-    assertThrows(NotFoundException.class, () -> documentsApi.deleteDocumentById(notebookId, testUser, notebookDeleteResponse));
+    assertThrows(
+        NotFoundException.class,
+        () -> documentsApi.deleteDocumentById(notebookId, testUser, notebookDeleteResponse));
   }
 
   @Test
@@ -785,6 +786,7 @@ public class DocumentsApiControllerTest extends SpringTransactionalTest {
     req.setSourceFolderId(source.getId());
     req.setTargetFolderId(source.getId());
 
-    assertThrows(RuntimeException.class, () -> documentsApi.moveDocuments(req, mockBindingResult, testUser));
+    assertThrows(
+        RuntimeException.class, () -> documentsApi.moveDocuments(req, mockBindingResult, testUser));
   }
 }

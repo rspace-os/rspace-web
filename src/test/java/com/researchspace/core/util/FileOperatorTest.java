@@ -1,7 +1,5 @@
 package com.researchspace.core.util;
 
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -51,7 +49,7 @@ public class FileOperatorTest {
             "a" + File.separator + "b" + File.separator + "c" + File.separator, anyFile, "xyz.pdf");
     String manualPath =
         (fileOps.getFoldOp().getBaseDir() + "/a/b/c/xyz.pdf").replaceAll("\\\\", "/");
-    assertThat(inserted.toString(), containsString(manualPath));
+    assertTrue(inserted.toString().contains(manualPath), inserted.toString());
   }
 
   private void createFileOperator() {

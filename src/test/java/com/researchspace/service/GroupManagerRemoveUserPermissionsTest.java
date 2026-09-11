@@ -1,15 +1,13 @@
 package com.researchspace.service;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
-import org.apache.shiro.authz.AuthorizationException;
-
 import static com.researchspace.testutils.TestGroup.LABADMIN_PREFIX;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.researchspace.model.Group;
 import com.researchspace.model.User;
 import com.researchspace.testutils.TestGroup;
+import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -142,7 +140,8 @@ public class GroupManagerRemoveUserPermissionsTest extends GroupPermissionsTestB
       throws Exception {
     String username = testgrp.getUserByPrefix(userPrefix).getUsername();
     Long groupId = testgrp.getGroup().getId();
-    assertThrows(AuthorizationException.class, () -> grpMgr.removeUserFromGroup(username, groupId, subject));
+    assertThrows(
+        AuthorizationException.class, () -> grpMgr.removeUserFromGroup(username, groupId, subject));
   }
 
   private void removeUser(TestGroup testgrp, String userPrefix, User subject) {

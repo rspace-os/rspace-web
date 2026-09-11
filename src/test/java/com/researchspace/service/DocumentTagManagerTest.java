@@ -1,7 +1,5 @@
 package com.researchspace.service;
 
-import org.apache.shiro.authz.AuthorizationException;
-
 import static com.researchspace.model.record.StructuredDocument.MAX_TAG_LENGTH;
 import static com.researchspace.service.DocumentTagManager.FINAL_DATA;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -33,6 +31,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

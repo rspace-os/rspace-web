@@ -7,8 +7,6 @@ import static com.researchspace.core.util.TransformerUtils.toSet;
 import static com.researchspace.model.record.BaseRecord.DEFAULT_VARCHAR_LENGTH;
 import static com.researchspace.testutils.RSpaceTestUtils.login;
 import static com.researchspace.testutils.RSpaceTestUtils.logoutCurrUserAndLoginAs;
-import static com.researchspace.testutils.matchers.TotalSearchResults.totalSearchResults;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -198,7 +196,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
     long totalRecordNumber = defPag + 4 + numb4InDB;
     ISearchResults<BaseRecord> res =
         recordMgr.listFolderRecords(root.getId(), DEFAULT_RECORD_PAGINATION);
-    assertThat(res, totalSearchResults((int) totalRecordNumber));
+    assertEquals((int) totalRecordNumber, res.getTotalHits().intValue());
 
     assertEquals(IPagination.DEFAULT_RESULTS_PERPAGE, res.getResults().size());
     assertEquals((res.getTotalHits().intValue() / defPag) + 1, res.getTotalPages().intValue());
@@ -233,7 +231,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
 
     ISearchResults<BaseRecord> res2 =
         recordMgr.listFolderRecords(root.getId(), pgCrit, foldersOnlyFilter);
-    assertThat(res2, totalSearchResults((int) (numFolders4InDB + numFolders)));
+    assertEquals((int) (numFolders4InDB + numFolders), res2.getTotalHits().intValue());
 
     ISearchResults<BaseRecord> res3 =
         recordMgr.listFolderRecords(root.getId(), pgCrit, recordsOnlyFilter);
@@ -466,11 +464,15 @@ public class RecordManagerTest extends SpringTransactionalTest {
     // other user can't use user's snippet
     Long snippetId = snippet.getId();
     Long otherFieldId = otherField.getId();
-    assertThrows(AuthorizationException.class, () -> recordMgr.copySnippetIntoField(snippetId, otherFieldId, otherUser));
+    assertThrows(
+        AuthorizationException.class,
+        () -> recordMgr.copySnippetIntoField(snippetId, otherFieldId, otherUser));
     // other user can't insert snippet into user's field
     Long otherSnippetId = otherSnippet.getId();
     Long fieldId = field.getId();
-    assertThrows(AuthorizationException.class, () -> recordMgr.copySnippetIntoField(otherSnippetId, fieldId, otherUser));
+    assertThrows(
+        AuthorizationException.class,
+        () -> recordMgr.copySnippetIntoField(otherSnippetId, fieldId, otherUser));
   }
 
   @Test // RSPAC-1126
@@ -1232,7 +1234,9 @@ public class RecordManagerTest extends SpringTransactionalTest {
     logoutCurrUserAndLoginAs(other.getUsername(), TESTPASSWD);
     // other user doesn't have permission to rename 'users' record
     Long recordId = doc.getId();
-    assertThrows(AuthorizationException.class, () -> recordMgr.renameRecord("newnameOTHER", recordId, other));
+    assertThrows(
+        AuthorizationException.class,
+        () -> recordMgr.renameRecord("newnameOTHER", recordId, other));
 
     // new names are abbreviated
     assertTrue(
@@ -1347,7 +1351,9 @@ public class RecordManagerTest extends SpringTransactionalTest {
     final User other = createAndSaveUserIfNotExists("OTHERU");
     logoutAndLoginAs(other);
     String otherUsername = other.getUsername();
-    assertThrows(AuthorizationException.class, () -> recordMgr.saveStructuredDocument(docId, otherUsername, true, null));
+    assertThrows(
+        AuthorizationException.class,
+        () -> recordMgr.saveStructuredDocument(docId, otherUsername, true, null));
   }
 
   @Test
@@ -1453,10 +1459,9 @@ public class RecordManagerTest extends SpringTransactionalTest {
     // now we do check permissions, so this should throw AuthException as wrong user is logged in in
     Long recordId = anyDoc2.getId();
     LinkedFieldsToMediaRecordInitPolicy policy = new LinkedFieldsToMediaRecordInitPolicy();
-    assertThrows(AuthorizationException.class, () ->
-            recordMgr
-                .getRecordWithLazyLoadedProperties(
-                    recordId, user, policy, false));
+    assertThrows(
+        AuthorizationException.class,
+        () -> recordMgr.getRecordWithLazyLoadedProperties(recordId, user, policy, false));
   }
 
   @Test

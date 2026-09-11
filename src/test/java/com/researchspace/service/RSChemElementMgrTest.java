@@ -1,8 +1,5 @@
 package com.researchspace.service;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
@@ -282,7 +279,7 @@ public class RSChemElementMgrTest {
 
     verify(chemDao, times(2)).save(chemElementCaptor.capture());
     RSChemElement savedElement = chemElementCaptor.getAllValues().get(0);
-    assertThat(savedElement.getSmilesString(), is(equalTo(expectedSmiles)));
+    assertEquals(expectedSmiles, savedElement.getSmilesString());
   }
 
   @Test

@@ -1,10 +1,7 @@
 package com.researchspace.service.impl;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
-import org.apache.shiro.authz.AuthorizationException;
-
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.User;
@@ -13,6 +10,7 @@ import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.Folder;
 import com.researchspace.testutils.SpringTransactionalTest;
+import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,7 +35,9 @@ public class TemplateFolderTests extends SpringTransactionalTest {
 
     Long rootId = root.getId();
     Long sharedFolderId = shared.getId();
-    assertThrows(AuthorizationException.class, () -> recordDeletionMgr.deleteFolder(rootId, sharedFolderId, any));
+    assertThrows(
+        AuthorizationException.class,
+        () -> recordDeletionMgr.deleteFolder(rootId, sharedFolderId, any));
   }
 
   @Test

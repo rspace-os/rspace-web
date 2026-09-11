@@ -17,6 +17,7 @@ import com.researchspace.model.inventory.field.InventoryLink;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.inventory.InventoryLinkManager;
 import com.researchspace.testutils.SpringTransactionalTest;
+import java.util.Date;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -85,7 +86,7 @@ public class InventoryLinkManagerImplTest extends SpringTransactionalTest {
     api.setRelationType("References");
     api.setTargetGlobalId(target1.getGlobalId());
     InventoryLink saved = linkManager.createLink(api, user);
-    java.util.Date originalCreated = saved.getCreatedAt();
+    Date originalCreated = saved.getCreatedAt();
 
     Thread.sleep(5);
     ApiInventoryLink update = new ApiInventoryLink();

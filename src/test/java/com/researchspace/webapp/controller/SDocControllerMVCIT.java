@@ -4,10 +4,9 @@ import static com.researchspace.testutils.RSpaceTestUtils.getResource;
 import static com.researchspace.webapp.controller.StructuredDocumentController.STRUCTURED_DOCUMENT_EDITOR_URL;
 import static org.apache.commons.io.FileUtils.readFileToByteArray;
 import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -148,7 +147,9 @@ public class SDocControllerMVCIT extends MVCTestBase {
     String name = getNameOfDoc(data);
 
     assertNotNull(id);
-    assertThat(dummyConverter.getWordHtml().getName(), containsString(name));
+    assertTrue(
+        dummyConverter.getWordHtml().getName().contains(name),
+        dummyConverter.getWordHtml().getName());
     Predicate<Boolean> inv =
         t ->
             fieldMgr
@@ -436,7 +437,7 @@ public class SDocControllerMVCIT extends MVCTestBase {
             .andExpect(status().isOk())
             .andReturn();
     SignatureInfo sign2 = getFromJsonAjaxReturnObject(res3, SignatureInfo.class);
-    assertThat(sign2.getWitnesses().keySet(), contains(setup.user.getFullName()));
+    assertIterableEquals(List.of(setup.user.getFullName()), sign2.getWitnesses().keySet());
   }
 
   @Test
