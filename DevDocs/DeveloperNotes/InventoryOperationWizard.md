@@ -126,7 +126,9 @@ Files:
    A new public operation needs one request class in
    `ApiInventoryOperationRequests` whose input fields are named exactly after
    its input keys, one method on `InventoryOperationsApi` and the controller,
-   and its spec entry (plan-operations-server-builds.md M7).
+   and one path plus one request schema in
+   `src/main/webapp/resources/rspace_api_inventory_specs_2_26_0.yaml`, under the
+   `Operations` tag, alongside the seven already there.
    `InventoryOperationFacadeShapesTest` fails until the class agrees with the
    definition. (There is only one config file — the backend's — and both sides
    read it, so there is nothing to sync.)
@@ -294,6 +296,13 @@ like the wizard's `amountMode: "all"`. All seven answer with one envelope
 (`ApiInventoryOperationResult`: the created `sample`, null for Destroy, and each
 `origin` as it stands afterwards), 201 with a `Location` at the new sample for the six
 creating operations, 200 for Destroy.
+
+All seven are in the published OpenAPI spec
+(`src/main/webapp/resources/rspace_api_inventory_specs_2_26_0.yaml`, tag `Operations`,
+plan-operations-server-builds.md M7): a path each, a request schema each, the shared
+`OperationOrigin` / `OperationOriginWithAmount` elements and the `OperationResult`
+envelope. The generic `POST /operations` and `GET /operations/config` stay unpublished
+until user-defined operations ship (M8), so the config endpoint remains the wizard's.
 
 ## Wizard steps
 
