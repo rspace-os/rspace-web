@@ -5,7 +5,9 @@ import { FilesClient } from "../api/clients/FilesClient";
 import { FoldersClient } from "../api/clients/FoldersClient";
 import { InventoryClient } from "../api/clients/InventoryClient";
 import { MailpitClient } from "../api/clients/MailpitClient";
+import { ShareClient } from "../api/clients/ShareClient";
 import { SnippetsClient } from "../api/clients/SnippetsClient";
+import { StatusClient } from "../api/clients/StatusClient";
 import { SysadminClient } from "../api/clients/SysadminClient";
 import { env } from "../env";
 import { SYSADMIN } from "../users";
@@ -18,6 +20,8 @@ type ApiFixtures = {
   clientFolders: FoldersClient;
   clientInventory: InventoryClient;
   clientSnippets: SnippetsClient;
+  clientShare: ShareClient;
+  clientStatus: StatusClient;
   clientSysadmin: SysadminClient;
   clientMailpit: MailpitClient;
 };
@@ -49,6 +53,12 @@ export const apiTest = uiTest.extend<ApiFixtures>({
   },
   clientSnippets: async ({ page }, use) => {
     await use(new SnippetsClient(page));
+  },
+  clientShare: async ({ apiContext, appUser }, use) => {
+    await use(new ShareClient(apiContext, appUser.apiKey));
+  },
+  clientStatus: async ({ apiContext, appUser }, use) => {
+    await use(new StatusClient(apiContext, appUser.apiKey));
   },
   clientSysadmin: async ({ apiContext }, use) => {
     const client = new SysadminClient(apiContext, SYSADMIN.apiKey);

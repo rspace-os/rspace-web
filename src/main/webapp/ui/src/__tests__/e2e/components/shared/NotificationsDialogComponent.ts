@@ -47,6 +47,17 @@ export class NotificationsDialogComponent {
     return this.root.locator("tr.notificationRow").allInnerTexts();
   }
 
+  // The archive-export notification's own link text is the download URL
+  async getExportDownloadHref(rowText: string): Promise<string> {
+    const row = this.root.locator("tr.notificationRow").filter({ hasText: rowText });
+    const link = row.locator("a[href*='/export/ajax/downloadArchive/']");
+    const href = await link.getAttribute("href");
+    if (!href) {
+      throw new Error(`getExportDownloadHref: no download link found in a notification matching "${rowText}"`);
+    }
+    return href;
+  }
+
   // Some pages (e.g. Gallery) render the bell as a plain link to /dashboard rather than a
   // button that opens this dialog in place.
   async fetchNotificationTexts(): Promise<Array<string>> {

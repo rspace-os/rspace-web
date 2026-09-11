@@ -53,6 +53,7 @@
     "@vitest/coverage-istanbul": "4.1.11",
     "@vitest/spy": "4.1.11",
     "@vitest/ui": "4.1.11",
+    "adm-zip": "0.6.0",
     "axe-core": "4.13.0",
     "axios-mock-adapter": "2.1.0",
     "browserslist": "4.28.8",

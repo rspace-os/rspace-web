@@ -108,15 +108,19 @@ test.describe("Sysadmin Operate As", { tag: tags.SYSTEM }, () => {
     await dialog.setUser(user.username);
     await dialog.submit(SYSADMIN.password);
 
-    await workspace.waitUntilLoaded();
-    expect(await workspace.isOwnerVisible(user.fullName)).toBe(true);
+    try {
+      await workspace.waitUntilLoaded();
+      expect(await workspace.isOwnerVisible(user.fullName)).toBe(true);
 
-    await profile.open();
-    await profile.waitUntilLoaded();
-    const changePassword = await profile.openChangePassword();
-    await changePassword.save(SYSADMIN.password, newPassword);
-    await expect(changePassword.successMessage("Password changed successfully")).toBeVisible();
-    await workspace.releaseOperateAs();
+      await profile.open();
+      await profile.waitUntilLoaded();
+      const changePassword = await profile.openChangePassword();
+      await changePassword.submit(SYSADMIN.password, newPassword, newPassword);
+
+      await changePassword.root.waitFor({ state: "hidden" });
+    } finally {
+      await workspace.releaseOperateAs();
+    }
 
     const newSession = await flowUserSession(user.username, newPassword);
     expect(await newSession.workspace.isLoaded()).toBe(true);

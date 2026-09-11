@@ -90,6 +90,12 @@ export class InventoryClient extends BaseApiClient {
     });
   }
 
+  async deleteBasket(basketId: number): Promise<void> {
+    await this.requestVoid("delete", `/api/inventory/v1/baskets/${basketId}`, {
+      action: "deleteInventoryBasket",
+    });
+  }
+
   async registerIdentifier(request: ApiInventoryIdentifierCreateRequest): Promise<ApiInventoryIdentifierInfo> {
     return this.requestJson("post", "/api/inventory/v1/identifiers", {
       data: request,

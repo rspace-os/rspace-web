@@ -95,19 +95,19 @@ test.describe("Sysadmin access and role", { tag: tags.SYSTEM }, () => {
 
     const memberSession = await flowUserSession(member.username, DYNAMIC_USER_PASSWORD);
     await memberSession.myRSpace.open();
-    const createFormPage = await memberSession.myRSpace.navigateToCreateFormPage();
-    await createFormPage.addNumberField("Value");
+    const createFormPage = await memberSession.myRSpace.openCreateForm();
+    await createFormPage.addField("Number", "Value");
     await createFormPage.rename(formName);
     const memberManageForms = await createFormPage.saveAndClose();
-    await memberManageForms.publishWithPermissions(formName, "NONE", "NONE");
+    await memberManageForms.configureAccess(formName, "NONE", "NONE");
 
     const { users, auditTrail, workspace: sysWorkspace, myRSpace: sysMyRSpace } = flowSysadminGroupAdmin;
     await sysMyRSpace.open();
-    const sysManageForms = await sysMyRSpace.navigateToManageFormsPage();
+    const sysManageForms = await sysMyRSpace.openManageForms();
 
     await sysManageForms.showAllForms();
     await sysManageForms.search(formName);
-    await sysManageForms.addToMenu(formName);
+    await sysManageForms.toggleMenu(formName, "Add to Menu");
 
     await sysWorkspace.open();
     await sysWorkspace.createDocumentFromCustomForm(formName);
@@ -125,7 +125,7 @@ test.describe("Sysadmin access and role", { tag: tags.SYSTEM }, () => {
     await expect(transferRow).toContainText(member.username);
 
     await sysMyRSpace.open();
-    const sysManageFormsAfter = await sysMyRSpace.navigateToManageFormsPage();
+    const sysManageFormsAfter = await sysMyRSpace.openManageForms();
     await expect(sysManageFormsAfter.formRow(formName)).toBeVisible();
   });
 

@@ -4,10 +4,15 @@ import { BasePage } from "../BasePage";
 import { AuditTrailPage } from "./AuditTrailPage";
 import { CreateFormPage } from "./CreateFormPage";
 import { DeletedItemsPage } from "./DeletedItemsPage";
+import { DirectoryPage } from "./DirectoryPage";
+import { ExportImportPage } from "./ExportImportPage";
 import { ManageFormsPage } from "./ManageFormsPage";
+import { PublishedDocumentsPage } from "./PublishedDocumentsPage";
+import { SharedDocumentsPage } from "./SharedDocumentsPage";
+import { UserProfilePage } from "./UserProfilePage";
 
 export class MyRSpacePage extends BasePage {
-  readonly path = "/admin";
+  readonly path = "/groups/viewPIGroup";
   readonly header: AppHeader;
 
   constructor(page: Page) {
@@ -27,19 +32,51 @@ export class MyRSpacePage extends BasePage {
     return new DeletedItemsPage(this.page);
   }
 
-  async navigateToCreateFormPage(): Promise<CreateFormPage> {
-    await this.page.getByRole("link", { name: "Create Form", exact: true }).click();
-    await this.page.waitForURL("**/workspace/editor/form/**");
-    const formPage = new CreateFormPage(this.page);
-    await formPage.isLoaded();
-    return formPage;
+  async openProfile(): Promise<UserProfilePage> {
+    await this.page.getByRole("link", { name: "My Profile" }).click();
+    const page = new UserProfilePage(this.page);
+    await page.waitUntilLoaded();
+    return page;
   }
 
-  async navigateToManageFormsPage(): Promise<ManageFormsPage> {
-    await this.page.getByRole("link", { name: "Manage Forms", exact: true }).click();
-    await this.page.waitForURL("**/workspace/editor/form/list**");
-    const manageForms = new ManageFormsPage(this.page);
-    await manageForms.isLoaded();
-    return manageForms;
+  async openDirectory(): Promise<DirectoryPage> {
+    await this.page.getByRole("link", { name: "Directory" }).click();
+    await this.page.waitForURL((url) => url.pathname === "/directory");
+    return new DirectoryPage(this.page);
+  }
+
+  async openCreateForm(): Promise<CreateFormPage> {
+    await this.page.getByRole("link", { name: "Create Form" }).click();
+    const form = new CreateFormPage(this.page);
+    await form.waitUntilLoaded();
+    return form;
+  }
+
+  async openManageForms(): Promise<ManageFormsPage> {
+    await this.page.getByRole("link", { name: "Manage Forms" }).click();
+    const forms = new ManageFormsPage(this.page);
+    await forms.waitUntilLoaded();
+    return forms;
+  }
+
+  async openSharedDocuments(): Promise<SharedDocumentsPage> {
+    await this.page.getByRole("link", { name: "Shared Documents" }).click();
+    const shared = new SharedDocumentsPage(this.page);
+    await shared.waitUntilLoaded();
+    return shared;
+  }
+
+  async openPublishedDocuments(): Promise<PublishedDocumentsPage> {
+    await this.page.getByRole("link", { name: "My Group's Published Documents" }).click();
+    const published = new PublishedDocumentsPage(this.page);
+    await published.waitUntilLoaded();
+    return published;
+  }
+
+  async openExportImport(): Promise<ExportImportPage> {
+    await this.page.getByRole("link", { name: "Export - Import" }).click();
+    const page = new ExportImportPage(this.page);
+    await page.waitUntilLoaded();
+    return page;
   }
 }

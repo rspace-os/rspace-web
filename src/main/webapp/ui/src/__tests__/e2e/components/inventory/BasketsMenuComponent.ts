@@ -85,16 +85,15 @@ export class BasketsMenuComponent {
   }
 
   async close(): Promise<void> {
-    if (await this.emptyAlert.isVisible().catch(() => false)) {
-      await expect(async () => {
-        if (await this.emptyAlert.isVisible().catch(() => false)) {
-          await this.emptyAlert.getByRole("button", { name: "Close" }).click({ timeout: 2_000 });
-        }
-      }).toPass();
-    } else {
-      await this.page.keyboard.press("Escape");
-    }
-    await this.root.waitFor({ state: "detached" });
+    await expect(async () => {
+      if (await this.root.isHidden()) return;
+      if (await this.emptyAlert.isVisible().catch(() => false)) {
+        await this.emptyAlert.getByRole("button", { name: "Close" }).click({ timeout: 2_000 });
+      } else {
+        await this.page.keyboard.press("Escape");
+      }
+      await expect(this.root).toBeHidden({ timeout: 2_000 });
+    }).toPass({ timeout: 10_000 });
   }
 
   async renameBasket(name: string, newName: string): Promise<void> {

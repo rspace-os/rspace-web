@@ -301,6 +301,9 @@ importers:
       '@vitest/ui':
         specifier: 4.1.11
         version: 4.1.11(vitest@4.1.11)
+      adm-zip:
+        specifier: 0.6.0
+        version: 0.6.0
       axe-core:
         specifier: 4.13.0
         version: 4.13.0
@@ -2682,6 +2685,10 @@ packages:
   adler-32@1.3.1:
     resolution: {integrity: sha512-ynZ4w/nUUv5rrsR8UUGoe1VC9hZj6V5hU9Qw1HlMDJGEJw5S7TfTErWTjMys6M7vr0YWcPqs3qAr4ss0nDfP+A==}
     engines: {node: '>=0.8'}
+
+  adm-zip@0.6.0:
+    resolution: {integrity: sha512-XleryMhbuksdKtofnWZ9Sk+4CUTbms4Mb/EU32SZwToAyZ5RgVos/ki8n+yr0LWHOGKuakbXTuuYNHLQjhddgg==}
+    engines: {node: '>=14.0'}
 
   agent-base@6.0.2:
     resolution: {integrity: sha512-RZNwNclF7+MS/8bDg70amg32dyeZGZxiDuQmZxKLAlQjr3jGyLx+4Kkk58UO7D2QdgFIQCovuSuZESne6RG6XQ==}
@@ -8419,6 +8426,8 @@ snapshots:
       negotiator: 0.6.3
 
   adler-32@1.3.1: {}
+
+  adm-zip@0.6.0: {}
 
   agent-base@6.0.2(supports-color@7.2.0):
     dependencies:
