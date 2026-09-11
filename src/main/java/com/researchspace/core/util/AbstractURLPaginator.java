@@ -46,14 +46,19 @@ public abstract class AbstractURLPaginator implements URLGenerator {
 
   @Override
   public String generateURLForOrderBy(String orderByClause) {
-    String originalRecordsPerPage = null;
+    String originalOrderBy = null;
     if (pgCrit != null) {
-      originalRecordsPerPage = pgCrit.getOrderBy();
+      originalOrderBy = pgCrit.getOrderBy();
       pgCrit.setOrderBy(orderByClause);
     }
     String url = generateURL(0);
     if (pgCrit != null) {
-      pgCrit.setOrderBy(originalRecordsPerPage);
+      // setOrderBy ignores null, so a criteria with no sort key must be cleared explicitly
+      if (originalOrderBy == null) {
+        pgCrit.clearOrderBy();
+      } else {
+        pgCrit.setOrderBy(originalOrderBy);
+      }
     }
     return url;
   }

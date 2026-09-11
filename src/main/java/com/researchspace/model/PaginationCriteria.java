@@ -215,6 +215,11 @@ public class PaginationCriteria<T> implements Serializable, IPagination<T> {
     delegate.setOrderBy(orderByField);
   }
 
+  @Override
+  public void clearOrderBy() {
+    delegate.clearOrderBy();
+  }
+
   /**
    * Getter for whether this sort order should be ascending or descending
    *

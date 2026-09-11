@@ -215,6 +215,11 @@ public class BasicPaginationCriteria<T> implements Serializable, IPagination<T> 
     this.orderBy = orderByField;
   }
 
+  @Override
+  public void clearOrderBy() {
+    this.orderBy = null;
+  }
+
   /*
    * (non-Javadoc)
    *
