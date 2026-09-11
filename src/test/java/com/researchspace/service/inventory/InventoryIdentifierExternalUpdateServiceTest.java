@@ -743,4 +743,19 @@ class InventoryIdentifierExternalUpdateServiceTest {
     assertEquals(Outcome.UPDATED, good.getExternalMetadataUpdate().getOutcome());
     verify(auditer, times(1)).notify(any());
   }
+
+  @Test
+  void aLinkedIdentifierIsNeverPushedNorExplained() {
+    // a draft would otherwise be pushed, so this pins the guard rather than the frozen-state rule
+    ApiInventoryDOI doi = identifier(IdentifierType.PIDINST_B2INST, "draft", RID);
+    doi.setLinked(true);
+
+    service.pushMetadataUpdates(savedInstrumentWith(doi), user);
+
+    verify(b2instConnector, never()).updateDraftDoi(anyString(), any(B2instDoi.class));
+    verifyNoInteractions(rspaceToExternalProviderAdapter, auditer);
+    assertNull(
+        doi.getExternalMetadataUpdate(),
+        "skipped silently, like an identifier of a disabled provider");
+  }
 }

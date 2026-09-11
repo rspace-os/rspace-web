@@ -96,7 +96,12 @@
         "externalUpdateNotPossibleB2inst": "The instrument metadata held by {0} could not be updated because its community review has been accepted, so the record no longer has a draft open for changes. The instrument itself was saved.",
         "externalUpdateNotPossibleDataCite": "The instrument metadata held by {0} could not be updated because its identifier is no longer a draft. Publishing or republishing the identifier sends its current metadata. The instrument itself was saved.",
         "integrationNotEnabled": "{0} integration is not enabled on this RSpace instance.",
+        "linkedReadOnly": "This identifier was minted outside RSpace and is only linked to this instrument. It cannot be published, retracted or refreshed from RSpace; delete it to remove the link.",
         "mintingUnsupportedType": "unsupported type for minting: {0}",
+        "pidinstAlreadyLinked": "This PID is already linked to instrument {0}.",
+        "pidinstImportPidRequired": "A PID is required to import an instrument.",
+        "pidinstMandatoryMissing": "The registry record has no {0}, which the \"Instrument (PIDINST 1.0)\" template requires, so it cannot be imported.",
+        "pidinstNotFound": "No published instrument record was found for \"{0}\" at the enabled PIDINST provider.",
         "refreshNoIdentifier": "This item has no identifier to refresh. Register an identifier before refreshing its status.",
         "typeUnsupported": "identifiers of type {0} are not supported yet"
       },

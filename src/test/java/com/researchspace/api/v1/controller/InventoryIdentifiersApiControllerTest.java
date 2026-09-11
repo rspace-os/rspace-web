@@ -175,6 +175,14 @@ class InventoryIdentifiersApiControllerTest {
         .assertInventoryAndIdentifierTypeEnabled(user, InventorySettingType.PIDINST);
   }
 
+  /**
+   * Of these three, {@code declined} is the one reached by an ordinary curator action, verified
+   * against b2inst-test on 2026-09-11 (RSDEV-1326): DECLINE leaves the review readable and the
+   * identifier lands here. A cancelled review is removed instead and the identifier goes back to
+   * {@code draft}, so {@code cancelled} and {@code expired} were not reproducible through the
+   * provider's own UI. They stay in the list deliberately - the status is stored verbatim from the
+   * provider, so a route that does produce them must not leave the identifier undeletable.
+   */
   @Test
   void deleteAllowsB2instClosedReviewStates() {
     for (String state : java.util.List.of("declined", "cancelled", "expired")) {

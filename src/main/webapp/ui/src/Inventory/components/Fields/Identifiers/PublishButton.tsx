@@ -2,7 +2,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import CustomTooltip from "../../../../components/CustomTooltip";
 import SubmitSpinnerButton from "../../../../components/SubmitSpinnerButton";
-import type { Identifier } from "../../../../stores/definitions/Identifier";
+import { type Identifier, isB2instReviewOver } from "../../../../stores/definitions/Identifier";
 import useStores from "../../../../stores/use-stores";
 
 type PublishButtonArgs = {
@@ -31,10 +31,23 @@ export default function PublishButton({ identifier, disabled }: PublishButtonArg
   const awaitingReview = identifier.state === "submitted";
 
   /*
-   * An accepted B2INST submission is published, and B2INST has no retract operation, so neither
-   * Publish nor Republish (which retracts first) can ever succeed for it.
+   * A B2INST record whose community review is over can never be published or republished from
+   * RSpace: an accepted submission is already published and B2INST has no retract operation, and a
+   * declined, cancelled or expired review is closed. The button used to be shown disabled with an
+   * explanatory tooltip; it is now not offered at all, because a control that can never do
+   * anything is worse than no control (RSDEV-1326).
    */
-  const publishedPidinst = identifier.doiType === "PIDINST_B2INST" && identifier.state === "accepted";
+  const publishedPidinst = identifier.doiType === "PIDINST_B2INST" && isB2instReviewOver(identifier.state);
+
+  /*
+   * A linked identifier is a PID another party minted, attached by an instrument import. RSpace
+   * owns nothing on the provider side for it, so publish, retract and refresh are all refused with
+   * 422 (ADR 0009) - whichever provider it came from. Offering the action would only produce that
+   * error. Identifiers RSpace minted itself are unaffected, DataCite's Republish included.
+   */
+  if (identifier.linked || publishedPidinst) {
+    return null;
+  }
 
   const button = (
     <SubmitSpinnerButton
@@ -66,18 +79,13 @@ export default function PublishButton({ identifier, disabled }: PublishButtonArg
           }
         })();
       }}
-      disabled={publishing || disabled || !identifier.isValid || awaitingReview || publishedPidinst}
+      disabled={publishing || disabled || !identifier.isValid || awaitingReview}
       label={republish ? t("common:actions.republish") : t("common:actions.publish")}
     />
   );
 
   if (awaitingReview) {
     return <CustomTooltip title={t("inventory:fields.identifiers.list.publishAwaitingReview")}>{button}</CustomTooltip>;
-  }
-  if (publishedPidinst) {
-    return (
-      <CustomTooltip title={t("inventory:fields.identifiers.list.publishPidinstPublished")}>{button}</CustomTooltip>
-    );
   }
   return button;
 }

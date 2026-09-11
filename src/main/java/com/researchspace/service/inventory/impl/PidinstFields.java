@@ -30,6 +30,17 @@ final class PidinstFields {
    */
   static final String LANDING_PAGE = "Landing page";
 
+  static final String OWNER = "Owner";
+  static final String MANUFACTURER = "Manufacturer";
+  static final String MODEL = "Model";
+  static final String INSTRUMENT_TYPE = "Instrument type";
+  static final String COMMISSIONED = "Commissioned";
+  static final String DECOMMISSIONED = "Decommissioned";
+  static final String MEASUREMENT_TECHNIQUE = "Measurement technique";
+  static final String MEASURED_QUANTITY = "Measured quantity";
+  static final String CALIBRATION = "Calibration";
+  static final String ALTERNATE_IDENTIFIER = "Alternate Identifier";
+
   private PidinstFields() {}
 
   /**

@@ -67,6 +67,15 @@
     </resources>
   </cache>
 
+  <cache alias="pidinstLookupResults">
+    <expiry>
+      <ttl unit="seconds">600</ttl>
+    </expiry>
+    <resources>
+      <heap unit="entries">200</heap>
+    </resources>
+  </cache>
+
   <cache alias="com.researchspace.model.User.roles">
     <expiry>
       <ttl unit="seconds">3600</ttl>

@@ -7,13 +7,17 @@ import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInstrumentSearchResult;
 import com.researchspace.api.v1.model.ApiInventoryRecordRevisionList;
 import com.researchspace.api.v1.model.ApiInventoryRecordRevisionList.ApiInventoryRecordRevision;
+import com.researchspace.api.v1.model.ApiInventorySystemSettings.InventorySettingType;
+import com.researchspace.api.v1.model.ApiPidinstImportPost;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.model.record.BaseRecord;
+import com.researchspace.service.ApiAvailabilityHandler;
 import com.researchspace.service.inventory.InventoryAuditApiManager;
 import com.researchspace.service.inventory.InventoryIdentifierExternalUpdateService;
+import com.researchspace.service.inventory.PidinstLookupManager;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.NotFoundException;
 import java.io.IOException;
@@ -39,6 +43,8 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
   @Autowired private InstrumentApiPutValidator instrumentApiPutValidator;
   @Autowired private InventoryAuditApiManager inventoryAuditMgr;
   @Autowired private InventoryIdentifierExternalUpdateService externalUpdateService;
+  @Autowired private PidinstLookupManager pidinstLookupMgr;
+  @Autowired private ApiAvailabilityHandler apiHandler;
 
   @Data
   @AllArgsConstructor
@@ -253,6 +259,21 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
     ApiInstrument copy = instrumentApiMgr.duplicateInstrument(id, user);
     buildAndAddInventoryRecordLinks(copy);
     return copy;
+  }
+
+  @Override
+  public ApiInstrument importPidinst(
+      @RequestBody @Valid ApiPidinstImportPost post,
+      BindingResult errors,
+      @RequestAttribute(name = "user") User user)
+      throws BindException {
+    throwBindExceptionIfErrors(errors);
+    apiHandler.assertInventoryAndIdentifierTypeEnabled(user, InventorySettingType.PIDINST);
+    ApiInstrument created =
+        pidinstLookupMgr.importInstrument(post.getPid(), post.getNewTargetLocation(), user);
+    // no external metadata push: the identifier is linked, and the service skips it anyway
+    buildAndAddInventoryRecordLinks(created);
+    return created;
   }
 
   @Override

@@ -196,6 +196,41 @@ resolved during design. This file is a glossary only — no implementation detai
   leaving the field as empty as it started; here too a value the user typed, and
   an address belonging to another identifier, are left alone.
 
+- **Registered identifier** — an identifier RSpace minted itself through a PID provider
+  (DataCite or B2INST). RSpace owns the provider-side record: it pushes metadata to it,
+  refreshes its state, publishes, retracts or deletes it, and serves its public landing
+  page. Every identifier that existed before Workflow 1 (RSDEV-1033) is a registered
+  identifier.
+  _Avoid_: RSpace identifier, own identifier, minted identifier (as a noun)
+- **Linked identifier** — an identifier that records a PID minted by another party, found
+  in a public PID registry and attached to an Instrument on import. It carries the same
+  provider type as a registered identifier and mirrors the state the provider holds, but
+  RSpace owns nothing on the provider side: it never pushes metadata to it, never
+  refreshes, publishes, retracts or deletes it at the provider, and never serves a public
+  landing page for it. It is what makes an Instrument "linked to a PIDINST", and it fills
+  the record's single identifier slot, so no new PID can be registered for that Instrument
+  while the link stands; removing the link is deleting the identifier in RSpace only.
+  _Avoid_: external identifier (ambiguous with *external metadata update*, which is about
+  registered identifiers), imported identifier, foreign PID
+
+- **PID lookup** — searching a PID registry for instrument records, by free text or by a
+  PID, in order to import one. A lookup always goes to the deployment's enabled PIDINST
+  provider, with that provider's configured server and credentials; while no PIDINST
+  provider is enabled there is no lookup, and there is never a choice of registry. Only
+  *public* records are found: a PID whose registration is still in progress, or has been
+  declined, is not a lookup result and cannot be imported, because it has no resolvable
+  landing page to link to.
+  _Avoid_: federated search (there is one registry per deployment), PIDINST search, DOI
+  search
+
+- **Instrument import** — creating an Instrument from a PID record found in a public PID
+  registry: RSpace fetches the record itself, fills the default PIDINST template's fields
+  from it by the inverse of the PIDINST mapping, and attaches a linked identifier for the
+  PID, all in one step. The imported values are ordinary field values afterwards: the user
+  edits them like any other, and only the identifier stays tied to the registry.
+  _Avoid_: PIDINST import (the PID is imported, the instrument is created), instrument
+  lookup (that is the search that precedes it), sync
+
 ## Record version history
 
 - **Revision** — a single audit row: one recorded change to a record, identified

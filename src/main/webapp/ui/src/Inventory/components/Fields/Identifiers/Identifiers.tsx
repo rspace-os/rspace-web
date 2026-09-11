@@ -33,7 +33,11 @@ import AlertContext, { mkAlert } from "../../../../stores/contexts/Alert";
 import AnalyticsContext from "../../../../stores/contexts/Analytics";
 import type { HasEditableFields } from "../../../../stores/definitions/Editable";
 import type { Identifier, IdentifierField, PublishingState } from "../../../../stores/definitions/Identifier";
-import { identifierStateLabelKey, isPublishedState } from "../../../../stores/definitions/Identifier";
+import {
+  B2INST_CLOSED_REVIEW_STATES,
+  identifierStateLabelKey,
+  isPublishedState,
+} from "../../../../stores/definitions/Identifier";
 import type { InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
 import useStores from "../../../../stores/use-stores";
 import RsSet from "../../../../util/set";
@@ -79,8 +83,10 @@ const IdentifierWrapper = observer(
     /*
      * B2INST manages its own community-specific metadata on its own side, so the DataCite-style
      * required/recommended property sections below don't apply and would only confuse the user.
+     * Neither do they apply to a linked identifier of any registry: RSpace does not own it and
+     * cannot push an edit to it, so offering editable minting metadata would be a lie.
      */
-    const isB2InstPidinst = id.doiType === "PIDINST_B2INST";
+    const hidesMintingMetadata = id.linked || id.doiType === "PIDINST_B2INST";
 
     const rawCustomFields: Array<unknown> =
       "fields" in activeResult && Array.isArray(activeResult.fields) ? activeResult.fields : [];
@@ -88,7 +94,7 @@ const IdentifierWrapper = observer(
 
     return (
       <>
-        {!isB2InstPidinst && (
+        {!hidesMintingMetadata && (
           <section>
             <Typography variant="h6" component="h4">
               {t("fields.identifiers.wrapper.required.title")}
@@ -141,7 +147,7 @@ const IdentifierWrapper = observer(
             ))}
           </section>
         )}
-        {!isB2InstPidinst && (
+        {!hidesMintingMetadata && (
           <section>
             <Grid
               container
@@ -194,63 +200,73 @@ const IdentifierWrapper = observer(
             </Collapse>
           </section>
         )}
-        <section>
-          <Typography variant="h6" component="h4" sx={{ mb: 1 }}>
-            {t("fields.identifiers.wrapper.inventoryFields.title")}
-          </Typography>
-          <Alert severity="info">
-            <TransRichText
-              i18nKey={
-                isInstrument
-                  ? "inventory:fields.identifiers.wrapper.inventoryFields.alertPidinst"
-                  : "inventory:fields.identifiers.wrapper.inventoryFields.alert"
-              }
-            />
-          </Alert>
-          <FormControlLabel
-            control={
-              <Checkbox
-                disabled={!editable}
-                color="primary"
-                name="include-inventory-fields"
-                value={id.customFieldsOnPublicPage ? "yes" : "no"}
-                checked={id.customFieldsOnPublicPage}
-                onChange={({ target: { checked } }) => {
-                  runInAction(() => {
-                    id.customFieldsOnPublicPage = checked;
-                  });
-                  activeResult.updateIdentifiers();
-                }}
-              />
-            }
-            label={t("fields.identifiers.wrapper.inventoryFields.includeOnPage")}
-          />
-          {editable && (
-            <Typography variant="body2" component="div">
-              {t("fields.identifiers.wrapper.inventoryFields.followingFields")}
-              <ul>
-                <li>{t("fields.identifiers.wrapper.inventoryFields.description")}</li>
-                <li>{t("fields.identifiers.wrapper.inventoryFields.tags")}</li>
-                <li>
-                  {t("fields.identifiers.wrapper.inventoryFields.customFields")}
-                  <ul>
-                    {customFields.map((f) => (
-                      <li key={f.id}>{f.name}</li>
-                    ))}
-                  </ul>
-                </li>
-                <li>
-                  {t("fields.identifiers.wrapper.inventoryFields.extraFields")}
-                  <ul>
-                    {activeResult.extraFields.map((f) => (
-                      <li key={f.id}>{f.name}</li>
-                    ))}
-                  </ul>
-                </li>
-              </ul>
+        {/*
+         * Withheld for a linked identifier, like Preview, Publish and Refresh. The checkbox
+         * chooses what an RSpace landing page shows, and this copy promises "the item's landing
+         * page" and asks the user to check the fields before publishing. A linked PID has neither:
+         * no page is stored for it and findPublishedItemVersionByPublicLink refuses to serve one,
+         * so its public address 404s, and RSpace never publishes it (ADR 0009). Keyed on `linked`
+         * alone - a registered PIDINST of either provider does get a page, so it keeps the choice.
+         */}
+        {!id.linked && (
+          <section>
+            <Typography variant="h6" component="h4" sx={{ mb: 1 }}>
+              {t("fields.identifiers.wrapper.inventoryFields.title")}
             </Typography>
-          )}
-        </section>
+            <Alert severity="info">
+              <TransRichText
+                i18nKey={
+                  isInstrument
+                    ? "inventory:fields.identifiers.wrapper.inventoryFields.alertPidinst"
+                    : "inventory:fields.identifiers.wrapper.inventoryFields.alert"
+                }
+              />
+            </Alert>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  disabled={!editable}
+                  color="primary"
+                  name="include-inventory-fields"
+                  value={id.customFieldsOnPublicPage ? "yes" : "no"}
+                  checked={id.customFieldsOnPublicPage}
+                  onChange={({ target: { checked } }) => {
+                    runInAction(() => {
+                      id.customFieldsOnPublicPage = checked;
+                    });
+                    activeResult.updateIdentifiers();
+                  }}
+                />
+              }
+              label={t("fields.identifiers.wrapper.inventoryFields.includeOnPage")}
+            />
+            {editable && (
+              <Typography variant="body2" component="div">
+                {t("fields.identifiers.wrapper.inventoryFields.followingFields")}
+                <ul>
+                  <li>{t("fields.identifiers.wrapper.inventoryFields.description")}</li>
+                  <li>{t("fields.identifiers.wrapper.inventoryFields.tags")}</li>
+                  <li>
+                    {t("fields.identifiers.wrapper.inventoryFields.customFields")}
+                    <ul>
+                      {customFields.map((f) => (
+                        <li key={f.id}>{f.name}</li>
+                      ))}
+                    </ul>
+                  </li>
+                  <li>
+                    {t("fields.identifiers.wrapper.inventoryFields.extraFields")}
+                    <ul>
+                      {activeResult.extraFields.map((f) => (
+                        <li key={f.id}>{f.name}</li>
+                      ))}
+                    </ul>
+                  </li>
+                </ul>
+              </Typography>
+            )}
+          </section>
+        )}
       </>
     );
   },
@@ -277,9 +293,8 @@ const isB2instBeyondDraft = (id: Identifier): boolean => id.doiType === "PIDINST
  * failed submission to register a new one (RSDEV-1260). Deliberately a known-state allowlist, the
  * inverse of isB2instBeyondDraft's catch-all: an unknown state must stay disabled, not deletable.
  */
-const CLOSED_REVIEW_STATES: ReadonlyArray<string> = ["declined", "cancelled", "expired"];
 const isDeletableClosedReview = (id: Identifier): boolean =>
-  id.doiType === "PIDINST_B2INST" && CLOSED_REVIEW_STATES.includes(id.state);
+  id.doiType === "PIDINST_B2INST" && B2INST_CLOSED_REVIEW_STATES.includes(id.state);
 
 type IdentifiersListArgs = { activeResult: InventoryRecord };
 
@@ -303,10 +318,18 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
   const StateInfo = ({
     identifierState,
     identifierUrl,
+    isLinked,
   }: {
     identifierState: PublishingState;
     identifierUrl: string | null | undefined;
+    isLinked: boolean;
   }): ReactNode => {
+    /*
+     * Checked before any state, because a linked PID carries the provider's own state - findable
+     * or accepted - and every explanation for those describes an RSpace landing page that
+     * findPublishedItemVersionByPublicLink deliberately refuses to serve for it (ADR 0009).
+     */
+    if (isLinked) return <>{t("fields.identifiers.list.stateInfo.linkedPidinst")}</>;
     if (identifierState === "draft")
       return (
         <>
@@ -497,30 +520,34 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
                   marginBottom: "12px",
                 }}
               >
-                <Grid>
-                  <CustomTooltip
-                    title={
-                      id.isValid
-                        ? t("fields.identifiers.list.tooltips.previewPage")
-                        : t("fields.identifiers.list.tooltips.missingData")
-                    }
-                  >
-                    <Button
-                      color="callToAction"
-                      variant="outlined"
-                      size="small"
-                      onClick={() => void handlePreview(id)}
-                      disabled={
-                        activeResult.state === "edit" ||
-                        !id.isValid ||
-                        // the preview dialog contains a publish action
-                        Boolean(activeResult.historicalVersion)
+                {/* withdrawn, not disabled, for a linked PID: there is no RSpace page to
+                    preview, and Publish and Refresh already withdraw for the same reason */}
+                {!id.linked && (
+                  <Grid>
+                    <CustomTooltip
+                      title={
+                        id.isValid
+                          ? t("fields.identifiers.list.tooltips.previewPage")
+                          : t("fields.identifiers.list.tooltips.missingData")
                       }
                     >
-                      {t("fields.identifiers.list.preview")}
-                    </Button>
-                  </CustomTooltip>
-                </Grid>
+                      <Button
+                        color="callToAction"
+                        variant="outlined"
+                        size="small"
+                        onClick={() => void handlePreview(id)}
+                        disabled={
+                          activeResult.state === "edit" ||
+                          !id.isValid ||
+                          // the preview dialog contains a publish action
+                          Boolean(activeResult.historicalVersion)
+                        }
+                      >
+                        {t("fields.identifiers.list.preview")}
+                      </Button>
+                    </CustomTooltip>
+                  </Grid>
+                )}
                 <Grid>
                   <PublishButton
                     identifier={id}
@@ -530,15 +557,17 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
                 <Grid>
                   <CustomTooltip
                     title={
-                      id.state === "draft"
-                        ? t("fields.identifiers.list.tooltips.deleteDraft")
-                        : isDeletableClosedReview(id)
-                          ? t("fields.identifiers.list.tooltips.deleteClosedReview")
-                          : id.state === "findable"
-                            ? t("fields.identifiers.list.tooltips.retract")
-                            : isB2instBeyondDraft(id)
-                              ? t("fields.identifiers.list.tooltips.pidinstNotRetractable")
-                              : t("fields.identifiers.list.tooltips.notPublished")
+                      id.linked
+                        ? t("fields.identifiers.list.tooltips.linkedReadOnly")
+                        : id.state === "draft"
+                          ? t("fields.identifiers.list.tooltips.deleteDraft")
+                          : isDeletableClosedReview(id)
+                            ? t("fields.identifiers.list.tooltips.deleteClosedReview")
+                            : id.state === "findable"
+                              ? t("fields.identifiers.list.tooltips.retract")
+                              : isB2instBeyondDraft(id)
+                                ? t("fields.identifiers.list.tooltips.pidinstNotRetractable")
+                                : t("fields.identifiers.list.tooltips.notPublished")
                     }
                   >
                     <Button
@@ -548,6 +577,7 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
                       onClick={deletable ? () => handleDelete(id) : () => handleRetract(id)}
                       disabled={
                         activeResult.state === "edit" ||
+                        id.linked ||
                         id.state === "registered" ||
                         (isB2instBeyondDraft(id) && !isDeletableClosedReview(id)) ||
                         Boolean(activeResult.historicalVersion)
@@ -573,7 +603,7 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
                 )}
               </Grid>
               <Alert severity="info" sx={{ width: "100%", mb: 1 }}>
-                <StateInfo identifierState={id.state} identifierUrl={id.url} />{" "}
+                <StateInfo identifierState={id.state} identifierUrl={id.url} isLinked={id.linked} />{" "}
                 <a
                   href={helpDocsArticleUrl(isInstrument ? "pidinstIdentifiers" : "igsnIdentifiers")}
                   target="_blank"
