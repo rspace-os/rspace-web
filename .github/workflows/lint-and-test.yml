@@ -388,7 +388,15 @@ jobs:
       # The Vitest browser provider drives real Playwright browsers, so the
       # browser binaries still need installing (just the one for this leg).
       - name: Install Playwright browser
-        run: pnpm exec playwright install --with-deps ${{ matrix.browser }}
+        run: |
+          for attempt in 1 2 3; do
+            pnpm exec playwright install --with-deps ${{ matrix.browser }} && exit 0
+            if [ "$attempt" -lt 3 ]; then
+              echo "Playwright download failed (attempt ${attempt}/3); retrying..."
+              sleep $((attempt * 10))
+            fi
+          done
+          exit 1
 
       - name: Run Vitest browser-mode tests
         env:

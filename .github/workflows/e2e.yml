@@ -274,7 +274,15 @@ jobs:
 
       - name: Install Playwright browser
         if: env.E2E_PW_BROWSER != ''
-        run: pnpm exec playwright install --with-deps ${{ env.E2E_PW_BROWSER }}
+        run: |
+          for attempt in 1 2 3; do
+            pnpm exec playwright install --with-deps ${{ env.E2E_PW_BROWSER }} && exit 0
+            if [ "$attempt" -lt 3 ]; then
+              echo "Playwright download failed (attempt ${attempt}/3); retrying..."
+              sleep $((attempt * 10))
+            fi
+          done
+          exit 1
 
       - name: Wait for RSpace readiness
         run: |

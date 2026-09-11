@@ -59,7 +59,8 @@ export default defineConfig<E2EOptions>({
 
     trace: PW_LOG === "trace" ? "on" : "on-first-retry",
     screenshot: PW_LOG === "off" ? "only-on-failure" : "on",
-    video: PW_LOG === "trace" ? "on" : "retain-on-failure",
+    // CI does not need video artifacts, so avoid recording them.
+    video: env.ci ? "off" : PW_LOG === "trace" ? "on" : "retain-on-failure",
   },
   projects: [
     {
