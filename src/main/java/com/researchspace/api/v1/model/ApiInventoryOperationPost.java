@@ -28,7 +28,14 @@ import lombok.ToString;
  */
 @Data
 @NoArgsConstructor
-@JsonPropertyOrder({"operationType", "origins", "inputs", "newSample"})
+@JsonPropertyOrder({
+  "operationType",
+  "origins",
+  "inputs",
+  "templateId",
+  "documentedByGlobalId",
+  "newSample"
+})
 public class ApiInventoryOperationPost implements UnknownPropertyCapturing {
   /**
    * Names of request properties this object does not declare; see {@link UnknownPropertyCapturing}.
@@ -79,4 +86,21 @@ public class ApiInventoryOperationPost implements UnknownPropertyCapturing {
    */
   @JsonProperty("inputs")
   private Map<String, Object> inputs;
+
+  /**
+   * Server-built shape only: the template for the sample the server builds; null means ad-hoc.
+   * Numeric like {@code POST /samples} (M0, D4). On the client-assembled shape the template lives
+   * on {@code newSample.templateId} and this is rejected rather than silently ignored.
+   */
+  @JsonProperty("templateId")
+  private Long templateId;
+
+  /**
+   * Server-built shape only: the ELN document, notebook or Gallery file the operation is documented
+   * by, as an {@code IsDocumentedBy} link the server adds to the built sample. Named after the
+   * relation it creates (M0). On the client-assembled shape the link travels in {@code
+   * newSample.extraFields} and this is rejected rather than silently ignored.
+   */
+  @JsonProperty("documentedByGlobalId")
+  private String documentedByGlobalId;
 }
