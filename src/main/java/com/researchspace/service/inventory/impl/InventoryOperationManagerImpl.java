@@ -71,7 +71,9 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
             .get(operationKey)
             .orElseThrow(() -> new IllegalArgumentException("unknown operation " + operationKey));
     // Inputs first: one that fails its declared rule is a 400 before any origin is read. The errors
-    // name the bare input key (M0: a typed facade's field IS the key).
+    // name the bare input key (M0: a typed facade's field IS the key). Declared defaults fill an
+    // absent optional input first (M0 D7), and are then validated like anything the client sent.
+    inputs = InventoryOperationInputValidator.withDefaults(definition, inputs);
     MapBindingResult inputErrors = new MapBindingResult(inputs, "apiInventoryOperationPost");
     InventoryOperationInputValidator.validate(definition, inputs, inputErrors);
     if (inputErrors.hasErrors()) {
@@ -127,12 +129,20 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
                     LocalDate.parse(new SessionTimeZoneUtils().formatDateForClient(new Date())))
                 .build());
     // The builder decides amounts the way the wizard does (a whole-origin operation snapshots the
-    // LIVE quantity); the core must instead compare-and-swap what the CLIENT saw, so every origin
-    // carries the client's own amount and mode into the core. Same order in and out: the builder
-    // emits one update per origin, in the order given.
+    // LIVE quantity); the core must instead compare-and-swap what the CLIENT saw, so an origin that
+    // carries the client's own amount takes it, and its mode, into the core. An origin without one
+    // (a typed facade's Passage or Destroy element, M0) keeps the builder's: zero for an operation
+    // that takes nothing, the live snapshot under a whole-origin claim for one that empties, which
+    // the core then compare-and-swaps against the locked quantity, so a concurrent change between
+    // this read and the lock is a 409, not a silent partial take. The client's expectedQuantity
+    // (M0 D5) is a separate guard and travels regardless. Same order in and out: the builder emits
+    // one update per origin, in the order given.
     for (int i = 0; i < origins.size(); i++) {
-      built.getOrigins().get(i).setAmountMode(origins.get(i).getAmountMode());
-      built.getOrigins().get(i).setAmountTaken(origins.get(i).getAmountTaken());
+      if (origins.get(i).getAmountTaken() != null) {
+        built.getOrigins().get(i).setAmountMode(origins.get(i).getAmountMode());
+        built.getOrigins().get(i).setAmountTaken(origins.get(i).getAmountTaken());
+      }
+      built.getOrigins().get(i).setExpectedQuantity(origins.get(i).getExpectedQuantity());
     }
     return performOperation(built, user, () -> callerValidation.validate(built));
   }
@@ -304,6 +314,14 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
               "amountTaken",
               "errors.inventory.operation.amountTakenCategoryMismatch",
               "The amount taken must use the origin's measurement category.");
+        } else if (origin.getExpectedQuantity() != null
+            && !amountTakenEmptiesOrigin(origin.getExpectedQuantity(), currentQuantity)) {
+          // The typed facades' form of the same compare-and-swap (M0 D5): the caller said what it
+          // believed the origin held, and the locked quantity says otherwise, so this is a stale
+          // read to reload from, whatever amount is being taken. Unit-aware equality, like the
+          // whole-origin claim below. An incomparable category is a mismatch too: the caller's
+          // belief cannot be about this origin.
+          staleOrigin = true;
         } else if (claimsWholeOrigin(origin)
             && !amountTakenEmptiesOrigin(origin.getAmountTaken(), currentQuantity)) {
           // Compare-and-swap, not a validation failure: the client DECLARED this amount was the

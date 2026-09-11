@@ -36,6 +36,15 @@ public class ApiInventoryOperationOriginUpdate {
   private ApiQuantityInfo amountTaken;
 
   /**
+   * Server-side only, set by the typed facades (M0 D5): the quantity the caller believes the origin
+   * holds. When present the manager compare-and-swaps it against the live locked quantity and
+   * rejects a mismatch with 409, exactly as a whole-origin {@code amountMode: all} claim is, but
+   * independent of how much is taken. Not on this generic endpoint's wire: the wizard expresses the
+   * same guard through {@code amountMode}.
+   */
+  @JsonIgnore private ApiQuantityInfo expectedQuantity;
+
+  /**
    * Server-side only: the fields the operation definition adds to the origin itself (Destroy's
    * disposed date), built by the request builder with {@code newFieldRequest} set and applied by
    * the manager through the ordinary subsample edit. Not on the wire.

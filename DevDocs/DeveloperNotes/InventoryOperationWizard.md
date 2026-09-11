@@ -120,11 +120,16 @@ Files:
    user's locale on the frontend and stored as data; use ICU interpolation
    (single braces), never string concatenation. See `FrontendI18nKeys.md`.
 
-3. **No spec change.** The generic endpoint is not in the published OpenAPI spec:
-   the public contract is the typed per-operation endpoints that
-   plan-operations-server-builds.md M6/M7 add, each of which will need its own
-   entry. (There is only one config file — the backend's — and both sides read
-   it, so there is nothing to sync.)
+3. **A typed endpoint, if the operation is public.** The generic endpoint is not
+   in the published OpenAPI spec: the public contract is the typed per-operation
+   endpoints (`POST /operations/<key>`, see "The seven typed endpoints" below).
+   A new public operation needs one request class in
+   `ApiInventoryOperationRequests` whose input fields are named exactly after
+   its input keys, one method on `InventoryOperationsApi` and the controller,
+   and its spec entry (plan-operations-server-builds.md M7).
+   `InventoryOperationFacadeShapesTest` fails until the class agrees with the
+   definition. (There is only one config file — the backend's — and both sides
+   read it, so there is nothing to sync.)
 
 4. That's it. The picker, wizard, request builder, and backend pick the new
    operation up automatically. Add a case to
@@ -261,6 +266,34 @@ in the mutation's own transaction (from the entity `assertUserCanEditSubSample`
 returns). It uses the pure, unit-aware helpers in `InventoryOperationManagerImpl` and
 reports through the same `rejectValue` → `BindException` → HTTP 400 path as the
 structural rules.
+
+### The seven typed endpoints (the public API)
+
+`POST /api/inventory/v1/operations/{aliquot,passage,pool,derive,cryopreserve,revive,destroy}`
+are facades over the same path (plan-operations-server-builds.md M6; shapes frozen in
+`.claude/operations-facade-design-m0.md`). Each request class in
+`ApiInventoryOperationRequests` carries what is consumed (`origin` for six, `origins`
+for Pool, identified by global id `"SS1234"`) with an optional `expectedQuantity` per
+origin, the definition's inputs as fields named exactly after the input keys, and for a
+creating operation `templateId` (numeric, like `POST /samples`) and
+`documentedByGlobalId`. `amountTaken` travels on the origin element and is omitted
+for Passage and Destroy, where the definition decides what is taken; `count` and
+Revive's `storageTemp` may be omitted and take the definition's `default`
+(`InventoryOperationInputValidator.withDefaults`).
+
+The controller converts the typed body to the generic request, runs the same structural
+validator and the same manager call, then renames every error path to the field the
+caller sent (`origins[0].amountTaken` → `origin.amountTaken`, `origins[1].id` →
+`origins[1].globalId`, `newSample.templateId` → `templateId`,
+`newSample.subSamples[i].quantity` → `eachAmount`; bare input keys pass through). The
+facades validate shape only (the origin is present, a Pool has at least two); every value
+rule stays in the core so it cannot drift from the config, which
+`InventoryOperationFacadeShapesTest` pins. `expectedQuantity`, when sent, is
+compare-and-swapped against the live locked quantity and a mismatch is a 409, exactly
+like the wizard's `amountMode: "all"`. All seven answer with one envelope
+(`ApiInventoryOperationResult`: the created `sample`, null for Destroy, and each
+`origin` as it stands afterwards), 201 with a `Location` at the new sample for the six
+creating operations, 200 for Destroy.
 
 ## Wizard steps
 
@@ -403,10 +436,13 @@ fields in the wizard is deferred.
   `InventoryOperationPostValidatorTest` (the request structure; it also holds the golden
   built request per operation that `InventoryOperationRequestBuilderTest` checks the
   builder against), `InventoryOperationInputValidatorTest`
-  (`mvn test -Dtest=... -Dfast=true`), plus `InventoryOperationsApiControllerMVCIT`
-  (end-to-end, incl. over-removal rejection and the concurrency rules) and
-  `InventoryOperationsInputsShapeMVCIT` (the records each operation persists, as a golden
-  fingerprint; run with `mvn verify`).
+  (`mvn test -Dtest=... -Dfast=true`), `InventoryOperationFacadeShapesTest` (each typed
+  request class agrees with its definition, and the M0 examples bind), plus
+  `InventoryOperationsApiControllerMVCIT` (end-to-end, incl. over-removal rejection and
+  the concurrency rules), `InventoryOperationsInputsShapeMVCIT` (the records each
+  operation persists, as a golden fingerprint) and `InventoryOperationFacadesMVCIT` (the
+  seven typed endpoints: envelope, status codes, renamed error paths, the 409, the
+  defaults). Run the MVCITs with `mvn verify -Dtest=A,B` (comma-separated).
 
 ## Out of scope (current)
 
