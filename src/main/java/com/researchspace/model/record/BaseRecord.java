@@ -609,7 +609,8 @@ public abstract class BaseRecord
       if (from.isTopLevelSharedFolder()) {
         return false;
       }
-      if (from.isSharedFolder() && !(to.isSharedFolder() || (to.isNotebook() && to.isShared()))) {
+      if (from.isSharedFolder()
+          && !(to.isSharedFolder() || (to.isNotebook() && sharesPrincipalWith(from, to)))) {
         return false;
       }
       if (!from.isSharedFolder() && to.isSharedFolder()) {
@@ -623,6 +624,17 @@ public abstract class BaseRecord
     boolean removed = from.removeChild(this);
     RecordToFolder added = to.addChild(this, u);
     return added != null && removed;
+  }
+
+  private static boolean sharesPrincipalWith(BaseRecord first, BaseRecord second) {
+    return first.getSharingACL().getAclElements().stream()
+        .map(ACLElement::getUserOrGrpUniqueName)
+        .filter(principal -> !ANONYMOUS_USER.equals(principal))
+        .anyMatch(
+            principal ->
+                second.getSharingACL().getAclElements().stream()
+                    .map(ACLElement::getUserOrGrpUniqueName)
+                    .anyMatch(principal::equals));
   }
 
   /**
