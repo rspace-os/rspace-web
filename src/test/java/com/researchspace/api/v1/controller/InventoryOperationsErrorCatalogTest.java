@@ -43,7 +43,7 @@ class InventoryOperationsErrorCatalogTest {
    * Every file in the controller package whose name starts with Operation or InventoryOperation is
    * matched, rather than named one by one, so splitting a validator cannot quietly take its codes
    * out of scope: that is exactly what happened when the 994-line validator became four classes
-   * (parallel review). The two files outside that package are named explicitly.
+   * (parallel review). The three files outside that package are named explicitly.
    */
   private static Path[] sourcesRaisingOperationErrors() throws IOException {
     List<Path> sources = new ArrayList<>();
@@ -60,6 +60,9 @@ class InventoryOperationsErrorCatalogTest {
     sources.add(
         Path.of(
             "src/main/java/com/researchspace/service/inventory/impl/InventoryOperationManagerImpl.java"));
+    sources.add(
+        Path.of(
+            "src/main/java/com/researchspace/service/inventory/InventoryOperationInputValidator.java"));
     sources.add(CONTROLLER_DIR.resolve("ApiControllerAdvice.java"));
     return sources.toArray(new Path[0]);
   }
