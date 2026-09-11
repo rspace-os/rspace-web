@@ -1,5 +1,7 @@
 package com.researchspace.service;
 
+import org.apache.shiro.authz.AuthorizationException;
+
 import static com.researchspace.model.record.StructuredDocument.MAX_TAG_LENGTH;
 import static com.researchspace.service.DocumentTagManager.FINAL_DATA;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -117,7 +119,8 @@ public class DocumentTagManagerTest extends SpringTransactionalTest {
     final StructuredDocument any = createBasicDocumentInRootFolderWithText(user, "any");
     final User other = createAndSaveRandomUser();
     logoutAndLoginAs(other);
-    assertAuthorisationExceptionThrown(() -> tagMgr.saveTag(any.getId(), "tag1", other));
+    Long recordId = any.getId();
+    assertThrows(AuthorizationException.class, () -> tagMgr.saveTag(recordId, "tag1", other));
     logoutAndLoginAs(user);
     // saving empty tag is NOT rejected if is empty - in general, attempt to re-save current tags
     // passes
@@ -130,11 +133,10 @@ public class DocumentTagManagerTest extends SpringTransactionalTest {
         tagMgr
             .saveTag(any.getId(), RandomStringUtils.randomAlphabetic(MAX_TAG_LENGTH), user)
             .isSucceeded());
+    Long documentId = any.getId();
+    String overlongTag = RandomStringUtils.randomAlphabetic(MAX_TAG_LENGTH + 1);
     assertThrows(
-        ConstraintViolationException.class,
-        () ->
-            tagMgr.saveTag(
-                any.getId(), RandomStringUtils.randomAlphabetic(MAX_TAG_LENGTH + 1), user));
+        ConstraintViolationException.class, () -> tagMgr.saveTag(documentId, overlongTag, user));
   }
 
   @Test
@@ -158,18 +160,19 @@ public class DocumentTagManagerTest extends SpringTransactionalTest {
     assertTrue(tagMgr.apiSaveTagForDocument(any.getId(), "", user).isSucceeded());
     assertEquals("", recordDao.get(any.getId()).asStrucDoc().getDocTag());
     assertEquals("", recordDao.get(any.getId()).asStrucDoc().getTagMetaData());
+    Long documentId = any.getId();
     assertThrows(
         IllegalArgumentException.class,
-        () -> tagMgr.apiSaveTagForDocument(any.getId(), "tag/", user));
+        () -> tagMgr.apiSaveTagForDocument(documentId, "tag/", user));
     assertThrows(
         IllegalArgumentException.class,
-        () -> tagMgr.apiSaveTagForDocument(any.getId(), "tag\\", user));
+        () -> tagMgr.apiSaveTagForDocument(documentId, "tag\\", user));
     assertThrows(
         IllegalArgumentException.class,
-        () -> tagMgr.apiSaveTagForDocument(any.getId(), "tag>", user));
+        () -> tagMgr.apiSaveTagForDocument(documentId, "tag>", user));
     assertThrows(
         IllegalArgumentException.class,
-        () -> tagMgr.apiSaveTagForDocument(any.getId(), "tag<", user));
+        () -> tagMgr.apiSaveTagForDocument(documentId, "tag<", user));
   }
 
   @Test
@@ -183,9 +186,10 @@ public class DocumentTagManagerTest extends SpringTransactionalTest {
     recordDao.save(any);
     logoutAndLoginAs(user);
     // new tags forbidden
+    Long documentId = any.getId();
     assertThrows(
         IllegalArgumentException.class,
-        () -> tagMgr.apiSaveTagForDocument(any.getId(), "tag2", user));
+        () -> tagMgr.apiSaveTagForDocument(documentId, "tag2", user));
     assertTrue(tagMgr.apiSaveTagForDocument(any.getId(), "tag1", user).isSucceeded());
     assertTrue(tagMgr.apiSaveTagForDocument(any.getId(), "", user).isSucceeded());
     // tag deletion allowed

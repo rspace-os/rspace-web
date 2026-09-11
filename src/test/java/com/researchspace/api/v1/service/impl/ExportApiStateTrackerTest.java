@@ -23,12 +23,12 @@ class ExportApiStateTrackerTest {
     tracker.addExportRecordList("a", new ExportRecordList());
     tracker.addProgressMonitor("a", monitor);
     // can't overwrite with same key
+    ExportRecordList replacementRecords = new ExportRecordList();
     assertThrows(
-        IllegalArgumentException.class,
-        () -> tracker.addExportRecordList("a", new ExportRecordList()));
+        IllegalArgumentException.class, () -> tracker.addExportRecordList("a", replacementRecords));
+    ProgressMonitorImpl replacementMonitor = new ProgressMonitorImpl(10, "a test monitor");
     assertThrows(
-        IllegalArgumentException.class,
-        () -> tracker.addProgressMonitor("a", new ProgressMonitorImpl(10, "a test monitor")));
+        IllegalArgumentException.class, () -> tracker.addProgressMonitor("a", replacementMonitor));
 
     // get(id) works as expected
     assertFalse(tracker.getById("b").isPresent());

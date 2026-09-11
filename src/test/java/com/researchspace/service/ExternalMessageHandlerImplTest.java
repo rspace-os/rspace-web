@@ -1,5 +1,9 @@
 package com.researchspace.service;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import org.apache.shiro.authz.AuthorizationException;
+
 import static com.researchspace.core.util.TransformerUtils.toList;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -128,8 +132,8 @@ public class ExternalMessageHandlerImplTest extends SpringTransactionalTest {
     User u2 = createAndSaveRandomUser();
     initialiseContentWithEmptyContent(u2);
     logoutAndLoginAs(u2);
-    RSpaceTestUtils.assertAuthExceptionThrown(
-        () -> handler.sendExternalMessage(EXPECTED_MESSAGE, cfgSetId, toList(-10L), u2));
+    var recordIds = toList(-10L);
+    assertThrows(AuthorizationException.class, () -> handler.sendExternalMessage(EXPECTED_MESSAGE, cfgSetId, recordIds, u2));
   }
 
   private Map<String, String> getSlackDevDfg() {

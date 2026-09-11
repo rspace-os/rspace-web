@@ -1,5 +1,9 @@
 package com.researchspace.service;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import org.apache.shiro.authz.AuthorizationException;
+
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -386,8 +390,7 @@ public class AuditManager2IT extends RealTransactionSpringTestBase {
     // now check that cannot restore from signed document
     newCurrent.setSigned(true);
     recordMgr.save(newCurrent, piUser);
-    assertAuthorisationExceptionThrown(
-        () -> auditMgr.restoreRevisionAsCurrent(firstRevission, DOC_ID));
+    assertThrows(AuthorizationException.class, () -> auditMgr.restoreRevisionAsCurrent(firstRevission, DOC_ID));
   }
 
   @Test

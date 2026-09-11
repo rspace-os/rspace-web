@@ -464,11 +464,13 @@ public class RecordManagerTest extends SpringTransactionalTest {
     recordMgr.copySnippetIntoField(otherSnippet.getId(), otherField.getId(), otherUser);
 
     // other user can't use user's snippet
-    assertAuthorisationExceptionThrown(
-        () -> recordMgr.copySnippetIntoField(snippet.getId(), otherField.getId(), otherUser));
+    Long snippetId = snippet.getId();
+    Long otherFieldId = otherField.getId();
+    assertThrows(AuthorizationException.class, () -> recordMgr.copySnippetIntoField(snippetId, otherFieldId, otherUser));
     // other user can't insert snippet into user's field
-    assertAuthorisationExceptionThrown(
-        () -> recordMgr.copySnippetIntoField(otherSnippet.getId(), field.getId(), otherUser));
+    Long otherSnippetId = otherSnippet.getId();
+    Long fieldId = field.getId();
+    assertThrows(AuthorizationException.class, () -> recordMgr.copySnippetIntoField(otherSnippetId, fieldId, otherUser));
   }
 
   @Test // RSPAC-1126
@@ -874,9 +876,10 @@ public class RecordManagerTest extends SpringTransactionalTest {
   public void addStructuredDocumentArgumentCheckingNoNulls() {
     user.getRootFolder();
     flushDatabaseState();
+    Long userId = user.getId();
     assertThrows(
         NullPointerException.class,
-        () -> recordMgr.createNewStructuredDocument(user.getId(), null, null));
+        () -> recordMgr.createNewStructuredDocument(userId, null, null));
   }
 
   @Test
@@ -1228,8 +1231,8 @@ public class RecordManagerTest extends SpringTransactionalTest {
     final User other = createAndSaveUserIfNotExists("OTHERU");
     logoutCurrUserAndLoginAs(other.getUsername(), TESTPASSWD);
     // other user doesn't have permission to rename 'users' record
-    assertAuthorisationExceptionThrown(
-        () -> recordMgr.renameRecord("newnameOTHER", doc.getId(), other));
+    Long recordId = doc.getId();
+    assertThrows(AuthorizationException.class, () -> recordMgr.renameRecord("newnameOTHER", recordId, other));
 
     // new names are abbreviated
     assertTrue(
@@ -1343,8 +1346,8 @@ public class RecordManagerTest extends SpringTransactionalTest {
     // check requires authorisation
     final User other = createAndSaveUserIfNotExists("OTHERU");
     logoutAndLoginAs(other);
-    assertAuthorisationExceptionThrown(
-        () -> recordMgr.saveStructuredDocument(docId, other.getUsername(), true, null));
+    String otherUsername = other.getUsername();
+    assertThrows(AuthorizationException.class, () -> recordMgr.saveStructuredDocument(docId, otherUsername, true, null));
   }
 
   @Test
@@ -1424,8 +1427,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
     assertEquals(0, hits2.size());
     // no search terms?
 
-    assertExceptionThrown(
-        () -> recordMgr.getAllFrom(Collections.EMPTY_SET), IllegalArgumentException.class);
+    assertThrows(IllegalArgumentException.class, () -> recordMgr.getAllFrom(Collections.EMPTY_SET));
 
     // folders are returned as well!
     Folder f1 = createFolder("any2", user.getRootFolder(), user);
@@ -1449,12 +1451,12 @@ public class RecordManagerTest extends SpringTransactionalTest {
     assertNotNull(anyDoc);
 
     // now we do check permissions, so this should throw AuthException as wrong user is logged in in
-    assertAuthorisationExceptionThrown(
-        () ->
+    Long recordId = anyDoc2.getId();
+    LinkedFieldsToMediaRecordInitPolicy policy = new LinkedFieldsToMediaRecordInitPolicy();
+    assertThrows(AuthorizationException.class, () ->
             recordMgr
                 .getRecordWithLazyLoadedProperties(
-                    anyDoc2.getId(), user, new LinkedFieldsToMediaRecordInitPolicy(), false)
-                .asStrucDoc());
+                    recordId, user, policy, false));
   }
 
   @Test

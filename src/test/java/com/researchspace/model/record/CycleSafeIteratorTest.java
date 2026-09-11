@@ -43,7 +43,7 @@ public class CycleSafeIteratorTest {
     CycleSafeIterator it = new CycleSafeIterator(f3);
     // check isolated node returns false
     assertFalse(it.hasNext());
-    assertThrowsNoSuchElementException(it);
+    assertThrows(NoSuchElementException.class, it::next);
     // f1->f2->f3,f1->f4
     f1.doAddToParentsOnly(f2, u);
     f1.doAddToParentsOnly(f4, u);
@@ -116,23 +116,11 @@ public class CycleSafeIteratorTest {
     assertEquals(target, count);
   }
 
-  private void assertThrowsNoSuchElementException(CycleSafeIterator it) {
-    try {
-      it.next();
-    } catch (NoSuchElementException e) {
-      return;
-    }
-    fail("expected no such elemetn exception");
-  }
-
   @Test
   public void testRemoeOperationUnsupported() {
-    assertThrows(
-        UnsupportedOperationException.class,
-        () -> {
-          Folder f1 = TestFactory.createAFolder("f1", u);
-          Iterator<Folder> cycleIt = new CycleSafeIterator(f1);
-          cycleIt.remove();
-        });
+    Folder f1 = TestFactory.createAFolder("f1", u);
+    Iterator<Folder> cycleIt = new CycleSafeIterator(f1);
+
+    assertThrows(UnsupportedOperationException.class, () -> cycleIt.remove());
   }
 }

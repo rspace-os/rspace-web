@@ -190,23 +190,27 @@ class FilestoreAclCheckerTest {
   @Test
   void assertCanRead_unauthorized_throws() {
     NfsFileSystem fs = s3FileSystem("alice", null);
-    assertThrows(AuthorizationException.class, () -> checker.assertCanRead(user("bob"), fs));
+    User bob = user("bob");
+    assertThrows(AuthorizationException.class, () -> checker.assertCanRead(bob, fs));
   }
 
   @Test
   void assertCanWrite_unauthorized_throws() {
     NfsFileSystem fs = s3FileSystem(null, "alice");
-    assertThrows(AuthorizationException.class, () -> checker.assertCanWrite(user("bob"), fs));
+    User bob = user("bob");
+    assertThrows(AuthorizationException.class, () -> checker.assertCanWrite(bob, fs));
   }
 
   @Test
   void assertCanRead_nullFilesystem_throwsAuthorizationExceptionNotNpe() {
-    assertThrows(AuthorizationException.class, () -> checker.assertCanRead(user("alice"), null));
+    User alice = user("alice");
+    assertThrows(AuthorizationException.class, () -> checker.assertCanRead(alice, null));
   }
 
   @Test
   void assertCanWrite_nullFilesystem_throwsAuthorizationExceptionNotNpe() {
-    assertThrows(AuthorizationException.class, () -> checker.assertCanWrite(user("alice"), null));
+    User alice = user("alice");
+    assertThrows(AuthorizationException.class, () -> checker.assertCanWrite(alice, null));
   }
 
   // --- helpers ---

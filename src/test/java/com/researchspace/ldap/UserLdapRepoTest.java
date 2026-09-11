@@ -137,10 +137,11 @@ public class UserLdapRepoTest extends SpringTransactionalTest {
         .findUserByUsername(testUser3.getUsername());
 
     // run sid retrieval for non-ldap user
+    String testUsername = testUser.getUsername();
     assertThat(
         assertThrows(
                 IllegalArgumentException.class,
-                () -> spyUserLdapRepo.retrieveSidForLdapUser(testUser.getUsername()))
+                () -> spyUserLdapRepo.retrieveSidForLdapUser(testUsername))
             .getMessage(),
         containsString("non-ldap"));
 
@@ -149,10 +150,11 @@ public class UserLdapRepoTest extends SpringTransactionalTest {
     assertEquals(testLdapUser2.getSid(), retrievedSID);
 
     // run for ldap user with sid
+    String testUsername3 = testUser3.getUsername();
     assertThat(
         assertThrows(
                 IllegalArgumentException.class,
-                () -> spyUserLdapRepo.retrieveSidForLdapUser(testUser3.getUsername()))
+                () -> spyUserLdapRepo.retrieveSidForLdapUser(testUsername3))
             .getMessage(),
         containsString("user with SID"));
   }

@@ -1,5 +1,9 @@
 package com.researchspace.service;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import org.apache.shiro.authz.AuthorizationException;
+
 import static com.researchspace.testutils.TestGroup.LABADMIN_PREFIX;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -33,9 +37,9 @@ public class GroupManagerRemoveUserPermissionsTest extends GroupPermissionsTestB
     removeUser(testgrp, "u1", admin);
     assertGroupMemberCount(2, testgrp.getGroup()); // pi + labadmin
     // lab admin can't remove PI
-    assertAuthorisationExceptionThrown(() -> removeUser(testgrp, "pi", admin));
+    assertRemoveUserNotAuthorised(testgrp, "pi", admin);
     // lab admin cannot remove labadmin as does not have permission to alter role remove himself
-    assertAuthorisationExceptionThrown(() -> removeUser(testgrp, LABADMIN_PREFIX, admin));
+    assertRemoveUserNotAuthorised(testgrp, LABADMIN_PREFIX, admin);
     assertGroupMemberCount(2, testgrp.getGroup()); // pi + labadmin
   }
 
@@ -102,12 +106,9 @@ public class GroupManagerRemoveUserPermissionsTest extends GroupPermissionsTestB
   private void assertNoPermissionsToRemoveGrpMembers(
       TestGroup testgrp, User commAdminOfDifferentCommunity, final int initialGrpSize)
       throws Exception {
-    assertAuthorisationExceptionThrown(
-        () -> removeUser(testgrp, "pi", commAdminOfDifferentCommunity));
-    assertAuthorisationExceptionThrown(
-        () -> removeUser(testgrp, LABADMIN_PREFIX, commAdminOfDifferentCommunity));
-    assertAuthorisationExceptionThrown(
-        () -> removeUser(testgrp, "u1", commAdminOfDifferentCommunity));
+    assertRemoveUserNotAuthorised(testgrp, "pi", commAdminOfDifferentCommunity);
+    assertRemoveUserNotAuthorised(testgrp, LABADMIN_PREFIX, commAdminOfDifferentCommunity);
+    assertRemoveUserNotAuthorised(testgrp, "u1", commAdminOfDifferentCommunity);
     assertGroupMemberCount(initialGrpSize, testgrp.getGroup());
   }
 
@@ -135,6 +136,13 @@ public class GroupManagerRemoveUserPermissionsTest extends GroupPermissionsTestB
 
   private void assertGroupMemberCount(final int expectedGrpMemberCount, Group grp) {
     assertEquals(expectedGrpMemberCount, grpMgr.getGroup(grp.getId()).getMembers().size());
+  }
+
+  private void assertRemoveUserNotAuthorised(TestGroup testgrp, String userPrefix, User subject)
+      throws Exception {
+    String username = testgrp.getUserByPrefix(userPrefix).getUsername();
+    Long groupId = testgrp.getGroup().getId();
+    assertThrows(AuthorizationException.class, () -> grpMgr.removeUserFromGroup(username, groupId, subject));
   }
 
   private void removeUser(TestGroup testgrp, String userPrefix, User subject) {

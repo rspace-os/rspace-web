@@ -256,11 +256,8 @@ public class AssetUrlTagTest {
 
   @Test
   public void blankValueIsRejected() throws JspException {
-    assertThrows(
-        IllegalStateException.class,
-        () -> {
-          tag.setValue("");
-          tag.doStartTag();
-        });
+    tag.setValue("");
+
+    assertThrows(IllegalStateException.class, () -> tag.doStartTag());
   }
 }

@@ -442,32 +442,28 @@ public class InventoryExportManagerTest extends SpringTransactionalTest {
     ApiSampleWithFullSubSamples testUserBasicSample = createBasicSampleForUser(testUser);
     User otherUser = createAndSaveUserIfNotExists(getRandomAlphabeticString("export2"));
     ApiSampleWithFullSubSamples otherUserBasicSample = createBasicSampleForUser(otherUser);
+    List<String> usernames = List.of(testUser.getUsername(), otherUser.getUsername(), "unexisting");
 
     ApiRuntimeException are =
         assertThrows(
             ApiRuntimeException.class,
             () ->
                 exportMgr.exportUserItemsAsCsvContent(
-                    List.of(testUser.getUsername(), otherUser.getUsername(), "unexisting"),
-                    CsvExportMode.FULL,
-                    true,
-                    testUser));
+                    usernames, CsvExportMode.FULL, true, testUser));
     assertEquals("errors.inventory.export.unexportableUsers", are.getErrorCode());
     assertEquals(otherUser.getUsername() + " and unexisting", (String) are.getArgs()[0]);
 
+    List<GlobalIdentifier> selectedItems =
+        List.of(
+            new GlobalIdentifier(testUserBasicSample.getGlobalId()),
+            new GlobalIdentifier(otherUserBasicSample.getGlobalId()),
+            new GlobalIdentifier("IT0"));
     are =
         assertThrows(
             ApiRuntimeException.class,
             () ->
                 exportMgr.exportSelectedItemsAsCsvContent(
-                    List.of(
-                        new GlobalIdentifier(testUserBasicSample.getGlobalId()),
-                        new GlobalIdentifier(otherUserBasicSample.getGlobalId()),
-                        new GlobalIdentifier("IT0")),
-                    CsvExportMode.FULL,
-                    false,
-                    false,
-                    testUser));
+                    selectedItems, CsvExportMode.FULL, false, false, testUser));
     assertEquals("errors.inventory.export.unexportableGlobalIds", are.getErrorCode());
     assertEquals(otherUserBasicSample.getGlobalId() + " and IT0", (String) are.getArgs()[0]);
   }

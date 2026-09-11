@@ -14,6 +14,7 @@ import com.researchspace.api.v1.model.ApiExtraField.ExtraFieldTypeEnum;
 import com.researchspace.api.v1.model.ApiInventoryLink;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
+import com.researchspace.model.inventory.field.ExtraField;
 import com.researchspace.model.inventory.field.ExtraLinkField;
 import com.researchspace.model.inventory.field.InventoryLink;
 import com.researchspace.model.record.RecordFactory;
@@ -142,10 +143,12 @@ class ApiExtraFieldsHelperLinkUpdateTest {
     when(selfField.getId()).thenReturn(5L);
     when(selfField.getConnectedRecordGlobalIdentifier()).thenReturn("SA9");
     ApiExtraField apiField = incomingLinkField(5L, "SA9", null);
+    List<ApiExtraField> apiFields = List.of(apiField);
+    List<ExtraField> dbFields = List.of(selfField);
 
     org.junit.jupiter.api.Assertions.assertThrows(
         com.researchspace.api.v1.auth.ApiRuntimeException.class,
-        () -> helper.applyExistingLinkFieldChanges(List.of(apiField), List.of(selfField), user));
+        () -> helper.applyExistingLinkFieldChanges(apiFields, dbFields, user));
     verify(inventoryLinkManager, never()).updateLink(any(), any(), any());
     verify(inventoryLinkManager, never()).createLink(any(), any());
   }
@@ -171,11 +174,13 @@ class ApiExtraFieldsHelperLinkUpdateTest {
     // service-layer apply must reject a non-DataCite relation itself
     ApiExtraField apiField = incomingLinkField(5L, "SA2", null);
     apiField.getLink().setRelationType("NotADataCiteRelation");
+    List<ApiExtraField> apiFields = List.of(apiField);
+    List<ExtraField> dbFields = List.of(dbField);
 
     com.researchspace.api.v1.auth.ApiRuntimeException ex =
         org.junit.jupiter.api.Assertions.assertThrows(
             com.researchspace.api.v1.auth.ApiRuntimeException.class,
-            () -> helper.applyExistingLinkFieldChanges(List.of(apiField), List.of(dbField), user));
+            () -> helper.applyExistingLinkFieldChanges(apiFields, dbFields, user));
     org.junit.jupiter.api.Assertions.assertEquals(
         "errors.inventory.field.linkRelationTypeInvalid", ex.getErrorCode());
     verify(inventoryLinkManager, never()).updateLink(any(), any(), any());
