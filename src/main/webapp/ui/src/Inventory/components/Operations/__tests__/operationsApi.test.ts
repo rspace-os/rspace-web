@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { performOperation, sampleNameAvailable } from "../operationsApi";
-import type { OperationRequest } from "../types";
+import { describeOperationError, performOperation, sampleNameAvailable } from "../operationsApi";
+import type { InventoryOperation } from "../operationsConfig";
+import type { OperationInputsRequest } from "../types";
 
 const query = vi.fn((_resource: string, _params: URLSearchParams) =>
   Promise.resolve({ data: { valid: true } as { valid?: boolean; message?: string } }),
@@ -47,12 +48,59 @@ describe("performOperation", () => {
     // A terminal operation (Destroy) creates no sample and returns an empty body, which Axios surfaces
     // as "" rather than null; performOperation must still resolve to null (its declared return type).
     post.mockResolvedValueOnce({ data: "" });
-    expect(await performOperation({} as OperationRequest)).toBeNull();
+    expect(await performOperation({} as OperationInputsRequest)).toBeNull();
   });
 
   it("returns the created sample for a producing operation", async () => {
     const created = { id: 7, globalId: "SA7", name: "Derived" };
     post.mockResolvedValueOnce({ data: created });
-    expect(await performOperation({} as OperationRequest)).toEqual(created);
+    expect(await performOperation({} as OperationInputsRequest)).toEqual(created);
+  });
+});
+
+// The inputs shape names a rejected input by its bare key ("sampleName: ..."), never a dotted path
+// (plan-operations-server-builds.md, M4), so the wizard swaps the key for the label it shows.
+describe("describeOperationError", () => {
+  const operation = {
+    key: "aliquot",
+    inputs: [{ key: "sampleName", type: "text", labelKey: "operations.fields.sampleName" }],
+    effect: { links: [] },
+  } as unknown as InventoryOperation;
+  const resolveLabel = (key: string): string => (key === "operations.fields.sampleName" ? "Sample name" : key);
+  const rejectedWith = (first: string) => ({ response: { data: { message: "Errors detected: 1", errors: [first] } } });
+
+  it("words an error on a declared input with the input's label instead of its bare key", () => {
+    expect(
+      describeOperationError(
+        rejectedWith("sampleName: This operation requires [sampleName]."),
+        operation,
+        resolveLabel,
+        "failed",
+      ),
+    ).toBe("Sample name: This operation requires [sampleName].");
+  });
+
+  it("strips a dotted origin path as before", () => {
+    expect(
+      describeOperationError(
+        rejectedWith("origins[0].amountTaken: Cannot take more from an origin than it currently holds"),
+        operation,
+        resolveLabel,
+        "failed",
+      ),
+    ).toBe("Cannot take more from an origin than it currently holds");
+  });
+
+  it("leaves a leading word that is not one of the operation's inputs alone", () => {
+    expect(describeOperationError(rejectedWith("Warning: stock is low"), operation, resolveLabel, "failed")).toBe(
+      "Warning: stock is low",
+    );
+  });
+
+  it("falls back to the response message when there is no field-scoped error", () => {
+    const conflict = { response: { data: { message: "The subsample's quantity changed", errors: [""] } } };
+    expect(describeOperationError(conflict, operation, resolveLabel, "failed")).toBe(
+      "The subsample's quantity changed",
+    );
   });
 });

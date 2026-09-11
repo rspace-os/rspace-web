@@ -1,8 +1,8 @@
 /**
  * Types for the Inventory operation wizard request. The wizard collects values per the operation's
- * config, then buildOperationRequest turns them into an OperationRequest which is POSTed to the
- * thin backend endpoint (see DevDocs/adr/0007). Shapes mirror the backend ApiInventoryOperationPost /
- * ApiSampleWithFullSubSamples so the JSON maps straight through.
+ * config, then buildOperationInputsRequest turns them into an OperationInputsRequest which is POSTed
+ * to the thin backend endpoint (see DevDocs/adr/0007). Shapes mirror the backend
+ * ApiInventoryOperationPost / ApiSampleWithFullSubSamples so the JSON maps straight through.
  */
 
 export type OperationQuantity = { numericValue: number; unitId: number };
@@ -91,12 +91,33 @@ export type OperationOriginUpdate = {
   extraFields?: Array<OperationExtraField>;
 };
 
+/**
+ * The client-assembled shape. No longer POSTed (see OperationInputsRequest): buildOperationRequest
+ * still produces it as the wizard's model of the sample the server builds, which the confirmation
+ * preview is checked against (plan-operations-server-builds.md, M4).
+ */
 export type OperationRequest = {
   operationType: string;
   origins: Array<OperationOriginUpdate>;
   /** The sample the operation creates, or null for a terminal operation that produces nothing
    * (noOutput, e.g. Destroy). */
   newSample: OperationNewSample | null;
+};
+
+/**
+ * The request the wizard POSTs (plan-operations-server-builds.md, M4): the values the user typed,
+ * keyed by the definition's input key, from which the server builds the sample itself. Each origin
+ * still carries the amount taken and how it was decided, which the server compare-and-swaps against
+ * the live quantity; the origin fields an operation adds (Destroy's disposed date) are the server's.
+ */
+export type OperationInputsRequest = {
+  operationType: string;
+  origins: Array<Omit<OperationOriginUpdate, "extraFields">>;
+  inputs: OperationInputs;
+  /** null for an ad-hoc sample; numeric like POST /samples. */
+  templateId: number | null;
+  /** The document chosen in the documentation step, linked as IsDocumentedBy; null for none. */
+  documentedByGlobalId: string | null;
 };
 
 /** An origin subsample the wizard was launched on. */

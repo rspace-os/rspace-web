@@ -3,6 +3,7 @@ package com.researchspace.api.v1.controller;
 import com.researchspace.api.v1.model.ApiInventoryOperationPost;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.UnknownPropertyCapturing;
+import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.service.inventory.ApiExtraFieldsHelper;
 import com.researchspace.service.inventory.InventoryOperationConfig;
 import com.researchspace.service.inventory.InventoryOperationConfigRegistry;
@@ -147,6 +148,14 @@ public class InventoryOperationPostValidator implements Validator {
 
     originValidator.validateOrigins(request, config, errors);
     if (request.getInputs() == null) {
+      // The template and documentation target belong to the server-built shape; on this shape they
+      // live on newSample, so a top-level one would be silently ignored (M4). Rejected instead.
+      if (request.getTemplateId() != null) {
+        rejectInputsShapeOnly(errors, "templateId");
+      }
+      if (request.getDocumentedByGlobalId() != null) {
+        rejectInputsShapeOnly(errors, "documentedByGlobalId");
+      }
       newSampleValidator.validateNewSample(request, config, errors);
       return;
     }
@@ -159,6 +168,17 @@ public class InventoryOperationPostValidator implements Validator {
           "errors.inventory.operation.newSampleNotAccepted",
           "Send either inputs or newSample, not both.");
     }
+    // Same record kinds the documentation picker offers and the client-assembled shape accepts
+    // (OperationNewSampleValidator.validateDocumentationLink); here the id arrives bare, so a
+    // malformed one is rejected too rather than left to the link validation that shape delegates
+    // to.
+    if (request.getDocumentedByGlobalId() != null
+        && !targetsDocumentableRecord(request.getDocumentedByGlobalId())) {
+      errors.rejectValue(
+          "documentedByGlobalId",
+          "errors.inventory.operation.documentationLinkTargetInvalid",
+          "A documentation link must target an ELN document, notebook or Gallery file.");
+    }
     for (int index = 0; index < request.getOrigins().size(); index++) {
       if (CollectionUtils.isNotEmpty(request.getOrigins().get(index).getExtraFields())) {
         errors.rejectValue(
@@ -166,6 +186,23 @@ public class InventoryOperationPostValidator implements Validator {
             "errors.inventory.operation.originFieldsNotAccepted",
             "This shape adds the operation's origin fields itself.");
       }
+    }
+  }
+
+  private static void rejectInputsShapeOnly(Errors errors, String field) {
+    errors.rejectValue(
+        field,
+        "errors.inventory.operation.inputsShapeOnly",
+        new Object[] {field},
+        "This property is accepted only alongside inputs.");
+  }
+
+  private static boolean targetsDocumentableRecord(String globalId) {
+    try {
+      return OperationNewSampleValidator.DOCUMENTATION_TARGET_PREFIXES.contains(
+          new GlobalIdentifier(globalId).getPrefix());
+    } catch (IllegalArgumentException malformed) {
+      return false;
     }
   }
 
