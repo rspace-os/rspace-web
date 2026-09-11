@@ -1,7 +1,11 @@
 /**
- * Turns an operation definition plus the user's collected input values into the concrete
- * OperationRequest POSTed to the backend. Pure and operation-agnostic: it only follows the effect
- * spec, so a new operation needs a new config entry, not new code here (see DevDocs/adr/0007).
+ * Turns an operation definition plus the user's collected input values into the request the wizard
+ * POSTs (buildOperationInputsRequest) and into the wizard's model of the sample the server builds
+ * from it (buildOperationRequest, the client-assembled shape the endpoint accepted before
+ * plan-operations-server-builds.md M4). The model is what the confirmation preview is checked
+ * against, since the preview and the server build can now drift. Pure and operation-agnostic: it
+ * only follows the effect spec, so a new operation needs a new config entry, not new code here (see
+ * DevDocs/adr/0007).
  *
  * The provenance/documentation link(s) and text fields (e.g. Cryomedium) go on the new sample only,
  * never on the subsamples it creates; custom fields added to an origin itself (Destroy's disposed
@@ -18,6 +22,7 @@ import type {
   AmountMode,
   OperationExtraField,
   OperationInputs,
+  OperationInputsRequest,
   OperationNewSample,
   OperationOrigin,
   OperationOriginUpdate,
@@ -52,9 +57,11 @@ function quantityValue(values: OperationInputs, key: string): OperationQuantity 
  * <p>Every member of a colliding group is suffixed, not just the later ones, so the names stay
  * symmetrical and each still says which origin it refers to. A link is disambiguated by the global
  * id it targets, which is unique per origin; anything else falls back to an ordinal, as does the
- * pathological case where a suffixed name collides in turn.
+ * pathological case where a suffixed name collides in turn. The server applies the same rule when
+ * it builds the sample (InventoryOperationRequestBuilder.withUniqueFieldNames), so the confirmation
+ * preview uses this to show the names the server will store.
  */
-function withUniqueFieldNames(fields: Array<OperationExtraField>): Array<OperationExtraField> {
+export function withUniqueFieldNames(fields: Array<OperationExtraField>): Array<OperationExtraField> {
   const comparable = (name: string): string => name.trim().toLowerCase();
   const occurrences = new Map<string, number>();
   for (const field of fields) {
@@ -76,7 +83,7 @@ function withUniqueFieldNames(fields: Array<OperationExtraField>): Array<Operati
   });
 }
 
-export function buildOperationRequest(params: {
+type BuildParams = {
   operation: InventoryOperation;
   values: OperationInputs;
   /** One or more origin subsamples. A single-origin operation passes one; Pool passes several. */
@@ -91,17 +98,38 @@ export function buildOperationRequest(params: {
   amountMode?: AmountMode;
   /** Per-origin amounts (by origin global id) for "perSubsample" mode; ignored in other modes. */
   perSubsampleAmounts?: PerSubsampleAmounts;
-}): OperationRequest {
-  const {
-    operation,
-    values,
-    origins,
-    resolveLabel,
+};
+
+/**
+ * The request the wizard POSTs (plan-operations-server-builds.md, M4). The server builds the sample
+ * and its generated fields itself, so only what the user chose travels: the declared inputs by key,
+ * each origin's amount taken (decided exactly as for the model below, since the server
+ * compare-and-swaps a whole-origin amount against the live quantity), the template and the
+ * documentation target. Computed values (Passage's counter, Destroy's disposed date) are the
+ * server's; the origin element owns the amount taken (M3), so it is not repeated in the inputs.
+ */
+export function buildOperationInputsRequest(
+  params: BuildParams & { documentedByGlobalId: string | null },
+): OperationInputsRequest {
+  const { operation, values, templateId, documentedByGlobalId } = params;
+  const inputs: OperationInputs = {};
+  for (const input of operation.inputs) {
+    if (input.key === operation.effect.amountTakenFrom) continue;
+    const value = values[input.key];
+    if (value !== undefined) inputs[input.key] = value;
+  }
+  return {
+    operationType: operation.key,
+    origins: buildOriginUpdates(params).map(({ id, amountMode, amountTaken }) => ({ id, amountMode, amountTaken })),
+    inputs,
     templateId,
-    documentationLink,
-    amountMode = "same",
-    perSubsampleAmounts = {},
-  } = params;
+    documentedByGlobalId,
+  };
+}
+
+/** One update per origin: its amount taken, how it was decided, and any fields the operation adds to it. */
+function buildOriginUpdates(params: BuildParams): Array<OperationOriginUpdate> {
+  const { operation, values, origins, resolveLabel, amountMode = "same", perSubsampleAmounts = {} } = params;
   const { effect } = operation;
 
   // The unit used when an amount-taken has to be defaulted (a no-op zero) and the origin carries no
@@ -153,12 +181,18 @@ export function buildOperationRequest(params: {
     content: String(values[spec.contentFrom] ?? ""),
   }));
 
-  const originUpdates: Array<OperationOriginUpdate> = origins.map((origin) => ({
+  return origins.map((origin) => ({
     id: origin.id,
     amountMode: takesWholeOrigin ? "all" : "explicit",
     amountTaken: amountTakenFor(origin),
     ...(originFields.length ? { extraFields: originFields } : {}),
   }));
+}
+
+export function buildOperationRequest(params: BuildParams): OperationRequest {
+  const { operation, values, origins, resolveLabel, templateId, documentationLink } = params;
+  const { effect } = operation;
+  const originUpdates = buildOriginUpdates(params);
 
   // A terminal operation (noOutput, e.g. Destroy) creates no sample: it only acts on its origins.
   let newSample: OperationNewSample | null = null;

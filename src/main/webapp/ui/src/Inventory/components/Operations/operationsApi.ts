@@ -1,6 +1,7 @@
 import ApiService from "@/common/InvApiService";
+import { getApiErrorDetail } from "@/util/error";
 import { type InventoryOperation, parseOperationsConfig } from "./operationsConfig";
-import type { OperationRequest } from "./types";
+import type { OperationInputsRequest, ResolveLabel } from "./types";
 
 /** Minimal view of the created sample returned by the operations endpoint. */
 export type OperationResult = { id: number; globalId: string; name: string };
@@ -20,12 +21,35 @@ export async function fetchOperationsConfig(): Promise<Array<InventoryOperation>
  * already applied by InvApiService, so the resource is just "operations". Resolves to null for a
  * terminal operation (noOutput, e.g. Destroy), which creates no sample and so returns an empty body.
  */
-export async function performOperation(request: OperationRequest): Promise<OperationResult | null> {
+export async function performOperation(request: OperationInputsRequest): Promise<OperationResult | null> {
   const { data } = await ApiService.post<OperationResult | null>("operations", request);
   // A terminal operation returns an empty body, which Axios surfaces as "" (not null) once JSON
   // parsing of the empty string fails; normalise any empty/falsy response to null so the declared
   // OperationResult | null return type holds and callers never see a stray "".
   return data || null;
+}
+
+/** A field-scoped error's leading path, when it is a bare word: the inputs shape names an input by its key alone. */
+const BARE_KEY_PREFIX = /^([A-Za-z_]\w*):\s*/;
+
+/**
+ * The reason a Perform was rejected, worded for the wizard. An error against a declared input comes
+ * back keyed by the bare input key ("sampleName: This operation requires [sampleName].", never
+ * "inputs.sampleName": Spring cannot address a map entry by a dotted path, and the bare key is what a
+ * typed client would have sent), so that key is swapped for the input's label as the wizard shows it.
+ * Anything else (an origin error under "origins[0].amountTaken", a 409, a bare message) is left to
+ * getApiErrorDetail, which strips a dotted path and falls back to the response message.
+ */
+export function describeOperationError(
+  error: unknown,
+  operation: InventoryOperation,
+  resolveLabel: ResolveLabel,
+  fallback: string,
+): string {
+  const detail = getApiErrorDetail(error, fallback);
+  const match = BARE_KEY_PREFIX.exec(detail);
+  const input = match ? operation.inputs.find((i) => i.key === match[1]) : undefined;
+  return input && match ? `${resolveLabel(input.labelKey)}: ${detail.slice(match[0].length)}` : detail;
 }
 
 /**

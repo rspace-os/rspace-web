@@ -1711,6 +1711,48 @@ class InventoryOperationPostValidatorTest {
   }
 
   @Test
+  void inputsShapeAcceptsATemplateAndADocumentationTarget() {
+    ApiInventoryOperationPost request = aliquotRequest();
+    request.setNewSample(null);
+    request.setInputs(java.util.Map.of());
+    request.setTemplateId(42L);
+    request.setDocumentedByGlobalId("SD99");
+    Errors errors = validate(request);
+    assertFalse(errors.hasErrors(), () -> "unexpected: " + errors.getAllErrors());
+  }
+
+  @Test
+  void inputsShapeRejectsADocumentationTargetThatIsNotAnElnRecord() {
+    for (String target : List.of("SS100", "garbage", "")) {
+      ApiInventoryOperationPost request = aliquotRequest();
+      request.setNewSample(null);
+      request.setInputs(java.util.Map.of());
+      request.setDocumentedByGlobalId(target);
+      assertSingleErrorWithCode(
+          validate(request),
+          "documentedByGlobalId",
+          "errors.inventory.operation.documentationLinkTargetInvalid");
+    }
+  }
+
+  @Test
+  void clientAssembledShapeRejectsTheInputsShapesTopLevelFields() {
+    // On this shape both live on newSample; a top-level copy would otherwise be silently ignored.
+    ApiInventoryOperationPost request = aliquotRequest();
+    request.setTemplateId(42L);
+    request.setDocumentedByGlobalId("SD99");
+    Errors errors = validate(request);
+    assertEquals(
+        List.of("documentedByGlobalId", "templateId"),
+        errors.getFieldErrors().stream().map(FieldError::getField).sorted().toList(),
+        () -> errors.getAllErrors().toString());
+    assertTrue(
+        errors.getFieldErrors().stream()
+            .allMatch(e -> "errors.inventory.operation.inputsShapeOnly".equals(e.getCode())),
+        () -> errors.getAllErrors().toString());
+  }
+
+  @Test
   void inputsShapeRejectsClientSuppliedOriginFields() {
     // Destroy's disposed field is generated server-side under this shape; a client copy would be
     // silently replaced, so it is rejected instead.

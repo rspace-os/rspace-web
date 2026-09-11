@@ -7019,6 +7019,7 @@ export default interface Resources {
           "inputNotStorable": "[{0}] supports at most 3 decimal places.",
           "inputRequired": "This operation requires [{0}].",
           "inputWrongType": "[{0}] must be a value of type [{1}].",
+          "inputsShapeOnly": "[{0}] is accepted only alongside inputs; a client-assembled request carries it on newSample.",
           "linkToOriginRequired": "The new sample must include a {0} link back to origin subsample {1}.",
           "mustEmptyOrigin": "This operation must take the origin's entire remaining quantity.",
           "newSampleForbidden": "This operation does not create a sample, so newSample must be omitted.",

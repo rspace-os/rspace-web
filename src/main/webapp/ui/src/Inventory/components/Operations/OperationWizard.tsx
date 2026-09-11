@@ -26,16 +26,15 @@ import type SubSampleModel from "@/stores/models/SubSampleModel";
 import getRootStore from "@/stores/stores/getRootStore";
 import type { UnitCategory } from "@/stores/stores/UnitStore";
 import { showToastWhilstPending } from "@/util/alerts";
-import { getApiErrorDetail, getErrorMessage } from "@/util/error";
+import { getErrorMessage } from "@/util/error";
 import ContextDialog from "../ContextMenu/ContextDialog";
-import { buildOperationRequest } from "./buildOperationRequest";
-import { applyComputedValues, gatherParentFields } from "./computedValues";
+import { buildOperationInputsRequest } from "./buildOperationRequest";
 import type { DocumentationSelection } from "./DocumentationStep";
 import DocumentationStep from "./DocumentationStep";
 import OperationConfirmation from "./OperationConfirmation";
 import OperationDetailsStep from "./OperationDetailsStep";
 import OperationPicker from "./OperationPicker";
-import { fetchOperationsConfig, performOperation, sampleNameAvailable } from "./operationsApi";
+import { describeOperationError, fetchOperationsConfig, performOperation, sampleNameAvailable } from "./operationsApi";
 import {
   amountKeysFor,
   type InventoryOperation,
@@ -631,12 +630,8 @@ function OperationWizard({
     if (!operation) return;
     setSubmitting(true);
     try {
-      // "fromSample" reads the origin sample's own template, and a computed value with a
-      // parentSampleField arg reads a field on it (e.g. Passage number); either way the parent's
-      // fields must be loaded before we read them.
-      const computed = operation.effect.computed ?? [];
-      const needsParentFields = computed.some((c) => Object.values(c.args).some((a) => "parentSampleField" in a));
-      if (templateSelection.mode === "fromSample" || needsParentFields) await origin.sample.fetchAdditionalInfo();
+      // "fromSample" reads the origin sample's own template, so the parent must be loaded first.
+      if (templateSelection.mode === "fromSample") await origin.sample.fetchAdditionalInfo();
       // A terminal operation (Destroy) skips the template step and creates no sample, so it needs no
       // template; resolve one only for producing operations.
       const templateId = operation.noOutput
@@ -646,27 +641,16 @@ function OperationWizard({
             pickedTemplateId: templateSelection.templateId,
             originSampleTemplateId: origin.sample.templateId ?? null,
           });
-      // Apply the operation's computed values (DevDocs/adr/0007), e.g. Passage number = parent's + 1, else 1.
-      // Computed only for the request, so they never enter the remembered bundle below. Search both the
-      // template-defined fields and the sample's ad-hoc extra fields: a "Passage number" the user added
-      // as a custom field lives in extraFields, so reading only `fields` would miss it and always fall
-      // back to the start value.
-      const submitValues: OperationInputs = computed.length
-        ? applyComputedValues(operation, {
-            parentFields: gatherParentFields(origin.sample),
-            values,
-            resolveFieldName: resolveLabel,
-          })
-        : values;
-      const request = buildOperationRequest({
+      // The server builds the sample from the definition and these inputs (plan-operations-server-
+      // builds.md, M4), including the computed values (Passage number = parent's + 1, the disposed
+      // date in the session's timezone), so none of that is assembled here any more.
+      const request = buildOperationInputsRequest({
         operation,
-        values: submitValues,
+        values,
         origins: origins.map(toOrigin),
         resolveLabel,
         templateId,
-        documentationLink: documentation
-          ? { fieldName: t("operations.documentation.fieldName"), targetGlobalId: documentation.globalId }
-          : undefined,
+        documentedByGlobalId: documentation?.globalId ?? null,
         amountMode,
         perSubsampleAmounts,
       });
@@ -675,11 +659,12 @@ function OperationWizard({
       // Never fail silently: surface the reason (e.g. a backend rejection) instead of leaving the
       // Perform button looking dead. The wizard stays open so the user can retry. The reason comes
       // from the field-scoped errors array, not `message`, which for a rejected request is only
-      // "Errors detected: 1" (code review, finding 4).
+      // "Errors detected: 1" (code review, finding 4); an error on a declared input is worded with
+      // the input's label rather than its bare key.
       getRootStore().uiStore.addAlert(
         mkAlert({
           title: t("operations.wizard.failed"),
-          message: getApiErrorDetail(error, t("operations.wizard.failed")),
+          message: describeOperationError(error, operation, resolveLabel, t("operations.wizard.failed")),
           variant: "error",
         }),
       );

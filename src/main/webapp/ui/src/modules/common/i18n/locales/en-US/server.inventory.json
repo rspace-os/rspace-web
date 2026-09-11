@@ -163,6 +163,7 @@
         "inputBelowMinimum": "[{0}] must be at least {1}.",
         "inputNotStorable": "[{0}] supports at most 3 decimal places.",
         "inputRequired": "This operation requires [{0}].",
+        "inputsShapeOnly": "[{0}] is accepted only alongside inputs; a client-assembled request carries it on newSample.",
         "inputWrongType": "[{0}] must be a value of type [{1}].",
         "newSampleNotAccepted": "Send either inputs or newSample, not both.",
         "originFieldsNotAccepted": "This shape adds the operation's origin fields itself; do not send origin fields.",

@@ -8,6 +8,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.researchspace.api.v1.model.ApiExtraField;
 import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.api.v1.model.ApiSample;
+import com.researchspace.api.v1.model.ApiSampleTemplate;
+import com.researchspace.api.v1.model.ApiSampleTemplatePost;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.api.v1.model.ApiSubSampleInfo;
@@ -232,6 +234,56 @@ public class InventoryOperationsInputsShapeMVCIT extends API_MVC_InventoryTestBa
                 + origin(o.get(0), "all", q("5", GRAM), "[" + disposed + "]")
                 + "],\"newSample\":null}",
         o -> newShape("destroy", origin(o.get(0), "all", q("5", GRAM), null), "{}"));
+  }
+
+  @Test
+  public void templateAndDocumentationTargetTravelTopLevelOnTheInputsShape() throws Exception {
+    // M4: the two wizard-level choices that are not inputs. The server builds the sample from the
+    // template and adds the IsDocumentedBy link itself, named from the shared catalog.
+    ApiSampleTemplatePost templatePost = new ApiSampleTemplatePost();
+    templatePost.setName("inputs shape template");
+    templatePost.setDefaultUnitId(GRAM);
+    ApiSampleTemplate template =
+        getFromJsonResponseBody(
+            mockMvc
+                .perform(
+                    createBuilderForPostWithJSONBody(
+                        apiKey, "/sampleTemplates", anyUser, templatePost))
+                .andExpect(status().isCreated())
+                .andReturn(),
+            ApiSampleTemplate.class);
+    String documentGlobalId =
+        createBasicDocumentInRootFolderWithText(anyUser, "protocol").getGlobalIdentifier();
+    ApiSubSample origin = origins(1).get(0);
+
+    Long sampleId =
+        perform(
+            "{\"operationType\":\"derive\",\"origins\":["
+                + origin(origin, "explicit", q("0.6", GRAM), null)
+                + "],\"inputs\":{\"processName\":\"PCR\",\"sampleName\":\"Documented\",\"count\":1,"
+                + "\"eachAmount\":"
+                + q("0.5", GRAM)
+                + "},\"templateId\":"
+                + template.getId()
+                + ",\"documentedByGlobalId\":\""
+                + documentGlobalId
+                + "\"}");
+
+    ApiSample created = sampleApiMgr.getApiSampleById(sampleId, anyUser);
+    assertEquals(template.getId(), created.getTemplateId());
+    ApiExtraField documentation =
+        created.getExtraFields().stream()
+            .filter(
+                field ->
+                    field.getLink() != null
+                        && "IsDocumentedBy".equals(field.getLink().getRelationType()))
+            .findFirst()
+            .orElseThrow(
+                () ->
+                    new AssertionError("no documentation link among " + created.getExtraFields()));
+    assertEquals(documentGlobalId, documentation.getLink().getTargetGlobalId());
+    assertEquals("Documented by", documentation.getName());
+    assertEquals("operations.documentationLink", documentation.getOperationFieldKey());
   }
 
   @Test

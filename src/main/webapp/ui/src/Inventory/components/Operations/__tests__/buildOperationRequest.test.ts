@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildOperationRequest } from "../buildOperationRequest";
+import { buildOperationInputsRequest, buildOperationRequest } from "../buildOperationRequest";
 import type { InventoryOperation } from "../operationsConfig";
 import type {
   OperationInputs,
@@ -8,11 +8,19 @@ import type {
   OperationOrigin,
   OperationRequest,
 } from "../types";
+import { operations } from "./testOperations";
 
 /** The created sample, asserting it exists - producing operations always create one. */
 function newSampleOf(request: OperationRequest): OperationNewSample {
   if (!request.newSample) throw new Error("expected a new sample");
   return request.newSample;
+}
+
+/** One of the real definitions, since the inputs shape sends exactly the inputs a definition declares. */
+function real(key: string): InventoryOperation {
+  const operation = operations.find((o) => o.key === key);
+  if (!operation) throw new Error(`no configured operation ${key}`);
+  return operation;
 }
 
 const deriveOperation: InventoryOperation = {
@@ -150,6 +158,75 @@ describe("buildOperationRequest (Derive)", () => {
     for (const subSample of newSampleOf(withDoc).subSamples) {
       expect(subSample.extraFields).toEqual([]);
     }
+  });
+});
+
+// What the wizard POSTs since plan-operations-server-builds.md M4: the server builds the sample, so
+// only the typed inputs, the per-origin amounts and the two wizard-level choices travel.
+describe("buildOperationInputsRequest (the inputs shape)", () => {
+  it("sends the declared inputs by key, the origins' amounts, the template and the documentation target", () => {
+    const request = buildOperationInputsRequest({
+      operation: real("derive"),
+      // an undeclared key never travels; the amount taken belongs to the origin element (M3)
+      values: { ...deriveValues, undeclared: "x" },
+      origins: [origin],
+      resolveLabel,
+      templateId: 77,
+      documentedByGlobalId: "SD42",
+    });
+    expect(request).toEqual({
+      operationType: "derive",
+      origins: [{ id: 100, amountMode: "explicit", amountTaken: { numericValue: 0.6, unitId: 3 } }],
+      inputs: {
+        processName: "PCR",
+        sampleName: "Derived material",
+        count: 2,
+        eachAmount: { numericValue: 0.5, unitId: 3 },
+      },
+      templateId: 77,
+      documentedByGlobalId: "SD42",
+    });
+  });
+
+  it("sends Destroy as a whole-origin claim with no inputs, leaving the disposed date to the server", () => {
+    const request = buildOperationInputsRequest({
+      operation: real("destroy"),
+      values: {},
+      origins: [{ id: 100, globalId: "SS100", name: "Vial A", quantity: { numericValue: 2, unitId: 3 } }],
+      resolveLabel,
+      templateId: null,
+      documentedByGlobalId: null,
+    });
+    expect(request).toEqual({
+      operationType: "destroy",
+      origins: [{ id: 100, amountMode: "all", amountTaken: { numericValue: 2, unitId: 3 } }],
+      inputs: {},
+      templateId: null,
+      documentedByGlobalId: null,
+    });
+  });
+
+  it("decides each origin's amount exactly as the model of the server build does", () => {
+    const params = {
+      operation: real("pool"),
+      values: {
+        sampleName: "Pool",
+        count: 1,
+        eachAmount: { numericValue: 2, unitId: 3 },
+        amountTaken: { numericValue: 1, unitId: 3 },
+      },
+      origins: [
+        { id: 1, globalId: "SS1", name: "Vial A", quantity: { numericValue: 5, unitId: 3 } },
+        { id: 2, globalId: "SS2", name: "Vial B", quantity: { numericValue: 8, unitId: 3 } },
+      ],
+      resolveLabel,
+      templateId: null,
+      amountMode: "perSubsample" as const,
+      perSubsampleAmounts: { SS1: { numericValue: 2, unitId: 3 } },
+    };
+    expect(buildOperationInputsRequest({ ...params, documentedByGlobalId: null }).origins).toEqual(
+      buildOperationRequest(params).origins,
+    );
   });
 });
 
