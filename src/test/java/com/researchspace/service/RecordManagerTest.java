@@ -1040,6 +1040,14 @@ public class RecordManagerTest extends SpringTransactionalTest {
         recordMgr
             .move(doc.getId(), pi.getRootFolder().getId(), g.getCommunalGroupFolderId(), pi)
             .isSucceeded());
+    // attempt to move from shared folder into pi's private notebook should also fail
+    Notebook privateNotebook =
+        folderMgr.createNewNotebook(
+            pi.getRootFolder().getId(), "private notebook", new DefaultRecordContext(), pi);
+    assertFalse(
+        recordMgr
+            .move(doc.getId(), privateNotebook.getId(), g.getCommunalGroupFolderId(), pi)
+            .isSucceeded());
     // attempt to move from shared folder into shared subfolder should be fine though
     Folder sharedSubfolder =
         folderMgr.createNewFolder(g.getCommunalGroupFolderId(), "sharedSubfolder", pi);
