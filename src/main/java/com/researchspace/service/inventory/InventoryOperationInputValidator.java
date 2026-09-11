@@ -52,7 +52,7 @@ public final class InventoryOperationInputValidator {
         continue;
       }
       switch (String.valueOf(input.type())) {
-        case "integer" -> validateMinimum(new BigDecimal(value.toString()), input, errors);
+        case "integer" -> validateBounds(new BigDecimal(value.toString()), input, errors);
         case "quantity" -> validateAmount((Quantifiable) value, input, errors);
         case "temperature" -> validateTemperature((Quantifiable) value, input, errors);
         default -> {}
@@ -60,8 +60,11 @@ public final class InventoryOperationInputValidator {
     }
   }
 
-  /** {@code min} is declared on integer inputs only (count); no shipped input declares a max. */
-  private static void validateMinimum(
+  /**
+   * {@code min} and {@code max} are declared on integer inputs only (count). The max is what turns
+   * a count the request builder refuses (over MAX_SUBSAMPLES) into a 400 instead of a 500.
+   */
+  private static void validateBounds(
       BigDecimal value, InventoryOperationConfig.Input input, Errors errors) {
     if (input.min() != null && value.compareTo(input.min()) < 0) {
       errors.rejectValue(
@@ -69,6 +72,13 @@ public final class InventoryOperationInputValidator {
           "errors.inventory.operation.inputBelowMinimum",
           new Object[] {input.key(), input.min()},
           "This input is below the minimum the operation declares.");
+    }
+    if (input.max() != null && value.compareTo(input.max()) > 0) {
+      errors.rejectValue(
+          input.key(),
+          "errors.inventory.operation.inputAboveMaximum",
+          new Object[] {input.key(), input.max()},
+          "This input is above the maximum the operation declares.");
     }
   }
 

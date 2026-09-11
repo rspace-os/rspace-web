@@ -7014,6 +7014,7 @@ export default interface Resources {
           "extraFieldCountMaximum": "This operation accepts at most {0} extra fields on the sample it creates.",
           "fieldKeyMissing": "A field on this operation is missing its operationFieldKey.",
           "fieldKeyUnknown": "The field [{0}] is not one this operation declares.",
+          "inputAboveMaximum": "[{0}] must be at most {1}.",
           "inputBelowMinimum": "[{0}] must be at least {1}.",
           "inputNotStorable": "[{0}] supports at most 3 decimal places.",
           "inputRequired": "This operation requires [{0}].",
