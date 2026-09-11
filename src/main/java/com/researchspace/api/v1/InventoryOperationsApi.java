@@ -17,10 +17,10 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 /**
  * The configured Inventory operations: GET /config serves the operation definitions (the backend's
  * {@code operations_config.json}, the single authoritative copy the wizard renders from), and POST
- * runs one. The POST is a single generic, atomic endpoint: it creates one new sample (with its
- * subsamples, custom fields and relation links) and sets the origin subsamples' quantities, all in
- * one transaction. There is no per-operation endpoint or logic; a new operation is a new config
- * entry. See DevDocs/adr/0007.
+ * runs one. The POST is a single generic, atomic endpoint: from the values the client typed and the
+ * operation definition it builds one new sample (with its subsamples, custom fields and relation
+ * links) and sets the origin subsamples' quantities, all in one transaction. There is no
+ * per-operation endpoint or logic; a new operation is a new config entry. See DevDocs/adr/0007.
  */
 @RequestMapping("/api/inventory/v1/operations")
 public interface InventoryOperationsApi {
