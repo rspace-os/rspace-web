@@ -811,6 +811,14 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
             .collect(Collectors.toList());
     assertTrue(otherUserRequestableResultIds.contains(testUserSample.getId()));
 
+    // otherUser has no read/edit access to testUser's sample at all, so viewing it still returns
+    // only the public-view fields, but "requestable" must survive even that reduced view so the
+    // Request Material UI knows the sample can be requested
+    ApiSample sampleViewedByOtherUser =
+        sampleApiMgr.getApiSampleById(testUserSample.getId(), otherUser);
+    assertTrue(sampleViewedByOtherUser.isClearedForPublicView());
+    assertTrue(sampleViewedByOtherUser.isRequestable());
+
     // pi has edit permission on testUser's sample (asserted earlier), but is not its owner, and
     // so cannot change whether it is requestable
     ApiSample nonOwnerRequestableUpdate = new ApiSample();

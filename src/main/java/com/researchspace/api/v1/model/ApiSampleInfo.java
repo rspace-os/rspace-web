@@ -259,6 +259,15 @@ public class ApiSampleInfo extends ApiInventoryRecordInfo {
   }
 
   @Override
+  protected void populatePublicViewCopy(ApiInventoryRecordInfo apiInvRecCopy) {
+    super.populatePublicViewCopy(apiInvRecCopy);
+    // requestable must survive even the public view, so that a user with no read/edit access to
+    // the sample (e.g. found via an unscoped "requestable" search) can still see whether it's
+    // requestable and use the Request Material UI
+    ((ApiSampleInfo) apiInvRecCopy).setRequestable(isRequestable());
+  }
+
+  @Override
   protected void populateLimitedViewCopy(ApiInventoryRecordInfo apiInvRecCopy) {
     super.populateLimitedViewCopy(apiInvRecCopy);
     ApiSampleInfo limitedViewCopy = (ApiSampleInfo) apiInvRecCopy;
@@ -266,7 +275,6 @@ public class ApiSampleInfo extends ApiInventoryRecordInfo {
     limitedViewCopy.setTemplateId(getTemplateId());
     limitedViewCopy.setTemplateVersion(getTemplateVersion());
     limitedViewCopy.setTemplateImageAvailable(isTemplateImageAvailable());
-    limitedViewCopy.setRequestable(isRequestable());
     limitedViewCopy.setStorageTempMin(getStorageTempMin());
     limitedViewCopy.setStorageTempMax(getStorageTempMax());
     limitedViewCopy.setExpiryDate(getExpiryDate());

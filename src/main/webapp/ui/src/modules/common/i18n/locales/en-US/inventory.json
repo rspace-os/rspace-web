@@ -1184,6 +1184,7 @@
     "notes": "Notes",
     "overview": "Overview",
     "parentSample": "Parent Sample",
+    "requestMaterial": "Request material",
     "requests": "Requests",
     "sampleFields": "Sample Fields",
     "samples": "Samples",
@@ -1967,6 +1968,14 @@
     "imageAlt": "What the sample looks like",
     "newImageAlt": "What the new sample looks like",
     "permissionsExplanation": "Sample permission settings affect all of its subsamples, and cannot be set for individual subsamples.",
+    "requestMaterialSection": {
+      "notAvailableBody": "The owner has not made this sample requestable.",
+      "notAvailableHeader": "Not available for request",
+      "reviewText": "{owner} reviews every request and produces the material. Nothing is issued automatically.",
+      "sendRequestButton": "Send Request",
+      "whatYouNeedHelperText": "Say what you need and what for. The owner reads this to decide what to produce.",
+      "whatYouNeedLabel": "What you need"
+    },
     "requestsSection": {
       "allowRequestsLabel": "Allow other users to request this sample"
     },

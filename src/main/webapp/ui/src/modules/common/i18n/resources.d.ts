@@ -3439,6 +3439,7 @@ export default interface Resources {
       "notes": "Notes",
       "overview": "Overview",
       "parentSample": "Parent Sample",
+      "requestMaterial": "Request material",
       "requests": "Requests",
       "sampleFields": "Sample Fields",
       "samples": "Samples",
@@ -4222,6 +4223,14 @@ export default interface Resources {
       "imageAlt": "What the sample looks like",
       "newImageAlt": "What the new sample looks like",
       "permissionsExplanation": "Sample permission settings affect all of its subsamples, and cannot be set for individual subsamples.",
+      "requestMaterialSection": {
+        "notAvailableBody": "The owner has not made this sample requestable.",
+        "notAvailableHeader": "Not available for request",
+        "reviewText": "{owner} reviews every request and produces the material. Nothing is issued automatically.",
+        "sendRequestButton": "Send Request",
+        "whatYouNeedHelperText": "Say what you need and what for. The owner reads this to decide what to produce.",
+        "whatYouNeedLabel": "What you need"
+      },
       "requestsSection": {
         "allowRequestsLabel": "Allow other users to request this sample"
       },
@@ -6889,6 +6898,16 @@ export default interface Resources {
           "templateActionsNotAllowed": "Please use /sampleTemplates endpoint for template actions",
           "templateNotFound": "No sample template with id: {0}",
           "unitIncompatibleWithTemplate": "Sample quantity unit {0} ({1}) is incompatible with template quantity unit {2} ({3})"
+        },
+        "sampleRequest": {
+          "notEnabled": "Sample requests are not enabled on this RSpace instance.",
+          "ownSample": "You cannot request material from a sample that you own.",
+          "role": {
+            "invalid": "Requested role must be one of: REQUESTER or OWNER"
+          },
+          "status": {
+            "invalid": "Requested status must be one of: PENDING, APPROVED, REJECTED, FULFILLED or CANCELLED"
+          }
         },
         "search": {
           "deletedItems": {

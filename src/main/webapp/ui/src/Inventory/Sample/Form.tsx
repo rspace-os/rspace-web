@@ -1,9 +1,17 @@
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Switch from "@mui/material/Switch";
+import { useTheme } from "@mui/material/styles";
+import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import type React from "react";
+import { useEffect, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
+import PadlockIcon from "../../assets/graphics/PadlockIcon";
+import ApiService from "../../common/InvApiService";
+import FieldLabel from "../../components/Inputs/FieldLabel";
 import { useDeploymentProperty } from "../../hooks/api/useDeploymentProperty";
 import type { Person } from "../../stores/definitions/Person";
 import SampleModel from "../../stores/models/SampleModel";
@@ -130,6 +138,118 @@ const RequestsSection = observer(({ activeResult }: { activeResult: SampleModel 
   );
 });
 
+const RequestMaterialSection = observer(({ activeResult }: { activeResult: SampleModel }) => {
+  const { t } = useTranslation("inventory");
+  const theme = useTheme();
+  const requestTextFieldId = useId();
+  const [requestText, setRequestText] = useState("");
+  const [checkingForExistingRequest, setCheckingForExistingRequest] = useState(true);
+  const [existingRequestStatus, setExistingRequestStatus] = useState<string | null>(null);
+  const sampleRequestsAvailable = FetchingData.getSuccessValue(useDeploymentProperty("sampleRequests.available"))
+    .flatMap(Parser.isString)
+    .map((value) => value === "ALLOWED")
+    .orElse(false);
+
+  // Check whether the current user already has a request against this sample, so that the
+  // send-a-request form can be replaced with the existing request's status instead. Further UI
+  // enhancements around this (richer status display, etc.) will come later.
+  useEffect(() => {
+    if (!activeResult.requestable || activeResult.id == null) {
+      setCheckingForExistingRequest(false);
+      setExistingRequestStatus(null);
+      return;
+    }
+    let cancelled = false;
+    setCheckingForExistingRequest(true);
+    ApiService.query<{ requests: Array<{ status: string }> }>(
+      "sampleRequests",
+      new URLSearchParams({ sampleId: String(activeResult.id) }),
+    )
+      .then(({ data }) => {
+        if (cancelled) return;
+        setExistingRequestStatus(data.requests[0]?.status ?? null);
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return;
+        console.error("Failed to check for an existing sample request", error);
+        setExistingRequestStatus(null);
+      })
+      .finally(() => {
+        if (!cancelled) setCheckingForExistingRequest(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeResult.id, activeResult.requestable]);
+
+  if (!sampleRequestsAvailable || activeResult.currentUserIsOwner) return null;
+
+  // Richer UI responses to the outcome (error state, etc.) are handled separately; for now,
+  // on success the newly-created request's status simply replaces the send-a-request form.
+  const sendRequest = () => {
+    if (!activeResult.globalId) return;
+    void ApiService.post<{ status: string }>("sampleRequests", {
+      sampleGlobalId: activeResult.globalId,
+      note: requestText,
+    })
+      .then(({ data }) => {
+        setExistingRequestStatus(data.status);
+      })
+      .catch((error: unknown) => {
+        console.error("Failed to send sample request", error);
+      });
+  };
+
+  return (
+    <StepperPanel icon="sample" title={t("formSections.requestMaterial")} sectionName="requests" recordType="sample">
+      {activeResult.requestable ? (
+        <>
+          <Typography variant="body2">
+            {t("sample.requestMaterialSection.reviewText", { owner: activeResult.owner?.fullName ?? "" })}
+          </Typography>
+          {checkingForExistingRequest ? null : existingRequestStatus ? (
+            <Typography variant="body2">{existingRequestStatus}</Typography>
+          ) : (
+            <>
+              <Box>
+                <FieldLabel htmlFor={requestTextFieldId} sx={{ textTransform: "uppercase" }}>
+                  {t("sample.requestMaterialSection.whatYouNeedLabel")}
+                </FieldLabel>
+                <TextField
+                  id={requestTextFieldId}
+                  placeholder={t("sample.requestMaterialSection.whatYouNeedHelperText")}
+                  multiline
+                  minRows={3}
+                  fullWidth
+                  value={requestText}
+                  onChange={({ target: { value } }) => setRequestText(value)}
+                />
+              </Box>
+              <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+                <Button color="primary" variant="outlined" onClick={sendRequest}>
+                  {t("sample.requestMaterialSection.sendRequestButton")}
+                </Button>
+              </Box>
+            </>
+          )}
+        </>
+      ) : (
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <PadlockIcon color={theme.palette.action.disabled} />
+          <Box>
+            <Typography variant="subtitle2" sx={{ fontSize: "1rem" }}>
+              {t("sample.requestMaterialSection.notAvailableHeader")}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {t("sample.requestMaterialSection.notAvailableBody")}
+            </Typography>
+          </Box>
+        </Box>
+      )}
+    </StepperPanel>
+  );
+});
+
 const MoreFieldsSection = observer(({ activeResult }: { activeResult: SampleModel }) => {
   const { t } = useTranslation("inventory");
   const formSectionError = useFormSectionError({
@@ -179,6 +299,12 @@ function Form(): React.ReactNode {
         whatLabel={t("recordTypes.sample.lower")}
       />
       <OverviewSection activeResult={activeResult} />
+      {/*
+       * Shown regardless of access level: someone with no read/edit access to
+       * this sample at all may still have found it via an unscoped
+       * "requestable" search, and should be able to request it.
+       */}
+      <RequestMaterialSection key={activeResult.globalId} activeResult={activeResult} />
       {activeResult.readAccessLevel !== "public" && (
         <>
           <DetailsSection activeResult={activeResult} />
