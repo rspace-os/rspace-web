@@ -146,7 +146,27 @@ public class InventoryOperationPostValidator implements Validator {
     }
 
     originValidator.validateOrigins(request, config, errors);
-    newSampleValidator.validateNewSample(request, config, errors);
+    if (request.getInputs() == null) {
+      newSampleValidator.validateNewSample(request, config, errors);
+      return;
+    }
+    // The server-built shape (M3): the server builds the sample and every generated field from the
+    // definition, so a client-assembled sample or origin field would be silently replaced. Rejected
+    // instead; the inputs themselves are validated by the manager against the definition.
+    if (request.getNewSample() != null) {
+      errors.rejectValue(
+          "newSample",
+          "errors.inventory.operation.newSampleNotAccepted",
+          "Send either inputs or newSample, not both.");
+    }
+    for (int index = 0; index < request.getOrigins().size(); index++) {
+      if (CollectionUtils.isNotEmpty(request.getOrigins().get(index).getExtraFields())) {
+        errors.rejectValue(
+            String.format("origins[%d].extraFields", index),
+            "errors.inventory.operation.originFieldsNotAccepted",
+            "This shape adds the operation's origin fields itself.");
+      }
+    }
   }
 
   /**
