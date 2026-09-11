@@ -279,36 +279,7 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
       List<String> groupNames,
       List<String> visibleOwners,
       String alias) {
-    String direct =
-        getInventoryReadPermissionSqlPredicate(
-            caller, groupMembers, groupNames, visibleOwners, alias + ".");
-    String childContainer =
-        getInventoryReadPermissionSqlPredicate(
-            caller, groupMembers, groupNames, List.of(), "childContainer.");
-    String childInstrument =
-        getInventoryReadPermissionSqlPredicate(
-            caller, groupMembers, groupNames, List.of(), "childInstrument.");
-    String childSubSample =
-        getInventoryReadPermissionSqlPredicate(
-            caller, groupMembers, groupNames, List.of(), "childSubSample.sample.");
-    return "("
-        + direct
-        + " or exists (select childLocation.id from ContainerLocation childLocation "
-        + "join childLocation.storedContainer childContainer where childLocation.container="
-        + alias
-        + " and childContainer.deleted=false and "
-        + childContainer
-        + ") or exists (select childLocation.id from ContainerLocation childLocation "
-        + "join childLocation.storedInstrument childInstrument where childLocation.container="
-        + alias
-        + " and childInstrument.deleted=false and "
-        + childInstrument
-        + ") or exists (select childLocation.id from ContainerLocation childLocation "
-        + "join childLocation.storedSubSample childSubSample where childLocation.container="
-        + alias
-        + " and childSubSample.deleted=false and "
-        + childSubSample
-        + "))";
+    return super.readableContainerPredicate(caller, groupMembers, groupNames, visibleOwners, alias);
   }
 
   private <T> void setBookingCatalogueLocationParameters(
