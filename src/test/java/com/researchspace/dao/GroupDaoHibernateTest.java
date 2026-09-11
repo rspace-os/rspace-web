@@ -63,6 +63,8 @@ public class GroupDaoHibernateTest extends SpringTransactionalTest {
   public void testListByFilter() throws IllegalAddChildOperation, InterruptedException {
     GroupSearchCriteria filter = new GroupSearchCriteria();
     pgCrit.setSearchCriteria(filter);
+    // a blank sort key means the display-name default, so pin the direction for the assertions
+    pgCrit.setSortOrder(SortOrder.ASC);
     assertEquals(0, grpDao.list(pgCrit).getTotalHits().intValue());
     User u1 = createAndSaveUserIfNotExists("u1", Constants.PI_ROLE);
     User u2 = createAndSaveUserIfNotExists("u2", Constants.PI_ROLE);
@@ -95,9 +97,13 @@ public class GroupDaoHibernateTest extends SpringTransactionalTest {
     assertEquals(1, grpDao.list(pgCrit).getTotalHits().intValue());
     assertEquals(collabGroup, grpDao.list(pgCrit).getResults().get(0));
 
-    // reset, check order by owner's name
+    // reset, check order by owner's last name
     filter.reset();
-    pgCrit.setOrderBy("owner.username");
+    u1.setLastName("Adams");
+    u2.setLastName("Brown");
+    userDao.save(u1);
+    userDao.save(u2);
+    pgCrit.setOrderBy("owner");
     pgCrit.setSortOrder(SortOrder.DESC);
     assertEquals(u2, grpDao.list(pgCrit).getFirstResult().getOwner());
     pgCrit.setSortOrder(SortOrder.ASC);

@@ -2,6 +2,7 @@ package com.researchspace.core.util;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
@@ -32,5 +33,17 @@ public class PaginationUtilTest {
     Map<String, PaginationObject> rc2 =
         PaginationUtil.generateOrderByLinks(null, urlGenerator, null);
     assertTrue(rc2.isEmpty());
+  }
+
+  @Test
+  public void orderByLinksRestoreOriginalOrderBy() {
+    IPagination<Object> unsorted = BasicPaginationCriteria.createDefaultForClass(Object.class);
+    PaginationUtil.generateOrderByLinks(null, new DefaultURLPaginator("/a", unsorted), "name");
+    assertNull(unsorted.getOrderBy());
+
+    IPagination<Object> sorted = BasicPaginationCriteria.createDefaultForClass(Object.class);
+    sorted.setOrderBy("creationDate");
+    PaginationUtil.generateOrderByLinks(null, new DefaultURLPaginator("/a", sorted), "name");
+    assertEquals("creationDate", sorted.getOrderBy());
   }
 }

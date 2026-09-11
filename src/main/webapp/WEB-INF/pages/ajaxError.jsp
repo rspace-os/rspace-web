@@ -4,6 +4,8 @@
 <div id="ajaxError">
 	<spring:message code="errors.ajaxFragment.notice"/> <br />
 	<p />
+	<%-- EscapeXmlELResolver escapes every String an EL expression resolves,
+	     so c:out here would escape it a second time --%>
 	<span id="ajaxErrorMsg">${exceptionMessage}</span>
 	<p id="ajaxErrorIdMsg">
 		<span><spring:message code="errors.ajaxFragment.refLabel" arguments="${errorId}"/></span>

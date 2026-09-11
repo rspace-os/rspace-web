@@ -16,7 +16,7 @@
           <spring:message code="directory.labGroupList.communityNameHeader"/>
         </th>
         <th style="width:20%">
-          <a class="orderBy" id="orderByPi" href="/directory/ajax/grouplist?orderBy=owner.lastName&sortOrder=ASC&resultsPerPage=${pgCrit.resultsPerPage}">
+          <a class="orderBy" id="orderByPi" href="/directory/ajax/grouplist?orderBy=owner&sortOrder=ASC&resultsPerPage=${pgCrit.resultsPerPage}">
             <spring:message code="groups.pi.label"/>
           </a>
         </th>

@@ -1601,7 +1601,7 @@ public abstract class BaseManagerTestCaseBase {
 
   protected ISearchResults<MessageOrRequest> searchDBForRequests(User u) {
     PaginationCriteria<CommunicationTarget> pc = new PaginationCriteria<CommunicationTarget>();
-    pc.setOrderBy("communication.creationTime");
+    pc.setOrderBy("creationTime");
     ISearchResults<MessageOrRequest> mors =
         communicationMgr.getActiveMessagesAndRequestsForUserTarget(u.getUsername(), pc);
     return mors;

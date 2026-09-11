@@ -218,7 +218,7 @@ public class SysadminGroupsControllerMVCIT extends MVCTestBase {
   }
 
   private MvcResult orderByPiLastName(SortOrder order, int i) throws Exception {
-    return list(order, "owner.lastName", i);
+    return list(order, "owner", i);
   }
 
   List<GroupUsageInfo> getListOfGroupInfo(MvcResult result) {

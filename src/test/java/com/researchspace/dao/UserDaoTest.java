@@ -20,6 +20,7 @@ import com.researchspace.model.dtos.UserRoleView;
 import com.researchspace.model.dtos.UserSearchCriteria;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.model.record.IllegalAddChildOperation;
+import com.researchspace.model.sort.UnknownSortKeyException;
 import com.researchspace.model.views.UserStatistics;
 import com.researchspace.model.views.UserView;
 import com.researchspace.testutils.RSpaceTestUtils;
@@ -296,6 +297,16 @@ public class UserDaoTest extends BaseDaoTestCase {
     pgCrit.setSortOrder(SortOrder.DESC);
     List<User> desc = userDao.searchUsers(pgCrit).getResults();
     assertEquals(Arrays.asList(bob, aliceHigh, aliceLow), desc);
+  }
+
+  @Test
+  public void usageSortKeysAreNotAcceptedByUserColumnListings() {
+    PaginationCriteria<User> pgCrit = PaginationCriteria.createDefaultForClass(User.class);
+    pgCrit.setOrderBy("fileUsage");
+    assertThrows(UnknownSortKeyException.class, () -> userDao.searchUsers(pgCrit));
+
+    pgCrit.setOrderBy("recordCount");
+    assertThrows(UnknownSortKeyException.class, () -> userDao.searchUsers(pgCrit));
   }
 
   @Test

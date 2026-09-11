@@ -204,7 +204,7 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
     MvcResult result2 =
         this.mockMvc
             .perform(
-                get("/system/ajax/jsonList?orderBy=fileUsage()&sortOrder=DESC")
+                get("/system/ajax/jsonList?orderBy=fileUsage&sortOrder=DESC")
                     .principal(adminPrincipal))
             .andReturn();
     UserInfoListDTO uui2 = getUserListFromMvcResult(result2);
@@ -215,7 +215,7 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
     MvcResult result3 =
         this.mockMvc
             .perform(
-                get("/system/ajax/jsonList?orderBy=recordCount()&sortOrder=DESC")
+                get("/system/ajax/jsonList?orderBy=recordCount&sortOrder=DESC")
                     .principal(adminPrincipal))
             .andReturn();
     UserInfoListDTO uui3 = getUserListFromMvcResult(result3);
@@ -230,7 +230,7 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
     MvcResult result4 =
         this.mockMvc
             .perform(
-                get("/system/ajax/jsonList?orderBy=recordCount()&sortOrder=DESC")
+                get("/system/ajax/jsonList?orderBy=recordCount&sortOrder=DESC")
                     .principal(new MockPrincipal(newadmin.getUsername())))
             .andReturn();
     UserInfoListDTO uui4 = getUserListFromMvcResult(result4);
@@ -240,7 +240,7 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
     MvcResult result5 =
         this.mockMvc
             .perform(
-                get("/system/ajax/jsonList?orderBy=fileUsage()&sortOrder=DESC")
+                get("/system/ajax/jsonList?orderBy=fileUsage&sortOrder=DESC")
                     .principal(new MockPrincipal(newadmin.getUsername())))
             .andReturn();
     UserInfoListDTO uui5 = getUserListFromMvcResult(result5);
@@ -296,7 +296,7 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
     MvcResult result =
         this.mockMvc
             .perform(
-                get("/system/ajax/jsonList?orderBy=fileUsage()&sortOrder=DESC")
+                get("/system/ajax/jsonList?orderBy=fileUsage&sortOrder=DESC")
                     .principal(sysAdminPrincipal))
             .andExpect(status().isOk())
             .andReturn();
@@ -310,7 +310,7 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
     MvcResult result2 =
         this.mockMvc
             .perform(
-                get("/system/ajax/jsonList?orderBy=fileUsage()&sortOrder=DESC")
+                get("/system/ajax/jsonList?orderBy=fileUsage&sortOrder=DESC")
                     .principal(sysAdminPrincipal))
             .andExpect(status().isOk())
             .andReturn();
@@ -325,7 +325,7 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
     MvcResult result3 =
         this.mockMvc
             .perform(
-                get("/system/ajax/jsonList?orderBy=recordCount()&sortOrder=DESC")
+                get("/system/ajax/jsonList?orderBy=recordCount&sortOrder=DESC")
                     .principal(sysAdminPrincipal))
             .andExpect(status().isOk())
             .andReturn();

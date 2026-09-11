@@ -333,7 +333,7 @@ public class CommunicationManagerIT extends RealTransactionSpringTestBase {
     logoutAndLoginAs(other);
     PaginationCriteria<CommunicationTarget> pg =
         PaginationCriteria.createDefaultForClass(CommunicationTarget.class);
-    pg.setOrderBy("communication.creationTime");
+    pg.setOrderBy("creationTime");
     pg.setSortOrder(SortOrder.ASC);
     ISearchResults<MessageOrRequest> mors =
         communicationMgr.getActiveMessagesAndRequestsForUserTarget(other.getUsername(), pg);
@@ -862,7 +862,7 @@ public class CommunicationManagerIT extends RealTransactionSpringTestBase {
     logoutAndLoginAs(source);
     PaginationCriteria<CommunicationTarget> pg =
         PaginationCriteria.createDefaultForClass(CommunicationTarget.class);
-    pg.setOrderBy("communication.creationTime");
+    pg.setOrderBy("creationTime");
     pg.setSortOrder(SortOrder.ASC);
     ISearchResults<Notification> notifications =
         communicationMgr.getNewNotificationsForUser(source.getUsername(), pg);
@@ -958,7 +958,7 @@ public class CommunicationManagerIT extends RealTransactionSpringTestBase {
 
     PaginationCriteria<CommunicationTarget> pg =
         PaginationCriteria.createDefaultForClass(CommunicationTarget.class);
-    pg.setOrderBy("communication.creationTime");
+    pg.setOrderBy("creationTime");
     pg.setSortOrder(SortOrder.ASC);
     ISearchResults<MessageOrRequest> sentRequests =
         communicationMgr.getAllSentAndReceivedSimpleMessagesForUser(source.getUsername(), pg);
