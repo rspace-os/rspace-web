@@ -4,8 +4,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.model.User;
+import com.researchspace.model.units.QuantityInfo;
+import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.inventory.SampleSiblingRowLock;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -28,9 +31,10 @@ import org.springframework.beans.factory.annotation.Autowired;
  * session. The competing write goes through a raw connection so it is genuinely committed by
  * another party before this transaction flushes.
  *
- * <p>NOT RUN as part of the change that added it (the plan's own instruction). Running it wipes the
- * dev database: {@code mvn verify -Denvironment=drop-recreate-db -DskipUnitTests=true
- * -Dtest=SampleDynamicUpdateIT -Dsurefire.failIfNoSpecifiedTests=false}.
+ * <p>NOT RUN as part of the changes that added these tests (the plan's own instruction, and the
+ * second test was added under the same rule). Running them wipes the dev database: {@code mvn
+ * verify -Denvironment=drop-recreate-db -DskipUnitTests=true -Dtest=SampleDynamicUpdateIT
+ * -Dsurefire.failIfNoSpecifiedTests=false}.
  */
 public class SampleDynamicUpdateIT extends RealTransactionSpringTestBase {
 
@@ -70,10 +74,55 @@ public class SampleDynamicUpdateIT extends RealTransactionSpringTestBase {
         "a rename committed between the unlocked read and the flush must survive the recompute");
   }
 
+  /**
+   * The same guarantee for the SubSample row, whose window is the larger of the two.
+   *
+   * <p>{@code registerApiSubSampleUsage} loads the subsample, WAITS on the sibling-set lock, then
+   * re-reads it through {@code lockSubSampleForEdit} - which Hibernate serves from the persistence
+   * context, so the entity still carries the pre-wait snapshot of every column. The method reads
+   * quantity and version as scalars under the lock precisely because of that, but nothing does so
+   * for name. Without {@code @DynamicUpdate} on {@code SubSample}, {@code setQuantity} dirties the
+   * entity and the flush writes the stale name back over a concurrent rename (parallel review, A7).
+   *
+   * <p>The rename commits while this transaction holds the subsample's row lock, so it is applied
+   * through the same locked row the decrement will write - which is the realistic race: the lock
+   * makes the other party wait, it does not make this transaction's cached entity current.
+   */
+  @Test
+  public void aStockDecrementDoesNotRevertAConcurrentRenameOfTheSubSample() throws Exception {
+    User user = createInitAndLoginAnyUser();
+    ApiSampleWithFullSubSamples sample = createBasicSampleForUser(user);
+    Long subSampleId = sample.getSubSamples().get(0).getId();
+
+    // Loads the subsample into this session, so the entity below carries a pre-rename snapshot.
+    subSampleApiMgr.getApiSubSampleById(subSampleId, user);
+
+    try (Connection other = dataSource.getConnection()) {
+      other.setAutoCommit(true);
+      try (Statement statement = other.createStatement()) {
+        statement.executeUpdate(
+            "update SubSample set name = 'renamed by someone else' where id = " + subSampleId);
+      }
+    }
+
+    subSampleApiMgr.registerApiSubSampleUsage(
+        subSampleId, QuantityInfo.of(BigDecimal.ONE, RSUnitDef.MILLI_LITRE), user);
+
+    assertEquals(
+        "renamed by someone else",
+        nameOf("SubSample", subSampleId),
+        "a rename committed before the decrement flushed must survive it");
+  }
+
   private String nameOf(Long sampleId) throws SQLException {
+    return nameOf("Sample", sampleId);
+  }
+
+  private String nameOf(String table, Long id) throws SQLException {
     try (Connection connection = dataSource.getConnection();
         Statement statement = connection.createStatement();
-        ResultSet rows = statement.executeQuery("select name from Sample where id = " + sampleId)) {
+        ResultSet rows =
+            statement.executeQuery("select name from " + table + " where id = " + id)) {
       rows.next();
       return rows.getString(1);
     }
