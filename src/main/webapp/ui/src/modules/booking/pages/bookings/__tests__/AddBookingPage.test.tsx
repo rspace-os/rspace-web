@@ -118,7 +118,12 @@ function page(items: readonly unknown[]) {
 function renderPage(hasSysAdminRole = false) {
   server.use(currentUserHandler(hasSysAdminRole));
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  queryClient.setQueryData(bookingDisplayPreferencesQueryKey, inheritedBrowserBookingPreferences);
+  queryClient.setQueryData(bookingDisplayPreferencesQueryKey, {
+    ...inheritedBrowserBookingPreferences,
+    timezoneMode: "CUSTOM",
+    customTimezone: "Europe/Berlin",
+    overridden: true,
+  });
   const root = createRootRoute({ component: Outlet });
   const booking = createRoute({ getParentRoute: () => root, path: "/booking", component: Outlet });
   const calendar = createRoute({
