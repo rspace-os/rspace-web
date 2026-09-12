@@ -709,7 +709,7 @@ describe("OperationWizard step flow", () => {
     await waitFor(() => expect(onClose).toHaveBeenCalled());
     // Destroy empties the origin: the amount taken is its full current quantity, sent as a
     // whole-origin claim the server compare-and-swaps. The disposed date is stamped server-side in
-    // the session's timezone (plan-operations-server-builds.md, M4), so nothing about it travels.
+    // the session's timezone (DevDocs/adr/0007, M4), so nothing about it travels.
     expect(posted[0]).toEqual({
       operationType: "destroy",
       origins: [{ id: 1, amountMode: "all", amountTaken: { numericValue: 1, unitId: 3 } }],
@@ -906,7 +906,7 @@ describe("OperationWizard remember bundle", () => {
     await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
 
     await waitFor(() => expect(onClose).toHaveBeenCalled());
-    // Pin the posted request (the inputs shape, plan-operations-server-builds.md M4): the typed
+    // Pin the posted request (the inputs shape, DevDocs/adr/0007 M4): the typed
     // inputs by key, the origin's amount, the chosen template and the documentation target. The
     // amount taken travels on the origin only, and no sample is assembled client-side.
     expect(posted[0]).toEqual({

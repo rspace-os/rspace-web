@@ -2,14 +2,12 @@ import { ThemeProvider } from "@mui/material/styles";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { createEnglishI18n, InEnglish } from "@/__tests__/realI18n";
+import { InEnglish } from "@/__tests__/realI18n";
 import appTheme from "@/theme";
-import { buildOperationRequest } from "../buildOperationRequest";
 import OperationConfirmation from "../OperationConfirmation";
 import type { InventoryOperation } from "../operationsConfig";
 import type { TemplateSelection } from "../TemplateStep";
 import type { OperationInputs } from "../types";
-import { resolveLabelFrom } from "../types";
 import { operations } from "./testOperations";
 
 // i18n runs in cimode in tests, so t(key, params) renders the namespaced key with no interpolation;
@@ -331,13 +329,15 @@ describe("OperationConfirmation in English", () => {
   });
 });
 
-// Since plan-operations-server-builds.md M4 the server builds the record from the typed inputs while
-// this card is computed from them separately, so the two can drift. buildOperationRequest is the
-// wizard's model of that build (its parity with the server is M3's gate,
-// InventoryOperationsInputsShapeMVCIT), so the card is checked against the model here, in English,
-// on the real definitions.
-describe("the confirmation preview matches the model of the server build", () => {
-  const modelLabel = resolveLabelFrom(createEnglishI18n().getFixedT(null, "inventory"));
+// The server builds the record from the typed inputs (DevDocs/adr/0007) while
+// this card is computed from them separately, so the two can drift. The names the server stores are
+// pinned server-side by InventoryOperationsInputsShapeMVCIT and InventoryOperationRequestBuilderTest;
+// these tests spell those names out as literals and assert the card shows them, in English, on the
+// real definitions. They used to call a TS buildOperationRequest as an oracle, but that function had
+// no production caller: it was a second implementation of the server's build that could drift from
+// it while both suites stayed green, and the assertions already hardcoded the expected names anyway
+// (parallel review).
+describe("the confirmation preview matches the names the server stores", () => {
   const real = (key: string): InventoryOperation => {
     const found = operations.find((o) => o.key === key);
     if (!found) throw new Error(`no configured operation ${key}`);
@@ -357,13 +357,6 @@ describe("the confirmation preview matches the model of the server build", () =>
       eachAmount: { numericValue: 2, unitId: 3 },
       amountTaken: { numericValue: 1, unitId: 3 },
     };
-    const model = buildOperationRequest({
-      operation: pool,
-      values: poolValues,
-      origins,
-      resolveLabel: modelLabel,
-      templateId: null,
-    });
     render(
       <InEnglish>
         <ThemeProvider theme={appTheme}>
@@ -379,9 +372,12 @@ describe("the confirmation preview matches the model of the server build", () =>
         </ThemeProvider>
       </InEnglish>,
     );
-    const modelNames = model.newSample?.extraFields.map((field) => field.name) ?? [];
-    expect(modelNames).toEqual(["Pooled from: Aliquot (SS1)", "Pooled from: Aliquot (SS2)"]);
-    for (const name of modelNames) expect(screen.getByText(name)).toBeInTheDocument();
+    // Both origins are named "Aliquot", so the interpolated link name collides and each member of
+    // the colliding group is suffixed with the global id it targets (withUniqueFieldNames, applied
+    // identically by InventoryOperationRequestBuilder server-side).
+    for (const name of ["Pooled from: Aliquot (SS1)", "Pooled from: Aliquot (SS2)"]) {
+      expect(screen.getByText(name)).toBeInTheDocument();
+    }
     expect(screen.getByText("Pooled")).toBeInTheDocument();
   });
 
@@ -395,13 +391,6 @@ describe("the confirmation preview matches the model of the server build", () =>
       eachAmount: { numericValue: 2, unitId: 3 },
       amountTaken: { numericValue: 1, unitId: 3 },
     };
-    const model = buildOperationRequest({
-      operation: derive,
-      values: deriveValues,
-      origins: [origin],
-      resolveLabel: modelLabel,
-      templateId: null,
-    });
     render(
       <InEnglish>
         <ThemeProvider theme={appTheme}>
@@ -416,8 +405,6 @@ describe("the confirmation preview matches the model of the server build", () =>
         </ThemeProvider>
       </InEnglish>,
     );
-    const [link] = model.newSample?.extraFields ?? [];
-    expect(link?.name).toBe("Is Derived From using process: PCR");
     expect(screen.getByText("Is Derived From using process: PCR")).toBeInTheDocument();
     expect(screen.getByText("Derived")).toBeInTheDocument();
   });
