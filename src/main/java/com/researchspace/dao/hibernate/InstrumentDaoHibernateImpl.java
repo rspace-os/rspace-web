@@ -247,7 +247,7 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
     Query<Long> countQuery =
         getSession().createQuery("select count(distinct parent.id)" + fromAndWhere, Long.class);
     CriteriaBuilder<BookingCatalogueLocationRow> pageQuery =
-        criteriaBuilderFactory()
+        criteriaBuilderFactory
             .create(getSession(), BookingCatalogueLocationRow.class)
             .from(BookingConfiguration.class, "configuration")
             .from(Instrument.class, "instrument")
@@ -430,7 +430,7 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
     if (instrumentIds.isEmpty()) {
       return Map.of();
     }
-    return criteriaBuilderFactory()
+    return criteriaBuilderFactory
         .create(getSession(), BookingSummaryRow.class)
         .from(Instrument.class, "instrument")
         .selectNew(BookingSummaryRow.class)
