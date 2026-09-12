@@ -181,7 +181,7 @@ function OperationConfirmation({
         const { fieldNameKey, relationType } = effect.links[0];
         // Two origins may share a name, and the server then suffixes each link name with its target
         // (as the wizard's own model does); previewing the raw names showed two identical lines
-        // for fields that are stored apart (plan-operations-server-builds.md, M4 preview check).
+        // for fields that are stored apart (DevDocs/adr/0007, M4 preview check).
         const names = withUniqueFieldNames(
           origins.map((o) => ({
             name: resolveLabel(fieldNameKey, { ...values, originName: o.name }),

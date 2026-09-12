@@ -100,7 +100,7 @@ public record InventoryOperationConfig(
    *
    * <p>{@code args} binds how each function argument is sourced, mirroring the wizard's {@code
    * ComputedArgSource}. The request validator ignores it; {@link InventoryOperationRequestBuilder}
-   * interprets it when building the request server-side (plan-operations-server-builds.md, M1).
+   * interprets it when building the request server-side (DevDocs/adr/0007, M1).
    */
   @JsonIgnoreProperties(ignoreUnknown = true)
   public record Computed(String fn, String into, Map<String, ArgSource> args) {

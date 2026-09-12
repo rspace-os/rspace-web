@@ -31,6 +31,7 @@ import com.researchspace.model.dtos.DTOControllerValidatorImpl;
 import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.service.inventory.ApiExtraFieldsHelper;
 import com.researchspace.service.inventory.InventoryOperationConfigRegistry;
 import com.researchspace.service.inventory.InventoryOperationManager;
 import com.researchspace.service.inventory.SampleApiManager;
@@ -81,6 +82,14 @@ class InventoryOperationsApiControllerTest {
     controller.inputValidator = new DTOControllerValidatorImpl();
     controller.operationPostValidator = InventoryOperationPostValidatorTest.newValidator();
     controller.operationConfigs = new InventoryOperationConfigRegistry();
+    controller.sampleApiPostValidator = new SampleApiPostValidator();
+    // The per-extra-field validator is a collaborator these tests do not assert on, but
+    // ValidationUtils.invokeValidator asserts supports() before delegating, so it has to answer
+    // true rather than a mock's default false.
+    ApiExtraFieldsHelper extraFieldHelper = mock(ApiExtraFieldsHelper.class);
+    when(extraFieldHelper.supports(any())).thenReturn(true);
+    ReflectionTestUtils.setField(
+        controller.sampleApiPostValidator, "extraFieldHelper", extraFieldHelper);
     controller.sampleApiPostFullValidator = new SampleApiPostFullValidator();
     ReflectionTestUtils.setField(
         controller.sampleApiPostFullValidator, "fieldHelper", mock(ApiFieldsHelper.class));
@@ -268,6 +277,29 @@ class InventoryOperationsApiControllerTest {
     ApiSubSample after = new ApiSubSample();
     after.setId(id);
     when(subSampleApiMgr.getApiSubSampleById(id, user)).thenReturn(after);
+  }
+
+  @Test
+  void templateConformanceBoundsTheBuiltSampleNameLikeTheSamplesEndpointDoes() throws Exception {
+    // SamplesApiController.validateCreateSampleInput runs sampleApiPostValidator AND
+    // sampleApiPostFullValidator; this path ran only the second, so the name/description/tag length
+    // rules never applied. EditInfo.name is varchar(255), and nothing between the input validator
+    // (which only checks that a "text" input is a CharSequence) and the entity bounded it, so an
+    // over-long sampleName reached Hibernate inside the transaction, after the origin locks were
+    // taken (parallel review).
+    ApiInventoryOperationPost request = aliquotInputs();
+    when(operationManager.performOperation(
+            eq("aliquot"), any(), any(), any(), any(), eq(user), any()))
+        .thenReturn(new ApiSampleWithFullSubSamples("Aliquots"));
+    controller.performOperation(request, new BeanPropertyBindingResult(request, "request"), user);
+
+    ApiInventoryOperationPost built = aliquotRequest();
+    built.getNewSample().setName("x".repeat(256));
+    BindException thrown =
+        assertThrows(BindException.class, () -> handedInValidation().validate(built));
+    assertTrue(
+        thrown.getFieldErrors().stream().anyMatch(e -> "newSample.name".equals(e.getField())),
+        () -> "expected a newSample.name rejection, got: " + thrown.getFieldErrors());
   }
 
   @Test

@@ -16,7 +16,21 @@ import com.fasterxml.jackson.annotation.JsonValue;
  */
 public enum ApiInventoryOperationAmountMode {
   EXPLICIT("explicit"),
-  ALL("all");
+  ALL("all"),
+
+  /**
+   * Any wire value this enum does not recognise. Binding an unknown mode here rather than throwing
+   * from {@link #fromWireValue} is what keeps the rejection translatable: a throw in a
+   * {@code @JsonCreator} surfaces as {@code HttpMessageNotReadableException}, whose raw English
+   * message the shared advice copies straight into the 400 body, so an untranslated developer
+   * string (echoing the client's own input) reached the user. {@code
+   * InventoryOperationPostValidator} rejects this constant with a catalog key instead, and the
+   * request still fails with a 400.
+   *
+   * <p>Kept distinct from a null mode: absent means "this client predates the field" and stays
+   * acceptable, while UNKNOWN means the client sent something it made up.
+   */
+  UNKNOWN("unknown");
 
   private final String wireValue;
 
@@ -30,8 +44,9 @@ public enum ApiInventoryOperationAmountMode {
   }
 
   /**
-   * Binds the lowercase wire value, case-insensitively. An unrecognised value throws, which Jackson
-   * surfaces as the endpoint's ordinary 400 binding failure.
+   * Binds the lowercase wire value, case-insensitively. An unrecognised value binds to {@link
+   * #UNKNOWN}, which the endpoint's validator rejects with a translated message; see that constant
+   * for why this does not throw.
    */
   @JsonCreator
   public static ApiInventoryOperationAmountMode fromWireValue(String value) {
@@ -40,6 +55,6 @@ public enum ApiInventoryOperationAmountMode {
         return mode;
       }
     }
-    throw new IllegalArgumentException("Unknown amountMode: " + value);
+    return UNKNOWN;
   }
 }
