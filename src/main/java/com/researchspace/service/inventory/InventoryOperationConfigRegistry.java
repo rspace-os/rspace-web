@@ -280,7 +280,15 @@ public class InventoryOperationConfigRegistry {
     return Optional.ofNullable(operationKey).map(operationsByKey::get);
   }
 
-  /** All configured operation keys. */
+  /**
+   * All configured operation keys.
+   *
+   * <p>A TEST SEAM, not live API: nothing in production calls it, and its three callers are the
+   * contract tests that assert there is exactly one facade, one golden input set and one registry
+   * entry per configured operation. Public rather than package-private only because two of those
+   * tests live in other packages. Do not delete it for want of a production caller (parallel
+   * review, Q9).
+   */
   public Set<String> keys() {
     return operationsByKey.keySet();
   }
