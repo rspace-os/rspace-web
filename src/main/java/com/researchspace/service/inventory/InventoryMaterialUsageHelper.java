@@ -46,7 +46,21 @@ public class InventoryMaterialUsageHelper {
    * (the same assert the mutation path applies): ids here come straight off a public request, so
    * locking first would let a caller name records they cannot access solely to lock those sibling
    * sets and delay authorized writers until the request fails (Copilot review, PR #1090). Stored
-   * materials are already on the list being updated, so they carry no such assert.
+   * materials are already on the list being updated, so they carry no such assert: the only caller
+   * that passes them ({@code updateListOfMaterials}) reaches this after the controller has asserted
+   * {@code PermissionType.WRITE} on the list itself, and authority over a list is authority over
+   * what is already recorded on it. Unlike the incoming ids, these are not attacker-chosen - they
+   * are whatever the list already holds (parallel review, A16).
+   *
+   * <p>Only an incoming material that will actually decrement stock is locked. {@code
+   * updateInventoryQuantity} false means "record that I used this, change no stock", which is how a
+   * subsample is cited without being consumed and needs only the read permission asserted above.
+   * Locking for it would take exclusive row locks across a sample the caller may well not be able
+   * to edit, held for the rest of the request, purely because they named it - and {@code materials}
+   * is capped but large, so one request could do that across many samples at once. There is nothing
+   * to serialise when there is no decrement. Stored materials are locked unconditionally, because
+   * removing a stored usage restores its stock and {@code MaterialUsage} does not record whether it
+   * originally decremented (parallel review, A6).
    *
    * <p>PRECONDITION: a transaction is already open. This class is a plain {@code @Component} named
    * {@code *Helper}, which no XML advisor pointcut matches, so it carried no transaction advice at
@@ -67,7 +81,9 @@ public class InventoryMaterialUsageHelper {
           InventoryRecord record = getForApiInventoryRecordInfo(usage.getRecord());
           if (record instanceof SubSample) {
             invPermissions.assertUserCanReadOrLimitedReadInventoryRecord(record, user);
-            parentSampleIds.add(((SubSample) record).getSample().getId());
+            if (usage.isUpdateInventoryQuantity()) {
+              parentSampleIds.add(((SubSample) record).getSample().getId());
+            }
           }
         }
       }
