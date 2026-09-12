@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+  <!--
+    REST API v2 custom-field filters resolve a definition to the rows that carry it, so every
+    filter and every catalog page probes InventoryEntityField by (templateField_id, deleted).
+    The existing foreign-key index covers only templateField_id, which leaves the deleted check
+    and the parent lookup to row reads.
+
+    Measured on the plan's Large data set (100,000 instruments, 2,000,000 value rows): with this
+    index the catalog page and the filter predicates keep an index-driven plan; without it the
+    optimizer falls back to scanning the value table. Baseline-sized data does not need it, which
+    is why it is added now rather than with the original feature.
+  -->
+  <changeSet id="custom-field-definition-index" author="rspace" context="run">
+    <preConditions onFail="MARK_RAN">
+      <not>
+        <indexExists tableName="InventoryEntityField" indexName="ix_invfield_def_deleted_instr"/>
+      </not>
+    </preConditions>
+    <comment>
+      Index the template definition, deletion flag, and owning instrument used by runtime fields.
+    </comment>
+    <createIndex tableName="InventoryEntityField" indexName="ix_invfield_def_deleted_instr">
+      <column name="templateField_id"/>
+      <column name="deleted"/>
+      <column name="instrumentEntity_id"/>
+    </createIndex>
+  </changeSet>
+
+</databaseChangeLog>

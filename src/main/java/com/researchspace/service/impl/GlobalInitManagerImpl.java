@@ -111,11 +111,24 @@ public class GlobalInitManagerImpl implements GlobalInitManager {
     createSubject();
     RSMetaData meta = null;
     List<RSMetaData> metas = metadataDao.getAll();
+    boolean initialDeployment = metas.isEmpty();
     if (metas.isEmpty()) {
       meta = doCoreStartUpOnInitialDeployment(null);
     } else {
       meta = metas.get(0);
-      if (!meta.isInitialized()) meta = doCoreStartUpOnInitialDeployment(meta);
+      if (!meta.isInitialized()) {
+        initialDeployment = true;
+        meta = doCoreStartUpOnInitialDeployment(meta);
+      }
+    }
+    if (!initialDeployment) {
+      Version currentVersion = currentVersion();
+      if (currentVersion != null && !currentVersion.equals(meta.getDBVersion())) {
+        for (IApplicationInitialisor init : getApplicationInitialisors()) {
+          init.onAppVersionUpdate();
+        }
+        meta.setDBVersion(currentVersion);
+      }
     }
     try {
       globalInit((ApplicationContext) appEvent.getSource());
@@ -147,17 +160,25 @@ public class GlobalInitManagerImpl implements GlobalInitManager {
     RSMetaData meta;
     meta = new RSMetaData();
     meta.setInitialized(false);
-    if (versionFromRsProperties != null) {
-      try {
-        Long version = Long.parseLong(versionFromRsProperties);
-        meta.setDBVersion(new Version(version));
-      } catch (NumberFormatException e) {
-        logger.error(
-            "Could not parse application version - should be an integer but was [{}]",
-            versionFromRsProperties);
-      }
+    Version currentVersion = currentVersion();
+    if (currentVersion != null) {
+      meta.setDBVersion(currentVersion);
     }
     return meta;
+  }
+
+  private Version currentVersion() {
+    if (versionFromRsProperties == null) {
+      return null;
+    }
+    try {
+      return new Version(Long.parseLong(versionFromRsProperties));
+    } catch (NumberFormatException e) {
+      logger.error(
+          "Could not parse application version - should be an integer but was [{}]",
+          versionFromRsProperties);
+      return null;
+    }
   }
 
   @Override

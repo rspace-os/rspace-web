@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+  <changeSet id="extra-field-name-index" author="rspace" context="run">
+    <preConditions onFail="MARK_RAN">
+      <not>
+        <indexExists tableName="ExtraField" indexName="ix_extrafield_name_deleted"/>
+      </not>
+    </preConditions>
+    <comment>
+      Index the name prefix, deletion flag, and subtype used by runtime-field discovery.
+    </comment>
+    <sql>
+      CREATE INDEX ix_extrafield_name_deleted ON ExtraField (name(128), deleted, DTYPE)
+    </sql>
+  </changeSet>
+
+  <changeSet id="extra-field-parent-name-index" author="rspace" context="run">
+    <preConditions onFail="MARK_RAN">
+      <not>
+        <indexExists tableName="ExtraField" indexName="ix_extrafield_instr_name"/>
+      </not>
+    </preConditions>
+    <comment>
+      Index the owning instrument followed by the name prefix and deletion flag.
+    </comment>
+    <sql>
+      CREATE INDEX ix_extrafield_instr_name
+      ON ExtraField (instrumentEntity_id, name(128), deleted)
+    </sql>
+  </changeSet>
+
+</databaseChangeLog>
