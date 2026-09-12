@@ -49,8 +49,6 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
   private record ParentLocationRow(
       Long instrumentId, Long containerId, String containerName, ContainerType containerType) {}
 
-  private record InstrumentNameRow(Long instrumentId, String name) {}
-
   private record BookingCatalogueLocationRow(
       Long containerId, String containerName, ContainerType containerType) {}
 
