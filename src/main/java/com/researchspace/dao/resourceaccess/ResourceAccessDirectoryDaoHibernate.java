@@ -164,7 +164,7 @@ public class ResourceAccessDirectoryDaoHibernate implements ResourceAccessDirect
       }
       try {
         long id = Long.parseLong(key.substring(prefix.length()));
-        if (id > 0) {
+        if (id != 0) {
           ids.add(id);
         }
       } catch (NumberFormatException ignored) {
