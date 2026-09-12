@@ -1,0 +1,919 @@
+package com.researchspace.api.v1.controller;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import com.researchspace.api.v1.model.ApiExtraField;
+import com.researchspace.api.v1.model.ApiField.ApiFieldType;
+import com.researchspace.api.v1.model.ApiInventoryEntityField;
+import com.researchspace.api.v1.model.ApiQuantityInfo;
+import com.researchspace.api.v1.model.ApiSample;
+import com.researchspace.api.v1.model.ApiSampleTemplate;
+import com.researchspace.api.v1.model.ApiSampleTemplatePost;
+import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
+import com.researchspace.api.v1.model.ApiSubSample;
+import com.researchspace.model.User;
+import com.researchspace.model.units.RSUnitDef;
+import com.researchspace.service.inventory.SubSampleApiManager;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.stream.Stream;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.web.WebAppConfiguration;
+import org.springframework.test.web.servlet.MvcResult;
+
+/**
+ * End-to-end coverage for the RSDEV-1231 operation endpoint (POST /operations). A single POST
+ * carries the origins with their amounts and the values the user typed; the server builds one new
+ * Sample parenting N subsamples from them and the operation definition, puts a provenance link back
+ * to each origin on the new Sample, and reduces each origin subsample by the amount taken from it
+ * (never increasing it), all in one transaction. The live-state and concurrency rules of that
+ * transaction are exercised here against a real database. See DevDocs/adr/0007.
+ *
+ * <p>Authored with the feature; not run automatically (extends a real-transaction MVC base).
+ */
+@WebAppConfiguration
+public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTestBase {
+
+  private @Autowired SubSampleApiManager subSampleApiManager;
+
+  private User anyUser;
+  private String apiKey;
+
+  @BeforeEach
+  public void setup() throws Exception {
+    super.setUp();
+    anyUser = createInitAndLoginAnyUser();
+    apiKey = createNewApiKeyForUser(anyUser);
+  }
+
+  // --- request bodies, in the shape the wizard sends ---
+
+  private static String quantityJson(String value, int unitId) {
+    return "{\"numericValue\":" + value + ",\"unitId\":" + unitId + "}";
+  }
+
+  /** One origin element; a null amountMode leaves the property absent. */
+  private static String originJson(ApiSubSample origin, String amountMode, String amountTakenJson) {
+    return "{\"id\":"
+        + origin.getId()
+        + (amountMode == null ? "" : ",\"amountMode\":\"" + amountMode + "\"")
+        + ",\"amountTaken\":"
+        + amountTakenJson
+        + "}";
+  }
+
+  /** The inputs every creating operation declares. */
+  private static String creatingInputs(String sampleName, int count, String eachAmountJson) {
+    return "\"sampleName\":\""
+        + sampleName
+        + "\",\"count\":"
+        + count
+        + ",\"eachAmount\":"
+        + eachAmountJson;
+  }
+
+  private static String body(String operationType, String originsJson, String inputsJson) {
+    return body(operationType, originsJson, inputsJson, "");
+  }
+
+  /** topLevelExtras is appended verbatim, e.g. {@code ,"templateId":5}. */
+  private static String body(
+      String operationType, String originsJson, String inputsJson, String topLevelExtras) {
+    return "{\"operationType\":\""
+        + operationType
+        + "\",\"origins\":["
+        + originsJson
+        + "],\"inputs\":{"
+        + inputsJson
+        + "}"
+        + topLevelExtras
+        + "}";
+  }
+
+  /** A Derive taking the given amount from the origin into {@code count} children of eachAmount. */
+  private static String deriveJson(
+      ApiSubSample origin,
+      String amountTakenJson,
+      String sampleName,
+      int count,
+      String eachAmountJson,
+      String topLevelExtras) {
+    return body(
+        "derive",
+        originJson(origin, null, amountTakenJson),
+        "\"processName\":\"PCR\"," + creatingInputs(sampleName, count, eachAmountJson),
+        topLevelExtras);
+  }
+
+  /** An Aliquot taking 1 (origin unit) into one 0.5 child. */
+  private static String aliquotJson(ApiSubSample origin) {
+    int unitId = origin.getQuantity().getUnitId();
+    return aliquotJsonWith(origin, quantityJson("1", unitId), quantityJson("0.5", unitId), "");
+  }
+
+  private static String aliquotJsonWith(
+      ApiSubSample origin, String amountTakenJson, String eachAmountJson, String topLevelExtras) {
+    return body(
+        "aliquot",
+        originJson(origin, null, amountTakenJson),
+        creatingInputs("Aliquots", 1, eachAmountJson),
+        topLevelExtras);
+  }
+
+  /** A Pool request over exactly two origins, taking 1 g from each into one 2 g child. */
+  private static String poolJson(String name, ApiSubSample first, ApiSubSample second) {
+    int gram = RSUnitDef.GRAM.getId();
+    return body(
+        "pool",
+        originJson(first, null, quantityJson("1", gram))
+            + ","
+            + originJson(second, null, quantityJson("1", gram)),
+        creatingInputs(name, 1, quantityJson("2", gram)));
+  }
+
+  /** An Aliquot taking the given amount, in the origin's own unit, into one child of the same. */
+  private static String aliquotTakingJson(ApiSubSample origin, String amount) {
+    int unitId = origin.getQuantity().getUnitId();
+    return body(
+        "aliquot",
+        originJson(origin, null, quantityJson(amount, unitId)),
+        creatingInputs("Aliquot of " + origin.getGlobalId(), 1, quantityJson(amount, unitId)));
+  }
+
+  @Test
+  public void deriveCreatesLinkedSampleAndReducesOriginByAmountTaken() throws Exception {
+    // an existing subsample to be the origin of the Derive operation
+    ApiSampleWithFullSubSamples source = createBasicSampleForUser(anyUser);
+    ApiSubSample origin = source.getSubSamples().get(0);
+    Long originId = origin.getId();
+    String originGlobalId = origin.getGlobalId();
+    Integer unitId = origin.getQuantity().getUnitId();
+    java.math.BigDecimal originalAmount = origin.getQuantity().getNumericValue();
+
+    // The wizard sends the typed inputs and the amount to take from the origin; the server builds
+    // the sample (2 subsamples, each holding a quantity and nothing else) and its provenance link.
+    String operationJson =
+        deriveJson(
+            origin,
+            quantityJson("0.6", unitId),
+            "Derived material",
+            2,
+            quantityJson("0.5", unitId),
+            "");
+
+    MvcResult result =
+        mockMvc
+            .perform(
+                createBuilderForPostWithJSONBody(apiKey, "/operations", anyUser, operationJson))
+            .andExpect(status().isCreated())
+            .andReturn();
+    ApiSampleWithFullSubSamples created =
+        getFromJsonResponseBody(result, ApiSampleWithFullSubSamples.class);
+
+    // the new sample carries the IsDerivedFrom link back to the origin
+    ApiExtraField sampleLink = findLinkField(created.getExtraFields());
+    assertNotNull(sampleLink, "the derived sample must carry the provenance link");
+    assertEquals("IsDerivedFrom", sampleLink.getLink().getRelationType());
+    assertEquals(originGlobalId, sampleLink.getLink().getTargetGlobalId());
+
+    // ... while the created subsamples carry only their quantity: the operation's links and text
+    // fields live on the sample.
+    assertEquals(2, created.getSubSamples().size());
+    for (ApiSubSample ss : created.getSubSamples()) {
+      assertTrue(
+          ss.getExtraFields().isEmpty(), "the operation puts no extra fields on its subsamples");
+    }
+
+    // the origin has been REDUCED by the amount taken (0.6), in one transaction with the creation.
+    // registerApiSubSampleUsage subtracts and clamps at zero, so the origin can never increase.
+    java.math.BigDecimal expectedAfter =
+        originalAmount.subtract(new java.math.BigDecimal("0.6")).max(java.math.BigDecimal.ZERO);
+    ApiSubSample reloadedOrigin = subSampleApiManager.getApiSubSampleById(originId, anyUser);
+    assertTrue(
+        expectedAfter.compareTo(reloadedOrigin.getQuantity().getNumericValue()) == 0,
+        "origin quantity should be reduced by the amount taken");
+  }
+
+  @Test
+  public void operationCreatesDerivedSampleFromChosenTemplate() throws Exception {
+    ApiSampleWithFullSubSamples source = createBasicSampleForUser(anyUser);
+    ApiSubSample origin = source.getSubSamples().get(0);
+    Integer unitId = origin.getQuantity().getUnitId();
+
+    // the user chooses an existing template (option "any") for the derived sample
+    ApiSampleTemplatePost templatePost = new ApiSampleTemplatePost();
+    templatePost.setName("operation target template");
+    templatePost.setDefaultUnitId(RSUnitDef.GRAM.getId());
+    MvcResult templateResult =
+        mockMvc
+            .perform(
+                createBuilderForPostWithJSONBody(apiKey, "/sampleTemplates", anyUser, templatePost))
+            .andExpect(status().isCreated())
+            .andReturn();
+    ApiSampleTemplate template = getFromJsonResponseBody(templateResult, ApiSampleTemplate.class);
+
+    String operationJson =
+        deriveJson(
+            origin,
+            quantityJson("0.6", unitId),
+            "Derived from template",
+            1,
+            quantityJson("0.5", unitId),
+            ",\"templateId\":" + template.getId());
+
+    MvcResult result =
+        mockMvc
+            .perform(
+                createBuilderForPostWithJSONBody(apiKey, "/operations", anyUser, operationJson))
+            .andExpect(status().isCreated())
+            .andReturn();
+    ApiSampleWithFullSubSamples created =
+        getFromJsonResponseBody(result, ApiSampleWithFullSubSamples.class);
+
+    assertEquals(
+        template.getId(),
+        created.getTemplateId(),
+        "the derived sample must be created from the chosen template");
+  }
+
+  @Test
+  public void rejectsTakingMoreThanTheOriginHolds() throws Exception {
+    // DevDocs/adr/0007: taking more than the origin currently holds must be rejected (400), not
+    // clamped, and must leave the origin untouched.
+    ApiSampleWithFullSubSamples source = createBasicSampleForUser(anyUser);
+    ApiSubSample origin = source.getSubSamples().get(0);
+    Long originId = origin.getId();
+    Integer unitId = origin.getQuantity().getUnitId();
+    java.math.BigDecimal originalAmount = origin.getQuantity().getNumericValue();
+    java.math.BigDecimal tooMuch = originalAmount.add(java.math.BigDecimal.ONE);
+
+    String operationJson =
+        deriveJson(
+            origin,
+            quantityJson(tooMuch.toPlainString(), unitId),
+            "Derived material",
+            1,
+            quantityJson("0.5", unitId),
+            "");
+
+    mockMvc
+        .perform(createBuilderForPostWithJSONBody(apiKey, "/operations", anyUser, operationJson))
+        .andExpect(status().isBadRequest());
+
+    // the origin is unchanged (the operation was rejected before any mutation)
+    ApiSubSample reloadedOrigin = subSampleApiManager.getApiSubSampleById(originId, anyUser);
+    assertTrue(
+        originalAmount.compareTo(reloadedOrigin.getQuantity().getNumericValue()) == 0,
+        "origin quantity must be unchanged when over-removal is rejected");
+  }
+
+  @Test
+  public void rollsBackOriginDecrementWhenSampleCreationFailsInsideTheTransaction()
+      throws Exception {
+    // The atomicity claim (DevDocs/adr/0007) rests on InventoryOperationManager matching the
+    // service.inventory.*Manager AOP pointcut; only a real transaction can prove it. Trigger an
+    // in-transaction failure AFTER the origin decrement: the documentation target is a document
+    // that does not exist, so creating the IsDocumentedBy link the server builds
+    // (assertTargetExistsAndReadable) throws while the new sample is being assembled, after
+    // registerApiSubSampleUsage already ran. Without a working transaction the origin would
+    // silently lose quantity with no sample created.
+    ApiSampleWithFullSubSamples source = createBasicSampleForUser(anyUser);
+    ApiSubSample origin = source.getSubSamples().get(0);
+    Long originId = origin.getId();
+    Integer unitId = origin.getQuantity().getUnitId();
+    java.math.BigDecimal originalAmount = origin.getQuantity().getNumericValue();
+
+    String operationJson =
+        deriveJson(
+            origin,
+            quantityJson("0.6", unitId),
+            "Rollback probe",
+            1,
+            quantityJson("0.5", unitId),
+            ",\"documentedByGlobalId\":\"SD999999999\"");
+
+    MvcResult result =
+        mockMvc
+            .perform(
+                createBuilderForPostWithJSONBody(apiKey, "/operations", anyUser, operationJson))
+            .andReturn();
+    assertTrue(
+        result.getResponse().getStatus() >= 400,
+        "a failing in-transaction link creation must not report success, was: "
+            + result.getResponse().getStatus());
+
+    // the origin's quantity is unchanged: the decrement was rolled back with the failed creation
+    ApiSubSample reloadedOrigin = subSampleApiManager.getApiSubSampleById(originId, anyUser);
+    assertTrue(
+        originalAmount.compareTo(reloadedOrigin.getQuantity().getNumericValue()) == 0,
+        "origin quantity must be restored when the operation fails mid-transaction");
+  }
+
+  /** POST /samples with one subsample holding exactly the given quantity; returns the sample. */
+  private ApiSampleWithFullSubSamples createSampleHolding(String name, String value, int unitId)
+      throws Exception {
+    String sampleJson =
+        "{\"name\":\""
+            + name
+            + "\",\"subSamples\":[{\"quantity\":{\"numericValue\":"
+            + value
+            + ",\"unitId\":"
+            + unitId
+            + "}}]}";
+    MvcResult result =
+        mockMvc
+            .perform(createBuilderForPostWithJSONBody(apiKey, "/samples", anyUser, sampleJson))
+            .andExpect(status().isCreated())
+            .andReturn();
+    return getFromJsonResponseBody(result, ApiSampleWithFullSubSamples.class);
+  }
+
+  @Test
+  public void passageIntoATemplateThatAlreadyDeclaresTheCounterFieldMergesInsteadOfDuplicating()
+      throws Exception {
+    // A Passage template may legitimately declare its own "Passage number" field. The operation
+    // generates a field of that name too, so the created sample used to end up with two and
+    // assertNoDuplicateFieldNames rejected the whole request: every Passage onto such a template
+    // failed, and the wizard could not rename the generated field (Codex review, PR #1090).
+    // Renaming it would clear the rejection but strand the counter, which finds the previous number
+    // by name, so the value has to land in the inherited field instead.
+    ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
+    int unitId = origin.getQuantity().getUnitId();
+    ApiSampleTemplatePost templatePost = new ApiSampleTemplatePost();
+    templatePost.setName("passage template with its own counter");
+    templatePost.setDefaultUnitId(unitId);
+    templatePost
+        .getFields()
+        .add(createBasicApiSampleField("Passage number", ApiFieldType.TEXT, ""));
+    MvcResult templateResult =
+        mockMvc
+            .perform(
+                createBuilderForPostWithJSONBody(apiKey, "/sampleTemplates", anyUser, templatePost))
+            .andExpect(status().isCreated())
+            .andReturn();
+    ApiSampleTemplate template = getFromJsonResponseBody(templateResult, ApiSampleTemplate.class);
+
+    String operationJson =
+        body(
+            "passage",
+            originJson(origin, null, quantityJson("0", unitId)),
+            creatingInputs("Passaged", 1, quantityJson("1", unitId)),
+            ",\"templateId\":" + template.getId());
+
+    MvcResult result =
+        mockMvc
+            .perform(
+                createBuilderForPostWithJSONBody(apiKey, "/operations", anyUser, operationJson))
+            .andExpect(status().isCreated())
+            .andReturn();
+
+    ApiSampleWithFullSubSamples created =
+        getFromJsonResponseBody(result, ApiSampleWithFullSubSamples.class);
+    ApiSample reloaded = sampleApiMgr.getApiSampleById(created.getId(), anyUser);
+    long counterFields =
+        Stream.concat(
+                reloaded.getFields().stream().map(ApiInventoryEntityField::getName),
+                reloaded.getExtraFields().stream().map(ApiExtraField::getName))
+            .filter(name -> "Passage number".equalsIgnoreCase(name == null ? "" : name.trim()))
+            .count();
+    assertEquals(1, counterFields, "the created sample must hold exactly one Passage number field");
+    // and it is the inherited one, carrying the operation's value (the server starts the counter
+    // at 1 when the origin's parent holds none), so the next Passage's counter lookup finds it.
+    assertEquals(
+        "1",
+        reloaded.getFields().stream()
+            .filter(f -> "Passage number".equals(f.getName()))
+            .map(ApiInventoryEntityField::getContent)
+            .findFirst()
+            .orElse(null),
+        "the operation's value must land in the template's own field");
+  }
+
+  @Test
+  public void rejectsPoolingAVolumeOriginWithAMassOrigin() throws Exception {
+    // security review finding 4: the wizard blocks mixed-category pooling; the endpoint must too
+    ApiSubSample volumeOrigin =
+        createSampleHolding("F4a volume", "5", RSUnitDef.MILLI_LITRE.getId())
+            .getSubSamples()
+            .get(0);
+    ApiSubSample massOrigin =
+        createSampleHolding("F4a mass", "5", RSUnitDef.GRAM.getId()).getSubSamples().get(0);
+
+    String operationJson =
+        body(
+            "pool",
+            originJson(volumeOrigin, null, quantityJson("1", RSUnitDef.MILLI_LITRE.getId()))
+                + ","
+                + originJson(massOrigin, null, quantityJson("1", RSUnitDef.GRAM.getId())),
+            creatingInputs("Mixed pool", 1, quantityJson("2", RSUnitDef.MILLI_LITRE.getId())));
+
+    mockMvc
+        .perform(createBuilderForPostWithJSONBody(apiKey, "/operations", anyUser, operationJson))
+        .andExpect(status().isBadRequest());
+
+    for (ApiSubSample origin : List.of(volumeOrigin, massOrigin)) {
+      ApiSubSample reloaded = subSampleApiManager.getApiSubSampleById(origin.getId(), anyUser);
+      assertTrue(
+          origin.getQuantity().getNumericValue().compareTo(reloaded.getQuantity().getNumericValue())
+              == 0,
+          "origins must be unchanged when the category mismatch is rejected");
+    }
+  }
+
+  /** Posts the body, expects a 400, asserts the origin was left untouched, returns the response. */
+  private MvcResult assertRejectedLeavingOriginUnchanged(ApiSubSample origin, String operationJson)
+      throws Exception {
+    java.math.BigDecimal before = origin.getQuantity().getNumericValue();
+    MvcResult result =
+        mockMvc
+            .perform(
+                createBuilderForPostWithJSONBody(apiKey, "/operations", anyUser, operationJson))
+            .andExpect(status().isBadRequest())
+            .andReturn();
+    ApiSubSample reloaded = subSampleApiManager.getApiSubSampleById(origin.getId(), anyUser);
+    assertTrue(
+        before.compareTo(reloaded.getQuantity().getNumericValue()) == 0,
+        "origin must be unchanged when the request is rejected");
+    return result;
+  }
+
+  private ApiExtraField findLinkField(List<ApiExtraField> extraFields) {
+    return extraFields.stream().filter(ef -> ef.getLink() != null).findFirst().orElse(null);
+  }
+
+  /**
+   * RSDEV-1231: identical requests racing the same origin used to have every losing request surface
+   * an uncaught commit-time conflict (a deadlock, or "record has changed since last read") as a
+   * 500, even though the origin itself always ended up in the correct final state. Fires {@code
+   * count} copies of {@code operationJson} concurrently and returns each response status.
+   */
+  private List<Integer> fireConcurrentOperationRequests(String operationJson, int count)
+      throws Exception {
+    return fireConcurrentOperationRequests(Collections.nCopies(count, operationJson));
+  }
+
+  /**
+   * As above, but each request has its own body, so requests that overlap only partly (two Pools
+   * sharing one of their origins) can race each other.
+   */
+  private List<Integer> fireConcurrentOperationRequests(List<String> operationJsons)
+      throws Exception {
+    ExecutorService pool = Executors.newFixedThreadPool(operationJsons.size());
+    try {
+      List<Callable<Integer>> requests = new ArrayList<>();
+      for (String operationJson : operationJsons) {
+        requests.add(
+            () ->
+                mockMvc
+                    .perform(
+                        createBuilderForPostWithJSONBody(
+                            apiKey, "/operations", anyUser, operationJson))
+                    .andReturn()
+                    .getResponse()
+                    .getStatus());
+      }
+      List<Integer> statuses = new ArrayList<>();
+      for (Future<Integer> result : pool.invokeAll(requests)) {
+        statuses.add(result.get());
+      }
+      return statuses;
+    } finally {
+      pool.shutdown();
+    }
+  }
+
+  @Test
+  public void parallelDestroyRequestsAgainstTheSameOriginNeverReturn5xx() throws Exception {
+    // Destroy must take the origin's entire quantity, so only the first of these to commit can
+    // still match it; every other request should lose cleanly (400/409), never 500.
+    ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
+    String operationJson =
+        body(
+            "destroy",
+            originJson(
+                origin,
+                "all",
+                quantityJson(
+                    origin.getQuantity().getNumericValue().toPlainString(),
+                    origin.getQuantity().getUnitId())),
+            "");
+
+    int samplesBefore = sampleCount();
+    List<Integer> statuses = fireConcurrentOperationRequests(operationJson, 5);
+
+    assertTrue(statuses.stream().noneMatch(status -> status >= 500), () -> "5xx in " + statuses);
+    assertEquals(
+        1,
+        statuses.stream().filter(status -> status == 201).count(),
+        () -> "exactly one request should win the race, got " + statuses);
+    // Tightened (2026-09-08): with a row lock that makes concurrent requests WAIT, every loser
+    // proceeds after the winner commits, reads the emptied origin under the lock and fails the
+    // live-state check as a 400. A 409 means a deadlock victim or lock-wait timeout, which the
+    // earlier "no 5xx" assertion tolerated while every run was deadlocking.
+    // Still 400 after the whole-origin compare-and-swap landed (RSDEV-1231): the winner leaves the
+    // origin at zero, and originHoldsNothing is checked BEFORE the stale-snapshot guard, so a loser
+    // is rejected as originEmpty rather than as a conflict. A loser would only see the 409 if the
+    // winner had left the origin non-empty, which Destroy cannot do.
+    assertTrue(
+        statuses.stream().allMatch(status -> status == 201 || status == 400),
+        () -> "losers must fail live-state (400), not deadlock (409), got " + statuses);
+    ApiSubSample reloaded = subSampleApiManager.getApiSubSampleById(origin.getId(), anyUser);
+    assertTrue(
+        java.math.BigDecimal.ZERO.compareTo(reloaded.getQuantity().getNumericValue()) == 0,
+        "origin should be fully consumed by the one request that won");
+    // A losing request must roll back completely, not just fail to decrement: Destroy creates no
+    // sample, so a partially-applied loser would show up as a stray one here.
+    assertEquals(samplesBefore, sampleCount(), "a terminal operation creates no sample");
+  }
+
+  @Test
+  public void takeAllAgainstAnOriginToppedUpAfterTheReadReturnsConflict() throws Exception {
+    // The wizard's "take all" serializes the quantity it read. If someone tops the origin up before
+    // Perform, emptying it anyway would destroy stock the user never saw, so the endpoint rejects
+    // the stale claim with 409 and leaves the origin exactly as the concurrent writer left it
+    // (RSDEV-1231). Sequential rather than concurrent: the point is the stale SNAPSHOT, and firing
+    // both at once would leave which one reads first up to the scheduler.
+    ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
+    java.math.BigDecimal amountTheWizardSaw = origin.getQuantity().getNumericValue();
+
+    // a concurrent writer tops the origin up after the wizard read it
+    ApiSubSample topUp = new ApiSubSample();
+    topUp.setId(origin.getId());
+    topUp.setQuantity(
+        new ApiQuantityInfo(
+            amountTheWizardSaw.add(java.math.BigDecimal.ONE), origin.getQuantity().getUnitId()));
+    subSampleApiManager.updateApiSubSample(topUp, anyUser);
+
+    int unitId = origin.getQuantity().getUnitId();
+    String operationJson =
+        body(
+            "aliquot",
+            originJson(origin, "all", quantityJson(amountTheWizardSaw.toPlainString(), unitId)),
+            creatingInputs("Aliquots", 1, quantityJson("0.5", unitId)));
+
+    mockMvc
+        .perform(createBuilderForPostWithJSONBody(apiKey, "/operations", anyUser, operationJson))
+        .andExpect(status().isConflict());
+
+    ApiSubSample reloaded = subSampleApiManager.getApiSubSampleById(origin.getId(), anyUser);
+    assertEquals(
+        0,
+        amountTheWizardSaw
+            .add(java.math.BigDecimal.ONE)
+            .compareTo(reloaded.getQuantity().getNumericValue()),
+        "a rejected stale take-all must leave the origin untouched");
+  }
+
+  @Test
+  public void parallelAliquotRequestsAgainstTheSameOriginNeverReturn5xx() throws Exception {
+    // Aliquot only decrements, so several concurrent requests can legitimately all succeed before
+    // the origin runs out; the race is only over which of them commits first, so none may 500.
+    ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
+    java.math.BigDecimal originalAmount = origin.getQuantity().getNumericValue();
+    String operationJson = aliquotJson(origin);
+
+    int samplesBefore = sampleCount();
+    List<Integer> statuses = fireConcurrentOperationRequests(operationJson, 5);
+
+    assertTrue(statuses.stream().noneMatch(status -> status >= 500), () -> "5xx in " + statuses);
+    long successes = statuses.stream().filter(status -> status == 201).count();
+    // Tightened (2026-09-08): five 1 g takes fit the 5 g origin exactly, so with row locks that
+    // make concurrent requests WAIT there is no legitimate loser; anything below five 201s is a
+    // deadlock victim or lock-wait timeout surfacing as a 409, which "no 5xx" alone tolerated.
+    assertEquals(5, successes, () -> "all five aliquots should succeed, got " + statuses);
+    ApiSubSample reloaded = subSampleApiManager.getApiSubSampleById(origin.getId(), anyUser);
+    java.math.BigDecimal expected =
+        originalAmount.subtract(java.math.BigDecimal.valueOf(successes));
+    assertTrue(
+        expected.compareTo(reloaded.getQuantity().getNumericValue()) == 0,
+        () -> "origin should be reduced by exactly " + successes + " g, got statuses " + statuses);
+    // The origin ending up right is only half the invariant: each 201 must have produced exactly
+    // one sample, and each loser none, or a rolled-back decrement would still leave its output.
+    assertEquals(
+        samplesBefore + successes,
+        sampleCount(),
+        () -> "one created sample per 201, got statuses " + statuses);
+  }
+
+  @Test
+  public void parallelDecrementsEachGetTheirOwnAddressableVersion() throws Exception {
+    // Every decrement is a content edit, so each must advance the subsample's user-facing version
+    // and leave the stock state it produced retrievable by that version. Two requests can both load
+    // the entity before either takes the row lock, and lockRowForUpdate hands the waiter back that
+    // same cached instance, so before the committed version was read as a scalar under the lock
+    // both bumped the same stale number: one version was reused and the intermediate stock state
+    // it labelled became unaddressable (Codex review, PR #1090).
+    //
+    // This is also the only check covering the flush ordering that read depends on. The scalar read
+    // is an HQL query against the SubSample table, and Hibernate's AUTO flush writes pending
+    // changes to that table before running it, so dirtying the entity first would flush the stale
+    // version and the query would read back this transaction's own value. Mocked DAO tests have no
+    // flush and cannot see that; SubSampleApiManagerImplUsageVersionTest only models it (third
+    // Codex review, PR #1090).
+    ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
+    String operationJson = aliquotJson(origin);
+
+    List<Integer> statuses = fireConcurrentOperationRequests(operationJson, 5);
+
+    long successes = statuses.stream().filter(status -> status == 201).count();
+    assertEquals(5, successes, () -> "all five aliquots should succeed, got " + statuses);
+    // A freshly created subsample is at version 1, so five committed decrements end at 6.
+    long finalVersion = 1 + successes;
+    ApiSubSample live = subSampleApiManager.getApiSubSampleById(origin.getId(), anyUser);
+    ApiSubSample atFinalVersion =
+        subSampleApiManager.getApiSubSampleVersion(origin.getId(), finalVersion, anyUser);
+    assertNotNull(
+        atFinalVersion,
+        () ->
+            "version "
+                + finalVersion
+                + " should exist after "
+                + successes
+                + " decrements, got statuses "
+                + statuses);
+    assertEquals(
+        0,
+        live.getQuantity()
+            .getNumericValue()
+            .compareTo(atFinalVersion.getQuantity().getNumericValue()),
+        "the last version should hold the live quantity");
+
+    // Each decrement's own state is addressable, and no two share a version: a reused number would
+    // make two of these resolve to the same stock value.
+    List<java.math.BigDecimal> quantitiesByVersion = new ArrayList<>();
+    for (long version = 2; version <= finalVersion; version++) {
+      ApiSubSample atVersion =
+          subSampleApiManager.getApiSubSampleVersion(origin.getId(), version, anyUser);
+      final long addressed = version;
+      assertNotNull(
+          atVersion, () -> "version " + addressed + " should be addressable, statuses " + statuses);
+      quantitiesByVersion.add(atVersion.getQuantity().getNumericValue().stripTrailingZeros());
+    }
+    assertEquals(
+        successes,
+        quantitiesByVersion.stream().distinct().count(),
+        () -> "each version should hold a distinct stock value, got " + quantitiesByVersion);
+  }
+
+  // --- code review (2026-09-03) reproductions: each is a field-scoped 400 leaving the origin
+  // untouched, where it used to be a 422 or a 201 with wrong data ---
+
+  @Test
+  public void rejectsAmountTakenInAUnitThatDoesNotExist() throws Exception {
+    // review repro f4-unknown: used to reach QuantityUtils.sum and surface as a 422
+    ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
+    int unitId = origin.getQuantity().getUnitId();
+    assertRejectedLeavingOriginUnchanged(
+        origin,
+        aliquotJsonWith(origin, quantityJson("1", 999999), quantityJson("0.5", unitId), ""));
+  }
+
+  @Test
+  public void rejectsAmountTakenInADifferentCategoryThanTheOrigin() throws Exception {
+    // review repro f4-category: millilitres taken from a gram origin used to be a 422
+    ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
+    int unitId = origin.getQuantity().getUnitId();
+    assertRejectedLeavingOriginUnchanged(
+        origin,
+        aliquotJsonWith(
+            origin,
+            quantityJson("1", RSUnitDef.MILLI_LITRE.getId()),
+            quantityJson("0.5", unitId),
+            ""));
+  }
+
+  @Test
+  public void rejectsANewSubSampleInADifferentCategoryThanTheOrigin() throws Exception {
+    // review repro f5: a millilitre child from a gram origin used to be created
+    ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
+    int unitId = origin.getQuantity().getUnitId();
+    assertRejectedLeavingOriginUnchanged(
+        origin,
+        aliquotJsonWith(
+            origin,
+            quantityJson("1", unitId),
+            quantityJson("0.5", RSUnitDef.MILLI_LITRE.getId()),
+            ""));
+  }
+
+  @Test
+  public void rejectsANewSubSampleOutsideTheChosenTemplatesCategory() throws Exception {
+    // review repro f5-template: gram children under a volume template used to be created
+    ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
+    int unitId = origin.getQuantity().getUnitId();
+    ApiSampleTemplatePost templatePost = new ApiSampleTemplatePost();
+    templatePost.setName("RSDEV-1231 volume template");
+    templatePost.setDefaultUnitId(RSUnitDef.MILLI_LITRE.getId());
+    MvcResult templateResult =
+        mockMvc
+            .perform(
+                createBuilderForPostWithJSONBody(apiKey, "/sampleTemplates", anyUser, templatePost))
+            .andExpect(status().isCreated())
+            .andReturn();
+    ApiSampleTemplate template = getFromJsonResponseBody(templateResult, ApiSampleTemplate.class);
+    assertRejectedLeavingOriginUnchanged(
+        origin,
+        aliquotJsonWith(
+            origin,
+            quantityJson("1", unitId),
+            quantityJson("0.5", unitId),
+            ",\"templateId\":" + template.getId()));
+  }
+
+  @Test
+  public void rejectsADocumentationLinkToAnInventoryRecord() throws Exception {
+    // review repro f6: IsDocumentedBy pointing at the origin subsample itself used to be stored
+    ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
+    int unitId = origin.getQuantity().getUnitId();
+    assertRejectedLeavingOriginUnchanged(
+        origin,
+        aliquotJsonWith(
+            origin,
+            quantityJson("1", unitId),
+            quantityJson("0.5", unitId),
+            ",\"documentedByGlobalId\":\"" + origin.getGlobalId() + "\""));
+  }
+
+  @Test
+  public void rejectsANewSubSampleQuantityFinerThanTheStored3dp() throws Exception {
+    // review repro f7: 0.0004 used to persist as a subsample holding 0
+    ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
+    int unitId = origin.getQuantity().getUnitId();
+    assertRejectedLeavingOriginUnchanged(
+        origin,
+        aliquotJsonWith(origin, quantityJson("1", unitId), quantityJson("0.0004", unitId), ""));
+  }
+
+  @Test
+  public void acceptsAmountTakenInAnotherUnitOfTheOriginsCategory() throws Exception {
+    // The origin's category is fixed, not its unit: the rejection tests above must not have
+    // tightened into unit equality. 1000 mg taken from a 5 g origin leaves 4 g.
+    ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
+    int unitId = origin.getQuantity().getUnitId();
+    mockMvc
+        .perform(
+            createBuilderForPostWithJSONBody(
+                apiKey,
+                "/operations",
+                anyUser,
+                aliquotJsonWith(
+                    origin,
+                    quantityJson("1000", RSUnitDef.MILLI_GRAM.getId()),
+                    quantityJson("0.5", unitId),
+                    "")))
+        .andExpect(status().isCreated());
+
+    ApiSubSample reloaded = subSampleApiManager.getApiSubSampleById(origin.getId(), anyUser);
+    assertTrue(
+        origin
+                .getQuantity()
+                .getNumericValue()
+                .subtract(java.math.BigDecimal.ONE)
+                .compareTo(reloaded.getQuantity().getNumericValue())
+            == 0,
+        () -> "origin should be reduced by 1 g, got " + reloaded.getQuantity().getNumericValue());
+  }
+
+  @Test
+  public void parallelPoolRequestsOverOverlappingOriginsNeverDeadlock() throws Exception {
+    // Two Pools sharing one origin lock two rows each. Locked in request order they would deadlock
+    // (each holding what the other wants), which is why the manager sorts origins by id before
+    // locking (code review, finding 1). The bodies below list their origins in opposite orders, so
+    // only that sort keeps them from crossing. Repeated over fresh origins: a deadlock is a race,
+    // and one round can miss it.
+    for (int round = 0; round < 5; round++) {
+      ApiSubSample a =
+          createSampleHolding("pool A " + round, "5", RSUnitDef.GRAM.getId())
+              .getSubSamples()
+              .get(0);
+      ApiSubSample b =
+          createSampleHolding("pool B " + round, "5", RSUnitDef.GRAM.getId())
+              .getSubSamples()
+              .get(0);
+      ApiSubSample c =
+          createSampleHolding("pool C " + round, "5", RSUnitDef.GRAM.getId())
+              .getSubSamples()
+              .get(0);
+
+      List<Integer> statuses =
+          fireConcurrentOperationRequests(
+              List.of(poolJson("pool BA " + round, b, a), poolJson("pool BC " + round, b, c)));
+
+      assertTrue(
+          statuses.stream().noneMatch(status -> status >= 500),
+          () -> "5xx from overlapping pools: " + statuses);
+      // Each 201 took 1 g from each of its two origins; A and C are named once, B by both.
+      int baWon = statuses.get(0) == 201 ? 1 : 0;
+      int bcWon = statuses.get(1) == 201 ? 1 : 0;
+      assertQuantityIs(a, 5 - baWon, statuses);
+      assertQuantityIs(c, 5 - bcWon, statuses);
+      assertQuantityIs(b, 5 - baWon - bcWon, statuses);
+    }
+  }
+
+  private void assertQuantityIs(ApiSubSample origin, int expected, List<Integer> statuses)
+      throws Exception {
+    ApiSubSample reloaded = subSampleApiManager.getApiSubSampleById(origin.getId(), anyUser);
+    assertTrue(
+        java.math.BigDecimal.valueOf(expected).compareTo(reloaded.getQuantity().getNumericValue())
+            == 0,
+        () ->
+            "expected "
+                + origin.getGlobalId()
+                + " to hold "
+                + expected
+                + ", got "
+                + reloaded.getQuantity().getNumericValue()
+                + " after "
+                + statuses);
+  }
+
+  @Test
+  public void parallelAliquotsOnSiblingSubSamplesKeepTheParentTotalExact() throws Exception {
+    // Two Aliquots on different subsamples of ONE sample never touch the same subsample row, so the
+    // origin locks alone let them run at once. Both still rewrite the parent's denormalised total,
+    // which each computes from its own read: without the parent lock one of the two decrements is
+    // lost from the total (10.11) or the loser fails at commit (12.3). Repeated: it is a race.
+    for (int round = 0; round < 5; round++) {
+      ApiSampleWithFullSubSamples sample =
+          createSampleWithTwoSubSamples("siblings " + round, "10", RSUnitDef.MILLI_LITRE.getId());
+      ApiSubSample first = sample.getSubSamples().get(0);
+      ApiSubSample second = sample.getSubSamples().get(1);
+
+      List<Integer> statuses =
+          fireConcurrentOperationRequests(
+              List.of(aliquotTakingJson(first, "3"), aliquotTakingJson(second, "3")));
+
+      // A green run is necessary but not sufficient: if the second request's transaction happens to
+      // begin after the first commits, its snapshot is already fresh and the test passes whatever
+      // the locking does. The rounds raise the chance of a real overlap, they do not guarantee one.
+      assertTrue(
+          statuses.stream().noneMatch(status -> status >= 500),
+          () -> "5xx from sibling aliquots: " + statuses);
+      // Sibling subsamples are different rows, so neither request has to lose: both queue on the
+      // shared sibling-set lock (taken first, before either origin's own row) and go through in
+      // turn. Before the sibling rows were locked up front they deadlocked here and InnoDB killed
+      // one (409), and before the lock was narrowed the eager-fetch graph lock deadlocked them
+      // against each other's joined rows too.
+      assertEquals(
+          2,
+          statuses.stream().filter(status -> status == 201).count(),
+          () -> "both sibling aliquots should succeed, got " + statuses);
+      assertQuantityIs(first, 7, statuses);
+      assertQuantityIs(second, 7, statuses);
+      // The point of the test: whatever the outcome of the race, the stored total must equal what
+      // the children actually hold. It used to be summed from a sibling read taken from the
+      // transaction's own snapshot, so it came out one decrement short (17 stored where the
+      // children held 14) even though both subsample rows were correct.
+      java.math.BigDecimal childTotal =
+          subSampleApiManager
+              .getApiSubSampleById(first.getId(), anyUser)
+              .getQuantity()
+              .getNumericValue()
+              .add(
+                  subSampleApiManager
+                      .getApiSubSampleById(second.getId(), anyUser)
+                      .getQuantity()
+                      .getNumericValue());
+      ApiSample reloadedSample = sampleApiMgr.getApiSampleById(sample.getId(), anyUser);
+      assertTrue(
+          childTotal.compareTo(reloadedSample.getQuantity().getNumericValue()) == 0,
+          () ->
+              "expected the parent total to equal the sum of its children ("
+                  + childTotal
+                  + "), got "
+                  + reloadedSample.getQuantity()
+                  + " after "
+                  + statuses);
+    }
+  }
+
+  /** A sample whose two subsamples each hold the given quantity. */
+  private ApiSampleWithFullSubSamples createSampleWithTwoSubSamples(
+      String name, String value, int unitId) throws Exception {
+    String subSampleJson = "{\"quantity\":" + quantityJson(value, unitId) + "}";
+    String sampleJson =
+        "{\"name\":\"" + name + "\",\"subSamples\":[" + subSampleJson + "," + subSampleJson + "]}";
+    MvcResult result =
+        mockMvc
+            .perform(createBuilderForPostWithJSONBody(apiKey, "/samples", anyUser, sampleJson))
+            .andExpect(status().isCreated())
+            .andReturn();
+    return getFromJsonResponseBody(result, ApiSampleWithFullSubSamples.class);
+  }
+
+  /** How many samples the test user can see; the outputs a race actually created. */
+  private int sampleCount() {
+    return sampleApiMgr.getSamplesForUser(null, null, null, anyUser).getTotalHits().intValue();
+  }
+}

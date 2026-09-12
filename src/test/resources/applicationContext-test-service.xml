@@ -45,6 +45,30 @@
 
     <tx:advice id="txAdvice">
         <tx:attributes>
+            <!-- Mirrors applicationContext-service.xml (RSDEV-1231): stock writers and the
+                 UI-preference merge run at READ COMMITTED so a locking read that waited sees
+                 the committed row under MariaDB's innodb_snapshot_isolation. -->
+            <tx:method name="performOperation" isolation="READ_COMMITTED"
+                rollback-for="org.springframework.validation.BindException"/>
+            <tx:method name="deductStock" isolation="READ_COMMITTED"/>
+            <tx:method name="createNewListOfMaterials" isolation="READ_COMMITTED"/>
+            <tx:method name="updateListOfMaterials" isolation="READ_COMMITTED"/>
+            <tx:method name="mergeUiJsonSetting" isolation="READ_COMMITTED"/>
+            <!-- The lock primitives are MANDATORY: each takes a row lock that is held until the
+                 transaction ends, so called as the outermost service call Spring would open a
+                 transaction, run the FOR UPDATE, return, COMMIT, and leave the caller acting on a
+                 value nothing protects - with no error raised. Failing at the call site is the
+                 only way that is visible. Expressed here rather than as @Transactional because
+                 these beans are advised by the XML pointcuts above, whose advisor (order 2) beats
+                 the annotation-driven advisor and would create the transaction before a MANDATORY
+                 annotation could see its absence (parallel review, L3-L4-P5). Every current caller
+                 is already inside a transaction, so this is a no-op today: that is the point.
+                 NameMatchTransactionAttributeSource matches on method name alone, so each name
+                 here must be declared by exactly one advised type - pinned by
+                 StockWriterTransactionIsolationTest. Keep in step with the other context file. -->
+            <tx:method name="lockSampleForEdit" propagation="MANDATORY"/>
+            <tx:method name="lockSubSampleForEdit" propagation="MANDATORY"/>
+            <tx:method name="getQuantityForUpdate" propagation="MANDATORY"/>
             <tx:method name="*"/>
         </tx:attributes>
     </tx:advice>

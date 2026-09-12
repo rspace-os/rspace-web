@@ -54,6 +54,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.IntStream;
+import org.hibernate.LockMode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -1291,5 +1292,29 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
     assertNotNull(subSampleAsSeenByTestUser.getModifiedBy());
     assertNotNull(subSampleAsSeenByTestUser.getExtraFields());
     assertNotNull(subSampleAsSeenByTestUser.getNotes());
+  }
+
+  @Test
+  public void registerApiSubSampleUsageReadsTheRowForUpdate() {
+    // Every stock decrement (operations, Stoichiometry, List of Materials) goes through this
+    // method,
+    // but only the operations endpoint locked its origin beforehand. The re-read inside the
+    // cooperative lock was an ordinary get, so a Stoichiometry deduction racing an operation
+    // subtracted from a stale quantity. The lock is taken here instead, once, for all three
+    // callers.
+    Long subSampleId = createBasicSampleForUser(testUser).getSubSamples().get(0).getId();
+    // flush the insert and detach, so the lock mode below is the one this call takes rather than
+    // the
+    // write lock the session already holds from creating the row
+    sessionFactory.getCurrentSession().flush();
+    sessionFactory.getCurrentSession().clear();
+    User reloadedUser = userDao.get(testUser.getId());
+
+    subSampleApiMgr.registerApiSubSampleUsage(
+        subSampleId, QuantityInfo.of(BigDecimal.ONE, RSUnitDef.MILLI_GRAM), reloadedUser);
+
+    assertEquals(
+        LockMode.PESSIMISTIC_WRITE,
+        sessionFactory.getCurrentSession().getCurrentLockMode(dao.get(subSampleId)));
   }
 }

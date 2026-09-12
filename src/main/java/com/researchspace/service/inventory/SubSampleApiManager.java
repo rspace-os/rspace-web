@@ -32,6 +32,35 @@ public interface SubSampleApiManager extends InventoryApiManager<SubSample> {
 
   SubSample assertUserCanEditSubSample(Long id, User user);
 
+  /**
+   * Like {@link #assertUserCanEditSubSample} but reads the subsample with a row lock held until the
+   * current transaction ends, so concurrent edits of the same subsample serialise. Intended for the
+   * operation endpoint's origins; ordinary edits keep using the unlocked read.
+   *
+   * <p>PRECONDITION: a transaction is already open. The lock is held until that transaction ends,
+   * so as the outermost service call this would lock, return and commit, leaving the caller acting
+   * on a value nothing protects. Declared {@code propagation="MANDATORY"} in
+   * applicationContext-service.xml so such a call fails instead (parallel review, L3-L4-P5).
+   *
+   * @throws jakarta.ws.rs.NotFoundException if no subsample has the id
+   */
+  SubSample lockSubSampleForEdit(Long id, User user);
+
+  /**
+   * The subsample's CURRENT quantity, read as a scalar under a row lock. The entity {@link
+   * #lockSubSampleForEdit} returns holds the transaction's snapshot (locking guarantees
+   * serialisation only), so any check or arithmetic that must see what the last committed writer
+   * stored reads the value through this instead (RSDEV-1231).
+   *
+   * <p>PRECONDITION: a transaction is already open. The lock is held until that transaction ends,
+   * so as the outermost service call this would lock, return and commit, leaving the caller acting
+   * on a value nothing protects. Declared {@code propagation="MANDATORY"} in
+   * applicationContext-service.xml so such a call fails instead (parallel review, L3-L4-P5).
+   *
+   * @return the current quantity, or null when the subsample holds none
+   */
+  QuantityInfo getQuantityForUpdate(Long subSampleId);
+
   SubSample assertUserCanDeleteSubSample(Long id, User user);
 
   /**

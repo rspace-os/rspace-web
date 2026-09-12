@@ -1,10 +1,14 @@
 import { mapValues } from "es-toolkit";
 import React from "react";
 import axios from "@/common/axios";
-import type { UseState } from "../../util/types";
 
 /**
  * This constant ensures that we don't end up with clashing keys
+ */
+/*
+ * The keys of the UI_JSON_SETTINGS object. The backend accepts only these names on a keyed
+ * preference write (UI_JSON_SETTINGS_KEYS in UserManagerImpl), so adding a preference here means
+ * adding it there too; without that, writes of the new key are refused with a 400.
  */
 export const PREFERENCES: { [pref: string]: symbol } = {
   GALLERY_VIEW_MODE: Symbol.for("GALLERY_VIEW_MODE"),
@@ -14,17 +18,31 @@ export const PREFERENCES: { [pref: string]: symbol } = {
   GALLERY_SIDEBAR_OPEN: Symbol.for("GALLERY_SIDEBAR_OPEN"),
   INVENTORY_FORM_SECTIONS_EXPANDED: Symbol.for("INVENTORY_FORM_SECTIONS_EXPANDED"),
   INVENTORY_HIDDEN_RIGHT_PANEL: Symbol.for("INVENTORY_HIDDEN_RIGHT_PANEL"),
+  // The single per-process "remember" bundle (template + documentation + collected values), keyed by
+  // operation + process name. Supersedes the earlier per-item template/doc/amount default preferences.
+  INVENTORY_OPERATION_PROCESS_VALUES: Symbol.for("INVENTORY_OPERATION_PROCESS_VALUES"),
+  INVENTORY_OPERATION_PROCESS_NAMES: Symbol.for("INVENTORY_OPERATION_PROCESS_NAMES"),
+  INVENTORY_OPERATION_PROCESS_NAME_DEFAULTS: Symbol.for("INVENTORY_OPERATION_PROCESS_NAME_DEFAULTS"),
   SYSADMIN_USERS_TABLE_COLUMNS: Symbol.for("SYSADMIN_USERS_TABLE_COLUMNS"),
 };
 
 type UiPreferencesContextType = {
   uiPreferences: { [key in keyof typeof PREFERENCES]: unknown };
   setUiPreferences: React.Dispatch<React.SetStateAction<{ [key in keyof typeof PREFERENCES]: unknown } | null>>;
+  /*
+   * One write chain per key, so two writes of the same key from one page land in the order they
+   * were made. Losing a key to an overlapping writer is no longer possible: each write sends only
+   * its own key and the server merges it (code review, finding 3), which is also why the chains are
+   * per key rather than one shared one - a single chain would let one stalled request hold up every
+   * other preference for the rest of the session, with nothing left to gain from the ordering.
+   */
+  pendingWrites: React.MutableRefObject<Map<string, Promise<void>>>;
 };
 
 const DEFAULT_UI_PREFERENCES_CONTEXT: UiPreferencesContextType = {
   uiPreferences: mapValues(PREFERENCES, () => null),
   setUiPreferences: () => {},
+  pendingWrites: { current: new Map() },
 };
 
 const UiPreferencesContext: React.Context<UiPreferencesContextType> =
@@ -48,6 +66,7 @@ async function fetchPreferences(): Promise<UiPreferencesContextType["uiPreferenc
  */
 export function UiPreferences({ children }: { children: React.ReactNode }): React.ReactNode {
   const [uiPreferences, setUiPreferences] = React.useState<UiPreferencesContextType["uiPreferences"] | null>(null);
+  const pendingWrites = React.useRef<Map<string, Promise<void>>>(new Map());
 
   React.useEffect(() => {
     void fetchPreferences()
@@ -69,7 +88,7 @@ export function UiPreferences({ children }: { children: React.ReactNode }): Reac
    */
   if (!uiPreferences) return null;
   return (
-    <UiPreferencesContext.Provider value={{ uiPreferences, setUiPreferences }}>
+    <UiPreferencesContext.Provider value={{ uiPreferences, setUiPreferences, pendingWrites }}>
       {children}
     </UiPreferencesContext.Provider>
   );
@@ -93,8 +112,8 @@ export default function useUiPreference<T>(
   opts: {
     defaultValue: T;
   },
-): UseState<T> {
-  const { uiPreferences, setUiPreferences } = React.useContext(UiPreferencesContext);
+): [T, (newValue: T) => void] {
+  const { uiPreferences, setUiPreferences, pendingWrites } = React.useContext(UiPreferencesContext);
   const key = Symbol.keyFor(preference);
   let v = opts.defaultValue;
   if (key && typeof uiPreferences[key] !== "undefined") {
@@ -104,7 +123,12 @@ export default function useUiPreference<T>(
 
   return [
     value,
-    (newValue) => {
+    // Takes a VALUE, not React's SetStateAction. It was typed as a full setter but treated
+    // `newValue` as a value everywhere below, so `setPref(prev => prev + 1)` stored the function
+    // object in the context and JSON.stringify'd it into the POST body, persisting undefined
+    // (parallel review, FE12). Every caller passes a value; narrowing the type makes the updater
+    // form a compile error rather than a silent data loss.
+    (newValue: T) => {
       setValue(newValue);
       setUiPreferences((old: { [k in keyof typeof PREFERENCES]: unknown } | null) => {
         if (old === null) return old;
@@ -119,24 +143,34 @@ export default function useUiPreference<T>(
       });
 
       if (!key) return;
-      void (async () => {
-        const preferences = await fetchPreferences();
+      const previous = pendingWrites.current.get(key) ?? Promise.resolve();
+      const write = previous.then(async () => {
         const formData = new FormData();
         formData.append("preference", "UI_JSON_SETTINGS");
+        // Only this key is sent; the server merges it into the stored object under a row lock.
+        // Reading the whole object here first and posting it back was the collision: two writers
+        // that overlapped both merged into the same snapshot and the later one dropped the
+        // other's key (code review, finding 3).
+        formData.append("key", key);
         formData.append(
           "value",
           JSON.stringify({
-            ...(typeof preferences === "object" ? preferences : {}),
-            [key]: {
-              value: newValue,
-              // we save the time so that we have the option of implementing an
-              // eviction polciy in the future
-              time: Date.now(),
-            },
+            value: newValue,
+            // we save the time so that we have the option of implementing an
+            // eviction polciy in the future
+            time: Date.now(),
           }),
         );
         await axios.post<unknown>("/userform/ajax/preference", formData);
-      })();
+      });
+      // Caught so a failure cannot block this key's chain (callers never await it), but reported: a
+      // silently dropped preference save is invisible to user and developer alike.
+      pendingWrites.current.set(
+        key,
+        write.catch((e) => {
+          console.error(`Could not save UI preference ${key}`, e);
+        }),
+      );
     },
   ];
 }

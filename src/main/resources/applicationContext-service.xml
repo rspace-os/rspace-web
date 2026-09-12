@@ -70,6 +70,38 @@
         <tx:attributes>
             <!-- Read-only commented out to make things easier for end-users -->
             <!--tx:method name="get*" read-only="true"/-->
+            <!-- Stock writers and the UI-preference merge take row locks AFTER a plain read.
+                 Under REPEATABLE READ that first read fixes the snapshot, and MariaDB's
+                 innodb_snapshot_isolation (default on from 11.6) then fails a later FOR UPDATE
+                 on a row committed since with error 1020 (mapped to 409) instead of waiting.
+                 READ COMMITTED closes the read view after every statement, so the locking
+                 read that waited sees the committed row (RSDEV-1231, DevDocs/adr/0007).
+                 performOperation also rolls back for BindException: a live-state rejection is
+                 checked, so Spring's default rules would COMMIT the parent-total recomputes
+                 lockSiblingRowsAndRecalculateTotal already wrote alongside the 400 (Copilot
+                 review, PR #1090). Keep this list in step with
+                 applicationContext-test-service.xml. -->
+            <tx:method name="performOperation" isolation="READ_COMMITTED"
+                rollback-for="org.springframework.validation.BindException"/>
+            <tx:method name="deductStock" isolation="READ_COMMITTED"/>
+            <tx:method name="createNewListOfMaterials" isolation="READ_COMMITTED"/>
+            <tx:method name="updateListOfMaterials" isolation="READ_COMMITTED"/>
+            <tx:method name="mergeUiJsonSetting" isolation="READ_COMMITTED"/>
+            <!-- The lock primitives are MANDATORY: each takes a row lock that is held until the
+                 transaction ends, so called as the outermost service call Spring would open a
+                 transaction, run the FOR UPDATE, return, COMMIT, and leave the caller acting on a
+                 value nothing protects - with no error raised. Failing at the call site is the
+                 only way that is visible. Expressed here rather than as @Transactional because
+                 these beans are advised by the XML pointcuts above, whose advisor (order 2) beats
+                 the annotation-driven advisor and would create the transaction before a MANDATORY
+                 annotation could see its absence (parallel review, L3-L4-P5). Every current caller
+                 is already inside a transaction, so this is a no-op today: that is the point.
+                 NameMatchTransactionAttributeSource matches on method name alone, so each name
+                 here must be declared by exactly one advised type - pinned by
+                 StockWriterTransactionIsolationTest. Keep in step with the other context file. -->
+            <tx:method name="lockSampleForEdit" propagation="MANDATORY"/>
+            <tx:method name="lockSubSampleForEdit" propagation="MANDATORY"/>
+            <tx:method name="getQuantityForUpdate" propagation="MANDATORY"/>
             <tx:method name="*"/>
         </tx:attributes>
     </tx:advice>

@@ -15,6 +15,7 @@ import com.researchspace.webapp.controller.RSpaceTag;
 import com.researchspace.webapp.controller.TagValidator;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -65,12 +66,26 @@ abstract class InventoryRecordValidator {
       int i = 0;
       for (ApiExtraField aef : inventoryRecord.getExtraFields()) {
         errors.pushNestedPath(String.format("extraFields[%d]", i++));
-        validateExtraFieldName(aef.getName(), errors);
-        ValidationUtils.invokeValidator(extraFieldHelper, aef, errors);
+        // A null element ("extraFields": [null]) is already a bean-validation error at binding,
+        // but the controllers accept a BindingResult so this validator still runs; dereferencing
+        // the element would turn that reported 400 into a 500 (Copilot review, PR #1090).
+        if (aef != null) {
+          validateExtraFieldName(aef.getName(), errors);
+          ValidationUtils.invokeValidator(extraFieldHelper, aef, errors);
+        }
         errors.popNestedPath();
       }
     }
   }
+
+  // No rejection of operationFieldKey here, deliberately. The DTO property is READ_ONLY, so a value
+  // in any request body is dropped at binding before this method runs. Rejecting it in this shared
+  // method was tried and was wrong twice over: the template validators never call this method, so
+  // a forged key still persisted (parallel review, C1); and rejecting a value the API itself
+  // returns broke read-modify-write, so any client that GETs an operation-created sample, edits
+  // one field and PUTs it back got a 400 on a field it never touched (C2 of that review). Ignoring
+  // is also truthful: no update path can change a persisted key, so there is nothing a caller could
+  // have meant by sending one. RSDEV-1231.
 
   boolean isValidUnit(ApiQuantityInfo quantity) {
     return quantity.getUnitId() != null && RSUnitDef.exists(quantity.getUnitId());
@@ -87,6 +102,10 @@ abstract class InventoryRecordValidator {
 
   void validateTags(List<ApiTagInfo> tags, Errors errors) {
     tags.stream()
+        // A null element ("tags": [null]) is already a bean-validation error at binding, but the
+        // controllers accept a BindingResult so this validator still runs; dereferencing the
+        // element would turn that reported 400 into a 500 (Copilot review, PR #1090).
+        .filter(Objects::nonNull)
         .forEach(
             tag -> {
               validateTooLong("tags", tag.getValue(), EditInfo.DESCRIPTION_LENGTH, errors);

@@ -1,0 +1,1307 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { act, render as renderWithoutQueryClient, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { HttpResponse, http } from "msw";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
+import { server } from "@/__tests__/mswServer";
+import { InEnglish } from "@/__tests__/realI18n";
+import { makeMockSubSample } from "@/stores/models/__tests__/SubSampleModel/mocking";
+import OperationWizard from "../OperationWizard";
+import { rawConfig } from "./testOperations";
+
+// The wizard fetches the operation definitions with React Query (mocked fetchOperationsConfig
+// below), so every render needs a QueryClient; a fresh one per render keeps tests isolated.
+function render(ui: React.ReactElement) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return renderWithoutQueryClient(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+}
+
+// Shared, controllable preference store standing in for useUiPreference's persisted UI settings, so
+// the test can assert exactly what Perform persisted (and keyed by which process name).
+const prefs = vi.hoisted(() => ({ store: {} as Record<string, unknown> }));
+
+vi.mock("@/hooks/api/useUiPreference", () => ({
+  PREFERENCES: {
+    INVENTORY_OPERATION_PROCESS_VALUES: Symbol.for("INVENTORY_OPERATION_PROCESS_VALUES"),
+    INVENTORY_OPERATION_PROCESS_NAMES: Symbol.for("INVENTORY_OPERATION_PROCESS_NAMES"),
+    INVENTORY_OPERATION_PROCESS_NAME_DEFAULTS: Symbol.for("INVENTORY_OPERATION_PROCESS_NAME_DEFAULTS"),
+  },
+  default: (pref: symbol, opts: { defaultValue: unknown }) => {
+    const key = Symbol.keyFor(pref) ?? "";
+    const value = key in prefs.store ? prefs.store[key] : opts.defaultValue;
+    return [value, (v: unknown) => (prefs.store[key] = v)];
+  },
+}));
+
+// The wizard talks to the backend through the real operationsApi client, answered here by MSW, so
+// the resource names and response handling are exercised rather than mocked away. `posted` collects
+// every operation request body; `taken` lists sample names the name check should report as in use.
+const OPERATIONS_URL = "/api/inventory/v1/operations";
+const posted: Array<Record<string, unknown>> = [];
+const taken: Array<string> = [];
+const operationHandlers = [
+  // The real definitions, exactly as the backend's config endpoint serves them.
+  http.get(`${OPERATIONS_URL}/config`, () => HttpResponse.json(rawConfig)),
+  http.post(OPERATIONS_URL, async ({ request }) => {
+    posted.push((await request.json()) as Record<string, unknown>);
+    return HttpResponse.json({ id: 1, globalId: "SS9", name: "New" }, { status: 201 });
+  }),
+  http.get("/api/inventory/v1/samples/validateNameForNewSample", ({ request }) => {
+    const name = new URL(request.url).searchParams.get("name") ?? "";
+    return HttpResponse.json({ valid: !taken.includes(name) });
+  }),
+];
+
+const performSearch = vi.fn();
+// The wizard loads the origin sample's own template to validate "use parent template" (F5). Default
+// to a template with no defaultless mandatory field, i.e. a passing check.
+const getTemplate = vi.fn(() =>
+  Promise.resolve({
+    id: 9,
+    name: "Parent template",
+    quantityCategory: "volume",
+    fields: [{ name: "Passage number", mandatory: true, content: "1", selectedOptions: null }],
+  }),
+);
+const addAlert = vi.fn();
+vi.mock("@/stores/stores/getRootStore", () => ({
+  default: () => ({
+    authStore: { isSynchronizing: false },
+    searchStore: { search: { performSearch }, getTemplate },
+    uiStore: { addAlert },
+    // Category-aware, matching stores/definitions/Units: the wizard reconciles a restored bundle
+    // against the origin's category, so a mock without one silently skipped that whole path.
+    unitStore: {
+      getUnit: (id: number) => ({
+        label: id === 7 ? "g" : "ml",
+        category: id === 7 ? "mass" : "volume",
+      }),
+    },
+  }),
+}));
+vi.mock("@/util/alerts", () => ({ showToastWhilstPending: (_msg: string, p: Promise<unknown>) => p }));
+vi.mock("@/stores/contexts/Alert", () => ({ mkAlert: (x: unknown) => x }));
+vi.mock("@/components/SubmitSpinnerButton", () => ({
+  default: ({ onClick, label, disabled }: { onClick: () => void; label: string; disabled?: boolean }) => (
+    <button type="button" onClick={onClick} disabled={disabled}>
+      {label}
+    </button>
+  ),
+}));
+// ContextDialog wraps the content in a MUI Dialog; render its children inline when open.
+// ContextDialog wraps the content in a MUI Dialog; render its children inline when open. The
+// "dialog-close" button stands in for the dialog's own close paths (Escape), which reach the wizard
+// through this same onClose prop.
+vi.mock("../../ContextMenu/ContextDialog", () => ({
+  default: ({ open, children, onClose }: { open: boolean; children: React.ReactNode; onClose: () => void }) =>
+    open ? (
+      <div>
+        <button type="button" data-testid="dialog-close" onClick={onClose} />
+        {children}
+      </div>
+    ) : null,
+}));
+
+// Stub the step bodies so the flow can be driven deterministically. The details stub renders all its
+// controls regardless of `section` (so a test can fill amounts while still on the details step) and
+// echoes `section`/`unitCategories` back via spans (the remember state is echoed by the
+// confirmation stub, where the checkbox lives).
+vi.mock("../OperationDetailsStep", () => ({
+  default: ({
+    values,
+    onChange,
+    section,
+    unitCategories,
+    onRememberChange,
+    onAmountModeChange,
+    onPerSubsampleAmountsChange,
+  }: {
+    values: Record<string, unknown>;
+    onChange: (v: Record<string, unknown>) => void;
+    section?: string;
+    unitCategories?: Array<string>;
+    onRememberChange?: (r: boolean) => void;
+    onAmountModeChange?: (mode: string) => void;
+    onPerSubsampleAmountsChange?: (amounts: Record<string, { numericValue: number; unitId: number }>) => void;
+  }) => (
+    <div>
+      <span data-testid="section">{String(section)}</span>
+      <span data-testid="unit-categories">{JSON.stringify(unitCategories ?? null)}</span>
+      <input
+        data-testid="proc"
+        value={String(values.processName ?? "")}
+        onChange={(e) => onChange({ ...values, processName: e.target.value })}
+      />
+      <span data-testid="details-has-toggle">{String(Boolean(onRememberChange))}</span>
+      <span data-testid="sample-name">{String(values.sampleName ?? "")}</span>
+      <button
+        type="button"
+        data-testid="edit-sample"
+        onClick={() => onChange({ ...values, sampleName: "Custom name" })}
+      />
+      <button
+        type="button"
+        data-testid="fill-amounts"
+        onClick={() =>
+          onChange({
+            ...values,
+            count: 1,
+            eachAmount: { numericValue: 5, unitId: 3 },
+            amountTaken: { numericValue: 1, unitId: 3 },
+          })
+        }
+      />
+      <button
+        type="button"
+        data-testid="fill-over-amounts"
+        onClick={() =>
+          onChange({
+            ...values,
+            count: 1,
+            eachAmount: { numericValue: 5, unitId: 3 },
+            amountTaken: { numericValue: 5, unitId: 3 },
+          })
+        }
+      />
+      <span data-testid="count">{String(values.count ?? "")}</span>
+      <span data-testid="each-amount">{JSON.stringify(values.eachAmount ?? null)}</span>
+      <span data-testid="amount-taken">{JSON.stringify(values.amountTaken ?? null)}</span>
+      <button type="button" data-testid="mode-per" onClick={() => onAmountModeChange?.("perSubsample")} />
+      <button
+        type="button"
+        data-testid="fill-per-first"
+        onClick={() => onPerSubsampleAmountsChange?.({ SS1: { numericValue: 1, unitId: 3 } })}
+      />
+      <button
+        type="button"
+        data-testid="fill-per-both"
+        onClick={() =>
+          onPerSubsampleAmountsChange?.({
+            SS1: { numericValue: 1, unitId: 3 },
+            SS2: { numericValue: 1, unitId: 3 },
+          })
+        }
+      />
+    </div>
+  ),
+}));
+vi.mock("../TemplateStep", () => ({
+  default: ({
+    value,
+    onChange,
+    parentTemplateChecking,
+    parentTemplateError,
+  }: {
+    value: { mode: string; templateId: number | null };
+    onChange: (v: unknown) => void;
+    parentTemplateChecking?: boolean;
+    parentTemplateError?: string | null;
+  }) => (
+    <div>
+      <span data-testid="tmpl-mode">{value.mode}</span>
+      <span data-testid="tmpl-id">{String(value.templateId)}</span>
+      {/* The wizard owns the parent-template check now, so its status is observable here. */}
+      <span data-testid="tmpl-checking">{String(Boolean(parentTemplateChecking))}</span>
+      <span data-testid="tmpl-parent-error">{parentTemplateError ?? ""}</span>
+      <button
+        type="button"
+        data-testid="tmpl-pick5"
+        onClick={() => onChange({ mode: "pick", templateId: 5, templateName: "T5" })}
+      />
+      <button
+        type="button"
+        data-testid="tmpl-pick-volume"
+        onClick={() => onChange({ mode: "pick", templateId: 7, templateName: "T7", quantityCategory: "volume" })}
+      />
+      <button
+        type="button"
+        data-testid="tmpl-pick-mass"
+        onClick={() => onChange({ mode: "pick", templateId: 8, templateName: "T8", quantityCategory: "mass" })}
+      />
+    </div>
+  ),
+}));
+vi.mock("../DocumentationStep", () => ({
+  default: ({ onChange }: { onChange: (v: unknown) => void }) => (
+    <div>
+      <button type="button" data-testid="doc-choose" onClick={() => onChange({ globalId: "SD1", name: "D1" })} />
+    </div>
+  ),
+}));
+// The confirmation stub echoes the remember state and offers a toggle: the single "remember"
+// checkbox lives on the summary & confirm step (and the step-one fast path, which renders the same
+// confirmation).
+vi.mock("../OperationConfirmation", () => ({
+  default: ({ remember, onRememberChange }: { remember?: boolean; onRememberChange?: (remember: boolean) => void }) => (
+    <div data-testid="confirm">
+      <span data-testid="remember">{String(remember)}</span>
+      {onRememberChange ? (
+        <button type="button" data-testid="toggle-remember" onClick={() => onRememberChange(!remember)} />
+      ) : null}
+    </div>
+  ),
+}));
+
+const nextButton = () => screen.getByRole("button", { name: /actions\.next/i });
+const backButton = () => screen.getByRole("button", { name: /actions\.back/i });
+
+beforeEach(() => {
+  for (const k of Object.keys(prefs.store)) delete prefs.store[k];
+  posted.length = 0;
+  taken.length = 0;
+  performSearch.mockClear();
+  addAlert.mockClear();
+  // Reset, not merely cleared: mockClear drops call history but LEAVES a queued
+  // mockResolvedValueOnce/mockRejectedValueOnce, so an unconsumed Once would be handed to the next
+  // test, which matters because one test here asserts getTemplate is never called (parallel
+  // review). mockReset also restores the implementation passed to vi.fn.
+  getTemplate.mockReset();
+  getTemplate.mockImplementation(() =>
+    Promise.resolve({
+      id: 9,
+      name: "Parent template",
+      quantityCategory: "volume",
+      fields: [{ name: "Passage number", mandatory: true, content: "1", selectedOptions: null }],
+    }),
+  );
+  server.use(...operationHandlers);
+});
+
+/** Pick Derive, type a process name (which auto-derives the sample name), and fill the amounts. */
+async function fillDerive(user: ReturnType<typeof userEvent.setup>, processName: string) {
+  await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
+  await user.type(screen.getByTestId("proc"), processName);
+  await user.click(screen.getByTestId("fill-amounts"));
+}
+
+/** Drive Derive from the picker all the way to the Confirm step (template picked, amounts filled). */
+async function reachConfirm(user: ReturnType<typeof userEvent.setup>, processName: string) {
+  await fillDerive(user, processName);
+  await user.click(nextButton()); // details -> template
+  await user.click(screen.getByTestId("tmpl-pick5"));
+  await user.click(nextButton()); // template -> amounts
+  await user.click(nextButton()); // amounts -> documentation
+  await user.click(nextButton()); // documentation -> confirm
+}
+
+describe("OperationWizard config load", () => {
+  it("shows the load-failed alert and no picker when GET /operations/config fails", async () => {
+    // Every other test in this file serves a valid config, and operationsApi.test.ts never mocked
+    // ApiService.get, so fetchOperationsConfig was never invoked in any test: the failure alert and
+    // the spinner beneath it were unreachable in the whole suite (parallel review, Q12).
+    server.use(http.get(`${OPERATIONS_URL}/config`, () => HttpResponse.error()));
+    render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(/picker\.loadFailed/);
+    // and the wizard does not advance: there is no operation to pick, so no step buttons at all
+    expect(screen.queryByRole("button", { name: /operations\.derive\.label/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /actions\.next/i })).not.toBeInTheDocument();
+  });
+
+  it("shows the load-failed alert when the config is served but does not match the schema", async () => {
+    // parseOperationsConfig throws for an invalid config, and the picker shows ONE failed state for
+    // both causes, as fetchOperationsConfig's contract says.
+    server.use(http.get(`${OPERATIONS_URL}/config`, () => HttpResponse.json([{ key: "broken" }])));
+    render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(/picker\.loadFailed/);
+  });
+});
+
+describe("OperationWizard step flow", () => {
+  it("keeps Next disabled on the details step until a process name (and derived sample name) exist", async () => {
+    const user = userEvent.setup();
+    render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
+    await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
+    expect(nextButton()).toBeDisabled(); // no process name yet
+    await user.type(screen.getByTestId("proc"), "dna");
+    expect(nextButton()).toBeEnabled();
+  });
+
+  it("keeps Next disabled on the details step when the origin subsample has an amount of 0", async () => {
+    const user = userEvent.setup();
+    render(
+      <OperationWizard
+        open
+        onClose={vi.fn()}
+        origins={[makeMockSubSample({ quantity: { numericValue: 0, unitId: 3 } })]}
+      />,
+    );
+    await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
+    // a process name would normally enable Next (see the test above), but a zero-amount origin blocks it
+    await user.type(screen.getByTestId("proc"), "dna");
+    expect(nextButton()).toBeDisabled();
+  });
+
+  it("auto-derives the sample name from the origin sample name and the process name", async () => {
+    const user = userEvent.setup();
+    render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
+    await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
+    await user.type(screen.getByTestId("proc"), "dna extraction");
+    expect(screen.getByTestId("sample-name")).toHaveTextContent("A sample dna extraction");
+  });
+
+  it("de-duplicates the derived sample name against existing names with a numeric suffix", async () => {
+    // "A sample dna" and its _1 are taken, so the wizard must land on _2.
+    taken.push("A sample dna", "A sample dna_1");
+    const user = userEvent.setup();
+    render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
+    await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
+    await user.type(screen.getByTestId("proc"), "dna");
+    await waitFor(() => expect(screen.getByTestId("sample-name")).toHaveTextContent("A sample dna_2"));
+  });
+
+  it("stops re-deriving the sample name once the user edits it by hand", async () => {
+    const user = userEvent.setup();
+    render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
+    await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
+    await user.type(screen.getByTestId("proc"), "dna");
+    await user.click(screen.getByTestId("edit-sample")); // manual override
+    await user.type(screen.getByTestId("proc"), "x"); // process name changes again
+    expect(screen.getByTestId("sample-name")).toHaveTextContent("Custom name");
+  });
+
+  it("preselects the parent's template for a first-time run when the parent has one", async () => {
+    const user = userEvent.setup();
+    const origin = makeMockSubSample({});
+    origin.sample.templateId = 9;
+    render(<OperationWizard open onClose={vi.fn()} origins={[origin]} />);
+    await fillDerive(user, "dna");
+    await user.click(nextButton()); // details -> template
+    expect(screen.getByTestId("tmpl-mode")).toHaveTextContent("fromSample");
+    // Preselected AND validated by the wizard: the parent's template can have a defaultless
+    // mandatory field just as a picked one can, so it is checked, and a passing check writes the id
+    // that enables Next (F5).
+    await waitFor(() => expect(screen.getByTestId("tmpl-id")).toHaveTextContent("9"));
+    expect(nextButton()).toBeEnabled();
+    expect(getTemplate).toHaveBeenCalledWith(9, null, expect.anything());
+  });
+
+  it("validates the parent template at step one, so the one-click fast path is still offered", async () => {
+    // The gate (templateStepValid) is evaluated for EVERY step, but the wizard renders only the
+    // active one. A check owned by TemplateStep therefore never ran while the user was on step one,
+    // which is exactly where the fast path lives, so Perform was permanently disabled for the most
+    // common template mode (parallel review, C2). The check belongs to the wizard for that reason.
+    prefs.store.INVENTORY_OPERATION_PROCESS_VALUES = {
+      "derive dna": {
+        values: { count: 2, eachAmount: { numericValue: 1, unitId: 3 }, amountTaken: { numericValue: 1, unitId: 3 } },
+        template: { mode: "fromSample", templateId: null },
+        documentation: null,
+      },
+    };
+    const user = userEvent.setup();
+    const origin = makeMockSubSample({});
+    origin.sample.templateId = 9;
+    render(<OperationWizard open onClose={vi.fn()} origins={[origin]} />);
+    await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
+    await user.type(screen.getByTestId("proc"), "dna");
+
+    // Never navigated to the template step, yet the check ran and Perform is offered.
+    await waitFor(() => expect(screen.getByRole("button", { name: /wizard\.perform/i })).toBeInTheDocument());
+    expect(getTemplate).toHaveBeenCalledWith(9, null, expect.anything());
+  });
+
+  it("blocks and explains when the parent template has a defaultless mandatory field", async () => {
+    getTemplate.mockResolvedValueOnce({
+      id: 9,
+      name: "Parent template",
+      quantityCategory: "volume",
+      // A mandatory field with no default: normal on a parent, and unusable for a new sample.
+      fields: [{ name: "Batch", mandatory: true, content: "", selectedOptions: null }],
+    });
+    const user = userEvent.setup();
+    const origin = makeMockSubSample({});
+    origin.sample.templateId = 9;
+    render(<OperationWizard open onClose={vi.fn()} origins={[origin]} />);
+    await fillDerive(user, "dna");
+    await user.click(nextButton()); // details -> template
+
+    // No id written, so Next stays disabled, and the step is told WHY rather than left silent.
+    await waitFor(() => expect(screen.getByTestId("tmpl-parent-error")).toHaveTextContent(/mandatoryFieldsError/));
+    expect(screen.getByTestId("tmpl-id")).toHaveTextContent("null");
+    expect(nextButton()).toBeDisabled();
+  });
+
+  it("explains a failed parent-template lookup instead of disabling Next silently", async () => {
+    getTemplate.mockRejectedValueOnce(new Error("gone"));
+    const user = userEvent.setup();
+    const origin = makeMockSubSample({});
+    origin.sample.templateId = 9;
+    render(<OperationWizard open onClose={vi.fn()} origins={[origin]} />);
+    await fillDerive(user, "dna");
+    await user.click(nextButton());
+
+    await waitFor(() => expect(screen.getByTestId("tmpl-parent-error")).toHaveTextContent(/lookupFailed/));
+    expect(nextButton()).toBeDisabled();
+  });
+
+  it("retires an in-flight parent-template check when the user switches away from that mode", async () => {
+    // The check's early return used to leave the in-flight lookup owning the token and the
+    // "checking" flag: a late rejection then reported lookupFailed against the mode the user had
+    // just switched TO, and the spinner belonged to a request whose answer no longer mattered
+    // (Copilot review, PR #1090).
+    let rejectLookup: (reason: Error) => void = () => {};
+    getTemplate.mockImplementationOnce(
+      () =>
+        new Promise((_resolve, reject) => {
+          rejectLookup = reject;
+        }),
+    );
+    const user = userEvent.setup();
+    const origin = makeMockSubSample({});
+    origin.sample.templateId = 9;
+    render(<OperationWizard open onClose={vi.fn()} origins={[origin]} />);
+    await fillDerive(user, "dna");
+    await user.click(nextButton()); // details -> template
+    await waitFor(() => expect(screen.getByTestId("tmpl-checking")).toHaveTextContent("true"));
+
+    // Switch to a picked template while the parent lookup is still outstanding.
+    await user.click(screen.getByTestId("tmpl-pick5"));
+    expect(screen.getByTestId("tmpl-mode")).toHaveTextContent("pick");
+    expect(screen.getByTestId("tmpl-checking")).toHaveTextContent("false");
+
+    // The abandoned lookup now fails. Its result must not touch the new selection's status.
+    await act(async () => {
+      rejectLookup(new Error("late failure"));
+      await Promise.resolve();
+    });
+    expect(screen.getByTestId("tmpl-parent-error")).toHaveTextContent("");
+    expect(screen.getByTestId("tmpl-checking")).toHaveTextContent("false");
+    expect(nextButton()).toBeEnabled();
+  });
+
+  it("drops a restored 'use parent template' bundle when this run has no parent template", async () => {
+    // Reachable whenever a bundle is reused on a different origin, or on a Pool where "the parent"
+    // is ambiguous. Left as it was, the step wanted a validated id nothing could supply and the
+    // radio is disabled in that state, so Next stuck with no spinner, no message and nothing the
+    // user could change (parallel review, C3). Falling back to "unselected" asks for the one thing
+    // that resolves it.
+    prefs.store.INVENTORY_OPERATION_PROCESS_VALUES = {
+      "derive dna": {
+        values: { count: 2, eachAmount: { numericValue: 1, unitId: 3 }, amountTaken: { numericValue: 1, unitId: 3 } },
+        template: { mode: "fromSample", templateId: null },
+        documentation: null,
+      },
+    };
+    const user = userEvent.setup();
+    const origin = makeMockSubSample({});
+    origin.sample.templateId = null; // no parent template for this run
+    render(<OperationWizard open onClose={vi.fn()} origins={[origin]} />);
+    await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
+    await user.type(screen.getByTestId("proc"), "dna");
+    await user.click(nextButton()); // details -> template
+
+    expect(screen.getByTestId("tmpl-mode")).toHaveTextContent("unselected");
+    expect(screen.getByTestId("tmpl-parent-error")).toHaveTextContent("");
+    expect(getTemplate).not.toHaveBeenCalled();
+    // And an explicit choice still resolves it, so the wizard is not stuck.
+    await user.click(screen.getByTestId("tmpl-pick5"));
+    expect(nextButton()).toBeEnabled();
+  });
+
+  it("keeps the rest of the template selection when the check writes the parent's id", async () => {
+    // The check used to run from a closure frozen at the step's mount render, so a passing result
+    // wrote a stale snapshot of the whole selection and could revert a mode the user had since
+    // changed (parallel review, I7). A functional update writes only the id and category.
+    const user = userEvent.setup();
+    const origin = makeMockSubSample({});
+    origin.sample.templateId = 9;
+    render(<OperationWizard open onClose={vi.fn()} origins={[origin]} />);
+    await fillDerive(user, "dna");
+    await user.click(nextButton()); // details -> template
+    await waitFor(() => expect(screen.getByTestId("tmpl-id")).toHaveTextContent("9"));
+
+    // The user picks a specific template instead; the earlier fromSample result must not come back.
+    await user.click(screen.getByTestId("tmpl-pick5"));
+    expect(screen.getByTestId("tmpl-mode")).toHaveTextContent("pick");
+    expect(screen.getByTestId("tmpl-id")).toHaveTextContent("5");
+  });
+
+  it("prefills the amount units from the origin subsample", async () => {
+    const user = userEvent.setup();
+    render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
+    await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
+    expect(screen.getByTestId("each-amount")).toHaveTextContent('{"numericValue":1,"unitId":3}');
+    expect(screen.getByTestId("amount-taken")).toHaveTextContent('{"numericValue":1,"unitId":3}');
+  });
+
+  it("resets the created amount's unit when a picked template changes the measurement category", async () => {
+    const user = userEvent.setup();
+    render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
+    await fillDerive(user, "dna"); // fills both amounts with unit 3
+    await user.click(nextButton()); // -> template
+    await user.click(screen.getByTestId("tmpl-pick-mass")); // a category the origin's unit is not in
+    await user.click(nextButton()); // -> amounts
+    expect(screen.getByTestId("each-amount")).toHaveTextContent('{"numericValue":5,"unitId":0}');
+    // the amount taken FROM the origin stays in the origin's own category, so its unit is untouched
+    expect(screen.getByTestId("amount-taken")).toHaveTextContent('{"numericValue":1,"unitId":3}');
+  });
+
+  it("puts the template on its own step, gated until a choice is made", async () => {
+    const user = userEvent.setup();
+    render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
+    await fillDerive(user, "dna");
+    await user.click(nextButton()); // -> template step
+    expect(screen.getByTestId("tmpl-mode")).toHaveTextContent("unselected");
+    expect(nextButton()).toBeDisabled();
+    await user.click(screen.getByTestId("tmpl-pick5"));
+    expect(nextButton()).toBeEnabled();
+  });
+
+  it("blocks Next on the amounts step when the amount taken exceeds the origin (over-removal)", async () => {
+    // origin (makeMockSubSample) holds 1 ml; taking 5 ml must be blocked (DevDocs/adr/0007).
+    const user = userEvent.setup();
+    render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
+    await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
+    await user.type(screen.getByTestId("proc"), "dna");
+    await user.click(nextButton()); // -> template
+    await user.click(screen.getByTestId("tmpl-pick5"));
+    await user.click(nextButton()); // -> amounts
+    await user.click(screen.getByTestId("fill-over-amounts"));
+    expect(nextButton()).toBeDisabled();
+    await user.click(screen.getByTestId("fill-amounts")); // within the origin's quantity
+    expect(nextButton()).toBeEnabled();
+  });
+
+  it("uses the picked template's quantity category for the amount units on the amounts step", async () => {
+    const user = userEvent.setup();
+    render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
+    await fillDerive(user, "dna");
+    await user.click(nextButton()); // -> template
+    await user.click(screen.getByTestId("tmpl-pick-volume"));
+    await user.click(nextButton()); // -> amounts
+    expect(screen.getByTestId("section")).toHaveTextContent("amounts");
+    expect(screen.getByTestId("unit-categories")).toHaveTextContent('["volume"]');
+  });
+
+  it("blocks Perform for a terminal operation (Destroy) on an empty origin, skipping template/amounts", async () => {
+    // Destroy declares steps ["confirm"], so it lands straight on the confirm step (no template or
+    // amounts step). Its empty-origin guard lives in stepValid(), which must gate Perform - not just
+    // show a message. Regression guard for the Perform button being gated only by `submitting`.
+    const user = userEvent.setup();
+    render(
+      <OperationWizard
+        open
+        onClose={vi.fn()}
+        origins={[makeMockSubSample({ quantity: { numericValue: 0, unitId: 3 } })]}
+      />,
+    );
+    await user.click(await screen.findByRole("button", { name: /operations\.destroy\.label/i }));
+    expect(screen.queryByText(/step\.template/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/step\.amounts/)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /wizard\.perform/i })).toBeDisabled();
+  });
+
+  it("blocks the details step for Pool when ANY pooled origin is empty, not just the smallest", async () => {
+    // Pool's default amount mode is "all" (take each origin's full quantity), which would silently
+    // no-op an empty origin; the backend also rejects empty origins outright (DevDocs/adr/0007), so
+    // the wizard must gate on every origin's quantity.
+    const user = userEvent.setup();
+    render(
+      <OperationWizard
+        open
+        onClose={vi.fn()}
+        origins={[makeMockSubSample({}), makeMockSubSample({ quantity: { numericValue: 0, unitId: 3 } })]}
+      />,
+    );
+    await user.click(await screen.findByRole("button", { name: /operations\.pool\.label/i }));
+    expect(nextButton()).toBeDisabled();
+  });
+
+  it("lets Pool proceed past the details step when every pooled origin holds an amount", async () => {
+    const user = userEvent.setup();
+    render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({}), makeMockSubSample({})]} />);
+    await user.click(await screen.findByRole("button", { name: /operations\.pool\.label/i }));
+    expect(nextButton()).toBeEnabled();
+  });
+
+  it("enables Perform for a terminal operation (Destroy) on a non-empty origin", async () => {
+    const user = userEvent.setup();
+    render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
+    await user.click(await screen.findByRole("button", { name: /operations\.destroy\.label/i }));
+    expect(screen.getByRole("button", { name: /wizard\.perform/i })).toBeEnabled();
+  });
+
+  it("surfaces a rejected Perform as an alert and keeps the wizard open for retry", async () => {
+    server.use(
+      http.post(OPERATIONS_URL, () => HttpResponse.json({ message: "backend rejected the request" }, { status: 400 }), {
+        once: true,
+      }),
+    );
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    const origin = makeMockSubSample({});
+    vi.spyOn(origin, "fetchAdditionalInfo").mockResolvedValue(undefined);
+    render(<OperationWizard open onClose={onClose} origins={[origin]} />);
+    await reachConfirm(user, "boom");
+    await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
+    await waitFor(() => expect(addAlert).toHaveBeenCalled());
+    // the wizard stays open on the confirmation so the user can retry; nothing is lost
+    expect(onClose).not.toHaveBeenCalled();
+    expect(screen.getByTestId("confirm")).toBeInTheDocument();
+  });
+
+  it("shows the field-scoped reason for a rejection and reloads the origin", async () => {
+    // A BindException 400 puts "Errors detected: 1" in `message`; the reason the user can act on is
+    // in `errors[0]`, behind the path it applies to. Showing only `message` left them re-submitting
+    // against a quantity the wizard had not refreshed, so it could only fail the same way again.
+    server.use(
+      http.post(
+        OPERATIONS_URL,
+        () =>
+          HttpResponse.json(
+            {
+              message: "Errors detected: 1",
+              errors: ["origins[0].amountTaken: Cannot take more from an origin than it currently holds"],
+            },
+            { status: 400 },
+          ),
+        { once: true },
+      ),
+    );
+    const user = userEvent.setup();
+    const origin = makeMockSubSample({});
+    const refresh = vi.spyOn(origin, "fetchAdditionalInfo").mockResolvedValue(undefined);
+    render(<OperationWizard open onClose={vi.fn()} origins={[origin]} />);
+    await reachConfirm(user, "stale");
+    await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
+
+    await waitFor(() => expect(addAlert).toHaveBeenCalled());
+    const alert = addAlert.mock.calls[0][0] as { message: string; variant: string };
+    expect(alert.variant).toBe("error");
+    // and it names WHICH origin, so a multi-origin rejection is actionable (FE11). The marker is
+    // worded from the catalog rather than concatenated in English (parallel review, A4), so under
+    // cimode it renders as the key; the assembled English is asserted in the InEnglish test below.
+    expect(alert.message).toBe("inventory:operations.wizard.originIndex");
+    // the amounts step validates against origin.quantity, so it has to be re-read or the user can
+    // only fail again
+    await waitFor(() => expect(refresh).toHaveBeenCalledTimes(1));
+  });
+
+  it("still reports the operation as failed when reloading the origin also fails", async () => {
+    // The refresh is best-effort: the alert above already names the real problem, and a refresh
+    // failure must not replace it with a less useful one.
+    server.use(
+      http.post(OPERATIONS_URL, () => HttpResponse.json({ message: "backend rejected the request" }, { status: 400 }), {
+        once: true,
+      }),
+    );
+    const restoreConsole = silenceConsole(["warn"], ["Could not refresh the origins"]);
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    const origin = makeMockSubSample({});
+    vi.spyOn(origin, "fetchAdditionalInfo").mockRejectedValue(new Error("network down"));
+    render(<OperationWizard open onClose={onClose} origins={[origin]} />);
+    await reachConfirm(user, "both fail");
+    await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
+
+    // wait for the refresh to have failed too, so the single-alert assertion below is about the
+    // finished state rather than a moment before the second alert could have been added
+    await waitFor(() => expect(origin.fetchAdditionalInfo).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(addAlert).toHaveBeenCalled());
+    const alerts = addAlert.mock.calls.map((call) => call[0] as { variant: string; message: string });
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0].message).toBe("backend rejected the request");
+    expect(onClose).not.toHaveBeenCalled();
+    restoreConsole();
+  });
+
+  it("treats a successful Perform as done even when refreshing the origin afterwards fails", async () => {
+    // Code review, finding 2: the POST committed (output created, origin decremented), so a failed
+    // refresh must not be reported as a failed operation with the wizard left open for a retry that
+    // would charge the origin twice. The wizard closes and the refresh failure is a warning.
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    const origin = makeMockSubSample({});
+    vi.spyOn(origin, "fetchAdditionalInfo").mockRejectedValue(new Error("network down"));
+    render(<OperationWizard open onClose={onClose} origins={[origin]} />);
+    await reachConfirm(user, "refresh");
+    await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+    expect(posted).toHaveLength(1);
+    const alerts = addAlert.mock.calls.map((call) => call[0] as { variant: string; title: string });
+    expect(alerts.some((a) => a.variant === "error")).toBe(false);
+    expect(alerts.some((a) => a.variant === "warning" && /refreshFailed/.test(a.title))).toBe(true);
+  });
+
+  it("sends Destroy as a whole-origin claim with no inputs, leaving the disposed date to the server", async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    const origin = makeMockSubSample({});
+    vi.spyOn(origin, "fetchAdditionalInfo").mockResolvedValue(undefined);
+    render(<OperationWizard open onClose={onClose} origins={[origin]} />);
+    await user.click(await screen.findByRole("button", { name: /operations\.destroy\.label/i }));
+    await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    // Destroy empties the origin: the amount taken is its full current quantity, sent as a
+    // whole-origin claim the server compare-and-swaps. The disposed date is stamped server-side in
+    // the session's timezone (DevDocs/adr/0007, M4), so nothing about it travels.
+    expect(posted[0]).toEqual({
+      operationType: "destroy",
+      origins: [{ id: 1, amountMode: "all", amountTaken: { numericValue: 1, unitId: 3 } }],
+      inputs: {},
+      templateId: null,
+      documentedByGlobalId: null,
+    });
+  });
+
+  it("names a rejected input by its label rather than the bare key the server reports", async () => {
+    // The inputs shape reports an input error under its bare key ("sampleName: ..."), which is what a
+    // typed client sent but not what the wizard shows; the alert swaps it for the input's label.
+    server.use(
+      http.post(
+        OPERATIONS_URL,
+        () =>
+          HttpResponse.json(
+            { message: "Errors detected: 1", errors: ["sampleName: Required by this operation."] },
+            { status: 400 },
+          ),
+        { once: true },
+      ),
+    );
+    const user = userEvent.setup();
+    const origin = makeMockSubSample({});
+    vi.spyOn(origin, "fetchAdditionalInfo").mockResolvedValue(undefined);
+    render(<OperationWizard open onClose={vi.fn()} origins={[origin]} />);
+    await reachConfirm(user, "bare key");
+    await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
+    await waitFor(() => expect(addAlert).toHaveBeenCalled());
+    const alert = addAlert.mock.calls[0][0] as { message: string };
+    // The "<label>: <reason>" join goes through the catalog now (FE14), and cimode renders a key
+    // without its parameters, so all this branch can show is that the join message was chosen and
+    // the bare input key is gone. The sentence itself is asserted in English below.
+    expect(alert.message).toMatch(/operations\.wizard\.fieldReason/);
+    expect(alert.message).not.toMatch(/^sampleName:/);
+  });
+
+  it("blocks the amounts step in per-subsample mode until every origin has an amount", async () => {
+    const user = userEvent.setup();
+    const first = makeMockSubSample({});
+    const second = makeMockSubSample({ id: 2, globalId: "SS2" });
+    render(<OperationWizard open onClose={vi.fn()} origins={[first, second]} />);
+    await user.click(await screen.findByRole("button", { name: /operations\.pool\.label/i }));
+    await user.click(nextButton()); // details -> template
+    await user.click(screen.getByTestId("tmpl-pick5"));
+    await user.click(nextButton()); // template -> amounts
+    await user.click(screen.getByTestId("mode-per"));
+    expect(nextButton()).toBeDisabled(); // no per-origin amounts entered yet
+    await user.click(screen.getByTestId("fill-per-first"));
+    expect(nextButton()).toBeDisabled(); // the second origin still has no amount
+    await user.click(screen.getByTestId("fill-per-both"));
+    expect(nextButton()).toBeEnabled();
+  });
+
+  it("names the operation and its process name in the heading; just the operation for a fixed one", async () => {
+    const user = userEvent.setup();
+    render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
+    await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
+    await user.type(screen.getByTestId("proc"), "dna");
+    expect(screen.getByText(/operations\.wizard\.headingWithProcess/)).toBeInTheDocument();
+    await user.click(backButton()); // back to picker
+    await user.click(await screen.findByRole("button", { name: /operations\.cryopreserve\.label/i }));
+    expect(screen.getByText(/operations\.cryopreserve\.label$/)).toBeInTheDocument();
+  });
+
+  it("blocks Cancel while a Perform is in flight, so the origin cannot be charged twice", async () => {
+    // Closing does not cancel the POST, so a user who cancelled mid-request could reopen the wizard
+    // and submit the same operation again against origins the first request was still decrementing
+    // (Copilot review, PR #1090).
+    let releasePost: () => void = () => {};
+    const pending = new Promise<void>((resolve) => {
+      releasePost = resolve;
+    });
+    server.use(
+      http.post(
+        OPERATIONS_URL,
+        async () => {
+          await pending;
+          return HttpResponse.json({ id: 1, globalId: "SS9", name: "New" }, { status: 201 });
+        },
+        { once: true },
+      ),
+    );
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    const origin = makeMockSubSample({});
+    vi.spyOn(origin, "fetchAdditionalInfo").mockResolvedValue(undefined);
+    render(<OperationWizard open onClose={onClose} origins={[origin]} />);
+    await reachConfirm(user, "slow");
+    await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
+
+    // Cancel is disabled (MUI then makes it unclickable), and the dialog's own close path (Escape)
+    // is blocked too: both route through the same guard.
+    await waitFor(() => expect(screen.getByRole("button", { name: /actions\.cancel/i })).toBeDisabled());
+    await user.click(screen.getByTestId("dialog-close"));
+    expect(onClose).not.toHaveBeenCalled();
+
+    releasePost();
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+  });
+
+  it("re-gates Perform on every step when un-ticking remember resets the earlier ones", async () => {
+    // Un-ticking resets the template/documentation/values but stays on the confirm step. Gating
+    // Perform on the confirm step alone left it enabled with no template chosen, producing an
+    // avoidable backend rejection (Copilot review, PR #1090).
+    const user = userEvent.setup();
+    render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
+    await reachConfirm(user, "dna");
+    await user.click(screen.getByTestId("toggle-remember")); // tick
+    expect(screen.getByRole("button", { name: /wizard\.perform/i })).toBeEnabled();
+
+    await user.click(screen.getByTestId("toggle-remember")); // un-tick: template selection is reset
+    expect(screen.getByRole("button", { name: /wizard\.perform/i })).toBeDisabled();
+  });
+
+  it("reads that heading as 'Derive: dna' in English", async () => {
+    // The key above proves the right branch rendered; only the real catalogs show that both
+    // parameters actually arrive rather than the heading being assembled in code (code review,
+    // finding 10). cimode renders the key alone and hides interpolation entirely.
+    const user = userEvent.setup();
+    render(
+      <InEnglish>
+        <OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />
+      </InEnglish>,
+    );
+    await user.click(await screen.findByRole("button", { name: /^Derive/ }));
+    await user.type(screen.getByTestId("proc"), "dna");
+    expect(screen.getByRole("heading", { name: "Derive: dna" })).toBeInTheDocument();
+  });
+
+  it("reads a rejected input as 'New sample name: ...' in English", async () => {
+    // The cimode assertion above can only show that the catalog's join message was chosen; the real
+    // catalogs are what show both parameters arriving, rather than the sentence being assembled in
+    // code with a hard-coded ": " no other locale need use (parallel review, FE14).
+    server.use(
+      http.post(
+        OPERATIONS_URL,
+        () =>
+          HttpResponse.json(
+            { message: "Errors detected: 1", errors: ["sampleName: Required by this operation."] },
+            { status: 400 },
+          ),
+        { once: true },
+      ),
+    );
+    const user = userEvent.setup();
+    const origin = makeMockSubSample({});
+    vi.spyOn(origin, "fetchAdditionalInfo").mockResolvedValue(undefined);
+    render(
+      <InEnglish>
+        <OperationWizard open onClose={vi.fn()} origins={[origin]} />
+      </InEnglish>,
+    );
+    await user.click(await screen.findByRole("button", { name: /^Derive/ }));
+    await user.type(screen.getByTestId("proc"), "bare key");
+    await user.click(screen.getByTestId("fill-amounts"));
+    await user.click(screen.getByRole("button", { name: "Next" })); // details -> template
+    await user.click(screen.getByTestId("tmpl-pick5"));
+    await user.click(screen.getByRole("button", { name: "Next" })); // template -> amounts
+    await user.click(screen.getByRole("button", { name: "Next" })); // amounts -> documentation
+    await user.click(screen.getByRole("button", { name: "Next" })); // documentation -> confirm
+    await user.click(screen.getByRole("button", { name: "Perform" }));
+
+    await waitFor(() => expect(addAlert).toHaveBeenCalled());
+    const alert = addAlert.mock.calls[0][0] as { message: string };
+    expect(alert.message).toBe("New sample name: Required by this operation.");
+  });
+
+  it("reads an origin rejection as '... (origin 1)' in English", async () => {
+    // The cimode assertion above can only show the catalog's marker message was chosen. This is
+    // what shows BOTH parameters arriving, rather than the aside being welded on in English after a
+    // reason the server already localized (parallel review, A4).
+    server.use(
+      http.post(
+        OPERATIONS_URL,
+        () =>
+          HttpResponse.json(
+            {
+              message: "Errors detected: 1",
+              errors: ["origins[0].amountTaken: Cannot take more from an origin than it currently holds"],
+            },
+            { status: 400 },
+          ),
+        { once: true },
+      ),
+    );
+    const user = userEvent.setup();
+    const origin = makeMockSubSample({});
+    vi.spyOn(origin, "fetchAdditionalInfo").mockResolvedValue(undefined);
+    render(
+      <InEnglish>
+        <OperationWizard open onClose={vi.fn()} origins={[origin]} />
+      </InEnglish>,
+    );
+    await user.click(await screen.findByRole("button", { name: /^Derive/ }));
+    await user.type(screen.getByTestId("proc"), "stale");
+    await user.click(screen.getByTestId("fill-amounts"));
+    await user.click(screen.getByRole("button", { name: "Next" })); // details -> template
+    await user.click(screen.getByTestId("tmpl-pick5"));
+    await user.click(screen.getByRole("button", { name: "Next" })); // template -> amounts
+    await user.click(screen.getByRole("button", { name: "Next" })); // amounts -> documentation
+    await user.click(screen.getByRole("button", { name: "Next" })); // documentation -> confirm
+    await user.click(screen.getByRole("button", { name: "Perform" }));
+
+    await waitFor(() => expect(addAlert).toHaveBeenCalled());
+    const alert = addAlert.mock.calls[0][0] as { message: string };
+    expect(alert.message).toBe("Cannot take more from an origin than it currently holds (origin 1)");
+  });
+
+  it("inflects the parent-template block for one field and for several", async () => {
+    // The same message as TemplateStep's own pick error, so the count has to arrive from this call
+    // site too; "field(s) ... have" was a parenthetical plural no other language can follow
+    // (PR #963 review). cimode renders the key alone, so only English shows the inflection.
+    for (const [fields, expected] of [
+      [["Batch"], "the required field Batch has no default value"],
+      [["Batch", "Concentration"], "the required fields Batch and Concentration have no default value"],
+    ] as Array<[Array<string>, string]>) {
+      getTemplate.mockResolvedValueOnce({
+        id: 9,
+        name: "Parent template",
+        quantityCategory: "volume",
+        fields: fields.map((name) => ({ name, mandatory: true, content: "", selectedOptions: null })),
+      });
+      const user = userEvent.setup();
+      const origin = makeMockSubSample({});
+      origin.sample.templateId = 9;
+      const { unmount } = render(
+        <InEnglish>
+          <OperationWizard open onClose={vi.fn()} origins={[origin]} />
+        </InEnglish>,
+      );
+      await user.click(await screen.findByRole("button", { name: /^Derive/ }));
+      await user.type(screen.getByTestId("proc"), "dna");
+      await user.click(screen.getByTestId("fill-amounts"));
+      await user.click(screen.getByRole("button", { name: "Next" })); // details -> template
+      await waitFor(() => expect(screen.getByTestId("tmpl-parent-error")).toHaveTextContent(expected));
+      unmount();
+    }
+  });
+});
+
+describe("OperationWizard remember bundle", () => {
+  it("offers the remember checkbox on the summary & confirm step, not the details step", async () => {
+    const user = userEvent.setup();
+    render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
+    await fillDerive(user, "dna");
+    // details: no remember handler is passed, so the step renders no checkbox
+    expect(screen.getByTestId("details-has-toggle")).toHaveTextContent("false");
+    await user.click(nextButton()); // -> template
+    await user.click(screen.getByTestId("tmpl-pick5"));
+    await user.click(nextButton()); // -> amounts
+    await user.click(nextButton()); // -> documentation
+    await user.click(nextButton()); // -> confirm
+    expect(screen.getByTestId("toggle-remember")).toBeInTheDocument();
+    expect(screen.getByTestId("remember")).toHaveTextContent("false");
+  });
+
+  it("persists the whole bundle keyed by process name when remember is ticked", async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    const origin = makeMockSubSample({});
+    vi.spyOn(origin, "fetchAdditionalInfo").mockResolvedValue(undefined);
+    render(<OperationWizard open onClose={onClose} origins={[origin]} />);
+
+    await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
+    await user.type(screen.getByTestId("proc"), "dna extraction");
+    await user.click(screen.getByTestId("fill-amounts"));
+    await user.click(nextButton()); // -> template
+    await user.click(screen.getByTestId("tmpl-pick5"));
+    await user.click(nextButton()); // -> amounts
+    await user.click(nextButton()); // -> documentation
+    await user.click(screen.getByTestId("doc-choose"));
+    await user.click(nextButton()); // -> confirm
+    await user.click(screen.getByTestId("toggle-remember")); // tick remember on the confirm step
+    await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
+
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    // Pin the posted request (the inputs shape, DevDocs/adr/0007 M4): the typed
+    // inputs by key, the origin's amount, the chosen template and the documentation target. The
+    // amount taken travels on the origin only, and no sample is assembled client-side.
+    expect(posted[0]).toEqual({
+      operationType: "derive",
+      origins: [{ id: 1, amountMode: "explicit", amountTaken: { numericValue: 1, unitId: 3 } }],
+      inputs: {
+        processName: "dna extraction",
+        sampleName: expect.any(String),
+        count: 1,
+        eachAmount: { numericValue: 5, unitId: 3 },
+      },
+      templateId: 5,
+      documentedByGlobalId: "SD1",
+    });
+    expect(prefs.store.INVENTORY_OPERATION_PROCESS_VALUES).toEqual({
+      "derive dna extraction": {
+        values: { count: 1, eachAmount: { numericValue: 5, unitId: 3 }, amountTaken: { numericValue: 1, unitId: 3 } },
+        template: { mode: "pick", templateId: 5, templateName: "T5" },
+        documentation: { globalId: "SD1", name: "D1" },
+      },
+    });
+    expect(prefs.store.INVENTORY_OPERATION_PROCESS_NAMES).toEqual({ derive: ["dna extraction"] });
+    expect(prefs.store.INVENTORY_OPERATION_PROCESS_NAME_DEFAULTS).toEqual({ derive: "dna extraction" });
+  });
+
+  it("performs a Pool: per-origin amounts posted for every origin, and remembered", async () => {
+    // No test ran a multi-origin operation through to Perform. Three things were unpinned because
+    // of it: the multi-origin remember bundle (amountMode plus perSubsampleAmounts) was never
+    // persisted in any test, representativeOrigin's smallest-origin choice was unexercised
+    // (replacing the reduce with origins[0] broke nothing), and the multi-origin POST body was
+    // never asserted. That is the path C1 hid in: commonQuantity threw for a multi-origin molarity
+    // selection and nothing noticed, because reduce on a one-element array never calls its callback
+    // and every test used one origin (parallel review, Q14).
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    const first = makeMockSubSample({});
+    const second = makeMockSubSample({ id: 2, globalId: "SS2" });
+    vi.spyOn(first, "fetchAdditionalInfo").mockResolvedValue(undefined);
+    vi.spyOn(second, "fetchAdditionalInfo").mockResolvedValue(undefined);
+    render(<OperationWizard open onClose={onClose} origins={[first, second]} />);
+
+    await user.click(await screen.findByRole("button", { name: /operations\.pool\.label/i }));
+    await user.click(screen.getByTestId("fill-amounts"));
+    await user.click(nextButton()); // details -> template
+    await user.click(screen.getByTestId("tmpl-pick5"));
+    await user.click(nextButton()); // template -> amounts
+    await user.click(screen.getByTestId("mode-per"));
+    await user.click(screen.getByTestId("fill-per-both"));
+    await user.click(nextButton()); // amounts -> documentation
+    await user.click(screen.getByTestId("doc-choose"));
+    await user.click(nextButton()); // documentation -> confirm
+    await user.click(screen.getByTestId("toggle-remember"));
+    await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
+
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+
+    const request = posted[0] as {
+      operationType: string;
+      origins: Array<{ id: number; amountMode: string; amountTaken: unknown }>;
+    };
+    expect(request.operationType).toBe("pool");
+    // BOTH origins are posted, each carrying its own amount: a Pool that sent one origin, or sent
+    // the same amount for both, would have passed every other test in this file.
+    expect(request.origins).toEqual([
+      { id: 1, amountMode: "explicit", amountTaken: { numericValue: 1, unitId: 3 } },
+      { id: 2, amountMode: "explicit", amountTaken: { numericValue: 1, unitId: 3 } },
+    ]);
+
+    // and the multi-origin half of the remember bundle round-trips: the mode and the per-origin
+    // amounts, keyed by global id, neither of which any single-origin run can exercise
+    const bundle = prefs.store.INVENTORY_OPERATION_PROCESS_VALUES as Record<
+      string,
+      { amountMode?: string; perSubsampleAmounts?: Record<string, unknown> }
+    >;
+    const pooled = Object.values(bundle)[0];
+    expect(pooled.amountMode).toBe("perSubsample");
+    expect(pooled.perSubsampleAmounts).toEqual({
+      SS1: { numericValue: 1, unitId: 3 },
+      SS2: { numericValue: 1, unitId: 3 },
+    });
+  });
+
+  it("persists nothing when remember is left unticked", async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    const origin = makeMockSubSample({});
+    vi.spyOn(origin, "fetchAdditionalInfo").mockResolvedValue(undefined);
+    render(<OperationWizard open onClose={onClose} origins={[origin]} />);
+    await reachConfirm(user, "dna extraction"); // remember never ticked
+    await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
+
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    expect(prefs.store.INVENTORY_OPERATION_PROCESS_VALUES).toBeUndefined();
+    expect(prefs.store.INVENTORY_OPERATION_PROCESS_NAMES).toBeUndefined();
+  });
+
+  it("loads a saved bundle (ticked) when its process name is entered", async () => {
+    prefs.store.INVENTORY_OPERATION_PROCESS_VALUES = {
+      "derive dna": {
+        values: { count: 4, eachAmount: { numericValue: 7, unitId: 3 }, amountTaken: { numericValue: 2, unitId: 3 } },
+        template: { mode: "pick", templateId: 9, templateName: "T9" },
+        documentation: null,
+      },
+    };
+    const user = userEvent.setup();
+    render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
+    await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
+    await user.type(screen.getByTestId("proc"), "dna");
+    // the loaded remember flag itself is observable on the confirm step / fast path (tested below)
+    expect(screen.getByTestId("count")).toHaveTextContent("4");
+    expect(screen.getByTestId("each-amount")).toHaveTextContent('{"numericValue":7,"unitId":3}');
+  });
+
+  it("resets a restored bundle's amounts when its units belong to another category", async () => {
+    // The bundle key is operation + process name only, so a bundle saved on a millilitre origin is
+    // offered on a gram one. Left alone it makes every step read as valid and offers one-click
+    // Perform on a request the endpoint is certain to reject (amountTakenCategoryMismatch).
+    prefs.store.INVENTORY_OPERATION_PROCESS_VALUES = {
+      "derive dna": {
+        values: {
+          count: 4,
+          eachAmount: { numericValue: 7, unitId: 3 },
+          amountTaken: { numericValue: 2, unitId: 3 },
+        },
+        template: null,
+        documentation: null,
+      },
+    };
+    const user = userEvent.setup();
+    render(
+      <OperationWizard
+        open
+        onClose={vi.fn()}
+        origins={[makeMockSubSample({ quantity: { numericValue: 10, unitId: 7 } })]}
+      />,
+    );
+    await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
+    await user.type(screen.getByTestId("proc"), "dna");
+
+    // BOTH amounts have their unit cleared (unitId 0), not defaulted to the origin's. A defaulted
+    // unit is a valid amount, so nothing downstream blocked and the one-click fast path stayed armed
+    // on a number the user never chose - it would have removed 1 g where the bundle says 2 mL
+    // (parallel review, C4). An unset unit forces the amounts step, where the user picks the amount
+    // in the right category. The saved numbers are kept so the user sees what to re-enter.
+    expect(screen.getByTestId("amount-taken")).toHaveTextContent('{"numericValue":2,"unitId":0}');
+    expect(screen.getByTestId("each-amount")).toHaveTextContent('{"numericValue":7,"unitId":0}');
+    // Everything not measured in the wrong units survives.
+    expect(screen.getByTestId("count")).toHaveTextContent("4");
+  });
+
+  it("keeps a restored bundle intact when its units are a different unit of the SAME category", async () => {
+    prefs.store.INVENTORY_OPERATION_PROCESS_VALUES = {
+      "derive dna": {
+        values: {
+          count: 4,
+          eachAmount: { numericValue: 7, unitId: 4 },
+          amountTaken: { numericValue: 2, unitId: 4 },
+        },
+        template: null,
+        documentation: null,
+      },
+    };
+    const user = userEvent.setup();
+    render(
+      <OperationWizard
+        open
+        onClose={vi.fn()}
+        origins={[makeMockSubSample({ quantity: { numericValue: 10, unitId: 3 } })]}
+      />,
+    );
+    await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
+    await user.type(screen.getByTestId("proc"), "dna");
+
+    // Litres on a millilitre origin is a unit choice, not a mismatch.
+    expect(screen.getByTestId("amount-taken")).toHaveTextContent('{"numericValue":2,"unitId":4}');
+    expect(screen.getByTestId("each-amount")).toHaveTextContent('{"numericValue":7,"unitId":4}');
+  });
+
+  it("resets to blank defaults (unticked) for a new, unsaved process name", async () => {
+    prefs.store.INVENTORY_OPERATION_PROCESS_VALUES = {
+      "derive dna": {
+        values: { count: 4, eachAmount: { numericValue: 7, unitId: 3 }, amountTaken: { numericValue: 2, unitId: 3 } },
+        template: { mode: "pick", templateId: 9, templateName: "T9" },
+        documentation: null,
+      },
+    };
+    const user = userEvent.setup();
+    render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
+    await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
+    await user.type(screen.getByTestId("proc"), "dna"); // loads the saved bundle
+    expect(screen.getByTestId("count")).toHaveTextContent("4");
+    await user.type(screen.getByTestId("proc"), "x"); // "dnax" is unsaved
+    expect(screen.getByTestId("count")).toHaveTextContent("1");
+    // fresh amounts are prefilled with the origin subsample's unit
+    expect(screen.getByTestId("each-amount")).toHaveTextContent('{"numericValue":1,"unitId":3}');
+  });
+
+  it("unticking remember (on the confirmation) resets the form but never deletes the saved bundle", async () => {
+    // amountTaken must not exceed the mock origin's quantity (1), or over-removal blocks the
+    // step-one fast path this test rides to reach the confirmation.
+    const saved = {
+      "derive dna": {
+        values: { count: 4, eachAmount: { numericValue: 7, unitId: 3 }, amountTaken: { numericValue: 1, unitId: 3 } },
+        template: { mode: "pick", templateId: 9, templateName: "T9" },
+        documentation: null,
+      },
+    };
+    prefs.store.INVENTORY_OPERATION_PROCESS_VALUES = saved;
+    const user = userEvent.setup();
+    render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
+    await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
+    await user.type(screen.getByTestId("proc"), "dna"); // loads + ticks the saved bundle
+    // once the derived sample name settles, the whole run is valid, so the step-one fast path shows
+    // the confirmation, which carries the remember checkbox
+    await waitFor(() => expect(screen.getByTestId("remember")).toHaveTextContent("true"), { timeout: 3000 });
+    await user.click(screen.getByTestId("toggle-remember")); // untick
+    // unticking drops the fast path (nothing is remembered any more): back to the details step,
+    // with the form reset to defaults
+    expect(screen.getByTestId("count")).toHaveTextContent("1");
+    expect(prefs.store.INVENTORY_OPERATION_PROCESS_VALUES).toEqual(saved); // store untouched
+  });
+
+  it("pre-fills the last-used process name and, on Review / edit, shows its bundle", async () => {
+    // A complete remembered bundle loads on open, so the wizard offers the step-one fast path (DevDocs/adr/0007):
+    // the confirmation and Perform, with the details form only behind "Review / edit".
+    prefs.store.INVENTORY_OPERATION_PROCESS_NAME_DEFAULTS = { derive: "boil" };
+    prefs.store.INVENTORY_OPERATION_PROCESS_VALUES = {
+      "derive boil": {
+        values: { count: 3, eachAmount: { numericValue: 8, unitId: 3 }, amountTaken: { numericValue: 1, unitId: 3 } },
+        template: { mode: "none", templateId: null },
+        documentation: null,
+      },
+    };
+    const user = userEvent.setup();
+    render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
+    await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
+    // Fast path: the confirmation (carrying the ticked remember checkbox) and an enabled Perform
+    // show; the details form is not rendered yet.
+    expect(screen.getByTestId("confirm")).toBeInTheDocument();
+    expect(screen.getByTestId("remember")).toHaveTextContent("true");
+    expect(screen.getByRole("button", { name: /wizard\.perform/i })).toBeEnabled();
+    expect(screen.queryByTestId("proc")).not.toBeInTheDocument();
+    // Review / edit drops into the normal wizard with the bundle pre-filled.
+    await user.click(screen.getByRole("button", { name: /wizard\.reviewEdit/i }));
+    expect(screen.getByTestId("proc")).toHaveValue("boil");
+    expect(screen.getByTestId("count")).toHaveTextContent("3");
+  });
+
+  it("performs a remembered run directly from the step-one fast path", async () => {
+    prefs.store.INVENTORY_OPERATION_PROCESS_NAME_DEFAULTS = { derive: "boil" };
+    prefs.store.INVENTORY_OPERATION_PROCESS_VALUES = {
+      "derive boil": {
+        values: { count: 3, eachAmount: { numericValue: 8, unitId: 3 }, amountTaken: { numericValue: 1, unitId: 3 } },
+        template: { mode: "none", templateId: null },
+        documentation: null,
+      },
+    };
+    const onClose = vi.fn();
+    const origin = makeMockSubSample({});
+    vi.spyOn(origin, "fetchAdditionalInfo").mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    render(<OperationWizard open onClose={onClose} origins={[origin]} />);
+    await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
+    await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    expect(posted).toHaveLength(1);
+  });
+
+  it("persists a Cryopreserve bundle keyed by the operation (fixed process name)", async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    const origin = makeMockSubSample({});
+    vi.spyOn(origin, "fetchAdditionalInfo").mockResolvedValue(undefined);
+    render(<OperationWizard open onClose={onClose} origins={[origin]} />);
+    await user.click(await screen.findByRole("button", { name: /operations\.cryopreserve\.label/i }));
+    await user.click(screen.getByTestId("fill-amounts"));
+    await user.click(nextButton()); // -> template
+    await user.click(screen.getByTestId("tmpl-pick5"));
+    await user.click(nextButton()); // -> amounts
+    await user.click(nextButton()); // -> documentation
+    await user.click(nextButton()); // -> confirm
+    await user.click(screen.getByTestId("toggle-remember")); // tick on the confirm step
+    await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
+
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    const stored = prefs.store.INVENTORY_OPERATION_PROCESS_VALUES as Record<string, unknown>;
+    expect(Object.keys(stored)).toEqual(["cryopreserve"]);
+  });
+});

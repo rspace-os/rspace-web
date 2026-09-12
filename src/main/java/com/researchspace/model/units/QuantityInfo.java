@@ -52,6 +52,26 @@ public class QuantityInfo implements Quantifiable, Serializable {
 
   private static final long serialVersionUID = -7919940280639374006L;
 
+  /** Integer digits the DECIMAL(19,3) column holds: precision 19 minus scale 3. */
+  private static final int MAX_INTEGER_DIGITS = 16;
+
+  /**
+   * Whether {@link #setNumericValue(BigDecimal)} would store this value exactly. Two ways it would
+   * not. Quantities persist at 3 decimal places (HALF_UP), so a finer value is silently rounded to
+   * a quantity the caller never gave. And the column is DECIMAL(19,3), so a value with more than
+   * {@value #MAX_INTEGER_DIGITS} integer digits does not fit at all: it passes a scale-only check
+   * (1E+30 has a NEGATIVE scale) and then fails at the INSERT, turning a bad request into a 500.
+   * Validation of user-supplied quantities should reject both rather than reach the database.
+   * Trailing zeros lose nothing, so 0.5000 is storable; null is not.
+   */
+  public static boolean canStoreWithoutRounding(BigDecimal value) {
+    if (value == null) {
+      return false;
+    }
+    BigDecimal stripped = value.stripTrailingZeros();
+    return stripped.scale() <= 3 && stripped.precision() - stripped.scale() <= MAX_INTEGER_DIGITS;
+  }
+
   private BigDecimal numericValue;
 
   private Integer unitId;

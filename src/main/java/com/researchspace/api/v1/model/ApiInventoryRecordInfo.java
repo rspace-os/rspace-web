@@ -24,6 +24,7 @@ import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.inventory.field.ExtraField;
 import com.researchspace.service.impl.DocumentTagManagerImpl;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.util.ArrayList;
 import java.util.List;
@@ -84,8 +85,10 @@ public abstract class ApiInventoryRecordInfo extends IdentifiableNameableApiObje
   @JsonProperty("quantity")
   private ApiQuantityInfo quantity;
 
+  // Null list elements ("extraFields": [null]) would 500 in the apply loops; element-level
+  // @NotNull turns each into a clean 400 at binding (security review, finding 6).
   @JsonProperty("tags")
-  private List<ApiTagInfo> tags = new ArrayList<>();
+  private List<@NotNull ApiTagInfo> tags = new ArrayList<>();
 
   @JsonProperty(value = "type")
   private ApiInventoryRecordType type;
@@ -103,7 +106,7 @@ public abstract class ApiInventoryRecordInfo extends IdentifiableNameableApiObje
   private List<ApiInventoryFile> attachments = new ArrayList<>();
 
   @JsonProperty(value = "barcodes")
-  private List<ApiBarcode> barcodes = new ArrayList<>();
+  private List<@NotNull ApiBarcode> barcodes = new ArrayList<>();
 
   @JsonProperty(value = "identifiers")
   private List<ApiInventoryDOI> identifiers = new ArrayList<>();

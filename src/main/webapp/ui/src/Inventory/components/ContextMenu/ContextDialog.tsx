@@ -8,6 +8,9 @@ type ContextDialogArgs = {
   onClose: () => void;
   maxWidth?: "xs" | "sm" | "lg";
   fullWidth?: boolean;
+  /** When set, a click on the backdrop does not dismiss the dialog (Escape still closes it). Use for
+   *  a multi-step flow where an accidental outside click should not discard the user's progress. */
+  disableBackdropClick?: boolean;
 };
 
 export default function ContextDialog({
@@ -16,6 +19,7 @@ export default function ContextDialog({
   onClose,
   maxWidth,
   fullWidth,
+  disableBackdropClick = false,
 }: ContextDialogArgs): React.ReactNode {
   const { uiStore } = useStores();
 
@@ -33,7 +37,10 @@ export default function ContextDialog({
         },
       }}
       open={open}
-      onClose={onClose}
+      onClose={(_event, reason) => {
+        if (disableBackdropClick && reason === "backdropClick") return;
+        onClose();
+      }}
       maxWidth={maxWidth}
       fullWidth={fullWidth}
     >

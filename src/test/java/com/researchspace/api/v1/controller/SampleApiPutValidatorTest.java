@@ -111,10 +111,14 @@ public class SampleApiPutValidatorTest extends InventoryRecordValidationTestBase
     e = resetErrorsAndValidate(apiSample);
     assertEquals(1, e.getErrorCount());
 
-    // set invalid unit, should be rejected
+    // set invalid unit, should be rejected, and only for being an invalid unit: a litre is not
+    // comparable to a temperature either, but reporting that as well told the user nothing they
+    // did not already have to fix (Copilot review, PR #1090)
     apiSample.setStorageTempMin(new ApiQuantityInfo(BigDecimal.valueOf(5L), RSUnitDef.LITRE));
     e = resetErrorsAndValidate(apiSample);
-    assertEquals(2, e.getErrorCount());
+    assertEquals(1, e.getErrorCount(), "unexpected errors: " + e.getAllErrors());
+    assertEquals("storageTempMin", e.getFieldError().getField());
+    assertEquals("errors.inventory.temperature.invalidUnit", e.getFieldError().getCode());
 
     // set min temperature in different unit (but still 5 degrees C), should pass
     apiSample.setStorageTempMin(new ApiQuantityInfo(BigDecimal.valueOf(278L), RSUnitDef.KELVIN));

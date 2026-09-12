@@ -3,6 +3,7 @@ package com.researchspace.api.v1.controller;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -10,14 +11,21 @@ import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInventoryRecordRevisionList;
 import com.researchspace.api.v1.model.ApiListOfMaterials;
 import com.researchspace.api.v1.model.ApiMaterialUsage;
+import com.researchspace.api.v1.model.ApiSample;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.apiutils.ApiError;
 import com.researchspace.model.User;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.record.StructuredDocument;
+import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -262,6 +270,190 @@ public class ListOfMaterialsApiControllerMVCIT extends API_MVC_InventoryTestBase
     ApiSubSample revision3 = getRevisionSnapshot(apiKey, anyUser, subSampleId, history, 2);
     assertEquals(3L, revision3.getVersion());
     assertEquals("2 g", revision3.getQuantity().toQuantityInfo().toPlainString());
+  }
+
+  @Test
+  public void parallelListsDeductingSiblingSubSamplesKeepTheParentTotalExact() throws Exception {
+    // List of Materials enters registerApiSubSampleUsage with no prior row lock, so it acquires
+    // the parent's sibling-set lock first and the subsample's own row second, the same order as
+    // the operations endpoint. Two concurrent lists deducting two siblings of ONE sample must
+    // therefore both succeed: a non-201 is a deadlock victim or lock-wait timeout, and a parent
+    // total that differs from the children's sum is the snapshot-sum bug (each transaction summing
+    // the sibling ENTITIES as of its own snapshot, losing the other's decrement).
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+    String subSampleJson = "{\"quantity\":{\"numericValue\":5,\"unitId\":7}}";
+    String sampleJson =
+        "{\"name\":\"lom siblings\",\"subSamples\":[" + subSampleJson + "," + subSampleJson + "]}";
+    MvcResult sampleResult =
+        mockMvc
+            .perform(createBuilderForPostWithJSONBody(apiKey, "/samples", anyUser, sampleJson))
+            .andExpect(status().isCreated())
+            .andReturn();
+    ApiSampleWithFullSubSamples sample =
+        mvcUtils.getFromJsonResponseBody(sampleResult, ApiSampleWithFullSubSamples.class);
+    Long firstId = sample.getSubSamples().get(0).getId();
+    Long secondId = sample.getSubSamples().get(1).getId();
+    Long firstFieldId =
+        createBasicDocumentInRootFolderWithText(anyUser, "lom parallel 1")
+            .getFields()
+            .get(0)
+            .getId();
+    Long secondFieldId =
+        createBasicDocumentInRootFolderWithText(anyUser, "lom parallel 2")
+            .getFields()
+            .get(0)
+            .getId();
+
+    ExecutorService pool = Executors.newFixedThreadPool(2);
+    List<Integer> statuses = new ArrayList<>();
+    try {
+      List<Callable<Integer>> posts =
+          List.of(
+              () -> postListOfMaterialsDeducting(apiKey, anyUser, firstFieldId, firstId),
+              () -> postListOfMaterialsDeducting(apiKey, anyUser, secondFieldId, secondId));
+      for (Future<Integer> future : pool.invokeAll(posts)) {
+        statuses.add(future.get());
+      }
+    } finally {
+      pool.shutdown();
+    }
+
+    assertTrue(
+        statuses.stream().allMatch(s -> s == 201),
+        () -> "both sibling deductions should succeed without deadlocking, got " + statuses);
+    // each list took its 1 g off its own subsample...
+    assertEquals(
+        "4 g",
+        getSubSample(apiKey, anyUser, firstId).getQuantity().toQuantityInfo().toPlainString());
+    assertEquals(
+        "4 g",
+        getSubSample(apiKey, anyUser, secondId).getQuantity().toQuantityInfo().toPlainString());
+    // ...and the denormalised parent total reflects BOTH decrements
+    MvcResult sampleGet =
+        mockMvc
+            .perform(
+                createBuilderForGet(API_VERSION.ONE, apiKey, "/samples/" + sample.getId(), anyUser))
+            .andExpect(status().isOk())
+            .andReturn();
+    ApiSample reloaded = mvcUtils.getFromJsonResponseBody(sampleGet, ApiSample.class);
+    assertEquals(
+        0,
+        new BigDecimal("8").compareTo(reloaded.getQuantity().getNumericValue()),
+        () -> "parent total should be 8 g after two 1 g deductions, got " + reloaded.getQuantity());
+  }
+
+  @Test
+  public void parallelListsExhaustingOneSubSampleNeverResurrectItsStock() throws Exception {
+    // Both lists load the subsample at 5 g before either takes its row lock, and each asks for the
+    // whole 5 g. The winner commits 0 g; the loser then reads 0 g as its locked scalar, so its
+    // usage clamps to zero and it deducts nothing. Its cached entity still holds the stale 5 g,
+    // though, so anything that dirties that instance makes Hibernate's full-row flush write 5 g
+    // back and resurrect stock that was already used up (Codex review, PR #1090). The invariant is
+    // the final quantity, not which request won.
+    //
+    // Read a green run carefully: the assertions hold under EVERY interleaving, so this test does
+    // not fail spuriously, but it only REPRODUCES the bug when the second request loads the entity
+    // before the first commits. If the two happen to serialise, the second loads a fresh 0 g, there
+    // is no stale instance to dirty, and this passes without exercising the defect at all. Making
+    // that deterministic would need both transactions parked at a barrier between load and commit,
+    // i.e. test scaffolding inside registerApiSubSampleUsage, which is not worth it here. So this
+    // is an end-to-end backstop, not the guard: the precise, deterministic check is
+    // SubSampleApiManagerImplUsageVersionTest, which forces the stale-entity state directly.
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+    MvcResult sampleResult =
+        mockMvc
+            .perform(
+                createBuilderForPostWithJSONBody(
+                    apiKey,
+                    "/samples",
+                    anyUser,
+                    "{\"name\":\"lom"
+                        + " exhaust\",\"subSamples\":[{\"quantity\":{\"numericValue\":5,\"unitId\":7}}]}"))
+            .andExpect(status().isCreated())
+            .andReturn();
+    ApiSampleWithFullSubSamples sample =
+        mvcUtils.getFromJsonResponseBody(sampleResult, ApiSampleWithFullSubSamples.class);
+    Long subSampleId = sample.getSubSamples().get(0).getId();
+    Long firstFieldId =
+        createBasicDocumentInRootFolderWithText(anyUser, "lom exhaust 1")
+            .getFields()
+            .get(0)
+            .getId();
+    Long secondFieldId =
+        createBasicDocumentInRootFolderWithText(anyUser, "lom exhaust 2")
+            .getFields()
+            .get(0)
+            .getId();
+
+    ExecutorService pool = Executors.newFixedThreadPool(2);
+    List<Integer> statuses = new ArrayList<>();
+    try {
+      List<Callable<Integer>> posts =
+          List.of(
+              () -> postListOfMaterialsUsing(apiKey, anyUser, firstFieldId, subSampleId, "5"),
+              () -> postListOfMaterialsUsing(apiKey, anyUser, secondFieldId, subSampleId, "5"));
+      for (Future<Integer> future : pool.invokeAll(posts)) {
+        statuses.add(future.get());
+      }
+    } finally {
+      pool.shutdown();
+    }
+
+    assertTrue(
+        statuses.stream().noneMatch(status -> status >= 500),
+        () -> "no 5xx from two lists exhausting one subsample, got " + statuses);
+    assertEquals(
+        "0 g",
+        getSubSample(apiKey, anyUser, subSampleId).getQuantity().toQuantityInfo().toPlainString(),
+        () -> "the exhausted subsample must stay empty, got statuses " + statuses);
+  }
+
+  /** Posts a list of materials using the given amount in grams, returning the HTTP status. */
+  private int postListOfMaterialsUsing(
+      String apiKey, User user, Long elnFieldId, Long subSampleId, String grams) throws Exception {
+    String usage =
+        "{ \"invRec\": { \"id\": "
+            + subSampleId
+            + ", \"type\":\"SUBSAMPLE\" },"
+            + " \"usedQuantity\": { \"numericValue\": \""
+            + grams
+            + "\", \"unitId\": 7},"
+            + " \"updateInventoryQuantity\": true }";
+    String newListJson =
+        "{ \"name\": \"exhausting list\", \"elnFieldId\": "
+            + elnFieldId
+            + ", \"materials\": ["
+            + usage
+            + "] }";
+    return mockMvc
+        .perform(createBuilderForPostWithJSONBody(apiKey, "/listOfMaterials", user, newListJson))
+        .andReturn()
+        .getResponse()
+        .getStatus();
+  }
+
+  /** Posts a list of materials using 1 g of the given subsample, returning the HTTP status. */
+  private int postListOfMaterialsDeducting(
+      String apiKey, User user, Long elnFieldId, Long subSampleId) throws Exception {
+    String usage =
+        "{ \"invRec\": { \"id\": "
+            + subSampleId
+            + ", \"type\":\"SUBSAMPLE\" },"
+            + " \"usedQuantity\": { \"numericValue\": \"1\", \"unitId\": 7},"
+            + " \"updateInventoryQuantity\": true }";
+    String newListJson =
+        "{ \"name\": \"parallel list\", \"elnFieldId\": "
+            + elnFieldId
+            + ", \"materials\": ["
+            + usage
+            + "] }";
+    return mockMvc
+        .perform(createBuilderForPostWithJSONBody(apiKey, "/listOfMaterials", user, newListJson))
+        .andReturn()
+        .getResponse()
+        .getStatus();
   }
 
   /** Creates a list of materials using 1 g of the given subsample, repeated usageCount times. */

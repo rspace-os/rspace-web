@@ -131,8 +131,9 @@
       "listOfMaterials": {
         "descriptionTooLong": "Description cannot be longer than 255 chars",
         "elnFieldIdRequired": "elnFieldId cannot be null",
+        "nameRequired": "name cannot be empty",
         "nameTooLong": "Name cannot be longer than 255 chars",
-        "nameRequired": "name cannot be empty"
+        "tooManyMaterials": "A list of materials accepts at most {max} materials."
       },
       "location": {
         "outsideGridDimensions": "Location ({0},{1}) is outside container grid dimensions (columns: {2}, rows: {3}).",
@@ -146,6 +147,43 @@
           "notFoundInImageContainer": "Target location not found.",
           "requiredForGridOrImageContainer": "When moving to image/grid type container request has to specify target location"
         }
+      },
+      "operation": {
+        "amountModeMustBeAll": "This operation empties its origins, so the amount taken cannot be an explicit amount.",
+        "amountModeNotApplicable": "This operation does not take from its origins, so the amount taken cannot be a whole-origin claim.",
+        "amountModeUnknown": "Unrecognised amount mode. Use \"explicit\" for an amount the user chose, or \"all\" to take the origin's whole quantity.",
+        "amountTakenCategoryMismatch": "The amount taken must use the origin's measurement category (e.g. millilitres from a volume origin).",
+        "amountTakenExceedsOrigin": "Cannot take more from an origin than it currently holds.",
+        "amountTakenInvalid": "Each origin must specify a non-negative amount, with a unit, to take from it.",
+        "amountTakenNotSubtractable": "The amount taken cannot be subtracted exactly from what the origin holds (quantities are stored at 3 decimal places).",
+        "amountTakenPositive": "This operation takes from each origin, so the amount taken must be greater than zero.",
+        "amountTakenStale": "The subsample's quantity changed since it was read; reload and retry.",
+        "amountTakenTooPrecise": "The amount taken supports at most 3 decimal places.",
+        "amountTakenZero": "This operation does not take from its origins, so the amount taken must be zero.",
+        "createdAmountNotPositive": "Each created subsample must be given a quantity greater than zero.",
+        "documentationLinkTargetInvalid": "A documentation link must target an ELN document, notebook or Gallery file.",
+        "duplicateOrigin": "An origin subsample may appear at most once in an operation.",
+        "inputAboveMaximum": "Must be at most {0}.",
+        "inputBelowMinimum": "Must be at least {0}.",
+        "inputNotStorable": "Supports at most 3 decimal places.",
+        "inputRequired": "Required by this operation.",
+        "inputWrongType": "Not the type this operation expects.",
+        "mustEmptyOrigin": "This operation must take the origin's entire remaining quantity.",
+        "operationTypeRequired": "An operation type is required.",
+        "originCategoryMismatch": "All origin subsamples must use the same measurement category (e.g. all volume or all mass).",
+        "originCountExact": "This operation requires exactly one origin subsample.",
+        "originCountMaximum": "This operation accepts at most {0} origin subsamples.",
+        "originCountMinimum": "This operation requires at least two origin subsamples.",
+        "originEmpty": "An origin subsample that currently holds nothing cannot be operated on.",
+        "originGlobalIdInvalid": "Each origin must be identified by a subsample global id (SS followed by a number), was [{0}].",
+        "originIdRequired": "Each origin must identify a subsample by id.",
+        "originsRequired": "At least one origin subsample must be provided for the operation.",
+        "storageTempAboveMax": "The storage temperature must be at most {0}°C for this operation.",
+        "storageTempBelowMin": "The storage temperature must be at least {0}°C for this operation.",
+        "subSampleCategoryMismatch": "Each new subsample must use the origin's measurement category (e.g. all volume or all mass).",
+        "tooManyInputs": "An operation request accepts at most {max} inputs.",
+        "tooManyOrigins": "This operation accepts at most {max} origin subsamples.",
+        "unknownType": "Unknown operation type [{0}]."
       },
       "publicLink": {
         "unavailable": "The item you try to see is not publicly available right now."
@@ -162,6 +200,7 @@
         "nameExists": "There is already a sample named [{0}]",
         "notFound": "No sample with id: {0}",
         "subSamplesArrayNotEmpty": "subSamples array must be empty if newSampleSubSamplesCount is provided",
+        "tooManySubSamples": "A sample can be created with at most {max} subsamples",
         "subSamplesCountOutOfRange": "{0} supported values are 1-100, was [{1}]",
         "templateActionsNotAllowed": "Please use /sampleTemplates endpoint for template actions",
         "templateNotFound": "No sample template with id: {0}",
@@ -200,6 +239,7 @@
       "temperature": {
         "invalidUnit": "Unit id is not a valid temperature unit.",
         "minGreaterThanMax": "Min temperature is greater than max temperature.",
+        "notStorable": "Temperature must be within the range the system stores, with at most 3 decimal places.",
         "unitsNotComparable": "Temperature units are not mutually comparable."
       },
       "validation": {

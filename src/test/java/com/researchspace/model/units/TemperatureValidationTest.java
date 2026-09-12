@@ -45,4 +45,14 @@ class TemperatureValidationTest extends JakartaValidatorTestJU5 {
     q.setNumericValue(new BigDecimal(20));
     assertNErrors(m, 1, true);
   }
+
+  @Test
+  void aTemperatureWithAUnitButNoNumberIsInvalidNotAServerError() {
+    // Quantities.getQuantity throws on a null value, so this shape used to fail the Bean
+    // Validation pass itself as a 500 instead of a field-scoped 400 (Copilot review, PR #1090).
+    QuantityInfo q = new QuantityInfo();
+    q.setUnitId(RSUnitDef.CELSIUS.getId());
+    q.setNumericValue(null);
+    assertNErrors(new Measurable(q), 1, true);
+  }
 }

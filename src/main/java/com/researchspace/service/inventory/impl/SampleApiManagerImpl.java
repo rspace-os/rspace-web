@@ -2,6 +2,8 @@ package com.researchspace.service.inventory.impl;
 
 import com.axiope.search.InventorySearchConfig.InventorySearchDeletedOption;
 import com.researchspace.api.v1.auth.ApiRuntimeException;
+import com.researchspace.api.v1.model.ApiExtraField;
+import com.researchspace.api.v1.model.ApiExtraField.ExtraFieldTypeEnum;
 import com.researchspace.api.v1.model.ApiFieldToModelFieldFactory;
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
@@ -22,6 +24,7 @@ import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.jsonserialisers.LocalDateDeserialiser;
 import com.researchspace.dao.SampleDao;
 import com.researchspace.dao.SampleTemplateDao;
+import com.researchspace.dao.SubSampleDao;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.events.InventoryAccessEvent;
@@ -43,32 +46,43 @@ import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.inventory.field.InventoryLinkField;
 import com.researchspace.model.record.IActiveUserStrategy;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.inventory.InventoryAuditApiManager;
 import com.researchspace.service.inventory.InventoryFieldNameUniquenessValidator;
 import com.researchspace.service.inventory.InventoryMoveHelper;
 import com.researchspace.service.inventory.SampleApiManager;
+import com.researchspace.service.inventory.SampleSiblingRowLock;
 import com.researchspace.service.inventory.SubSampleApiManager;
 import jakarta.ws.rs.NotFoundException;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.helper.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service("sampleApiManager")
 public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
-    implements SampleApiManager {
+    implements SampleSiblingRowLock, SampleApiManager {
 
   public static final String SAMPLE_DEFAULT_NAME = "Generic Sample";
 
   private @Autowired SubSampleApiManager subSampleMgr;
   private @Autowired SampleDao sampleDao;
+  private @Autowired SubSampleDao subSampleDao;
+  private @Autowired MessageSourceUtils messages;
   private @Autowired SampleTemplateDao sampleTemplateDao;
   private @Autowired InventoryMoveHelper inventoryMoveHelper;
   private @Autowired InventoryAuditApiManager inventoryAuditMgr;
@@ -139,6 +153,39 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
     Sample sample = getSampleOrThrowNotFound(id);
     invPermissions.assertUserCanEditInventoryRecord(sample, user);
     return sample;
+  }
+
+  @Override
+  public Sample lockSampleForEdit(Long id, User user) {
+    Sample sample = sampleDao.lockRowForUpdate(id);
+    if (sample == null) {
+      throw new NotFoundException(
+          messages.getMessage("errors.inventory.sample.notFound", new Object[] {id}));
+    }
+    invPermissions.assertUserCanEditInventoryRecord(sample, user);
+    return sample;
+  }
+
+  @Override
+  @Transactional(propagation = Propagation.MANDATORY)
+  public void lockSiblingRowsAndRecalculateTotal(Long sampleId) {
+    // Deliberately an UNLOCKED read of the sample: the serialisation this method needs comes from
+    // the locked scalar read of the subsample rows below, and taking the sample's own row lock
+    // here would insert a sample-before-subsample acquisition into paths that otherwise lock
+    // subsample rows first, inverting the order against them.
+    SampleEntity sample = sampleDao.get(sampleId);
+    if (sample == null) {
+      // Every caller derives sampleId from a live subsample it has just read, so reaching here
+      // means the parent row vanished between that read and this one. There is nothing to lock and
+      // no sibling rows to sum, so returning is the whole correct answer; throwing would turn a
+      // benign race into a 500 on a path that has not written anything (parallel review, L5).
+      return;
+    }
+    // Assigned onto the entity so the flush at commit writes this value rather than the cascade's
+    // stale one; the arithmetic (empty, single, unit-aware sum) stays in the entity.
+    sample.setTotalQuantityFrom(
+        subSampleDao.getActiveQuantitiesForUpdate(sampleId, sample.isDeleted()));
+    saveSampleEntity(sample);
   }
 
   @Override
@@ -253,6 +300,12 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
             ? recordFactory.createSample(sampleName, user, sampleTemplate)
             : recordFactory.createSample(sampleName, user);
 
+    if (sampleTemplate != null) {
+      // Before the extra fields are added below: an operation-generated field whose name the
+      // template already declares is absorbed into that inherited field rather than added beside it
+      // as a duplicate (Codex review, PR #1090).
+      mergeOperationFieldsIntoInheritedTemplateFields(apiSample, sample.getActiveFields());
+    }
     setBasicFieldsFromNewIncomingApiInventoryRecord(sample, apiSample, user);
     if (sampleTemplate != null) {
       // might be null from incoming API request, but here we want to reference template icon id
@@ -375,6 +428,72 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
       }
     }
     return subSample;
+  }
+
+  /**
+   * Writes an operation's generated field into the identically named field the created sample
+   * inherits from its template, instead of adding a second field with that name.
+   *
+   * <p>A template may legitimately declare a field an operation also produces: a Passage template
+   * with "Passage number", a Cryopreserve one with "Cryomedium". Adding the generated field
+   * alongside the inherited one gives the sample two fields of the same name, which {@link
+   * InventoryFieldNameUniquenessValidator#assertNoDuplicateFieldNames} rejects, so the operation
+   * failed for every such template and the wizard offered no way to repair the generated name
+   * (Codex review, PR #1090). Renaming the generated field would clear the rejection but break the
+   * Passage counter, which finds the previous number by looking the field up by name
+   * (computedValues.ts, {@code parentFieldValue}): the number would land beside an untouched
+   * template counter and the next Passage would read the empty one. Merging keeps one field of that
+   * name carrying the operation's value, so the lookup still works with or without a template.
+   *
+   * <p>Only fields the operation generated are merged, identified by their {@code
+   * operationFieldKey}: a user's own extra field on POST /samples carries none and keeps the
+   * existing duplicate-name rejection rather than silently overwriting template content. The key is
+   * evidence because no request can set it: the DTO property is READ_ONLY, so only the server's
+   * request builder ever puts one on a field (RSDEV-1231). Link fields are never merged in either
+   * direction, because a link holds a structured {@code InventoryLink} rather than text. Names are
+   * matched the way the uniqueness check compares them, trimmed and case-insensitively, or a
+   * collision it would reject could survive this merge.
+   */
+  static void mergeOperationFieldsIntoInheritedTemplateFields(
+      ApiSampleWithFullSubSamples apiSample, List<InventoryEntityField> inheritedFields) {
+    if (apiSample == null
+        || CollectionUtils.isEmpty(apiSample.getExtraFields())
+        || CollectionUtils.isEmpty(inheritedFields)) {
+      return;
+    }
+    Map<String, InventoryEntityField> mergeTargets = new HashMap<>();
+    for (InventoryEntityField inherited : inheritedFields) {
+      if (inherited instanceof InventoryLinkField || inherited.isOptionsStoringField()) {
+        continue;
+      }
+      String name = inherited.getName();
+      if (StringUtils.isNotBlank(name)) {
+        mergeTargets.putIfAbsent(name.trim().toLowerCase(Locale.ROOT), inherited);
+      }
+    }
+    Iterator<ApiExtraField> generated = apiSample.getExtraFields().iterator();
+    while (generated.hasNext()) {
+      ApiExtraField field = generated.next();
+      if (field == null
+          || StringUtils.isBlank(field.getOperationFieldKey())
+          || ExtraFieldTypeEnum.LINK.equals(field.getType())
+          || StringUtils.isBlank(field.getName())) {
+        continue;
+      }
+      InventoryEntityField target =
+          mergeTargets.get(field.getName().trim().toLowerCase(Locale.ROOT));
+      // A name match says nothing about the inherited field's TYPE: a template may declare a NUMBER
+      // field called "Cryomedium" while the operation generates a text one holding "10% DMSO".
+      // setFieldData validates before storing and throws, which would leave the manager as an
+      // uncontrolled failure rather than the request's own validation response. Asked first with
+      // the
+      // non-throwing validate, so an incompatible field is simply not absorbed: it stays in
+      // extraFields and collects the ordinary duplicate-name rejection (Copilot review, PR #1090).
+      if (target != null && !target.validate(field.getContent()).hasErrorMessages()) {
+        target.setFieldData(field.getContent());
+        generated.remove();
+      }
+    }
   }
 
   private void saveNewApiFieldsIntoSampleFields(

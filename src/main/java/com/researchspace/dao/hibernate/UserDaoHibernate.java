@@ -24,8 +24,10 @@ import com.researchspace.model.User;
 import com.researchspace.model.UserProfile;
 import com.researchspace.model.dtos.UserRoleView;
 import com.researchspace.model.dtos.UserSearchCriteria;
+import com.researchspace.model.preference.Preference;
 import com.researchspace.model.views.UserStatistics;
 import com.researchspace.model.views.UserView;
+import jakarta.persistence.LockModeType;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Order;
@@ -133,6 +135,21 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
   public User getUserByUsername(String username) {
     return getOptionalUserByUsername(username)
         .orElseThrow(() -> new ObjectRetrievalFailureException(User.class, username));
+  }
+
+  @Override
+  public String getPreferenceValueForUpdate(Long userId, Preference preference) {
+    // A scalar under a row lock: the persistence context cannot serve it, so the value is what the
+    // last committed writer stored, not this transaction's snapshot. See UserDao for the contract.
+    return getSession()
+        .createQuery(
+            "select up.value from UserPreference up"
+                + " where up.user.id = :userId and up.preference = :preference",
+            String.class)
+        .setParameter("userId", userId)
+        .setParameter("preference", preference)
+        .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+        .uniqueResult();
   }
 
   @Override

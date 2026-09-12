@@ -18,7 +18,9 @@ import type { RecordDetails } from "../definitions/Record";
 import type { CoreFetcherArgs } from "../definitions/Search";
 import type { AdjustableTableRowOptions } from "../definitions/Tables";
 import type { Template } from "../definitions/Template";
+import { categoryOfUnit } from "../definitions/Units";
 import getRootStore from "../stores/getRootStore";
+import type { UnitCategory } from "../stores/UnitStore";
 import FieldModel, { type FieldModelAttrs } from "./FieldModel";
 import SampleModel, {
   defaultEditableSampleFields,
@@ -485,6 +487,30 @@ export default class TemplateModel extends SampleModel implements Template {
     return Object.values(this.subSampleAlias).every(
       (v) => typeof v === "string" && v !== "custom" && v !== "customs" && v.length > 1 && v.length <= 30,
     );
+  }
+
+  /**
+   * The measurement category the template's samples are made in.
+   *
+   * Overridden because the inherited HasQuantity getter derives the category from `quantity`, and a
+   * template's quantity is always null: it would fall back to unit id 3 and report every template
+   * as "volume", so a mass or count template offered volume units and produced a request the
+   * backend rejects (Copilot review, PR #1090). A template declares its unit as `defaultUnitId`.
+   *
+   * The static unit table is consulted before the unit store, because the store is seeded from
+   * localStorage and holds nothing until GET /units has resolved once. Going to the store first
+   * threw for every id in that window, and the operation wizard reads this inside a catch that
+   * reports "template lookup failed", so a perfectly valid template was blocked with a misleading
+   * reason on a fresh profile (parallel review). categoryOfUnit needs no store, so it is right
+   * immediately; the store still answers for molarity and concentration, which the static table
+   * does not enumerate.
+   */
+  get quantityCategory(): UnitCategory {
+    const known = categoryOfUnit(this.defaultUnitId);
+    if (known) return known;
+    const unit = getRootStore().unitStore.getUnit(this.defaultUnitId);
+    if (!unit) throw new Error("Could not get unit category");
+    return unit.category;
   }
 
   validateQuantity(): ValidationResult {

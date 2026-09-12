@@ -1,0 +1,219 @@
+package com.researchspace.service.inventory.impl;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import com.researchspace.api.v1.model.ApiInventoryEditLock;
+import com.researchspace.api.v1.model.ApiInventoryEditLock.ApiInventoryEditLockStatus;
+import com.researchspace.dao.SubSampleDao;
+import com.researchspace.model.User;
+import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SubSample;
+import com.researchspace.model.units.QuantityInfo;
+import com.researchspace.model.units.RSUnitDef;
+import com.researchspace.service.UserManager;
+import com.researchspace.service.inventory.InventoryPermissionUtils;
+import com.researchspace.service.inventory.SampleApiManager;
+import com.researchspace.service.inventory.SampleSiblingRowLock;
+import java.math.BigDecimal;
+import java.util.concurrent.atomic.AtomicBoolean;
+import org.apache.shiro.subject.Subject;
+import org.apache.shiro.util.ThreadContext;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
+
+/**
+ * The user-facing version a stock decrement advances. Two operations on one subsample can both load
+ * the entity at version N before either takes the row lock; the second must not reuse the number
+ * the first already committed, or the intermediate stock state stops being addressable by its
+ * version (Codex review, PR #1090).
+ */
+@ExtendWith(MockitoExtension.class)
+class SubSampleApiManagerImplUsageVersionTest {
+
+  @Mock private SubSampleDao subSampleDao;
+  @Mock private InventoryPermissionUtils invPermissions;
+  @Mock private SampleApiManager sampleApiMgr;
+
+  /**
+   * The sibling-set lock, taken off {@link SampleApiManager} onto its own one-method type so a lock
+   * primitive with no {@code User} stops reading as an ordinary public mutator (parallel review, L5
+   * and P4-S3). These tests are about the version read, not the lock, so it does nothing.
+   */
+  @Mock private SampleSiblingRowLock siblingRowLock;
+
+  @Mock private ApplicationEventPublisher publisher;
+  @Mock private InventoryEditLockTracker tracker;
+  @Mock private UserManager userManager;
+  @Mock private Subject subject;
+  @InjectMocks private SubSampleApiManagerImpl subSampleApiMgr;
+
+  private final User user = ownerNamed("someone");
+
+  @BeforeEach
+  void bindSubject() {
+    // setModifiedBy resolves the operating-as user through Shiro; bind a thread-local mock rather
+    // than mutating the global SecurityManager.
+    ThreadContext.bind(subject);
+  }
+
+  @AfterEach
+  void unbindSubject() {
+    ThreadContext.unbindSubject();
+  }
+
+  private static User ownerNamed(String username) {
+    User owner = new User(username);
+    owner.setId(7L);
+    return owner;
+  }
+
+  private SubSample subSampleAtVersion(long version) {
+    SubSample subSample = new SubSample();
+    subSample.setId(100L);
+    Sample parent = new Sample();
+    parent.setId(20L);
+    parent.setOwner(user);
+    subSample.setSample(parent);
+    subSample.setQuantity(millilitres("10"));
+    for (long v = subSample.getVersion(); v < version; v++) {
+      subSample.increaseVersion();
+    }
+    return subSample;
+  }
+
+  /** The edit-lock tracker reports an already-held lock, so the call takes no temporary lock. */
+  private void trackerGrantsTheLock() {
+    ApiInventoryEditLock granted = new ApiInventoryEditLock();
+    granted.setStatus(ApiInventoryEditLockStatus.WAS_ALREADY_LOCKED);
+    when(tracker.attemptToLockForEdit(any(), any())).thenReturn(granted);
+  }
+
+  private static QuantityInfo millilitres(String value) {
+    return new QuantityInfo(new BigDecimal(value), RSUnitDef.MILLI_LITRE.getId());
+  }
+
+  @Test
+  void versionAdvancesFromTheCommittedRowNotTheStaleCachedEntity() {
+    // Both requests loaded the entity at version 3. The other one committed 5 while this one waited
+    // on the row lock, and lockRowForUpdate hands back the same cached instance, so the entity
+    // still
+    // says 3. Bumping that would write 4 again over the committed 5.
+    SubSample cached = subSampleAtVersion(3L);
+    when(subSampleDao.exists(100L)).thenReturn(true);
+    when(subSampleDao.get(100L)).thenReturn(cached);
+    trackerGrantsTheLock();
+    when(subSampleDao.lockRowForUpdate(100L)).thenReturn(cached);
+    when(subSampleDao.getQuantityForUpdate(100L)).thenReturn(millilitres("6"));
+    when(subSampleDao.getVersionForUpdate(100L)).thenReturn(5L);
+    when(subSampleDao.save(any(SubSample.class))).thenAnswer(i -> i.getArgument(0));
+
+    subSampleApiMgr.registerApiSubSampleUsage(100L, millilitres("1"), user);
+
+    assertEquals(6L, cached.getVersion());
+  }
+
+  @Test
+  void versionStillAdvancesWhenTheRowMatchesTheCachedEntity() {
+    // The uncontended case: nothing committed while we waited, so the committed version equals the
+    // cached one and the bump is the ordinary +1.
+    SubSample cached = subSampleAtVersion(3L);
+    when(subSampleDao.exists(100L)).thenReturn(true);
+    when(subSampleDao.get(100L)).thenReturn(cached);
+    trackerGrantsTheLock();
+    when(subSampleDao.lockRowForUpdate(100L)).thenReturn(cached);
+    when(subSampleDao.getQuantityForUpdate(100L)).thenReturn(millilitres("10"));
+    when(subSampleDao.getVersionForUpdate(100L)).thenReturn(3L);
+    when(subSampleDao.save(any(SubSample.class))).thenAnswer(i -> i.getArgument(0));
+
+    subSampleApiMgr.registerApiSubSampleUsage(100L, millilitres("1"), user);
+
+    assertEquals(4L, cached.getVersion());
+  }
+
+  @Test
+  void readsTheCommittedVersionBeforeAnythingDirtiesTheEntity() {
+    // The committed version has to be read BEFORE this transaction dirties the subsample.
+    // getVersionForUpdate is an HQL query against the SubSample table, and under Hibernate's
+    // default AUTO flush mode a query flushes pending changes to the tables it touches first. So if
+    // setQuantity has already dirtied the entity, the flush writes the whole row, stale version
+    // included, and the scalar read then returns the value this transaction just wrote instead of
+    // the one the other transaction committed. The refresh becomes a no-op, the bump reissues the
+    // other decrement's version, and the intermediate stock state stops being addressable again
+    // (third Codex review, PR #1090).
+    //
+    // Mocks have no flush, so that ordering is modelled here: the stubbed query returns the
+    // entity's own version once the entity has been dirtied, which is exactly what a flush would
+    // leave behind, and the committed 5 only while it is still clean.
+    SubSample cached = spy(subSampleAtVersion(3L));
+    AtomicBoolean dirtied = new AtomicBoolean(false);
+    doAnswer(
+            invocation -> {
+              dirtied.set(true);
+              return invocation.callRealMethod();
+            })
+        .when(cached)
+        .setQuantity(any(QuantityInfo.class));
+    when(subSampleDao.exists(100L)).thenReturn(true);
+    when(subSampleDao.get(100L)).thenReturn(cached);
+    trackerGrantsTheLock();
+    when(subSampleDao.lockRowForUpdate(100L)).thenReturn(cached);
+    when(subSampleDao.getQuantityForUpdate(100L)).thenReturn(millilitres("6"));
+    when(subSampleDao.getVersionForUpdate(100L))
+        .thenAnswer(invocation -> dirtied.get() ? cached.getVersion() : 5L);
+    when(subSampleDao.save(any(SubSample.class))).thenAnswer(i -> i.getArgument(0));
+
+    subSampleApiMgr.registerApiSubSampleUsage(100L, millilitres("1"), user);
+
+    assertEquals(6L, cached.getVersion(), "the bump must land on top of the committed version");
+  }
+
+  @Test
+  void aUsageClampedToZeroAgainstExhaustedStockNeverTouchesTheStaleEntity() {
+    // Two List of Materials saves both load 10 ml at version 3. The first exhausts the subsample
+    // and
+    // commits 0 ml at version 5. This one then reads 0 as the locked scalar, so its positive usage
+    // clamps to zero and quantityChanged is false: nothing is saved. But its cached entity still
+    // holds the stale 10 ml, so anything that dirties that instance makes Hibernate's full-row
+    // flush write the 10 ml back and resurrect the exhausted stock (Codex review, PR #1090).
+    // Refreshing the version here is exactly such a mutation, so a no-op must leave the entity
+    // untouched.
+    SubSample cached = subSampleAtVersion(3L);
+    when(subSampleDao.exists(100L)).thenReturn(true);
+    when(subSampleDao.get(100L)).thenReturn(cached);
+    trackerGrantsTheLock();
+    when(subSampleDao.lockRowForUpdate(100L)).thenReturn(cached);
+    when(subSampleDao.getQuantityForUpdate(100L)).thenReturn(millilitres("0"));
+    // The exhausting writer committed version 5 alongside the 0 ml.
+    lenient().when(subSampleDao.getVersionForUpdate(100L)).thenReturn(5L);
+
+    subSampleApiMgr.registerApiSubSampleUsage(100L, millilitres("1"), user);
+
+    assertEquals(3L, cached.getVersion(), "a no-op must not advance or dirty the version");
+    verify(subSampleDao, never()).save(any(SubSample.class));
+  }
+
+  @Test
+  void aUsageThatChangesNothingLeavesTheVersionAlone() {
+    // Zero usage is a no-op read, so it must not consume a version even though the row was locked.
+    SubSample cached = subSampleAtVersion(3L);
+    when(subSampleDao.exists(100L)).thenReturn(true);
+    when(subSampleDao.get(100L)).thenReturn(cached);
+
+    subSampleApiMgr.registerApiSubSampleUsage(100L, millilitres("0"), user);
+
+    assertEquals(3L, cached.getVersion());
+  }
+}

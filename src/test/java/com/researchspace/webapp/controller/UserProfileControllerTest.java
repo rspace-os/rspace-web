@@ -9,6 +9,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -53,6 +55,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
 
 @ExtendWith(MockitoExtension.class)
 public class UserProfileControllerTest {
@@ -359,5 +362,112 @@ public class UserProfileControllerTest {
     assertEquals(1, ugs.getData().size());
     assertFalse(ugs.getData().get(0).getPrivateGroup());
     assertNotNull(ugs.getData().get(0).getGroupDisplayName());
+  }
+
+  @Test
+  public void updatePreferenceValueWithKeyMergesInsteadOfReplacing() {
+    // The whole UI_JSON_SETTINGS blob is one column: replacing it from the client meant two
+    // overlapping writers each dropped the other's key. With a key the server merges just that one.
+    when(usrMgr.getUserByUsername("any")).thenReturn(anyUser);
+    UserPreference merged =
+        new UserPreference(Preference.UI_JSON_SETTINGS, anyUser, "{\"A\":1,\"B\":2}");
+    when(usrMgr.mergeUiJsonSetting("B", "{\"value\":2}", "any")).thenReturn(merged);
+
+    AjaxReturnObject<String> response =
+        userProfileController.updatePreferenceValue(
+            "UI_JSON_SETTINGS",
+            "{\"value\":2}",
+            "B",
+            () -> "any",
+            mockRequest,
+            new MockHttpServletResponse());
+
+    assertEquals("{\"A\":1,\"B\":2}", response.getData());
+    verify(usrMgr, never()).setPreference(any(Preference.class), anyString(), anyString());
+  }
+
+  @Test
+  public void updatePreferenceValueWithoutKeyStillReplacesTheWholeValue() {
+    // Legacy JSP callers post no key and every other preference is a single scalar, so the
+    // whole-value path has to keep working untouched.
+    when(usrMgr.getUserByUsername("any")).thenReturn(anyUser);
+    UserPreference replaced = new UserPreference(Preference.UI_JSON_SETTINGS, anyUser, "whole");
+    when(usrMgr.setPreference(Preference.UI_JSON_SETTINGS, "whole", "any")).thenReturn(replaced);
+
+    AjaxReturnObject<String> response =
+        userProfileController.updatePreferenceValue(
+            "UI_JSON_SETTINGS",
+            "whole",
+            null,
+            () -> "any",
+            mockRequest,
+            new MockHttpServletResponse());
+
+    assertEquals("whole", response.getData());
+    verify(usrMgr, never()).mergeUiJsonSetting(anyString(), anyString(), anyString());
+  }
+
+  @Test
+  public void updatePreferenceValueReturns400WhenTheKeyedValueIsRejected() {
+    // A value that is not JSON, or a key no preference declares, is refused by the merge with an
+    // IllegalArgumentException carrying the catalog text. Left to the web tier that is a 500
+    // (live test 2026-09-08, row P5); the caller sent a bad request and should be told so.
+    when(usrMgr.getUserByUsername("any")).thenReturn(anyUser);
+    when(usrMgr.mergeUiJsonSetting("BAD", "not json", "any"))
+        .thenThrow(new IllegalArgumentException("not valid JSON"));
+    MockHttpServletResponse response = new MockHttpServletResponse();
+
+    AjaxReturnObject<String> result =
+        userProfileController.updatePreferenceValue(
+            "UI_JSON_SETTINGS", "not json", "BAD", () -> "any", mockRequest, response);
+
+    assertEquals(400, response.getStatus());
+    assertNull(result.getData());
+    assertEquals("not valid JSON", result.getErrorMsg().getErrorMessages().get(0));
+    verify(analMgr, never()).usersPreferencesChanged(any(User.class), any());
+  }
+
+  @Test
+  public void updatePreferenceValueTreatsABlankSuppliedKeyAsInvalidNotAbsent() {
+    // A supplied-but-blank key ("" or " ") used to be treated as if the parameter were absent,
+    // routing the request to setPreference and silently replacing the whole JSON blob, bypassing
+    // both the key validation and the locked merge (Copilot review, PR #1090). A supplied key must
+    // always reach the keyed path, where the merge rejects the invalid shape as a 400.
+    when(usrMgr.getUserByUsername("any")).thenReturn(anyUser);
+    when(usrMgr.mergeUiJsonSetting(anyString(), anyString(), anyString()))
+        .thenThrow(new IllegalArgumentException("bad key"));
+
+    for (String blank : java.util.List.of("", " ")) {
+      MockHttpServletResponse response = new MockHttpServletResponse();
+      AjaxReturnObject<String> result =
+          userProfileController.updatePreferenceValue(
+              "UI_JSON_SETTINGS", "{}", blank, () -> "any", mockRequest, response);
+      assertEquals(400, response.getStatus());
+      assertNull(result.getData());
+    }
+    verify(usrMgr, never()).setPreference(any(Preference.class), anyString(), anyString());
+  }
+
+  @Test
+  public void updatePreferenceValueRejectsAKeyOnAPreferenceThatIsNotTheJsonBlob() {
+    // Only UI_JSON_SETTINGS holds a JSON object. Quietly ignoring the key for any other preference
+    // would let a caller believe it merged one field while the whole value was replaced, so it is
+    // refused instead of silently doing something else.
+    when(messages.getMessage(
+            "errors.preference.keyNotSupported", new Object[] {"UI_CLIENT_SETTINGS"}))
+        .thenReturn("not a keyed preference");
+    MockHttpServletResponse servletResponse = new MockHttpServletResponse();
+
+    AjaxReturnObject<String> response =
+        userProfileController.updatePreferenceValue(
+            "UI_CLIENT_SETTINGS", "whole", "B", () -> "any", mockRequest, servletResponse);
+
+    // 400 like the other rejected shapes: without the status a client would treat this rejected
+    // update as successful (Copilot review, PR #1090)
+    assertEquals(400, servletResponse.getStatus());
+    assertNull(response.getData());
+    assertEquals("not a keyed preference", response.getErrorMsg().getErrorMessages().get(0));
+    verify(usrMgr, never()).mergeUiJsonSetting(anyString(), anyString(), anyString());
+    verify(usrMgr, never()).setPreference(any(Preference.class), anyString(), anyString());
   }
 }

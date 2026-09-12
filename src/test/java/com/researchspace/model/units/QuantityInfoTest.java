@@ -1,6 +1,7 @@
 package com.researchspace.model.units;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigDecimal;
@@ -47,5 +48,38 @@ public class QuantityInfoTest {
     QuantityInfo quantity1L = QuantityInfo.of(BigDecimal.valueOf(1), RSUnitDef.LITRE);
     QuantityInfo quantity1dot0L = QuantityInfo.of(BigDecimal.valueOf(1.0), RSUnitDef.LITRE);
     assertTrue(quantity1L.equals(quantity1dot0L));
+  }
+
+  @Test
+  void canStoreWithoutRoundingMatchesTheStored3dpScale() {
+    assertTrue(QuantityInfo.canStoreWithoutRounding(new BigDecimal("0.001")));
+    assertTrue(QuantityInfo.canStoreWithoutRounding(new BigDecimal("5")));
+    assertTrue(
+        QuantityInfo.canStoreWithoutRounding(new BigDecimal("0.5000")),
+        "trailing zeros beyond 3dp do not lose information");
+    assertTrue(QuantityInfo.canStoreWithoutRounding(new BigDecimal("0.000")));
+
+    assertFalse(
+        QuantityInfo.canStoreWithoutRounding(new BigDecimal("0.0005")),
+        "would round up to 0.001, storing more than was given");
+    assertFalse(
+        QuantityInfo.canStoreWithoutRounding(new BigDecimal("0.0004")),
+        "would round down to zero, silently discarding the amount");
+    assertFalse(QuantityInfo.canStoreWithoutRounding(null));
+  }
+
+  @Test
+  void canStoreWithoutRoundingRejectsValuesTooLargeForTheColumn() {
+    // The column is DECIMAL(19,3), so 16 integer digits is the ceiling. A value above it used to
+    // pass this guard (1E+30 has a NEGATIVE scale, which is trivially <= 3) and only failed at the
+    // INSERT, turning a bad request into a 500.
+    assertTrue(QuantityInfo.canStoreWithoutRounding(new BigDecimal("9999999999999999.999")));
+    assertTrue(QuantityInfo.canStoreWithoutRounding(new BigDecimal("1000000000000000")));
+
+    assertFalse(
+        QuantityInfo.canStoreWithoutRounding(new BigDecimal("1E+30")),
+        "negative scale must not be mistaken for a storable value");
+    assertFalse(QuantityInfo.canStoreWithoutRounding(new BigDecimal("10000000000000000")));
+    assertFalse(QuantityInfo.canStoreWithoutRounding(new BigDecimal("-1E+30")));
   }
 }

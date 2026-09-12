@@ -75,6 +75,23 @@ public class ApiExtraField extends IdentifiableNameableApiObject {
   @JsonProperty(value = "deleteFieldRequest", access = Access.WRITE_ONLY)
   private boolean deleteFieldRequest;
 
+  /**
+   * Identifies which entry of an operation definition produced this field (DevDocs/adr/0007).
+   * Resolved field names interpolate user input ({@code {processName}}, {@code {originName}}) and
+   * are localized, so the definition key is the field's stable identity: the next run of an
+   * operation reads the parent sample's fields over the API and recognises the previous generation
+   * by this key to continue from it. Persisted (RSDEV-1231) and returned on GET.
+   *
+   * <p>READ_ONLY: only the server sets it, when it builds an operation's fields
+   * (InventoryOperationRequestBuilder). A value in any request body is ignored at binding rather
+   * than rejected, on every endpoint, so a client that GETs a record and sends it back is not 400ed
+   * for a value it never chose (that rejection was tried and reverted twice). Ignoring it at
+   * binding is what makes "only an operation may claim to have generated a field" true by
+   * construction, with no write point or endpoint validator to remember it.
+   */
+  @JsonProperty(value = "operationFieldKey", access = Access.READ_ONLY)
+  private String operationFieldKey;
+
   /** The data type of this field */
   public enum ExtraFieldTypeEnum {
     @JsonProperty("text")
@@ -115,6 +132,9 @@ public class ApiExtraField extends IdentifiableNameableApiObject {
     setDeleted(field.isDeleted());
     setContent(field.getData());
     setGlobalId(field.getOid().toString());
+    // The stable identity of an operation-generated field, so the next run of that operation can
+    // recognise the previous generation's field by key rather than by its localized name.
+    setOperationFieldKey(field.getOperationFieldKey());
     if (field instanceof ExtraLinkField && ((ExtraLinkField) field).getLink() != null) {
       setLink(new ApiInventoryLink(((ExtraLinkField) field).getLink()));
     }

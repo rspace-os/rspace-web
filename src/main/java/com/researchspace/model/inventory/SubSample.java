@@ -47,6 +47,24 @@ import org.hibernate.search.mapper.pojo.mapping.definition.annotation.PropertyVa
 /** Represents RSInventory SubSample. */
 @Entity
 @Audited
+/*
+ * DELIBERATELY NOT @DynamicUpdate, unlike SampleEntity.
+ *
+ * A stock decrement computes from the row read under the lock, but Hibernate dirty-checks the entity
+ * against its LOADED STATE, which is the pre-lock snapshot the scalar reads never refresh. So a
+ * request that cached 5 g, waited while another writer committed a top-up to 15 g, then correctly
+ * read 15 g and deducted 10 g, assigns 5 g - equal to the cached value. Under @DynamicUpdate the
+ * quantity columns are then omitted from the UPDATE: the version and modification date advance, the
+ * operation reports success, and the row stays at 15 g with the stock never deducted. Proven by
+ * SampleDynamicUpdateIT.aStockDecrementAppliesEvenWhenItsResultEqualsTheCachedQuantity, which fails
+ * the moment this annotation is added (Codex review, P1).
+ *
+ * The full-row UPDATE is what makes the deduction land. Its cost is the field-level last-write-wins
+ * GenericDao.lockRowForUpdate documents and DevDocs/adr/0007 accepts: a name another user committed
+ * while this request queued for the lock is written back from the snapshot. That is the application
+ * norm for every unlocked write path, and the fix for it is a global optimistic-locking change, not
+ * an annotation here - which, as above, silently breaks stock accounting instead.
+ */
 @Getter
 @Setter
 @EqualsAndHashCode(callSuper = true)
