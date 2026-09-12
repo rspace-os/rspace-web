@@ -159,7 +159,7 @@
           }
         },
         "booking": {
-          "window": "End time must be after start time.",
+          "window": "Start time must be in the future and end time must be after start time.",
           "duration": "Bookings may not exceed 366 days.",
           "target": {
             "unavailable": "The selected target is not available for booking."

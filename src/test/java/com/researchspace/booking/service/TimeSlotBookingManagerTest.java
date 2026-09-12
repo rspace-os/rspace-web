@@ -40,7 +40,9 @@ import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.resourceaccess.ResourceAccess;
 import com.researchspace.service.resourceaccess.ResolvedResourceAccess;
 import com.researchspace.service.resourceaccess.ResourceAccessManager;
+import java.time.Clock;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -75,7 +77,8 @@ class TimeSlotBookingManagerTest {
           events,
           accessManager,
           ApiV2TimeSlotBookingResource.DESCRIPTION,
-          ApiV2BookingConfigurationResource.DESCRIPTION);
+          ApiV2BookingConfigurationResource.DESCRIPTION,
+          Clock.fixed(Instant.parse("2025-12-01T00:00:00Z"), ZoneOffset.UTC));
 
   @BeforeEach
   void setUp() {
@@ -143,6 +146,48 @@ class TimeSlotBookingManagerTest {
             null,
             Set.of(BookingEventKind.BOOKING, BookingEventKind.MAINTENANCE));
     verify(events).publishEvent(any(TimeSlotBookingAuditEvent.class));
+  }
+
+  @Test
+  void rejectsPastAndCurrentStartsBeforeSavingOrPublishing() {
+    when(configurationDao.lockActiveByTarget(any()))
+        .thenReturn(Optional.of(configuration(4L, 12L, true)));
+    for (String value : List.of("2025-11-30T23:55:00Z", "2025-12-01T00:00:00Z")) {
+      assertThrows(
+          BookingWindowException.class,
+          () ->
+              manager.createBooking(
+                  new TimeSlotBookingManager.Create(
+                      target(12L), instant(value), instant("2025-12-01T01:00:00Z"), null),
+                  actor,
+                  actor));
+    }
+    verify(bookingDao, never()).saveAndFlush(any());
+    verify(events, never()).publishEvent(any(TimeSlotBookingAuditEvent.class));
+  }
+
+  @Test
+  void rejectsMovingAFutureBookingIntoThePast() {
+    TimeSlotBooking existing = booking(41L, 12L, actor);
+    when(bookingDao.findReadableById(eq(41L), any())).thenReturn(Optional.of(existing));
+    when(configurationDao.lockActiveById(4L))
+        .thenReturn(Optional.of(existing.getBookingConfiguration()));
+    assertThrows(
+        BookingWindowException.class,
+        () ->
+            manager.updateBooking(
+                41L,
+                new TimeSlotBookingManager.Patch(
+                    instant("2025-11-30T23:55:00Z"),
+                    instant("2025-12-01T01:00:00Z"),
+                    false,
+                    null,
+                    null),
+                actor,
+                actor));
+    assertEquals(start(), existing.getStartTime());
+    verify(bookingDao, never()).saveAndFlush(any());
+    verify(events, never()).publishEvent(any(TimeSlotBookingAuditEvent.class));
   }
 
   @Test
