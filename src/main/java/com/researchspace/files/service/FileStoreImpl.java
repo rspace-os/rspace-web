@@ -41,6 +41,9 @@ public class FileStoreImpl implements FileStore {
       throws IOException {
     //  save to local file storage first
     URI localFile = localFileStore.save(fileProperty, sourceFile, behaviourOnDuplicate);
+    if (localFile == null) {
+      return null;
+    }
     // see if we've got external FS setup.
     Optional<ExternalFileStoreWithCredentials> extFileStoreOpt = getExternalFS(fileProperty);
     extFileStoreOpt.map(
@@ -56,6 +59,9 @@ public class FileStoreImpl implements FileStore {
       FileDuplicateStrategy behaviourOnDuplicate)
       throws IOException {
     URI localFile = localFileStore.save(fileProperty, inStream, fileName, behaviourOnDuplicate);
+    if (localFile == null) {
+      return null;
+    }
     Optional<ExternalFileStoreWithCredentials> extFileStoreOpt = getExternalFS(fileProperty);
     extFileStoreOpt.map(
         exFS -> doExternalSave(fileProperty, new File(localFile), behaviourOnDuplicate, exFS));

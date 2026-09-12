@@ -35,10 +35,16 @@ public interface FileStore {
   /**
    * Save a file to the path to be calculated from {@link FileProperty}.
    *
+   * <p>Both save overloads honor the duplicate strategy: {@code ERROR} returns {@code null} without
+   * changing the existing file, {@code REPLACE} overwrites it, and {@code AS_NEW} reserves a
+   * distinct path and updates the supplied metadata to reference it. On collision, the new filename
+   * uses a UUID and retains the original extension if it is at most 20 UTF-8 bytes. Longer
+   * extensions are omitted. A second collision fails without retrying.
+   *
    * @param fileProperty, a new constructed FileProperty,
    * @param sourceFile, specify the resource/file location
    * @param behaviourOnDuplicate, a {@link FileDuplicateStrategy}
-   * @return new file URI in file store.
+   * @return new file URI in file store, or {@code null} when a duplicate is rejected.
    */
   URI save(FileProperty fileProperty, File sourceFile, FileDuplicateStrategy behaviourOnDuplicate)
       throws IOException;
