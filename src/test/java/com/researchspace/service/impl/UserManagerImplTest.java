@@ -379,12 +379,31 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
     // The merged blob is one TEXT column (65535 chars). The UserPreference constructor fail-fast
     // validates that limit (SettingsType.validate), so a merge that would overflow throws before
     // anything is saved and the controller maps it to a 400; this test pins that the keyed path
-    // cannot reach the database with an oversized value (Copilot review, PR #1090).
-    userWithUiJsonSettings("{}");
-    String oversized = "{\"value\":\"" + "x".repeat(65_600) + "\"}";
+    // cannot reach the database with an oversized blob (Copilot review, PR #1090).
+    //
+    // The overflow is reached by ACCUMULATION, not by one huge value: the per-key ceiling (S6)
+    // rejects a single value big enough to overflow the column on its own, before the lock, so
+    // this guard now only fires when several within-ceiling values together exceed the column.
+    userWithUiJsonSettings("{\"GALLERY_VIEW_MODE\":{\"value\":\"" + "x".repeat(60_000) + "\"}}");
+    String withinPerKeyCeiling = "{\"value\":\"" + "x".repeat(8_000) + "\"}";
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> userManager.mergeUiJsonSetting("GALLERY_SORT_BY", withinPerKeyCeiling, "jbloggs"));
+    verify(userDao, never()).save(Mockito.any(User.class));
+  }
+
+  @Test
+  public void mergeUiJsonSettingRejectsASingleValueAboveThePerKeyCeiling() {
+    // The column-level guard above only fires once the MERGED blob overflows, so one allowed key
+    // holding a near-65535-char value passes it and then makes every later keyed write for that
+    // user overflow permanently: the same wedge the allowlist exists to prevent, reached through
+    // one key instead of many. The per-key ceiling is checked before the row lock, so an oversized
+    // value neither reaches the database nor holds a lock (parallel review, S6).
+    String oversized = "{\"value\":\"" + "x".repeat(9_000) + "\"}";
     assertThrows(
         IllegalArgumentException.class,
         () -> userManager.mergeUiJsonSetting("GALLERY_SORT_BY", oversized, "jbloggs"));
+    verify(userDao, never()).lockRowForUpdate(Mockito.anyLong());
     verify(userDao, never()).save(Mockito.any(User.class));
   }
 

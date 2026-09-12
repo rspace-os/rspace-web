@@ -1,7 +1,6 @@
 import { mapValues } from "es-toolkit";
 import React from "react";
 import axios from "@/common/axios";
-import type { UseState } from "../../util/types";
 
 /**
  * This constant ensures that we don't end up with clashing keys
@@ -113,7 +112,7 @@ export default function useUiPreference<T>(
   opts: {
     defaultValue: T;
   },
-): UseState<T> {
+): [T, (newValue: T) => void] {
   const { uiPreferences, setUiPreferences, pendingWrites } = React.useContext(UiPreferencesContext);
   const key = Symbol.keyFor(preference);
   let v = opts.defaultValue;
@@ -124,7 +123,12 @@ export default function useUiPreference<T>(
 
   return [
     value,
-    (newValue) => {
+    // Takes a VALUE, not React's SetStateAction. It was typed as a full setter but treated
+    // `newValue` as a value everywhere below, so `setPref(prev => prev + 1)` stored the function
+    // object in the context and JSON.stringify'd it into the POST body, persisting undefined
+    // (parallel review, FE12). Every caller passes a value; narrowing the type makes the updater
+    // form a compile error rather than a silent data loss.
+    (newValue: T) => {
       setValue(newValue);
       setUiPreferences((old: { [k in keyof typeof PREFERENCES]: unknown } | null) => {
         if (old === null) return old;

@@ -25,11 +25,11 @@ import {
 } from "./operationsConfig";
 import {
   amountTakenExceedsOrigin,
-  MAX_SUBSAMPLE_COUNT,
   quantityExceedsOrigin,
   temperatureBelowMin,
   temperatureExceedsMax,
   temperatureNotStorable,
+  validSubSampleCount,
 } from "./operationValidation";
 import { filterProcessNames } from "./processNames";
 import type { AmountMode, OperationInputs, OperationInputValue, OperationQuantity, PerSubsampleAmounts } from "./types";
@@ -165,6 +165,12 @@ function OperationDetailsStep({
       );
     }
     if (input.type === "integer") {
+      // The field carried min/max but neither error nor helperText, unlike every quantity and
+      // temperature field below: clearing it makes Number("") === 0, which fails the gate, so Next
+      // greyed out with nothing on screen explaining why (parallel review, FE10). Driven by the
+      // same predicate the step gate uses, so the two cannot disagree.
+      const min = input.min ?? 1;
+      const badCount = !validSubSampleCount(values[input.key], min, input.max);
       return (
         <TextField
           key={input.key}
@@ -173,7 +179,15 @@ function OperationDetailsStep({
           value={String(values[input.key] ?? "")}
           fullWidth
           margin="dense"
-          slotProps={{ htmlInput: { min: input.min ?? 1, max: MAX_SUBSAMPLE_COUNT, step: 1 } }}
+          error={badCount}
+          helperText={
+            badCount
+              ? input.max === undefined
+                ? label("operations.fields.countMin", { min })
+                : label("operations.fields.countRange", { min, max: input.max })
+              : undefined
+          }
+          slotProps={{ htmlInput: { min, max: input.max, step: 1 } }}
           onChange={(e) => set(input.key, Number(e.target.value))}
         />
       );

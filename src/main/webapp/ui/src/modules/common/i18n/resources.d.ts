@@ -4007,6 +4007,8 @@ export default interface Resources {
         "amountTakenEach": "Amount taken from each",
         "amountTakenExceedsOrigin": "Cannot take more than the original holds.",
         "count": "Number of new subsamples",
+        "countMin": "Enter a whole number of {min} or more.",
+        "countRange": "Enter a whole number between {min} and {max}.",
         "cryomedium": "Cryomedium",
         "eachAmount": "Amount per new subsample",
         "originAmountZero": "Subsample has an amount of 0.",
@@ -4057,12 +4059,13 @@ export default interface Resources {
         "parentHasNoTemplate": "The parent sample has no template, so this option is unavailable. Choose an existing template or none.",
         "pick": "Choose an existing template",
         "searchLabel": "Search templates",
-        "selectedLabel": "Selected template",
+        "selectedLabel": "Selected template: {name}",
         "valueFromSample": "From {name}",
         "valueNone": "None (ad-hoc sample)"
       },
       "wizard": {
         "failed": "The operation could not be completed",
+        "fieldReason": "{label}: {reason}",
         "headingWithProcess": "{operation}: {process}",
         "inProgress": "Performing operation…",
         "perform": "Perform",
@@ -5699,7 +5702,8 @@ export default interface Resources {
       "preference": {
         "invalidJsonValue": "The value for preference key ''{0}'' is not valid JSON.",
         "invalidKey": "''{0}'' is not a valid preference key.",
-        "keyNotSupported": "Preference ''{0}'' is stored as a single value, so it cannot be updated one key at a time."
+        "keyNotSupported": "Preference ''{0}'' is stored as a single value, so it cannot be updated one key at a time.",
+        "valueTooLarge": "The value for preference key ''{0}'' is too large. The limit is {1} characters."
       },
       "rateLimitExceeded": "You have exceeded the number of {0} requests. Please contact ResearchSpace support for assistance.",
       "reauthentication": {
@@ -6998,6 +7002,7 @@ export default interface Resources {
         "operation": {
           "amountModeMustBeAll": "This operation empties its origins, so the amount taken cannot be an explicit amount.",
           "amountModeNotApplicable": "This operation does not take from its origins, so the amount taken cannot be a whole-origin claim.",
+          "amountModeUnknown": "Unrecognised amount mode. Use \"explicit\" for an amount the user chose, or \"all\" to take the origin's whole quantity.",
           "amountTakenCategoryMismatch": "The amount taken must use the origin's measurement category (e.g. millilitres from a volume origin).",
           "amountTakenExceedsOrigin": "Cannot take more from an origin than it currently holds.",
           "amountTakenInvalid": "Each origin must specify a non-negative amount, with a unit, to take from it.",

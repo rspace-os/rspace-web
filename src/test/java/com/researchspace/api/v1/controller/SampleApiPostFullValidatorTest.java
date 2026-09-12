@@ -4,12 +4,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiQuantityInfo;
+import com.researchspace.api.v1.model.ApiSampleFullPost;
 import com.researchspace.api.v1.model.ApiSampleTemplate;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.units.RSUnitDef;
+import com.researchspace.service.inventory.SampleApiPostFullValidator;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -47,7 +49,7 @@ public class SampleApiPostFullValidatorTest extends InventoryRecordValidationTes
     apiSamplePost.setQuantity(new ApiQuantityInfo(BigDecimal.ONE, RSUnitDef.MILLI_LITRE.getId()));
 
     // lets run the validation
-    SamplesApiController.ApiSampleFullPost fullPost = new SamplesApiController.ApiSampleFullPost();
+    ApiSampleFullPost fullPost = new ApiSampleFullPost();
     fullPost.setApiSample(apiSamplePost);
     fullPost.setTemplate(baseTemplate);
 
@@ -81,7 +83,7 @@ public class SampleApiPostFullValidatorTest extends InventoryRecordValidationTes
     child.setQuantity(new ApiQuantityInfo(BigDecimal.ONE, RSUnitDef.MILLI_LITRE.getId()));
     apiSamplePost.setSubSamples(List.of(child));
 
-    SamplesApiController.ApiSampleFullPost fullPost = new SamplesApiController.ApiSampleFullPost();
+    ApiSampleFullPost fullPost = new ApiSampleFullPost();
     fullPost.setApiSample(apiSamplePost);
     fullPost.setTemplate(massTemplate);
 
@@ -111,7 +113,7 @@ public class SampleApiPostFullValidatorTest extends InventoryRecordValidationTes
 
     // check sample post with default fields (not specifying 'fields' array)
     ApiSampleWithFullSubSamples apiSamplePost = new ApiSampleWithFullSubSamples();
-    SamplesApiController.ApiSampleFullPost fullPost = new SamplesApiController.ApiSampleFullPost();
+    ApiSampleFullPost fullPost = new ApiSampleFullPost();
     fullPost.setApiSample(apiSamplePost);
     fullPost.setTemplate(
         sampleApiMgr.getSampleTemplateByIdWithPopulatedFields(

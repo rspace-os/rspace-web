@@ -84,6 +84,76 @@ describe("useUiPreference", () => {
     expect(typeof sent.time).toBe("number");
   });
 
+  it("writes two updates of ONE key in the order they were made", async () => {
+    // The per-key chain (previous.then(...)) exists so two writes of one key land in order: without
+    // it a slow first POST and a fast second one leave the server holding the OLDER value. No test
+    // covered it - replacing the chain with a bare `void write` passed every test in this file
+    // (parallel review, Q13).
+    const order: Array<string> = [];
+    let releaseFirst: () => void = () => undefined;
+    const firstInFlight = new Promise<void>((resolve) => (releaseFirst = resolve));
+    let seen = 0;
+    server.use(
+      http.get("/userform/ajax/preference", () => HttpResponse.json({})),
+      http.post("/userform/ajax/preference", async ({ request }) => {
+        const form = await request.formData();
+        const value = JSON.parse(String(form.get("value"))) as { value: string };
+        // The first write stalls until released, so a chain-less implementation would let the
+        // second overtake it.
+        if (++seen === 1) await firstInFlight;
+        order.push(value.value);
+        return HttpResponse.json({ data: "{}" });
+      }),
+    );
+
+    const { result } = renderHook(
+      () => useUiPreference<string | null>(PREFERENCES.GALLERY_VIEW_MODE, { defaultValue: null }),
+      { wrapper: UiPreferences },
+    );
+    await waitFor(() => expect(result.current).not.toBeNull());
+
+    act(() => {
+      result.current[1]("grid");
+      result.current[1]("list");
+    });
+    releaseFirst();
+
+    await waitFor(() => expect(order).toHaveLength(2));
+    expect(order).toEqual(["grid", "list"]);
+  });
+
+  it("keeps writing a key after one of its writes fails", async () => {
+    // The .catch on the chain is what stops a failed write wedging that key forever: the rejected
+    // promise would otherwise become the `previous` every later write of this key chains onto, so
+    // every subsequent save is dropped. Unverified before (parallel review, Q13).
+    const posted: Array<string> = [];
+    let attempts = 0;
+    server.use(
+      http.get("/userform/ajax/preference", () => HttpResponse.json({})),
+      http.post("/userform/ajax/preference", async ({ request }) => {
+        const form = await request.formData();
+        const value = JSON.parse(String(form.get("value"))) as { value: string };
+        if (++attempts === 1) return HttpResponse.error();
+        posted.push(value.value);
+        return HttpResponse.json({ data: "{}" });
+      }),
+    );
+    const reportedErrors = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    const { result } = renderHook(
+      () => useUiPreference<string | null>(PREFERENCES.GALLERY_VIEW_MODE, { defaultValue: null }),
+      { wrapper: UiPreferences },
+    );
+    await waitFor(() => expect(result.current).not.toBeNull());
+
+    act(() => result.current[1]("grid"));
+    await waitFor(() => expect(reportedErrors).toHaveBeenCalled());
+    act(() => result.current[1]("list"));
+
+    await waitFor(() => expect(posted).toEqual(["list"]));
+    reportedErrors.mockRestore();
+  });
+
   it("does not let a stalled write of one key block a different key", async () => {
     // The chain exists to order repeated writes of the SAME key and to report a failure once.
     // Sharing one chain across every key in a provider would make a single hung request block every

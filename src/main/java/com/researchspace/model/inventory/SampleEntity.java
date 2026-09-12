@@ -46,6 +46,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
+import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.envers.Audited;
 import org.hibernate.envers.RelationTargetAuditMode;
 import org.hibernate.search.mapper.pojo.automaticindexing.ReindexOnUpdate;
@@ -65,6 +66,25 @@ import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexingDe
  * Sample/SampleTemplate (or use TYPE()), not a "template" property.
  */
 @Audited
+/*
+ * Narrows every UPDATE to the columns that actually changed. lockSiblingRowsAndRecalculateTotal
+ * reads the sample UNLOCKED and deliberately so (taking its row lock would invert the
+ * sibling-set-before-row order every stock writer follows), then assigns the recomputed total and
+ * saves. With a full-row UPDATE that flush writes every column from this transaction's snapshot, so
+ * a rename another user committed in between is silently reverted. There is no optimistic locking
+ * to catch it: "version" here is the user-visible version in the global id, not a JPA @Version.
+ *
+ * The trade-off was always the application's last-write-wins norm (GenericDao, DevDocs/adr/0007),
+ * but this PR extended the exposure to deductStock, createNewListOfMaterials and
+ * updateListOfMaterials, which did not previously write the parent Sample row up front (parallel
+ * review, P3). A real @Version is the general fix and a far larger change: it would turn concurrent
+ * edits into OptimisticLockException, which the API has no mapping for.
+ *
+ * COST: this disables Hibernate's cached static UPDATE and regenerates the SQL per flush. Not
+ * measured here against the workbench-bag write path, where 7024 accumulated rows already gave 35s
+ * writes.
+ */
+@DynamicUpdate
 @Getter
 @Setter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
@@ -502,7 +522,8 @@ public abstract class SampleEntity extends InventoryRecord
    * <p>The no-argument version reads the sibling entities, which a transaction sees as of its own
    * snapshot, so two writers on different siblings each compute the total from stale stock and one
    * decrement is lost from it. Callers that must be exact under concurrency pass values read from
-   * the rows under a lock instead (see {@code SampleApiManager.recalculateTotalFromLockedRows}).
+   * the rows under a lock instead (see {@code
+   * SampleApiManager.lockSiblingRowsAndRecalculateTotal}).
    */
   public void setTotalQuantityFrom(List<QuantityInfo> subSampleQuantities) {
     QuantityUtils quantityUtils = new QuantityUtils();

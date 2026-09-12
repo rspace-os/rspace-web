@@ -38,7 +38,7 @@ public class InventoryMaterialUsageHelperTest {
 
   @Mock private InventoryRecordRetriever invRecRetriever;
   @Mock private SubSampleApiManager subSampleMgr;
-  @Mock private SampleApiManager sampleApiMgr;
+  @Mock private SampleSiblingRowLock siblingRowLock;
   @Mock private InventoryPermissionUtils invPermissions;
   @InjectMocks private InventoryMaterialUsageHelper helper;
 
@@ -74,12 +74,12 @@ public class InventoryMaterialUsageHelperTest {
 
     helper.lockParentSampleSets(List.of(ninety, eighty, eightyAgain), List.of(stored), user);
 
-    InOrder inOrder = inOrder(sampleApiMgr);
-    inOrder.verify(sampleApiMgr).recalculateTotalFromLockedRows(70L);
-    inOrder.verify(sampleApiMgr).recalculateTotalFromLockedRows(80L);
-    inOrder.verify(sampleApiMgr).recalculateTotalFromLockedRows(90L);
+    InOrder inOrder = inOrder(siblingRowLock);
+    inOrder.verify(siblingRowLock).lockSiblingRowsAndRecalculateTotal(70L);
+    inOrder.verify(siblingRowLock).lockSiblingRowsAndRecalculateTotal(80L);
+    inOrder.verify(siblingRowLock).lockSiblingRowsAndRecalculateTotal(90L);
     // deduped: one set lock per sample, however many of its subsamples the list names
-    verify(sampleApiMgr, times(1)).recalculateTotalFromLockedRows(80L);
+    verify(siblingRowLock, times(1)).lockSiblingRowsAndRecalculateTotal(80L);
   }
 
   @Test
@@ -91,7 +91,7 @@ public class InventoryMaterialUsageHelperTest {
     helper.lockParentSampleSets(List.of(new ApiMaterialUsage(sampleRecord, null)), null, user);
     helper.lockParentSampleSets(null, null, user);
 
-    verifyNoInteractions(sampleApiMgr);
+    verifyNoInteractions(siblingRowLock);
   }
 
   @Test
@@ -107,6 +107,6 @@ public class InventoryMaterialUsageHelperTest {
     assertThrows(
         RuntimeException.class, () -> helper.lockParentSampleSets(List.of(usage), null, user));
 
-    verifyNoInteractions(sampleApiMgr);
+    verifyNoInteractions(siblingRowLock);
   }
 }

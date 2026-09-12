@@ -105,7 +105,9 @@ describe("getApiErrorDetail", () => {
         },
       },
     };
-    expect(getApiErrorDetail(error, "fallback")).toBe("Cannot take more from an origin than it currently holds");
+    expect(getApiErrorDetail(error, "fallback")).toBe(
+      "Cannot take more from an origin than it currently holds (origin 1)",
+    );
   });
 
   test("shows only the first of several errors", () => {
@@ -117,7 +119,29 @@ describe("getApiErrorDetail", () => {
         },
       },
     };
-    expect(getApiErrorDetail(error, "fallback")).toBe("first");
+    expect(getApiErrorDetail(error, "fallback")).toBe("first (origin 1)");
+  });
+
+  test("names which origin failed, so a Pool rejection is actionable", () => {
+    // Stripping the whole path left "Cannot take more than the subsample holds" with no indication
+    // which of five pooled origins was at fault (parallel review, FE11). Reported 1-based: the user
+    // reads it, nothing sends it back.
+    const error = {
+      response: {
+        data: {
+          message: "Errors detected: 1",
+          errors: ["origins[3].amountTaken: Cannot take more from an origin than it currently holds"],
+        },
+      },
+    };
+    expect(getApiErrorDetail(error, "fallback")).toBe(
+      "Cannot take more from an origin than it currently holds (origin 4)",
+    );
+  });
+
+  test("adds no origin marker to an error that is not about an origin", () => {
+    const error = { response: { data: { errors: ["newSample.name: This field is too long"] } } };
+    expect(getApiErrorDetail(error, "fallback")).toBe("This field is too long");
   });
 
   test("keeps an error that has no path prefix", () => {

@@ -1,8 +1,8 @@
-package com.researchspace.api.v1.controller;
+package com.researchspace.service.inventory;
 
-import com.researchspace.api.v1.controller.SamplesApiController.ApiSampleFullPost;
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiQuantityInfo;
+import com.researchspace.api.v1.model.ApiSampleFullPost;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.api.v1.service.ApiFieldsHelper;
@@ -20,7 +20,14 @@ import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
 
-/** Validator for creating a new sample */
+/**
+ * Validator for creating a new sample: the cross-field rules that need more than the posted body,
+ * namely the template it must conform to.
+ *
+ * <p>Lives in {@code service.inventory} rather than in {@code api.v1.controller} because the same
+ * check runs inside the operations transaction (see {@code OperationTemplateConformanceValidator}),
+ * and the service layer may not import the controller layer (parallel review, L1).
+ */
 @Component
 public class SampleApiPostFullValidator implements Validator {
 

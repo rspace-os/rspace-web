@@ -21,7 +21,9 @@ import com.researchspace.service.inventory.InventoryOperationConfigRegistry;
 import com.researchspace.service.inventory.InventoryOperationInputValidator;
 import com.researchspace.service.inventory.InventoryOperationManager;
 import com.researchspace.service.inventory.InventoryOperationRequestBuilder;
+import com.researchspace.service.inventory.OperationTemplateConformanceValidator;
 import com.researchspace.service.inventory.SampleApiManager;
+import com.researchspace.service.inventory.SampleSiblingRowLock;
 import com.researchspace.service.inventory.SubSampleApiManager;
 import com.researchspace.session.SessionTimeZoneUtils;
 import java.math.BigDecimal;
@@ -52,6 +54,8 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
   @Autowired private SubSampleApiManager subSampleApiMgr;
   @Autowired private InventoryOperationConfigRegistry operationConfigs;
   @Autowired private MessageSource messageSource;
+  @Autowired private OperationTemplateConformanceValidator templateConformance;
+  @Autowired private SampleSiblingRowLock siblingRowLock;
 
   /** Stateless; one instance per bean, as elsewhere in the codebase. */
   private static final QuantityUtils quantityUtils = new QuantityUtils();
@@ -63,8 +67,7 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
       Map<String, Object> inputs,
       Long templateId,
       String documentedByGlobalId,
-      User user,
-      BuiltRequestValidation callerValidation)
+      User user)
       throws BindException {
     InventoryOperationConfig definition =
         operationConfigs
@@ -144,7 +147,9 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
       }
       built.getOrigins().get(i).setExpectedQuantity(origins.get(i).getExpectedQuantity());
     }
-    return performOperation(built, user, () -> callerValidation.validate(built));
+    // Template conformance runs on the request just built, inside this transaction and before any
+    // origin is read, so the template validated is the template the sample is created from.
+    return performOperation(built, user, () -> templateConformance.validate(built, user));
   }
 
   /**
@@ -232,12 +237,12 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
    *
    * <p>Locking, in acquisition order. First, every distinct parent sample's subsample rows are
    * locked as a set, ascending by sample id, via {@link
-   * SampleApiManager#recalculateTotalFromLockedRows}: the recompute of each parent's denormalised
-   * total must read the sibling rows currently, and taking them any later would deadlock, because
-   * each origin's own row is one of them. Then each origin is locked through {@link
-   * SubSampleApiManager#lockSubSampleForEdit}, ascending by subsample id (a re-ask for a row the
-   * sibling set already holds, plus the permission check and 404), so a concurrent operation on the
-   * same origin waits and then decrements from the committed quantity, not a stale read (code
+   * SampleApiManager#lockSiblingRowsAndRecalculateTotal}: the recompute of each parent's
+   * denormalised total must read the sibling rows currently, and taking them any later would
+   * deadlock, because each origin's own row is one of them. Then each origin is locked through
+   * {@link SubSampleApiManager#lockSubSampleForEdit}, ascending by subsample id (a re-ask for a row
+   * the sibling set already holds, plus the permission check and 404), so a concurrent operation on
+   * the same origin waits and then decrements from the committed quantity, not a stale read (code
    * review, finding 1). Each check below reads the origin's quantity as a locked scalar ({@link
    * SubSampleApiManager#getQuantityForUpdate}): the locked entity itself holds this transaction's
    * snapshot, and a check against that would pass on stock a concurrent committer already took.
@@ -277,7 +282,7 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
       parentSampleIds.add(
           subSampleApiMgr.assertUserCanEditSubSample(origin.getId(), user).getSample().getId());
     }
-    parentSampleIds.forEach(sampleApiMgr::recalculateTotalFromLockedRows);
+    parentSampleIds.forEach(siblingRowLock::lockSiblingRowsAndRecalculateTotal);
 
     QuantityInfo firstOriginQuantity = null;
     // Whether any origin's whole-origin claim no longer matches its live quantity. Collected rather

@@ -17,7 +17,6 @@ import { useTranslation } from "react-i18next";
 import SubmitSpinnerButton from "@/components/SubmitSpinnerButton";
 import useUiPreference, { PREFERENCES } from "@/hooks/api/useUiPreference";
 import useViewportDimensions from "@/hooks/browser/useViewportDimensions";
-import { formatList } from "@/modules/common/i18n/listFormat";
 import { mkAlert } from "@/stores/contexts/Alert";
 import { CELSIUS, categoryOfUnit, toCommonUnit } from "@/stores/definitions/Units";
 import AlwaysNewFactory from "@/stores/models/Factory/AlwaysNewFactory";
@@ -56,7 +55,7 @@ import TemplateStep, { type TemplateSelection } from "./TemplateStep";
 import {
   initialTemplateSelection,
   resolveTemplateId,
-  templateSelectionBlock,
+  templateBlockReason,
   templateSelectionFor,
   templateSelectionToDefault,
   templateStepValid,
@@ -326,20 +325,12 @@ function OperationWizard({
       try {
         const template = await getRootStore().searchStore.getTemplate(parentTemplateId, null, new AlwaysNewFactory());
         if (checkId !== parentCheckIdRef.current) return;
-        const { blocked, missingFields } = templateSelectionBlock(
-          template.fields.map((f) => ({
-            name: f.name,
-            mandatory: f.mandatory,
-            hasDefault:
-              (f.selectedOptions?.length ?? 0) > 0 ||
-              (f.content !== null && f.content !== undefined && String(f.content).trim() !== ""),
-          })),
-        );
-        if (blocked) {
+        const reason = templateBlockReason(template, i18n.resolvedLanguage ?? i18n.language);
+        if (reason.blocked) {
           setParentTemplateError(
             t("operations.template.mandatoryFieldsError", {
-              count: missingFields.length,
-              fields: formatList(missingFields, i18n.resolvedLanguage ?? i18n.language),
+              count: reason.count,
+              fields: reason.fields,
             }),
           );
           return;
@@ -536,17 +527,22 @@ function OperationWizard({
   // resets the created amount's prefilled unit (the amounts step will offer the new category's units,
   // and a stale unit from the old category must not survive into the request). The amount taken FROM
   // the origin always stays in the origin's own category, so its unit is kept.
-  const onTemplateSelectionChange = (next: TemplateSelection) => {
+  const onTemplateSelectionChange = (next: React.SetStateAction<TemplateSelection>) => {
     const eachAmountFrom = operation?.effect.eachAmountFrom;
+    // The step may send an updater rather than a value, because its post-lookup write crosses an
+    // await (FE6). Resolving it here decides the category reset; the WRITE below resolves it again
+    // against the freshest state, which is the point. Updaters are pure, so running one twice is
+    // safe.
+    const resolved = typeof next === "function" ? next(templateSelection) : next;
     const previousCategory = templateSelection.quantityCategory ?? originCategory;
-    const nextCategory = next.quantityCategory ?? originCategory;
+    const nextCategory = resolved.quantityCategory ?? originCategory;
     if (eachAmountFrom && nextCategory !== previousCategory) {
       setValues((v) => {
         const each = v[eachAmountFrom] as OperationQuantity | undefined;
         return { ...v, [eachAmountFrom]: { numericValue: each?.numericValue ?? 1, unitId: UNSET_UNIT } };
       });
     }
-    setTemplateSelection(next);
+    setTemplateSelection((previous) => (typeof next === "function" ? next(previous) : next));
   };
 
   // Auto-derive the sample name "<origin> <process>" and de-duplicate it against existing sample
