@@ -35,7 +35,6 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang3.Validate;
-import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.envers.Audited;
 import org.hibernate.search.mapper.pojo.automaticindexing.ReindexOnUpdate;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.GenericField;
@@ -49,26 +48,23 @@ import org.hibernate.search.mapper.pojo.mapping.definition.annotation.PropertyVa
 @Entity
 @Audited
 /*
- * Narrows every UPDATE to the columns that actually changed, for the same reason SampleEntity
- * carries it - and on a wider window.
+ * DELIBERATELY NOT @DynamicUpdate, unlike SampleEntity.
  *
- * registerApiSubSampleUsage loads the subsample, WAITS on the sibling-set lock, then re-reads it
- * through lockSubSampleForEdit. Hibernate serves that re-read from the persistence context, so the
- * entity still holds this transaction's pre-wait snapshot of every column; the method says as much
- * ("the lock serialises, it does not refresh") and works around it for quantity and version by
- * reading those two as scalars under the lock. Nothing does that for name, description or tags. With
- * a full-row UPDATE, setQuantity dirties the entity and the flush writes those stale columns back,
- * so a rename another user committed while this request queued for the lock is silently reverted.
+ * A stock decrement computes from the row read under the lock, but Hibernate dirty-checks the entity
+ * against its LOADED STATE, which is the pre-lock snapshot the scalar reads never refresh. So a
+ * request that cached 5 g, waited while another writer committed a top-up to 15 g, then correctly
+ * read 15 g and deducted 10 g, assigns 5 g - equal to the cached value. Under @DynamicUpdate the
+ * quantity columns are then omitted from the UPDATE: the version and modification date advance, the
+ * operation reports success, and the row stays at 15 g with the stock never deducted. Proven by
+ * SampleDynamicUpdateIT.aStockDecrementAppliesEvenWhenItsResultEqualsTheCachedQuantity, which fails
+ * the moment this annotation is added (Codex review, P1).
  *
- * The window here is the LARGER of the two: the subsample row is the one every stock writer
- * deliberately blocks on, so the wait is exactly when a concurrent edit is most likely to land.
- * There is no optimistic locking to catch it - "version" is the user-visible version in the global
- * id, not a JPA @Version (parallel review, A7).
- *
- * COST: as on SampleEntity, this disables Hibernate's cached static UPDATE and regenerates the SQL
- * per flush. Not measured.
+ * The full-row UPDATE is what makes the deduction land. Its cost is the field-level last-write-wins
+ * GenericDao.lockRowForUpdate documents and DevDocs/adr/0007 accepts: a name another user committed
+ * while this request queued for the lock is written back from the snapshot. That is the application
+ * norm for every unlocked write path, and the fix for it is a global optimistic-locking change, not
+ * an annotation here - which, as above, silently breaks stock accounting instead.
  */
-@DynamicUpdate
 @Getter
 @Setter
 @EqualsAndHashCode(callSuper = true)
