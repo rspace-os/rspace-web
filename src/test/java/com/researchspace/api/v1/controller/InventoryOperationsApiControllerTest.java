@@ -1,7 +1,6 @@
 package com.researchspace.api.v1.controller;
 
 import static com.researchspace.api.v1.controller.InventoryOperationPostValidatorTest.aliquotRequest;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -25,19 +24,15 @@ import com.researchspace.api.v1.model.ApiInventoryOperationResult;
 import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
-import com.researchspace.api.v1.service.ApiFieldsHelper;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.DTOControllerValidatorImpl;
-import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.properties.IPropertyHolder;
-import com.researchspace.service.inventory.ApiExtraFieldsHelper;
 import com.researchspace.service.inventory.InventoryOperationConfigRegistry;
 import com.researchspace.service.inventory.InventoryOperationManager;
 import com.researchspace.service.inventory.SampleApiManager;
 import com.researchspace.service.inventory.SubSampleApiManager;
 import com.researchspace.webapp.config.WebConfig;
-import jakarta.ws.rs.NotFoundException;
 import java.math.BigDecimal;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -48,7 +43,6 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.validation.BeanPropertyBindingResult;
@@ -82,17 +76,6 @@ class InventoryOperationsApiControllerTest {
     controller.inputValidator = new DTOControllerValidatorImpl();
     controller.operationPostValidator = InventoryOperationPostValidatorTest.newValidator();
     controller.operationConfigs = new InventoryOperationConfigRegistry();
-    controller.sampleApiPostValidator = new SampleApiPostValidator();
-    // The per-extra-field validator is a collaborator these tests do not assert on, but
-    // ValidationUtils.invokeValidator asserts supports() before delegating, so it has to answer
-    // true rather than a mock's default false.
-    ApiExtraFieldsHelper extraFieldHelper = mock(ApiExtraFieldsHelper.class);
-    when(extraFieldHelper.supports(any())).thenReturn(true);
-    ReflectionTestUtils.setField(
-        controller.sampleApiPostValidator, "extraFieldHelper", extraFieldHelper);
-    controller.sampleApiPostFullValidator = new SampleApiPostFullValidator();
-    ReflectionTestUtils.setField(
-        controller.sampleApiPostFullValidator, "fieldHelper", mock(ApiFieldsHelper.class));
     controller.inventoryOperationManager = operationManager;
   }
 
@@ -114,26 +97,12 @@ class InventoryOperationsApiControllerTest {
     return request;
   }
 
-  /**
-   * The template-conformance check the controller hands to the manager, which runs it inside the
-   * operation's transaction on the request the server built (Copilot review, PR #1090). Captured
-   * after a controller call so these tests can exercise it the way the manager does, against a
-   * built request.
-   */
-  private InventoryOperationManager.BuiltRequestValidation handedInValidation() throws Exception {
-    ArgumentCaptor<InventoryOperationManager.BuiltRequestValidation> captor =
-        ArgumentCaptor.forClass(InventoryOperationManager.BuiltRequestValidation.class);
-    verify(operationManager)
-        .performOperation(eq("aliquot"), any(), any(), any(), any(), eq(user), captor.capture());
-    return captor.getValue();
-  }
-
   @Test
   void validRequestReachesTheManagerAndReturnsItsResult() throws Exception {
     ApiInventoryOperationPost request = aliquotInputs();
     ApiSampleWithFullSubSamples created = new ApiSampleWithFullSubSamples("Aliquots");
     when(operationManager.performOperation(
-            eq("aliquot"), eq(request.getOrigins()), any(), any(), any(), eq(user), any()))
+            eq("aliquot"), eq(request.getOrigins()), any(), any(), any(), eq(user)))
         .thenReturn(created);
 
     ApiSampleWithFullSubSamples returned =
@@ -144,33 +113,10 @@ class InventoryOperationsApiControllerTest {
     @SuppressWarnings("unchecked")
     ArgumentCaptor<Map<String, Object>> inputs = ArgumentCaptor.forClass(Map.class);
     verify(operationManager)
-        .performOperation(eq("aliquot"), any(), inputs.capture(), any(), any(), eq(user), any());
+        .performOperation(eq("aliquot"), any(), inputs.capture(), any(), any(), eq(user));
     assertTrue(
         inputs.getValue().get("eachAmount") instanceof ApiQuantityInfo,
         "the bound quantity Map must reach the manager typed");
-    InventoryOperationManager.BuiltRequestValidation validation = handedInValidation();
-    assertDoesNotThrow(() -> validation.validate(aliquotRequest()));
-  }
-
-  @Test
-  void rejectsATemplateIdThatDoesNotResolveToAReadableTemplate() throws Exception {
-    // Mirrors POST /samples: a bogus templateId must be a clean 400, not a failure after the
-    // manager has started mutating. The check runs inside the manager's transaction on the built
-    // request, so it is asserted here by running the validation the controller hands in.
-    ApiInventoryOperationPost request = aliquotInputs();
-    request.setTemplateId(999L);
-    when(sampleApiMgr.getSampleTemplateByIdWithPopulatedFields(999L, user))
-        .thenThrow(new NotFoundException("no template"));
-
-    controller.performOperation(request, new BeanPropertyBindingResult(request, "request"), user);
-
-    ApiInventoryOperationPost built = aliquotRequest();
-    built.getNewSample().setTemplateId(999L);
-    InventoryOperationManager.BuiltRequestValidation validation = handedInValidation();
-    BindException rejection = assertThrows(BindException.class, () -> validation.validate(built));
-    assertEquals(
-        "errors.inventory.sample.templateNotFound",
-        rejection.getFieldErrors("newSample.templateId").get(0).getCode());
   }
 
   @Test
@@ -217,34 +163,6 @@ class InventoryOperationsApiControllerTest {
     verifyNoInteractions(operationManager);
   }
 
-  @Test
-  void rejectsNewSubSamplesOutsideTheChosenTemplatesCategory() throws Exception {
-    // The server derives the sample's total from its children, so the template's unit must be
-    // checked against every child the builder produced, not only the aggregate (code review,
-    // finding 5).
-    ApiInventoryOperationPost request = aliquotInputs();
-    request.setTemplateId(7L);
-    SampleTemplate volumeTemplate = new SampleTemplate();
-    volumeTemplate.setDefaultUnitId(RSUnitDef.MILLI_LITRE.getId());
-    when(sampleApiMgr.getSampleTemplateByIdWithPopulatedFields(7L, user))
-        .thenReturn(volumeTemplate);
-
-    controller.performOperation(request, new BeanPropertyBindingResult(request, "request"), user);
-
-    ApiInventoryOperationPost built = aliquotRequest();
-    built.getNewSample().setTemplateId(7L);
-    built
-        .getNewSample()
-        .getSubSamples()
-        .get(0)
-        .setQuantity(new ApiQuantityInfo(new BigDecimal("0.5"), RSUnitDef.GRAM.getId()));
-    InventoryOperationManager.BuiltRequestValidation validation = handedInValidation();
-    BindException rejection = assertThrows(BindException.class, () -> validation.validate(built));
-    assertEquals(
-        "errors.inventory.sample.unitIncompatibleWithTemplate",
-        rejection.getFieldErrors("newSample.subSamples[0].quantity").get(0).getCode());
-  }
-
   // --- the typed facades (M6) ---
 
   private static ApiInventoryOperationRequests.Origin facadeOrigin(
@@ -280,29 +198,6 @@ class InventoryOperationsApiControllerTest {
   }
 
   @Test
-  void templateConformanceBoundsTheBuiltSampleNameLikeTheSamplesEndpointDoes() throws Exception {
-    // SamplesApiController.validateCreateSampleInput runs sampleApiPostValidator AND
-    // sampleApiPostFullValidator; this path ran only the second, so the name/description/tag length
-    // rules never applied. EditInfo.name is varchar(255), and nothing between the input validator
-    // (which only checks that a "text" input is a CharSequence) and the entity bounded it, so an
-    // over-long sampleName reached Hibernate inside the transaction, after the origin locks were
-    // taken (parallel review).
-    ApiInventoryOperationPost request = aliquotInputs();
-    when(operationManager.performOperation(
-            eq("aliquot"), any(), any(), any(), any(), eq(user), any()))
-        .thenReturn(new ApiSampleWithFullSubSamples("Aliquots"));
-    controller.performOperation(request, new BeanPropertyBindingResult(request, "request"), user);
-
-    ApiInventoryOperationPost built = aliquotRequest();
-    built.getNewSample().setName("x".repeat(256));
-    BindException thrown =
-        assertThrows(BindException.class, () -> handedInValidation().validate(built));
-    assertTrue(
-        thrown.getFieldErrors().stream().anyMatch(e -> "newSample.name".equals(e.getField())),
-        () -> "expected a newSample.name rejection, got: " + thrown.getFieldErrors());
-  }
-
-  @Test
   void facadeFieldRenamesEveryCorePathToTheFieldTheCallerSent() {
     // Single-origin: the list the core works with collapses to the singular the client sent.
     assertEquals("origin.amountTaken", facadeField("origins[0].amountTaken", true));
@@ -330,8 +225,7 @@ class InventoryOperationsApiControllerTest {
   void typedFacadeCreatesThroughTheSameManagerCallAndAnswers201WithALocation() throws Exception {
     ApiSampleWithFullSubSamples created = new ApiSampleWithFullSubSamples("Aliquots");
     created.setId(55L);
-    when(operationManager.performOperation(
-            eq("aliquot"), any(), any(), any(), any(), eq(user), any()))
+    when(operationManager.performOperation(eq("aliquot"), any(), any(), any(), any(), eq(user)))
         .thenReturn(created);
     originReadsBackAs(100L);
     ApiInventoryOperationRequests.Aliquot request = aliquotFacade();
@@ -355,13 +249,7 @@ class InventoryOperationsApiControllerTest {
     ArgumentCaptor<Map<String, Object>> inputs = ArgumentCaptor.forClass(Map.class);
     verify(operationManager)
         .performOperation(
-            eq("aliquot"),
-            origins.capture(),
-            inputs.capture(),
-            eq(42L),
-            eq("SD99"),
-            eq(user),
-            any());
+            eq("aliquot"), origins.capture(), inputs.capture(), eq(42L), eq("SD99"), eq(user));
     assertEquals(Long.valueOf(100L), origins.getValue().get(0).getId());
     assertEquals(millilitres("0.6"), origins.getValue().get(0).getAmountTaken());
     assertEquals(
@@ -371,8 +259,7 @@ class InventoryOperationsApiControllerTest {
 
   @Test
   void destroyAnswers200WithANullSampleAndTheOriginAsItStands() throws Exception {
-    when(operationManager.performOperation(
-            eq("destroy"), any(), any(), any(), any(), eq(user), any()))
+    when(operationManager.performOperation(eq("destroy"), any(), any(), any(), any(), eq(user)))
         .thenReturn(null);
     originReadsBackAs(100L);
     ApiInventoryOperationRequests.Destroy request = new ApiInventoryOperationRequests.Destroy();
@@ -391,8 +278,7 @@ class InventoryOperationsApiControllerTest {
     ArgumentCaptor<List<ApiInventoryOperationOriginUpdate>> origins =
         ArgumentCaptor.forClass(List.class);
     verify(operationManager)
-        .performOperation(
-            eq("destroy"), origins.capture(), eq(Map.of()), any(), any(), eq(user), any());
+        .performOperation(eq("destroy"), origins.capture(), eq(Map.of()), any(), any(), eq(user));
     // No amount: the manager's builder takes the whole origin. The expected quantity travels.
     assertNull(origins.getValue().get(0).getAmountTaken());
     assertEquals(millilitres("5"), origins.getValue().get(0).getExpectedQuantity());
@@ -401,8 +287,7 @@ class InventoryOperationsApiControllerTest {
   @Test
   void passageSendsNoAmountAndStillReachesTheManager() throws Exception {
     // The structural validator must accept an absent amount where the definition takes nothing.
-    when(operationManager.performOperation(
-            eq("passage"), any(), any(), any(), any(), eq(user), any()))
+    when(operationManager.performOperation(eq("passage"), any(), any(), any(), any(), eq(user)))
         .thenReturn(new ApiSampleWithFullSubSamples("HeLa p3"));
     originReadsBackAs(100L);
     ApiInventoryOperationRequests.Passage request = new ApiInventoryOperationRequests.Passage();
@@ -442,8 +327,7 @@ class InventoryOperationsApiControllerTest {
         "origins[0].amountTaken",
         "errors.inventory.operation.amountTakenExceedsOrigin",
         "Cannot take more from an origin than it currently holds.");
-    when(operationManager.performOperation(
-            eq("aliquot"), any(), any(), any(), any(), eq(user), any()))
+    when(operationManager.performOperation(eq("aliquot"), any(), any(), any(), any(), eq(user)))
         .thenThrow(new BindException(coreErrors));
     ApiInventoryOperationRequests.Aliquot request = aliquotFacade();
 
@@ -479,30 +363,5 @@ class InventoryOperationsApiControllerTest {
         "errors.inventory.operation.duplicateOrigin",
         rejection.getFieldErrors("origins[1].globalId").get(0).getCode());
     verifyNoInteractions(operationManager);
-  }
-
-  @Test
-  void acceptsNewSubSamplesInAnotherUnitOfTheTemplatesCategory() throws Exception {
-    // The template fixes the measurement category, not the exact unit, so microlitre children under
-    // a millilitre template are a legitimate request: the check above must not have tightened into
-    // unit equality (code review, finding 5).
-    ApiInventoryOperationPost request = aliquotInputs();
-    request.setTemplateId(7L);
-    SampleTemplate volumeTemplate = new SampleTemplate();
-    volumeTemplate.setDefaultUnitId(RSUnitDef.MILLI_LITRE.getId());
-    when(sampleApiMgr.getSampleTemplateByIdWithPopulatedFields(7L, user))
-        .thenReturn(volumeTemplate);
-
-    controller.performOperation(request, new BeanPropertyBindingResult(request, "request"), user);
-
-    ApiInventoryOperationPost built = aliquotRequest();
-    built.getNewSample().setTemplateId(7L);
-    built
-        .getNewSample()
-        .getSubSamples()
-        .get(0)
-        .setQuantity(new ApiQuantityInfo(new BigDecimal("500"), RSUnitDef.MICRO_LITRE.getId()));
-    InventoryOperationManager.BuiltRequestValidation validation = handedInValidation();
-    assertDoesNotThrow(() -> validation.validate(built));
   }
 }

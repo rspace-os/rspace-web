@@ -94,12 +94,33 @@ const FIELD_PATH_PREFIX = /^[A-Za-z_]\w*(?:\[\d+\]|\.\w+)+:\s*/;
  * @arg fallback  Passed through to {@link getErrorMessage} when there is no detail.
  */
 export function getApiErrorDetail(error: unknown, fallback: string): string {
-  return Parsers.objectPath(["response", "data", "errors"], error)
-    .flatMap(Parsers.isArray)
-    .flatMap(([first]) => (typeof first === "undefined" ? Result.Error<unknown>([]) : Result.Ok(first)))
-    .flatMap(Parsers.isString)
-    .map((detail) => detail.replace(FIELD_PATH_PREFIX, "").trim())
-    .flatMap((detail) => (detail.length > 0 ? Result.Ok(detail) : Result.Error<string>([])))
-    .orElseTry(() => Result.Ok(getErrorMessage(error, fallback)))
-    .orElse(fallback);
+  return (
+    Parsers.objectPath(["response", "data", "errors"], error)
+      .flatMap(Parsers.isArray)
+      .flatMap(([first]) => (typeof first === "undefined" ? Result.Error<unknown>([]) : Result.Ok(first)))
+      .flatMap(Parsers.isString)
+      .map(withOriginIndex)
+      .flatMap((detail) => (detail.length > 0 ? Result.Ok(detail) : Result.Error<string>([])))
+      // Always Ok, so this is the last step: there is no trailing .orElse, which was unreachable and
+      // read as a live fallback (parallel review, FE11).
+      .orElseTry(() => Result.Ok(getErrorMessage(error, fallback)))
+      .orElse(fallback)
+  );
+}
+
+/** An `origins[N]` path, whose index is the one part of the path the user needs. */
+const ORIGIN_INDEX = /^origins\[(\d+)\]/;
+
+/**
+ * The reason, with the request path stripped - except that an origin's index is kept.
+ *
+ * Stripping the whole path turned a Pool rejection into "Cannot take more than the subsample holds"
+ * with no indication which of five origins was at fault, leaving the user to guess (parallel
+ * review, FE11). The index is 1-based here because it is read by a person, not sent back.
+ */
+function withOriginIndex(detail: string): string {
+  const origin = ORIGIN_INDEX.exec(detail);
+  const reason = detail.replace(FIELD_PATH_PREFIX, "").trim();
+  if (!origin || reason.length === 0) return reason;
+  return `${reason} (origin ${Number(origin[1]) + 1})`;
 }

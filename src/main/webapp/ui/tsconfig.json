@@ -20,7 +20,12 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      // The backend's own resources, read by tests that must stay pinned to the server's files
+      // (operations_config.json). A seven-level relative path out of the Vite root was unreadable
+      // and broke on any move (parallel review, FE13); vite.config.ts resolves this via
+      // tsconfigPaths, and vitestAliases repeats it for the test runs that bypass that.
+      "@resources/*": ["../../resources/*"]
     },
     "resolveJsonModule": true,
     "lib": ["ES2024", "DOM", "DOM.Iterable"],
