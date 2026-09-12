@@ -26,12 +26,12 @@ import org.springframework.web.bind.annotation.ResponseStatus;
  *
  * <p>Two ways in. The generic {@code POST /operations} is the wizard's, internal and unpublished:
  * the operation is named in the body and the inputs travel as a map. The seven typed {@code POST
- * /operations/<key>} endpoints are the public API (plan-operations-server-builds.md M6, shapes
- * frozen in operations-facade-design-m0.md): one request body per operation whose fields are that
- * definition's input keys, origins by global id, and one response envelope for all seven, the
- * created sample (null for Destroy) with each origin as it stands afterwards. Both run the same
- * validation and the same transactional core; a new operation is still a new config entry, plus one
- * typed shape here once it is public.
+ * /operations/<key>} endpoints are the public API (DevDocs/adr/0007 M6, shapes frozen in
+ * DevDocs/adr/0007): one request body per operation whose fields are that definition's input keys,
+ * origins by global id, and one response envelope for all seven, the created sample (null for
+ * Destroy) with each origin as it stands afterwards. Both run the same validation and the same
+ * transactional core; a new operation is still a new config entry, plus one typed shape here once
+ * it is public.
  */
 @RequestMapping("/api/inventory/v1/operations")
 public interface InventoryOperationsApi {

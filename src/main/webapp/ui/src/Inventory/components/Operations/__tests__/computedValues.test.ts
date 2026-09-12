@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyComputedValues, type ComputedContext, gatherParentFields } from "../computedValues";
+import { applyComputedValues, type ComputedContext } from "../computedValues";
 import type { InventoryOperation } from "../operationsConfig";
 
 function opWith(computed: InventoryOperation["effect"]["computed"]): InventoryOperation {
@@ -74,27 +74,17 @@ describe("applyComputedValues", () => {
   });
 });
 
-describe("gatherParentFields", () => {
-  it("combines the parent sample's template fields and its ad-hoc extra fields", () => {
-    const combined = gatherParentFields({
-      fields: [{ name: "Template field", content: "t" }],
-      extraFields: [{ name: "Passage number", content: "2" }],
+describe("parentFields drawn from both of the parent's field lists", () => {
+  it("finds a parentSampleField that came from extraFields, so Passage increments X to X+1 (regression)", () => {
+    // The Passage "stuck at 1" bug: the passage number is a user-added custom field, so it is in the
+    // parent's extraFields, not its template-defined `fields`. A caller that passes only `fields`
+    // misses it and increment falls back to start (1); both lists have to be combined so increment
+    // sees "2" -> 3.
+    const result = applyComputedValues(opWith(passageComputed), {
+      parentFields: [...[], ...[{ name: "Passage number", content: "2" }]],
+      values: {},
+      resolveFieldName,
     });
-    expect(combined).toEqual([
-      { name: "Template field", content: "t" },
-      { name: "Passage number", content: "2" },
-    ]);
-  });
-
-  it("finds a parentSampleField that lives in extraFields, so Passage increments X to X+1 (regression)", () => {
-    // The Passage "stuck at 1" bug: the passage number is a user-added custom field, so it is in
-    // extraFields, not the template-defined `fields`. Reading only `fields` misses it and increment
-    // falls back to start (1). gatherParentFields must combine both so increment sees "2" -> 3.
-    const parentFields = gatherParentFields({
-      fields: [],
-      extraFields: [{ name: "Passage number", content: "2" }],
-    });
-    const result = applyComputedValues(opWith(passageComputed), { parentFields, values: {}, resolveFieldName });
     expect(result.passageNumber).toBe(3);
   });
 });
@@ -148,10 +138,10 @@ describe("parentSampleField matching", () => {
 
   it("matches a keyed field gathered from either of the parent's two field lists", () => {
     // Both lists must be searched: a Passage number can be a template field or an ad-hoc custom
-    // one. Asserting that gatherParentFields merely preserves the property would prove nothing -
-    // it spreads both arrays and always did, so such a test passes with the key matching removed
-    // entirely (parallel review, I11). This goes through the lookup instead, with a same-named
-    // decoy in the other list so only key matching can produce the right answer.
+    // one. Asserting that a gather helper merely preserves the property would prove nothing - a
+    // spread of both arrays passes such a test with the key matching removed entirely (parallel
+    // review, I11). This goes through the lookup instead, with a same-named decoy in the other list
+    // so only key matching can produce the right answer.
     for (const listName of ["fields", "extraFields"] as const) {
       const keyed = {
         name: "Passagenummer",
@@ -159,12 +149,10 @@ describe("parentSampleField matching", () => {
         operationFieldKey: "operations.passage.numberField",
       };
       const decoy = { name: "Passage number", content: "99", operationFieldKey: null };
-      const parentFields = gatherParentFields({
-        fields: listName === "fields" ? [keyed] : [decoy],
-        extraFields: listName === "extraFields" ? [keyed] : [decoy],
-      });
+      const fields = listName === "fields" ? [keyed] : [decoy];
+      const extraFields = listName === "extraFields" ? [keyed] : [decoy];
       const values = applyComputedValues(opWith(passageComputed), {
-        parentFields,
+        parentFields: [...fields, ...extraFields],
         values: {},
         resolveFieldName,
       });

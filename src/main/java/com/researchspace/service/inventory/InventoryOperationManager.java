@@ -89,9 +89,9 @@ public interface InventoryOperationManager {
   }
 
   /**
-   * The server-built path (plan-operations-server-builds.md, M3): validates {@code inputs} against
-   * the definition's declared inputs ({@link InventoryOperationInputValidator}), builds the request
-   * the core executes from the definition, the origins' live state and those inputs ({@link
+   * The server-built path (DevDocs/adr/0007, M3): validates {@code inputs} against the definition's
+   * declared inputs ({@link InventoryOperationInputValidator}), builds the request the core
+   * executes from the definition, the origins' live state and those inputs ({@link
    * InventoryOperationRequestBuilder}), then runs the same transactional core as {@link
    * #performOperation(ApiInventoryOperationPost, User, InTransactionValidation)}, unchanged.
    *

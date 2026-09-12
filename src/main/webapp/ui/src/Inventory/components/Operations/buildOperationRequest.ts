@@ -1,16 +1,17 @@
 /**
  * Turns an operation definition plus the user's collected input values into the request the wizard
- * POSTs (buildOperationInputsRequest) and into the wizard's model of the sample the server builds
- * from it (buildOperationRequest, the shape the endpoint accepted before the server started
- * building the sample itself, plan-operations-server-builds.md M4 and M5). The model is what the
- * confirmation preview is checked against, since the preview and the server build can drift; its
- * server-side parity is pinned by InventoryOperationsInputsShapeMVCIT. Pure and operation-agnostic: it
- * only follows the effect spec, so a new operation needs a new config entry, not new code here (see
- * DevDocs/adr/0007).
+ * POSTs (buildOperationInputsRequest). Pure and operation-agnostic: it only follows the effect spec,
+ * so a new operation needs a new config entry, not new code here (see DevDocs/adr/0007).
  *
- * The provenance/documentation link(s) and text fields (e.g. Cryomedium) go on the new sample only,
- * never on the subsamples it creates; custom fields added to an origin itself (Destroy's disposed
- * date) travel on the origin update. Each origin's amount-taken is a positive decrement; the backend
+ * The server builds the created sample and all of its generated fields itself (DevDocs/adr/0007)
+ * (InventoryOperationRequestBuilder), so only what the user chose travels: the declared inputs by
+ * key, each origin's amount taken, the template and the documentation target. This module used to
+ * carry a second implementation of that build, as the wizard's own model of it, but it had no
+ * production caller and could drift from the server while its tests stayed green, so it was deleted
+ * (parallel review). Server-side parity is pinned by InventoryOperationsInputsShapeMVCIT and
+ * InventoryOperationRequestBuilderTest.
+ *
+ * Each origin's amount-taken is a positive decrement; the backend
  * rejects taking more than the origin holds (HTTP 400, DevDocs/adr/0007) and clamps at zero only as
  * defence-in-depth (DevDocs/adr/0007). `templateId` is chosen by the user in the wizard's template step
  * (none / an existing template / a template created from the origin's sample); null means an ad-hoc
@@ -18,28 +19,17 @@
  * null and only the origins are affected.
  */
 import type { InventoryOperation } from "./operationsConfig";
-import { validSubSampleCount } from "./operationValidation";
 import type {
   AmountMode,
   OperationExtraField,
   OperationInputs,
   OperationInputsRequest,
-  OperationNewSample,
   OperationOrigin,
   OperationOriginUpdate,
   OperationQuantity,
-  OperationRequest,
   PerSubsampleAmounts,
-  ResolveLabel,
 } from "./types";
 import { UNSET_UNIT } from "./types";
-
-/**
- * The documentation link is a wizard-level feature rather than a per-operation declaration, so it
- * carries this fixed key, the same one the server stamps on the link it builds
- * (InventoryOperationRequestBuilder.DOCUMENTATION_LINK_KEY).
- */
-const DOCUMENTATION_LINK_KEY = "operations.documentationLink";
 
 function quantityValue(values: OperationInputs, key: string): OperationQuantity {
   return values[key] as OperationQuantity;
@@ -89,11 +79,8 @@ type BuildParams = {
   values: OperationInputs;
   /** One or more origin subsamples. A single-origin operation passes one; Pool passes several. */
   origins: Array<OperationOrigin>;
-  resolveLabel: ResolveLabel;
   /** The template for the new sample, resolved by the wizard's template step. null = ad-hoc. */
   templateId: number | null;
-  /** Optional SOP link chosen in the documentation step; added as an IsDocumentedBy link. */
-  documentationLink?: { fieldName: string; targetGlobalId: string };
   /** How the amount taken is decided across origins (DevDocs/adr/0007). Defaults to "same" (single shared
    *  amount), which is also every single-origin operation's mode. */
   amountMode?: AmountMode;
@@ -102,7 +89,7 @@ type BuildParams = {
 };
 
 /**
- * The request the wizard POSTs (plan-operations-server-builds.md, M4). The server builds the sample
+ * The request the wizard POSTs (DevDocs/adr/0007, M4). The server builds the sample
  * and its generated fields itself, so only what the user chose travels: the declared inputs by key,
  * each origin's amount taken (decided exactly as for the model below, since the server
  * compare-and-swaps a whole-origin amount against the live quantity), the template and the
@@ -128,9 +115,15 @@ export function buildOperationInputsRequest(
   };
 }
 
-/** One update per origin: its amount taken, how it was decided, and any fields the operation adds to it. */
+/**
+ * One update per origin: its amount taken and how it was decided.
+ *
+ * Fields the operation adds to the origin itself (Destroy's disposed date) are NOT built here: the
+ * server builds them from the definition (InventoryOperationRequestBuilder), so a client-sent copy
+ * was mapped on every request and then dropped by the only caller (parallel review).
+ */
 function buildOriginUpdates(params: BuildParams): Array<OperationOriginUpdate> {
-  const { operation, values, origins, resolveLabel, amountMode = "same", perSubsampleAmounts = {} } = params;
+  const { operation, values, origins, amountMode = "same", perSubsampleAmounts = {} } = params;
   const { effect } = operation;
 
   // The unit used when an amount-taken has to be defaulted (a no-op zero) and the origin carries no
@@ -171,104 +164,9 @@ function buildOriginUpdates(params: BuildParams): Array<OperationOriginUpdate> {
     return { numericValue: 0, unitId: origin.quantity?.unitId ?? eachAmountUnit ?? UNSET_UNIT };
   };
 
-  // Custom fields added to the origin subsample itself (Destroy's disposed date), as opposed to the
-  // textFields added to the created sample. Content comes from a named input (usually a computed
-  // value). Inventory subsample fields have no native date type, so a date is stored as text.
-  const originFields: Array<OperationExtraField> = (effect.originFields ?? []).map((spec) => ({
-    name: resolveLabel(spec.nameKey),
-    type: spec.type ?? "text",
-    newFieldRequest: true,
-    operationFieldKey: spec.nameKey,
-    content: String(values[spec.contentFrom] ?? ""),
-  }));
-
   return origins.map((origin) => ({
     id: origin.id,
     amountMode: takesWholeOrigin ? "all" : "explicit",
     amountTaken: amountTakenFor(origin),
-    ...(originFields.length ? { extraFields: originFields } : {}),
   }));
-}
-
-export function buildOperationRequest(params: BuildParams): OperationRequest {
-  const { operation, values, origins, resolveLabel, templateId, documentationLink } = params;
-  const { effect } = operation;
-  const originUpdates = buildOriginUpdates(params);
-
-  // A terminal operation (noOutput, e.g. Destroy) creates no sample: it only acts on its origins.
-  let newSample: OperationNewSample | null = null;
-  if (!operation.noOutput && effect.nameFrom && effect.countFrom && effect.eachAmountFrom) {
-    const count = Number(values[effect.countFrom]);
-    if (!validSubSampleCount(count)) {
-      throw new Error(`Invalid subsample count ${String(values[effect.countFrom])}`);
-    }
-    const eachAmount = quantityValue(values, effect.eachAmountFrom);
-    const name = String(values[effect.nameFrom]);
-
-    // Provenance links point back to each origin; the display name may interpolate inputs
-    // (e.g. {processName}) and the origin's own name as {originName}. Each link spec fans out to one
-    // link per origin, so a single-origin operation yields one link and Pool yields one HasPart link
-    // per pooled subsample (DevDocs/adr/0007). Pool's fieldNameKey includes {originName}, but two
-    // distinct subsamples may share a name, so uniqueness is enforced by withUniqueFieldNames below
-    // rather than assumed here. The optional documentation link is one more link; all of them land
-    // on the created sample only.
-    const links: Array<OperationExtraField> = effect.links.flatMap((spec) =>
-      origins.map((origin) => ({
-        name: resolveLabel(spec.fieldNameKey, { ...values, originName: origin.name }),
-        type: "link" as const,
-        newFieldRequest: true as const,
-        operationFieldKey: spec.fieldNameKey,
-        link: {
-          relationType: spec.relationType,
-          targetGlobalId: origin.globalId,
-          versionPin: null,
-        },
-      })),
-    );
-
-    if (documentationLink) {
-      links.push({
-        name: documentationLink.fieldName,
-        type: "link",
-        newFieldRequest: true,
-        operationFieldKey: DOCUMENTATION_LINK_KEY,
-        link: {
-          relationType: "IsDocumentedBy",
-          targetGlobalId: documentationLink.targetGlobalId,
-          versionPin: null,
-        },
-      });
-    }
-
-    const textFields: Array<OperationExtraField> = (effect.textFields ?? []).map((spec) => ({
-      name: resolveLabel(spec.nameKey),
-      type: "text",
-      newFieldRequest: true,
-      operationFieldKey: spec.nameKey,
-      content: String(values[spec.contentFrom] ?? ""),
-    }));
-
-    // The process links (provenance + documentation) belong on the created sample, not on the
-    // subsamples it creates, so each subsample carries no extra fields.
-    const subSamples = Array.from({ length: count }, () => ({
-      quantity: { numericValue: eachAmount.numericValue, unitId: eachAmount.unitId },
-      extraFields: [] as Array<OperationExtraField>,
-    }));
-
-    newSample = {
-      name,
-      templateId,
-      quantity: { numericValue: eachAmount.numericValue * count, unitId: eachAmount.unitId },
-      extraFields: withUniqueFieldNames([...links, ...textFields]),
-      subSamples,
-    };
-
-    if (effect.storageTempFrom) {
-      const temp = quantityValue(values, effect.storageTempFrom);
-      newSample.storageTempMin = { ...temp };
-      newSample.storageTempMax = { ...temp };
-    }
-  }
-
-  return { operationType: operation.key, origins: originUpdates, newSample };
 }

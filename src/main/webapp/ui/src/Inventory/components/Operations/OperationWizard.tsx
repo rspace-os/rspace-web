@@ -129,9 +129,24 @@ function toOrigin(origin: SubSampleModel): OperationOrigin {
   };
 }
 
-/** A subsample's quantity in its category's atomic unit, or 0 when it has no quantity. */
+/**
+ * A subsample's quantity in its category's atomic unit, or 0 when it has no quantity or holds one
+ * this module cannot convert.
+ *
+ * toCommonUnit THROWS ("Unknown unit: N") for any unit outside volume/mass/dimensionless, and
+ * molarity (ids 11-14) and concentration (15-17) are real, server-supported inventory units that a
+ * subsample can genuinely hold. Because this runs during render (representativeOrigin) and
+ * ProcessAction mounts the wizard as soon as the selection is processable, that throw took out the
+ * whole context menu - the same failure the categoryOfUnit comment below describes, reached through
+ * a different helper. categoryOfUnit is the total unit-to-category test, so gate on it.
+ *
+ * 0 is the safe answer: an unconvertible origin sorts as smallest and becomes representative, and
+ * allSameCategory is already false for those units, so Pool stays disabled either way.
+ */
 function commonQuantity(origin: SubSampleModel): number {
-  return origin.quantity ? toCommonUnit(getValue(origin.quantity), getUnitId(origin.quantity)) : 0;
+  if (!origin.quantity) return 0;
+  const unitId = getUnitId(origin.quantity);
+  return categoryOfUnit(unitId) === null ? 0 : toCommonUnit(getValue(origin.quantity), unitId);
 }
 
 /**
@@ -648,7 +663,6 @@ function OperationWizard({
         operation,
         values,
         origins: origins.map(toOrigin),
-        resolveLabel,
         templateId,
         documentedByGlobalId: documentation?.globalId ?? null,
         amountMode,

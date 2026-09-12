@@ -24,11 +24,11 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MvcResult;
 
 /**
- * The seven typed operation endpoints (plan-operations-server-builds.md M6), each posted in the
- * shape frozen in operations-facade-design-m0.md: the created sample and each origin's remaining
- * quantity come back in one envelope (D2), a creating operation answers 201 with a Location,
- * Destroy 200; plus the facade-only rules a unit test cannot reach end to end: every error names a
- * field the caller sent, a stale expectedQuantity is a 409, and the server defaults apply.
+ * The seven typed operation endpoints (DevDocs/adr/0007 M6), each posted in the shape frozen in
+ * DevDocs/adr/0007: the created sample and each origin's remaining quantity come back in one
+ * envelope (D2), a creating operation answers 201 with a Location, Destroy 200; plus the
+ * facade-only rules a unit test cannot reach end to end: every error names a field the caller sent,
+ * a stale expectedQuantity is a 409, and the server defaults apply.
  *
  * <p>Not run automatically (extends a real-transaction MVC base).
  */
