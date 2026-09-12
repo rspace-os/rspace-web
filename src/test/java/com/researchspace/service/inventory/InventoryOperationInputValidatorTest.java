@@ -2,6 +2,7 @@ package com.researchspace.service.inventory;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.model.units.RSUnitDef;
@@ -91,6 +92,46 @@ class InventoryOperationInputValidatorTest {
                   + error.getCode()
                   + ", which interpolates the raw declared TYPE into a translated sentence.");
     }
+  }
+
+  /**
+   * The quantity each created subsample gets must be strictly positive.
+   *
+   * <p>Zero passed every check: {@code validateAmount} rejects only negatives, and the delegated
+   * {@code SampleApiPostValidator} does the same. So an Aliquot with a positive {@code amountTaken}
+   * and {@code eachAmount} of zero deducted real stock from the origin and created a subsample
+   * holding nothing. The wizard forbids it client-side ({@code detailsValid}) and the operation
+   * validator enforced it server-side before validation moved to the inputs map, so this restores a
+   * rule the redesign dropped (Codex review, P2).
+   *
+   * <p>Scoped to the input the definition names in {@code effect.eachAmountFrom}, so an operation
+   * that deliberately takes nothing from its origin (Passage: no {@code amountTakenFrom} at all) is
+   * untouched.
+   */
+  @Test
+  void everyOperationRejectsACreatedAmountOfZero() {
+    for (String operation :
+        List.of("aliquot", "passage", "pool", "derive", "cryopreserve", "revive")) {
+      String createdAmountKey = registry.get(operation).orElseThrow().effect().eachAmountFrom();
+      assertNotNull(createdAmountKey, operation + " is expected to declare eachAmountFrom");
+      Map<String, Object> inputs = goldenFor(operation);
+      inputs.put(createdAmountKey, millilitres("0"));
+
+      assertSingleErrorOn(
+          validate(operation, inputs),
+          createdAmountKey,
+          "errors.inventory.operation.createdAmountNotPositive");
+    }
+  }
+
+  @Test
+  void aZeroAmountTakenIsStillAccepted() {
+    // Only the CREATED amount gained a positivity rule. Taking nothing from the origin is a real
+    // case the definitions rely on, and nothing here should start rejecting it.
+    Map<String, Object> inputs = aliquot();
+    inputs.put("amountTaken", millilitres("0"));
+
+    assertEquals(List.of(), validate("aliquot", inputs).getAllErrors());
   }
 
   @Test
@@ -212,10 +253,24 @@ class InventoryOperationInputValidatorTest {
 
   @Test
   void negativeQuantityIsAFieldErrorOnItsKey() {
+    // Asserted on amountTaken rather than eachAmount: eachAmount is the definition's created
+    // amount,
+    // which has the stricter "greater than zero" rule of its own (Codex review, P2), so a negative
+    // there is reported under that code instead. This keeps the plain negative rule covered.
+    Map<String, Object> inputs = aliquot();
+    inputs.put("amountTaken", millilitres("-1"));
+    assertSingleErrorOn(
+        validate("aliquot", inputs), "amountTaken", "errors.inventory.quantity.negative");
+  }
+
+  @Test
+  void aNegativeCreatedAmountIsReportedUnderThePositivityRule() {
     Map<String, Object> inputs = aliquot();
     inputs.put("eachAmount", millilitres("-1"));
     assertSingleErrorOn(
-        validate("aliquot", inputs), "eachAmount", "errors.inventory.quantity.negative");
+        validate("aliquot", inputs),
+        "eachAmount",
+        "errors.inventory.operation.createdAmountNotPositive");
   }
 
   @Test
