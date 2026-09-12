@@ -516,8 +516,11 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
     }
   }
 
-  private static void validateWindow(Date start, Date end) {
-    if (start == null || end == null || !end.after(start)) {
+  private void validateWindow(Date start, Date end) {
+    if (start == null
+        || end == null
+        || !end.after(start)
+        || !start.toInstant().isAfter(clock.instant())) {
       throw new BookingWindowException();
     }
     if (Duration.between(start.toInstant(), end.toInstant())

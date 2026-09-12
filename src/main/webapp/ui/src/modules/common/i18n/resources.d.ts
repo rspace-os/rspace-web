@@ -5820,7 +5820,7 @@ export default interface Resources {
             "target": {
               "unavailable": "The selected target is not available for booking."
             },
-            "window": "End time must be after start time."
+            "window": "Start time must be in the future and end time must be after start time."
           },
           "bookingConfiguration": {
             "buffer": {

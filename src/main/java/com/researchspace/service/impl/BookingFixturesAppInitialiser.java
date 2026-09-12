@@ -199,13 +199,13 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
       logout();
     }
 
-    LocalDate today = LocalDate.now(FIXTURE_DATE_ZONE);
+    LocalDate fixtureDate = LocalDate.now(FIXTURE_DATE_ZONE).plusDays(1);
     try {
       login(new UsernamePasswordToken(FIXTURE_USER, devUserPassword, false));
       ensureBooking(
           instruments.get(0),
           configurations.get(0),
-          today,
+          fixtureDate,
           9,
           0,
           10,
@@ -215,7 +215,7 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
       ensureBooking(
           instruments.get(0),
           configurations.get(0),
-          today,
+          fixtureDate,
           13,
           0,
           14,
@@ -225,7 +225,7 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
       ensureBooking(
           instruments.get(1),
           configurations.get(1),
-          today,
+          fixtureDate,
           10,
           0,
           12,
@@ -235,7 +235,7 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
       ensureBooking(
           instruments.get(2),
           configurations.get(2),
-          today,
+          fixtureDate,
           8,
           0,
           9,
@@ -245,7 +245,7 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
       ensureBooking(
           instruments.get(3),
           configurations.get(3),
-          today,
+          fixtureDate,
           14,
           0,
           16,
@@ -255,7 +255,7 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
       ensureBooking(
           instruments.get(3),
           configurations.get(3),
-          today,
+          fixtureDate,
           23,
           30,
           0,
