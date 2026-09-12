@@ -138,6 +138,81 @@ public class StockWriterTransactionIsolationTest {
   }
 
   /**
+   * No type an advisor reaches may declare a method name that is annotated {@code MANDATORY}
+   * somewhere else.
+   *
+   * <p>The MANDATORY lock primitives come from two sources. Three are declared in the XML ({@code
+   * lockSampleForEdit}, {@code lockSubSampleForEdit}, {@code getQuantityForUpdate}); the rest carry
+   * {@code @Transactional(propagation = MANDATORY)} on the implementing method, which works only
+   * because no {@code txAdvice} pointcut reaches their declaring type. Every advisor referencing
+   * {@code txAdvice} runs at {@code order="2"} and ends in a {@code <tx:method name="*"/>}
+   * catch-all, so the moment such a type IS reached the XML wins and the attribute becomes
+   * REQUIRED.
+   *
+   * <p>The concrete hazard: {@code lockSiblingRowsAndRecalculateTotal} is deliberately declared on
+   * {@code SampleSiblingRowLock} rather than on {@code SampleApiManager}, whose name the {@code
+   * inventoryManagerTx} pointcut matches. Moving it to the interface that looks like its natural
+   * home downgrades MANDATORY to REQUIRED, so the method opens its own transaction, takes every
+   * sibling row lock, COMMITS, and returns to a caller those locks no longer protect. No error, no
+   * warning: the only symptom is lost updates to {@code Sample.totalQuantity} under concurrency
+   * (parallel review, L-I2).
+   *
+   * <p>KNOWN LIMITATION: the same static approximation as the test above. It reads sources rather
+   * than asking the container, and judges reachability by package and name.
+   */
+  @Test
+  void noAdvisedTypeDeclaresAMandatoryAnnotatedMethodName() throws Exception {
+    Map<String, String> declaringTypeByMethod = mandatoryAnnotatedMethods();
+    assertFalse(
+        declaringTypeByMethod.isEmpty(),
+        "no @Transactional(propagation = MANDATORY) methods found under " + MAIN_SOURCES);
+
+    List<Pattern> pointcuts = advisedTypePatterns("applicationContext-service.xml");
+    assertFalse(pointcuts.isEmpty(), "no txAdvice advisor pointcuts parsed from the service XML");
+
+    for (Path source : javaSourcesUnder(MAIN_SOURCES)) {
+      String fqn = fullyQualifiedName(source);
+      if (pointcuts.stream().noneMatch(p -> p.matcher(fqn).matches())) {
+        continue;
+      }
+      String body = stripComments(Files.readString(source));
+      for (Map.Entry<String, String> entry : declaringTypeByMethod.entrySet()) {
+        assertFalse(
+            declaresMethod(body, entry.getKey()),
+            "'"
+                + entry.getKey()
+                + "' is annotated @Transactional(propagation = MANDATORY) on "
+                + entry.getValue()
+                + ", but "
+                + fqn
+                + " also declares it and IS reached by a txAdvice advisor. The XML advisor's"
+                + " name=\"*\" catch-all overrides the annotation, silently making the method"
+                + " REQUIRED: it would open its own transaction, take its locks, commit, and return"
+                + " to a caller those locks no longer protect.");
+      }
+    }
+  }
+
+  /**
+   * Method name to declaring type for every {@code @Transactional(propagation = MANDATORY)} method
+   * under {@code src/main/java}. Comments are stripped first so prose about MANDATORY cannot match.
+   */
+  private static Map<String, String> mandatoryAnnotatedMethods() throws IOException {
+    Pattern annotated =
+        Pattern.compile(
+            "@Transactional\\s*\\(\\s*propagation\\s*=\\s*(?:Propagation\\.)?MANDATORY\\s*\\)"
+                + "[^;{}]*?[\\w.$<>\\[\\],?]+\\s+(\\w+)\\s*\\(");
+    Map<String, String> result = new TreeMap<>();
+    for (Path source : javaSourcesUnder(MAIN_SOURCES)) {
+      Matcher matcher = annotated.matcher(stripComments(Files.readString(source)));
+      while (matcher.find()) {
+        result.put(matcher.group(1), fullyQualifiedName(source));
+      }
+    }
+    return result;
+  }
+
+  /**
    * The {@code tx:method} entries that carry attributes beyond their name, read from the XML rather
    * than from {@link #READ_COMMITTED_METHODS}, so a sixth entry added later is covered without
    * touching this test. {@code name="*"} is the catch-all and carries no attributes.
