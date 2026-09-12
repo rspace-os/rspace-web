@@ -34,11 +34,11 @@ import org.springframework.test.web.servlet.MvcResult;
  * origin's quantity and fields afterwards.
  *
  * <p>The fingerprints are the records the client-assembled shape persisted before the server
- * started building the sample (plan-operations-server-builds.md M3 proved the two shapes identical,
- * M5 deleted the client-assembled one). The wizard's confirmation preview is checked against the
- * wizard's own model of the build (OperationConfirmation.test), so this is the only thing tying
- * that model to what the server actually stores: a change here that is not a deliberate change to
- * the records is the preview drifting.
+ * started building the sample (DevDocs/adr/0007 M3 proved the two shapes identical, M5 deleted the
+ * client-assembled one). The wizard's confirmation preview is checked against the wizard's own
+ * model of the build (OperationConfirmation.test), so this is the only thing tying that model to
+ * what the server actually stores: a change here that is not a deliberate change to the records is
+ * the preview drifting.
  *
  * <p>Not run automatically (extends a real-transaction MVC base).
  */

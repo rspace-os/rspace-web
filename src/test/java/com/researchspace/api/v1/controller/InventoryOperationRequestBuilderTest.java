@@ -28,9 +28,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 
 /**
- * M1's gate (plan-operations-server-builds.md): for each configured operation, the server-side
- * builder must produce exactly the golden request InventoryOperationPostValidatorTest holds - the
- * shape the wizard posts today. Lives in this package to reuse those fixtures verbatim.
+ * M1's gate (DevDocs/adr/0007): for each configured operation, the server-side builder must produce
+ * exactly the golden request InventoryOperationPostValidatorTest holds - the shape the wizard posts
+ * today. Lives in this package to reuse those fixtures verbatim.
  *
  * <p>Two comparisons per operation, because each covers the other's blind spot: Lombok equality
  * (ApiExtraField's equals excludes the inherited name, but sees the WRITE_ONLY newFieldRequest) and

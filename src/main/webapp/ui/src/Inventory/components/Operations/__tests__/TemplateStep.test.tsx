@@ -289,16 +289,27 @@ describe("TemplateStep failure and clearing paths", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("Batch has no default");
   });
 
-  it("prefers its own pick error over the wizard's parent-template error", () => {
-    // Only one of the two can be current: picking a template abandons the parent-template mode.
+  it("prefers its own pick error over the wizard's parent-template error", async () => {
+    // Only one of the two can be current: picking a template abandons the parent-template mode, so
+    // the pick error is the one that describes what the user just did.
+    //
+    // This test used to render fromSampleMode with only parentTemplateError set and never pick a
+    // template, so blockError stayed null and `blockError ?? parentTemplateError` produced the same
+    // text either way - reversing the precedence kept it green and it was identical in force to the
+    // test above (parallel review). It now produces BOTH errors, which is the only arrangement that
+    // can distinguish the two orderings.
+    currentTemplate = makeTemplate([{ name: "Concentration", mandatory: true, content: "", selectedOptions: null }]);
     render(
       <TemplateStep
-        value={fromSampleMode}
+        value={pickMode}
         onChange={() => undefined}
         originSampleName="S1"
         parentTemplateError="parent problem"
       />,
     );
-    expect(screen.getByRole("alert")).toHaveTextContent("parent problem");
+    await userEvent.setup().click(screen.getByTestId("template-picker"));
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent(/mandatoryFieldsError|cannot be used|no default/i);
+    expect(alert).not.toHaveTextContent("parent problem");
   });
 });

@@ -25,15 +25,13 @@ import org.springframework.context.MessageSource;
 /**
  * Builds the request the operations endpoint executes, server-side, from an operation definition
  * plus the values the user typed: a Java port of the wizard's {@code buildOperationRequest.ts} and
- * {@code computedValues.ts} (plan-operations-server-builds.md, M1). It interprets every effect
- * primitive the config vocabulary declares - {@code nameFrom}, {@code countFrom}, {@code
- * eachAmountFrom}, {@code amountTakenFrom}, {@code storageTempFrom}, {@code links[]}, {@code
- * textFields[]}, {@code originFields[]}, {@code computed[]} ({@code increment}, {@code today}) -
- * plus the wizard-level documentation link, and sets each generated field's {@code
- * operationFieldKey} itself.
+ * {@code computedValues.ts} (DevDocs/adr/0007, M1). It interprets every effect primitive the config
+ * vocabulary declares - {@code nameFrom}, {@code countFrom}, {@code eachAmountFrom}, {@code
+ * amountTakenFrom}, {@code storageTempFrom}, {@code links[]}, {@code textFields[]}, {@code
+ * originFields[]}, {@code computed[]} ({@code increment}, {@code today}) - plus the wizard-level
+ * documentation link, and sets each generated field's {@code operationFieldKey} itself.
  *
- * <p>Wired to nothing yet: M3 adds the endpoint path that calls it. Deliberate divergences from the
- * wizard's serialized request, each traced to its consumer:
+ * <p>Deliberate divergences from the wizard's serialized request, each traced to its consumer:
  *
  * <ul>
  *   <li>No aggregate {@code newSample.quantity}. SampleApiManagerImpl reads it only when a
@@ -65,7 +63,10 @@ public final class InventoryOperationRequestBuilder {
   /** Number.MAX_SAFE_INTEGER: the wizard's ceiling for a counter that can still be incremented. */
   private static final long MAX_SAFE_INTEGER = 9007199254740991L;
 
-  private static final int MAX_SUBSAMPLES = 100;
+  /**
+   * The largest subsample count the builder will produce; the config must bound `countFrom` by it.
+   */
+  static final int MAX_SUBSAMPLES = 100;
 
   private InventoryOperationRequestBuilder() {}
 
@@ -75,11 +76,17 @@ public final class InventoryOperationRequestBuilder {
     String resolve(String key, Map<String, Object> args);
   }
 
-  /** How the amount taken is decided across origins; mirrors the wizard's AmountMode. */
+  /**
+   * How the amount taken is decided across origins: one shared amount, or a per-origin one.
+   *
+   * <p>The wizard's third mode, "take all", has no constant here. Whether a request takes an
+   * origin's whole quantity is the definition's to decide ({@code effect.emptiesOrigin()}), not the
+   * caller's: no typed facade offers a "take all" flag, so no caller could ever supply it and the
+   * constant was a permanently false branch (parallel review).
+   */
   public enum AmountMode {
     SAME,
-    PER_SUBSAMPLE,
-    ALL
+    PER_SUBSAMPLE
   }
 
   /** A field on the origin's parent sample that a computed value may read. */
@@ -143,7 +150,7 @@ public final class InventoryOperationRequestBuilder {
       eachAmountUnit = eachAmount.getUnitId();
     }
 
-    boolean takesWholeOrigin = effect.emptiesOrigin() || amountMode == AmountMode.ALL;
+    boolean takesWholeOrigin = effect.emptiesOrigin();
 
     ApiInventoryOperationPost request = new ApiInventoryOperationPost();
     request.setOperationType(operation.key());
