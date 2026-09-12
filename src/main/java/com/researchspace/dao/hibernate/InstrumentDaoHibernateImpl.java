@@ -39,6 +39,8 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
   private record ParentLocationRow(
       Long instrumentId, Long containerId, String containerName, ContainerType containerType) {}
 
+  private record InstrumentNameRow(Long instrumentId, String name) {}
+
   private String defaultTemplateOwner;
 
   @Autowired(required = false)
@@ -134,20 +136,24 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
     }
     InventoryReadQueryContext context = readQueryContext(user);
     String permission = context.permissionPredicate(this, "instrument.");
-    Query<InstrumentReadSummary> query =
-        getSession()
-            .createQuery(
-                "select new com.researchspace.model.inventory.InstrumentReadSummary("
-                    + "instrument.id, instrument.editInfo.name, instrument.deleted, "
-                    + "parent.id, parent.editInfo.name, parent.containerType) "
-                    + "from Instrument instrument "
-                    + "left join instrument.parentLocation location "
-                    + "with location.storedInstrument.id = instrument.id "
-                    + "left join location.container parent "
-                    + "where instrument.id in (:instrumentIds) "
-                    + "and instrument.deleted = false and "
-                    + permission,
-                InstrumentReadSummary.class)
+    CriteriaBuilder<InstrumentReadSummary> query =
+        criteriaBuilderFactory()
+            .create(getSession(), InstrumentReadSummary.class)
+            .from(Instrument.class, "instrument")
+            .leftJoinOn("instrument.parentLocation", "location")
+            .setOnExpression("location.storedInstrument.id = instrument.id")
+            .leftJoin("location.container", "parent")
+            .selectNew(InstrumentReadSummary.class)
+            .with("instrument.id")
+            .with("instrument.editInfo.name")
+            .with("instrument.deleted")
+            .with("parent.id")
+            .with("parent.editInfo.name")
+            .with("parent.containerType")
+            .end()
+            .whereExpression("instrument.id in :instrumentIds")
+            .whereExpression("instrument.deleted = false")
+            .whereExpression(permission)
             .setParameter("instrumentIds", instrumentIds);
     context.bind(query, null);
     return query
@@ -160,14 +166,17 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
     if (instrumentIds.isEmpty()) {
       return Map.of();
     }
-    return getSession()
-        .createQuery(
-            "select instrument.id, instrument.editInfo.name from Instrument instrument"
-                + " where instrument.id in (:instrumentIds)",
-            Object[].class)
+    return criteriaBuilderFactory()
+        .create(getSession(), InstrumentNameRow.class)
+        .from(Instrument.class, "instrument")
+        .selectNew(InstrumentNameRow.class)
+        .with("instrument.id")
+        .with("instrument.editInfo.name")
+        .end()
+        .whereExpression("instrument.id IN :instrumentIds")
         .setParameter("instrumentIds", instrumentIds)
         .getResultStream()
-        .collect(Collectors.toMap(row -> (Long) row[0], row -> (String) row[1]));
+        .collect(Collectors.toMap(InstrumentNameRow::instrumentId, InstrumentNameRow::name));
   }
 
   @Override

@@ -1,5 +1,8 @@
 package com.researchspace.dao.hibernate;
 
+import com.blazebit.persistence.CommonQueryBuilder;
+import com.blazebit.persistence.CriteriaBuilder;
+import com.blazebit.persistence.CriteriaBuilderFactory;
 import com.researchspace.dao.ExtraFieldDao;
 import com.researchspace.dao.query.LikeEscaper;
 import com.researchspace.dao.query.LookAheadPagination;
@@ -15,7 +18,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.hibernate.SessionFactory;
-import org.hibernate.query.Query;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
@@ -26,19 +28,22 @@ import org.springframework.stereotype.Repository;
  * parent alias, which is the same rule the owning collection applies. That is what makes an extra
  * field a narrowing of an already-authorized row set rather than a second, weaker access path.
  *
- * <p>Plain HQL rather than the criteria builder, because these queries need {@code type(f)} to tell
- * a text field from a number field of the same name, and the value column is reached through an
- * embeddable. The compiled read rule is still parameterized: only its expression text, which is
- * built from server-owned property names, is concatenated.
+ * <p>The projections use Blaze's typed constructor queries. The type discriminator remains in the
+ * select list so text and number fields with the same name stay distinct.
  */
 @Repository("extraFieldDao")
 public class ExtraFieldDaoHibernateImpl implements ExtraFieldDao {
+
+  private record DefinitionProjection(String name, Object entityType) {}
+
+  private record ValueProjection(Long parentId, String name, Object entityType, String value) {}
 
   private static final String FIELD_ALIAS = "extraField";
   private static final String PARENT_ALIAS = "extraFieldParent";
   private static final String NAME = FIELD_ALIAS + ".editInfo.name";
   private static final String VALUE = FIELD_ALIAS + ".editInfo.description";
 
+  @Autowired private CriteriaBuilderFactory criteriaBuilderFactory;
   @Autowired private SessionFactory sessionFactory;
 
   @Override
@@ -55,25 +60,24 @@ public class ExtraFieldDaoHibernateImpl implements ExtraFieldDao {
     }
     RsqlCollectionQuery.Predicate access = access(scope, constraint);
     boolean hydrating = !wanted.isEmpty();
-    StringBuilder hql =
-        new StringBuilder("select distinct ")
-            .append(NAME)
-            .append(", type(")
-            .append(FIELD_ALIAS)
-            .append(") from ExtraField ")
-            .append(FIELD_ALIAS)
-            .append(" where ")
-            .append(common(scope, access))
-            .append(" and ")
-            .append(typeRestriction(types));
+    CriteriaBuilder<DefinitionProjection> query =
+        criteriaBuilderFactory
+            .create(sessionFactory.getCurrentSession(), DefinitionProjection.class)
+            .from(ExtraField.class, FIELD_ALIAS)
+            .selectNew(DefinitionProjection.class)
+            .with(NAME)
+            .with("TYPE(" + FIELD_ALIAS + ")")
+            .end()
+            .distinct()
+            .whereExpression(common(scope, access))
+            .whereExpression(typeRestriction(types));
     if (hydrating) {
-      hql.append(" and ").append(NAME).append(" in :names");
+      query.whereExpression(NAME + " in :names");
     } else if (search != null) {
-      hql.append(" and lower(").append(NAME).append(") like :nameSearch escape '!'");
+      query.whereExpression("lower(" + NAME + ") like :nameSearch escape '!'");
     }
-    hql.append(" order by ").append(NAME).append(" asc, type(").append(FIELD_ALIAS).append(") asc");
-    Query<Object[]> query =
-        sessionFactory.getCurrentSession().createQuery(hql.toString(), Object[].class);
+    query.orderByAsc(NAME);
+    query.orderByAsc("TYPE(" + FIELD_ALIAS + ")");
     bind(query, access);
     if (hydrating) {
       query.setParameter(
@@ -86,12 +90,12 @@ public class ExtraFieldDaoHibernateImpl implements ExtraFieldDao {
       query.setMaxResults(limit + 1);
     }
     List<ExtraFieldRow> rows = new ArrayList<>(limit + 1);
-    for (Object[] columns : query.getResultList()) {
-      FieldType type = typeOf(columns[1]);
+    for (DefinitionProjection projection : query.getResultList()) {
+      FieldType type = typeOf(projection.entityType());
       if (type == null || !types.contains(type)) {
         continue;
       }
-      ExtraFieldRow candidate = new ExtraFieldRow((String) columns[0], type);
+      ExtraFieldRow candidate = new ExtraFieldRow(projection.name(), type);
       if (!hydrating || wanted.contains(candidate)) {
         rows.add(candidate);
       }
@@ -109,39 +113,32 @@ public class ExtraFieldDaoHibernateImpl implements ExtraFieldDao {
       return values;
     }
     String parent = FIELD_ALIAS + "." + scope.parentProperty();
-    StringBuilder hql =
-        new StringBuilder("select ")
-            .append(parent)
-            .append(".id, ")
-            .append(NAME)
-            .append(", type(")
-            .append(FIELD_ALIAS)
-            .append("), ")
-            .append(VALUE)
-            .append(" from ExtraField ")
-            .append(FIELD_ALIAS)
-            .append(" where ")
-            .append(FIELD_ALIAS)
-            .append(".deleted = false and ")
-            .append(parent)
-            .append(".id in :parentIds and ")
-            .append(NAME)
-            .append(" in :names");
-    Query<Object[]> query =
-        sessionFactory.getCurrentSession().createQuery(hql.toString(), Object[].class);
-    query.setParameter("parentIds", parentIds);
+    CriteriaBuilder<ValueProjection> query =
+        criteriaBuilderFactory
+            .create(sessionFactory.getCurrentSession(), ValueProjection.class)
+            .from(ExtraField.class, FIELD_ALIAS)
+            .selectNew(ValueProjection.class)
+            .with(parent + ".id")
+            .with(NAME)
+            .with("TYPE(" + FIELD_ALIAS + ")")
+            .with(VALUE)
+            .end()
+            .whereExpression(FIELD_ALIAS + ".deleted = false")
+            .whereExpression(parent + ".id in :parentIds")
+            .whereExpression(NAME + " in :names")
+            .setParameter("parentIds", parentIds);
     query.setParameter(
         "names", definitions.stream().map(ExtraFieldRow::name).collect(Collectors.toSet()));
-    for (Object[] columns : query.getResultList()) {
-      FieldType type = typeOf(columns[2]);
+    for (ValueProjection projection : query.getResultList()) {
+      FieldType type = typeOf(projection.entityType());
       if (type == null) {
         continue;
       }
-      ExtraFieldRow definition = new ExtraFieldRow((String) columns[1], type);
+      ExtraFieldRow definition = new ExtraFieldRow(projection.name(), type);
       if (definitions.contains(definition)) {
         values
-            .computeIfAbsent((Long) columns[0], ignored -> new LinkedHashMap<>())
-            .put(definition, (String) columns[3]);
+            .computeIfAbsent(projection.parentId(), ignored -> new LinkedHashMap<>())
+            .put(definition, projection.value());
       }
     }
     return values;
@@ -182,7 +179,7 @@ public class ExtraFieldDaoHibernateImpl implements ExtraFieldDao {
     return predicate;
   }
 
-  private static void bind(Query<?> query, RsqlCollectionQuery.Predicate access) {
+  private static void bind(CommonQueryBuilder<?> query, RsqlCollectionQuery.Predicate access) {
     if (access != null) {
       access.parameters().forEach(query::setParameter);
     }

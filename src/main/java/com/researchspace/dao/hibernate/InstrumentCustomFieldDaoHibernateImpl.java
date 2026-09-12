@@ -34,6 +34,8 @@ import org.springframework.stereotype.Repository;
 @Repository("instrumentCustomFieldDao")
 public class InstrumentCustomFieldDaoHibernateImpl implements InstrumentCustomFieldDao {
 
+  private record OptionRow(Long fieldId, String storedOptions) {}
+
   private static final String DEFINITION_ALIAS = "customFieldDef";
   private static final String COPY_ALIAS = "customFieldCopy";
   private static final String INSTRUMENT_ALIAS = "customFieldInstrument";
@@ -162,33 +164,31 @@ public class InstrumentCustomFieldDaoHibernateImpl implements InstrumentCustomFi
     if (definitionIds.isEmpty()) {
       return options;
     }
-    collectOptions(
-        options,
-        "select f.id, f.choiceDef.choiceOptions from "
-            + InventoryChoiceField.class.getSimpleName()
-            + " f where f.id in :ids",
-        definitionIds);
-    collectOptions(
-        options,
-        "select f.id, f.radioDef.radioOptions from "
-            + InventoryRadioField.class.getSimpleName()
-            + " f where f.id in :ids",
-        definitionIds);
+    collectOptions(options, InventoryChoiceField.class, "choiceDef.choiceOptions", definitionIds);
+    collectOptions(options, InventoryRadioField.class, "radioDef.radioOptions", definitionIds);
     return options;
   }
 
-  private void collectOptions(Map<Long, List<String>> options, String hql, Set<Long> ids) {
-    List<Object[]> rows =
-        sessionFactory
-            .getCurrentSession()
-            .createQuery(hql, Object[].class)
-            .setParameterList("ids", ids)
-            .list();
-    for (Object[] row : rows) {
-      Object stored = row[1];
+  private void collectOptions(
+      Map<Long, List<String>> options,
+      Class<? extends InventoryEntityField> fieldType,
+      String optionPath,
+      Set<Long> ids) {
+    CriteriaBuilder<OptionRow> query =
+        criteriaBuilderFactory
+            .create(sessionFactory.getCurrentSession(), OptionRow.class)
+            .from(fieldType, "field")
+            .selectNew(OptionRow.class)
+            .with("field.id")
+            .with("field." + optionPath)
+            .end()
+            .whereExpression("field.id in :ids")
+            .setParameter("ids", ids);
+    for (OptionRow row : query.getResultList()) {
+      Object stored = row.storedOptions();
       Object parsed =
           stored == null ? null : RuntimeFieldValueType.CHOICE.serialize((String) stored);
-      options.put((Long) row[0], asStrings(parsed));
+      options.put(row.fieldId(), asStrings(parsed));
     }
   }
 
