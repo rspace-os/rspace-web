@@ -83,9 +83,10 @@ public final class InventoryOperationInputValidator {
             "This input is not of the type the operation declares.");
         continue;
       }
+      boolean isCreatedAmount = input.key().equals(definition.effect().eachAmountFrom());
       switch (String.valueOf(input.type())) {
         case "integer" -> validateBounds(new BigDecimal(value.toString()), input, errors);
-        case "quantity" -> validateAmount((Quantifiable) value, input, errors);
+        case "quantity" -> validateAmount((Quantifiable) value, input, isCreatedAmount, errors);
         case "temperature" -> validateTemperature((Quantifiable) value, input, errors);
         default -> {}
       }
@@ -171,8 +172,23 @@ public final class InventoryOperationInputValidator {
    * rounded to an amount the caller never sent.
    */
   private static void validateAmount(
-      Quantifiable quantity, InventoryOperationConfig.Input input, Errors errors) {
-    if (quantity.getNumericValue().signum() < 0) {
+      Quantifiable quantity,
+      InventoryOperationConfig.Input input,
+      boolean isCreatedAmount,
+      Errors errors) {
+    if (isCreatedAmount && quantity.getNumericValue().signum() <= 0) {
+      // The quantity each created subsample gets, so zero creates a subsample holding nothing while
+      // still deducting real stock from the origin. Only negatives were rejected here and in the
+      // delegated SampleApiPostValidator, so an Aliquot with a positive amountTaken and a zero
+      // eachAmount was accepted; the wizard forbids it client-side and the pre-redesign operation
+      // validator enforced it server-side (Codex review, P2). Scoped to the input the definition
+      // names in eachAmountFrom, so an operation that deliberately takes nothing from its origin
+      // (Passage) is untouched.
+      errors.rejectValue(
+          input.key(),
+          "errors.inventory.operation.createdAmountNotPositive",
+          "Each created subsample must be given a quantity greater than zero.");
+    } else if (quantity.getNumericValue().signum() < 0) {
       errors.rejectValue(
           input.key(), "errors.inventory.quantity.negative", "The quantity must not be negative.");
     }
@@ -180,7 +196,6 @@ public final class InventoryOperationInputValidator {
       errors.rejectValue(
           input.key(),
           "errors.inventory.operation.inputNotStorable",
-          new Object[] {input.key()},
           "The quantity supports at most 3 decimal places.");
     }
     Integer unitId = quantity.getUnitId();
