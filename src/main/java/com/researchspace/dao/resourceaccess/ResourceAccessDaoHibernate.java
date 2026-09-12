@@ -1,7 +1,10 @@
 package com.researchspace.dao.resourceaccess;
 
+import com.blazebit.persistence.CriteriaBuilder;
+import com.blazebit.persistence.CriteriaBuilderFactory;
 import com.researchspace.model.Group;
 import com.researchspace.model.User;
+import com.researchspace.model.UserGroup;
 import com.researchspace.model.resourceaccess.ResourceAccess;
 import com.researchspace.model.resourceaccess.ResourceAudience;
 import com.researchspace.model.resourceaccess.ResourceRoleAssignment;
@@ -25,6 +28,11 @@ public class ResourceAccessDaoHibernate implements ResourceAccessDao {
   private static final String ALL_USERS_KEY = "audience:all-users";
 
   private final SessionFactory sessionFactory;
+
+  @org.springframework.beans.factory.annotation.Autowired
+  private CriteriaBuilderFactory criteriaBuilderFactory;
+
+  private record UserGroupRow(Long userId, Long groupId) {}
 
   public ResourceAccessDaoHibernate(SessionFactory sessionFactory) {
     this.sessionFactory = sessionFactory;
@@ -134,22 +142,26 @@ public class ResourceAccessDaoHibernate implements ResourceAccessDao {
     if (userIds.isEmpty() || groupIds.isEmpty()) {
       return Map.of();
     }
-    List<Object[]> rows =
-        sessionFactory
-            .getCurrentSession()
-            .createQuery(
-                "select membership.user.id, membership.group.id from UserGroup membership "
-                    + "where membership.user.id in :userIds and membership.group.id in :groupIds",
-                Object[].class)
+    CriteriaBuilder<UserGroupRow> query =
+        criteriaBuilderFactory
+            .create(sessionFactory.getCurrentSession(), UserGroupRow.class)
+            .from(UserGroup.class, "membership")
+            .selectNew(UserGroupRow.class)
+            .with("membership.user.id")
+            .with("membership.group.id")
+            .end()
+            .whereExpression("membership.user.id in :userIds")
+            .whereExpression("membership.group.id in :groupIds")
             .setParameter("userIds", userIds)
-            .setParameter("groupIds", groupIds)
-            .getResultList();
+            .setParameter("groupIds", groupIds);
     Map<Long, Set<Long>> result = new LinkedHashMap<>();
-    rows.forEach(
-        row ->
-            result
-                .computeIfAbsent((Long) row[0], ignored -> new LinkedHashSet<>())
-                .add((Long) row[1]));
+    query
+        .getResultList()
+        .forEach(
+            row ->
+                result
+                    .computeIfAbsent(row.userId(), ignored -> new LinkedHashSet<>())
+                    .add(row.groupId()));
     result.replaceAll((ignored, ids) -> Set.copyOf(ids));
     return Map.copyOf(result);
   }
