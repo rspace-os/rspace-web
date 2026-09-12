@@ -51,6 +51,7 @@ import org.springframework.validation.BindException;
 class InventoryOperationManagerImplTest {
 
   @Mock private com.researchspace.service.inventory.SampleApiManager sampleApiMgr;
+  @Mock private com.researchspace.service.inventory.SampleSiblingRowLock siblingRowLock;
   @Mock private com.researchspace.service.inventory.SubSampleApiManager subSampleApiMgr;
 
   private InventoryOperationManagerImpl manager;
@@ -125,6 +126,7 @@ class InventoryOperationManagerImplTest {
   void setUp() {
     manager = new InventoryOperationManagerImpl();
     ReflectionTestUtils.setField(manager, "sampleApiMgr", sampleApiMgr);
+    ReflectionTestUtils.setField(manager, "siblingRowLock", siblingRowLock);
     ReflectionTestUtils.setField(manager, "subSampleApiMgr", subSampleApiMgr);
     // the real registry over the real config: the live checks read emptiesOrigin per operation
     ReflectionTestUtils.setField(
@@ -204,7 +206,7 @@ class InventoryOperationManagerImplTest {
   void assertsEditPermissionBeforeLockingAnySiblingSet() {
     // An under-permissioned caller must not be able to lock other users' sibling sets and delay
     // their writers until the transaction fails: permission is asserted (unlocked) while the parent
-    // ids are collected, before recalculateTotalFromLockedRows takes the first lock (Copilot
+    // ids are collected, before lockSiblingRowsAndRecalculateTotal takes the first lock (Copilot
     // review, PR #1090).
     ApiInventoryOperationPost request = new ApiInventoryOperationPost();
     request.setOperationType("derive");
@@ -982,6 +984,13 @@ class InventoryOperationManagerImplTest {
     when(messages.getMessage(any(String.class), any(), any(String.class), any()))
         .thenAnswer(invocation -> invocation.getArgument(2));
     ReflectionTestUtils.setField(manager, "messageSource", messages);
+    // The template-conformance check moved out of the controller into service.inventory (parallel
+    // review, L1); these built-path cases are about the builder, not conformance, so it is a mock
+    // that accepts whatever the builder produced.
+    ReflectionTestUtils.setField(
+        manager,
+        "templateConformance",
+        mock(com.researchspace.service.inventory.OperationTemplateConformanceValidator.class));
   }
 
   /** A facade origin element: an id, optionally an amount, no mode. */
@@ -1018,8 +1027,7 @@ class InventoryOperationManagerImplTest {
         creatingInputs("HeLa p3", 1),
         null,
         null,
-        user,
-        built -> {});
+        user);
 
     ArgumentCaptor<QuantityInfo> taken = ArgumentCaptor.forClass(QuantityInfo.class);
     verify(subSampleApiMgr).registerApiSubSampleUsage(eq(100L), taken.capture(), eq(user));
@@ -1035,13 +1043,7 @@ class InventoryOperationManagerImplTest {
 
     assertNull(
         manager.performOperation(
-            "destroy",
-            List.of(facadeOrigin(100L, null)),
-            java.util.Map.of(),
-            null,
-            null,
-            user,
-            built -> {}));
+            "destroy", List.of(facadeOrigin(100L, null)), java.util.Map.of(), null, null, user));
 
     ArgumentCaptor<QuantityInfo> taken = ArgumentCaptor.forClass(QuantityInfo.class);
     verify(subSampleApiMgr).registerApiSubSampleUsage(eq(100L), taken.capture(), eq(user));
@@ -1059,7 +1061,7 @@ class InventoryOperationManagerImplTest {
         InventoryEditConflictException.class,
         () ->
             manager.performOperation(
-                "destroy", List.of(origin), java.util.Map.of(), null, null, user, built -> {}));
+                "destroy", List.of(origin), java.util.Map.of(), null, null, user));
     verifyNoMutation();
   }
 
@@ -1074,7 +1076,7 @@ class InventoryOperationManagerImplTest {
         InventoryEditConflictException.class,
         () ->
             manager.performOperation(
-                "destroy", List.of(origin), java.util.Map.of(), null, null, user, built -> {}));
+                "destroy", List.of(origin), java.util.Map.of(), null, null, user));
     verifyNoMutation();
   }
 
@@ -1092,8 +1094,7 @@ class InventoryOperationManagerImplTest {
         creatingInputs("Aliquots", null),
         null,
         null,
-        user,
-        built -> {});
+        user);
 
     assertEquals(1, createdSample().getSubSamples().size());
   }
@@ -1110,8 +1111,7 @@ class InventoryOperationManagerImplTest {
         creatingInputs("Revived", 1),
         null,
         null,
-        user,
-        built -> {});
+        user);
 
     ApiSampleWithFullSubSamples created = createdSample();
     assertEquals(

@@ -28,6 +28,7 @@ import com.researchspace.service.inventory.InventoryAuditApiManager;
 import com.researchspace.service.inventory.InventoryFieldNameUniquenessValidator;
 import com.researchspace.service.inventory.InventoryMoveHelper;
 import com.researchspace.service.inventory.SampleApiManager;
+import com.researchspace.service.inventory.SampleSiblingRowLock;
 import com.researchspace.service.inventory.SubSampleApiManager;
 import jakarta.ws.rs.NotFoundException;
 import java.math.BigDecimal;
@@ -49,6 +50,7 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
   private @Autowired InventoryAuditApiManager inventoryAuditMgr;
 
   private @Autowired @Lazy SampleApiManager sampleApiMgr;
+  private @Autowired @Lazy SampleSiblingRowLock siblingRowLock;
 
   private QuantityUtils qUtils = new QuantityUtils();
 
@@ -292,7 +294,7 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
     // afterwards deadlocks: the origin's own row is one of the sibling rows, so two operations on
     // two siblings each end up holding the row the other wants. Locking the whole sibling set up
     // front makes the second operation WAIT here instead, which is why both can then succeed.
-    sampleApiMgr.recalculateTotalFromLockedRows(dbSubSample.getSample().getId());
+    siblingRowLock.lockSiblingRowsAndRecalculateTotal(dbSubSample.getSample().getId());
     boolean temporaryLock = lockItemForEdit(dbSubSample, user);
     try {
       // Every stock decrement in the app funnels through here (the operations endpoint,
@@ -348,7 +350,7 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
         // setQuantity above recomputed the parent total from the sibling ENTITIES, which this
         // transaction sees as of its own snapshot and so can be stale. Recompute it from the rows,
         // read under their locks, which is the value that must survive.
-        sampleApiMgr.recalculateTotalFromLockedRows(dbSubSample.getSample().getId());
+        siblingRowLock.lockSiblingRowsAndRecalculateTotal(dbSubSample.getSample().getId());
       }
 
     } finally {

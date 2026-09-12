@@ -17,8 +17,14 @@
     created by hand and every field that predates this column, so there is nothing to backfill.
     Only the operations endpoint may write a non-null value. Every other endpoint that binds
     ApiExtraField ignores an incoming key rather than rejecting it, because the API returns this
-    column and rejecting broke read-modify-write; enforcement is at the single write point in
-    ApiExtraFieldsHelper, gated on a flag no client can bind.
+    column and rejecting broke read-modify-write.
+
+    Enforcement is @JsonProperty(access = READ_ONLY) on ApiExtraField.operationFieldKey, which
+    drops a client's value at Jackson binding on every endpoint. There is no flag and no check at
+    the write point: ApiExtraFieldsHelper copies whatever the bound DTO carries, which for a
+    client-supplied body is always null. The invariant therefore depends on that one annotation -
+    remove it and every endpoint binding ApiExtraField becomes a way to claim a field was
+    operation-generated.
   -->
   <changeSet id="2026-09-09a-a" context="run" author="neil">
     <comment>RSDEV-1231 add operationFieldKey to ExtraField</comment>

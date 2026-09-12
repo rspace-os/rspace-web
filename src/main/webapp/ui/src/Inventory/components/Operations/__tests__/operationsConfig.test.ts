@@ -4,11 +4,12 @@ import {
   assertEffectReferencesValid,
   type InventoryOperation,
   operationAvailability,
+  parseOperationsConfig,
   resolveDefaultAmountMode,
   resolveProcessName,
   usesAmountModes,
 } from "../operationsConfig";
-import { operations } from "./testOperations";
+import { operations, rawConfig } from "./testOperations";
 
 function op(key: string): InventoryOperation {
   const found = operations.find((o) => o.key === key);
@@ -168,6 +169,52 @@ describe("usesAmountModes", () => {
     expect(cryopreserve.confirmSummary).toContain("storageTemp");
     // Derive has no storage temperature, so its summary does not list one
     expect(derive.confirmSummary).not.toContain("storageTemp");
+  });
+});
+
+describe("assertComputedValuesValid", () => {
+  // Its three throws had no test at all: deleting the function's body left the suite green,
+  // defeating the documented "a bad config fails at fetch, not at submit" contract, while its
+  // sibling assertEffectReferencesValid has four (parallel review, Q11). Reached through
+  // parseOperationsConfig, which is how the wizard reaches it.
+  const withComputed = (computed: unknown): unknown => [
+    {
+      key: "c",
+      labelKey: "l",
+      descriptionKey: "d",
+      iconKey: "i",
+      documentationStep: false,
+      inputs: [{ key: "count", type: "integer", labelKey: "l" }],
+      effect: { computed: [computed], links: [] },
+    },
+  ];
+
+  it("throws when a computed value names an operation function that does not exist", () => {
+    expect(() => parseOperationsConfig(withComputed({ fn: "notAFunction", into: "n", args: {} }))).toThrow(
+      /unknown operation function "notAFunction"/,
+    );
+  });
+
+  it("throws when a computed value binds an argument the function does not declare", () => {
+    expect(() =>
+      parseOperationsConfig(
+        withComputed({
+          fn: "increment",
+          into: "n",
+          args: { current: { input: "count" }, start: { constant: 1 }, spurious: { constant: 2 } },
+        }),
+      ),
+    ).toThrow(/has no parameter "spurious"/);
+  });
+
+  it("throws when a computed value leaves one of the function's parameters unbound", () => {
+    expect(() =>
+      parseOperationsConfig(withComputed({ fn: "increment", into: "n", args: { current: { input: "count" } } })),
+    ).toThrow(/requires argument "start"/);
+  });
+
+  it("accepts the shipped config", () => {
+    expect(() => parseOperationsConfig(rawConfig)).not.toThrow();
   });
 });
 

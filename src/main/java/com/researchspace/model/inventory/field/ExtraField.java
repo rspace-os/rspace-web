@@ -55,10 +55,14 @@ public abstract class ExtraField extends InventoryRecordConnectedEntity implemen
    * and reset a computed counter rather than continue it (RSDEV-1231).
    *
    * <p>Null means "not owned by any operation definition": every hand-created field, and every
-   * field predating the column. Only the operations endpoint may write a non-null value, enforced
-   * at the single write point ({@code ApiExtraFieldsHelper}) rather than by asking every other
-   * endpoint to reject one, so a non-null key is a reliable claim that an operation created this
-   * field rather than merely a hint.
+   * field predating the column. Only the operations endpoint may write a non-null value, and what
+   * enforces that is {@code @JsonProperty(access = READ_ONLY)} on {@code
+   * ApiExtraField.operationFieldKey}: a client's value is dropped at Jackson binding on every
+   * endpoint, rather than rejected, so a read-modify-write is not 400ed. {@code
+   * ApiExtraFieldsHelper} then copies the bound value unconditionally, which is null unless the
+   * server built the DTO. So a non-null key is a reliable claim that an operation created this
+   * field rather than merely a hint - but only for as long as that annotation is there. There is no
+   * second guard at the write point.
    *
    * <p>SCOPE: this covers fields an operation adds as EXTRA fields. When the created sample
    * inherits a template field of the same name, {@code

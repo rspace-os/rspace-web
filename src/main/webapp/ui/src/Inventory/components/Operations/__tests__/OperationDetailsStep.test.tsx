@@ -5,8 +5,8 @@ import { describe, expect, it, vi } from "vitest";
 import type SubSampleModel from "@/stores/models/SubSampleModel";
 import OperationDetailsStep from "../OperationDetailsStep";
 import type { InventoryOperation } from "../operationsConfig";
-import { MAX_SUBSAMPLE_COUNT } from "../operationValidation";
 import type { OperationInputs } from "../types";
+import { operations } from "./testOperations";
 
 // Stub UnitSelect (real one reads the MobX unitStore) with a native <select> that exposes its
 // disabled state and plays a chosen unitId back through handleChange.
@@ -52,6 +52,8 @@ const operation = {
     links: [],
   },
 } as unknown as InventoryOperation;
+
+const CELSIUS_UNIT = 8;
 
 const origin = {
   quantity: { numericValue: 10, unitId: 3 },
@@ -140,17 +142,22 @@ describe("OperationDetailsStep", () => {
     expect(screen.getAllByTestId("unit-select")).toHaveLength(2);
   });
 
-  it("bounds the count input to whole numbers up to the server's cap", () => {
+  it("bounds the count input to whole numbers within the definition's own min and max", () => {
     // The count decides how many subsamples the operation creates; the backend rejects a
-    // fractional count and caps it at MAX_SUBSAMPLE_COUNT (DevDocs/adr/0007), so the input must
-    // not invite a value the request builder would then throw on (code review, finding 12).
-    const countOperation = {
-      ...operation,
-      inputs: [{ key: "count", type: "integer", labelKey: "operations.fields.count", min: 1 }, ...operation.inputs],
-    } as unknown as InventoryOperation;
+    // fractional count and caps it (DevDocs/adr/0007), so the input must not invite a value the
+    // request builder would then throw on (code review, finding 12).
+    //
+    // Driven by the REAL aliquot definition, not a hand-written fixture: the cap used to be a
+    // frontend constant, so lowering it server-side left the wizard offering counts the endpoint
+    // rejects, with the 400 arriving only at Perform (parallel review, FE9). The fixture this test
+    // used carried no max at all, which is how the drift went unnoticed.
+    const aliquot = operations.find((o) => o.key === "aliquot");
+    if (!aliquot) throw new Error("the aliquot definition must exist in operations_config.json");
+    const countInput = aliquot.inputs.find((i) => i.key === "count");
+    if (!countInput) throw new Error("aliquot must declare a count input");
     render(
       <OperationDetailsStep
-        operation={countOperation}
+        operation={aliquot}
         origin={origin}
         values={{ ...values, count: 2 }}
         onChange={() => undefined}
@@ -158,9 +165,11 @@ describe("OperationDetailsStep", () => {
       />,
     );
     const count = screen.getByRole("spinbutton", { name: /fields\.count/i });
-    expect(count).toHaveAttribute("min", "1");
-    expect(count).toHaveAttribute("max", String(MAX_SUBSAMPLE_COUNT));
+    expect(count).toHaveAttribute("min", String(countInput.min));
+    expect(count).toHaveAttribute("max", String(countInput.max));
     expect(count).toHaveAttribute("step", "1");
+    // and the config really does bound it, or the assertions above pass vacuously
+    expect(countInput.max).toBeGreaterThan(0);
   });
 
   it("does not allow a negative amount (clamps it to zero)", () => {
@@ -395,5 +404,94 @@ describe("OperationDetailsStep (amount modes)", () => {
     renderPool({ amountMode: "perSubsample" });
     expect(screen.getByRole("spinbutton", { name: /Vial A/ })).toBeInTheDocument();
     expect(screen.getByRole("spinbutton", { name: /Vial B/ })).toBeInTheDocument();
+  });
+
+  it("flags a per-origin amount that exceeds THAT origin, naming only the offending field", async () => {
+    // The per-origin over-removal check and its wiring into error/helperText had no test: the
+    // predicate was unit-tested in isolation, but nothing asserted the message reaches the field,
+    // and the callback was stubbed as () => undefined everywhere so the field's own change path was
+    // unexercised too (parallel review, Q15).
+    renderPool({
+      amountMode: "perSubsample",
+      // Vial A holds 5, Vial B holds 8: only A is over-drawn.
+      perSubsampleAmounts: { SS1: { numericValue: 9, unitId: 3 }, SS2: { numericValue: 1, unitId: 3 } },
+    });
+    const overDrawn = screen.getByRole("spinbutton", { name: /Vial A/ });
+    expect(overDrawn).toBeInvalid();
+    expect(screen.getByText(/amountTakenExceedsOrigin/)).toBeInTheDocument();
+    expect(screen.getByRole("spinbutton", { name: /Vial B/ })).toBeValid();
+  });
+
+  it("reports a typed per-origin amount through onPerSubsampleAmountsChange, keeping the others", async () => {
+    const onPerSubsample = vi.fn();
+    renderPool({
+      amountMode: "perSubsample",
+      perSubsampleAmounts: { SS2: { numericValue: 1, unitId: 3 } },
+      onPerSubsampleAmountsChange: onPerSubsample,
+    });
+    fireEvent.change(screen.getByRole("spinbutton", { name: /Vial A/ }), { target: { value: "2" } });
+    expect(onPerSubsample).toHaveBeenCalledWith({
+      SS1: { numericValue: 2, unitId: 3 },
+      SS2: { numericValue: 1, unitId: 3 },
+    });
+  });
+});
+
+describe("OperationDetailsStep inline field errors", () => {
+  // Each predicate below is unit-tested in operationValidation.test.ts; what was untested is that
+  // its outcome reaches the FIELD, and that the four-way helper-text precedence picks the right one
+  // (parallel review, Q15).
+  const renderWith = (props: Partial<React.ComponentProps<typeof OperationDetailsStep>>) =>
+    render(
+      <OperationDetailsStep
+        operation={operation}
+        origin={origin}
+        values={values}
+        onChange={() => undefined}
+        section="amounts"
+        {...props}
+      />,
+    );
+
+  it("flags an amount taken that exceeds what the origin holds, on that field", () => {
+    // the origin holds 10; take 11
+    renderWith({ values: { ...values, amountTaken: { numericValue: 11, unitId: 3 } } });
+    expect(screen.getByRole("spinbutton", { name: /fields\.amountTaken/i })).toBeInvalid();
+    expect(screen.getByText(/amountTakenExceedsOrigin/)).toBeInTheDocument();
+  });
+
+  it("leaves the amount-taken field clean when it is within the origin", () => {
+    renderWith({});
+    expect(screen.getByRole("spinbutton", { name: /fields\.amountTaken/i })).toBeValid();
+    expect(screen.queryByText(/amountTakenExceedsOrigin/)).not.toBeInTheDocument();
+  });
+
+  it("prefers the unstorable-temperature message over the out-of-range one on the same field", () => {
+    // -300 is below absolute zero AND below the configured minimum: the precedence chain puts
+    // storageTempInvalid first, because a value the backend cannot store at all is the more
+    // specific complaint.
+    const reviveOp = {
+      ...operation,
+      inputs: [
+        {
+          key: "storageTemp",
+          type: "temperature",
+          labelKey: "operations.fields.storageTemp",
+          minCelsius: 4,
+          maxCelsius: 120,
+        },
+      ],
+      effect: { ...operation.effect, storageTempFrom: "storageTemp" },
+    } as unknown as InventoryOperation;
+    render(
+      <OperationDetailsStep
+        operation={reviveOp}
+        origin={origin}
+        values={{ storageTemp: { numericValue: -300, unitId: CELSIUS_UNIT } }}
+        onChange={() => undefined}
+      />,
+    );
+    expect(screen.getByText(/storageTempInvalid/)).toBeInTheDocument();
+    expect(screen.queryByText(/storageTempMin/)).not.toBeInTheDocument();
   });
 });

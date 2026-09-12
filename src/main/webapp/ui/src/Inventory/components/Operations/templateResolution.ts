@@ -12,6 +12,7 @@
  *   the stored "remember" bundle (see processValues.ts).
  */
 
+import { formatList } from "@/modules/common/i18n/listFormat";
 import type { UnitCategory } from "@/stores/stores/UnitStore";
 
 // "remembered" is a specific template restored from the user's saved default: it resolves to a
@@ -20,10 +21,25 @@ import type { UnitCategory } from "@/stores/stores/UnitStore";
 // and the user must make an explicit choice before Next is enabled (DevDocs/adr/0007).
 export type TemplateMode = "none" | "pick" | "fromSample" | "remembered" | "unselected";
 
-export type TemplateSelectionLike = {
+/**
+ * The user's template choice for the new sample (DevDocs/adr/0007).
+ *
+ * Declared here, not in TemplateStep, so the module and the component cannot disagree: this type
+ * and the step's own `TemplateSelection` were two structurally identical declarations, and
+ * `TemplateMode` was written out a second time inline, so a sixth mode added to one compiled
+ * cleanly against the other until a runtime `switch` fell through (parallel review, Q16).
+ * TemplateStep re-exports it, which keeps every existing import path working.
+ */
+export type TemplateSelection = {
+  // "remembered" = a specific template restored from the saved default: shown as a banner with no
+  // radio selected until the user picks a radio to override it. "unselected" = the initial state
+  // when nothing is remembered: no radio selected, and Next stays disabled until the user chooses.
   mode: TemplateMode;
   templateId: number | null;
   templateName?: string;
+  // The picked template's quantity category (mass/volume/dimensionless...). Set when the user picks
+  // a specific template so the amounts step can offer that template's units instead of the origin
+  // subsample's (a volume template overrides a mass subsample). Undefined = fall back to the origin.
   quantityCategory?: UnitCategory;
   remember: boolean;
 };
@@ -63,7 +79,7 @@ export function templateSelectionToDefault(selection: {
  * as a banner ("remembered", no radio); a remembered "none"/"fromSample" is applied as that radio
  * directly (DevDocs/adr/0007).
  */
-export function templateSelectionFor(remembered: TemplateDefault | undefined): TemplateSelectionLike {
+export function templateSelectionFor(remembered: TemplateDefault | undefined): TemplateSelection {
   if (!remembered) return { mode: "unselected", templateId: null, remember: false };
   const isSpecific = remembered.mode === "pick" && remembered.templateId !== null;
   return {
@@ -82,7 +98,7 @@ export function templateSelectionFor(remembered: TemplateDefault | undefined): T
  * an explicit choice before Next is enabled (DevDocs/adr/0007). A multi-origin operation (Pool)
  * passes parentHasTemplate=false, because "the parent" is ambiguous across several origins.
  */
-export function initialTemplateSelection(parentHasTemplate: boolean): TemplateSelectionLike {
+export function initialTemplateSelection(parentHasTemplate: boolean): TemplateSelection {
   return {
     mode: parentHasTemplate ? "fromSample" : "unselected",
     templateId: null,
@@ -132,4 +148,43 @@ export function templateSelectionBlock(fields: Array<{ name: string; mandatory: 
 } {
   const missingFields = fields.filter((f) => f.mandatory && !f.hasDefault).map((f) => f.name);
   return { blocked: missingFields.length > 0, missingFields };
+}
+
+/** Just enough of TemplateModel to judge a template: avoids importing the MobX model here. */
+type TemplateFieldsLike = {
+  fields: ReadonlyArray<{
+    name: string;
+    mandatory: boolean;
+    content?: unknown;
+    selectedOptions?: ReadonlyArray<unknown> | null;
+  }>;
+};
+
+/**
+ * Whether a template is usable by the wizard, with the arguments its rejection message needs.
+ *
+ * The field mapping and the hasDefault rule were written out twice, in the wizard's "use parent
+ * template" check and in the template step's pick check. A fix to one - treating a whitespace-only
+ * default as absent, say - left the two screens disagreeing about the same template, with the user
+ * blocked on one and not the other and no way to tell which was right (parallel review, Q10).
+ *
+ * The `t` call stays at each call site rather than moving in here: i18next's TFunction is typed
+ * against the catalog's key union and does not assign to a plain `(key, options) => string`, so
+ * taking it as a parameter would need either a cast or a forced `defaultValue`. What is returned is
+ * exactly the ICU arguments, so the two sites cannot compute them differently.
+ */
+export function templateBlockReason(
+  template: TemplateFieldsLike,
+  language: string,
+): { blocked: boolean; count: number; fields: string } {
+  const { blocked, missingFields } = templateSelectionBlock(
+    template.fields.map((f) => ({
+      name: f.name,
+      mandatory: f.mandatory,
+      hasDefault:
+        (f.selectedOptions?.length ?? 0) > 0 ||
+        (f.content !== null && f.content !== undefined && String(f.content).trim() !== ""),
+    })),
+  );
+  return { blocked, count: missingFields.length, fields: formatList(missingFields, language) };
 }

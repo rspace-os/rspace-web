@@ -327,9 +327,16 @@ above) without computing it.
   properly is a global optimistic-locking/`@DynamicUpdate` change, which the
   no-mapping-changes constraint rules out here; it belongs to the separate
   concurrency ticket alongside the If-Match discussion.
+  - **Revisited 2026-09-12** (parallel review, P3): `@DynamicUpdate` is now on
+    `SampleEntity` alone, which narrows its UPDATE to the changed columns and
+    closes this case for the sample row the recompute writes. A real `@Version`
+    remains out of scope: it would turn a concurrent edit into
+    `OptimisticLockException`, which api/v1 has no mapping for. The cost of
+    losing Hibernate's cached static UPDATE on this entity has not been measured
+    against the workbench-bag write path.
 - **Lock acquisition order in an operation**: first every distinct parent
   sample's subsample rows as a set, ascending by sample id (the locked scalar
-  read in `SampleApiManager.recalculateTotalFromLockedRows`); then each origin
+  read in `SampleSiblingRowLock.lockSiblingRowsAndRecalculateTotal`); then each origin
   row, ascending by subsample id (a re-ask for a row the sibling set already
   holds); then the parent sample rows themselves, ascending, matching every
   other writer's subsample-then-sample order. The sibling set comes first
@@ -341,7 +348,7 @@ above) without computing it.
   `SubSample.setQuantity`'s cascade still sums the sibling entities, which a
   transaction sees as of its own snapshot, so two operations on two siblings
   of one sample each computed the total from stale stock (reproduced: children
-  held 14, stored total 17). `recalculateTotalFromLockedRows` re-derives the
+  held 14, stored total 17). `lockSiblingRowsAndRecalculateTotal` re-derives the
   total from `getActiveQuantitiesForUpdate` scalars and assigns it onto the
   sample so the commit flush writes it over the cascade's value.
   `parallelAliquotsOnSiblingSubSamplesKeepTheParentTotalExact` in
