@@ -41,10 +41,10 @@ import org.springframework.web.bind.annotation.RequestBody;
  * transaction and performs the whole effect atomically. No per-operation logic lives here (see
  * DevDocs/adr/0007).
  *
- * <p>The seven typed endpoints (plan-operations-server-builds.md M6) are facades over the same
- * path: each converts its typed body to the generic request, runs the same structural validator and
- * the same manager call, and renames the error paths back to the fields the caller sent on the way
- * out ({@link #facadeField}). Their only own rules are the shape ones the typed body carries.
+ * <p>The seven typed endpoints (DevDocs/adr/0007 M6) are facades over the same path: each converts
+ * its typed body to the generic request, runs the same structural validator and the same manager
+ * call, and renames the error paths back to the fields the caller sent on the way out ({@link
+ * #facadeField}). Their only own rules are the shape ones the typed body carries.
  */
 @ApiController
 public class InventoryOperationsApiController extends BaseApiInventoryController
@@ -53,6 +53,8 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
   @Autowired InventoryOperationManager inventoryOperationManager;
   @Autowired InventoryOperationPostValidator operationPostValidator;
   @Autowired InventoryOperationConfigRegistry operationConfigs;
+  @Autowired SampleApiPostValidator sampleApiPostValidator;
+
   @Autowired SampleApiPostFullValidator sampleApiPostFullValidator;
 
   /** Only converts an already-bound Map into a DTO, so it needs none of the API mapper's setup. */
@@ -352,11 +354,18 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
       }
     }
     if (!errors.hasErrors()) {
-      // The full-post validator names fields relative to the sample (quantity,
-      // subSamples[i].quantity); this binding result is rooted at the request, so nest the path
-      // or a rejection would fail to resolve the field and surface as a 500.
+      // Both validators, exactly as POST /samples runs them. Running only the full-post one left
+      // the sample unbounded: the length, tag and extra-field rules live on sampleApiPostValidator,
+      // and nothing else bounded them - the input validator only checks that a "text" input is a
+      // CharSequence, so an over-long sampleName reached EditInfo.name (varchar(255)) inside the
+      // manager's transaction, after the origin locks were taken (parallel review).
+      //
+      // Both name fields relative to the sample (name, quantity, subSamples[i].quantity); this
+      // binding result is rooted at the request, so nest the path or a rejection would fail to
+      // resolve the field and surface as a 500.
       errors.pushNestedPath("newSample");
       try {
+        inputValidator.validate(newSample, sampleApiPostValidator, errors);
         inputValidator.validate(
             new ApiSampleFullPost(newSample, user, template), sampleApiPostFullValidator, errors);
       } finally {

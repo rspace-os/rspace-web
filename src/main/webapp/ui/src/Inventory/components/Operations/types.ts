@@ -34,8 +34,7 @@ export type OperationInputs = Record<string, OperationInputValue>;
  * The definition key that produced a field. The server stamps it when it builds an operation's
  * fields; the API returns it on GET and ignores it in every request (it is read-only on the wire),
  * which is what lets a later operation identify a field an earlier one generated regardless of the
- * locale its name was rendered in (F6, e.g. the Passage counter). Carried here so the wizard's model
- * of the server build (buildOperationRequest) describes what the server stores. A field absorbed
+ * locale its name was rendered in (F6, e.g. the Passage counter). A field absorbed
  * into an inherited TEMPLATE field carries no key, since InventoryEntityField has no such column;
  * that gap is a documented follow-up in DevDocs/adr/0007.
  */
@@ -60,22 +59,6 @@ export type OperationTextFieldValue = OperationFieldKey & {
 
 export type OperationExtraField = OperationLinkField | OperationTextFieldValue;
 
-export type OperationSubSample = {
-  quantity: OperationQuantity;
-  extraFields: Array<OperationExtraField>;
-};
-
-export type OperationNewSample = {
-  name: string;
-  /** null for an ad-hoc sample; a template id when the user chose a template (see DevDocs/adr/0007). */
-  templateId: number | null;
-  quantity: OperationQuantity;
-  storageTempMin?: OperationQuantity;
-  storageTempMax?: OperationQuantity;
-  extraFields: Array<OperationExtraField>;
-  subSamples: Array<OperationSubSample>;
-};
-
 export type OperationOriginUpdate = {
   id: number;
   /** How `amountTaken` was decided, which is what lets the backend compare-and-swap it. "all" means
@@ -84,34 +67,17 @@ export type OperationOriginUpdate = {
    * never saw. "explicit" amounts are user-entered and carry no such claim. */
   amountMode: "explicit" | "all";
   amountTaken: OperationQuantity;
-  /** Custom fields to add to the origin subsample itself (e.g. Destroy's disposed date). Omitted when
-   * the operation adds none, so an ordinary decrement-only origin update is unchanged. */
-  extraFields?: Array<OperationExtraField>;
 };
 
 /**
- * The wizard's model of what the server builds and stores: buildOperationRequest produces it so the
- * confirmation preview can be checked against it. It is the shape the endpoint accepted before the
- * server started building the sample (plan-operations-server-builds.md, M4 and M5); nothing POSTs
- * it now (see OperationInputsRequest).
- */
-export type OperationRequest = {
-  operationType: string;
-  origins: Array<OperationOriginUpdate>;
-  /** The sample the operation creates, or null for a terminal operation that produces nothing
-   * (noOutput, e.g. Destroy). */
-  newSample: OperationNewSample | null;
-};
-
-/**
- * The request the wizard POSTs (plan-operations-server-builds.md, M4): the values the user typed,
+ * The request the wizard POSTs (DevDocs/adr/0007, M4): the values the user typed,
  * keyed by the definition's input key, from which the server builds the sample itself. Each origin
  * still carries the amount taken and how it was decided, which the server compare-and-swaps against
  * the live quantity; the origin fields an operation adds (Destroy's disposed date) are the server's.
  */
 export type OperationInputsRequest = {
   operationType: string;
-  origins: Array<Omit<OperationOriginUpdate, "extraFields">>;
+  origins: Array<OperationOriginUpdate>;
   inputs: OperationInputs;
   /** null for an ad-hoc sample; numeric like POST /samples. */
   templateId: number | null;

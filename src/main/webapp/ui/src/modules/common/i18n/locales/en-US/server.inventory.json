@@ -143,6 +143,7 @@
       "operation": {
         "amountModeMustBeAll": "This operation empties its origins, so the amount taken cannot be an explicit amount.",
         "amountModeNotApplicable": "This operation does not take from its origins, so the amount taken cannot be a whole-origin claim.",
+        "amountModeUnknown": "Unrecognised amount mode. Use \"explicit\" for an amount the user chose, or \"all\" to take the origin's whole quantity.",
         "amountTakenCategoryMismatch": "The amount taken must use the origin's measurement category (e.g. millilitres from a volume origin).",
         "amountTakenExceedsOrigin": "Cannot take more from an origin than it currently holds.",
         "amountTakenInvalid": "Each origin must specify a non-negative amount, with a unit, to take from it.",

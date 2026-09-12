@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.model.field.FieldType;
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -202,6 +203,50 @@ public class InventoryOperationConfigRegistry {
     // would be an amount the user chooses that the endpoint then ignores.
     if (effect.emptiesOrigin() && effect.amountTakenFrom() != null) {
       problems.add("emptiesOrigin operations must not also declare amountTakenFrom");
+    }
+    problems.addAll(validateCountBounds(operation, effect));
+    return problems;
+  }
+
+  /**
+   * The input named by {@code countFrom} must declare bounds inside what the request builder
+   * accepts.
+   *
+   * <p>Without them the builder's own guard is the only thing standing between a client and a
+   * subsample count it refuses, and that guard throws {@link IllegalArgumentException}, which the
+   * shared advice maps to a 422 carrying the exception's raw English message - untranslated text,
+   * echoing the client's input, shown in the wizard's alert. Every configured operation already
+   * declares {@code min: 1, max: 100}; this makes the endpoint's 400 depend on the config saying so
+   * rather than on it happening to (parallel review).
+   */
+  private static List<String> validateCountBounds(
+      InventoryOperationConfig operation, InventoryOperationConfig.Effect effect) {
+    if (effect.countFrom() == null) {
+      return List.of();
+    }
+    InventoryOperationConfig.Input count =
+        operation.inputs().stream()
+            .filter(input -> effect.countFrom().equals(input.key()))
+            .findFirst()
+            .orElse(null);
+    if (count == null) {
+      return List.of(); // already reported as naming an undeclared input
+    }
+    List<String> problems = new ArrayList<>();
+    if (count.min() == null || count.min().compareTo(BigDecimal.ONE) < 0) {
+      problems.add(
+          String.format(
+              "countFrom input '%s' must declare min >= 1, was %s", count.key(), count.min()));
+    }
+    if (count.max() == null
+        || count
+                .max()
+                .compareTo(BigDecimal.valueOf(InventoryOperationRequestBuilder.MAX_SUBSAMPLES))
+            > 0) {
+      problems.add(
+          String.format(
+              "countFrom input '%s' must declare max <= %d, was %s",
+              count.key(), InventoryOperationRequestBuilder.MAX_SUBSAMPLES, count.max()));
     }
     return problems;
   }

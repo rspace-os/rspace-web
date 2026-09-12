@@ -533,6 +533,19 @@ class InventoryOperationPostValidatorTest {
   }
 
   @Test
+  void rejectsAnUnrecognisedAmountModeWithAKeyedMessage() {
+    // An unrecognised wire value binds to UNKNOWN rather than throwing out of the @JsonCreator.
+    // Throwing there produced an HttpMessageNotReadableException whose raw English message the
+    // shared advice copied into the 400 body, so an untranslated developer string (echoing the
+    // client's own input) reached the user. Rejecting it here keeps the 400 and makes the message
+    // a catalog key like every other rule on this endpoint (parallel review).
+    ApiInventoryOperationPost request = aliquotRequest();
+    request.getOrigins().get(0).setAmountMode(ApiInventoryOperationAmountMode.UNKNOWN);
+    assertSingleErrorWithCode(
+        validate(request), "origins[0].amountMode", "errors.inventory.operation.amountModeUnknown");
+  }
+
+  @Test
   void stillAcceptsAnAllAmountModeOnAnOperationThatDoesTakeFromItsOrigins() {
     // Aliquot decrements its origin, so "take all of it" is a real request and stays a
     // compare-and-swap rather than a 400.

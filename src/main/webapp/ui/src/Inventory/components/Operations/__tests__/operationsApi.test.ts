@@ -59,7 +59,7 @@ describe("performOperation", () => {
 });
 
 // The inputs shape names a rejected input by its bare key ("sampleName: ..."), never a dotted path
-// (plan-operations-server-builds.md, M4), so the wizard swaps the key for the label it shows.
+// (DevDocs/adr/0007, M4), so the wizard swaps the key for the label it shows.
 describe("describeOperationError", () => {
   const operation = {
     key: "aliquot",

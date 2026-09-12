@@ -162,7 +162,16 @@ public class InventoryOperationPostValidator implements Validator {
       // field keep working, and it is NOT read as a whole-origin claim: only a DECLARED "all"
       // earns the compare-and-swap, so an absent mode whose amount does not empty the origin still
       // gets the mustEmptyOrigin 400 rather than a 409 it could never resolve.
-      if (config.effect().emptiesOrigin()
+      if (origin.getAmountMode() == ApiInventoryOperationAmountMode.UNKNOWN) {
+        // A wire value the enum does not recognise. It binds to UNKNOWN rather than throwing from
+        // the @JsonCreator so that the rejection is a catalog key here, not the raw English of an
+        // HttpMessageNotReadableException copied into the 400 body (parallel review). Reported
+        // before the two rules below because neither can mean anything for an unknown mode.
+        errors.rejectValue(
+            "amountMode",
+            "errors.inventory.operation.amountModeUnknown",
+            "Unrecognised amount mode.");
+      } else if (config.effect().emptiesOrigin()
           && origin.getAmountMode() == ApiInventoryOperationAmountMode.EXPLICIT) {
         errors.rejectValue(
             "amountMode",

@@ -30,8 +30,14 @@ import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserExistsException;
 import com.researchspace.testutils.TestFactory;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -317,23 +323,49 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
     verify(userDao, never()).save(Mockito.any(User.class));
   }
 
+  /** The client's own declaration of the preference names, the source this allowlist must track. */
+  private static final Path UI_PREFERENCES_SOURCE =
+      Path.of("src/main/webapp/ui/src/hooks/api/useUiPreference.tsx");
+
+  /** An entry of that file's PREFERENCES map, e.g. {@code GALLERY_VIEW_MODE: Symbol.for("...")}. */
+  private static final Pattern DECLARED_PREFERENCE =
+      Pattern.compile("(\\w+):\\s*Symbol\\.for\\(\"(\\w+)\"\\)");
+
+  /**
+   * The names the frontend declares, read from its source at test time.
+   *
+   * <p>Deliberately NOT a hand-written copy. Transcribing them here made a third copy of one list
+   * (the TS map, the Java allowlist, this test), and a third copy cannot catch the drift the test
+   * exists to catch: adding a preference to the TS map and forgetting UI_JSON_SETTINGS_KEYS left
+   * every Java test green while the new preference silently stopped persisting (parallel review).
+   * Reading the real file is the same technique InventoryOperationsErrorCatalogTest uses.
+   */
+  private static List<String> declaredPreferenceNames() throws IOException {
+    String source = Files.readString(UI_PREFERENCES_SOURCE);
+    // Only the PREFERENCES map, so an unrelated Symbol.for elsewhere in the file cannot leak in.
+    int start = source.indexOf("export const PREFERENCES");
+    assertTrue(start >= 0, () -> "no PREFERENCES map in " + UI_PREFERENCES_SOURCE);
+    int end = source.indexOf("};", start);
+    assertTrue(end > start, () -> "unterminated PREFERENCES map in " + UI_PREFERENCES_SOURCE);
+
+    List<String> names = new ArrayList<>();
+    Matcher matcher = DECLARED_PREFERENCE.matcher(source.substring(start, end));
+    while (matcher.find()) {
+      assertEquals(
+          matcher.group(1),
+          matcher.group(2),
+          "a PREFERENCES entry's key and its Symbol.for name must agree");
+      names.add(matcher.group(1));
+    }
+    assertFalse(names.isEmpty(), () -> "no preference names parsed from " + UI_PREFERENCES_SOURCE);
+    return names;
+  }
+
   @Test
-  public void mergeUiJsonSettingAcceptsEveryDeclaredPreferenceName() {
+  public void mergeUiJsonSettingAcceptsEveryDeclaredPreferenceName() throws IOException {
     // The counterpart to the rejection above: the allowlist has to admit every name the client
     // declares in its PREFERENCES map, or a legitimate preference silently stops persisting.
-    for (String declared :
-        List.of(
-            "GALLERY_VIEW_MODE",
-            "GALLERY_SORT_BY",
-            "GALLERY_SORT_ORDER",
-            "GALLERY_PICKER_INITIAL_SECTION",
-            "GALLERY_SIDEBAR_OPEN",
-            "INVENTORY_FORM_SECTIONS_EXPANDED",
-            "INVENTORY_HIDDEN_RIGHT_PANEL",
-            "INVENTORY_OPERATION_PROCESS_VALUES",
-            "INVENTORY_OPERATION_PROCESS_NAMES",
-            "INVENTORY_OPERATION_PROCESS_NAME_DEFAULTS",
-            "SYSADMIN_USERS_TABLE_COLUMNS")) {
+    for (String declared : declaredPreferenceNames()) {
       User user = userWithUiJsonSettings("{}");
       when(userDao.save(user)).thenReturn(user);
       userManager.mergeUiJsonSetting(declared, "{\"value\":1}", "jbloggs");

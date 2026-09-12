@@ -99,3 +99,42 @@ describe("OperationWizard while the unit store is still loading", () => {
     ).not.toThrow();
   });
 });
+
+describe("OperationWizard for an origin whose unit has no atomic unit", () => {
+  /*
+   * Molarity (unit ids 11-14) and concentration (15-17) are real, server-supported inventory units
+   * (RSUnitDef), and the sample/subsample API applies no category restriction, so a subsample can
+   * genuinely hold one. The static unit table only knows volume, mass and dimensionless, so
+   * toCommonUnit -> atomicUnitOfSameCategory THROWS "Unknown unit: N" for them.
+   *
+   * That is the same shape as the quantityCategory throw above, and it reaches the same place: the
+   * wizard picks its representative origin during render, and ProcessAction mounts the wizard as
+   * soon as the selection is processable, so the throw takes out the whole context menu.
+   */
+  it("mounts for a molarity origin without throwing", () => {
+    expect(() =>
+      render(
+        <OperationWizard
+          open={false}
+          onClose={vi.fn()}
+          origins={[makeMockSubSample({ quantity: { numericValue: 1, unitId: 11 } })]}
+        />,
+      ),
+    ).not.toThrow();
+  });
+
+  it("mounts for a multi-origin selection holding concentration quantities without throwing", () => {
+    expect(() =>
+      render(
+        <OperationWizard
+          open={false}
+          onClose={vi.fn()}
+          origins={[
+            makeMockSubSample({ id: 1, globalId: "SS1", quantity: { numericValue: 2, unitId: 15 } }),
+            makeMockSubSample({ id: 2, globalId: "SS2", quantity: { numericValue: 1, unitId: 15 } }),
+          ]}
+        />,
+      ),
+    ).not.toThrow();
+  });
+});

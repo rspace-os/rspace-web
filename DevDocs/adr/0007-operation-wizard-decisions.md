@@ -431,7 +431,7 @@ above) without computing it.
 
 ## Amended 2026-09-11: the server builds the sample
 
-Implemented as plan-operations-server-builds.md steps M1 to M5 (RSDEV-1231). The
+Implemented as DevDocs/adr/0007 steps M1 to M5 (RSDEV-1231). The
 client no longer assembles the new sample. The request carries the origins with the
 amount taken from each, the values the user typed (`inputs`, keyed by the definition's
 input keys), the template and the documentation target. The server validates the inputs
@@ -479,9 +479,9 @@ What that changes in the sections above:
 
 ## Amended 2026-09-11: the seven typed endpoints are the public API
 
-plan-operations-server-builds.md M6 (RSDEV-1231). The generic `POST /operations` stays
+DevDocs/adr/0007 M6 (RSDEV-1231). The generic `POST /operations` stays
 internal and unpublished; the public contract is one typed endpoint per operation,
-`POST /operations/<key>`, in the shapes frozen by M0 (`.claude/operations-facade-design-m0.md`):
+`POST /operations/<key>`, in the shapes frozen by M0 (DevDocs/adr/0007):
 origins by global id, a singular `origin` for the six single-origin operations and
 `origins` for Pool, input fields named exactly after the definition's input keys, numeric
 `templateId`, `documentedByGlobalId`, an optional per-origin `expectedQuantity`

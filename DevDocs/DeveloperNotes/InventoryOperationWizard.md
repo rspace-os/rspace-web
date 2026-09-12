@@ -272,8 +272,8 @@ structural rules.
 ### The seven typed endpoints (the public API)
 
 `POST /api/inventory/v1/operations/{aliquot,passage,pool,derive,cryopreserve,revive,destroy}`
-are facades over the same path (plan-operations-server-builds.md M6; shapes frozen in
-`.claude/operations-facade-design-m0.md`). Each request class in
+are facades over the same path (DevDocs/adr/0007 M6; shapes frozen in
+DevDocs/adr/0007). Each request class in
 `ApiInventoryOperationRequests` carries what is consumed (`origin` for six, `origins`
 for Pool, identified by global id `"SS1234"`) with an optional `expectedQuantity` per
 origin, the definition's inputs as fields named exactly after the input keys, and for a
@@ -299,7 +299,7 @@ creating operations, 200 for Destroy.
 
 All seven are in the published OpenAPI spec
 (`src/main/webapp/resources/rspace_api_inventory_specs_2_26_0.yaml`, tag `Operations`,
-plan-operations-server-builds.md M7): a path each, a request schema each, the shared
+DevDocs/adr/0007 M7): a path each, a request schema each, the shared
 `OperationOrigin` / `OperationOriginWithAmount` elements and the `OperationResult`
 envelope. The generic `POST /operations` and `GET /operations/config` stay unpublished
 until user-defined operations ship (M8), so the config endpoint remains the wizard's.

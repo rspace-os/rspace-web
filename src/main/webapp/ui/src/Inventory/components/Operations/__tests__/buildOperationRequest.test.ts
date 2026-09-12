@@ -1,20 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { buildOperationInputsRequest, buildOperationRequest } from "../buildOperationRequest";
+import { buildOperationInputsRequest, withUniqueFieldNames } from "../buildOperationRequest";
 import type { InventoryOperation } from "../operationsConfig";
-import type {
-  OperationInputs,
-  OperationLinkField,
-  OperationNewSample,
-  OperationOrigin,
-  OperationRequest,
-} from "../types";
+import type { OperationExtraField, OperationInputs, OperationOrigin } from "../types";
 import { operations } from "./testOperations";
 
-/** The created sample, asserting it exists - producing operations always create one. */
-function newSampleOf(request: OperationRequest): OperationNewSample {
-  if (!request.newSample) throw new Error("expected a new sample");
-  return request.newSample;
-}
+/*
+ * These tests used to drive a TS buildOperationRequest, the wizard's own model of the sample the
+ * server builds. That function had no production caller: since the server started building the
+ * sample itself it was a second implementation that could drift from the real one while both suites
+ * stayed green, so it was deleted (parallel review). What the server builds is pinned server-side by
+ * InventoryOperationRequestBuilderTest and InventoryOperationsInputsShapeMVCIT.
+ *
+ * What remains here is the part the wizard still owns: the request it POSTs, and the field-name
+ * uniqueness rule the confirmation preview applies so it can show the names the server will store.
+ */
 
 /** One of the real definitions, since the inputs shape sends exactly the inputs a definition declares. */
 function real(key: string): InventoryOperation {
@@ -23,31 +22,11 @@ function real(key: string): InventoryOperation {
   return operation;
 }
 
-const deriveOperation: InventoryOperation = {
-  key: "derive",
-  labelKey: "operations.derive.label",
-  documentationStep: true,
-  inputs: [],
-  effect: {
-    nameFrom: "sampleName",
-    countFrom: "count",
-    eachAmountFrom: "eachAmount",
-    amountTakenFrom: "amountTaken",
-    links: [{ relationType: "IsDerivedFrom", fieldNameKey: "operations.derive.linkFieldName" }],
-  },
-};
-
 const origin: OperationOrigin = {
   id: 100,
   globalId: "SS100",
   name: "Origin A",
   quantity: { numericValue: 1, unitId: 3 },
-};
-
-const resolveLabel = (key: string, params?: Record<string, unknown>): string => {
-  if (key === "operations.derive.linkFieldName") return `Is Derived From using process: ${String(params?.processName)}`;
-  if (key === "operations.pool.linkFieldName") return `Pooled from: ${String(params?.originName)}`;
-  return key;
 };
 
 const deriveValues: OperationInputs = {
@@ -58,111 +37,6 @@ const deriveValues: OperationInputs = {
   amountTaken: { numericValue: 0.6, unitId: 3 },
 };
 
-describe("buildOperationRequest (Derive)", () => {
-  const request = buildOperationRequest({
-    operation: deriveOperation,
-    values: deriveValues,
-    origins: [origin],
-    resolveLabel,
-    templateId: null,
-  });
-
-  it("sets the origin to its absolute after-quantity", () => {
-    expect(request.origins).toEqual([
-      { id: 100, amountMode: "explicit", amountTaken: { numericValue: 0.6, unitId: 3 } },
-    ]);
-  });
-
-  it("refuses to build a request for a fractional or excessive child count", () => {
-    // Code review, finding 12: Array.from({ length: 1.5 }) silently truncates to one child.
-    for (const count of [1.5, 101, 0]) {
-      expect(() =>
-        buildOperationRequest({
-          operation: deriveOperation,
-          values: { ...deriveValues, count },
-          origins: [origin],
-          resolveLabel,
-          templateId: null,
-        }),
-      ).toThrow();
-    }
-  });
-
-  it("passes through a chosen templateId (any / from-origin-sample resolve to an id)", () => {
-    const withTemplate = buildOperationRequest({
-      operation: deriveOperation,
-      values: deriveValues,
-      origins: [origin],
-      resolveLabel,
-      templateId: 77,
-    });
-    expect(newSampleOf(withTemplate).templateId).toBe(77);
-  });
-
-  it("creates N subsamples, each with the each-item amount in the origin's unit", () => {
-    expect(newSampleOf(request).subSamples).toHaveLength(2);
-    for (const subSample of newSampleOf(request).subSamples) {
-      expect(subSample.quantity).toEqual({ numericValue: 0.5, unitId: 3 });
-    }
-  });
-
-  it("puts the IsDerivedFrom link (named with the process) on the sample only, never on the subsamples", () => {
-    const expectedName = "Is Derived From using process: PCR";
-    const sampleLink = newSampleOf(request).extraFields[0] as OperationLinkField;
-    expect(sampleLink.name).toBe(expectedName);
-    expect(sampleLink.link).toEqual({
-      relationType: "IsDerivedFrom",
-      targetGlobalId: "SS100",
-      versionPin: null,
-    });
-    // The process links belong on the created sample, not on any subsample it creates.
-    for (const subSample of newSampleOf(request).subSamples) {
-      expect(subSample.extraFields).toEqual([]);
-    }
-  });
-
-  it("stamps each field with the definition key that produced it", () => {
-    // Resolved names interpolate user input and are localized, so the backend matches an operation
-    // request's fields to the definition by key, not by name (see DevDocs/adr/0007).
-    const sampleLink = newSampleOf(request).extraFields[0] as OperationLinkField;
-    expect(sampleLink.operationFieldKey).toBe("operations.derive.linkFieldName");
-  });
-
-  it("sets the sample total quantity to N x each-amount", () => {
-    expect(newSampleOf(request).quantity).toEqual({ numericValue: 1, unitId: 3 });
-  });
-
-  it("carries the operation key as operationType", () => {
-    expect(request.operationType).toBe("derive");
-  });
-
-  it("adds the optional documentation link (IsDocumentedBy) to the sample only, not the subsamples", () => {
-    const withDoc = buildOperationRequest({
-      operation: deriveOperation,
-      values: deriveValues,
-      origins: [origin],
-      resolveLabel,
-      templateId: null,
-      documentationLink: { fieldName: "Documented by", targetGlobalId: "SD42" },
-    });
-    const docOn = (fields: Array<{ type: string }>) =>
-      fields.some((f) => (f as OperationLinkField).link?.relationType === "IsDocumentedBy");
-    expect(docOn(newSampleOf(withDoc).extraFields)).toBe(true);
-    // The documentation link is a wizard-level feature, so it carries the fixed key every
-    // output-producing operation accepts.
-    const documentation = newSampleOf(withDoc).extraFields.find(
-      (f) => (f as OperationLinkField).link?.relationType === "IsDocumentedBy",
-    );
-    expect(documentation?.operationFieldKey).toBe("operations.documentationLink");
-    // The documentation link, like the provenance link, stays on the sample and off the subsamples.
-    for (const subSample of newSampleOf(withDoc).subSamples) {
-      expect(subSample.extraFields).toEqual([]);
-    }
-  });
-});
-
-// What the wizard POSTs since plan-operations-server-builds.md M4: the server builds the sample, so
-// only the typed inputs, the per-origin amounts and the two wizard-level choices travel.
 describe("buildOperationInputsRequest (the inputs shape)", () => {
   it("sends the declared inputs by key, the origins' amounts, the template and the documentation target", () => {
     const request = buildOperationInputsRequest({
@@ -170,7 +44,6 @@ describe("buildOperationInputsRequest (the inputs shape)", () => {
       // an undeclared key never travels; the amount taken belongs to the origin element (M3)
       values: { ...deriveValues, undeclared: "x" },
       origins: [origin],
-      resolveLabel,
       templateId: 77,
       documentedByGlobalId: "SD42",
     });
@@ -193,7 +66,6 @@ describe("buildOperationInputsRequest (the inputs shape)", () => {
       operation: real("destroy"),
       values: {},
       origins: [{ id: 100, globalId: "SS100", name: "Vial A", quantity: { numericValue: 2, unitId: 3 } }],
-      resolveLabel,
       templateId: null,
       documentedByGlobalId: null,
     });
@@ -206,290 +78,23 @@ describe("buildOperationInputsRequest (the inputs shape)", () => {
     });
   });
 
-  it("decides each origin's amount exactly as the model of the server build does", () => {
-    const params = {
-      operation: real("pool"),
-      values: {
-        sampleName: "Pool",
-        count: 1,
-        eachAmount: { numericValue: 2, unitId: 3 },
-        amountTaken: { numericValue: 1, unitId: 3 },
-      },
-      origins: [
-        { id: 1, globalId: "SS1", name: "Vial A", quantity: { numericValue: 5, unitId: 3 } },
-        { id: 2, globalId: "SS2", name: "Vial B", quantity: { numericValue: 8, unitId: 3 } },
-      ],
-      resolveLabel,
+  it("never sends fields for the origin itself: the server builds those from the definition", () => {
+    // Destroy declares an originFields entry (the disposed date). The wizard used to map it onto
+    // every origin update and the request builder then dropped it, so it was built on each request
+    // and thrown away (parallel review). An origin update carries only id, mode and amount.
+    const request = buildOperationInputsRequest({
+      operation: real("destroy"),
+      values: { disposedDate: "2026-09-12" },
+      origins: [{ id: 100, globalId: "SS100", name: "Vial A", quantity: { numericValue: 2, unitId: 3 } }],
       templateId: null,
-      amountMode: "perSubsample" as const,
-      perSubsampleAmounts: { SS1: { numericValue: 2, unitId: 3 } },
-    };
-    expect(buildOperationInputsRequest({ ...params, documentedByGlobalId: null }).origins).toEqual(
-      buildOperationRequest(params).origins,
-    );
-  });
-});
-
-describe("buildOperationRequest (operation-specific fields)", () => {
-  it("adds a text field and storage temperature when the effect declares them", () => {
-    const cryo: InventoryOperation = {
-      key: "cryopreserve",
-      labelKey: "operations.cryopreserve.label",
-      documentationStep: true,
-      inputs: [],
-      effect: {
-        nameFrom: "sampleName",
-        countFrom: "count",
-        eachAmountFrom: "eachAmount",
-        amountTakenFrom: "amountTaken",
-        storageTempFrom: "storageTemp",
-        links: [{ relationType: "IsDerivedFrom", fieldNameKey: "operations.cryopreserve.linkFieldName" }],
-        textFields: [{ nameKey: "operations.cryopreserve.cryomediumField", contentFrom: "cryomedium" }],
-      },
-    };
-    const values: OperationInputs = {
-      sampleName: "Frozen aliquots",
-      count: 1,
-      eachAmount: { numericValue: 1, unitId: 3 },
-      amountTaken: { numericValue: 0, unitId: 3 },
-      cryomedium: "DMSO 10%",
-      storageTemp: { numericValue: -196, unitId: 8 },
-    };
-
-    const request = buildOperationRequest({
-      operation: cryo,
-      values,
-      origins: [origin],
-      resolveLabel,
-      templateId: null,
+      documentedByGlobalId: null,
     });
-
-    expect(newSampleOf(request).storageTempMin).toEqual({ numericValue: -196, unitId: 8 });
-    expect(newSampleOf(request).storageTempMax).toEqual({ numericValue: -196, unitId: 8 });
-    const textField = newSampleOf(request).extraFields.find((f) => f.type === "text");
-    expect(textField).toMatchObject({
-      content: "DMSO 10%",
-      operationFieldKey: "operations.cryopreserve.cryomediumField",
-    });
-    // text fields live on the sample only, not on the subsamples
-    expect(newSampleOf(request).subSamples[0].extraFields.every((f) => f.type === "link")).toBe(true);
+    expect(Object.keys(request.origins[0]).sort()).toEqual(["amountMode", "amountTaken", "id"]);
   });
 });
 
-// An operation with no amountTakenFrom (e.g. Passage) must NOT send an empty origins array - the
-// backend rejects that. It sends the origin with a zero amount (a no-op decrement), so the origin
-// is still linked and permission-checked but its quantity is unchanged. See DevDocs/adr/0007.
-describe("buildOperationRequest (operation that does not decrement the origin)", () => {
-  const passageOperation: InventoryOperation = {
-    key: "passage",
-    labelKey: "operations.passage.label",
-    documentationStep: true,
-    inputs: [],
-    effect: {
-      nameFrom: "sampleName",
-      countFrom: "count",
-      eachAmountFrom: "eachAmount",
-      links: [{ relationType: "IsDerivedFrom", fieldNameKey: "operations.passage.linkFieldName" }],
-    },
-  };
-  const request = buildOperationRequest({
-    operation: passageOperation,
-    values: { sampleName: "Culture P2", count: 1, eachAmount: { numericValue: 2, unitId: 3 } },
-    origins: [origin],
-    resolveLabel,
-    templateId: null,
-  });
-
-  it("sends the origin with a zero amount taken (not an empty origins array)", () => {
-    expect(request.origins).toEqual([{ id: 100, amountMode: "explicit", amountTaken: { numericValue: 0, unitId: 3 } }]);
-  });
-});
-
-// Pool (DevDocs/adr/0007) is multi-origin: it decrements every selected origin by the same shared amount and
-// links the new sample back to each with a HasPart link.
-describe("buildOperationRequest (Pool - multi-origin)", () => {
-  const poolOperation: InventoryOperation = {
-    key: "pool",
-    labelKey: "operations.pool.label",
-    requiresMultiple: true,
-    documentationStep: true,
-    inputs: [],
-    effect: {
-      nameFrom: "sampleName",
-      countFrom: "count",
-      eachAmountFrom: "eachAmount",
-      amountTakenFrom: "amountTaken",
-      links: [{ relationType: "HasPart", fieldNameKey: "operations.pool.linkFieldName" }],
-    },
-  };
-  const origins: Array<OperationOrigin> = [
-    { id: 1, globalId: "SS1", name: "Vial A", quantity: { numericValue: 5, unitId: 3 } },
-    { id: 2, globalId: "SS2", name: "Vial B", quantity: { numericValue: 5, unitId: 3 } },
-    { id: 3, globalId: "SS3", name: "Vial C", quantity: { numericValue: 5, unitId: 3 } },
-  ];
-  const request = buildOperationRequest({
-    operation: poolOperation,
-    values: {
-      sampleName: "Pool",
-      count: 1,
-      eachAmount: { numericValue: 2, unitId: 3 },
-      amountTaken: { numericValue: 1, unitId: 3 },
-    },
-    origins,
-    resolveLabel,
-    templateId: null,
-  });
-
-  it("reduces every origin by the same shared amount taken", () => {
-    expect(request.origins).toEqual([
-      { id: 1, amountMode: "explicit", amountTaken: { numericValue: 1, unitId: 3 } },
-      { id: 2, amountMode: "explicit", amountTaken: { numericValue: 1, unitId: 3 } },
-      { id: 3, amountMode: "explicit", amountTaken: { numericValue: 1, unitId: 3 } },
-    ]);
-  });
-
-  it("puts one HasPart link back to each pooled origin on the new sample", () => {
-    const links = newSampleOf(request).extraFields.filter((f): f is OperationLinkField => f.type === "link");
-    expect(links.map((l) => l.link.targetGlobalId)).toEqual(["SS1", "SS2", "SS3"]);
-    expect(links.every((l) => l.link.relationType === "HasPart")).toBe(true);
-    // All three carry the one link spec's key: the backend matches by key and distinguishes the
-    // links by their targets, not by their (interpolated) names.
-    expect(links.every((l) => l.operationFieldKey === "operations.pool.linkFieldName")).toBe(true);
-  });
-
-  it("gives each pooled link a distinct name including the origin subsample name", () => {
-    const links = newSampleOf(request).extraFields.filter((f): f is OperationLinkField => f.type === "link");
-    const names = links.map((l) => l.name);
-    expect(names).toEqual(["Pooled from: Vial A", "Pooled from: Vial B", "Pooled from: Vial C"]);
-    // Distinct names: a record cannot hold two fields with the same name.
-    expect(new Set(names).size).toBe(names.length);
-  });
-
-  // Two distinct subsamples may carry the same name, so interpolating the origin's name is not on
-  // its own enough to keep the generated field names apart. The backend rejects the duplicate
-  // (InventoryFieldNameUniquenessValidator, trimmed and case-insensitive), which made a perfectly
-  // valid Pool selection fail at Perform with nothing the wizard could do about it (Codex review,
-  // PR #1090).
-  it("keeps pooled link names apart when two origins share a name", () => {
-    const sameNamed: Array<OperationOrigin> = [
-      { id: 1, globalId: "SS1", name: "Aliquot", quantity: { numericValue: 5, unitId: 3 } },
-      { id: 2, globalId: "SS2", name: "Aliquot", quantity: { numericValue: 5, unitId: 3 } },
-    ];
-    const poolOfSameNamed = buildOperationRequest({
-      operation: poolOperation,
-      values: {
-        sampleName: "Pool",
-        count: 1,
-        eachAmount: { numericValue: 2, unitId: 3 },
-        amountTaken: { numericValue: 1, unitId: 3 },
-      },
-      origins: sameNamed,
-      resolveLabel,
-      templateId: null,
-    });
-
-    const links = newSampleOf(poolOfSameNamed).extraFields.filter((f): f is OperationLinkField => f.type === "link");
-    const names = links.map((l) => l.name);
-    expect(new Set(names.map((n) => n.trim().toLowerCase())).size).toBe(names.length);
-    // Disambiguated by the origin each link points at, so the name still says which is which.
-    expect(names).toEqual(["Pooled from: Aliquot (SS1)", "Pooled from: Aliquot (SS2)"]);
-    // The targets and the key the backend matches on are untouched.
-    expect(links.map((l) => l.link.targetGlobalId)).toEqual(["SS1", "SS2"]);
-    expect(links.every((l) => l.operationFieldKey === "operations.pool.linkFieldName")).toBe(true);
-  });
-
-  it("differs only by case is still a duplicate to the backend", () => {
-    const casedNames: Array<OperationOrigin> = [
-      { id: 1, globalId: "SS1", name: "Aliquot", quantity: { numericValue: 5, unitId: 3 } },
-      { id: 2, globalId: "SS2", name: "ALIQUOT", quantity: { numericValue: 5, unitId: 3 } },
-    ];
-    const poolOfCased = buildOperationRequest({
-      operation: poolOperation,
-      values: {
-        sampleName: "Pool",
-        count: 1,
-        eachAmount: { numericValue: 2, unitId: 3 },
-        amountTaken: { numericValue: 1, unitId: 3 },
-      },
-      origins: casedNames,
-      resolveLabel,
-      templateId: null,
-    });
-
-    const names = newSampleOf(poolOfCased)
-      .extraFields.filter((f): f is OperationLinkField => f.type === "link")
-      .map((l) => l.name);
-    expect(new Set(names.map((n) => n.trim().toLowerCase())).size).toBe(names.length);
-  });
-});
-
-// Destroy (DevDocs/adr/0007) is a terminal operation: noOutput (no new sample), it empties the origin (takes
-// its full current quantity) and adds a custom field to the origin itself (the disposed date).
-describe("buildOperationRequest (Destroy - terminal, no output)", () => {
-  const destroyOperation: InventoryOperation = {
-    key: "destroy",
-    labelKey: "operations.destroy.label",
-    noOutput: true,
-    documentationStep: false,
-    steps: ["confirm"],
-    inputs: [],
-    effect: {
-      emptiesOrigin: true,
-      links: [],
-      originFields: [{ nameKey: "operations.destroy.disposedField", contentFrom: "disposedDate", type: "text" }],
-    },
-  };
-  const request = buildOperationRequest({
-    operation: destroyOperation,
-    // The disposed date is a computed value applied before the request is built (here supplied directly).
-    values: { disposedDate: "2026-07-20" },
-    origins: [{ id: 100, globalId: "SS100", name: "Vial A", quantity: { numericValue: 2, unitId: 3 } }],
-    resolveLabel,
-    templateId: null,
-  });
-
-  it("creates no new sample", () => {
-    expect(request.newSample).toBeNull();
-  });
-
-  it("empties the origin (its full current quantity) and adds the disposed field to it", () => {
-    expect(request.origins).toEqual([
-      {
-        id: 100,
-        amountMode: "all",
-        amountTaken: { numericValue: 2, unitId: 3 },
-        extraFields: [
-          {
-            name: "operations.destroy.disposedField",
-            type: "text",
-            newFieldRequest: true,
-            operationFieldKey: "operations.destroy.disposedField",
-            content: "2026-07-20",
-          },
-        ],
-      },
-    ]);
-  });
-});
-
-// Amount modes for a multi-origin operation (DevDocs/adr/0007): "same" removes one shared amount from every
-// origin; "all" empties each origin to zero; "per subsample" removes a per-origin chosen amount.
-describe("buildOperationRequest (amount modes, multi-origin)", () => {
-  const poolOp: InventoryOperation = {
-    key: "pool",
-    labelKey: "operations.pool.label",
-    requiresMultiple: true,
-    takeAmountPerSubsample: true,
-    documentationStep: true,
-    inputs: [],
-    effect: {
-      nameFrom: "sampleName",
-      countFrom: "count",
-      eachAmountFrom: "eachAmount",
-      amountTakenFrom: "amountTaken",
-      links: [{ relationType: "HasPart", fieldNameKey: "operations.pool.linkFieldName" }],
-    },
-  } as unknown as InventoryOperation;
+describe("buildOperationInputsRequest (amount modes, multi-origin)", () => {
+  const poolOp = real("pool");
   const values: OperationInputs = {
     sampleName: "Pool",
     count: 1,
@@ -501,17 +106,18 @@ describe("buildOperationRequest (amount modes, multi-origin)", () => {
     { id: 2, globalId: "SS2", name: "Vial B", quantity: { numericValue: 8, unitId: 3 } },
     { id: 3, globalId: "SS3", name: "Vial C", quantity: { numericValue: 4, unitId: 3 } },
   ];
-
-  it("'take all' empties every origin (each takes its own full current quantity)", () => {
-    const request = buildOperationRequest({
+  const build = (extra: Partial<Parameters<typeof buildOperationInputsRequest>[0]>) =>
+    buildOperationInputsRequest({
       operation: poolOp,
       values,
       origins,
-      resolveLabel,
       templateId: null,
-      amountMode: "all",
+      documentedByGlobalId: null,
+      ...extra,
     });
-    expect(request.origins).toEqual([
+
+  it("'take all' empties every origin (each takes its own full current quantity)", () => {
+    expect(build({ amountMode: "all" }).origins).toEqual([
       { id: 1, amountMode: "all", amountTaken: { numericValue: 5, unitId: 3 } },
       { id: 2, amountMode: "all", amountTaken: { numericValue: 8, unitId: 3 } },
       { id: 3, amountMode: "all", amountTaken: { numericValue: 4, unitId: 3 } },
@@ -521,24 +127,11 @@ describe("buildOperationRequest (amount modes, multi-origin)", () => {
   it("marks 'take all' origins as a whole-origin claim so the backend can compare-and-swap them", () => {
     // amountTaken alone cannot tell the backend whether 5 was typed by the user or read off the
     // origin. Only the second case may be rejected as stale, so the mode has to travel with it.
-    const request = buildOperationRequest({
-      operation: poolOp,
-      values,
-      origins,
-      resolveLabel,
-      templateId: null,
-      amountMode: "all",
-    });
-    expect(request.origins.map((o) => o.amountMode)).toEqual(["all", "all", "all"]);
+    expect(build({ amountMode: "all" }).origins.map((o) => o.amountMode)).toEqual(["all", "all", "all"]);
   });
 
   it("marks 'per subsample' origins explicit: those amounts are user-entered, not snapshots", () => {
-    const request = buildOperationRequest({
-      operation: poolOp,
-      values,
-      origins,
-      resolveLabel,
-      templateId: null,
+    const request = build({
       amountMode: "perSubsample",
       perSubsampleAmounts: { SS1: { numericValue: 2, unitId: 3 } },
     });
@@ -546,12 +139,7 @@ describe("buildOperationRequest (amount modes, multi-origin)", () => {
   });
 
   it("'per subsample' takes each origin's chosen amount, defaulting a missing one to zero", () => {
-    const request = buildOperationRequest({
-      operation: poolOp,
-      values,
-      origins,
-      resolveLabel,
-      templateId: null,
+    const request = build({
       amountMode: "perSubsample",
       perSubsampleAmounts: { SS1: { numericValue: 2, unitId: 3 }, SS2: { numericValue: 4, unitId: 3 } },
     });
@@ -564,18 +152,54 @@ describe("buildOperationRequest (amount modes, multi-origin)", () => {
   });
 
   it("'same' (the default) takes the one shared amount from every origin", () => {
-    const request = buildOperationRequest({
-      operation: poolOp,
-      values,
-      origins,
-      resolveLabel,
-      templateId: null,
-      amountMode: "same",
-    });
-    expect(request.origins).toEqual([
+    expect(build({ amountMode: "same" }).origins).toEqual([
       { id: 1, amountMode: "explicit", amountTaken: { numericValue: 1, unitId: 3 } },
       { id: 2, amountMode: "explicit", amountTaken: { numericValue: 1, unitId: 3 } },
       { id: 3, amountMode: "explicit", amountTaken: { numericValue: 1, unitId: 3 } },
+    ]);
+  });
+});
+
+describe("withUniqueFieldNames", () => {
+  // The confirmation preview applies this so it shows the names the server will actually store;
+  // the server applies the same rule in InventoryOperationRequestBuilder.withUniqueFieldNames.
+  const link = (name: string, targetGlobalId: string): OperationExtraField => ({
+    name,
+    type: "link",
+    newFieldRequest: true,
+    operationFieldKey: "operations.pool.linkFieldName",
+    link: { relationType: "HasPart", targetGlobalId, versionPin: null },
+  });
+
+  it("leaves distinct names untouched", () => {
+    const fields = [link("Pooled from: Vial A", "SS1"), link("Pooled from: Vial B", "SS2")];
+    expect(withUniqueFieldNames(fields).map((f) => f.name)).toEqual(["Pooled from: Vial A", "Pooled from: Vial B"]);
+  });
+
+  it("suffixes every member of a colliding group with the global id it targets", () => {
+    // Two distinct subsamples may share a name ("Aliquot"), which produced two fields called
+    // "Pooled from: Aliquot"; the endpoint rejects duplicates, so a valid Pool always failed at
+    // Perform. Every member is suffixed, not just the later ones, so the names stay symmetrical.
+    const fields = [link("Pooled from: Aliquot", "SS1"), link("Pooled from: Aliquot", "SS2")];
+    expect(withUniqueFieldNames(fields).map((f) => f.name)).toEqual([
+      "Pooled from: Aliquot (SS1)",
+      "Pooled from: Aliquot (SS2)",
+    ]);
+  });
+
+  it("treats names differing only by case or surrounding space as duplicates, as the backend does", () => {
+    // InventoryFieldNameUniquenessValidator compares trimmed and case-insensitively.
+    const fields = [link("Pooled from: Aliquot", "SS1"), link("  pooled FROM: aliquot ", "SS2")];
+    const names = withUniqueFieldNames(fields).map((f) => f.name);
+    expect(names[0]).toBe("Pooled from: Aliquot (SS1)");
+    expect(names[1]).toBe("  pooled FROM: aliquot  (SS2)");
+  });
+
+  it("falls back to an ordinal when a suffixed name collides in turn", () => {
+    const fields = [link("Pooled from: Aliquot", "SS1"), link("Pooled from: Aliquot", "SS1")];
+    expect(withUniqueFieldNames(fields).map((f) => f.name)).toEqual([
+      "Pooled from: Aliquot (SS1)",
+      "Pooled from: Aliquot (SS1) (2)",
     ]);
   });
 });
