@@ -12,6 +12,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -36,7 +37,7 @@ import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.StoichiometryMoleculeManager;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
-import com.researchspace.service.inventory.SampleApiManager;
+import com.researchspace.service.inventory.SampleSiblingRowLock;
 import com.researchspace.service.inventory.SubSampleApiManager;
 import jakarta.ws.rs.NotFoundException;
 import java.math.BigDecimal;
@@ -57,7 +58,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
   @Mock private IPermissionUtils elnPerms;
   @Mock private InventoryPermissionUtils invPerms;
   @Mock private SubSampleApiManager subSampleMgr;
-  @Mock private SampleApiManager sampleApiMgr;
+  @Mock private SampleSiblingRowLock siblingRowLock;
 
   private StoichiometryInventoryLinkManagerImpl manager;
 
@@ -76,7 +77,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
             elnPerms,
             invPerms,
             subSampleMgr,
-            sampleApiMgr,
+            siblingRowLock,
             new MessageSourceUtils(new JsonMessageSource()));
     user = new User();
     user.setUsername("u1");
@@ -199,6 +200,34 @@ public class StoichiometryInventoryLinkManagerImplTest {
     assertEquals(Long.valueOf(stoichiometryId), result.getStoichiometryId());
     assertTrue(original.isStockDeducted());
     verify(linkDao).save(original);
+  }
+
+  @Test
+  public void eachSubmittedLinkIdIsResolvedExactlyOnce() {
+    // Three passes need the link: the sibling-set lock, the lock ordering and the deduction loop.
+    // Each used to load it again, so a repeated id was loaded six times and lockOrderKey resolved
+    // arbitrary ids on its own, twenty lines below the filtering written to stop that (parallel
+    // review, S4). One load per DISTINCT id, whatever the submitted cardinality.
+    StoichiometryInventoryLink original = new StoichiometryInventoryLink();
+    original.setId(321L);
+    long stoichiometryId = 55L;
+    molecule.getStoichiometry().setId(stoichiometryId);
+    molecule.setActualAmount(10.0);
+    original.setStoichiometryMolecule(molecule);
+    original.setInventoryRecord(invSubSample);
+
+    invSubSample.setQuantity(new QuantityInfo(BigDecimal.valueOf(100), RSUnitDef.GRAM.getId()));
+
+    when(linkDao.getSafeNull(321L)).thenReturn(java.util.Optional.of(original));
+    when(moleculeManager.getDocContainingMolecule(molecule)).thenReturn(owningRecord);
+    when(elnPerms.isPermitted(owningRecord, PermissionType.WRITE, user)).thenReturn(true);
+    when(subSampleMgr.lockSubSampleForEdit(invSubSample.getId(), user)).thenReturn(invSubSample);
+    when(subSampleMgr.getQuantityForUpdate(invSubSample.getId()))
+        .thenReturn(invSubSample.getQuantity());
+
+    manager.deductStock(stoichiometryId, List.of(321L, 321L), user);
+
+    verify(linkDao, times(1)).getSafeNull(321L);
   }
 
   @Test
@@ -362,10 +391,10 @@ public class StoichiometryInventoryLinkManagerImplTest {
 
     manager.deductStock(stoichiometryId, List.of(321L), user);
 
-    InOrder inOrder = inOrder(sampleApiMgr, subSampleMgr);
+    InOrder inOrder = inOrder(siblingRowLock, subSampleMgr);
     // calls(1): the set is deliberately asked for twice (the up-front hoist and the per-link
     // re-ask); what matters is that the first ask precedes the row lock
-    inOrder.verify(sampleApiMgr, calls(1)).recalculateTotalFromLockedRows(invSample.getId());
+    inOrder.verify(siblingRowLock, calls(1)).lockSiblingRowsAndRecalculateTotal(invSample.getId());
     inOrder.verify(subSampleMgr).lockSubSampleForEdit(invSubSample.getId(), user);
   }
 
@@ -396,11 +425,11 @@ public class StoichiometryInventoryLinkManagerImplTest {
 
     manager.deductStock(stoichiometryId, List.of(500L, 501L), user);
 
-    InOrder inOrder = inOrder(sampleApiMgr, subSampleMgr);
+    InOrder inOrder = inOrder(siblingRowLock, subSampleMgr);
     // calls(1): each set is re-asked per link later; the assertion is that BOTH sets are taken,
     // ascending, before the first row lock
-    inOrder.verify(sampleApiMgr, calls(1)).recalculateTotalFromLockedRows(8000L);
-    inOrder.verify(sampleApiMgr, calls(1)).recalculateTotalFromLockedRows(9000L);
+    inOrder.verify(siblingRowLock, calls(1)).lockSiblingRowsAndRecalculateTotal(8000L);
+    inOrder.verify(siblingRowLock, calls(1)).lockSiblingRowsAndRecalculateTotal(9000L);
     inOrder.verify(subSampleMgr).lockSubSampleForEdit(800L, user);
   }
 
@@ -428,7 +457,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
 
     StockDeductionResult result = manager.deductStock(stoichiometryId, List.of(500L, 501L), user);
 
-    verify(sampleApiMgr, never()).recalculateTotalFromLockedRows(any());
+    verify(siblingRowLock, never()).lockSiblingRowsAndRecalculateTotal(any());
     assertEquals(2, result.getResults().size());
     result.getResults().forEach(row -> assertFalse(row.isSuccess()));
   }

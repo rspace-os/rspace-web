@@ -115,7 +115,7 @@ public class SubSampleDaoTest extends SpringTransactionalTest {
    * dialect's locking clause here is implementation behaviour, not specified behaviour. Nothing
    * else in this tier can see it: a single session holds no observable lock, so if the clause were
    * silently dropped these tests would still return the right numbers and pass, while
-   * recalculateTotalFromLockedRows quietly stopped serialising anything (parallel review, P1).
+   * lockSiblingRowsAndRecalculateTotal quietly stopped serialising anything (parallel review, P1).
    *
    * This is the cheap guard, and it pins the SQL rather than the locking behaviour: it is what
    * fails fast on a Hibernate upgrade. The behaviour itself, that the rows are genuinely held

@@ -66,7 +66,13 @@ describe("describeOperationError", () => {
     inputs: [{ key: "sampleName", type: "text", labelKey: "operations.fields.sampleName" }],
     effect: { links: [] },
   } as unknown as InventoryOperation;
-  const resolveLabel = (key: string): string => (key === "operations.fields.sampleName" ? "Sample name" : key);
+  // Stands in for i18next: resolves the one field label, and renders the "<label>: <reason>" join
+  // from the catalog rather than from a hard-coded separator (parallel review, FE14).
+  const resolveLabel = (key: string, params?: Record<string, unknown>): string => {
+    if (key === "operations.fields.sampleName") return "Sample name";
+    if (key === "operations.wizard.fieldReason") return `${String(params?.label)}: ${String(params?.reason)}`;
+    return key;
+  };
   const rejectedWith = (first: string) => ({ response: { data: { message: "Errors detected: 1", errors: [first] } } });
 
   it("words an error on a declared input with the input's label instead of its bare key", () => {
@@ -80,7 +86,7 @@ describe("describeOperationError", () => {
     ).toBe("Sample name: This operation requires [sampleName].");
   });
 
-  it("strips a dotted origin path as before", () => {
+  it("strips a dotted origin path but keeps which origin it was (FE11)", () => {
     expect(
       describeOperationError(
         rejectedWith("origins[0].amountTaken: Cannot take more from an origin than it currently holds"),
@@ -88,7 +94,7 @@ describe("describeOperationError", () => {
         resolveLabel,
         "failed",
       ),
-    ).toBe("Cannot take more from an origin than it currently holds");
+    ).toBe("Cannot take more from an origin than it currently holds (origin 1)");
   });
 
   it("leaves a leading word that is not one of the operation's inputs alone", () => {

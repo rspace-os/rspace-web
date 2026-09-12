@@ -20,13 +20,14 @@ import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.StoichiometryInventoryLinkManager;
 import com.researchspace.service.StoichiometryMoleculeManager;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
-import com.researchspace.service.inventory.SampleApiManager;
+import com.researchspace.service.inventory.SampleSiblingRowLock;
 import com.researchspace.service.inventory.SubSampleApiManager;
 import jakarta.ws.rs.NotFoundException;
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import lombok.extern.slf4j.Slf4j;
@@ -42,7 +43,7 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
   private final IPermissionUtils elnPermissionUtils;
   private final InventoryPermissionUtils invPermissionUtils;
   private final SubSampleApiManager subSampleMgr;
-  private final SampleApiManager sampleApiMgr;
+  private final SampleSiblingRowLock siblingRowLock;
   private final QuantityUtils quantityUtils;
   private final MessageSourceUtils messages;
 
@@ -53,14 +54,14 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
       IPermissionUtils elnPermissionUtils,
       InventoryPermissionUtils invPermissionUtils,
       SubSampleApiManager subSampleMgr,
-      SampleApiManager sampleApiMgr,
+      SampleSiblingRowLock siblingRowLock,
       MessageSourceUtils messages) {
     this.linkDao = linkDao;
     this.stoichiometryMoleculeManager = stoichiometryMoleculeManager;
     this.elnPermissionUtils = elnPermissionUtils;
     this.invPermissionUtils = invPermissionUtils;
     this.subSampleMgr = subSampleMgr;
-    this.sampleApiMgr = sampleApiMgr;
+    this.siblingRowLock = siblingRowLock;
     this.messages = messages;
     this.quantityUtils = new QuantityUtils();
   }
@@ -108,28 +109,27 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
     // solely to lock their sibling sets and delay authorized writers (Copilot review, PR #1090).
     // Any link the filters skip, like an unresolvable or non-subsample one, locks nothing and
     // fails per-row below with its specific reason, as before; the loop's own checks are retained.
+    Map<Long, StoichiometryInventoryLink> resolved = resolveOnce(linkIds);
     Set<Long> parentSampleIds = new TreeSet<>();
-    for (Long id : linkIds) {
-      linkDao
-          .getSafeNull(id)
-          .filter(
-              link -> link.getStoichiometryMolecule().getStoichiometry().getId() == stoichiometryId)
-          .filter(
-              link ->
-                  invPermissionUtils.canUserEditInventoryRecord(link.getInventoryRecord(), user))
-          .map(StoichiometryInventoryLink::getInventoryRecord)
-          .filter(SubSample.class::isInstance)
-          .map(record -> ((SubSample) record).getSample().getId())
-          .ifPresent(parentSampleIds::add);
+    for (StoichiometryInventoryLink link : resolved.values()) {
+      if (link.getStoichiometryMolecule().getStoichiometry().getId() != stoichiometryId) {
+        continue;
+      }
+      if (!invPermissionUtils.canUserEditInventoryRecord(link.getInventoryRecord(), user)) {
+        continue;
+      }
+      if (link.getInventoryRecord() instanceof SubSample subSample) {
+        parentSampleIds.add(subSample.getSample().getId());
+      }
     }
-    parentSampleIds.forEach(sampleApiMgr::recalculateTotalFromLockedRows);
+    parentSampleIds.forEach(siblingRowLock::lockSiblingRowsAndRecalculateTotal);
 
     // dedupe: a repeated link id deducts its amount once (RSDEV-1319). The response still carries
     // one result row per submitted entry, so the API's cardinality contract is unchanged
     Map<Long, StockDeductionResult.IndividualResult> resultsById = new HashMap<>();
-    for (Long id : inLockOrder(linkIds)) {
+    for (Long id : inLockOrder(linkIds, resolved)) {
       try {
-        StoichiometryInventoryLink link = getLinkOrThrowNotFound(id);
+        StoichiometryInventoryLink link = requireLink(resolved, id);
         StoichiometryMolecule stoichiometryMolecule = link.getStoichiometryMolecule();
         if (stoichiometryMolecule.getStoichiometry().getId() != stoichiometryId) {
           throw new IllegalArgumentException(
@@ -185,21 +185,42 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
    * today, so a collision is harmless now, but it would become a deadlock the day another record
    * type is deducted from.
    */
-  private List<Long> inLockOrder(List<Long> linkIds) {
+  private List<Long> inLockOrder(
+      List<Long> linkIds, Map<Long, StoichiometryInventoryLink> resolved) {
     return linkIds.stream()
         .distinct()
-        .map(id -> Map.entry(id, lockOrderKey(id)))
+        .map(id -> Map.entry(id, lockOrderKey(resolved, id)))
         .sorted(Map.Entry.comparingByValue())
         .map(Map.Entry::getKey)
         .toList();
   }
 
-  private String lockOrderKey(Long linkId) {
-    return linkDao
-        .getSafeNull(linkId)
+  private String lockOrderKey(Map<Long, StoichiometryInventoryLink> resolved, Long linkId) {
+    return Optional.ofNullable(resolved.get(linkId))
         .map(StoichiometryInventoryLink::getInventoryRecord)
         .map(record -> String.format("%s%020d", record.getType(), record.getId()))
         .orElse("~");
+  }
+
+  /**
+   * Every distinct submitted id that names a link, loaded once. The three passes of {@link
+   * #deductStock} - the sibling-set lock, the lock ordering and the deduction loop - each used to
+   * load the link again, so a five-id request issued fifteen loads and {@code lockOrderKey} in
+   * particular resolved arbitrary ids twenty lines below the filtering written to stop exactly that
+   * (parallel review, S4).
+   *
+   * <p>Resolution is deliberately NOT permission-filtered. The loop answers "no such link", "not in
+   * this stoichiometry" and "you may not edit that record" with three different messages, so it
+   * needs the link even where the caller has no right to it. What IS filtered is the set of sibling
+   * sets locked up front, which is the pass a caller could otherwise abuse to lock rows they cannot
+   * edit.
+   */
+  private Map<Long, StoichiometryInventoryLink> resolveOnce(List<Long> linkIds) {
+    Map<Long, StoichiometryInventoryLink> resolved = new HashMap<>();
+    linkIds.stream()
+        .distinct()
+        .forEach(id -> linkDao.getSafeNull(id).ifPresent(link -> resolved.put(id, link)));
+    return resolved;
   }
 
   private void processStockDeduction(
@@ -213,7 +234,7 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
       // deductStock this is a re-acquisition (the sets were locked up front); it stands on its own
       // so any future caller of this method cannot reintroduce the row-then-set inversion, where
       // two deductions on two siblings each hold their own row and wait for the other's.
-      sampleApiMgr.recalculateTotalFromLockedRows(subSample.getSample().getId());
+      siblingRowLock.lockSiblingRowsAndRecalculateTotal(subSample.getSample().getId());
       // The over-use check reads the row it is about to decrement, under the same lock the
       // decrement takes, rather than the link's own copy: a concurrent operation may have drained
       // the subsample since that copy was loaded, and registerApiSubSampleUsage clamps at zero, so
@@ -259,13 +280,14 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
     }
   }
 
-  private StoichiometryInventoryLink getLinkOrThrowNotFound(long linkId) {
-    return linkDao
-        .getSafeNull(linkId)
-        .orElseThrow(
-            () ->
-                new NotFoundException(
-                    messages.getMessage(
-                        "errors.inventory.stoichiometry.linkNotFound", new Object[] {linkId})));
+  private StoichiometryInventoryLink requireLink(
+      Map<Long, StoichiometryInventoryLink> resolved, Long linkId) {
+    StoichiometryInventoryLink link = resolved.get(linkId);
+    if (link == null) {
+      throw new NotFoundException(
+          messages.getMessage(
+              "errors.inventory.stoichiometry.linkNotFound", new Object[] {linkId}));
+    }
+    return link;
   }
 }

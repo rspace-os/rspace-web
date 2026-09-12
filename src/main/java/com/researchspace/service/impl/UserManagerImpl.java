@@ -359,6 +359,15 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
    * no such growth: each write either replaces a known key or is refused (Copilot review, PR
    * #1090).
    */
+  /**
+   * The ceiling on ONE key's value, well under the 65535-char TEXT column the merged blob lives in.
+   * The column-level guard in {@link UserPreference} only fires once the merge overflows, by which
+   * point a single near-column-sized value has already been stored and every later keyed write for
+   * that user fails permanently. Every preference the client declares is a short scalar or a small
+   * list, so a few KB is ample (parallel review, S6).
+   */
+  private static final int MAX_UI_JSON_SETTING_VALUE_CHARS = 8192;
+
   private static final Set<String> UI_JSON_SETTINGS_KEYS =
       Set.of(
           "GALLERY_VIEW_MODE",
@@ -382,6 +391,14 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
     if (key == null || !UI_JSON_SETTINGS_KEYS.contains(key)) {
       throw new IllegalArgumentException(
           messages.getMessage("errors.preference.invalidKey", new Object[] {key}));
+    }
+    // Before the parse and before the lock: an oversized value should neither be materialised as a
+    // tree nor hold a row lock while it is rejected.
+    if (valueJson != null && valueJson.length() > MAX_UI_JSON_SETTING_VALUE_CHARS) {
+      throw new IllegalArgumentException(
+          messages.getMessage(
+              "errors.preference.valueTooLarge",
+              new Object[] {key, MAX_UI_JSON_SETTING_VALUE_CHARS}));
     }
     JsonNode newValue = JacksonUtil.fromJson(valueJson, JsonNode.class);
     if (newValue == null) {

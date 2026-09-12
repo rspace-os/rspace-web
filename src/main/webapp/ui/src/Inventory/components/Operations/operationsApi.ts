@@ -49,7 +49,14 @@ export function describeOperationError(
   const detail = getApiErrorDetail(error, fallback);
   const match = BARE_KEY_PREFIX.exec(detail);
   const input = match ? operation.inputs.find((i) => i.key === match[1]) : undefined;
-  return input && match ? `${resolveLabel(input.labelKey)}: ${detail.slice(match[0].length)}` : detail;
+  // The "<label>: <reason>" join goes through the catalog: not every locale separates with a
+  // colon-space (parallel review, FE14).
+  return input && match
+    ? resolveLabel("operations.wizard.fieldReason", {
+        label: resolveLabel(input.labelKey),
+        reason: detail.slice(match[0].length),
+      })
+    : detail;
 }
 
 /**

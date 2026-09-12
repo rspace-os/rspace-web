@@ -16,6 +16,10 @@ const InputSchema = v.object({
   labelKey: v.string(),
   required: v.optional(v.boolean()),
   min: v.optional(v.number()),
+  // Upper bound for an "integer" input, e.g. count is capped at 100. The config declared it all
+  // along; this schema dropped it, and valibot strips what it does not declare, so the wizard was
+  // enforcing a hand-copied constant instead of the server's own number (parallel review, FE9).
+  max: v.optional(v.number()),
   // Upper bound (in Celsius) for a "temperature" input, e.g. cryopreserve must be stored at or below
   // this. Configurable per operation; when absent the temperature is unconstrained.
   maxCelsius: v.optional(v.number()),
