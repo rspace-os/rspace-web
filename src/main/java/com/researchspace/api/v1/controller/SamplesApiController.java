@@ -7,6 +7,7 @@ import com.researchspace.api.v1.model.ApiInventoryRecordRevisionList;
 import com.researchspace.api.v1.model.ApiInventoryRecordRevisionList.ApiInventoryRecordRevision;
 import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.api.v1.model.ApiSample;
+import com.researchspace.api.v1.model.ApiSampleFullPost;
 import com.researchspace.api.v1.model.ApiSampleInfo;
 import com.researchspace.api.v1.model.ApiSampleSearchResult;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
@@ -19,6 +20,7 @@ import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.service.inventory.InventoryAuditApiManager;
+import com.researchspace.service.inventory.SampleApiPostFullValidator;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.NotFoundException;
 import java.io.IOException;
@@ -50,16 +52,6 @@ public class SamplesApiController extends BaseApiInventoryController implements 
   @Autowired private SampleApiPostValidator sampleApiPostValidator;
   @Autowired private SampleApiPutValidator sampleApiPutValidator;
   @Autowired private SampleApiPostFullValidator sampleApiPostFullValidator;
-
-  @Data
-  @AllArgsConstructor
-  @NoArgsConstructor
-  public static class ApiSampleFullPost {
-    ApiSampleWithFullSubSamples apiSample;
-    User user;
-    // may be null
-    SampleTemplate template;
-  }
 
   // this class doesn't seem to be used at all, nor its validator
   @Data

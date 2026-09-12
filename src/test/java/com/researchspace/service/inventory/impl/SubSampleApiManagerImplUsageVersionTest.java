@@ -20,6 +20,7 @@ import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
 import com.researchspace.service.inventory.SampleApiManager;
+import com.researchspace.service.inventory.SampleSiblingRowLock;
 import java.math.BigDecimal;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.shiro.subject.Subject;
@@ -45,6 +46,14 @@ class SubSampleApiManagerImplUsageVersionTest {
   @Mock private SubSampleDao subSampleDao;
   @Mock private InventoryPermissionUtils invPermissions;
   @Mock private SampleApiManager sampleApiMgr;
+
+  /**
+   * The sibling-set lock, taken off {@link SampleApiManager} onto its own one-method type so a lock
+   * primitive with no {@code User} stops reading as an ordinary public mutator (parallel review, L5
+   * and P4-S3). These tests are about the version read, not the lock, so it does nothing.
+   */
+  @Mock private SampleSiblingRowLock siblingRowLock;
+
   @Mock private ApplicationEventPublisher publisher;
   @Mock private InventoryEditLockTracker tracker;
   @Mock private UserManager userManager;

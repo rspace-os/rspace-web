@@ -285,6 +285,30 @@ async function reachConfirm(user: ReturnType<typeof userEvent.setup>, processNam
   await user.click(nextButton()); // documentation -> confirm
 }
 
+describe("OperationWizard config load", () => {
+  it("shows the load-failed alert and no picker when GET /operations/config fails", async () => {
+    // Every other test in this file serves a valid config, and operationsApi.test.ts never mocked
+    // ApiService.get, so fetchOperationsConfig was never invoked in any test: the failure alert and
+    // the spinner beneath it were unreachable in the whole suite (parallel review, Q12).
+    server.use(http.get(`${OPERATIONS_URL}/config`, () => HttpResponse.error()));
+    render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(/picker\.loadFailed/);
+    // and the wizard does not advance: there is no operation to pick, so no step buttons at all
+    expect(screen.queryByRole("button", { name: /operations\.derive\.label/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /actions\.next/i })).not.toBeInTheDocument();
+  });
+
+  it("shows the load-failed alert when the config is served but does not match the schema", async () => {
+    // parseOperationsConfig throws for an invalid config, and the picker shows ONE failed state for
+    // both causes, as fetchOperationsConfig's contract says.
+    server.use(http.get(`${OPERATIONS_URL}/config`, () => HttpResponse.json([{ key: "broken" }])));
+    render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(/picker\.loadFailed/);
+  });
+});
+
 describe("OperationWizard step flow", () => {
   it("keeps Next disabled on the details step until a process name (and derived sample name) exist", async () => {
     const user = userEvent.setup();
@@ -646,7 +670,8 @@ describe("OperationWizard step flow", () => {
     await waitFor(() => expect(addAlert).toHaveBeenCalled());
     const alert = addAlert.mock.calls[0][0] as { message: string; variant: string };
     expect(alert.variant).toBe("error");
-    expect(alert.message).toBe("Cannot take more from an origin than it currently holds");
+    // and it names WHICH origin, so a multi-origin rejection is actionable (FE11)
+    expect(alert.message).toBe("Cannot take more from an origin than it currently holds (origin 1)");
     // the amounts step validates against origin.quantity, so it has to be re-read or the user can
     // only fail again
     await waitFor(() => expect(refresh).toHaveBeenCalledTimes(1));
@@ -741,8 +766,11 @@ describe("OperationWizard step flow", () => {
     await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
     await waitFor(() => expect(addAlert).toHaveBeenCalled());
     const alert = addAlert.mock.calls[0][0] as { message: string };
-    // cimode renders the label's key; the bare input key is gone from the front of the message
-    expect(alert.message).toMatch(/operations\.fields\.sampleName: This operation requires \[sampleName\]\.$/);
+    // The "<label>: <reason>" join goes through the catalog now (FE14), and cimode renders a key
+    // without its parameters, so all this branch can show is that the join message was chosen and
+    // the bare input key is gone. The sentence itself is asserted in English below.
+    expect(alert.message).toMatch(/operations\.wizard\.fieldReason/);
+    expect(alert.message).not.toMatch(/^sampleName:/);
   });
 
   it("blocks the amounts step in per-subsample mode until every origin has an amount", async () => {
@@ -838,6 +866,44 @@ describe("OperationWizard step flow", () => {
     expect(screen.getByRole("heading", { name: "Derive: dna" })).toBeInTheDocument();
   });
 
+  it("reads a rejected input as 'New sample name: ...' in English", async () => {
+    // The cimode assertion above can only show that the catalog's join message was chosen; the real
+    // catalogs are what show both parameters arriving, rather than the sentence being assembled in
+    // code with a hard-coded ": " no other locale need use (parallel review, FE14).
+    server.use(
+      http.post(
+        OPERATIONS_URL,
+        () =>
+          HttpResponse.json(
+            { message: "Errors detected: 1", errors: ["sampleName: This operation requires [sampleName]."] },
+            { status: 400 },
+          ),
+        { once: true },
+      ),
+    );
+    const user = userEvent.setup();
+    const origin = makeMockSubSample({});
+    vi.spyOn(origin, "fetchAdditionalInfo").mockResolvedValue(undefined);
+    render(
+      <InEnglish>
+        <OperationWizard open onClose={vi.fn()} origins={[origin]} />
+      </InEnglish>,
+    );
+    await user.click(await screen.findByRole("button", { name: /^Derive/ }));
+    await user.type(screen.getByTestId("proc"), "bare key");
+    await user.click(screen.getByTestId("fill-amounts"));
+    await user.click(screen.getByRole("button", { name: "Next" })); // details -> template
+    await user.click(screen.getByTestId("tmpl-pick5"));
+    await user.click(screen.getByRole("button", { name: "Next" })); // template -> amounts
+    await user.click(screen.getByRole("button", { name: "Next" })); // amounts -> documentation
+    await user.click(screen.getByRole("button", { name: "Next" })); // documentation -> confirm
+    await user.click(screen.getByRole("button", { name: "Perform" }));
+
+    await waitFor(() => expect(addAlert).toHaveBeenCalled());
+    const alert = addAlert.mock.calls[0][0] as { message: string };
+    expect(alert.message).toBe("New sample name: This operation requires [sampleName].");
+  });
+
   it("inflects the parent-template block for one field and for several", async () => {
     // The same message as TemplateStep's own pick error, so the count has to arrive from this call
     // site too; "field(s) ... have" was a parenthetical plural no other language can follow
@@ -930,6 +996,63 @@ describe("OperationWizard remember bundle", () => {
     });
     expect(prefs.store.INVENTORY_OPERATION_PROCESS_NAMES).toEqual({ derive: ["dna extraction"] });
     expect(prefs.store.INVENTORY_OPERATION_PROCESS_NAME_DEFAULTS).toEqual({ derive: "dna extraction" });
+  });
+
+  it("performs a Pool: per-origin amounts posted for every origin, and remembered", async () => {
+    // No test ran a multi-origin operation through to Perform. Three things were unpinned because
+    // of it: the multi-origin remember bundle (amountMode plus perSubsampleAmounts) was never
+    // persisted in any test, representativeOrigin's smallest-origin choice was unexercised
+    // (replacing the reduce with origins[0] broke nothing), and the multi-origin POST body was
+    // never asserted. That is the path C1 hid in: commonQuantity threw for a multi-origin molarity
+    // selection and nothing noticed, because reduce on a one-element array never calls its callback
+    // and every test used one origin (parallel review, Q14).
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    const first = makeMockSubSample({});
+    const second = makeMockSubSample({ id: 2, globalId: "SS2" });
+    vi.spyOn(first, "fetchAdditionalInfo").mockResolvedValue(undefined);
+    vi.spyOn(second, "fetchAdditionalInfo").mockResolvedValue(undefined);
+    render(<OperationWizard open onClose={onClose} origins={[first, second]} />);
+
+    await user.click(await screen.findByRole("button", { name: /operations\.pool\.label/i }));
+    await user.click(screen.getByTestId("fill-amounts"));
+    await user.click(nextButton()); // details -> template
+    await user.click(screen.getByTestId("tmpl-pick5"));
+    await user.click(nextButton()); // template -> amounts
+    await user.click(screen.getByTestId("mode-per"));
+    await user.click(screen.getByTestId("fill-per-both"));
+    await user.click(nextButton()); // amounts -> documentation
+    await user.click(screen.getByTestId("doc-choose"));
+    await user.click(nextButton()); // documentation -> confirm
+    await user.click(screen.getByTestId("toggle-remember"));
+    await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
+
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+
+    const request = posted[0] as {
+      operationType: string;
+      origins: Array<{ id: number; amountMode: string; amountTaken: unknown }>;
+    };
+    expect(request.operationType).toBe("pool");
+    // BOTH origins are posted, each carrying its own amount: a Pool that sent one origin, or sent
+    // the same amount for both, would have passed every other test in this file.
+    expect(request.origins).toEqual([
+      { id: 1, amountMode: "explicit", amountTaken: { numericValue: 1, unitId: 3 } },
+      { id: 2, amountMode: "explicit", amountTaken: { numericValue: 1, unitId: 3 } },
+    ]);
+
+    // and the multi-origin half of the remember bundle round-trips: the mode and the per-origin
+    // amounts, keyed by global id, neither of which any single-origin run can exercise
+    const bundle = prefs.store.INVENTORY_OPERATION_PROCESS_VALUES as Record<
+      string,
+      { amountMode?: string; perSubsampleAmounts?: Record<string, unknown> }
+    >;
+    const pooled = Object.values(bundle)[0];
+    expect(pooled.amountMode).toBe("perSubsample");
+    expect(pooled.perSubsampleAmounts).toEqual({
+      SS1: { numericValue: 1, unitId: 3 },
+      SS2: { numericValue: 1, unitId: 3 },
+    });
   });
 
   it("persists nothing when remember is left unticked", async () => {

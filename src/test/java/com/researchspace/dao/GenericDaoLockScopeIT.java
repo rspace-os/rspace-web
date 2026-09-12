@@ -29,9 +29,9 @@ import org.springframework.beans.factory.annotation.Autowired;
  * against unrelated features.
  *
  * <p>The second test pins the sibling-set lock, which is the one the whole design rests on and the
- * only lock with no other source: {@code SampleApiManagerImpl.recalculateTotalFromLockedRows} reads
- * the sample UNLOCKED on purpose and states that "the serialisation this method needs comes from
- * the locked scalar read of the subsample rows below". That read selects no entity, only two
+ * only lock with no other source: {@code SampleApiManagerImpl.lockSiblingRowsAndRecalculateTotal}
+ * reads the sample UNLOCKED on purpose and states that "the serialisation this method needs comes
+ * from the locked scalar read of the subsample rows below". That read selects no entity, only two
  * embeddable columns, and JPA defines {@code setLockMode} in terms of the entities a query returns,
  * so whether Hibernate emits {@code for update} at all is implementation behaviour rather than
  * specified behaviour. If it does not, no sibling row is locked, the ascending-order deadlock
@@ -116,7 +116,8 @@ public class GenericDaoLockScopeIT extends RealTransactionSpringTestBase {
           // Narrowness: another sample's subsample is untouched, so the lock does not serialise
           // unrelated work.
           assertRowLockable(statement, "SubSample", unrelatedSubSampleId);
-          // The parent Sample row stays free, which recalculateTotalFromLockedRows relies on: it
+          // The parent Sample row stays free, which lockSiblingRowsAndRecalculateTotal relies on:
+          // it
           // reads the sample unlocked precisely so it does not insert a sample-before-subsample
           // acquisition into paths that lock subsample rows first.
           assertRowLockable(statement, "Sample", sampleId);
