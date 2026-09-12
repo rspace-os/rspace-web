@@ -567,7 +567,8 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
             .andExpect(status().is4xxClientError())
             .andReturn();
     error = getErrorFromJsonResponseBody(result, ApiError.class);
-    assertApiErrorContainsMessage(error, "'qwer' cannot be parsed into number");
+    assertApiErrorContainsMessage(
+        error, "'qwer' is not a valid number or exceeds the supported precision and range.");
 
     // extra field with restricted name
     json =
