@@ -30,6 +30,7 @@ import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.inventory.InventoryOperationConfigRegistry;
 import com.researchspace.service.inventory.InventoryOperationManager;
+import com.researchspace.service.inventory.InventoryOperationManager.OperationOutcome;
 import com.researchspace.service.inventory.SampleApiManager;
 import com.researchspace.service.inventory.SubSampleApiManager;
 import com.researchspace.webapp.config.WebConfig;
@@ -103,7 +104,7 @@ class InventoryOperationsApiControllerTest {
     ApiSampleWithFullSubSamples created = new ApiSampleWithFullSubSamples("Aliquots");
     when(operationManager.performOperation(
             eq("aliquot"), eq(request.getOrigins()), any(), any(), any(), eq(user)))
-        .thenReturn(created);
+        .thenReturn(new OperationOutcome(created, List.of(originAfter(100L))));
 
     ApiSampleWithFullSubSamples returned =
         controller.performOperation(
@@ -191,10 +192,14 @@ class InventoryOperationsApiControllerTest {
     return new BeanPropertyBindingResult(request, "request");
   }
 
-  private void originReadsBackAs(long id) {
+  /**
+   * The origin as the manager reports it afterwards. The controller no longer re-reads origins
+   * itself: the manager returns them, read inside its own transaction (parallel review, A14).
+   */
+  private static ApiSubSample originAfter(long id) {
     ApiSubSample after = new ApiSubSample();
     after.setId(id);
-    when(subSampleApiMgr.getApiSubSampleById(id, user)).thenReturn(after);
+    return after;
   }
 
   @Test
@@ -226,8 +231,7 @@ class InventoryOperationsApiControllerTest {
     ApiSampleWithFullSubSamples created = new ApiSampleWithFullSubSamples("Aliquots");
     created.setId(55L);
     when(operationManager.performOperation(eq("aliquot"), any(), any(), any(), any(), eq(user)))
-        .thenReturn(created);
-    originReadsBackAs(100L);
+        .thenReturn(new OperationOutcome(created, List.of(originAfter(100L))));
     ApiInventoryOperationRequests.Aliquot request = aliquotFacade();
     request.setTemplateId(42L);
     request.setDocumentedByGlobalId("SD99");
@@ -259,9 +263,10 @@ class InventoryOperationsApiControllerTest {
 
   @Test
   void destroyAnswers200WithANullSampleAndTheOriginAsItStands() throws Exception {
+    // A terminal operation creates no sample, but still reports its origin: the outcome carries a
+    // null sample, not a null outcome (parallel review, A14).
     when(operationManager.performOperation(eq("destroy"), any(), any(), any(), any(), eq(user)))
-        .thenReturn(null);
-    originReadsBackAs(100L);
+        .thenReturn(new OperationOutcome(null, List.of(originAfter(100L))));
     ApiInventoryOperationRequests.Destroy request = new ApiInventoryOperationRequests.Destroy();
     ApiInventoryOperationRequests.Origin origin = facadeOrigin("SS100", null);
     origin.setExpectedQuantity(millilitres("5"));
@@ -288,8 +293,9 @@ class InventoryOperationsApiControllerTest {
   void passageSendsNoAmountAndStillReachesTheManager() throws Exception {
     // The structural validator must accept an absent amount where the definition takes nothing.
     when(operationManager.performOperation(eq("passage"), any(), any(), any(), any(), eq(user)))
-        .thenReturn(new ApiSampleWithFullSubSamples("HeLa p3"));
-    originReadsBackAs(100L);
+        .thenReturn(
+            new OperationOutcome(
+                new ApiSampleWithFullSubSamples("HeLa p3"), List.of(originAfter(100L))));
     ApiInventoryOperationRequests.Passage request = new ApiInventoryOperationRequests.Passage();
     request.setOrigin(facadeOrigin("SS100", null));
     request.setSampleName("HeLa p3");

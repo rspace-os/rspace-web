@@ -71,6 +71,7 @@ describe("describeOperationError", () => {
   const resolveLabel = (key: string, params?: Record<string, unknown>): string => {
     if (key === "operations.fields.sampleName") return "Sample name";
     if (key === "operations.wizard.fieldReason") return `${String(params?.label)}: ${String(params?.reason)}`;
+    if (key === "operations.wizard.originIndex") return `${String(params?.reason)} [ORIGIN ${String(params?.index)}]`;
     return key;
   };
   const rejectedWith = (first: string) => ({ response: { data: { message: "Errors detected: 1", errors: [first] } } });
@@ -78,15 +79,17 @@ describe("describeOperationError", () => {
   it("words an error on a declared input with the input's label instead of its bare key", () => {
     expect(
       describeOperationError(
-        rejectedWith("sampleName: This operation requires [sampleName]."),
+        rejectedWith("sampleName: Required by this operation."),
         operation,
         resolveLabel,
         "failed",
       ),
-    ).toBe("Sample name: This operation requires [sampleName].");
+    ).toBe("Sample name: Required by this operation.");
   });
 
-  it("strips a dotted origin path but keeps which origin it was (FE11)", () => {
+  it("strips a dotted origin path but keeps which origin it was, through the catalog (FE11, A4)", () => {
+    // The marker is a translated sentence, not English welded onto a localized reason: a non-English
+    // user got their reason back with " (origin 3)" appended in English (parallel review, A4).
     expect(
       describeOperationError(
         rejectedWith("origins[0].amountTaken: Cannot take more from an origin than it currently holds"),
@@ -94,7 +97,7 @@ describe("describeOperationError", () => {
         resolveLabel,
         "failed",
       ),
-    ).toBe("Cannot take more from an origin than it currently holds (origin 1)");
+    ).toBe("Cannot take more from an origin than it currently holds [ORIGIN 1]");
   });
 
   it("leaves a leading word that is not one of the operation's inputs alone", () => {

@@ -12,7 +12,6 @@ import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.inventory.InventoryOperationConfigRegistry;
 import com.researchspace.service.inventory.InventoryOperationRequestBuilder;
-import com.researchspace.service.inventory.InventoryOperationRequestBuilder.AmountMode;
 import com.researchspace.service.inventory.InventoryOperationRequestBuilder.DocumentationLink;
 import com.researchspace.service.inventory.InventoryOperationRequestBuilder.LabelResolver;
 import com.researchspace.service.inventory.InventoryOperationRequestBuilder.Origin;
@@ -128,6 +127,7 @@ class InventoryOperationRequestBuilderTest {
                     "amountTaken",
                     millilitres("0.6")))
             .origins(List.of(origin(100, "10", List.of())))
+            .perSubsampleAmounts(Map.of("SS100", millilitres("0.6")))
             .build());
   }
 
@@ -157,7 +157,6 @@ class InventoryOperationRequestBuilderTest {
         params("pool")
             .values(Map.of("sampleName", "Pooled", "count", 1, "eachAmount", millilitres("0.5")))
             .origins(List.of(origin(100, "10", List.of()), origin(101, "10", List.of())))
-            .amountMode(AmountMode.PER_SUBSAMPLE)
             .perSubsampleAmounts(Map.of("SS100", millilitres("0.6"), "SS101", millilitres("0.7")))
             .build());
   }
@@ -180,6 +179,7 @@ class InventoryOperationRequestBuilderTest {
                     "amountTaken",
                     millilitres("0.6")))
             .origins(List.of(origin(100, "10", List.of())))
+            .perSubsampleAmounts(Map.of("SS100", millilitres("0.6")))
             .build());
   }
 
@@ -203,6 +203,7 @@ class InventoryOperationRequestBuilderTest {
                     "storageTemp",
                     celsius("-20")))
             .origins(List.of(origin(100, "10", List.of())))
+            .perSubsampleAmounts(Map.of("SS100", millilitres("0.6")))
             .build());
   }
 
@@ -219,6 +220,7 @@ class InventoryOperationRequestBuilderTest {
                     "amountTaken", millilitres("0.6"),
                     "storageTemp", celsius("4")))
             .origins(List.of(origin(100, "10", List.of())))
+            .perSubsampleAmounts(Map.of("SS100", millilitres("0.6")))
             .build());
   }
 
@@ -279,7 +281,6 @@ class InventoryOperationRequestBuilderTest {
                     List.of(
                         new Origin(100L, "SS100", "Aliquot", millilitres("10"), List.of()),
                         new Origin(101L, "SS101", "Aliquot", millilitres("10"), List.of())))
-                .amountMode(AmountMode.PER_SUBSAMPLE)
                 .perSubsampleAmounts(
                     Map.of("SS100", millilitres("0.6"), "SS101", millilitres("0.7")))
                 .build());

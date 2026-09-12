@@ -53,12 +53,15 @@ public class InventoryMaterialUsageHelperTest {
     return subSample;
   }
 
+  /** A usage that WILL decrement stock, which is the only kind the sibling-set lock exists for. */
   private ApiMaterialUsage usageOfSubSample(long subSampleId, long sampleId) {
     ApiSubSample record = new ApiSubSample();
     record.setId(subSampleId);
     when(invRecRetriever.getInvRecForIdAndType(subSampleId, ApiInventoryRecordType.SUBSAMPLE))
         .thenReturn(subSampleUnderSample(subSampleId, sampleId));
-    return new ApiMaterialUsage(record, null);
+    ApiMaterialUsage usage = new ApiMaterialUsage(record, null);
+    usage.setUpdateInventoryQuantity(true);
+    return usage;
   }
 
   @Test
@@ -80,6 +83,41 @@ public class InventoryMaterialUsageHelperTest {
     inOrder.verify(siblingRowLock).lockSiblingRowsAndRecalculateTotal(90L);
     // deduped: one set lock per sample, however many of its subsamples the list names
     verify(siblingRowLock, times(1)).lockSiblingRowsAndRecalculateTotal(80L);
+  }
+
+  /**
+   * A material that will not decrement stock must not lock its parent's sibling set.
+   *
+   * <p>{@code updateInventoryQuantity} false means "record that I used this, change no stock": it
+   * is how a subsample is cited on a list of materials without consuming it, and it needs only read
+   * permission, which is all this method asserts. Locking for it takes exclusive row locks across a
+   * sample the caller may not be able to edit, held for the rest of the request, purely because
+   * they named it. With no cap on {@code materials}, one request could do that across arbitrarily
+   * many other people's samples.
+   *
+   * <p>Nothing is lost by skipping it: the lock exists to serialise the decrement, and there is no
+   * decrement. Stored materials are still locked unconditionally, because removing a stored usage
+   * restores its stock and {@code MaterialUsage} does not record whether it originally decremented
+   * (parallel review, A6).
+   */
+  @Test
+  public void locksNothingForAMaterialThatWillNotDecrementStock() {
+    ApiMaterialUsage documentedOnly = usageOfSubSample(900L, 90L);
+    documentedOnly.setUpdateInventoryQuantity(false);
+
+    helper.lockParentSampleSets(List.of(documentedOnly), null, user);
+
+    verifyNoInteractions(siblingRowLock);
+  }
+
+  @Test
+  public void stillLocksAMaterialThatWillDecrementStock() {
+    ApiMaterialUsage consuming = usageOfSubSample(900L, 90L);
+    consuming.setUpdateInventoryQuantity(true);
+
+    helper.lockParentSampleSets(List.of(consuming), null, user);
+
+    verify(siblingRowLock).lockSiblingRowsAndRecalculateTotal(90L);
   }
 
   @Test

@@ -670,8 +670,10 @@ describe("OperationWizard step flow", () => {
     await waitFor(() => expect(addAlert).toHaveBeenCalled());
     const alert = addAlert.mock.calls[0][0] as { message: string; variant: string };
     expect(alert.variant).toBe("error");
-    // and it names WHICH origin, so a multi-origin rejection is actionable (FE11)
-    expect(alert.message).toBe("Cannot take more from an origin than it currently holds (origin 1)");
+    // and it names WHICH origin, so a multi-origin rejection is actionable (FE11). The marker is
+    // worded from the catalog rather than concatenated in English (parallel review, A4), so under
+    // cimode it renders as the key; the assembled English is asserted in the InEnglish test below.
+    expect(alert.message).toBe("inventory:operations.wizard.originIndex");
     // the amounts step validates against origin.quantity, so it has to be re-read or the user can
     // only fail again
     await waitFor(() => expect(refresh).toHaveBeenCalledTimes(1));
@@ -752,7 +754,7 @@ describe("OperationWizard step flow", () => {
         OPERATIONS_URL,
         () =>
           HttpResponse.json(
-            { message: "Errors detected: 1", errors: ["sampleName: This operation requires [sampleName]."] },
+            { message: "Errors detected: 1", errors: ["sampleName: Required by this operation."] },
             { status: 400 },
           ),
         { once: true },
@@ -875,7 +877,7 @@ describe("OperationWizard step flow", () => {
         OPERATIONS_URL,
         () =>
           HttpResponse.json(
-            { message: "Errors detected: 1", errors: ["sampleName: This operation requires [sampleName]."] },
+            { message: "Errors detected: 1", errors: ["sampleName: Required by this operation."] },
             { status: 400 },
           ),
         { once: true },
@@ -901,7 +903,48 @@ describe("OperationWizard step flow", () => {
 
     await waitFor(() => expect(addAlert).toHaveBeenCalled());
     const alert = addAlert.mock.calls[0][0] as { message: string };
-    expect(alert.message).toBe("New sample name: This operation requires [sampleName].");
+    expect(alert.message).toBe("New sample name: Required by this operation.");
+  });
+
+  it("reads an origin rejection as '... (origin 1)' in English", async () => {
+    // The cimode assertion above can only show the catalog's marker message was chosen. This is
+    // what shows BOTH parameters arriving, rather than the aside being welded on in English after a
+    // reason the server already localized (parallel review, A4).
+    server.use(
+      http.post(
+        OPERATIONS_URL,
+        () =>
+          HttpResponse.json(
+            {
+              message: "Errors detected: 1",
+              errors: ["origins[0].amountTaken: Cannot take more from an origin than it currently holds"],
+            },
+            { status: 400 },
+          ),
+        { once: true },
+      ),
+    );
+    const user = userEvent.setup();
+    const origin = makeMockSubSample({});
+    vi.spyOn(origin, "fetchAdditionalInfo").mockResolvedValue(undefined);
+    render(
+      <InEnglish>
+        <OperationWizard open onClose={vi.fn()} origins={[origin]} />
+      </InEnglish>,
+    );
+    await user.click(await screen.findByRole("button", { name: /^Derive/ }));
+    await user.type(screen.getByTestId("proc"), "stale");
+    await user.click(screen.getByTestId("fill-amounts"));
+    await user.click(screen.getByRole("button", { name: "Next" })); // details -> template
+    await user.click(screen.getByTestId("tmpl-pick5"));
+    await user.click(screen.getByRole("button", { name: "Next" })); // template -> amounts
+    await user.click(screen.getByRole("button", { name: "Next" })); // amounts -> documentation
+    await user.click(screen.getByRole("button", { name: "Next" })); // documentation -> confirm
+    await user.click(screen.getByRole("button", { name: "Perform" }));
+
+    await waitFor(() => expect(addAlert).toHaveBeenCalled());
+    const alert = addAlert.mock.calls[0][0] as { message: string };
+    expect(alert.message).toBe("Cannot take more from an origin than it currently holds (origin 1)");
   });
 
   it("inflects the parent-template block for one field and for several", async () => {

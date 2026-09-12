@@ -16,6 +16,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public abstract class IdentifiableNameableApiObject extends LinkableApiObject
     implements IdentifiableObject {
+
   @JsonProperty("id")
   private Long id = null;
 
