@@ -60,7 +60,13 @@ Files:
   `GET /api/inventory/v1/operations/config`.
 - Frontend logic: `src/main/webapp/ui/src/Inventory/components/Operations/`
   - `operationsConfig.ts` — valibot schema (the frontend's source of truth for
-    the shape) + `parseOperationsConfig`, applied to the fetched config.
+    the shape) + `parseOperationsConfig`, applied to the fetched config. The schema
+    must declare every field the wizard needs: valibot strips what it does not
+    declare, which is how `max` was silently dropped and the count cap ended up
+    hand-copied in the frontend. Value bounds come from the definition, never from a
+    constant here. The one exception is `MAX_ORIGINS`, which has no home in a file
+    that is a list of definitions; it is pinned to the server's constant by
+    `InventoryOperationPostValidatorTest`.
   - `buildOperationRequest.ts` — pure. `buildOperationInputsRequest`: (operation +
     collected values + origins) → the posted body: the declared inputs by key, each
     origin's amount taken, `templateId` and `documentedByGlobalId`. The server builds
@@ -235,12 +241,16 @@ in the session's timezone.
 
 The
 live-state rules run in `InventoryOperationManagerImpl`, inside the operation's own
-transaction so they hold against the state the mutation sees. The controller's
-template-conformance check runs in that transaction too, handed in as the manager's
-`BuiltRequestValidation` callback, run on the built request before any origin is read or locked, so
-the template the sample is created from is the one the request was validated against
-(the check stays controller code because it delegates to the shared samples validator,
-a controller-layer class the service must not import). Edit permission is asserted on
+transaction so they hold against the state the mutation sees. The template-conformance check
+runs in that transaction too, on the built request before any origin is read or locked, so
+the template the sample is created from is the one the request was validated against. It
+lives in `service.inventory.OperationTemplateConformanceValidator`, which the manager calls
+directly; the `BuiltRequestValidation` callback that used to carry it in from the controller
+is gone, along with the controller method behind it. Moving it down took
+`SampleApiPostFullValidator` and `ApiSampleFullPost` with it (to `service.inventory` and
+`api.v1.model`), because the service layer may not import `api.v1.controller`;
+`sampleApiPostValidator` is injected as a plain Spring `Validator` by bean name, since its
+own type extends a package-private hierarchy that stays in the controller package. Edit permission is asserted on
 every origin, unlocked, before the first sibling-set lock, so an under-permissioned
 caller cannot lock other users' rows; the locked per-origin re-check then closes the
 TOCTOU window. The live-state rules themselves: every origin must
@@ -441,6 +451,11 @@ fields in the wizard is deferred.
   `amountTakenExceedsOrigin`). Component/flow: `OperationWizard.test.tsx`,
   `OperationDetailsStep.test.tsx`, `TemplateStep.test.tsx`. `pnpm test <path>` from the
   repo root.
+- The published OpenAPI spec (`rspace_api_inventory_specs_2_26_0.yaml`) states the
+  operations' bounds in prose rather than as schema constraints, so
+  `InventoryOperationFacadeShapesTest` asserts those sentences against
+  `operations_config.json`: change a bound in the config and that test names the spec
+  file to update.
 - Backend: `InventoryOperationManagerImplTest` (incl. decrement-before-create order),
   `InventoryOperationPostValidatorTest` (the request structure; it also holds the golden
   built request per operation that `InventoryOperationRequestBuilderTest` checks the

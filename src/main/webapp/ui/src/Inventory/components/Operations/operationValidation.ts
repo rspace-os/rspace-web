@@ -5,13 +5,6 @@ import type { OperationInputs, OperationQuantity, PerSubsampleAmounts } from "./
 import { UNSET_UNIT } from "./types";
 
 /**
- * Most subsamples one operation may create: mirrors the server's cap on an explicit subSamples list
- * (`@Size(max = 100)` on the sample DTO), so the wizard refuses a count the endpoint would reject
- * rather than building it first.
- */
-export const MAX_SUBSAMPLE_COUNT = 100;
-
-/**
  * Whether an amount is one the server can store exactly. Quantities persist in a DECIMAL(19,3)
  * column, so the endpoint rejects anything finer than three decimal places rather than round it to
  * a different amount (mirrors QuantityInfo.canStoreWithoutRounding). Gating on it here means the
@@ -25,10 +18,18 @@ export function amountIsStorable(value: number): boolean {
   return Math.round(value * 1000) / 1000 === value;
 }
 
-/** Whether a child count is a whole number within [min, MAX_SUBSAMPLE_COUNT]. */
-export function validSubSampleCount(count: unknown, min = 1): boolean {
+/**
+ * Whether a child count is a whole number within [min, max].
+ *
+ * Both bounds come from the operation definition the server serves, not from a constant retyped
+ * here: the cap was hand-copied as 100, so lowering it server-side would have left the wizard
+ * offering counts the endpoint rejects, with the 400 arriving only at Perform and naming no limit
+ * (parallel review, FE9). `max` is undefined only for a definition that declares none, which is
+ * unbounded by the definition's own account.
+ */
+export function validSubSampleCount(count: unknown, min = 1, max?: number): boolean {
   const n = Number(count);
-  return Number.isInteger(n) && n >= min && n <= MAX_SUBSAMPLE_COUNT;
+  return Number.isInteger(n) && n >= min && (max === undefined || n <= max);
 }
 
 /**
@@ -91,7 +92,7 @@ export function detailsValid(
     } else if (input.type === "integer") {
       // A fractional count would be truncated by Array.from when the request is built (1.5 -> 1
       // child), and a count above the server's cap would be built only to be rejected.
-      if (!validSubSampleCount(value, input.min ?? 1)) return false;
+      if (!validSubSampleCount(value, input.min ?? 1, input.max)) return false;
     } else {
       const q = value as OperationQuantity | undefined;
       if (!q || !Number.isFinite(q.numericValue)) return false;

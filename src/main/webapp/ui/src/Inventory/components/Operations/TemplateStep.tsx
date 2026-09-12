@@ -7,26 +7,13 @@ import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { formatList } from "@/modules/common/i18n/listFormat";
 import type TemplateModel from "@/stores/models/TemplateModel";
-import type { UnitCategory } from "@/stores/stores/UnitStore";
-import { templateSelectionBlock } from "./templateResolution";
+import { type TemplateSelection, templateBlockReason } from "./templateResolution";
 import WizardTemplatePicker from "./WizardTemplatePicker";
 
-/** The user's template choice for the new sample (DevDocs/adr/0007). */
-export type TemplateSelection = {
-  // "remembered" = a specific template restored from the saved default: shown as a banner with no
-  // radio selected until the user picks a radio to override it. "unselected" = the initial state
-  // when nothing is remembered: no radio selected, and Next stays disabled until the user chooses.
-  mode: "none" | "pick" | "fromSample" | "remembered" | "unselected";
-  templateId: number | null;
-  templateName?: string;
-  // The picked template's quantity category (mass/volume/dimensionless...). Set when the user picks a
-  // specific template so the amounts step can offer that template's units instead of the origin
-  // subsample's (a volume template overrides a mass subsample). Undefined = fall back to the origin.
-  quantityCategory?: UnitCategory;
-  remember: boolean;
-};
+// Declared in templateResolution so the module and this component cannot drift apart, and
+// re-exported here so every existing `from "./TemplateStep"` import keeps working (Q16).
+export type { TemplateSelection };
 
 /**
  * Framework step (present for every operation): optionally choose the new sample's template - none
@@ -44,7 +31,14 @@ function TemplateStep({
   parentTemplateError = null,
 }: {
   value: TemplateSelection;
-  onChange: (value: TemplateSelection) => void;
+  /**
+   * Accepts an updater as well as a value. The post-lookup write below crosses an await, so
+   * spreading the `value` this render captured would write back a pre-await snapshot: ticking
+   * "remember" while the template lookup was in flight was silently undone, and the user performed
+   * the operation believing the bundle had been saved (parallel review, FE6). The synchronous
+   * handlers keep passing a plain value.
+   */
+  onChange: React.Dispatch<React.SetStateAction<TemplateSelection>>;
   originSampleName: string;
   /** Whether the origin's parent sample has its own template. When it does not, the "use parent
    *  template" option is disabled with a hint: the wizard never creates a template (DevDocs/adr/0007). */
@@ -94,19 +88,12 @@ function TemplateStep({
     try {
       const template = await load();
       if (latestPickRef.current !== token) return;
-      const fields = template.fields.map((f) => ({
-        name: f.name,
-        mandatory: f.mandatory,
-        hasDefault:
-          (f.selectedOptions?.length ?? 0) > 0 ||
-          (f.content !== null && f.content !== undefined && String(f.content).trim() !== ""),
-      }));
-      const { blocked, missingFields } = templateSelectionBlock(fields);
-      if (blocked) {
+      const reason = templateBlockReason(template, i18n.resolvedLanguage ?? i18n.language);
+      if (reason.blocked) {
         setBlockError(
           t("operations.template.mandatoryFieldsError", {
-            count: missingFields.length,
-            fields: formatList(missingFields, i18n.resolvedLanguage ?? i18n.language),
+            count: reason.count,
+            fields: reason.fields,
           }),
         );
         return;
@@ -114,7 +101,7 @@ function TemplateStep({
       // Only a PASSING check writes an id, which is what makes templateStepValid's id test the
       // signal that this step is done. The category comes along so the amounts step offers the
       // template's units in both modes rather than only after a pick.
-      onChange({ ...value, ...describe(template) });
+      onChange((previous) => ({ ...previous, ...describe(template) }));
     } catch {
       // The lookup failed (offline, permission change, template deleted): without this the rejection
       // escaped the detached task unhandled and the user saw only the spinner stop, with no reason
@@ -178,9 +165,17 @@ function TemplateStep({
   };
 
   // Hand the picker a referentially stable callback (latest impl via ref), so re-renders of this
-  // step never churn the picker via a changing prop.
+  // step never churn the picker via a changing prop. The empty dependency array below is required,
+  // not incidental: the Picker fires onAddition from an effect keyed on the callback's identity, so
+  // an unstable callback plus a state update is an infinite render loop on selection.
   const onPickTemplateRef = React.useRef(onPickTemplate);
-  onPickTemplateRef.current = onPickTemplate;
+  // Written in a layout effect, not in the render body. React 19 may discard a render pass, and a
+  // body assignment would leave the ref holding the abandoned render's closure over a stale `value`
+  // (parallel review, FE5). useLayoutEffect rather than useEffect so the ref is current before any
+  // child effect - the Picker's included - can call it.
+  React.useLayoutEffect(() => {
+    onPickTemplateRef.current = onPickTemplate;
+  });
   const handlePickTemplate = React.useCallback(
     (template: TemplateModel | null) => onPickTemplateRef.current(template),
     [],
@@ -190,7 +185,7 @@ function TemplateStep({
     <Stack spacing={1}>
       {value.mode === "remembered" && value.templateName ? (
         <Alert severity="info" data-testid="SelectedTemplateName">
-          {`${t("operations.template.selectedLabel")}: ${value.templateName}`}
+          {t("operations.template.selectedLabel", { name: value.templateName })}
         </Alert>
       ) : null}
       <Typography variant="body2">{t("operations.template.description")}</Typography>

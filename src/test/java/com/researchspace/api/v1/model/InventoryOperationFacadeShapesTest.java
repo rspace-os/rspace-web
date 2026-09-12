@@ -17,15 +17,20 @@ import com.researchspace.api.v1.model.ApiInventoryOperationRequests.Pool;
 import com.researchspace.api.v1.model.ApiInventoryOperationRequests.Request;
 import com.researchspace.api.v1.model.ApiInventoryOperationRequests.Revive;
 import com.researchspace.service.inventory.InventoryOperationConfig;
+import com.researchspace.service.inventory.InventoryOperationConfig.Input;
 import com.researchspace.service.inventory.InventoryOperationConfigRegistry;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -310,5 +315,106 @@ class InventoryOperationFacadeShapesTest {
     assertNotEquals(
         Integer.MAX_VALUE, ceiling, "the generic request must still cap origins at binding");
     return ceiling;
+  }
+
+  // --- the published OpenAPI spec (parallel review, Q17) ---
+
+  private static final Path PUBLISHED_SPEC =
+      Path.of("src/main/webapp/resources/rspace_api_inventory_specs_2_26_0.yaml");
+
+  /**
+   * The published spec describes the same seven operations this class pins against the config, in
+   * prose, and nothing read it: it was the one copy of the facade shapes with no test at all. Its
+   * numbers are the ones a client builds against, so a bound left behind after a config change is a
+   * customer-visible lie that survives a deprecation cycle (parallel review, Q17).
+   *
+   * <p>Prose, not schema constraints, is what is checked, because M7 deliberately kept value bounds
+   * out of the published schemas for exactly this staleness reason and stated them in the
+   * descriptions instead. That decision is what makes this test necessary rather than optional.
+   */
+  @Test
+  void thePublishedSpecStatesTheBoundsTheConfigActuallyDeclares() throws IOException {
+    String spec = Files.readString(PUBLISHED_SPEC);
+
+    for (String key : FACADES.keySet()) {
+      assertTrue(
+          spec.contains("/operations/" + key + ":"),
+          () -> "the published spec must carry POST /operations/" + key);
+    }
+
+    // count: every creating operation declares the same min/max, and the spec says so twice per
+    // operation - once in the field description, once in the 400 description.
+    InventoryOperationConfig aliquot = registry.get("aliquot").orElseThrow();
+    Input count = input(aliquot, "count");
+    assertSpecStates(spec, "Defaults to 1, at most " + count.max().toBigInteger() + ".");
+    assertSpecStates(
+        spec,
+        "`count` is below "
+            + count.min().toBigInteger()
+            + " or above "
+            + count.max().toBigInteger());
+
+    // cryopreserve's ceiling and revive's range, each stated in the spec as a plain number.
+    Input cryoTemp = input(registry.get("cryopreserve").orElseThrow(), "storageTemp");
+    assertSpecStates(spec, "is above " + cryoTemp.maxCelsius().toBigInteger() + " degrees Celsius");
+    Input reviveTemp = input(registry.get("revive").orElseThrow(), "storageTemp");
+    assertSpecStates(
+        spec,
+        "between "
+            + reviveTemp.minCelsius().toBigInteger()
+            + " and "
+            + reviveTemp.maxCelsius().toBigInteger()
+            + " degrees Celsius");
+    assertSpecStates(
+        spec,
+        "stored at "
+            + new BigDecimal(reviveTemp.defaultValue().toString()).toBigInteger()
+            + " degrees Celsius");
+  }
+
+  /** Every input key the seven definitions declare is a property of its published schema. */
+  @Test
+  void thePublishedSchemasCarryEveryInputTheDefinitionDeclares() throws IOException {
+    String spec = Files.readString(PUBLISHED_SPEC);
+    FACADES.forEach(
+        (key, facade) -> {
+          String schemaName =
+              Character.toUpperCase(key.charAt(0)) + key.substring(1) + "Operation:";
+          int start = spec.indexOf("    " + schemaName);
+          assertTrue(start > 0, () -> "no " + schemaName + " schema in the published spec");
+          // to the next sibling schema (four-space indent), which bounds this one's body
+          int end = spec.indexOf("\n    ", spec.indexOf("\n", start) + 1);
+          while (end > 0 && spec.startsWith("\n      ", end)) {
+            end = spec.indexOf("\n    ", end + 1);
+          }
+          String schema = spec.substring(start, end > 0 ? end : spec.length());
+          for (Input declared : registry.get(key).orElseThrow().inputs()) {
+            // amountTaken travels on the origin element, not on the request body.
+            if ("amountTaken".equals(declared.key())) {
+              continue;
+            }
+            assertTrue(
+                schema.contains("\n        " + declared.key() + ":"),
+                () -> schemaName + " must publish the input " + declared.key());
+          }
+        });
+  }
+
+  private static void assertSpecStates(String spec, String sentence) {
+    assertTrue(
+        spec.contains(sentence),
+        () ->
+            "the published spec must state \""
+                + sentence
+                + "\", which is what operations_config.json declares. Update "
+                + PUBLISHED_SPEC
+                + " when a bound changes.");
+  }
+
+  private static Input input(InventoryOperationConfig definition, String key) {
+    return definition.inputs().stream()
+        .filter(i -> key.equals(i.key()))
+        .findFirst()
+        .orElseThrow(() -> new AssertionError(definition.key() + " declares no " + key + " input"));
   }
 }

@@ -15,6 +15,8 @@ import java.util.Set;
 import java.util.TreeSet;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 /** Component helping actions on inventory list of materials. */
 @Component
@@ -23,7 +25,7 @@ public class InventoryMaterialUsageHelper {
   @Autowired private InventoryRecordRetriever invRecRetriever;
 
   private @Autowired SubSampleApiManager subSampleMgr;
-  private @Autowired SampleApiManager sampleApiMgr;
+  private @Autowired SampleSiblingRowLock siblingRowLock;
   private @Autowired InventoryPermissionUtils invPermissions;
   private QuantityUtils qUtils = new QuantityUtils();
 
@@ -45,7 +47,16 @@ public class InventoryMaterialUsageHelper {
    * locking first would let a caller name records they cannot access solely to lock those sibling
    * sets and delay authorized writers until the request fails (Copilot review, PR #1090). Stored
    * materials are already on the list being updated, so they carry no such assert.
+   *
+   * <p>PRECONDITION: a transaction is already open. This class is a plain {@code @Component} named
+   * {@code *Helper}, which no XML advisor pointcut matches, so it carried no transaction advice at
+   * all: called without an ambient transaction, each sibling-set lock below would have opened and
+   * committed its own, releasing every lock before the loop finished and leaving the caller
+   * protected by nothing. {@code Propagation.MANDATORY} makes that call fail instead. Every current
+   * caller is already transactional, so this is a no-op today, which is the point (parallel review,
+   * L3-L4-P5).
    */
+  @Transactional(propagation = Propagation.MANDATORY)
   public void lockParentSampleSets(
       List<ApiMaterialUsage> incoming, List<MaterialUsage> stored, User user) {
     Set<Long> parentSampleIds = new TreeSet<>();
@@ -68,7 +79,7 @@ public class InventoryMaterialUsageHelper {
         }
       }
     }
-    parentSampleIds.forEach(sampleApiMgr::recalculateTotalFromLockedRows);
+    parentSampleIds.forEach(siblingRowLock::lockSiblingRowsAndRecalculateTotal);
   }
 
   public InventoryRecord getForApiInventoryRecordInfo(ApiInventoryRecordInfo invRecInfo) {
