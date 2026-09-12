@@ -61,6 +61,7 @@ function printSettingsList() {
     _printSettings([ 'public_sharing' ]);
     _printSettings([ 'publicdocs_allow_seo' ]);
     _printSettings([ 'dataverse.available' ]);
+    _printSettings([ 'dbrepo.available' ]);
     _printSettings([ 'digitalCommonsData.available' ]);
     _printSettings([ 'dryad.available' ]);
     _printSettings([ 'figshare.available' ]);

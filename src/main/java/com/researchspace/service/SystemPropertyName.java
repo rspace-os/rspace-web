@@ -39,6 +39,7 @@ public enum SystemPropertyName {
   ARGOS_AVAILABLE("argos.available"),
   CLUSTER_MARKET_AVAILABLE("clustermarket.available"),
   DATAVERSE_AVAILABLE("dataverse.available"),
+  DBREPO_AVAILABLE("dbrepo.available"),
   DMPASSISTANT_AVAILABLE("dmpassistant.available"),
   DMPONLINE_AVAILABLE("dmponline.available"),
   DMPTOOL_AVAILABLE("dmptool.available"),

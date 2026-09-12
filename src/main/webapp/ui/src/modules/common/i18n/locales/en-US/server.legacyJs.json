@@ -94,6 +94,9 @@
         "loadingPlayer": "Loading the player ...",
         "playerNotAvailable": "Player not available"
       },
+      "dbrepo": {
+        "dialogTitle": "DBRepo link details"
+      },
       "nfs": {
         "actionFailed": "{0} action failed ({1}), if that does not work contact your System Admin",
         "actionLogin": "Login",

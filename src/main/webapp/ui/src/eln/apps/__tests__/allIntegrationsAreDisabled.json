@@ -16,6 +16,14 @@
       "oauthConnected": false,
       "options": {}
     },
+    "DBREPO": {
+      "name": "DBREPO",
+      "displayName": "DBRepo",
+      "available": false,
+      "enabled": false,
+      "oauthConnected": false,
+      "options": {}
+    },
     "OWNCLOUD": {
       "name": "OWNCLOUD",
       "displayName": "OwnCloud",

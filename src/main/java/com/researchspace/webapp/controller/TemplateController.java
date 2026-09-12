@@ -45,6 +45,8 @@ public class TemplateController extends BaseController {
 
   protected static final String NET_FILESTORE_LINK_TEMPLATE = "netFilestoreLink";
 
+  protected static final String DBREPO_LINK_TEMPLATE = "dbrepoLink";
+
   protected static final String EQUATION_TEMPLATE = "equationLink";
 
   protected static final String CALCULATION_TABLE_TEMPLATE = "calcTableLink";
@@ -144,6 +146,19 @@ public class TemplateController extends BaseController {
       mustachify(
           velocityModel, "name", "linktype", "fileStoreId", "relFilePath", "nfsId", "nfsType");
       templateFile = "nfsLink.vm";
+    } else if (name.equals(DBREPO_LINK_TEMPLATE)) {
+      mustachify(
+          velocityModel,
+          "id",
+          "name",
+          "dbrepoType",
+          "databaseId",
+          "resourceId",
+          "databaseName",
+          "query",
+          "recordURL",
+          "iconPath");
+      templateFile = "dbrepoLink.vm";
     } else {
       return null;
     }
