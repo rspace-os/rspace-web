@@ -265,6 +265,7 @@ public class FileStoreImpTest {
     FileProperty original = new FileProperty();
     Path destination =
         Path.of(saveContents(original, "original", FileDuplicateStrategy.AS_NEW, true));
+    var originalPermissions = Files.getPosixFilePermissions(destination);
     try (InputStream input =
         new InputStream() {
           private boolean firstByte = true;
@@ -283,12 +284,14 @@ public class FileStoreImpTest {
           () -> fs.save(original, input, "test.txt", FileDuplicateStrategy.REPLACE));
     }
     assertEquals("original", Files.readString(destination));
+    assertEquals(originalPermissions, Files.getPosixFilePermissions(destination));
     try (Stream<Path> siblings = Files.list(destination.getParent())) {
       assertEquals(List.of(destination), siblings.toList());
     }
     assertEquals(
         destination.toUri(), saveContents(original, "retry", FileDuplicateStrategy.REPLACE, true));
     assertEquals("retry", Files.readString(destination));
+    assertEquals(originalPermissions, Files.getPosixFilePermissions(destination));
   }
 
   @Test

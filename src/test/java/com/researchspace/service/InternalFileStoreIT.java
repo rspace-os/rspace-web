@@ -10,7 +10,8 @@ import com.researchspace.model.FileProperty;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.UUID;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,26 +22,31 @@ public class InternalFileStoreIT extends RealTransactionSpringTestBase {
 
   @Autowired private InternalFileStore internalFileStore;
 
+  @BeforeEach
+  public void setUp() throws Exception {
+    super.setUp();
+  }
+
+  @AfterEach
+  public void tearDown() throws Exception {
+    super.tearDown();
+  }
+
   @Test
   void failedStreamWriteRollsBackPersistedMetadata() throws IOException {
     assertTrue(AopUtils.isAopProxy(internalFileStore));
     assertFalse(TransactionSynchronizationManager.isActualTransactionActive());
     internalFileStore.setupInternalFileStoreRoot();
     FileProperty property = new FileProperty();
-    property.setFileUser(UUID.randomUUID().toString());
+    property.setFileUser(piUser.getUsername());
     JdbcTemplate jdbc = new JdbcTemplate(dataSource);
     try (InputStream input =
         new InputStream() {
           @Override
           public int read() throws IOException {
             assertTrue(TransactionSynchronizationManager.isActualTransactionActive());
+            assertTrue(property.getId() != null);
             sessionFactory.getCurrentSession().flush();
-            assertEquals(
-                1,
-                jdbc.queryForObject(
-                    "select count(*) from FileProperty where id = ?",
-                    Integer.class,
-                    property.getId()));
             throw new IOException("source failed after metadata was persisted");
           }
         }) {

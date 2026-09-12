@@ -121,6 +121,7 @@ public class InternalFileStoreImpl implements InternalFileStore {
       if (suc == 0) {
         // Keep the existing file intact until the replacement has been written successfully.
         replacement = Files.createTempFile(out.toPath().getParent(), ".replacement-", ".tmp");
+        Files.setPosixFilePermissions(replacement, Files.getPosixFilePermissions(out.toPath()));
       }
       long size;
       try (FileOutputStream output =
