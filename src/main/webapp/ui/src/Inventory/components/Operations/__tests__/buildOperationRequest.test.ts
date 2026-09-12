@@ -1,3 +1,4 @@
+import sharedCases from "@testresources/inventory/fieldNameUniquenessCases.json";
 import { describe, expect, it } from "vitest";
 import { buildOperationInputsRequest, withUniqueFieldNames } from "../buildOperationRequest";
 import type { InventoryOperation } from "../operationsConfig";
@@ -157,6 +158,35 @@ describe("buildOperationInputsRequest (amount modes, multi-origin)", () => {
       { id: 2, amountMode: "explicit", amountTaken: { numericValue: 1, unitId: 3 } },
       { id: 3, amountMode: "explicit", amountTaken: { numericValue: 1, unitId: 3 } },
     ]);
+  });
+});
+
+/**
+ * The rule is implemented twice, once per language, and these cases are the only thing tying the two
+ * together: the same file is asserted from InventoryOperationRequestBuilderTest. Without it, changing
+ * the suffix format on one side left the preview promising names the server would not store, with
+ * both suites green (parallel review, A10).
+ */
+describe("withUniqueFieldNames, against the cases the Java implementation is held to", () => {
+  it.each(sharedCases.cases)("$description", ({ fields, expected }) => {
+    const asExtraFields: Array<OperationExtraField> = fields.map((field) =>
+      field.type === "link"
+        ? {
+            name: field.name,
+            type: "link",
+            newFieldRequest: true,
+            operationFieldKey: "operations.pool.linkFieldName",
+            link: { relationType: "HasPart", targetGlobalId: field.targetGlobalId ?? "", versionPin: null },
+          }
+        : {
+            name: field.name,
+            type: "text",
+            newFieldRequest: true,
+            operationFieldKey: "operations.passage.numberField",
+            content: "",
+          },
+    );
+    expect(withUniqueFieldNames(asExtraFields).map((f) => f.name)).toEqual(expected);
   });
 });
 

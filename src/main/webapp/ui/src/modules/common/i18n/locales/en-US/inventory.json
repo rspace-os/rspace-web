@@ -1805,6 +1805,7 @@
       "fieldReason": "{label}: {reason}",
       "headingWithProcess": "{operation}: {process}",
       "inProgress": "Performing operation…",
+      "originIndex": "{reason} (origin {index})",
       "perform": "Perform",
       "refreshFailed": "The operation completed, but the view could not be refreshed. Reload to see the changes.",
       "reviewEdit": "Review / edit",

@@ -193,10 +193,12 @@ public class InventoryOperationPostValidator implements Validator {
                 + " whole-origin claim.");
       }
       if (origin.getAmountTaken() == null && config.effect().amountTakenFrom() == null) {
-        // The definition, not the caller, decides what this operation takes: nothing (Passage) or
-        // the whole origin (Destroy). A typed facade sends no amount for either, and the manager's
-        // request builder supplies it from the definition and the origin's live quantity (M0).
-        // The wizard still sends one, which is then checked like any other.
+        // Deliberately empty. The definition, not the caller, decides what this operation takes:
+        // nothing (Passage) or the whole origin (Destroy). A typed facade sends no amount for
+        // either, and the manager's request builder supplies it from the definition and the
+        // origin's live quantity (M0). The wizard still sends one, which is then checked like any
+        // other. Inverting this to avoid the empty body would have to restructure the whole
+        // else-chain below, which is not worth it (parallel review).
       } else if (!isValidAmountTaken(origin.getAmountTaken())) {
         errors.rejectValue(
             "amountTaken",

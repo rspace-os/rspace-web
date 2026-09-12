@@ -20,6 +20,13 @@ export async function fetchOperationsConfig(): Promise<Array<InventoryOperation>
  * POST a configured operation to the thin backend endpoint. The /api/inventory/v1/ prefix is
  * already applied by InvApiService, so the resource is just "operations". Resolves to null for a
  * terminal operation (noOutput, e.g. Destroy), which creates no sample and so returns an empty body.
+ *
+ * The wizard currently discards the result: it reports success with a toast and leaves the user
+ * where they were, rather than navigating away from a selection they may want to act on again. The
+ * typing and the null normalisation are kept regardless - they describe the endpoint's contract,
+ * which is what this module exists to state, and the normalisation guards a real Axios behaviour
+ * (an empty body surfaces as "", not null, once JSON parsing of the empty string fails). Both are
+ * covered by this module's own tests, independently of who calls it (parallel review, A11).
  */
 export async function performOperation(request: OperationInputsRequest): Promise<OperationResult | null> {
   const { data } = await ApiService.post<OperationResult | null>("operations", request);
@@ -34,7 +41,7 @@ const BARE_KEY_PREFIX = /^([A-Za-z_]\w*):\s*/;
 
 /**
  * The reason a Perform was rejected, worded for the wizard. An error against a declared input comes
- * back keyed by the bare input key ("sampleName: This operation requires [sampleName].", never
+ * back keyed by the bare input key ("sampleName: Required by this operation.", never
  * "inputs.sampleName": Spring cannot address a map entry by a dotted path, and the bare key is what a
  * typed client would have sent), so that key is swapped for the input's label as the wizard shows it.
  * Anything else (an origin error under "origins[0].amountTaken", a 409, a bare message) is left to
@@ -46,17 +53,23 @@ export function describeOperationError(
   resolveLabel: ResolveLabel,
   fallback: string,
 ): string {
-  const detail = getApiErrorDetail(error, fallback);
+  // The "which origin" marker is worded from the catalog: welding " (origin 3)" onto a reason the
+  // server already localized shipped half an English sentence to a non-English user (parallel
+  // review, A4).
+  const detail = getApiErrorDetail(error, fallback, (reason, index) =>
+    resolveLabel("operations.wizard.originIndex", { reason, index }),
+  );
   const match = BARE_KEY_PREFIX.exec(detail);
   const input = match ? operation.inputs.find((i) => i.key === match[1]) : undefined;
   // The "<label>: <reason>" join goes through the catalog: not every locale separates with a
   // colon-space (parallel review, FE14).
-  return input && match
-    ? resolveLabel("operations.wizard.fieldReason", {
-        label: resolveLabel(input.labelKey),
-        reason: detail.slice(match[0].length),
-      })
-    : detail;
+  if (input && match) {
+    return resolveLabel("operations.wizard.fieldReason", {
+      label: resolveLabel(input.labelKey),
+      reason: detail.slice(match[0].length),
+    });
+  }
+  return detail;
 }
 
 /**

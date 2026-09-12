@@ -1,6 +1,7 @@
 package com.researchspace.service.inventory;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.model.units.RSUnitDef;
@@ -34,6 +35,62 @@ class InventoryOperationInputValidatorTest {
     assertEquals(1, fieldErrors.size(), () -> "expected one error, got " + errors.getAllErrors());
     assertEquals(inputKey, fieldErrors.get(0).getField());
     assertEquals(code, fieldErrors.get(0).getCode());
+  }
+
+  /**
+   * No rejection may spell a raw config identifier into its localized sentence.
+   *
+   * <p>An input key ("sampleName") and a declared type ("integer") are wire-contract tokens, not
+   * words in any language. Interpolating one into a translated sentence ships half a message the
+   * user cannot read, and it is already redundant: the error carries the key as its FIELD, which is
+   * what the wizard swaps for the input's localized label before showing it (operationsApi's
+   * describeOperationError). The sentence only has to say what is wrong (parallel review, A3).
+   */
+  @Test
+  void noRejectionSpellsARawConfigIdentifierIntoItsMessage() {
+    for (String operation :
+        List.of("aliquot", "passage", "pool", "derive", "cryopreserve", "revive", "destroy")) {
+      InventoryOperationConfig definition = registry.get(operation).orElseThrow();
+      for (InventoryOperationConfig.Input input : definition.inputs()) {
+        // Every way this input can be rejected: absent, wrong type, and out of bounds.
+        Map<String, Object> absent = goldenFor(operation);
+        absent.remove(input.key());
+        Map<String, Object> wrongType = goldenFor(operation);
+        wrongType.put(input.key(), new Object());
+        for (Errors errors : List.of(validate(operation, absent), validate(operation, wrongType))) {
+          for (FieldError error : errors.getFieldErrors()) {
+            assertNoRawIdentifiers(operation, input, error);
+          }
+        }
+      }
+    }
+  }
+
+  private static void assertNoRawIdentifiers(
+      String operation, InventoryOperationConfig.Input input, FieldError error) {
+    for (Object argument : error.getArguments() == null ? new Object[0] : error.getArguments()) {
+      assertNotEquals(
+          input.key(),
+          String.valueOf(argument),
+          () ->
+              operation
+                  + "."
+                  + input.key()
+                  + " rejected with "
+                  + error.getCode()
+                  + ", which interpolates the raw input KEY into a translated sentence. The key is"
+                  + " already the error's field; the sentence must not repeat it untranslated.");
+      assertNotEquals(
+          input.type(),
+          String.valueOf(argument),
+          () ->
+              operation
+                  + "."
+                  + input.key()
+                  + " rejected with "
+                  + error.getCode()
+                  + ", which interpolates the raw declared TYPE into a translated sentence.");
+    }
   }
 
   @Test

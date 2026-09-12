@@ -20,6 +20,7 @@ import com.researchspace.service.inventory.InventoryOperationConfig;
 import com.researchspace.service.inventory.InventoryOperationConfigRegistry;
 import com.researchspace.service.inventory.InventoryOperationInputValidator;
 import com.researchspace.service.inventory.InventoryOperationManager;
+import com.researchspace.service.inventory.InventoryOperationManager.OperationOutcome;
 import com.researchspace.service.inventory.InventoryOperationRequestBuilder;
 import com.researchspace.service.inventory.OperationTemplateConformanceValidator;
 import com.researchspace.service.inventory.SampleApiManager;
@@ -61,7 +62,7 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
   private static final QuantityUtils quantityUtils = new QuantityUtils();
 
   @Override
-  public ApiSampleWithFullSubSamples performOperation(
+  public OperationOutcome performOperation(
       String operationKey,
       List<ApiInventoryOperationOriginUpdate> origins,
       Map<String, Object> inputs,
@@ -124,7 +125,6 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
                             documentedByGlobalId))
                 // The origin element owns amountTaken (M3 decision), so the builder is given the
                 // client's per-origin amounts rather than reading one from the inputs.
-                .amountMode(InventoryOperationRequestBuilder.AmountMode.PER_SUBSAMPLE)
                 .perSubsampleAmounts(amountsByGlobalId)
                 // The session timezone is the browser's, recorded at login (TimezoneAdjuster), so
                 // this is the user's local date; an API-key session has none and gets the server's.
@@ -149,13 +149,23 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
     }
     // Template conformance runs on the request just built, inside this transaction and before any
     // origin is read, so the template validated is the template the sample is created from.
-    return performOperation(built, user, () -> templateConformance.validate(built, user));
+    ApiSampleWithFullSubSamples created =
+        performOperation(built, user, () -> templateConformance.validate(built, user));
+
+    // The origins as they stand afterwards, read HERE rather than by the caller: still inside this
+    // transaction, so they are one consistent snapshot of what this operation produced, and one
+    // transaction rather than one per origin against a 100-origin cap (parallel review, A14).
+    List<ApiSubSample> originsAfter = new ArrayList<>();
+    for (ApiInventoryOperationOriginUpdate origin : origins) {
+      originsAfter.add(subSampleApiMgr.getApiSubSampleById(origin.getId(), user));
+    }
+    return new OperationOutcome(created, originsAfter);
   }
 
   /**
    * The origin's parent sample's fields a computed value may read: its template-defined fields
    * (which carry no definition key) and its ad-hoc extra fields, both, as the wizard's
-   * gatherParentFields does.
+   * computedValues.ts does.
    */
   private static List<InventoryOperationRequestBuilder.ParentField> parentFields(
       SampleEntity parent) {
@@ -237,7 +247,7 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
    *
    * <p>Locking, in acquisition order. First, every distinct parent sample's subsample rows are
    * locked as a set, ascending by sample id, via {@link
-   * SampleApiManager#lockSiblingRowsAndRecalculateTotal}: the recompute of each parent's
+   * SampleSiblingRowLock#lockSiblingRowsAndRecalculateTotal}: the recompute of each parent's
    * denormalised total must read the sibling rows currently, and taking them any later would
    * deadlock, because each origin's own row is one of them. Then each origin is locked through
    * {@link SubSampleApiManager#lockSubSampleForEdit}, ascending by subsample id (a re-ask for a row
@@ -458,6 +468,13 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
     }
     if (originQuantity == null || originQuantity.getNumericValue() == null) {
       // Origin holds nothing: any positive amount taken is over-removal.
+      //
+      // Unreachable from the only production caller: checkOriginLiveState tests
+      // originHoldsNothing(currentQuantity) first and takes a different branch, and that covers
+      // exactly the null / null-numericValue cases handled here. Kept so this stays a total
+      // function
+      // of its two arguments rather than one with an undocumented precondition, which is how its
+      // direct unit test exercises it (parallel review, A9).
       return amountTaken.getNumericValue().signum() > 0;
     }
     if (!quantityUtils.isComparableQuantities(amountTaken, originQuantity)) {

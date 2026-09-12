@@ -60,6 +60,13 @@ public interface UserDao extends GenericDao<User, Long> {
    * {@code lockRowForUpdate} guarantees serialisation only; a merge into the blob this returns is a
    * merge into what the last committed writer stored (RSDEV-1231).
    *
+   * <p>PRECONDITION: the caller must already hold the User row lock. For a user who has never
+   * stored this preference there is no UserPreference row, so the {@code FOR UPDATE} above matches
+   * nothing and locks nothing - the first-ever write is serialised entirely by that User row lock.
+   * The only caller takes it first ({@code UserManagerImpl.mergeUiJsonSetting}), so this holds
+   * today; a caller that relied on the lock named above would be relying on a lock that does not
+   * exist on the insert path (parallel review, A13).
+   *
    * @return the stored value, or null when the user has never stored that preference
    */
   String getPreferenceValueForUpdate(Long userId, Preference preference);

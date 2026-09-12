@@ -124,8 +124,9 @@
       "listOfMaterials": {
         "descriptionTooLong": "Description cannot be longer than 255 chars",
         "elnFieldIdRequired": "elnFieldId cannot be null",
+        "nameRequired": "name cannot be empty",
         "nameTooLong": "Name cannot be longer than 255 chars",
-        "nameRequired": "name cannot be empty"
+        "tooManyMaterials": "A list of materials accepts at most {max} materials."
       },
       "location": {
         "outsideGridDimensions": "Location ({0},{1}) is outside container grid dimensions (columns: {2}, rows: {3}).",
@@ -154,11 +155,11 @@
         "amountTakenZero": "This operation does not take from its origins, so the amount taken must be zero.",
         "documentationLinkTargetInvalid": "A documentation link must target an ELN document, notebook or Gallery file.",
         "duplicateOrigin": "An origin subsample may appear at most once in an operation.",
-        "inputAboveMaximum": "[{0}] must be at most {1}.",
-        "inputBelowMinimum": "[{0}] must be at least {1}.",
+        "inputAboveMaximum": "Must be at most {0}.",
+        "inputBelowMinimum": "Must be at least {0}.",
         "inputNotStorable": "[{0}] supports at most 3 decimal places.",
-        "inputRequired": "This operation requires [{0}].",
-        "inputWrongType": "[{0}] must be a value of type [{1}].",
+        "inputRequired": "Required by this operation.",
+        "inputWrongType": "Not the type this operation expects.",
         "mustEmptyOrigin": "This operation must take the origin's entire remaining quantity.",
         "operationTypeRequired": "An operation type is required.",
         "originCategoryMismatch": "All origin subsamples must use the same measurement category (e.g. all volume or all mass).",
@@ -172,6 +173,7 @@
         "storageTempAboveMax": "The storage temperature must be at most {0}°C for this operation.",
         "storageTempBelowMin": "The storage temperature must be at least {0}°C for this operation.",
         "subSampleCategoryMismatch": "Each new subsample must use the origin's measurement category (e.g. all volume or all mass).",
+        "tooManyInputs": "An operation request accepts at most {max} inputs.",
         "tooManyOrigins": "This operation accepts at most {max} origin subsamples.",
         "unknownType": "Unknown operation type [{0}]."
       },

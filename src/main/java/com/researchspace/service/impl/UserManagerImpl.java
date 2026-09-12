@@ -347,6 +347,15 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
   }
 
   /**
+   * The ceiling on ONE key's value, well under the 65535-char TEXT column the merged blob lives in.
+   * The column-level guard in {@link UserPreference} only fires once the merge overflows, by which
+   * point a single near-column-sized value has already been stored and every later keyed write for
+   * that user fails permanently. Every preference the client declares is a short scalar or a small
+   * list, so a few KB is ample (parallel review, S6).
+   */
+  private static final int MAX_UI_JSON_SETTING_VALUE_CHARS = 8192;
+
+  /**
    * The keys a UI settings object may hold: exactly the names the client declares in its
    * PREFERENCES map (src/main/webapp/ui/src/hooks/api/useUiPreference.tsx). Adding a preference
    * there means adding it here.
@@ -359,15 +368,6 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
    * no such growth: each write either replaces a known key or is refused (Copilot review, PR
    * #1090).
    */
-  /**
-   * The ceiling on ONE key's value, well under the 65535-char TEXT column the merged blob lives in.
-   * The column-level guard in {@link UserPreference} only fires once the merge overflows, by which
-   * point a single near-column-sized value has already been stored and every later keyed write for
-   * that user fails permanently. Every preference the client declares is a short scalar or a small
-   * list, so a few KB is ample (parallel review, S6).
-   */
-  private static final int MAX_UI_JSON_SETTING_VALUE_CHARS = 8192;
-
   private static final Set<String> UI_JSON_SETTINGS_KEYS =
       Set.of(
           "GALLERY_VIEW_MODE",

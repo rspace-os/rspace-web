@@ -25,7 +25,9 @@
       // (operations_config.json). A seven-level relative path out of the Vite root was unreadable
       // and broke on any move (parallel review, FE13); vite.config.ts resolves this via
       // tsconfigPaths, and vitestAliases repeats it for the test runs that bypass that.
-      "@resources/*": ["../../resources/*"]
+      "@resources/*": ["../../resources/*"],
+      // Backend test resources: fixtures a Java test and a TS test both assert against (A10)
+      "@testresources/*": ["../../../test/resources/*"]
     },
     "resolveJsonModule": true,
     "lib": ["ES2024", "DOM", "DOM.Iterable"],

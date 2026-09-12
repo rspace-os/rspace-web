@@ -17,7 +17,6 @@ import com.researchspace.service.inventory.InventoryOperationConfigRegistry;
 import com.researchspace.service.inventory.InventoryOperationManager;
 import jakarta.validation.Valid;
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -72,13 +71,19 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
     // any origin is read, so the template the sample is created from is the one this request was
     // validated against (Copilot review, PR #1090). Either kind of rejection propagates as the same
     // field-scoped 400 BindException the structural checks above produce.
-    return inventoryOperationManager.performOperation(
-        request.getOperationType(),
-        request.getOrigins(),
-        typedInputs(request),
-        request.getTemplateId(),
-        request.getDocumentedByGlobalId(),
-        user);
+    // This endpoint's contract is the created sample alone, so the origins-after the manager also
+    // returns are discarded here. They are assembled from entities the operation just loaded and
+    // wrote, so they come off the persistence context rather than the database; the typed endpoints
+    // below are what actually publish them.
+    return inventoryOperationManager
+        .performOperation(
+            request.getOperationType(),
+            request.getOrigins(),
+            typedInputs(request),
+            request.getTemplateId(),
+            request.getDocumentedByGlobalId(),
+            user)
+        .sample();
   }
 
   // --- the seven typed endpoints (M6) ---
@@ -186,12 +191,12 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
     generic.setTemplateId(request.getTemplateId());
     generic.setDocumentedByGlobalId(request.getDocumentedByGlobalId());
 
-    ApiSampleWithFullSubSamples sample;
+    InventoryOperationManager.OperationOutcome outcome;
     try {
       BindingResult genericErrors = new BeanPropertyBindingResult(generic, errors.getObjectName());
       inputValidator.validate(generic, operationPostValidator, genericErrors);
       throwBindExceptionIfErrors(genericErrors);
-      sample =
+      outcome =
           inventoryOperationManager.performOperation(
               operationKey,
               generic.getOrigins(),
@@ -203,12 +208,11 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
       throw new BindException(facadeFieldNames(coreRejection.getBindingResult(), singleOrigin));
     }
 
-    List<ApiSubSample> originsAfter = new ArrayList<>();
-    for (ApiInventoryOperationOriginUpdate update : generic.getOrigins()) {
-      ApiSubSample after = subSampleApiMgr.getApiSubSampleById(update.getId(), user);
-      buildAndAddInventoryRecordLinks(after);
-      originsAfter.add(after);
-    }
+    // The manager read these inside its own transaction, so they are one consistent snapshot of
+    // what the operation produced (parallel review, A14). Only the hypermedia is added here.
+    ApiSampleWithFullSubSamples sample = outcome.sample();
+    List<ApiSubSample> originsAfter = outcome.originsAfter();
+    originsAfter.forEach(this::buildAndAddInventoryRecordLinks);
     ApiInventoryOperationResult result = new ApiInventoryOperationResult(sample, originsAfter);
     if (sample == null) {
       return ResponseEntity.ok(result);

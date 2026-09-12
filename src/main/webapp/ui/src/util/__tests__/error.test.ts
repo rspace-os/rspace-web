@@ -105,9 +105,7 @@ describe("getApiErrorDetail", () => {
         },
       },
     };
-    expect(getApiErrorDetail(error, "fallback")).toBe(
-      "Cannot take more from an origin than it currently holds (origin 1)",
-    );
+    expect(getApiErrorDetail(error, "fallback")).toBe("Cannot take more from an origin than it currently holds");
   });
 
   test("shows only the first of several errors", () => {
@@ -119,7 +117,16 @@ describe("getApiErrorDetail", () => {
         },
       },
     };
-    expect(getApiErrorDetail(error, "fallback")).toBe("first (origin 1)");
+    expect(getApiErrorDetail(error, "fallback")).toBe("first");
+  });
+
+  test("drops the origin index when the caller supplies no way to word it", () => {
+    const error = {
+      response: {
+        data: { message: "Errors detected: 1", errors: ["origins[3].amountTaken: Cannot take more"] },
+      },
+    };
+    expect(getApiErrorDetail(error, "fallback")).toBe("Cannot take more");
   });
 
   test("names which origin failed, so a Pool rejection is actionable", () => {
@@ -134,8 +141,10 @@ describe("getApiErrorDetail", () => {
         },
       },
     };
-    expect(getApiErrorDetail(error, "fallback")).toBe(
-      "Cannot take more from an origin than it currently holds (origin 4)",
+    // The wording is the caller's: this module has no `t`, and appending English to a reason the
+    // server already localized is exactly the bug (parallel review, A4).
+    expect(getApiErrorDetail(error, "fallback", (reason, index) => `${reason} [#${index}]`)).toBe(
+      "Cannot take more from an origin than it currently holds [#4]",
     );
   });
 

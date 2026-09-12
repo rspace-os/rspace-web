@@ -76,19 +76,6 @@ public final class InventoryOperationRequestBuilder {
     String resolve(String key, Map<String, Object> args);
   }
 
-  /**
-   * How the amount taken is decided across origins: one shared amount, or a per-origin one.
-   *
-   * <p>The wizard's third mode, "take all", has no constant here. Whether a request takes an
-   * origin's whole quantity is the definition's to decide ({@code effect.emptiesOrigin()}), not the
-   * caller's: no typed facade offers a "take all" flag, so no caller could ever supply it and the
-   * constant was a permanently false branch (parallel review).
-   */
-  public enum AmountMode {
-    SAME,
-    PER_SUBSAMPLE
-  }
-
   /** A field on the origin's parent sample that a computed value may read. */
   public record ParentField(String name, String content, String operationFieldKey) {}
 
@@ -119,10 +106,11 @@ public final class InventoryOperationRequestBuilder {
 
     DocumentationLink documentationLink;
 
-    /** null defaults to SAME, every single-origin operation's mode. */
-    AmountMode amountMode;
-
-    /** Per-origin amounts by origin global id, for PER_SUBSAMPLE mode; ignored otherwise. */
+    /**
+     * Per-origin amounts by origin global id. An origin with no entry takes zero, which is correct
+     * for an operation that decrements nothing (Passage). Ignored for an origin-emptying operation,
+     * which snapshots the origin's own quantity instead.
+     */
     Map<String, ApiQuantityInfo> perSubsampleAmounts;
 
     /**
@@ -135,8 +123,6 @@ public final class InventoryOperationRequestBuilder {
   public static ApiInventoryOperationPost build(Params params) {
     InventoryOperationConfig operation = params.getOperation();
     InventoryOperationConfig.Effect effect = operation.effect();
-    AmountMode amountMode =
-        params.getAmountMode() == null ? AmountMode.SAME : params.getAmountMode();
     Map<String, ApiQuantityInfo> perSubsampleAmounts =
         params.getPerSubsampleAmounts() == null ? Map.of() : params.getPerSubsampleAmounts();
     LabelResolver resolveLabel = params.getResolveLabel();
@@ -164,14 +150,7 @@ public final class InventoryOperationRequestBuilder {
         update.setAmountMode(ApiInventoryOperationAmountMode.ALL);
       }
       update.setAmountTaken(
-          amountTakenFor(
-              origin,
-              effect,
-              values,
-              amountMode,
-              perSubsampleAmounts,
-              eachAmountUnit,
-              takesWholeOrigin));
+          amountTakenFor(origin, perSubsampleAmounts, eachAmountUnit, takesWholeOrigin));
       List<ApiExtraField> originFields = originFields(effect, values, resolveLabel);
       if (!originFields.isEmpty()) {
         update.setExtraFields(originFields);
@@ -253,36 +232,32 @@ public final class InventoryOperationRequestBuilder {
 
   /**
    * The amount to take from a given origin, exactly as the wizard decides it: an origin-emptying
-   * operation and the runtime "take all" mode snapshot the origin's own full quantity;
-   * PER_SUBSAMPLE takes the amount chosen for this origin (zero when none was); otherwise the
-   * configured shared amount, or a zero no-op decrement for an operation with no amountTakenFrom
-   * (Passage).
+   * operation snapshots the origin's own full quantity, and every other operation takes the amount
+   * chosen for this origin, or zero when none was (Passage, which decrements nothing).
+   *
+   * <p>There is no "one shared amount across origins" mode. The origin element owns amountTaken (M3
+   * decision), so the caller always supplies amounts per origin even when every origin gets the
+   * same one; a mode constant for it was a branch no caller could reach (parallel review).
    */
   private static ApiQuantityInfo amountTakenFor(
       Origin origin,
-      InventoryOperationConfig.Effect effect,
-      Map<String, Object> values,
-      AmountMode amountMode,
       Map<String, ApiQuantityInfo> perSubsampleAmounts,
       Integer eachAmountUnit,
       boolean takesWholeOrigin) {
-    int fallbackUnit =
-        origin.quantity() != null
-            ? origin.quantity().getUnitId()
-            : (eachAmountUnit != null ? eachAmountUnit : UNSET_UNIT);
     if (takesWholeOrigin) {
       return origin.quantity() != null
           ? copy(origin.quantity())
           : new ApiQuantityInfo(
               BigDecimal.ZERO, eachAmountUnit != null ? eachAmountUnit : UNSET_UNIT);
     }
-    if (amountMode == AmountMode.PER_SUBSAMPLE) {
-      ApiQuantityInfo chosen = perSubsampleAmounts.get(origin.globalId());
-      return chosen != null ? copy(chosen) : new ApiQuantityInfo(BigDecimal.ZERO, fallbackUnit);
+    ApiQuantityInfo chosen = perSubsampleAmounts.get(origin.globalId());
+    if (chosen != null) {
+      return copy(chosen);
     }
-    if (effect.amountTakenFrom() != null) {
-      return copy((ApiQuantityInfo) values.get(effect.amountTakenFrom()));
-    }
+    int fallbackUnit =
+        origin.quantity() != null
+            ? origin.quantity().getUnitId()
+            : (eachAmountUnit != null ? eachAmountUnit : UNSET_UNIT);
     return new ApiQuantityInfo(BigDecimal.ZERO, fallbackUnit);
   }
 

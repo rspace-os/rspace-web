@@ -52,7 +52,9 @@ export default function OperationPicker({
   allSameCategory: boolean;
 }): React.ReactNode {
   const { t } = useTranslation("inventory");
-  // Cast so config-driven (dynamic) keys resolve; the keys are validated to exist in the catalog.
+  // Cast so config-driven (dynamic) keys resolve: they arrive at runtime, so i18next's typed key
+  // union cannot describe them. Nothing here can check them, so operationsConfigKeys.test.ts asserts
+  // every key the shipped config names exists in the catalog (parallel review, A5).
   const label = resolveLabelFrom(t);
   return (
     // 2px between the operation buttons (DevDocs/adr/0007 UI request); a flex column with a small gap keeps

@@ -38,6 +38,13 @@ public class ApiListOfMaterials {
   @JsonProperty("elnDocument")
   ApiDocumentInfo elnDocument;
 
+  /**
+   * Each material that decrements stock locks its parent sample's whole sibling set for the rest of
+   * the request, so an uncapped list is an uncapped number of exclusive locks taken from one call
+   * (parallel review, A6). 250 is well above any real list and well below a denial of service; the
+   * operations endpoint caps its origins at 100 for the same reason.
+   */
+  @Size(max = 250, message = "{errors.inventory.listOfMaterials.tooManyMaterials}")
   @JsonProperty("materials")
   List<ApiMaterialUsage> materials;
 

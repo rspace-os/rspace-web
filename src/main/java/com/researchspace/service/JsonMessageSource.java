@@ -64,9 +64,13 @@ public class JsonMessageSource extends AbstractMessageSource {
   }
 
   /**
-   * ICU formats a whole number with locale grouping, so a bare {@code {0}} turns a record id like
-   * 73662 into "73,662". Pass whole numbers through as text, leaving those the message types itself
-   * ({@code {0, plural, ...}}, {@code {0, number}}) as numbers.
+   * ICU formats a number with locale grouping and locale decimal separators, so a bare {@code {0}}
+   * turns a record id like 73662 into "73,662" and a bound like 0.5 into "0,5" in a comma-decimal
+   * locale. Pass plain numbers through as text, leaving those the message types itself ({@code {0,
+   * plural, ...}}, {@code {0, number}}) as numbers so they are formatted deliberately.
+   *
+   * <p>{@code BigDecimal} is included because the operation definitions' min/max bounds are
+   * BigDecimal and are interpolated bare (parallel review, A3).
    */
   private Object[] plainIntegersAsText(String pattern, Object[] args) {
     if (ObjectUtils.isEmpty(args)) {
@@ -74,12 +78,13 @@ public class JsonMessageSource extends AbstractMessageSource {
     }
     Object[] copy = args.clone();
     for (int i = 0; i < copy.length; i++) {
-      boolean wholeNumber =
+      boolean plainNumber =
           copy[i] instanceof Integer
               || copy[i] instanceof Long
               || copy[i] instanceof Short
-              || copy[i] instanceof java.math.BigInteger;
-      if (wholeNumber && Pattern.compile("\\{\\s*" + i + "\\s*\\}").matcher(pattern).find()) {
+              || copy[i] instanceof java.math.BigInteger
+              || copy[i] instanceof java.math.BigDecimal;
+      if (plainNumber && Pattern.compile("\\{\\s*" + i + "\\s*\\}").matcher(pattern).find()) {
         copy[i] = copy[i].toString();
       }
     }
