@@ -441,7 +441,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
    * failed for every such template and the wizard offered no way to repair the generated name
    * (Codex review, PR #1090). Renaming the generated field would clear the rejection but break the
    * Passage counter, which finds the previous number by looking the field up by name
-   * (computedValues.ts, {@code gatherParentFields}): the number would land beside an untouched
+   * (computedValues.ts, {@code parentFieldValue}): the number would land beside an untouched
    * template counter and the next Passage would read the empty one. Merging keeps one field of that
    * name carrying the operation's value, so the lookup still works with or without a template.
    *

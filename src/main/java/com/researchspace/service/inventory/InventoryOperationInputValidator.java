@@ -65,7 +65,6 @@ public final class InventoryOperationInputValidator {
           errors.rejectValue(
               input.key(),
               "errors.inventory.operation.inputRequired",
-              new Object[] {input.key()},
               "This operation requires this input.");
         }
         continue;
@@ -81,7 +80,6 @@ public final class InventoryOperationInputValidator {
         errors.rejectValue(
             input.key(),
             "errors.inventory.operation.inputWrongType",
-            new Object[] {input.key(), input.type()},
             "This input is not of the type the operation declares.");
         continue;
       }
@@ -104,14 +102,14 @@ public final class InventoryOperationInputValidator {
       errors.rejectValue(
           input.key(),
           "errors.inventory.operation.inputBelowMinimum",
-          new Object[] {input.key(), input.min()},
+          new Object[] {input.min()},
           "This input is below the minimum the operation declares.");
     }
     if (input.max() != null && value.compareTo(input.max()) > 0) {
       errors.rejectValue(
           input.key(),
           "errors.inventory.operation.inputAboveMaximum",
-          new Object[] {input.key(), input.max()},
+          new Object[] {input.max()},
           "This input is above the maximum the operation declares.");
     }
   }

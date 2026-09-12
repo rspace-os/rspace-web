@@ -35,6 +35,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang3.Validate;
+import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.envers.Audited;
 import org.hibernate.search.mapper.pojo.automaticindexing.ReindexOnUpdate;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.GenericField;
@@ -47,6 +48,27 @@ import org.hibernate.search.mapper.pojo.mapping.definition.annotation.PropertyVa
 /** Represents RSInventory SubSample. */
 @Entity
 @Audited
+/*
+ * Narrows every UPDATE to the columns that actually changed, for the same reason SampleEntity
+ * carries it - and on a wider window.
+ *
+ * registerApiSubSampleUsage loads the subsample, WAITS on the sibling-set lock, then re-reads it
+ * through lockSubSampleForEdit. Hibernate serves that re-read from the persistence context, so the
+ * entity still holds this transaction's pre-wait snapshot of every column; the method says as much
+ * ("the lock serialises, it does not refresh") and works around it for quantity and version by
+ * reading those two as scalars under the lock. Nothing does that for name, description or tags. With
+ * a full-row UPDATE, setQuantity dirties the entity and the flush writes those stale columns back,
+ * so a rename another user committed while this request queued for the lock is silently reverted.
+ *
+ * The window here is the LARGER of the two: the subsample row is the one every stock writer
+ * deliberately blocks on, so the wait is exactly when a concurrent edit is most likely to land.
+ * There is no optimistic locking to catch it - "version" is the user-visible version in the global
+ * id, not a JPA @Version (parallel review, A7).
+ *
+ * COST: as on SampleEntity, this disables Hibernate's cached static UPDATE and regenerates the SQL
+ * per flush. Not measured.
+ */
+@DynamicUpdate
 @Getter
 @Setter
 @EqualsAndHashCode(callSuper = true)
