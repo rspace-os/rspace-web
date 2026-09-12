@@ -298,7 +298,7 @@
             </resource>
           </webResources>
           <warSourceExcludes>
-            ui/node/**, ui/node_modules/**, ui/dist/stats.json
+            ui/node/**, ui/node_modules/**, ui/dist/stats.json, ui/storybook-static/**
           </warSourceExcludes>
         </configuration>
       </plugin>
@@ -2005,6 +2005,64 @@
   </dependencies>
 
   <profiles>
+    <!-- Opt-in WAR content. Keep the bundle under WEB-INF so the deployment
+      property controls access, including when the servlet container serves static files. -->
+    <profile>
+      <id>generateStorybookFiles</id>
+      <activation>
+        <property>
+          <name>generateStorybook</name>
+          <value>true</value>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>com.github.eirslett</groupId>
+            <artifactId>frontend-maven-plugin</artifactId>
+            <version>${frontend.maven.plugin.version}</version>
+            <configuration>
+              <nodeVersion>${frontend.node.version}</nodeVersion>
+              <pnpmVersion>${frontend.pnpm.version}</pnpmVersion>
+              <workingDirectory>.</workingDirectory>
+            </configuration>
+            <executions>
+              <execution>
+                <id>Install node and pnpm locally to the project</id>
+                <goals><goal>install-node-and-pnpm</goal></goals>
+              </execution>
+              <execution>
+                <id>Collect frontend dependencies</id>
+                <goals><goal>pnpm</goal></goals>
+                <configuration>
+                  <arguments>${frontend.dependencies.install.arg}</arguments>
+                </configuration>
+              </execution>
+              <execution>
+                <id>Build Storybook</id>
+                <phase>prepare-package</phase>
+                <goals><goal>pnpm</goal></goals>
+                <configuration><arguments>run storybook:build</arguments></configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-war-plugin</artifactId>
+            <configuration>
+              <webResources combine.children="append">
+                <resource>
+                  <directory>src/main/webapp/ui/storybook-static</directory>
+                  <targetPath>WEB-INF/storybook</targetPath>
+                  <filtering>false</filtering>
+                </resource>
+              </webResources>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
     <!-- Generates the React/Vite frontend dist files and bundles them into the WAR.
       Opt-in: activated only when -DgenerateReactDist is passed. This keeps the pnpm
       install and Vite build out of everyday `mvn compile`/`test` runs, while CI
@@ -2025,10 +2083,10 @@
           <plugin>
             <groupId>com.github.eirslett</groupId>
             <artifactId>frontend-maven-plugin</artifactId>
-            <version>2.0.0</version>
+            <version>${frontend.maven.plugin.version}</version>
             <configuration>
-              <nodeVersion>v24.15.0</nodeVersion>
-              <pnpmVersion>11.18.0</pnpmVersion>
+              <nodeVersion>${frontend.node.version}</nodeVersion>
+              <pnpmVersion>${frontend.pnpm.version}</pnpmVersion>
               <workingDirectory>.</workingDirectory>
             </configuration>
             <executions>
@@ -2626,6 +2684,9 @@
   </profiles>
 
   <properties>
+    <frontend.maven.plugin.version>2.0.0</frontend.maven.plugin.version>
+    <frontend.node.version>v24.15.0</frontend.node.version>
+    <frontend.pnpm.version>11.18.0</frontend.pnpm.version>
     <!-- jetty -->
     <jetty.version>12.1.11</jetty.version>
     <slf4j.version>2.0.2</slf4j.version>

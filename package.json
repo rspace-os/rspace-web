@@ -28,7 +28,10 @@
     "test-e2e": "cd src/main/webapp/ui && cross-env playwright test --config playwright-e2e.config.ts",
     "test-e2e:ui": "cd src/main/webapp/ui && cross-env playwright test --config playwright-e2e.config.ts --ui --project=chromium",
     "test-e2e:api": "cd src/main/webapp/ui && cross-env playwright test --config playwright-e2e.config.ts --project=api",
-    "test-e2e:debug": "cd src/main/webapp/ui && cross-env PW_LOG=trace playwright test --config playwright-e2e.config.ts"
+    "test-e2e:debug": "cd src/main/webapp/ui && cross-env PW_LOG=trace playwright test --config playwright-e2e.config.ts",
+    "storybook": "cd src/main/webapp/ui && storybook dev -p 6006",
+    "storybook:build": "cd src/main/webapp/ui && storybook build",
+    "storybook:test": "cd src/main/webapp/ui && vitest run --config .storybook/vitest.config.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.9",
@@ -36,6 +39,10 @@
     "@mswjs/http-middleware": "0.10.3",
     "@playwright/test": "1.62.1",
     "@sa11y/vitest": "8.0.28",
+    "@storybook/addon-a11y": "10.6.0",
+    "@storybook/addon-docs": "10.6.0",
+    "@storybook/addon-vitest": "10.6.0",
+    "@storybook/react-vite": "10.6.0",
     "@suspensive/react": "3.21.3",
     "@testing-library/jest-dom": "7.0.1",
     "@testing-library/react": "16.3.2",
@@ -70,6 +77,7 @@
     "msw": "2.15.0",
     "playwright-core": "1.62.1",
     "rollup-plugin-visualizer": "7.1.1",
+    "storybook": "10.6.0",
     "typescript": "7.0.2",
     "url": "0.11.4",
     "vite": "8.2.2",
