@@ -2,6 +2,7 @@ package com.researchspace.api.v1.model;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -35,12 +36,12 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 
 /**
- * Each typed facade agrees with the definition it fronts (plan-operations-server-builds.md, M6
- * gate): its origin cardinality follows {@code requiresMultiple}, so {@code @Size(min = 2)} cannot
- * drift from it; its input fields are exactly the definition's input keys, so {@code
- * toOperationInputs()} stays a mechanical copy and a core error names a field the client sent; and
- * it carries no value rule, so nothing can go stale against the config. Plus the seven request
- * examples frozen in operations-facade-design-m0.md bind as written.
+ * Each typed facade agrees with the definition it fronts (DevDocs/adr/0007, M6 gate): its origin
+ * cardinality follows {@code requiresMultiple}, so {@code @Size(min = 2)} cannot drift from it; its
+ * input fields are exactly the definition's input keys, so {@code toOperationInputs()} stays a
+ * mechanical copy and a core error names a field the client sent; and it carries no value rule, so
+ * nothing can go stale against the config. Plus the seven request examples frozen in
+ * DevDocs/adr/0007 bind as written.
  */
 class InventoryOperationFacadeShapesTest {
 
@@ -81,9 +82,18 @@ class InventoryOperationFacadeShapesTest {
           if (definition.requiresMultiple()) {
             assertNull(origin, key + " is multi-origin, so no singular origin");
             assertNotNull(origins, key);
-            Size size = origins.getAnnotation(Size.class);
-            assertNotNull(size, key + ": minItems belongs in the published schema");
-            assertEquals(2, size.min(), key);
+            List<Size> sizes = sizeConstraints(origins);
+            assertFalse(sizes.isEmpty(), key + ": minItems belongs in the published schema");
+            assertEquals(2, sizes.stream().mapToInt(Size::min).max().orElse(0), key + ": minItems");
+            // The ceiling belongs at binding for the same reason the generic DTO carries one: the
+            // validator's MAX_ORIGINS check runs only after Jackson has materialised every element
+            // and performTyped has walked all of them parsing global ids, so without this an
+            // authenticated caller could post an unbounded origins array (parallel review). Read
+            // off the generic DTO rather than restated, so the two endpoints cannot disagree.
+            assertEquals(
+                genericOriginsCeiling(),
+                sizes.stream().mapToInt(Size::max).min().orElse(Integer.MAX_VALUE),
+                key + ": maxItems belongs at binding, not only in the core");
           } else {
             assertNotNull(origin, key + " takes exactly one origin");
             assertNull(origins, key + " is single-origin, so no origins list");
@@ -128,8 +138,12 @@ class InventoryOperationFacadeShapesTest {
               .annotationType()
               .getPackageName()
               .equals("jakarta.validation.constraints")) {
+            // Size.List is the repeated form of Size, used where each bound needs its own message;
+            // still a shape rule, not a value rule.
             assertTrue(
-                annotation instanceof NotNull || annotation instanceof Size,
+                annotation instanceof NotNull
+                    || annotation instanceof Size
+                    || annotation instanceof Size.List,
                 facade.getSimpleName() + "." + field.getName() + " carries " + annotation);
           }
         }
@@ -273,5 +287,28 @@ class InventoryOperationFacadeShapesTest {
 
   private static Field field(Class<?> facade, String name) {
     return fields(facade).stream().filter(f -> f.getName().equals(name)).findFirst().orElse(null);
+  }
+
+  /**
+   * Every {@code @Size} on a field, whether declared singly or repeated through {@code @Size.List}.
+   * A field needing a distinct message per bound has to use the repeated form, since one annotation
+   * carries one message.
+   */
+  private static List<Size> sizeConstraints(Field field) {
+    return List.of(field.getAnnotationsByType(Size.class));
+  }
+
+  /**
+   * The origins ceiling the generic endpoint enforces at binding, so a multi-origin facade can be
+   * pinned to it rather than restating the number and drifting from it.
+   */
+  private static int genericOriginsCeiling() {
+    Field origins = field(ApiInventoryOperationPost.class, "origins");
+    assertNotNull(origins, "the generic request must still declare origins");
+    int ceiling =
+        sizeConstraints(origins).stream().mapToInt(Size::max).min().orElse(Integer.MAX_VALUE);
+    assertNotEquals(
+        Integer.MAX_VALUE, ceiling, "the generic request must still cap origins at binding");
+    return ceiling;
   }
 }

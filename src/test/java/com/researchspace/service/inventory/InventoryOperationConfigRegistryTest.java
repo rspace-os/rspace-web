@@ -116,7 +116,7 @@ class InventoryOperationConfigRegistryTest {
 
     InventoryOperationConfig passage = registry.get("passage").orElseThrow();
     // args bind too, since the server-side request builder sources each function argument from
-    // them (plan-operations-server-builds.md, M1).
+    // them (DevDocs/adr/0007, M1).
     assertEquals(
         List.of(
             new InventoryOperationConfig.Computed(
