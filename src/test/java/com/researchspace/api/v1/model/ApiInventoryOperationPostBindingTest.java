@@ -43,7 +43,7 @@ class ApiInventoryOperationPostBindingTest {
   void aClientAssembledSampleAndOriginFieldsAreDroppedAtBinding() {
     // newSample and origins[].extraFields are the server's: the request builder fills them from
     // the definition, and the core reads them. Both are @JsonIgnore, so a body in the shape the
-    // endpoint accepted before plan-operations-server-builds.md M5 binds with neither, even under a
+    // endpoint accepted before DevDocs/adr/0007 M5 binds with neither, even under a
     // mapper that rejects unknown properties (probed: Jackson treats an ignored property as
     // ignorable, not as unknown).
     for (ObjectMapper mapper : new ObjectMapper[] {apiMapper, new ObjectMapper()}) {
@@ -85,7 +85,7 @@ class ApiInventoryOperationPostBindingTest {
   }
 
   @Test
-  void bindsAmountModeFromItsLowercaseWireValueAndRejectsAnythingElse() {
+  void bindsAmountModeFromItsLowercaseWireValueAndMarksAnythingElseUnknown() {
     assertEquals(
         ApiInventoryOperationAmountMode.EXPLICIT,
         assertDoesNotThrow(
@@ -94,17 +94,20 @@ class ApiInventoryOperationPostBindingTest {
                         "{\"id\":1,\"amountMode\":\"explicit\"}",
                         ApiInventoryOperationOriginUpdate.class))
             .getAmountMode());
-    // An unrecognised mode is a binding failure (the endpoint's ordinary 400), not a silent
-    // fallthrough to EXPLICIT, which would turn a client's "all" typo into a partial take.
-    assertTrue(
-        assertThrows(
-                Exception.class,
+    // An unrecognised mode binds to UNKNOWN, which the validator rejects with a catalog key, rather
+    // than throwing out of the @JsonCreator: that throw became an HttpMessageNotReadableException
+    // whose raw English message the shared advice copied into the 400 body, echoing the client's
+    // own input back untranslated (parallel review). Still a 400 either way, and crucially still
+    // NOT a silent fallthrough to EXPLICIT, which would turn a client's "all" typo into a partial
+    // take.
+    assertEquals(
+        ApiInventoryOperationAmountMode.UNKNOWN,
+        assertDoesNotThrow(
                 () ->
                     apiMapper.readValue(
                         "{\"id\":1,\"amountMode\":\"everything\"}",
                         ApiInventoryOperationOriginUpdate.class))
-            .getMessage()
-            .contains("everything"));
+            .getAmountMode());
   }
 
   @Test

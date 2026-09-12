@@ -10,8 +10,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * The response of every typed operation endpoint (operations-facade-design-m0.md, D2): an operation
- * is a transfer, so the caller gets both what was produced and what each origin holds afterwards,
+ * The response of every typed operation endpoint (DevDocs/adr/0007, D2): an operation is a
+ * transfer, so the caller gets both what was produced and what each origin holds afterwards,
  * without a GET per origin. {@code sample} is null for an operation that creates nothing (Destroy).
  * {@code origins} are in request order.
  */

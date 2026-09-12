@@ -23,26 +23,21 @@ type SampleField = {
 };
 
 export type ComputedContext = {
-  /** Fields on the origin's parent sample, for `parentSampleField` args (loaded before calling). */
+  /**
+   * Fields on the origin's parent sample, for `parentSampleField` args: the parent's template-defined
+   * fields AND its ad-hoc extra (custom) fields, combined by the caller. Both have to be included - a
+   * value like Passage number is often added as a custom field, so it lives in `extraFields`, and
+   * passing only `fields` makes every `parentSampleField` lookup fall back to its start value (the
+   * original Passage "stuck at 1" bug).
+   *
+   * The confirmation preview passes an empty array deliberately; see the comment at its call site.
+   */
   parentFields: ReadonlyArray<SampleField>;
   /** The current input values, for `input` args, and where each result is written. */
   values: OperationInputs;
   /** Resolves a field-name i18n key to the field name to match, in the user's locale. */
   resolveFieldName: (key: string) => string;
 };
-
-/**
- * The parent sample's fields a computed value may read: its template-defined fields AND its ad-hoc
- * extra (custom) fields, combined. Both must be searched - a value like Passage number is often added
- * as a custom field, so it lives in `extraFields`; reading only `fields` would miss it and every
- * `parentSampleField` lookup would fall back to its start value (the original Passage "stuck at 1" bug).
- */
-export function gatherParentFields(sample: {
-  fields: ReadonlyArray<SampleField>;
-  extraFields: ReadonlyArray<SampleField>;
-}): Array<SampleField> {
-  return [...sample.fields, ...sample.extraFields];
-}
 
 /**
  * The content of the field a `parentSampleField` arg refers to, matched by definition KEY first and
