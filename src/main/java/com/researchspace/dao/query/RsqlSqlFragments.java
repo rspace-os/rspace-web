@@ -5,6 +5,7 @@ import com.researchspace.model.collection.CollectionQueryException;
 import com.researchspace.model.collection.Operator;
 import com.researchspace.model.collection.ResourceReference;
 import java.util.Arrays;
+import java.util.stream.Collectors;
 
 /**
  * Builds the individual JPQL fragments the compiler stitches together: comparison symbols, LIKE
@@ -54,11 +55,11 @@ final class RsqlSqlFragments {
         .map(
             word -> {
               state.recordLikePredicate();
-              return like(path, state.add("%" + escapeLike(word) + "%"), false);
+              return like(path, state.add("%" + LikeEscaper.escape(word) + "%"), false);
             })
-        .reduce((left, right) -> left + " AND " + right)
-        .map(expression -> "(" + expression + ")")
-        .orElseThrow(() -> new CollectionQueryException(CollectionQueryException.Reason.VALUE));
+        .collect(
+            Collectors.collectingAndThen(
+                Collectors.joining(" AND "), expression -> "(" + expression + ")"));
   }
 
   static String like(String path, String parameter, boolean negated) {
@@ -74,10 +75,6 @@ final class RsqlSqlFragments {
   // ponytail: '*' is always a wildcard here, so a value containing a literal '*' can never be
   // matched by EQUAL/NOT_EQUAL. Add a '\*' escape convention in RsqlFilterParser if that's needed.
   static String wildcardPattern(String value) {
-    return escapeLike(value).replace('*', '%');
-  }
-
-  static String escapeLike(String value) {
-    return value.replace("!", "!!").replace("%", "!%").replace("_", "!_");
+    return LikeEscaper.escape(value).replace('*', '%');
   }
 }

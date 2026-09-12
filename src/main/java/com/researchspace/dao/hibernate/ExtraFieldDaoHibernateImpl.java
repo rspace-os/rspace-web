@@ -1,13 +1,13 @@
 package com.researchspace.dao.hibernate;
 
 import com.researchspace.dao.ExtraFieldDao;
+import com.researchspace.dao.query.LikeEscaper;
+import com.researchspace.dao.query.LookAheadPagination;
 import com.researchspace.dao.query.RsqlCollectionQuery;
 import com.researchspace.model.collection.QueryConstraint;
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.field.ExtraField;
-import com.researchspace.model.inventory.field.ExtraLinkField;
-import com.researchspace.model.inventory.field.ExtraNumberField;
-import com.researchspace.model.inventory.field.ExtraTextField;
+import com.researchspace.model.inventory.field.ExtraFieldIdentity.PublishedType;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -79,7 +79,7 @@ public class ExtraFieldDaoHibernateImpl implements ExtraFieldDao {
       query.setParameter(
           "names", wanted.stream().map(ExtraFieldRow::name).collect(Collectors.toSet()));
     } else if (search != null) {
-      query.setParameter("nameSearch", "%" + escapeLike(search) + "%");
+      query.setParameter("nameSearch", "%" + LikeEscaper.escape(search) + "%");
     }
     if (!hydrating) {
       query.setFirstResult(offset);
@@ -96,13 +96,9 @@ public class ExtraFieldDaoHibernateImpl implements ExtraFieldDao {
         rows.add(candidate);
       }
     }
-    boolean hasMore = !hydrating && rows.size() > limit;
-    if (hasMore) {
-      rows.remove(rows.size() - 1);
-    }
-    boolean exact = hydrating || !rows.isEmpty() || offset == 0;
-    return new ExtraFieldPage(
-        rows, hasMore || !exact ? null : (long) offset + rows.size(), hasMore);
+    LookAheadPagination.Result<ExtraFieldRow> page =
+        LookAheadPagination.apply(rows, offset, limit, hydrating);
+    return new ExtraFieldPage(page.rows(), page.total(), page.hasMore());
   }
 
   @Override
@@ -193,12 +189,8 @@ public class ExtraFieldDaoHibernateImpl implements ExtraFieldDao {
   }
 
   private static Class<?> subtype(FieldType type) {
-    return switch (type) {
-      case TEXT -> ExtraTextField.class;
-      case NUMBER -> ExtraNumberField.class;
-      case LINK -> ExtraLinkField.class;
-      default -> ExtraField.class;
-    };
+    PublishedType published = PublishedType.fromFieldType(type);
+    return published == null ? ExtraField.class : published.entityType();
   }
 
   private static String typeRestriction(Set<FieldType> types) {
@@ -209,19 +201,11 @@ public class ExtraFieldDaoHibernateImpl implements ExtraFieldDao {
   }
 
   private static FieldType typeOf(Object entityType) {
-    if (entityType == ExtraTextField.class) {
-      return FieldType.TEXT;
-    }
-    if (entityType == ExtraNumberField.class) {
-      return FieldType.NUMBER;
-    }
-    if (entityType == ExtraLinkField.class) {
-      return FieldType.LINK;
+    for (PublishedType published : PublishedType.values()) {
+      if (entityType == published.entityType()) {
+        return published.fieldType();
+      }
     }
     return null;
-  }
-
-  private static String escapeLike(String value) {
-    return value.replace("!", "!!").replace("%", "!%").replace("_", "!_");
   }
 }

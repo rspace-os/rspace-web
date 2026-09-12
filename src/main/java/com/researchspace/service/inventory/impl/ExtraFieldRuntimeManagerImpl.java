@@ -18,9 +18,7 @@ import com.researchspace.model.collection.RuntimeFieldNamespaces;
 import com.researchspace.model.collection.RuntimeFieldValueType;
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.field.ExtraFieldIdentity;
-import com.researchspace.model.inventory.field.ExtraLinkField;
-import com.researchspace.model.inventory.field.ExtraNumberField;
-import com.researchspace.model.inventory.field.ExtraTextField;
+import com.researchspace.model.inventory.field.ExtraFieldIdentity.PublishedType;
 import com.researchspace.service.inventory.ExtraFieldRuntimeManager;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -186,22 +184,13 @@ public class ExtraFieldRuntimeManagerImpl<T> implements ExtraFieldRuntimeManager
   }
 
   private static Class<?> entityType(FieldType type) {
-    return switch (type) {
-      case NUMBER -> ExtraNumberField.class;
-      case LINK -> ExtraLinkField.class;
-      default -> ExtraTextField.class;
-    };
+    PublishedType published = PublishedType.fromFieldType(type);
+    return published == null ? null : published.entityType();
   }
 
   private static RuntimeFieldValueType valueType(FieldType type) {
-    if (type == null) {
-      return null;
-    }
-    return switch (type) {
-      case TEXT, LINK -> RuntimeFieldValueType.TEXT;
-      case NUMBER -> RuntimeFieldValueType.NUMBER;
-      default -> null;
-    };
+    PublishedType published = PublishedType.fromFieldType(type);
+    return published == null ? null : published.runtimeType();
   }
 
   /**

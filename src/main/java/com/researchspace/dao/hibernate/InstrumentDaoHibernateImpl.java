@@ -1,6 +1,7 @@
 package com.researchspace.dao.hibernate;
 
 import com.axiope.search.InventorySearchConfig.InventorySearchDeletedOption;
+import com.blazebit.persistence.CriteriaBuilder;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SearchResultsImpl;
 import com.researchspace.dao.InstrumentDao;
@@ -8,7 +9,6 @@ import com.researchspace.dao.query.CollectionQueryExecutor;
 import com.researchspace.dao.query.IndexedTextNarrowing;
 import com.researchspace.inventory.model.ApiV2InstrumentResource;
 import com.researchspace.model.FileProperty;
-import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.AccessResult;
@@ -35,6 +35,9 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
   private static final CollectionQueryExecutor<Instrument> COLLECTION_QUERY =
       new CollectionQueryExecutor<>(
           Instrument.class, ApiV2InstrumentResource.DESCRIPTION, "collectionInstrument");
+
+  private record ParentLocationRow(
+      Long instrumentId, Long containerId, String containerName, ContainerType containerType) {}
 
   private String defaultTemplateOwner;
 
@@ -74,23 +77,17 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
     if (instrumentIds.isEmpty()) {
       return Map.of();
     }
-    return getSession()
-        .createQuery(
-            "select instrument.id, parent.id, parent.editInfo.name, parent.containerType "
-                + "from Instrument instrument "
-                + "join instrument.parentLocation location "
-                + "join location.container parent "
-                + "where instrument.id in (:instrumentIds) "
-                + "and location.storedInstrument.id = instrument.id",
-            Object[].class)
-        .setParameter("instrumentIds", instrumentIds)
-        .getResultStream()
+    CriteriaBuilder<ParentLocationRow> query = parentLocationQuery();
+    query.whereExpression("instrument.id IN :instrumentIds");
+    query.whereExpression("location.storedInstrument.id = instrument.id");
+    query.setParameter("instrumentIds", instrumentIds);
+    return query.getResultList().stream()
         .collect(
             Collectors.toMap(
-                row -> (Long) row[0],
+                ParentLocationRow::instrumentId,
                 row ->
                     new InstrumentParentLocationSummary(
-                        (Long) row[1], (String) row[2], (ContainerType) row[3])));
+                        row.containerId(), row.containerName(), row.containerType())));
   }
 
   @Override
@@ -99,27 +96,35 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
     if (instrumentIds.isEmpty()) {
       return Map.of();
     }
-    List<String> groupMembers =
-        invPermissionUtils.getUsernameOfUserAndAllMembersOfTheirGroups(caller);
-    List<String> groupNames = caller.getGroups().stream().map(Group::getUniqueName).toList();
-    List<String> visibleOwners = invPermissionUtils.getOwnersVisibleWithUserRole(caller);
-    String hql =
-        "select instrument.id, parent.id, parent.editInfo.name, parent.containerType"
-            + " from Instrument instrument join instrument.parentLocation location"
-            + " join location.container parent where instrument.id in (:instrumentIds)"
-            + " and location.storedInstrument.id = instrument.id and parent.deleted = false and "
-            + readableContainerPredicate(caller, groupMembers, groupNames, visibleOwners, "parent");
-    Query<Object[]> query = getSession().createQuery(hql, Object[].class);
-    query.setParameterList("instrumentIds", instrumentIds);
-    addQueryParams(null, caller, query, visibleOwners, groupMembers, groupNames);
-    return query
-        .getResultStream()
+    InventoryReadQueryContext context = readQueryContext(caller);
+    CriteriaBuilder<ParentLocationRow> query = parentLocationQuery();
+    query.whereExpression("instrument.id IN :instrumentIds");
+    query.whereExpression("location.storedInstrument.id = instrument.id");
+    query.whereExpression("parent.deleted = false");
+    query.whereExpression(context.readableContainerPredicate(this, "parent"));
+    query.setParameter("instrumentIds", instrumentIds);
+    context.bind(query, null);
+    return query.getResultList().stream()
         .collect(
             Collectors.toMap(
-                row -> (Long) row[0],
+                ParentLocationRow::instrumentId,
                 row ->
                     new InstrumentParentLocationSummary(
-                        (Long) row[1], (String) row[2], (ContainerType) row[3])));
+                        row.containerId(), row.containerName(), row.containerType())));
+  }
+
+  private CriteriaBuilder<ParentLocationRow> parentLocationQuery() {
+    return criteriaBuilderFactory()
+        .create(getSession(), ParentLocationRow.class)
+        .from(Instrument.class, "instrument")
+        .innerJoin("instrument.parentLocation", "location")
+        .innerJoin("location.container", "parent")
+        .selectNew(ParentLocationRow.class)
+        .with("instrument.id")
+        .with("parent.id")
+        .with("parent.editInfo.name")
+        .with("parent.containerType")
+        .end();
   }
 
   @Override
@@ -127,13 +132,8 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
     if (instrumentIds.isEmpty()) {
       return Map.of();
     }
-    List<String> groupMembers =
-        invPermissionUtils.getUsernameOfUserAndAllMembersOfTheirGroups(user);
-    List<String> groupNames = user.getGroups().stream().map(Group::getUniqueName).toList();
-    List<String> visibleOwners = invPermissionUtils.getOwnersVisibleWithUserRole(user);
-    String permission =
-        getInventoryReadPermissionSqlPredicate(
-            user, groupMembers, groupNames, visibleOwners, "instrument.");
+    InventoryReadQueryContext context = readQueryContext(user);
+    String permission = context.permissionPredicate(this, "instrument.");
     Query<InstrumentReadSummary> query =
         getSession()
             .createQuery(
@@ -149,7 +149,7 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
                     + permission,
                 InstrumentReadSummary.class)
             .setParameter("instrumentIds", instrumentIds);
-    addQueryParams(null, user, query, visibleOwners, groupMembers, groupNames);
+    context.bind(query, null);
     return query
         .getResultStream()
         .collect(Collectors.toMap(InstrumentReadSummary::id, summary -> summary));
@@ -176,10 +176,7 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
     if (containerIds.isEmpty() && workbenchIds.isEmpty()) {
       return Set.of();
     }
-    List<String> groupMembers =
-        invPermissionUtils.getUsernameOfUserAndAllMembersOfTheirGroups(caller);
-    List<String> groupNames = caller.getGroups().stream().map(Group::getUniqueName).toList();
-    List<String> visibleOwners = invPermissionUtils.getOwnersVisibleWithUserRole(caller);
+    InventoryReadQueryContext context = readQueryContext(caller);
     String parentType =
         "((parent.id in (:containerIds) and parent.containerType <> :workbenchType)"
             + " or (parent.id in (:workbenchIds) and parent.containerType = :workbenchType))";
@@ -192,18 +189,14 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
             + " and "
             + parentType
             + " and "
-            + readableContainerPredicate(caller, groupMembers, groupNames, visibleOwners, "parent");
+            + context.readableContainerPredicate(this, "parent");
     Query<Long> query = getSession().createQuery(hql, Long.class);
     query
         .setParameterList("containerIds", containerIds.isEmpty() ? Set.of(-1L) : containerIds)
         .setParameterList("workbenchIds", workbenchIds.isEmpty() ? Set.of(-1L) : workbenchIds)
         .setParameter("workbenchType", ContainerType.WORKBENCH);
-    addQueryParams(null, caller, query, visibleOwners, groupMembers, groupNames);
+    context.bind(query, null);
     return Set.copyOf(query.getResultList());
-  }
-
-  private static String escapeLike(String value) {
-    return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
   }
 
   private ResourceRequest narrowed(ResourceRequest request) {
@@ -218,14 +211,8 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
       String searchTerm,
       User user) {
 
-    List<String> userGroupMembers =
-        invPermissionUtils.getUsernameOfUserAndAllMembersOfTheirGroups(user);
-    List<String> userGroupsUniqueNames =
-        user.getGroups().stream().map(Group::getUniqueName).toList();
-    List<String> visibleOwners = invPermissionUtils.getOwnersVisibleWithUserRole(user);
-    String permittedFragment =
-        getOwnedByAndPermittedItemsSqlQueryFragment(
-            ownedBy, user, userGroupMembers, userGroupsUniqueNames, visibleOwners);
+    InventoryReadQueryContext context = readQueryContext(user);
+    String permittedFragment = context.ownedByAndPermitted(this, ownedBy);
 
     if (pgCrit == null) {
       pgCrit = PaginationCriteria.createDefaultForClass(Instrument.class);
@@ -246,9 +233,7 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
                         deletedFragment, " type(i) = Instrument ", nameFragment)
                     + permittedFragment,
                 Long.class);
-    Query<Long> countQueryWithParams =
-        addQueryParams(
-            ownedBy, user, countQuery, visibleOwners, userGroupMembers, userGroupsUniqueNames);
+    Query<Long> countQueryWithParams = context.bind(countQuery, ownedBy);
     if (StringUtils.isNotBlank(searchTerm)) {
       countQueryWithParams.setParameter("searchTerm", "%" + searchTerm + "%");
     }
@@ -269,9 +254,7 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
                 Instrument.class)
             .setFirstResult(startPosition)
             .setMaxResults(maxResult);
-    Query<Instrument> pageQueryWithParams =
-        addQueryParams(
-            ownedBy, user, pageQuery, visibleOwners, userGroupMembers, userGroupsUniqueNames);
+    Query<Instrument> pageQueryWithParams = context.bind(pageQuery, ownedBy);
     if (StringUtils.isNotBlank(searchTerm)) {
       pageQueryWithParams.setParameter("searchTerm", "%" + searchTerm + "%");
     }
@@ -309,14 +292,8 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
       InventorySearchDeletedOption deletedOption,
       User user) {
 
-    List<String> userGroupMembers =
-        invPermissionUtils.getUsernameOfUserAndAllMembersOfTheirGroups(user);
-    List<String> userGroupsUniqueNames =
-        user.getGroups().stream().map(Group::getUniqueName).toList();
-    List<String> visibleOwners = invPermissionUtils.getOwnersVisibleWithUserRole(user);
-    String permittedFragment =
-        getOwnedByAndPermittedItemsSqlQueryFragment(
-            ownedBy, user, userGroupMembers, userGroupsUniqueNames, visibleOwners);
+    InventoryReadQueryContext context = readQueryContext(user);
+    String permittedFragment = context.ownedByAndPermitted(this, ownedBy);
 
     if (pgCrit == null) {
       pgCrit = PaginationCriteria.createDefaultForClass(Instrument.class);
@@ -338,9 +315,7 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
                     + permittedFragment,
                 Long.class)
             .setParameter("templateId", templateId);
-    Query<Long> countQueryWithParams =
-        addQueryParams(
-            ownedBy, user, countQuery, visibleOwners, userGroupMembers, userGroupsUniqueNames);
+    Query<Long> countQueryWithParams = context.bind(countQuery, ownedBy);
     long totalCount = countQueryWithParams.getSingleResult();
     if (totalCount == 0) {
       return new SearchResultsImpl<>(List.of(), pgCrit, 0);
@@ -361,9 +336,7 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
             .setParameter("templateId", templateId)
             .setFirstResult(startPosition)
             .setMaxResults(maxResult);
-    Query<Instrument> pageQueryWithParams =
-        addQueryParams(
-            ownedBy, user, pageQuery, visibleOwners, userGroupMembers, userGroupsUniqueNames);
+    Query<Instrument> pageQueryWithParams = context.bind(pageQuery, ownedBy);
     List<Instrument> page = pageQueryWithParams.list();
     return new SearchResultsImpl<>(page, pgCrit, totalCount);
   }

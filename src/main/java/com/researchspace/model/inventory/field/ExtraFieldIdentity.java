@@ -1,12 +1,12 @@
 package com.researchspace.model.inventory.field;
 
+import com.researchspace.model.collection.RuntimeFieldValueType;
 import com.researchspace.model.field.FieldType;
 import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.util.HexFormat;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -27,11 +27,57 @@ public final class ExtraFieldIdentity {
 
   private static final String ID_PREFIX = "XF";
 
-  private static final Map<FieldType, Character> TYPE_CODES =
-      Map.of(FieldType.TEXT, 't', FieldType.NUMBER, 'n', FieldType.LINK, 'l');
+  public enum PublishedType {
+    TEXT(FieldType.TEXT, 't', ExtraTextField.class, RuntimeFieldValueType.TEXT),
+    NUMBER(FieldType.NUMBER, 'n', ExtraNumberField.class, RuntimeFieldValueType.NUMBER),
+    LINK(FieldType.LINK, 'l', ExtraLinkField.class, RuntimeFieldValueType.TEXT);
 
-  private static final Map<Character, FieldType> TYPES_BY_CODE =
-      Map.of('t', FieldType.TEXT, 'n', FieldType.NUMBER, 'l', FieldType.LINK);
+    private final FieldType fieldType;
+    private final char code;
+    private final Class<? extends ExtraField> entityType;
+    private final RuntimeFieldValueType runtimeType;
+
+    PublishedType(
+        FieldType fieldType,
+        char code,
+        Class<? extends ExtraField> entityType,
+        RuntimeFieldValueType runtimeType) {
+      this.fieldType = fieldType;
+      this.code = code;
+      this.entityType = entityType;
+      this.runtimeType = runtimeType;
+    }
+
+    public FieldType fieldType() {
+      return fieldType;
+    }
+
+    public char code() {
+      return code;
+    }
+
+    public Class<? extends ExtraField> entityType() {
+      return entityType;
+    }
+
+    public RuntimeFieldValueType runtimeType() {
+      return runtimeType;
+    }
+
+    public static PublishedType fromFieldType(FieldType type) {
+      for (PublishedType published : values()) {
+        if (published.fieldType == type) return published;
+      }
+      return null;
+    }
+
+    public static PublishedType fromCode(char code) {
+      for (PublishedType published : values()) {
+        if (published.code == code) return published;
+      }
+      return null;
+    }
+  }
 
   /** One definition: an exact name and the type it was declared with. */
   public record Definition(String name, FieldType type) {}
@@ -39,7 +85,8 @@ public final class ExtraFieldIdentity {
   private ExtraFieldIdentity() {}
 
   public static Set<FieldType> publishedTypes() {
-    return TYPE_CODES.keySet();
+    return Set.of(
+        PublishedType.TEXT.fieldType, PublishedType.NUMBER.fieldType, PublishedType.LINK.fieldType);
   }
 
   /**
@@ -48,19 +95,21 @@ public final class ExtraFieldIdentity {
    * @return null for an unpublished type or a blank name
    */
   public static String encode(String name, FieldType type) {
-    Character code = type == null ? null : TYPE_CODES.get(type);
-    if (code == null || name == null || name.isEmpty()) {
+    PublishedType published = PublishedType.fromFieldType(type);
+    if (published == null || name == null || name.isEmpty()) {
       return null;
     }
-    return ID_PREFIX + code + HexFormat.of().formatHex(name.getBytes(StandardCharsets.UTF_8));
+    return ID_PREFIX
+        + published.code
+        + HexFormat.of().formatHex(name.getBytes(StandardCharsets.UTF_8));
   }
 
   public static Definition decode(String id) {
     if (id == null || id.length() < ID_PREFIX.length() + 1 || !id.startsWith(ID_PREFIX)) {
       return null;
     }
-    FieldType type = TYPES_BY_CODE.get(id.charAt(ID_PREFIX.length()));
-    if (type == null) {
+    PublishedType published = PublishedType.fromCode(id.charAt(ID_PREFIX.length()));
+    if (published == null) {
       return null;
     }
     String hex = id.substring(ID_PREFIX.length() + 1);
@@ -69,7 +118,7 @@ public final class ExtraFieldIdentity {
     }
     try {
       String name = decodeUtf8(HexFormat.of().parseHex(hex));
-      return name.isEmpty() ? null : new Definition(name, type);
+      return name.isEmpty() ? null : new Definition(name, published.fieldType);
     } catch (IllegalArgumentException | CharacterCodingException malformed) {
       return null;
     }

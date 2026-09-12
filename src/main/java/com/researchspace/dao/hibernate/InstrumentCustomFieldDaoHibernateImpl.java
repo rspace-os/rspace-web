@@ -3,6 +3,8 @@ package com.researchspace.dao.hibernate;
 import com.blazebit.persistence.CriteriaBuilder;
 import com.blazebit.persistence.CriteriaBuilderFactory;
 import com.researchspace.dao.InstrumentCustomFieldDao;
+import com.researchspace.dao.query.LikeEscaper;
+import com.researchspace.dao.query.LookAheadPagination;
 import com.researchspace.dao.query.RsqlCollectionQuery;
 import com.researchspace.inventory.model.ApiV2InstrumentResource;
 import com.researchspace.model.collection.QueryConstraint;
@@ -80,13 +82,9 @@ public class InstrumentCustomFieldDaoHibernateImpl implements InstrumentCustomFi
       query.setFirstResult(offset).setMaxResults(limit + 1);
     }
     List<DefinitionRow> rows = new ArrayList<>(query.getResultList());
-    boolean hasMore = !hydrating && rows.size() > limit;
-    if (hasMore) {
-      rows.remove(rows.size() - 1);
-    }
-    boolean exact = hydrating || !rows.isEmpty() || offset == 0;
-    Long total = hasMore || !exact ? null : (long) offset + rows.size();
-    return new DefinitionPage(rows, total, hasMore);
+    LookAheadPagination.Result<DefinitionRow> page =
+        LookAheadPagination.apply(rows, offset, limit, hydrating);
+    return new DefinitionPage(page.rows(), page.total(), page.hasMore());
   }
 
   private void restrict(
@@ -124,7 +122,7 @@ public class InstrumentCustomFieldDaoHibernateImpl implements InstrumentCustomFi
       query.setParameter("requestedIds", ids);
     } else if (search != null) {
       query.whereExpression("LOWER(" + DEFINITION_ALIAS + ".name) LIKE :nameSearch ESCAPE '!'");
-      query.setParameter("nameSearch", "%" + escapeLike(search) + "%");
+      query.setParameter("nameSearch", "%" + LikeEscaper.escape(search) + "%");
     }
     if (predicate != null) {
       predicate.parameters().forEach(query::setParameter);
@@ -197,10 +195,6 @@ public class InstrumentCustomFieldDaoHibernateImpl implements InstrumentCustomFi
   @SuppressWarnings("unchecked")
   private static List<String> asStrings(Object parsed) {
     return parsed instanceof List ? List.copyOf((List<String>) parsed) : List.of();
-  }
-
-  private static String escapeLike(String value) {
-    return value.replace("!", "!!").replace("%", "!%").replace("_", "!_");
   }
 
   @Override

@@ -2,6 +2,7 @@ package com.researchspace.dao.hibernate;
 
 import com.axiope.search.InventorySearchConfig.InventorySearchDeletedOption;
 import com.axiope.search.SearchUtils;
+import com.blazebit.persistence.CommonQueryBuilder;
 import com.blazebit.persistence.CriteriaBuilderFactory;
 import com.researchspace.dao.GenericDaoHibernate;
 import com.researchspace.dao.query.CollectionQueryExecutor;
@@ -30,6 +31,58 @@ public class InventoryDaoHibernate<T extends InventoryRecord, PK extends Seriali
 
   public InventoryDaoHibernate(Class<T> persistentClass) {
     super(persistentClass);
+  }
+
+  protected InventoryReadQueryContext readQueryContext(User user) {
+    return new InventoryReadQueryContext(
+        user,
+        invPermissionUtils.getUsernameOfUserAndAllMembersOfTheirGroups(user),
+        user.getGroups().stream().map(group -> group.getUniqueName()).toList(),
+        invPermissionUtils.getOwnersVisibleWithUserRole(user));
+  }
+
+  protected CriteriaBuilderFactory criteriaBuilderFactory() {
+    return criteriaBuilderFactory;
+  }
+
+  protected record InventoryReadQueryContext(
+      User user, List<String> groupMembers, List<String> groupNames, List<String> visibleOwners) {
+
+    String permissionPredicate(InventoryDaoHibernate<?, ?> dao, String prefix) {
+      return dao.getInventoryReadPermissionSqlPredicate(
+          user, groupMembers, groupNames, visibleOwners, prefix);
+    }
+
+    String readableContainerPredicate(InventoryDaoHibernate<?, ?> dao, String alias) {
+      return dao.readableContainerPredicate(user, groupMembers, groupNames, visibleOwners, alias);
+    }
+
+    String ownedByAndPermitted(InventoryDaoHibernate<?, ?> dao, String ownedBy) {
+      return dao.getOwnedByAndPermittedItemsSqlQueryFragment(
+          ownedBy, user, groupMembers, groupNames, visibleOwners);
+    }
+
+    <Q> Query<Q> bind(Query<Q> query, String ownedBy) {
+      return addQueryParams(ownedBy, user, query, visibleOwners, groupMembers, groupNames);
+    }
+
+    void bind(CommonQueryBuilder<?> query, String ownedBy) {
+      if (StringUtils.isNotEmpty(ownedBy)) {
+        query.setParameter("ownedBy", ownedBy);
+      }
+      if (!user.hasSysadminRole()) {
+        query.setParameter("currentUser", user.getUsername());
+        if (CollectionUtils.isNotEmpty(visibleOwners)) {
+          query.setParameter("visibleOwners", visibleOwners);
+        }
+        if (CollectionUtils.isNotEmpty(groupMembers)) {
+          query.setParameter("userGroupMembers", groupMembers);
+        }
+        for (int i = 0; i < groupNames.size(); i++) {
+          query.setParameter("userGroupUniqueName" + i, "%" + groupNames.get(i) + "%");
+        }
+      }
+    }
   }
 
   /**

@@ -5,7 +5,6 @@ import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SearchResultsImpl;
 import com.researchspace.dao.ContainerDao;
 import com.researchspace.model.FileProperty;
-import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Container;
@@ -15,7 +14,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 import org.hibernate.query.Query;
 import org.hibernate.type.StandardBasicTypes;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,14 +63,8 @@ public class ContainerDaoHibernateImpl extends InventoryDaoHibernate<Container, 
       User user) {
 
     // prepare permission limiting query fragment
-    List<String> userGroupMembers =
-        invPermissionUtils.getUsernameOfUserAndAllMembersOfTheirGroups(user);
-    List<String> userGroupsUniqueNames =
-        user.getGroups().stream().map(Group::getUniqueName).collect(Collectors.toList());
-    List<String> visibleOwners = invPermissionUtils.getOwnersVisibleWithUserRole(user);
-    String ownedByAndPermittedItemsQueryFragment =
-        getOwnedByAndPermittedItemsSqlQueryFragment(
-            ownedBy, user, userGroupMembers, userGroupsUniqueNames, visibleOwners);
+    InventoryReadQueryContext context = readQueryContext(user);
+    String ownedByAndPermittedItemsQueryFragment = context.ownedByAndPermitted(this, ownedBy);
 
     // prepare type limiting fragment query
     String typeQueryFragment =
@@ -98,9 +90,7 @@ public class ContainerDaoHibernateImpl extends InventoryDaoHibernate<Container, 
                     + ownedByAndPermittedItemsQueryFragment
                     + typeQueryFragment,
                 Long.class);
-    Query<Long> countQueryWithParams =
-        addQueryParams(
-            ownedBy, user, countQueryBase, visibleOwners, userGroupMembers, userGroupsUniqueNames);
+    Query<Long> countQueryWithParams = context.bind(countQueryBase, ownedBy);
     long allContainersCount = countQueryWithParams.getSingleResult();
     if (allContainersCount == 0) {
       return new SearchResultsImpl<>(new ArrayList<>(), pgCrit, 0);
@@ -118,14 +108,7 @@ public class ContainerDaoHibernateImpl extends InventoryDaoHibernate<Container, 
             .setFirstResult(startPosition)
             .setMaxResults(maxResult);
 
-    Query<Container> containerPageQueryWithParams =
-        addQueryParams(
-            ownedBy,
-            user,
-            containerQueryBase,
-            visibleOwners,
-            userGroupMembers,
-            userGroupsUniqueNames);
+    Query<Container> containerPageQueryWithParams = context.bind(containerQueryBase, ownedBy);
     List<Container> pageOfContainers = containerPageQueryWithParams.list();
     return new SearchResultsImpl<>(pageOfContainers, pgCrit, allContainersCount);
   }
@@ -206,13 +189,8 @@ public class ContainerDaoHibernateImpl extends InventoryDaoHibernate<Container, 
               .setParameterList("containerIds", containerIds)
               .list());
     }
-    List<String> groupMembers =
-        invPermissionUtils.getUsernameOfUserAndAllMembersOfTheirGroups(actor);
-    List<String> groupNames =
-        actor.getGroups().stream().map(Group::getUniqueName).collect(Collectors.toList());
-    List<String> visibleOwners = invPermissionUtils.getOwnersVisibleWithUserRole(actor);
-    String readableContainerPredicate =
-        readableContainerPredicate(actor, groupMembers, groupNames, visibleOwners, "container");
+    InventoryReadQueryContext context = readQueryContext(actor);
+    String readableContainerPredicate = context.readableContainerPredicate(this, "container");
     StringBuilder hql =
         new StringBuilder("select container.id from Container container ")
             .append("where container.id in (:containerIds) and container.deleted=false and ")
@@ -222,7 +200,7 @@ public class ContainerDaoHibernateImpl extends InventoryDaoHibernate<Container, 
             .getCurrentSession()
             .createQuery(hql.toString(), Long.class)
             .setParameterList("containerIds", containerIds);
-    addQueryParams(null, actor, query, visibleOwners, groupMembers, groupNames);
+    context.bind(query, null);
     return new LinkedHashSet<>(query.list());
   }
 }

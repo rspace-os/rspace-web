@@ -1,6 +1,6 @@
 package com.researchspace.dao.query;
 
-import static com.researchspace.dao.query.RsqlSqlFragments.escapeLike;
+import static com.researchspace.dao.query.LikeEscaper.escape;
 import static com.researchspace.dao.query.RsqlSqlFragments.jsonQuoted;
 import static com.researchspace.dao.query.RsqlSqlFragments.like;
 import static com.researchspace.dao.query.RsqlSqlFragments.referencePair;
@@ -31,6 +31,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
 
 /** Compiles a typed collection filter into a parameterized Blaze-Persistence predicate. */
 public final class RsqlCollectionQuery {
@@ -174,20 +176,26 @@ public final class RsqlCollectionQuery {
 
   private String compileConstraintLogical(
       List<QueryConstraint> children, String separator, RsqlCompilationState state) {
-    return children.stream()
-        .map(child -> compileConstraint(child, state))
-        .reduce((left, right) -> left + separator + right)
-        .map(expression -> "(" + expression + ")")
-        .orElseThrow();
+    if (children.isEmpty()) {
+      throw new NoSuchElementException();
+    }
+    return "("
+        + children.stream()
+            .map(child -> compileConstraint(child, state))
+            .collect(Collectors.joining(separator))
+        + ")";
   }
 
   private String compileLogical(
       List<FilterExpression> children, String separator, RsqlCompilationState state) {
-    return children.stream()
-        .map(child -> compile(child, state))
-        .reduce((left, right) -> left + separator + right)
-        .map(expression -> "(" + expression + ")")
-        .orElseThrow(() -> new CollectionQueryException(CollectionQueryException.Reason.SYNTAX));
+    if (children.isEmpty()) {
+      throw new CollectionQueryException(CollectionQueryException.Reason.SYNTAX);
+    }
+    return "("
+        + children.stream()
+            .map(child -> compile(child, state))
+            .collect(Collectors.joining(separator))
+        + ")";
   }
 
   private String compileComparison(
@@ -319,27 +327,30 @@ public final class RsqlCollectionQuery {
 
   private String textComparison(
       FilterExpression.Comparison comparison, String valuePath, RsqlCompilationState state) {
+    return comparisonPredicate(comparison, valuePath, state);
+  }
+
+  private String comparisonPredicate(
+      FilterExpression.Comparison comparison, String path, RsqlCompilationState state) {
     Operator operator = comparison.operator();
     if (operator == Operator.IN || operator == Operator.NOT_IN) {
       String parameter = state.add(comparison.values());
-      return valuePath + (operator == Operator.IN ? " IN :" : " NOT IN :") + parameter;
+      return path + (operator == Operator.IN ? " IN :" : " NOT IN :") + parameter;
     }
     Object value = comparison.values().get(0);
     if (operator == Operator.CONTAINS) {
       state.recordLikePredicate();
-      return like(valuePath, state.add("%" + escapeLike(String.valueOf(value)) + "%"), false);
+      return like(path, state.add("%" + escape(String.valueOf(value)) + "%"), false);
     }
     if (operator == Operator.LIKE) {
-      return wordsLike(valuePath, String.valueOf(value), state);
+      return wordsLike(path, String.valueOf(value), state);
     }
     if (comparison.wildcard()) {
       state.recordLikePredicate();
       return like(
-          valuePath,
-          state.add(wildcardPattern(String.valueOf(value))),
-          operator == Operator.NOT_EQUAL);
+          path, state.add(wildcardPattern(String.valueOf(value))), operator == Operator.NOT_EQUAL);
     }
-    return valuePath + " " + symbol(operator) + " :" + state.add(value);
+    return path + " " + symbol(operator) + " :" + state.add(value);
   }
 
   private String choiceMembership(
@@ -347,7 +358,7 @@ public final class RsqlCollectionQuery {
     List<String> disjuncts = new ArrayList<>();
     for (Object value : comparison.values()) {
       state.recordLikePredicate();
-      String needle = "%" + escapeLike(jsonQuoted(String.valueOf(value))) + "%";
+      String needle = "%" + escape(jsonQuoted(String.valueOf(value))) + "%";
       disjuncts.add(valuePath + " LIKE :" + state.add(needle) + " ESCAPE '!'");
     }
     if (disjuncts.isEmpty()) {
@@ -365,25 +376,7 @@ public final class RsqlCollectionQuery {
     if (operator == Operator.EXISTS) {
       return path + (Boolean.TRUE.equals(comparison.values().get(0)) ? " IS NOT NULL" : " IS NULL");
     }
-    if (operator == Operator.IN || operator == Operator.NOT_IN) {
-      String parameter = state.add(comparison.values());
-      return path + (operator == Operator.IN ? " IN :" : " NOT IN :") + parameter;
-    }
-
-    Object value = comparison.values().get(0);
-    if (operator == Operator.CONTAINS) {
-      state.recordLikePredicate();
-      return like(path, state.add("%" + escapeLike(String.valueOf(value)) + "%"), false);
-    }
-    if (operator == Operator.LIKE) {
-      return wordsLike(path, String.valueOf(value), state);
-    }
-    if (comparison.wildcard()) {
-      state.recordLikePredicate();
-      return like(
-          path, state.add(wildcardPattern(String.valueOf(value))), operator == Operator.NOT_EQUAL);
-    }
-    return path + " " + symbol(operator) + " :" + state.add(value);
+    return comparisonPredicate(comparison, path, state);
   }
 
   /**
@@ -558,12 +551,15 @@ public final class RsqlCollectionQuery {
           ? "(" + kindPath + " IS NOT NULL AND " + idPath + " IS NOT NULL)"
           : "(" + kindPath + " IS NULL OR " + idPath + " IS NULL)";
     }
+    if (comparison.values().isEmpty()) {
+      throw new CollectionQueryException(CollectionQueryException.Reason.VALUE);
+    }
     String pairs =
-        comparison.values().stream()
-            .map(value -> referencePair(value, kindPath, idPath, state))
-            .reduce((left, right) -> left + " OR " + right)
-            .map(expression -> "(" + expression + ")")
-            .orElseThrow(() -> new CollectionQueryException(CollectionQueryException.Reason.VALUE));
+        "("
+            + comparison.values().stream()
+                .map(value -> referencePair(value, kindPath, idPath, state))
+                .collect(Collectors.joining(" OR "))
+            + ")";
     return switch (operator) {
       case EQUAL, IN -> pairs;
       case NOT_EQUAL, NOT_IN -> "NOT " + pairs;
