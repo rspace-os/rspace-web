@@ -42,7 +42,14 @@ public class ApiInventoryOperationPost {
    * The values the user typed, by the definition's input key. Bound as raw JSON values (a quantity
    * arrives as a Map), which the endpoint types against the definition before validation. Absent
    * means no inputs, which is what Destroy declares.
+   *
+   * <p>Capped because the map is not merely held: {@code InventoryOperationRequestBuilder} copies
+   * it once per link spec PER ORIGIN, so its size is multiplied by the 100-origin ceiling above.
+   * The input validator iterates the DEFINITION's inputs and never rejects an undeclared key, so
+   * without a bound here nothing limits what a client can send. 50 is far above the largest
+   * definition (cryopreserve declares 6) and far below anything that costs (parallel review, A15).
    */
+  @Size(max = 50, message = "{errors.inventory.operation.tooManyInputs}")
   @JsonProperty("inputs")
   private Map<String, Object> inputs;
 

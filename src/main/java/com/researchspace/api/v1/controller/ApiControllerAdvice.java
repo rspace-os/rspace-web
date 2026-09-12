@@ -53,7 +53,7 @@ public class ApiControllerAdvice extends RestControllerAdvice {
    * 1231): 1020 is "Record has changed since last read", surfaced via {@link
    * HibernateJdbcException#getSQLException()} when Hibernate cannot classify the failure more
    * specifically. A genuine deadlock or lock-wait timeout is already classified by Hibernate itself
-   * and reaches Spring as {@link CannotAcquireLockException} instead, so it needs no code check
+   * and reaches Spring as {@code CannotAcquireLockException} instead, so it needs no code check
    * here.
    */
   private static final Set<Integer> CONCURRENT_WRITE_SQL_ERROR_CODES = Set.of(1020);
