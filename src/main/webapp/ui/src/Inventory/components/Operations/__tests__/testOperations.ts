@@ -4,7 +4,7 @@
  * GET /operations/config. Importing the backend file directly keeps these tests red if the config
  * and the frontend schema ever disagree.
  */
-import rawConfig from "../../../../../../../resources/inventory/operations_config.json";
+import rawConfig from "@resources/inventory/operations_config.json";
 import { type InventoryOperation, parseOperationsConfig } from "../operationsConfig";
 
 export const operations: Array<InventoryOperation> = parseOperationsConfig(rawConfig);

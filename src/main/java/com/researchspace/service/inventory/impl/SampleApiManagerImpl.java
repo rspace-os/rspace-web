@@ -51,6 +51,7 @@ import com.researchspace.service.inventory.InventoryAuditApiManager;
 import com.researchspace.service.inventory.InventoryFieldNameUniquenessValidator;
 import com.researchspace.service.inventory.InventoryMoveHelper;
 import com.researchspace.service.inventory.SampleApiManager;
+import com.researchspace.service.inventory.SampleSiblingRowLock;
 import com.researchspace.service.inventory.SubSampleApiManager;
 import jakarta.ws.rs.NotFoundException;
 import java.io.IOException;
@@ -69,10 +70,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.jsoup.helper.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service("sampleApiManager")
 public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
-    implements SampleApiManager {
+    implements SampleSiblingRowLock, SampleApiManager {
 
   public static final String SAMPLE_DEFAULT_NAME = "Generic Sample";
 
@@ -164,13 +167,18 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
   }
 
   @Override
-  public void recalculateTotalFromLockedRows(Long sampleId) {
+  @Transactional(propagation = Propagation.MANDATORY)
+  public void lockSiblingRowsAndRecalculateTotal(Long sampleId) {
     // Deliberately an UNLOCKED read of the sample: the serialisation this method needs comes from
     // the locked scalar read of the subsample rows below, and taking the sample's own row lock
     // here would insert a sample-before-subsample acquisition into paths that otherwise lock
     // subsample rows first, inverting the order against them.
     SampleEntity sample = sampleDao.get(sampleId);
     if (sample == null) {
+      // Every caller derives sampleId from a live subsample it has just read, so reaching here
+      // means the parent row vanished between that read and this one. There is nothing to lock and
+      // no sibling rows to sum, so returning is the whole correct answer; throwing would turn a
+      // benign race into a 500 on a path that has not written anything (parallel review, L5).
       return;
     }
     // Assigned onto the entity so the flush at commit writes this value rather than the cascade's

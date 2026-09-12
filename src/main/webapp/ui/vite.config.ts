@@ -257,6 +257,12 @@ const useFsPolling = process.env.VITE_USE_POLLING === "true";
 
 const vitestAliases: Alias[] = [
   {
+    // The backend's src/main/resources, for tests pinned to the server's own files (FE13). Kept
+    // here as well as in tsconfig paths because resolve.alias is what the vitest runs use.
+    find: /^@resources\//,
+    replacement: `${resolveFromRoot("../../resources")}/`,
+  },
+  {
     find: /^@mui\/x-data-grid$/,
     replacement: resolveFromRoot("src/test-stubs/MuiDataGridStub.tsx"),
   },

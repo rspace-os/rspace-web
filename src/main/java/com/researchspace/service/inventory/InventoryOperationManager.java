@@ -42,12 +42,11 @@ public interface InventoryOperationManager {
 
   /**
    * The transactional core, run on a request the server built ({@link #performOperation(String,
-   * List, Map, Long, String, User, BuiltRequestValidation)}). Precondition: the origins must
-   * already have passed the structural validation the operations endpoint applies
-   * (InventoryOperationPostValidator): every origin carries a non-null id and a non-null,
-   * unit-bearing amountTaken, and origin ids are unique. The implementation dereferences these
-   * without guards, so a caller that skips validation would fail mid-transaction instead of
-   * cleanly.
+   * List, Map, Long, String, User)}). Precondition: the origins must already have passed the
+   * structural validation the operations endpoint applies (InventoryOperationPostValidator): every
+   * origin carries a non-null id and a non-null, unit-bearing amountTaken, and origin ids are
+   * unique. The implementation dereferences these without guards, so a caller that skips validation
+   * would fail mid-transaction instead of cleanly.
    *
    * <p>The live-state rules (an origin must currently hold something, and the amount taken may not
    * exceed what it holds) are enforced HERE, inside the operation's own transaction, so they hold
@@ -69,7 +68,7 @@ public interface InventoryOperationManager {
    *     any sample created. The txAdvice for this method declares {@code rollback-for
    *     BindException} (BindException is checked, so Spring's default rules would otherwise COMMIT
    *     on it): the sibling-set locks the live-state pass takes go through {@code
-   *     recalculateTotalFromLockedRows}, which writes each parent's recomputed total, and those
+   *     lockSiblingRowsAndRecalculateTotal}, which writes each parent's recomputed total, and those
    *     writes must not be committed alongside a 400 (Copilot review, PR #1090).
    *     InventoryOperationManagerImplTest pins the ordering: performExpectingRejection asserts none
    *     of the mutating collaborators were called.
@@ -77,16 +76,6 @@ public interface InventoryOperationManager {
   ApiSampleWithFullSubSamples performOperation(
       ApiInventoryOperationPost request, User user, InTransactionValidation callerValidation)
       throws BindException;
-
-  /**
-   * As {@link InTransactionValidation}, for the server-built path, where the request the core
-   * executes does not exist until this transaction has built it: the caller's check receives that
-   * built request.
-   */
-  @FunctionalInterface
-  interface BuiltRequestValidation {
-    void validate(ApiInventoryOperationPost built) throws BindException;
-  }
 
   /**
    * The server-built path (DevDocs/adr/0007, M3): validates {@code inputs} against the definition's
@@ -123,7 +112,6 @@ public interface InventoryOperationManager {
       Map<String, Object> inputs,
       Long templateId,
       String documentedByGlobalId,
-      User user,
-      BuiltRequestValidation callerValidation)
+      User user)
       throws BindException;
 }

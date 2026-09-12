@@ -39,6 +39,22 @@ vi.mock("../WizardTemplatePicker", () => ({
 const base: TemplateSelection = { mode: "none", templateId: null, remember: false };
 const pickMode: TemplateSelection = { mode: "pick", templateId: null, remember: false };
 
+/**
+ * Every selection the step asked for, with the updater form resolved against `from`.
+ *
+ * The post-lookup write sends an updater rather than a value, because it crosses an await (FE6), so
+ * asserting on the raw mock argument would silently match nothing - including the negative
+ * assertions, which would stop being sensitive to the thing they guard.
+ */
+const selectionsFrom = (
+  onChange: ReturnType<typeof vi.fn>,
+  from: TemplateSelection = pickMode,
+): Array<TemplateSelection> =>
+  onChange.mock.calls.map((call) => {
+    const arg = call[0] as TemplateSelection | ((p: TemplateSelection) => TemplateSelection);
+    return typeof arg === "function" ? arg(from) : arg;
+  });
+
 const makeTemplate = (fields: Array<FakeField>): FakeTemplate => ({
   id: 5,
   name: "T5",
@@ -83,7 +99,10 @@ describe("TemplateStep", () => {
         originSampleName="S1"
       />,
     );
-    expect(screen.getByRole("alert")).toHaveTextContent("My Template");
+    // cimode renders the key without its parameters, so the name itself is asserted in English
+    // below: the "Selected template: {name}" join moved into the catalog, because not every locale
+    // separates with a colon-space (parallel review, FE14).
+    expect(screen.getByRole("alert")).toHaveTextContent(/template\.selectedLabel/);
     for (const radio of screen.getAllByRole("radio")) expect(radio).not.toBeChecked();
     expect(screen.queryByTestId("template-picker")).not.toBeInTheDocument();
   });
@@ -111,7 +130,7 @@ describe("TemplateStep", () => {
     render(<TemplateStep value={pickMode} onChange={onChange} originSampleName="S1" />);
     await userEvent.setup().click(screen.getByTestId("template-picker"));
     expect(await screen.findByText(/mandatoryFieldsError|cannot be used|no default/i)).toBeInTheDocument();
-    expect(onChange).not.toHaveBeenCalledWith(expect.objectContaining({ templateId: 5 }));
+    expect(selectionsFrom(onChange)).not.toContainEqual(expect.objectContaining({ templateId: 5 }));
   });
 
   it("accepts a template whose mandatory fields all have defaults", async () => {
@@ -119,7 +138,33 @@ describe("TemplateStep", () => {
     const onChange = vi.fn();
     render(<TemplateStep value={pickMode} onChange={onChange} originSampleName="S1" />);
     await userEvent.setup().click(screen.getByTestId("template-picker"));
-    await waitFor(() => expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ templateId: 5 })));
+    await waitFor(() => expect(selectionsFrom(onChange)).toContainEqual(expect.objectContaining({ templateId: 5 })));
+  });
+
+  it("keeps a change made while the template lookup was in flight", async () => {
+    // The write after the await used to spread the `value` captured BEFORE it, so ticking
+    // "remember" mid-lookup was silently undone and the user performed the operation believing the
+    // bundle had been saved (parallel review, FE6). The updater form sees the newer value.
+    let resolveLookup: () => void = () => undefined;
+    currentTemplate = {
+      id: 5,
+      name: "T5",
+      fetchAdditionalInfo: () => new Promise((r) => (resolveLookup = r)),
+      fields: [{ name: "Batch", mandatory: true, content: "B1", selectedOptions: null }],
+    };
+    const onChange = vi.fn();
+    render(<TemplateStep value={pickMode} onChange={onChange} originSampleName="S1" />);
+    await userEvent.setup().click(screen.getByTestId("template-picker"));
+
+    resolveLookup();
+    await waitFor(() => expect(selectionsFrom(onChange)).toContainEqual(expect.objectContaining({ templateId: 5 })));
+
+    // The wizard's state moved on while the lookup was pending: remember was ticked. Resolving the
+    // step's write against THAT value must preserve it.
+    const tickedMidLookup: TemplateSelection = { ...pickMode, remember: true };
+    expect(selectionsFrom(onChange, tickedMidLookup)).toContainEqual(
+      expect.objectContaining({ templateId: 5, remember: true }),
+    );
   });
 
   it("discards a stale template lookup that resolves after a newer pick (latest wins)", async () => {
@@ -147,10 +192,10 @@ describe("TemplateStep", () => {
     await user.click(screen.getByTestId("template-picker"));
 
     // B resolved immediately and applied; now the older A resolves and must be ignored.
-    await waitFor(() => expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ templateId: 6 })));
+    await waitFor(() => expect(selectionsFrom(onChange)).toContainEqual(expect.objectContaining({ templateId: 6 })));
     resolveA();
     await Promise.resolve();
-    expect(onChange).not.toHaveBeenCalledWith(expect.objectContaining({ templateId: 5 }));
+    expect(selectionsFrom(onChange)).not.toContainEqual(expect.objectContaining({ templateId: 5 }));
   });
 
   it("abandons a pending template lookup when the step unmounts (wizard navigated away)", async () => {
@@ -174,7 +219,7 @@ describe("TemplateStep", () => {
     unmount(); // the wizard moved off the template step
     resolveA();
     await Promise.resolve();
-    expect(onChange).not.toHaveBeenCalledWith(expect.objectContaining({ templateId: 5 }));
+    expect(selectionsFrom(onChange)).not.toContainEqual(expect.objectContaining({ templateId: 5 }));
   });
 
   it("abandons a pending template lookup when the user switches mode (no stale restore)", async () => {
@@ -197,7 +242,7 @@ describe("TemplateStep", () => {
     await user.click(screen.getAllByRole("radio")[2]);
     resolveA();
     await Promise.resolve();
-    expect(onChange).not.toHaveBeenCalledWith(expect.objectContaining({ templateId: 5 }));
+    expect(selectionsFrom(onChange)).not.toContainEqual(expect.objectContaining({ templateId: 5 }));
   });
 });
 
@@ -213,6 +258,19 @@ describe("TemplateStep in English", () => {
     );
     await userEvent.setup().click(screen.getByTestId("template-picker"));
   };
+
+  it("reads the remembered-template banner as 'Selected template: My Template'", async () => {
+    render(
+      <InEnglish>
+        <TemplateStep
+          value={{ mode: "remembered", templateId: 5, templateName: "My Template", remember: true }}
+          onChange={vi.fn()}
+          originSampleName="S1"
+        />
+      </InEnglish>,
+    );
+    expect(await screen.findByRole("alert")).toHaveTextContent("Selected template: My Template");
+  });
 
   it("names the blocking fields as a list, not a bare join", async () => {
     // The message is assembled by i18n, not in code (code review, finding 10): the field names go
@@ -244,7 +302,7 @@ describe("TemplateStep failure and clearing paths", () => {
     await userEvent.setup().click(screen.getByTestId("template-picker"));
     expect(await screen.findByText(/template\.lookupFailed/)).toBeInTheDocument();
     // and the selection stays unset, so Next remains blocked rather than submitting a bad template
-    expect(onChange).not.toHaveBeenCalledWith(expect.objectContaining({ templateId: 5 }));
+    expect(selectionsFrom(onChange)).not.toContainEqual(expect.objectContaining({ templateId: 5 }));
   });
 
   it("clears the parent's selection when the picker is cleared", async () => {

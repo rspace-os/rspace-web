@@ -15,10 +15,15 @@ import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.inventory.InventoryOperationConfigRegistry;
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.junit.jupiter.api.Test;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
@@ -29,7 +34,7 @@ import org.springframework.validation.FieldError;
  * enforced here too (DevDocs/adr/0007). One fixture per configured operation, each the exact shape
  * the wizard's request builder produces; the tests then break them one rule at a time.
  */
-class InventoryOperationPostValidatorTest {
+public class InventoryOperationPostValidatorTest {
 
   private final InventoryOperationPostValidator validator = newValidator();
 
@@ -115,7 +120,7 @@ class InventoryOperationPostValidatorTest {
     return request;
   }
 
-  static ApiInventoryOperationPost aliquotRequest() {
+  public static ApiInventoryOperationPost aliquotRequest() {
     return request(
         "aliquot",
         newSample("Aliquots", linkTo("operations.aliquot.linkFieldName", "IsPartOf", 100)),
@@ -574,6 +579,29 @@ class InventoryOperationPostValidatorTest {
     request.setDocumentedByGlobalId("SD99");
     Errors errors = validate(request);
     assertFalse(errors.hasErrors(), () -> "unexpected: " + errors.getAllErrors());
+  }
+
+  /** The wizard's copy of the origins cap, in the file it is declared in. */
+  private static final Path MAX_ORIGINS_SOURCE =
+      Path.of("src/main/webapp/ui/src/Inventory/components/Operations/operationsConfig.ts");
+
+  @Test
+  void theWizardsOriginsCapIsTheSameNumberTheEndpointEnforces() throws IOException {
+    // The wizard greys out a multi-origin operation above this many selected subsamples. It is a
+    // hand-copied constant, because the cap has no home in operations_config.json (which is a list
+    // of operation definitions, not a settings object) and reshaping that payload to carry one
+    // number is a bigger change than the drift warrants. So it is pinned instead: lower MAX_ORIGINS
+    // here and the wizard would keep offering a selection the endpoint rejects, with the 400
+    // arriving only at Perform and naming no limit (parallel review, FE9).
+    Matcher declaration =
+        Pattern.compile("export const MAX_ORIGINS = (\\d+);")
+            .matcher(Files.readString(MAX_ORIGINS_SOURCE));
+    assertTrue(
+        declaration.find(), () -> "no MAX_ORIGINS declaration found in " + MAX_ORIGINS_SOURCE);
+    assertEquals(
+        InventoryOperationPostValidator.MAX_ORIGINS,
+        Integer.parseInt(declaration.group(1)),
+        "the wizard's MAX_ORIGINS must be the cap this validator enforces");
   }
 
   @Test
