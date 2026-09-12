@@ -5,6 +5,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
@@ -36,6 +37,7 @@ import org.springframework.test.context.web.WebAppConfiguration;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 @Tag("integration")
+@DisabledIfSystemProperty(named = "fast", matches = ".*")
 @ExtendWith(SpringExtension.class)
 @WebAppConfiguration
 @ActiveProfiles(profiles = "dev")
