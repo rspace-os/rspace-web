@@ -3,6 +3,7 @@ package com.researchspace.service.inventory;
 import com.researchspace.api.v1.model.ApiInventoryOperationOriginUpdate;
 import com.researchspace.api.v1.model.ApiInventoryOperationPost;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
+import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.model.User;
 import java.util.List;
 import java.util.Map;
@@ -78,6 +79,21 @@ public interface InventoryOperationManager {
       throws BindException;
 
   /**
+   * What an operation produced: the created sample, and each origin as it stands afterwards.
+   *
+   * <p>Both are read INSIDE the operation's transaction. The controller used to re-read the origins
+   * one at a time after it returned, which made each read its own transaction: the "origins
+   * afterwards" it handed back were neither a single consistent snapshot nor necessarily the state
+   * this operation produced, since a concurrent writer landing between commit and read-back was
+   * reported as this operation's result. It was also N+1 transactions per request against a
+   * documented 100-origin cap (parallel review, A14).
+   *
+   * <p>{@code sample} is null for a terminal operation that creates nothing (noOutput, e.g.
+   * Destroy). {@code originsAfter} is in the order the origins were given.
+   */
+  record OperationOutcome(ApiSampleWithFullSubSamples sample, List<ApiSubSample> originsAfter) {}
+
+  /**
    * The server-built path (DevDocs/adr/0007, M3): validates {@code inputs} against the definition's
    * declared inputs ({@link InventoryOperationInputValidator}), builds the request the core
    * executes from the definition, the origins' live state and those inputs ({@link
@@ -102,11 +118,12 @@ public interface InventoryOperationManager {
    * @param documentedByGlobalId the ELN record the built sample gets an {@code IsDocumentedBy} link
    *     to (the wizard's documentation step); null for none. The caller has checked it names a
    *     documentable record kind.
-   * @return as the core overload
+   * @return the created sample (null for a terminal operation) together with each origin as it
+   *     stands afterwards, in the order given
    * @throws BindException when an input fails the definition's rules (field errors named by the
    *     bare input key, which is the name a typed facade client sends: M0), or as the core overload
    */
-  ApiSampleWithFullSubSamples performOperation(
+  OperationOutcome performOperation(
       String operationKey,
       List<ApiInventoryOperationOriginUpdate> origins,
       Map<String, Object> inputs,

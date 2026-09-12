@@ -1042,8 +1042,11 @@ class InventoryOperationManagerImplTest {
     serverBuiltOriginHolds(100L, "5");
 
     assertNull(
-        manager.performOperation(
-            "destroy", List.of(facadeOrigin(100L, null)), java.util.Map.of(), null, null, user));
+        manager
+            .performOperation(
+                "destroy", List.of(facadeOrigin(100L, null)), java.util.Map.of(), null, null, user)
+            .sample(),
+        "a terminal operation creates no sample, but still reports its origins (A14)");
 
     ArgumentCaptor<QuantityInfo> taken = ArgumentCaptor.forClass(QuantityInfo.class);
     verify(subSampleApiMgr).registerApiSubSampleUsage(eq(100L), taken.capture(), eq(user));

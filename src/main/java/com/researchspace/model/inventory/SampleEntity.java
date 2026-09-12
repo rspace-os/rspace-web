@@ -523,7 +523,7 @@ public abstract class SampleEntity extends InventoryRecord
    * snapshot, so two writers on different siblings each compute the total from stale stock and one
    * decrement is lost from it. Callers that must be exact under concurrency pass values read from
    * the rows under a lock instead (see {@code
-   * SampleApiManager.lockSiblingRowsAndRecalculateTotal}).
+   * SampleSiblingRowLock.lockSiblingRowsAndRecalculateTotal}).
    */
   public void setTotalQuantityFrom(List<QuantityInfo> subSampleQuantities) {
     QuantityUtils quantityUtils = new QuantityUtils();

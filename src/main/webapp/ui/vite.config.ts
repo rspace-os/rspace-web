@@ -263,6 +263,11 @@ const vitestAliases: Alias[] = [
     replacement: `${resolveFromRoot("../../resources")}/`,
   },
   {
+    // The backend's src/test/resources, for fixtures shared with a Java test (A10).
+    find: /^@testresources\//,
+    replacement: `${resolveFromRoot("../../../test/resources")}/`,
+  },
+  {
     find: /^@mui\/x-data-grid$/,
     replacement: resolveFromRoot("src/test-stubs/MuiDataGridStub.tsx"),
   },
