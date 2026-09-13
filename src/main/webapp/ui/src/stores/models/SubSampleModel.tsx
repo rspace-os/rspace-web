@@ -177,7 +177,11 @@ export default class SubSampleModel
    */
   get paramsForBackend(): Record<string, unknown> {
     const params = { ...super.paramsForBackend };
-    if (this.currentlyEditableFields.has("quantity")) params.quantity = this.quantity;
+    // Only when the user actually set it: see HasQuantityMixin.quantityEdited for why an echoed
+    // quantity is stock loss rather than the last-write-wins a name gets. A record with no id yet
+    // is being created, where the quantity is part of what is being created.
+    if (this.currentlyEditableFields.has("quantity") && (this.id === null || this.quantityEdited))
+      params.quantity = this.quantity;
     return params;
   }
 
