@@ -157,9 +157,41 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
     // transaction rather than one per origin against a 100-origin cap (parallel review, A14).
     List<ApiSubSample> originsAfter = new ArrayList<>();
     for (ApiInventoryOperationOriginUpdate origin : origins) {
-      originsAfter.add(subSampleApiMgr.getApiSubSampleById(origin.getId(), user));
+      originsAfter.add(
+          withLockedQuantity(subSampleApiMgr.getApiSubSampleById(origin.getId(), user)));
     }
     return new OperationOutcome(created, originsAfter);
+  }
+
+  /**
+   * The mapped origin, with its quantity taken from the row lock this transaction still holds
+   * rather than from the persistence context.
+   *
+   * <p>An operation that takes a positive amount reconciles the entity itself, so the two already
+   * agree. One that takes nothing (Passage, M0) does not: {@code registerApiSubSampleUsage} returns
+   * before touching the entity, deliberately, because dirtying a stale instance on a no-op path is
+   * what resurrects exhausted stock. {@code getApiSubSampleById} then answers from the same
+   * persistence context and reports the quantity this request cached BEFORE it queued for the
+   * locks. The envelope promises the post-operation snapshot, and a client that reuses that number
+   * as {@code expectedQuantity} gets a false 409 on its next request (Codex review, P2, PR #1090).
+   *
+   * <p>Only the DTO is corrected; the entity is left alone, so this cannot introduce the stale
+   * full-row write the no-op protection exists to prevent. The scalar read is an HQL query against
+   * SubSample, so Hibernate's AUTO flush mode flushes first. That is safe here: the only operation
+   * that writes fields onto its origins is Destroy, whose {@code emptiesOrigin} effect always takes
+   * a positive amount, so an origin can never be both dirty and holding a stale quantity at this
+   * point.
+   *
+   * <p>The rest of the mapped record is still this transaction's snapshot. That is the field-level
+   * last-write-wins DevDocs/adr/0007 accepts everywhere; the quantity is singled out because the
+   * endpoint's own compare-and-swap contract is written in terms of it.
+   */
+  private ApiSubSample withLockedQuantity(ApiSubSample mapped) {
+    QuantityInfo locked = subSampleApiMgr.getQuantityForUpdate(mapped.getId());
+    if (locked != null) {
+      mapped.setQuantity(new ApiQuantityInfo(locked));
+    }
+    return mapped;
   }
 
   /**

@@ -7,7 +7,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiContainerInfo;
+import com.researchspace.api.v1.model.ApiInventoryOperationOriginUpdate;
 import com.researchspace.api.v1.model.ApiListOfMaterials;
+import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.dao.SubSampleDao;
@@ -23,6 +25,9 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.TransactionDefinition;
@@ -58,6 +63,7 @@ public class StockWriterConcurrencyIT extends RealTransactionSpringTestBase {
   private @Autowired ListOfMaterialsApiManager lomManager;
   private @Autowired InventoryMoveHelper moveHelper;
   private @Autowired SubSampleDao subSampleDao;
+  private @Autowired InventoryOperationManager operationManager;
 
   /**
    * W1 x M4. The guard that stops a decrement putting its origin back in the container it was moved
@@ -229,6 +235,69 @@ public class StockWriterConcurrencyIT extends RealTransactionSpringTestBase {
         1,
         deletedFlagOf("SubSample", subSample.getId()),
         "the deleted subsample must still be deleted after the refused usage");
+  }
+
+  /**
+   * W2 x M3, on the one path where the writer deliberately does not touch the entity: an operation
+   * that takes NOTHING from its origins must still report their live stock.
+   *
+   * <p>Passage takes zero, so {@code registerApiSubSampleUsage} returns before reconciling the
+   * entity with the locked row. That early return is itself a fix (dirtying a stale instance on a
+   * no-op path is what resurrects exhausted stock), and it must stay. But the envelope's "origins
+   * after" is then mapped from the same persistence context, so without the DTO-level correction it
+   * reports the quantity this request cached BEFORE it queued for the locks. A client reusing that
+   * number as {@code expectedQuantity} is handed a false 409 on its next request (Codex review, P2,
+   * PR #1090).
+   *
+   * <p>Only an IT can show this. The unit test models it with mocks, but the staleness IS the
+   * persistence context, so the guard has to run against a real one with a genuinely committed
+   * competing write.
+   */
+  @Test
+  public void anOperationTakingNothingStillReportsTheOriginsLiveStock() throws Exception {
+    User user = createInitAndLoginAnyUser();
+    ApiSampleWithFullSubSamples sample = createBasicSampleForUser(user);
+    Long subSampleId = sample.getSubSamples().get(0).getId();
+
+    InventoryOperationManager.OperationOutcome outcome;
+    openTransaction();
+    try {
+      // Loads the entity into THIS session, fixing its cached quantity at the seeded 5 g.
+      subSampleApiMgr.getApiSubSampleById(subSampleId, user);
+
+      // Another party takes it down to 2 g and COMMITS, as one can while this request queues for
+      // the sibling-set lock.
+      setQuantityFromAnotherConnection(subSampleId, "2");
+
+      ApiInventoryOperationOriginUpdate origin = new ApiInventoryOperationOriginUpdate();
+      origin.setId(subSampleId);
+      Map<String, Object> inputs = new LinkedHashMap<>();
+      inputs.put("sampleName", "HeLa p3");
+      inputs.put("count", 1);
+      inputs.put("eachAmount", new ApiQuantityInfo(BigDecimal.ONE, RSUnitDef.GRAM.getId()));
+      outcome =
+          operationManager.performOperation("passage", List.of(origin), inputs, null, null, user);
+    } finally {
+      commitTransaction();
+    }
+
+    assertEquals(
+        0,
+        new BigDecimal("2")
+            .compareTo(outcome.originsAfter().get(0).getQuantity().getNumericValue()),
+        "the origin currently holds 2 g; reporting 5 g means the envelope answered from this"
+            + " transaction's pre-lock snapshot rather than from the locked row");
+  }
+
+  private void setQuantityFromAnotherConnection(Long subSampleId, String grams)
+      throws SQLException {
+    try (Connection other = dataSource.getConnection()) {
+      other.setAutoCommit(true);
+      try (Statement statement = other.createStatement()) {
+        statement.executeUpdate(
+            "update SubSample set quantityNumericValue = " + grams + " where id = " + subSampleId);
+      }
+    }
   }
 
   private void moveInItsOwnCommittedTransaction(Long subSampleId, Long destinationId, User user) {
