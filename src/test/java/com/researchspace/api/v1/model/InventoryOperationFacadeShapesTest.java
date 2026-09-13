@@ -19,6 +19,7 @@ import com.researchspace.api.v1.model.ApiInventoryOperationRequests.Revive;
 import com.researchspace.service.inventory.InventoryOperationConfig;
 import com.researchspace.service.inventory.InventoryOperationConfig.Input;
 import com.researchspace.service.inventory.InventoryOperationConfigRegistry;
+import com.researchspace.service.inventory.InventoryOperationInputValidator;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
@@ -39,6 +40,8 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
+import org.springframework.validation.Errors;
+import org.springframework.validation.MapBindingResult;
 
 /**
  * Each typed facade agrees with the definition it fronts (DevDocs/adr/0007, M6 gate): its origin
@@ -68,6 +71,70 @@ class InventoryOperationFacadeShapesTest {
 
   /** The mapper the API's converter is built from (see ApiInventoryOperationPostBindingTest). */
   private final ObjectMapper apiMapper = Jackson2ObjectMapperBuilder.json().build();
+
+  /**
+   * A fractional count must not be silently truncated into a valid one.
+   *
+   * <p>Jackson's {@code ACCEPT_FLOAT_AS_INT} is on by default and the API converter does not turn
+   * it off, so {@code "count": 1.9} binds into an {@code Integer} field as 1. The request then
+   * deducts the full {@code amountTaken} but creates a single subsample, and {@code "count": 100.9}
+   * becomes 100, slipping past the definition's declared maximum entirely. The generic endpoint
+   * binds the same value into a {@code Map<String, Object>}, where it arrives as a Double and
+   * {@code isIntegral} rejects it - so the typed facades were quietly laxer than the endpoint they
+   * front (Codex review, P2).
+   *
+   * <p>Asserted through the API's own mapper and then through the real input validator, because the
+   * truncation happens at binding: constructing the DTO by hand cannot show it.
+   */
+  @Test
+  void aFractionalCountIsRejectedRatherThanTruncated() throws Exception {
+    for (String fractional : List.of("1.9", "100.9", "0.5")) {
+      Aliquot request =
+          apiMapper.readValue(
+              "{\"origin\":{\"id\":100,\"amountTaken\":{\"numericValue\":1,\"unitId\":3}},"
+                  + "\"sampleName\":\"Aliquots\",\"count\":"
+                  + fractional
+                  + ",\"eachAmount\":{\"numericValue\":0.5,\"unitId\":3}}",
+              Aliquot.class);
+
+      Map<String, Object> inputs = request.toOperationInputs();
+      Errors errors = new MapBindingResult(inputs, "inputs");
+      InventoryOperationInputValidator.validate(
+          registry.get("aliquot").orElseThrow(), inputs, errors);
+
+      assertEquals(
+          1,
+          errors.getFieldErrors().size(),
+          () ->
+              "count "
+                  + fractional
+                  + " must be rejected, not truncated to "
+                  + inputs.get("count")
+                  + ". The generic endpoint rejects the same value.");
+      assertEquals("count", errors.getFieldErrors().get(0).getField());
+    }
+  }
+
+  /** A whole count still binds and still passes, however it is written on the wire. */
+  @Test
+  void aWholeCountStillBinds() throws Exception {
+    for (String whole : List.of("2", "2.0")) {
+      Aliquot request =
+          apiMapper.readValue(
+              "{\"origin\":{\"id\":100,\"amountTaken\":{\"numericValue\":1,\"unitId\":3}},"
+                  + "\"sampleName\":\"Aliquots\",\"count\":"
+                  + whole
+                  + ",\"eachAmount\":{\"numericValue\":0.5,\"unitId\":3}}",
+              Aliquot.class);
+
+      Map<String, Object> inputs = request.toOperationInputs();
+      Errors errors = new MapBindingResult(inputs, "inputs");
+      InventoryOperationInputValidator.validate(
+          registry.get("aliquot").orElseThrow(), inputs, errors);
+
+      assertEquals(List.of(), errors.getAllErrors(), "count " + whole + " is a valid count of 2");
+    }
+  }
 
   private static final Validator validator =
       Validation.buildDefaultValidatorFactory().getValidator();
