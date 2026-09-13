@@ -7047,6 +7047,7 @@ export default interface Resources {
           "subSampleCategoryMismatch": "Each new subsample must use the origin's measurement category (e.g. all volume or all mass).",
           "tooManyInputs": "An operation request accepts at most {max} inputs.",
           "tooManyOrigins": "This operation accepts at most {max} origin subsamples.",
+          "totalNotStorable": "The new subsamples hold more in total than a quantity can store; reduce the amount or the number of subsamples.",
           "unknownType": "Unknown operation type [{0}]."
         },
         "publicLink": {
