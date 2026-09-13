@@ -324,6 +324,56 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
         "origin quantity must be untouched");
   }
 
+  /**
+   * The whole flow end to end, with no concurrency in it at all: an operation commits, and only
+   * then does the user save an edit to the origin.
+   *
+   * <p>The row lock cannot help here, because nothing overlaps. What decides it is whether the edit
+   * carries a quantity. A PUT that sends one replaces the stored value, deliberately: that is how a
+   * user corrects a quantity, and the server cannot tell a correction apart from a client echoing
+   * back the number the page was loaded with. So the client does not send one it was not given, and
+   * that is pinned where the payload is built (SubSampleModel paramsForBackend tests); this is the
+   * other half, that a payload without a quantity leaves the deduction standing (Codex review, PR
+   * #1090).
+   */
+  @Test
+  public void aRenameSavedAfterAnOperationLeavesTheDeductionStanding() throws Exception {
+    ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
+    java.math.BigDecimal beforeOperation = origin.getQuantity().getNumericValue();
+
+    mockMvc
+        .perform(
+            createBuilderForPostWithJSONBody(
+                apiKey, "/operations", anyUser, aliquotTakingJson(origin, "1")))
+        .andExpect(status().isCreated());
+    java.math.BigDecimal afterOperation =
+        subSampleApiManager
+            .getApiSubSampleById(origin.getId(), anyUser)
+            .getQuantity()
+            .getNumericValue();
+    assertEquals(
+        0,
+        beforeOperation.subtract(java.math.BigDecimal.ONE).compareTo(afterOperation),
+        "precondition: the operation took 1 from the origin");
+
+    mockMvc
+        .perform(
+            createBuilderForPutWithJSONBody(
+                apiKey,
+                "/subSamples/" + origin.getId(),
+                anyUser,
+                "{\"id\":" + origin.getId() + ",\"name\":\"Renamed after the aliquot\"}"))
+        .andExpect(status().is2xxSuccessful());
+
+    ApiSubSample reloaded = subSampleApiManager.getApiSubSampleById(origin.getId(), anyUser);
+    assertEquals("Renamed after the aliquot", reloaded.getName(), "the rename must land");
+    assertEquals(
+        0,
+        afterOperation.compareTo(reloaded.getQuantity().getNumericValue()),
+        "the edit must not put the pre-operation quantity back: that is stock reappearing with"
+            + " material already made from it");
+  }
+
   /** POST /samples with one subsample holding exactly the given quantity; returns the sample. */
   private ApiSampleWithFullSubSamples createSampleHolding(String name, String value, int unitId)
       throws Exception {
