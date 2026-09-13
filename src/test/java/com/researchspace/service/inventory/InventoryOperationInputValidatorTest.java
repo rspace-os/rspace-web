@@ -476,4 +476,108 @@ class InventoryOperationInputValidatorTest {
   private static Map<String, Object> destroy() {
     return inputs();
   }
+
+  // --- lengths: text inputs land in varchar columns ---
+
+  /**
+   * The sample's name is EditInfo.name, varchar(255), and a text field's content is
+   * EditInfo.description, varchar(250). Nothing here bounded a text input, so the name reached the
+   * samples validator only after the origins were read (and came back as {@code newSample.name}, a
+   * field no facade caller sent), and a text field's content reached the INSERT as a 500. The
+   * definition says which role each text input plays ({@code nameFrom}, {@code
+   * textFields[].contentFrom}, {@code originFields[].contentFrom}), so the bound can follow the
+   * role, on the input's own key, like every other rule here.
+   */
+  @Test
+  void aNameInputLongerThanTheRecordNameLimitIsAFieldErrorOnItsKey() {
+    // KNOWN FAILURE (backend F2)
+    for (String operation :
+        List.of("aliquot", "passage", "pool", "derive", "cryopreserve", "revive")) {
+      String nameKey = registry.get(operation).orElseThrow().effect().nameFrom();
+      Map<String, Object> tooLong = goldenFor(operation);
+      tooLong.put(nameKey, "x".repeat(256));
+      assertSingleErrorOn(
+          validate(operation, tooLong), nameKey, "errors.inventory.operation.inputTooLong");
+
+      Map<String, Object> atTheLimit = goldenFor(operation);
+      atTheLimit.put(nameKey, "x".repeat(255));
+      assertEquals(
+          List.of(), validate(operation, atTheLimit).getAllErrors(), operation + " at 255");
+    }
+  }
+
+  @Test
+  void aTextInputStoredAsFieldContentLongerThanTheContentLimitIsAFieldErrorOnItsKey() {
+    // KNOWN FAILURE (backend F2): cryomedium becomes the Cryomedium text field's content.
+    Map<String, Object> tooLong = cryopreserve();
+    tooLong.put("cryomedium", "m".repeat(251));
+    assertSingleErrorOn(
+        validate("cryopreserve", tooLong), "cryomedium", "errors.inventory.operation.inputTooLong");
+
+    Map<String, Object> atTheLimit = cryopreserve();
+    atTheLimit.put("cryomedium", "m".repeat(250));
+    assertEquals(List.of(), validate("cryopreserve", atTheLimit).getAllErrors());
+  }
+
+  // --- the integer and quantity rules at their edges ---
+
+  @Test
+  void aCountAsALongAboveTheMaximumIsAboveMaximumNotWrongType() {
+    // Jackson binds a large JSON integer to Long; it is still a whole number, judged by the bound.
+    Map<String, Object> inputs = aliquot();
+    inputs.put("count", 10_000_000_000L);
+    assertSingleErrorOn(
+        validate("aliquot", inputs), "count", "errors.inventory.operation.inputAboveMaximum");
+  }
+
+  @Test
+  void aCountAsABigIntegerIsAWholeNumber() {
+    Map<String, Object> inputs = aliquot();
+    inputs.put("count", java.math.BigInteger.valueOf(3));
+    assertEquals(List.of(), validate("aliquot", inputs).getAllErrors());
+  }
+
+  @Test
+  void aNegativeCountIsBelowTheMinimum() {
+    Map<String, Object> inputs = aliquot();
+    inputs.put("count", -1);
+    assertSingleErrorOn(
+        validate("aliquot", inputs), "count", "errors.inventory.operation.inputBelowMinimum");
+  }
+
+  @Test
+  void aQuantityWithTheWizardsUnsetUnitIsAFieldErrorOnItsKey() {
+    // UNSET_UNIT = 0 is the wizard's "no unit chosen" marker; it is not a unit.
+    Map<String, Object> inputs = aliquot();
+    inputs.put("eachAmount", new ApiQuantityInfo(new BigDecimal("3"), 0));
+    assertSingleErrorOn(
+        validate("aliquot", inputs), "eachAmount", "errors.inventory.quantity.unitInvalid");
+  }
+
+  @Test
+  void aQuantityWithMoreIntegerDigitsThanTheColumnHoldsIsNotStorable() {
+    // DECIMAL(19,3): 1E+17 passes a scale-only check and fails at the INSERT.
+    Map<String, Object> inputs = aliquot();
+    inputs.put("eachAmount", millilitres("1E+17"));
+    assertSingleErrorOn(
+        validate("aliquot", inputs), "eachAmount", "errors.inventory.operation.inputNotStorable");
+  }
+
+  @Test
+  void whitespaceOnlyRequiredTextIsAbsent() {
+    Map<String, Object> inputs = aliquot();
+    inputs.put("sampleName", "   ");
+    assertSingleErrorOn(
+        validate("aliquot", inputs), "sampleName", "errors.inventory.operation.inputRequired");
+  }
+
+  @Test
+  void aTemperatureWithTheWizardsUnsetUnitIsAFieldErrorOnItsKey() {
+    Map<String, Object> inputs = cryopreserve();
+    inputs.put("storageTemp", new ApiQuantityInfo(new BigDecimal("-80"), 0));
+    assertSingleErrorOn(
+        validate("cryopreserve", inputs),
+        "storageTemp",
+        "errors.inventory.temperature.invalidUnit");
+  }
 }

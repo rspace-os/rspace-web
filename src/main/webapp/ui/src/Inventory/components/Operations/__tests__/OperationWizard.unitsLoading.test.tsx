@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render as renderWithoutQueryClient } from "@testing-library/react";
+import { render as renderWithoutQueryClient, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
@@ -136,5 +137,31 @@ describe("OperationWizard for an origin whose unit has no atomic unit", () => {
         />,
       ),
     ).not.toThrow();
+  });
+
+  // KNOWN FAILURE (BUG-1): the wizard's details gate reads commonQuantity(), which is 0 for any unit
+  // outside volume/mass/dimensionless, so Next is disabled for a real 1 M origin; but the details
+  // step shows its "origin holds nothing" alert only for getValue(origin.quantity) <= 0, which is
+  // false here, so nothing on screen says why. This file renders the REAL details step (the main
+  // wizard suite stubs it), which is where the alert has to be visible.
+  it("explains, on the details step, why Next is disabled for a molarity origin", async () => {
+    // The dedup effect fires this once a process name exists; answer it so nothing is unhandled.
+    server.use(
+      http.get("/api/inventory/v1/samples/validateNameForNewSample", () => HttpResponse.json({ valid: true })),
+    );
+    const user = userEvent.setup();
+    render(
+      <OperationWizard
+        open
+        onClose={vi.fn()}
+        origins={[makeMockSubSample({ quantity: { numericValue: 1, unitId: 11 } })]}
+      />,
+    );
+    await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
+    // A process name alone would enable Next for a millilitre origin (see the main suite), so the
+    // only thing holding it here is the origin's unit.
+    await user.type(screen.getByRole("combobox", { name: /fields\.processName/i }), "dna");
+    expect(screen.getByRole("button", { name: /actions\.next/i })).toBeDisabled();
+    expect(screen.getByRole("alert")).not.toBeEmptyDOMElement();
   });
 });
