@@ -8,6 +8,7 @@ import com.researchspace.api.v1.model.ApiExtraField;
 import com.researchspace.api.v1.model.ApiInventoryOperationAmountMode;
 import com.researchspace.api.v1.model.ApiInventoryOperationPost;
 import com.researchspace.api.v1.model.ApiQuantityInfo;
+import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.inventory.InventoryOperationConfigRegistry;
@@ -366,5 +367,78 @@ class InventoryOperationRequestBuilderTest {
     assertEquals(
         "Pooled from: Vial A",
         resolver.resolve("operations.pool.linkFieldName", Map.of("originName", "Vial A")));
+  }
+
+  /**
+   * Every generated field name is persisted in EditInfo.name, varchar(255), and nothing downstream
+   * bounds it: ApiExtraFieldsHelper checks a link field's payload, not its name's length, so an
+   * over-long name fails at the INSERT as a 500 inside the manager's transaction, after the origin
+   * locks. Two inputs compose into names: the process name ("Is Derived From using process: X") and
+   * the origin's own name ("Pooled from: X"), the latter legitimately up to 255 characters already,
+   * and longer still once the uniqueness suffix is appended. The builder must fit what it composes,
+   * suffix included, and keep the names unique the way the backend judges uniqueness.
+   */
+  @Test
+  void generatedFieldNamesFitTheStoredNameColumnAndStayUnique() {
+    // KNOWN FAILURE (backend F3): the builder composes names without a length bound.
+    LabelResolver production =
+        InventoryOperationRequestBuilder.messageSourceResolver(
+            new JsonMessageSource(), Locale.forLanguageTag("en-US"));
+    ApiInventoryOperationPost derive =
+        InventoryOperationRequestBuilder.build(
+            Params.builder()
+                .operation(REGISTRY.get("derive").orElseThrow())
+                .resolveLabel(production)
+                .clientToday(LocalDate.parse("2026-08-20"))
+                .values(
+                    Map.of(
+                        "processName",
+                        "p".repeat(300),
+                        "sampleName",
+                        "Derived",
+                        "count",
+                        1,
+                        "eachAmount",
+                        millilitres("0.5")))
+                .origins(List.of(origin(100, "10", List.of())))
+                .perSubsampleAmounts(Map.of("SS100", millilitres("0.6")))
+                .build());
+    String longestLegalOriginName = "n".repeat(BaseRecord.DEFAULT_VARCHAR_LENGTH);
+    ApiInventoryOperationPost pool =
+        InventoryOperationRequestBuilder.build(
+            Params.builder()
+                .operation(REGISTRY.get("pool").orElseThrow())
+                .resolveLabel(production)
+                .clientToday(LocalDate.parse("2026-08-20"))
+                .values(
+                    Map.of("sampleName", "Pooled", "count", 1, "eachAmount", millilitres("0.5")))
+                .origins(
+                    List.of(
+                        new Origin(
+                            100L, "SS100", longestLegalOriginName, millilitres("10"), List.of()),
+                        new Origin(
+                            101L, "SS101", longestLegalOriginName, millilitres("10"), List.of())))
+                .perSubsampleAmounts(
+                    Map.of("SS100", millilitres("0.6"), "SS101", millilitres("0.7")))
+                .build());
+
+    for (ApiInventoryOperationPost built : List.of(derive, pool)) {
+      for (ApiExtraField field : built.getNewSample().getExtraFields()) {
+        assertTrue(
+            field.getName().length() <= BaseRecord.DEFAULT_VARCHAR_LENGTH,
+            () ->
+                built.getOperationType()
+                    + " generated a "
+                    + field.getName().length()
+                    + "-character field name, which the column cannot hold");
+      }
+    }
+    List<String> poolNames =
+        pool.getNewSample().getExtraFields().stream()
+            .map(field -> field.getName().trim().toLowerCase(Locale.ROOT))
+            .toList();
+    assertEquals(2, poolNames.size());
+    assertEquals(
+        poolNames.size(), new java.util.HashSet<>(poolNames).size(), "fitted names stay unique");
   }
 }
