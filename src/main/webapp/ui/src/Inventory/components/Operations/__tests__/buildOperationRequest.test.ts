@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { buildOperationInputsRequest, withUniqueFieldNames } from "../buildOperationRequest";
 import type { InventoryOperation } from "../operationsConfig";
 import type { OperationExtraField, OperationInputs, OperationOrigin } from "../types";
+import { UNSET_UNIT } from "../types";
 import { operations } from "./testOperations";
 
 /*
@@ -157,6 +158,101 @@ describe("buildOperationInputsRequest (amount modes, multi-origin)", () => {
       { id: 1, amountMode: "explicit", amountTaken: { numericValue: 1, unitId: 3 } },
       { id: 2, amountMode: "explicit", amountTaken: { numericValue: 1, unitId: 3 } },
       { id: 3, amountMode: "explicit", amountTaken: { numericValue: 1, unitId: 3 } },
+    ]);
+  });
+});
+
+// The origin-update branches no test above reaches: an operation with no amount-taken input at all
+// (Passage), a whole-origin claim on an origin that holds no quantity, the inputs map's handling of
+// a computed key and of an undeclared-because-untouched optional input, and the amount mode's
+// interaction with a single-origin operation.
+describe("buildOperationInputsRequest (remaining origin-update branches)", () => {
+  const passageValues: OperationInputs = {
+    sampleName: "Culture P2",
+    count: 1,
+    eachAmount: { numericValue: 1, unitId: 3 },
+  };
+
+  it("Passage (no amountTakenFrom) sends an explicit zero decrement in the origin's own unit", () => {
+    // The origin still travels so it is linked and permission-checked; the backend treats a 0
+    // decrement as a no-op (SubSampleApiManagerImpl returns early). It is "explicit", not a
+    // whole-origin claim, so no compare-and-swap is asked for.
+    const request = buildOperationInputsRequest({
+      operation: real("passage"),
+      values: passageValues,
+      origins: [origin],
+      templateId: null,
+      documentedByGlobalId: null,
+    });
+    expect(request.origins).toEqual([{ id: 100, amountMode: "explicit", amountTaken: { numericValue: 0, unitId: 3 } }]);
+  });
+
+  it("Destroy on an origin with no quantity claims the whole (empty) origin with an unset unit", () => {
+    // Destroy declares no each-amount either, so there is no unit to borrow: the fallback is the
+    // unset marker. The wizard never lets this reach Perform (its empty-origin gate), so this pins
+    // the builder's own defence rather than a reachable request.
+    const request = buildOperationInputsRequest({
+      operation: real("destroy"),
+      values: {},
+      origins: [{ id: 100, globalId: "SS100", name: "Vial A", quantity: null }],
+      templateId: null,
+      documentedByGlobalId: null,
+    });
+    expect(request.origins).toEqual([
+      { id: 100, amountMode: "all", amountTaken: { numericValue: 0, unitId: UNSET_UNIT } },
+    ]);
+  });
+
+  it("never sends a computed value's `into` key: the server computes Passage's number itself", () => {
+    // A stale wizard state (or a remembered bundle from an older version) could carry passageNumber
+    // in values; only the DECLARED inputs travel, so it must not.
+    const request = buildOperationInputsRequest({
+      operation: real("passage"),
+      values: { ...passageValues, passageNumber: 3 },
+      origins: [origin],
+      templateId: null,
+      documentedByGlobalId: null,
+    });
+    expect(request.inputs).not.toHaveProperty("passageNumber");
+    expect(request.inputs).toEqual({ sampleName: "Culture P2", count: 1, eachAmount: { numericValue: 1, unitId: 3 } });
+  });
+
+  it("drops a declared input the user never touched rather than sending an undefined entry", () => {
+    // Cryopreserve's cryomedium is optional; absent from values it must be absent from the request
+    // too (an `undefined` would serialise to nothing anyway, but the key must not be claimed).
+    const request = buildOperationInputsRequest({
+      operation: real("cryopreserve"),
+      values: {
+        sampleName: "Frozen",
+        count: 1,
+        eachAmount: { numericValue: 1, unitId: 3 },
+        amountTaken: { numericValue: 1, unitId: 3 },
+        storageTemp: { numericValue: -80, unitId: 8 },
+      },
+      origins: [origin],
+      templateId: null,
+      documentedByGlobalId: null,
+    });
+    expect("cryomedium" in request.inputs).toBe(false);
+    expect(Object.keys(request.inputs).sort()).toEqual(["count", "eachAmount", "sampleName", "storageTemp"]);
+  });
+
+  // KNOWN FAILURE (BUG-2): buildOriginUpdates treats `amountMode === "all"` as "take the whole
+  // origin" for ANY operation, but only a multi-origin operation (usesAmountModes) ever offers that
+  // mode. The wizard restores a stored bundle's amountMode for single-origin operations too, so a
+  // stale or edited Derive bundle carrying "all" empties the origin while the summary shows the
+  // typed amount. A single-origin operation must always send the typed amount, explicitly.
+  it("a single-origin operation handed amountMode 'all' still sends the typed amount, explicitly", () => {
+    const request = buildOperationInputsRequest({
+      operation: real("derive"),
+      values: deriveValues,
+      origins: [origin],
+      templateId: null,
+      documentedByGlobalId: null,
+      amountMode: "all",
+    });
+    expect(request.origins).toEqual([
+      { id: 100, amountMode: "explicit", amountTaken: { numericValue: 0.6, unitId: 3 } },
     ]);
   });
 });

@@ -216,4 +216,22 @@ class SubSampleApiManagerImplUsageVersionTest {
 
     assertEquals(3L, cached.getVersion());
   }
+
+  @Test
+  void aZeroUsageTakesNoLockAndWritesNothing() {
+    // Passage decrements its origin by zero. That must be a pure read: no sibling-set lock, no row
+    // lock, no save, and the cached quantity untouched, so a Passage can never contend with or
+    // dirty a concurrent decrement of the same origin.
+    SubSample cached = subSampleAtVersion(3L);
+    when(subSampleDao.exists(100L)).thenReturn(true);
+    when(subSampleDao.get(100L)).thenReturn(cached);
+
+    subSampleApiMgr.registerApiSubSampleUsage(100L, millilitres("0"), user);
+
+    verify(siblingRowLock, never()).lockSiblingRowsAndRecalculateTotal(any());
+    verify(subSampleDao, never()).lockRowForUpdate(any());
+    verify(subSampleDao, never()).getQuantityForUpdate(any());
+    verify(subSampleDao, never()).save(any(SubSample.class));
+    assertEquals(0, new BigDecimal("10").compareTo(cached.getQuantity().getNumericValue()));
+  }
 }
