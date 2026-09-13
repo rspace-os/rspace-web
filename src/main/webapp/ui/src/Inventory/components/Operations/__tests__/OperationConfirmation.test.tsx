@@ -1,6 +1,7 @@
 import { ThemeProvider } from "@mui/material/styles";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { omit } from "es-toolkit";
 import { describe, expect, it, vi } from "vitest";
 import { InEnglish } from "@/__tests__/realI18n";
 import appTheme from "@/theme";
@@ -239,6 +240,44 @@ describe("OperationConfirmation", () => {
     // taken" (the plain label, anchored so it does not also match ...amountTakenEach, is absent).
     expect(screen.getByText(/confirm\.labels\.amountTakenEach/)).toBeInTheDocument();
     expect(screen.queryByText(/confirm\.labels\.amountTaken$/)).not.toBeInTheDocument();
+  });
+
+  it("reads the amount-taken row as 'take all' for a Pool in 'all' mode, with no per-origin lines", () => {
+    // Pool's DEFAULT mode, and the one branch of the amountTaken row no test rendered: the two
+    // Pool tests above use "same" and "perSubsample".
+    render(
+      <ThemeProvider theme={appTheme}>
+        <OperationConfirmation
+          operation={poolOp}
+          values={values}
+          documentation={null}
+          templateSelection={{ mode: "none", templateId: null, remember: false }}
+          originSampleName="S1"
+          originName="Vial A"
+          amountMode="all"
+          origins={[
+            { globalId: "SS1", name: "Vial A" },
+            { globalId: "SS2", name: "Vial B" },
+          ]}
+          perSubsampleAmounts={{ SS1: { numericValue: 1, unitId: 3 } }}
+        />
+      </ThemeProvider>,
+    );
+    expect(screen.getByText(/confirm\.labels\.amountTakenEach/)).toBeInTheDocument();
+    expect(screen.getByText(/confirm\.values\.takeAll/)).toBeInTheDocument();
+    // neither the per-origin breakdown nor the single shared amount is shown alongside it
+    expect(screen.queryByText(/confirm\.values\.originAmount/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/confirm\.values\.amountTaken$/)).not.toBeInTheDocument();
+  });
+
+  // KNOWN FAILURE (BUG-3): the card title is `String(values[effect.nameFrom])`, so an absent name
+  // renders the literal word "undefined"; the process-name row beside it guards with `?? ""`.
+  it("does not render the literal 'undefined' as the title when the sample name is absent", () => {
+    renderConf({
+      values: omit(values, ["sampleName"]),
+      templateSelection: { mode: "none", templateId: null, remember: false },
+    });
+    expect(screen.queryByText(/undefined/)).not.toBeInTheDocument();
   });
 
   // Destroy-shaped op (DevDocs/adr/0007): noOutput, so the card names the origin subsample, and the summary is
