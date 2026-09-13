@@ -4,6 +4,7 @@ import static com.researchspace.service.inventory.InventoryOperationManager.InTr
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -978,6 +979,20 @@ class InventoryOperationManagerImplTest {
     when(parent.getActiveFields()).thenReturn(List.of());
     when(parent.getActiveExtraFields()).thenReturn(List.of());
     originHolds(originId, subSample);
+    wireServerBuiltCollaborators();
+  }
+
+  private boolean serverBuiltCollaboratorsWired;
+
+  /**
+   * Once per test, so a multi-origin case can stub two origins without the second call replacing
+   * the first's message source and leaving its stubbing unused (strict stubs would flag it).
+   */
+  private void wireServerBuiltCollaborators() {
+    if (serverBuiltCollaboratorsWired) {
+      return;
+    }
+    serverBuiltCollaboratorsWired = true;
     // the field names resolve to their default (the key) rather than a real catalog
     org.springframework.context.MessageSource messages =
         mock(org.springframework.context.MessageSource.class);
@@ -1135,5 +1150,374 @@ class InventoryOperationManagerImplTest {
     assertThrows(BindException.class, () -> manager.performOperation(request, user, check));
 
     verifyNoInteractions(subSampleApiMgr, sampleApiMgr);
+  }
+
+  // --- zero amounts: what "take nothing" means to each kind of operation ---
+
+  @Test
+  void aPassageWithAnExplicitZeroAmountDecrementsNothingAndStillCreatesTheSample()
+      throws Exception {
+    // The wizard's Passage sends amountTaken 0 in the origin's unit under an explicit mode. Zero
+    // passes every live rule, reaches the usage register as a no-op, and the sample is created.
+    ApiInventoryOperationPost request = new ApiInventoryOperationPost();
+    request.setOperationType("passage");
+    ApiInventoryOperationOriginUpdate origin = origin(100L, millilitres("0"));
+    origin.setAmountMode(ApiInventoryOperationAmountMode.EXPLICIT);
+    request.setOrigins(List.of(origin));
+    ApiSampleWithFullSubSamples newSample = new ApiSampleWithFullSubSamples("HeLa p3");
+    request.setNewSample(newSample);
+    originHolds(100L, subSampleHolding("5", ML));
+    when(sampleApiMgr.createNewApiSample(newSample, user))
+        .thenReturn(new ApiSampleWithFullSubSamples("HeLa p3"));
+
+    manager.performOperation(request, user, NONE);
+
+    ArgumentCaptor<QuantityInfo> used = ArgumentCaptor.forClass(QuantityInfo.class);
+    verify(subSampleApiMgr).registerApiSubSampleUsage(eq(100L), used.capture(), eq(user));
+    assertEquals(0, used.getValue().getNumericValue().signum(), "nothing is taken");
+    assertEquals(ML, used.getValue().getUnitId());
+    verify(sampleApiMgr).createNewApiSample(newSample, user);
+  }
+
+  @Test
+  void aPassageOnAnOriginThatHoldsNothingIsStillRejectedAsEmpty() {
+    // Taking nothing from nothing is not allowed either: every operation needs an origin that
+    // currently holds something (DevDocs/adr/0007), so the zero amount earns no exemption.
+    ApiInventoryOperationPost request = new ApiInventoryOperationPost();
+    request.setOperationType("passage");
+    request.setOrigins(List.of(origin(100L, millilitres("0"))));
+    request.setNewSample(new ApiSampleWithFullSubSamples("HeLa p3"));
+    originHolds(100L, subSampleHolding("0", ML));
+
+    BindException rejection = performExpectingRejection(request);
+    assertEquals(
+        "errors.inventory.operation.originEmpty",
+        rejection.getFieldErrors("origins[0].id").get(0).getCode());
+  }
+
+  @Test
+  void aZeroAmountOnAnEmptyingOperationWithoutAModeIsAMalformedRequest() {
+    // Destroy asked to take 0 of a 5 ml origin, with no whole-origin claim: a 400 on the amount,
+    // never a partial take and never a 409 (nothing changed, so a reload would loop forever).
+    ApiInventoryOperationPost request = new ApiInventoryOperationPost();
+    request.setOperationType("destroy");
+    request.setOrigins(List.of(origin(100L, millilitres("0"))));
+    originHolds(100L, subSampleHolding("5", ML));
+
+    BindException rejection = performExpectingRejection(request);
+    assertEquals(
+        "errors.inventory.operation.mustEmptyOrigin",
+        rejection.getFieldErrors("origins[0].amountTaken").get(0).getCode());
+  }
+
+  @Test
+  void aZeroWholeOriginClaimOnAnEmptyingOperationIsAConflict() {
+    // The client DECLARED "all" and 0 ml: it read the origin as empty, and it now holds 5 ml. That
+    // is a stale snapshot to reload from, and nothing is emptied on the strength of it.
+    ApiInventoryOperationPost request = new ApiInventoryOperationPost();
+    request.setOperationType("destroy");
+    request.setOrigins(List.of(takeAll(100L, millilitres("0"))));
+    originHolds(100L, subSampleHolding("5", ML));
+
+    assertThrows(
+        InventoryEditConflictException.class, () -> manager.performOperation(request, user, NONE));
+    verifyNoMutation();
+  }
+
+  @Test
+  void anExplicitAmountEqualToTheOriginEmptiesItWithoutAConflict() throws Exception {
+    // An Aliquot taking exactly what the origin holds is neither over-removal nor a whole-origin
+    // claim, so it proceeds and the register receives the full 5 ml, leaving the origin at zero.
+    ApiInventoryOperationPost request = new ApiInventoryOperationPost();
+    request.setOperationType("aliquot");
+    ApiInventoryOperationOriginUpdate origin = origin(100L, millilitres("5"));
+    origin.setAmountMode(ApiInventoryOperationAmountMode.EXPLICIT);
+    request.setOrigins(List.of(origin));
+    ApiSampleWithFullSubSamples newSample = new ApiSampleWithFullSubSamples("Aliquots");
+    request.setNewSample(newSample);
+    originHolds(100L, subSampleHolding("5", ML));
+    when(sampleApiMgr.createNewApiSample(newSample, user))
+        .thenReturn(new ApiSampleWithFullSubSamples("Aliquots"));
+
+    manager.performOperation(request, user, NONE);
+
+    ArgumentCaptor<QuantityInfo> used = ArgumentCaptor.forClass(QuantityInfo.class);
+    verify(subSampleApiMgr).registerApiSubSampleUsage(eq(100L), used.capture(), eq(user));
+    assertEquals(0, new BigDecimal("5").compareTo(used.getValue().getNumericValue()));
+  }
+
+  // --- expectedQuantity (M0 D5) at the edges ---
+
+  @Test
+  void anExpectedQuantityOfZeroAgainstAnEmptyOriginIsStillTheEmptyOriginRule() {
+    // The caller correctly believes the origin is empty. There is still nothing to operate on, and
+    // the field error (400) wins over the compare-and-swap, which would otherwise pass.
+    ApiInventoryOperationPost request = new ApiInventoryOperationPost();
+    request.setOperationType("derive");
+    ApiInventoryOperationOriginUpdate origin = origin(100L, millilitres("0.6"));
+    origin.setExpectedQuantity(millilitres("0"));
+    request.setOrigins(List.of(origin));
+    request.setNewSample(new ApiSampleWithFullSubSamples("Derived material"));
+    originHolds(100L, subSampleHolding("0", ML));
+
+    BindException rejection = performExpectingRejection(request);
+    assertEquals(
+        "errors.inventory.operation.originEmpty",
+        rejection.getFieldErrors("origins[0].id").get(0).getCode());
+  }
+
+  @Test
+  void anExpectedQuantityInAnotherCategoryIsAStaleReadNotAnOverRemoval() {
+    // The caller's belief (5 g) cannot be about this 5 ml origin: the javadoc's stated choice is a
+    // conflict to reload from, and nothing is mutated on the way to it.
+    ApiInventoryOperationPost request = new ApiInventoryOperationPost();
+    request.setOperationType("derive");
+    ApiInventoryOperationOriginUpdate origin = origin(100L, millilitres("1"));
+    origin.setExpectedQuantity(grams("5"));
+    request.setOrigins(List.of(origin));
+    request.setNewSample(new ApiSampleWithFullSubSamples("Derived material"));
+    originHolds(100L, subSampleHolding("5", ML));
+
+    assertThrows(
+        InventoryEditConflictException.class, () -> manager.performOperation(request, user, NONE));
+    verifyNoMutation();
+  }
+
+  @Test
+  void aMatchingExpectedQuantityEarnsNoPassOnOverRemoval() {
+    // The caller read the origin correctly (5 ml) and still asked for 6 ml: that is the ordinary
+    // over-removal 400, not a conflict.
+    ApiInventoryOperationPost request = new ApiInventoryOperationPost();
+    request.setOperationType("derive");
+    ApiInventoryOperationOriginUpdate origin = origin(100L, millilitres("6"));
+    origin.setExpectedQuantity(millilitres("5"));
+    request.setOrigins(List.of(origin));
+    request.setNewSample(new ApiSampleWithFullSubSamples("Derived material"));
+    originHolds(100L, subSampleHolding("5", ML));
+
+    BindException rejection = performExpectingRejection(request);
+    assertEquals(
+        "errors.inventory.operation.amountTakenExceedsOrigin",
+        rejection.getFieldErrors("origins[0].amountTaken").get(0).getCode());
+  }
+
+  // --- concurrency on the server-built path: the builder reads unlocked, the core re-reads
+  // under lock, so whatever committed in between is what the rules see ---
+
+  @Test
+  void aDecrementCommittedBetweenTheBuilderReadAndTheLockIsCaughtByTheLockedScalar() {
+    // An Aliquot facade request. The builder read 5 ml off the entity; another request committed
+    // while this one waited for the lock, leaving 0.4 ml. Taking 1 ml is now over-removal (400),
+    // caught from the locked scalar, and nothing is mutated.
+    serverBuiltOriginHolds(100L, "5");
+    when(subSampleApiMgr.getQuantityForUpdate(100L))
+        .thenReturn(new QuantityInfo(new BigDecimal("0.4"), ML));
+
+    BindException rejection =
+        assertThrows(
+            BindException.class,
+            () ->
+                manager.performOperation(
+                    "aliquot",
+                    List.of(facadeOrigin(100L, millilitres("1"))),
+                    creatingInputs("Aliquots", 1),
+                    null,
+                    null,
+                    user));
+
+    assertEquals(
+        "errors.inventory.operation.amountTakenExceedsOrigin",
+        rejection.getFieldErrors("origins[0].amountTaken").get(0).getCode());
+    verifyNoMutation();
+  }
+
+  @Test
+  void aDestroyFacadeWhoseOriginWasDecrementedAfterTheBuilderReadIsAConflict() {
+    // No amount and no expectedQuantity: the builder's 5 ml snapshot travels under a whole-origin
+    // claim, so a locked scalar of 4 ml is a stale read (409), never a silent take of the 4.
+    serverBuiltOriginHolds(100L, "5");
+    when(subSampleApiMgr.getQuantityForUpdate(100L))
+        .thenReturn(new QuantityInfo(new BigDecimal("4"), ML));
+
+    assertThrows(
+        InventoryEditConflictException.class,
+        () ->
+            manager.performOperation(
+                "destroy",
+                List.of(facadeOrigin(100L, null)),
+                java.util.Map.of(),
+                null,
+                null,
+                user));
+    verifyNoMutation();
+  }
+
+  @Test
+  void aDestroyFacadeWhoseOriginWasEmptiedAfterTheBuilderReadIsRejectedAsEmptyNotStale() {
+    // Field errors beat the conflict: an origin emptied meanwhile "holds nothing" (400), which the
+    // caller understands without a reload.
+    serverBuiltOriginHolds(100L, "5");
+    when(subSampleApiMgr.getQuantityForUpdate(100L))
+        .thenReturn(new QuantityInfo(BigDecimal.ZERO, ML));
+
+    BindException rejection =
+        assertThrows(
+            BindException.class,
+            () ->
+                manager.performOperation(
+                    "destroy",
+                    List.of(facadeOrigin(100L, null)),
+                    java.util.Map.of(),
+                    null,
+                    null,
+                    user));
+
+    assertEquals(
+        "errors.inventory.operation.originEmpty",
+        rejection.getFieldErrors("origins[0].id").get(0).getCode());
+    verifyNoMutation();
+  }
+
+  @Test
+  void theOriginsAfterComeBackInRequestOrderWhileLocksAreTakenInIdOrder() throws Exception {
+    // A Pool facade over origins 200 then 100: locks ascend by id (deadlock avoidance), the outcome
+    // lists the origins as the caller gave them (M0 D2).
+    serverBuiltOriginHolds(200L, "5");
+    serverBuiltOriginHolds(100L, "5");
+    ApiSubSample after200 = new ApiSubSample();
+    after200.setId(200L);
+    ApiSubSample after100 = new ApiSubSample();
+    after100.setId(100L);
+    when(subSampleApiMgr.getApiSubSampleById(200L, user)).thenReturn(after200);
+    when(subSampleApiMgr.getApiSubSampleById(100L, user)).thenReturn(after100);
+    when(sampleApiMgr.createNewApiSample(any(), eq(user)))
+        .thenReturn(new ApiSampleWithFullSubSamples("Pooled"));
+
+    InventoryOperationManager.OperationOutcome outcome =
+        manager.performOperation(
+            "pool",
+            List.of(facadeOrigin(200L, millilitres("1")), facadeOrigin(100L, millilitres("1"))),
+            creatingInputs("Pooled", 1),
+            null,
+            null,
+            user);
+
+    assertEquals(
+        List.of(200L, 100L), outcome.originsAfter().stream().map(ApiSubSample::getId).toList());
+    InOrder locks = inOrder(subSampleApiMgr);
+    locks.verify(subSampleApiMgr).lockSubSampleForEdit(100L, user);
+    locks.verify(subSampleApiMgr).lockSubSampleForEdit(200L, user);
+  }
+
+  // --- the input rules run before any origin is read (server-built path) ---
+
+  @Test
+  void aCountAboveTheDeclaredMaximumIsRejectedBeforeAnyOriginIsRead() {
+    BindException rejection =
+        assertThrows(
+            BindException.class,
+            () ->
+                manager.performOperation(
+                    "aliquot",
+                    List.of(facadeOrigin(100L, millilitres("1"))),
+                    creatingInputs("Aliquots", 101),
+                    null,
+                    null,
+                    user));
+
+    assertEquals(
+        "errors.inventory.operation.inputAboveMaximum",
+        rejection.getFieldErrors("count").get(0).getCode());
+    verifyNoInteractions(subSampleApiMgr, sampleApiMgr, siblingRowLock);
+  }
+
+  @Test
+  void aZeroCreatedAmountIsRejectedBeforeAnyOriginIsRead() {
+    java.util.Map<String, Object> inputs = creatingInputs("Aliquots", 1);
+    inputs.put("eachAmount", millilitres("0"));
+
+    BindException rejection =
+        assertThrows(
+            BindException.class,
+            () ->
+                manager.performOperation(
+                    "aliquot",
+                    List.of(facadeOrigin(100L, millilitres("1"))),
+                    inputs,
+                    null,
+                    null,
+                    user));
+
+    assertEquals(
+        "errors.inventory.operation.createdAmountNotPositive",
+        rejection.getFieldErrors("eachAmount").get(0).getCode());
+    verifyNoInteractions(subSampleApiMgr, sampleApiMgr, siblingRowLock);
+  }
+
+  /**
+   * Text inputs land in varchar columns: the built sample's name in EditInfo.name (255) and a text
+   * field's content in EditInfo.description (250). Today the only length check is the samples
+   * validator run over the BUILT sample inside the transaction, after the origins were read, and it
+   * reports {@code newSample.name}, a field the caller never sent; a text field's content has no
+   * check at all and fails at the INSERT as a 500 after the locks. The input rule must bound both
+   * at the door, on the input's own key, before anything is read.
+   *
+   * <p>No origin is stubbed on purpose: under the current code the builder runs and dereferences
+   * the mock's null origin, which is the observable proof that a read happened.
+   */
+  @Test
+  void aSampleNameLongerThanTheRecordNameLimitIsRejectedOnSampleNameBeforeAnyRead() {
+    // KNOWN FAILURE (backend F2)
+    Throwable thrown =
+        assertThrows(
+            Throwable.class,
+            () ->
+                manager.performOperation(
+                    "aliquot",
+                    List.of(facadeOrigin(100L, millilitres("1"))),
+                    creatingInputs("x".repeat(256), 1),
+                    null,
+                    null,
+                    user));
+
+    assertInstanceOf(
+        BindException.class,
+        thrown,
+        "a 256-character name must be a field-scoped 400 before any origin read; anything else"
+            + " means the builder ran");
+    assertEquals(
+        "errors.inventory.operation.inputTooLong",
+        ((BindException) thrown).getFieldErrors("sampleName").get(0).getCode());
+    verifyNoInteractions(subSampleApiMgr, sampleApiMgr, siblingRowLock);
+  }
+
+  @Test
+  void aCryomediumLongerThanTheFieldContentLimitIsRejectedOnCryomediumBeforeAnyRead() {
+    // KNOWN FAILURE (backend F2): ExtraTextField.validateNewData accepts any length, so 251
+    // characters reach the varchar(250) INSERT as a 500 inside the transaction.
+    java.util.Map<String, Object> inputs = creatingInputs("Frozen", 1);
+    inputs.put("cryomedium", "m".repeat(251));
+    inputs.put("storageTemp", new ApiQuantityInfo(new BigDecimal("-80"), RSUnitDef.CELSIUS));
+
+    Throwable thrown =
+        assertThrows(
+            Throwable.class,
+            () ->
+                manager.performOperation(
+                    "cryopreserve",
+                    List.of(facadeOrigin(100L, millilitres("1"))),
+                    inputs,
+                    null,
+                    null,
+                    user));
+
+    assertInstanceOf(
+        BindException.class,
+        thrown,
+        "251 characters of cryomedium must be a field-scoped 400 before any origin read");
+    assertEquals(
+        "errors.inventory.operation.inputTooLong",
+        ((BindException) thrown).getFieldErrors("cryomedium").get(0).getCode());
+    verifyNoInteractions(subSampleApiMgr, sampleApiMgr, siblingRowLock);
   }
 }
