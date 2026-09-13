@@ -172,6 +172,24 @@ public class SubSample extends MovableInventoryRecord implements Serializable, Q
     return this.getQuantityInfo();
   }
 
+  /**
+   * Adopts the quantity committed to this record's row, read as a scalar under its row lock.
+   *
+   * <p>Unlike {@link #setQuantity} this does NOT recompute the parent sample's total. The value
+   * being adopted was committed by another transaction, which recomputed that total from the locked
+   * sibling rows before it committed. Recomputing it here would sum THIS transaction's stale
+   * sibling snapshots over the top of that, and would dirty the sample so that the stale total got
+   * written at all (live run 2026-09-13, F1b).
+   *
+   * @param committedQuantity the quantity read under the lock, ignored when null (a row may hold no
+   *     quantity value at all, which is not a value to adopt)
+   */
+  public void refreshQuantityFromLockedRow(QuantityInfo committedQuantity) {
+    if (committedQuantity != null) {
+      setQuantityInfo(committedQuantity);
+    }
+  }
+
   public void setQuantity(QuantityInfo quantityInfo) {
     Validate.notNull(quantityInfo, "Cannot assign null quantity to SubSample");
     this.setQuantityInfo(quantityInfo);

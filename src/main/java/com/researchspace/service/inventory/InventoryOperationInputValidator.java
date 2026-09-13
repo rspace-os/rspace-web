@@ -94,6 +94,43 @@ public final class InventoryOperationInputValidator {
         default -> {}
       }
     }
+    rejectUnstorableTotal(definition, inputs, errors);
+  }
+
+  /**
+   * The created sample's total quantity is the sum of the children the builder emits, recalculated
+   * while the sample is persisted. Each child can fit the DECIMAL(19,3) quantity column while
+   * {@code count x eachAmount} does not, and nothing between here and the INSERT looks at the sum:
+   * the delegated sample validators see the children only. So an otherwise valid request reached
+   * the origin locks, decremented them, and then failed inside the transaction as a 500 rather than
+   * as a field error (Codex review, PR #1090).
+   *
+   * <p>Reported on the amount rather than the count, because the amount is the value the caller
+   * chose freely: the definition already bounds the count to a small range. Skipped when either
+   * input was already rejected on its own terms, so the caller still sees one problem per field.
+   */
+  private static void rejectUnstorableTotal(
+      InventoryOperationConfig definition, Map<String, ?> inputs, Errors errors) {
+    InventoryOperationConfig.Effect effect = definition.effect();
+    if (definition.noOutput() || effect.countFrom() == null || effect.eachAmountFrom() == null) {
+      return;
+    }
+    Object count = inputs == null ? null : inputs.get(effect.countFrom());
+    Object each = inputs == null ? null : inputs.get(effect.eachAmountFrom());
+    if (!isIntegral(count)
+        || !(each instanceof Quantifiable amount)
+        || amount.getNumericValue() == null
+        || errors.getFieldErrorCount(effect.countFrom()) > 0
+        || errors.getFieldErrorCount(effect.eachAmountFrom()) > 0) {
+      return;
+    }
+    BigDecimal total = amount.getNumericValue().multiply(new BigDecimal(count.toString()));
+    if (!QuantityInfo.canStoreWithoutRounding(total)) {
+      errors.rejectValue(
+          effect.eachAmountFrom(),
+          "errors.inventory.operation.totalNotStorable",
+          "The created subsamples hold more in total than a quantity can store.");
+    }
   }
 
   /**

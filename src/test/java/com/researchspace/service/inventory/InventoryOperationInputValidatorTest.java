@@ -562,6 +562,28 @@ class InventoryOperationInputValidatorTest {
   }
 
   @Test
+  void anEachAmountThatFitsButWhoseTotalDoesNotIsAFieldErrorOnItsKey() {
+    // DECIMAL(19,3) holds 16 integer digits. Each of the two children fits it; the parent total the
+    // created sample recalculates from them does not. That recompute happens during persistence, so
+    // without this the overflow is a 500 inside the transaction, after the origin locks, instead of
+    // a rejected field (Codex review, PR #1090).
+    Map<String, Object> inputs = passage();
+    inputs.put("count", 2);
+    inputs.put("eachAmount", millilitres("6E+15"));
+    assertSingleErrorOn(
+        validate("passage", inputs), "eachAmount", "errors.inventory.operation.totalNotStorable");
+  }
+
+  @Test
+  void aTotalThatStillFitsTheColumnIsAccepted() {
+    // The boundary the test above is one step past: 2 x 4E+15 is 8E+15, sixteen integer digits.
+    Map<String, Object> inputs = passage();
+    inputs.put("count", 2);
+    inputs.put("eachAmount", millilitres("4E+15"));
+    assertEquals(List.of(), validate("passage", inputs).getAllErrors());
+  }
+
+  @Test
   void whitespaceOnlyRequiredTextIsAbsent() {
     Map<String, Object> inputs = aliquot();
     inputs.put("sampleName", "   ");
