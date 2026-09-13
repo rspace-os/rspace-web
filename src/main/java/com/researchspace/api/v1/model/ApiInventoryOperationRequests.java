@@ -3,6 +3,7 @@ package com.researchspace.api.v1.model;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import java.math.BigDecimal;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -73,8 +74,23 @@ public final class ApiInventoryOperationRequests {
     @JsonProperty("sampleName")
     private String sampleName;
 
+    /**
+     * Bound as a BigDecimal, NOT an Integer, so a fractional count survives binding long enough to
+     * be rejected.
+     *
+     * <p>Jackson's {@code ACCEPT_FLOAT_AS_INT} is on by default and the API converter does not turn
+     * it off, so an Integer field takes {@code "count": 1.9} as 1: the request deducted the full
+     * amountTaken but created one subsample, and {@code 100.9} became 100 and slipped past the
+     * definition's declared maximum. The generic endpoint binds into a {@code Map<String, Object>},
+     * where the same value arrives as a Double and the input validator's integrality check rejects
+     * it - so the typed facades were quietly laxer than the endpoint they front (Codex review, P2).
+     *
+     * <p>{@link #toOperationInputs} narrows a whole value to an Integer and passes anything else
+     * through unchanged, so the rejection is the validator's usual field-scoped 400 on {@code
+     * count} rather than an unreadable-message 400 from a throwing deserializer.
+     */
     @JsonProperty("count")
-    private Integer count;
+    private BigDecimal count;
 
     @JsonProperty("eachAmount")
     private ApiQuantityInfo eachAmount;
@@ -89,7 +105,7 @@ public final class ApiInventoryOperationRequests {
     public Map<String, Object> toOperationInputs() {
       Map<String, Object> inputs = new LinkedHashMap<>();
       put(inputs, "sampleName", sampleName);
-      put(inputs, "count", count);
+      put(inputs, "count", wholeOrAsSent(count));
       put(inputs, "eachAmount", eachAmount);
       return inputs;
     }
@@ -97,6 +113,22 @@ public final class ApiInventoryOperationRequests {
     static void put(Map<String, Object> inputs, String key, Object value) {
       if (value != null) {
         inputs.put(key, value);
+      }
+    }
+
+    /**
+     * A whole count as the Integer the definition declares; anything else exactly as sent, so the
+     * input validator judges its type and rejects it. Also covers a value too large for an int,
+     * which is not a usable count either.
+     */
+    private static Object wholeOrAsSent(BigDecimal count) {
+      if (count == null) {
+        return null;
+      }
+      try {
+        return count.intValueExact();
+      } catch (ArithmeticException notAWholeInt) {
+        return count;
       }
     }
   }
