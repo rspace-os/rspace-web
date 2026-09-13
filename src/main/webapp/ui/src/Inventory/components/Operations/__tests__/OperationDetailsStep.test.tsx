@@ -435,6 +435,89 @@ describe("OperationDetailsStep (amount modes)", () => {
       SS2: { numericValue: 1, unitId: 3 },
     });
   });
+
+  it("flags any positive per-origin amount for an origin whose quantity was never set", () => {
+    // A subsample whose quantity is null holds nothing (getValue reads null as 0), so 1 ml from it
+    // is over-removal; the unit select still gets a category (the default ml unit) so the field
+    // renders rather than crashing. The full origin beside it stays clean.
+    const unset = { globalId: "SS9", name: "Vial Z", quantity: null } as unknown as SubSampleModel;
+    renderPool({
+      amountMode: "perSubsample",
+      origins: [poolOrigins[0], unset],
+      perSubsampleAmounts: { SS1: { numericValue: 1, unitId: 3 }, SS9: { numericValue: 1, unitId: 3 } },
+    });
+    expect(screen.getByRole("spinbutton", { name: /Vial Z/ })).toBeInvalid();
+    expect(screen.getByRole("spinbutton", { name: /Vial A/ })).toBeValid();
+    expect(screen.getByText(/amountTakenExceedsOrigin/)).toBeInTheDocument();
+  });
+});
+
+// The integer field's error state and helper text (FE10) had no test: only its min/max/step
+// attributes were asserted. The temperature field's unit had none either.
+describe("OperationDetailsStep count errors and temperature unit", () => {
+  const aliquot = operations.find((o) => o.key === "aliquot");
+  if (!aliquot) throw new Error("the aliquot definition must exist in operations_config.json");
+  const renderCount = (count: number, onChange: (v: OperationInputs) => void = () => undefined) =>
+    render(
+      <OperationDetailsStep
+        operation={aliquot}
+        origin={origin}
+        values={{ ...values, count }}
+        onChange={onChange}
+        section="amounts"
+      />,
+    );
+  const countField = () => screen.getByRole("spinbutton", { name: /fields\.count/i });
+
+  it("marks a count above the definition's max invalid and names the allowed range", () => {
+    renderCount(101);
+    expect(countField()).toBeInvalid();
+    expect(screen.getByText(/fields\.countRange/)).toBeInTheDocument();
+  });
+
+  it("marks a zero count invalid, and a count within range valid with no helper text", () => {
+    const { rerender } = renderCount(0);
+    expect(countField()).toBeInvalid();
+    expect(screen.getByText(/fields\.countRange/)).toBeInTheDocument();
+    rerender(
+      <OperationDetailsStep
+        operation={aliquot}
+        origin={origin}
+        values={{ ...values, count: 2 }}
+        onChange={() => undefined}
+        section="amounts"
+      />,
+    );
+    expect(countField()).toBeValid();
+    expect(screen.queryByText(/fields\.countRange/)).not.toBeInTheDocument();
+  });
+
+  it("reports a cleared count as 0 (Number('') is 0), which the field then flags as out of range", () => {
+    const onChange = vi.fn();
+    renderCount(2, onChange);
+    fireEvent.change(countField(), { target: { value: "" } });
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ count: 0 }));
+  });
+
+  it("stores a typed temperature in Celsius (unit 8) without clamping a sub-zero value", () => {
+    const cryoOp = {
+      ...operation,
+      inputs: [{ key: "storageTemp", type: "temperature", labelKey: "operations.fields.storageTemp", maxCelsius: -18 }],
+      effect: { ...operation.effect, storageTempFrom: "storageTemp" },
+    } as unknown as InventoryOperation;
+    const onChange = vi.fn();
+    render(
+      <OperationDetailsStep
+        operation={cryoOp}
+        origin={origin}
+        values={{ storageTemp: { numericValue: -80, unitId: CELSIUS_UNIT } }}
+        onChange={onChange}
+      />,
+    );
+    fireEvent.change(screen.getByRole("spinbutton", { name: /fields\.storageTemp/i }), { target: { value: "-20" } });
+    // the origin is a millilitre subsample, yet the temperature's unit is Celsius, not the origin's
+    expect(onChange).toHaveBeenCalledWith({ storageTemp: { numericValue: -20, unitId: CELSIUS_UNIT } });
+  });
 });
 
 describe("OperationDetailsStep inline field errors", () => {
