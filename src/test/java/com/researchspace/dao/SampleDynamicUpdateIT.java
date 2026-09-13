@@ -3,6 +3,7 @@ package com.researchspace.dao;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
+import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.model.User;
 import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.model.units.RSUnitDef;
@@ -176,6 +177,59 @@ public class SampleDynamicUpdateIT extends RealTransactionSpringTestBase {
         "the deduction must reach the row: 15 g committed by another writer, 10 g taken under the"
             + " lock, so 5 g remains. Finding 15 g means the UPDATE omitted the quantity because it"
             + " matched this transaction's stale cached value.");
+  }
+
+  /**
+   * The mirror of the test above, and the direction adr/0007 does NOT accept.
+   *
+   * <p>A plain edit of a subsample takes no row lock, so its full-row UPDATE writes the quantity
+   * column too, from the snapshot loaded before another party's decrement committed. Both requests
+   * report success, the edit lands, and the stock comes back with material already made from it.
+   *
+   * <p>This is live-run finding F1b (2026-09-13): an aliquot took 4 g from a 10 g origin and
+   * returned 201, a rename 300 ms later returned 200, and the origin was still 10 g. The same run's
+   * C13 lost a decrement to a concurrent subsample MOVE, which is this same method.
+   *
+   * <p>A reverted NAME is the field-level last-write-wins {@code GenericDao.lockRowForUpdate}
+   * documents; a reverted QUANTITY is stock appearing from nowhere. So this path reconciles the
+   * row's own columns with the locked row before it dirties anything, exactly as the decrement path
+   * does.
+   */
+  @Test
+  public void anEditDoesNotRevertAConcurrentStockDecrement() throws Exception {
+    User user = createInitAndLoginAnyUser();
+    ApiSampleWithFullSubSamples sample = createBasicSampleForUser(user);
+    Long subSampleId = sample.getSubSamples().get(0).getId();
+
+    openTransaction();
+    try {
+      // Loads the entity into THIS session, so its snapshot carries the pre-decrement quantity.
+      subSampleApiMgr.getApiSubSampleById(subSampleId, user);
+
+      // Another party spends 4 of the 5 g and COMMITS, as an operation can while this edit is in
+      // flight. Raw SQL rather than registerApiSubSampleUsage, which would join this transaction
+      // instead of being another party.
+      try (Connection other = dataSource.getConnection()) {
+        other.setAutoCommit(true);
+        try (Statement statement = other.createStatement()) {
+          statement.executeUpdate(
+              "update SubSample set quantityNumericValue = 1 where id = " + subSampleId);
+        }
+      }
+
+      ApiSubSample rename = new ApiSubSample();
+      rename.setId(subSampleId);
+      rename.setName("renamed while the stock was being spent");
+      subSampleApiMgr.updateApiSubSample(rename, user);
+    } finally {
+      commitTransaction();
+    }
+
+    assertEquals(
+        0,
+        BigDecimal.ONE.compareTo(quantityOf(subSampleId)),
+        "the edit must not carry its stale quantity back over a committed decrement: finding 5 g"
+            + " means material was created from stock the row no longer shows as spent");
   }
 
   private BigDecimal quantityOf(Long subSampleId) throws SQLException {
