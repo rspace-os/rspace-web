@@ -246,7 +246,44 @@ public class InventoryOperationPostValidator implements Validator {
               "This operation does not take from its origins, so the amount taken must be zero.");
         }
       }
+      validateExpectedQuantity(origin.getExpectedQuantity(), errors);
       errors.popNestedPath();
+    }
+  }
+
+  /**
+   * The compare-and-swap claim gets the same shape check the amount taken gets, for the same
+   * reason: the manager reads it live, under the origin locks, where a malformed value can no
+   * longer be reported as a field. A null numeric value makes {@code amountTakenEmptiesOrigin}
+   * answer false, which the manager reads as a stale origin and answers with a 409 the caller
+   * cannot resolve by reloading; an unknown unit id reaches {@code
+   * QuantityUtils.isComparableQuantities}, which throws from {@code RSUnitDef.getUnitById} after
+   * every origin row is locked. Both are malformed requests, so they are 400s here.
+   *
+   * <p>Whether the value MATCHES the live quantity stays the manager's 409: absent is still
+   * allowed, and a well-formed mismatch is a conflict, not a malformed request (M0, D5).
+   */
+  private static void validateExpectedQuantity(ApiQuantityInfo expected, Errors errors) {
+    if (expected == null) {
+      return;
+    }
+    if (!isValidAmountTaken(expected)) {
+      errors.rejectValue(
+          "expectedQuantity",
+          "errors.inventory.operation.expectedQuantityInvalid",
+          "The expected quantity must be a non-negative amount, with a unit.");
+    } else if (!RSUnitDef.exists(expected.getUnitId())) {
+      errors.rejectValue(
+          "expectedQuantity",
+          "errors.inventory.quantity.unitInvalid",
+          new Object[] {expected.getUnitId()},
+          "The expected quantity must use a known unit.");
+    } else if (!RSUnitDef.getUnitById(expected.getUnitId()).isAmount()) {
+      errors.rejectValue(
+          "expectedQuantity",
+          "errors.inventory.quantity.unitNotAmount",
+          new Object[] {expected.getUnitId()},
+          "The expected quantity must use an amount unit (volume, mass or count).");
     }
   }
 

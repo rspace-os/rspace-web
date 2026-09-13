@@ -490,7 +490,6 @@ class InventoryOperationInputValidatorTest {
    */
   @Test
   void aNameInputLongerThanTheRecordNameLimitIsAFieldErrorOnItsKey() {
-    // KNOWN FAILURE (backend F2)
     for (String operation :
         List.of("aliquot", "passage", "pool", "derive", "cryopreserve", "revive")) {
       String nameKey = registry.get(operation).orElseThrow().effect().nameFrom();
@@ -508,7 +507,6 @@ class InventoryOperationInputValidatorTest {
 
   @Test
   void aTextInputStoredAsFieldContentLongerThanTheContentLimitIsAFieldErrorOnItsKey() {
-    // KNOWN FAILURE (backend F2): cryomedium becomes the Cryomedium text field's content.
     Map<String, Object> tooLong = cryopreserve();
     tooLong.put("cryomedium", "m".repeat(251));
     assertSingleErrorOn(

@@ -220,7 +220,10 @@ per-origin amount semantics (a real amount unit, storable at 3dp, positive for a
 decrementing operation and zero for one that only links), the amount mode, and the kind
 of record the documentation target names. The manager then validates the inputs against
 the definition's `inputs[]` (`InventoryOperationInputValidator`: required, type,
-`min`/`max`, Celsius bounds on a temperature, storable quantities; errors name the bare
+`min`/`max`, Celsius bounds on a temperature, storable quantities, and the length of a
+text input bounded by the column the built sample stores it in — the definition says
+which, so `nameFrom` gets `EditInfo.name`'s 255 and a `contentFrom` gets
+`EditInfo.description`'s 250; errors name the bare
 input key), builds the sample and every generated field from the definition
 (`InventoryOperationRequestBuilder`: N equal subsamples from `count` and `eachAmount`, one
 provenance link per origin, the declared text and origin fields, the computed values),
@@ -297,11 +300,18 @@ The controller converts the typed body to the generic request, runs the same str
 validator and the same manager call, then renames every error path to the field the
 caller sent (`origins[0].amountTaken` → `origin.amountTaken`, `origins[1].id` →
 `origins[1].globalId`, `newSample.templateId` → `templateId`,
-`newSample.subSamples[i].quantity` → `eachAmount`; bare input keys pass through). The
+`newSample.subSamples[i].quantity` → `eachAmount`, `newSample.name` → `sampleName`,
+`newSample.storageTempMin`/`Max` → `storageTemp`; bare input keys pass through). A
+rejection on a GENERATED field is renamed through that field's `operationFieldKey`: the
+documentation link to `documentedByGlobalId`, a text field to the input its definition's
+`contentFrom` names, a provenance link to the origin it targets. No `newSample.*` path
+reaches a caller, because none of them is a field the caller sent. The
 facades validate shape only (the origin is present, a Pool has at least two); every value
 rule stays in the core so it cannot drift from the config, which
 `InventoryOperationFacadeShapesTest` pins. `expectedQuantity`, when sent, is
-compare-and-swapped against the live locked quantity and a mismatch is a 409, exactly
+shape-checked at the door exactly as `amountTaken` is (a non-negative value in a known
+amount unit; a malformed one is a 400 rather than a 409 the caller cannot resolve), then
+compare-and-swapped against the live locked quantity, where a mismatch is a 409, exactly
 like the wizard's `amountMode: "all"`. All seven answer with one envelope
 (`ApiInventoryOperationResult`: the created `sample`, null for Destroy, and each
 `origin` as it stands afterwards), 201 with a `Location` at the new sample for the six
@@ -410,7 +420,11 @@ sample only, never on the subsamples it creates. Links reuse the RSDEV-1131 `lin
 (`{ relationType, targetGlobalId, versionPin }`); relation types come from
 `DataCiteRelationType`. The documentation link (`IsDocumentedBy`) targets an ELN
 document, notebook or Gallery file, the kinds the picker offers; the endpoint
-rejects any other target. It is remembered as part of the single per-process bundle (see
+rejects any other target. Generated field names interpolate caller-supplied values
+("Pooled from: {originName}"), so the builder fits each one to `EditInfo.name`'s 255
+characters BEFORE appending the uniqueness suffix, and re-checks uniqueness on the
+fitted name: truncated rather than rejected, because pooling two origins already at the
+column limit has to remain possible and the link target carries the meaning. It is remembered as part of the single per-process bundle (see
 "Remembered process values" above), not a separate preference.
 
 ## Template for the new sample (DevDocs/adr/0007)

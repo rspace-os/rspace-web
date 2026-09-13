@@ -380,7 +380,6 @@ class InventoryOperationRequestBuilderTest {
    */
   @Test
   void generatedFieldNamesFitTheStoredNameColumnAndStayUnique() {
-    // KNOWN FAILURE (backend F3): the builder composes names without a length bound.
     LabelResolver production =
         InventoryOperationRequestBuilder.messageSourceResolver(
             new JsonMessageSource(), Locale.forLanguageTag("en-US"));
