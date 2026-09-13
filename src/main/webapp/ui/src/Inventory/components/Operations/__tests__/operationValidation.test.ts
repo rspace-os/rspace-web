@@ -466,9 +466,6 @@ describe("detailsValid temperature unit", () => {
     expect(detailsValid(cryopreserve, cryoValues)).toBe(true);
   });
 
-  // KNOWN FAILURE (BUG-4): the temperature bounds compare numericValue as Celsius but never check
-  // unitId, and detailsValid asserts a unit only on the quantity branch, so an unset unit (0) and a
-  // Kelvin unit (9, where -80 is below absolute zero) both pass and travel as-is in the request.
   it("rejects a temperature whose unit is unset or is not Celsius", () => {
     expect(detailsValid(cryopreserve, { ...cryoValues, storageTemp: { numericValue: -80, unitId: 0 } })).toBe(false);
     expect(detailsValid(cryopreserve, { ...cryoValues, storageTemp: { numericValue: -80, unitId: 9 } })).toBe(false);

@@ -237,11 +237,6 @@ describe("buildOperationInputsRequest (remaining origin-update branches)", () =>
     expect(Object.keys(request.inputs).sort()).toEqual(["count", "eachAmount", "sampleName", "storageTemp"]);
   });
 
-  // KNOWN FAILURE (BUG-2): buildOriginUpdates treats `amountMode === "all"` as "take the whole
-  // origin" for ANY operation, but only a multi-origin operation (usesAmountModes) ever offers that
-  // mode. The wizard restores a stored bundle's amountMode for single-origin operations too, so a
-  // stale or edited Derive bundle carrying "all" empties the origin while the summary shows the
-  // typed amount. A single-origin operation must always send the typed amount, explicitly.
   it("a single-origin operation handed amountMode 'all' still sends the typed amount, explicitly", () => {
     const request = buildOperationInputsRequest({
       operation: real("derive"),

@@ -139,11 +139,6 @@ describe("OperationWizard for an origin whose unit has no atomic unit", () => {
     ).not.toThrow();
   });
 
-  // KNOWN FAILURE (BUG-1): the wizard's details gate reads commonQuantity(), which is 0 for any unit
-  // outside volume/mass/dimensionless, so Next is disabled for a real 1 M origin; but the details
-  // step shows its "origin holds nothing" alert only for getValue(origin.quantity) <= 0, which is
-  // false here, so nothing on screen says why. This file renders the REAL details step (the main
-  // wizard suite stubs it), which is where the alert has to be visible.
   it("explains, on the details step, why Next is disabled for a molarity origin", async () => {
     // The dedup effect fires this once a process name exists; answer it so nothing is unhandled.
     server.use(

@@ -8,12 +8,14 @@ import com.researchspace.model.FileProperty;
 import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
+import com.researchspace.model.inventory.ContainerLocation;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.units.QuantityInfo;
 import jakarta.persistence.LockModeType;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import org.hibernate.query.Query;
 import org.springframework.stereotype.Repository;
@@ -160,6 +162,27 @@ public class SubSampleDaoHibernateImpl extends InventoryDaoHibernate<SubSample, 
         .setParameter("id", subSampleId)
         .setLockMode(LockModeType.PESSIMISTIC_WRITE)
         .uniqueResult();
+  }
+
+  @Override
+  public void refreshParentLocationFromLockedRow(SubSample subSample) {
+    // ss.parentLocation.id reads the foreign key COLUMN: dereferencing the id of a to-one needs no
+    // join, so a row whose parent location is null still comes back (as null) rather than being
+    // dropped by one.
+    Long committed =
+        getSession()
+            .createQuery(
+                "select ss.parentLocation.id from SubSample ss where ss.id = :id", Long.class)
+            .setParameter("id", subSample.getId())
+            .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+            .uniqueResult();
+    Long cached =
+        subSample.getParentLocation() == null ? null : subSample.getParentLocation().getId();
+    if (Objects.equals(committed, cached)) {
+      return;
+    }
+    subSample.setParentLocation(
+        committed == null ? null : getSession().getReference(ContainerLocation.class, committed));
   }
 
   @Override
