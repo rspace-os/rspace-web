@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   initialTemplateSelection,
   resolveTemplateId,
+  templateBlockReason,
   templateSelectionBlock,
   templateSelectionFor,
   templateSelectionToDefault,
@@ -87,6 +88,61 @@ describe("templateSelectionBlock", () => {
     ]);
     expect(result.blocked).toBe(true);
     expect(result.missingFields).toEqual(["Concentration", "Passage"]);
+  });
+});
+
+describe("templateBlockReason", () => {
+  const linkField = (link: { relationType: string; targetGlobalId: string; versionPin: number | null } | null) => ({
+    name: "Protocol",
+    mandatory: true,
+    type: "link",
+    // A link field's data column is unused: the server never stores content for one.
+    content: "",
+    link,
+  });
+
+  it("does not block a mandatory link field that carries a populated default", () => {
+    const reason = templateBlockReason(
+      { fields: [linkField({ relationType: "derivedFrom", targetGlobalId: "SD123", versionPin: null })] },
+      "en-US",
+    );
+    expect(reason.blocked).toBe(false);
+    expect(reason.count).toBe(0);
+  });
+
+  it("blocks a mandatory link field with no target, naming it", () => {
+    const reason = templateBlockReason({ fields: [linkField(null)] }, "en-US");
+    expect(reason.blocked).toBe(true);
+    expect(reason.fields).toContain("Protocol");
+  });
+
+  it("treats a blank link target as no target", () => {
+    const reason = templateBlockReason(
+      { fields: [linkField({ relationType: "derivedFrom", targetGlobalId: "  ", versionPin: null })] },
+      "en-US",
+    );
+    expect(reason.blocked).toBe(true);
+  });
+
+  it("still treats a whitespace-only text default as absent, as the server does", () => {
+    const reason = templateBlockReason(
+      { fields: [{ name: "Batch", mandatory: true, type: "text", content: "   " }] },
+      "en-US",
+    );
+    expect(reason.blocked).toBe(true);
+  });
+
+  it("accepts a text default and a selected option", () => {
+    const reason = templateBlockReason(
+      {
+        fields: [
+          { name: "Batch", mandatory: true, type: "text", content: "B1" },
+          { name: "Grade", mandatory: true, type: "radio", content: "", selectedOptions: ["analytical"] },
+        ],
+      },
+      "en-US",
+    );
+    expect(reason.blocked).toBe(false);
   });
 });
 
