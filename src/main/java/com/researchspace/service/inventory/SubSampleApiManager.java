@@ -43,6 +43,10 @@ public interface SubSampleApiManager extends InventoryApiManager<SubSample> {
    * applicationContext-service.xml so such a call fails instead (parallel review, L3-L4-P5).
    *
    * @throws jakarta.ws.rs.NotFoundException if no subsample has the id
+   * @throws InventoryEditConflictException (409) if the row was soft-deleted while this request
+   *     queued for the lock. The flag is re-read as a locked scalar because the entity the lock
+   *     hands back was loaded before the wait; a delete that landed in between is a conflict, not a
+   *     malformed request.
    */
   SubSample lockSubSampleForEdit(Long id, User user);
 

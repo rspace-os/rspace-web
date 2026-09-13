@@ -25,6 +25,7 @@ import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.model.units.QuantityUtils;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.inventory.InventoryAuditApiManager;
+import com.researchspace.service.inventory.InventoryEditConflictException;
 import com.researchspace.service.inventory.InventoryFieldNameUniquenessValidator;
 import com.researchspace.service.inventory.InventoryMoveHelper;
 import com.researchspace.service.inventory.SampleApiManager;
@@ -114,9 +115,14 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
     // from
     // it. So the flag is read as a scalar under the lock, exactly as the quantity and version below
     // are, and for the same reason (Codex review, P1).
+    //
+    // A 409, not a 400 or a 500: the request was valid against the state the client read, and the
+    // row changed underneath it while this request queued, which is the same shape as the
+    // stale-quantity conflict. IllegalArgumentException has no handler in ApiControllerAdvice, so
+    // it surfaced as a 500. The exception carries the catalog KEY and the id rather than resolved
+    // text: handleInventoryEditConflict formats getMessageKey() with getArgs().
     if (Boolean.TRUE.equals(subSampleDao.isDeletedForUpdate(id))) {
-      throw new IllegalArgumentException(
-          messages.getMessage("errors.inventory.subsample.deletedSinceLoaded", new Object[] {id}));
+      throw new InventoryEditConflictException("errors.inventory.subsample.deletedSinceLoaded", id);
     }
     return subSample;
   }
@@ -355,6 +361,13 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
         // the full-row flush write that stale quantity back and resurrect stock a concurrent writer
         // had exhausted, even though nothing was deducted (second Codex review, PR #1090).
         Long committedVersion = subSampleDao.getVersionForUpdate(dbSubSample.getId());
+        // The parent location is a column on this row too, so the full-row write puts the snapshot
+        // one back: a move committed while this request queued would be reverted, and because the
+        // move drops the vacated ContainerLocation row, the stale foreign key fails the constraint
+        // and takes the decrement down with it. Reconciled with the locked row like the two values
+        // above. Placed HERE, after the version read and before the first mutation, because it is
+        // also an HQL query against SubSample: a dirty entity would be flushed ahead of it.
+        subSampleDao.refreshParentLocationFromLockedRow(dbSubSample);
         dbSubSample.setQuantity(newQuantity);
         dbSubSample.refreshVersionFromLockedRow(committedVersion);
         increaseVersionOncePerTransaction(dbSubSample);

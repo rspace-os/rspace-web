@@ -45,6 +45,7 @@ import {
   amountIsStorable,
   amountTakenExceedsOrigin,
   detailsValid,
+  originBlockedReason,
   quantityExceedsOrigin,
   reconcileRestoredQuantities,
 } from "./operationValidation";
@@ -815,7 +816,7 @@ function OperationWizard({
         templateSelection={templateSelection}
         originSampleName={origin.sample.name}
         originName={origin.name ?? ""}
-        originHasAmount={getValue(origin.quantity) > 0}
+        originBlocked={originBlockedReason(origin.quantity)}
         amountMode={amountMode}
         perSubsampleAmounts={perSubsampleAmounts}
         origins={origins.map((o) => ({ globalId: o.globalId ?? "", name: o.name ?? "" }))}

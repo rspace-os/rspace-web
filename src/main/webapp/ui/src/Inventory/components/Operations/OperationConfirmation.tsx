@@ -22,6 +22,7 @@ import {
   resolveProcessName,
   usesAmountModes,
 } from "./operationsConfig";
+import type { OriginBlockedReason } from "./operationValidation";
 import type { TemplateSelection } from "./TemplateStep";
 import type { AmountMode, OperationInputs, OperationQuantity, PerSubsampleAmounts } from "./types";
 import { resolveLabelFrom } from "./types";
@@ -39,7 +40,7 @@ function OperationConfirmation({
   templateSelection,
   originSampleName,
   originName,
-  originHasAmount = true,
+  originBlocked = null,
   amountMode = "same",
   perSubsampleAmounts = {},
   origins = [],
@@ -54,10 +55,11 @@ function OperationConfirmation({
   /** The origin subsample's own name, shown as the card title for a terminal operation (Destroy),
    * which acts on the origin and creates no new sample. */
   originName: string;
-  /** Whether the origin holds any material. A terminal operation that empties its origin
-   * (`emptiesOrigin`) cannot run on an empty subsample, so the confirmation shows why and the wizard
-   * disables Perform. Defaults to true (producing operations gate emptiness on their amounts step). */
-  originHasAmount?: boolean;
+  /** Why the origin cannot be operated on, or null when it can. A terminal operation that empties
+   * its origin (`emptiesOrigin`) cannot run on a subsample holding nothing, nor on one whose unit is
+   * not an amount, so the confirmation shows which and the wizard disables Perform. Defaults to null
+   * (producing operations gate this on their details and amounts steps). */
+  originBlocked?: OriginBlockedReason | null;
   /** The amount mode for a multi-origin operation (DevDocs/adr/0007); drives how the amount-taken row reads. */
   amountMode?: AmountMode;
   /** Per-origin amounts (by origin global id) for "perSubsample" mode. */
@@ -82,7 +84,7 @@ function OperationConfirmation({
   const each = effect.eachAmountFrom ? (values[effect.eachAmountFrom] as OperationQuantity | undefined) : undefined;
   const after = effect.amountTakenFrom ? (values[effect.amountTakenFrom] as OperationQuantity) : null;
   const storageTemp = effect.storageTempFrom ? (values[effect.storageTempFrom] as OperationQuantity) : null;
-  const name = effect.nameFrom ? String(values[effect.nameFrom]) : "";
+  const name = effect.nameFrom ? String(values[effect.nameFrom] ?? "") : "";
   const processName = effect.processNameFrom ? String(values[effect.processNameFrom] ?? "").trim() : "";
   // The link field name may interpolate {originName} (Pool's "Pooled from: {originName}"), which is
   // not in `values` - it is injected per origin at build time. For a single-origin operation, supply
@@ -236,12 +238,20 @@ function OperationConfirmation({
   // panel, and its "cannot operate on an empty subsample" guard also moves here: when it would empty
   // the origin but the origin holds nothing, the confirmation explains why and the wizard blocks Perform.
   const infoText = operation.noOutput && operation.descriptionKey ? resolveLabel(operation.descriptionKey) : null;
-  const originEmptyBlocked = Boolean(effect.emptiesOrigin) && !originHasAmount;
+  const originEmptyBlocked = Boolean(effect.emptiesOrigin) && originBlocked !== null;
 
   return (
     <Stack spacing={1}>
       {infoText ? <Alert severity="info">{infoText}</Alert> : null}
-      {originEmptyBlocked ? <Alert severity="error">{t("operations.fields.originAmountZero")}</Alert> : null}
+      {originEmptyBlocked ? (
+        <Alert severity="error">
+          {t(
+            originBlocked === "unsupportedCategory"
+              ? "operations.fields.originCategoryUnsupported"
+              : "operations.fields.originAmountZero",
+          )}
+        </Alert>
+      ) : null}
       <Card variant="outlined">
         <CardHeader
           // A terminal operation (Destroy) creates no sample, so the card names the origin subsample it
