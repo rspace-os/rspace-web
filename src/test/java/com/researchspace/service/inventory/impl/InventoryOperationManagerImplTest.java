@@ -13,6 +13,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -121,6 +122,12 @@ class InventoryOperationManagerImplTest {
     // The live checks read the quantity as a locked scalar, not from the locked entity; in these
     // tests the two agree unless a test overrides the scalar to model a concurrent committer.
     when(subSampleApiMgr.getQuantityForUpdate(originId)).thenReturn(quantity);
+    // The server-built overload maps each origin again once the operation is done. Lenient because
+    // most tests here assert on the mutation rather than the envelope and never reach it; a test
+    // that cares stubs its own.
+    ApiSubSample mapped = new ApiSubSample();
+    mapped.setId(originId);
+    lenient().when(subSampleApiMgr.getApiSubSampleById(originId, user)).thenReturn(mapped);
   }
 
   @BeforeEach
@@ -1048,6 +1055,45 @@ class InventoryOperationManagerImplTest {
     verify(subSampleApiMgr).registerApiSubSampleUsage(eq(100L), taken.capture(), eq(user));
     assertEquals(0, taken.getValue().getNumericValue().signum());
     assertEquals(ML, taken.getValue().getUnitId());
+  }
+
+  @Test
+  void aZeroDeductionOriginComesBackWithTheLockedQuantityNotTheCachedOne() throws Exception {
+    // Passage takes nothing, so registerApiSubSampleUsage returns before it reconciles the entity
+    // with the locked row (deliberately: dirtying a stale entity on a no-op path is what resurrects
+    // exhausted stock). getApiSubSampleById then answers from that same persistence context, so the
+    // envelope's "origins after" would carry the quantity this transaction cached BEFORE the locks
+    // were acquired. A client reusing it as expectedQuantity gets a false 409 on its next request.
+    //
+    // Modelled here as: the origin was loaded at 5 ml, another request committed it down to 2 ml
+    // while this one queued for the sibling-set lock, so the locked scalar says 2 ml and the cached
+    // entity still says 5 ml (Codex review, P2, PR #1090).
+    serverBuiltOriginHolds(100L, "5");
+    when(subSampleApiMgr.getQuantityForUpdate(100L))
+        .thenReturn(new QuantityInfo(new BigDecimal("2"), ML));
+    ApiSubSample cached = new ApiSubSample();
+    cached.setId(100L);
+    cached.setQuantity(millilitres("5"));
+    when(subSampleApiMgr.getApiSubSampleById(100L, user)).thenReturn(cached);
+    when(sampleApiMgr.createNewApiSample(any(), eq(user)))
+        .thenReturn(new ApiSampleWithFullSubSamples("HeLa p3"));
+
+    InventoryOperationManager.OperationOutcome outcome =
+        manager.performOperation(
+            "passage",
+            List.of(facadeOrigin(100L, null)),
+            creatingInputs("HeLa p3", 1),
+            null,
+            null,
+            user);
+
+    ApiQuantityInfo reported = outcome.originsAfter().get(0).getQuantity();
+    assertEquals(
+        0,
+        new BigDecimal("2").compareTo(reported.getNumericValue()),
+        "the envelope promises the post-operation snapshot, so a zero-deduction origin must report"
+            + " the quantity under the lock, not the one cached before it");
+    assertEquals(ML, reported.getUnitId());
   }
 
   @Test

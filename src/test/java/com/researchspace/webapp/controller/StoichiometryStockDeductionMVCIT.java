@@ -1,8 +1,7 @@
 package com.researchspace.webapp.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -41,6 +40,7 @@ import com.researchspace.service.StoichiometryInventoryLinkManager;
 import com.researchspace.service.StoichiometryManager;
 import com.researchspace.service.StoichiometryService;
 import com.researchspace.service.chemistry.ChemistryProvider;
+import com.researchspace.service.inventory.InventoryEditConflictException;
 import com.researchspace.testutils.RSpaceTestUtils;
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -237,6 +237,17 @@ public class StoichiometryStockDeductionMVCIT extends API_MVC_InventoryTestBase 
    * giving stoichiometry its own decrement path has to fail here rather than quietly take stock
    * from a deleted record.
    *
+   * <p>The refusal must ESCAPE deductStock rather than become a failed row in its result. {@code
+   * lockSubSampleForEdit} is reached through the proxy and carries MANDATORY transaction advice, so
+   * a RuntimeException leaving it marks the shared transaction rollback-only before deductStock's
+   * catch runs. Recording a per-link failure cannot recover that: the commit throws
+   * UnexpectedRollbackException, the result is discarded, and any other link in the same batch has
+   * its deduction rolled back too, so the caller sees a 500 instead of the 409 this is. An earlier
+   * version of this test asserted the per-link result and treated the rollback as pre-existing
+   * background; it is not, and it is now asserted the other way (Codex review, P2, PR #1090). This
+   * is the real-proxy case the mocked {@code StoichiometryInventoryLinkManagerImplTest} cannot
+   * reach: there, {@code subSampleMgr} is a bare mock with no transaction advice at all.
+   *
    * <p>Deliberately NOT two concurrent HTTP requests. A race only exercises the defect when the
    * second party commits between the first's load and its write, and reports green when they
    * serialise. So the competing delete is committed on a raw second connection at exactly that
@@ -266,36 +277,31 @@ public class StoichiometryStockDeductionMVCIT extends API_MVC_InventoryTestBase 
             sample.getSubSamples().get(0).getGlobalId(), "stoich deleted origin");
 
     openTransaction();
-    StockDeductionResult result = null;
     try {
       // Loads the entity into THIS session, so its cached deleted flag says false.
       subSampleApiMgr.getApiSubSampleById(subSampleId, user);
       softDeleteFromAnotherConnection(subSampleId);
-      result =
-          inventoryLinkManager.deductStock(
-              deduction.getStoichiometryId(), deduction.getLinkIds(), user);
+
+      assertThrows(
+          InventoryEditConflictException.class,
+          () ->
+              inventoryLinkManager.deductStock(
+                  deduction.getStoichiometryId(), deduction.getLinkIds(), user),
+          "the conflict has already marked the batch's transaction rollback-only, so it must"
+              + " propagate and become a 409 rather than be recorded as a per-link failure the"
+              + " commit will then discard");
     } finally {
-      // deductStock records the refusal as a per-link failure rather than rethrowing it, but the
-      // refusal crossed a proxied transaction boundary (lockSubSampleForEdit is its own advised
-      // bean) on the way out, and Spring marks the shared transaction rollback-only for any
-      // RuntimeException that leaves an advised method. So the commit reports the rollback rather
-      // than succeeding. That is pre-existing and not specific to this refusal: it was the same
-      // when the deleted-row check threw IllegalArgumentException. Swallowed rather than asserted,
-      // so that a regression in the refusal fails on ITS assertions below rather than here.
+      // The refusal marks the transaction rollback-only, which is the point: the commit reports the
+      // rollback instead of succeeding. Swallowed rather than asserted, so that a regression in the
+      // refusal above fails on ITS assertion and on the row assertions below, rather than being
+      // masked here.
       try {
         commitTransaction();
       } catch (UnexpectedRollbackException rolledBackByTheRefusal) {
         // expected; see above
       }
     }
-    assertNotNull(result, "deductStock must answer with a result rather than throwing");
-    StockDeductionResult.IndividualResult deducted = result.getResults().get(0);
 
-    assertFalse(
-        deducted.isSuccess(),
-        () ->
-            "a deduction from a subsample deleted while this request queued must be refused, got "
-                + deducted);
     assertEquals(
         1,
         deletedFlagOf(subSampleId),
