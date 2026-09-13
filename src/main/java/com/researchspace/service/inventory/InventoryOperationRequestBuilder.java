@@ -8,6 +8,7 @@ import com.researchspace.api.v1.model.ApiInventoryOperationPost;
 import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
+import com.researchspace.model.record.BaseRecord;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -55,7 +56,7 @@ public final class InventoryOperationRequestBuilder {
    * The documentation link is a wizard-level feature rather than a per-operation declaration, so it
    * carries this fixed key on every output-producing operation.
    */
-  static final String DOCUMENTATION_LINK_KEY = "operations.documentationLink";
+  public static final String DOCUMENTATION_LINK_KEY = "operations.documentationLink";
 
   /** The wizard's UNSET_UNIT marker, used when a defaulted zero amount has no unit to inherit. */
   private static final int UNSET_UNIT = 0;
@@ -376,19 +377,41 @@ public final class InventoryOperationRequestBuilder {
     }
     Set<String> used = new HashSet<>();
     for (ApiExtraField field : fields) {
-      String base =
-          occurrences.get(comparable(field.getName())) > 1
+      String resolved = field.getName();
+      String suffix =
+          occurrences.get(comparable(resolved)) > 1
                   && field.getType() == ApiExtraField.ExtraFieldTypeEnum.LINK
-              ? field.getName() + " (" + field.getLink().getTargetGlobalId() + ")"
-              : field.getName();
-      String candidate = base;
+              ? " (" + field.getLink().getTargetGlobalId() + ")"
+              : "";
+      String candidate = fit(resolved, suffix.length()) + suffix;
       for (int ordinal = 2; used.contains(comparable(candidate)); ordinal++) {
-        candidate = base + " (" + ordinal + ")";
+        String ordinalSuffix = suffix + " (" + ordinal + ")";
+        candidate = fit(resolved, ordinalSuffix.length()) + ordinalSuffix;
       }
       used.add(comparable(candidate));
       field.setName(candidate);
     }
     return fields;
+  }
+
+  /**
+   * A composed name cut to what {@code EditInfo.name} holds, leaving {@code reserve} characters for
+   * the uniqueness suffix that is about to be appended.
+   *
+   * <p>Generated names interpolate caller-supplied values: "Is Derived From using process: {X}" and
+   * "Pooled from: {originName}", where an origin's name may legitimately be the full 255 characters
+   * already. Nothing downstream bounds a field name - ApiExtraFieldsHelper checks a link field's
+   * payload, not its name's length - so an over-long name failed at the INSERT as a 500 inside the
+   * manager's transaction, after the origin locks.
+   *
+   * <p>Truncated rather than rejected: pooling two subsamples whose names are at the column limit
+   * has to remain possible, and the name is display text. The link TARGET, which is the part that
+   * carries meaning, is unaffected. Cutting before the suffix rather than after keeps the suffix,
+   * which is what makes the name unique.
+   */
+  private static String fit(String name, int reserve) {
+    int room = Math.max(0, BaseRecord.DEFAULT_VARCHAR_LENGTH - reserve);
+    return name.length() <= room ? name : name.substring(0, room).stripTrailing();
   }
 
   /**

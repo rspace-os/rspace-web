@@ -632,7 +632,6 @@ public class InventoryOperationPostValidatorTest {
    */
   @Test
   void rejectsAnExpectedQuantityWithoutANumericValue() {
-    // KNOWN FAILURE (backend F1): expectedQuantity has no structural validation yet.
     for (ApiInventoryOperationPost request : List.of(aliquotRequest(), destroyRequest())) {
       request
           .getOrigins()
@@ -647,7 +646,6 @@ public class InventoryOperationPostValidatorTest {
 
   @Test
   void rejectsANegativeExpectedQuantity() {
-    // KNOWN FAILURE (backend F1)
     ApiInventoryOperationPost request = aliquotRequest();
     request.getOrigins().get(0).setExpectedQuantity(millilitres("-1"));
     assertSingleErrorWithCode(
@@ -658,8 +656,6 @@ public class InventoryOperationPostValidatorTest {
 
   @Test
   void rejectsAnExpectedQuantityWithAUnitThatDoesNotExist() {
-    // KNOWN FAILURE (backend F1): today this is an IllegalArgumentException inside the manager's
-    // transaction, after the locks.
     ApiInventoryOperationPost request = destroyRequest();
     request.getOrigins().get(0).setExpectedQuantity(new ApiQuantityInfo(new BigDecimal("5"), 9999));
     assertSingleErrorWithCode(
@@ -668,7 +664,6 @@ public class InventoryOperationPostValidatorTest {
 
   @Test
   void rejectsAnExpectedQuantityInAUnitThatIsNotAnAmount() {
-    // KNOWN FAILURE (backend F1)
     ApiInventoryOperationPost request = destroyRequest();
     request.getOrigins().get(0).setExpectedQuantity(celsius("5"));
     assertSingleErrorWithCode(
@@ -679,7 +674,6 @@ public class InventoryOperationPostValidatorTest {
 
   @Test
   void reportsAMalformedExpectedQuantityAtThePoolOriginsOwnIndex() {
-    // KNOWN FAILURE (backend F1)
     ApiInventoryOperationPost request = poolRequest();
     request
         .getOrigins()

@@ -7,6 +7,7 @@ import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.model.User;
 import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.model.units.RSUnitDef;
+import com.researchspace.service.inventory.InventoryEditConflictException;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -57,7 +58,7 @@ public class SoftDeletedOriginUnderLockIT extends RealTransactionSpringTestBase 
       softDeleteFromAnotherConnection(subSampleId);
 
       assertThrows(
-          IllegalArgumentException.class,
+          InventoryEditConflictException.class,
           () ->
               subSampleApiMgr.registerApiSubSampleUsage(
                   subSampleId, QuantityInfo.of(BigDecimal.ONE, RSUnitDef.GRAM), user),
