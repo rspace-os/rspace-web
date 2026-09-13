@@ -32,11 +32,26 @@ export function HasQuantityMixin<TBase extends new (...args: any[]) => Inventory
 
     quantity: Quantity | null;
 
+    /**
+     * Whether the user has edited the quantity since it was last loaded from the server.
+     *
+     * Quantity is stock, not a label. The update payload is built from which fields are EDITABLE,
+     * so an edit screen echoes back every editable field and the last write wins - the accepted
+     * norm for a name (DevDocs/adr/0007). For a quantity it is not: an operation that deducted from
+     * this record between the page load and the save is undone by the save, restoring stock that
+     * material was already made from, and this needs no race at all - the operation can finish
+     * before the edit request even starts. The server cannot tell that payload apart from a user
+     * deliberately setting the same number, so the client only sends a quantity it was actually
+     * given (Codex review, PR #1090).
+     */
+    quantityEdited: boolean;
+
     // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
     constructor(...args: any[]) {
       super(...args);
       makeObservable(this, {
         quantity: observable,
+        quantityEdited: observable,
         quantityCategory: computed,
         quantityUnitId: computed,
         quantityValue: computed,
@@ -46,6 +61,26 @@ export function HasQuantityMixin<TBase extends new (...args: any[]) => Inventory
       });
       const [, params] = args as [factory: Factory, params: object];
       this.quantity = Parsers.getValueWithKey("quantity")(params).elseThrow() as Quantity | null;
+      this.quantityEdited = false;
+    }
+
+    /**
+     * Every quantity editor in the UI funnels through here (Subsample/Fields/Quantity passes
+     * setFieldsDirty, Sample/Fields/Quantity and Template/Fields/QuantityUnits call this directly,
+     * and a batch edit fans out to each record), so one hook catches them all. Intent, not a
+     * comparison with the loaded value: a user who retypes the number they were shown has still
+     * set it.
+     */
+    // biome-ignore lint/complexity/noBannedTypes: matches the base signature
+    setAttributesDirty(params: {}) {
+      if ("quantity" in params) this.quantityEdited = true;
+      super.setAttributesDirty(params);
+    }
+
+    /** A fresh load from the server is the new baseline, so nothing is outstanding against it. */
+    populateFromJson(factory: Factory, passedParams: object, defaultParams: object = {}): void {
+      super.populateFromJson(factory, passedParams, defaultParams);
+      this.quantityEdited = false;
     }
 
     get quantityCategory(): UnitCategory {
