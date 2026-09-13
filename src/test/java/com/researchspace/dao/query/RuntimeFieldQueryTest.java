@@ -21,6 +21,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 class RuntimeFieldQueryTest {
 
@@ -83,6 +85,44 @@ class RuntimeFieldQueryTest {
             .endsWith("NUMERIC_TEXT(rsqlTarget0.data) <= :rsql2"),
         onlySubquery(predicate).whereExpression());
     assertEquals(-80d, predicate.parameters().get("rsql2"));
+  }
+
+  @ParameterizedTest
+  @EnumSource(RuntimeFieldValueType.class)
+  void everyPublishedRuntimeTypeHasWorkingComparisonSemantics(RuntimeFieldValueType type) {
+    Operator operator = type == RuntimeFieldValueType.CHOICE ? Operator.CONTAINS : Operator.EQUAL;
+    Object value =
+        switch (type) {
+          case NUMBER -> type.parse("12.5");
+          case DATE -> type.parse("2026-01-31");
+          case TIME -> type.parse("09:30");
+          default -> type.parse("option");
+        };
+    Predicate predicate = translate("SF3", type, operator, List.of(value));
+    String expected =
+        switch (type) {
+          case NUMBER -> "NUMERIC_TEXT(rsqlTarget0.data) = :rsql2";
+          case CHOICE -> "(rsqlTarget0.data LIKE :rsql2 ESCAPE '!')";
+          default -> "rsqlTarget0.data = :rsql2";
+        };
+    assertTrue(onlySubquery(predicate).whereExpression().endsWith(expected));
+    assertEquals(
+        type == RuntimeFieldValueType.CHOICE ? "%\"option\"%" : value,
+        predicate.parameters().get("rsql2"));
+  }
+
+  @Test
+  void numericMembershipPreservesIndividualConversionsAndNegation() {
+    Predicate predicate =
+        translate("SF3", RuntimeFieldValueType.NUMBER, Operator.NOT_IN, List.of(1, 2));
+    assertTrue(
+        onlySubquery(predicate)
+            .whereExpression()
+            .endsWith(
+                "NOT (NUMERIC_TEXT(rsqlTarget0.data) = :rsql2 OR NUMERIC_TEXT(rsqlTarget0.data) ="
+                    + " :rsql3)"));
+    assertEquals(1, predicate.parameters().get("rsql2"));
+    assertEquals(2, predicate.parameters().get("rsql3"));
   }
 
   @Test
