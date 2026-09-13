@@ -617,4 +617,121 @@ public class InventoryOperationPostValidatorTest {
           "errors.inventory.operation.documentationLinkTargetInvalid");
     }
   }
+
+  // --- the typed facades' expectedQuantity (M0 D5): its SHAPE is this validator's job ---
+
+  /**
+   * A typed facade copies the caller's {@code expectedQuantity} onto the origin element and the
+   * manager compare-and-swaps it against the locked quantity. Nothing validated its shape. A null
+   * numeric value made {@code amountTakenEmptiesOrigin} answer false, which the manager read as a
+   * stale origin and answered with a 409 the caller can never resolve by reloading; an unknown unit
+   * id reached {@code QuantityUtils.isComparableQuantities}, which throws IllegalArgumentException,
+   * after every origin row was locked. Both are malformed requests and belong here as the same
+   * field-scoped 400 {@code amountTaken} gets, under {@code origins[i].expectedQuantity} so the
+   * facade renames it to {@code origin.expectedQuantity}.
+   */
+  @Test
+  void rejectsAnExpectedQuantityWithoutANumericValue() {
+    // KNOWN FAILURE (backend F1): expectedQuantity has no structural validation yet.
+    for (ApiInventoryOperationPost request : List.of(aliquotRequest(), destroyRequest())) {
+      request
+          .getOrigins()
+          .get(0)
+          .setExpectedQuantity(new ApiQuantityInfo(null, RSUnitDef.MILLI_LITRE));
+      assertSingleErrorWithCode(
+          validate(request),
+          "origins[0].expectedQuantity",
+          "errors.inventory.operation.expectedQuantityInvalid");
+    }
+  }
+
+  @Test
+  void rejectsANegativeExpectedQuantity() {
+    // KNOWN FAILURE (backend F1)
+    ApiInventoryOperationPost request = aliquotRequest();
+    request.getOrigins().get(0).setExpectedQuantity(millilitres("-1"));
+    assertSingleErrorWithCode(
+        validate(request),
+        "origins[0].expectedQuantity",
+        "errors.inventory.operation.expectedQuantityInvalid");
+  }
+
+  @Test
+  void rejectsAnExpectedQuantityWithAUnitThatDoesNotExist() {
+    // KNOWN FAILURE (backend F1): today this is an IllegalArgumentException inside the manager's
+    // transaction, after the locks.
+    ApiInventoryOperationPost request = destroyRequest();
+    request.getOrigins().get(0).setExpectedQuantity(new ApiQuantityInfo(new BigDecimal("5"), 9999));
+    assertSingleErrorWithCode(
+        validate(request), "origins[0].expectedQuantity", "errors.inventory.quantity.unitInvalid");
+  }
+
+  @Test
+  void rejectsAnExpectedQuantityInAUnitThatIsNotAnAmount() {
+    // KNOWN FAILURE (backend F1)
+    ApiInventoryOperationPost request = destroyRequest();
+    request.getOrigins().get(0).setExpectedQuantity(celsius("5"));
+    assertSingleErrorWithCode(
+        validate(request),
+        "origins[0].expectedQuantity",
+        "errors.inventory.quantity.unitNotAmount");
+  }
+
+  @Test
+  void reportsAMalformedExpectedQuantityAtThePoolOriginsOwnIndex() {
+    // KNOWN FAILURE (backend F1)
+    ApiInventoryOperationPost request = poolRequest();
+    request
+        .getOrigins()
+        .get(1)
+        .setExpectedQuantity(new ApiQuantityInfo(null, RSUnitDef.MILLI_LITRE));
+    assertSingleErrorWithCode(
+        validate(request),
+        "origins[1].expectedQuantity",
+        "errors.inventory.operation.expectedQuantityInvalid");
+  }
+
+  @Test
+  void acceptsAWellFormedExpectedQuantityOnEveryOperation() {
+    // Whether it MATCHES the live quantity is the manager's compare-and-swap, not a shape rule.
+    for (ApiInventoryOperationPost request :
+        List.of(
+            aliquotRequest(),
+            passageRequest(),
+            poolRequest(),
+            deriveRequest(),
+            cryopreserveRequest(),
+            reviveRequest(),
+            destroyRequest())) {
+      request.getOrigins().forEach(origin -> origin.setExpectedQuantity(millilitres("5")));
+      Errors errors = validate(request);
+      assertFalse(
+          errors.hasErrors(),
+          () -> request.getOperationType() + " with expectedQuantity: " + errors.getAllErrors());
+    }
+  }
+
+  // --- storability covers the column's integer digits, not only its scale ---
+
+  @Test
+  void rejectsAmountTakenWithMoreIntegerDigitsThanTheColumnHolds() {
+    // DECIMAL(19,3) holds 16 integer digits. 1E+17 has a NEGATIVE scale, so a scale-only check
+    // passes it and the INSERT fails inside the transaction, after the origin locks.
+    ApiInventoryOperationPost request = aliquotRequest();
+    request.getOrigins().get(0).setAmountTaken(millilitres("1E+17"));
+    assertSingleErrorWithCode(
+        validate(request),
+        "origins[0].amountTaken",
+        "errors.inventory.operation.amountTakenTooPrecise");
+  }
+
+  @Test
+  void aZeroAmountOnAnEmptyingOperationIsLeftToTheLiveCheck() {
+    // Destroy with amountTaken 0 and no mode is shape-valid: whether it empties the origin is the
+    // manager's rule (mustEmptyOrigin, or the 409 under a declared "all"), because this validator
+    // never sees the live quantity. The manager test pins both answers.
+    ApiInventoryOperationPost request = destroyRequest();
+    request.getOrigins().get(0).setAmountTaken(millilitres("0"));
+    assertFalse(validate(request).hasErrors(), () -> validate(request).getAllErrors().toString());
+  }
 }

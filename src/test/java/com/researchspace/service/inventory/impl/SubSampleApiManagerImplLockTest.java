@@ -1,5 +1,6 @@
 package com.researchspace.service.inventory.impl;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -14,6 +15,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.service.inventory.InventoryEditConflictException;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
 import jakarta.ws.rs.NotFoundException;
 import org.junit.jupiter.api.Test;
@@ -67,5 +69,40 @@ class SubSampleApiManagerImplLockTest {
     InOrder inOrder = inOrder(subSampleDao, invPermissions);
     inOrder.verify(subSampleDao).lockRowForUpdate(100L);
     inOrder.verify(invPermissions).assertUserCanEditInventoryRecord(locked, user);
+  }
+
+  @Test
+  void aRowDeletedWhileThisRequestWaitedForTheLockIsAConflict() {
+    // KNOWN FAILURE (backend F4). The entity lockRowForUpdate hands back was loaded before the
+    // wait, so its deleted flag answers from before it; the flag is re-read as a locked scalar and
+    // true means the origin is gone. Today that is an IllegalArgumentException, which
+    // ApiControllerAdvice has no handler for, so a delete that lands while an operation queues for
+    // the row is a 500. The request was valid against the state the client read and the row changed
+    // underneath it: the same shape as the stale-quantity conflict, so the same 409, carrying the
+    // catalog key and the id for the advice to resolve (it formats getMessageKey() with getArgs()).
+    SubSample locked = new SubSample();
+    when(subSampleDao.lockRowForUpdate(100L)).thenReturn(locked);
+    when(subSampleDao.isDeletedForUpdate(100L)).thenReturn(true);
+
+    InventoryEditConflictException conflict =
+        assertThrows(
+            InventoryEditConflictException.class,
+            () -> subSampleApiMgr.lockSubSampleForEdit(100L, user));
+
+    assertEquals("errors.inventory.subsample.deletedSinceLoaded", conflict.getMessageKey());
+    assertArrayEquals(new Object[] {100L}, conflict.getArgs());
+    // Read under the lock, after the row is held: a read before it would be the same stale answer.
+    InOrder inOrder = inOrder(subSampleDao);
+    inOrder.verify(subSampleDao).lockRowForUpdate(100L);
+    inOrder.verify(subSampleDao).isDeletedForUpdate(100L);
+  }
+
+  @Test
+  void aRowStillLiveUnderTheLockIsHandedBack() {
+    SubSample locked = new SubSample();
+    when(subSampleDao.lockRowForUpdate(100L)).thenReturn(locked);
+    when(subSampleDao.isDeletedForUpdate(100L)).thenReturn(false);
+
+    assertEquals(locked, subSampleApiMgr.lockSubSampleForEdit(100L, user));
   }
 }

@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -17,6 +18,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.researchspace.api.v1.model.ApiExtraField;
+import com.researchspace.api.v1.model.ApiInventoryLink;
 import com.researchspace.api.v1.model.ApiInventoryOperationOriginUpdate;
 import com.researchspace.api.v1.model.ApiInventoryOperationPost;
 import com.researchspace.api.v1.model.ApiInventoryOperationRequests;
@@ -28,6 +31,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.dtos.DTOControllerValidatorImpl;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.service.inventory.InventoryEditConflictException;
 import com.researchspace.service.inventory.InventoryOperationConfigRegistry;
 import com.researchspace.service.inventory.InventoryOperationManager;
 import com.researchspace.service.inventory.InventoryOperationManager.OperationOutcome;
@@ -35,6 +39,7 @@ import com.researchspace.service.inventory.SampleApiManager;
 import com.researchspace.service.inventory.SubSampleApiManager;
 import com.researchspace.webapp.config.WebConfig;
 import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -368,6 +373,222 @@ class InventoryOperationsApiControllerTest {
     assertEquals(
         "errors.inventory.operation.duplicateOrigin",
         rejection.getFieldErrors("origins[1].globalId").get(0).getCode());
+    verifyNoInteractions(operationManager);
+  }
+
+  // --- the rename must cover every path the core can report, or a caller is told about a field
+  // it never sent (M0: "every single-origin error must name a field the caller sent") ---
+
+  @Test
+  void facadeFieldRenamesTheExpectedQuantityPath() {
+    assertEquals("origin.expectedQuantity", facadeField("origins[0].expectedQuantity", true));
+    assertEquals("origins[1].expectedQuantity", facadeField("origins[1].expectedQuantity", false));
+  }
+
+  /**
+   * OperationTemplateConformanceValidator runs the samples endpoint's validators over the BUILT
+   * sample for every creating operation, templated or not, under the nested path {@code newSample}:
+   * an over-long sampleName comes back as {@code newSample.name}, a storage temperature as {@code
+   * newSample.storageTempMin}/{@code Max}, a generated field as {@code
+   * newSample.extraFields[i].name} or {@code .content}. Only {@code templateId} and {@code
+   * subSamples[i].quantity} were renamed, so every other path leaked a field the caller never sent.
+   */
+  @Test
+  void facadeFieldNeverLeaksTheServerBuiltSamplesPaths() {
+    // KNOWN FAILURE (backend F2): only two newSample.* paths are renamed today.
+    assertEquals("sampleName", facadeField("newSample.name", true));
+    assertEquals("storageTemp", facadeField("newSample.storageTempMin", true));
+    assertEquals("storageTemp", facadeField("newSample.storageTempMax", false));
+  }
+
+  /**
+   * Each generated field on the built sample traces to something the caller sent, recorded on the
+   * field's {@code operationFieldKey}: the documentation link to {@code documentedByGlobalId}
+   * (whose target the shared link validation checks for existence and readability), a text field to
+   * the input its {@code contentFrom} names, a provenance link to the origin it targets. The rename
+   * receives the built request as the binding result's target, so it can look these up.
+   */
+  @Test
+  void aCoreRejectionOnABuiltFieldIsRenamedToWhatTheCallerSentForIt() {
+    // KNOWN FAILURE (backend F2)
+    ApiInventoryOperationPost built = InventoryOperationPostValidatorTest.cryopreserveRequest();
+    ApiExtraField documentation = new ApiExtraField(ApiExtraField.ExtraFieldTypeEnum.LINK);
+    documentation.setName("Documented by");
+    documentation.setNewFieldRequest(true);
+    documentation.setOperationFieldKey("operations.documentationLink");
+    ApiInventoryLink target = new ApiInventoryLink();
+    target.setRelationType("IsDocumentedBy");
+    target.setTargetGlobalId("SD99");
+    documentation.setLink(target);
+    built.getNewSample().getExtraFields().add(documentation);
+    // [0] the provenance link to SS100, [1] the Cryomedium text field, [2] the documentation link
+    BeanPropertyBindingResult core =
+        new BeanPropertyBindingResult(built, "apiInventoryOperationPost");
+    core.rejectValue(
+        "newSample.extraFields[2].link.targetGlobalId",
+        "errors.inventory.field.linkTargetNotFound",
+        "No such record.");
+    core.rejectValue(
+        "newSample.extraFields[1].content", "errors.inventory.field.validation", "Too long.");
+    core.rejectValue("newSample.extraFields[0].name", "errors.maxLength", "Too long.");
+
+    List<String> renamed =
+        InventoryOperationsApiController.facadeFieldNames(core, true).getFieldErrors().stream()
+            .map(FieldError::getField)
+            .toList();
+
+    assertEquals(List.of("documentedByGlobalId", "cryomedium", "origin"), renamed);
+  }
+
+  @Test
+  void aCoreRejectionOnTheBuiltSamplesNameIsRenamedToSampleName() throws Exception {
+    // KNOWN FAILURE (backend F2). The samples validator rejects a 256-character name on
+    // newSample.name; the aliquot client sent sampleName.
+    ApiInventoryOperationPost generic = aliquotRequest();
+    BeanPropertyBindingResult coreErrors =
+        new BeanPropertyBindingResult(generic, "apiInventoryOperationPost");
+    coreErrors.rejectValue("newSample.name", "errors.maxLength", new Object[] {"name", 255}, null);
+    when(operationManager.performOperation(eq("aliquot"), any(), any(), any(), any(), eq(user)))
+        .thenThrow(new BindException(coreErrors));
+    ApiInventoryOperationRequests.Aliquot request = aliquotFacade();
+    request.setSampleName("x".repeat(256));
+
+    BindException rejection =
+        assertThrows(
+            BindException.class,
+            () -> controller.aliquot(request, bindingResultFor(request), user));
+
+    assertEquals(
+        1, rejection.getFieldErrors("sampleName").size(), rejection.getAllErrors().toString());
+    assertTrue(rejection.getFieldErrors("newSample.name").isEmpty());
+  }
+
+  // --- shape rules the facade must apply at the door ---
+
+  @Test
+  void typedFacadeRejectsAMalformedExpectedQuantityBeforeTheManager() throws Exception {
+    // KNOWN FAILURE (backend F1). A null numeric value would otherwise become a 409 the caller can
+    // never resolve, and an unknown unit an IllegalArgumentException after the origin locks; both
+    // are shape errors on the field the caller sent.
+    when(operationManager.performOperation(eq("destroy"), any(), any(), any(), any(), eq(user)))
+        .thenReturn(new OperationOutcome(null, List.of(originAfter(100L))));
+    for (ApiQuantityInfo malformed :
+        List.of(
+            new ApiQuantityInfo(null, RSUnitDef.MILLI_LITRE),
+            new ApiQuantityInfo(new BigDecimal("5"), 9999),
+            new ApiQuantityInfo(new BigDecimal("5"), RSUnitDef.CELSIUS),
+            millilitres("-1"))) {
+      ApiInventoryOperationRequests.Destroy request = new ApiInventoryOperationRequests.Destroy();
+      ApiInventoryOperationRequests.Origin origin = facadeOrigin("SS100", null);
+      origin.setExpectedQuantity(malformed);
+      request.setOrigin(origin);
+
+      BindException rejection =
+          assertThrows(
+              BindException.class,
+              () -> controller.destroy(request, bindingResultFor(request), user),
+              () -> "expectedQuantity " + malformed + " must be a 400 at the door");
+
+      assertEquals(
+          1,
+          rejection.getFieldErrors("origin.expectedQuantity").size(),
+          () -> malformed + ": " + rejection.getAllErrors());
+      assertTrue(
+          rejection.getFieldErrors().stream().noneMatch(e -> e.getField().startsWith("origins")),
+          () -> malformed + " leaked the plural path: " + rejection.getAllErrors());
+    }
+    verify(operationManager, never()).performOperation(any(), any(), any(), any(), any(), any());
+  }
+
+  @Test
+  void poolRejectsANullOriginElementAtItsIndex() {
+    // JSON "origins": [{...}, null] binds a null element; it must be a clean 400 at that index, not
+    // a NullPointerException reading its global id.
+    ApiInventoryOperationRequests.Pool request = new ApiInventoryOperationRequests.Pool();
+    request.setOrigins(Arrays.asList(facadeOrigin("SS100", millilitres("1")), null));
+    request.setSampleName("Pooled");
+    request.setEachAmount(millilitres("2"));
+
+    BindException rejection =
+        assertThrows(
+            BindException.class, () -> controller.pool(request, bindingResultFor(request), user));
+
+    assertEquals(
+        "errors.inventory.operation.originIdRequired",
+        rejection.getFieldErrors("origins[1]").get(0).getCode());
+    verifyNoInteractions(operationManager);
+  }
+
+  @Test
+  void poolWithoutAnOriginsListIsRejectedAsMissingOrigins() {
+    // @Size does not fire on null, so an absent list reaches the core as an empty origin list and
+    // must come back as the plural field the pool client knows.
+    ApiInventoryOperationRequests.Pool request = new ApiInventoryOperationRequests.Pool();
+    request.setSampleName("Pooled");
+    request.setEachAmount(millilitres("2"));
+
+    BindException rejection =
+        assertThrows(
+            BindException.class, () -> controller.pool(request, bindingResultFor(request), user));
+
+    assertEquals(
+        "errors.inventory.operation.originsRequired",
+        rejection.getFieldErrors("origins").get(0).getCode());
+    verifyNoInteractions(operationManager);
+  }
+
+  @Test
+  void aZeroAmountOnADecrementingFacadeIsRejectedOnTheCallersField() {
+    // Aliquot takes from its origin, so "take 0 ml" is a shape error the structural validator
+    // reports before any read, renamed to the singular field the caller sent.
+    ApiInventoryOperationRequests.Aliquot request = aliquotFacade();
+    request.getOrigin().setAmountTaken(millilitres("0"));
+
+    BindException rejection =
+        assertThrows(
+            BindException.class,
+            () -> controller.aliquot(request, bindingResultFor(request), user));
+
+    assertEquals(
+        "errors.inventory.operation.amountTakenPositive",
+        rejection.getFieldErrors("origin.amountTaken").get(0).getCode());
+    assertTrue(rejection.getFieldErrors().stream().noneMatch(e -> e.getField().contains("[")));
+    verifyNoInteractions(operationManager);
+  }
+
+  @Test
+  void aConflictFromTheManagerPassesThroughTheFacadeUnchanged() throws Exception {
+    // performTyped catches BindException to rename fields; the 409 must not be caught with it.
+    when(operationManager.performOperation(eq("destroy"), any(), any(), any(), any(), eq(user)))
+        .thenThrow(
+            new InventoryEditConflictException("errors.inventory.operation.amountTakenStale"));
+    ApiInventoryOperationRequests.Destroy request = new ApiInventoryOperationRequests.Destroy();
+    request.setOrigin(facadeOrigin("SS100", null));
+
+    assertThrows(
+        InventoryEditConflictException.class,
+        () -> controller.destroy(request, bindingResultFor(request), user));
+  }
+
+  @Test
+  void typedFacadeRejectsEveryNearMissOfASubsampleGlobalId() {
+    // The wire form is exactly "SS" + digits. Case, whitespace, signs and decimals are all
+    // rejected at the door rather than parsed leniently into some other subsample's id.
+    for (String nearMiss :
+        List.of(
+            "ss100", " SS100", "SS100 ", "SS-1", "SS1.5", "SS", "", "SS 100", "S100", "SSS100")) {
+      ApiInventoryOperationRequests.Aliquot request = aliquotFacade();
+      request.getOrigin().setGlobalId(nearMiss);
+      BindException rejection =
+          assertThrows(
+              BindException.class,
+              () -> controller.aliquot(request, bindingResultFor(request), user),
+              "[" + nearMiss + "]");
+      assertEquals(
+          "errors.inventory.operation.originGlobalIdInvalid",
+          rejection.getFieldErrors("origin.globalId").get(0).getCode(),
+          "[" + nearMiss + "]");
+    }
     verifyNoInteractions(operationManager);
   }
 }

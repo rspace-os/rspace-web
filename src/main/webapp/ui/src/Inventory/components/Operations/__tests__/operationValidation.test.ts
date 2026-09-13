@@ -1,3 +1,4 @@
+import { omit } from "es-toolkit";
 import { describe, expect, it } from "vitest";
 import type { InventoryOperation } from "../operationsConfig";
 import {
@@ -9,6 +10,14 @@ import {
 } from "../operationValidation";
 import type { OperationInputs } from "../types";
 import { UNSET_UNIT } from "../types";
+import { operations } from "./testOperations";
+
+/** One of the real definitions from operations_config.json, parsed exactly as the wizard does. */
+function real(key: string): InventoryOperation {
+  const operation = operations.find((o) => o.key === key);
+  if (!operation) throw new Error(`no configured operation ${key}`);
+  return operation;
+}
 
 // A cryopreserve-shaped operation: it has a sub-zero temperature field and an optional cryomedium.
 const cryo = {
@@ -364,5 +373,138 @@ describe("quantityExceedsOrigin across categories", () => {
     expect(quantityExceedsOrigin({ numericValue: 2, unitId: ML }, { numericValue: 1, unitId: ML })).toBe(true);
     expect(quantityExceedsOrigin({ numericValue: 0.5, unitId: ML }, { numericValue: 1, unitId: ML })).toBe(false);
     expect(quantityExceedsOrigin({ numericValue: 1, unitId: L }, { numericValue: 1, unitId: ML })).toBe(true);
+  });
+});
+
+// Branches of detailsValid that the suite above reaches only by accident, or not at all: the count's
+// lower bound below zero and its non-numeric forms, a quantity or temperature input that is absent
+// rather than malformed, the storability rule on the QUANTITY branch (it was only ever exercised via
+// temperature), and the created amount's sign.
+describe("detailsValid edge cases", () => {
+  it("rejects a negative child count", () => {
+    expect(detailsValid(cryo, { ...validValues, count: -1 })).toBe(false);
+  });
+
+  it("rejects a blank, absent or non-numeric child count", () => {
+    // A cleared number input reads as "" (Number("") is 0), an untouched one may be missing from the
+    // values entirely (Number(undefined) is NaN), and anything non-numeric is NaN: none is a count.
+    expect(detailsValid(cryo, { ...validValues, count: "" })).toBe(false);
+    expect(detailsValid(cryo, omit(validValues, ["count"]))).toBe(false);
+    expect(detailsValid(cryo, { ...validValues, count: "abc" })).toBe(false);
+  });
+
+  it("rejects a quantity input that is missing entirely or holds a NaN value", () => {
+    expect(detailsValid(cryo, omit(validValues, ["amountTaken"]))).toBe(false);
+    expect(detailsValid(cryo, omit(validValues, ["eachAmount"]))).toBe(false);
+    expect(detailsValid(cryo, { ...validValues, eachAmount: { numericValue: Number.NaN, unitId: 3 } })).toBe(false);
+  });
+
+  it("rejects a negative created amount, not only a negative amount taken", () => {
+    expect(detailsValid(cryo, { ...validValues, eachAmount: { numericValue: -1, unitId: 3 } })).toBe(false);
+  });
+
+  it("rejects an amount finer than three decimal places on either quantity input", () => {
+    // Quantities persist in DECIMAL(19,3); the storability rule was pinned only through the
+    // temperature branch, so this is the first assertion that reaches it through a quantity.
+    expect(detailsValid(cryo, { ...validValues, eachAmount: { numericValue: 1.0005, unitId: 3 } })).toBe(false);
+    expect(detailsValid(cryo, { ...validValues, amountTaken: { numericValue: 1.0005, unitId: 3 } })).toBe(false);
+    // and exactly three decimal places are still fine on both
+    expect(
+      detailsValid(cryo, {
+        ...validValues,
+        eachAmount: { numericValue: 1.001, unitId: 3 },
+        amountTaken: { numericValue: 1.001, unitId: 3 },
+      }),
+    ).toBe(true);
+  });
+
+  it("rejects a temperature input that is missing entirely", () => {
+    expect(detailsValid(cryo, omit(validValues, ["storageTemp"]))).toBe(false);
+  });
+});
+
+// The shipped Revive definition, not a hand-written fixture: the cryopreserve ceiling is pinned
+// against the real config elsewhere, but Revive's 4..120 range and its default of 4 were not, so the
+// config could drift from what the suite believes it enforces.
+describe("detailsValid against the real Revive definition", () => {
+  const revive = real("revive");
+  const reviveValues: OperationInputs = {
+    sampleName: "Revived A",
+    count: 1,
+    eachAmount: { numericValue: 1, unitId: 3 },
+    amountTaken: { numericValue: 1, unitId: 3 },
+    storageTemp: { numericValue: 37, unitId: 8 },
+  };
+
+  it("declares a 4 to 120 Celsius range with a default of 4", () => {
+    const storageTemp = revive.inputs.find((i) => i.key === "storageTemp");
+    expect(storageTemp?.minCelsius).toBe(4);
+    expect(storageTemp?.maxCelsius).toBe(120);
+    expect(storageTemp?.default).toBe(4);
+  });
+
+  it("accepts both bounds and rejects one degree beyond either", () => {
+    expect(detailsValid(revive, { ...reviveValues, storageTemp: { numericValue: 120, unitId: 8 } })).toBe(true);
+    expect(detailsValid(revive, { ...reviveValues, storageTemp: { numericValue: 4, unitId: 8 } })).toBe(true);
+    expect(detailsValid(revive, { ...reviveValues, storageTemp: { numericValue: 121, unitId: 8 } })).toBe(false);
+    expect(detailsValid(revive, { ...reviveValues, storageTemp: { numericValue: 3, unitId: 8 } })).toBe(false);
+  });
+});
+
+describe("detailsValid temperature unit", () => {
+  const cryopreserve = real("cryopreserve");
+  const cryoValues: OperationInputs = {
+    sampleName: "Frozen A",
+    count: 1,
+    eachAmount: { numericValue: 1, unitId: 3 },
+    amountTaken: { numericValue: 1, unitId: 3 },
+    cryomedium: "",
+    storageTemp: { numericValue: -80, unitId: 8 },
+  };
+
+  it("accepts a Celsius temperature within the ceiling (control for the case below)", () => {
+    expect(detailsValid(cryopreserve, cryoValues)).toBe(true);
+  });
+
+  // KNOWN FAILURE (BUG-4): the temperature bounds compare numericValue as Celsius but never check
+  // unitId, and detailsValid asserts a unit only on the quantity branch, so an unset unit (0) and a
+  // Kelvin unit (9, where -80 is below absolute zero) both pass and travel as-is in the request.
+  it("rejects a temperature whose unit is unset or is not Celsius", () => {
+    expect(detailsValid(cryopreserve, { ...cryoValues, storageTemp: { numericValue: -80, unitId: 0 } })).toBe(false);
+    expect(detailsValid(cryopreserve, { ...cryoValues, storageTemp: { numericValue: -80, unitId: 9 } })).toBe(false);
+  });
+});
+
+describe("amountTakenExceedsOrigin edge cases", () => {
+  it("is false for an operation with no amount-taken input (Passage), whatever the origin holds", () => {
+    // Passage leaves the origin untouched, so there is nothing to compare: neither an empty origin
+    // nor one with no quantity at all is over-removal.
+    const passage = real("passage");
+    const values: OperationInputs = { sampleName: "P2", count: 1, eachAmount: { numericValue: 1, unitId: ML } };
+    expect(amountTakenExceedsOrigin(passage, values, { numericValue: 0, unitId: ML })).toBe(false);
+    expect(amountTakenExceedsOrigin(passage, values, null)).toBe(false);
+  });
+
+  it("flags any positive amount against an origin whose quantity is explicitly zero, not only null", () => {
+    expect(amountTakenExceedsOrigin(cryo, validValues, { numericValue: 0, unitId: ML })).toBe(true);
+    expect(quantityExceedsOrigin({ numericValue: 1, unitId: ML }, { numericValue: 0, unitId: ML })).toBe(true);
+  });
+
+  it("answers 'not exceeding' for a cross-category amount taken, through the operation-level check", () => {
+    // Pinned only through quantityExceedsOrigin before; the operation-level wrapper is what the
+    // wizard and the amounts step actually call.
+    expect(
+      amountTakenExceedsOrigin(
+        cryo,
+        { ...validValues, amountTaken: { numericValue: 1e9, unitId: G } },
+        { numericValue: 1, unitId: ML },
+      ),
+    ).toBe(false);
+  });
+
+  it("does not flag an amount whose value is NaN", () => {
+    expect(quantityExceedsOrigin({ numericValue: Number.NaN, unitId: ML }, { numericValue: 5, unitId: ML })).toBe(
+      false,
+    );
   });
 });

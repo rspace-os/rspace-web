@@ -164,10 +164,24 @@ vi.mock("../OperationDetailsStep", () => ({
           })
         }
       />
+      {/* 3 ml shared: within a 5 ml origin, beyond a 1 ml one, so it tells which origin gates. */}
+      <button
+        type="button"
+        data-testid="fill-shared-3"
+        onClick={() =>
+          onChange({
+            ...values,
+            count: 1,
+            eachAmount: { numericValue: 5, unitId: 3 },
+            amountTaken: { numericValue: 3, unitId: 3 },
+          })
+        }
+      />
       <span data-testid="count">{String(values.count ?? "")}</span>
       <span data-testid="each-amount">{JSON.stringify(values.eachAmount ?? null)}</span>
       <span data-testid="amount-taken">{JSON.stringify(values.amountTaken ?? null)}</span>
       <button type="button" data-testid="mode-per" onClick={() => onAmountModeChange?.("perSubsample")} />
+      <button type="button" data-testid="mode-same" onClick={() => onAmountModeChange?.("same")} />
       <button
         type="button"
         data-testid="fill-per-first"
@@ -1303,5 +1317,126 @@ describe("OperationWizard remember bundle", () => {
     await waitFor(() => expect(onClose).toHaveBeenCalled());
     const stored = prefs.store.INVENTORY_OPERATION_PROCESS_VALUES as Record<string, unknown>;
     expect(Object.keys(stored)).toEqual(["cryopreserve"]);
+  });
+});
+
+// Every rejection the suite above serves is a 400. The submit handler has one catch for everything,
+// so a 409 (the compare-and-swap on a "take all" snapshot) and a connection failure share it, and
+// what they share had never been asserted: the message chosen, that EVERY origin is re-read (the
+// snapshot and the over-removal gate both read origin.quantity), and that the wizard stays put.
+describe("OperationWizard rejection paths and multi-origin gating", () => {
+  it("keeps a Pool open on a 409, shows the conflict message and re-reads every origin", async () => {
+    server.use(
+      http.post(
+        OPERATIONS_URL,
+        () => HttpResponse.json({ message: "The subsample's quantity changed", errors: [""] }, { status: 409 }),
+        { once: true },
+      ),
+    );
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    const first = makeMockSubSample({});
+    const second = makeMockSubSample({ id: 2, globalId: "SS2" });
+    const refreshFirst = vi.spyOn(first, "fetchAdditionalInfo").mockResolvedValue(undefined);
+    const refreshSecond = vi.spyOn(second, "fetchAdditionalInfo").mockResolvedValue(undefined);
+    render(<OperationWizard open onClose={onClose} origins={[first, second]} />);
+
+    // Pool opens on "take all", which is exactly the whole-origin claim a 409 answers.
+    await user.click(await screen.findByRole("button", { name: /operations\.pool\.label/i }));
+    await user.click(screen.getByTestId("fill-amounts"));
+    await user.click(nextButton()); // details -> template
+    await user.click(screen.getByTestId("tmpl-pick5"));
+    await user.click(nextButton()); // template -> amounts
+    await user.click(nextButton()); // amounts -> documentation
+    await user.click(nextButton()); // documentation -> confirm
+    await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
+
+    await waitFor(() => expect(addAlert).toHaveBeenCalled());
+    // A 409 carries `errors: [""]` (ApiError's singleton list), so the message body is the reason.
+    const alerts = addAlert.mock.calls.map((call) => call[0] as { variant: string; message: string });
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0].variant).toBe("error");
+    expect(alerts[0].message).toBe("The subsample's quantity changed");
+    // BOTH origins are re-read, not just the representative one
+    await waitFor(() => expect(refreshFirst).toHaveBeenCalledTimes(1));
+    expect(refreshSecond).toHaveBeenCalledTimes(1);
+    expect(onClose).not.toHaveBeenCalled();
+    expect(screen.getByTestId("confirm")).toBeInTheDocument();
+    expect(posted).toHaveLength(0);
+  });
+
+  it("reports a connection failure once, re-reads the origin and stays open for a retry", async () => {
+    server.use(http.post(OPERATIONS_URL, () => HttpResponse.error(), { once: true }));
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    const origin = makeMockSubSample({});
+    const refresh = vi.spyOn(origin, "fetchAdditionalInfo").mockResolvedValue(undefined);
+    render(<OperationWizard open onClose={onClose} origins={[origin]} />);
+    await reachConfirm(user, "offline");
+    await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
+
+    await waitFor(() => expect(addAlert).toHaveBeenCalled());
+    await waitFor(() => expect(refresh).toHaveBeenCalledTimes(1));
+    const alerts = addAlert.mock.calls.map((call) => call[0] as { variant: string; message: string });
+    // one error alert, worded from the error itself (there is no response body to read)
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0].variant).toBe("error");
+    expect(alerts[0].message).toBe("Network Error");
+    expect(onClose).not.toHaveBeenCalled();
+    expect(screen.getByTestId("confirm")).toBeInTheDocument();
+    // the Perform button is live again for the retry
+    expect(screen.getByRole("button", { name: /wizard\.perform/i })).toBeEnabled();
+  });
+
+  it("gates a shared Pool amount on the SMALLEST origin, not on the first selected", async () => {
+    // representativeOrigin reduces to the origin holding the least. The Pool test above holds 1 ml
+    // in both origins, so its `<` branch never fired and `origins[0]` would have passed it. Here the
+    // larger origin comes FIRST, so only the reduce can find the 1 ml one.
+    const user = userEvent.setup();
+    const large = makeMockSubSample({ quantity: { numericValue: 5, unitId: 3 } });
+    const small = makeMockSubSample({ id: 2, globalId: "SS2", quantity: { numericValue: 1, unitId: 3 } });
+    render(<OperationWizard open onClose={vi.fn()} origins={[large, small]} />);
+    await user.click(await screen.findByRole("button", { name: /operations\.pool\.label/i }));
+    await user.click(screen.getByTestId("fill-shared-3")); // 3 ml from each: fine for 5 ml, over for 1 ml
+    await user.click(nextButton()); // details -> template
+    await user.click(screen.getByTestId("tmpl-pick5"));
+    await user.click(nextButton()); // template -> amounts
+    // Pool opens on "take all", which never over-removes
+    expect(nextButton()).toBeEnabled();
+    await user.click(screen.getByTestId("mode-same"));
+    expect(nextButton()).toBeDisabled();
+    await user.click(screen.getByTestId("fill-amounts")); // 1 ml from each: within the smallest
+    expect(nextButton()).toBeEnabled();
+  });
+
+  it("performs Passage with an explicit zero decrement and no client-computed passage number", async () => {
+    // Passage declares no amount-taken input and leaves the origin untouched. No test drove it: the
+    // zero-decrement branch of buildOriginUpdates and the amounts step with only count/each-amount
+    // were reachable only through it.
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    const origin = makeMockSubSample({});
+    vi.spyOn(origin, "fetchAdditionalInfo").mockResolvedValue(undefined);
+    render(<OperationWizard open onClose={onClose} origins={[origin]} />);
+    await user.click(await screen.findByRole("button", { name: /operations\.passage\.label/i }));
+    // no amount-taken input exists, so nothing is prefilled for it
+    expect(screen.getByTestId("amount-taken")).toHaveTextContent("null");
+    await user.click(nextButton()); // details -> template (the sample name is seeded from the origin)
+    await user.click(screen.getByTestId("tmpl-pick5"));
+    await user.click(nextButton()); // template -> amounts (count 1 and each amount 1 ml prefilled)
+    await user.click(nextButton()); // amounts -> documentation
+    await user.click(nextButton()); // documentation -> confirm
+    await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
+
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    expect(posted[0]).toEqual({
+      operationType: "passage",
+      origins: [{ id: 1, amountMode: "explicit", amountTaken: { numericValue: 0, unitId: 3 } }],
+      inputs: { sampleName: expect.any(String), count: 1, eachAmount: { numericValue: 1, unitId: 3 } },
+      templateId: 5,
+      documentedByGlobalId: null,
+    });
+    // the passage number is the server's computed value, never assembled or sent from here
+    expect(posted[0].inputs).not.toHaveProperty("passageNumber");
   });
 });
