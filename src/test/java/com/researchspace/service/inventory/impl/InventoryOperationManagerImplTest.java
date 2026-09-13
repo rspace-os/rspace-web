@@ -39,6 +39,7 @@ import com.researchspace.service.inventory.InventoryOperationConfigRegistry;
 import com.researchspace.service.inventory.InventoryOperationManager;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -55,6 +56,7 @@ class InventoryOperationManagerImplTest {
   @Mock private com.researchspace.service.inventory.SampleApiManager sampleApiMgr;
   @Mock private com.researchspace.service.inventory.SampleSiblingRowLock siblingRowLock;
   @Mock private com.researchspace.service.inventory.SubSampleApiManager subSampleApiMgr;
+  @Mock private com.researchspace.service.inventory.LinkTargetResolver linkTargetResolver;
 
   private InventoryOperationManagerImpl manager;
   private final User user = new User("anyUser");
@@ -136,6 +138,7 @@ class InventoryOperationManagerImplTest {
     ReflectionTestUtils.setField(manager, "sampleApiMgr", sampleApiMgr);
     ReflectionTestUtils.setField(manager, "siblingRowLock", siblingRowLock);
     ReflectionTestUtils.setField(manager, "subSampleApiMgr", subSampleApiMgr);
+    ReflectionTestUtils.setField(manager, "linkTargetResolver", linkTargetResolver);
     // the real registry over the real config: the live checks read emptiesOrigin per operation
     ReflectionTestUtils.setField(
         manager, "operationConfigs", new InventoryOperationConfigRegistry());
@@ -921,6 +924,65 @@ class InventoryOperationManagerImplTest {
         "errors.inventory.operation.amountTakenNotSubtractable",
         rejection.getFieldErrors("origins[0].amountTaken").get(0).getCode());
     verify(subSampleApiMgr, never()).registerApiSubSampleUsage(any(), any(), any());
+  }
+
+  @Test
+  void rejectsAnAmountTakenWhoseRemainderIsNotStorableInTheOriginsOwnUnit() throws Exception {
+    // 0.001 ul from a 1 ml origin leaves 0.999999 ml, which does not fit the origin's own 3dp
+    // storage. The sum does not round it away - convertToMoreUsefulUnit moves the result down to
+    // 999.999 ul, where it does fit - so the guard that only compared the two sums saw no loss and
+    // let it through: the operation was accepted and the origin's unit silently changed from ml to
+    // ul underneath the user (live test 2026-09-13, F3).
+    ApiInventoryOperationPost request = new ApiInventoryOperationPost();
+    request.setOperationType("derive");
+    request.setOrigins(
+        List.of(
+            origin(
+                100L,
+                new ApiQuantityInfo(new BigDecimal("0.001"), RSUnitDef.MICRO_LITRE.getId()))));
+    request.setNewSample(new ApiSampleWithFullSubSamples("Derived material"));
+    originHolds(100L, subSampleHolding("1", RSUnitDef.MILLI_LITRE.getId()));
+
+    BindException rejection =
+        assertThrows(BindException.class, () -> manager.performOperation(request, user, NONE));
+
+    assertEquals(
+        "errors.inventory.operation.amountTakenNotSubtractable",
+        rejection.getFieldErrors("origins[0].amountTaken").get(0).getCode());
+    verify(subSampleApiMgr, never()).registerApiSubSampleUsage(any(), any(), any());
+  }
+
+  @Test
+  void anUnreadableDocumentationTargetIsAFieldErrorNamingTheFieldTheCallerSent() {
+    // The target was only resolved while the built sample's link was being created, deep inside
+    // the transaction, where it became a bare 422 carrying no field path at all: every other 4xx
+    // this API answers names the field the caller sent (live test 2026-09-13, F4). Checked with
+    // the inputs, before any origin is read, so nothing is locked for a request already known bad.
+    when(linkTargetResolver.targetExistsAndIsReadable(any(), eq(user))).thenReturn(false);
+
+    BindException rejection =
+        assertThrows(
+            BindException.class,
+            () ->
+                manager.performOperation(
+                    "aliquot",
+                    List.of(
+                        origin(100L, new ApiQuantityInfo(BigDecimal.ONE, RSUnitDef.GRAM.getId()))),
+                    Map.of(
+                        "sampleName",
+                        "Aliquots",
+                        "count",
+                        1,
+                        "eachAmount",
+                        new ApiQuantityInfo(new BigDecimal("0.5"), RSUnitDef.GRAM.getId())),
+                    null,
+                    "SD999999999",
+                    user));
+
+    assertEquals(
+        "errors.inventory.field.linkTargetNotFound",
+        rejection.getFieldErrors("documentedByGlobalId").get(0).getCode());
+    verifyNoInteractions(sampleApiMgr);
   }
 
   @Test

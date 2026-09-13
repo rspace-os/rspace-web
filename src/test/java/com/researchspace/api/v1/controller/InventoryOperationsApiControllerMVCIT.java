@@ -14,6 +14,7 @@ import com.researchspace.api.v1.model.ApiSampleTemplate;
 import com.researchspace.api.v1.model.ApiSampleTemplatePost;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
+import com.researchspace.apiutils.ApiError;
 import com.researchspace.model.User;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.inventory.SubSampleApiManager;
@@ -278,45 +279,49 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
   }
 
   @Test
-  public void rollsBackOriginDecrementWhenSampleCreationFailsInsideTheTransaction()
+  public void aDocumentationTargetThatCannotBeResolvedIsRejectedBeforeAnyMutation()
       throws Exception {
-    // The atomicity claim (DevDocs/adr/0007) rests on InventoryOperationManager matching the
-    // service.inventory.*Manager AOP pointcut; only a real transaction can prove it. Trigger an
-    // in-transaction failure AFTER the origin decrement: the documentation target is a document
-    // that does not exist, so creating the IsDocumentedBy link the server builds
-    // (assertTargetExistsAndReadable) throws while the new sample is being assembled, after
-    // registerApiSubSampleUsage already ran. Without a working transaction the origin would
-    // silently lose quantity with no sample created.
+    // The generic endpoint does not rename paths, so the error names the field as sent (F4).
+    //
+    // This replaces rollsBackOriginDecrementWhenSampleCreationFailsInsideTheTransaction, which
+    // used this same unresolvable target to force a failure AFTER the origin decrement and so
+    // prove the AOP transaction rolls back. The target is now rejected before the transaction
+    // opens, which leaves that test asserting nothing, and no other failure reachable through
+    // this endpoint writes before it throws: checkOriginLiveState runs every origin's checks
+    // before any decrement, and the parent-total recompute it does first writes the sum of the
+    // children, which a rejected request leaves unchanged either way. Real-transaction rollback
+    // therefore needs an injected failure rather than a request-shaped one, and is not covered
+    // here any more.
     ApiSampleWithFullSubSamples source = createBasicSampleForUser(anyUser);
     ApiSubSample origin = source.getSubSamples().get(0);
-    Long originId = origin.getId();
     Integer unitId = origin.getQuantity().getUnitId();
     java.math.BigDecimal originalAmount = origin.getQuantity().getNumericValue();
-
-    String operationJson =
-        deriveJson(
-            origin,
-            quantityJson("0.6", unitId),
-            "Rollback probe",
-            1,
-            quantityJson("0.5", unitId),
-            ",\"documentedByGlobalId\":\"SD999999999\"");
 
     MvcResult result =
         mockMvc
             .perform(
-                createBuilderForPostWithJSONBody(apiKey, "/operations", anyUser, operationJson))
+                createBuilderForPostWithJSONBody(
+                    apiKey,
+                    "/operations",
+                    anyUser,
+                    deriveJson(
+                        origin,
+                        quantityJson("0.6", unitId),
+                        "Documented output",
+                        1,
+                        quantityJson("0.5", unitId),
+                        ",\"documentedByGlobalId\":\"SD999999999\"")))
+            .andExpect(status().isBadRequest())
             .andReturn();
+    List<String> errors = getErrorFromJsonResponseBody(result, ApiError.class).getErrors();
     assertTrue(
-        result.getResponse().getStatus() >= 400,
-        "a failing in-transaction link creation must not report success, was: "
-            + result.getResponse().getStatus());
+        errors.stream().anyMatch(message -> message.startsWith("documentedByGlobalId:")),
+        () -> "expected documentedByGlobalId, got " + errors);
 
-    // the origin's quantity is unchanged: the decrement was rolled back with the failed creation
-    ApiSubSample reloadedOrigin = subSampleApiManager.getApiSubSampleById(originId, anyUser);
+    ApiSubSample reloadedOrigin = subSampleApiManager.getApiSubSampleById(origin.getId(), anyUser);
     assertTrue(
         originalAmount.compareTo(reloadedOrigin.getQuantity().getNumericValue()) == 0,
-        "origin quantity must be restored when the operation fails mid-transaction");
+        "origin quantity must be untouched");
   }
 
   /** POST /samples with one subsample holding exactly the given quantity; returns the sample. */

@@ -344,9 +344,31 @@ public class Container extends MovableInventoryRecord implements Serializable {
           getContainerType()
               + " container cannot store content without providing specific coordinates");
     }
-    ContainerLocation newLocation = createOrRetrieveLocationWithCoords(locations.size() + 1, 1);
+    ContainerLocation newLocation = createOrRetrieveLocationWithCoords(nextFreeCoordX(), 1);
     setRecordInLocation(record, newLocation);
     return newLocation;
+  }
+
+  /**
+   * One past the highest coordinate in use, NOT one past how many locations there are.
+   *
+   * <p>A list container's coordinates are normally the contiguous 1..n that {@code
+   * resetListLayoutLocationCoords} restores after every removal, and for that state the two agree.
+   * They stop agreeing when the persisted rows have a gap, which a concurrent batch create can
+   * leave behind when its transaction rolls back after part of its rows were written: the count is
+   * then lower than the highest coordinate already occupied, and counting resolves to a location
+   * that holds a record. That is not a transient clash - it recurs identically on every subsequent
+   * add, so the container can never be added to again (live test 2026-09-13, F1). Reading the
+   * coordinates themselves steps past the gap instead, and the container heals.
+   */
+  private int nextFreeCoordX() {
+    return locations.stream()
+            .map(ContainerLocation::getCoordX)
+            .filter(Objects::nonNull)
+            .mapToInt(Integer::intValue)
+            .max()
+            .orElse(0)
+        + 1;
   }
 
   public ContainerLocation addToNewLocationWithCoords(

@@ -37,6 +37,7 @@ public class InventoryOperationFacadesMVCIT extends API_MVC_InventoryTestBase {
 
   private static final int GRAM = RSUnitDef.GRAM.getId();
   private static final int CELSIUS = RSUnitDef.CELSIUS.getId();
+  private static final int MILLIGRAM = RSUnitDef.MILLI_GRAM.getId();
 
   private @Autowired SubSampleApiManager subSampleApiManager;
 
@@ -259,6 +260,71 @@ public class InventoryOperationFacadesMVCIT extends API_MVC_InventoryTestBase {
     assertTrue(
         errors.stream().anyMatch(message -> message.startsWith("processName:")),
         () -> "expected processName, got " + errors);
+    assertUnchanged(origin);
+  }
+
+  @Test
+  public void aFractionalCountIsRejectedNamingTheFieldRatherThanSilentlyCoerced() throws Exception {
+    // Asserted through the running converter, not the DTO: the coercion this guards against is
+    // Jackson's, and only a request that actually crosses the HTTP boundary exercises the mapper
+    // the endpoint is wired to (live test 2026-09-13, F2).
+    ApiSubSample origin = origin();
+    List<String> errors =
+        errorsOf(
+            post(
+                "aliquot",
+                "{\"origin\":"
+                    + originJson(origin, q("1", GRAM))
+                    + ",\"sampleName\":\"Fractional\",\"count\":1.9,\"eachAmount\":"
+                    + q("0.5", GRAM)
+                    + "}",
+                400));
+    assertTrue(
+        errors.stream().anyMatch(message -> message.startsWith("count:")),
+        () -> "expected count, got " + errors);
+    assertUnchanged(origin);
+  }
+
+  @Test
+  public void anAmountTakenTheOriginsOwnUnitCannotExpressIsRejected() throws Exception {
+    // 4999.999 mg from a 5 g origin leaves 0.000001 g, which the origin's own unit cannot store.
+    // The sum does not lose it - it comes back as 1 ug - so the operation was accepted and the
+    // origin's unit silently changed underneath the user (live test 2026-09-13, F3).
+    ApiSubSample origin = origin();
+    List<String> errors =
+        errorsOf(
+            post(
+                "aliquot",
+                "{\"origin\":"
+                    + originJson(origin, q("4999.999", MILLIGRAM))
+                    + ",\"sampleName\":\"Lost to rounding\",\"eachAmount\":"
+                    + q("0.5", GRAM)
+                    + "}",
+                400));
+    assertTrue(
+        errors.stream().anyMatch(message -> message.startsWith("origin.amountTaken:")),
+        () -> "expected origin.amountTaken, got " + errors);
+    assertUnchanged(origin);
+  }
+
+  @Test
+  public void anUnreadableDocumentationTargetNamesTheFieldTheCallerSent() throws Exception {
+    // Resolved only while the built sample's link was created, deep in the transaction, this came
+    // back as a bare 422 with no field path on it (live test 2026-09-13, F4).
+    ApiSubSample origin = origin();
+    List<String> errors =
+        errorsOf(
+            post(
+                "aliquot",
+                "{\"origin\":"
+                    + originJson(origin, q("1", GRAM))
+                    + ",\"sampleName\":\"Documented\",\"eachAmount\":"
+                    + q("0.5", GRAM)
+                    + ",\"documentedByGlobalId\":\"SD999999999\"}",
+                400));
+    assertTrue(
+        errors.stream().anyMatch(message -> message.startsWith("documentedByGlobalId:")),
+        () -> "expected documentedByGlobalId, got " + errors);
     assertUnchanged(origin);
   }
 

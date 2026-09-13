@@ -7,6 +7,7 @@ import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.model.User;
+import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.inventory.field.ExtraField;
@@ -22,6 +23,7 @@ import com.researchspace.service.inventory.InventoryOperationInputValidator;
 import com.researchspace.service.inventory.InventoryOperationManager;
 import com.researchspace.service.inventory.InventoryOperationManager.OperationOutcome;
 import com.researchspace.service.inventory.InventoryOperationRequestBuilder;
+import com.researchspace.service.inventory.LinkTargetResolver;
 import com.researchspace.service.inventory.OperationTemplateConformanceValidator;
 import com.researchspace.service.inventory.SampleApiManager;
 import com.researchspace.service.inventory.SampleSiblingRowLock;
@@ -57,6 +59,7 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
   @Autowired private MessageSource messageSource;
   @Autowired private OperationTemplateConformanceValidator templateConformance;
   @Autowired private SampleSiblingRowLock siblingRowLock;
+  @Autowired private LinkTargetResolver linkTargetResolver;
 
   /** Stateless; one instance per bean, as elsewhere in the codebase. */
   private static final QuantityUtils quantityUtils = new QuantityUtils();
@@ -80,6 +83,7 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
     inputs = InventoryOperationInputValidator.withDefaults(definition, inputs);
     MapBindingResult inputErrors = new MapBindingResult(inputs, "apiInventoryOperationPost");
     InventoryOperationInputValidator.validate(definition, inputs, inputErrors);
+    rejectUnreadableDocumentationTarget(documentedByGlobalId, user, inputErrors);
     if (inputErrors.hasErrors()) {
       throw new BindException(inputErrors);
     }
@@ -431,6 +435,38 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
   }
 
   /**
+   * A documentation target the caller cannot read is a field error on {@code documentedByGlobalId},
+   * the field they sent it in.
+   *
+   * <p>The target used to be resolved only when the built sample's link was created, inside the
+   * transaction and after the origins were decremented, where it surfaced as a bare 422 with no
+   * field path on it at all: every other 4xx this API answers names a field (live test 2026-09-13,
+   * F4). Checked here, alongside the declared inputs and before any origin is read, so a request
+   * already known to be bad locks nothing. The prefix is checked earlier, by the post validator;
+   * this is the existence and read-permission half, which needs the acting user.
+   */
+  private void rejectUnreadableDocumentationTarget(
+      String documentedByGlobalId, User user, MapBindingResult errors) {
+    if (documentedByGlobalId == null) {
+      return;
+    }
+    GlobalIdentifier target;
+    try {
+      target = new GlobalIdentifier(documentedByGlobalId);
+    } catch (IllegalArgumentException malformed) {
+      // Shape is the post validator's business; it has already rejected this one.
+      return;
+    }
+    if (!linkTargetResolver.targetExistsAndIsReadable(target, user)) {
+      errors.rejectValue(
+          "documentedByGlobalId",
+          "errors.inventory.field.linkTargetNotFound",
+          new Object[] {documentedByGlobalId},
+          "The documentation target does not exist or you may not read it.");
+    }
+  }
+
+  /**
    * Without a template the wizard offers only the origin's measurement category for the created
    * amounts, so a gram child from a millilitre origin is a request it never builds (code review,
    * finding 5). With a template the created amounts follow the template's category instead, which
@@ -557,6 +593,14 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
             .getNumericValue()
             .multiply(exactUnitFactor(amountTaken.getUnitId(), originQuantity.getUnitId()));
     BigDecimal exactRemainder = originQuantity.getNumericValue().subtract(takenInOriginUnit);
+    // The remainder has to survive in the unit the origin is held in. Comparing only the two sums
+    // misses the case where it does not: convertToMoreUsefulUnit moves a sub-unit result down to a
+    // smaller unit where the same value does fit, so 0.001 ul from a 1 ml origin came back as
+    // 999.999 ul, matched, and was accepted - decrementing by an amount the origin's own unit
+    // cannot express and changing its unit underneath the user (live test 2026-09-13, F3).
+    if (!QuantityInfo.canStoreWithoutRounding(exactRemainder)) {
+      return true;
+    }
     QuantityInfo stored =
         quantityUtils.sum(
             List.of(
