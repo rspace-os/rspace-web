@@ -37,6 +37,7 @@ import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.StoichiometryMoleculeManager;
+import com.researchspace.service.inventory.InventoryEditConflictException;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
 import com.researchspace.service.inventory.SampleSiblingRowLock;
 import com.researchspace.service.inventory.SubSampleApiManager;
@@ -487,6 +488,37 @@ public class StoichiometryInventoryLinkManagerImplTest {
 
     assertThrows(
         CannotAcquireLockException.class,
+        () -> manager.deductStock(stoichiometryId, List.of(321L), user));
+  }
+
+  @Test
+  public void anEditConflictAbortsTheWholeDeductionRatherThanBecomingOneFailedRow() {
+    // Same reason as the lock failure above, by a different mechanism. lockSubSampleForEdit is
+    // called through the proxy and carries MANDATORY transaction advice, so this RuntimeException
+    // escaping it makes the participating interceptor mark deductStock's shared transaction
+    // rollback-only before the catch runs. Recording it as a per-link failure cannot recover that:
+    // the commit throws UnexpectedRollbackException, the result is discarded, and the other links'
+    // deductions roll back too. So it escapes and the tier maps it to the 409 it already means
+    // (Codex review, P2, PR #1090).
+    StoichiometryInventoryLink original = new StoichiometryInventoryLink();
+    original.setId(321L);
+    long stoichiometryId = 55L;
+    molecule.getStoichiometry().setId(stoichiometryId);
+    molecule.setActualAmount(1.0);
+    original.setStoichiometryMolecule(molecule);
+    original.setInventoryRecord(invSubSample);
+    invSubSample.setQuantity(new QuantityInfo(BigDecimal.valueOf(100), RSUnitDef.GRAM.getId()));
+
+    when(linkDao.getSafeNull(321L)).thenReturn(java.util.Optional.of(original));
+    when(moleculeManager.getDocContainingMolecule(molecule)).thenReturn(owningRecord);
+    when(elnPerms.isPermitted(owningRecord, PermissionType.WRITE, user)).thenReturn(true);
+    when(subSampleMgr.lockSubSampleForEdit(invSubSample.getId(), user))
+        .thenThrow(
+            new InventoryEditConflictException(
+                "errors.inventory.subsample.deletedSinceLoaded", 321L));
+
+    assertThrows(
+        InventoryEditConflictException.class,
         () -> manager.deductStock(stoichiometryId, List.of(321L), user));
   }
 
