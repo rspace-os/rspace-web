@@ -4,7 +4,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.AdditionalAnswers.delegatesTo;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 
+import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiContainerInfo;
 import com.researchspace.api.v1.model.ApiInventoryOperationOriginUpdate;
@@ -30,6 +35,8 @@ import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.util.AopTestUtils;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.UnexpectedRollbackException;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -289,6 +296,79 @@ public class StockWriterConcurrencyIT extends RealTransactionSpringTestBase {
             + " transaction's pre-lock snapshot rather than from the locked row");
   }
 
+  /**
+   * The operation's atomicity: a failure while the sample is created must put back the stock its
+   * origins already gave up.
+   *
+   * <p>This is the only claim in DevDocs/adr/0007 that no amount of mocking can settle, because the
+   * transaction is not on the class. It comes from an XML pointcut, {@code execution(*
+   * *..service.inventory.*Manager.*(..))} in applicationContext-service.xml, so renaming the class
+   * or moving it out of that package silently removes the transaction while every unit test in
+   * InventoryOperationManagerImplTest keeps passing. Only a run that really commits can see it.
+   *
+   * <p>The failure is INJECTED rather than requested. It used to be requested, by a documentation
+   * target that does not exist: the link creation threw while the built sample was assembled, after
+   * the decrement. Both of the request-shaped ways in have since been closed - that target is now
+   * resolved with the declared inputs, before any origin is locked (live test 2026-09-13, F4), and
+   * the workbench collision that the created subsamples used to hit is fixed (F1) - and the test
+   * that relied on the first was passing while asserting nothing, because its request no longer
+   * reached a mutation. Everything else the endpoint can be asked for is checked before any origin
+   * is decremented, so a request cannot get between the two writes any more. Stubbing the sample
+   * creation to throw is what is left, and it pins the boundary rather than the route to it.
+   *
+   * <p>Deliberately NOT wrapped in openTransaction: the transaction under test is the one the
+   * advice starts, and joining an outer one would prove only that the test's own rollback works.
+   * The assertion reads a second connection for the same reason.
+   */
+  @Test
+  public void aFailureCreatingTheSampleRollsBackTheOriginDecrement() throws Exception {
+    User user = createInitAndLoginAnyUser();
+    ApiSampleWithFullSubSamples sample = createBasicSampleForUser(user);
+    Long subSampleId = sample.getSubSamples().get(0).getId();
+    BigDecimal before = quantityOf(subSampleId);
+    assertNotNull(before, "precondition: the seeded origin holds a quantity to lose");
+
+    Object manager = AopTestUtils.getUltimateTargetObject(operationManager);
+    SampleApiManager realSampleApiMgr =
+        (SampleApiManager) ReflectionTestUtils.getField(manager, "sampleApiMgr");
+    // Delegates every other call to the real bean, so the operation runs normally right up to the
+    // creation: the origins are locked, checked and decremented for real, which is the state the
+    // rollback has to undo.
+    SampleApiManager throwsWhenCreating =
+        mock(SampleApiManager.class, delegatesTo(realSampleApiMgr));
+    doThrow(new ApiRuntimeException("errors.inventory.field.linkTargetNotFound", "SD999999999"))
+        .when(throwsWhenCreating)
+        .createNewApiSample(any(), any());
+
+    ReflectionTestUtils.setField(manager, "sampleApiMgr", throwsWhenCreating);
+    try {
+      ApiInventoryOperationOriginUpdate origin = new ApiInventoryOperationOriginUpdate();
+      origin.setId(subSampleId);
+      origin.setAmountTaken(new ApiQuantityInfo(BigDecimal.ONE, RSUnitDef.GRAM.getId()));
+      Map<String, Object> inputs = new LinkedHashMap<>();
+      inputs.put("sampleName", "Rollback probe");
+      inputs.put("count", 1);
+      inputs.put("eachAmount", new ApiQuantityInfo(BigDecimal.ONE, RSUnitDef.GRAM.getId()));
+
+      assertThrows(
+          ApiRuntimeException.class,
+          () ->
+              operationManager.performOperation(
+                  "aliquot", List.of(origin), inputs, null, null, user),
+          "the injected failure must reach the caller rather than being swallowed");
+    } finally {
+      // A shared singleton: leaving the stub in place would fail every later test in this class.
+      ReflectionTestUtils.setField(manager, "sampleApiMgr", realSampleApiMgr);
+    }
+
+    assertEquals(
+        0,
+        before.compareTo(quantityOf(subSampleId)),
+        "the origin gave up 1 g before the creation failed; keeping it committed means the"
+            + " decrement and the creation are not in one transaction, and stock is lost with no"
+            + " sample to show for it");
+  }
+
   private void setQuantityFromAnotherConnection(Long subSampleId, String grams)
       throws SQLException {
     try (Connection other = dataSource.getConnection()) {
@@ -341,6 +421,20 @@ public class StockWriterConcurrencyIT extends RealTransactionSpringTestBase {
   private int deletedFlagOf(String table, Long id) throws SQLException {
     Long flag = scalar("select deleted from " + table + " where id = " + id);
     return flag == null ? 0 : flag.intValue();
+  }
+
+  private BigDecimal quantityOf(Long subSampleId) throws SQLException {
+    try (Connection connection = dataSource.getConnection();
+        Statement statement = connection.createStatement();
+        ResultSet rows =
+            statement.executeQuery(
+                "select quantityNumericValue from SubSample where id = " + subSampleId)) {
+      if (!rows.next()) {
+        return null;
+      }
+      BigDecimal value = rows.getBigDecimal(1);
+      return rows.wasNull() ? null : value;
+    }
   }
 
   private Long scalar(String sql) throws SQLException {
