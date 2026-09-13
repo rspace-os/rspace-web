@@ -25,6 +25,7 @@ import {
 } from "./operationsConfig";
 import {
   amountTakenExceedsOrigin,
+  originBlockedReason,
   quantityExceedsOrigin,
   temperatureBelowMin,
   temperatureExceedsMax,
@@ -359,13 +360,20 @@ function OperationDetailsStep({
     );
   }
 
-  // An origin subsample with no amount (0, or a quantity never set - getValue reads null as 0) cannot
-  // be operated on: block the first step with a clear error (the wizard also disables Next on this).
-  const originHasNoAmount = getValue(origin.quantity) <= 0;
+  // An origin the backend will not accept blocks the first step, and the wizard disables Next on the
+  // same condition. Both reasons are explained: an empty origin, and one whose unit is not an amount
+  // (a molarity or concentration), which used to disable Next with nothing on screen saying why.
+  const blocked = originBlockedReason(origin.quantity);
 
   return (
     <Stack spacing={1}>
-      {originHasNoAmount ? <Alert severity="error">{label("operations.fields.originAmountZero")}</Alert> : null}
+      {blocked ? (
+        <Alert severity="error">
+          {label(
+            blocked === "empty" ? "operations.fields.originAmountZero" : "operations.fields.originCategoryUnsupported",
+          )}
+        </Alert>
+      ) : null}
       {operation.inputs.filter((input) => !amountKeys.has(input.key)).map(renderInput)}
     </Stack>
   );

@@ -1,6 +1,8 @@
 package com.researchspace.service.inventory;
 
 import com.researchspace.api.v1.model.ApiQuantityInfo;
+import com.researchspace.model.record.BaseRecord;
+import com.researchspace.model.record.EditInfo;
 import com.researchspace.model.units.Quantifiable;
 import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.model.units.QuantityUtils;
@@ -85,12 +87,57 @@ public final class InventoryOperationInputValidator {
       }
       boolean isCreatedAmount = input.key().equals(definition.effect().eachAmountFrom());
       switch (String.valueOf(input.type())) {
+        case "text" -> validateTextLength(value.toString(), definition, input, errors);
         case "integer" -> validateBounds(new BigDecimal(value.toString()), input, errors);
         case "quantity" -> validateAmount((Quantifiable) value, input, isCreatedAmount, errors);
         case "temperature" -> validateTemperature((Quantifiable) value, input, errors);
         default -> {}
       }
     }
+  }
+
+  /**
+   * A text input is bounded by the column the built sample stores it in, which the definition
+   * already names: {@code effect().nameFrom()} becomes the sample's name ({@code EditInfo.name},
+   * varchar 255), and the {@code contentFrom} of a {@code textFields[]} or {@code originFields[]}
+   * entry becomes that field's content ({@code EditInfo.description}, varchar 250).
+   *
+   * <p>Without this the name reached the samples validator only after the origins were read, and
+   * came back as {@code newSample.name}, a field no facade caller sent; a field's content reached
+   * the INSERT as a 500 inside the transaction, after the origin locks, because {@code
+   * ExtraTextField.validateNewData} accepts any length. Any other text input (Derive's {@code
+   * processName}, which is interpolated into a generated field NAME rather than stored on its own)
+   * gets the record-name limit as a ceiling; what actually fits that name is the builder's business
+   * (F3).
+   *
+   * <p>The message carries the limit only. Spelling the input key or its type into a user-facing
+   * message would leak a raw config identifier, which {@code
+   * noRejectionSpellsARawConfigIdentifierIntoItsMessage} forbids; the error is already scoped to
+   * the field.
+   */
+  private static void validateTextLength(
+      String value,
+      InventoryOperationConfig definition,
+      InventoryOperationConfig.Input input,
+      Errors errors) {
+    int max =
+        isStoredAsFieldContent(definition, input.key())
+            ? EditInfo.DESCRIPTION_LENGTH
+            : BaseRecord.DEFAULT_VARCHAR_LENGTH;
+    if (value.length() > max) {
+      errors.rejectValue(
+          input.key(),
+          "errors.inventory.operation.inputTooLong",
+          new Object[] {max},
+          "This input is longer than the column it is stored in.");
+    }
+  }
+
+  private static boolean isStoredAsFieldContent(InventoryOperationConfig definition, String key) {
+    return definition.effect().textFields().stream()
+            .anyMatch(field -> key.equals(field.contentFrom()))
+        || definition.effect().originFields().stream()
+            .anyMatch(field -> key.equals(field.contentFrom()));
   }
 
   /**

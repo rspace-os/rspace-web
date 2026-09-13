@@ -73,13 +73,6 @@ class SubSampleApiManagerImplLockTest {
 
   @Test
   void aRowDeletedWhileThisRequestWaitedForTheLockIsAConflict() {
-    // KNOWN FAILURE (backend F4). The entity lockRowForUpdate hands back was loaded before the
-    // wait, so its deleted flag answers from before it; the flag is re-read as a locked scalar and
-    // true means the origin is gone. Today that is an IllegalArgumentException, which
-    // ApiControllerAdvice has no handler for, so a delete that lands while an operation queues for
-    // the row is a 500. The request was valid against the state the client read and the row changed
-    // underneath it: the same shape as the stale-quantity conflict, so the same 409, carrying the
-    // catalog key and the id for the advice to resolve (it formats getMessageKey() with getArgs()).
     SubSample locked = new SubSample();
     when(subSampleDao.lockRowForUpdate(100L)).thenReturn(locked);
     when(subSampleDao.isDeletedForUpdate(100L)).thenReturn(true);

@@ -2,6 +2,7 @@ package com.researchspace.api.v1.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.api.v1.InventoryOperationsApi;
+import com.researchspace.api.v1.model.ApiExtraField;
 import com.researchspace.api.v1.model.ApiInventoryOperationOriginUpdate;
 import com.researchspace.api.v1.model.ApiInventoryOperationPost;
 import com.researchspace.api.v1.model.ApiInventoryOperationRequests;
@@ -15,11 +16,16 @@ import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.service.inventory.InventoryOperationConfig;
 import com.researchspace.service.inventory.InventoryOperationConfigRegistry;
 import com.researchspace.service.inventory.InventoryOperationManager;
+import com.researchspace.service.inventory.InventoryOperationRequestBuilder;
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BeanPropertyBindingResult;
@@ -52,6 +58,23 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
 
   /** Only converts an already-bound Map into a DTO, so it needs none of the API mapper's setup. */
   private static final ObjectMapper MAPPER = new ObjectMapper();
+
+  /**
+   * A generated field on the built sample, by its index in {@code newSample.extraFields}: the
+   * rename has to look the field up to know what the caller sent for it.
+   */
+  private static final Pattern BUILT_FIELD =
+      Pattern.compile("^newSample\\.extraFields\\[(\\d+)\\]\\.");
+
+  /**
+   * The definitions, read for the one lookup {@link #facadeFieldNames} needs: which input a
+   * generated text field's content came from. Held statically because that rename is static (it is
+   * exercised directly by its tests, and the error it renames is raised inside the manager, not
+   * here). It is a second instance of the same immutable registry the container injects below and
+   * cannot diverge from it: both parse the same classpath file, once.
+   */
+  private static final InventoryOperationConfigRegistry DEFINITIONS =
+      new InventoryOperationConfigRegistry();
 
   @Override
   public String getOperationsConfig() {
@@ -261,7 +284,8 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
       renamed.addError(
           new FieldError(
               error.getObjectName(),
-              facadeField(error.getField(), singleOrigin),
+              builtFieldName(core, error.getField(), singleOrigin)
+                  .orElseGet(() -> facadeField(error.getField(), singleOrigin)),
               error.getRejectedValue(),
               error.isBindingFailure(),
               error.getCodes(),
@@ -291,7 +315,78 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
     return renamed
         .replaceFirst("^(origins?(?:\\[\\d+\\])?)\\.id$", "$1.globalId")
         .replaceFirst("^newSample\\.templateId$", "templateId")
-        .replaceFirst("^newSample\\.subSamples\\[\\d+\\]\\.quantity$", "eachAmount");
+        .replaceFirst("^newSample\\.subSamples\\[\\d+\\]\\.quantity$", "eachAmount")
+        .replaceFirst("^newSample\\.name$", "sampleName")
+        .replaceFirst("^newSample\\.storageTemp(?:Min|Max)$", "storageTemp");
+  }
+
+  /**
+   * The caller's name for a generated field the core rejected, or empty if this is not one.
+   *
+   * <p>Every field on the built sample traces to something the caller sent, and the field records
+   * which through its {@code operationFieldKey}: the documentation link to {@code
+   * documentedByGlobalId} (whose target the shared link validation checks for existence and
+   * readability), a text field to the input its definition's {@code contentFrom} names, a
+   * provenance link to the origin it targets. Without this, an unreadable documentation target came
+   * back as {@code newSample.extraFields[2].link.targetGlobalId}: a path with no field the caller
+   * could correct.
+   *
+   * <p>Empty rather than a guess when anything does not resolve (a target not among the origins, a
+   * key no definition declares). The unrenamed path is wrong but truthful; inventing a field name
+   * would not be.
+   */
+  private static Optional<String> builtFieldName(
+      BindingResult core, String field, boolean singleOrigin) {
+    Matcher matcher = BUILT_FIELD.matcher(field);
+    if (!matcher.find() || !(core.getTarget() instanceof ApiInventoryOperationPost request)) {
+      return Optional.empty();
+    }
+    int index = Integer.parseInt(matcher.group(1));
+    if (request.getNewSample() == null || index >= request.getNewSample().getExtraFields().size()) {
+      return Optional.empty();
+    }
+    ApiExtraField built = request.getNewSample().getExtraFields().get(index);
+    String key = built.getOperationFieldKey();
+    if (InventoryOperationRequestBuilder.DOCUMENTATION_LINK_KEY.equals(key)) {
+      return Optional.of("documentedByGlobalId");
+    }
+    Optional<String> input = inputBehindGeneratedField(request.getOperationType(), key);
+    if (input.isPresent()) {
+      return input;
+    }
+    return built.getLink() == null
+        ? Optional.empty()
+        : originNamed(request, built.getLink().getTargetGlobalId(), singleOrigin);
+  }
+
+  /** The input key whose value became this generated field's content, per the definition. */
+  private static Optional<String> inputBehindGeneratedField(String operationType, String fieldKey) {
+    return DEFINITIONS
+        .get(String.valueOf(operationType))
+        .map(InventoryOperationConfig::effect)
+        .flatMap(
+            effect ->
+                Stream.concat(
+                        effect.textFields().stream()
+                            .filter(spec -> spec.nameKey().equals(fieldKey))
+                            .map(InventoryOperationConfig.TextField::contentFrom),
+                        effect.originFields().stream()
+                            .filter(spec -> spec.nameKey().equals(fieldKey))
+                            .map(InventoryOperationConfig.OriginField::contentFrom))
+                    .findFirst());
+  }
+
+  /** The caller's path for the origin a provenance link points at. */
+  private static Optional<String> originNamed(
+      ApiInventoryOperationPost request, String targetGlobalId, boolean singleOrigin) {
+    List<ApiInventoryOperationOriginUpdate> origins = request.getOrigins();
+    for (int i = 0; i < origins.size(); i++) {
+      Long id = origins.get(i).getId();
+      if (id != null && ("SS" + id).equals(targetGlobalId)) {
+        return Optional.of(singleOrigin ? "origin" : "origins[" + i + "]");
+      }
+    }
+    return Optional.empty();
   }
 
   /**

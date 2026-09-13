@@ -1,6 +1,8 @@
 package com.researchspace.webapp.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -35,6 +37,7 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.stoichiometry.MoleculeRole;
 import com.researchspace.service.ChemicalImportException;
 import com.researchspace.service.ChemicalSearcher;
+import com.researchspace.service.StoichiometryInventoryLinkManager;
 import com.researchspace.service.StoichiometryManager;
 import com.researchspace.service.StoichiometryService;
 import com.researchspace.service.chemistry.ChemistryProvider;
@@ -42,6 +45,10 @@ import com.researchspace.testutils.RSpaceTestUtils;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.security.Principal;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -58,6 +65,7 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.util.AopTestUtils;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.transaction.UnexpectedRollbackException;
 
 /**
  * Concurrency coverage for Stoichiometry stock deduction, split out of {@code
@@ -77,6 +85,7 @@ public class StoichiometryStockDeductionMVCIT extends API_MVC_InventoryTestBase 
 
   private @Autowired StoichiometryService stoichiometryService;
   private @Autowired StoichiometryManager stoichiometryManager;
+  private @Autowired StoichiometryInventoryLinkManager inventoryLinkManager;
 
   private Principal principal;
   private User user;
@@ -216,6 +225,116 @@ public class StoichiometryStockDeductionMVCIT extends API_MVC_InventoryTestBase 
                 + firstRemaining
                 + " + "
                 + secondRemaining);
+  }
+
+  /**
+   * W4 x M2 of the stock-write concurrency matrix: a stoichiometry deduction must inherit the
+   * refusal when the subsample it deducts from was soft-deleted while the request queued.
+   *
+   * <p>{@code processStockDeduction} reaches the row through {@code lockSubSampleForEdit} and then
+   * {@code registerApiSubSampleUsage}, so the guard is the shared writer's, not its own. That
+   * inheritance is incidental until it is asserted, which is what this test is for: a future change
+   * giving stoichiometry its own decrement path has to fail here rather than quietly take stock
+   * from a deleted record.
+   *
+   * <p>Deliberately NOT two concurrent HTTP requests. A race only exercises the defect when the
+   * second party commits between the first's load and its write, and reports green when they
+   * serialise. So the competing delete is committed on a raw second connection at exactly that
+   * point, and {@code deductStock} is called directly rather than through MockMvc, which is the
+   * shape the rest of the matrix uses ({@code StockWriterConcurrencyIT}). The fixture is here
+   * because the chemistry stubbing it needs is here.
+   */
+  @Test
+  public void aDeductionIsRefusedWhenTheSubSampleWasDeletedWhileThisRequestQueued()
+      throws Exception {
+    MvcResult sampleResult =
+        mockMvc
+            .perform(
+                createBuilderForPostWithJSONBody(
+                    apiKey,
+                    "/samples",
+                    user,
+                    "{\"name\":\"stoich deleted"
+                        + " origin\",\"subSamples\":[{\"quantity\":{\"numericValue\":5,\"unitId\":7}}]}"))
+            .andExpect(status().isCreated())
+            .andReturn();
+    ApiSampleWithFullSubSamples sample =
+        getFromJsonResponseBody(sampleResult, ApiSampleWithFullSubSamples.class);
+    long subSampleId = sample.getSubSamples().get(0).getId();
+    StockDeductionRequest deduction =
+        stoichiometryDeducting(
+            sample.getSubSamples().get(0).getGlobalId(), "stoich deleted origin");
+
+    openTransaction();
+    StockDeductionResult result = null;
+    try {
+      // Loads the entity into THIS session, so its cached deleted flag says false.
+      subSampleApiMgr.getApiSubSampleById(subSampleId, user);
+      softDeleteFromAnotherConnection(subSampleId);
+      result =
+          inventoryLinkManager.deductStock(
+              deduction.getStoichiometryId(), deduction.getLinkIds(), user);
+    } finally {
+      // deductStock records the refusal as a per-link failure rather than rethrowing it, but the
+      // refusal crossed a proxied transaction boundary (lockSubSampleForEdit is its own advised
+      // bean) on the way out, and Spring marks the shared transaction rollback-only for any
+      // RuntimeException that leaves an advised method. So the commit reports the rollback rather
+      // than succeeding. That is pre-existing and not specific to this refusal: it was the same
+      // when the deleted-row check threw IllegalArgumentException. Swallowed rather than asserted,
+      // so that a regression in the refusal fails on ITS assertions below rather than here.
+      try {
+        commitTransaction();
+      } catch (UnexpectedRollbackException rolledBackByTheRefusal) {
+        // expected; see above
+      }
+    }
+    assertNotNull(result, "deductStock must answer with a result rather than throwing");
+    StockDeductionResult.IndividualResult deducted = result.getResults().get(0);
+
+    assertFalse(
+        deducted.isSuccess(),
+        () ->
+            "a deduction from a subsample deleted while this request queued must be refused, got "
+                + deducted);
+    assertEquals(
+        1,
+        deletedFlagOf(subSampleId),
+        "the deleted subsample must still be deleted: a full-row write from the pre-lock snapshot"
+            + " would resurrect it");
+    assertEquals(
+        0,
+        new BigDecimal("5").compareTo(quantityFromAnotherConnection(subSampleId)),
+        "no stock may be taken from a deleted subsample");
+  }
+
+  private void softDeleteFromAnotherConnection(long subSampleId) throws SQLException {
+    try (Connection other = dataSource.getConnection()) {
+      other.setAutoCommit(true);
+      try (Statement statement = other.createStatement()) {
+        statement.executeUpdate("update SubSample set deleted = 1 where id = " + subSampleId);
+      }
+    }
+  }
+
+  private int deletedFlagOf(long subSampleId) throws SQLException {
+    try (Connection connection = dataSource.getConnection();
+        Statement statement = connection.createStatement();
+        ResultSet rows =
+            statement.executeQuery("select deleted from SubSample where id = " + subSampleId)) {
+      rows.next();
+      return rows.getInt(1);
+    }
+  }
+
+  private BigDecimal quantityFromAnotherConnection(long subSampleId) throws SQLException {
+    try (Connection connection = dataSource.getConnection();
+        Statement statement = connection.createStatement();
+        ResultSet rows =
+            statement.executeQuery(
+                "select quantityNumericValue from SubSample where id = " + subSampleId)) {
+      rows.next();
+      return rows.getBigDecimal(1);
+    }
   }
 
   /**

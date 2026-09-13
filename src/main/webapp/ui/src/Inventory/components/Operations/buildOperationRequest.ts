@@ -19,6 +19,7 @@
  * null and only the origins are affected.
  */
 import type { InventoryOperation } from "./operationsConfig";
+import { usesAmountModes } from "./operationsConfig";
 import type {
   AmountMode,
   OperationExtraField,
@@ -141,7 +142,11 @@ function buildOriginUpdates(params: BuildParams): Array<OperationOriginUpdate> {
   // amount against the live quantity, so a "take all" built from a stale wizard load is rejected as
   // a 409 instead of emptying an origin someone else has since topped up. "same" and "perSubsample"
   // amounts are user-entered, so they are "explicit" and carry no such claim.
-  const takesWholeOrigin = effect.emptiesOrigin || amountMode === "all";
+  // The mode is only honoured for an operation that OFFERS it: only a multi-origin operation that
+  // takes an amount ever shows the modes, but the wizard restores a stored bundle's amountMode for
+  // every operation, so a stale or hand-edited single-origin bundle carrying "all" would empty the
+  // origin while the summary still showed the typed amount (BUG-2).
+  const takesWholeOrigin = effect.emptiesOrigin || (amountMode === "all" && usesAmountModes(operation));
 
   // The amount to take from a given origin (DevDocs/adr/0007):
   // - `emptiesOrigin` (Destroy) and the runtime "take all" mode both take the origin's own full

@@ -7,6 +7,7 @@ import { InEnglish } from "@/__tests__/realI18n";
 import appTheme from "@/theme";
 import OperationConfirmation from "../OperationConfirmation";
 import type { InventoryOperation } from "../operationsConfig";
+import type { OriginBlockedReason } from "../operationValidation";
 import type { TemplateSelection } from "../TemplateStep";
 import type { OperationInputs } from "../types";
 import { operations } from "./testOperations";
@@ -42,7 +43,7 @@ const renderConf = (overrides: {
   documentation?: { globalId: string; name: string } | null;
   op?: InventoryOperation;
   values?: OperationInputs;
-  originHasAmount?: boolean;
+  originBlocked?: OriginBlockedReason | null;
   remember?: boolean;
   onRememberChange?: (remember: boolean) => void;
 }) =>
@@ -56,7 +57,7 @@ const renderConf = (overrides: {
         templateSelection={overrides.templateSelection}
         originSampleName="S1"
         originName="S1.01"
-        originHasAmount={overrides.originHasAmount ?? true}
+        originBlocked={overrides.originBlocked ?? null}
         remember={overrides.remember ?? false}
         onRememberChange={overrides.onRememberChange}
       />
@@ -270,8 +271,6 @@ describe("OperationConfirmation", () => {
     expect(screen.queryByText(/confirm\.values\.amountTaken$/)).not.toBeInTheDocument();
   });
 
-  // KNOWN FAILURE (BUG-3): the card title is `String(values[effect.nameFrom])`, so an absent name
-  // renders the literal word "undefined"; the process-name row beside it guards with `?? ""`.
   it("does not render the literal 'undefined' as the title when the sample name is absent", () => {
     renderConf({
       values: omit(values, ["sampleName"]),
@@ -316,7 +315,7 @@ describe("OperationConfirmation", () => {
     renderConf({
       op: destroyOp,
       values: {},
-      originHasAmount: false,
+      originBlocked: "empty",
       templateSelection: { mode: "none", templateId: null, remember: false },
     });
     expect(screen.getByText(/fields\.originAmountZero/)).toBeInTheDocument();

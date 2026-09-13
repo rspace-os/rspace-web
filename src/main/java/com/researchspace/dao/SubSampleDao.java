@@ -82,4 +82,26 @@ public interface SubSampleDao extends GenericDao<SubSample, Long> {
    *     404-check the subsample first
    */
   Long getVersionForUpdate(Long subSampleId);
+
+  /**
+   * Reconciles the given entity's parent location with the one committed on its row, read under a
+   * lock.
+   *
+   * <p>{@code parentLocation} is a to-one whose foreign key is a COLUMN on the SubSample row, so
+   * the full-row UPDATE that makes a stock decrement land (see {@code SampleDynamicUpdateIT}) also
+   * writes it, from the snapshot the caller loaded before taking any lock. A move committed in
+   * between drops the vacated {@code ContainerLocation} row, so writing the stale foreign key back
+   * fails the constraint and takes the whole decrement down; without the constraint it would put
+   * the subsample back in the container it was moved out of.
+   *
+   * <p>That is not the field-level last-write-wins {@code GenericDao.lockRowForUpdate} documents
+   * and DevDocs/adr/0007 accepts. A reverted name is a stale value; a reverted location is a
+   * physical record in the wrong place. So the column is reconciled with the locked row, exactly as
+   * the quantity and the version are, and for the same reason.
+   *
+   * <p>PRECONDITION: the row is already locked and the entity is not yet dirty. This runs an HQL
+   * query against the SubSample table, and Hibernate's AUTO flush mode would flush pending changes
+   * to that table first, writing the row from the snapshot this call exists to correct.
+   */
+  void refreshParentLocationFromLockedRow(SubSample subSample);
 }
