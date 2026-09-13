@@ -161,4 +161,13 @@ public class SubSampleDaoHibernateImpl extends InventoryDaoHibernate<SubSample, 
         .setLockMode(LockModeType.PESSIMISTIC_WRITE)
         .uniqueResult();
   }
+
+  @Override
+  public Boolean isDeletedForUpdate(Long subSampleId) {
+    return getSession()
+        .createQuery("select ss.deleted from SubSample ss where ss.id = :id", Boolean.class)
+        .setParameter("id", subSampleId)
+        .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+        .uniqueResult();
+  }
 }
