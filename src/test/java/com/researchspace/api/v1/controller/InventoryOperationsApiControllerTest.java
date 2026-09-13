@@ -183,7 +183,7 @@ class InventoryOperationsApiControllerTest {
     ApiInventoryOperationRequests.Aliquot request = new ApiInventoryOperationRequests.Aliquot();
     request.setOrigin(facadeOrigin("SS100", millilitres("0.6")));
     request.setSampleName("Aliquots");
-    request.setCount(2);
+    request.setCount(java.math.BigDecimal.valueOf(2));
     request.setEachAmount(millilitres("0.5"));
     return request;
   }
