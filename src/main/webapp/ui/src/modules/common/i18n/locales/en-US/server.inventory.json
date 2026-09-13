@@ -241,6 +241,7 @@
         "unsupportedLinkTarget": "{0} is a sample template. Only Containers, Samples and Subsamples are valid for linking."
       },
       "subsample": {
+        "deletedSinceLoaded": "Subsample {0} was deleted and can no longer be edited.",
         "notFound": "No subsample with id: {0}",
         "unitIncompatibleWithSample": "Subsample quantity ''{0}'' is incompatible with quantity unit used by parent sample ({1})"
       },
