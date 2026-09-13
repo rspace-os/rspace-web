@@ -155,10 +155,31 @@ type TemplateFieldsLike = {
   fields: ReadonlyArray<{
     name: string;
     mandatory: boolean;
+    type?: string;
     content?: unknown;
+    link?: { targetGlobalId?: string | null } | null;
     selectedOptions?: ReadonlyArray<unknown> | null;
   }>;
 };
+
+/**
+ * Whether a template field carries a default value the wizard can submit as it stands.
+ *
+ * Field-type-aware, because the value does not live in the same place for every type. A LINK
+ * field's default is its `link.targetGlobalId`; its data column is unused and always empty, so a
+ * content-only rule marked every populated mandatory link as missing and left Next disabled for a
+ * template the server accepts - ApiFieldsHelper.validateMandatoryFieldsForEntityPost reads the link
+ * target, and InventoryLinkField.shallowCopy carries the populated default into the new sample
+ * (Codex review, PR #1090).
+ *
+ * Blank counts as absent, for content and for a link target alike, matching the server's own rule
+ * (InventoryEntityField.isValidValueForMandatoryField, StringUtils.isNotBlank).
+ */
+function fieldHasDefault(field: TemplateFieldsLike["fields"][number]): boolean {
+  if ((field.selectedOptions?.length ?? 0) > 0) return true;
+  if (field.type === "link") return (field.link?.targetGlobalId ?? "").trim() !== "";
+  return field.content !== null && field.content !== undefined && String(field.content).trim() !== "";
+}
 
 /**
  * Whether a template is usable by the wizard, with the arguments its rejection message needs.
@@ -181,9 +202,7 @@ export function templateBlockReason(
     template.fields.map((f) => ({
       name: f.name,
       mandatory: f.mandatory,
-      hasDefault:
-        (f.selectedOptions?.length ?? 0) > 0 ||
-        (f.content !== null && f.content !== undefined && String(f.content).trim() !== ""),
+      hasDefault: fieldHasDefault(f),
     })),
   );
   return { blocked, count: missingFields.length, fields: formatList(missingFields, language) };

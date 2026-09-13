@@ -193,6 +193,7 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
 
     try {
       dbSubSample = getIfExists(dbSubSample.getId());
+      reconcileWithCommittedRow(dbSubSample, user);
       Container orgParent = dbSubSample.getParentContainer();
       boolean contentChanged =
           extraFieldHelper.createDeleteRequestedExtraFieldsInDatabaseSubSample(
@@ -386,6 +387,38 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
     }
 
     return getPopulatedApiSubSampleFull(dbSubSample, user);
+  }
+
+  /**
+   * Adopts the columns of this row that another transaction may have committed since this one
+   * loaded it, before anything dirties the entity.
+   *
+   * <p>An edit ends in a full-row UPDATE written from the pre-lock snapshot, so every column it did
+   * not set is put back as it was read. For the name that is the field-level last-write-wins {@code
+   * GenericDao.lockRowForUpdate} documents and DevDocs/adr/0007 accepts. For the QUANTITY it is
+   * not: a decrement that committed while this edit was in flight is silently reverted, so the
+   * stock reappears with material already made from it and both requests report success. That is
+   * live-run finding F1b (2026-09-13) - an aliquot took 4 g from a 10 g origin, a rename 300 ms
+   * later returned 200, and the origin was still 10 g - and the same run's C13, where the competing
+   * edit was a move, which is also this method.
+   *
+   * <p>The version and the parent location are reconciled for the reasons {@link
+   * #registerApiSubSampleUsage} spells out: reusing a version number makes the state the earlier
+   * one labelled unaddressable, and a stale location foreign key refiles the record where it is not
+   * or fails the constraint outright.
+   *
+   * <p>Order matters, as it does there. Both scalar reads and the location reconcile are queries
+   * against the SubSample table, and Hibernate's AUTO flush mode flushes pending changes to a
+   * query's tables before running it: a dirty entity here would be written from the snapshot this
+   * call exists to correct, and the queries would then read back what this transaction just wrote.
+   */
+  private void reconcileWithCommittedRow(SubSample dbSubSample, User user) {
+    lockSubSampleForEdit(dbSubSample.getId(), user);
+    QuantityInfo committedQuantity = subSampleDao.getQuantityForUpdate(dbSubSample.getId());
+    Long committedVersion = subSampleDao.getVersionForUpdate(dbSubSample.getId());
+    subSampleDao.refreshParentLocationFromLockedRow(dbSubSample);
+    dbSubSample.refreshQuantityFromLockedRow(committedQuantity);
+    dbSubSample.refreshVersionFromLockedRow(committedVersion);
   }
 
   private void registerSubSampleModification(User user, SubSample dbSubSample) {
