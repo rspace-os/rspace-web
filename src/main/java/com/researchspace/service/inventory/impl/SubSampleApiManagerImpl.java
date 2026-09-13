@@ -105,6 +105,19 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
           messages.getMessage("errors.inventory.subsample.notFound", new Object[] {id}));
     }
     invPermissions.assertUserCanEditInventoryRecord(subSample, user);
+    // That assertion includes an isDeleted() check, but it asks the ENTITY, which callers loaded
+    // before taking any lock and which lockRowForUpdate hands straight back: it answers from before
+    // the wait. A soft delete keeps the row and its quantity, so a delete committed while this
+    // request queued is invisible to every other check on this path - the decrement proceeds and
+    // the
+    // full-row write puts deleted = false back, resurrecting the record while creating material
+    // from
+    // it. So the flag is read as a scalar under the lock, exactly as the quantity and version below
+    // are, and for the same reason (Codex review, P1).
+    if (Boolean.TRUE.equals(subSampleDao.isDeletedForUpdate(id))) {
+      throw new IllegalArgumentException(
+          messages.getMessage("errors.inventory.subsample.deletedSinceLoaded", new Object[] {id}));
+    }
     return subSample;
   }
 
