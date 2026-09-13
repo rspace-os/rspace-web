@@ -9,8 +9,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Immutable description of the fields and default ordering shared by a collection's adapters.
@@ -37,6 +35,10 @@ public final class CollectionDescription<T> {
   private final String idField;
   private final List<Sort> defaultSort;
   private final AccessPolicy accessPolicy;
+  private final CollectionEntityMapper<T> entityMapper;
+  private final CollectionAccessEvaluator<T> accessEvaluator;
+  private final CollectionSchemaBuilder<T> schemaBuilder;
+  private final CollectionValueReader<T> valueReader;
 
   /**
    * Describes a collection whose every operation requires an authenticated caller.
@@ -180,6 +182,24 @@ public final class CollectionDescription<T> {
     if (!sorted.contains(this.idField)) {
       throw new IllegalArgumentException("Default sort must include the ID field");
     }
+
+    Map<String, FilterSelector<T>> allSelectors = new LinkedHashMap<>(filterSelectors);
+    allSelectors.putAll(internalFilterSelectors);
+    this.entityMapper = new CollectionEntityMapper<>(fields, this.idField);
+    this.accessEvaluator =
+        new CollectionAccessEvaluator<>(
+            this.fields, this.relationships, filterSelectors, this.idField);
+    this.schemaBuilder =
+        new CollectionSchemaBuilder<>(
+            this.resourceName,
+            this.entityType,
+            this.fields,
+            this.relationships,
+            this.filterSelectors,
+            this.idField,
+            this.defaultSort,
+            this.accessPolicy);
+    this.valueReader = new CollectionValueReader<>(this.fields, allSelectors);
   }
 
   /** Describes an annotated resource whose every operation requires an authenticated caller. */
@@ -335,37 +355,23 @@ public final class CollectionDescription<T> {
 
   /** Reads an entity into an ordered API document containing every described field. */
   public Map<String, Object> toDocument(T entity) {
-    return toDocument(entity, field -> true);
+    return entityMapper.toDocument(entity);
   }
 
   /** Reads only selected fields, avoiding work for fields omitted from the response. */
   public Map<String, Object> toDocument(T entity, Predicate<String> selection) {
-    return toDocument(entity, selection, Map.of());
+    return entityMapper.toDocument(entity, selection);
   }
 
   /** Reads selected fields, substituting caller-specific values before their readers run. */
   public Map<String, Object> toDocument(
       T entity, Predicate<String> selection, Map<String, Object> readOverrides) {
-    Objects.requireNonNull(entity, "Entity");
-    Objects.requireNonNull(selection, "Selection");
-    Objects.requireNonNull(readOverrides, "Read overrides");
-    Map<String, Object> document = new LinkedHashMap<>();
-    fields.values().stream()
-        .filter(field -> selection.test(field.name()))
-        .forEach(
-            field ->
-                document.put(
-                    field.name(),
-                    readOverrides.containsKey(field.name())
-                        ? readOverrides.get(field.name())
-                        : field.documentValue(entity)));
-    return document;
+    return entityMapper.toDocument(entity, selection, readOverrides);
   }
 
   /** Returns the serialized identifier value used for row-specific access decisions. */
   public Object idValue(T entity) {
-    Objects.requireNonNull(entity, "Entity");
-    return requireField(idField).documentValue(entity);
+    return entityMapper.idValue(entity);
   }
 
   /** Applies parsed values in description order for deterministic setter behavior. */
@@ -376,12 +382,7 @@ public final class CollectionDescription<T> {
 
   /** Applies typed values in description order for deterministic setter behavior. */
   public void apply(T entity, Map<String, Object> values, WriteOperation operation) {
-    Objects.requireNonNull(entity, "Entity");
-    Objects.requireNonNull(values, "Values");
-    values.forEach((name, value) -> requireWritableField(name, operation).validateValue(value));
-    fields.values().stream()
-        .filter(field -> field.writableOn(operation) && values.containsKey(field.name()))
-        .forEach(field -> field.write(entity, values.get(field.name())));
+    entityMapper.apply(entity, values, operation);
   }
 
   public List<Field<T, ?>> fields() {
@@ -392,6 +393,14 @@ public final class CollectionDescription<T> {
     return accessPolicy;
   }
 
+  static AccessDocumentation documented(AccessFunction function) {
+    return CollectionSchemaBuilder.documented(function);
+  }
+
+  static AccessDocumentation documented(AccessFunction function, AccessFunction inheritedFunction) {
+    return CollectionSchemaBuilder.documented(function, inheritedFunction);
+  }
+
   /**
    * Whether {@code field} may be read at all in this request.
    *
@@ -400,92 +409,20 @@ public final class CollectionDescription<T> {
    * and rejected as a {@code where}/{@code sort} target.
    */
   public boolean fieldReadable(String field, AccessContext context) {
-    Field<T, ?> described = fields.get(field);
-    if (described != null) {
-      return idField.equals(field) || described.readAccess().allowsField(context);
-    }
-    Relationship<T> relationship = relationships.get(field);
-    if (relationship != null) {
-      return relationship.readAccess().allowsField(context);
-    }
-    FilterSelector<T> selector = filterSelectors.get(field);
-    if (selector instanceof FilterSelector.RelationshipPart<?> relationshipPart) {
-      return relationshipPart.relationship().readAccess().allowsField(context);
-    }
-    return false;
+    return accessEvaluator.fieldReadable(field, context);
   }
 
   /** Field names this request may not read, for narrowing a {@link FieldSelection}. */
   public Set<String> unreadableFields(AccessContext context) {
-    return Stream.concat(fields.keySet().stream(), relationships.keySet().stream())
-        .filter(name -> !fieldReadable(name, context))
-        .collect(Collectors.toCollection(LinkedHashSet::new));
+    return accessEvaluator.unreadableFields(context);
   }
 
   public ResourceSchema schema() {
-    return new ResourceSchema(
-        resourceName,
-        entityType,
-        idField,
-        fields.values().stream().map(field -> field.schema(accessPolicy)).toList(),
-        relationships.values().stream()
-            .map(
-                relationship ->
-                    new RelationshipSchema(
-                        relationship.name(),
-                        relationship.targets().stream()
-                            .map(RelationshipTarget::resourceName)
-                            .toList(),
-                        globalIdPrefixesByTarget(relationship.targets()),
-                        relationship.isRequiredOnCreate(),
-                        relationship.nullable(),
-                        !relationship.writableOn(WriteOperation.CREATE)
-                            && !relationship.writableOn(WriteOperation.UPDATE),
-                        relationship.writeOperations,
-                        relationship.inputForms,
-                        relationship.selfReferenceAllowed(),
-                        relationship.openApi,
-                        documented(relationship.readAccess, accessPolicy.readAccess()),
-                        documented(relationship.writeAccess, accessPolicy.createAccess()),
-                        documented(relationship.writeAccess, accessPolicy.updateAccess())))
-            .toList(),
-        filterSelectors.values().stream()
-            .map(
-                selector ->
-                    new FilterSchema(
-                        selector.name(), selector.operators(), selector.supportsWildcards()))
-            .toList(),
-        defaultSort,
-        new AccessPolicySchema(
-            documented(accessPolicy.readAccess()),
-            documented(accessPolicy.createAccess()),
-            documented(accessPolicy.updateAccess()),
-            documented(accessPolicy.deleteAccess()),
-            documented(accessPolicy.softDeleteAccess())));
-  }
-
-  private static Map<String, String> globalIdPrefixesByTarget(List<RelationshipTarget<?>> targets) {
-    Map<String, String> prefixes = new LinkedHashMap<>();
-    targets.stream()
-        .filter(target -> target.globalIdPrefix() != null)
-        .forEach(target -> prefixes.put(target.resourceName(), target.globalIdPrefix()));
-    return Collections.unmodifiableMap(prefixes);
-  }
-
-  static AccessDocumentation documented(AccessFunction function) {
-    return function
-        .documentation()
-        .orElseThrow(() -> new IllegalStateException("Access function is not documented"));
-  }
-
-  static AccessDocumentation documented(AccessFunction function, AccessFunction inheritedFunction) {
-    return function == AccessFunction.INHERITED
-        ? documented(inheritedFunction)
-        : documented(function);
+    return schemaBuilder.build();
   }
 
   Object readRelationship(T entity, Relationship<T> relationship) {
-    return relationship.read(entity);
+    return entityMapper.readRelationship(entity, relationship);
   }
 
   /**
@@ -501,53 +438,15 @@ public final class CollectionDescription<T> {
    * read it.
    */
   public Optional<Object> relationshipTargetId(T entity, Relationship<T> relationship) {
-    Object value = readRelationship(entity, relationship);
-    return value instanceof ResourceReference<?, ?> reference
-        ? Optional.ofNullable(reference.id())
-        : Optional.empty();
+    return entityMapper.relationshipTargetId(entity, relationship);
   }
 
   Object readFilterValue(T entity, String selectorName) {
-    FilterSelector<T> selector = requireFilterSelector(selectorName);
-    // Covers every permitted FilterSelector. Java 17 has no pattern switch, so a new selector kind
-    // fails here explicitly rather than through a cast that breaks only when a caller filters on
-    // it.
-    if (selector instanceof FilterSelector.Property<T> property) {
-      Field<T, ?> field = fields.get(property.name());
-      if (field == null) {
-        // An internal filter has no reader, so only a database query can evaluate it.
-        throw new IllegalStateException(
-            "Internal filter " + property.name() + " cannot be evaluated in memory");
-      }
-      return field.reader.apply(entity);
-    }
-    if (selector instanceof FilterSelector.RelationshipPart<T> part) {
-      return readRelationshipValue(entity, part);
-    }
-    if (selector instanceof FilterSelector.RuntimeField<T> runtime) {
-      throw new IllegalStateException(
-          "Runtime field " + runtime.name() + " cannot be evaluated in memory");
-    }
-    throw new IllegalStateException("Unsupported filter selector " + selector.getClass());
-  }
-
-  private Object readRelationshipValue(T entity, FilterSelector.RelationshipPart<T> selector) {
-    Object value = selector.readRelationship(entity);
-    if (value == null) {
-      return null;
-    }
-    if (!(value instanceof ResourceReference<?, ?> reference)) {
-      throw new IllegalStateException("Relationship filter requires a resource reference");
-    }
-    return switch (selector.part()) {
-      case ROOT -> reference;
-      case KIND -> reference.kind();
-      case ID -> reference.id();
-    };
+    return valueReader.readFilterValue(entity, selectorName);
   }
 
   Object readSortValue(T entity, String fieldName) {
-    return requireField(fieldName).reader.apply(entity);
+    return valueReader.readSortValue(entity, fieldName);
   }
 
   static String requireText(String value, String label) {
