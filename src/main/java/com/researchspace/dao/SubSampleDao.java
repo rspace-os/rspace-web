@@ -57,6 +57,21 @@ public interface SubSampleDao extends GenericDao<SubSample, Long> {
   QuantityInfo getQuantityForUpdate(Long subSampleId);
 
   /**
+   * Whether the subsample is soft-deleted, read with a row lock ({@code SELECT ... FOR UPDATE}) so
+   * it is the committed value rather than the transaction's snapshot.
+   *
+   * <p>A scalar for the same reason as {@link #getQuantityForUpdate}: a caller loads the subsample
+   * before taking any lock, and {@code lockRowForUpdate} then hands back that same managed
+   * instance, so an {@code isDeleted()} asked of the entity answers from before the wait. A soft
+   * delete keeps the row and its quantity, so nothing else on this path notices one that landed in
+   * between: the decrement proceeds and the full-row write puts {@code deleted = false} back,
+   * resurrecting the record while creating material from it (Codex review, P1).
+   *
+   * @return the committed flag, or null when no row has that id
+   */
+  Boolean isDeletedForUpdate(Long subSampleId);
+
+  /**
    * One subsample's user-facing version, read with a row lock ({@code SELECT ... FOR UPDATE}) so it
    * is the committed value rather than the transaction's snapshot. A scalar for the same reason as
    * {@link #getQuantityForUpdate}: two operations can both load the entity at version N before
