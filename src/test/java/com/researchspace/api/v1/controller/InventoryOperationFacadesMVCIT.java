@@ -308,6 +308,29 @@ public class InventoryOperationFacadesMVCIT extends API_MVC_InventoryTestBase {
   }
 
   @Test
+  public void aPerSubsampleAmountWhoseTotalTheColumnCannotHoldIsRejected() throws Exception {
+    // Each of the two children fits the DECIMAL(19,3) quantity column on its own; the parent total
+    // the created sample recalculates from them does not. That recompute happens during
+    // persistence, so the request passed validation, reached the origin locks, and then failed
+    // inside the transaction as a 500 (Codex review, PR #1090).
+    ApiSubSample origin = origin();
+    List<String> errors =
+        errorsOf(
+            post(
+                "passage",
+                "{\"origin\":"
+                    + originJson(origin, null)
+                    + ",\"sampleName\":\"Overflowing\",\"count\":2,\"eachAmount\":"
+                    + q("6E+15", GRAM)
+                    + "}",
+                400));
+    assertTrue(
+        errors.stream().anyMatch(message -> message.startsWith("eachAmount:")),
+        () -> "expected eachAmount, got " + errors);
+    assertUnchanged(origin);
+  }
+
+  @Test
   public void anUnreadableDocumentationTargetNamesTheFieldTheCallerSent() throws Exception {
     // Resolved only while the built sample's link was created, deep in the transaction, this came
     // back as a bare 422 with no field path on it (live test 2026-09-13, F4).
