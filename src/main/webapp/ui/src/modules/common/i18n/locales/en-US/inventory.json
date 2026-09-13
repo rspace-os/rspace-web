@@ -1749,6 +1749,7 @@
       "cryomedium": "Cryomedium",
       "eachAmount": "Amount per new subsample",
       "originAmountZero": "Subsample has an amount of 0.",
+      "originCategoryUnsupported": "This subsample's quantity is not an amount (volume, mass or count), so no operation can take from it.",
       "processName": "Process name",
       "processNameRequired": "Enter a process name first.",
       "rememberProcessValues": "Remember values for this process: {name}",

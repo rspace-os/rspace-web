@@ -4012,6 +4012,7 @@ export default interface Resources {
         "cryomedium": "Cryomedium",
         "eachAmount": "Amount per new subsample",
         "originAmountZero": "Subsample has an amount of 0.",
+        "originCategoryUnsupported": "This subsample's quantity is not an amount (volume, mass or count), so no operation can take from it.",
         "processName": "Process name",
         "processNameRequired": "Enter a process name first.",
         "rememberProcessValues": "Remember values for this process: {name}",
@@ -6980,7 +6981,8 @@ export default interface Resources {
           "descriptionTooLong": "Description cannot be longer than 255 chars",
           "elnFieldIdRequired": "elnFieldId cannot be null",
           "nameRequired": "name cannot be empty",
-          "nameTooLong": "Name cannot be longer than 255 chars"
+          "nameTooLong": "Name cannot be longer than 255 chars",
+          "tooManyMaterials": "A list of materials accepts at most {max} materials."
         },
         "location": {
           "outsideGridDimensions": "Location ({0},{1}) is outside container grid dimensions (columns: {2}, rows: {3}).",
@@ -7012,12 +7014,15 @@ export default interface Resources {
           "amountTakenStale": "The subsample's quantity changed since it was read; reload and retry.",
           "amountTakenTooPrecise": "The amount taken supports at most 3 decimal places.",
           "amountTakenZero": "This operation does not take from its origins, so the amount taken must be zero.",
+          "createdAmountNotPositive": "Each created subsample must be given a quantity greater than zero.",
           "documentationLinkTargetInvalid": "A documentation link must target an ELN document, notebook or Gallery file.",
           "duplicateOrigin": "An origin subsample may appear at most once in an operation.",
+          "expectedQuantityInvalid": "The expected quantity must be a non-negative amount, with a unit.",
           "inputAboveMaximum": "Must be at most {0}.",
           "inputBelowMinimum": "Must be at least {0}.",
-          "inputNotStorable": "[{0}] supports at most 3 decimal places.",
+          "inputNotStorable": "Supports at most 3 decimal places.",
           "inputRequired": "Required by this operation.",
+          "inputTooLong": "This input supports at most {0} characters.",
           "inputWrongType": "Not the type this operation expects.",
           "mustEmptyOrigin": "This operation must take the origin's entire remaining quantity.",
           "operationTypeRequired": "An operation type is required.",
@@ -7032,6 +7037,7 @@ export default interface Resources {
           "storageTempAboveMax": "The storage temperature must be at most {0}°C for this operation.",
           "storageTempBelowMin": "The storage temperature must be at least {0}°C for this operation.",
           "subSampleCategoryMismatch": "Each new subsample must use the origin's measurement category (e.g. all volume or all mass).",
+          "tooManyInputs": "An operation request accepts at most {max} inputs.",
           "tooManyOrigins": "This operation accepts at most {max} origin subsamples.",
           "unknownType": "Unknown operation type [{0}]."
         },
@@ -7083,6 +7089,7 @@ export default interface Resources {
           "unsupportedLinkTarget": "{0} is a sample template. Only Containers, Samples and Subsamples are valid for linking."
         },
         "subsample": {
+          "deletedSinceLoaded": "Subsample {0} was deleted and can no longer be edited.",
           "notFound": "No subsample with id: {0}",
           "unitIncompatibleWithSample": "Subsample quantity ''{0}'' is incompatible with quantity unit used by parent sample ({1})"
         },

@@ -1467,7 +1467,6 @@ class InventoryOperationManagerImplTest {
    */
   @Test
   void aSampleNameLongerThanTheRecordNameLimitIsRejectedOnSampleNameBeforeAnyRead() {
-    // KNOWN FAILURE (backend F2)
     Throwable thrown =
         assertThrows(
             Throwable.class,
@@ -1493,8 +1492,6 @@ class InventoryOperationManagerImplTest {
 
   @Test
   void aCryomediumLongerThanTheFieldContentLimitIsRejectedOnCryomediumBeforeAnyRead() {
-    // KNOWN FAILURE (backend F2): ExtraTextField.validateNewData accepts any length, so 251
-    // characters reach the varchar(250) INSERT as a 500 inside the transaction.
     java.util.Map<String, Object> inputs = creatingInputs("Frozen", 1);
     inputs.put("cryomedium", "m".repeat(251));
     inputs.put("storageTemp", new ApiQuantityInfo(new BigDecimal("-80"), RSUnitDef.CELSIUS));

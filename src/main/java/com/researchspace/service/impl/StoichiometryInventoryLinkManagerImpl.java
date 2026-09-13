@@ -19,6 +19,7 @@ import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.StoichiometryInventoryLinkManager;
 import com.researchspace.service.StoichiometryMoleculeManager;
+import com.researchspace.service.inventory.InventoryEditConflictException;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
 import com.researchspace.service.inventory.SampleSiblingRowLock;
 import com.researchspace.service.inventory.SubSampleApiManager;
@@ -156,6 +157,15 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
         resultsById.put(id, new StockDeductionResult.IndividualResult(id, true));
       } catch (NotFoundException | IllegalArgumentException e) {
         resultsById.put(id, new StockDeductionResult.IndividualResult(id, false, e.getMessage()));
+      } catch (InventoryEditConflictException e) {
+        // The subsample was soft-deleted, or its quantity moved, while this request queued for its
+        // row. A per-link failure like the two above, not an unexpected error: caught explicitly
+        // because it carries a message KEY rather than text, and because the generic handler below
+        // would log it at ERROR and replace the reason with the catch-all message.
+        resultsById.put(
+            id,
+            new StockDeductionResult.IndividualResult(
+                id, false, messages.getMessage(e.getMessageKey(), e.getArgs())));
       } catch (DataAccessException e) {
         // A row lock this method takes can fail (deadlock loser, lock-wait timeout, stale row).
         // Hibernate leaves the session unusable and the transaction rollback-only afterwards, so

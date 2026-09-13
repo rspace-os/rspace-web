@@ -1,4 +1,6 @@
-import { categoryOfUnit, toCommonUnit } from "@/stores/definitions/Units";
+import type { Quantity } from "@/stores/definitions/HasQuantity";
+import { CELSIUS, categoryOfUnit, toCommonUnit } from "@/stores/definitions/Units";
+import { getUnitId, getValue } from "@/stores/models/HasQuantity";
 import type { UnitCategory } from "@/stores/stores/UnitStore";
 import type { InventoryOperation, OperationInputConfig } from "./operationsConfig";
 import type { OperationInputs, OperationQuantity, PerSubsampleAmounts } from "./types";
@@ -98,6 +100,11 @@ export function detailsValid(
       if (!q || !Number.isFinite(q.numericValue)) return false;
       // A temperature outside its configured bounds (cryopreserve > -18 °C, revive < 4 °C) blocks
       // it, as does one the backend rejects outright (below absolute zero, or finer than 3dp).
+      // The control is fixed to Celsius, and every bound below (the configured ceiling and floor,
+      // absolute zero) compares numericValue AS Celsius. A value carrying any other unit - an unset
+      // 0 from a cleared control, or a Kelvin id restored from a stored preferences bundle - would
+      // be judged against the wrong scale here and travel to the server as sent (BUG-4).
+      if (input.type === "temperature" && q.unitId !== CELSIUS) return false;
       if (temperatureExceedsMax(input, q)) return false;
       if (temperatureBelowMin(input, q)) return false;
       if (temperatureNotStorable(input, q)) return false;
@@ -254,4 +261,24 @@ export function reconcileRestoredQuantities({
   }
 
   return { values: reconciled, perSubsampleAmounts: reconciledPerOrigin };
+}
+
+/**
+ * Why an origin subsample cannot be operated on at all, or null when it can.
+ *
+ * <p>"empty" is a subsample holding nothing (0, or a quantity never set). "unsupportedCategory" is
+ * one whose unit is outside volume, mass and dimensionless - a molarity or a concentration - which
+ * the backend rejects because an operation's amountTaken must be an amount unit.
+ *
+ * Both disable the step, and both did before this existed: the wizard gates on commonQuantity(),
+ * which returns 0 for a unit with no category, so a real 1 M origin disabled Next while the only
+ * alert on screen was "the origin holds nothing", whose own condition was false. The user got a
+ * dead button with no explanation (BUG-1). Shared so the gate and the two places that explain it
+ * cannot drift apart.
+ */
+export type OriginBlockedReason = "empty" | "unsupportedCategory";
+
+export function originBlockedReason(quantity: Quantity | null): OriginBlockedReason | null {
+  if (categoryOfUnit(getUnitId(quantity)) === null) return "unsupportedCategory";
+  return getValue(quantity) <= 0 ? "empty" : null;
 }

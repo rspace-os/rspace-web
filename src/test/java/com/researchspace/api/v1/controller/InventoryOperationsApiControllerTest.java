@@ -395,7 +395,6 @@ class InventoryOperationsApiControllerTest {
    */
   @Test
   void facadeFieldNeverLeaksTheServerBuiltSamplesPaths() {
-    // KNOWN FAILURE (backend F2): only two newSample.* paths are renamed today.
     assertEquals("sampleName", facadeField("newSample.name", true));
     assertEquals("storageTemp", facadeField("newSample.storageTempMin", true));
     assertEquals("storageTemp", facadeField("newSample.storageTempMax", false));
@@ -410,7 +409,6 @@ class InventoryOperationsApiControllerTest {
    */
   @Test
   void aCoreRejectionOnABuiltFieldIsRenamedToWhatTheCallerSentForIt() {
-    // KNOWN FAILURE (backend F2)
     ApiInventoryOperationPost built = InventoryOperationPostValidatorTest.cryopreserveRequest();
     ApiExtraField documentation = new ApiExtraField(ApiExtraField.ExtraFieldTypeEnum.LINK);
     documentation.setName("Documented by");
@@ -442,8 +440,6 @@ class InventoryOperationsApiControllerTest {
 
   @Test
   void aCoreRejectionOnTheBuiltSamplesNameIsRenamedToSampleName() throws Exception {
-    // KNOWN FAILURE (backend F2). The samples validator rejects a 256-character name on
-    // newSample.name; the aliquot client sent sampleName.
     ApiInventoryOperationPost generic = aliquotRequest();
     BeanPropertyBindingResult coreErrors =
         new BeanPropertyBindingResult(generic, "apiInventoryOperationPost");
@@ -467,9 +463,6 @@ class InventoryOperationsApiControllerTest {
 
   @Test
   void typedFacadeRejectsAMalformedExpectedQuantityBeforeTheManager() throws Exception {
-    // KNOWN FAILURE (backend F1). A null numeric value would otherwise become a 409 the caller can
-    // never resolve, and an unknown unit an IllegalArgumentException after the origin locks; both
-    // are shape errors on the field the caller sent.
     when(operationManager.performOperation(eq("destroy"), any(), any(), any(), any(), eq(user)))
         .thenReturn(new OperationOutcome(null, List.of(originAfter(100L))));
     for (ApiQuantityInfo malformed :
