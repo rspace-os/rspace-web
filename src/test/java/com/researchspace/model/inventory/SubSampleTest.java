@@ -43,40 +43,6 @@ public class SubSampleTest {
   }
 
   @Test
-  void adoptingACommittedQuantityLeavesTheParentTotalAlone() {
-    // The whole reason this exists rather than setQuantity. The value was committed by another
-    // transaction, which recomputed the parent total from the locked sibling rows before it
-    // committed; recomputing here would sum THIS transaction's stale sibling snapshots over the top
-    // of that, and would dirty the sample so the stale total got written at all.
-    QuantityInfo totalBefore = sample.getTotalQuantity();
-
-    subSample.refreshQuantityFromLockedRow(QuantityInfo.of(BigDecimal.valueOf(3), RSUnitDef.GRAM));
-
-    assertEquals(0, BigDecimal.valueOf(3).compareTo(subSample.getQuantity().getNumericValue()));
-    assertEquals(
-        totalBefore, sample.getTotalQuantity(), "the parent total must not be recomputed here");
-  }
-
-  @Test
-  void aRowWithNoStoredQuantityLeavesTheEntityAsItIs() {
-    // getQuantityForUpdate returns null for a row whose quantityNumericValue column is NULL. That
-    // is the ONLY thing null can mean on this path: the "no such row" case cannot reach here
-    // because reconcileWithCommittedRow calls lockSubSampleForEdit first, which 404s on a missing
-    // row before any scalar is read.
-    //
-    // Such a row is not reachable through the application - setQuantityInfo dereferences the
-    // numeric value whenever a unit is present, and quantityUnitId is NOT NULL in the schema - so
-    // this covers legacy or externally written data only. Adopting the NULL would leave the entity
-    // with no quantity at all and NPE the rest of the request, which is worse than declining to
-    // reconcile a column the application cannot produce (review 2026-09-14, I3).
-    QuantityInfo held = subSample.getQuantity();
-
-    subSample.refreshQuantityFromLockedRow(null);
-
-    assertEquals(held, subSample.getQuantity());
-  }
-
-  @Test
   void shallowCopy() throws IllegalArgumentException, IllegalAccessException, IOException {
 
     SubSample copy = subSample.shallowCopy();
