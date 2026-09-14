@@ -625,12 +625,15 @@ public abstract class BaseRecord
     return !to.isSharedFolder() && from.getOwner().equals(to.getOwner());
   }
 
-  private static boolean isNotebookWithUserOrGroupAccessInCommon(
+  private boolean isNotebookWithUserOrGroupAccessInCommon(
       BaseRecord source, BaseRecord destination) {
     return destination.isNotebook()
         && source.getSharingACL().getAclElements().stream()
             .map(ACLElement::getUserOrGrpUniqueName)
-            .filter(userOrGroup -> !ANONYMOUS_USER.equals(userOrGroup))
+            .filter(
+                userOrGroup ->
+                    !ANONYMOUS_USER.equals(userOrGroup)
+                        && !getOwner().getUniqueName().equals(userOrGroup))
             .anyMatch(
                 userOrGroup ->
                     destination.getSharingACL().getAclElements().stream()

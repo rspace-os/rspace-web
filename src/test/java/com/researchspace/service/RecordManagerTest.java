@@ -1097,6 +1097,38 @@ public class RecordManagerTest extends SpringTransactionalTest {
   }
 
   @Test
+  public void moveIndividuallySharedDocumentOnlyIntoNotebookSharedWithRecipient() throws Exception {
+    User owner = createAndSaveAPi();
+    User recipient = createAndSaveRandomUser();
+    initialiseContentWithEmptyContent(owner, recipient);
+    Group group = createGroup("individual sharing", owner);
+    addUsersToGroup(owner, group, recipient);
+
+    logoutAndLoginAs(owner);
+    StructuredDocument doc = createBasicDocumentInRootFolderWithText(owner, "shared document");
+    shareRecordWithUser(owner, doc, recipient);
+    Folder individualSharedFolder =
+        folderDao.getIndividualSharedFolderForUsers(owner, recipient, null);
+
+    Notebook privateNotebook =
+        folderMgr.createNewNotebook(
+            owner.getRootFolder().getId(), "private notebook", new DefaultRecordContext(), owner);
+    assertFalse(
+        recordMgr
+            .move(doc.getId(), privateNotebook.getId(), individualSharedFolder.getId(), owner)
+            .isSucceeded());
+
+    Notebook sharedNotebook =
+        folderMgr.createNewNotebook(
+            owner.getRootFolder().getId(), "shared notebook", new DefaultRecordContext(), owner);
+    assertTrue(shareNotebookWithGroupMember(owner, sharedNotebook, recipient).isPresent());
+    assertTrue(
+        recordMgr
+            .move(doc.getId(), sharedNotebook.getId(), individualSharedFolder.getId(), owner)
+            .isSucceeded());
+  }
+
+  @Test
   public void move() throws Exception {
     Folder root = user.getRootFolder();
     anyForm = formDao.getAll().get(0);
