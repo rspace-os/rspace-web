@@ -401,8 +401,8 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
     // The overflow is reached by ACCUMULATION, not by one huge value: the per-key ceiling (S6)
     // rejects a single value big enough to overflow the column on its own, before the lock, so
     // this guard now only fires when several within-ceiling values together exceed the column.
-    userWithUiJsonSettings("{\"GALLERY_VIEW_MODE\":{\"value\":\"" + "x".repeat(60_000) + "\"}}");
-    String withinPerKeyCeiling = "{\"value\":\"" + "x".repeat(8_000) + "\"}";
+    userWithUiJsonSettings("{\"GALLERY_VIEW_MODE\":{\"value\":\"" + "x".repeat(62_000) + "\"}}");
+    String withinPerKeyCeiling = "{\"value\":\"" + "x".repeat(6_000) + "\"}";
     assertThrows(
         IllegalArgumentException.class,
         () -> userManager.mergeUiJsonSetting("GALLERY_SORT_BY", withinPerKeyCeiling, "jbloggs"));

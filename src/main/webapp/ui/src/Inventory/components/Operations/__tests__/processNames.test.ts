@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
+import { PREFERENCES } from "@/hooks/api/useUiPreference";
 import type { InventoryOperation } from "../operationsConfig";
-import { addProcessName, filterProcessNames, processNameDefaultAfterPerform, rememberKey } from "../processNames";
+import {
+  addProcessName,
+  filterProcessNames,
+  processNameDefaultAfterPerform,
+  processValuesPreferenceFor,
+  rememberKey,
+} from "../processNames";
 import { operations } from "./testOperations";
 
 // Operation keys never contain spaces, so a single space separates operation key from process name.
@@ -59,6 +66,32 @@ describe("filterProcessNames", () => {
 
   it("returns nothing when the prefix matches no option (user can still free-type)", () => {
     expect(filterProcessNames(options, "de")).toEqual([]);
+  });
+});
+
+describe("processValuesPreferenceFor", () => {
+  // RSDEV-1231: each operation type has its own "remember" collection, so one operation's heavy
+  // use of Remember cannot push another's collection - or the pot every operation used to share -
+  // over the server's per-key size cap.
+  it("gives every one of the seven operations its own, distinct preference key", () => {
+    const keys = [
+      ["aliquot", PREFERENCES.INVENTORY_OPERATION_PROCESS_VALUES_ALIQUOT],
+      ["passage", PREFERENCES.INVENTORY_OPERATION_PROCESS_VALUES_PASSAGE],
+      ["pool", PREFERENCES.INVENTORY_OPERATION_PROCESS_VALUES_POOL],
+      ["derive", PREFERENCES.INVENTORY_OPERATION_PROCESS_VALUES_DERIVE],
+      ["cryopreserve", PREFERENCES.INVENTORY_OPERATION_PROCESS_VALUES_CRYOPRESERVE],
+      ["revive", PREFERENCES.INVENTORY_OPERATION_PROCESS_VALUES_REVIVE],
+      ["destroy", PREFERENCES.INVENTORY_OPERATION_PROCESS_VALUES_DESTROY],
+    ] as const;
+    for (const [key, expected] of keys) expect(processValuesPreferenceFor(key)).toBe(expected);
+    // distinct, not just present: no two operations were accidentally mapped to the same symbol
+    expect(new Set(keys.map(([key]) => processValuesPreferenceFor(key))).size).toBe(keys.length);
+  });
+
+  it("falls back to the legacy shared key for an operation type it does not recognise", () => {
+    // Only reachable if a new operation type is added server-side before this map is; falling back
+    // to the retained legacy collection is safer than throwing or guessing one of the seven.
+    expect(processValuesPreferenceFor("teleport")).toBe(PREFERENCES.INVENTORY_OPERATION_PROCESS_VALUES);
   });
 });
 
