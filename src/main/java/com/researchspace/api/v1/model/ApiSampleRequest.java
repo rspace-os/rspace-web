@@ -4,9 +4,9 @@ package com.researchspace.api.v1.model;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.researchspace.model.inventory.SampleRequest;
-import com.researchspace.model.inventory.SampleRequestStatus;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -24,20 +24,9 @@ public class ApiSampleRequest extends ApiSampleRequestInfo {
 
   public ApiSampleRequest(SampleRequest request) {
     super(request);
-    this.statusChanges = new ArrayList<>(List.of(creationEntry(request)));
-  }
-
-  /**
-   * TODO RSDEV-1368: the creation entry is synthesised from the request's own requester and created
-   * fields, because no status-change table exists yet. Once SampleRequestStatusChange lands,
-   * replace this with a straight mapping of that table's rows, which will include the PENDING row.
-   */
-  private static ApiSampleRequestStatusChange creationEntry(SampleRequest request) {
-    return new ApiSampleRequestStatusChange(
-        null,
-        SampleRequestStatus.PENDING,
-        request.getCreated().getTime(),
-        new ApiUser(request.getRequester()),
-        null);
+    this.statusChanges =
+        request.getStatusChanges().stream()
+            .map(ApiSampleRequestStatusChange::new)
+            .collect(Collectors.toCollection(ArrayList::new));
   }
 }

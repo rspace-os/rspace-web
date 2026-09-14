@@ -117,6 +117,13 @@ public class API_MVC_TestBase extends MVCTestBase {
         post(createInventoryUrl(API_VERSION.ONE, suffixUrl)), body, user, apiKey);
   }
 
+  protected MockHttpServletRequestBuilder createBuilderForInventoryPutWithJSONBody(
+      String apiKey, String suffixUrl, User user, Object toPut) {
+    String body = getStringBody(toPut);
+    return preparePostOrPutRequestBody(
+        put(createInventoryUrl(API_VERSION.ONE, suffixUrl)), body, user, apiKey);
+  }
+
   protected MockHttpServletRequestBuilder createBuilderForPostWithJSONBody(
       String apiKey, String suffixUrl, User user, Object toPost) {
     String body = getStringBody(toPost);

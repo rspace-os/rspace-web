@@ -6957,15 +6957,20 @@ export default interface Resources {
           "unitIncompatibleWithTemplate": "Sample quantity unit {0} ({1}) is incompatible with template quantity unit {2} ({3})"
         },
         "sampleRequest": {
+          "illegalTransition": "A sample request cannot move from {0} to {1}.",
           "notEnabled": "Sample requests are not enabled on this RSpace instance.",
           "notRequestable": "Sample {0} is not available to request.",
           "ownSample": "You cannot request material from a sample that you own.",
+          "reasonNotAllowed": "A reason cannot be given when setting a request to {0}.",
+          "reasonRequired": "A reason is required when rejecting a request.",
           "role": {
             "invalid": "Requested role must be one of: REQUESTER or OWNER"
           },
           "status": {
             "invalid": "Requested status must be one of: PENDING, APPROVED, REJECTED, FULFILLED or CANCELLED"
-          }
+          },
+          "statusNotSettable": "A sample request cannot be set to {0}.",
+          "wrongActor": "You are not permitted to make this change to the request."
         },
         "search": {
           "deletedItems": {

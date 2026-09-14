@@ -3,6 +3,7 @@ package com.researchspace.service.inventory;
 import com.researchspace.api.v1.model.ApiSampleRequest;
 import com.researchspace.api.v1.model.ApiSampleRequestPost;
 import com.researchspace.api.v1.model.ApiSampleRequestSearchResult;
+import com.researchspace.api.v1.model.ApiSampleRequestStatusPut;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.SampleRequest;
@@ -28,6 +29,15 @@ public interface SampleRequestApiManager {
    * @throws jakarta.ws.rs.NotFoundException if absent, or the user is neither party
    */
   ApiSampleRequest getRequestById(Long id, User user);
+
+  /**
+   * Move a request to a new status, recording who did it and why in the request's history.
+   *
+   * @throws jakarta.ws.rs.NotFoundException if absent, or the user is neither party
+   * @throws com.researchspace.api.v1.auth.ApiRuntimeException if the user is not the permitted
+   *     actor, the transition is not legal, or the reason is missing or not allowed
+   */
+  ApiSampleRequest updateStatus(Long id, ApiSampleRequestStatusPut post, User user);
 
   /**
    * Page of requests involving the user, on the given side of the request.

@@ -160,4 +160,68 @@ public class SampleRequestsApiControllerMVCIT extends API_MVC_InventoryTestBase 
                 API_VERSION.ONE, requesterApiKey, "/sampleRequests/" + created.getId(), requester))
         .andExpect(status().isNotFound());
   }
+
+  @Test
+  public void approveOverHttpThenRefuseAnIllegalTransition() throws Exception {
+    User owner = createAndSaveUser(getRandomName(10), Constants.PI_ROLE);
+    User requester = createAndSaveUser(getRandomName(10));
+    initUsers(owner, requester);
+    createGroupForUsersWithDefaultPi(owner, requester);
+
+    String requesterApiKey = createNewApiKeyForUser(requester);
+    String ownerApiKey = createNewApiKeyForUser(owner);
+    sysPropMgr.save(
+        SystemPropertyName.SAMPLE_REQUESTS_AVAILABLE,
+        HierarchicalPermission.ALLOWED,
+        getSysAdminUser());
+
+    ApiSampleWithFullSubSamples sample = createBasicSampleForUser(owner);
+    markRequestable(sample, owner);
+
+    MvcResult postResult =
+        this.mockMvc
+            .perform(
+                createBuilderForInventoryPostWithJSONBody(
+                    requesterApiKey,
+                    "/sampleRequests",
+                    requester,
+                    Map.of("sampleGlobalId", sample.getGlobalId(), "note", "for approval")))
+            .andReturn();
+    ApiSampleRequest created = mvcUtils.getFromJsonResponseBody(postResult, ApiSampleRequest.class);
+
+    MvcResult approveResult =
+        this.mockMvc
+            .perform(
+                createBuilderForInventoryPutWithJSONBody(
+                    ownerApiKey,
+                    "/sampleRequests/" + created.getId() + "/status",
+                    owner,
+                    Map.of("status", "APPROVED")))
+            .andReturn();
+    assertNull(approveResult.getResolvedException());
+    ApiSampleRequest approved =
+        mvcUtils.getFromJsonResponseBody(approveResult, ApiSampleRequest.class);
+    assertEquals(SampleRequestStatus.APPROVED, approved.getStatus());
+    assertEquals(2, approved.getStatusChanges().size());
+
+    // approving again is no longer a legal transition
+    this.mockMvc
+        .perform(
+            createBuilderForInventoryPutWithJSONBody(
+                ownerApiKey,
+                "/sampleRequests/" + created.getId() + "/status",
+                owner,
+                Map.of("status", "APPROVED")))
+        .andExpect(status().isUnprocessableEntity());
+
+    // and the requester may not approve at all
+    this.mockMvc
+        .perform(
+            createBuilderForInventoryPutWithJSONBody(
+                requesterApiKey,
+                "/sampleRequests/" + created.getId() + "/status",
+                requester,
+                Map.of("status", "APPROVED")))
+        .andExpect(status().isUnprocessableEntity());
+  }
 }

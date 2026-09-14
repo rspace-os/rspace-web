@@ -5,6 +5,7 @@ import com.researchspace.api.v1.model.ApiSampleRequest;
 import com.researchspace.api.v1.model.ApiSampleRequestInfo;
 import com.researchspace.api.v1.model.ApiSampleRequestPost;
 import com.researchspace.api.v1.model.ApiSampleRequestSearchResult;
+import com.researchspace.api.v1.model.ApiSampleRequestStatusPut;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.SampleRequest;
@@ -64,6 +65,20 @@ public class SampleRequestsApiController extends BaseApiInventoryController
   private void buildAndAddSelfLink(ApiSampleRequestInfo request) {
     request.buildAndAddSelfLink(
         SAMPLE_REQUESTS_ENDPOINT, String.valueOf(request.getId()), getInventoryApiBaseURIBuilder());
+  }
+
+  @Override
+  public ApiSampleRequest updateStatus(
+      @PathVariable Long id,
+      @RequestBody @Valid ApiSampleRequestStatusPut status,
+      BindingResult errors,
+      @RequestAttribute(name = "user") User user)
+      throws BindException {
+
+    throwBindExceptionIfErrors(errors);
+    ApiSampleRequest updated = sampleRequestMgr.updateStatus(id, status, user);
+    buildAndAddSelfLink(updated);
+    return updated;
   }
 
   @Override
