@@ -220,10 +220,6 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
       user.setPreference(new UserPreference(Preference.UI_JSON_SETTINGS, user, storedJson));
     }
     when(userDao.getUserByUsername("jbloggs")).thenReturn(user);
-    when(userDao.lockRowForUpdate(7L)).thenReturn(user);
-    // the blob is read as a scalar under its own lock, not from the entity
-    when(userDao.getPreferenceValueForUpdate(7L, Preference.UI_JSON_SETTINGS))
-        .thenReturn(storedJson);
     return user;
   }
 
@@ -235,42 +231,13 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
   public void mergeUiJsonSettingKeepsTheKeysItWasNotAskedToChange() throws Exception {
     // The whole UI_JSON_SETTINGS blob is one column, so the client used to read it, merge one key
     // and post the lot back. Two overlapping writers each merged into the same snapshot and the
-    // later post dropped the earlier one's key. The merge happens here instead, under a row lock.
+    // later post dropped the earlier one's key. The merge happens here instead.
     User user = userWithUiJsonSettings("{\"GALLERY_VIEW_MODE\":{\"value\":\"grid\"}}");
     when(userDao.save(user)).thenReturn(user);
 
     userManager.mergeUiJsonSetting("GALLERY_SORT_BY", "{\"value\":\"name\"}", user.getUsername());
 
     JsonNode merged = new ObjectMapper().readTree(storedUiJsonSettings(user));
-    assertEquals("grid", merged.path("GALLERY_VIEW_MODE").path("value").asText());
-    assertEquals("name", merged.path("GALLERY_SORT_BY").path("value").asText());
-  }
-
-  @Test
-  public void mergeUiJsonSettingMergesIntoTheLockedColumnValueNotTheEntitySnapshot()
-      throws Exception {
-    // The entity the lock returns holds this transaction's snapshot of the blob (lockRowForUpdate
-    // serialises, it does not refresh), so the merge must read the stored value as a scalar under
-    // its own lock. The entity here carries an older blob than the column; only a merge into the
-    // scalar's value keeps the key a concurrent writer added and its change to a shared key.
-    User user = createAnyUser("jbloggs");
-    user.setId(7L);
-    user.setPreference(
-        new UserPreference(
-            Preference.UI_JSON_SETTINGS, user, "{\"GALLERY_VIEW_MODE\":{\"value\":\"list\"}}"));
-    when(userDao.getUserByUsername("jbloggs")).thenReturn(user);
-    when(userDao.lockRowForUpdate(7L)).thenReturn(user);
-    when(userDao.getPreferenceValueForUpdate(7L, Preference.UI_JSON_SETTINGS))
-        .thenReturn(
-            "{\"GALLERY_VIEW_MODE\":{\"value\":\"grid\"},\"SYSADMIN_USERS_TABLE_COLUMNS\":{\"value\":1}}");
-    when(userDao.save(user)).thenReturn(user);
-
-    userManager.mergeUiJsonSetting("GALLERY_SORT_BY", "{\"value\":\"name\"}", "jbloggs");
-
-    JsonNode merged = new ObjectMapper().readTree(storedUiJsonSettings(user));
-    // the key another writer committed after this transaction's snapshot survives...
-    assertEquals(1, merged.path("SYSADMIN_USERS_TABLE_COLUMNS").path("value").asInt());
-    // ...and so does its change to a key the snapshot also had
     assertEquals("grid", merged.path("GALLERY_VIEW_MODE").path("value").asText());
     assertEquals("name", merged.path("GALLERY_SORT_BY").path("value").asText());
   }
@@ -382,8 +349,8 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
     // cannot reach the database with an oversized blob (Copilot review, PR #1090).
     //
     // The overflow is reached by ACCUMULATION, not by one huge value: the per-key ceiling (S6)
-    // rejects a single value big enough to overflow the column on its own, before the lock, so
-    // this guard now only fires when several within-ceiling values together exceed the column.
+    // rejects a single value big enough to overflow the column on its own, so this guard now only
+    // fires when several within-ceiling values together exceed the column.
     userWithUiJsonSettings("{\"GALLERY_VIEW_MODE\":{\"value\":\"" + "x".repeat(62_000) + "\"}}");
     String withinPerKeyCeiling = "{\"value\":\"" + "x".repeat(6_000) + "\"}";
     assertThrows(
@@ -397,13 +364,13 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
     // The column-level guard above only fires once the MERGED blob overflows, so one allowed key
     // holding a near-65535-char value passes it and then makes every later keyed write for that
     // user overflow permanently: the same wedge the allowlist exists to prevent, reached through
-    // one key instead of many. The per-key ceiling is checked before the row lock, so an oversized
-    // value neither reaches the database nor holds a lock (parallel review, S6).
+    // one key instead of many. The per-key ceiling is checked before the user is even read, so an
+    // oversized value never reaches the database (parallel review, S6).
     String oversized = "{\"value\":\"" + "x".repeat(9_000) + "\"}";
     assertThrows(
         IllegalArgumentException.class,
         () -> userManager.mergeUiJsonSetting("GALLERY_SORT_BY", oversized, "jbloggs"));
-    verify(userDao, never()).lockRowForUpdate(Mockito.anyLong());
+    verify(userDao, never()).getUserByUsername(Mockito.anyString());
     verify(userDao, never()).save(Mockito.any(User.class));
   }
 
