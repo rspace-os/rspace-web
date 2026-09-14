@@ -261,4 +261,27 @@ class SubSampleApiManagerImplUpdateReconcileTest {
     order.verify(subSampleDao).getQuantityForUpdate(100L);
     order.verify(cached).setQuantity(any());
   }
+
+  @Test
+  void anExplicitQuantityEqualToTheLoadedValueOverwritesACommittedDecrement() {
+    // The boundary the client-side guard rests on, asserted so it is a decision rather than an
+    // accident (review 2026-09-14, I4).
+    //
+    // updateQuantity compares the incoming value against dbSubSample.getQuantity(), which after the
+    // reconcile is the COMMITTED value rather than the loaded one. So a payload echoing the 10 g
+    // the page was shown no longer equals the stored 6 g and is applied, where the equality check
+    // used to make it a no-op. That is correct in itself: the field is an absolute replacement, and
+    // a request carrying 10 g against a stored 6 g is byte for byte what a user deliberately
+    // correcting the quantity sends. The server cannot separate them, which is exactly why
+    // SubSampleModel stops sending a quantity the user never set.
+    SubSample cached = cachedSubSampleHolding("10");
+    stubTheEditOf(cached, millilitres("6"));
+
+    subSampleApiMgr.updateApiSubSample(edit(millilitres("10")), user);
+
+    assertEquals(
+        0,
+        new BigDecimal("10").compareTo(cached.getQuantity().getNumericValue()),
+        "an explicit quantity is an absolute replacement, committed decrement or not");
+  }
 }
