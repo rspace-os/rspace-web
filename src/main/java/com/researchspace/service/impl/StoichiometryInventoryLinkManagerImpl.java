@@ -91,7 +91,6 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
   public StockDeductionResult deductStock(long stoichiometryId, List<Long> linkIds, User user) {
     StockDeductionResult result = new StockDeductionResult();
     result.setStoichiometryId(stoichiometryId);
-
     // dedupe: a repeated link id deducts its amount once (RSDEV-1319). The response still carries
     // one result row per submitted entry, so the API's cardinality contract is unchanged
     Map<Long, StockDeductionResult.IndividualResult> resultsById = new HashMap<>();

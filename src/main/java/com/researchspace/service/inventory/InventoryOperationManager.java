@@ -26,11 +26,11 @@ public interface InventoryOperationManager {
 
   /**
    * A validation the caller needs run INSIDE the operation's transaction, before any origin is read
-   * or mutated. The controller supplies its template-conformance check this way: the check itself
-   * belongs to the controller layer (it delegates to the shared samples validator), but running it
-   * in a separate transaction would leave a window in which the template changes between validation
-   * and use, failing the operation mid-mutation (Copilot review, PR #1090). A rejection is the same
-   * field-scoped 400 every other validation produces.
+   * or mutated. The manager's facade path supplies its template-conformance check this way ({@code
+   * OperationTemplateConformanceValidator}, which delegates to the shared samples validator);
+   * running it in a separate transaction would leave a window in which the template changes between
+   * validation and use, failing the operation mid-mutation (Copilot review, PR #1090). A rejection
+   * is the same field-scoped 400 every other validation produces.
    */
   @FunctionalInterface
   interface InTransactionValidation {

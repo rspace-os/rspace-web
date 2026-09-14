@@ -309,8 +309,9 @@ public interface UserManager extends GenericManager<User, Long> {
    * Merges a single key into the user's {@code UI_JSON_SETTINGS} preference, leaving the other keys
    * in it untouched. The whole preference is one JSON column, so a client that read it, merged its
    * key and wrote the lot back lost the keys of any writer it overlapped with; merging server-side
-   * under a row lock removes that race for every caller. Writes of the same key stay
-   * last-write-wins, which is what a preference means.
+   * narrows that window to one transaction for every caller (no row lock is taken; see
+   * DevDocs/adr/0007). Writes of the same key stay last-write-wins, which is what a preference
+   * means.
    *
    * @param key the key within the JSON object
    * @param valueJson the key's new value, as JSON

@@ -2557,8 +2557,6 @@ paths:
                 $ref: "#/components/schemas/Error"
         "404":
           $ref: "#/components/responses/NotFound"
-        "409":
-          $ref: "#/components/responses/EditConflict"
         "422":
           $ref: "#/components/responses/UnprocessableQuery"
   /operations/passage:
@@ -2605,8 +2603,6 @@ paths:
                 $ref: "#/components/schemas/Error"
         "404":
           $ref: "#/components/responses/NotFound"
-        "409":
-          $ref: "#/components/responses/EditConflict"
         "422":
           $ref: "#/components/responses/UnprocessableQuery"
   /operations/pool:
@@ -2660,8 +2656,6 @@ paths:
                 $ref: "#/components/schemas/Error"
         "404":
           $ref: "#/components/responses/NotFound"
-        "409":
-          $ref: "#/components/responses/EditConflict"
         "422":
           $ref: "#/components/responses/UnprocessableQuery"
   /operations/derive:
@@ -2707,8 +2701,6 @@ paths:
                 $ref: "#/components/schemas/Error"
         "404":
           $ref: "#/components/responses/NotFound"
-        "409":
-          $ref: "#/components/responses/EditConflict"
         "422":
           $ref: "#/components/responses/UnprocessableQuery"
   /operations/cryopreserve:
@@ -2762,8 +2754,6 @@ paths:
                 $ref: "#/components/schemas/Error"
         "404":
           $ref: "#/components/responses/NotFound"
-        "409":
-          $ref: "#/components/responses/EditConflict"
         "422":
           $ref: "#/components/responses/UnprocessableQuery"
   /operations/revive:
@@ -2811,8 +2801,6 @@ paths:
                 $ref: "#/components/schemas/Error"
         "404":
           $ref: "#/components/responses/NotFound"
-        "409":
-          $ref: "#/components/responses/EditConflict"
         "422":
           $ref: "#/components/responses/UnprocessableQuery"
   /operations/destroy:
@@ -2825,8 +2813,8 @@ paths:
 
         This operation creates nothing, so it answers 200 rather than 201, there is no `Location`
         header, and `sample` in the response is null. Do not send `amountTaken`: the server takes
-        whatever the origin holds when the operation runs. Send `expectedQuantity` if the
-        quantity you are destroying must be the one you last read.
+        whatever the origin holds when the operation runs. `expectedQuantity` is accepted but not
+        enforced.
       tags:
         - Operations
       requestBody:
@@ -2854,8 +2842,6 @@ paths:
                 $ref: "#/components/schemas/Error"
         "404":
           $ref: "#/components/responses/NotFound"
-        "409":
-          $ref: "#/components/responses/EditConflict"
         "422":
           $ref: "#/components/responses/UnprocessableQuery"
   /import/parseFile:
@@ -4229,16 +4215,6 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/Error"
-    EditConflict:
-      description: >
-        The item changed since the client read it. An operation answers this when an origin's
-        `expectedQuantity` does not match the quantity the origin holds when the operation runs,
-        or when two writes to the same subsample raced. Nothing was changed: reload the origin
-        and retry.
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/Error"
   requestBodies:
     Container:
       content:
@@ -5333,11 +5309,10 @@ components:
         A subsample an operation consumes, identified by its global id (`SS` prefix). A sample or
         container id is rejected.
 
-        `expectedQuantity` is optional. When it is sent, the server compares it with the origin's
-        live quantity while the row is locked, and answers 409 if the two differ, so a client
-        cannot act on a quantity that changed after it read it. When it is omitted, the operation
-        takes whatever the origin holds at the moment it runs. The Inventory web UI always sends
-        it; a script that means "destroy SS1234, whatever is left in it" should not.
+        `expectedQuantity` is optional and, when sent, is checked for shape only (a numeric value
+        and a known unit). It is not compared with the origin's live quantity: the operation always
+        takes whatever the origin holds at the moment it runs. There is no concurrency control on
+        this endpoint.
       properties:
         globalId:
           type: string
