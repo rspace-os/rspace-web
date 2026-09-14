@@ -1,5 +1,6 @@
 package com.researchspace.webapp.config;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.researchspace.api.v1.controller.APIFileUploadThrottlingInterceptor;
 import com.researchspace.api.v1.controller.APIRequestThrottlingInterceptor;
@@ -212,8 +213,22 @@ public class WebConfig extends WebMvcConfigurationSupport {
   protected void extendMessageConverters(List<HttpMessageConverter<?>> converters) {
     // now let's reconfigure Jackson to use PrettyPrinted object mapper.
     for (HttpMessageConverter<?> converter : converters) {
-      if (converter instanceof MappingJackson2HttpMessageConverter) {
-        ((MappingJackson2HttpMessageConverter) converter).setPrettyPrint(true);
+      if (converter instanceof MappingJackson2HttpMessageConverter jacksonConverter) {
+        jacksonConverter.setPrettyPrint(true);
+        // A request field bound as Object/Map<String,Object> (e.g. the generic Inventory
+        // operations endpoint's `inputs`) has no declared BigDecimal target for Jackson to bind
+        // into, so by default it guesses Double for any JSON number written with a decimal point.
+        // Double cannot hold every value DECIMAL(19,3) can (RSDEV-1231, Codex review, PR #1090: an
+        // eachAmount.numericValue of 9007199254740992.001 reaches the server as 9007199254740992.0,
+        // and nothing downstream can recover the digits Jackson already discarded). A field bound
+        // directly to a typed BigDecimal (every quantity on the seven typed facades) is unaffected
+        // either way, since Jackson never has to guess its type. Whole-number tokens (count, unitId
+        // ids) are also unaffected: this only changes which type a token WRITTEN WITH A DECIMAL
+        // POINT gets, and no validator in this codebase accepts Double as a whole number, so
+        // BigDecimal is equally rejected - this does not relax any integer-input validation.
+        jacksonConverter
+            .getObjectMapper()
+            .configure(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS, true);
       }
       // and string response bodies to be UTF8
       if (converter instanceof StringHttpMessageConverter) {
