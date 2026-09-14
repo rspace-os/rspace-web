@@ -50,7 +50,11 @@ public class StockWriterTransactionIsolationTest {
           "deductStock",
           "createNewListOfMaterials",
           "updateListOfMaterials",
-          "mergeUiJsonSetting");
+          "mergeUiJsonSetting",
+          // A plain getIfExists, then reconcileWithCommittedRow's lockRowForUpdate and its three
+          // FOR UPDATE scalar reads: the same read-then-lock shape as the decrement path, so a
+          // rename racing a committed decrement would 409 rather than wait (review 2026-09-14, C2).
+          "updateApiSubSample");
 
   @ParameterizedTest
   @ValueSource(strings = {"applicationContext-service.xml", "applicationContext-test-service.xml"})
