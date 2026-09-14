@@ -63,7 +63,8 @@ public class RandomTextFileGenerator {
   public List<FileSearchTerms> generate(File pathToFiles, int numFiles, int linesPerFile)
       throws IOException {
     List<FileSearchTerms> rc = new ArrayList<>(numFiles);
-    InputStream is = CoreTestUtils.getWordFrequencyFile();
+    InputStream is =
+        RandomTextFileGenerator.class.getResourceAsStream("/WordListNoDupsCumulative.txt");
 
     BufferedReader br = new BufferedReader(new InputStreamReader(is));
     Random random = new Random();

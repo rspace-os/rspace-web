@@ -17,6 +17,7 @@ import com.researchspace.api.v1.model.ApiMaterialUsage;
 import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
+import com.researchspace.dao.SampleTemplateDao;
 import com.researchspace.model.Group;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdentifier;
@@ -41,6 +42,8 @@ import org.springframework.validation.BindException;
 public class ListOfMaterialsApiManagerTest extends SpringTransactionalTest {
 
   private @Autowired ListOfMaterialsApiManager lomManager;
+  private @Autowired InventoryPermissionUtils invPermissionUtils;
+  private @Autowired SampleTemplateDao sampleTemplateDao;
   private @Autowired SubSampleApiManager subSampleManager;
 
   private ApplicationEventPublisher mockPublisher;

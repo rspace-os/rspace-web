@@ -8,18 +8,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.researchspace.client.BioPortalOntologiesClient;
 import java.util.List;
 import lombok.SneakyThrows;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 
-@EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
+@EnabledIfSystemProperty(named = "bioportal.realConnectionTests", matches = "true")
 public class BioPortalOntologiesServiceNightlyTest {
   private BioPortalOntologiesClient bioportalClient = new BioPortalOntologiesClient();
   private BioPortalOntologiesService service = new BioPortalOntologiesService(bioportalClient);
 
   @SneakyThrows
   @Test
-  @Disabled("BioPortal tags retrieval currently doesn't work, see rspace-os/rspace-web issue #319")
   public void testListResults() {
     List<String> results = service.getBioOntologyDataForQuery("Tolstoy");
     String town = results.get(0);

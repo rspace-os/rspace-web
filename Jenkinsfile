@@ -42,6 +42,7 @@ pipeline {
         SAFE_BRANCH_NAME = branchToSafeName("${BRANCH_NAME}")
         RS_FILE_BASE = "/var/lib/jenkins/userContent/${SAFE_BRANCH_NAME}-filestore"
         SANITIZED_DBNAME = branchToDbName("${BRANCH_NAME}")
+        CHEMISTRY_CONTAINER_NAME = "rspace-chemistry-${SAFE_BRANCH_NAME}-${BUILD_ID}"
         AWS_TOMCAT_AMI = 'ami-04a32018c63fb81e9'
         APP_VERSION = readMavenPom().getVersion()
 
@@ -285,6 +286,49 @@ pipeline {
                     )
                 }
             } // end post test handler
+        }
+
+        stage('Chemistry tests') {
+            when {
+                expression { return params.FULL_JAVA_TESTS && !params.LIQUIBASE }
+            }
+
+            steps {
+                sh '''
+                    mkdir -p "${RS_FILE_BASE}"
+                    docker run --detach --rm \
+                      --name "${CHEMISTRY_CONTAINER_NAME}" \
+                      --publish 127.0.0.1::8090 \
+                      rspaceops/oss-chemistry:latest
+                    CHEMISTRY_PORT=$(docker port "${CHEMISTRY_CONTAINER_NAME}" 8090/tcp | sed 's/.*://')
+                    export CHEMISTRY_URL="http://127.0.0.1:${CHEMISTRY_PORT}"
+                    export JDBC_DB="${SANITIZED_DBNAME}"
+                    export JDBC_URL="jdbc:mysql://localhost:3306/${SANITIZED_DBNAME}"
+                    if ! scripts/run-chemistry-tests.sh; then
+                      docker logs "${CHEMISTRY_CONTAINER_NAME}"
+                      exit 1
+                    fi
+                '''
+            }
+
+            post {
+                always {
+                    sh 'docker stop "${CHEMISTRY_CONTAINER_NAME}" || true'
+                    sh 'rm -rf "${RS_FILE_BASE}"'
+                    sh 'mysql -h 127.0.0.1 -P 3306 -urspacedbuser -prspacedbpwd -e "drop database if exists ${SANITIZED_DBNAME}"'
+                }
+                failure {
+                    notify currentBuild.result
+                    notifySlack('FAILURE', 'Chemistry tests failed')
+                }
+                fixed {
+                    notify currentBuild.result
+                    notifySlack('SUCCESS', 'Chemistry tests fixed')
+                }
+                success {
+                    junit 'target/surefire-reports/*.xml'
+                }
+            }
         }
     }
 }
