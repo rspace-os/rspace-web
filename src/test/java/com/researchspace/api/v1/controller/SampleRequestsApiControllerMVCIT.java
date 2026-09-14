@@ -104,4 +104,60 @@ public class SampleRequestsApiControllerMVCIT extends API_MVC_InventoryTestBase 
                 Map.of("sampleGlobalId", sample.getGlobalId(), "note", "requesting my own")))
         .andExpect(status().isUnprocessableEntity());
   }
+
+  @Test
+  public void allEndpointsAreNotFoundWhenSampleRequestsDisabled() throws Exception {
+    User owner = createAndSaveUser(getRandomName(10), Constants.PI_ROLE);
+    User requester = createAndSaveUser(getRandomName(10));
+    initUsers(owner, requester);
+    createGroupForUsersWithDefaultPi(owner, requester);
+
+    String requesterApiKey = createNewApiKeyForUser(requester);
+    sysPropMgr.save(
+        SystemPropertyName.SAMPLE_REQUESTS_AVAILABLE,
+        HierarchicalPermission.ALLOWED,
+        getSysAdminUser());
+
+    ApiSampleWithFullSubSamples sample = createBasicSampleForUser(owner);
+    markRequestable(sample, owner);
+
+    // raise one while the feature is on, so there is something for GET /{id} to find
+    MvcResult postResult =
+        this.mockMvc
+            .perform(
+                createBuilderForInventoryPostWithJSONBody(
+                    requesterApiKey,
+                    "/sampleRequests",
+                    requester,
+                    Map.of("sampleGlobalId", sample.getGlobalId(), "note", "before switch-off")))
+            .andReturn();
+    ApiSampleRequest created = mvcUtils.getFromJsonResponseBody(postResult, ApiSampleRequest.class);
+
+    sysPropMgr.save(
+        SystemPropertyName.SAMPLE_REQUESTS_AVAILABLE,
+        HierarchicalPermission.DENIED,
+        getSysAdminUser());
+
+    // the whole resource behaves as if it is not there, rather than erroring
+    this.mockMvc
+        .perform(
+            createBuilderForInventoryPostWithJSONBody(
+                requesterApiKey,
+                "/sampleRequests",
+                requester,
+                Map.of("sampleGlobalId", sample.getGlobalId(), "note", "after switch-off")))
+        .andExpect(status().isNotFound());
+
+    this.mockMvc
+        .perform(
+            createBuilderForInventoryGet(
+                API_VERSION.ONE, requesterApiKey, "/sampleRequests", requester))
+        .andExpect(status().isNotFound());
+
+    this.mockMvc
+        .perform(
+            createBuilderForInventoryGet(
+                API_VERSION.ONE, requesterApiKey, "/sampleRequests/" + created.getId(), requester))
+        .andExpect(status().isNotFound());
+  }
 }

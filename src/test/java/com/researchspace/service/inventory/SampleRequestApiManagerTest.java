@@ -203,6 +203,19 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
         UnsupportedOperationException.class, () -> listFor(SampleRequestRole.REQUESTER, requester));
   }
 
+  @Test
+  public void getRequestById_isRefusedWhenSampleRequestsDisabled() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+    systemPropertyMgr.save(
+        SystemPropertyName.SAMPLE_REQUESTS_AVAILABLE,
+        HierarchicalPermission.DENIED,
+        getSysAdminUser());
+
+    assertThrows(
+        UnsupportedOperationException.class,
+        () -> sampleRequestApiMgr.getRequestById(raised.getId(), requester));
+  }
+
   private void markRequestable(ApiSampleWithFullSubSamples target) {
     ApiSample update = new ApiSample();
     update.setId(target.getId());
