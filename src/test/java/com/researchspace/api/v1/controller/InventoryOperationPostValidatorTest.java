@@ -299,9 +299,8 @@ public class InventoryOperationPostValidatorTest {
 
   @Test
   void rejectsAnExplicitAmountModeOnAnOriginEmptyingOperation() {
-    // Destroy's whole promise is to empty the origin, so its amount is a compare-and-swap claim the
-    // manager checks live. A client declaring "explicit" is claiming the opposite, which this
-    // operation cannot honour: malformed, so 400 here rather than the manager's 409 (RSDEV-1231).
+    // Destroy's whole promise is to empty the origin. A client declaring "explicit" is claiming the
+    // opposite, which this operation cannot honour: malformed, so 400 here (RSDEV-1231).
     ApiInventoryOperationPost request = destroyRequest();
     request.getOrigins().get(0).setAmountMode(ApiInventoryOperationAmountMode.EXPLICIT);
     assertSingleErrorWithCode(
@@ -524,11 +523,8 @@ public class InventoryOperationPostValidatorTest {
   @Test
   void rejectsAnAllAmountModeOnAnOperationThatTakesNothingFromItsOrigins() {
     // Passage links to its origin and takes nothing, so its amount must be exactly zero. Declaring
-    // "all" claims the zero equals the origin's whole quantity, which the manager compare-and-swaps
-    // and rejects as a 409 telling the client to reload; reloading changes nothing, so the client
-    // resubmits the only payload the validator accepts and 409s forever. A whole-origin claim is
-    // meaningless here, so it is malformed: a 400, like the mirror rule for Destroy (parallel
-    // review).
+    // "all" claims the zero equals the origin's whole quantity. A whole-origin claim is meaningless
+    // here, so it is malformed: a 400, like the mirror rule for Destroy (parallel review).
     ApiInventoryOperationPost request = passageRequest();
     request.getOrigins().get(0).setAmountMode(ApiInventoryOperationAmountMode.ALL);
     assertSingleErrorWithCode(
@@ -552,8 +548,7 @@ public class InventoryOperationPostValidatorTest {
 
   @Test
   void stillAcceptsAnAllAmountModeOnAnOperationThatDoesTakeFromItsOrigins() {
-    // Aliquot decrements its origin, so "take all of it" is a real request and stays a
-    // compare-and-swap rather than a 400.
+    // Aliquot decrements its origin, so "take all of it" is a real request, not a 400.
     ApiInventoryOperationPost request = aliquotRequest();
     request.getOrigins().get(0).setAmountMode(ApiInventoryOperationAmountMode.ALL);
     assertFalse(validate(request).hasErrors());
@@ -621,14 +616,11 @@ public class InventoryOperationPostValidatorTest {
   // --- the typed facades' expectedQuantity (M0 D5): its SHAPE is this validator's job ---
 
   /**
-   * A typed facade copies the caller's {@code expectedQuantity} onto the origin element and the
-   * manager compare-and-swaps it against the locked quantity. Nothing validated its shape. A null
-   * numeric value made {@code amountTakenEmptiesOrigin} answer false, which the manager read as a
-   * stale origin and answered with a 409 the caller can never resolve by reloading; an unknown unit
-   * id reached {@code QuantityUtils.isComparableQuantities}, which throws IllegalArgumentException,
-   * after every origin row was locked. Both are malformed requests and belong here as the same
-   * field-scoped 400 {@code amountTaken} gets, under {@code origins[i].expectedQuantity} so the
-   * facade renames it to {@code origin.expectedQuantity}.
+   * A typed facade copies the caller's {@code expectedQuantity} onto the origin element. Nothing
+   * validated its shape: a null numeric value or an unknown unit id reached the manager as a
+   * malformed value it could no longer report as a field. Both are malformed requests and belong
+   * here as the same field-scoped 400 {@code amountTaken} gets, under {@code
+   * origins[i].expectedQuantity} so the facade renames it to {@code origin.expectedQuantity}.
    */
   @Test
   void rejectsAnExpectedQuantityWithoutANumericValue() {
@@ -687,7 +679,7 @@ public class InventoryOperationPostValidatorTest {
 
   @Test
   void acceptsAWellFormedExpectedQuantityOnEveryOperation() {
-    // Whether it MATCHES the live quantity is the manager's compare-and-swap, not a shape rule.
+    // The value is accepted without comparison (DevDocs/adr/0007); only its shape is checked.
     for (ApiInventoryOperationPost request :
         List.of(
             aliquotRequest(),
@@ -710,7 +702,7 @@ public class InventoryOperationPostValidatorTest {
   @Test
   void rejectsAmountTakenWithMoreIntegerDigitsThanTheColumnHolds() {
     // DECIMAL(19,3) holds 16 integer digits. 1E+17 has a NEGATIVE scale, so a scale-only check
-    // passes it and the INSERT fails inside the transaction, after the origin locks.
+    // passes it and the INSERT fails inside the transaction, after the origins were decremented.
     ApiInventoryOperationPost request = aliquotRequest();
     request.getOrigins().get(0).setAmountTaken(millilitres("1E+17"));
     assertSingleErrorWithCode(
@@ -722,8 +714,8 @@ public class InventoryOperationPostValidatorTest {
   @Test
   void aZeroAmountOnAnEmptyingOperationIsLeftToTheLiveCheck() {
     // Destroy with amountTaken 0 and no mode is shape-valid: whether it empties the origin is the
-    // manager's rule (mustEmptyOrigin, or the 409 under a declared "all"), because this validator
-    // never sees the live quantity. The manager test pins both answers.
+    // manager's rule (mustEmptyOrigin), because this validator never sees the live quantity. The
+    // manager test pins the answer.
     ApiInventoryOperationPost request = destroyRequest();
     request.getOrigins().get(0).setAmountTaken(millilitres("0"));
     assertFalse(validate(request).hasErrors(), () -> validate(request).getAllErrors().toString());
