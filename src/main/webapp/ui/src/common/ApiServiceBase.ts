@@ -54,6 +54,10 @@ class ApiServiceBase {
       error.response.status === 401 &&
       !(error.config.data && !error.config.data.__isRetryRequest)
     ) {
+      // A UI token is bound to the cookie-backed browser session. After an
+      // Operate As release, a token cached by another tab is rejected and must
+      // not be reused for the retry.
+      JwtService.destroyToken();
       if (/\/userform\/ajax\/inventoryOauthToken/.test(error.request.responseURL)) {
         /*
          * Prevent the immediate infinite loop caused by a 401 on
