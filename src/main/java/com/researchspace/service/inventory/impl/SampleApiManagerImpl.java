@@ -24,7 +24,6 @@ import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.jsonserialisers.LocalDateDeserialiser;
 import com.researchspace.dao.SampleDao;
 import com.researchspace.dao.SampleTemplateDao;
-import com.researchspace.dao.SubSampleDao;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.events.InventoryAccessEvent;
@@ -46,12 +45,10 @@ import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.inventory.field.InventoryLinkField;
 import com.researchspace.model.record.IActiveUserStrategy;
-import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.inventory.InventoryAuditApiManager;
 import com.researchspace.service.inventory.InventoryFieldNameUniquenessValidator;
 import com.researchspace.service.inventory.InventoryMoveHelper;
 import com.researchspace.service.inventory.SampleApiManager;
-import com.researchspace.service.inventory.SampleSiblingRowLock;
 import com.researchspace.service.inventory.SubSampleApiManager;
 import jakarta.ws.rs.NotFoundException;
 import java.io.IOException;
@@ -70,19 +67,15 @@ import org.apache.commons.lang3.StringUtils;
 import org.jsoup.helper.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service("sampleApiManager")
 public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
-    implements SampleSiblingRowLock, SampleApiManager {
+    implements SampleApiManager {
 
   public static final String SAMPLE_DEFAULT_NAME = "Generic Sample";
 
   private @Autowired SubSampleApiManager subSampleMgr;
   private @Autowired SampleDao sampleDao;
-  private @Autowired SubSampleDao subSampleDao;
-  private @Autowired MessageSourceUtils messages;
   private @Autowired SampleTemplateDao sampleTemplateDao;
   private @Autowired InventoryMoveHelper inventoryMoveHelper;
   private @Autowired InventoryAuditApiManager inventoryAuditMgr;
@@ -155,38 +148,6 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
     return sample;
   }
 
-  @Override
-  public Sample lockSampleForEdit(Long id, User user) {
-    Sample sample = sampleDao.lockRowForUpdate(id);
-    if (sample == null) {
-      throw new NotFoundException(
-          messages.getMessage("errors.inventory.sample.notFound", new Object[] {id}));
-    }
-    invPermissions.assertUserCanEditInventoryRecord(sample, user);
-    return sample;
-  }
-
-  @Override
-  @Transactional(propagation = Propagation.MANDATORY)
-  public void lockSiblingRowsAndRecalculateTotal(Long sampleId) {
-    // Deliberately an UNLOCKED read of the sample: the serialisation this method needs comes from
-    // the locked scalar read of the subsample rows below, and taking the sample's own row lock
-    // here would insert a sample-before-subsample acquisition into paths that otherwise lock
-    // subsample rows first, inverting the order against them.
-    SampleEntity sample = sampleDao.get(sampleId);
-    if (sample == null) {
-      // Every caller derives sampleId from a live subsample it has just read, so reaching here
-      // means the parent row vanished between that read and this one. There is nothing to lock and
-      // no sibling rows to sum, so returning is the whole correct answer; throwing would turn a
-      // benign race into a 500 on a path that has not written anything (parallel review, L5).
-      return;
-    }
-    // Assigned onto the entity so the flush at commit writes this value rather than the cascade's
-    // stale one; the arithmetic (empty, single, unit-aware sum) stays in the entity.
-    sample.setTotalQuantityFrom(
-        subSampleDao.getActiveQuantitiesForUpdate(sampleId, sample.isDeleted()));
-    saveSampleEntity(sample);
-  }
 
   @Override
   public Sample assertUserCanDeleteSample(Long id, User user) {
