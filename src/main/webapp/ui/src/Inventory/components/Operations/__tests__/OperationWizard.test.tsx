@@ -32,6 +32,16 @@ vi.mock("@/hooks/api/useUiPreference", () => ({
     const value = key in prefs.store ? prefs.store[key] : opts.defaultValue;
     return [value, (v: unknown) => (prefs.store[key] = v)];
   },
+  // The wizard reads per-operation bundles through readUiPreference over the raw map rather than
+  // through the bound hook (bundleFor). Both were missing from this mock, so every test in this file
+  // threw "No useRawUiPreferences export is defined" from the wizard's first render.
+  useRawUiPreferences: () => prefs.store,
+  readUiPreference: (uiPreferences: Record<string, unknown>, pref: symbol, defaultValue: unknown) => {
+    const key = Symbol.keyFor(pref) ?? "";
+    // prefs.store holds values unwrapped, matching the `default` mock above; the real implementation
+    // unwraps a { value } envelope.
+    return key in uiPreferences ? uiPreferences[key] : defaultValue;
+  },
 }));
 
 // The wizard talks to the backend through the real operationsApi client, answered here by MSW, so
@@ -61,6 +71,8 @@ const getTemplate = vi.fn(() =>
     id: 9,
     name: "Parent template",
     quantityCategory: "volume",
+    // RSpace soft-deletes, so a trashed template still resolves; only this flag distinguishes it.
+    deleted: false,
     fields: [{ name: "Passage number", mandatory: true, content: "1", selectedOptions: null }],
   }),
 );
@@ -206,18 +218,23 @@ vi.mock("../TemplateStep", () => ({
     onChange,
     parentTemplateChecking,
     parentTemplateError,
+    rememberedTemplateError,
   }: {
-    value: { mode: string; templateId: number | null };
+    value: { mode: string; templateId: number | null; templateName?: string };
     onChange: (v: unknown) => void;
     parentTemplateChecking?: boolean;
     parentTemplateError?: string | null;
+    rememberedTemplateError?: string | null;
   }) => (
     <div>
       <span data-testid="tmpl-mode">{value.mode}</span>
       <span data-testid="tmpl-id">{String(value.templateId)}</span>
+      {/* The remembered banner renders this name, so a stale one is observable here. */}
+      <span data-testid="tmpl-name">{value.templateName ?? ""}</span>
       {/* The wizard owns the parent-template check now, so its status is observable here. */}
       <span data-testid="tmpl-checking">{String(Boolean(parentTemplateChecking))}</span>
       <span data-testid="tmpl-parent-error">{parentTemplateError ?? ""}</span>
+      <span data-testid="tmpl-remembered-error">{rememberedTemplateError ?? ""}</span>
       <button
         type="button"
         data-testid="tmpl-pick5"
@@ -276,6 +293,7 @@ beforeEach(() => {
       id: 9,
       name: "Parent template",
       quantityCategory: "volume",
+      deleted: false,
       fields: [{ name: "Passage number", mandatory: true, content: "1", selectedOptions: null }],
     }),
   );
@@ -416,11 +434,81 @@ describe("OperationWizard step flow", () => {
     expect(getTemplate).toHaveBeenCalledWith(9, null, expect.anything());
   });
 
+  it("withholds the one-click fast path when the remembered template has been trashed", async () => {
+    // The stored bundle's template id is a snapshot from a previous run. The template may since have
+    // been moved to trash, and RSpace soft-deletes, so the lookup SUCCEEDS and only the deleted flag
+    // tells the wizard. Left unchecked, step one offered Perform against a trashed template
+    // (RSDEV-1231, F2).
+    getTemplate.mockResolvedValue({
+      id: 9,
+      name: "Cell line",
+      quantityCategory: "volume",
+      deleted: true,
+      fields: [],
+    });
+    prefs.store.INVENTORY_OPERATION_PROCESS_VALUES = {
+      "derive dna": {
+        values: { count: 2, eachAmount: { numericValue: 1, unitId: 3 }, amountTaken: { numericValue: 1, unitId: 3 } },
+        template: { mode: "pick", templateId: 9, templateName: "Cell line" },
+        documentation: null,
+      },
+    };
+    const user = userEvent.setup();
+    const origin = makeMockSubSample({});
+    render(<OperationWizard open onClose={vi.fn()} origins={[origin]} />);
+    await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
+    await user.type(screen.getByTestId("proc"), "dna");
+
+    // The check runs at step one, where the fast path lives, so Perform is never offered.
+    await waitFor(() => expect(getTemplate).toHaveBeenCalledWith(9, null, expect.anything()));
+    expect(screen.queryByRole("button", { name: /wizard\.perform/i })).not.toBeInTheDocument();
+
+    // On reaching the template step the selection has been dropped back to a first-run choice, so
+    // the user must pick another template, and the reason is shown rather than silently reverting.
+    await user.click(nextButton());
+    expect(screen.getByTestId("tmpl-mode")).toHaveTextContent("unselected");
+    expect(screen.getByTestId("tmpl-remembered-error")).toHaveTextContent(/rememberedDeleted/);
+  });
+
+  it("shows the remembered template's current name after it has been renamed", async () => {
+    // The bundle stores the name alongside the id, and it was read straight back out, so a template
+    // renamed since the bundle was saved was shown - and confirmed on the one-click summary - under
+    // its old name (RSDEV-1231, F1). The name is display-only; only the id travels.
+    getTemplate.mockResolvedValue({
+      id: 9,
+      name: "Cell line v2",
+      quantityCategory: "volume",
+      deleted: false,
+      fields: [],
+    });
+    prefs.store.INVENTORY_OPERATION_PROCESS_VALUES = {
+      "derive dna": {
+        values: { count: 2, eachAmount: { numericValue: 1, unitId: 3 }, amountTaken: { numericValue: 1, unitId: 3 } },
+        template: { mode: "pick", templateId: 9, templateName: "Cell line" },
+        documentation: null,
+      },
+    };
+    const user = userEvent.setup();
+    const origin = makeMockSubSample({});
+    render(<OperationWizard open onClose={vi.fn()} origins={[origin]} />);
+    await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
+    await user.type(screen.getByTestId("proc"), "dna");
+
+    // Still the remembered template, still one-click performable: only its label has changed.
+    await waitFor(() => expect(screen.getByRole("button", { name: /wizard\.perform/i })).toBeInTheDocument());
+    // Step into the wizard (the fast path replaces Next with review/Perform) to read the banner.
+    await user.click(screen.getByRole("button", { name: /wizard\.reviewEdit/i }));
+    await user.click(nextButton());
+    expect(screen.getByTestId("tmpl-mode")).toHaveTextContent("remembered");
+    expect(screen.getByTestId("tmpl-name")).toHaveTextContent("Cell line v2");
+  });
+
   it("blocks and explains when the parent template has a defaultless mandatory field", async () => {
     getTemplate.mockResolvedValueOnce({
       id: 9,
       name: "Parent template",
       quantityCategory: "volume",
+      deleted: false,
       // A mandatory field with no default: normal on a parent, and unusable for a new sample.
       fields: [{ name: "Batch", mandatory: true, content: "", selectedOptions: null }],
     });
@@ -973,6 +1061,7 @@ describe("OperationWizard step flow", () => {
         id: 9,
         name: "Parent template",
         quantityCategory: "volume",
+        deleted: false,
         fields: fields.map((name) => ({ name, mandatory: true, content: "", selectedOptions: null })),
       });
       const user = userEvent.setup();

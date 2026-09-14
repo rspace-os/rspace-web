@@ -47,13 +47,24 @@ beforeEach(() => {
 vi.mock("@/stores/stores/getRootStore", () => ({
   default: () => ({
     authStore: { isSynchronizing: false },
-    searchStore: { search: { performSearch: vi.fn() } },
+    // A remembered specific template is re-checked against the server on restore (RSDEV-1231), so
+    // the bundles here resolve their template through this.
+    searchStore: {
+      search: { performSearch: vi.fn() },
+      getTemplate: () => Promise.resolve({ id: 5, name: "T5", quantityCategory: "volume", deleted: false, fields: [] }),
+    },
     uiStore: { addAlert: vi.fn() },
     unitStore: { getUnit: () => ({ label: "ml" }) },
   }),
 }));
 vi.mock("@/util/alerts", () => ({ showToastWhilstPending: (_msg: string, p: Promise<unknown>) => p }));
-vi.mock("@/stores/contexts/Alert", () => ({ mkAlert: (x: unknown) => x }));
+// Keeps the real AlertContext (its default export) and overrides only mkAlert: the wizard now
+// reports preference save failures through useContext(AlertContext), so a mock with mkAlert alone
+// left every test in this file throwing "No default export is defined".
+vi.mock("@/stores/contexts/Alert", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/stores/contexts/Alert")>()),
+  mkAlert: (x: unknown) => x,
+}));
 vi.mock("@/components/SubmitSpinnerButton", () => ({
   default: ({ onClick, label, disabled }: { onClick: () => void; label: string; disabled?: boolean }) => (
     <button type="button" onClick={onClick} disabled={disabled}>
@@ -251,6 +262,9 @@ describe("OperationWizard with the real preference hook", () => {
     // No typing, no toggling Remember: selecting the operation alone must find and restore the
     // per-operation bundle, offering Perform straight away.
     await waitFor(() => expect(screen.getByRole("button", { name: /wizard\.perform/i })).toBeEnabled());
+    // The process name came back with the bundle. Step one is showing the confirmation (that is what
+    // the fast path means), so the details field holding it is only rendered once we step in.
+    await user.click(screen.getByRole("button", { name: /wizard\.reviewEdit/i }));
     expect(screen.getByTestId("proc")).toHaveValue("dna extraction");
   });
 });
