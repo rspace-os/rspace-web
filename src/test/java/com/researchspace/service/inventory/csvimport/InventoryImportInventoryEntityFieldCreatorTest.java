@@ -3,20 +3,77 @@ package com.researchspace.service.inventory.csvimport;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.inventory.field.InventoryRadioField;
 import com.researchspace.model.units.RSUnitDef;
+import com.researchspace.properties.IPropertyHolder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class InventoryImportInventoryEntityFieldCreatorTest {
 
   InventoryImportSampleFieldCreator helper = new InventoryImportSampleFieldCreator();
+
+  @BeforeEach
+  void wireLinkParser() {
+    CsvLinkValueParser linkParser = new CsvLinkValueParser();
+    IPropertyHolder properties = mock(IPropertyHolder.class);
+    when(properties.getServerUrl()).thenReturn("https://rspace.example.com");
+    linkParser.properties = properties;
+    helper.linkParser = linkParser;
+  }
+
+  @Test
+  public void linkSuggestedOnlyWhenEveryValueIsALinkCell() {
+    List<String> values = new ArrayList<>();
+    values.add("IsDerivedFrom https://rspace.example.com/globalId/SA1v2");
+    values.add("");
+    values.add("Cites https://rspace.example.com/globalId/SD9");
+    InventoryEntityField field = helper.getSuggestedSampleFieldForNameAndValues("links", values);
+    assertEquals(FieldType.LINK, field.getType());
+    assertEquals("links", field.getName());
+
+    values.add("Cites https://elsewhere.example.com/globalId/SD9");
+    field = helper.getSuggestedSampleFieldForNameAndValues("links", values);
+    assertEquals(FieldType.STRING, field.getType());
+  }
+
+  @Test
+  public void longValueContainingUrlIsNotForcedToText() {
+    String url = "https://rsdev-1354-export-import-inventory-links-bb57ac5e-3.researchspace.com/x";
+    String longWithUrl = "see " + url + " " + StringUtils.repeat("y", 150 - url.length() - 5);
+    assertTrue(longWithUrl.length() > InventoryImportSampleFieldCreator.MAX_NON_TEXT_LENGTH);
+    InventoryEntityField field =
+        helper.getSuggestedSampleFieldForNameAndValues("n", List.of(longWithUrl));
+    assertEquals(FieldType.STRING, field.getType());
+
+    String longWithoutUrl = StringUtils.repeat("y", 150);
+    field = helper.getSuggestedSampleFieldForNameAndValues("n", List.of(longWithoutUrl));
+    assertEquals(FieldType.TEXT, field.getType());
+
+    String tooLongEvenWithUrl = url + " " + StringUtils.repeat("y", 500);
+    field = helper.getSuggestedSampleFieldForNameAndValues("n", List.of(tooLongEvenWithUrl));
+    assertEquals(FieldType.TEXT, field.getType());
+
+    // a link cell on a server with a long hostname stays eligible for the Link type
+    String longLinkCell =
+        "IsVersionOf https://rsdev-1354-export-import-inventory-links-bb57ac5e-3.researchspace.com"
+            + "/globalId/SA1711111";
+    helper.linkParser.properties = mock(IPropertyHolder.class);
+    when(helper.linkParser.properties.getServerUrl())
+        .thenReturn(
+            "https://rsdev-1354-export-import-inventory-links-bb57ac5e-3.researchspace.com");
+    field = helper.getSuggestedSampleFieldForNameAndValues("n", List.of(longLinkCell));
+    assertEquals(FieldType.LINK, field.getType());
+  }
 
   @Test
   public void testColumnTypeRecognition() {
