@@ -92,8 +92,7 @@ type BuildParams = {
 /**
  * The request the wizard POSTs (DevDocs/adr/0007, M4). The server builds the sample
  * and its generated fields itself, so only what the user chose travels: the declared inputs by key,
- * each origin's amount taken (decided exactly as for the model below, since the server
- * compare-and-swaps a whole-origin amount against the live quantity), the template and the
+ * each origin's amount taken (decided exactly as for the model below), the template and the
  * documentation target. Computed values (Passage's counter, Destroy's disposed date) are the
  * server's; the origin element owns the amount taken (M3), so it is not repeated in the inputs.
  */
@@ -138,10 +137,9 @@ function buildOriginUpdates(params: BuildParams): Array<OperationOriginUpdate> {
 
   // Whether this request's amount is a snapshot of the origin's whole quantity rather than something
   // the user typed. Exactly the two branches of amountTakenFor that call fullQuantity: Destroy
-  // (emptiesOrigin) and the runtime "take all" mode. The backend uses it to compare-and-swap the
-  // amount against the live quantity, so a "take all" built from a stale wizard load is rejected as
-  // a 409 instead of emptying an origin someone else has since topped up. "same" and "perSubsample"
-  // amounts are user-entered, so they are "explicit" and carry no such claim.
+  // (emptiesOrigin) and the runtime "take all" mode. The backend checks the mode for shape only
+  // (DevDocs/adr/0007: no concurrency control). "same" and "perSubsample" amounts are user-entered,
+  // so they are "explicit".
   // The mode is only honoured for an operation that OFFERS it: only a multi-origin operation that
   // takes an amount ever shows the modes, but the wizard restores a stored bundle's amountMode for
   // every operation, so a stale or hand-edited single-origin bundle carrying "all" would empty the

@@ -13,13 +13,11 @@ import lombok.NoArgsConstructor;
  * non-negative decrement (not an absolute value): the backend reduces the origin's current quantity
  * by this amount, clamped at zero, so an operation can never increase the origin's volume.
  *
- * <p>{@code amountMode} says how the client decided {@code amountTaken}, which turns that amount
- * into a compare-and-swap guard when the answer is "all of it". A client that means to empty the
- * origin still serializes the full quantity it saw, and the endpoint checks that against the live
- * locked quantity: a mismatch means the origin changed between wizard load and Perform, and the
- * request is rejected with 409 rather than emptying an origin the user never saw. Absent on the
- * wire it binds to null, a third state distinct from both modes: it earns no compare-and-swap, so
- * every request accepted before this field existed keeps its current meaning. See DevDocs/adr/0007.
+ * <p>{@code amountMode} says how the client decided {@code amountTaken}: "all of it" or an amount
+ * the user typed. The post validator checks it for shape only (see {@link
+ * ApiInventoryOperationAmountMode}); it is not compared against the live quantity. Absent on the
+ * wire it binds to null, so every request accepted before this field existed keeps its meaning. See
+ * DevDocs/adr/0007.
  */
 @Data
 @NoArgsConstructor
@@ -37,10 +35,8 @@ public class ApiInventoryOperationOriginUpdate {
 
   /**
    * Server-side only, set by the typed facades (M0 D5): the quantity the caller believes the origin
-   * holds. When present the manager compare-and-swaps it against the live locked quantity and
-   * rejects a mismatch with 409, exactly as a whole-origin {@code amountMode: all} claim is, but
-   * independent of how much is taken. Not on this generic endpoint's wire: the wizard expresses the
-   * same guard through {@code amountMode}.
+   * holds. Shape-checked by the post validator and otherwise accepted without comparison
+   * (DevDocs/adr/0007: no concurrency control). Not on this generic endpoint's wire.
    */
   @JsonIgnore private ApiQuantityInfo expectedQuantity;
 

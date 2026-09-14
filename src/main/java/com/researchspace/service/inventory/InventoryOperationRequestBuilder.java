@@ -2,7 +2,6 @@ package com.researchspace.service.inventory;
 
 import com.researchspace.api.v1.model.ApiExtraField;
 import com.researchspace.api.v1.model.ApiInventoryLink;
-import com.researchspace.api.v1.model.ApiInventoryOperationAmountMode;
 import com.researchspace.api.v1.model.ApiInventoryOperationOriginUpdate;
 import com.researchspace.api.v1.model.ApiInventoryOperationPost;
 import com.researchspace.api.v1.model.ApiQuantityInfo;
@@ -37,8 +36,8 @@ import org.springframework.context.MessageSource;
  * <ul>
  *   <li>No aggregate {@code newSample.quantity}. SampleApiManagerImpl reads it only when a
  *       subsample lacks its own quantity, and every subsample built here carries one.
- *   <li>No {@code amountMode: explicit}. InventoryOperationManagerImpl acts only on {@code ALL}
- *       (the compare-and-swap guard), which IS emitted whenever the whole origin is taken.
+ *   <li>No {@code amountMode}. Only the post validator reads it, and a built request never passes
+ *       through that validator (DevDocs/adr/0007: no concurrency control).
  * </ul>
  *
  * <p>Locale: the builder itself is locale-free - generated field names come from the supplied
@@ -145,11 +144,6 @@ public final class InventoryOperationRequestBuilder {
     for (Origin origin : origins) {
       ApiInventoryOperationOriginUpdate update = new ApiInventoryOperationOriginUpdate();
       update.setId(origin.id());
-      if (takesWholeOrigin) {
-        // The snapshot amount below doubles as a compare-and-swap guard only when the request says
-        // it meant "all of it" (InventoryOperationManagerImpl.performOperation).
-        update.setAmountMode(ApiInventoryOperationAmountMode.ALL);
-      }
       update.setAmountTaken(
           amountTakenFor(origin, perSubsampleAmounts, eachAmountUnit, takesWholeOrigin));
       List<ApiExtraField> originFields = originFields(effect, values, resolveLabel);
@@ -402,7 +396,7 @@ public final class InventoryOperationRequestBuilder {
    * "Pooled from: {originName}", where an origin's name may legitimately be the full 255 characters
    * already. Nothing downstream bounds a field name - ApiExtraFieldsHelper checks a link field's
    * payload, not its name's length - so an over-long name failed at the INSERT as a 500 inside the
-   * manager's transaction, after the origin locks.
+   * manager's transaction, after the origins were decremented.
    *
    * <p>Truncated rather than rejected: pooling two subsamples whose names are at the column limit
    * has to remain possible, and the name is display text. The link TARGET, which is the part that

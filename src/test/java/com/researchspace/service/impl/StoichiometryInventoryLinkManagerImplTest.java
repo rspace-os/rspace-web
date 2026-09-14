@@ -81,7 +81,6 @@ public class StoichiometryInventoryLinkManagerImplTest {
     invSample.setId(200L);
     invSubSample = new SubSample();
     invSubSample.setId(300L);
-    // the deduction locks the parent sample's sibling set before the subsample's own row, so
     // every subsample a deduction touches needs a parent to resolve
     invSubSample.setSample(invSample);
     owningRecord = mock(StructuredDocument.class);
@@ -283,7 +282,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
       Long linkId, Long subSampleId, StoichiometryMolecule mol) {
     SubSample sub = new SubSample();
     sub.setId(subSampleId);
-    // parent sample id derived from the subsample id (800 -> 8000) so ordering tests can name it
+    // parent sample id derived from the subsample id (800 -> 8000)
     Sample parent = new Sample();
     parent.setId(subSampleId * 10);
     sub.setSample(parent);

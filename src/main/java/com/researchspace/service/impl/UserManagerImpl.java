@@ -413,8 +413,7 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
       throw new IllegalArgumentException(
           messages.getMessage("errors.preference.invalidKey", new Object[] {key}));
     }
-    // Before the parse and before the lock: an oversized value should neither be materialised as a
-    // tree nor hold a row lock while it is rejected.
+    // Before the parse: an oversized value should not be materialised as a tree to be rejected.
     if (valueJson != null && valueJson.length() > MAX_UI_JSON_SETTING_VALUE_CHARS) {
       throw new IllegalArgumentException(
           messages.getMessage(

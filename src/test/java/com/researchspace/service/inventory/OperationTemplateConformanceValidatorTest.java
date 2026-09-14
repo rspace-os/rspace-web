@@ -158,8 +158,8 @@ class OperationTemplateConformanceValidatorTest {
     // sampleApiPostFullValidator; this path ran only the second, so the name/description/tag length
     // rules never applied. EditInfo.name is varchar(255), and nothing between the input validator
     // (which only checks that a "text" input is a CharSequence) and the entity bounded it, so an
-    // over-long sampleName reached Hibernate inside the transaction, after the origin locks were
-    // taken (parallel review).
+    // over-long sampleName reached Hibernate inside the transaction, after the origins were
+    // decremented (parallel review).
     ApiInventoryOperationPost built = aliquotRequest();
     built.getNewSample().setName("x".repeat(256));
 
