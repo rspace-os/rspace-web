@@ -181,8 +181,17 @@ public class SubSample extends MovableInventoryRecord implements Serializable, Q
    * sibling snapshots over the top of that, and would dirty the sample so that the stale total got
    * written at all (live run 2026-09-13, F1b).
    *
-   * @param committedQuantity the quantity read under the lock, ignored when null (a row may hold no
-   *     quantity value at all, which is not a value to adopt)
+   * @param committedQuantity the quantity read under the lock. Null means one thing only here: the
+   *     row's {@code quantityNumericValue} column is NULL. The "no such row" reading of null cannot
+   *     occur, because {@code SubSampleApiManagerImpl.reconcileWithCommittedRow} and {@code
+   *     registerApiSubSampleUsage} both call {@code lockSubSampleForEdit} first, which 404s on a
+   *     missing row before any scalar is read. Such a row is not reachable through the application
+   *     either - {@link #setQuantityInfo} dereferences the numeric value whenever a unit is
+   *     present, and {@code quantityUnitId} is NOT NULL in the schema - so it means legacy or
+   *     externally written data. It is left alone rather than adopted: adopting it would leave the
+   *     entity with no quantity at all and fail the rest of the request on a null dereference,
+   *     which is worse than declining to reconcile a column the application cannot produce (review
+   *     2026-09-14, I3). Pinned by {@code SubSampleTest}.
    */
   public void refreshQuantityFromLockedRow(QuantityInfo committedQuantity) {
     if (committedQuantity != null) {
