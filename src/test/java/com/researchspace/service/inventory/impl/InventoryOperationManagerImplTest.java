@@ -88,8 +88,10 @@ class InventoryOperationManagerImplTest {
     when(subSample.getQuantity())
         .thenReturn(value == null ? null : new QuantityInfo(new BigDecimal(value), unitId));
     SampleEntity parent = mock(SampleEntity.class);
-    when(parent.getId()).thenReturn(sampleId);
-    when(subSample.getSample()).thenReturn(parent);
+    // Lenient: only the server-built path's parentFields(subSample.getSample()) reads the
+    // parent, so most callers of this helper never touch it.
+    lenient().when(parent.getId()).thenReturn(sampleId);
+    lenient().when(subSample.getSample()).thenReturn(parent);
     return subSample;
   }
 
@@ -191,7 +193,9 @@ class InventoryOperationManagerImplTest {
     // A single-origin test cannot catch a refactor that merges the assert and mutate loops; this
     // one
     // does - it would decrement origin 100 before checking origin 200's permission.
-    originHolds(100L, subSampleHolding("5", 3));
+    // Origin 100's permission check must succeed, but nothing past it ever runs, so it needs no
+    // quantity stub (the permission loop rejects origin 200 before the quantity loop starts).
+    when(subSampleApiMgr.assertUserCanEditSubSample(100L, user)).thenReturn(mock(SubSample.class));
     doThrow(new RuntimeException("no permission"))
         .when(subSampleApiMgr)
         .assertUserCanEditSubSample(200L, user);
@@ -1110,8 +1114,9 @@ class InventoryOperationManagerImplTest {
 
   @Test
   void theOriginsAfterComeBackInRequestOrderRegardlessOfProcessingOrder() throws Exception {
-    // A Pool facade over origins 200 then 100: origins are processed ascending by id, but the
-    // outcome lists them as the caller gave them (M0 D2).
+    // A Pool facade over origins 200 then 100: the outcome lists them as the caller gave them
+    // (M0 D2), even though the core processes origins ascending by id (see
+    // locksOriginsInAscendingIdOrderAndReportsErrorsAtTheirRequestIndex).
     serverBuiltOriginHolds(200L, "5");
     serverBuiltOriginHolds(100L, "5");
     ApiSubSample after200 = new ApiSubSample();
@@ -1134,9 +1139,6 @@ class InventoryOperationManagerImplTest {
 
     assertEquals(
         List.of(200L, 100L), outcome.originsAfter().stream().map(ApiSubSample::getId).toList());
-    InOrder processed = inOrder(subSampleApiMgr);
-    processed.verify(subSampleApiMgr).assertUserCanEditSubSample(100L, user);
-    processed.verify(subSampleApiMgr).assertUserCanEditSubSample(200L, user);
   }
 
   // --- the input rules run before any origin is read (server-built path) ---
