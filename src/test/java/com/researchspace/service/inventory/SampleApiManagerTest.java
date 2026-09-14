@@ -490,7 +490,9 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
         assertThrows(
             IllegalArgumentException.class,
             () -> sampleApiMgr.createNewApiSample(sampleWithInvalidExtraField, testUser));
-    assertEquals("'3.14asdf' cannot be parsed into number", iae.getMessage());
+    assertEquals(
+        "'3.14asdf' is not a valid number or exceeds the supported precision and range.",
+        iae.getMessage());
 
     // verify extra field cannot be named as default sample field (RSINV-162)
     ApiExtraField unallowedFieldName = new ApiExtraField();
