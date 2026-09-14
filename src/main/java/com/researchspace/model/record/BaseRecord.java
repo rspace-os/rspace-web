@@ -593,31 +593,8 @@ public abstract class BaseRecord
 
   private boolean doMove(Folder from, Folder to, User u, boolean allowUnsafeMove)
       throws IllegalAddChildOperation {
-    if (from == null || to == null || u == null) {
+    if (!isMoveValid(from, to, u, allowUnsafeMove)) {
       return false;
-    }
-    if (!this.getParentFolders().contains(from)) {
-      return false;
-    }
-    if (from.isNotebook() && !getOwner().equals(from.getOwner())) {
-      return false;
-    }
-    if (!allowUnsafeMove) {
-      if (isFolder() && ((Folder) this).isSystemFolder()) {
-        return false;
-      }
-      if (from.isTopLevelSharedFolder()) {
-        return false;
-      }
-      if (!isAllowedDestinationForSharedFolderMove(from, to)) {
-        return false;
-      }
-      if (!from.isSharedFolder() && to.isSharedFolder()) {
-        return false;
-      }
-      if (!from.isSharedFolder() && !from.getOwner().equals(to.getOwner())) {
-        return false; // block move from user's Workspace folder into somebody else's
-      }
     }
 
     boolean removed = from.removeChild(this);
@@ -625,14 +602,31 @@ public abstract class BaseRecord
     return added != null && removed;
   }
 
-  /**
-   * Returns whether this move satisfies the restrictions that apply when the source is a shared
-   * folder.
-   */
-  private static boolean isAllowedDestinationForSharedFolderMove(Folder from, Folder to) {
-    return !from.isSharedFolder()
-        || to.isSharedFolder()
-        || (to.isNotebook() && hasUserOrGroupWithAccessInCommon(from, to));
+  private boolean isMoveValid(Folder from, Folder to, User u, boolean allowUnsafeMove) {
+    if (from == null || to == null || u == null || !getParentFolders().contains(from)) {
+      return false;
+    }
+    if (from.isNotebook() && !getOwner().equals(from.getOwner())) {
+      return false;
+    }
+    return allowUnsafeMove || satisfiesMoveRestrictions(from, to);
+  }
+
+  private boolean satisfiesMoveRestrictions(Folder from, Folder to) {
+    if (isFolder() && ((Folder) this).isSystemFolder()) {
+      return false;
+    }
+    if (from.isTopLevelSharedFolder()) {
+      return false;
+    }
+    if (from.isSharedFolder()) {
+      return isAllowedSharedFolderDestination(from, to);
+    }
+    return !to.isSharedFolder() && from.getOwner().equals(to.getOwner());
+  }
+
+  private static boolean isAllowedSharedFolderDestination(Folder from, Folder to) {
+    return to.isSharedFolder() || (to.isNotebook() && hasUserOrGroupWithAccessInCommon(from, to));
   }
 
   private static boolean hasUserOrGroupWithAccessInCommon(BaseRecord first, BaseRecord second) {
