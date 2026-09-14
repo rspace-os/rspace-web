@@ -110,6 +110,31 @@ export function UiPreferences({ children }: { children: React.ReactNode }): Reac
 }
 
 /**
+ * Read a preference's value straight out of the shared context, without binding a component to it
+ * the way `useUiPreference` does. For the rare case that needs a DIFFERENT preference's current
+ * value than whatever a `useUiPreference` call in the same component happens to be bound to this
+ * render - e.g. computing the bundle for an operation the user is in the middle of selecting, whose
+ * key `useUiPreference` will only start reading on the NEXT render (RSDEV-1231, Codex review, PR
+ * #1090). Pair with `useRawUiPreferences` for the context value to pass in.
+ */
+export function readUiPreference<T>(
+  uiPreferences: UiPreferencesContextType["uiPreferences"],
+  preference: (typeof PREFERENCES)[keyof typeof PREFERENCES],
+  defaultValue: T,
+): T {
+  const key = Symbol.keyFor(preference);
+  if (key && typeof uiPreferences[key] !== "undefined") {
+    return (uiPreferences[key] as { value: T })?.value ?? defaultValue;
+  }
+  return defaultValue;
+}
+
+/** The raw preferences map, for a caller that needs `readUiPreference` rather than one bound key. */
+export function useRawUiPreferences(): UiPreferencesContextType["uiPreferences"] {
+  return React.useContext(UiPreferencesContext).uiPreferences;
+}
+
+/**
  * Use this custom hook to get the value of a UI Preference from the page-wide
  * context. The returned tuple has the same shape as a call to React.useState,
  * so that the value can be updated and persisted across page loads.
@@ -136,10 +161,7 @@ export default function useUiPreference<T>(
   // whose active operation changes without unmounting, RSDEV-1231) needs this render's value for
   // that key, not whatever `preference` resolved to when the component first mounted. A useState
   // initializer only runs once, so it would keep serving the first key's value forever.
-  let v = opts.defaultValue;
-  if (key && typeof uiPreferences[key] !== "undefined") {
-    v = (uiPreferences[key] as { value: T })?.value ?? opts.defaultValue;
-  }
+  const v = readUiPreference(uiPreferences, preference, opts.defaultValue);
 
   return [
     v,
