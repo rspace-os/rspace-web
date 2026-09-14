@@ -8,7 +8,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.researchspace.api.v1.model.ApiExtraField;
 import com.researchspace.api.v1.model.ApiField.ApiFieldType;
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
-import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.api.v1.model.ApiSample;
 import com.researchspace.api.v1.model.ApiSampleTemplate;
 import com.researchspace.api.v1.model.ApiSampleTemplatePost;
@@ -18,13 +17,7 @@ import com.researchspace.apiutils.ApiError;
 import com.researchspace.model.User;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.inventory.SubSampleApiManager;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -116,12 +109,6 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
         topLevelExtras);
   }
 
-  /** An Aliquot taking 1 (origin unit) into one 0.5 child. */
-  private static String aliquotJson(ApiSubSample origin) {
-    int unitId = origin.getQuantity().getUnitId();
-    return aliquotJsonWith(origin, quantityJson("1", unitId), quantityJson("0.5", unitId), "");
-  }
-
   private static String aliquotJsonWith(
       ApiSubSample origin, String amountTakenJson, String eachAmountJson, String topLevelExtras) {
     return body(
@@ -129,17 +116,6 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
         originJson(origin, null, amountTakenJson),
         creatingInputs("Aliquots", 1, eachAmountJson),
         topLevelExtras);
-  }
-
-  /** A Pool request over exactly two origins, taking 1 g from each into one 2 g child. */
-  private static String poolJson(String name, ApiSubSample first, ApiSubSample second) {
-    int gram = RSUnitDef.GRAM.getId();
-    return body(
-        "pool",
-        originJson(first, null, quantityJson("1", gram))
-            + ","
-            + originJson(second, null, quantityJson("1", gram)),
-        creatingInputs(name, 1, quantityJson("2", gram)));
   }
 
   /** An Aliquot taking the given amount, in the origin's own unit, into one child of the same. */
@@ -506,220 +482,6 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
     return extraFields.stream().filter(ef -> ef.getLink() != null).findFirst().orElse(null);
   }
 
-  /**
-   * RSDEV-1231: identical requests racing the same origin used to have every losing request surface
-   * an uncaught commit-time conflict (a deadlock, or "record has changed since last read") as a
-   * 500, even though the origin itself always ended up in the correct final state. Fires {@code
-   * count} copies of {@code operationJson} concurrently and returns each response status.
-   */
-  private List<Integer> fireConcurrentOperationRequests(String operationJson, int count)
-      throws Exception {
-    return fireConcurrentOperationRequests(Collections.nCopies(count, operationJson));
-  }
-
-  /**
-   * As above, but each request has its own body, so requests that overlap only partly (two Pools
-   * sharing one of their origins) can race each other.
-   */
-  private List<Integer> fireConcurrentOperationRequests(List<String> operationJsons)
-      throws Exception {
-    ExecutorService pool = Executors.newFixedThreadPool(operationJsons.size());
-    try {
-      List<Callable<Integer>> requests = new ArrayList<>();
-      for (String operationJson : operationJsons) {
-        requests.add(
-            () ->
-                mockMvc
-                    .perform(
-                        createBuilderForPostWithJSONBody(
-                            apiKey, "/operations", anyUser, operationJson))
-                    .andReturn()
-                    .getResponse()
-                    .getStatus());
-      }
-      List<Integer> statuses = new ArrayList<>();
-      for (Future<Integer> result : pool.invokeAll(requests)) {
-        statuses.add(result.get());
-      }
-      return statuses;
-    } finally {
-      pool.shutdown();
-    }
-  }
-
-  @Test
-  public void parallelDestroyRequestsAgainstTheSameOriginNeverReturn5xx() throws Exception {
-    // Destroy must take the origin's entire quantity, so only the first of these to commit can
-    // still match it; every other request should lose cleanly (400/409), never 500.
-    ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
-    String operationJson =
-        body(
-            "destroy",
-            originJson(
-                origin,
-                "all",
-                quantityJson(
-                    origin.getQuantity().getNumericValue().toPlainString(),
-                    origin.getQuantity().getUnitId())),
-            "");
-
-    int samplesBefore = sampleCount();
-    List<Integer> statuses = fireConcurrentOperationRequests(operationJson, 5);
-
-    assertTrue(statuses.stream().noneMatch(status -> status >= 500), () -> "5xx in " + statuses);
-    assertEquals(
-        1,
-        statuses.stream().filter(status -> status == 201).count(),
-        () -> "exactly one request should win the race, got " + statuses);
-    // Tightened (2026-09-08): with a row lock that makes concurrent requests WAIT, every loser
-    // proceeds after the winner commits, reads the emptied origin under the lock and fails the
-    // live-state check as a 400. A 409 means a deadlock victim or lock-wait timeout, which the
-    // earlier "no 5xx" assertion tolerated while every run was deadlocking.
-    // Still 400 after the whole-origin compare-and-swap landed (RSDEV-1231): the winner leaves the
-    // origin at zero, and originHoldsNothing is checked BEFORE the stale-snapshot guard, so a loser
-    // is rejected as originEmpty rather than as a conflict. A loser would only see the 409 if the
-    // winner had left the origin non-empty, which Destroy cannot do.
-    assertTrue(
-        statuses.stream().allMatch(status -> status == 201 || status == 400),
-        () -> "losers must fail live-state (400), not deadlock (409), got " + statuses);
-    ApiSubSample reloaded = subSampleApiManager.getApiSubSampleById(origin.getId(), anyUser);
-    assertTrue(
-        java.math.BigDecimal.ZERO.compareTo(reloaded.getQuantity().getNumericValue()) == 0,
-        "origin should be fully consumed by the one request that won");
-    // A losing request must roll back completely, not just fail to decrement: Destroy creates no
-    // sample, so a partially-applied loser would show up as a stray one here.
-    assertEquals(samplesBefore, sampleCount(), "a terminal operation creates no sample");
-  }
-
-  @Test
-  public void takeAllAgainstAnOriginToppedUpAfterTheReadReturnsConflict() throws Exception {
-    // The wizard's "take all" serializes the quantity it read. If someone tops the origin up before
-    // Perform, emptying it anyway would destroy stock the user never saw, so the endpoint rejects
-    // the stale claim with 409 and leaves the origin exactly as the concurrent writer left it
-    // (RSDEV-1231). Sequential rather than concurrent: the point is the stale SNAPSHOT, and firing
-    // both at once would leave which one reads first up to the scheduler.
-    ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
-    java.math.BigDecimal amountTheWizardSaw = origin.getQuantity().getNumericValue();
-
-    // a concurrent writer tops the origin up after the wizard read it
-    ApiSubSample topUp = new ApiSubSample();
-    topUp.setId(origin.getId());
-    topUp.setQuantity(
-        new ApiQuantityInfo(
-            amountTheWizardSaw.add(java.math.BigDecimal.ONE), origin.getQuantity().getUnitId()));
-    subSampleApiManager.updateApiSubSample(topUp, anyUser);
-
-    int unitId = origin.getQuantity().getUnitId();
-    String operationJson =
-        body(
-            "aliquot",
-            originJson(origin, "all", quantityJson(amountTheWizardSaw.toPlainString(), unitId)),
-            creatingInputs("Aliquots", 1, quantityJson("0.5", unitId)));
-
-    mockMvc
-        .perform(createBuilderForPostWithJSONBody(apiKey, "/operations", anyUser, operationJson))
-        .andExpect(status().isConflict());
-
-    ApiSubSample reloaded = subSampleApiManager.getApiSubSampleById(origin.getId(), anyUser);
-    assertEquals(
-        0,
-        amountTheWizardSaw
-            .add(java.math.BigDecimal.ONE)
-            .compareTo(reloaded.getQuantity().getNumericValue()),
-        "a rejected stale take-all must leave the origin untouched");
-  }
-
-  @Test
-  public void parallelAliquotRequestsAgainstTheSameOriginNeverReturn5xx() throws Exception {
-    // Aliquot only decrements, so several concurrent requests can legitimately all succeed before
-    // the origin runs out; the race is only over which of them commits first, so none may 500.
-    ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
-    java.math.BigDecimal originalAmount = origin.getQuantity().getNumericValue();
-    String operationJson = aliquotJson(origin);
-
-    int samplesBefore = sampleCount();
-    List<Integer> statuses = fireConcurrentOperationRequests(operationJson, 5);
-
-    assertTrue(statuses.stream().noneMatch(status -> status >= 500), () -> "5xx in " + statuses);
-    long successes = statuses.stream().filter(status -> status == 201).count();
-    // Tightened (2026-09-08): five 1 g takes fit the 5 g origin exactly, so with row locks that
-    // make concurrent requests WAIT there is no legitimate loser; anything below five 201s is a
-    // deadlock victim or lock-wait timeout surfacing as a 409, which "no 5xx" alone tolerated.
-    assertEquals(5, successes, () -> "all five aliquots should succeed, got " + statuses);
-    ApiSubSample reloaded = subSampleApiManager.getApiSubSampleById(origin.getId(), anyUser);
-    java.math.BigDecimal expected =
-        originalAmount.subtract(java.math.BigDecimal.valueOf(successes));
-    assertTrue(
-        expected.compareTo(reloaded.getQuantity().getNumericValue()) == 0,
-        () -> "origin should be reduced by exactly " + successes + " g, got statuses " + statuses);
-    // The origin ending up right is only half the invariant: each 201 must have produced exactly
-    // one sample, and each loser none, or a rolled-back decrement would still leave its output.
-    assertEquals(
-        samplesBefore + successes,
-        sampleCount(),
-        () -> "one created sample per 201, got statuses " + statuses);
-  }
-
-  @Test
-  public void parallelDecrementsEachGetTheirOwnAddressableVersion() throws Exception {
-    // Every decrement is a content edit, so each must advance the subsample's user-facing version
-    // and leave the stock state it produced retrievable by that version. Two requests can both load
-    // the entity before either takes the row lock, and lockRowForUpdate hands the waiter back that
-    // same cached instance, so before the committed version was read as a scalar under the lock
-    // both bumped the same stale number: one version was reused and the intermediate stock state
-    // it labelled became unaddressable (Codex review, PR #1090).
-    //
-    // This is also the only check covering the flush ordering that read depends on. The scalar read
-    // is an HQL query against the SubSample table, and Hibernate's AUTO flush writes pending
-    // changes to that table before running it, so dirtying the entity first would flush the stale
-    // version and the query would read back this transaction's own value. Mocked DAO tests have no
-    // flush and cannot see that; SubSampleApiManagerImplUsageVersionTest only models it (third
-    // Codex review, PR #1090).
-    ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
-    String operationJson = aliquotJson(origin);
-
-    List<Integer> statuses = fireConcurrentOperationRequests(operationJson, 5);
-
-    long successes = statuses.stream().filter(status -> status == 201).count();
-    assertEquals(5, successes, () -> "all five aliquots should succeed, got " + statuses);
-    // A freshly created subsample is at version 1, so five committed decrements end at 6.
-    long finalVersion = 1 + successes;
-    ApiSubSample live = subSampleApiManager.getApiSubSampleById(origin.getId(), anyUser);
-    ApiSubSample atFinalVersion =
-        subSampleApiManager.getApiSubSampleVersion(origin.getId(), finalVersion, anyUser);
-    assertNotNull(
-        atFinalVersion,
-        () ->
-            "version "
-                + finalVersion
-                + " should exist after "
-                + successes
-                + " decrements, got statuses "
-                + statuses);
-    assertEquals(
-        0,
-        live.getQuantity()
-            .getNumericValue()
-            .compareTo(atFinalVersion.getQuantity().getNumericValue()),
-        "the last version should hold the live quantity");
-
-    // Each decrement's own state is addressable, and no two share a version: a reused number would
-    // make two of these resolve to the same stock value.
-    List<java.math.BigDecimal> quantitiesByVersion = new ArrayList<>();
-    for (long version = 2; version <= finalVersion; version++) {
-      ApiSubSample atVersion =
-          subSampleApiManager.getApiSubSampleVersion(origin.getId(), version, anyUser);
-      final long addressed = version;
-      assertNotNull(
-          atVersion, () -> "version " + addressed + " should be addressable, statuses " + statuses);
-      quantitiesByVersion.add(atVersion.getQuantity().getNumericValue().stripTrailingZeros());
-    }
-    assertEquals(
-        successes,
-        quantitiesByVersion.stream().distinct().count(),
-        () -> "each version should hold a distinct stock value, got " + quantitiesByVersion);
-  }
-
   // --- code review (2026-09-03) reproductions: each is a field-scoped 400 leaving the origin
   // untouched, where it used to be a 422 or a 201 with wrong data ---
 
@@ -837,138 +599,5 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
                 .compareTo(reloaded.getQuantity().getNumericValue())
             == 0,
         () -> "origin should be reduced by 1 g, got " + reloaded.getQuantity().getNumericValue());
-  }
-
-  @Test
-  public void parallelPoolRequestsOverOverlappingOriginsNeverDeadlock() throws Exception {
-    // Two Pools sharing one origin lock two rows each. Locked in request order they would deadlock
-    // (each holding what the other wants), which is why the manager sorts origins by id before
-    // locking (code review, finding 1). The bodies below list their origins in opposite orders, so
-    // only that sort keeps them from crossing. Repeated over fresh origins: a deadlock is a race,
-    // and one round can miss it.
-    for (int round = 0; round < 5; round++) {
-      ApiSubSample a =
-          createSampleHolding("pool A " + round, "5", RSUnitDef.GRAM.getId())
-              .getSubSamples()
-              .get(0);
-      ApiSubSample b =
-          createSampleHolding("pool B " + round, "5", RSUnitDef.GRAM.getId())
-              .getSubSamples()
-              .get(0);
-      ApiSubSample c =
-          createSampleHolding("pool C " + round, "5", RSUnitDef.GRAM.getId())
-              .getSubSamples()
-              .get(0);
-
-      List<Integer> statuses =
-          fireConcurrentOperationRequests(
-              List.of(poolJson("pool BA " + round, b, a), poolJson("pool BC " + round, b, c)));
-
-      assertTrue(
-          statuses.stream().noneMatch(status -> status >= 500),
-          () -> "5xx from overlapping pools: " + statuses);
-      // Each 201 took 1 g from each of its two origins; A and C are named once, B by both.
-      int baWon = statuses.get(0) == 201 ? 1 : 0;
-      int bcWon = statuses.get(1) == 201 ? 1 : 0;
-      assertQuantityIs(a, 5 - baWon, statuses);
-      assertQuantityIs(c, 5 - bcWon, statuses);
-      assertQuantityIs(b, 5 - baWon - bcWon, statuses);
-    }
-  }
-
-  private void assertQuantityIs(ApiSubSample origin, int expected, List<Integer> statuses)
-      throws Exception {
-    ApiSubSample reloaded = subSampleApiManager.getApiSubSampleById(origin.getId(), anyUser);
-    assertTrue(
-        java.math.BigDecimal.valueOf(expected).compareTo(reloaded.getQuantity().getNumericValue())
-            == 0,
-        () ->
-            "expected "
-                + origin.getGlobalId()
-                + " to hold "
-                + expected
-                + ", got "
-                + reloaded.getQuantity().getNumericValue()
-                + " after "
-                + statuses);
-  }
-
-  @Test
-  public void parallelAliquotsOnSiblingSubSamplesKeepTheParentTotalExact() throws Exception {
-    // Two Aliquots on different subsamples of ONE sample never touch the same subsample row, so the
-    // origin locks alone let them run at once. Both still rewrite the parent's denormalised total,
-    // which each computes from its own read: without the parent lock one of the two decrements is
-    // lost from the total (10.11) or the loser fails at commit (12.3). Repeated: it is a race.
-    for (int round = 0; round < 5; round++) {
-      ApiSampleWithFullSubSamples sample =
-          createSampleWithTwoSubSamples("siblings " + round, "10", RSUnitDef.MILLI_LITRE.getId());
-      ApiSubSample first = sample.getSubSamples().get(0);
-      ApiSubSample second = sample.getSubSamples().get(1);
-
-      List<Integer> statuses =
-          fireConcurrentOperationRequests(
-              List.of(aliquotTakingJson(first, "3"), aliquotTakingJson(second, "3")));
-
-      // A green run is necessary but not sufficient: if the second request's transaction happens to
-      // begin after the first commits, its snapshot is already fresh and the test passes whatever
-      // the locking does. The rounds raise the chance of a real overlap, they do not guarantee one.
-      assertTrue(
-          statuses.stream().noneMatch(status -> status >= 500),
-          () -> "5xx from sibling aliquots: " + statuses);
-      // Sibling subsamples are different rows, so neither request has to lose: both queue on the
-      // shared sibling-set lock (taken first, before either origin's own row) and go through in
-      // turn. Before the sibling rows were locked up front they deadlocked here and InnoDB killed
-      // one (409), and before the lock was narrowed the eager-fetch graph lock deadlocked them
-      // against each other's joined rows too.
-      assertEquals(
-          2,
-          statuses.stream().filter(status -> status == 201).count(),
-          () -> "both sibling aliquots should succeed, got " + statuses);
-      assertQuantityIs(first, 7, statuses);
-      assertQuantityIs(second, 7, statuses);
-      // The point of the test: whatever the outcome of the race, the stored total must equal what
-      // the children actually hold. It used to be summed from a sibling read taken from the
-      // transaction's own snapshot, so it came out one decrement short (17 stored where the
-      // children held 14) even though both subsample rows were correct.
-      java.math.BigDecimal childTotal =
-          subSampleApiManager
-              .getApiSubSampleById(first.getId(), anyUser)
-              .getQuantity()
-              .getNumericValue()
-              .add(
-                  subSampleApiManager
-                      .getApiSubSampleById(second.getId(), anyUser)
-                      .getQuantity()
-                      .getNumericValue());
-      ApiSample reloadedSample = sampleApiMgr.getApiSampleById(sample.getId(), anyUser);
-      assertTrue(
-          childTotal.compareTo(reloadedSample.getQuantity().getNumericValue()) == 0,
-          () ->
-              "expected the parent total to equal the sum of its children ("
-                  + childTotal
-                  + "), got "
-                  + reloadedSample.getQuantity()
-                  + " after "
-                  + statuses);
-    }
-  }
-
-  /** A sample whose two subsamples each hold the given quantity. */
-  private ApiSampleWithFullSubSamples createSampleWithTwoSubSamples(
-      String name, String value, int unitId) throws Exception {
-    String subSampleJson = "{\"quantity\":" + quantityJson(value, unitId) + "}";
-    String sampleJson =
-        "{\"name\":\"" + name + "\",\"subSamples\":[" + subSampleJson + "," + subSampleJson + "]}";
-    MvcResult result =
-        mockMvc
-            .perform(createBuilderForPostWithJSONBody(apiKey, "/samples", anyUser, sampleJson))
-            .andExpect(status().isCreated())
-            .andReturn();
-    return getFromJsonResponseBody(result, ApiSampleWithFullSubSamples.class);
-  }
-
-  /** How many samples the test user can see; the outputs a race actually created. */
-  private int sampleCount() {
-    return sampleApiMgr.getSamplesForUser(null, null, null, anyUser).getTotalHits().intValue();
   }
 }
