@@ -609,9 +609,7 @@ public abstract class BaseRecord
       if (from.isTopLevelSharedFolder()) {
         return false;
       }
-      if (from.isSharedFolder()
-          && !(to.isSharedFolder()
-              || (to.isNotebook() && hasUserOrGroupWithAccessInCommon(from, to)))) {
+      if (!isAllowedDestinationForSharedFolderMove(from, to)) {
         return false;
       }
       if (!from.isSharedFolder() && to.isSharedFolder()) {
@@ -625,6 +623,16 @@ public abstract class BaseRecord
     boolean removed = from.removeChild(this);
     RecordToFolder added = to.addChild(this, u);
     return added != null && removed;
+  }
+
+  /**
+   * Returns whether this move satisfies the restrictions that apply when the source is a shared
+   * folder.
+   */
+  private static boolean isAllowedDestinationForSharedFolderMove(Folder from, Folder to) {
+    return !from.isSharedFolder()
+        || to.isSharedFolder()
+        || (to.isNotebook() && hasUserOrGroupWithAccessInCommon(from, to));
   }
 
   private static boolean hasUserOrGroupWithAccessInCommon(BaseRecord first, BaseRecord second) {
