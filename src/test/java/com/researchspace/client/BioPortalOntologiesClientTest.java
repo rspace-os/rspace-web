@@ -1,0 +1,253 @@
+package com.researchspace.client;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.queryParam;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withServerError;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
+
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import org.hamcrest.Matcher;
+import org.hamcrest.Matchers;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.test.web.client.MockRestServiceServer;
+import org.springframework.test.web.client.RequestMatcher;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
+import org.springframework.web.util.UriUtils;
+
+class BioPortalOntologiesClientTest {
+
+  private static final String API_BASE_URL = "https://data.bioontology.org";
+
+  private BioPortalOntologiesClient client;
+  private RestTemplate restTemplate;
+  private MockRestServiceServer mockServer;
+
+  @BeforeEach
+  void setUp() {
+    client = new BioPortalOntologiesClient();
+    restTemplate = new RestTemplate();
+    mockServer = MockRestServiceServer.createServer(restTemplate);
+    ReflectionTestUtils.setField(client, "restTemplate", restTemplate);
+    ReflectionTestUtils.setField(client, "bioportalApiBaseUrl", API_BASE_URL);
+    ReflectionTestUtils.setField(client, "bioportalBaseUrl", "https://bioportal.bioontology.org");
+    ReflectionTestUtils.setField(client, "bioportalApiKey", "test-api-key");
+  }
+
+  @Test
+  void shouldDeserializeSuccessfulResponse() {
+    mockServer
+        .expect(requestTo(startsWithUri(API_BASE_URL + "/search")))
+        .andRespond(withSuccess(singleResultJson(), MediaType.APPLICATION_JSON));
+
+    List<BioPortalSearchResult> results = client.search("Tolstoy");
+
+    assertEquals(1, results.size());
+    assertEquals("Lev Tolstoy", results.get(0).getPrefLabel());
+    assertEquals("http://purl.obolibrary.org/obo/GAZ_00593210", results.get(0).getId());
+    assertEquals(
+        "https://data.bioontology.org/ontologies/GAZ", results.get(0).getLinks().getOntology());
+  }
+
+  @Test
+  void shouldSendAuthorizationHeader() {
+    mockServer
+        .expect(requestTo(startsWithUri(API_BASE_URL + "/search")))
+        .andExpect(header("Authorization", "apikey token=test-api-key"))
+        .andRespond(withSuccess(emptyCollectionJson(), MediaType.APPLICATION_JSON));
+
+    client.search("Tolstoy");
+
+    mockServer.verify();
+  }
+
+  @Test
+  void shouldSendRequiredQueryParameters() {
+    mockServer
+        .expect(requestTo(startsWithUri(API_BASE_URL + "/search")))
+        .andExpect(method(HttpMethod.GET))
+        .andExpect(queryParam("q", "Tolstoy"))
+        .andExpect(queryParam("suggest", "true"))
+        .andExpect(queryParam("pagesize", "20"))
+        .andRespond(withSuccess(emptyCollectionJson(), MediaType.APPLICATION_JSON));
+
+    client.search("Tolstoy");
+
+    mockServer.verify();
+  }
+
+  @Test
+  void shouldSafelyEncodeSpecialCharacterQueries() {
+    List<String> terms =
+        List.of("heart failure", "A&B", "gene + protein", "alpha/beta", "α-synuclein");
+    for (String term : terms) {
+      mockServer
+          .expect(requestTo(startsWithUri(API_BASE_URL + "/search")))
+          .andExpect(decodedQueryParam("q", term))
+          .andRespond(withSuccess(emptyCollectionJson(), MediaType.APPLICATION_JSON));
+    }
+
+    for (String term : terms) {
+      assertTrue(client.search(term).isEmpty());
+    }
+    mockServer.verify();
+  }
+
+  private static RequestMatcher decodedQueryParam(String name, String expectedValue) {
+    return request -> {
+      String rawValue =
+          UriComponentsBuilder.fromUri(request.getURI()).build().getQueryParams().getFirst(name);
+      String decoded = rawValue == null ? null : UriUtils.decode(rawValue, StandardCharsets.UTF_8);
+      assertEquals(expectedValue, decoded, "query param [" + name + "]");
+    };
+  }
+
+  @Test
+  void shouldReturnEmptyListForEmptyCollection() {
+    mockServer
+        .expect(requestTo(startsWithUri(API_BASE_URL + "/search")))
+        .andRespond(withSuccess(emptyCollectionJson(), MediaType.APPLICATION_JSON));
+
+    assertEquals(0, client.search("Tolstoy").size());
+  }
+
+  @Test
+  void shouldReturnEmptyListWhenCollectionKeyIsMissingEntirely() {
+    mockServer
+        .expect(requestTo(startsWithUri(API_BASE_URL + "/search")))
+        .andRespond(
+            withSuccess(
+                "{\"page\":1,\"pageCount\":0,\"totalCount\":0}", MediaType.APPLICATION_JSON));
+
+    assertEquals(0, client.search("Tolstoy").size());
+  }
+
+  @Test
+  void shouldIgnoreUnknownJsonFields() {
+    String json =
+        "{\"page\":1,\"pageCount\":1,\"totalCount\":1,\"collection\":[{\"prefLabel\":\"Lev"
+            + " Tolstoy\",\"@id\":\"http://purl.obolibrary.org/obo/GAZ_00593210\",\"@type\":\"owl:Class\",\"obsolete\":false,\"links\":{\"ontology\":\"https://data.bioontology.org/ontologies/GAZ\",\"self\":\"https://data.bioontology.org/ignored\"}}]}";
+    mockServer
+        .expect(requestTo(startsWithUri(API_BASE_URL + "/search")))
+        .andRespond(withSuccess(json, MediaType.APPLICATION_JSON));
+
+    List<BioPortalSearchResult> results = client.search("Tolstoy");
+
+    assertEquals(1, results.size());
+    assertEquals("Lev Tolstoy", results.get(0).getPrefLabel());
+  }
+
+  @Test
+  void shouldKeepDuplicateLabelsFromDifferentOntologies() {
+    String json =
+        "{\"collection\":["
+            + "{\"prefLabel\":\"Toluene\",\"@id\":\"http://purl.obolibrary.org/obo/CHEAR_1\",\"links\":{\"ontology\":\"https://data.bioontology.org/ontologies/CHEAR\"}},"
+            + "{\"prefLabel\":\"Toluene\",\"@id\":\"http://purl.obolibrary.org/obo/HHEAR_1\",\"links\":{\"ontology\":\"https://data.bioontology.org/ontologies/HHEAR\"}}"
+            + "]}";
+    mockServer
+        .expect(requestTo(startsWithUri(API_BASE_URL + "/search")))
+        .andRespond(withSuccess(json, MediaType.APPLICATION_JSON));
+
+    List<BioPortalSearchResult> results = client.search("Toluene");
+
+    assertEquals(2, results.size());
+    assertEquals("CHEAR", lastPathSegment(results.get(0).getLinks().getOntology()));
+    assertEquals("HHEAR", lastPathSegment(results.get(1).getLinks().getOntology()));
+  }
+
+  @Test
+  void shouldPropagateProviderFailure() {
+    mockServer
+        .expect(requestTo(startsWithUri(API_BASE_URL + "/search")))
+        .andRespond(withServerError());
+
+    assertThrows(RestClientException.class, () -> client.search("Tolstoy"));
+  }
+
+  @Test
+  void shouldCacheSuccessfulResponsesForSameQuery() {
+    mockServer
+        .expect(requestTo(startsWithUri(API_BASE_URL + "/search")))
+        .andRespond(withSuccess(singleResultJson(), MediaType.APPLICATION_JSON));
+
+    List<BioPortalSearchResult> first = client.search("Tolstoy");
+    List<BioPortalSearchResult> second = client.search("Tolstoy");
+
+    assertSame(first, second); // same cached instance, so the server was hit only once
+    mockServer.verify();
+  }
+
+  @Test
+  void shouldNotShareCacheEntriesAcrossDifferentQueries() {
+    mockServer
+        .expect(requestTo(startsWithUri(API_BASE_URL + "/search")))
+        .andExpect(queryParam("q", "Tolstoy"))
+        .andRespond(withSuccess(singleResultJson(), MediaType.APPLICATION_JSON));
+    mockServer
+        .expect(requestTo(startsWithUri(API_BASE_URL + "/search")))
+        .andExpect(queryParam("q", "heart"))
+        .andRespond(withSuccess(emptyCollectionJson(), MediaType.APPLICATION_JSON));
+
+    List<BioPortalSearchResult> tolstoy = client.search("Tolstoy");
+    List<BioPortalSearchResult> heart = client.search("heart");
+
+    assertEquals(1, tolstoy.size());
+    assertEquals(0, heart.size());
+    mockServer.verify();
+  }
+
+  @Test
+  void shouldNotCacheFailedRequests() {
+    mockServer
+        .expect(requestTo(startsWithUri(API_BASE_URL + "/search")))
+        .andRespond(withServerError());
+    mockServer
+        .expect(requestTo(startsWithUri(API_BASE_URL + "/search")))
+        .andRespond(withSuccess(singleResultJson(), MediaType.APPLICATION_JSON));
+
+    assertThrows(RestClientException.class, () -> client.search("Tolstoy"));
+    List<BioPortalSearchResult> results = client.search("Tolstoy");
+
+    assertEquals(1, results.size());
+    mockServer.verify(); // both requests were made; the failure was not served from cache
+  }
+
+  @Test
+  void shouldReturnEmptyAndSkipRequestWhenApiKeyMissing() {
+    ReflectionTestUtils.setField(client, "bioportalApiKey", "");
+
+    List<BioPortalSearchResult> results = client.search("Tolstoy");
+
+    assertEquals(0, results.size());
+    mockServer.verify(); // no expectations were set up, and none should have been requested
+  }
+
+  private static String lastPathSegment(String url) {
+    return url.substring(url.lastIndexOf('/') + 1);
+  }
+
+  private static Matcher<String> startsWithUri(String prefix) {
+    return Matchers.startsWith(prefix);
+  }
+
+  private static String singleResultJson() {
+    return "{\"page\":1,\"pageCount\":1,\"totalCount\":1,\"collection\":[{\"prefLabel\":\"Lev"
+               + " Tolstoy\",\"@id\":\"http://purl.obolibrary.org/obo/GAZ_00593210\",\"links\":{\"ontology\":\"https://data.bioontology.org/ontologies/GAZ\"}}]}";
+  }
+
+  private static String emptyCollectionJson() {
+    return "{\"page\":1,\"pageCount\":0,\"totalCount\":0,\"collection\":[]}";
+  }
+}
