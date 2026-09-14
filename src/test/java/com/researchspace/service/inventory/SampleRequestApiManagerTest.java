@@ -93,6 +93,7 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
   @Test
   public void getRequestsForUser_filteredBySample_returnsOnlyThatSamplesRequests() {
     ApiSampleWithFullSubSamples otherSample = createBasicSampleForUser(owner);
+    markRequestable(otherSample);
     ApiSampleRequest onFirst = raiseRequest("Need 2ml for the binding assay");
     raiseRequestAgainst(otherSample, "Need 5ml of the other one");
 
