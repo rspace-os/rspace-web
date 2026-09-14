@@ -77,10 +77,24 @@ export function HasQuantityMixin<TBase extends new (...args: any[]) => Inventory
       super.setAttributesDirty(params);
     }
 
-    /** A fresh load from the server is the new baseline, so nothing is outstanding against it. */
+    /**
+     * A fresh load from the server is the new baseline, so nothing is outstanding against it.
+     *
+     * <p>The quantity is assigned here as well as in the constructor, and the two have to stay
+     * together. Clearing the flag without refreshing the value it is a baseline FOR is how a live
+     * edit was silently dropped: a mid-edit refetch (creating or deleting an IGSN calls
+     * fetchAdditionalInfo unconditionally) cleared the flag, the field went on showing the user's
+     * number because nothing reassigned it, and the save then omitted the quantity and reported
+     * success (review 2026-09-14, C3). Assigning it makes the quantity behave like every other
+     * editable field on the model, which populateFromJson has always overwritten.
+     */
     populateFromJson(factory: Factory, passedParams: object, defaultParams: object = {}): void {
       super.populateFromJson(factory, passedParams, defaultParams);
-      this.quantityEdited = false;
+      const params = { ...defaultParams, ...passedParams };
+      Parsers.getValueWithKey("quantity")(params).do((quantity) => {
+        this.quantity = quantity as Quantity | null;
+        this.quantityEdited = false;
+      });
     }
 
     get quantityCategory(): UnitCategory {
