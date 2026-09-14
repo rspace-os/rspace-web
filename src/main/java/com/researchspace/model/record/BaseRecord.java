@@ -610,7 +610,8 @@ public abstract class BaseRecord
         return false;
       }
       if (from.isSharedFolder()
-          && !(to.isSharedFolder() || (to.isNotebook() && sharesPrincipalWith(from, to)))) {
+          && !(to.isSharedFolder()
+              || (to.isNotebook() && hasUserOrGroupWithAccessInCommon(from, to)))) {
         return false;
       }
       if (!from.isSharedFolder() && to.isSharedFolder()) {
@@ -626,15 +627,15 @@ public abstract class BaseRecord
     return added != null && removed;
   }
 
-  private static boolean sharesPrincipalWith(BaseRecord first, BaseRecord second) {
+  private static boolean hasUserOrGroupWithAccessInCommon(BaseRecord first, BaseRecord second) {
     return first.getSharingACL().getAclElements().stream()
         .map(ACLElement::getUserOrGrpUniqueName)
-        .filter(principal -> !ANONYMOUS_USER.equals(principal))
+        .filter(userOrGroup -> !ANONYMOUS_USER.equals(userOrGroup))
         .anyMatch(
-            principal ->
+            userOrGroup ->
                 second.getSharingACL().getAclElements().stream()
                     .map(ACLElement::getUserOrGrpUniqueName)
-                    .anyMatch(principal::equals));
+                    .anyMatch(userOrGroup::equals));
   }
 
   /**
