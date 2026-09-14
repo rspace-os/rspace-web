@@ -369,6 +369,90 @@ public class StockWriterConcurrencyIT extends RealTransactionSpringTestBase {
             + " sample to show for it");
   }
 
+  /**
+   * W2 x M1. A quantity EDIT must not write the parent's denormalised total from sibling snapshots.
+   *
+   * <p>{@code updateApiSubSample} reconciles the origin's OWN columns with its locked row, and
+   * {@code SubSample.refreshQuantityFromLockedRow} is careful not to recompute the parent total
+   * while doing so. Two statements later {@code applyChangesToDatabaseSubSample} undoes that care:
+   * it routes through {@code SubSample.setQuantity}, which cascades into {@code
+   * SampleEntity.recalculateTotalQuantity} and sums the sibling ENTITIES. In InnoDB an unlocked
+   * sibling is read from this transaction's snapshot, so a decrement another party committed
+   * against a sibling is not in the sum and the sample advertises stock that does not exist (review
+   * 2026-09-14, C1).
+   *
+   * <p>TWO subsamples are required. Recomputing from a single child that has just been reconciled
+   * gives the right answer anyway, so a one-subsample version of this test passes whether the fix
+   * is present or not.
+   *
+   * <p>The reverse interleaving is correct, which is why the live symptom is intermittent: it is
+   * the edit arriving second, over a snapshot taken first, that writes the stale total.
+   */
+  @Test
+  public void aQuantityEditDoesNotWriteTheParentTotalFromStaleSiblings() throws Exception {
+    User user = createInitAndLoginAnyUser();
+    ApiSampleWithFullSubSamples sample = sampleWithTwoSubSamplesOf("5", user);
+    Long sampleId = sample.getId();
+    Long editedId = sample.getSubSamples().get(0).getId();
+    Long siblingId = sample.getSubSamples().get(1).getId();
+    assertEquals(0, new BigDecimal("10").compareTo(totalQuantityOf(sampleId)));
+
+    openTransaction();
+    try {
+      // Loads the sample AND both subsample entities into THIS session, so the sibling's snapshot
+      // says 5 g for the rest of the transaction. Without this the cascade would read the sibling
+      // fresh and sum the committed value by luck rather than by the lock.
+      sampleApiMgr.getApiSampleById(sampleId, user);
+
+      // Another party spends 4 of the sibling's 5 g and COMMITS, as an operation can while this
+      // edit is in flight.
+      setQuantityFromAnotherConnection(siblingId, "1");
+
+      ApiSubSample quantityEdit = new ApiSubSample();
+      quantityEdit.setId(editedId);
+      quantityEdit.setQuantity(new ApiQuantityInfo(new BigDecimal("4"), RSUnitDef.GRAM));
+      subSampleApiMgr.updateApiSubSample(quantityEdit, user);
+    } finally {
+      commitTransaction();
+    }
+
+    assertEquals(
+        0,
+        new BigDecimal("5").compareTo(totalQuantityOf(sampleId)),
+        "the stored total must be the sum of the committed rows, 4 + 1: finding 9 means the edit"
+            + " summed its own 4 g over the sibling's pre-decrement snapshot and the sample now"
+            + " advertises 4 g of stock that does not exist");
+  }
+
+  private ApiSampleWithFullSubSamples sampleWithTwoSubSamplesOf(String grams, User user) {
+    ApiSampleWithFullSubSamples newSample = new ApiSampleWithFullSubSamples();
+    newSample.setName("two-subsample sample");
+    newSample.setSubSamples(
+        List.of(subSampleHolding("edited", grams), subSampleHolding("sibling", grams)));
+    return sampleApiMgr.createNewApiSample(newSample, user);
+  }
+
+  private static ApiSubSample subSampleHolding(String name, String grams) {
+    ApiSubSample subSample = new ApiSubSample();
+    subSample.setName(name);
+    subSample.setQuantity(new ApiQuantityInfo(new BigDecimal(grams), RSUnitDef.GRAM));
+    return subSample;
+  }
+
+  private BigDecimal totalQuantityOf(Long sampleId) throws SQLException {
+    try (Connection connection = dataSource.getConnection();
+        Statement statement = connection.createStatement();
+        ResultSet rows =
+            statement.executeQuery(
+                "select quantityNumericValue from Sample where id = " + sampleId)) {
+      if (!rows.next()) {
+        return null;
+      }
+      BigDecimal value = rows.getBigDecimal(1);
+      return rows.wasNull() ? null : value;
+    }
+  }
+
   private void setQuantityFromAnotherConnection(Long subSampleId, String grams)
       throws SQLException {
     try (Connection other = dataSource.getConnection()) {
