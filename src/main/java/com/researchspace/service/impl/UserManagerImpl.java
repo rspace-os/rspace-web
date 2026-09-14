@@ -426,16 +426,10 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
       throw new IllegalArgumentException(
           messages.getMessage("errors.preference.invalidJsonValue", new Object[] {key}));
     }
-    // Locked before the blob is read: reading first would merge into a snapshot another writer is
-    // already replacing, which is the race this method exists to remove. The lock serialises the
-    // merges; the blob itself is then read as a scalar under its own lock, because the entity
-    // returned here holds the transaction's snapshot (lockRowForUpdate guarantees serialisation
-    // only, not freshness).
-    User user = userDao.lockRowForUpdate(userDao.getUserByUsername(subject).getId());
+    User user = userDao.getUserByUsername(subject);
     ObjectNode settings =
         uiJsonSettingsFrom(
-            userDao.getPreferenceValueForUpdate(user.getId(), Preference.UI_JSON_SETTINGS),
-            user.getUsername());
+            user.getValueForPreference(Preference.UI_JSON_SETTINGS).getValue(), user.getUsername());
     settings.set(key, newValue);
     UserPreference merged =
         new UserPreference(Preference.UI_JSON_SETTINGS, user, settings.toString());
