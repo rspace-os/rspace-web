@@ -368,6 +368,80 @@ function OperationWizard({
     })();
   }, [needsParentTemplateCheck, parentTemplateId, t, i18n.language]);
 
+  // The restored-template check, for the same reason the parent check lives here: the gate it feeds
+  // is evaluated on every step while only the active step renders, and step one is exactly where the
+  // one-click fast path is offered.
+  //
+  // A remembered template's id and name come from the stored bundle, not from a check, so by now it
+  // may have been renamed (the wizard showed and confirmed the OLD name) or moved to trash (the
+  // wizard offered one-click Perform against it, and the server accepts a trashed template because
+  // RSpace soft-deletes). One lookup settles both: the name is refreshed from the server, and a
+  // template that is gone, trashed or no longer usable drops the selection back so the user must
+  // choose another (RSDEV-1231, F1/F2).
+  const [rememberedTemplateError, setRememberedTemplateError] = React.useState<string | null>(null);
+  const rememberedCheckIdRef = React.useRef(0);
+  const rememberedTemplateId = templateSelection.mode === "remembered" ? templateSelection.templateId : null;
+  const needsRememberedTemplateCheck = rememberedTemplateId !== null && templateSelection.pendingCheck === true;
+
+  React.useEffect(() => {
+    if (!needsRememberedTemplateCheck || rememberedTemplateId === null) {
+      // Retire any in-flight lookup, as the parent check does, so a late answer cannot report against
+      // a selection the user has since changed.
+      //
+      // Deliberately does NOT clear the message: rejecting a remembered template resets the mode,
+      // which lands here on the very next render and wiped the explanation the user needed. It is
+      // cleared instead when the user makes their own choice, or on switching operation.
+      rememberedCheckIdRef.current++;
+      return;
+    }
+    const checkId = ++rememberedCheckIdRef.current;
+    setRememberedTemplateError(null);
+    void (async () => {
+      // Drops the remembered selection back to a first-run choice, keeping the user's remember tick.
+      const reject = (message: string) => {
+        setRememberedTemplateError(message);
+        setTemplateSelection((previous) =>
+          previous.mode === "remembered" && previous.templateId === rememberedTemplateId
+            ? { ...initialTemplateSelection(parentHasTemplate), remember: previous.remember }
+            : previous,
+        );
+      };
+      try {
+        const template = await getRootStore().searchStore.getTemplate(
+          rememberedTemplateId,
+          null,
+          new AlwaysNewFactory(),
+        );
+        if (checkId !== rememberedCheckIdRef.current) return;
+        // A trashed template still resolves (soft deletion), so the flag is the only signal.
+        if (template.deleted) {
+          reject(t("operations.template.rememberedDeleted", { name: template.name }));
+          return;
+        }
+        const reason = templateBlockReason(template, i18n.resolvedLanguage ?? i18n.language);
+        if (reason.blocked) {
+          reject(t("operations.template.mandatoryFieldsError", { count: reason.count, fields: reason.fields }));
+          return;
+        }
+        // Passed: take the template's CURRENT name and category, and clear pendingCheck, which is
+        // what makes the step valid and re-offers the fast path.
+        setTemplateSelection((previous) =>
+          previous.mode === "remembered" && previous.templateId === rememberedTemplateId
+            ? {
+                ...previous,
+                pendingCheck: false,
+                templateName: template.name,
+                quantityCategory: template.quantityCategory,
+              }
+            : previous,
+        );
+      } catch {
+        if (checkId !== rememberedCheckIdRef.current) return;
+        reject(t("operations.template.lookupFailed"));
+      }
+    })();
+  }, [needsRememberedTemplateCheck, rememberedTemplateId, parentHasTemplate, t, i18n.language]);
+
   // The base the derived sample name is built from: the origin's own sample name for a single-origin
   // operation, or the operation's label for a multi-origin one (Pool combines several samples, so no
   // single origin name applies - it becomes just "Pool", de-duplicated).
@@ -491,6 +565,7 @@ function OperationWizard({
     setPerSubsampleAmounts(s.perSubsampleAmounts);
     setReviewing(false);
     setSampleNameEdited(false);
+    setRememberedTemplateError(null);
     setActiveStep(0);
   };
 
@@ -560,6 +635,9 @@ function OperationWizard({
   // and a stale unit from the old category must not survive into the request). The amount taken FROM
   // the origin always stays in the origin's own category, so its unit is kept.
   const onTemplateSelectionChange = (next: React.SetStateAction<TemplateSelection>) => {
+    // The user is making their own choice, which answers the "choose another template" the dropped
+    // remembered template asked for.
+    setRememberedTemplateError(null);
     const eachAmountFrom = operation?.effect.eachAmountFrom;
     // The step may send an updater rather than a value, because its post-lookup write crosses an
     // await (FE6). Resolving it here decides the category reset; the WRITE below resolves it again
@@ -809,6 +887,7 @@ function OperationWizard({
           parentHasTemplate={parentHasTemplate}
           parentTemplateChecking={parentTemplateChecking}
           parentTemplateError={parentTemplateError}
+          rememberedTemplateError={rememberedTemplateError}
         />
       );
     }

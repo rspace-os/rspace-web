@@ -42,6 +42,13 @@ export type TemplateSelection = {
   // subsample's (a volume template overrides a mass subsample). Undefined = fall back to the origin.
   quantityCategory?: UnitCategory;
   remember: boolean;
+  /**
+   * A restored "remembered" template whose id came from the stored bundle rather than from a check
+   * against the server, so it is not yet known to exist, to still carry this name, or to still be
+   * usable. The wizard clears this by re-checking the template on restore; until then the template
+   * step is incomplete, which also withholds the step-one one-click Perform.
+   */
+  pendingCheck?: boolean;
 };
 
 export type TemplateDefault = {
@@ -88,6 +95,9 @@ export function templateSelectionFor(remembered: TemplateDefault | undefined): T
     templateName: remembered.templateName,
     quantityCategory: remembered.quantityCategory,
     remember: true,
+    // A specific template is restored unchecked: its stored name may be stale and the template
+    // itself may have been trashed since. The wizard re-checks it before the step counts as done.
+    ...(isSpecific ? { pendingCheck: true } : {}),
   };
 }
 
@@ -120,8 +130,17 @@ export function initialTemplateSelection(parentHasTemplate: boolean): TemplateSe
  *
  * The id is therefore written only by a PASSING check, which is what makes its presence the signal.
  */
-export function templateStepValid(selection: { mode: TemplateMode; templateId: number | null }): boolean {
+export function templateStepValid(selection: {
+  mode: TemplateMode;
+  templateId: number | null;
+  pendingCheck?: boolean;
+}): boolean {
   if (selection.mode === "unselected") return false;
+  // A restored template is held to the same rule by a different route: its id was written by the
+  // stored bundle rather than by a check, so it counts only once the restore-time check has cleared
+  // pendingCheck. Without this the step was unconditionally valid, so a renamed template was shown
+  // under its old name and a trashed one was offered for one-click Perform (RSDEV-1231, F1/F2).
+  if (selection.mode === "remembered") return !selection.pendingCheck;
   if (selection.mode === "pick" || selection.mode === "fromSample") return selection.templateId !== null;
   return true;
 }
