@@ -245,7 +245,7 @@ in the session's timezone.
 The
 live-state rules run in `InventoryOperationManagerImpl`, inside the operation's own
 transaction so they hold against the state the mutation sees. The template-conformance check
-runs in that transaction too, on the built request before any origin is read or locked, so
+runs in that transaction too, on the built request before any origin is read, so
 the template the sample is created from is the one the request was validated against. It
 lives in `service.inventory.OperationTemplateConformanceValidator`, which the manager calls
 directly; the `BuiltRequestValidation` callback that used to carry it in from the controller
@@ -253,10 +253,10 @@ is gone, along with the controller method behind it. Moving it down took
 `SampleApiPostFullValidator` and `ApiSampleFullPost` with it (to `service.inventory` and
 `api.v1.model`), because the service layer may not import `api.v1.controller`;
 `sampleApiPostValidator` is injected as a plain Spring `Validator` by bean name, since its
-own type extends a package-private hierarchy that stays in the controller package. Edit permission is asserted on
-every origin, unlocked, before the first sibling-set lock, so an under-permissioned
-caller cannot lock other users' rows; the locked per-origin re-check then closes the
-TOCTOU window. The live-state rules themselves: every origin must
+own type extends a package-private hierarchy that stays in the controller package. Edit
+permission is asserted on every origin before any origin is mutated (this branch has no
+row locking; see DevDocs/adr/0007's RSDEV-1231-no-concurrency note). The live-state rules
+themselves: every origin must
 currently hold something, all origins must share one measurement category (a Pool of
 5 ml + 5 g is meaningless), the amount taken must not exceed what the origin holds
 (DevDocs/adr/0007), and
@@ -310,9 +310,10 @@ facades validate shape only (the origin is present, a Pool has at least two); ev
 rule stays in the core so it cannot drift from the config, which
 `InventoryOperationFacadeShapesTest` pins. `expectedQuantity`, when sent, is
 shape-checked at the door exactly as `amountTaken` is (a non-negative value in a known
-amount unit; a malformed one is a 400 rather than a 409 the caller cannot resolve), then
-compare-and-swapped against the live locked quantity, where a mismatch is a 409, exactly
-like the wizard's `amountMode: "all"`. All seven answer with one envelope
+amount unit; a malformed one is a 400), but not compared against the origin's live
+quantity: this branch has no concurrency control, so `expectedQuantity` and
+`amountMode: "all"` are accepted and threaded through unchecked (DevDocs/adr/0007's
+RSDEV-1231-no-concurrency note). All seven answer with one envelope
 (`ApiInventoryOperationResult`: the created `sample`, null for Destroy, and each
 `origin` as it stands afterwards), 201 with a `Location` at the new sample for the six
 creating operations, 200 for Destroy.
@@ -476,8 +477,8 @@ fields in the wizard is deferred.
   builder against), `InventoryOperationInputValidatorTest`
   (`mvn test -Dtest=... -Dfast=true`), `InventoryOperationFacadeShapesTest` (each typed
   request class agrees with its definition, and the M0 examples bind), plus
-  `InventoryOperationsApiControllerMVCIT` (end-to-end, incl. over-removal rejection and
-  the concurrency rules), `InventoryOperationsInputsShapeMVCIT` (the records each
+  `InventoryOperationsApiControllerMVCIT` (end-to-end, incl. over-removal rejection),
+  `InventoryOperationsInputsShapeMVCIT` (the records each
   operation persists, as a golden fingerprint) and `InventoryOperationFacadesMVCIT` (the
   seven typed endpoints: envelope, status codes, renamed error paths, the 409, the
   defaults). Run the MVCITs with `mvn verify -Dtest=A,B` (comma-separated).
