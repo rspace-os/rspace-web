@@ -620,25 +620,32 @@ public abstract class BaseRecord
       return false;
     }
     if (from.isSharedFolder()) {
-      return to.isSharedFolder() || isNotebookWithUserOrGroupAccessInCommon(from, to);
+      return to.isSharedFolder() || (to.isNotebook() && keepsSourceAudience(from, to));
     }
-    return !to.isSharedFolder() && from.getOwner().equals(to.getOwner());
+    if (to.isSharedFolder()) {
+      return false;
+    }
+    return from.getOwner().equals(to.getOwner());
   }
 
-  private boolean isNotebookWithUserOrGroupAccessInCommon(
-      BaseRecord source, BaseRecord destination) {
-    return destination.isNotebook()
-        && source.getSharingACL().getAclElements().stream()
-            .map(ACLElement::getUserOrGrpUniqueName)
-            .filter(
-                userOrGroup ->
-                    !ANONYMOUS_USER.equals(userOrGroup)
-                        && !getOwner().getUniqueName().equals(userOrGroup))
-            .anyMatch(
-                userOrGroup ->
-                    destination.getSharingACL().getAclElements().stream()
-                        .map(ACLElement::getUserOrGrpUniqueName)
-                        .anyMatch(userOrGroup::equals));
+  /**
+   * Whether moving into {@code to} keeps this record visible to at least one user or group that
+   * {@code from} shared it with. The record's own owner does not count, since the owner keeps
+   * access wherever the record goes.
+   */
+  private boolean keepsSourceAudience(Folder from, Folder to) {
+    Set<String> audienceToKeep = sharedWithNames(from);
+    audienceToKeep.remove(this.getOwner().getUniqueName());
+    Set<String> destinationAudience = sharedWithNames(to);
+    return audienceToKeep.stream().anyMatch(destinationAudience::contains);
+  }
+
+  /** Unique names of the users and groups a record is shared with, ignoring the anonymous guest. */
+  private static Set<String> sharedWithNames(BaseRecord record) {
+    return record.getSharingACL().getAclElements().stream()
+        .map(ACLElement::getUserOrGrpUniqueName)
+        .filter(name -> !ANONYMOUS_USER.equals(name))
+        .collect(toCollection(HashSet::new));
   }
 
   /**
