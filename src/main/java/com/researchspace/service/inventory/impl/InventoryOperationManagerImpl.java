@@ -84,7 +84,7 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
 
     // Then the builder, which needs each origin's name (link field names), global id (link targets)
     // and its parent's fields (the Passage counter). Read with the same edit assertion the core
-    // repeats under lock; nothing here is what the compare-and-swap protects.
+    // repeats inside checkOriginLiveState.
     List<InventoryOperationRequestBuilder.Origin> builderOrigins = new ArrayList<>();
     Map<String, ApiQuantityInfo> amountsByGlobalId = new HashMap<>();
     for (ApiInventoryOperationOriginUpdate origin : origins) {
@@ -130,20 +130,15 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
                     LocalDate.parse(new SessionTimeZoneUtils().formatDateForClient(new Date())))
                 .build());
     // The builder decides amounts the way the wizard does (a whole-origin operation snapshots the
-    // LIVE quantity); the core must instead compare-and-swap what the CLIENT saw, so an origin that
-    // carries the client's own amount takes it, and its mode, into the core. An origin without one
-    // (a typed facade's Passage or Destroy element, M0) keeps the builder's: zero for an operation
-    // that takes nothing, the live snapshot under a whole-origin claim for one that empties, which
-    // the core then compare-and-swaps against the locked quantity, so a concurrent change between
-    // this read and the lock is a 409, not a silent partial take. The client's expectedQuantity
-    // (M0 D5) is a separate guard and travels regardless. Same order in and out: the builder emits
-    // one update per origin, in the order given.
+    // LIVE quantity). An origin that carries the client's own amount takes it into the core; one
+    // without (a typed facade's Passage or Destroy element, M0) keeps the builder's. amountMode and
+    // expectedQuantity are shape-checked by the post validator and read nowhere else
+    // (DevDocs/adr/0007: no concurrency control), so neither is copied. Same order in and out: the
+    // builder emits one update per origin, in the order given.
     for (int i = 0; i < origins.size(); i++) {
       if (origins.get(i).getAmountTaken() != null) {
-        built.getOrigins().get(i).setAmountMode(origins.get(i).getAmountMode());
         built.getOrigins().get(i).setAmountTaken(origins.get(i).getAmountTaken());
       }
-      built.getOrigins().get(i).setExpectedQuantity(origins.get(i).getExpectedQuantity());
     }
     // Template conformance runs on the request just built, inside this transaction and before any
     // origin is read, so the template validated is the template the sample is created from.
@@ -185,13 +180,13 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
       ApiInventoryOperationPost request, User user, InTransactionValidation callerValidation)
       throws BindException {
     // The caller's own validation (the controller's template-conformance check) runs FIRST, inside
-    // this transaction, before any origin is read or locked: a template changed after an
+    // this transaction, before any origin is read: a template changed after an
     // out-of-transaction check could otherwise fail the operation mid-mutation or create the sample
     // against a definition different from the one validated (Copilot review, PR #1090).
     callerValidation.validate();
-    // Origins are handled in ascending id order (not request order) so two concurrent multi-origin
-    // operations over overlapping origins acquire their row locks in one consistent order and
-    // cannot deadlock. The validator guarantees unique, non-null ids by this point.
+    // Origins are handled in ascending id order (not request order) so the processing order is
+    // deterministic however the client listed them; errors are still reported at the request
+    // index. The validator guarantees unique, non-null ids by this point.
     List<ApiInventoryOperationOriginUpdate> originsById =
         request.getOrigins().stream()
             .sorted(Comparator.comparing(ApiInventoryOperationOriginUpdate::getId))
@@ -199,7 +194,7 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
 
     // Validate-before-mutate, inside this method's own transaction so the rules hold against the
     // same state the mutation sees (not an advisory read in a separate transaction): read each
-    // origin with a row lock, assert edit permission on it and check its live quantity against
+    // origin, assert edit permission on it and check its live quantity against
     // its amountTaken. Any violation throws before anything is written. See DevDocs/adr/0007.
     checkOriginLiveState(request, originsById, user);
 
@@ -336,8 +331,8 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
    * transaction and after the origins were decremented, where it surfaced as a bare 422 with no
    * field path on it at all: every other 4xx this API answers names a field (live test 2026-09-13,
    * F4). Checked here, alongside the declared inputs and before any origin is read, so a request
-   * already known to be bad locks nothing. The prefix is checked earlier, by the post validator;
-   * this is the existence and read-permission half, which needs the acting user.
+   * already known to be bad touches no origin. The prefix is checked earlier, by the post
+   * validator; this is the existence and read-permission half, which needs the acting user.
    */
   private void rejectUnreadableDocumentationTarget(
       String documentedByGlobalId, User user, MapBindingResult errors) {
@@ -509,10 +504,10 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
 
   /**
    * Whether the amount taken equals the origin's current quantity, unit-aware within a measurement
-   * category (0.005 kg empties a 5 g origin, and 0.01 l a 10 ml one). This is the equality half of
-   * the whole-origin compare-and-swap: a whole-origin claim that does not match the live quantity
-   * is a stale snapshot, rejected as a 409. Missing values or incomparable categories never count
-   * as emptying, so an incomparable pair is left to the category check that runs before this one.
+   * category (0.005 kg empties a 5 g origin, and 0.01 l a 10 ml one). This is what the
+   * mustEmptyOrigin rule checks: an emptying operation whose amount does not match the live
+   * quantity is a 400. Missing values or incomparable categories never count as emptying, so an
+   * incomparable pair is left to the category check that runs before this one.
    */
   static boolean amountTakenEmptiesOrigin(
       ApiQuantityInfo amountTaken, Quantifiable originQuantity) {

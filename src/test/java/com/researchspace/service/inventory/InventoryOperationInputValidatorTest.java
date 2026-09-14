@@ -565,7 +565,8 @@ class InventoryOperationInputValidatorTest {
   void anEachAmountThatFitsButWhoseTotalDoesNotIsAFieldErrorOnItsKey() {
     // DECIMAL(19,3) holds 16 integer digits. Each of the two children fits it; the parent total the
     // created sample recalculates from them does not. That recompute happens during persistence, so
-    // without this the overflow is a 500 inside the transaction, after the origin locks, instead of
+    // without this the overflow is a 500 inside the transaction, after the origins were
+    // decremented, instead of
     // a rejected field (Codex review, PR #1090).
     Map<String, Object> inputs = passage();
     inputs.put("count", 2);

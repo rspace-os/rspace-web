@@ -149,7 +149,6 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
   public ApiSubSample updateApiSubSample(ApiSubSample apiSubSample, User user) {
     SubSample dbSubSample = getIfExists(apiSubSample.getId());
     ApiSubSample original = new ApiSubSample(dbSubSample);
-
     boolean temporaryLock = lockItemForEdit(dbSubSample, user);
 
     try {
@@ -279,7 +278,7 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
       QuantityInfo newQuantity = qUtils.subtract(orgQuantity, usedQuantity);
 
       // if usage is larger than remaining quantity set remaining to zero, in the stored unit
-      // (qUtils.sum may return a different unit, and "0 g" must not relabel itself to "0 mg")
+      // (qUtils.subtract may return a different unit, and "0 g" must not relabel itself to "0 mg")
       if (newQuantity.getNumericValue().compareTo(BigDecimal.ZERO) < 0) {
         newQuantity = new QuantityInfo(BigDecimal.ZERO, orgQuantity.getUnitId());
       }

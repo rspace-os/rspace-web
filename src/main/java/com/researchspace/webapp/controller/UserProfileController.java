@@ -709,7 +709,7 @@ public class UserProfileController extends BaseController {
       @RequestParam(value = "preference") String preferenceName,
       @RequestParam(value = "value") String value,
       // Optional: with a key, only that key of the UI_JSON_SETTINGS object is written, merged
-      // server-side under a row lock. Without one the whole preference value is replaced, which is
+      // server-side. Without one the whole preference value is replaced, which is
       // what every other preference and every legacy JSP caller means (code review, finding 3).
       @RequestParam(value = "key", required = false) String key,
       Principal principal,
@@ -719,7 +719,7 @@ public class UserProfileController extends BaseController {
     Preference pref = Preference.valueOf(preferenceName);
     // Supplied means keyed, even when blank: treating "" or " " as absent would route the request
     // to setPreference and silently replace the whole JSON blob, bypassing the key validation and
-    // the locked merge; the merge itself rejects a blank key as a 400 (Copilot review, PR #1090).
+    // the merge; the merge itself rejects a blank key as a 400 (Copilot review, PR #1090).
     boolean keyed = key != null;
     if (keyed && !Preference.UI_JSON_SETTINGS.equals(pref)) {
       // 400 like the malformed-key/value branch below: without the status a client would treat

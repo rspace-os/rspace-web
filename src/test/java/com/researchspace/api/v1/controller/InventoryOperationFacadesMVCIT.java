@@ -324,7 +324,7 @@ public class InventoryOperationFacadesMVCIT extends API_MVC_InventoryTestBase {
   public void aPerSubsampleAmountWhoseTotalTheColumnCannotHoldIsRejected() throws Exception {
     // Each of the two children fits the DECIMAL(19,3) quantity column on its own; the parent total
     // the created sample recalculates from them does not. That recompute happens during
-    // persistence, so the request passed validation, reached the origin locks, and then failed
+    // persistence, so the request passed validation, decremented the origins, and then failed
     // inside the transaction as a 500 (Codex review, PR #1090).
     ApiSubSample origin = origin();
     List<String> errors =
@@ -393,7 +393,7 @@ public class InventoryOperationFacadesMVCIT extends API_MVC_InventoryTestBase {
                 + "\",\"amountTaken\":"
                 + q("1", GRAM)
                 + ",\"expectedQuantity\":"
-                + q("5", GRAM)
+                + q("4", GRAM)
                 + "},\"sampleName\":\"Fresh\",\"eachAmount\":"
                 + q("0.5", GRAM)
                 + "}");

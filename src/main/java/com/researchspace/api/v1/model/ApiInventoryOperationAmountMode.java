@@ -8,11 +8,11 @@ import com.fasterxml.jackson.annotation.JsonValue;
  * AmountMode} string union. Only the distinction the backend can act on is modelled: whether the
  * submitted amount is a value the user typed, or a snapshot of the origin's whole quantity.
  *
- * <p>{@link #ALL} makes {@code amountTaken} a compare-and-swap guard: the client is asserting "this
- * was the origin's entire quantity when I read it", so the endpoint rejects the request with 409 if
- * the live quantity no longer matches, rather than emptying an origin the user never saw. {@link
- * #EXPLICIT} amounts are user-entered and carry no such claim. The wizard's "perSubsample" and
- * "same" modes are both EXPLICIT here for that reason. See DevDocs/adr/0007.
+ * <p>{@link #ALL} says the client is asserting "this was the origin's entire quantity when I read
+ * it"; {@link #EXPLICIT} amounts are user-entered. The post validator uses the mode for shape rules
+ * only (an emptying operation cannot take an explicit amount, a linking one cannot take all); it is
+ * not compared against the live quantity. The wizard's "perSubsample" and "same" modes are both
+ * EXPLICIT. See DevDocs/adr/0007.
  */
 public enum ApiInventoryOperationAmountMode {
   EXPLICIT("explicit"),

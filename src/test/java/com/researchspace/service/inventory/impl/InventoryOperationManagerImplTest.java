@@ -413,7 +413,7 @@ class InventoryOperationManagerImplTest {
   }
 
   @Test
-  void rejectsAnAbsentAmountModeOnAnEmptyingOperationAsA400NotAConflict() {
+  void rejectsAnAbsentAmountModeOnAnEmptyingOperationAsA400() {
     // A client predating amountMode asking Destroy for PART of an origin is making a malformed
     // request: nothing has changed, so it gets the same field error it got before the mode
     // existed.
@@ -637,7 +637,7 @@ class InventoryOperationManagerImplTest {
   }
 
   @Test
-  void locksOriginsInAscendingIdOrderAndReportsErrorsAtTheirRequestIndex() {
+  void readsOriginsInAscendingIdOrderAndReportsErrorsAtTheirRequestIndex() {
     // Origins are read in ascending id order regardless of request order; the error path still
     // names the origin by its position in the request (code review, finding 1).
     ApiInventoryOperationPost request = new ApiInventoryOperationPost();
@@ -807,7 +807,7 @@ class InventoryOperationManagerImplTest {
   // --- the caller-supplied in-transaction validation (template conformance) ---
 
   @Test
-  void runsTheInTransactionValidationBeforeAnyOriginReadOrLock() throws Exception {
+  void runsTheInTransactionValidationBeforeAnyOriginRead() throws Exception {
     // The controller's template-conformance check used to run in its own transaction, so a template
     // changed between it and the operation could still fail mid-mutation. The check is now handed
     // in and run HERE, inside the operation's transaction, before any origin is read or locked
@@ -836,8 +836,8 @@ class InventoryOperationManagerImplTest {
 
   /**
    * An origin the server-built path can read: name and global id for the generated field names, a
-   * parent with no fields for the computed values, and the same quantity as entity, locked scalar
-   * and builder snapshot.
+   * parent with no fields for the computed values, and the same quantity as entity and builder
+   * snapshot.
    */
   private void serverBuiltOriginHolds(long originId, String value) {
     SubSample subSample = subSampleHolding(value, ML);
@@ -1041,7 +1041,7 @@ class InventoryOperationManagerImplTest {
   @Test
   void aZeroAmountOnAnEmptyingOperationWithoutAModeIsAMalformedRequest() {
     // Destroy asked to take 0 of a 5 ml origin, with no whole-origin claim: a 400 on the amount,
-    // never a partial take and never a 409 (nothing changed, so a reload would loop forever).
+    // never a partial take.
     ApiInventoryOperationPost request = new ApiInventoryOperationPost();
     request.setOperationType("destroy");
     request.setOrigins(List.of(origin(100L, millilitres("0"))));
@@ -1054,7 +1054,7 @@ class InventoryOperationManagerImplTest {
   }
 
   @Test
-  void anExplicitAmountEqualToTheOriginEmptiesItWithoutAConflict() throws Exception {
+  void anExplicitAmountEqualToTheOriginEmptiesIt() throws Exception {
     // An Aliquot taking exactly what the origin holds is neither over-removal nor a whole-origin
     // claim, so it proceeds and the register receives the full 5 ml, leaving the origin at zero.
     ApiInventoryOperationPost request = new ApiInventoryOperationPost();
@@ -1097,7 +1097,7 @@ class InventoryOperationManagerImplTest {
   @Test
   void aMatchingExpectedQuantityEarnsNoPassOnOverRemoval() {
     // The caller read the origin correctly (5 ml) and still asked for 6 ml: that is the ordinary
-    // over-removal 400, not a conflict.
+    // over-removal 400.
     ApiInventoryOperationPost request = new ApiInventoryOperationPost();
     request.setOperationType("derive");
     ApiInventoryOperationOriginUpdate origin = origin(100L, millilitres("6"));
@@ -1116,7 +1116,7 @@ class InventoryOperationManagerImplTest {
   void theOriginsAfterComeBackInRequestOrderRegardlessOfProcessingOrder() throws Exception {
     // A Pool facade over origins 200 then 100: the outcome lists them as the caller gave them
     // (M0 D2), even though the core processes origins ascending by id (see
-    // locksOriginsInAscendingIdOrderAndReportsErrorsAtTheirRequestIndex).
+    // readsOriginsInAscendingIdOrderAndReportsErrorsAtTheirRequestIndex).
     serverBuiltOriginHolds(200L, "5");
     serverBuiltOriginHolds(100L, "5");
     ApiSubSample after200 = new ApiSubSample();

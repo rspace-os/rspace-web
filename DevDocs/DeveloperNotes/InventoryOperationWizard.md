@@ -480,7 +480,7 @@ fields in the wizard is deferred.
   `InventoryOperationsApiControllerMVCIT` (end-to-end, incl. over-removal rejection),
   `InventoryOperationsInputsShapeMVCIT` (the records each
   operation persists, as a golden fingerprint) and `InventoryOperationFacadesMVCIT` (the
-  seven typed endpoints: envelope, status codes, renamed error paths, the 409, the
+  seven typed endpoints: envelope, status codes, renamed error paths, the
   defaults). Run the MVCITs with `mvn verify -Dtest=A,B` (comma-separated).
 
 ## Out of scope (current)

@@ -193,7 +193,7 @@ export default function useUiPreference<T>(
       const write = previous.then(async () => {
         const formData = new FormData();
         formData.append("preference", "UI_JSON_SETTINGS");
-        // Only this key is sent; the server merges it into the stored object under a row lock.
+        // Only this key is sent; the server merges it into the stored object in one transaction.
         // Reading the whole object here first and posting it back was the collision: two writers
         // that overlapped both merged into the same snapshot and the later one dropped the
         // other's key (code review, finding 3).

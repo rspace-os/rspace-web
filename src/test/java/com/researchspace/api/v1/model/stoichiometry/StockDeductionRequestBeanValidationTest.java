@@ -14,10 +14,8 @@ import org.junit.jupiter.api.Test;
 /**
  * The stock-deduction endpoint binds its body as {@code @Valid StockDeductionRequest}. The list
  * itself is constrained, but without an element-level constraint {@code {"linkIds":[null]}} reaches
- * the manager, whose lock-ordering pre-pass ({@code Map.entry}, {@code getSafeNull}) rejects a null
- * id outside the per-link try/catch, turning a malformed public request into a 500 (Copilot review,
- * PR #1090). Uses the plain Jakarta validator, the same engine Spring's request-body validation
- * delegates to.
+ * the manager, turning a malformed public request into a 500 (Copilot review, PR #1090). Uses the
+ * plain Jakarta validator, the same engine Spring's request-body validation delegates to.
  */
 class StockDeductionRequestBeanValidationTest {
 

@@ -39,8 +39,8 @@ import org.springframework.validation.Validator;
 public class InventoryOperationPostValidator implements Validator {
 
   /**
-   * Ceiling on origins per request: each origin costs a read, a lock and an update cycle, so the
-   * batch is capped like the samples endpoint caps newSampleSubSamplesCount (both 100).
+   * Ceiling on origins per request: each origin costs a read and an update cycle, so the batch is
+   * capped like the samples endpoint caps newSampleSubSamplesCount (both 100).
    */
   static final int MAX_ORIGINS = 100;
 
@@ -154,14 +154,12 @@ public class InventoryOperationPostValidator implements Validator {
             "errors.inventory.operation.duplicateOrigin",
             "An origin subsample may appear at most once in an operation.");
       }
-      // An origin-emptying operation (Destroy) means to take the whole origin, so its amount is a
-      // compare-and-swap claim the manager checks against the live quantity. A client that declares
-      // amountMode "explicit" is saying the opposite, that this is an amount the user chose, which
-      // this operation cannot honour: malformed, not conflicted, so a 400 here rather than the
-      // manager's 409 (RSDEV-1231). An ABSENT mode stays acceptable, so requests predating the
-      // field keep working, and it is NOT read as a whole-origin claim: only a DECLARED "all"
-      // earns the compare-and-swap, so an absent mode whose amount does not empty the origin still
-      // gets the mustEmptyOrigin 400 rather than a 409 it could never resolve.
+      // An origin-emptying operation (Destroy) means to take the whole origin. A client that
+      // declares amountMode "explicit" is saying the opposite, that this is an amount the user
+      // chose, which this operation cannot honour: malformed, so a 400 here (RSDEV-1231). An ABSENT
+      // mode stays acceptable, so requests predating the field keep working. Whether the amount
+      // actually empties the origin is the manager's mustEmptyOrigin rule; the mode itself is not
+      // compared against the live quantity (DevDocs/adr/0007).
       if (origin.getAmountMode() == ApiInventoryOperationAmountMode.UNKNOWN) {
         // A wire value the enum does not recognise. It binds to UNKNOWN rather than throwing from
         // the @JsonCreator so that the rejection is a catalog key here, not the raw English of an
@@ -182,10 +180,8 @@ public class InventoryOperationPostValidator implements Validator {
           && config.effect().amountTakenFrom() == null
           && origin.getAmountMode() == ApiInventoryOperationAmountMode.ALL) {
         // The mirror of the rule above. An operation that only links to its origins (Passage)
-        // requires an amount of exactly zero, so a whole-origin claim cannot be satisfied: the
-        // manager compare-and-swaps the zero against the live quantity, 409s, and the client
-        // reloads to find nothing changed and resubmits the only payload that validates, forever.
-        // Malformed rather than conflicted, so it is a 400 here (parallel review).
+        // requires an amount of exactly zero, so a whole-origin claim can never be meant.
+        // Malformed, so it is a 400 here (parallel review).
         errors.rejectValue(
             "amountMode",
             "errors.inventory.operation.amountModeNotApplicable",
@@ -230,8 +226,8 @@ public class InventoryOperationPostValidator implements Validator {
         // What the amount taken must be follows the operation's effect (DevDocs/adr/0007): an
         // operation that decrements its origins (amountTakenFrom configured) must take a positive
         // amount from each; one that only links to them (e.g. Passage) must take exactly zero. An
-        // origin-emptying operation (Destroy) is compare-and-swapped live in the manager
-        // instead, where the amount must still equal the origin's current quantity.
+        // origin-emptying operation (Destroy) is checked live in the manager instead, where the
+        // amount must equal the origin's current quantity (mustEmptyOrigin).
         int amountSignum = origin.getAmountTaken().getNumericValue().signum();
         if (config.effect().amountTakenFrom() != null && amountSignum <= 0) {
           errors.rejectValue(
@@ -252,16 +248,10 @@ public class InventoryOperationPostValidator implements Validator {
   }
 
   /**
-   * The compare-and-swap claim gets the same shape check the amount taken gets, for the same
-   * reason: the manager reads it live, under the origin locks, where a malformed value can no
-   * longer be reported as a field. A null numeric value makes {@code amountTakenEmptiesOrigin}
-   * answer false, which the manager reads as a stale origin and answers with a 409 the caller
-   * cannot resolve by reloading; an unknown unit id reaches {@code
-   * QuantityUtils.isComparableQuantities}, which throws from {@code RSUnitDef.getUnitById} after
-   * every origin row is locked. Both are malformed requests, so they are 400s here.
-   *
-   * <p>Whether the value MATCHES the live quantity stays the manager's 409: absent is still
-   * allowed, and a well-formed mismatch is a conflict, not a malformed request (M0, D5).
+   * {@code expectedQuantity} gets the same shape check the amount taken gets: a null numeric value
+   * or an unknown unit id is a malformed request, so both are 400s here. Absent is allowed, and a
+   * well-formed value is otherwise accepted without being compared against the live quantity (M0
+   * D5; DevDocs/adr/0007: no concurrency control).
    */
   private static void validateExpectedQuantity(ApiQuantityInfo expected, Errors errors) {
     if (expected == null) {
