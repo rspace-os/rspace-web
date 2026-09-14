@@ -10,26 +10,7 @@
 <%@ taglib prefix="axt" tagdir="/WEB-INF/tags" %>
 <%@ taglib uri="http://www.springframework.org/tags" prefix="spring" %>
 
-<style>
-	.pagin a:link
-            .pagin a:active {
-            color: #1465b7;
-            text-decoration: none;
-            font-size:1em;
-        }
-        .pagin a:visited {
-            color: #1465b7;
-            background-color: transparent;
-            font-size:1em;
-        }
-       .pagin  a:hover {
-            color: #cc0000;
-            text-decoration: none;
-            font-size:1em;
-        }
-</style>
-	<span class="pagin">
-<axt:paginate paginationList="${formsForCreateMenuPagination}"></axt:paginate></span>
+<axt:paginate paginationList="${formsForCreateMenuPagination}"></axt:paginate>
 <table>
 	<tr>
 		<th><spring:message code="workspace.list.name.header"/></th>
