@@ -1,5 +1,6 @@
 import { describe, expect, test, vi } from "vitest";
-import { makeMockSubSample, makeMockSubSampleWithParentContainer } from "./mocking";
+import AlwaysNewFactory from "../../Factory/AlwaysNewFactory";
+import { makeMockSubSample, makeMockSubSampleWithParentContainer, subsampleAttrs } from "./mocking";
 
 vi.mock("../../../use-stores", () => () => {});
 vi.mock("../../../../stores/stores/getRootStore", () => ({
@@ -52,6 +53,38 @@ describe("computed: paramsForBackend", () => {
       subSample.setFieldsDirty({ quantity: { numericValue: 4, unitId: 3 } });
       expect(subSample.paramsForBackend).toHaveProperty("quantity", {
         numericValue: 4,
+        unitId: 3,
+      });
+    });
+
+    test("is not left outstanding when a mid-edit refetch resets the baseline.", () => {
+      // Creating or deleting an IGSN calls fetchAdditionalInfo unconditionally, which calls
+      // populateFromJson on the live instance. That clears quantityEdited, so the save omits the
+      // quantity - but nothing refreshed this.quantity, so the field went on showing the user's
+      // number, the server returned 200, the success alert fired and nothing was written. The
+      // quantity is now assigned from the incoming params like every other field on the model, so
+      // clearing the flag really does correspond to a new baseline (review 2026-09-14, C3).
+      const subSample = editing();
+      subSample.setFieldsDirty({ quantity: { numericValue: 4, unitId: 3 } });
+
+      subSample.populateFromJson(new AlwaysNewFactory(), {
+        ...subsampleAttrs({ quantity: { numericValue: 9, unitId: 3 } }),
+        sample: subSample.sample,
+      });
+
+      expect(subSample.quantity).toEqual({ numericValue: 9, unitId: 3 });
+    });
+
+    test("is sent on a create even though the user never touched it.", () => {
+      // A record with no id yet is being created, so its quantity is part of what is being created
+      // rather than an echo of something stored. Every other case here uses the fixture's id of 1,
+      // so without this a simplification to quantityEdited alone would create subsamples holding
+      // nothing (review 2026-09-14, C3).
+      const subSample = makeMockSubSample({ id: null });
+      subSample.setEditable(new Set(["name", "quantity"]), true);
+
+      expect(subSample.paramsForBackend).toHaveProperty("quantity", {
+        numericValue: 1,
         unitId: 3,
       });
     });
