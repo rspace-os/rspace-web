@@ -189,6 +189,20 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
   public ApiSubSample updateApiSubSample(ApiSubSample apiSubSample, User user) {
     SubSample dbSubSample = getIfExists(apiSubSample.getId());
     ApiSubSample original = new ApiSubSample(dbSubSample);
+
+    // Taken as the FIRST lock of the transaction, for the reasons registerApiSubSampleUsage spells
+    // out and in the same order. Applying the edit runs SubSample.setQuantity, which cascades into
+    // SampleEntity.recalculateTotalQuantity and sums the sibling ENTITIES: this transaction's
+    // snapshot, which does not include a decrement another writer committed against a sibling while
+    // this edit was in flight. The sample then advertises stock that does not exist (review
+    // 2026-09-14, C1).
+    //
+    // Before the row lock, not after: this subsample's own row is one of its parent's sibling rows,
+    // so acquiring the set second is the inversion where two edits on two siblings each hold the
+    // row
+    // the other wants. Unconditional rather than only when the payload carries a quantity, so the
+    // lock order of this method does not depend on what a client chose to send.
+    siblingRowLock.lockSiblingRowsAndRecalculateTotal(dbSubSample.getSample().getId());
     boolean temporaryLock = lockItemForEdit(dbSubSample, user);
 
     try {
@@ -229,6 +243,11 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
       if (contentChanged || moveSuccessful) {
         dbSubSample = subSampleDao.save(dbSubSample);
       }
+      // The cascade above has already written a total summed from unlocked sibling entities.
+      // Recompute
+      // it from the rows read under the locks taken at the top, which is the value that must
+      // survive.
+      siblingRowLock.lockSiblingRowsAndRecalculateTotal(dbSubSample.getSample().getId());
     } finally {
       if (temporaryLock) {
         unlockItemAfterEdit(dbSubSample, user);
