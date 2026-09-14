@@ -1,19 +1,28 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
+import AlertContext from "@/stores/contexts/Alert";
 import useUiPreference, { PREFERENCES, UiPreferences } from "../useUiPreference";
 
-const addAlert = vi.fn();
-vi.mock("@/stores/stores/getRootStore", () => ({
-  default: () => ({ uiStore: { addAlert } }),
-}));
+/**
+ * Wraps a `renderHook` under test with both providers a real page supplies: `UiPreferences` (always
+ * present) and `AlertContext` with a caller-supplied `addAlert` (present everywhere - Gallery and
+ * Sysadmin mount the generic Alerts component, Inventory its own adapter - unlike `getRootStore`,
+ * which the hook no longer depends on precisely because it is NOT always bootstrapped outside
+ * Inventory, Codex review, PR #1090).
+ */
+function withAlerts(addAlert: (alert: unknown) => void) {
+  return function Wrapper({ children }: { children: React.ReactNode }) {
+    return (
+      <AlertContext.Provider value={{ addAlert: addAlert as never, removeAlert: () => {} }}>
+        <UiPreferences>{children}</UiPreferences>
+      </AlertContext.Provider>
+    );
+  };
+}
 
 describe("useUiPreference", () => {
-  beforeEach(() => {
-    addAlert.mockClear();
-  });
-
   it("writes one key at a time and never re-reads the whole object first", async () => {
     // Code review, finding 3: each setter used to read the full preference object, merge one key
     // and POST the lot back. Two writers that overlapped (two tabs, or two setters in one handler)
@@ -250,6 +259,7 @@ describe("useUiPreference", () => {
     // Logging alone left a failed save invisible to the user: the session kept working off the
     // optimistic local state, so nothing looked wrong until a later login found the save had never
     // landed (RSDEV-1231, Codex review, PR #1090). A visible alert is the other half of "reports".
+    const addAlert = vi.fn();
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
     server.use(
       http.get("/userform/ajax/preference", () => HttpResponse.json({})),
@@ -258,7 +268,7 @@ describe("useUiPreference", () => {
 
     const { result } = renderHook(
       () => useUiPreference<string | null>(PREFERENCES.GALLERY_VIEW_MODE, { defaultValue: null }),
-      { wrapper: UiPreferences },
+      { wrapper: withAlerts(addAlert) },
     );
     await waitFor(() => expect(result.current).not.toBeNull());
 
@@ -270,6 +280,44 @@ describe("useUiPreference", () => {
     expect(addAlert).toHaveBeenCalled();
     const alert = addAlert.mock.calls[0][0] as { variant: string };
     expect(alert.variant).toBe("warning");
+    consoleError.mockRestore();
+  });
+
+  it("keeps writing a key even when raising the failure alert itself throws", async () => {
+    // getRootStore().uiStore.addAlert used to throw here whenever RootStore had not been
+    // bootstrapped - true for every page outside Inventory, since only Inventory's Alerts adapter
+    // wires UiStore.addAlert to anything real (Codex review, PR #1090). A throw inside this .catch
+    // handler rejected the promise stored in `pendingWrites`, so every LATER write of that key
+    // chained onto an already-rejected promise and silently skipped its POST, forever. Whatever
+    // raises the alert must never be able to do that again, however badly it misbehaves.
+    const throwingAddAlert = vi.fn(() => {
+      throw new Error("no alert host mounted");
+    });
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    const posted: Array<string> = [];
+    let attempts = 0;
+    server.use(
+      http.get("/userform/ajax/preference", () => HttpResponse.json({})),
+      http.post("/userform/ajax/preference", async ({ request }) => {
+        const form = await request.formData();
+        const value = JSON.parse(String(form.get("value"))) as { value: string };
+        if (++attempts === 1) return HttpResponse.error();
+        posted.push(value.value);
+        return HttpResponse.json({});
+      }),
+    );
+
+    const { result } = renderHook(
+      () => useUiPreference<string | null>(PREFERENCES.GALLERY_VIEW_MODE, { defaultValue: null }),
+      { wrapper: withAlerts(throwingAddAlert) },
+    );
+    await waitFor(() => expect(result.current).not.toBeNull());
+
+    act(() => result.current[1]("grid"));
+    await waitFor(() => expect(throwingAddAlert).toHaveBeenCalled());
+    act(() => result.current[1]("list"));
+
+    await waitFor(() => expect(posted).toEqual(["list"]));
     consoleError.mockRestore();
   });
 });
