@@ -375,18 +375,15 @@ public class QuantityUtilsTest {
     IllegalArgumentException iae =
         assertThrows(
             IllegalArgumentException.class, () -> QuantityUtils.parseQuantityInfo("2 tonne"));
-    assertEquals(
-        "Cannot parse quantity string: Parse Error - tonne not recognized (in 2 tonne at index 2)",
-        iae.getMessage());
+    assertEquals("validation.quantity.parseFailed", iae.getMessage());
     // unit parseable by library, but unknown to rspace
     iae =
         assertThrows(
             IllegalArgumentException.class, () -> QuantityUtils.parseQuantityInfo("2 mol"));
-    assertEquals("Cannot parse quantity string: unit not recognized [mol]", iae.getMessage());
+    assertEquals("validation.quantity.unitUnrecognized", iae.getMessage());
     // invalid string
     iae =
         assertThrows(IllegalArgumentException.class, () -> QuantityUtils.parseQuantityInfo("asdf"));
-    assertEquals(
-        "Cannot parse quantity string: Failed to parse number-literal 'asdf'.", iae.getMessage());
+    assertEquals("validation.quantity.parseFailed", iae.getMessage());
   }
 }

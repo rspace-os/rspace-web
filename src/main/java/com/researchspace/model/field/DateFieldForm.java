@@ -34,7 +34,7 @@ public class DateFieldForm extends FieldForm {
     setType(FieldType.DATE);
   }
 
-  @NotBlank(message = "date format {errors.required.field}")
+  @NotBlank(message = "{validation.fieldForm.dateFormatRequired}")
   public String getFormat() {
     return format;
   }
@@ -158,7 +158,7 @@ public class DateFieldForm extends FieldForm {
     try {
       inputDate = simpleDateFormat.parse(data);
     } catch (ParseException e) {
-      el.addErrorMsg(String.format("Invalid date format [%s]", data));
+      el.addErrorMsgCode("validation.fieldData.invalidDateFormat", data);
       return el;
     }
     Date b4 = null;
@@ -170,12 +170,10 @@ public class DateFieldForm extends FieldForm {
       after = new Date(getMaxValue());
     }
     if (b4 != null && inputDate.before(b4)) {
-      el.addErrorMsg(
-          String.format("Input date [%s] before minimum [%s]", data, getMinDateAsString()));
+      el.addErrorMsgCode("validation.fieldData.dateBeforeMinimum", data, getMinDateAsString());
     }
     if (after != null && inputDate.after(after)) {
-      el.addErrorMsg(
-          String.format("Input date [%s] after maximum [%s]", data, getMaxDateAsString()));
+      el.addErrorMsgCode("validation.fieldData.dateAfterMaximum", data, getMaxDateAsString());
     }
     return el;
   }

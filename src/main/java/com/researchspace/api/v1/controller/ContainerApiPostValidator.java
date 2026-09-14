@@ -2,8 +2,8 @@ package com.researchspace.api.v1.controller;
 
 import com.ibm.icu.text.ListFormatter;
 import com.researchspace.api.v1.model.ApiContainer;
+import com.researchspace.core.util.ListFormatUtils;
 import com.researchspace.model.inventory.Container.ContainerType;
-import com.researchspace.service.ListFormatUtils;
 import java.util.List;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.stereotype.Component;

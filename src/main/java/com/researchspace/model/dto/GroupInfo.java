@@ -1,7 +1,7 @@
 package com.researchspace.model.dto;
 
 import com.researchspace.model.Group;
-import com.researchspace.model.User;
+import com.researchspace.model.RoleInGroup;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -10,11 +10,11 @@ import lombok.NoArgsConstructor;
 public class GroupInfo {
   private String groupName;
   private Long groupId;
-  private String roleInGroup;
+  private RoleInGroup roleInGroup;
 
-  public GroupInfo(Group g, User user) {
+  public GroupInfo(Group g, RoleInGroup roleInGroup) {
     this.groupName = g.getDisplayName();
     this.groupId = g.getId();
-    this.roleInGroup = g.getRoleForUser(user).getLabel();
+    this.roleInGroup = roleInGroup;
   }
 }

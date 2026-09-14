@@ -2,8 +2,8 @@ package com.axiope.webapp.taglib;
 
 import static java.lang.Math.min;
 
+import com.researchspace.core.util.ListFormatUtils;
 import com.researchspace.core.util.ObjectToStringPropertyTransformer;
-import com.researchspace.service.ListFormatUtils;
 import jakarta.servlet.jsp.JspException;
 import jakarta.servlet.jsp.JspWriter;
 import jakarta.servlet.jsp.tagext.TagSupport;

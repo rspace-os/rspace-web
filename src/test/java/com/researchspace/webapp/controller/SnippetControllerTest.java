@@ -5,9 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.ibm.icu.text.ListFormatter;
+import com.researchspace.core.util.ListFormatUtils;
 import com.researchspace.model.User;
 import com.researchspace.model.record.IllegalAddChildOperation;
-import com.researchspace.service.ListFormatUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.webapp.controller.SnippetController.SnippetResponse;
 import java.security.Principal;

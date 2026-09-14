@@ -3,6 +3,7 @@ package com.researchspace.webapp.controller;
 import static com.researchspace.core.util.TransformerUtils.toSet;
 
 import com.researchspace.core.util.ISearchResults;
+import com.researchspace.core.util.ListFormatUtils;
 import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.Role;
@@ -15,7 +16,6 @@ import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.views.CommunityListResult;
 import com.researchspace.model.views.GroupListResult;
 import com.researchspace.service.CommunityServiceManager;
-import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.audit.search.AuditTrailHandler;
 import com.researchspace.service.audit.search.AuditTrailSearchResult;

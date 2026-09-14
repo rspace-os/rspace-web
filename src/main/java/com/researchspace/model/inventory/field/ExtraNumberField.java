@@ -1,6 +1,8 @@
 package com.researchspace.model.inventory.field;
 
+import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.field.FieldType;
+import com.researchspace.model.field.LocalizedIllegalArgumentException;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Transient;
@@ -29,9 +31,9 @@ public class ExtraNumberField extends ExtraField {
    */
   @Override
   public void setData(String data) {
-    String validationMsg = validateNewData(data);
-    if (validationMsg != null) {
-      throw new IllegalArgumentException(validationMsg);
+    ErrorList errors = validateNewData(data);
+    if (errors.hasErrorMessages()) {
+      throw new LocalizedIllegalArgumentException("validation.inventoryField.invalidData", errors);
     }
     super.setData(data);
   }
@@ -43,15 +45,16 @@ public class ExtraNumberField extends ExtraField {
   }
 
   @Override
-  public String validateNewData(String data) {
+  public ErrorList validateNewData(String data) {
+    ErrorList errors = new ErrorList();
     if (StringUtils.isNotEmpty(data)) {
       try {
         new BigDecimal(data);
       } catch (NumberFormatException nfe) {
-        return "'" + data + "' cannot be parsed into number";
+        errors.addErrorMsgCode("validation.inventoryField.extraNumberInvalid", data);
       }
     }
-    return null;
+    return errors;
   }
 
   @Override
