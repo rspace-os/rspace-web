@@ -817,7 +817,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     ApiSample sampleViewedByOtherUser =
         sampleApiMgr.getApiSampleById(testUserSample.getId(), otherUser);
     assertTrue(sampleViewedByOtherUser.isClearedForPublicView());
-    assertTrue(sampleViewedByOtherUser.isRequestable());
+    assertTrue(sampleViewedByOtherUser.getRequestable());
 
     // pi has edit permission on testUser's sample (asserted earlier), but is not its owner, and
     // so cannot change whether it is requestable
@@ -827,7 +827,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     sampleApiMgr.updateApiSample(nonOwnerRequestableUpdate, pi);
     ApiSample sampleAfterNonOwnerAttempt =
         sampleApiMgr.getApiSampleById(testUserSample.getId(), testUser);
-    assertTrue(sampleAfterNonOwnerAttempt.isRequestable());
+    assertTrue(sampleAfterNonOwnerAttempt.getRequestable());
 
     /*
      * check visibility for community admin administering the group
@@ -1276,5 +1276,29 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     assertNotNull(sampleAsSeenByTestUser.getFields());
     assertNotNull(sampleAsSeenByTestUser.getExtraFields());
     assertNotNull(sampleAsSeenByTestUser.getSubSamples());
+  }
+
+  @Test
+  public void updateOmittingRequestableMustNotClearIt() {
+    User owner = createAndSaveUserIfNotExists(getRandomAlphabeticString("reqOwner"));
+    initialiseContentWithEmptyContent(owner);
+    ApiSampleWithFullSubSamples sample = createBasicSampleForUser(owner);
+
+    ApiSample makeRequestable = new ApiSample();
+    makeRequestable.setId(sample.getId());
+    makeRequestable.setRequestable(true);
+    sampleApiMgr.updateApiSample(makeRequestable, owner);
+    assertTrue(sampleApiMgr.getApiSampleById(sample.getId(), owner).getRequestable());
+
+    // a partial update that says nothing about requestable, as the UI sends when the
+    // requestable field is not among the currently editable fields
+    ApiSample renameOnly = new ApiSample();
+    renameOnly.setId(sample.getId());
+    renameOnly.setName("renamed, nothing to do with requesting");
+    sampleApiMgr.updateApiSample(renameOnly, owner);
+
+    assertTrue(
+        sampleApiMgr.getApiSampleById(sample.getId(), owner).getRequestable(),
+        "an update that omits 'requestable' must not turn it off");
   }
 }

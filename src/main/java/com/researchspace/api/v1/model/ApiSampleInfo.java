@@ -78,7 +78,7 @@ public class ApiSampleInfo extends ApiInventoryRecordInfo {
   @JsonIgnore private boolean templateImageAvailable;
 
   @JsonProperty("requestable")
-  private boolean requestable;
+  private Boolean requestable;
 
   @JsonProperty("subSampleAlias")
   private ApiSubSampleAlias subSampleAlias;
@@ -187,7 +187,9 @@ public class ApiSampleInfo extends ApiInventoryRecordInfo {
       // (e.g. a PI or group-shared editor) may otherwise have edit permission on the sample
       boolean requestedByOwner =
           user.getUsername().equals(nonTemplateSample.getOwner().getUsername());
-      if (requestedByOwner && nonTemplateSample.isRequestable() != requestable) {
+      if (requestable != null
+          && requestedByOwner
+          && nonTemplateSample.isRequestable() != requestable) {
         nonTemplateSample.setRequestable(requestable);
         contentChanged = true;
       }
@@ -264,7 +266,7 @@ public class ApiSampleInfo extends ApiInventoryRecordInfo {
     // requestable must survive even the public view, so that a user with no read/edit access to
     // the sample (e.g. found via an unscoped "requestable" search) can still see whether it's
     // requestable and use the Request Material UI
-    ((ApiSampleInfo) apiInvRecCopy).setRequestable(isRequestable());
+    ((ApiSampleInfo) apiInvRecCopy).setRequestable(getRequestable());
   }
 
   @Override

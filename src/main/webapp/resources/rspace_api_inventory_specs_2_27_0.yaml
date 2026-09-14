@@ -1181,11 +1181,10 @@ paths:
         created in PENDING state; changing that state is a separate operation.
 
         Requires the `sampleRequests.available` system property to be enabled, and
-        read access to the sample. A user cannot request material from a sample
-        they own.
-
-        Note: until RSDEV-1365 adds the `requestable` flag to samples, every sample
-        the caller can read is treated as requestable.
+        the sample to be marked `requestable` by its owner. Read access to the
+        sample is not required: marking a sample requestable is the owner's opt-in 
+        to being asked by anyone, and requestable samples are discoverable 
+        instance-wide. A user cannot request material from a sample they own.
 
         ## Examples of the request body
 
@@ -1216,8 +1215,8 @@ paths:
             sample requests are not enabled on this instance.
         "422":
           description: >-
-            The request is not valid, for example the sample is owned by the
-            current user.
+            The request is not valid: the sample is not marked requestable, is
+            owned by the current user, or the global id does not name a sample.
   "/sampleRequests/{id}":
     get:
       summary: Get a specific sample request

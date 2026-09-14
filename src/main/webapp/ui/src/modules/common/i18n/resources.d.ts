@@ -6958,6 +6958,7 @@ export default interface Resources {
         },
         "sampleRequest": {
           "notEnabled": "Sample requests are not enabled on this RSpace instance.",
+          "notRequestable": "Sample {0} is not available to request.",
           "ownSample": "You cannot request material from a sample that you own.",
           "role": {
             "invalid": "Requested role must be one of: REQUESTER or OWNER"

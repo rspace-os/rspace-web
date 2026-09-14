@@ -6,6 +6,7 @@ import com.researchspace.api.v1.model.ApiSampleRequestInfo;
 import com.researchspace.api.v1.model.ApiSampleRequestPost;
 import com.researchspace.api.v1.model.ApiSampleRequestSearchResult;
 import com.researchspace.core.util.ISearchResults;
+import com.researchspace.dao.SampleDao;
 import com.researchspace.dao.SampleRequestDao;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
@@ -31,6 +32,7 @@ import org.springframework.stereotype.Service;
 public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
 
   private @Autowired SampleRequestDao sampleRequestDao;
+  private @Autowired SampleDao sampleDao;
   private @Autowired SampleApiManager sampleApiManager;
   private @Autowired MessageSourceUtils messages;
   private @Autowired SystemPropertyPermissionManager systemPropertyPermissions;
@@ -38,7 +40,7 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
   @Override
   public ApiSampleRequest createRequest(ApiSampleRequestPost post, User user) {
     assertSampleRequestsEnabled(user);
-    Sample sample = readRequestedSample(post.getSampleGlobalId(), user);
+    Sample sample = readRequestedSample(post.getSampleGlobalId());
     assertNotOwnSample(sample, user);
     assertRequestable(sample);
     SampleRequest saved = sampleRequestDao.save(new SampleRequest(sample, user, post.getNote()));
@@ -97,13 +99,23 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
     return apiRequest;
   }
 
-  /** Rejects a global id that is well formed but does not name a sample. */
-  private Sample readRequestedSample(String sampleGlobalId, User user) {
+  /**
+   * Loads the requested sample, rejecting a global id that is well formed but does not name a
+   * sample. Read permission is not required: marking a sample requestable is the owner's opt-in to
+   * being asked by anyone, and the requestable search is instance-wide, so requestable is the gate
+   * rather than readability.
+   */
+  private Sample readRequestedSample(String sampleGlobalId) {
     GlobalIdentifier oid = new GlobalIdentifier(sampleGlobalId);
     if (!GlobalIdPrefix.SA.equals(oid.getPrefix())) {
       throw new ApiRuntimeException("errors.inventory.globalId.unsupportedType", oid.getIdString());
     }
-    return sampleApiManager.assertUserCanReadSample(oid.getDbId(), user);
+    return sampleDao
+        .getSafeNull(oid.getDbId())
+        .orElseThrow(
+            () ->
+                new NotFoundException(
+                    messages.getResourceNotFoundMessage("Sample", oid.getDbId())));
   }
 
   /** Only the requester and the sample's current owner may see a request. */
@@ -126,12 +138,12 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
     }
   }
 
-  /**
-   * TODO RSDEV-1365: every readable sample is treated as requestable until Sample.requestable
-   * lands. Replace the body with a check on sample.isRequestable().
-   */
+  /** Only a sample its owner has published for requests may be asked for. */
   private void assertRequestable(Sample sample) {
-    // FIXME RSDEV-1365: no-op placeholder, see javadoc
+    if (!sample.isRequestable()) {
+      throw new ApiRuntimeException(
+          "errors.inventory.sampleRequest.notRequestable", sample.getOid().getIdString());
+    }
   }
 
   /** An owner already has the material, and would otherwise be approving their own request. */
