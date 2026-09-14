@@ -2,8 +2,10 @@ package com.researchspace.service.inventory.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.api.v1.model.ApiInventoryEditLock;
@@ -25,6 +27,7 @@ import com.researchspace.service.inventory.InventoryPermissionUtils;
 import com.researchspace.service.inventory.SampleApiManager;
 import com.researchspace.service.inventory.SampleSiblingRowLock;
 import java.math.BigDecimal;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.shiro.subject.Subject;
 import org.apache.shiro.util.ThreadContext;
 import org.junit.jupiter.api.AfterEach;
@@ -103,12 +106,15 @@ class SubSampleApiManagerImplUpdateReconcileTest {
   }
 
   private void stubTheEditOf(SubSample cached, QuantityInfo committed) {
+    // Read out of the entity BEFORE the stubbing below: reading a spy inside when(..) is a nested
+    // call Mockito reports as UnfinishedStubbing.
+    long committedVersion = cached.getVersion();
     when(subSampleDao.exists(100L)).thenReturn(true);
     when(subSampleDao.get(100L)).thenReturn(cached);
     trackerGrantsTheLock();
     when(subSampleDao.lockRowForUpdate(100L)).thenReturn(cached);
     when(subSampleDao.getQuantityForUpdate(100L)).thenReturn(committed);
-    lenient().when(subSampleDao.getVersionForUpdate(100L)).thenReturn(cached.getVersion());
+    lenient().when(subSampleDao.getVersionForUpdate(100L)).thenReturn(committedVersion);
     lenient().when(subSampleDao.save(any(SubSample.class))).thenAnswer(i -> i.getArgument(0));
   }
 
@@ -176,5 +182,83 @@ class SubSampleApiManagerImplUpdateReconcileTest {
         0,
         new BigDecimal("4").compareTo(cached.getQuantity().getNumericValue()),
         "a quantity the user explicitly sent must reach the entity");
+  }
+
+  @Test
+  void readsTheCommittedQuantityBeforeAnythingDirtiesTheEntity() {
+    // Every read in the reconcile is an HQL query against the SubSample table, and Hibernate's
+    // default AUTO flush mode flushes pending changes to a query's tables before running it. So a
+    // mutation that ran first would flush the whole row from the pre-lock snapshot, and the scalar
+    // would then read back what this transaction just wrote instead of what the other transaction
+    // committed: the reconcile becomes a no-op and the decrement it exists to preserve is reverted.
+    //
+    // Mocks have no flush, so the ordering is modelled the way
+    // SubSampleApiManagerImplUsageVersionTest models it: the stubbed query returns the entity's own
+    // value once the entity has been dirtied, which is what a flush would leave behind, and the
+    // committed value only while it is still clean.
+    SubSample cached = spy(cachedSubSampleHolding("10"));
+    long committedVersion = cached.getVersion();
+    AtomicBoolean dirtied = new AtomicBoolean(false);
+    doAnswer(
+            invocation -> {
+              dirtied.set(true);
+              return invocation.callRealMethod();
+            })
+        .when(cached)
+        .setName(any());
+    when(subSampleDao.exists(100L)).thenReturn(true);
+    when(subSampleDao.get(100L)).thenReturn(cached);
+    trackerGrantsTheLock();
+    when(subSampleDao.lockRowForUpdate(100L)).thenReturn(cached);
+    when(subSampleDao.getQuantityForUpdate(100L))
+        .thenAnswer(invocation -> dirtied.get() ? cached.getQuantity() : millilitres("6"));
+    lenient().when(subSampleDao.getVersionForUpdate(100L)).thenReturn(committedVersion);
+    lenient().when(subSampleDao.save(any(SubSample.class))).thenAnswer(i -> i.getArgument(0));
+
+    ApiSubSample rename = edit(null);
+    rename.setName("renamed while the stock was being spent");
+    subSampleApiMgr.updateApiSubSample(rename, user);
+
+    assertEquals(
+        0,
+        new BigDecimal("6").compareTo(cached.getQuantity().getNumericValue()),
+        "the entity must carry the committed quantity: finding 10 means the read was served from a"
+            + " flush of this transaction's own snapshot");
+  }
+
+  @Test
+  void everyLockedReadPrecedesTheFirstReconcilingMutation() {
+    // Same AUTO-flush rule, stated as an ordering rather than through a stubbed flush, so the guard
+    // survives someone reordering the three reads among themselves.
+    // refreshParentLocationFromLockedRow is a query too, so it belongs on the read side of the
+    // line, not with the assignments it sits next to.
+    SubSample cached = spy(cachedSubSampleHolding("10"));
+    stubTheEditOf(cached, millilitres("6"));
+
+    subSampleApiMgr.updateApiSubSample(edit(millilitres("4")), user);
+
+    InOrder order = inOrder(subSampleDao, cached);
+    order.verify(subSampleDao).getQuantityForUpdate(100L);
+    order.verify(subSampleDao).getVersionForUpdate(100L);
+    order.verify(subSampleDao).refreshParentLocationFromLockedRow(cached);
+    order.verify(cached).refreshQuantityFromLockedRow(any());
+    order.verify(cached).refreshVersionFromLockedRow(any());
+  }
+
+  @Test
+  void theEditIsAppliedOnlyAfterTheRowLockIsHeld() {
+    // The reconcile is worth nothing if the row it read is not locked for the rest of the
+    // transaction: another writer could commit between the read and the write. Deleting the
+    // reconcile call outright left the whole fast tier green, which is why this is asserted at all
+    // (review 2026-09-14, I1).
+    SubSample cached = spy(cachedSubSampleHolding("10"));
+    stubTheEditOf(cached, millilitres("6"));
+
+    subSampleApiMgr.updateApiSubSample(edit(millilitres("4")), user);
+
+    InOrder order = inOrder(subSampleDao, cached);
+    order.verify(subSampleDao).lockRowForUpdate(100L);
+    order.verify(subSampleDao).getQuantityForUpdate(100L);
+    order.verify(cached).setQuantity(any());
   }
 }
