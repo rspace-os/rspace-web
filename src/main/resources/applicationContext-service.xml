@@ -70,7 +70,8 @@
         <tx:attributes>
             <!-- Read-only commented out to make things easier for end-users -->
             <!--tx:method name="get*" read-only="true"/-->
-            <!-- Stock writers and the UI-preference merge take row locks AFTER a plain read.
+            <!-- Stock writers, the subsample edit path and the UI-preference merge take row
+                 locks AFTER a plain read.
                  Under REPEATABLE READ that first read fixes the snapshot, and MariaDB's
                  innodb_snapshot_isolation (default on from 11.6) then fails a later FOR UPDATE
                  on a row committed since with error 1020 (mapped to 409) instead of waiting.
@@ -87,6 +88,7 @@
             <tx:method name="createNewListOfMaterials" isolation="READ_COMMITTED"/>
             <tx:method name="updateListOfMaterials" isolation="READ_COMMITTED"/>
             <tx:method name="mergeUiJsonSetting" isolation="READ_COMMITTED"/>
+            <tx:method name="updateApiSubSample" isolation="READ_COMMITTED"/>
             <!-- The lock primitives are MANDATORY: each takes a row lock that is held until the
                  transaction ends, so called as the outermost service call Spring would open a
                  transaction, run the FOR UPDATE, return, COMMIT, and leave the caller acting on a
