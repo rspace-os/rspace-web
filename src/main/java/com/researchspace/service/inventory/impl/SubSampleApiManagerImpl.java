@@ -34,7 +34,6 @@ import com.researchspace.service.inventory.SubSampleApiManager;
 import jakarta.ws.rs.NotFoundException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -359,7 +358,10 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
       // what the last committed writer stored.
       QuantityInfo orgQuantity = subSampleDao.getQuantityForUpdate(dbSubSample.getId());
 
-      QuantityInfo newQuantity = qUtils.sum(Arrays.asList(orgQuantity, usedQuantity.negate()));
+      // subtract, not sum: a remainder that will not fit 3dp in the origin's unit is stored one
+      // rung down the ladder where it does, so 2.5 mg from a 5 g origin leaves 4997.5 mg exactly
+      // rather than rounding 4.9975 g away (review 2026-09-14, Q1a).
+      QuantityInfo newQuantity = qUtils.subtract(orgQuantity, usedQuantity);
 
       // if usage is larger than remaining quantity set remaining to zero, in the stored unit
       // (qUtils.sum may return a different unit, and "0 g" must not relabel itself to "0 mg")
