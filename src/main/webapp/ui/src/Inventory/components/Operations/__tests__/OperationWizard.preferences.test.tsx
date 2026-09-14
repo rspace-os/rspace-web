@@ -209,4 +209,48 @@ describe("OperationWizard with the real preference hook", () => {
     // reviews a complete remembered bundle) instead of requiring the amounts step to be filled again.
     await waitFor(() => expect(screen.getByRole("button", { name: /wizard\.perform/i })).toBeEnabled());
   });
+
+  it("restores a bundle saved only under the new per-operation key on selecting that operation", async () => {
+    // Codex review, PR #1090: selectOperation used to call stateForKey(op, ...) with `processValues`
+    // still bound to whatever operation (or none) was PREVIOUSLY selected - the per-operation split
+    // only takes effect on the render after `operation` state actually changes. A bundle that exists
+    // ONLY under the new key (no legacy fallback to lean on) was therefore never restored on the very
+    // pick that should load it. The saved process-name default pre-fills the process name on
+    // selection alone, so this covers the exact repro: no typing, no manual Remember toggle.
+    stored = {
+      INVENTORY_OPERATION_PROCESS_NAME_DEFAULTS: { value: { derive: "dna extraction" }, time: 0 },
+      INVENTORY_OPERATION_PROCESS_VALUES_DERIVE: {
+        value: {
+          "derive dna extraction": {
+            values: {
+              count: 1,
+              eachAmount: { numericValue: 5, unitId: 3 },
+              amountTaken: { numericValue: 1, unitId: 3 },
+            },
+            template: { mode: "pick", templateId: 5, templateName: "T5" },
+            documentation: { globalId: "SD1", name: "D1" },
+          },
+        },
+        time: 0,
+      },
+    };
+    const user = userEvent.setup();
+    const origin = makeMockSubSample({});
+    vi.spyOn(origin, "fetchAdditionalInfo").mockResolvedValue(undefined);
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <UiPreferences>
+          <OperationWizard open onClose={vi.fn()} origins={[origin]} />
+        </UiPreferences>
+      </QueryClientProvider>,
+    );
+
+    await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
+
+    // No typing, no toggling Remember: selecting the operation alone must find and restore the
+    // per-operation bundle, offering Perform straight away.
+    await waitFor(() => expect(screen.getByRole("button", { name: /wizard\.perform/i })).toBeEnabled());
+    expect(screen.getByTestId("proc")).toHaveValue("dna extraction");
+  });
 });
