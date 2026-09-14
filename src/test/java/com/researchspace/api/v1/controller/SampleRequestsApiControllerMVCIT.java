@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.researchspace.Constants;
+import com.researchspace.api.v1.model.ApiSample;
 import com.researchspace.api.v1.model.ApiSampleRequest;
 import com.researchspace.api.v1.model.ApiSampleRequestSearchResult;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
@@ -40,6 +41,7 @@ public class SampleRequestsApiControllerMVCIT extends API_MVC_InventoryTestBase 
         getSysAdminUser());
 
     ApiSampleWithFullSubSamples sample = createBasicSampleForUser(owner);
+    markRequestable(sample, owner);
 
     MvcResult postResult =
         this.mockMvc
@@ -73,6 +75,13 @@ public class SampleRequestsApiControllerMVCIT extends API_MVC_InventoryTestBase 
     assertEquals(created.getId(), listed.getRequests().get(0).getId());
   }
 
+  private void markRequestable(ApiSampleWithFullSubSamples target, User owner) {
+    ApiSample update = new ApiSample();
+    update.setId(target.getId());
+    update.setRequestable(true);
+    sampleApiMgr.updateApiSample(update, owner);
+  }
+
   @Test
   public void createRequest_forOwnSampleIsUnprocessable() throws Exception {
     User owner = createAndSaveUser(getRandomName(10), Constants.PI_ROLE);
@@ -84,6 +93,7 @@ public class SampleRequestsApiControllerMVCIT extends API_MVC_InventoryTestBase 
         getSysAdminUser());
 
     ApiSampleWithFullSubSamples sample = createBasicSampleForUser(owner);
+    markRequestable(sample, owner);
 
     this.mockMvc
         .perform(

@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.researchspace.api.v1.auth.ApiRuntimeException;
+import com.researchspace.api.v1.model.ApiSample;
 import com.researchspace.api.v1.model.ApiSampleRequest;
 import com.researchspace.api.v1.model.ApiSampleRequestPost;
 import com.researchspace.api.v1.model.ApiSampleRequestSearchResult;
@@ -42,6 +43,7 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
     createGroupForUsers(requester, requester.getUsername(), "", requester, owner);
 
     sample = createBasicSampleForUser(owner);
+    markRequestable(sample);
     systemPropertyMgr.save(
         SystemPropertyName.SAMPLE_REQUESTS_AVAILABLE,
         HierarchicalPermission.ALLOWED,
@@ -88,6 +90,7 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
   @Test
   public void getRequestsForUser_filteredBySample_returnsOnlyThatSamplesRequests() {
     ApiSampleWithFullSubSamples otherSample = createBasicSampleForUser(owner);
+    markRequestable(otherSample);
     ApiSampleRequest onFirst = raiseRequest("Need 2ml for the binding assay");
     raiseRequestAgainst(otherSample, "Need 5ml of the other one");
 
@@ -104,11 +107,25 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void createRequest_isRefusedWhenRequesterCannotReadSample() {
+  public void createRequest_isAllowedForAUserWhoCannotReadTheSample() {
+    // marking a sample requestable is the owner's opt-in to being asked by anyone, so discovery
+    // is instance-wide and read permission is deliberately not required here
     User outsider = createAndSaveUserIfNotExists(getRandomAlphabeticString("outsider"));
     initialiseContentWithEmptyContent(outsider);
 
-    assertThrows(NotFoundException.class, () -> raiseRequestAs(outsider));
+    ApiSampleRequest raised = raiseRequestAs(outsider);
+
+    assertEquals(SampleRequestStatus.PENDING, raised.getStatus());
+    assertEquals(outsider.getUsername(), raised.getRequester().getUsername());
+  }
+
+  @Test
+  public void createRequest_isRefusedWhenSampleIsNotRequestable() {
+    ApiSampleWithFullSubSamples notRequestable = createBasicSampleForUser(owner);
+
+    assertThrows(
+        ApiRuntimeException.class,
+        () -> raiseRequestAgainst(notRequestable, "not published for requests"));
   }
 
   @Test
@@ -184,6 +201,13 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
 
     assertThrows(
         UnsupportedOperationException.class, () -> listFor(SampleRequestRole.REQUESTER, requester));
+  }
+
+  private void markRequestable(ApiSampleWithFullSubSamples target) {
+    ApiSample update = new ApiSample();
+    update.setId(target.getId());
+    update.setRequestable(true);
+    sampleApiMgr.updateApiSample(update, owner);
   }
 
   private ApiSampleRequest raiseRequestAs(User user) {
