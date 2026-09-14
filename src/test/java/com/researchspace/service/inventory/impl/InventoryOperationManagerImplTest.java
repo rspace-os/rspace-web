@@ -17,7 +17,6 @@ import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -35,7 +34,6 @@ import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.model.units.RSUnitDef;
-import com.researchspace.service.inventory.InventoryEditConflictException;
 import com.researchspace.service.inventory.InventoryOperationConfigRegistry;
 import com.researchspace.service.inventory.InventoryOperationManager;
 import java.math.BigDecimal;
@@ -55,7 +53,6 @@ import org.springframework.validation.BindException;
 class InventoryOperationManagerImplTest {
 
   @Mock private com.researchspace.service.inventory.SampleApiManager sampleApiMgr;
-  @Mock private com.researchspace.service.inventory.SampleSiblingRowLock siblingRowLock;
   @Mock private com.researchspace.service.inventory.SubSampleApiManager subSampleApiMgr;
   @Mock private com.researchspace.service.inventory.LinkTargetResolver linkTargetResolver;
 
@@ -96,35 +93,9 @@ class InventoryOperationManagerImplTest {
     return subSample;
   }
 
-  /**
-   * A subsample entity mock without a quantity stub, for origins the manager resolves (to find the
-   * parent sample) but never reads a quantity from, e.g. because an earlier check throws first.
-   */
-  private SubSample subSampleWithParent(long sampleId) {
-    SubSample subSample = mock(SubSample.class);
-    SampleEntity parent = mock(SampleEntity.class);
-    when(parent.getId()).thenReturn(sampleId);
-    when(subSample.getSample()).thenReturn(parent);
-    return subSample;
-  }
-
-  /** The origin resolves (parent sample findable) but is never read further. */
-  private void originExists(long originId, long sampleId) {
-    // Built BEFORE when(): creating and stubbing the entity mock inside thenReturn(...) would run
-    // while the outer stubbing is still in progress, which Mockito rejects as unfinished stubbing.
-    SubSample subSample = subSampleWithParent(sampleId);
-    when(subSampleApiMgr.assertUserCanEditSubSample(originId, user)).thenReturn(subSample);
-  }
-
   private void originHolds(long originId, SubSample subSample) {
-    // Read BEFORE when() for the same reason: getQuantity() is a mock call, and a mock call between
-    // when() and thenReturn() is unfinished stubbing.
-    QuantityInfo quantity = subSample.getQuantity();
     when(subSampleApiMgr.assertUserCanEditSubSample(originId, user)).thenReturn(subSample);
-    when(subSampleApiMgr.lockSubSampleForEdit(originId, user)).thenReturn(subSample);
-    // The live checks read the quantity as a locked scalar, not from the locked entity; in these
-    // tests the two agree unless a test overrides the scalar to model a concurrent committer.
-    when(subSampleApiMgr.getQuantityForUpdate(originId)).thenReturn(quantity);
+    when(subSampleApiMgr.getIfExists(originId)).thenReturn(subSample);
     // The server-built overload maps each origin again once the operation is done. Lenient because
     // most tests here assert on the mutation rather than the envelope and never reach it; a test
     // that cares stubs its own.
@@ -137,7 +108,6 @@ class InventoryOperationManagerImplTest {
   void setUp() {
     manager = new InventoryOperationManagerImpl();
     ReflectionTestUtils.setField(manager, "sampleApiMgr", sampleApiMgr);
-    ReflectionTestUtils.setField(manager, "siblingRowLock", siblingRowLock);
     ReflectionTestUtils.setField(manager, "subSampleApiMgr", subSampleApiMgr);
     ReflectionTestUtils.setField(manager, "linkTargetResolver", linkTargetResolver);
     // the real registry over the real config: the live checks read emptiesOrigin per operation
@@ -163,7 +133,7 @@ class InventoryOperationManagerImplTest {
     // the created sample is returned unchanged
     assertSame(created, result);
     // permission on the origin is asserted, and the sample is created exactly once
-    verify(subSampleApiMgr).lockSubSampleForEdit(100L, user);
+    verify(subSampleApiMgr).assertUserCanEditSubSample(100L, user);
     verify(sampleApiMgr).createNewApiSample(newSample, user);
     // the origin is REDUCED by the amount taken (registerApiSubSampleUsage subtracts and clamps at
     // zero, so it can never increase the origin)
@@ -203,35 +173,14 @@ class InventoryOperationManagerImplTest {
     request.setOperationType("derive");
     request.setOrigins(List.of(origin(100L, new ApiQuantityInfo(new BigDecimal("0.6"), 3))));
     request.setNewSample(new ApiSampleWithFullSubSamples("Derived material"));
-    originExists(100L, 900L);
-    doThrow(new RuntimeException("no permission"))
-        .when(subSampleApiMgr)
-        .lockSubSampleForEdit(100L, user);
-
-    assertThrows(RuntimeException.class, () -> manager.performOperation(request, user, NONE));
-
-    verify(sampleApiMgr, never()).createNewApiSample(any(), any());
-    verify(subSampleApiMgr, never()).registerApiSubSampleUsage(any(), any(), any());
-  }
-
-  @Test
-  void assertsEditPermissionBeforeLockingAnySiblingSet() {
-    // An under-permissioned caller must not be able to lock other users' sibling sets and delay
-    // their writers until the transaction fails: permission is asserted (unlocked) while the parent
-    // ids are collected, before lockSiblingRowsAndRecalculateTotal takes the first lock (Copilot
-    // review, PR #1090).
-    ApiInventoryOperationPost request = new ApiInventoryOperationPost();
-    request.setOperationType("derive");
-    request.setOrigins(List.of(origin(100L, new ApiQuantityInfo(new BigDecimal("0.6"), 3))));
-    request.setNewSample(new ApiSampleWithFullSubSamples("Derived material"));
     doThrow(new RuntimeException("no permission"))
         .when(subSampleApiMgr)
         .assertUserCanEditSubSample(100L, user);
 
     assertThrows(RuntimeException.class, () -> manager.performOperation(request, user, NONE));
 
-    verifyNoInteractions(sampleApiMgr);
-    verify(subSampleApiMgr, never()).lockSubSampleForEdit(any(), any());
+    verify(sampleApiMgr, never()).createNewApiSample(any(), any());
+    verify(subSampleApiMgr, never()).registerApiSubSampleUsage(any(), any(), any());
   }
 
   @Test
@@ -243,10 +192,9 @@ class InventoryOperationManagerImplTest {
     // one
     // does - it would decrement origin 100 before checking origin 200's permission.
     originHolds(100L, subSampleHolding("5", 3));
-    originExists(200L, 901L);
     doThrow(new RuntimeException("no permission"))
         .when(subSampleApiMgr)
-        .lockSubSampleForEdit(200L, user);
+        .assertUserCanEditSubSample(200L, user);
     ApiInventoryOperationPost request = new ApiInventoryOperationPost();
     request.setOperationType("pool");
     request.setOrigins(
@@ -297,9 +245,8 @@ class InventoryOperationManagerImplTest {
   }
 
   @Test
-  void decrementsOriginsInAscendingIdOrderToAvoidLockOrderDeadlocks() throws Exception {
-    // Two concurrent multi-origin operations over overlapping origins must acquire row locks in a
-    // consistent order; the manager therefore mutates origins sorted by id, not in request order.
+  void decrementsOriginsInAscendingIdOrderRegardlessOfRequestOrder() throws Exception {
+    // The manager mutates origins sorted by id, not in request order.
     ApiInventoryOperationPost request = new ApiInventoryOperationPost();
     request.setOperationType("pool");
     request.setOrigins(
@@ -338,8 +285,8 @@ class InventoryOperationManagerImplTest {
     manager.performOperation(request, user, NONE);
 
     // both origins are permission-checked and each is reduced by its own amount
-    verify(subSampleApiMgr).lockSubSampleForEdit(100L, user);
-    verify(subSampleApiMgr).lockSubSampleForEdit(200L, user);
+    verify(subSampleApiMgr).assertUserCanEditSubSample(100L, user);
+    verify(subSampleApiMgr).assertUserCanEditSubSample(200L, user);
     ArgumentCaptor<QuantityInfo> first = ArgumentCaptor.forClass(QuantityInfo.class);
     verify(subSampleApiMgr).registerApiSubSampleUsage(eq(100L), first.capture(), eq(user));
     assertEquals(0, new BigDecimal("0.6").compareTo(first.getValue().getNumericValue()));
@@ -381,29 +328,6 @@ class InventoryOperationManagerImplTest {
   }
 
   @Test
-  void checksAgainstTheLockedScalarNotTheEntitySnapshot() {
-    // The locked entity holds this transaction's snapshot (lockRowForUpdate serialises, it does
-    // not refresh); the entity mock here deliberately has NO quantity, so a check reading the
-    // entity would fail this test. The last committed writer left 0.4 ml: the over-removal check
-    // must reject from the locked scalar, or it would approve a decrement that
-    // registerApiSubSampleUsage then clamps into a silent partial take.
-    ApiInventoryOperationPost request = new ApiInventoryOperationPost();
-    request.setOperationType("derive");
-    request.setOrigins(List.of(origin(100L, new ApiQuantityInfo(new BigDecimal("0.6"), 3))));
-    request.setNewSample(new ApiSampleWithFullSubSamples("Derived material"));
-    SubSample snapshotOnlyEntity = subSampleWithParent(900L);
-    when(subSampleApiMgr.assertUserCanEditSubSample(100L, user)).thenReturn(snapshotOnlyEntity);
-    when(subSampleApiMgr.lockSubSampleForEdit(100L, user)).thenReturn(snapshotOnlyEntity);
-    when(subSampleApiMgr.getQuantityForUpdate(100L))
-        .thenReturn(new QuantityInfo(new BigDecimal("0.4"), 3));
-
-    BindException rejection = performExpectingRejection(request);
-    assertEquals(
-        "errors.inventory.operation.amountTakenExceedsOrigin",
-        rejection.getFieldErrors("origins[0].amountTaken").get(0).getCode());
-  }
-
-  @Test
   void rejectsTakingMoreThanTheOriginCurrentlyHolds() {
     ApiInventoryOperationPost request = new ApiInventoryOperationPost();
     request.setOperationType("derive");
@@ -415,85 +339,6 @@ class InventoryOperationManagerImplTest {
     assertEquals(
         "errors.inventory.operation.amountTakenExceedsOrigin",
         rejection.getFieldErrors("origins[0].amountTaken").get(0).getCode());
-  }
-
-  @Test
-  void rejectsADeclaredAllDestroyWhoseAmountNoLongerMatchesTheOrigin() {
-    // Destroy declaring "all" is claiming what the origin held when the wizard read it, so a live
-    // quantity that no longer matches means someone changed it in between. That is a 409 to reload
-    // from rather than a 400 to correct: the user typed no amount, so there is no field to fix
-    // (RSDEV-1231). Contrast rejectsAnAbsentAmountModeOnAnEmptyingOperationAsA400NotAConflict,
-    // where the client made no such claim.
-    ApiInventoryOperationPost request = new ApiInventoryOperationPost();
-    request.setOperationType("destroy");
-    request.setOrigins(List.of(takeAll(100L, new ApiQuantityInfo(new BigDecimal("3"), 3))));
-    originHolds(100L, subSampleHolding("5", 3));
-
-    assertEquals(
-        "errors.inventory.operation.amountTakenStale",
-        assertThrows(
-                InventoryEditConflictException.class,
-                () -> manager.performOperation(request, user, NONE))
-            .getMessageKey());
-    verifyNoMutation();
-  }
-
-  @Test
-  void rejectsTakeAllWhoseAmountNoLongerMatchesTheOrigin() {
-    // The wizard's "take all" serializes the quantity it saw. A concurrent top-up between load and
-    // Perform must not be silently swept into the operation.
-    ApiInventoryOperationPost request = new ApiInventoryOperationPost();
-    request.setOperationType("derive");
-    request.setOrigins(List.of(takeAll(100L, new ApiQuantityInfo(new BigDecimal("5"), 3))));
-    request.setNewSample(new ApiSampleWithFullSubSamples("Derived material"));
-    SubSample entity = subSampleWithParent(900L);
-    when(subSampleApiMgr.assertUserCanEditSubSample(100L, user)).thenReturn(entity);
-    when(subSampleApiMgr.lockSubSampleForEdit(100L, user)).thenReturn(entity);
-    // a concurrent writer topped the origin up from 5 to 8 after the wizard read it
-    when(subSampleApiMgr.getQuantityForUpdate(100L))
-        .thenReturn(new QuantityInfo(new BigDecimal("8"), 3));
-
-    assertEquals(
-        "errors.inventory.operation.amountTakenStale",
-        assertThrows(
-                InventoryEditConflictException.class,
-                () -> manager.performOperation(request, user, NONE))
-            .getMessageKey());
-    verifyNoMutation();
-  }
-
-  @Test
-  void rejectsAnExpectedQuantityThatNoLongerMatchesTheOriginAsAConflict() {
-    // M0 D5: the typed facades' compare-and-swap. The caller took 1 ml believing the origin held
-    // 10 ml; it holds 5, so the read was stale and the answer is a 409, not a partial take.
-    ApiInventoryOperationOriginUpdate origin = origin(100L, millilitres("1"));
-    origin.setExpectedQuantity(millilitres("10"));
-    ApiInventoryOperationPost request = new ApiInventoryOperationPost();
-    request.setOperationType("derive");
-    request.setOrigins(List.of(origin));
-    request.setNewSample(new ApiSampleWithFullSubSamples("Derived material"));
-    originHolds(100L, subSampleHolding("5", RSUnitDef.MILLI_LITRE.getId()));
-
-    assertEquals(
-        "errors.inventory.operation.amountTakenStale",
-        assertThrows(
-                InventoryEditConflictException.class,
-                () -> manager.performOperation(request, user, NONE))
-            .getMessageKey());
-    verifyNoMutation();
-  }
-
-  @Test
-  void acceptsAnExpectedQuantityThatMatchesTheOriginInAnotherUnitOfItsCategory() throws Exception {
-    ApiInventoryOperationOriginUpdate origin = origin(100L, millilitres("1"));
-    origin.setExpectedQuantity(new ApiQuantityInfo(new BigDecimal("0.005"), RSUnitDef.LITRE));
-    ApiInventoryOperationPost request = new ApiInventoryOperationPost();
-    request.setOperationType("derive");
-    request.setOrigins(List.of(origin));
-    request.setNewSample(new ApiSampleWithFullSubSamples("Derived material"));
-    originHolds(100L, subSampleHolding("5", RSUnitDef.MILLI_LITRE.getId()));
-
-    assertDoesNotThrow(() -> manager.performOperation(request, user, NONE));
   }
 
   @Test
@@ -565,11 +410,9 @@ class InventoryOperationManagerImplTest {
 
   @Test
   void rejectsAnAbsentAmountModeOnAnEmptyingOperationAsA400NotAConflict() {
-    // The case that distinguishes the two answers, and the one I1 was about. A client predating
-    // amountMode asking Destroy for PART of an origin is making a malformed request: nothing has
-    // changed, so answering 409 "reload and retry" sends it round a loop it can never leave. It
-    // gets the field error it got before the mode existed. Only a DECLARED "all" earns the 409
-    // (rejectsTakeAllWhoseAmountNoLongerMatchesTheOrigin covers that).
+    // A client predating amountMode asking Destroy for PART of an origin is making a malformed
+    // request: nothing has changed, so it gets the same field error it got before the mode
+    // existed.
     ApiInventoryOperationPost request = new ApiInventoryOperationPost();
     request.setOperationType("destroy");
     ApiInventoryOperationOriginUpdate origin =
@@ -582,31 +425,6 @@ class InventoryOperationManagerImplTest {
     assertEquals(
         "errors.inventory.operation.mustEmptyOrigin",
         rejection.getFieldErrors("origins[0].amountTaken").get(0).getCode());
-  }
-
-  @Test
-  void reportsAFieldErrorRatherThanTheConflictWhenARequestHasBoth() {
-    // A 400 is the more actionable answer and needs no reload, so it wins. Throwing the conflict on
-    // sight discarded errors already collected for earlier origins, leaving the caller to reload,
-    // resubmit and only then discover the 400 (parallel review, I4).
-    ApiInventoryOperationPost request = new ApiInventoryOperationPost();
-    request.setOperationType("pool");
-    request.setOrigins(
-        List.of(
-            origin(100L, new ApiQuantityInfo(new BigDecimal("1"), 3)),
-            takeAll(200L, new ApiQuantityInfo(new BigDecimal("5"), 3))));
-    request.setNewSample(new ApiSampleWithFullSubSamples("Pooled material"));
-    originHolds(100L, subSampleHolding("0", 3)); // empty: a collected field error
-    SubSample stale = subSampleWithParent(901L);
-    when(subSampleApiMgr.assertUserCanEditSubSample(200L, user)).thenReturn(stale);
-    when(subSampleApiMgr.lockSubSampleForEdit(200L, user)).thenReturn(stale);
-    when(subSampleApiMgr.getQuantityForUpdate(200L))
-        .thenReturn(new QuantityInfo(new BigDecimal("8"), 3)); // stale whole-origin claim
-
-    BindException rejection = performExpectingRejection(request);
-    assertEquals(
-        "errors.inventory.operation.originEmpty",
-        rejection.getFieldErrors("origins[0].id").get(0).getCode());
   }
 
   @Test
@@ -816,9 +634,8 @@ class InventoryOperationManagerImplTest {
 
   @Test
   void locksOriginsInAscendingIdOrderAndReportsErrorsAtTheirRequestIndex() {
-    // The row locks taken by the live-state read must be acquired in the same consistent order as
-    // the decrements, so two overlapping Pool requests cannot deadlock; the error path still names
-    // the origin by its position in the request (code review, finding 1).
+    // Origins are read in ascending id order regardless of request order; the error path still
+    // names the origin by its position in the request (code review, finding 1).
     ApiInventoryOperationPost request = new ApiInventoryOperationPost();
     request.setOperationType("pool");
     request.setOrigins(List.of(origin(300L, millilitres("1")), origin(100L, millilitres("9"))));
@@ -829,54 +646,11 @@ class InventoryOperationManagerImplTest {
     BindException rejection = performExpectingRejection(request);
 
     InOrder inOrder = inOrder(subSampleApiMgr);
-    inOrder.verify(subSampleApiMgr).lockSubSampleForEdit(100L, user);
-    inOrder.verify(subSampleApiMgr).lockSubSampleForEdit(300L, user);
+    inOrder.verify(subSampleApiMgr).assertUserCanEditSubSample(100L, user);
+    inOrder.verify(subSampleApiMgr).assertUserCanEditSubSample(300L, user);
     assertEquals(
         "errors.inventory.operation.amountTakenExceedsOrigin",
         rejection.getFieldErrors("origins[1].amountTaken").get(0).getCode());
-  }
-
-  @Test
-  void locksOriginsAscendingThenTheirParentSamplesAscending() {
-    // Decrementing a subsample rewrites its parent sample's denormalised total, so two operations
-    // on sibling subsamples of one sample must serialise on the parent row too or one total is
-    // written from a stale read (code review, finding 2). The parents are locked after the origins
-    // and in id order: every other writer takes the subsample row first and then the sample row, so
-    // locking the other way round would invert the order against all of them.
-    ApiInventoryOperationPost request = new ApiInventoryOperationPost();
-    request.setOperationType("pool");
-    request.setOrigins(List.of(origin(300L, millilitres("1")), origin(100L, millilitres("1"))));
-    request.setNewSample(new ApiSampleWithFullSubSamples("Pooled material"));
-    originHolds(300L, subSampleHolding("5", RSUnitDef.MILLI_LITRE.getId(), 30L));
-    originHolds(100L, subSampleHolding("5", RSUnitDef.MILLI_LITRE.getId(), 20L));
-    when(sampleApiMgr.createNewApiSample(any(ApiSampleWithFullSubSamples.class), eq(user)))
-        .thenReturn(new ApiSampleWithFullSubSamples("Pooled material"));
-
-    assertDoesNotThrow(() -> manager.performOperation(request, user, NONE));
-
-    InOrder inOrder = inOrder(subSampleApiMgr, sampleApiMgr);
-    inOrder.verify(subSampleApiMgr).lockSubSampleForEdit(100L, user);
-    inOrder.verify(subSampleApiMgr).lockSubSampleForEdit(300L, user);
-    inOrder.verify(sampleApiMgr).lockSampleForEdit(20L, user);
-    inOrder.verify(sampleApiMgr).lockSampleForEdit(30L, user);
-  }
-
-  @Test
-  void locksEachParentSampleOnceWhenOriginsAreSiblings() {
-    // Two origins under one sample are one row: asking twice is harmless but pointless, and the
-    // second ask would be a re-lock of an entity the first decrement has already dirtied.
-    ApiInventoryOperationPost request = new ApiInventoryOperationPost();
-    request.setOperationType("pool");
-    request.setOrigins(List.of(origin(100L, millilitres("1")), origin(300L, millilitres("1"))));
-    request.setNewSample(new ApiSampleWithFullSubSamples("Pooled material"));
-    originHolds(100L, subSampleHolding("5", RSUnitDef.MILLI_LITRE.getId(), 20L));
-    originHolds(300L, subSampleHolding("5", RSUnitDef.MILLI_LITRE.getId(), 20L));
-    when(sampleApiMgr.createNewApiSample(any(ApiSampleWithFullSubSamples.class), eq(user)))
-        .thenReturn(new ApiSampleWithFullSubSamples("Pooled material"));
-
-    assertDoesNotThrow(() -> manager.performOperation(request, user, NONE));
-
-    verify(sampleApiMgr, times(1)).lockSampleForEdit(20L, user);
   }
 
   @Test
@@ -1145,48 +919,9 @@ class InventoryOperationManagerImplTest {
   }
 
   @Test
-  void aZeroDeductionOriginComesBackWithTheLockedQuantityNotTheCachedOne() throws Exception {
-    // Passage takes nothing, so registerApiSubSampleUsage returns before it reconciles the entity
-    // with the locked row (deliberately: dirtying a stale entity on a no-op path is what resurrects
-    // exhausted stock). getApiSubSampleById then answers from that same persistence context, so the
-    // envelope's "origins after" would carry the quantity this transaction cached BEFORE the locks
-    // were acquired. A client reusing it as expectedQuantity gets a false 409 on its next request.
-    //
-    // Modelled here as: the origin was loaded at 5 ml, another request committed it down to 2 ml
-    // while this one queued for the sibling-set lock, so the locked scalar says 2 ml and the cached
-    // entity still says 5 ml (Codex review, P2, PR #1090).
-    serverBuiltOriginHolds(100L, "5");
-    when(subSampleApiMgr.getQuantityForUpdate(100L))
-        .thenReturn(new QuantityInfo(new BigDecimal("2"), ML));
-    ApiSubSample cached = new ApiSubSample();
-    cached.setId(100L);
-    cached.setQuantity(millilitres("5"));
-    when(subSampleApiMgr.getApiSubSampleById(100L, user)).thenReturn(cached);
-    when(sampleApiMgr.createNewApiSample(any(), eq(user)))
-        .thenReturn(new ApiSampleWithFullSubSamples("HeLa p3"));
-
-    InventoryOperationManager.OperationOutcome outcome =
-        manager.performOperation(
-            "passage",
-            List.of(facadeOrigin(100L, null)),
-            creatingInputs("HeLa p3", 1),
-            null,
-            null,
-            user);
-
-    ApiQuantityInfo reported = outcome.originsAfter().get(0).getQuantity();
-    assertEquals(
-        0,
-        new BigDecimal("2").compareTo(reported.getNumericValue()),
-        "the envelope promises the post-operation snapshot, so a zero-deduction origin must report"
-            + " the quantity under the lock, not the one cached before it");
-    assertEquals(ML, reported.getUnitId());
-  }
-
-  @Test
   void aFacadeOriginWithoutAnAmountEmptiesTheOriginOnADestroy() throws Exception {
     // Destroy: no amount, no expected quantity means "take whatever is there" (M0 D5). The
-    // builder's live snapshot travels under a whole-origin claim, so it is compare-and-swapped.
+    // builder substitutes the origin's live snapshot as the amount taken.
     serverBuiltOriginHolds(100L, "5");
 
     assertNull(
@@ -1200,35 +935,6 @@ class InventoryOperationManagerImplTest {
     verify(subSampleApiMgr).registerApiSubSampleUsage(eq(100L), taken.capture(), eq(user));
     assertEquals(0, new BigDecimal("5").compareTo(taken.getValue().getNumericValue()));
     verify(subSampleApiMgr).updateApiSubSample(any(), eq(user));
-  }
-
-  @Test
-  void aDestroyWhoseExpectedQuantityIsStaleIsAConflictBeforeAnyMutation() {
-    serverBuiltOriginHolds(100L, "5");
-    ApiInventoryOperationOriginUpdate origin = facadeOrigin(100L, null);
-    origin.setExpectedQuantity(millilitres("4"));
-
-    assertThrows(
-        InventoryEditConflictException.class,
-        () ->
-            manager.performOperation(
-                "destroy", List.of(origin), java.util.Map.of(), null, null, user));
-    verifyNoMutation();
-  }
-
-  @Test
-  void theWizardsOwnAmountAndModeStillOverrideTheBuilders() throws Exception {
-    // The generic endpoint's client (the wizard) sends both; the core must compare-and-swap what
-    // the CLIENT saw, so a wizard "all" of 4 ml against a 5 ml origin is a conflict, not a take.
-    serverBuiltOriginHolds(100L, "5");
-    ApiInventoryOperationOriginUpdate origin = takeAll(100L, millilitres("4"));
-
-    assertThrows(
-        InventoryEditConflictException.class,
-        () ->
-            manager.performOperation(
-                "destroy", List.of(origin), java.util.Map.of(), null, null, user));
-    verifyNoMutation();
   }
 
   @Test
@@ -1344,20 +1050,6 @@ class InventoryOperationManagerImplTest {
   }
 
   @Test
-  void aZeroWholeOriginClaimOnAnEmptyingOperationIsAConflict() {
-    // The client DECLARED "all" and 0 ml: it read the origin as empty, and it now holds 5 ml. That
-    // is a stale snapshot to reload from, and nothing is emptied on the strength of it.
-    ApiInventoryOperationPost request = new ApiInventoryOperationPost();
-    request.setOperationType("destroy");
-    request.setOrigins(List.of(takeAll(100L, millilitres("0"))));
-    originHolds(100L, subSampleHolding("5", ML));
-
-    assertThrows(
-        InventoryEditConflictException.class, () -> manager.performOperation(request, user, NONE));
-    verifyNoMutation();
-  }
-
-  @Test
   void anExplicitAmountEqualToTheOriginEmptiesItWithoutAConflict() throws Exception {
     // An Aliquot taking exactly what the origin holds is neither over-removal nor a whole-origin
     // claim, so it proceeds and the register receives the full 5 ml, leaving the origin at zero.
@@ -1383,8 +1075,7 @@ class InventoryOperationManagerImplTest {
 
   @Test
   void anExpectedQuantityOfZeroAgainstAnEmptyOriginIsStillTheEmptyOriginRule() {
-    // The caller correctly believes the origin is empty. There is still nothing to operate on, and
-    // the field error (400) wins over the compare-and-swap, which would otherwise pass.
+    // The caller correctly believes the origin is empty. There is still nothing to operate on.
     ApiInventoryOperationPost request = new ApiInventoryOperationPost();
     request.setOperationType("derive");
     ApiInventoryOperationOriginUpdate origin = origin(100L, millilitres("0.6"));
@@ -1397,23 +1088,6 @@ class InventoryOperationManagerImplTest {
     assertEquals(
         "errors.inventory.operation.originEmpty",
         rejection.getFieldErrors("origins[0].id").get(0).getCode());
-  }
-
-  @Test
-  void anExpectedQuantityInAnotherCategoryIsAStaleReadNotAnOverRemoval() {
-    // The caller's belief (5 g) cannot be about this 5 ml origin: the javadoc's stated choice is a
-    // conflict to reload from, and nothing is mutated on the way to it.
-    ApiInventoryOperationPost request = new ApiInventoryOperationPost();
-    request.setOperationType("derive");
-    ApiInventoryOperationOriginUpdate origin = origin(100L, millilitres("1"));
-    origin.setExpectedQuantity(grams("5"));
-    request.setOrigins(List.of(origin));
-    request.setNewSample(new ApiSampleWithFullSubSamples("Derived material"));
-    originHolds(100L, subSampleHolding("5", ML));
-
-    assertThrows(
-        InventoryEditConflictException.class, () -> manager.performOperation(request, user, NONE));
-    verifyNoMutation();
   }
 
   @Test
@@ -1434,87 +1108,10 @@ class InventoryOperationManagerImplTest {
         rejection.getFieldErrors("origins[0].amountTaken").get(0).getCode());
   }
 
-  // --- concurrency on the server-built path: the builder reads unlocked, the core re-reads
-  // under lock, so whatever committed in between is what the rules see ---
-
   @Test
-  void aDecrementCommittedBetweenTheBuilderReadAndTheLockIsCaughtByTheLockedScalar() {
-    // An Aliquot facade request. The builder read 5 ml off the entity; another request committed
-    // while this one waited for the lock, leaving 0.4 ml. Taking 1 ml is now over-removal (400),
-    // caught from the locked scalar, and nothing is mutated.
-    serverBuiltOriginHolds(100L, "5");
-    when(subSampleApiMgr.getQuantityForUpdate(100L))
-        .thenReturn(new QuantityInfo(new BigDecimal("0.4"), ML));
-
-    BindException rejection =
-        assertThrows(
-            BindException.class,
-            () ->
-                manager.performOperation(
-                    "aliquot",
-                    List.of(facadeOrigin(100L, millilitres("1"))),
-                    creatingInputs("Aliquots", 1),
-                    null,
-                    null,
-                    user));
-
-    assertEquals(
-        "errors.inventory.operation.amountTakenExceedsOrigin",
-        rejection.getFieldErrors("origins[0].amountTaken").get(0).getCode());
-    verifyNoMutation();
-  }
-
-  @Test
-  void aDestroyFacadeWhoseOriginWasDecrementedAfterTheBuilderReadIsAConflict() {
-    // No amount and no expectedQuantity: the builder's 5 ml snapshot travels under a whole-origin
-    // claim, so a locked scalar of 4 ml is a stale read (409), never a silent take of the 4.
-    serverBuiltOriginHolds(100L, "5");
-    when(subSampleApiMgr.getQuantityForUpdate(100L))
-        .thenReturn(new QuantityInfo(new BigDecimal("4"), ML));
-
-    assertThrows(
-        InventoryEditConflictException.class,
-        () ->
-            manager.performOperation(
-                "destroy",
-                List.of(facadeOrigin(100L, null)),
-                java.util.Map.of(),
-                null,
-                null,
-                user));
-    verifyNoMutation();
-  }
-
-  @Test
-  void aDestroyFacadeWhoseOriginWasEmptiedAfterTheBuilderReadIsRejectedAsEmptyNotStale() {
-    // Field errors beat the conflict: an origin emptied meanwhile "holds nothing" (400), which the
-    // caller understands without a reload.
-    serverBuiltOriginHolds(100L, "5");
-    when(subSampleApiMgr.getQuantityForUpdate(100L))
-        .thenReturn(new QuantityInfo(BigDecimal.ZERO, ML));
-
-    BindException rejection =
-        assertThrows(
-            BindException.class,
-            () ->
-                manager.performOperation(
-                    "destroy",
-                    List.of(facadeOrigin(100L, null)),
-                    java.util.Map.of(),
-                    null,
-                    null,
-                    user));
-
-    assertEquals(
-        "errors.inventory.operation.originEmpty",
-        rejection.getFieldErrors("origins[0].id").get(0).getCode());
-    verifyNoMutation();
-  }
-
-  @Test
-  void theOriginsAfterComeBackInRequestOrderWhileLocksAreTakenInIdOrder() throws Exception {
-    // A Pool facade over origins 200 then 100: locks ascend by id (deadlock avoidance), the outcome
-    // lists the origins as the caller gave them (M0 D2).
+  void theOriginsAfterComeBackInRequestOrderRegardlessOfProcessingOrder() throws Exception {
+    // A Pool facade over origins 200 then 100: origins are processed ascending by id, but the
+    // outcome lists them as the caller gave them (M0 D2).
     serverBuiltOriginHolds(200L, "5");
     serverBuiltOriginHolds(100L, "5");
     ApiSubSample after200 = new ApiSubSample();
@@ -1537,9 +1134,9 @@ class InventoryOperationManagerImplTest {
 
     assertEquals(
         List.of(200L, 100L), outcome.originsAfter().stream().map(ApiSubSample::getId).toList());
-    InOrder locks = inOrder(subSampleApiMgr);
-    locks.verify(subSampleApiMgr).lockSubSampleForEdit(100L, user);
-    locks.verify(subSampleApiMgr).lockSubSampleForEdit(200L, user);
+    InOrder processed = inOrder(subSampleApiMgr);
+    processed.verify(subSampleApiMgr).assertUserCanEditSubSample(100L, user);
+    processed.verify(subSampleApiMgr).assertUserCanEditSubSample(200L, user);
   }
 
   // --- the input rules run before any origin is read (server-built path) ---
@@ -1561,7 +1158,7 @@ class InventoryOperationManagerImplTest {
     assertEquals(
         "errors.inventory.operation.inputAboveMaximum",
         rejection.getFieldErrors("count").get(0).getCode());
-    verifyNoInteractions(subSampleApiMgr, sampleApiMgr, siblingRowLock);
+    verifyNoInteractions(subSampleApiMgr, sampleApiMgr);
   }
 
   @Test
@@ -1584,7 +1181,7 @@ class InventoryOperationManagerImplTest {
     assertEquals(
         "errors.inventory.operation.createdAmountNotPositive",
         rejection.getFieldErrors("eachAmount").get(0).getCode());
-    verifyNoInteractions(subSampleApiMgr, sampleApiMgr, siblingRowLock);
+    verifyNoInteractions(subSampleApiMgr, sampleApiMgr);
   }
 
   /**
@@ -1620,7 +1217,7 @@ class InventoryOperationManagerImplTest {
     assertEquals(
         "errors.inventory.operation.inputTooLong",
         ((BindException) thrown).getFieldErrors("sampleName").get(0).getCode());
-    verifyNoInteractions(subSampleApiMgr, sampleApiMgr, siblingRowLock);
+    verifyNoInteractions(subSampleApiMgr, sampleApiMgr);
   }
 
   @Test
@@ -1648,6 +1245,6 @@ class InventoryOperationManagerImplTest {
     assertEquals(
         "errors.inventory.operation.inputTooLong",
         ((BindException) thrown).getFieldErrors("cryomedium").get(0).getCode());
-    verifyNoInteractions(subSampleApiMgr, sampleApiMgr, siblingRowLock);
+    verifyNoInteractions(subSampleApiMgr, sampleApiMgr);
   }
 }
