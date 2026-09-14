@@ -4061,6 +4061,7 @@ export default interface Resources {
         "none": "No template",
         "parentHasNoTemplate": "The parent sample has no template, so this option is unavailable. Choose an existing template or none.",
         "pick": "Choose an existing template",
+        "rememberedDeleted": "The remembered template \"{name}\" is in the trash and cannot be used. Choose another template.",
         "searchLabel": "Search templates",
         "selectedLabel": "Selected template: {name}",
         "valueFromSample": "From {name}",
