@@ -286,25 +286,38 @@ public class InventoryOperationFacadesMVCIT extends API_MVC_InventoryTestBase {
   }
 
   @Test
-  public void anAmountTakenTheOriginsOwnUnitCannotExpressIsRejected() throws Exception {
+  public void anAmountTakenTheOriginsOwnUnitCannotExpressRedenominatesTheOrigin() throws Exception {
     // 4999.999 mg from a 5 g origin leaves 0.000001 g, which the origin's own unit cannot store.
-    // The sum does not lose it - it comes back as 1 ug - so the operation was accepted and the
-    // origin's unit silently changed underneath the user (live test 2026-09-13, F3).
+    // It IS 0.001 mg, and the whole ladder is powers of a thousand, so the remainder is stored in
+    // the unit that holds it exactly rather than the operation being refused (review 2026-09-14,
+    // Q1a/Q1b). Milligrams, not micrograms: the descent stops at the FIRST unit that fits, so the
+    // quantity is relabelled no further than storing it requires. This is the end-to-end version:
+    // over HTTP, through the real validator, the real decrement and the real column.
+    //
+    // The origin's unit changing underneath the user was the recorded half of live-run finding F3.
+    // The new unit is in the response payload, as asserted below, so the card re-renders showing
+    // it; nothing yet ANNOUNCES the change, which is Q1c and is a product decision.
     ApiSubSample origin = origin();
-    List<String> errors =
-        errorsOf(
-            post(
-                "aliquot",
-                "{\"origin\":"
-                    + originJson(origin, q("4999.999", MILLIGRAM))
-                    + ",\"sampleName\":\"Lost to rounding\",\"eachAmount\":"
-                    + q("0.5", GRAM)
-                    + "}",
-                400));
-    assertTrue(
-        errors.stream().anyMatch(message -> message.startsWith("origin.amountTaken:")),
-        () -> "expected origin.amountTaken, got " + errors);
-    assertUnchanged(origin);
+
+    ApiInventoryOperationResult result =
+        created(
+            "aliquot",
+            "{\"origin\":"
+                + originJson(origin, q("4999.999", MILLIGRAM))
+                + ",\"sampleName\":\"Down to micrograms\",\"eachAmount\":"
+                + q("0.5", GRAM)
+                + "}");
+
+    ApiSubSample remaining =
+        result.getOrigins().stream()
+            .filter(o -> o.getId().equals(origin.getId()))
+            .findFirst()
+            .orElseThrow();
+    assertEquals(MILLIGRAM, remaining.getQuantity().getUnitId(), "remainder re-denominated");
+    assertEquals(0, new BigDecimal("0.001").compareTo(quantityOf(remaining)), "reported remainder");
+    ApiSubSample stored = subSampleApiManager.getApiSubSampleById(origin.getId(), anyUser);
+    assertEquals(MILLIGRAM, stored.getQuantity().getUnitId(), "stored in the finer unit");
+    assertEquals(0, new BigDecimal("0.001").compareTo(quantityOf(stored)), "stored remainder");
   }
 
   @Test
