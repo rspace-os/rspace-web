@@ -314,6 +314,24 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-enforcer-plugin</artifactId>
+        <executions>
+          <execution>
+            <!-- The JVM running Maven, not the toolchain JDK: Spotless and other plugins run in
+                 it, and a wrong version fails late with cryptic errors otherwise. -->
+            <id>enforce-java-version</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <requireJavaVersion>
+                  <version>[17,22)</version>
+                  <message>RSpace builds on Java 17 or 21. Run Maven with one of those (JAVA_HOME), and pass -Djava-version to pick the toolchain JDK.</message>
+                </requireJavaVersion>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

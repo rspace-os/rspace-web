@@ -79,7 +79,7 @@ jobs:
       pull-requests: write
     strategy:
       matrix:
-        java-version: [17]
+        java-version: [17, 21]
     if: |
       (github.event_name == 'push' && github.ref_name == 'main') ||
       inputs.fast_java_tests ||
@@ -118,6 +118,7 @@ jobs:
         uses: EnricoMi/publish-unit-test-result-action@v2.24.0
         if: |
           always() &&
+          matrix.java-version == 17 &&
           (
             github.event_name != 'pull_request' ||
             github.event.pull_request.head.repo.full_name == github.repository
@@ -770,7 +771,7 @@ jobs:
       needs.changed-files.outputs.java == 'true'
     strategy:
       matrix:
-        java-version: [17]
+        java-version: [17, 21]
     steps:
       - uses: actions/checkout@v7.0.0
         with:
