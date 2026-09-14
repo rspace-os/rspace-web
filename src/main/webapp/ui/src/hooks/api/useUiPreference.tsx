@@ -2,8 +2,7 @@ import { mapValues } from "es-toolkit";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
-import { mkAlert } from "@/stores/contexts/Alert";
-import getRootStore from "@/stores/stores/getRootStore";
+import AlertContext, { mkAlert } from "@/stores/contexts/Alert";
 
 /**
  * This constant ensures that we don't end up with clashing keys
@@ -154,6 +153,12 @@ export default function useUiPreference<T>(
   },
 ): [T, (newValue: T) => void] {
   const { uiPreferences, setUiPreferences, pendingWrites } = React.useContext(UiPreferencesContext);
+  // Not getRootStore().uiStore: this hook also serves Gallery and Sysadmin, which mount the generic
+  // Alerts component, not Inventory's adapter - the only place that wires UiStore.addAlert to
+  // anything real. Elsewhere it is a silent no-op, so a save failure never reached the user
+  // (Codex review, PR #1090). AlertContext's default value is itself a safe no-op, so this is never
+  // undefined, unlike RootStore, which is not always bootstrapped outside Inventory.
+  const { addAlert } = React.useContext(AlertContext);
   const { t } = useTranslation("common");
   const key = Symbol.keyFor(preference);
   // Derived fresh from context every render, not mirrored into a local useState: a caller that
@@ -213,13 +218,21 @@ export default function useUiPreference<T>(
         key,
         write.catch((e) => {
           console.error(`Could not save UI preference ${key}`, e);
-          getRootStore().uiStore.addAlert(
-            mkAlert({
-              title: t("preferences.saveFailedTitle"),
-              message: t("preferences.saveFailedMessage"),
-              variant: "warning",
-            }),
-          );
+          // Never let raising the alert itself throw past this point: a throw here would make
+          // THIS handler's own returned promise reject, and that rejection becomes `previous` for
+          // this key's next write - which then skips its POST entirely, chained onto a promise
+          // that already rejected, failing silently forever (Codex review, PR #1090).
+          try {
+            addAlert(
+              mkAlert({
+                title: t("preferences.saveFailedTitle"),
+                message: t("preferences.saveFailedMessage"),
+                variant: "warning",
+              }),
+            );
+          } catch (alertError) {
+            console.error("Could not raise the preference-save-failed alert", alertError);
+          }
         }),
       );
     },
