@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <!--
+    This is a standalone build used only by Dockerfile.app. It is deliberately
+    not a module of the application build, so normal RSpace Maven commands do
+    not resolve or package these agent dependencies.
+  -->
+  <groupId>com.researchspace.dev</groupId>
+  <artifactId>docker-java-dependencies</artifactId>
+  <version>1.0.0</version>
+  <packaging>jar</packaging>
+
+  <properties>
+    <hotswap-agent.version>2.0.3</hotswap-agent.version>
+    <hotswap-agent.sha256>4ef49724b7d8523536d2e2a7310f827f4db9f4fed3489224e05d7bf87f0594f9</hotswap-agent.sha256>
+    <!-- Keep aligned with the OpenTelemetry API and annotations in the application pom. -->
+    <otel-agent.version>2.29.0</otel-agent.version>
+    <otel-contrib.version>1.58.0-alpha</otel-contrib.version>
+    <maven-antrun-plugin.version>3.2.0</maven-antrun-plugin.version>
+    <maven-dependency-plugin.version>3.11.0</maven-dependency-plugin.version>
+    <maven-jar-plugin.version>3.5.0</maven-jar-plugin.version>
+    <maven-shade-plugin.version>3.6.2</maven-shade-plugin.version>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+
+  <!--
+    The inferred-spans extension is the only project dependency because it and
+    all of its runtime dependencies must be merged into one extension jar.
+    The other agents are copied as individual artifacts below.
+  -->
+  <dependencies>
+    <dependency>
+      <groupId>io.opentelemetry.contrib</groupId>
+      <artifactId>opentelemetry-inferred-spans</artifactId>
+      <version>${otel-contrib.version}</version>
+      <scope>runtime</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <version>${maven-antrun-plugin.version}</version>
+        <executions>
+          <execution>
+            <id>download-hotswap-agent-release</id>
+            <phase>package</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target>
+                <!-- The Maven Central build differs from the published release asset. -->
+                <mkdir dir="${project.build.directory}/docker-libs" />
+                <get
+                  src="https://github.com/HotswapProjects/HotswapAgent/releases/download/RELEASE-${hotswap-agent.version}/hotswap-agent-${hotswap-agent.version}.jar"
+                  dest="${project.build.directory}/docker-libs/hotswap-agent.jar"
+                  quiet="true" />
+                <checksum
+                  file="${project.build.directory}/docker-libs/hotswap-agent.jar"
+                  algorithm="SHA-256"
+                  property="hotswap-agent.actual.sha256" />
+                <fail message="HotswapAgent release checksum does not match the pinned value">
+                  <condition>
+                    <not>
+                      <equals arg1="${hotswap-agent.sha256}" arg2="${hotswap-agent.actual.sha256}" />
+                    </not>
+                  </condition>
+                </fail>
+              </target>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>${maven-jar-plugin.version}</version>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>${maven-dependency-plugin.version}</version>
+        <executions>
+          <execution>
+            <id>copy-opentelemetry-agent-and-extension</id>
+            <phase>package</phase>
+            <goals>
+              <goal>copy</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/docker-libs</outputDirectory>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>io.opentelemetry.javaagent</groupId>
+                  <artifactId>opentelemetry-javaagent</artifactId>
+                  <version>${otel-agent.version}</version>
+                  <destFileName>opentelemetry-javaagent.jar</destFileName>
+                </artifactItem>
+                <artifactItem>
+                  <groupId>io.opentelemetry.contrib</groupId>
+                  <artifactId>opentelemetry-span-stacktrace</artifactId>
+                  <version>${otel-contrib.version}</version>
+                  <destFileName>opentelemetry-span-stacktrace.jar</destFileName>
+                </artifactItem>
+              </artifactItems>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>${maven-shade-plugin.version}</version>
+        <executions>
+          <execution>
+            <id>assemble-inferred-spans-extension</id>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration>
+              <outputFile>${project.build.directory}/docker-libs/opentelemetry-inferred-spans.jar</outputFile>
+              <createDependencyReducedPom>false</createDependencyReducedPom>
+              <filters>
+                <filter>
+                  <artifact>*:*</artifact>
+                  <excludes>
+                    <exclude>module-info.class</exclude>
+                    <exclude>META-INF/versions/**</exclude>
+                    <exclude>META-INF/*.SF</exclude>
+                    <exclude>META-INF/*.DSA</exclude>
+                    <exclude>META-INF/*.RSA</exclude>
+                  </excludes>
+                </filter>
+              </filters>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>
