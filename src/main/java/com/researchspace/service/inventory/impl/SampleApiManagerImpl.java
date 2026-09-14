@@ -148,7 +148,6 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
     return sample;
   }
 
-
   @Override
   public Sample assertUserCanDeleteSample(Long id, User user) {
     Sample sample = getSampleOrThrowNotFound(id);
