@@ -1,6 +1,9 @@
 import { mapValues } from "es-toolkit";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
+import { mkAlert } from "@/stores/contexts/Alert";
+import getRootStore from "@/stores/stores/getRootStore";
 
 /**
  * This constant ensures that we don't end up with clashing keys
@@ -18,9 +21,21 @@ export const PREFERENCES: { [pref: string]: symbol } = {
   GALLERY_SIDEBAR_OPEN: Symbol.for("GALLERY_SIDEBAR_OPEN"),
   INVENTORY_FORM_SECTIONS_EXPANDED: Symbol.for("INVENTORY_FORM_SECTIONS_EXPANDED"),
   INVENTORY_HIDDEN_RIGHT_PANEL: Symbol.for("INVENTORY_HIDDEN_RIGHT_PANEL"),
-  // The single per-process "remember" bundle (template + documentation + collected values), keyed by
-  // operation + process name. Supersedes the earlier per-item template/doc/amount default preferences.
+  // Legacy: the single per-process "remember" bundle for every operation type combined into one
+  // ever-growing collection, which is what let a heavy user of "Remember" eventually exceed the
+  // per-key size cap for good (RSDEV-1231, Codex review, PR #1090). Read-only fallback for bundles
+  // saved before the per-operation keys below existed; nothing writes it anymore.
   INVENTORY_OPERATION_PROCESS_VALUES: Symbol.for("INVENTORY_OPERATION_PROCESS_VALUES"),
+  // One "remember" bundle collection per operation type, so one operation's heavy use cannot crowd
+  // out another's budget under a shared cap. Select the right one for the current operation with
+  // `processValuesPreferenceFor` (processNames.ts) rather than referencing these directly.
+  INVENTORY_OPERATION_PROCESS_VALUES_ALIQUOT: Symbol.for("INVENTORY_OPERATION_PROCESS_VALUES_ALIQUOT"),
+  INVENTORY_OPERATION_PROCESS_VALUES_PASSAGE: Symbol.for("INVENTORY_OPERATION_PROCESS_VALUES_PASSAGE"),
+  INVENTORY_OPERATION_PROCESS_VALUES_POOL: Symbol.for("INVENTORY_OPERATION_PROCESS_VALUES_POOL"),
+  INVENTORY_OPERATION_PROCESS_VALUES_DERIVE: Symbol.for("INVENTORY_OPERATION_PROCESS_VALUES_DERIVE"),
+  INVENTORY_OPERATION_PROCESS_VALUES_CRYOPRESERVE: Symbol.for("INVENTORY_OPERATION_PROCESS_VALUES_CRYOPRESERVE"),
+  INVENTORY_OPERATION_PROCESS_VALUES_REVIVE: Symbol.for("INVENTORY_OPERATION_PROCESS_VALUES_REVIVE"),
+  INVENTORY_OPERATION_PROCESS_VALUES_DESTROY: Symbol.for("INVENTORY_OPERATION_PROCESS_VALUES_DESTROY"),
   INVENTORY_OPERATION_PROCESS_NAMES: Symbol.for("INVENTORY_OPERATION_PROCESS_NAMES"),
   INVENTORY_OPERATION_PROCESS_NAME_DEFAULTS: Symbol.for("INVENTORY_OPERATION_PROCESS_NAME_DEFAULTS"),
   SYSADMIN_USERS_TABLE_COLUMNS: Symbol.for("SYSADMIN_USERS_TABLE_COLUMNS"),
@@ -114,22 +129,26 @@ export default function useUiPreference<T>(
   },
 ): [T, (newValue: T) => void] {
   const { uiPreferences, setUiPreferences, pendingWrites } = React.useContext(UiPreferencesContext);
+  const { t } = useTranslation("common");
   const key = Symbol.keyFor(preference);
+  // Derived fresh from context every render, not mirrored into a local useState: a caller that
+  // passes a DIFFERENT `preference` across renders of the same component instance (e.g. a wizard
+  // whose active operation changes without unmounting, RSDEV-1231) needs this render's value for
+  // that key, not whatever `preference` resolved to when the component first mounted. A useState
+  // initializer only runs once, so it would keep serving the first key's value forever.
   let v = opts.defaultValue;
   if (key && typeof uiPreferences[key] !== "undefined") {
     v = (uiPreferences[key] as { value: T })?.value ?? opts.defaultValue;
   }
-  const [value, setValue] = React.useState(v);
 
   return [
-    value,
+    v,
     // Takes a VALUE, not React's SetStateAction. It was typed as a full setter but treated
     // `newValue` as a value everywhere below, so `setPref(prev => prev + 1)` stored the function
     // object in the context and JSON.stringify'd it into the POST body, persisting undefined
     // (parallel review, FE12). Every caller passes a value; narrowing the type makes the updater
     // form a compile error rather than a silent data loss.
     (newValue: T) => {
-      setValue(newValue);
       setUiPreferences((old: { [k in keyof typeof PREFERENCES]: unknown } | null) => {
         if (old === null) return old;
         if (!key) return old;
@@ -163,12 +182,22 @@ export default function useUiPreference<T>(
         );
         await axios.post<unknown>("/userform/ajax/preference", formData);
       });
-      // Caught so a failure cannot block this key's chain (callers never await it), but reported: a
-      // silently dropped preference save is invisible to user and developer alike.
+      // Caught so a failure cannot block this key's chain (callers never await it), but reported
+      // two ways: logged for a developer, and alerted for the user. A silently dropped preference
+      // save used to be invisible to both - the session kept working off the optimistic local
+      // state above, so nothing looked wrong until a later login found the save had never landed
+      // (RSDEV-1231, Codex review, PR #1090).
       pendingWrites.current.set(
         key,
         write.catch((e) => {
           console.error(`Could not save UI preference ${key}`, e);
+          getRootStore().uiStore.addAlert(
+            mkAlert({
+              title: t("preferences.saveFailedTitle"),
+              message: t("preferences.saveFailedMessage"),
+              variant: "warning",
+            }),
+          );
         }),
       );
     },

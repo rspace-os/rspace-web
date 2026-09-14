@@ -49,7 +49,12 @@ import {
   quantityExceedsOrigin,
   reconcileRestoredQuantities,
 } from "./operationValidation";
-import { addProcessName, processNameDefaultAfterPerform, rememberKey } from "./processNames";
+import {
+  addProcessName,
+  processNameDefaultAfterPerform,
+  processValuesPreferenceFor,
+  rememberKey,
+} from "./processNames";
 import { normalizeProcessValues, type ProcessValues, processValuesAfterPerform } from "./processValues";
 import { derivedSampleName, firstAvailableName } from "./sampleNaming";
 import TemplateStep, { type TemplateSelection } from "./TemplateStep";
@@ -242,7 +247,18 @@ function OperationWizard({
     templateId: null,
     remember: false,
   });
+  // Each operation type's own collection (RSDEV-1231): `useUiPreference` derives its value fresh
+  // from context every render rather than caching it in a `useState`, precisely so that passing a
+  // DIFFERENT preference symbol here as `operation` changes (no remount - `operation` is this
+  // component's own state, set by selectOperation) reads that operation's data immediately, not a
+  // stale mirror of whichever operation was selected first.
   const [processValues, setProcessValues] = useUiPreference<Record<string, ProcessValues>>(
+    processValuesPreferenceFor(operation?.key ?? ""),
+    { defaultValue: {} },
+  );
+  // Read-only: bundles saved before the split above lived here. Never written to; falls out of use
+  // once every user who saved a bundle under it has re-saved it under their operation's own key.
+  const [legacyProcessValues] = useUiPreference<Record<string, ProcessValues>>(
     PREFERENCES.INVENTORY_OPERATION_PROCESS_VALUES,
     { defaultValue: {} },
   );
@@ -405,7 +421,8 @@ function OperationWizard({
   // whether remember is on) that a process name resolves to: its saved bundle if one exists, else the
   // defaults. Used on operation select and whenever the process name changes.
   const stateForKey = (op: InventoryOperation, vals: OperationInputs) => {
-    const bundle = normalizeProcessValues(processValues?.[rememberKey(op, vals)]);
+    const key = rememberKey(op, vals);
+    const bundle = normalizeProcessValues(processValues?.[key] ?? legacyProcessValues?.[key]);
     const base = freshValues(op, origin, vals);
     if (bundle) {
       const restoredTemplate = restoredTemplateSelection(templateSelectionFor(bundle.template));
@@ -497,7 +514,8 @@ function OperationWizard({
     if (!operation) return;
     setRemember(checked);
     if (checked) {
-      const bundle = normalizeProcessValues(processValues?.[rememberKey(operation, values)]);
+      const key = rememberKey(operation, values);
+      const bundle = normalizeProcessValues(processValues?.[key] ?? legacyProcessValues?.[key]);
       if (bundle) {
         // Same reconciliation as the load path: ticking the box restores the same bundle, so it can
         // carry the same cross-category amounts.
