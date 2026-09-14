@@ -1,25 +1,52 @@
 package com.researchspace.service.impl;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 import com.researchspace.core.util.TransformerUtils;
+import com.researchspace.dao.FileMetadataDao;
+import com.researchspace.files.service.ExternalFileService;
+import com.researchspace.files.service.ExternalFileStoreLocator;
+import com.researchspace.files.service.FileStoreImpl;
 import com.researchspace.model.FileProperty;
 import com.researchspace.model.FileStoreRoot;
 import com.researchspace.model.User;
+import com.researchspace.service.FileDuplicateStrategy;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.TestFactory;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
+import java.util.stream.Stream;
 import org.apache.commons.io.FilenameUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 public class FileStoreImpTest {
 
@@ -81,6 +108,248 @@ public class FileStoreImpTest {
     // mimic messed up stream
     fp.setRelPath(corruptedName);
     assertThrows(IllegalStateException.class, () -> tss.handlePossibleUTF8Error(fp, fnfe()));
+  }
+
+  @TempDir Path tempDir;
+
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  void duplicateStrategiesPreserveOrReplaceContents(boolean stream) throws IOException {
+    FileMetadataDao metadata = setUpStore();
+    FileProperty original = new FileProperty();
+    original.setFileCategory("test");
+    original.setFileGroup("group");
+    original.setFileUser("user");
+    original.setFileVersion("v1");
+    URI first = saveContents(original, "original", FileDuplicateStrategy.AS_NEW, stream);
+
+    assertNull(saveContents(original.copy(), "rejected", FileDuplicateStrategy.ERROR, stream));
+    assertEquals("original", Files.readString(Path.of(first)));
+    ExternalFileStoreLocator locator = mock(ExternalFileStoreLocator.class);
+    ExternalFileService external = mock(ExternalFileService.class);
+    FileStoreImpl composite = new FileStoreImpl(fs, locator, external);
+    if (stream) {
+      try (var input = new ByteArrayInputStream("rejected".getBytes(StandardCharsets.UTF_8))) {
+        assertNull(composite.save(original.copy(), input, "test.txt", FileDuplicateStrategy.ERROR));
+      }
+    } else {
+      assertNull(
+          composite.save(
+              original.copy(), tempDir.resolve("test.txt").toFile(), FileDuplicateStrategy.ERROR));
+    }
+    verifyNoInteractions(locator, external);
+
+    assertEquals(
+        first, saveContents(original, "replacement", FileDuplicateStrategy.REPLACE, stream));
+    assertEquals("replacement", Files.readString(Path.of(first)));
+
+    FileProperty duplicate = original.copy();
+    URI second = saveContents(duplicate, "new", FileDuplicateStrategy.AS_NEW, stream);
+    assertNotEquals(first, second);
+    assertEquals("new", Files.readString(Path.of(second)));
+    assertEquals("replacement", Files.readString(Path.of(first)));
+    assertEquals(Path.of(second).toFile(), fs.findFile(duplicate));
+
+    URI third = saveContents(original.copy(), "third", FileDuplicateStrategy.AS_NEW, stream);
+    assertNotEquals(first, third);
+    assertNotEquals(second, third);
+    assertEquals("new", Files.readString(Path.of(second)));
+    assertEquals("third", Files.readString(Path.of(third)));
+
+    FileProperty failedSave = original.copy();
+    failedSave.setFileVersion("v2");
+    IllegalStateException failure = new IllegalStateException("metadata unavailable");
+    when(metadata.save(failedSave)).thenThrow(failure);
+    if (stream) {
+      try (var input = new ByteArrayInputStream("failed".getBytes(StandardCharsets.UTF_8))) {
+        assertSame(
+            failure,
+            assertThrows(
+                IllegalStateException.class,
+                () -> fs.save(failedSave, input, "test.txt", FileDuplicateStrategy.AS_NEW)));
+      }
+    } else {
+      Path source = tempDir.resolve("test.txt");
+      Files.writeString(source, "failed");
+      File sourceFile = source.toFile();
+      assertSame(
+          failure,
+          assertThrows(
+              IllegalStateException.class,
+              () -> fs.save(failedSave, sourceFile, FileDuplicateStrategy.AS_NEW)));
+    }
+    assertFalse(fs.findFile(failedSave).exists());
+    assertEquals("replacement", Files.readString(Path.of(first)));
+  }
+
+  @ParameterizedTest
+  @MethodSource("collisionNames")
+  void collidingLongNamesUseBoundedUuidNames(String name) throws IOException {
+    setUpStore();
+    FileProperty original = new FileProperty();
+    original.setFileName(name);
+    URI first = saveContents(original, "original", FileDuplicateStrategy.AS_NEW, true);
+    FileProperty duplicate = original.copy();
+    URI second = saveContents(duplicate, "duplicate", FileDuplicateStrategy.AS_NEW, true);
+    String storedName = Path.of(second).getFileName().toString();
+    String extension = FilenameUtils.getExtension(name);
+    if (extension.getBytes(StandardCharsets.UTF_8).length > 20) {
+      extension = "";
+    }
+    assertEquals(extension, FilenameUtils.getExtension(storedName));
+    assertNotNull(UUID.fromString(FilenameUtils.getBaseName(storedName)));
+    assertTrue(storedName.getBytes(StandardCharsets.UTF_8).length <= 57);
+    assertEquals(storedName, duplicate.getFileName());
+    assertEquals(Path.of(second).toFile(), fs.findFile(duplicate));
+    assertEquals("original", Files.readString(Path.of(first)));
+    assertEquals("duplicate", Files.readString(Path.of(second)));
+  }
+
+  static Stream<String> collisionNames() {
+    return Stream.of(
+        "a".repeat(251) + ".txt",
+        "é".repeat(125) + ".csv",
+        "test." + "x".repeat(21),
+        "test.报告",
+        "no-extension");
+  }
+
+  @Test
+  void missingSourceDoesNotReserveDestination() throws IOException {
+    setUpStore();
+    FileProperty property = new FileProperty();
+    File source = tempDir.resolve("missing.txt").toFile();
+    Path destination =
+        fs.fileOp
+            .getFoldOp()
+            .getBaseDir()
+            .toPath()
+            .resolve(property.makeTargetPath(false))
+            .resolve(source.getName());
+    assertThrows(IOException.class, () -> fs.save(property, source, FileDuplicateStrategy.AS_NEW));
+    assertFalse(Files.exists(destination));
+    Files.writeString(source.toPath(), "retry");
+    assertNotNull(fs.save(property, source, FileDuplicateStrategy.ERROR));
+    assertEquals("retry", Files.readString(destination));
+  }
+
+  @ParameterizedTest
+  @EnumSource(FileDuplicateStrategy.class)
+  void failedStreamWriteReleasesReservation(FileDuplicateStrategy strategy) throws IOException {
+    setUpStore();
+    FileProperty property = new FileProperty();
+    try (InputStream input =
+        new InputStream() {
+          private boolean firstByte = true;
+
+          @Override
+          public int read() throws IOException {
+            if (firstByte) {
+              firstByte = false;
+              return 'x';
+            }
+            throw new IOException("source failed during read");
+          }
+        }) {
+      assertThrows(IOException.class, () -> fs.save(property, input, "test.txt", strategy));
+    }
+    assertFalse(fs.findFile(property).exists());
+    URI retry = saveContents(property, "retry", FileDuplicateStrategy.ERROR, true);
+    assertNotNull(retry);
+    assertEquals("retry", Files.readString(Path.of(retry)));
+  }
+
+  @Test
+  void failedReplacementStreamPreservesContentsAndRemovesTemporaryFile() throws IOException {
+    setUpStore();
+    FileProperty original = new FileProperty();
+    Path destination =
+        Path.of(saveContents(original, "original", FileDuplicateStrategy.AS_NEW, true));
+    var originalPermissions = Files.getPosixFilePermissions(destination);
+    try (InputStream input =
+        new InputStream() {
+          private boolean firstByte = true;
+
+          @Override
+          public int read() throws IOException {
+            if (firstByte) {
+              firstByte = false;
+              return 'x';
+            }
+            throw new IOException("source failed during read");
+          }
+        }) {
+      assertThrows(
+          IOException.class,
+          () -> fs.save(original, input, "test.txt", FileDuplicateStrategy.REPLACE));
+    }
+    assertEquals("original", Files.readString(destination));
+    assertEquals(originalPermissions, Files.getPosixFilePermissions(destination));
+    try (Stream<Path> siblings = Files.list(destination.getParent())) {
+      assertEquals(List.of(destination), siblings.toList());
+    }
+    assertEquals(
+        destination.toUri(), saveContents(original, "retry", FileDuplicateStrategy.REPLACE, true));
+    assertEquals("retry", Files.readString(destination));
+    assertEquals(originalPermissions, Files.getPosixFilePermissions(destination));
+  }
+
+  @Test
+  void failedReplacementDoesNotDeleteExistingFile() throws IOException {
+    FileMetadataDao metadata = setUpStore();
+    FileProperty original = new FileProperty();
+    URI first = saveContents(original, "original", FileDuplicateStrategy.AS_NEW, true);
+    IllegalStateException failure = new IllegalStateException("metadata unavailable");
+    when(metadata.save(original)).thenThrow(failure);
+    try (var input = new ByteArrayInputStream("replacement".getBytes(StandardCharsets.UTF_8))) {
+      assertSame(
+          failure,
+          assertThrows(
+              IllegalStateException.class,
+              () -> fs.save(original, input, "test.txt", FileDuplicateStrategy.REPLACE)));
+    }
+    assertEquals("original", Files.readString(Path.of(first)));
+  }
+
+  @Test
+  void failedMetadataUpdateAfterWritingReleasesReservation() throws IOException {
+    FileMetadataDao metadata = setUpStore();
+    FileProperty property = new FileProperty();
+    IllegalStateException failure = new IllegalStateException("metadata update failed");
+    when(metadata.save(property)).thenReturn(property).thenThrow(failure);
+    try (var input = new ByteArrayInputStream("contents".getBytes(StandardCharsets.UTF_8))) {
+      assertSame(
+          failure,
+          assertThrows(
+              IllegalStateException.class,
+              () -> fs.save(property, input, "test.txt", FileDuplicateStrategy.AS_NEW)));
+    }
+    assertFalse(fs.findFile(property).exists());
+  }
+
+  private FileMetadataDao setUpStore() throws IOException {
+    Path store = Files.createDirectory(tempDir.resolve("store"));
+    fs.setBaseDir(store.toFile());
+    FileMetadataDao metadata = mock(FileMetadataDao.class);
+    File base = fs.fileOp.getFoldOp().getBaseDir();
+    FileStoreRoot root = new FileStoreRoot(base.toURI().toString());
+    root.setCurrent(true);
+    when(metadata.findByFileStorePath(base.getAbsolutePath())).thenReturn(root);
+    fs.setFileMetadataDao(metadata);
+    return metadata;
+  }
+
+  private URI saveContents(
+      FileProperty property, String contents, FileDuplicateStrategy strategy, boolean stream)
+      throws IOException {
+    if (stream) {
+      try (var input = new ByteArrayInputStream(contents.getBytes(StandardCharsets.UTF_8))) {
+        return fs.save(property, input, "test.txt", strategy);
+      }
+    }
+    Path source = tempDir.resolve("test.txt");
+    Files.writeString(source, contents);
+    return fs.save(property, source.toFile(), strategy);
   }
 
   private FileNotFoundException fnfe() {

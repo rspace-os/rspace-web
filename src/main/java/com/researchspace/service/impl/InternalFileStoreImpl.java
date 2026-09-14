@@ -20,9 +20,15 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
@@ -36,7 +42,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 /** FileStore implementation for storing files locally on RSpace server */
 @Service
-@Transactional
+@Transactional(rollbackFor = IOException.class)
 public class InternalFileStoreImpl implements InternalFileStore {
 
   public void setBaseDir(File rootDir) throws IOException {
@@ -91,17 +97,9 @@ public class InternalFileStoreImpl implements InternalFileStore {
   @Override
   public URI save(FileProperty meta, File sourceFile, FileDuplicateStrategy behaviourOnDuplicate)
       throws IOException {
-    checkInitialised();
-    String sourceFileName = parseFileName(sourceFile);
-    long sourceFileSize = sourceFile.length();
-    meta.setFileSize(Long.toString(sourceFileSize));
-
-    int suc = addMetadata(meta, sourceFileName, behaviourOnDuplicate);
-    if (suc >= 0) { // success
-      String tgPath = meta.makeTargetPath(false);
-      URI rst = fileOp.addFile(tgPath, sourceFile, meta.parseFileKey());
-      return rst;
-    } else return null;
+    try (InputStream input = new FileInputStream(sourceFile)) {
+      return save(meta, input, parseFileName(sourceFile), behaviourOnDuplicate);
+    }
   }
 
   @Override
@@ -109,29 +107,47 @@ public class InternalFileStoreImpl implements InternalFileStore {
       FileProperty fileProperty,
       InputStream inStream,
       String fnm,
-      FileDuplicateStrategy behavoiurOnDuplicate)
+      FileDuplicateStrategy behaviourOnDuplicate)
       throws IOException {
     checkInitialised();
     fnm = EscapeReplacement.replaceChars(fnm); // get ride funny characters
-    int suc = addMetadata(fileProperty, fnm, FileDuplicateStrategy.AS_NEW);
-    FileStoreRoot root = fileMetadataDao.getCurrentFileStoreRoot(false);
-    fileProperty.setRoot(root);
-    if (suc >= 0) { // success path
-      String relPath = fileProperty.makeTargetPath(true);
-      fileOp.getFoldOp().createPath(fileProperty.makeTargetPath(false));
-      File out = new File(fileOp.getFoldOp().getBaseDir(), relPath);
-      log.debug("Saving to {}", out.getAbsolutePath());
-      long fsz;
-
-      try (FileOutputStream fos = new FileOutputStream(out)) {
-        fsz = fileOp.copyStream(fos, inStream, 0);
+    int suc = addMetadata(fileProperty, fnm, behaviourOnDuplicate);
+    if (suc < 0) {
+      return null;
+    }
+    File out = new File(baseDir, fileProperty.getRelPath());
+    Path replacement = null;
+    try {
+      if (suc == 0) {
+        // Keep the existing file intact until the replacement has been written successfully.
+        replacement = Files.createTempFile(out.toPath().getParent(), ".replacement-", ".tmp");
+        Files.setPosixFilePermissions(replacement, Files.getPosixFilePermissions(out.toPath()));
       }
-      URI rst = out.toURI();
-      fileProperty.setFileSize(Long.toString(fsz));
+      long size;
+      try (FileOutputStream output =
+          new FileOutputStream(replacement == null ? out : replacement.toFile())) {
+        size = fileOp.copyStream(output, inStream, 0);
+      }
+      fileProperty.setFileSize(Long.toString(size));
       fileMetadataDao.save(fileProperty);
-
-      return rst;
-    } else return null;
+      if (replacement != null) {
+        Files.move(
+            replacement,
+            out.toPath(),
+            StandardCopyOption.ATOMIC_MOVE,
+            StandardCopyOption.REPLACE_EXISTING);
+      }
+      return out.toURI();
+    } catch (IOException | RuntimeException e) {
+      if (replacement != null) {
+        removeReservedFile(replacement, e);
+      }
+      if (suc == 100) {
+        removeReservedFile(out.toPath(), e);
+      }
+      log.warn("Could not write file :{}", fileProperty.getRelPath(), e);
+      throw e;
+    }
   }
 
   private void checkInitialised() {
@@ -228,56 +244,57 @@ public class InternalFileStoreImpl implements InternalFileStore {
     return path.substring(idx + 1);
   }
 
-  /*
-   *
-   * @param meta
-   * @param fnm
-   * @param existCd -1 =error if already exists, 0 =replace, 1=add as new
-   * @return 0 if replace was successful, 100 if add as new successful
-   *  If could not be added: returns -1 if existCd was -1
-   */
-  int addMetadata(FileProperty meta, String fnm, FileDuplicateStrategy duplicateBehaviour) {
+  /** Reserves a destination for new files before saving their metadata. */
+  int addMetadata(FileProperty meta, String fnm, FileDuplicateStrategy duplicateBehaviour)
+      throws IOException {
     meta.setRoot(currentRootFs);
-    boolean success = true;
-    int rst = 100; // add one
+    if (StringUtils.isEmpty(meta.getFileName())) {
+      meta.setFileName(fnm);
+    }
+    meta.generateURIFromProperties(baseDir);
+    Path destination = baseDir.toPath().resolve(meta.getRelPath());
+    Files.createDirectories(destination.getParent());
+    boolean reserved = true;
     try {
-      if (StringUtils.isEmpty(meta.getFileName())) {
-        meta.setFileName(fnm);
+      Files.createFile(destination);
+    } catch (FileAlreadyExistsException e) {
+      if (duplicateBehaviour == FileDuplicateStrategy.ERROR) {
+        return -1;
       }
-      meta.generateURIFromProperties(baseDir);
-      if (meta.getAbsolutePathUri() != null
-          && FileDuplicateStrategy.REPLACE.equals(duplicateBehaviour)) {
-        fileMetadataDao.save(meta);
-        rst = 0;
+      if (duplicateBehaviour == FileDuplicateStrategy.REPLACE) {
+        reserved = false;
       } else {
-        fileMetadataDao.save(meta);
-      }
-
-    } catch (Exception ex) {
-      log.warn("Could not save file metadata for file :{}", meta.getRelPath(), ex);
-      success = false;
-    }
-
-    if (!success) {
-      if (FileDuplicateStrategy.ERROR.equals(duplicateBehaviour)) {
-        rst = -1; // return error if exist
-      } else if (FileDuplicateStrategy.REPLACE.equals(duplicateBehaviour)) {
-        fileMetadataDao.remove(meta.getId());
-        fileMetadataDao.save(meta);
-        rst = 0;
-      } else { // add change name add another one: may be recursive call
-        // purly for hibernate entity
-        FileProperty metax = meta.copy();
-        String fnmx = metax.getFileName();
-        fnmx = "A1_" + fnmx;
-        metax.setFileName(fnmx);
-        metax.generateURIFromProperties(baseDir);
-        log.debug("k2= {},", metax.getAbsolutePathUri());
-        fileMetadataDao.save(metax);
-        rst = 1;
+        String extension = FilenameUtils.getExtension(meta.getFileName());
+        // Keep ordinary extensions intact; omit extensions exceeding 20 UTF-8 bytes.
+        if (extension.getBytes(StandardCharsets.UTF_8).length > 20) {
+          extension = "";
+        }
+        meta.setFileName(
+            EscapeReplacement.replaceChars(
+                UUID.randomUUID() + (extension.isEmpty() ? "" : "." + extension)));
+        meta.generateURIFromProperties(baseDir);
+        destination = baseDir.toPath().resolve(meta.getRelPath());
+        Files.createFile(destination);
       }
     }
-    return rst;
+    try {
+      fileMetadataDao.save(meta);
+    } catch (RuntimeException e) {
+      if (reserved) {
+        removeReservedFile(destination, e);
+      }
+      log.warn("Could not save file metadata for file :{}", meta.getRelPath(), e);
+      throw e;
+    }
+    return reserved ? 100 : 0;
+  }
+
+  private void removeReservedFile(Path destination, Exception failure) {
+    try {
+      Files.deleteIfExists(destination);
+    } catch (IOException cleanupFailure) {
+      failure.addSuppressed(cleanupFailure);
+    }
   }
 
   public FileStoreRoot getCurrentFileStoreRoot() {
