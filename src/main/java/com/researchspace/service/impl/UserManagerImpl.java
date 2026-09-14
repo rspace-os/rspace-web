@@ -351,9 +351,18 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
    * The column-level guard in {@link UserPreference} only fires once the merge overflows, by which
    * point a single near-column-sized value has already been stored and every later keyed write for
    * that user fails permanently. Every preference the client declares is a short scalar or a small
-   * list, so a few KB is ample (parallel review, S6).
+   * list, so a few KB is ample (parallel review, S6) - except INVENTORY_OPERATION_PROCESS_VALUES,
+   * which was one shared, ever-growing collection across all seven operation types: a user who
+   * never unticks "Remember" (by design, see processValues.ts) eventually pushed that single key
+   * over this cap, after which every later save of it was refused forever (RSDEV-1231, Codex
+   * review, PR #1090). Splitting it into one key per operation type (below) bounds growth across
+   * operation types but not within one, so this cap is lower per key than it once needed to be,
+   * while the seven keys together give substantially more usable headroom than the one shared key
+   * did. Sized to leave comfortable room under the column limit even with all seven at once: 6500*7
+   * + 8192 (the retained legacy key, see below) + 3000 (generous budget for the other ten small
+   * keys) = 56692.
    */
-  private static final int MAX_UI_JSON_SETTING_VALUE_CHARS = 8192;
+  private static final int MAX_UI_JSON_SETTING_VALUE_CHARS = 6500;
 
   /**
    * The keys a UI settings object may hold: exactly the names the client declares in its
@@ -367,6 +376,11 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
    * the oversize guard rejects EVERY later keyed write for that user, permanently. A closed set has
    * no such growth: each write either replaces a known key or is refused (Copilot review, PR
    * #1090).
+   *
+   * <p>INVENTORY_OPERATION_PROCESS_VALUES is kept, read-only from the client's perspective, as a
+   * legacy fallback source for bundles saved before RSDEV-1231 split it into the seven
+   * per-operation keys below; nothing writes it anymore. Remove it (and the frontend's fallback
+   * read) together, in a follow-up ticket, once it is no longer worth reading.
    */
   private static final Set<String> UI_JSON_SETTINGS_KEYS =
       Set.of(
@@ -378,6 +392,13 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
           "INVENTORY_FORM_SECTIONS_EXPANDED",
           "INVENTORY_HIDDEN_RIGHT_PANEL",
           "INVENTORY_OPERATION_PROCESS_VALUES",
+          "INVENTORY_OPERATION_PROCESS_VALUES_ALIQUOT",
+          "INVENTORY_OPERATION_PROCESS_VALUES_PASSAGE",
+          "INVENTORY_OPERATION_PROCESS_VALUES_POOL",
+          "INVENTORY_OPERATION_PROCESS_VALUES_DERIVE",
+          "INVENTORY_OPERATION_PROCESS_VALUES_CRYOPRESERVE",
+          "INVENTORY_OPERATION_PROCESS_VALUES_REVIVE",
+          "INVENTORY_OPERATION_PROCESS_VALUES_DESTROY",
           "INVENTORY_OPERATION_PROCESS_NAMES",
           "INVENTORY_OPERATION_PROCESS_NAME_DEFAULTS",
           "SYSADMIN_USERS_TABLE_COLUMNS");
