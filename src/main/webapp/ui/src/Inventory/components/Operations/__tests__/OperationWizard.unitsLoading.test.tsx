@@ -41,6 +41,10 @@ vi.mock("@/hooks/api/useUiPreference", () => ({
     INVENTORY_OPERATION_PROCESS_NAME_DEFAULTS: Symbol.for("INVENTORY_OPERATION_PROCESS_NAME_DEFAULTS"),
   },
   default: (_pref: symbol, opts: { defaultValue: unknown }) => [opts.defaultValue, vi.fn()],
+  // The wizard reads per-operation bundles through these rather than the bound hook (bundleFor).
+  // Without them every test here threw from the wizard's first render.
+  useRawUiPreferences: () => ({}),
+  readUiPreference: (_uiPreferences: Record<string, unknown>, _pref: symbol, defaultValue: unknown) => defaultValue,
 }));
 
 vi.mock("../../ContextMenu/ContextDialog", () => ({

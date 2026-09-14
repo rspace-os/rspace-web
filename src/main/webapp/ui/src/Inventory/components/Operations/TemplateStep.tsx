@@ -29,6 +29,7 @@ function TemplateStep({
   parentHasTemplate = true,
   parentTemplateChecking = false,
   parentTemplateError = null,
+  rememberedTemplateError = null,
 }: {
   value: TemplateSelection;
   /**
@@ -53,6 +54,12 @@ function TemplateStep({
    */
   parentTemplateChecking?: boolean;
   parentTemplateError?: string | null;
+  /**
+   * Why a remembered template was dropped: it has been trashed, has gone, or is no longer usable.
+   * Also owned by the wizard rather than this step, and for the same reason as the parent check: a
+   * remembered bundle is resolved at step one, which this step is not rendered for (F1/F2).
+   */
+  rememberedTemplateError?: string | null;
 }): React.ReactNode {
   const { t, i18n } = useTranslation("inventory");
   const [checking, setChecking] = React.useState(false);
@@ -186,6 +193,13 @@ function TemplateStep({
       {value.mode === "remembered" && value.templateName ? (
         <Alert severity="info" data-testid="SelectedTemplateName">
           {t("operations.template.selectedLabel", { name: value.templateName })}
+        </Alert>
+      ) : null}
+      {/* The remembered template was dropped: say which one and why, or the radios simply reappear
+          with no explanation for a template the user expected to still be selected. */}
+      {rememberedTemplateError ? (
+        <Alert severity="warning" data-testid="RememberedTemplateError">
+          {rememberedTemplateError}
         </Alert>
       ) : null}
       <Typography variant="body2">{t("operations.template.description")}</Typography>
