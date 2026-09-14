@@ -126,9 +126,9 @@ describe("buildOperationInputsRequest (amount modes, multi-origin)", () => {
     ]);
   });
 
-  it("marks 'take all' origins as a whole-origin claim so the backend can compare-and-swap them", () => {
+  it("marks 'take all' origins as a whole-origin claim", () => {
     // amountTaken alone cannot tell the backend whether 5 was typed by the user or read off the
-    // origin. Only the second case may be rejected as stale, so the mode has to travel with it.
+    // origin, and the backend's shape rules key off the mode, so it has to travel with the amount.
     expect(build({ amountMode: "all" }).origins.map((o) => o.amountMode)).toEqual(["all", "all", "all"]);
   });
 
@@ -176,7 +176,7 @@ describe("buildOperationInputsRequest (remaining origin-update branches)", () =>
   it("Passage (no amountTakenFrom) sends an explicit zero decrement in the origin's own unit", () => {
     // The origin still travels so it is linked and permission-checked; the backend treats a 0
     // decrement as a no-op (SubSampleApiManagerImpl returns early). It is "explicit", not a
-    // whole-origin claim, so no compare-and-swap is asked for.
+    // whole-origin claim.
     const request = buildOperationInputsRequest({
       operation: real("passage"),
       values: passageValues,

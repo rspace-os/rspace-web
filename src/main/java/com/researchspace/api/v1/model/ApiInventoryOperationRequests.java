@@ -34,8 +34,8 @@ public final class ApiInventoryOperationRequests {
    * One origin subsample. {@code amountTaken} is what the operation removes from it, and is only
    * meaningful where the definition takes something (absent for Passage and Destroy: the server
    * takes nothing, or everything). {@code expectedQuantity} is optional on every operation (M0 D5):
-   * the quantity the caller saw, compare-and-swapped against the live locked quantity, a mismatch
-   * being a 409 to reload from. Absent, the operation takes whatever is there.
+   * the quantity the caller saw, shape-checked and otherwise accepted without comparison
+   * (DevDocs/adr/0007). The operation takes whatever is there either way.
    */
   @Getter
   @Setter

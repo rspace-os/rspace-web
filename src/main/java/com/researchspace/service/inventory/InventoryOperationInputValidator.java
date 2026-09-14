@@ -102,8 +102,8 @@ public final class InventoryOperationInputValidator {
    * while the sample is persisted. Each child can fit the DECIMAL(19,3) quantity column while
    * {@code count x eachAmount} does not, and nothing between here and the INSERT looks at the sum:
    * the delegated sample validators see the children only. So an otherwise valid request reached
-   * the origin locks, decremented them, and then failed inside the transaction as a 500 rather than
-   * as a field error (Codex review, PR #1090).
+   * the origins, decremented them, and then failed inside the transaction as a 500 rather than as a
+   * field error (Codex review, PR #1090).
    *
    * <p>Reported on the amount rather than the count, because the amount is the value the caller
    * chose freely: the definition already bounds the count to a small range. Skipped when either
@@ -141,7 +141,7 @@ public final class InventoryOperationInputValidator {
    *
    * <p>Without this the name reached the samples validator only after the origins were read, and
    * came back as {@code newSample.name}, a field no facade caller sent; a field's content reached
-   * the INSERT as a 500 inside the transaction, after the origin locks, because {@code
+   * the INSERT as a 500 inside the transaction, after the origins were decremented, because {@code
    * ExtraTextField.validateNewData} accepts any length. Any other text input (Derive's {@code
    * processName}, which is interpolated into a generated field NAME rather than stored on its own)
    * gets the record-name limit as a ceiling; what actually fits that name is the builder's business
