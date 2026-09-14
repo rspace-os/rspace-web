@@ -103,7 +103,8 @@ public class FormManagerTest extends SpringTransactionalTest {
     // this user does not have rights to share the template.
     logoutCurrUserAndLoginAs(USER1A, USER1APWD);
     User u = userDao.getUserByUsername(USER1A);
-    assertThrows(AuthorizationException.class, () -> formMgr.publish(form.getId(), true, null, u));
+    Long formId = form.getId();
+    assertThrows(AuthorizationException.class, () -> formMgr.publish(formId, true, null, u));
   }
 
   @Test
@@ -151,8 +152,9 @@ public class FormManagerTest extends SpringTransactionalTest {
     DateFieldForm dft = formMgr.createFieldForm(dto, form.getId(), user);
     logoutCurrUserAndLoginAs(USER1A, USER1APWD);
     User imposter = userDao.getUserByUsername(USER1A);
+    Long fieldId = dft.getId();
     assertThrows(
-        AuthorizationException.class, () -> formMgr.updateFieldForm(dto2, dft.getId(), imposter));
+        AuthorizationException.class, () -> formMgr.updateFieldForm(dto2, fieldId, imposter));
   }
 
   @Test
@@ -200,8 +202,9 @@ public class FormManagerTest extends SpringTransactionalTest {
     NumberFieldDTO<NumberFieldForm> dto = createAnyNumberFieldDTO();
     logoutCurrUserAndLoginAs(USER1A, USER1APWD);
     User imposter = userDao.getUserByUsername(USER1A);
+    Long formId = form.getId();
     assertThrows(
-        AuthorizationException.class, () -> formMgr.createFieldForm(dto, form.getId(), imposter));
+        AuthorizationException.class, () -> formMgr.createFieldForm(dto, formId, imposter));
   }
 
   private NumberFieldDTO<NumberFieldForm> createAnyNumberFieldDTO() {
@@ -541,8 +544,8 @@ public class FormManagerTest extends SpringTransactionalTest {
     RSForm form2 = formMgr.save(form, user);
     StructuredDocument doc =
         recordMgr.createNewStructuredDocument(user.getRootFolder().getId(), form2.getId(), user);
-    assertExceptionThrown(
-        () -> formMgr.delete(form2.getId(), user), IllegalArgumentException.class);
+    Long formId = form2.getId();
+    assertThrows(IllegalArgumentException.class, () -> formMgr.delete(formId, user));
     assertEquals(b4, formMgr.getAllCurrentNormalForms().size());
   }
 
@@ -570,7 +573,8 @@ public class FormManagerTest extends SpringTransactionalTest {
     userDao.save(user);
     permissionUtils.refreshCache();
     // now should gfail
-    assertAuthorisationExceptionThrown(() -> formMgr.delete(form.getId(), user));
+    Long formId = form.getId();
+    assertThrows(AuthorizationException.class, () -> formMgr.delete(formId, user));
   }
 
   @Test
@@ -852,9 +856,8 @@ public class FormManagerTest extends SpringTransactionalTest {
     assertNull(formMgr.updateVersion(toEdit.getId(), user));
     // will throw exception if altered
 
-    assertExceptionThrown(
-        () -> formMgr.publish(systemForm.getId(), false, null, user),
-        UnsupportedOperationException.class);
+    Long systemFormId = systemForm.getId();
+    assertThrows(UnsupportedOperationException.class, () -> formMgr.publish(systemFormId, false, null, user));
     // sanity check
     assertTrue(formMgr.get(systemForm.getId(), user).isPublishedAndVisible());
   }

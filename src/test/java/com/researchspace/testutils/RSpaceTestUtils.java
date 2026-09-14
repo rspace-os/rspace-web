@@ -101,16 +101,6 @@ public class RSpaceTestUtils {
   }
 
   /**
-   * Asserts that an AuthorizationException is thrown.
-   *
-   * @param invokable
-   * @throws Exception
-   */
-  public static void assertAuthExceptionThrown(Invokable invokable) throws Exception {
-    assertThrows(AuthorizationException.class, invokable::invoke);
-  }
-
-  /**
    * Gets example mol format string or use in tests
    *
    * @return

@@ -3,6 +3,7 @@ package com.axiope.userimport;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.researchspace.model.dto.UserRegistrationInfo;
 import com.researchspace.model.field.ErrorList;
 import java.util.Collections;
 import org.junit.jupiter.api.Test;
@@ -11,20 +12,17 @@ public class UserImportResultTest {
 
   @Test
   public void testUserImportResultNoNullArgs1() {
+    var emptyUsers = Collections.<UserRegistrationInfo>emptyList();
+
     assertThrows(
-        NullPointerException.class,
-        () -> {
-          new UserImportResult(Collections.emptyList(), null, null, null);
-        });
+        NullPointerException.class, () -> new UserImportResult(emptyUsers, null, null, null));
   }
 
   @Test
   public void testUserImportResultNoNullArgs2() {
-    assertThrows(
-        NullPointerException.class,
-        () -> {
-          new UserImportResult(null, null, null, new ErrorList());
-        });
+    ErrorList errors = new ErrorList();
+
+    assertThrows(NullPointerException.class, () -> new UserImportResult(null, null, null, errors));
   }
 
   @Test

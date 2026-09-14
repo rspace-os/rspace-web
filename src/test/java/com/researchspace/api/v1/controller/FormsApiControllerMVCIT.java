@@ -1,5 +1,9 @@
 package com.researchspace.api.v1.controller;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+
 import static com.researchspace.core.util.JacksonUtil.toJson;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -142,7 +146,9 @@ public class FormsApiControllerMVCIT extends API_MVC_TestBase {
     mockMvc
         .perform(createBuilderForDelete(apiKeyAnyUser, "/forms/{id}", anyUser, apiForm.getId()))
         .andExpect(status().isNoContent());
-    assertExceptionThrown(() -> formMgr.get(apiForm.getId(), anyUser), DataAccessException.class);
+    var formId = apiForm.getId();
+
+    assertThrows(DataAccessException.class, () -> formMgr.get(formId, anyUser));
     mockMvc
         .perform(
             createBuilderForGet(
@@ -187,7 +193,7 @@ public class FormsApiControllerMVCIT extends API_MVC_TestBase {
                     .content(toJson(formPost)))
             .andExpect(status().isBadRequest())
             .andReturn();
-    assertException(result, BindException.class);
+    assertInstanceOf(BindException.class, result.getResolvedException());
   }
 
   @Test

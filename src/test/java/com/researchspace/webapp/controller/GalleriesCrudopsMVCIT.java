@@ -1,5 +1,9 @@
 package com.researchspace.webapp.controller;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import org.apache.shiro.authz.AuthorizationException;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -98,9 +102,10 @@ public class GalleriesCrudopsMVCIT extends MVCTestBase {
 
     // test unauthorised user can't copy:
     final User other = createInitAndLoginAnyUser();
-    assertAuthorisationExceptionThrown(
-        () ->
-            galleryController.copyGalleries(ids, newNames, new MockPrincipal(other.getUsername())));
+    var otherPrincipal = new MockPrincipal(other.getUsername());
+
+    assertThrows(AuthorizationException.class, () ->
+            galleryController.copyGalleries(ids, newNames, otherPrincipal));
   }
 
   @Test

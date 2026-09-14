@@ -108,14 +108,11 @@ public class SystemSettingsApiControllerTest extends SpringTransactionalTest {
 
     IdentifierSettings noProvider = new IdentifierSettings();
     noProvider.setUsername("whatever");
+    BeanPropertyBindingResult errors =
+        new BeanPropertyBindingResult(noProvider, "identifierSettings");
     assertThrows(
         BindException.class,
-        () ->
-            settingsController.updateInventorySettings(
-                request,
-                noProvider,
-                new BeanPropertyBindingResult(noProvider, "identifierSettings"),
-                sysadmin));
+        () -> settingsController.updateInventorySettings(request, noProvider, errors, sysadmin));
   }
 
   @Test

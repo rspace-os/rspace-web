@@ -523,10 +523,11 @@ class InventoryIdentifierApiManagerImplUnitTest {
     when(b2instConnector.getReviewOf("k2j9p-7yh21")).thenReturn(Optional.empty());
     when(b2instConnector.getPublishedRecord("k2j9p-7yh21")).thenReturn(Optional.empty());
     when(b2instConnector.getDraftRecord("k2j9p-7yh21")).thenReturn(Optional.empty());
+    Method refresh = refreshMethod();
+    DigitalObjectIdentifier doi = b2instDoi();
 
     InvocationTargetException thrown =
-        assertThrows(
-            InvocationTargetException.class, () -> refreshMethod().invoke(mgr, b2instDoi()));
+        assertThrows(InvocationTargetException.class, () -> refresh.invoke(mgr, doi));
 
     assertInstanceOf(ApiRuntimeException.class, thrown.getCause());
   }
@@ -542,10 +543,11 @@ class InventoryIdentifierApiManagerImplUnitTest {
         .thenReturn("Could not refresh. reason");
     when(b2instConnector.getReviewOf("k2j9p-7yh21"))
         .thenThrow(new B2instConnectionException("dev message", "reason", null));
+    Method refresh = refreshMethod();
+    DigitalObjectIdentifier doi = b2instDoi();
 
     InvocationTargetException thrown =
-        assertThrows(
-            InvocationTargetException.class, () -> refreshMethod().invoke(mgr, b2instDoi()));
+        assertThrows(InvocationTargetException.class, () -> refresh.invoke(mgr, doi));
 
     assertInstanceOf(B2instConnectionException.class, thrown.getCause());
     assertEquals("Could not refresh. reason", thrown.getCause().getMessage());
@@ -564,9 +566,10 @@ class InventoryIdentifierApiManagerImplUnitTest {
     GlobalIdentifier oid = new GlobalIdentifier("IT1");
     Instrument withoutIdentifier = new Instrument();
     when(retriever.getInvRecordByGlobalId(oid)).thenReturn(withoutIdentifier);
+    User user = new User("u");
 
     ApiRuntimeException thrown =
-        assertThrows(ApiRuntimeException.class, () -> mgr.refreshIdentifier(oid, new User("u")));
+        assertThrows(ApiRuntimeException.class, () -> mgr.refreshIdentifier(oid, user));
 
     assertEquals("errors.inventory.identifier.refreshNoIdentifier", thrown.getErrorCode());
   }
@@ -613,10 +616,11 @@ class InventoryIdentifierApiManagerImplUnitTest {
     review.setStatus("accepted");
     when(b2instConnector.getReviewOf("k2j9p-7yh21")).thenReturn(Optional.of(review));
     when(b2instConnector.getPublishedRecord("k2j9p-7yh21")).thenReturn(Optional.empty());
+    Method refresh = refreshMethod();
+    DigitalObjectIdentifier doi = b2instDoi();
 
     InvocationTargetException thrown =
-        assertThrows(
-            InvocationTargetException.class, () -> refreshMethod().invoke(mgr, b2instDoi()));
+        assertThrows(InvocationTargetException.class, () -> refresh.invoke(mgr, doi));
 
     ApiRuntimeException cause = assertInstanceOf(ApiRuntimeException.class, thrown.getCause());
     assertEquals(

@@ -166,10 +166,9 @@ assertThat(assertThrows(IllegalStateException.class, () -> foo()).getMessage(),
     containsString("expected text"));
 ```
 
-Spring test subclasses can also use the inherited `assertExceptionThrown`,
-`assertAuthorisationExceptionThrown` and `assertLazyInitializationExceptionThrown`
-on `BaseManagerTestCaseBase`, which take the project's `Invokable` and delegate to
-`assertThrows`.
+Use JUnit's `assertThrows` directly for exception checks, including authorization
+and lazy-initialization failures. Keep setup outside its executable. For exceptions
+already captured by MockMvc, use `assertInstanceOf` on `getResolvedException()`.
 
 Gate a test that needs an environment CI does not have with
 `@EnabledIfSystemProperty`, on the **class** when every test in it is gated.

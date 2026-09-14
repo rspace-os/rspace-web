@@ -19,7 +19,8 @@ public class MoveAuditEventTest {
 
   @Test
   public void testGetAuditActionThrowsIAEIfMapNUll() {
-    assertThrows(IllegalArgumentException.class, this::invalidMoveEvent);
+    AuditTrailTestObject target = new AuditTrailTestObject();
+    assertThrows(IllegalArgumentException.class, () -> new MoveAuditEvent(user, null, null, target));
   }
 
   @Test
@@ -32,9 +33,5 @@ public class MoveAuditEventTest {
   private MoveAuditEvent aMoveEvent() {
     return new MoveAuditEvent(
         user, new AuditTrailTestObject(), new AuditTrailTestObject(), new AuditTrailTestObject());
-  }
-
-  private MoveAuditEvent invalidMoveEvent() {
-    return new MoveAuditEvent(user, null, null, new AuditTrailTestObject());
   }
 }

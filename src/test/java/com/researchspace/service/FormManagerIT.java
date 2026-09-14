@@ -44,13 +44,14 @@ public class FormManagerIT extends RealTransactionSpringTestBase {
     User user = createInitAndLoginAnyUser();
     RSForm form = formMgr.create(user);
     formMgr.publish(form.getId(), true, null, user);
+    Long formId = form.getId();
 
     ChoiceFieldDTO<ChoiceFieldForm> invalidChoice = ChoiceFieldDTOValidatorTest.createValid();
     invalidChoice.setChoiceValues(null);
     assertThat(
         assertThrows(
                 ConstraintViolationException.class,
-                () -> formMgr.createFieldForm(invalidChoice, form.getId(), user))
+                () -> formMgr.createFieldForm(invalidChoice, formId, user))
             .getMessage(),
         containsString("choice options is a required field"));
 
@@ -59,7 +60,7 @@ public class FormManagerIT extends RealTransactionSpringTestBase {
     assertThat(
         assertThrows(
                 ConstraintViolationException.class,
-                () -> formMgr.createFieldForm(invalidDate, form.getId(), user))
+                () -> formMgr.createFieldForm(invalidDate, formId, user))
             .getMessage(),
         containsString("format is a required field"));
 
@@ -68,7 +69,7 @@ public class FormManagerIT extends RealTransactionSpringTestBase {
     assertThat(
         assertThrows(
                 ConstraintViolationException.class,
-                () -> formMgr.createFieldForm(invalidRadio, form.getId(), user))
+                () -> formMgr.createFieldForm(invalidRadio, formId, user))
             .getMessage(),
         containsString("radio options is a required field"));
 
@@ -77,7 +78,7 @@ public class FormManagerIT extends RealTransactionSpringTestBase {
     assertThat(
         assertThrows(
                 ConstraintViolationException.class,
-                () -> formMgr.createFieldForm(invalidText, form.getId(), user))
+                () -> formMgr.createFieldForm(invalidText, formId, user))
             .getMessage(),
         containsString("size must be between"));
   }

@@ -1,5 +1,9 @@
 package com.researchspace.service;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import org.apache.shiro.authz.AuthorizationException;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -69,9 +73,8 @@ public class BaseRecordManagerTest extends SpringTransactionalTest {
     assertNotNull(retrievedFolder);
 
     // getting unexisting record id throws exception
-    assertExceptionThrown(
-        () -> baseRecordManager.get(createdDocument.getId() + 1, user),
-        ObjectRetrievalFailureException.class);
+    long missingRecordId = createdDocument.getId() + 1;
+    assertThrows(ObjectRetrievalFailureException.class, () -> baseRecordManager.get(missingRecordId, user));
   }
 
   @Test
@@ -80,7 +83,8 @@ public class BaseRecordManagerTest extends SpringTransactionalTest {
     assertEquals(toDelete, baseRecordManager.get(toDelete.getId(), user));
 
     deletionMgr.deleteFolder(folderDao.getRootRecordForUser(user).getId(), toDelete.getId(), user);
-    assertAuthorisationExceptionThrown(() -> baseRecordManager.get(toDelete.getId(), user));
+    Long deletedFolderId = toDelete.getId();
+    assertThrows(AuthorizationException.class, () -> baseRecordManager.get(deletedFolderId, user));
     // exception not thrown if we include deleted folder.
     assertEquals(toDelete, baseRecordManager.get(toDelete.getId(), user, true));
   }

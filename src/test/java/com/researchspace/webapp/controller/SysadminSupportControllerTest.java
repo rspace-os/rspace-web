@@ -1,6 +1,9 @@
 package com.researchspace.webapp.controller;
 
-import static com.researchspace.testutils.RSpaceTestUtils.assertAuthExceptionThrown;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import org.apache.shiro.authz.AuthorizationException;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -50,7 +53,7 @@ public class SysadminSupportControllerTest {
   public void testOnlySysAdminCanReloadLicense() throws Exception {
     authenticateSysadmin();
     demoteSysadmin();
-    assertAuthExceptionThrown(() -> controller.forceRefreshLicense());
+    assertThrows(AuthorizationException.class, () -> controller.forceRefreshLicense());
   }
 
   private void demoteSysadmin() {
@@ -62,7 +65,7 @@ public class SysadminSupportControllerTest {
   public void testOnlySysAdminCanViewLicense() throws Exception {
     authenticateSysadmin();
     demoteSysadmin();
-    assertAuthExceptionThrown(() -> controller.getLicense());
+    assertThrows(AuthorizationException.class, () -> controller.getLicense());
   }
 
   @Test

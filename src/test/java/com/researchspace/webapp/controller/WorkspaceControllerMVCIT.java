@@ -1,5 +1,9 @@
 package com.researchspace.webapp.controller;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import org.apache.shiro.authz.AuthorizationException;
+
 import static com.axiope.search.SearchConstants.ALL_SEARCH_OPTION;
 import static com.axiope.search.SearchConstants.RECORDS_SEARCH_OPTION;
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
@@ -351,8 +355,9 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     assertEquals(2, getRecordCountInFolderForUser(grpFlderId));
     assertFalse(permissionUtils.isPermitted(sharedRecord, PermissionType.DELETE, extra));
     // attempting to delete has no effect - permissions block this
-    assertAuthorisationExceptionThrown(
-        () -> recordDeletionMgr.deleteRecord(null, sharedRecord.getId(), extra));
+    var sharedRecordId = sharedRecord.getId();
+
+    assertThrows(AuthorizationException.class, () -> recordDeletionMgr.deleteRecord(null, sharedRecordId, extra));
 
     // still 2 shared records
     assertEquals(2, getRecordCountInFolderForUser(grpFlderId));
@@ -380,15 +385,17 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     RSpaceTestUtils.logoutCurrUserAndLoginAs(setup.user.getUsername(), TESTPASSWD);
     final WorkspaceSettings srchInput = new WorkspaceSettings();
     srchInput.setParentFolderId(root.getId());
-    assertAuthorisationExceptionThrown(
-        () ->
+    var documentIds = new Long[] {setup.structuredDocument.getId()};
+    var otherPrincipal = new MockPrincipal(setup.user.getUsername());
+
+    assertThrows(AuthorizationException.class, () ->
             workspaceController.delete(
-                new Long[] {setup.structuredDocument.getId()},
+                documentIds,
                 null,
                 model,
                 srchInput,
                 request,
-                new MockPrincipal(setup.user.getUsername()),
+                otherPrincipal,
                 session,
                 response));
 

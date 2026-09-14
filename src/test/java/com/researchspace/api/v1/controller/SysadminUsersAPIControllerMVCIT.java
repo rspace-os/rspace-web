@@ -1,5 +1,7 @@
 package com.researchspace.api.v1.controller;
 
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+
 import static com.researchspace.api.v1.controller.API_ModelTestUtils.createAnyUserPost;
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static com.researchspace.core.util.DateUtil.localDateToDateUTC;
@@ -248,7 +250,7 @@ public class SysadminUsersAPIControllerMVCIT extends API_MVC_TestBase {
                     .param("createdBefore", "abcde")
                     .header("apiKey", apiKey))
             .andReturn();
-    assertException(result, BindException.class);
+    assertInstanceOf(BindException.class, result.getResolvedException());
   }
 
   @Test

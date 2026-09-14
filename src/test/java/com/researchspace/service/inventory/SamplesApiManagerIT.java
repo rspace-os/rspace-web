@@ -1,5 +1,9 @@
 package com.researchspace.service.inventory;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import org.hibernate.LazyInitializationException;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -49,8 +53,8 @@ public class SamplesApiManagerIT extends RealTransactionSpringTestBase {
     assertEquals(1, dbSubSample.getParentContainer().getParentContainer().getContentCount());
 
     // but shouldn't be able to access parent's locations at this point, that's lazy-initialized
-    assertLazyInitializationExceptionThrown(
-        () -> dbSubSample.getParentContainer().getLocations().size());
+    var parentLocations = dbSubSample.getParentContainer().getLocations();
+    assertThrows(LazyInitializationException.class, () -> parentLocations.size());
 
     // verify subsample can be mapped to ApiSubSample without extra db queries
     ApiSubSampleInfo infoWithParents = new ApiSubSampleInfo(dbSubSample);

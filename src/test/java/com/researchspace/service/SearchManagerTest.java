@@ -2059,11 +2059,10 @@ public class SearchManagerTest extends SearchSpringTestBase {
     flushToSearchIndices();
     // Login as user2 and search for the documents from that form
     RSpaceTestUtils.logoutCurrUserAndLoginAs(user2.getUsername(), TESTPASSWD);
+    String formId = form.getOid().getIdString();
+    var searchConfig = createSimpleFormSearchCfg(formId);
     assertThrows(
-        AuthorizationException.class,
-        () ->
-            searchMgr.searchWorkspaceRecords(
-                createSimpleFormSearchCfg(form.getOid().getIdString()), user2));
+        AuthorizationException.class, () -> searchMgr.searchWorkspaceRecords(searchConfig, user2));
   }
 
   @Test
@@ -2072,9 +2071,9 @@ public class SearchManagerTest extends SearchSpringTestBase {
     User user = createAndSaveUserIfNotExists(getRandomName(length));
     initialiseContentWithExampleContent(user);
     RSpaceTestUtils.logoutCurrUserAndLoginAs(user.getUsername(), TESTPASSWD);
+    var searchConfig = createSimpleFormSearchCfg("FM425346143");
     assertThrows(
-        AuthorizationException.class,
-        () -> searchMgr.searchWorkspaceRecords(createSimpleFormSearchCfg("FM425346143"), user));
+        AuthorizationException.class, () -> searchMgr.searchWorkspaceRecords(searchConfig, user));
   }
 
   @Test
@@ -2100,9 +2099,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
     assertNotNull(results);
     assertEquals(1, results.getTotalHits().intValue());
 
-    assertExceptionThrown(
-        () -> searchMgr.searchUserRecordsWithSimpleQuery(user, "", null),
-        IllegalArgumentException.class);
+    assertThrows(IllegalArgumentException.class, () -> searchMgr.searchUserRecordsWithSimpleQuery(user, "", null));
   }
 
   @Test
@@ -2314,9 +2311,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
     assertEquals(1, result.getTotalHits().intValue());
 
     // full-wildcard search rejected
-    assertExceptionThrown(
-        () -> searchMgr.searchInventoryWithSimpleQuery("**", null, null, null, null, null, u),
-        IllegalArgumentException.class);
+    assertThrows(IllegalArgumentException.class, () -> searchMgr.searchInventoryWithSimpleQuery("**", null, null, null, null, null, u));
   }
 
   @Test
@@ -2581,11 +2576,9 @@ public class SearchManagerTest extends SearchSpringTestBase {
     assertEquals("u2's inventorySearchTestSample", result.getRecords().get(2).getName());
 
     // partial-wildcard search rejected for sysadmin
-    assertExceptionThrown(
-        () ->
+    assertThrows(IllegalArgumentException.class, () ->
             searchMgr.searchInventoryWithSimpleQuery(
-                "inve*", null, null, null, null, null, sysAdminUser),
-        IllegalArgumentException.class);
+                "inve*", null, null, null, null, null, sysAdminUser));
   }
 
   @Test

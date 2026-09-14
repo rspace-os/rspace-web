@@ -1,5 +1,9 @@
 package com.researchspace.service;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import org.apache.shiro.authz.AuthorizationException;
+
 import static com.researchspace.model.comms.MessageType.REQUEST_RECORD_WITNESS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -182,10 +186,10 @@ public class RecordSigningManagerTest extends SpringTransactionalTest {
 
     // unauthorised access for other user.
     logoutAndLoginAs(other);
-    assertAuthorisationExceptionThrown(
-        () ->
+    Long signatureId = sig.getId();
+    assertThrows(AuthorizationException.class, () ->
             signingMgr.getSignedExport(
-                signature.getSignature().get().getId(), other, NOT_EXISTING_FP));
+                signatureId, other, NOT_EXISTING_FP));
   }
 
   private FileProperty createAndSaveAFileProperty() throws IOException {

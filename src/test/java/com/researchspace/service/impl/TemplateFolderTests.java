@@ -1,5 +1,9 @@
 package com.researchspace.service.impl;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import org.apache.shiro.authz.AuthorizationException;
+
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -31,8 +35,9 @@ public class TemplateFolderTests extends SpringTransactionalTest {
     Folder root = folderDao.getRootRecordForUser(any);
     Folder shared = folderDao.getUserSharedFolder(any);
 
-    assertAuthorisationExceptionThrown(
-        () -> recordDeletionMgr.deleteFolder(root.getId(), shared.getId(), any));
+    Long rootId = root.getId();
+    Long sharedFolderId = shared.getId();
+    assertThrows(AuthorizationException.class, () -> recordDeletionMgr.deleteFolder(rootId, sharedFolderId, any));
   }
 
   @Test

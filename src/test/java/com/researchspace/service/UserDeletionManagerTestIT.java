@@ -1,5 +1,7 @@
 package com.researchspace.service;
 
+import org.apache.shiro.authz.AuthorizationException;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
@@ -175,7 +177,8 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
   }
 
   private void assertUserNotExist(final User tempuser) throws Exception {
-    assertExceptionThrown(() -> userMgr.get(tempuser.getId()), DataAccessException.class);
+    Long userId = tempuser.getId();
+    assertThrows(DataAccessException.class, () -> userMgr.get(userId));
   }
 
   @Test
@@ -187,9 +190,8 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     final User sysadmin = logoutAndLoginAsSysAdmin();
     final UserDeletionPolicy policy = getDeleteTempUserPolicy();
 
-    assertExceptionThrown(
-        () -> userDeletionMgr.removeUser(tempuser.getId(), policy, sysadmin),
-        DataAccessException.class);
+    Long userId = tempuser.getId();
+    assertThrows(DataAccessException.class, () -> userDeletionMgr.removeUser(userId, policy, sysadmin));
   }
 
   @Test
@@ -294,11 +296,9 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     initUser(notAnAdmin, true);
     final User toDelete = createAndSaveUser(getRandomAlphabeticString("toDelete"));
     logoutAndLoginAs(notAnAdmin);
-    assertAuthorisationExceptionThrown(
-        () -> {
-          final UserDeletionPolicy policy = unrestrictedDeletionPolicy();
-          userDeletionMgr.removeUser(toDelete.getId(), policy, notAnAdmin);
-        });
+    final UserDeletionPolicy policy = unrestrictedDeletionPolicy();
+    Long userId = toDelete.getId();
+    assertThrows(AuthorizationException.class, () -> userDeletionMgr.removeUser(userId, policy, notAnAdmin));
   }
 
   @Test
@@ -594,7 +594,8 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
 
     // check u1 form has been deleted (and exception is thrown trying to retrieve) since the form
     // wasn't used by any other users
-    assertThrows(ObjectRetrievalFailureException.class, () -> formMgr.get(u1Form.getId()));
+    Long formId = u1Form.getId();
+    assertThrows(ObjectRetrievalFailureException.class, () -> formMgr.get(formId));
   }
 
   @Test
@@ -1051,7 +1052,8 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
         userDeletionMgr.removeUser(userToDelete.getId(), unrestrictedDeletionPolicy(), sysadmin);
 
     assertTrue(report.isSucceeded());
-    assertThrows(ObjectRetrievalFailureException.class, () -> recordMgr.get(template.getId()));
+    Long templateId = template.getId();
+    assertThrows(ObjectRetrievalFailureException.class, () -> recordMgr.get(templateId));
   }
 
   @Test

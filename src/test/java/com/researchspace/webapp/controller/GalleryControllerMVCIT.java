@@ -1,5 +1,9 @@
 package com.researchspace.webapp.controller;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+
 import static com.researchspace.core.util.MediaUtils.CHEMISTRY_MEDIA_FLDER_NAME;
 import static com.researchspace.core.util.MediaUtils.DOCUMENT_MEDIA_FLDER_NAME;
 import static com.researchspace.core.util.MediaUtils.IMAGES_MEDIA_FLDER_NAME;
@@ -339,9 +343,9 @@ public class GalleryControllerMVCIT extends MVCTestBase {
      * parameters at the same time - which is not expected, as we either upload new version
      * of existing media/attachment, or attach completely new file to the field */
     final Long audioId = audioFileId;
-    assertExceptionThrown(
-        () -> galleryController.uploadFile(mfAudio, audioId, null, field.getId()),
-        IllegalArgumentException.class);
+    var fieldId = field.getId();
+
+    assertThrows(IllegalArgumentException.class, () -> galleryController.uploadFile(mfAudio, audioId, null, fieldId));
   }
 
   private void initialiseIndexFolder() throws IOException, Exception {
@@ -680,7 +684,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
                     .param("id[]", attachment.getId() + "," + attachment2.getId())
                     .param("revision[]", ",,,,"))
             .andReturn();
-    assertException(res, IllegalArgumentException.class);
+    assertInstanceOf(IllegalArgumentException.class, res.getResolvedException());
 
     // non existent id + existing ID
     res =

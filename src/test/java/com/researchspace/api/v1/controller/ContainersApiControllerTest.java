@@ -630,12 +630,12 @@ public class ContainersApiControllerTest extends SpringTransactionalTest {
     // cannot update workbench
     ApiContainer updateRequest = new ApiContainer();
     updateRequest.setName("my name");
+    Long workbenchId = workbench.getId();
     IllegalArgumentException iae =
         assertThrows(
             IllegalArgumentException.class,
             () ->
-                containersApi.updateContainer(
-                    workbench.getId(), updateRequest, mockBindingResult, user));
+                containersApi.updateContainer(workbenchId, updateRequest, mockBindingResult, user));
     assertEquals("Container with id " + workbench.getId() + " is a workbench", iae.getMessage());
   }
 }

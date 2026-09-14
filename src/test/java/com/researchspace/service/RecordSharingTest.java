@@ -1,7 +1,6 @@
 package com.researchspace.service;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
-import static com.researchspace.testutils.RSpaceTestUtils.assertAuthExceptionThrown;
 import static com.researchspace.testutils.RSpaceTestUtils.logoutCurrUserAndLoginAs;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -331,8 +330,9 @@ public class RecordSharingTest extends SpringTransactionalTest {
     int NUM_CHILDREN_IN_GRPFOLDERS = sharedFolder.getChildren().size();
 
     // deletion attempt by non-auth user should throw exception
-    assertAuthorisationExceptionThrown(
-        () -> recordDeletionMgr.deleteRecord(sharedFolder.getId(), toShare.getId(), other));
+    Long sharedFolderId = sharedFolder.getId();
+    Long recordId = toShare.getId();
+    assertThrows(AuthorizationException.class, () -> recordDeletionMgr.deleteRecord(sharedFolderId, recordId, other));
 
     // still should be shared
     assertTrue(regGrpDao.getRecordsSharedByGroup(group.getId()).contains(toShare));
@@ -421,13 +421,13 @@ public class RecordSharingTest extends SpringTransactionalTest {
     ShareConfigElement indivCommand = new ShareConfigElement(other.getId(), "write");
     indivCommand.setUserId(other.getId());
     ShareConfigElement[] indivSharingCfgElem = new ShareConfigElement[] {indivCommand};
+    User persistedUser = userDao.get(user.getId());
+    Long documentId = testDoc.getId();
 
     AuthorizationException authorizationException =
         assertThrows(
             AuthorizationException.class,
-            () ->
-                sharingMgr.shareRecord(
-                    userDao.get(user.getId()), testDoc.getId(), indivSharingCfgElem));
+            () -> sharingMgr.shareRecord(persistedUser, documentId, indivSharingCfgElem));
     assertEquals(
         "Unauthorized attempt by ["
             + user.getUsername()
@@ -443,9 +443,7 @@ public class RecordSharingTest extends SpringTransactionalTest {
     authorizationException =
         assertThrows(
             AuthorizationException.class,
-            () ->
-                sharingMgr.shareRecord(
-                    userDao.get(user.getId()), testDoc.getId(), groupSharingCfgElem));
+            () -> sharingMgr.shareRecord(persistedUser, documentId, groupSharingCfgElem));
     assertEquals(
         "Unauthorized attempt by ["
             + user.getUsername()
@@ -537,7 +535,8 @@ public class RecordSharingTest extends SpringTransactionalTest {
     sharingMgr.shareRecord(piUser, toShare.getId(), getGrpShareCommand(group, "write"));
     logoutAndLoginAs(other);
     // other user can't rename even though is shared with group.
-    assertAuthorisationExceptionThrown(() -> recordMgr.renameRecord("XXX", toShare.getId(), other));
+    Long recordId = toShare.getId();
+    assertThrows(AuthorizationException.class, () -> recordMgr.renameRecord("XXX", recordId, other));
 
     // get user to create a new folder in the group:
     logoutAndLoginAs(piUser);
@@ -546,7 +545,8 @@ public class RecordSharingTest extends SpringTransactionalTest {
     logoutAndLoginAs(other);
 
     // other user can't rename a folder created by group admin even though is shared with group.
-    assertAuthExceptionThrown(() -> recordMgr.renameRecord("XXX", subf.getId(), other));
+    Long subfolderId = subf.getId();
+    assertThrows(AuthorizationException.class, () -> recordMgr.renameRecord("XXX", subfolderId, other));
   }
 
   @Test

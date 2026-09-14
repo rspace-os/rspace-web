@@ -1,5 +1,7 @@
 package com.researchspace.webapp.integrations.raid;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static com.researchspace.service.IntegrationsHandler.RAID_APP_NAME;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -438,9 +440,9 @@ public class RaIDControllerMCVIT extends MVCTestBase {
     // THEN
     expectedProjectGroup.setRaid(null);
     assertEquals(expectedProjectGroup, grpMgr.getGroup(newProjectGroupId));
-    assertExceptionThrown(
-        () -> raidServiceManager.getUserRaid(expectedCreatedUserRaid.getId()),
-        ObjectRetrievalFailureException.class);
+    var raidId = expectedCreatedUserRaid.getId();
+
+    assertThrows(ObjectRetrievalFailureException.class, () -> raidServiceManager.getUserRaid(raidId));
   }
 
   @NotNull

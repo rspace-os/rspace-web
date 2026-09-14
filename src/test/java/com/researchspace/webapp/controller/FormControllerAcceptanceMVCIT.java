@@ -1,5 +1,7 @@
 package com.researchspace.webapp.controller;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import static com.researchspace.testutils.RSpaceTestUtils.logoutCurrUserAndLoginAs;
 import static com.researchspace.testutils.TestRunnerController.isJDK8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -186,10 +188,10 @@ public class FormControllerAcceptanceMVCIT extends MVCTestBase {
     createInitAndLoginAnyUser();
 
     // assert both addTo and removeFrom menu
-    assertExceptionThrown(
-        () -> formController.toggleMenu(true, newForm.getId()), AuthorizationException.class);
-    assertExceptionThrown(
-        () -> formController.toggleMenu(false, newForm.getId()), AuthorizationException.class);
+    var formId = newForm.getId();
+
+    assertThrows(AuthorizationException.class, () -> formController.toggleMenu(true, formId));
+    assertThrows(AuthorizationException.class, () -> formController.toggleMenu(false, formId));
     logoutAndLoginAs(piUser);
     formController.toggleMenu(true, newForm.getId());
   }
@@ -278,8 +280,10 @@ public class FormControllerAcceptanceMVCIT extends MVCTestBase {
     assertEquals(EditStatus.EDIT_MODE, openedForm.getEditStatus());
     // but, imposter can't do the following:
     logoutAndLoginAs(imposter);
-    assertAuthorisationExceptionThrown(
-        () -> formController.rename(anyform.getId(), "hacked", new MockPrincipal(imposter)));
+    var formId = anyform.getId();
+    var imposterPrincipal = new MockPrincipal(imposter);
+
+    assertThrows(AuthorizationException.class, () -> formController.rename(formId, "hacked", imposterPrincipal));
 
     assertEquals("newname", formMgr.get(anyform.getId(), user_1).getName());
 
@@ -399,7 +403,9 @@ public class FormControllerAcceptanceMVCIT extends MVCTestBase {
   }
 
   private void assertPublishNotAuthorized(RSForm form, User u) throws Exception {
-    assertAuthorisationExceptionThrown(() -> formMgr.publish(form.getId(), false, null, u));
+    var formId = form.getId();
+
+    assertThrows(AuthorizationException.class, () -> formMgr.publish(formId, false, null, u));
   }
 
   private void assertPublishIsAuthorized(RSForm form, User u) {

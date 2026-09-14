@@ -54,9 +54,10 @@ class DocumentCopyManagerTest {
   void testCopyMediaFileUnableToRetrieveOriginal() {
     when(fileStore.retrieve(any())).thenReturn(Optional.empty());
     EcatMediaFile mediaFile = getImageMediaFile();
+    var parent = mediaFile.getParent();
     assertThrows(
         RecordCopyException.class,
-        () -> documentCopyManager.copy(mediaFile, "test-image_copy", user, mediaFile.getParent()));
+        () -> documentCopyManager.copy(mediaFile, "test-image_copy", user, parent));
   }
 
   @Test
@@ -65,9 +66,10 @@ class DocumentCopyManagerTest {
     when(fileStore.retrieve(any())).thenReturn(Optional.of(fileInputStream));
     when(fileStore.save(any(), any(), any(), any())).thenThrow(IOException.class);
     EcatMediaFile mediaFile = getImageMediaFile();
+    var parent = mediaFile.getParent();
     assertThrows(
         RecordCopyException.class,
-        () -> documentCopyManager.copy(mediaFile, "test-image_copy", user, mediaFile.getParent()));
+        () -> documentCopyManager.copy(mediaFile, "test-image_copy", user, parent));
   }
 
   private EcatImage getImageMediaFile() {
