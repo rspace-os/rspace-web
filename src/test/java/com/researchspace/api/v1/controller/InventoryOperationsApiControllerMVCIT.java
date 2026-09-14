@@ -304,13 +304,12 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
    * The whole flow end to end, with no concurrency in it at all: an operation commits, and only
    * then does the user save an edit to the origin.
    *
-   * <p>The row lock cannot help here, because nothing overlaps. What decides it is whether the edit
-   * carries a quantity. A PUT that sends one replaces the stored value, deliberately: that is how a
-   * user corrects a quantity, and the server cannot tell a correction apart from a client echoing
-   * back the number the page was loaded with. So the client does not send one it was not given, and
-   * that is pinned where the payload is built (SubSampleModel paramsForBackend tests); this is the
-   * other half, that a payload without a quantity leaves the deduction standing (Codex review, PR
-   * #1090).
+   * <p>Nothing overlaps here. What decides it is whether the edit carries a quantity. A PUT that
+   * sends one replaces the stored value, deliberately: that is how a user corrects a quantity, and
+   * the server cannot tell a correction apart from a client echoing back the number the page was
+   * loaded with. So the client does not send one it was not given, and that is pinned where the
+   * payload is built (SubSampleModel paramsForBackend tests); this is the other half, that a
+   * payload without a quantity leaves the deduction standing (Codex review, PR #1090).
    */
   @Test
   public void aRenameSavedAfterAnOperationLeavesTheDeductionStanding() throws Exception {
@@ -459,6 +458,56 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
               == 0,
           "origins must be unchanged when the category mismatch is rejected");
     }
+  }
+
+  @Test
+  public void rejectsAnOriginTheCallerCannotEditThroughTheFullStack() throws Exception {
+    // security review D1: the unit tests pin authz-before-read with mocks; this pins it through the
+    // real controller, Shiro and permission utils. An unrelated user can neither read nor edit the
+    // origin, so the Inventory API answers its 404 (a foreign id is indistinguishable from a
+    // missing one) and nothing is written.
+    User otherUser = createInitAndLoginAnyUser();
+    ApiSubSample foreignOrigin = createBasicSampleForUser(otherUser).getSubSamples().get(0);
+    ApiSubSample ownOrigin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
+    int unitId = foreignOrigin.getQuantity().getUnitId();
+
+    // single origin
+    mockMvc
+        .perform(
+            createBuilderForPostWithJSONBody(
+                apiKey, "/operations", anyUser, aliquotTakingJson(foreignOrigin, "1")))
+        .andExpect(status().isNotFound());
+
+    // Pool over one origin the caller owns and one it does not: the whole request is refused
+    // before either origin is decremented
+    String poolJson =
+        body(
+            "pool",
+            originJson(ownOrigin, null, quantityJson("1", unitId))
+                + ","
+                + originJson(foreignOrigin, null, quantityJson("1", unitId)),
+            creatingInputs("Pooled with a foreign origin", 1, quantityJson("2", unitId)));
+    mockMvc
+        .perform(createBuilderForPostWithJSONBody(apiKey, "/operations", anyUser, poolJson))
+        .andExpect(status().isNotFound());
+
+    ApiSubSample reloadedForeign =
+        subSampleApiManager.getApiSubSampleById(foreignOrigin.getId(), otherUser);
+    assertEquals(
+        0,
+        foreignOrigin
+            .getQuantity()
+            .getNumericValue()
+            .compareTo(reloadedForeign.getQuantity().getNumericValue()),
+        "the foreign origin must be untouched");
+    ApiSubSample reloadedOwn = subSampleApiManager.getApiSubSampleById(ownOrigin.getId(), anyUser);
+    assertEquals(
+        0,
+        ownOrigin
+            .getQuantity()
+            .getNumericValue()
+            .compareTo(reloadedOwn.getQuantity().getNumericValue()),
+        "the caller's own origin must be untouched when a sibling origin is refused");
   }
 
   /** Posts the body, expects a 400, asserts the origin was left untouched, returns the response. */

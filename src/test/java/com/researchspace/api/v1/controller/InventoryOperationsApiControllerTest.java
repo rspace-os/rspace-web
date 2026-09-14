@@ -359,7 +359,8 @@ class InventoryOperationsApiControllerTest {
         ArgumentCaptor.forClass(List.class);
     verify(operationManager)
         .performOperation(eq("destroy"), origins.capture(), eq(Map.of()), any(), any(), eq(user));
-    // No amount: the manager's builder takes the whole origin. The expected quantity travels.
+    // No amount: the manager's builder takes the whole origin. The expected quantity travels to
+    // the manager, which accepts it without comparison (DevDocs/adr/0007).
     assertNull(origins.getValue().get(0).getAmountTaken());
     assertEquals(millilitres("5"), origins.getValue().get(0).getExpectedQuantity());
   }

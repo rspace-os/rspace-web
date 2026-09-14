@@ -61,10 +61,10 @@ export type OperationExtraField = OperationLinkField | OperationTextFieldValue;
 
 export type OperationOriginUpdate = {
   id: number;
-  /** How `amountTaken` was decided, which is what lets the backend compare-and-swap it. "all" means
-   * the amount IS the origin's whole quantity as this client read it, so the backend rejects the
-   * request with 409 if the live quantity has since changed rather than emptying an origin the user
-   * never saw. "explicit" amounts are user-entered and carry no such claim. */
+  /** How `amountTaken` was decided. "all" means the amount IS the origin's whole quantity as this
+   * client read it; "explicit" amounts are user-entered. The backend checks the mode for shape only
+   * (an emptying operation cannot take an explicit amount, a linking one cannot take all) and does
+   * not compare it against the live quantity (DevDocs/adr/0007: no concurrency control). */
   amountMode: "explicit" | "all";
   amountTaken: OperationQuantity;
 };
@@ -72,8 +72,8 @@ export type OperationOriginUpdate = {
 /**
  * The request the wizard POSTs (DevDocs/adr/0007, M4): the values the user typed,
  * keyed by the definition's input key, from which the server builds the sample itself. Each origin
- * still carries the amount taken and how it was decided, which the server compare-and-swaps against
- * the live quantity; the origin fields an operation adds (Destroy's disposed date) are the server's.
+ * still carries the amount taken and how it was decided (shape-checked, not compared against the
+ * live quantity); the origin fields an operation adds (Destroy's disposed date) are the server's.
  */
 export type OperationInputsRequest = {
   operationType: string;

@@ -749,7 +749,7 @@ describe("OperationWizard step flow", () => {
     await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
     await waitFor(() => expect(onClose).toHaveBeenCalled());
     // Destroy empties the origin: the amount taken is its full current quantity, sent as a
-    // whole-origin claim the server compare-and-swaps. The disposed date is stamped server-side in
+    // whole-origin claim. The disposed date is stamped server-side in
     // the session's timezone (DevDocs/adr/0007, M4), so nothing about it travels.
     expect(posted[0]).toEqual({
       operationType: "destroy",
@@ -1320,12 +1320,13 @@ describe("OperationWizard remember bundle", () => {
   });
 });
 
-// Every rejection the suite above serves is a 400. The submit handler has one catch for everything,
-// so a 409 (the compare-and-swap on a "take all" snapshot) and a connection failure share it, and
-// what they share had never been asserted: the message chosen, that EVERY origin is re-read (the
-// snapshot and the over-removal gate both read origin.quantity), and that the wizard stays put.
+// Every rejection the suite above serves is a field-scoped 400. The submit handler has one catch
+// for everything, so a non-field rejection (a bare message with a 409 status, as the ELN's
+// document-lock path still answers) and a connection failure share it, and what they share had
+// never been asserted: the message chosen, that EVERY origin is re-read (the snapshot and the
+// over-removal gate both read origin.quantity), and that the wizard stays put.
 describe("OperationWizard rejection paths and multi-origin gating", () => {
-  it("keeps a Pool open on a 409, shows the conflict message and re-reads every origin", async () => {
+  it("keeps a Pool open on a non-field rejection, shows its message and re-reads every origin", async () => {
     server.use(
       http.post(
         OPERATIONS_URL,
@@ -1341,7 +1342,7 @@ describe("OperationWizard rejection paths and multi-origin gating", () => {
     const refreshSecond = vi.spyOn(second, "fetchAdditionalInfo").mockResolvedValue(undefined);
     render(<OperationWizard open onClose={onClose} origins={[first, second]} />);
 
-    // Pool opens on "take all", which is exactly the whole-origin claim a 409 answers.
+    // Pool opens on "take all", a whole-origin claim, so every origin's quantity is read.
     await user.click(await screen.findByRole("button", { name: /operations\.pool\.label/i }));
     await user.click(screen.getByTestId("fill-amounts"));
     await user.click(nextButton()); // details -> template
@@ -1352,7 +1353,8 @@ describe("OperationWizard rejection paths and multi-origin gating", () => {
     await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
 
     await waitFor(() => expect(addAlert).toHaveBeenCalled());
-    // A 409 carries `errors: [""]` (ApiError's singleton list), so the message body is the reason.
+    // A non-field rejection carries `errors: [""]` (ApiError's singleton list), so the message body
+    // is the reason.
     const alerts = addAlert.mock.calls.map((call) => call[0] as { variant: string; message: string });
     expect(alerts).toHaveLength(1);
     expect(alerts[0].variant).toBe("error");
