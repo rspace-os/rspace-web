@@ -3,6 +3,7 @@ package com.researchspace.service.inventory.impl;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -29,6 +30,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -233,5 +235,40 @@ class SubSampleApiManagerImplUsageVersionTest {
     verify(subSampleDao, never()).getQuantityForUpdate(any());
     verify(subSampleDao, never()).save(any(SubSample.class));
     assertEquals(0, new BigDecimal("10").compareTo(cached.getQuantity().getNumericValue()));
+  }
+
+  @Test
+  void theDecrementReadsAndWritesTheQuantityOnlyUnderTheRowLock() {
+    // registerApiSubSampleUsage is the single funnel for every stock decrement in the application:
+    // the operations endpoint, Stoichiometry and List of Materials all reach the database through
+    // it. Without the row lock two decrements racing the same subsample both subtract from the same
+    // stale quantity and one is lost.
+    //
+    // This replaces SubSampleApiManagerTest.registerApiSubSampleUsageReadsTheRowForUpdate, which
+    // asserted Hibernate had recorded PESSIMISTIC_WRITE as the entity's lock mode. That became
+    // unreachable when lockRowForUpdate stopped fetching the entity under the lock: it now locks
+    // through a scalar id projection and then does a plain session.get, deliberately, because the
+    // eager-fetch join took lock_mode X on some twenty tables and deadlocked. Hibernate therefore
+    // never records the mode, the assertion could not pass whatever the code did, and it was
+    // deleted without a named replacement - leaving no test anywhere under src/test/java
+    // mentioning PESSIMISTIC_WRITE (review 2026-09-14, I2). Asserting the CALL ORDER instead says
+    // the same thing about the code and survives how the DAO chooses to take the lock. That the
+    // lock is a real FOR UPDATE is pinned separately by SubSampleDaoTest and GenericDaoLockScopeIT.
+    SubSample cached = subSampleAtVersion(3L);
+    when(subSampleDao.exists(100L)).thenReturn(true);
+    when(subSampleDao.get(100L)).thenReturn(cached);
+    trackerGrantsTheLock();
+    when(subSampleDao.lockRowForUpdate(100L)).thenReturn(cached);
+    when(subSampleDao.getQuantityForUpdate(100L)).thenReturn(millilitres("10"));
+    when(subSampleDao.getVersionForUpdate(100L)).thenReturn(3L);
+    when(subSampleDao.save(any(SubSample.class))).thenAnswer(i -> i.getArgument(0));
+
+    subSampleApiMgr.registerApiSubSampleUsage(100L, millilitres("1"), user);
+
+    InOrder order = inOrder(siblingRowLock, subSampleDao);
+    order.verify(siblingRowLock).lockSiblingRowsAndRecalculateTotal(20L);
+    order.verify(subSampleDao).lockRowForUpdate(100L);
+    order.verify(subSampleDao).getQuantityForUpdate(100L);
+    order.verify(subSampleDao).save(any(SubSample.class));
   }
 }
