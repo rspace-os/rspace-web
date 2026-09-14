@@ -620,13 +620,9 @@ public abstract class BaseRecord
       return false;
     }
     if (from.isSharedFolder()) {
-      return isAllowedSharedFolderDestination(from, to);
+      return to.isSharedFolder() || (to.isNotebook() && hasUserOrGroupWithAccessInCommon(from, to));
     }
     return !to.isSharedFolder() && from.getOwner().equals(to.getOwner());
-  }
-
-  private static boolean isAllowedSharedFolderDestination(Folder from, Folder to) {
-    return to.isSharedFolder() || (to.isNotebook() && hasUserOrGroupWithAccessInCommon(from, to));
   }
 
   private static boolean hasUserOrGroupWithAccessInCommon(BaseRecord first, BaseRecord second) {
