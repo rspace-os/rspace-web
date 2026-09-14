@@ -162,9 +162,17 @@ did not.
 To assert on an exception message, nest the call rather than introducing a local:
 
 ```java
-assertThat(assertThrows(IllegalStateException.class, () -> foo()).getMessage(),
-    containsString("expected text"));
+assertTrue(
+    assertThrows(IllegalStateException.class, () -> foo()).getMessage()
+        .contains("expected text"));
 ```
+
+Assertions come from `org.junit.jupiter.api.Assertions` only; direct Hamcrest
+assertions are prohibited. Hamcrest remains on the test classpath as compile
+support for Spring's matcher-typed MockMvc signatures. Spring's MockMvc
+assertion helpers have typed replacements on `MVCTestBase`:
+`viewNameContains`, `modelAttributeContains`, `modelAttributeDoesNotContain`
+and `headerContains`.
 
 Use JUnit's `assertThrows` directly for exception checks, including authorization
 and lazy-initialization failures. Keep setup outside its executable. For exceptions

@@ -1,12 +1,11 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 import static com.researchspace.testutils.RSpaceTestUtils.logoutCurrUserAndLoginAs;
 import static com.researchspace.testutils.TestRunnerController.isJDK8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -283,7 +282,9 @@ public class FormControllerAcceptanceMVCIT extends MVCTestBase {
     var formId = anyform.getId();
     var imposterPrincipal = new MockPrincipal(imposter);
 
-    assertThrows(AuthorizationException.class, () -> formController.rename(formId, "hacked", imposterPrincipal));
+    assertThrows(
+        AuthorizationException.class,
+        () -> formController.rename(formId, "hacked", imposterPrincipal));
 
     assertEquals("newname", formMgr.get(anyform.getId(), user_1).getName());
 

@@ -311,7 +311,7 @@ public class StoichiometryServiceImplTest {
     when(mol.getSmiles()).thenReturn("C2H6O");
     when(mol.getMass()).thenReturn(46.07);
     when(mol.getFormula()).thenReturn("C2H6O");
-    when(analysis.getMoleculeInfo()).thenReturn(java.util.Collections.singletonList(mol));
+    when(analysis.getMoleculeInfo()).thenReturn(Collections.singletonList(mol));
     when(rsChemElementManager.getInfo("CCO")).thenReturn(Optional.of(analysis));
 
     StoichiometryMolecule result = service.getMoleculeInfo("CCO");

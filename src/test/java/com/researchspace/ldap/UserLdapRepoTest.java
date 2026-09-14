@@ -1,10 +1,9 @@
 package com.researchspace.ldap;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.SignupSource;
 import com.researchspace.model.User;
@@ -49,18 +48,15 @@ public class UserLdapRepoTest extends SpringTransactionalTest {
 
     properties.setLdapEnabled("false");
 
-    assertThat(
-        assertThrows(IllegalStateException.class, () -> userLdapRepo.findUserByUsername("user"))
-            .getMessage(),
-        containsString("LDAP not configured"));
-    assertThat(
-        assertThrows(IllegalStateException.class, () -> userLdapRepo.authenticate("user", "pass"))
-            .getMessage(),
-        containsString("LDAP not configured"));
-    assertThat(
-        assertThrows(IllegalStateException.class, () -> userLdapRepo.signupLdapUser(null))
-            .getMessage(),
-        containsString("LDAP not configured"));
+    var exception1 =
+        assertThrows(IllegalStateException.class, () -> userLdapRepo.findUserByUsername("user"));
+    assertTrue(exception1.getMessage().contains("LDAP not configured"));
+    var exception2 =
+        assertThrows(IllegalStateException.class, () -> userLdapRepo.authenticate("user", "pass"));
+    assertTrue(exception2.getMessage().contains("LDAP not configured"));
+    var exception3 =
+        assertThrows(IllegalStateException.class, () -> userLdapRepo.signupLdapUser(null));
+    assertTrue(exception3.getMessage().contains("LDAP not configured"));
   }
 
   @Test
@@ -138,12 +134,11 @@ public class UserLdapRepoTest extends SpringTransactionalTest {
 
     // run sid retrieval for non-ldap user
     String testUsername = testUser.getUsername();
-    assertThat(
+    var exception4 =
         assertThrows(
-                IllegalArgumentException.class,
-                () -> spyUserLdapRepo.retrieveSidForLdapUser(testUsername))
-            .getMessage(),
-        containsString("non-ldap"));
+            IllegalArgumentException.class,
+            () -> spyUserLdapRepo.retrieveSidForLdapUser(testUsername));
+    assertTrue(exception4.getMessage().contains("non-ldap"));
 
     // run for ldap user without sid
     String retrievedSID = spyUserLdapRepo.retrieveSidForLdapUser(testUser2.getUsername());
@@ -151,11 +146,10 @@ public class UserLdapRepoTest extends SpringTransactionalTest {
 
     // run for ldap user with sid
     String testUsername3 = testUser3.getUsername();
-    assertThat(
+    var exception5 =
         assertThrows(
-                IllegalArgumentException.class,
-                () -> spyUserLdapRepo.retrieveSidForLdapUser(testUsername3))
-            .getMessage(),
-        containsString("user with SID"));
+            IllegalArgumentException.class,
+            () -> spyUserLdapRepo.retrieveSidForLdapUser(testUsername3));
+    assertTrue(exception5.getMessage().contains("user with SID"));
   }
 }

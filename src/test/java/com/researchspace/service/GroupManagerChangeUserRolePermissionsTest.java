@@ -1,15 +1,13 @@
 package com.researchspace.service;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
-import org.apache.shiro.authz.AuthorizationException;
-
 import static com.researchspace.testutils.TestGroup.LABADMIN_PREFIX;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.RoleInGroup;
 import com.researchspace.model.User;
 import com.researchspace.testutils.TestGroup;
+import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -99,8 +97,12 @@ public class GroupManagerChangeUserRolePermissionsTest extends GroupPermissionsT
     Long userId = testgrp.getUserByPrefix("u1").getId();
     String labAdminRole = RoleInGroup.RS_LAB_ADMIN.name();
     String defaultRole = RoleInGroup.DEFAULT.name();
-    assertThrows(AuthorizationException.class, () -> grpMgr.setRoleForUser(groupId, userId, labAdminRole, subject));
-    assertThrows(AuthorizationException.class, () -> grpMgr.setRoleForUser(groupId, userId, defaultRole, subject));
+    assertThrows(
+        AuthorizationException.class,
+        () -> grpMgr.setRoleForUser(groupId, userId, labAdminRole, subject));
+    assertThrows(
+        AuthorizationException.class,
+        () -> grpMgr.setRoleForUser(groupId, userId, defaultRole, subject));
   }
 
   private void assertRolesCanBeAltered(TestGroup testgrp, User subject) {
@@ -123,8 +125,12 @@ public class GroupManagerChangeUserRolePermissionsTest extends GroupPermissionsT
       throws Exception {
     Long labAdminId = getLabAdmin(testgrp).getId();
     Long groupId = testgrp.getGroup().getId();
-    assertThrows(AuthorizationException.class, () -> grpMgr.authorizeLabAdminToViewAll(labAdminId, subject, groupId, true));
-    assertThrows(AuthorizationException.class, () -> grpMgr.authorizeLabAdminToViewAll(labAdminId, subject, groupId, false));
+    assertThrows(
+        AuthorizationException.class,
+        () -> grpMgr.authorizeLabAdminToViewAll(labAdminId, subject, groupId, true));
+    assertThrows(
+        AuthorizationException.class,
+        () -> grpMgr.authorizeLabAdminToViewAll(labAdminId, subject, groupId, false));
   }
 
   private void assertSetLabAdminViewAllAuthorised(TestGroup testgrp, User subject) {

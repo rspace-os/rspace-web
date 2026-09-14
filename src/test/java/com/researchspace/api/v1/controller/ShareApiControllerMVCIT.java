@@ -1,7 +1,6 @@
 package com.researchspace.api.v1.controller;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
-import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -182,11 +181,11 @@ public class ShareApiControllerMVCIT extends API_MVC_TestBase {
   }
 
   private ResultMatcher nFailedItems(int n) {
-    return jsonPath("$.failedShares.length()", is(n));
+    return jsonPath("$.failedShares.length()").value(n);
   }
 
   private ResultMatcher nSharedItemsInResponse(int n) {
-    return jsonPath("$.shareInfos.length()", is(n));
+    return jsonPath("$.shareInfos.length()").value(n);
   }
 
   @Test

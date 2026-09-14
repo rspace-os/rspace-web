@@ -1,10 +1,7 @@
 package com.researchspace.service;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
-import org.apache.shiro.authz.AuthorizationException;
-
 import static com.researchspace.testutils.TestGroup.LABADMIN_PREFIX;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.model.Group;
@@ -16,6 +13,7 @@ import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.testutils.TestGroup;
 import java.util.HashSet;
 import java.util.List;
+import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -83,7 +81,9 @@ public class GroupManagerEditMetadataPermissionsTest extends GroupPermissionsTes
     if (authorised) {
       requestCreateMgr.createRequest(cgf, username, recipients, null, null);
     } else {
-      assertThrows(AuthorizationException.class, () -> requestCreateMgr.createRequest(cgf, username, recipients, null, null));
+      assertThrows(
+          AuthorizationException.class,
+          () -> requestCreateMgr.createRequest(cgf, username, recipients, null, null));
     }
   }
 

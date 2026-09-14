@@ -332,7 +332,9 @@ public class RecordSharingTest extends SpringTransactionalTest {
     // deletion attempt by non-auth user should throw exception
     Long sharedFolderId = sharedFolder.getId();
     Long recordId = toShare.getId();
-    assertThrows(AuthorizationException.class, () -> recordDeletionMgr.deleteRecord(sharedFolderId, recordId, other));
+    assertThrows(
+        AuthorizationException.class,
+        () -> recordDeletionMgr.deleteRecord(sharedFolderId, recordId, other));
 
     // still should be shared
     assertTrue(regGrpDao.getRecordsSharedByGroup(group.getId()).contains(toShare));
@@ -536,7 +538,8 @@ public class RecordSharingTest extends SpringTransactionalTest {
     logoutAndLoginAs(other);
     // other user can't rename even though is shared with group.
     Long recordId = toShare.getId();
-    assertThrows(AuthorizationException.class, () -> recordMgr.renameRecord("XXX", recordId, other));
+    assertThrows(
+        AuthorizationException.class, () -> recordMgr.renameRecord("XXX", recordId, other));
 
     // get user to create a new folder in the group:
     logoutAndLoginAs(piUser);
@@ -546,7 +549,8 @@ public class RecordSharingTest extends SpringTransactionalTest {
 
     // other user can't rename a folder created by group admin even though is shared with group.
     Long subfolderId = subf.getId();
-    assertThrows(AuthorizationException.class, () -> recordMgr.renameRecord("XXX", subfolderId, other));
+    assertThrows(
+        AuthorizationException.class, () -> recordMgr.renameRecord("XXX", subfolderId, other));
   }
 
   @Test

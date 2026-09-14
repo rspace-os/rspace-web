@@ -39,6 +39,7 @@ import java.io.IOException;
 import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -500,7 +501,7 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
                 afterAdd.getMolecules())
             .stream()
             .filter(m -> !"CCO".equals(m.getSmiles()))
-            .collect(java.util.stream.Collectors.toList());
+            .collect(Collectors.toList());
     deleteAgentDTO.setMolecules(keepMolecules);
 
     MvcResult removeAgentResult =

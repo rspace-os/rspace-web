@@ -1,13 +1,11 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static com.researchspace.testutils.TestGroup.LABADMIN_PREFIX;
-import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -341,7 +339,7 @@ public class GroupControllerMVCIT extends MVCTestBase {
     return mockMvc
         .perform(postCreateNewGroup(piOfNewGroup, user, groupDisplayName, principalName))
         .andExpect(model().hasNoErrors())
-        .andExpect(view().name(containsString("redirect:/groups/view/")))
+        .andExpect(viewNameContains("redirect:/groups/view/"))
         .andReturn();
   }
 
@@ -546,7 +544,8 @@ public class GroupControllerMVCIT extends MVCTestBase {
     logoutAndLoginAs(setup.user);
     var groupFolderId = grp.getCommunalGroupFolderId();
 
-    assertThrows(AuthorizationException.class, () -> folderMgr.getFolder(groupFolderId, setup.user));
+    assertThrows(
+        AuthorizationException.class, () -> folderMgr.getFolder(groupFolderId, setup.user));
   }
 
   @Test
@@ -556,7 +555,7 @@ public class GroupControllerMVCIT extends MVCTestBase {
     // pi without group
     mockMvc
         .perform(get("/groups/viewPIGroup").principal(pi1::getUsername))
-        .andExpect(view().name(containsString("redirect:/userform")))
+        .andExpect(viewNameContains("redirect:/userform"))
         .andReturn();
 
     // regular user
@@ -564,7 +563,7 @@ public class GroupControllerMVCIT extends MVCTestBase {
     logoutAndLoginAs(user1);
     mockMvc
         .perform(get("/groups/viewPIGroup").principal(pi1::getUsername))
-        .andExpect(view().name(containsString("redirect:/userform")))
+        .andExpect(viewNameContains("redirect:/userform"))
         .andReturn();
 
     // pi with group
@@ -573,7 +572,7 @@ public class GroupControllerMVCIT extends MVCTestBase {
     createGroupForUsers(pi1, pi1.getUsername(), "", pi1);
     mockMvc
         .perform(get("/groups/viewPIGroup").principal(pi1::getUsername))
-        .andExpect(view().name(containsString("redirect:/groups/view/")))
+        .andExpect(viewNameContains("redirect:/groups/view/"))
         .andReturn();
   }
 
@@ -591,7 +590,7 @@ public class GroupControllerMVCIT extends MVCTestBase {
                 .param("groupType", "PROJECT_GROUP")
                 .principal(sysadmin::getUsername))
         // Spring 6: model attributes not propagated on redirect; redirect URL confirms success
-        .andExpect(view().name(containsString("redirect:/groups/view/")));
+        .andExpect(viewNameContains("redirect:/groups/view/"));
   }
 
   @Test
@@ -798,7 +797,9 @@ public class GroupControllerMVCIT extends MVCTestBase {
     logoutAndLoginAs(member1);
     var collabGroupId = collabGrp.getId();
 
-    assertThrows(AuthorizationException.class, () -> grpMgr.removeLabGroupMembersFromCollabGroup(collabGroupId, member1));
+    assertThrows(
+        AuthorizationException.class,
+        () -> grpMgr.removeLabGroupMembersFromCollabGroup(collabGroupId, member1));
 
     // butpi can delete him and member1
     logoutAndLoginAs(pi1);

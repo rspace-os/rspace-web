@@ -1,7 +1,5 @@
 package com.researchspace.service;
 
-import org.apache.shiro.authz.AuthorizationException;
-
 import static com.researchspace.core.util.MediaUtils.IMAGES_MEDIA_FLDER_NAME;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -20,6 +18,7 @@ import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.webapp.controller.ServiceLoggerAspct;
+import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -215,14 +214,16 @@ public class FolderManagerSpringTest extends SpringTransactionalTest {
     folderMgr.createNewFolder(userA.getRootFolder().getId(), "any", userA);
     // but can't create stuff in someone elses folder
     Long otherRootFolderId = userB.getRootFolder().getId();
-    assertThrows(AuthorizationException.class, () -> folderMgr.createNewFolder(otherRootFolderId, "any", userA));
+    assertThrows(
+        AuthorizationException.class,
+        () -> folderMgr.createNewFolder(otherRootFolderId, "any", userA));
 
     // same for notebook
     folderMgr.createNewNotebook(
         userA.getRootFolder().getId(), "any", new DefaultRecordContext(), userA);
     DefaultRecordContext context = new DefaultRecordContext();
-    assertThrows(AuthorizationException.class, () ->
-            folderMgr.createNewNotebook(
-                otherRootFolderId, "any", context, userA));
+    assertThrows(
+        AuthorizationException.class,
+        () -> folderMgr.createNewNotebook(otherRootFolderId, "any", context, userA));
   }
 }

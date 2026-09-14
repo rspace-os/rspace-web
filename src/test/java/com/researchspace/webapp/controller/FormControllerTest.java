@@ -1,10 +1,9 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.User;
@@ -124,7 +123,9 @@ public class FormControllerTest extends SpringTransactionalTest {
       rsFormController.setServletContext(new MockServletContext());
       var formId = formU1.getId();
 
-      assertThrows(RecordAccessDeniedException.class, () -> rsFormController.editForm(model, unauthorizedUser::getUsername, formId));
+      assertThrows(
+          RecordAccessDeniedException.class,
+          () -> rsFormController.editForm(model, unauthorizedUser::getUsername, formId));
 
     } finally {
       rsFormController.setServletContext(null);

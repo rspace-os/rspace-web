@@ -1,12 +1,9 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
-import org.apache.shiro.authz.AuthorizationException;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -17,6 +14,7 @@ import com.researchspace.model.dtos.WorkspaceSettings;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
 import java.util.Map;
+import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -104,8 +102,9 @@ public class GalleriesCrudopsMVCIT extends MVCTestBase {
     final User other = createInitAndLoginAnyUser();
     var otherPrincipal = new MockPrincipal(other.getUsername());
 
-    assertThrows(AuthorizationException.class, () ->
-            galleryController.copyGalleries(ids, newNames, otherPrincipal));
+    assertThrows(
+        AuthorizationException.class,
+        () -> galleryController.copyGalleries(ids, newNames, otherPrincipal));
   }
 
   @Test

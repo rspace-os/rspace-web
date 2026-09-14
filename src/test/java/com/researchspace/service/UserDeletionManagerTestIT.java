@@ -1,10 +1,5 @@
 package com.researchspace.service;
 
-import org.apache.shiro.authz.AuthorizationException;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -73,6 +68,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -191,7 +187,8 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     final UserDeletionPolicy policy = getDeleteTempUserPolicy();
 
     Long userId = tempuser.getId();
-    assertThrows(DataAccessException.class, () -> userDeletionMgr.removeUser(userId, policy, sysadmin));
+    assertThrows(
+        DataAccessException.class, () -> userDeletionMgr.removeUser(userId, policy, sysadmin));
   }
 
   @Test
@@ -298,7 +295,8 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     logoutAndLoginAs(notAnAdmin);
     final UserDeletionPolicy policy = unrestrictedDeletionPolicy();
     Long userId = toDelete.getId();
-    assertThrows(AuthorizationException.class, () -> userDeletionMgr.removeUser(userId, policy, notAnAdmin));
+    assertThrows(
+        AuthorizationException.class, () -> userDeletionMgr.removeUser(userId, policy, notAnAdmin));
   }
 
   @Test
@@ -346,7 +344,9 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     ServiceOperationResult<User> report =
         userDeletionMgr.removeUser(piToDelete.getId(), policy, sysadmin);
     assertFalse(report.isSucceeded());
-    assertThat(report.getMessage(), containsString("Sorry, cannot remove the only admin or PI"));
+    assertTrue(
+        report.getMessage().contains("Sorry, cannot remove the only admin or PI"),
+        report.getMessage());
   }
 
   @Test
@@ -485,7 +485,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     final UserDeletionPolicy policy = unrestrictedDeletionPolicy();
     ServiceOperationResult<User> report =
         userDeletionMgr.removeUser(communityAdminToDelete.getId(), policy, sysadmin1);
-    assertThat(report.isSucceeded(), is(true));
+    assertEquals(true, report.isSucceeded());
   }
 
   // RSPAC-1929
@@ -504,7 +504,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     final UserDeletionPolicy policy = unrestrictedDeletionPolicy();
     ServiceOperationResult<User> report =
         userDeletionMgr.removeUser(communityAdminToDelete.getId(), policy, sysadmin1);
-    assertThat(report.isSucceeded(), is(true));
+    assertEquals(true, report.isSucceeded());
   }
 
   private UserDeletionPolicy unrestrictedDeletionPolicy() {
@@ -524,7 +524,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     final UserDeletionPolicy policy = unrestrictedDeletionPolicy();
     ServiceOperationResult<User> report =
         userDeletionMgr.removeUser(communityAdminToDelete.getId(), policy, sysadmin1);
-    assertThat(report.isSucceeded(), is(false));
+    assertEquals(false, report.isSucceeded());
   }
 
   @Test

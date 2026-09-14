@@ -289,7 +289,8 @@ public class SysadminApiControllerTest extends JakartaValidatorTest {
     SysadminUserPaginationCriteria pagination = new SysadminUserPaginationCriteria();
     BeanPropertyBindingResult errors = new BeanPropertyBindingResult(null, "object");
 
-    assertThrows(clazz, () -> controller.getUsers(request, pagination, srchConfig, errors, subject));
+    assertThrows(
+        clazz, () -> controller.getUsers(request, pagination, srchConfig, errors, subject));
   }
 
   ISearchResults<User> mockNUsers(User subject, int numUsers) {

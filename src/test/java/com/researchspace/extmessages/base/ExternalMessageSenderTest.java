@@ -1,7 +1,5 @@
 package com.researchspace.extmessages.base;
 
-import org.apache.shiro.authz.AuthorizationException;
-
 import static com.researchspace.testutils.SystemPropertyTestFactory.createAnyAppWithConfigElements;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -15,6 +13,7 @@ import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.testutils.TestFactory;
 import java.net.URI;
 import java.net.URISyntaxException;
+import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -96,7 +95,8 @@ public class ExternalMessageSenderTest {
     User imposter = TestFactory.createAnyUser("imposter");
     UserAppConfig cfg = createAnyAppWithConfigElements(sender, "message");
     var config = cfg.getAppConfigElementSets().iterator().next();
-    assertThrows(AuthorizationException.class, () -> msteamsSender.sendMessage(null, config, imposter));
+    assertThrows(
+        AuthorizationException.class, () -> msteamsSender.sendMessage(null, config, imposter));
     assertMessageNotPosted();
     verify(messages)
         .getMessage(

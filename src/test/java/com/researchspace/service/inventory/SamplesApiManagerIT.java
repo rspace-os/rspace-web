@@ -1,13 +1,10 @@
 package com.researchspace.service.inventory;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
-import org.hibernate.LazyInitializationException;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.api.v1.model.ApiContainer;
@@ -25,6 +22,7 @@ import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import java.util.List;
+import org.hibernate.LazyInitializationException;
 import org.junit.jupiter.api.Test;
 
 public class SamplesApiManagerIT extends RealTransactionSpringTestBase {
