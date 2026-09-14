@@ -47,24 +47,6 @@ import org.hibernate.search.mapper.pojo.mapping.definition.annotation.PropertyVa
 /** Represents RSInventory SubSample. */
 @Entity
 @Audited
-/*
- * DELIBERATELY NOT @DynamicUpdate, unlike SampleEntity.
- *
- * A stock decrement computes from the row read under the lock, but Hibernate dirty-checks the entity
- * against its LOADED STATE, which is the pre-lock snapshot the scalar reads never refresh. So a
- * request that cached 5 g, waited while another writer committed a top-up to 15 g, then correctly
- * read 15 g and deducted 10 g, assigns 5 g - equal to the cached value. Under @DynamicUpdate the
- * quantity columns are then omitted from the UPDATE: the version and modification date advance, the
- * operation reports success, and the row stays at 15 g with the stock never deducted. Proven by
- * SampleDynamicUpdateIT.aStockDecrementAppliesEvenWhenItsResultEqualsTheCachedQuantity, which fails
- * the moment this annotation is added (Codex review, P1).
- *
- * The full-row UPDATE is what makes the deduction land. Its cost is the field-level last-write-wins
- * GenericDao.lockRowForUpdate documents and DevDocs/adr/0007 accepts: a name another user committed
- * while this request queued for the lock is written back from the snapshot. That is the application
- * norm for every unlocked write path, and the fix for it is a global optimistic-locking change, not
- * an annotation here - which, as above, silently breaks stock accounting instead.
- */
 @Getter
 @Setter
 @EqualsAndHashCode(callSuper = true)
@@ -170,33 +152,6 @@ public class SubSample extends MovableInventoryRecord implements Serializable, Q
   @Transient
   public QuantityInfo getQuantity() {
     return this.getQuantityInfo();
-  }
-
-  /**
-   * Adopts the quantity committed to this record's row, read as a scalar under its row lock.
-   *
-   * <p>Unlike {@link #setQuantity} this does NOT recompute the parent sample's total. The value
-   * being adopted was committed by another transaction, which recomputed that total from the locked
-   * sibling rows before it committed. Recomputing it here would sum THIS transaction's stale
-   * sibling snapshots over the top of that, and would dirty the sample so that the stale total got
-   * written at all (live run 2026-09-13, F1b).
-   *
-   * @param committedQuantity the quantity read under the lock. Null means one thing only here: the
-   *     row's {@code quantityNumericValue} column is NULL. The "no such row" reading of null cannot
-   *     occur, because {@code SubSampleApiManagerImpl.reconcileWithCommittedRow} and {@code
-   *     registerApiSubSampleUsage} both call {@code lockSubSampleForEdit} first, which 404s on a
-   *     missing row before any scalar is read. Such a row is not reachable through the application
-   *     either - {@link #setQuantityInfo} dereferences the numeric value whenever a unit is
-   *     present, and {@code quantityUnitId} is NOT NULL in the schema - so it means legacy or
-   *     externally written data. It is left alone rather than adopted: adopting it would leave the
-   *     entity with no quantity at all and fail the rest of the request on a null dereference,
-   *     which is worse than declining to reconcile a column the application cannot produce (review
-   *     2026-09-14, I3). Pinned by {@code SubSampleTest}.
-   */
-  public void refreshQuantityFromLockedRow(QuantityInfo committedQuantity) {
-    if (committedQuantity != null) {
-      setQuantityInfo(committedQuantity);
-    }
   }
 
   public void setQuantity(QuantityInfo quantityInfo) {
