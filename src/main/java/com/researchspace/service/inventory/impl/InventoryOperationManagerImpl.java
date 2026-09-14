@@ -402,14 +402,13 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
               "errors.inventory.operation.amountTakenExceedsOrigin",
               "Cannot take more from an origin than it currently holds.");
         } else if (amountTakenLostToRounding(origin.getAmountTaken(), currentQuantity)) {
-          // The submitted scalar fits 3dp on its own, but the post-subtraction quantity may not
-          // after unit conversion (0.001 ul from a 1 l origin leaves 999.999999 ml), and
-          // registerApiSubSampleUsage would store it rounded, silently losing the decrement
-          // (Copilot review, PR #1090). Checked with the same sum the decrement itself uses.
+          // The remainder fits no unit in its category, so registerApiSubSampleUsage would store
+          // it rounded and silently lose the decrement. Checked with the same subtraction the
+          // decrement itself uses, so the two can never disagree.
           errors.rejectValue(
               "amountTaken",
               "errors.inventory.operation.amountTakenNotSubtractable",
-              "The amount taken cannot be subtracted exactly from what the origin holds.");
+              "The amount taken is too fine to record against this origin.");
         } else {
           firstOriginQuantity = firstOriginQuantity == null ? currentQuantity : firstOriginQuantity;
         }
@@ -552,27 +551,33 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
   }
 
   /**
-   * Whether the decrement would not subtract exactly what the caller asked for. {@code
-   * registerApiSubSampleUsage} subtracts with {@code QuantityUtils.sum}, whose summing visitor
-   * computes in the LARGER of the two units and whose result persists at 3 decimal places, so
-   * resolution can be lost in the conversion rather than in the submitted scalar. Two ways that
-   * happens, both rejected here:
+   * Whether the decrement would not subtract exactly what the caller asked for.
    *
-   * <ul>
-   *   <li>the amount itself falls below the stored resolution: 0.001 ul from a 1 l origin is 1e-9
-   *       l, rounded away entirely, so the operation would create its output without decrementing
-   *       the origin at all (Copilot review, PR #1090);
-   *   <li>the amount is exactly storable but the REMAINDER is not: 0.5 l is exactly 500 ml, yet
-   *       taking it from a 1500.4 ml origin is computed as 1.0004 l, which rounds to 1 l and
-   *       silently removes an extra 0.4 ml (Codex review, PR #1090).
-   * </ul>
+   * <p>This now means one thing: the remainder fits NO unit in its measurement category. It used to
+   * mean "the remainder does not fit the ORIGIN's unit", which rejected ordinary lab work - 2.5 mg
+   * from a 5 g origin leaves 4.9975 g, four decimal places, refused; and 0.001 ul from a 1 ml
+   * origin leaves 999.999 ul, which is exact and was refused anyway. The column stores a number and
+   * a UNIT ID, so a remainder that will not fit the origin's own unit usually fits one rung down,
+   * and {@code QuantityUtils.subtract} now stores it there (review 2026-09-14, Q1a/Q1b).
    *
-   * <p>A scale-only test of the converted amount catches the first and misses the second, so the
-   * check compares the exact remainder against the value {@code sum} would actually persist, both
-   * expressed in the origin's unit. Conversions use exact power-of-ten unit factors, so nothing is
-   * lost before the comparison. Over-removal is rejected before this runs, so the remainder is
-   * never negative. Missing values, a zero amount and incomparable categories are handled by their
-   * own rules.
+   * <p>What remains rejected is a genuinely unrepresentable amount, and it reaches here through the
+   * arithmetic rather than through the column: summing across a span of unit rungs wide enough to
+   * exceed the working precision loses the decrement outright, for example 0.001 ng taken from a 1
+   * kg origin, where the result rounds back to the untouched 1 kg. Accepting that would create the
+   * operation's output while taking nothing.
+   *
+   * <p>The check compares the exact remainder against the value {@code subtract} would actually
+   * persist, both expressed in the origin's unit, so it tracks whatever that method does rather
+   * than restating its rules. Conversions use exact power-of-ten unit factors, so nothing is lost
+   * before the comparison. Over-removal is rejected before this runs, so the remainder is never
+   * negative. Missing values, a zero amount and incomparable categories are handled by their own
+   * rules; two quantities in the SAME unit are both already stored at 3dp, so their difference is
+   * exact and needs no check at all.
+   *
+   * <p>NOT COVERED: telling the caller that the origin's unit was re-denominated as a result. The
+   * operation response returns the origins, so the new unit is in the payload and the card
+   * re-renders showing it, but nothing announces the change. That is the half of live-run finding
+   * F3 that is a product decision rather than a technical one (review 2026-09-14, Q1c).
    */
   static boolean amountTakenLostToRounding(
       ApiQuantityInfo amountTaken, QuantityInfo originQuantity) {
@@ -593,19 +598,10 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
             .getNumericValue()
             .multiply(exactUnitFactor(amountTaken.getUnitId(), originQuantity.getUnitId()));
     BigDecimal exactRemainder = originQuantity.getNumericValue().subtract(takenInOriginUnit);
-    // The remainder has to survive in the unit the origin is held in. Comparing only the two sums
-    // misses the case where it does not: convertToMoreUsefulUnit moves a sub-unit result down to a
-    // smaller unit where the same value does fit, so 0.001 ul from a 1 ml origin came back as
-    // 999.999 ul, matched, and was accepted - decrementing by an amount the origin's own unit
-    // cannot express and changing its unit underneath the user (live test 2026-09-13, F3).
-    if (!QuantityInfo.canStoreWithoutRounding(exactRemainder)) {
-      return true;
-    }
     QuantityInfo stored =
-        quantityUtils.sum(
-            List.of(
-                originQuantity,
-                new QuantityInfo(amountTaken.getNumericValue(), amountTaken.getUnitId()).negate()));
+        quantityUtils.subtract(
+            originQuantity,
+            new QuantityInfo(amountTaken.getNumericValue(), amountTaken.getUnitId()));
     BigDecimal storedInOriginUnit =
         stored
             .getNumericValue()

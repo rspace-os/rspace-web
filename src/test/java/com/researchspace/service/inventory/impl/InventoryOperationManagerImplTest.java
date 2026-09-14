@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
@@ -879,10 +880,12 @@ class InventoryOperationManagerImplTest {
   }
 
   @Test
-  void rejectsAnAmountTakenWhoseSubtractionWouldBeLostToRounding() throws Exception {
-    // 0.001 ul is itself storable at 3dp, but taking it from a 1 l origin leaves 999.999999 ml,
-    // which the DECIMAL(19,3) column rounds back to 1000 ml: the operation would create its output
-    // without decrementing the origin at all (Copilot review, PR #1090).
+  void aWithdrawalFarBelowTheOriginsOwnResolutionIsAccepted() throws Exception {
+    // 0.001 ul from a 1 l origin leaves 999999.999 ul, which DECIMAL(19,3) holds exactly. This was
+    // rejected on the grounds that the operation would create its output without decrementing the
+    // origin at all, because 0.999999999 l rounds back to 1 l (Copilot review, PR #1090). True of
+    // the value expressed in litres; not true of the value, which is why the remedy is to store it
+    // in the unit that holds it rather than to refuse the operation (review 2026-09-14, Q1b).
     ApiInventoryOperationPost request = new ApiInventoryOperationPost();
     request.setOperationType("derive");
     request.setOrigins(
@@ -892,47 +895,41 @@ class InventoryOperationManagerImplTest {
                 new ApiQuantityInfo(new BigDecimal("0.001"), RSUnitDef.MICRO_LITRE.getId()))));
     request.setNewSample(new ApiSampleWithFullSubSamples("Derived material"));
     originHolds(100L, subSampleHolding("1", RSUnitDef.LITRE.getId()));
+    when(sampleApiMgr.createNewApiSample(any(ApiSampleWithFullSubSamples.class), eq(user)))
+        .thenReturn(new ApiSampleWithFullSubSamples("Derived material"));
 
-    BindException rejection =
-        assertThrows(BindException.class, () -> manager.performOperation(request, user, NONE));
+    assertDoesNotThrow(() -> manager.performOperation(request, user, NONE));
 
-    assertEquals(
-        "errors.inventory.operation.amountTakenNotSubtractable",
-        rejection.getFieldErrors("origins[0].amountTaken").get(0).getCode());
-    verify(sampleApiMgr, never()).createNewApiSample(any(), any());
-    verify(subSampleApiMgr, never()).registerApiSubSampleUsage(any(), any(), any());
+    verify(subSampleApiMgr).registerApiSubSampleUsage(eq(100L), any(), eq(user));
   }
 
   @Test
-  void rejectsAnAmountTakenWhoseSubtractionLosesStockInTheLargerUnit() throws Exception {
-    // 0.5 l converts to exactly 500 ml, so the amount taken is storable in the origin's unit and
-    // the earlier scale-only guard let it through. The subtraction is not: QuantitySummingVisitor
-    // sums in the LARGEST unit of the operands, so 1500.4 ml - 0.5 l is computed as 1.0004 l,
-    // convertToMoreUsefulUnit leaves it in litres, and QuantityInfo rounds it to 1 l. The origin
-    // would silently lose an extra 0.4 ml (Codex review, PR #1090).
+  void aWithdrawalWhoseRemainderNeedsASmallerUnitThanEitherOperandIsAccepted() throws Exception {
+    // 1500.4 ml less 0.5 l. QuantitySummingVisitor works in the LARGEST unit of the operands, so
+    // the remainder arises as 1.0004 l, which does not fit 3dp and used to be rejected as silently
+    // losing an extra 0.4 ml (Codex review, PR #1090). It is 1000.4 ml, which fits, so the
+    // subtraction now steps down to the unit that holds it and no stock is lost either way.
     ApiInventoryOperationPost request = new ApiInventoryOperationPost();
     request.setOperationType("derive");
     request.setOrigins(
         List.of(origin(100L, new ApiQuantityInfo(new BigDecimal("0.5"), RSUnitDef.LITRE.getId()))));
     request.setNewSample(new ApiSampleWithFullSubSamples("Derived material"));
     originHolds(100L, subSampleHolding("1500.4", RSUnitDef.MILLI_LITRE.getId()));
+    when(sampleApiMgr.createNewApiSample(any(ApiSampleWithFullSubSamples.class), eq(user)))
+        .thenReturn(new ApiSampleWithFullSubSamples("Derived material"));
 
-    BindException rejection =
-        assertThrows(BindException.class, () -> manager.performOperation(request, user, NONE));
+    assertDoesNotThrow(() -> manager.performOperation(request, user, NONE));
 
-    assertEquals(
-        "errors.inventory.operation.amountTakenNotSubtractable",
-        rejection.getFieldErrors("origins[0].amountTaken").get(0).getCode());
-    verify(subSampleApiMgr, never()).registerApiSubSampleUsage(any(), any(), any());
+    verify(subSampleApiMgr).registerApiSubSampleUsage(eq(100L), any(), eq(user));
   }
 
   @Test
-  void rejectsAnAmountTakenWhoseRemainderIsNotStorableInTheOriginsOwnUnit() throws Exception {
-    // 0.001 ul from a 1 ml origin leaves 0.999999 ml, which does not fit the origin's own 3dp
-    // storage. The sum does not round it away - convertToMoreUsefulUnit moves the result down to
-    // 999.999 ul, where it does fit - so the guard that only compared the two sums saw no loss and
-    // let it through: the operation was accepted and the origin's unit silently changed from ml to
-    // ul underneath the user (live test 2026-09-13, F3).
+  void aWithdrawalThatRedenominatesTheOriginIsAccepted() throws Exception {
+    // Live-run finding F3, revisited. 0.001 ul from a 1 ml origin came back as 999.999 ul, and the
+    // recorded complaint was that the origin's unit changed underneath the user. That result was
+    // EXACT: no stock was lost. The complaint is a UX one and it was answered by rejecting the
+    // arithmetic, which also made 2.5 mg from 5 g impossible. Accepted again, and the user-facing
+    // half of F3 - telling the caller the unit was re-denominated - is Q1c and still open.
     ApiInventoryOperationPost request = new ApiInventoryOperationPost();
     request.setOperationType("derive");
     request.setOrigins(
@@ -942,14 +939,42 @@ class InventoryOperationManagerImplTest {
                 new ApiQuantityInfo(new BigDecimal("0.001"), RSUnitDef.MICRO_LITRE.getId()))));
     request.setNewSample(new ApiSampleWithFullSubSamples("Derived material"));
     originHolds(100L, subSampleHolding("1", RSUnitDef.MILLI_LITRE.getId()));
+    when(sampleApiMgr.createNewApiSample(any(ApiSampleWithFullSubSamples.class), eq(user)))
+        .thenReturn(new ApiSampleWithFullSubSamples("Derived material"));
 
-    BindException rejection =
-        assertThrows(BindException.class, () -> manager.performOperation(request, user, NONE));
+    assertDoesNotThrow(() -> manager.performOperation(request, user, NONE));
 
-    assertEquals(
-        "errors.inventory.operation.amountTakenNotSubtractable",
-        rejection.getFieldErrors("origins[0].amountTaken").get(0).getCode());
-    verify(subSampleApiMgr, never()).registerApiSubSampleUsage(any(), any(), any());
+    verify(subSampleApiMgr).registerApiSubSampleUsage(eq(100L), any(), eq(user));
+  }
+
+  @Test
+  void aSubUnitWithdrawalIsAccepted() throws Exception {
+    // 2.5 mg from a 5 g origin leaves 4.9975 g, which needs four decimal places and so used to be
+    // refused as unsubtractable. The remainder is not unrepresentable, only unrepresentable IN
+    // GRAMS: it is 4997.5 mg, which the same DECIMAL(19,3) column holds exactly. The column stores
+    // a number and a unit id, so the fix is to store the remainder in the finer unit rather than
+    // to reject ordinary lab work (review 2026-09-14, Q1a/Q1b).
+    ApiInventoryOperationPost request = new ApiInventoryOperationPost();
+    request.setOperationType("derive");
+    request.setOrigins(
+        List.of(
+            origin(
+                100L, new ApiQuantityInfo(new BigDecimal("2.5"), RSUnitDef.MILLI_GRAM.getId()))));
+    request.setNewSample(new ApiSampleWithFullSubSamples("Derived material"));
+    originHolds(100L, subSampleHolding("5", RSUnitDef.GRAM.getId()));
+    when(sampleApiMgr.createNewApiSample(any(ApiSampleWithFullSubSamples.class), eq(user)))
+        .thenReturn(new ApiSampleWithFullSubSamples("Derived material"));
+
+    assertDoesNotThrow(() -> manager.performOperation(request, user, NONE));
+
+    verify(subSampleApiMgr)
+        .registerApiSubSampleUsage(
+            eq(100L),
+            argThat(
+                taken ->
+                    taken.getUnitId().equals(RSUnitDef.MILLI_GRAM.getId())
+                        && new BigDecimal("2.5").compareTo(taken.getNumericValue()) == 0),
+            eq(user));
   }
 
   @Test
