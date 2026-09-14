@@ -281,7 +281,18 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
     if (templateId == null) {
       return null;
     }
-    return assertUserCanReadSampleTemplate(templateId, user);
+    SampleTemplate template = assertUserCanReadSampleTemplate(templateId, user);
+    // Soft deletion means a trashed template still exists and is still readable, so neither the
+    // existence check nor the permission check above rejects one. Creating a sample from a template
+    // the user has thrown away is never intended: the operations wizard could restore a remembered
+    // template that had since been trashed and perform against it (RSDEV-1231). Checked here rather
+    // than in assertUserCanReadSampleTemplate, whose other callers (the template's own GET, its
+    // image and thumbnail, export) must keep reading trashed templates.
+    if (template.isDeleted()) {
+      throw new IllegalArgumentException(
+          messages.getMessage("errors.inventory.template.deleted", new Object[] {templateId}));
+    }
+    return template;
   }
 
   private String getNameForIncomingApiSample(ApiSampleInfo prototypeSample) {
