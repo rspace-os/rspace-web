@@ -100,7 +100,12 @@
       "optionalLinkText": "Optionally, choose a folder or notebook"
     },
     "importFromWord": {
-      "instruction": "Please choose 1 or more <span class=\"importfileType\">Word/OpenOffice</span> files to import:"
+      "instruction": "Please choose 1 or more <span class=\"importfileType\">Word/OpenOffice</span> files to import:",
+      "afterImport": "After importing:",
+      "newDocuments": "Save as new documents",
+      "replaceDocument": "Update selected document",
+      "newEntries": "Save as new entries",
+      "replaceEntry": "Update current entry"
     },
     "moveRecord": {
       "dialogTitle": "Select move target",
@@ -1003,7 +1008,12 @@
         "noFilesError": "No files were submitted! Please choose some Word or text files to upload.",
         "noImporterForFileType": "No importer for file type {0}",
         "progressDescription": "Processed file ''{0}''. Import is {1}% complete.",
-        "progressStarted": "Importing files..."
+        "progressStarted": "Importing files...",
+        "notAuthorized": "You do not have permission to update this document.",
+        "basicDocumentRequired": "Only a Basic Document can be updated from Word.",
+        "oneFileRequired": "Choose exactly one file to update a document.",
+        "targetNotEditable": "This document cannot be updated because it is signed, deleted, or not editable.",
+        "updateAction": "update document from Word"
       }
     }
   },

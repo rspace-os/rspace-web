@@ -7157,13 +7157,16 @@ export default interface Resources {
         },
         "word": {
           "allImported": "All documents imported, reloading page...",
+          "basicDocumentRequired": "Only a Basic Document can be updated from Word.",
           "chooseFiles": "Please choose some {0} files to upload.",
           "converted": "These documents were converted: {0}",
           "folderChooserPrompt": "{0} to put the imported documents. Otherwise, they will be put in the current folder.",
           "importAction": "Importing Word Documents",
           "importTitle": "Import",
           "importing": "Importing files...",
-          "notConverted": "<br>These documents were not converted: {0}"
+          "notConverted": "<br>These documents were not converted: {0}",
+          "oneFileRequired": "Choose exactly one file to update a document.",
+          "selectOneTarget": "Select exactly one target document, or open a notebook entry, to update from Word."
         }
       },
       "directory": {
@@ -9066,7 +9069,12 @@ export default interface Resources {
         "optionalLinkText": "Optionally, choose a folder or notebook"
       },
       "importFromWord": {
-        "instruction": "Please choose 1 or more <span class=\"importfileType\">Word/OpenOffice</span> files to import:"
+        "afterImport": "After importing:",
+        "instruction": "Please choose 1 or more <span class=\"importfileType\">Word/OpenOffice</span> files to import:",
+        "newDocuments": "Save as new documents",
+        "newEntries": "Save as new entries",
+        "replaceDocument": "Update selected document",
+        "replaceEntry": "Update current entry"
       },
       "moveRecord": {
         "dialogTitle": "Select move target",
@@ -9964,12 +9972,17 @@ export default interface Resources {
       },
       "word": {
         "import": {
+          "basicDocumentRequired": "Only a Basic Document can be updated from Word.",
           "createFailed": "Could not create document from {0}",
           "createFailedWithReason": "Could not create document from {0} - {1}",
           "noFilesError": "No files were submitted! Please choose some Word or text files to upload.",
           "noImporterForFileType": "No importer for file type {0}",
+          "notAuthorized": "You do not have permission to update this document.",
+          "oneFileRequired": "Choose exactly one file to update a document.",
           "progressDescription": "Processed file ''{0}''. Import is {1}% complete.",
-          "progressStarted": "Importing files..."
+          "progressStarted": "Importing files...",
+          "targetNotEditable": "This document cannot be updated because it is signed, deleted, or not editable.",
+          "updateAction": "update document from Word"
         }
       }
     },
