@@ -155,9 +155,11 @@ describe("OperationWizard with the real preference hook", () => {
     expect(Object.keys(stored).sort()).toEqual([
       "INVENTORY_OPERATION_PROCESS_NAMES",
       "INVENTORY_OPERATION_PROCESS_NAME_DEFAULTS",
-      "INVENTORY_OPERATION_PROCESS_VALUES",
+      // Derive's own collection (RSDEV-1231), not the legacy shared
+      // INVENTORY_OPERATION_PROCESS_VALUES: nothing writes that key anymore.
+      "INVENTORY_OPERATION_PROCESS_VALUES_DERIVE",
     ]);
-    expect(stored.INVENTORY_OPERATION_PROCESS_VALUES.value).toEqual({
+    expect(stored.INVENTORY_OPERATION_PROCESS_VALUES_DERIVE.value).toEqual({
       "derive dna extraction": {
         values: { count: 1, eachAmount: { numericValue: 5, unitId: 3 }, amountTaken: { numericValue: 1, unitId: 3 } },
         template: { mode: "pick", templateId: 5, templateName: "T5" },
@@ -166,5 +168,45 @@ describe("OperationWizard with the real preference hook", () => {
     });
     expect(stored.INVENTORY_OPERATION_PROCESS_NAMES.value).toEqual({ derive: ["dna extraction"] });
     expect(stored.INVENTORY_OPERATION_PROCESS_NAME_DEFAULTS.value).toEqual({ derive: "dna extraction" });
+  });
+
+  it("still loads a bundle saved under the legacy shared key before the per-operation split", async () => {
+    // Pre-RSDEV-1231 data lives under INVENTORY_OPERATION_PROCESS_VALUES; nothing migrates it, so the
+    // wizard must keep reading it as a fallback until the user re-Performs and re-saves it under
+    // their operation's own key.
+    stored = {
+      INVENTORY_OPERATION_PROCESS_VALUES: {
+        value: {
+          "derive dna extraction": {
+            values: {
+              count: 1,
+              eachAmount: { numericValue: 5, unitId: 3 },
+              amountTaken: { numericValue: 1, unitId: 3 },
+            },
+            template: { mode: "pick", templateId: 5, templateName: "T5" },
+            documentation: { globalId: "SD1", name: "D1" },
+          },
+        },
+        time: 0,
+      },
+    };
+    const user = userEvent.setup();
+    const origin = makeMockSubSample({});
+    vi.spyOn(origin, "fetchAdditionalInfo").mockResolvedValue(undefined);
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <UiPreferences>
+          <OperationWizard open onClose={vi.fn()} origins={[origin]} />
+        </UiPreferences>
+      </QueryClientProvider>,
+    );
+
+    await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
+    await user.type(screen.getByTestId("proc"), "dna extraction");
+
+    // The legacy bundle's amount was restored, so the wizard offers Perform straight away (step one
+    // reviews a complete remembered bundle) instead of requiring the amounts step to be filled again.
+    await waitFor(() => expect(screen.getByRole("button", { name: /wizard\.perform/i })).toBeEnabled());
   });
 });

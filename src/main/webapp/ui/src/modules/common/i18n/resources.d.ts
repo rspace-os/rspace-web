@@ -1115,6 +1115,10 @@ export default interface Resources {
       "viewerTitle": "Ketcher Chemical Viewer (Read-Only)"
     },
     "loading": "Loading",
+    "preferences": {
+      "saveFailedMessage": "This preference did not save to your account and may be lost when you next sign in. Try again, or contact support if this keeps happening.",
+      "saveFailedTitle": "A setting could not be saved"
+    },
     "profile": {
       "accountActivity": {
         "action": "Action",
