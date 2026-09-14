@@ -336,9 +336,18 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
     siblingRowLock.lockSiblingRowsAndRecalculateTotal(dbSubSample.getSample().getId());
     boolean temporaryLock = lockItemForEdit(dbSubSample, user);
     try {
-      // Every stock decrement in the app funnels through here (the operations endpoint,
+      // Every recorded USAGE of stock funnels through here (the operations endpoint,
       // Stoichiometry, List of Materials), so the row lock is taken once here rather than in each
-      // caller. Without it two decrements racing the same subsample both subtract from the same
+      // caller.
+      //
+      // Not every write that reduces stock, and the difference matters. split() reads
+      // origSubSample.getQuantity() off the entity snapshot with no row lock and no
+      // getQuantityForUpdate, divides it and saves, so a 10 g subsample split in two while an
+      // operation commits a 4 g withdrawal writes 5 g + 5 g over rows that should total 6 g.
+      // duplicate() and markSubSampleAsDeleted() share the shape. Pre-existing, outside the change
+      // that added this lock, and deliberately not widened into here: extending the reconcile idiom
+      // to those paths is a separate piece of work (review 2026-09-14, I5). Without it two
+      // decrements racing the same subsample both subtract from the same
       // stale quantity. Routed through lockSubSampleForEdit rather than the DAO so a row that
       // vanished between the two reads is the same localised 404 as anywhere else, instead of a
       // null dereference; the repeat permission check it performs is the same verdict as the one
