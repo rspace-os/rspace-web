@@ -1,4 +1,5 @@
 import type { Locator, Page } from "@playwright/test";
+import type { PublicationKind } from "@/__tests__/e2e/components/myrspace/PublishDialogComponent";
 import { AppHeader } from "@/__tests__/e2e/components/shared/AppHeader";
 import { MessagesAndRequestsDialogComponent } from "@/__tests__/e2e/components/shared/MessagesAndRequestsDialogComponent";
 import type { RecordInfoDialog } from "@/__tests__/e2e/components/shared/RecordInfoDialog";
@@ -66,6 +67,7 @@ export class WorkspacePage extends BasePage {
   }
 
   async releaseOperateAs(): Promise<void> {
+    if (!(await this.operateAsBanner.isVisible().catch(() => false))) return;
     await this.page.locator("#runAs").evaluate((el: HTMLElement) => el.click());
     await this.page.waitForURL((url) => url.pathname === "/workspace");
     await this.operateAsBanner.waitFor({ state: "hidden" });
@@ -175,5 +177,16 @@ export class WorkspacePage extends BasePage {
     const editor = new DocumentEditorPage(this.page);
     await editor.isLoaded();
     return editor;
+  }
+
+  async publishRecord(
+    name: string,
+    kind: PublicationKind,
+    summary: string,
+    displayContactDetails: boolean,
+  ): Promise<void> {
+    await this.table.selectRecord(name);
+    const dialog = await this.selectionBar.publish();
+    await dialog.publish(kind, summary, displayContactDetails);
   }
 }
