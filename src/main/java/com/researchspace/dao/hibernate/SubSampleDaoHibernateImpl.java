@@ -113,5 +113,4 @@ public class SubSampleDaoHibernateImpl extends InventoryDaoHibernate<SubSample, 
         .setParameter("fileProperty", fileProperty)
         .list();
   }
-
 }
