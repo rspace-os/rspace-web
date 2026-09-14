@@ -1,7 +1,6 @@
 package com.researchspace.dao;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.api.v1.model.ApiInventoryDOI;
@@ -48,7 +47,7 @@ public class DigitalObjectIdentifierDaoTest extends SpringTransactionalTest {
     flushDatabaseState();
 
     // THEN
-    assertTrue(daoUnderTest.getActiveIdentifiersByOwner(anotherUser).isEmpty());
-    assertEquals(1, daoUnderTest.getActiveIdentifiersByOwner(admin).size());
+    assertThat(daoUnderTest.getActiveIdentifiersByOwner(anotherUser)).isEmpty();
+    assertThat(daoUnderTest.getActiveIdentifiersByOwner(admin)).hasSize(1);
   }
 }

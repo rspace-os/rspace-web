@@ -1,6 +1,6 @@
 package com.researchspace.api.v1.controller;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -76,7 +76,7 @@ public class InventoryFilesApiControllerTest extends SpringTransactionalTest {
     assertEquals(
         ContentInitializerForDevRunManager.EXAMPLE_TOP_IMAGE_CONTAINER_NAME,
         imageContainer.getName());
-    assertEquals(1, imageContainer.getAttachments().size());
+    assertThat(imageContainer.getAttachments()).hasSize(1);
     ApiInventoryFile defaultAttachment = imageContainer.getAttachments().get(0);
     assertEquals(
         ContentInitializerForDevRunManager.EXAMPLE_TOP_IMAGE_CONTAINER_ATTACHMENT_NAME,
@@ -98,7 +98,7 @@ public class InventoryFilesApiControllerTest extends SpringTransactionalTest {
 
     byte[] content = resp.getContentAsByteArray();
     assertNotNull(content);
-    assertEquals(47, content.length);
+    assertThat(content).hasSize(47);
   }
 
   @Test
@@ -106,7 +106,7 @@ public class InventoryFilesApiControllerTest extends SpringTransactionalTest {
 
     User user = createInitAndLoginAnyUser();
     ApiSampleInfo apiSample = createBasicSampleForUser(user);
-    assertEquals(0, apiSample.getAttachments().size());
+    assertThat(apiSample.getAttachments()).isEmpty();
 
     MockMultipartFile mockFile = createAnyMultipartFile();
     ApiInventoryFilePost settings = new ApiInventoryFilePost();
@@ -123,13 +123,13 @@ public class InventoryFilesApiControllerTest extends SpringTransactionalTest {
     assertFalse(uploadedFile.getDeleted());
 
     apiSample = sampleApiMgr.getApiSampleById(apiSample.getId(), user);
-    assertEquals(1, apiSample.getAttachments().size());
+    assertThat(apiSample.getAttachments()).hasSize(1);
 
     ApiInventoryFile deletedFile = invFilesApi.deleteFile(uploadedFile.getId(), user);
     assertNotNull(deletedFile);
 
     apiSample = sampleApiMgr.getApiSampleById(apiSample.getId(), user);
-    assertEquals(0, apiSample.getAttachments().size());
+    assertThat(apiSample.getAttachments()).isEmpty();
   }
 
   @Test
@@ -172,7 +172,7 @@ public class InventoryFilesApiControllerTest extends SpringTransactionalTest {
   public void uploadChemicalAndRetrieveImageAndChemDtoSuccess() throws Exception {
     User user = createInitAndLoginAnyUser();
     ApiSampleInfo apiSample = createBasicSampleForUser(user);
-    assertEquals(0, apiSample.getAttachments().size());
+    assertThat(apiSample.getAttachments()).isEmpty();
     ApiInventoryFile uploadedFile = createAndUploadChemistryFile(user, apiSample);
 
     mockSuccessChemistryWeb();
@@ -180,7 +180,7 @@ public class InventoryFilesApiControllerTest extends SpringTransactionalTest {
     MockHttpServletResponse resp = new MockHttpServletResponse();
     invFilesApi.getImageBytes(
         uploadedFile.getId(), new ApiInventoryFileImageRequest(1, 1, 1.0), user, resp);
-    assertArrayEquals(new byte[] {1, 2, 3}, resp.getContentAsByteArray());
+    assertThat(resp.getContentAsByteArray()).containsExactly(new byte[] {1, 2, 3});
 
     AjaxReturnObject<ChemEditorInputDto> chemDto =
         invFilesApi.getChemFileDto(uploadedFile.getId(), user);

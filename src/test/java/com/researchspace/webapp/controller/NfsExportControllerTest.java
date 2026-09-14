@@ -1,6 +1,7 @@
 package com.researchspace.webapp.controller;
 
 import static com.researchspace.webapp.controller.ExportControllerTest.createExportArchiveConfigForUser;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -44,15 +45,15 @@ public class NfsExportControllerTest extends SpringTransactionalTest {
 
     Map<String, NfsExportPlan> nfsExportPlansFromSession =
         controller.getNfsExportPlansFromSession(request);
-    assertEquals(0, nfsExportPlansFromSession.size());
+    assertThat(nfsExportPlansFromSession).isEmpty();
 
     ExportArchiveDialogConfigDTO config = createExportArchiveConfigForUser(user.getUsername());
     NfsExportPlan exportPlan = controller.createQuickExportPlan(config, request, principalStub);
     assertNotNull(exportPlan);
-    assertEquals(1, exportPlan.getFoundNfsLinks().size());
-    assertEquals(1, exportPlan.getFoundFileSystems().size());
+    assertThat(exportPlan.getFoundNfsLinks()).hasSize(1);
+    assertThat(exportPlan.getFoundFileSystems()).hasSize(1);
     assertEquals(1, exportPlan.countFileSystemsRequiringLogin());
-    assertEquals(1, nfsExportPlansFromSession.size());
+    assertThat(nfsExportPlansFromSession).hasSize(1);
     assertEquals(
         exportPlan.getPlanId(), nfsExportPlansFromSession.values().iterator().next().getPlanId());
 
@@ -67,10 +68,10 @@ public class NfsExportControllerTest extends SpringTransactionalTest {
 
     NfsExportPlan exportPlan2 = controller.createQuickExportPlan(config, request, principalStub);
     assertNotNull(exportPlan2);
-    assertEquals(1, exportPlan2.getFoundNfsLinks().size());
-    assertEquals(1, exportPlan2.getFoundFileSystems().size());
+    assertThat(exportPlan2.getFoundNfsLinks()).hasSize(1);
+    assertThat(exportPlan2.getFoundFileSystems()).hasSize(1);
     assertEquals(
         0, exportPlan2.countFileSystemsRequiringLogin()); // nfs client reports being logged in
-    assertEquals(2, nfsExportPlansFromSession.size());
+    assertThat(nfsExportPlansFromSession).hasSize(2);
   }
 }

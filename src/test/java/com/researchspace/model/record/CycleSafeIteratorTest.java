@@ -1,5 +1,6 @@
 package com.researchspace.model.record;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -42,7 +43,7 @@ public class CycleSafeIteratorTest {
     Thread.sleep(1);
     CycleSafeIterator it = new CycleSafeIterator(f3);
     // check isolated node returns false
-    assertFalse(it.hasNext());
+    assertThat(it).isExhausted();
     assertThrows(NoSuchElementException.class, it::next);
     // f1->f2->f3,f1->f4
     f1.doAddToParentsOnly(f2, u);

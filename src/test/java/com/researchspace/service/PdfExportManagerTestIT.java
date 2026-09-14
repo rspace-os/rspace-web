@@ -1,5 +1,6 @@
 package com.researchspace.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -70,7 +71,7 @@ public class PdfExportManagerTestIT extends RealTransactionSpringTestBase {
             .get();
     EcatDocumentFile edf = exportEcatDocumentResult.getEcatDocumentFile();
     assertNotNull(edf);
-    assertTrue(edf.getName().contains(exportName));
+    assertThat(edf.getName()).contains(exportName);
 
     assertTrue(fStore.retrieve(edf.getFileProperty()) != null);
 
@@ -86,7 +87,7 @@ public class PdfExportManagerTestIT extends RealTransactionSpringTestBase {
             sysadmin);
     EcatDocumentFile edf2 = exportEcatDocumentResult2.getEcatDocumentFile();
     assertNotNull(edf2);
-    assertTrue(edf2.getName().contains(exportName));
+    assertThat(edf2.getName()).contains(exportName);
   }
 
   @Test

@@ -5,6 +5,7 @@ import static com.researchspace.core.util.TransformerUtils.toSet;
 import static com.researchspace.model.Role.SYSTEM_ROLE;
 import static com.researchspace.testutils.TestFactory.createACommunity;
 import static com.researchspace.testutils.TestFactory.createAnyUser;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -67,7 +68,7 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
     User user = userManager.getUser("1");
     assertTrue(user != null);
     assert user != null;
-    assertTrue(user.getRoles().size() == 1);
+    assertThat(user.getRoles()).hasSize(1);
   }
 
   @Test
@@ -85,7 +86,7 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
     User returned = userManager.saveNewUser(user);
     Mockito.verify(userDao, Mockito.times(1)).saveUser(user);
     Mockito.verify(analyticsManager, Mockito.times(1)).userCreated(user);
-    assertTrue(returned.getRoles().size() == 1);
+    assertThat(returned.getRoles()).hasSize(1);
   }
 
   @Test
@@ -109,7 +110,7 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
     user = userManager.saveNewUser(user);
 
     assertTrue(user.getUsername().equals(uname));
-    assertTrue(user.getRoles().size() == 1);
+    assertThat(user.getRoles()).hasSize(1);
   }
 
   @Test

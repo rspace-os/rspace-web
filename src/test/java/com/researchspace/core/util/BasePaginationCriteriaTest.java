@@ -1,5 +1,6 @@
 package com.researchspace.core.util;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -51,7 +52,7 @@ public class BasePaginationCriteriaTest {
   public void setORderByRejectsSQLChars() {
     pg = new BasicPaginationCriteria<>(Object.class);
     pg.setOrderBy("'%%; delete * from User'");
-    assertTrue(StringUtils.isEmpty(pg.getOrderBy()));
+    assertThat(pg.getOrderBy()).isNullOrEmpty();
     // now an OK value:
     pg.setOrderBy("name");
     assertEquals("name", pg.getOrderBy());
@@ -145,7 +146,7 @@ public class BasePaginationCriteriaTest {
   public void orderByIfNull() {
     pg = new BasicPaginationCriteria<>(Object.class);
     pg.setOrderByIfNull("'%%; delete * from User;'");
-    assertTrue(StringUtils.isEmpty(pg.getOrderBy()));
+    assertThat(pg.getOrderBy()).isNullOrEmpty();
     // now an OK value:
     pg.setOrderByIfNull("name");
     assertEquals("name", pg.getOrderBy());

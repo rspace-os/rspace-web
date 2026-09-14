@@ -1,5 +1,6 @@
 package com.researchspace.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -79,7 +80,7 @@ public class StoichiometryInventoryLinkManagerTest extends SpringTransactionalTe
     User user = createInitAndLoginAnyUser();
     Stoichiometry stoich =
         createStoichiometry(user, analysisOf(ethanol(), molecule("Methanol", "CH4O", "CO", 32.04)));
-    assertEquals(2, stoich.getMolecules().size());
+    assertThat(stoich.getMolecules()).hasSize(2);
     stoich.getMolecules().forEach(m -> m.setActualAmount(0.01)); // 10 mg each
     stoichiometryManager.save(stoich);
 

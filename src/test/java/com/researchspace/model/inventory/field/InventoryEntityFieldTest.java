@@ -1,5 +1,6 @@
 package com.researchspace.model.inventory.field;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -188,7 +189,7 @@ class InventoryEntityFieldTest {
     InventoryDateField field = new InventoryDateField("date");
     IllegalArgumentException exception =
         assertThrows(IllegalArgumentException.class, () -> field.setFieldData(value));
-    assertTrue(exception.getMessage().contains("is invalid for field type Date"));
+    assertThat(exception.getMessage()).contains("is invalid for field type Date");
   }
 
   @ParameterizedTest
@@ -274,7 +275,7 @@ class InventoryEntityFieldTest {
     InventoryTimeField field = new InventoryTimeField("time");
     IllegalArgumentException exception =
         assertThrows(IllegalArgumentException.class, () -> field.setFieldData(value));
-    assertTrue(exception.getMessage().contains("is invalid for field type Time"));
+    assertThat(exception.getMessage()).contains("is invalid for field type Time");
   }
 
   @Test
@@ -286,13 +287,13 @@ class InventoryEntityFieldTest {
     field.setFieldData("test attachment");
     assertEquals(fileA, field.getAttachedFile());
     assertFalse(fileA.isDeleted());
-    assertEquals(1, field.getFiles().size());
+    assertThat(field.getFiles()).hasSize(1);
     assertEquals("test attachment", field.getData());
 
     field.setAttachedFile(fileB);
     assertEquals(fileB, field.getAttachedFile());
     assertTrue(fileA.isDeleted());
-    assertEquals(2, field.getFiles().size());
+    assertThat(field.getFiles()).hasSize(2);
 
     // file parameter validated to be not null
     assertThrows(NullPointerException.class, () -> field.setAttachedFile(null));

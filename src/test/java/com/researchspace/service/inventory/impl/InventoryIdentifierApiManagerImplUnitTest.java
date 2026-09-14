@@ -1,7 +1,7 @@
 package com.researchspace.service.inventory.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -201,9 +201,9 @@ class InventoryIdentifierApiManagerImplUnitTest {
         "Could not publish the instrument PID in B2INST. instrument_type: Missing data for required"
             + " field.",
         thrown.getMessage());
-    assertFalse(
-        thrown.getMessage().contains("Error submitting B2INST record"),
-        "the connector's developer prefix must not appear inside the localized sentence");
+    assertThat(thrown.getMessage())
+        .as("the connector's developer prefix must not appear inside the localized sentence")
+        .doesNotContain("Error submitting B2INST record");
     assertSame(original, thrown.getCause());
   }
 
@@ -397,7 +397,9 @@ class InventoryIdentifierApiManagerImplUnitTest {
 
     ApiInstrument update = instrumentUpdateFor(mgr, instrument, newPidinstRegistration());
 
-    assertTrue(landingPageUpdate(update).isEmpty(), "a typed landing page must not be overwritten");
+    assertThat(landingPageUpdate(update))
+        .as("a typed landing page must not be overwritten")
+        .isEmpty();
   }
 
   /**
@@ -427,7 +429,7 @@ class InventoryIdentifierApiManagerImplUnitTest {
 
     ApiInstrument update = instrumentUpdateFor(mgr, instrumentWithLandingPage(null), publishUpdate);
 
-    assertTrue(landingPageUpdate(update).isEmpty());
+    assertThat(landingPageUpdate(update)).isEmpty();
   }
 
   /** No server URL means no public address to write; the field is left blank rather than junk. */
@@ -438,7 +440,7 @@ class InventoryIdentifierApiManagerImplUnitTest {
     ApiInstrument update =
         instrumentUpdateFor(mgr, instrumentWithLandingPage(null), newPidinstRegistration());
 
-    assertTrue(landingPageUpdate(update).isEmpty());
+    assertThat(landingPageUpdate(update)).isEmpty();
   }
 
   private Method refreshMethod() throws Exception {

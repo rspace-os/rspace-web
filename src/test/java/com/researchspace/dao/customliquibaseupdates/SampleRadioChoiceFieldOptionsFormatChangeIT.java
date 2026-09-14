@@ -1,5 +1,6 @@
 package com.researchspace.dao.customliquibaseupdates;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -46,7 +47,7 @@ public class SampleRadioChoiceFieldOptionsFormatChangeIT extends AbstractDBHelpe
     commitTransaction();
 
     // confirm sample saved
-    assertEquals(5, persistedFields.size());
+    assertThat(persistedFields).hasSize(5);
     var firstField = persistedFields.get(0);
     var secondField = persistedFields.get(1);
     var thirdField = persistedFields.get(2);
@@ -106,7 +107,7 @@ public class SampleRadioChoiceFieldOptionsFormatChangeIT extends AbstractDBHelpe
     commitTransaction();
 
     // confirm sample updated fine and content now parseable
-    assertEquals(5, updatedFields.size());
+    assertThat(updatedFields).hasSize(5);
     // old radio fields
     assertEquals(List.of("option1", "option2"), updatedFields.get(0).getAllOptions());
     assertEquals(List.of("option1"), updatedFields.get(0).getSelectedOptions());

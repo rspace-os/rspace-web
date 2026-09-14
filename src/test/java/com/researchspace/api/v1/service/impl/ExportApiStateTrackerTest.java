@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.service.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.researchspace.archive.ExportRecordList;
@@ -31,14 +32,14 @@ class ExportApiStateTrackerTest {
         IllegalArgumentException.class, () -> tracker.addProgressMonitor("a", replacementMonitor));
 
     // get(id) works as expected
-    assertFalse(tracker.getById("b").isPresent());
-    assertFalse(tracker.getProgressMonitorById("b").isPresent());
-    assertTrue(tracker.getById("a").isPresent());
-    assertTrue(tracker.getProgressMonitorById("a").isPresent());
+    assertThat(tracker.getById("b")).isNotPresent();
+    assertThat(tracker.getProgressMonitorById("b")).isNotPresent();
+    assertThat(tracker.getById("a")).isPresent();
+    assertThat(tracker.getProgressMonitorById("a")).isPresent();
 
     // clear should remove all state for this id
     tracker.clear("a");
-    assertFalse(tracker.getById("a").isPresent());
-    assertFalse(tracker.getProgressMonitorById("a").isPresent());
+    assertThat(tracker.getById("a")).isNotPresent();
+    assertThat(tracker.getProgressMonitorById("a")).isNotPresent();
   }
 }

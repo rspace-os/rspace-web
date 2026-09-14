@@ -1,5 +1,6 @@
 package com.researchspace.service.inventory;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -101,7 +102,9 @@ public class InventoryBulkOperationApiManagerTest extends SpringTransactionalTes
         assertThrows(
             InventoryBulkOperationException.class,
             () -> inventoryBulkOpApiMgr.runBulkOperation(bulkOpConfig));
-    assertTrue(boe.getMessage().contains("is already taken by the record: SS"), boe.getMessage());
+    assertThat(boe.getMessage())
+        .as(boe.getMessage())
+        .contains("is already taken by the record: SS");
   }
 
   @Test

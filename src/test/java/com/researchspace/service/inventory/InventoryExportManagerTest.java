@@ -1,7 +1,7 @@
 package com.researchspace.service.inventory;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -59,17 +59,17 @@ public class InventoryExportManagerTest extends SpringTransactionalTest {
             .getCombinedContent();
 
     // subsamples data
-    assertTrue(
-        sampleAndSubSampleExport.startsWith(
-            "# RSpace Inventory Export\n# Exported content: SUBSAMPLES\n"),
-        sampleAndSubSampleExport);
+    assertThat(sampleAndSubSampleExport)
+        .as(sampleAndSubSampleExport)
+        .startsWith("# RSpace Inventory Export\n# Exported content: SUBSAMPLES\n");
     String expectedSubSampleHeaderLine =
         "Global ID,Name,Tags,Owner,Description,Parent Sample (Global ID),Parent Container (Global"
             + " ID),Quantity,Notes,\"Data (TEXT, SS";
-    assertTrue(
-        sampleAndSubSampleExport.contains(expectedSubSampleHeaderLine), sampleAndSubSampleExport);
-    assertTrue(sampleAndSubSampleExport.contains(",mySubSample,"), sampleAndSubSampleExport);
-    assertTrue(sampleAndSubSampleExport.contains("test note"), sampleAndSubSampleExport);
+    assertThat(sampleAndSubSampleExport)
+        .as(sampleAndSubSampleExport)
+        .contains(expectedSubSampleHeaderLine);
+    assertThat(sampleAndSubSampleExport).as(sampleAndSubSampleExport).contains(",mySubSample,");
+    assertThat(sampleAndSubSampleExport).as(sampleAndSubSampleExport).contains("test note");
   }
 
   @Test
@@ -95,45 +95,47 @@ public class InventoryExportManagerTest extends SpringTransactionalTest {
             .getCombinedContent();
 
     // starts with a container
-    assertTrue(
-        containerAndSampleExport.startsWith(
-            "# RSpace Inventory Export\n# Exported content: CONTAINERS\n"),
-        containerAndSampleExport);
+    assertThat(containerAndSampleExport)
+        .as(containerAndSampleExport)
+        .startsWith("# RSpace Inventory Export\n# Exported content: CONTAINERS\n");
     String expectedContainerHeaderLine =
         "Global ID,Name,Tags,Owner,Description,Parent Container (Global ID),"
             + "Container Type,Can Store Containers (Y/N),Can Store Subsamples (Y/N),"
             + "Number of Stored Containers,Number of Stored Subsamples";
-    assertTrue(
-        containerAndSampleExport.contains(expectedContainerHeaderLine), containerAndSampleExport);
-    assertTrue(containerAndSampleExport.contains(",gridContainer,"), containerAndSampleExport);
-    assertTrue(containerAndSampleExport.contains(",GRID(4x5),Y,Y,0,0"), containerAndSampleExport);
+    assertThat(containerAndSampleExport)
+        .as(containerAndSampleExport)
+        .contains(expectedContainerHeaderLine);
+    assertThat(containerAndSampleExport).as(containerAndSampleExport).contains(",gridContainer,");
+    assertThat(containerAndSampleExport)
+        .as(containerAndSampleExport)
+        .contains(",GRID(4x5),Y,Y,0,0");
 
     // then a sample
-    assertTrue(
-        containerAndSampleExport.contains(
-            "\n# RSpace Inventory Export\n# Exported content: SAMPLES\n"),
-        containerAndSampleExport);
+    assertThat(containerAndSampleExport)
+        .as(containerAndSampleExport)
+        .contains("\n# RSpace Inventory Export\n# Exported content: SAMPLES\n");
     String expectedSampleHeaderLine =
         "Global ID,Name,Tags,Owner,Description,Parent Template (Global ID),Parent Template"
             + " (name),Total Quantity,Expiry Date,Sample Source,Storage Temperature (min),Storage"
             + " Temperature (max)";
-    assertTrue(
-        containerAndSampleExport.contains(expectedSampleHeaderLine), containerAndSampleExport);
-    assertTrue(containerAndSampleExport.contains(",mySample,,"), containerAndSampleExport);
+    assertThat(containerAndSampleExport)
+        .as(containerAndSampleExport)
+        .contains(expectedSampleHeaderLine);
+    assertThat(containerAndSampleExport).as(containerAndSampleExport).contains(",mySample,,");
 
     // then a template
-    assertTrue(
-        containerAndSampleExport.contains(
-            "\n# RSpace Inventory Export\n# Exported content: SAMPLE_TEMPLATES\n"),
-        containerAndSampleExport);
+    assertThat(containerAndSampleExport)
+        .as(containerAndSampleExport)
+        .contains("\n# RSpace Inventory Export\n# Exported content: SAMPLE_TEMPLATES\n");
     String expectedTemplateHeaderLine =
         "Global ID,Name,Tags,Owner,Description,"
             + "Expiry Date,Sample Source,Storage Temperature (min),Storage Temperature (max)";
-    assertTrue(
-        containerAndSampleExport.contains(expectedSampleHeaderLine), containerAndSampleExport);
-    assertTrue(
-        containerAndSampleExport.contains(",test template with radio and number,"),
-        containerAndSampleExport);
+    assertThat(containerAndSampleExport)
+        .as(containerAndSampleExport)
+        .contains(expectedSampleHeaderLine);
+    assertThat(containerAndSampleExport)
+        .as(containerAndSampleExport)
+        .contains(",test template with radio and number,");
 
     // verify the output contains expected number of containers, samples and subsamples
     assertEquals(
@@ -161,54 +163,55 @@ public class InventoryExportManagerTest extends SpringTransactionalTest {
             .getCombinedContent();
 
     // starts with containers
-    assertTrue(
-        allUserItems.startsWith("# RSpace Inventory Export\n# Exported content: CONTAINERS\n"),
-        allUserItems);
+    assertThat(allUserItems)
+        .as(allUserItems)
+        .startsWith("# RSpace Inventory Export\n# Exported content: CONTAINERS\n");
     String expectedContainerHeaderLine =
         "Global ID,Name,Tags,Owner,Description,Parent Container (Global ID),"
             + "Container Type,Can Store Containers (Y/N),Can Store Subsamples (Y/N),"
             + "Number of Stored Containers,Number of Stored Subsamples";
-    assertTrue(allUserItems.contains(expectedContainerHeaderLine), allUserItems);
-    assertTrue(allUserItems.contains(",storage shelf #1 (list container),"), allUserItems);
-    assertTrue(allUserItems.contains(",4-drawer storage unit (image container),"), allUserItems);
-    assertTrue(allUserItems.contains(",96-well plate (12x8 grid),"), allUserItems);
+    assertThat(allUserItems).as(allUserItems).contains(expectedContainerHeaderLine);
+    assertThat(allUserItems).as(allUserItems).contains(",storage shelf #1 (list container),");
+    assertThat(allUserItems).as(allUserItems).contains(",4-drawer storage unit (image container),");
+    assertThat(allUserItems).as(allUserItems).contains(",96-well plate (12x8 grid),");
 
     // continues with samples
-    assertTrue(
-        allUserItems.contains("\n# RSpace Inventory Export\n# Exported content: SAMPLES\n"),
-        allUserItems);
+    assertThat(allUserItems)
+        .as(allUserItems)
+        .contains("\n# RSpace Inventory Export\n# Exported content: SAMPLES\n");
     String expectedSampleHeaderLine =
         "Global ID,Name,Tags,Owner,Description,Parent Template (Global ID),Parent Template"
             + " (name),Total Quantity,Expiry Date,Sample Source,Storage Temperature (min),Storage"
             + " Temperature (max),\"MyNumber (NUMBER, IT";
-    assertTrue(allUserItems.contains(expectedSampleHeaderLine), allUserItems);
-    assertTrue(allUserItems.contains("Complex Sample #1"), allUserItems);
-    assertTrue(allUserItems.contains("Basic Sample"), allUserItems);
+    assertThat(allUserItems).as(allUserItems).contains(expectedSampleHeaderLine);
+    assertThat(allUserItems).as(allUserItems).contains("Complex Sample #1");
+    assertThat(allUserItems).as(allUserItems).contains("Basic Sample");
 
     // continues with subsamples
-    assertTrue(
-        allUserItems.contains("\n# RSpace Inventory Export\n# Exported content: SUBSAMPLES\n"),
-        allUserItems);
+    assertThat(allUserItems)
+        .as(allUserItems)
+        .contains("\n# RSpace Inventory Export\n# Exported content: SUBSAMPLES\n");
     String expectedSubSampleHeaderLine =
         "Global ID,Name,Tags,Owner,Description,Parent Sample (Global ID),"
             + "Parent Container (Global ID),Quantity,Notes,\"My extra number (NUMBER, SS";
-    assertTrue(allUserItems.contains(expectedSubSampleHeaderLine), allUserItems);
-    assertTrue(allUserItems.contains("Complex Sample #1.01"), allUserItems);
-    assertTrue(allUserItems.contains("Basic Sample.01"), allUserItems);
+    assertThat(allUserItems).as(allUserItems).contains(expectedSubSampleHeaderLine);
+    assertThat(allUserItems).as(allUserItems).contains("Complex Sample #1.01");
+    assertThat(allUserItems).as(allUserItems).contains("Basic Sample.01");
 
     // also includes sample templates
-    assertTrue(
-        allUserItems.contains(
-            "\n# RSpace Inventory Export\n# Exported content: SAMPLE_TEMPLATES\n"),
-        allUserItems);
-    assertTrue(allUserItems.contains(",test template with mandatory text field,,"), allUserItems);
+    assertThat(allUserItems)
+        .as(allUserItems)
+        .contains("\n# RSpace Inventory Export\n# Exported content: SAMPLE_TEMPLATES\n");
+    assertThat(allUserItems)
+        .as(allUserItems)
+        .contains(",test template with mandatory text field,,");
 
     // also includes user's instruments (even when not stored in any container)
-    assertTrue(
-        allUserItems.contains("\n# RSpace Inventory Export\n# Exported content: INSTRUMENTS\n"),
-        allUserItems);
-    assertTrue(allUserItems.contains(",myUserInstrument,"), allUserItems);
-    assertTrue(allUserItems.contains("\n" + userInstrument.getGlobalId() + ","), allUserItems);
+    assertThat(allUserItems)
+        .as(allUserItems)
+        .contains("\n# RSpace Inventory Export\n# Exported content: INSTRUMENTS\n");
+    assertThat(allUserItems).as(allUserItems).contains(",myUserInstrument,");
+    assertThat(allUserItems).as(allUserItems).contains("\n" + userInstrument.getGlobalId() + ",");
 
     // verify the output contains expected number of containers, samples and subsamples
     assertEquals(8, StringUtils.countMatches(allUserItems, "\nIC"), allUserItems);
@@ -257,20 +260,22 @@ public class InventoryExportManagerTest extends SpringTransactionalTest {
                 testUser)
             .getCombinedContent();
     // starts with containers
-    assertTrue(
-        containerWithContent.startsWith(
-            "# RSpace Inventory Export\n# Exported content: CONTAINERS\n"),
-        containerWithContent);
-    assertTrue(
-        containerWithContent.contains(",storage shelf #1 (list container),,sampleExportUser"),
-        containerWithContent);
-    assertTrue(
-        containerWithContent.contains(",box #1 (list container),,sampleExportUser"),
-        containerWithContent);
-    assertTrue(
-        containerWithContent.contains(",Basic Sample.01,,sampleExportUser"), containerWithContent);
+    assertThat(containerWithContent)
+        .as(containerWithContent)
+        .startsWith("# RSpace Inventory Export\n# Exported content: CONTAINERS\n");
+    assertThat(containerWithContent)
+        .as(containerWithContent)
+        .contains(",storage shelf #1 (list container),,sampleExportUser");
+    assertThat(containerWithContent)
+        .as(containerWithContent)
+        .contains(",box #1 (list container),,sampleExportUser");
+    assertThat(containerWithContent)
+        .as(containerWithContent)
+        .contains(",Basic Sample.01,,sampleExportUser");
     // includes pi's subsample
-    assertTrue(containerWithContent.contains(",mySubSample,,sampleExportPi"), containerWithContent);
+    assertThat(containerWithContent)
+        .as(containerWithContent)
+        .contains(",mySubSample,,sampleExportPi");
 
     // verify the output contains expected number of containers, samples and subsamples
     assertEquals(7, StringUtils.countMatches(containerWithContent, "\nIC"), containerWithContent);
@@ -284,17 +289,17 @@ public class InventoryExportManagerTest extends SpringTransactionalTest {
                 List.of(testUser.getUsername()), CsvExportMode.COMPACT, true, testUser)
             .getCombinedContent();
     // starts with containers
-    assertTrue(
-        allUserItems.startsWith("# RSpace Inventory Export\n# Exported content: CONTAINERS\n"),
-        allUserItems);
-    assertTrue(
-        allUserItems.contains(",storage shelf #1 (list container),,sampleExportUser"),
-        allUserItems);
-    assertTrue(
-        allUserItems.contains(",4-drawer storage unit (image container),,sampleExportUser"),
-        allUserItems);
+    assertThat(allUserItems)
+        .as(allUserItems)
+        .startsWith("# RSpace Inventory Export\n# Exported content: CONTAINERS\n");
+    assertThat(allUserItems)
+        .as(allUserItems)
+        .contains(",storage shelf #1 (list container),,sampleExportUser");
+    assertThat(allUserItems)
+        .as(allUserItems)
+        .contains(",4-drawer storage unit (image container),,sampleExportUser");
     // includes pi's subsample
-    assertTrue(allUserItems.contains(",mySubSample,,sampleExportPi"), allUserItems);
+    assertThat(allUserItems).as(allUserItems).contains(",mySubSample,,sampleExportPi");
 
     // verify the output contains expected number of containers, samples and subsamples
     assertEquals(8, StringUtils.countMatches(allUserItems, "\nIC"), allUserItems);
@@ -347,30 +352,29 @@ public class InventoryExportManagerTest extends SpringTransactionalTest {
                 pi)
             .getCombinedContent();
     // starts with containers
-    assertTrue(
-        containerWithContentPiExport.startsWith(
-            "# RSpace Inventory Export\n# Exported content: CONTAINERS\n"),
-        containerWithContentPiExport);
-    assertTrue(
-        containerWithContentPiExport.contains(",piTopContainer,,sampleExportPi"),
-        containerWithContentPiExport);
-    assertTrue(
-        containerWithContentPiExport.contains(",piSubContainer,,sampleExportPi"),
-        containerWithContentPiExport);
-    assertTrue(
-        containerWithContentPiExport.contains(",piSubSubContainer,,sampleExportPi"),
-        containerWithContentPiExport);
+    assertThat(containerWithContentPiExport)
+        .as(containerWithContentPiExport)
+        .startsWith("# RSpace Inventory Export\n# Exported content: CONTAINERS\n");
+    assertThat(containerWithContentPiExport)
+        .as(containerWithContentPiExport)
+        .contains(",piTopContainer,,sampleExportPi");
+    assertThat(containerWithContentPiExport)
+        .as(containerWithContentPiExport)
+        .contains(",piSubContainer,,sampleExportPi");
+    assertThat(containerWithContentPiExport)
+        .as(containerWithContentPiExport)
+        .contains(",piSubSubContainer,,sampleExportPi");
     // pi has only limited read to user container, so won't be able to export it
-    assertFalse(
-        containerWithContentPiExport.contains(",userContainer,,sampleExportUser"),
-        containerWithContentPiExport);
+    assertThat(containerWithContentPiExport)
+        .as(containerWithContentPiExport)
+        .doesNotContain(",userContainer,,sampleExportUser");
     // pi can no longer see subsample nor subcontainer
-    assertFalse(
-        containerWithContentPiExport.contains(",userSubContainer,,sampleExportUser"),
-        containerWithContentPiExport);
-    assertFalse(
-        containerWithContentPiExport.contains(",mySubSample,,sampleExportUser"),
-        containerWithContentPiExport);
+    assertThat(containerWithContentPiExport)
+        .as(containerWithContentPiExport)
+        .doesNotContain(",userSubContainer,,sampleExportUser");
+    assertThat(containerWithContentPiExport)
+        .as(containerWithContentPiExport)
+        .doesNotContain(",mySubSample,,sampleExportUser");
 
     // verify the output contains expected number of containers, samples and subsamples
     assertEquals(
@@ -398,27 +402,26 @@ public class InventoryExportManagerTest extends SpringTransactionalTest {
                 testUser)
             .getCombinedContent();
     // starts with containers
-    assertTrue(
-        containerWithContentUserExport.startsWith(
-            "# RSpace Inventory Export\n# Exported content: CONTAINERS\n"),
-        containerWithContentUserExport);
-    assertTrue(
-        containerWithContentUserExport.contains(",piSubContainer,,sampleExportPi"),
-        containerWithContentUserExport);
+    assertThat(containerWithContentUserExport)
+        .as(containerWithContentUserExport)
+        .startsWith("# RSpace Inventory Export\n# Exported content: CONTAINERS\n");
+    assertThat(containerWithContentUserExport)
+        .as(containerWithContentUserExport)
+        .contains(",piSubContainer,,sampleExportPi");
     // contains user's container, subcontainer and subsample
-    assertTrue(
-        containerWithContentUserExport.contains(",userContainer,,sampleExportUser"),
-        containerWithContentUserExport);
-    assertTrue(
-        containerWithContentUserExport.contains(",userSubContainer,,sampleExportUser"),
-        containerWithContentUserExport);
-    assertTrue(
-        containerWithContentUserExport.contains(",mySubSample,,sampleExportUser"),
-        containerWithContentUserExport);
+    assertThat(containerWithContentUserExport)
+        .as(containerWithContentUserExport)
+        .contains(",userContainer,,sampleExportUser");
+    assertThat(containerWithContentUserExport)
+        .as(containerWithContentUserExport)
+        .contains(",userSubContainer,,sampleExportUser");
+    assertThat(containerWithContentUserExport)
+        .as(containerWithContentUserExport)
+        .contains(",mySubSample,,sampleExportUser");
     // doesn't contain pi's subsubcontainer, which user can no longer see
-    assertFalse(
-        containerWithContentUserExport.contains(",piSubContainer2,,sampleExportPi"),
-        containerWithContentUserExport);
+    assertThat(containerWithContentUserExport)
+        .as(containerWithContentUserExport)
+        .doesNotContain(",piSubContainer2,,sampleExportPi");
 
     // verify the output contains expected number of containers, samples and subsamples
     assertEquals(
@@ -484,14 +487,14 @@ public class InventoryExportManagerTest extends SpringTransactionalTest {
                 testUser)
             .getCombinedContent();
 
-    assertTrue(
-        instrumentExport.startsWith("# RSpace Inventory Export\n# Exported content: INSTRUMENTS\n"),
-        instrumentExport);
+    assertThat(instrumentExport)
+        .as(instrumentExport)
+        .startsWith("# RSpace Inventory Export\n# Exported content: INSTRUMENTS\n");
     String expectedInstrumentHeader =
         "Global ID,Name,Tags,Owner,Description,"
             + "Parent Template (Global ID),Parent Template (name),Parent Container (Global ID)";
-    assertTrue(instrumentExport.contains(expectedInstrumentHeader), instrumentExport);
-    assertTrue(instrumentExport.contains(",selectedInstrument,"), instrumentExport);
+    assertThat(instrumentExport).as(instrumentExport).contains(expectedInstrumentHeader);
+    assertThat(instrumentExport).as(instrumentExport).contains(",selectedInstrument,");
     assertEquals(1, StringUtils.countMatches(instrumentExport, "\nIN"), instrumentExport);
   }
 
@@ -520,15 +523,13 @@ public class InventoryExportManagerTest extends SpringTransactionalTest {
             .getCombinedContent();
 
     // container appears first, then the stored instrument
-    assertTrue(
-        containerWithContent.startsWith(
-            "# RSpace Inventory Export\n# Exported content: CONTAINERS\n"),
-        containerWithContent);
-    assertTrue(
-        containerWithContent.contains(
-            "\n# RSpace Inventory Export\n# Exported content: INSTRUMENTS\n"),
-        containerWithContent);
-    assertTrue(containerWithContent.contains(",storedInstrument,"), containerWithContent);
+    assertThat(containerWithContent)
+        .as(containerWithContent)
+        .startsWith("# RSpace Inventory Export\n# Exported content: CONTAINERS\n");
+    assertThat(containerWithContent)
+        .as(containerWithContent)
+        .contains("\n# RSpace Inventory Export\n# Exported content: INSTRUMENTS\n");
+    assertThat(containerWithContent).as(containerWithContent).contains(",storedInstrument,");
     assertEquals(1, StringUtils.countMatches(containerWithContent, "\nIN"), containerWithContent);
   }
 
@@ -564,16 +565,18 @@ public class InventoryExportManagerTest extends SpringTransactionalTest {
             .getCombinedContent();
 
     // subsamples data
-    assertTrue(
-        sampleAndSubSampleExport.startsWith(
-            "# RSpace Inventory Export\n# Exported content: LIST_OF_MATERIALS\n"),
-        sampleAndSubSampleExport);
+    assertThat(sampleAndSubSampleExport)
+        .as(sampleAndSubSampleExport)
+        .startsWith("# RSpace Inventory Export\n# Exported content: LIST_OF_MATERIALS\n");
     String expectedLomHeaderLine =
         "List of Materials (Global ID),List of Materials (Name),Used Material (Global ID),Used"
             + " Material (Name),Used Material (Type),Used Quantity\n";
-    assertTrue(sampleAndSubSampleExport.contains(expectedLomHeaderLine), sampleAndSubSampleExport);
-    assertTrue(sampleAndSubSampleExport.contains(",mySample,SAMPLE"), sampleAndSubSampleExport);
-    assertTrue(
-        sampleAndSubSampleExport.contains(",mySubSample,SUBSAMPLE,1 ml"), sampleAndSubSampleExport);
+    assertThat(sampleAndSubSampleExport)
+        .as(sampleAndSubSampleExport)
+        .contains(expectedLomHeaderLine);
+    assertThat(sampleAndSubSampleExport).as(sampleAndSubSampleExport).contains(",mySample,SAMPLE");
+    assertThat(sampleAndSubSampleExport)
+        .as(sampleAndSubSampleExport)
+        .contains(",mySubSample,SUBSAMPLE,1 ml");
   }
 }

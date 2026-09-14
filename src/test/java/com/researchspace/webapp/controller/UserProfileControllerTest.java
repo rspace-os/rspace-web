@@ -2,6 +2,7 @@ package com.researchspace.webapp.controller;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
 import static com.researchspace.testutils.TestFactory.createOAuthTokenForUI;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -117,7 +118,7 @@ public class UserProfileControllerTest {
     // then
     assertNull(aro.getData());
     assertNotNull(aro.getError());
-    assertEquals(List.of("failed-message"), aro.getErrorMsg().getErrorMessages());
+    assertThat(aro.getErrorMsg().getErrorMessages()).containsExactly("failed-message");
   }
 
   @Test
@@ -136,7 +137,7 @@ public class UserProfileControllerTest {
     verify(oAuthAppManager, never()).removeApp(sessionUser, clientId);
     assertNull(aro.getData());
     assertNotNull(aro.getError());
-    assertEquals(List.of("failed-message"), aro.getErrorMsg().getErrorMessages());
+    assertThat(aro.getErrorMsg().getErrorMessages()).containsExactly("failed-message");
   }
 
   @Test
@@ -155,7 +156,7 @@ public class UserProfileControllerTest {
     verify(oAuthAppManager).removeApp(sessionUser, clientId);
     assertNull(aro.getData());
     assertNotNull(aro.getError());
-    assertEquals(List.of("succeeded"), aro.getErrorMsg().getErrorMessages());
+    assertThat(aro.getErrorMsg().getErrorMessages()).containsExactly("succeeded");
   }
 
   @Test
@@ -172,7 +173,7 @@ public class UserProfileControllerTest {
 
     // then
     assertNotNull(aro.getData());
-    assertEquals(1, aro.getData().getOAuthConnectedApps().size());
+    assertThat(aro.getData().getOAuthConnectedApps()).hasSize(1);
     assertEquals(
         appInfo.getAppName(), aro.getData().getOAuthConnectedApps().get(0).getClientName());
   }
@@ -342,19 +343,18 @@ public class UserProfileControllerTest {
   }
 
   private void assertAccountEventsVisible(User queryUser, boolean expected) {
-    assertEquals(
-        expected ? 1 : 0,
-        userProfileController.getAccountEventsByUser(queryUser.getId()).getData().size());
+    assertThat(userProfileController.getAccountEventsByUser(queryUser.getId()).getData())
+        .hasSize(expected ? 1 : 0);
   }
 
   private void assertGroupHidden(AjaxReturnObject<List<UserGroupInfo>> ugs) {
-    assertEquals(1, ugs.getData().size());
+    assertThat(ugs.getData()).hasSize(1);
     assertTrue(ugs.getData().get(0).getPrivateGroup());
     assertNull(ugs.getData().get(0).getGroupDisplayName());
   }
 
   private void assertGroupViewable(AjaxReturnObject<List<UserGroupInfo>> ugs) {
-    assertEquals(1, ugs.getData().size());
+    assertThat(ugs.getData()).hasSize(1);
     assertFalse(ugs.getData().get(0).getPrivateGroup());
     assertNotNull(ugs.getData().get(0).getGroupDisplayName());
   }

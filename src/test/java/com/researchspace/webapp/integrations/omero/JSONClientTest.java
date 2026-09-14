@@ -16,6 +16,7 @@ import static com.researchspace.webapp.integrations.omero.OmeroJsonTestMother.sc
 import static com.researchspace.webapp.integrations.omero.OmeroJsonTestMother.urlsJson;
 import static com.researchspace.webapp.integrations.omero.OmeroJsonTestMother.versionJson;
 import static com.researchspace.webapp.integrations.omero.OmeroJsonTestMother.wellsForPlateJson;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.testutils.StubHttpServer;
@@ -74,7 +75,7 @@ public class JSONClientTest {
         .query("offset", "0")
         .respond(projectsJson);
     Collection<JsonObject> projects = jsonClient.listProjects();
-    assertEquals(113, projects.size());
+    assertThat(projects).hasSize(113);
   }
 
   @SneakyThrows
@@ -86,7 +87,7 @@ public class JSONClientTest {
         .query("offset", "0")
         .respond(screensJson);
     Collection<JsonObject> screens = jsonClient.listScreens();
-    assertEquals(97, screens.size());
+    assertThat(screens).hasSize(97);
   }
 
   @SneakyThrows
@@ -100,7 +101,7 @@ public class JSONClientTest {
         .respond(datasetsForProjectJson);
     JsonObject project = jsonClient.getProjectWithId(51L);
     Collection<JsonObject> datasets = jsonClient.listDatasetsForProject(project);
-    assertEquals(10, datasets.size());
+    assertThat(datasets).hasSize(10);
   }
 
   @SneakyThrows
@@ -113,7 +114,7 @@ public class JSONClientTest {
         .respond(imagesForDatasetJson);
     JsonObject dataset = jsonClient.getDataSetWithId("51");
     Collection<JsonObject> images = jsonClient.listImagesForDataset(dataset);
-    assertEquals(33, images.size());
+    assertThat(images).hasSize(33);
   }
 
   @SneakyThrows
@@ -126,7 +127,7 @@ public class JSONClientTest {
         .respond(wellsForPlateJson);
     JsonObject plate = jsonClient.getPlateWithId("422");
     Collection<JsonObject> wells = jsonClient.listWellsForPlateAcquisition(plate, 422L, 0);
-    assertEquals(96, wells.size());
+    assertThat(wells).hasSize(96);
   }
 
   @SneakyThrows
@@ -140,7 +141,7 @@ public class JSONClientTest {
         .respond(platesForScreenJson);
     JsonObject screen = jsonClient.getScreenWithId(51L);
     Collection<JsonObject> plates = jsonClient.listPlatesForScreen(screen);
-    assertEquals(85, plates.size());
+    assertThat(plates).hasSize(85);
   }
 
   // All data responses larger than 'limit' (omero sets limit at 200), are handled by common code.
@@ -164,7 +165,7 @@ public class JSONClientTest {
         .query("offset", "400")
         .respond(large_data_3_json);
     Collection<JsonObject> projects = jsonClient.listProjects();
-    assertEquals(410, projects.size());
+    assertThat(projects).hasSize(410);
   }
 
   @SneakyThrows
@@ -175,7 +176,7 @@ public class JSONClientTest {
         .query("screen", "102")
         .respond(screenAnnotationsJson);
     List<String> annotations = jsonClient.getAnnotations(baseUrl, "screen", 102L);
-    assertEquals(18, annotations.size());
+    assertThat(annotations).hasSize(18);
     List<String> expected =
         List.of(
             "Sample Type = cell",

@@ -1,7 +1,7 @@
 package com.researchspace.webapp.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -154,7 +154,7 @@ public class JournalControllerMVCIT extends MVCTestBase {
       result.andExpect(jsonPath("$[0].id").value(entry.getId().intValue()));
     } else {
       String body = result.andReturn().getResponse().getContentAsString();
-      assertFalse(body.contains(entry.getId() + ""), body);
+      assertThat(body).as(body).doesNotContain(entry.getId() + "");
     }
     if (isMatch) {
       result.andExpect(jsonPath("$.length()").value(1));

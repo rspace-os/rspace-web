@@ -1,5 +1,6 @@
 package com.researchspace.service.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -153,7 +154,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
     StockDeductionResult result =
         manager.deductStock(requestedStoichiometryId, List.of(321L), user);
 
-    assertEquals(1, result.getResults().size());
+    assertThat(result.getResults()).hasSize(1);
     assertFalse(result.getResults().get(0).isSuccess());
     assertEquals(
         String.format(
@@ -181,7 +182,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
 
     StockDeductionResult result = manager.deductStock(stoichiometryId, List.of(321L), user);
 
-    assertEquals(1, result.getResults().size());
+    assertThat(result.getResults()).hasSize(1);
     assertTrue(result.getResults().get(0).isSuccess());
     assertEquals(Long.valueOf(stoichiometryId), result.getStoichiometryId());
     assertTrue(original.isStockDeducted());
@@ -215,7 +216,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
         .registerApiSubSampleUsage(eq(invSubSample.getId()), any(QuantityInfo.class), eq(user));
     // but the public API contract is one result row per submitted entry, so the response
     // cardinality is unchanged: three rows, all reporting the single deduction's outcome
-    assertEquals(3, result.getResults().size());
+    assertThat(result.getResults()).hasSize(3);
     result
         .getResults()
         .forEach(
@@ -244,7 +245,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
 
     StockDeductionResult result = manager.deductStock(stoichiometryId, List.of(321L), user);
 
-    assertEquals(1, result.getResults().size());
+    assertThat(result.getResults()).hasSize(1);
     assertFalse(result.getResults().get(0).isSuccess());
     assertEquals(
         "Insufficient stock to perform this action. Attempting to use 20 g of stock amount 5 g"
@@ -280,7 +281,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
 
     StockDeductionResult result = manager.deductStock(stoichiometryId, List.of(101L), user);
 
-    assertEquals(1, result.getResults().size());
+    assertThat(result.getResults()).hasSize(1);
     assertEquals(Long.valueOf(101L), result.getResults().get(0).getLinkId());
     assertEquals("Molecule 1 Not Found", result.getResults().get(0).getErrorMessage());
     assertFalse(result.getResults().get(0).isSuccess());
@@ -304,7 +305,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
 
     StockDeductionResult result = manager.deductStock(stoichiometryId, List.of(102L), user);
 
-    assertEquals(1, result.getResults().size());
+    assertThat(result.getResults()).hasSize(1);
     assertEquals(Long.valueOf(102L), result.getResults().get(0).getLinkId());
     assertEquals("Molecule 2 Insufficient Stock", result.getResults().get(0).getErrorMessage());
     assertFalse(result.getResults().get(0).isSuccess());
@@ -328,7 +329,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
 
     StockDeductionResult result = manager.deductStock(stoichiometryId, List.of(103L), user);
 
-    assertEquals(1, result.getResults().size());
+    assertThat(result.getResults()).hasSize(1);
     assertEquals(Long.valueOf(103L), result.getResults().get(0).getLinkId());
     assertEquals(
         "An internal error occurred while deducting stock",

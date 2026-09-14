@@ -1,5 +1,6 @@
 package com.researchspace.dao;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -86,12 +87,11 @@ public class SampleTemplateDaoTest extends SpringTransactionalTest {
     // All initially visible templates must be owned by either the default owner or the test user.
     if (defaultOwner != null) {
       final String finalDefaultOwner = defaultOwner;
-      assertTrue(
-          initialTemplates.getResults().stream()
-              .allMatch(
-                  t ->
-                      t.getOwner().getUsername().equals(finalDefaultOwner)
-                          || t.getOwner().getUsername().equals(user.getUsername())));
+      assertThat(initialTemplates.getResults())
+          .allMatch(
+              t ->
+                  t.getOwner().getUsername().equals(finalDefaultOwner)
+                      || t.getOwner().getUsername().equals(user.getUsername()));
     }
 
     // a new template of the user's own must become visible to them
@@ -100,9 +100,7 @@ public class SampleTemplateDaoTest extends SpringTransactionalTest {
     ISearchResults<SampleTemplate> updatedTemplates =
         sampleTemplateDao.getTemplatesForUser(pgCrit, null, null, user);
     assertEquals(initialCount + 1, updatedTemplates.getTotalHits().longValue());
-    assertTrue(
-        updatedTemplates.getResults().stream()
-            .anyMatch(t -> t.getId().equals(ownTemplate.getId())));
+    assertThat(updatedTemplates.getResults()).anyMatch(t -> t.getId().equals(ownTemplate.getId()));
 
     // Compute the true default owner now that ownTemplate is persisted (cache may have been
     // populated before ownTemplate existed; reset to get an accurate picture).
@@ -117,19 +115,17 @@ public class SampleTemplateDaoTest extends SpringTransactionalTest {
       // Aged-DB path: default templates pre-exist and are owned by a DIFFERENT user.
       // ownTemplate is a private template of `user`, so `otherUser` must NOT see it,
       // and the count for `otherUser` stays at `initialCount` (only default-owner templates).
-      assertTrue(
-          otherUserTemplates.getResults().stream()
-              .noneMatch(t -> t.getId().equals(ownTemplate.getId())),
-          "otherUser should not see user's private template");
+      assertThat(otherUserTemplates.getResults())
+          .as("otherUser should not see user's private template")
+          .noneMatch(t -> t.getId().equals(ownTemplate.getId()));
       assertEquals(
           initialCount,
           otherUserTemplates.getTotalHits().longValue(),
           "otherUser count must equal the pre-existing default-owner template count");
       final String finalCurrentDefaultOwner = currentDefaultOwner;
-      assertTrue(
-          otherUserTemplates.getResults().stream()
-              .anyMatch(t -> t.getOwner().getUsername().equals(finalCurrentDefaultOwner)),
-          "otherUser must see at least one default-owner template");
+      assertThat(otherUserTemplates.getResults())
+          .as("otherUser must see at least one default-owner template")
+          .anyMatch(t -> t.getOwner().getUsername().equals(finalCurrentDefaultOwner));
     } else {
       // Fresh-DB path: `user` IS the default owner.
       // The visibility rule exposes ALL templates owned by the default user to every user,
@@ -140,10 +136,9 @@ public class SampleTemplateDaoTest extends SpringTransactionalTest {
           initialCount + 1,
           otherUserTemplates.getTotalHits().longValue(),
           "otherUser must see all default-owner templates plus ownTemplate");
-      assertTrue(
-          otherUserTemplates.getResults().stream()
-              .anyMatch(t -> t.getId().equals(ownTemplate.getId())),
-          "ownTemplate must be visible to otherUser when user is the default owner");
+      assertThat(otherUserTemplates.getResults())
+          .as("ownTemplate must be visible to otherUser when user is the default owner")
+          .anyMatch(t -> t.getId().equals(ownTemplate.getId()));
     }
   }
 

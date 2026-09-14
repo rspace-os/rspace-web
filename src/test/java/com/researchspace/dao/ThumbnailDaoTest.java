@@ -1,5 +1,6 @@
 package com.researchspace.dao;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
@@ -23,7 +24,7 @@ public class ThumbnailDaoTest extends SpringTransactionalTest {
     Thumbnail thumbnail1 = TestFactory.createThumbnail(100, 100);
     thumbnail1.setSourceParentId(2L);
     thumbnailDao.save(thumbnail1);
-    assertEquals(1, thumbnailDao.getByFieldId(thumbnail1.getSourceParentId()).size());
+    assertThat(thumbnailDao.getByFieldId(thumbnail1.getSourceParentId())).hasSize(1);
   }
 
   @Test
@@ -51,7 +52,7 @@ public class ThumbnailDaoTest extends SpringTransactionalTest {
     // Make sure it's handing us separate objects for different sizes
     assertNotSame(thumbnail100.getId(), thumbnail200.getId());
 
-    assertEquals(2, thumbnailDao.getAll().size());
+    assertThat(thumbnailDao.getAll()).hasSize(2);
 
     // Check that a get against a nonexistent size doesn't work
     Thumbnail thumbnail3 = TestFactory.createThumbnail(300, 300);
@@ -61,7 +62,7 @@ public class ThumbnailDaoTest extends SpringTransactionalTest {
     // Make sure a delete against a different id doesn't delete any of our
     // thumbnails
     thumbnailDao.deleteAllThumbnails(SourceType.IMAGE, 2l);
-    assertEquals(thumbnailDao.getAll().size(), 2);
+    assertThat(thumbnailDao.getAll()).hasSize(2);
 
     // Try deleting one of our thumbnails. Make sure it only deleted the one
     // we intended.
@@ -75,7 +76,7 @@ public class ThumbnailDaoTest extends SpringTransactionalTest {
     // Make sure a delete against a different parent id doesn't delete any
     // of our thumbnails
     thumbnailDao.deleteAllThumbnails(SourceType.IMAGE, 1l, -1l);
-    assertEquals(thumbnailDao.getAll().size(), 1);
+    assertThat(thumbnailDao.getAll()).hasSize(1);
 
     // Next, we will add a thumbnail with a source parent id
     Thumbnail thumbnail5 = TestFactory.createThumbnail(100, 100);
@@ -107,12 +108,12 @@ public class ThumbnailDaoTest extends SpringTransactionalTest {
     assertNotSame(thumbnail100.getId(), thumbnail100_4.getId());
     assertNotSame(thumbnail100_5.getId(), thumbnail100_4.getId());
 
-    assertEquals(thumbnailDao.getAll().size(), 3);
+    assertThat(thumbnailDao.getAll()).hasSize(3);
 
     // Delete using the parent id and revision id and make sure it only
     // deletes the correct one
     thumbnailDao.deleteAllThumbnails(SourceType.IMAGE, 1l, 10l, 20l);
-    assertEquals(thumbnailDao.getAll().size(), 2);
+    assertThat(thumbnailDao.getAll()).hasSize(2);
     for (Thumbnail thumbnail : thumbnailDao.getAll()) {
       assertNotSame(thumbnail.getId(), thumbnail100_4.getId());
     }
@@ -120,11 +121,11 @@ public class ThumbnailDaoTest extends SpringTransactionalTest {
     // Delete using the parent id and make sure it only deletes the correct
     // one
     thumbnailDao.deleteAllThumbnails(SourceType.IMAGE, 1l, 10l);
-    assertEquals(thumbnailDao.getAll().size(), 1);
+    assertThat(thumbnailDao.getAll()).hasSize(1);
     assertEquals(thumbnailDao.getAll().get(0).getId(), thumbnail1.getId());
 
     // Now delete all thumbnails and make sure they're gone
     thumbnailDao.deleteAllThumbnails(SourceType.IMAGE, 1l);
-    assertEquals(thumbnailDao.getAll().size(), 0);
+    assertThat(thumbnailDao.getAll()).isEmpty();
   }
 }

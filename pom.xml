@@ -796,6 +796,15 @@
       <scope>runtime</scope>
     </dependency>
     <dependency>
+      <!-- Used only where JUnit has no equivalent assertion: collections, maps, string
+           content, Optional, numeric comparison and files. Equality, boolean, null, same,
+           instanceOf and exception checks stay on org.junit.jupiter.api.Assertions. -->
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+      <version>${assertj.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <!-- No test in this project uses Hamcrest, but spring-test's MockRestRequestMatchers and
            MockMvcResultMatchers declare Matcher-typed overloads, and javac must load
            org.hamcrest.Matcher to resolve calls against them. Compile-support only: assertions
@@ -2542,6 +2551,8 @@
     <hibernate.logLevel>ERROR</hibernate.logLevel>
 
     <javax.cache.version>1.1.1</javax.cache.version>
+
+    <assertj.version>3.27.7</assertj.version>
 
     <!-- TEMPORARY: rspace-parent 3.2.0 still manages Mockito 3.7.7. Parent 3.3.0 carries
          5.23.0, so delete this override once the pinned parent version is bumped. -->

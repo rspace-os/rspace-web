@@ -1,6 +1,6 @@
 package com.researchspace.service;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.Constants;
@@ -84,7 +84,7 @@ public class PermissionsPerformanceTest {
     utils.filter(toFilter, PermissionType.RENAME, u);
     sw.split();
     assertTrue(sw.getSplitTime() < 1500, "Should be less than 1500ms but was " + sw.getSplitTime());
-    assertEquals(NUM_RECORDS_TO_CREATE, toFilter.size());
+    assertThat(toFilter).hasSize(NUM_RECORDS_TO_CREATE);
   }
 
   private User createUser(String uname) {

@@ -1,7 +1,7 @@
 package com.researchspace.b2inst.model.metadata;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -52,7 +52,7 @@ class B2instInstrumentMetadataDateJsonTest {
     Map<String, Object> json =
         mapper.readValue(mapper.writeValueAsString(new B2instInstrumentMetadata()), JSON_OBJECT);
 
-    assertFalse(json.containsKey("Date"));
+    assertThat(json).doesNotContainKey("Date");
   }
 
   @Test
@@ -62,7 +62,7 @@ class B2instInstrumentMetadataDateJsonTest {
             "{\"Date\":[{\"Date\":\"2023-12-01\",\"dateType\":\"Commissioned\"}]}",
             B2instInstrumentMetadata.class);
 
-    assertEquals(1, metadata.getDate().size());
+    assertThat(metadata.getDate()).hasSize(1);
     assertEquals("2023-12-01", metadata.getDate().get(0).getDate());
     assertEquals("Commissioned", metadata.getDate().get(0).getDateType());
   }

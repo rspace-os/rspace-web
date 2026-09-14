@@ -1,5 +1,6 @@
 package com.researchspace.webapp.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -24,8 +25,8 @@ public class BaseControllerTest {
     HttpHeaders hdrs = new HttpHeaders();
     Date date = new Date();
     bc.setCacheTimeInBrowser(1000, date, hdrs);
-    assertTrue(hdrs.getCacheControl().contains("1000"));
-    assertTrue(date.getTime() - hdrs.getLastModified() < 1000); // rounds to
+    assertThat(hdrs.getCacheControl()).contains("1000");
+    assertThat(date.getTime() - hdrs.getLastModified()).isLessThan(1000); // rounds to
     // second
     bc.setCacheTimeInBrowser(1000, null, hdrs); // null is ok
   }

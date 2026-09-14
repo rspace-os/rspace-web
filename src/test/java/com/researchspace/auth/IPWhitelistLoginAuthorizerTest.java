@@ -1,5 +1,6 @@
 package com.researchspace.auth;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -96,7 +97,7 @@ public class IPWhitelistLoginAuthorizerTest extends SpringTransactionalTest {
 
   private void assertLoginFailed(User sysadmin, Subject subject) throws Exception {
     assertFalse(ipAuth.isLoginPermitted(req, resp, sysadmin));
-    assertTrue(getRedirectUrl().contains(IPWhitelistLoginAuthorizer.REDIRECT_FOR_IP_FAILURE));
+    assertThat(getRedirectUrl()).contains(IPWhitelistLoginAuthorizer.REDIRECT_FOR_IP_FAILURE);
     assertFalse(subject.isAuthenticated());
   }
 

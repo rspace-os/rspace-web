@@ -1,5 +1,6 @@
 package com.researchspace.service.inventory.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -64,7 +65,7 @@ public class InventoryAuditApiManagerVersionTest {
 
     ApiInventoryRecordRevisionList result = mgr.getInventoryRecordRevisions(current);
 
-    assertEquals(1, result.getRevisions().size());
+    assertThat(result.getRevisions()).hasSize(1);
     assertEquals("Alice Smith", result.getRevisions().get(0).getRecord().getModifiedByFullName());
   }
 
@@ -81,7 +82,7 @@ public class InventoryAuditApiManagerVersionTest {
 
     ApiInventoryRecordRevisionList result = mgr.getInventoryRecordRevisions(current);
 
-    assertEquals(2, result.getRevisions().size());
+    assertThat(result.getRevisions()).hasSize(2);
     result
         .getRevisions()
         .forEach(rev -> assertEquals("Alice Smith", rev.getRecord().getModifiedByFullName()));

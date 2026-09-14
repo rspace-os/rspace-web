@@ -1,6 +1,7 @@
 package com.researchspace.api.v1.controller;
 
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -57,14 +58,14 @@ public class InstrumentsApiControllerMVCIT extends API_MVC_InventoryTestBase {
     assertEquals(anyUser.getUsername(), created.getModifiedBy());
     assertNotNull(created.getOwner());
     assertEquals(anyUser.getUsername(), created.getOwner().getUsername());
-    assertFalse(created.getLinks().isEmpty());
-    assertTrue(created.getLinkOfType(ApiLinkItem.SELF_REL).isPresent());
-    assertTrue(
-        created
-            .getLinkOfType(ApiLinkItem.SELF_REL)
-            .orElseThrow(() -> new IllegalStateException("missing self link"))
-            .getLink()
-            .endsWith("/api/inventory/v1/instruments/" + created.getId()));
+    assertThat(created.getLinks()).isNotEmpty();
+    assertThat(created.getLinkOfType(ApiLinkItem.SELF_REL)).isPresent();
+    assertThat(
+            created
+                .getLinkOfType(ApiLinkItem.SELF_REL)
+                .orElseThrow(() -> new IllegalStateException("missing self link"))
+                .getLink())
+        .endsWith("/api/inventory/v1/instruments/" + created.getId());
   }
 
   @Test
@@ -84,8 +85,8 @@ public class InstrumentsApiControllerMVCIT extends API_MVC_InventoryTestBase {
     assertNotNull(retrieved);
     assertEquals(instrument.getId(), retrieved.getId());
     assertEquals("myInstrument", retrieved.getName());
-    assertEquals(0, retrieved.getFields().size());
-    assertEquals(0, retrieved.getExtraFields().size());
+    assertThat(retrieved.getFields()).isEmpty();
+    assertThat(retrieved.getExtraFields()).isEmpty();
     assertFalse(retrieved.isStoredInContainer());
   }
 
@@ -253,7 +254,7 @@ public class InstrumentsApiControllerMVCIT extends API_MVC_InventoryTestBase {
         getFromJsonResponseBody(result, ApiInstrumentSearchResult.class);
     assertNotNull(allInstruments);
     assertEquals(3, allInstruments.getTotalHits().intValue());
-    assertEquals(3, allInstruments.getInstruments().size());
+    assertThat(allInstruments.getInstruments()).hasSize(3);
 
     // pagination
     result =
@@ -267,8 +268,8 @@ public class InstrumentsApiControllerMVCIT extends API_MVC_InventoryTestBase {
     ApiInstrumentSearchResult page =
         getFromJsonResponseBody(result, ApiInstrumentSearchResult.class);
     assertEquals(3, page.getTotalHits().intValue());
-    assertEquals(2, page.getInstruments().size());
-    assertEquals(2, page.getLinks().size()); // self, next
+    assertThat(page.getInstruments()).hasSize(2);
+    assertThat(page.getLinks()).hasSize(2); // self, next
   }
 
   @Test
@@ -403,7 +404,7 @@ public class InstrumentsApiControllerMVCIT extends API_MVC_InventoryTestBase {
     assertNotNull(copy);
     assertNotNull(copy.getId());
     assertFalse(copy.getId().equals(instrument.getId()));
-    assertTrue(copy.getName().contains("original"));
+    assertThat(copy.getName()).contains("original");
     assertEquals(anyUser.getUsername(), copy.getOwner().getUsername());
   }
 
@@ -436,7 +437,7 @@ public class InstrumentsApiControllerMVCIT extends API_MVC_InventoryTestBase {
     assertNull(result.getResolvedException());
     ApiInventoryRecordRevisionList history =
         getFromJsonResponseBody(result, ApiInventoryRecordRevisionList.class);
-    assertEquals(2, history.getRevisions().size());
+    assertThat(history.getRevisions()).hasSize(2);
 
     Long firstRevisionId = history.getRevisions().get(0).getRevisionId();
     assertEquals("rev-test", history.getRevisions().get(0).getRecord().getName());
@@ -458,11 +459,8 @@ public class InstrumentsApiControllerMVCIT extends API_MVC_InventoryTestBase {
     assertNotNull(rev1);
     assertEquals("rev-test", rev1.getName());
     assertEquals(firstRevisionId, rev1.getRevisionId());
-    assertTrue(
-        rev1.getLinkOfType(ApiLinkItem.SELF_REL)
-            .get()
-            .getLink()
-            .endsWith("/revisions/" + firstRevisionId));
+    assertThat(rev1.getLinkOfType(ApiLinkItem.SELF_REL).get().getLink())
+        .endsWith("/revisions/" + firstRevisionId);
   }
 
   @Test
@@ -505,7 +503,7 @@ public class InstrumentsApiControllerMVCIT extends API_MVC_InventoryTestBase {
 
     ApiInstrument created = mvcUtils.getFromJsonResponseBody(createResult, ApiInstrument.class);
     assertNotNull(created);
-    assertTrue(created.getLinkOfType(ApiLinkItem.IMAGE_REL).isPresent());
+    assertThat(created.getLinkOfType(ApiLinkItem.IMAGE_REL)).isPresent();
 
     // GET image
     MvcResult imageResult =
@@ -518,7 +516,7 @@ public class InstrumentsApiControllerMVCIT extends API_MVC_InventoryTestBase {
                     anyUser))
             .andExpect(status().isOk())
             .andReturn();
-    assertTrue(imageResult.getResponse().getContentAsByteArray().length > 0);
+    assertThat(imageResult.getResponse().getContentAsByteArray().length).isGreaterThan(0);
 
     // GET thumbnail
     MvcResult thumbResult =
@@ -531,7 +529,7 @@ public class InstrumentsApiControllerMVCIT extends API_MVC_InventoryTestBase {
                     anyUser))
             .andExpect(status().isOk())
             .andReturn();
-    assertTrue(thumbResult.getResponse().getContentAsByteArray().length > 0);
+    assertThat(thumbResult.getResponse().getContentAsByteArray().length).isGreaterThan(0);
   }
 
   @Test
@@ -558,7 +556,7 @@ public class InstrumentsApiControllerMVCIT extends API_MVC_InventoryTestBase {
     assertEquals(template.getId(), created.getTemplateId());
     assertEquals(template.getVersion(), created.getTemplateVersion());
     // basic template has one field — should be copied onto the instrument
-    assertEquals(1, created.getFields().size());
+    assertThat(created.getFields()).hasSize(1);
     assertEquals(template.getFields().get(0).getName(), created.getFields().get(0).getName());
   }
 
@@ -745,9 +743,9 @@ public class InstrumentsApiControllerMVCIT extends API_MVC_InventoryTestBase {
     ApiInstrument created = postInstrumentFromTemplate(anyUser, apiKey, templateId);
 
     assertNotNull(created.getGlobalId());
-    assertTrue(
-        StringUtils.isBlank(landingPageOf(created)),
-        "expected a blank landing page, got: " + landingPageOf(created));
+    assertThat(landingPageOf(created))
+        .as("expected a blank landing page, got: " + landingPageOf(created))
+        .isBlank();
   }
 
   /**
@@ -787,8 +785,8 @@ public class InstrumentsApiControllerMVCIT extends API_MVC_InventoryTestBase {
             .andReturn();
     ApiInstrument updated = mvcUtils.getFromJsonResponseBody(result, ApiInstrument.class);
 
-    assertTrue(
-        StringUtils.isBlank(landingPageOf(updated)),
-        "expected the cleared value to stay cleared, got: " + landingPageOf(updated));
+    assertThat(landingPageOf(updated))
+        .as("expected the cleared value to stay cleared, got: " + landingPageOf(updated))
+        .isBlank();
   }
 }

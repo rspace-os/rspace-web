@@ -1,7 +1,7 @@
 package com.researchspace.core.util;
 
 import static java.util.Arrays.asList;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -75,7 +75,7 @@ public class ObjectToStringTransformerTest {
     List<TestObject> list = Arrays.asList(new TestObject[] {f1, f2});
     transformer = new ObjectToStringPropertyTransformer<>("p1");
     List<String> usages = list.stream().map(transformer).collect(Collectors.toList());
-    assertEquals(2, usages.size());
+    assertThat(usages).hasSize(2);
   }
 
   @Test
@@ -87,7 +87,7 @@ public class ObjectToStringTransformerTest {
     List<TestObject> list = asList(new TestObject[] {f1, f2});
     transformer = new ObjectToStringPropertyTransformer<>("inner.p1");
     List<String> usages = list.stream().map(transformer).collect(Collectors.toList());
-    assertEquals(2, usages.size());
+    assertThat(usages).hasSize(2);
     assertTrue(usages.contains("inner1") && usages.contains("inner2"));
   }
 

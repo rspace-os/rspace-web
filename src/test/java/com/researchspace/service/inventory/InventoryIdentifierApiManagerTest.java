@@ -1,6 +1,7 @@
 package com.researchspace.service.inventory;
 
 import static com.researchspace.webapp.integrations.datacite.DataCiteConnectorDummy.DUMMY_VALID_DOI;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -57,11 +58,11 @@ public class InventoryIdentifierApiManagerTest extends SpringTransactionalTest {
   @Test
   public void registerNewIdentifierForInstrumentUsesPidinstWorkflow() {
     ApiInstrument createdInstrument = createBasicInstrumentForUser(user);
-    assertEquals(0, createdInstrument.getIdentifiers().size());
+    assertThat(createdInstrument.getIdentifiers()).isEmpty();
 
     ApiInventoryRecordInfo updatedInstrument =
         inventoryIdentifierApiMgr.registerNewIdentifier(createdInstrument.getOid(), user);
-    assertEquals(1, updatedInstrument.getIdentifiers().size());
+    assertThat(updatedInstrument.getIdentifiers()).hasSize(1);
 
     ApiInventoryDOI createdDoi = updatedInstrument.getIdentifiers().get(0);
     assertEquals("PIDINST_DATACITE", createdDoi.getDoiType());
@@ -118,7 +119,7 @@ public class InventoryIdentifierApiManagerTest extends SpringTransactionalTest {
 
     ApiInventoryRecordInfo deletedIdentifierInstrument =
         inventoryIdentifierApiMgr.deleteAssociatedIdentifier(instrumentOid, user);
-    assertEquals(0, deletedIdentifierInstrument.getIdentifiers().size());
+    assertThat(deletedIdentifierInstrument.getIdentifiers()).isEmpty();
     assertEquals(InventorySettingType.PIDINST, dataCiteConnectorDummy.getLastSettingTypeUsed());
   }
 
@@ -131,7 +132,7 @@ public class InventoryIdentifierApiManagerTest extends SpringTransactionalTest {
         assertThrows(
             IllegalArgumentException.class,
             () -> inventoryIdentifierApiMgr.registerNewIdentifier(templateId, user));
-    assertTrue(iae.getMessage().contains("unsupported type for minting"), iae.getMessage());
+    assertThat(iae.getMessage()).as(iae.getMessage()).contains("unsupported type for minting");
     // the type check runs before any DataCite call, so no draft DOI was leaked
     assertNull(dataCiteConnectorDummy.getDoiSentToDatacite());
   }
@@ -155,17 +156,17 @@ public class InventoryIdentifierApiManagerTest extends SpringTransactionalTest {
   @Test
   public void registerUpdateDeleteNewIdentifiers() {
     ApiSampleWithFullSubSamples createdSample = createComplexSampleForUser(user);
-    assertEquals(1, createdSample.getTags().size());
-    assertEquals(0, createdSample.getIdentifiers().size());
+    assertThat(createdSample.getTags()).hasSize(1);
+    assertThat(createdSample.getIdentifiers()).isEmpty();
     ApiSubSample createdSubSample = createdSample.getSubSamples().get(0);
-    assertEquals(0, createdSubSample.getIdentifiers().size());
+    assertThat(createdSubSample.getIdentifiers()).isEmpty();
     ApiContainer createdContainer = createBasicContainerForUser(user);
-    assertEquals(0, createdContainer.getIdentifiers().size());
+    assertThat(createdContainer.getIdentifiers()).isEmpty();
 
     ApiInventoryRecordInfo updatedSample =
         inventoryIdentifierApiMgr.registerNewIdentifier(createdSample.getOid(), user);
-    assertEquals(1, updatedSample.getTags().size()); // RSDEV-76
-    assertEquals(1, updatedSample.getIdentifiers().size());
+    assertThat(updatedSample.getTags()).hasSize(1); // RSDEV-76
+    assertThat(updatedSample.getIdentifiers()).hasSize(1);
     ApiInventoryDOI sampleDoi = updatedSample.getIdentifiers().get(0);
     assertEquals("Material Sample", sampleDoi.getResourceType());
     assertEquals("draft", sampleDoi.getState());
@@ -182,7 +183,7 @@ public class InventoryIdentifierApiManagerTest extends SpringTransactionalTest {
         inventoryIdentifierApiMgr.getInventoryRecordByIdentifierId(sampleDoi.getId());
     assertNotNull(sampleFoundByDoiId);
     assertEquals(createdSample.getGlobalId(), sampleFoundByDoiId.getOid().getIdString());
-    assertEquals(1, sampleFoundByDoiId.getActiveIdentifiers().size());
+    assertThat(sampleFoundByDoiId.getActiveIdentifiers()).hasSize(1);
     assertEquals(sampleDoi.getId(), sampleFoundByDoiId.getActiveIdentifiers().get(0).getId());
     assertNotNull(sampleFoundByDoiId.getActiveIdentifiers().get(0).getPublicLink());
 
@@ -198,31 +199,31 @@ public class InventoryIdentifierApiManagerTest extends SpringTransactionalTest {
 
     // run the sample/identifiers update
     updatedSample = sampleApiMgr.updateApiSample(sampleUpdate, user);
-    assertEquals(1, updatedSample.getIdentifiers().size());
+    assertThat(updatedSample.getIdentifiers()).hasSize(1);
     sampleDoi = updatedSample.getIdentifiers().get(0);
-    assertEquals(1, sampleDoi.getSubjects().size());
-    assertEquals(1, sampleDoi.getDescriptions().size());
-    assertEquals(1, sampleDoi.getAlternateIdentifiers().size());
-    assertEquals(1, sampleDoi.getDates().size());
+    assertThat(sampleDoi.getSubjects()).hasSize(1);
+    assertThat(sampleDoi.getDescriptions()).hasSize(1);
+    assertThat(sampleDoi.getAlternateIdentifiers()).hasSize(1);
+    assertThat(sampleDoi.getDates()).hasSize(1);
     assertEquals(Boolean.TRUE, sampleDoi.getCustomFieldsOnPublicPage());
     // check geolocation save/retrieval
-    assertEquals(2, sampleDoi.getGeoLocations().size());
+    assertThat(sampleDoi.getGeoLocations()).hasSize(2);
     assertNull(sampleDoi.getGeoLocations().get(0).getGeoLocationInPolygonPoint());
     assertNotNull(sampleDoi.getGeoLocations().get(1).getGeoLocationInPolygonPoint());
 
     // delete the identifier
     updatedSample =
         inventoryIdentifierApiMgr.deleteAssociatedIdentifier(createdSample.getOid(), user);
-    assertEquals(0, updatedSample.getIdentifiers().size());
+    assertThat(updatedSample.getIdentifiers()).isEmpty();
 
     // confirm with subsample/container
     ApiInventoryRecordInfo updatedSubSample =
         inventoryIdentifierApiMgr.registerNewIdentifier(createdSubSample.getOid(), user);
-    assertEquals(1, updatedSubSample.getIdentifiers().size());
+    assertThat(updatedSubSample.getIdentifiers()).hasSize(1);
     assertEquals("Material Sample", updatedSubSample.getIdentifiers().get(0).getResourceType());
     ApiInventoryRecordInfo updatedContainer =
         inventoryIdentifierApiMgr.registerNewIdentifier(createdContainer.getOid(), user);
-    assertEquals(1, updatedContainer.getIdentifiers().size());
+    assertThat(updatedContainer.getIdentifiers()).hasSize(1);
     assertEquals("Material Sample", updatedContainer.getIdentifiers().get(0).getResourceType());
   }
 
@@ -231,7 +232,7 @@ public class InventoryIdentifierApiManagerTest extends SpringTransactionalTest {
     int initialDbSize = doiDao.getAll().size();
     List<ApiInventoryDOI> result = inventoryIdentifierApiMgr.registerBulkIdentifiers(3, user);
 
-    assertEquals(3, result.size());
+    assertThat(result).hasSize(3);
 
     assertNull(result.get(0).getAssociatedGlobalId());
     assertEquals("draft", result.get(0).getState());
@@ -240,7 +241,7 @@ public class InventoryIdentifierApiManagerTest extends SpringTransactionalTest {
     assertNull(result.get(2).getAssociatedGlobalId());
     assertEquals("draft", result.get(2).getState());
 
-    assertEquals(initialDbSize + 3, doiDao.getAll().size()); // make sure they are saved to DB
+    assertThat(doiDao.getAll()).hasSize(initialDbSize + 3); // make sure they are saved to DB
 
     // cleanup identifiers
     inventoryIdentifierApiMgr.deleteUnassociatedIdentifier(result.get(0), user);
@@ -271,19 +272,19 @@ public class InventoryIdentifierApiManagerTest extends SpringTransactionalTest {
     // WHEN we search for any "valid" DOI --> THEN assert the result
     List<ApiInventoryDOI> userExistingDoiAssociatedAndDraft =
         inventoryIdentifierApiMgr.findIdentifiers("draft", true, DUMMY_VALID_DOI, true, user);
-    assertEquals(1, userExistingDoiAssociatedAndDraft.size());
+    assertThat(userExistingDoiAssociatedAndDraft).hasSize(1);
     userExistingDoiAssociatedAndDraft =
         inventoryIdentifierApiMgr.findIdentifiers(
             "draft", true, "https://doi.org/" + DUMMY_VALID_DOI, true, user);
-    assertEquals(1, userExistingDoiAssociatedAndDraft.size());
+    assertThat(userExistingDoiAssociatedAndDraft).hasSize(1);
     userExistingDoiAssociatedAndDraft =
         inventoryIdentifierApiMgr.findIdentifiers(
             "draft", true, "doi.org/" + DUMMY_VALID_DOI, true, user);
-    assertEquals(1, userExistingDoiAssociatedAndDraft.size());
+    assertThat(userExistingDoiAssociatedAndDraft).hasSize(1);
     userExistingDoiAssociatedAndDraft =
         inventoryIdentifierApiMgr.findIdentifiers(
             "draft", true, DUMMY_VALID_DOI.substring(0, DUMMY_VALID_DOI.length() - 3), true, user);
-    assertEquals(1, userExistingDoiAssociatedAndDraft.size());
+    assertThat(userExistingDoiAssociatedAndDraft).hasSize(1);
     userExistingDoiAssociatedAndDraft =
         inventoryIdentifierApiMgr.findIdentifiers(
             "draft",
@@ -291,7 +292,7 @@ public class InventoryIdentifierApiManagerTest extends SpringTransactionalTest {
             "https://doi.org/" + DUMMY_VALID_DOI.substring(0, DUMMY_VALID_DOI.length() - 3),
             true,
             user);
-    assertEquals(1, userExistingDoiAssociatedAndDraft.size());
+    assertThat(userExistingDoiAssociatedAndDraft).hasSize(1);
     userExistingDoiAssociatedAndDraft =
         inventoryIdentifierApiMgr.findIdentifiers(
             "draft",
@@ -299,7 +300,7 @@ public class InventoryIdentifierApiManagerTest extends SpringTransactionalTest {
             "doi.org/" + DUMMY_VALID_DOI.substring(0, DUMMY_VALID_DOI.length() - 3),
             true,
             user);
-    assertEquals(1, userExistingDoiAssociatedAndDraft.size());
+    assertThat(userExistingDoiAssociatedAndDraft).hasSize(1);
     userExistingDoiAssociatedAndDraft =
         inventoryIdentifierApiMgr.findIdentifiers(
             "draft",
@@ -307,22 +308,22 @@ public class InventoryIdentifierApiManagerTest extends SpringTransactionalTest {
             "doi.org/" + DUMMY_VALID_DOI.substring(0, DUMMY_VALID_DOI.length() - 3),
             false, // do not allow substring search
             user);
-    assertEquals(0, userExistingDoiAssociatedAndDraft.size());
+    assertThat(userExistingDoiAssociatedAndDraft).isEmpty();
 
     // WHEN we search for any "NON valid" DOI --> THEN assert the result
     List<ApiInventoryDOI> userNotExistingDoiAssociatedAndDraft =
         inventoryIdentifierApiMgr.findIdentifiers(
             "draft", true, "NOT_" + DUMMY_VALID_DOI, true, user);
-    assertTrue(userNotExistingDoiAssociatedAndDraft.isEmpty());
+    assertThat(userNotExistingDoiAssociatedAndDraft).isEmpty();
 
-    assertEquals(initialDbSize + 5, doiDao.getAll().size());
+    assertThat(doiDao.getAll()).hasSize(initialDbSize + 5);
 
     // delete associated identifiers
-    assertTrue(
-        inventoryIdentifierApiMgr
-            .deleteAssociatedIdentifier(createdSample.getOid(), user)
-            .getIdentifiers()
-            .isEmpty());
+    assertThat(
+            inventoryIdentifierApiMgr
+                .deleteAssociatedIdentifier(createdSample.getOid(), user)
+                .getIdentifiers())
+        .isEmpty();
     // delete Unassociated identifiers
     List<ApiInventoryDOI> anotherUserNotAssociated =
         inventoryIdentifierApiMgr.findIdentifiers(null, false, null, true, anotherUser);
@@ -376,32 +377,32 @@ public class InventoryIdentifierApiManagerTest extends SpringTransactionalTest {
         inventoryIdentifierApiMgr.findIdentifiers(null, false, null, true, anotherUser);
 
     // THEN
-    assertEquals(3, userAll.size());
-    assertEquals(1, userAssociated.size());
+    assertThat(userAll).hasSize(3);
+    assertThat(userAssociated).hasSize(1);
     assertEquals(user, userAssociated.get(0).getOwner());
-    assertEquals(1, userAssociatedAndDraft.size());
-    assertTrue(userAssociatedAndRegistered.isEmpty());
+    assertThat(userAssociatedAndDraft).hasSize(1);
+    assertThat(userAssociatedAndRegistered).isEmpty();
 
-    assertEquals(2, userNotAssociated.size());
+    assertThat(userNotAssociated).hasSize(2);
     assertEquals(user, userNotAssociated.get(0).getOwner());
     assertEquals(user, userNotAssociated.get(1).getOwner());
-    assertEquals(2, userNotAssociatedAndDraft.size());
-    assertTrue(userNotAssociatedAndRegisterd.isEmpty());
+    assertThat(userNotAssociatedAndDraft).hasSize(2);
+    assertThat(userNotAssociatedAndRegisterd).isEmpty();
 
-    assertEquals(2, anotherUserAll.size());
-    assertTrue(anotherUserAssociated.isEmpty());
-    assertEquals(2, anotherUserNotAssociated.size());
+    assertThat(anotherUserAll).hasSize(2);
+    assertThat(anotherUserAssociated).isEmpty();
+    assertThat(anotherUserNotAssociated).hasSize(2);
     assertEquals(anotherUser, anotherUserNotAssociated.get(0).getOwner());
     assertEquals(anotherUser, anotherUserNotAssociated.get(1).getOwner());
 
-    assertEquals(initialDbSize + 5, doiDao.getAll().size());
+    assertThat(doiDao.getAll()).hasSize(initialDbSize + 5);
 
     // delete associated identifiers
-    assertTrue(
-        inventoryIdentifierApiMgr
-            .deleteAssociatedIdentifier(createdSample.getOid(), user)
-            .getIdentifiers()
-            .isEmpty());
+    assertThat(
+            inventoryIdentifierApiMgr
+                .deleteAssociatedIdentifier(createdSample.getOid(), user)
+                .getIdentifiers())
+        .isEmpty();
     // delete Unassociated identifiers
     assertTrue(
         inventoryIdentifierApiMgr.deleteUnassociatedIdentifier(userNotAssociated.get(0), user));
@@ -419,18 +420,18 @@ public class InventoryIdentifierApiManagerTest extends SpringTransactionalTest {
   public void testAssignIdentifier() {
     List<ApiInventoryDOI> bulkCreateResult =
         inventoryIdentifierApiMgr.registerBulkIdentifiers(1, user);
-    assertEquals(1, bulkCreateResult.size());
+    assertThat(bulkCreateResult).hasSize(1);
     assertFalse(bulkCreateResult.get(0).isAssociated());
     assertNull(bulkCreateResult.get(0).getAssociatedGlobalId());
     assertNull(bulkCreateResult.get(0).getTitle());
 
     ApiContainer createdContainer = createBasicContainerForUser(user);
-    assertEquals(0, createdContainer.getIdentifiers().size());
+    assertThat(createdContainer.getIdentifiers()).isEmpty();
 
     ApiInventoryRecordInfo assignIdentifierResult =
         inventoryIdentifierApiMgr.assignIdentifier(
             createdContainer.getOid(), bulkCreateResult.get(0).getId(), user);
-    assertEquals(1, assignIdentifierResult.getIdentifiers().size());
+    assertThat(assignIdentifierResult.getIdentifiers()).hasSize(1);
     assertEquals(
         createdContainer.getOid().getIdString(),
         assignIdentifierResult.getIdentifiers().get(0).getAssociatedGlobalId());
@@ -438,7 +439,7 @@ public class InventoryIdentifierApiManagerTest extends SpringTransactionalTest {
         createdContainer.getName(), assignIdentifierResult.getIdentifiers().get(0).getTitle());
 
     Container refreshedContainer = containerApiMgr.getContainerById(createdContainer.getId(), user);
-    assertEquals(1, refreshedContainer.getActiveIdentifiers().size());
+    assertThat(refreshedContainer.getActiveIdentifiers()).hasSize(1);
     assertEquals(
         bulkCreateResult.get(0).getDoi(),
         refreshedContainer.getActiveIdentifiers().get(0).getIdentifier());
@@ -446,7 +447,7 @@ public class InventoryIdentifierApiManagerTest extends SpringTransactionalTest {
     // cleanup identifiers
     ApiInventoryRecordInfo updatedContainer =
         inventoryIdentifierApiMgr.deleteAssociatedIdentifier(refreshedContainer.getOid(), user);
-    assertEquals(0, updatedContainer.getIdentifiers().size());
+    assertThat(updatedContainer.getIdentifiers()).isEmpty();
   }
 
   @Test
@@ -484,7 +485,7 @@ public class InventoryIdentifierApiManagerTest extends SpringTransactionalTest {
         inventoryIdentifierApiMgr.registerNewIdentifier(createdSample.getOid(), user);
 
     ApiContainer createdContainer = createBasicContainerForUser(user);
-    assertEquals(0, createdContainer.getIdentifiers().size());
+    assertThat(createdContainer.getIdentifiers()).isEmpty();
 
     boolean exceptionHappened = false;
     try {
@@ -569,31 +570,23 @@ public class InventoryIdentifierApiManagerTest extends SpringTransactionalTest {
     ApiInventoryRecordInfo updatedSubSample =
         inventoryIdentifierApiMgr.registerNewIdentifier(createdSubSample.getOid(), user);
 
-    assertEquals(1, updatedSubSample.getIdentifiers().size());
+    assertThat(updatedSubSample.getIdentifiers()).hasSize(1);
     assertEquals("draft", updatedSubSample.getIdentifiers().get(0).getState());
     assertNotNull(updatedSubSample.getIdentifiers().get(0).getRsPublicId());
     assertNotNull(updatedSubSample.getIdentifiers().get(0).getUrl());
     assertNull(updatedSubSample.getIdentifiers().get(0).getPublicUrl());
     // publish
     updatedSubSample = inventoryIdentifierApiMgr.publishIdentifier(createdSubSample.getOid(), user);
-    assertEquals(1, updatedSubSample.getIdentifiers().size());
+    assertThat(updatedSubSample.getIdentifiers()).hasSize(1);
     assertNotNull(updatedSubSample.getIdentifiers().get(0).getUrl());
-    assertTrue(
-        updatedSubSample
-            .getIdentifiers()
-            .get(0)
-            .getPublicUrl()
-            .startsWith("https://doi.org/" + DUMMY_VALID_DOI));
+    assertThat(updatedSubSample.getIdentifiers().get(0).getPublicUrl())
+        .startsWith("https://doi.org/" + DUMMY_VALID_DOI);
     // retract
     updatedSubSample = inventoryIdentifierApiMgr.retractIdentifier(createdSubSample.getOid(), user);
-    assertEquals(1, updatedSubSample.getIdentifiers().size());
+    assertThat(updatedSubSample.getIdentifiers()).hasSize(1);
     assertNotNull(updatedSubSample.getIdentifiers().get(0).getUrl());
-    assertTrue(
-        updatedSubSample
-            .getIdentifiers()
-            .get(0)
-            .getPublicUrl()
-            .startsWith("https://doi.org/" + DUMMY_VALID_DOI));
+    assertThat(updatedSubSample.getIdentifiers().get(0).getPublicUrl())
+        .startsWith("https://doi.org/" + DUMMY_VALID_DOI);
   }
 
   @Test
@@ -613,19 +606,19 @@ public class InventoryIdentifierApiManagerTest extends SpringTransactionalTest {
     assertEquals("incomingTitle", dataCiteDoi.getAttributes().getTitles().get(0).getTitle());
     assertEquals("dois", dataCiteDoi.getType());
     assertNotNull(dataCiteDoi.getAttributes().getSubjects());
-    assertEquals(1, dataCiteDoi.getAttributes().getSubjects().size());
+    assertThat(dataCiteDoi.getAttributes().getSubjects()).hasSize(1);
     assertNotNull(dataCiteDoi.getAttributes().getDescriptions());
-    assertEquals(1, dataCiteDoi.getAttributes().getDescriptions().size());
+    assertThat(dataCiteDoi.getAttributes().getDescriptions()).hasSize(1);
     assertEquals("testDesc", dataCiteDoi.getAttributes().getDescriptions().get(0).getDescription());
     assertEquals(
         "Abstract", dataCiteDoi.getAttributes().getDescriptions().get(0).getDescriptionType());
-    assertEquals(1, dataCiteDoi.getAttributes().getDescriptions().size());
+    assertThat(dataCiteDoi.getAttributes().getDescriptions()).hasSize(1);
     assertNotNull(dataCiteDoi.getAttributes().getAlternateIdentifiers());
-    assertEquals(1, dataCiteDoi.getAttributes().getAlternateIdentifiers().size());
+    assertThat(dataCiteDoi.getAttributes().getAlternateIdentifiers()).hasSize(1);
     assertNotNull(dataCiteDoi.getAttributes().getDates());
-    assertEquals(1, dataCiteDoi.getAttributes().getDates().size());
+    assertThat(dataCiteDoi.getAttributes().getDates()).hasSize(1);
     assertNotNull(dataCiteDoi.getAttributes().getGeoLocations());
-    assertEquals(2, dataCiteDoi.getAttributes().getGeoLocations().size());
+    assertThat(dataCiteDoi.getAttributes().getGeoLocations()).hasSize(2);
     assertEquals(
         "testLocation - point",
         dataCiteDoi.getAttributes().getGeoLocations().get(0).getGeoLocationPlace());

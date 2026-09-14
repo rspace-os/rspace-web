@@ -3,11 +3,10 @@ package com.researchspace.model.record;
 import static com.researchspace.model.record.TestFactory.createAFolder;
 import static com.researchspace.model.record.TestFactory.createAnySD;
 import static com.researchspace.model.record.TestFactory.createAnyUser;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.User;
 import com.researchspace.model.core.RecordType;
@@ -46,21 +45,21 @@ public class RSPathTest {
   @Test
   public void findByType() {
     RSPath path = record.getParentHierarchyForUser(user);
-    assertFalse(path.findFirstByType(RecordType.SYSTEM).isPresent());
+    assertThat(path.findFirstByType(RecordType.SYSTEM)).isNotPresent();
     assertEquals(parent, path.findFirstByType(RecordType.FOLDER).get());
   }
 
   @Test
   public void testRSPath() {
     RSPath path = record.getParentHierarchyForUser(user);
-    assertEquals(4, path.size());
+    assertThat(path).hasSize(4);
     assertEquals(parent, path.getFirstElement().get());
     assertEquals(record, path.getLastElement().get());
 
-    assertFalse(path.getImmediateParentOf(parent).isPresent());
+    assertThat(path.getImmediateParentOf(parent)).isNotPresent();
     assertEquals(child, path.getImmediateParentOf(record).get());
 
-    assertFalse(path.get(1000).isPresent()); // returns empty optional rather than throw exception
+    assertThat(path.get(1000)).isNotPresent(); // returns empty optional rather than throw exception
     path.toString();
   }
 
@@ -68,15 +67,15 @@ public class RSPathTest {
   public void testRSPathConstructor() {
     // test does not throw NPEs when is a nempty list
     RSPath path = new RSPath(null); //
-    assertEquals(0, path.size());
-    assertFalse(path.getFirstElement().isPresent());
-    assertFalse(path.getLastElement().isPresent());
-    assertTrue(path.isEmpty());
+    assertThat(path).isEmpty();
+    assertThat(path.getFirstElement()).isNotPresent();
+    assertThat(path.getLastElement()).isNotPresent();
+    assertThat(path).isEmpty();
     assertNotNull(path.iterator());
     Folder unknown = createAFolder("notinpath", user);
-    assertFalse(path.getImmediateParentOf(unknown).isPresent());
+    assertThat(path.getImmediateParentOf(unknown)).isNotPresent();
 
-    assertFalse(path.get(-1).isPresent());
+    assertThat(path.get(-1)).isNotPresent();
     path.toString();
   }
 
@@ -105,7 +104,7 @@ public class RSPathTest {
     RSPath p1 = new RSPath(srcToVia);
     RSPath p2 = new RSPath(viaToTarget);
     // test is symmetrical
-    assertEquals(2, p1.merge(p2).size());
-    assertEquals(2, p2.merge(p1).size());
+    assertThat(p1.merge(p2)).hasSize(2);
+    assertThat(p2.merge(p1)).hasSize(2);
   }
 }

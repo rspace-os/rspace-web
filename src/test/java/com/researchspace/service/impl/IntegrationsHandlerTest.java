@@ -27,6 +27,7 @@ import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_ALIA
 import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_APIKEY;
 import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_CONFIGURED_SERVERS;
 import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_URL;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -129,7 +130,7 @@ public class IntegrationsHandlerTest {
     when(sysPropMgr.listSystemPropertyDefinitions()).thenReturn(parentAndChild);
     handler.init();
     parent2child = handler.getParent2ChildMap();
-    assertEquals(1, parent2child.get(parent).size());
+    assertThat(parent2child.get(parent)).hasSize(1);
     assertEquals(child, parent2child.get(parent).get(0));
     assertNull(parent2child.get(child));
   }
@@ -174,7 +175,7 @@ public class IntegrationsHandlerTest {
     assertTrue(info.isEnabled());
     assertEquals(propName, info.getName());
     assertNotNull(info.getOptions());
-    assertEquals(0, info.getOptions().size());
+    assertThat(info.getOptions()).isEmpty();
 
     UserPreference dropboxDisabled = new UserPreference(Preference.DROPBOX, subject, "false");
     when(userMgr.getPreferenceForUser(subject, Preference.DROPBOX)).thenReturn(dropboxDisabled);
@@ -328,7 +329,7 @@ public class IntegrationsHandlerTest {
     when(userMgr.getPreferenceForUser(subject, Preference.BOX_LINK_TYPE))
         .thenReturn(boxLinkTypePref);
     IntegrationInfo info = handler.getIntegration(subject, Preference.BOX.name());
-    assertEquals("LIVE", info.getOptions().get(Preference.BOX_LINK_TYPE.name()));
+    assertThat(info.getOptions()).containsEntry(Preference.BOX_LINK_TYPE.name(), "LIVE");
   }
 
   @Test
@@ -339,7 +340,7 @@ public class IntegrationsHandlerTest {
     IntegrationInfo info = handler.getIntegration(subject, SLACK_APP_NAME);
     Map<String, Object> options = info.getOptions();
     assertNotNull(options);
-    assertEquals(0, options.size());
+    assertThat(options).isEmpty();
   }
 
   @Test
@@ -360,8 +361,8 @@ public class IntegrationsHandlerTest {
     assertEquals(DIGITAL_COMMONS_DATA_APP_NAME, info.getName());
     Map<String, Object> options = info.getOptions();
     assertNotNull(options);
-    assertEquals(1, options.size());
-    assertEquals(MASKED_TOKEN, options.get(DIGITAL_COMMONS_DATA_USER_TOKEN));
+    assertThat(options).hasSize(1);
+    assertThat(options).containsEntry(DIGITAL_COMMONS_DATA_USER_TOKEN, MASKED_TOKEN);
   }
 
   @Test
@@ -381,9 +382,9 @@ public class IntegrationsHandlerTest {
     assertTrue(info.isOauthConnected());
     Map<String, Object> options = info.getOptions();
     assertNotNull(options);
-    assertEquals(1, options.size());
+    assertThat(options).hasSize(1);
     // the real token must never be surfaced to the Apps page; only the masked sentinel
-    assertEquals(MASKED_TOKEN, options.get(ACCESS_TOKEN_SETTING));
+    assertThat(options).containsEntry(ACCESS_TOKEN_SETTING, MASKED_TOKEN);
   }
 
   /**
@@ -413,10 +414,10 @@ public class IntegrationsHandlerTest {
     assertEquals(OMERO_APP_NAME, info.getName());
     assertTrue(info.isOauthConnected());
     // the stored OMERO username/password must never reach the Apps page
-    assertEquals(MASKED_TOKEN, info.getOptions().get(ACCESS_TOKEN_SETTING));
-    assertFalse(
-        info.getOptions().toString().contains("omeropassword"),
-        "the real OMERO credentials must not appear anywhere in the options");
+    assertThat(info.getOptions()).containsEntry(ACCESS_TOKEN_SETTING, MASKED_TOKEN);
+    assertThat(info.getOptions().toString())
+        .as("the real OMERO credentials must not appear anywhere in the options")
+        .doesNotContain("omeropassword");
   }
 
   @Test
@@ -487,7 +488,7 @@ public class IntegrationsHandlerTest {
     assertEquals(PYRAT_APP_NAME, info.getName());
     Map<String, Object> options = info.getOptions();
     assertNotNull(options);
-    assertEquals(2, options.size());
+    assertThat(options).hasSize(2);
     Collections.sort((List<ServerConfigurationDTO>) options.get(PYRAT_CONFIGURED_SERVERS));
     assertEquals(
         new ServerConfigurationDTO("alias1", "http://pyrat1.server.com/"),
@@ -498,10 +499,11 @@ public class IntegrationsHandlerTest {
 
     // here we do get("null") becasue since the AppCnfigSet is not saved into DB (as per mocks)
     // then it has not got a proper numerical ID
-    assertEquals("alias1", ((Map<String, String>) options.get("null")).get(PYRAT_ALIAS));
-    assertEquals(MASKED_TOKEN, ((Map<String, String>) options.get("null")).get(PYRAT_APIKEY));
-    assertEquals(
-        "http://pyrat1.server.com/", ((Map<String, String>) options.get("null")).get(PYRAT_URL));
+    assertThat(((Map<String, String>) options.get("null"))).containsEntry(PYRAT_ALIAS, "alias1");
+    assertThat(((Map<String, String>) options.get("null")))
+        .containsEntry(PYRAT_APIKEY, MASKED_TOKEN);
+    assertThat(((Map<String, String>) options.get("null")))
+        .containsEntry(PYRAT_URL, "http://pyrat1.server.com/");
   }
 
   @Test

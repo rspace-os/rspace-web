@@ -1,11 +1,11 @@
 package com.researchspace.webapp.controller;
 
 import static com.researchspace.session.UserSessionTracker.USERS_KEY;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
@@ -158,7 +158,7 @@ public class JournalControllerTest extends SpringTransactionalTest {
     assertEquals(new Long(1), entry.getId());
     assertEquals(new Integer(0), entry.getPosition());
     assertEquals(TEST_DATA_RECORD_NAME + 1L, entry.getName());
-    assertTrue(entry.getHtml().contains(TEXT_FIELD_NAME + 1L));
+    assertThat(entry.getHtml()).contains(TEXT_FIELD_NAME + 1L);
 
     // test retrieval of next record should skip 2L
     JournalEntry nextEntry = journalController.retrieveEntry(targetParent, 0, 1, mockPrincipal);
@@ -166,7 +166,7 @@ public class JournalControllerTest extends SpringTransactionalTest {
     assertEquals(new Long(3), nextEntry.getId());
     assertEquals(new Integer(2), nextEntry.getPosition());
     assertEquals(TEST_DATA_RECORD_NAME + 3L, nextEntry.getName());
-    assertTrue(nextEntry.getHtml().contains(TEXT_FIELD_NAME + 3L));
+    assertThat(nextEntry.getHtml()).contains(TEXT_FIELD_NAME + 3L);
 
     // test retrieval of previous record should skip 2L
     JournalEntry previousEntry =
@@ -175,7 +175,7 @@ public class JournalControllerTest extends SpringTransactionalTest {
     assertEquals(new Long(1), previousEntry.getId());
     assertEquals(new Integer(0), previousEntry.getPosition());
     assertEquals(TEST_DATA_RECORD_NAME + 1L, previousEntry.getName());
-    assertTrue(previousEntry.getHtml().contains(TEXT_FIELD_NAME + 1L));
+    assertThat(previousEntry.getHtml()).contains(TEXT_FIELD_NAME + 1L);
 
     // test nothing to the left of position
     JournalEntry nothingLeftEntry =
@@ -199,7 +199,7 @@ public class JournalControllerTest extends SpringTransactionalTest {
     assertNotNull(emptyEntry);
     assertNull(emptyEntry.getId());
     assertNull(emptyEntry.getPosition());
-    assertEquals("", emptyEntry.getHtml());
+    assertThat(emptyEntry.getHtml()).isEmpty();
     assertEquals("EMPTY", emptyEntry.getName()); // name should be EMPTY
 
     recordManagerStub.makeEmpty(false);
@@ -226,7 +226,7 @@ public class JournalControllerTest extends SpringTransactionalTest {
     String combinedEntryContent = journalController.prepareStructuredDocumentContent(doc);
     Document d = Jsoup.parse(combinedEntryContent);
     Elements divs = d.select("div.invMaterialsListing");
-    assertEquals(expectedLoMCount, divs.size());
+    assertThat(divs).hasSize(expectedLoMCount);
   }
 
   @Test
@@ -238,8 +238,8 @@ public class JournalControllerTest extends SpringTransactionalTest {
     String combinedEntryContent = journalController.prepareStructuredDocumentContent(doc);
 
     // non-text field content should be escaped
-    assertTrue(combinedEntryContent.contains("<p>default text</p><br/><br/>"));
-    assertTrue(combinedEntryContent.contains("&lt;p&gt;default string&lt;/p&gt;<br/>"));
+    assertThat(combinedEntryContent).contains("<p>default text</p><br/><br/>");
+    assertThat(combinedEntryContent).contains("&lt;p&gt;default string&lt;/p&gt;<br/>");
   }
 
   private RSForm createTestForm() {
@@ -268,31 +268,31 @@ public class JournalControllerTest extends SpringTransactionalTest {
     List<JournalEntry> pageMinus1enteries =
         journalController.retrieveHistory(targetParent, -1, true, session, mockPrincipal).getBody();
     assertNotNull(pageMinus1enteries);
-    assertEquals(0, pageMinus1enteries.size());
+    assertThat(pageMinus1enteries).isEmpty();
 
     // test retrieval of page 1 should be 7 enteries
     List<JournalEntry> page1enteries =
         journalController.retrieveHistory(targetParent, 1, true, session, mockPrincipal).getBody();
     assertNotNull(page1enteries);
-    assertEquals(7, page1enteries.size());
+    assertThat(page1enteries).hasSize(7);
 
     // test retrieval of page 2 should be 7 enteries
     List<JournalEntry> page2enteries =
         journalController.retrieveHistory(targetParent, 2, true, session, mockPrincipal).getBody();
     assertNotNull(page2enteries);
-    assertEquals(7, page2enteries.size());
+    assertThat(page2enteries).hasSize(7);
 
     // test retrieval of page 3 should be 2 enteries
     List<JournalEntry> page3enteries =
         journalController.retrieveHistory(targetParent, 3, true, session, mockPrincipal).getBody();
     assertNotNull(page3enteries);
-    assertEquals(2, page3enteries.size());
+    assertThat(page3enteries).hasSize(2);
 
     // test retrieval of page 4 should be 0 enteries
     List<JournalEntry> page4enteries =
         journalController.retrieveHistory(targetParent, 4, true, session, mockPrincipal).getBody();
     assertNotNull(page4enteries);
-    assertEquals(0, page4enteries.size());
+    assertThat(page4enteries).isEmpty();
   }
 
   @Test
@@ -305,10 +305,10 @@ public class JournalControllerTest extends SpringTransactionalTest {
     List<JournalEntry> searchEntries =
         journalController.searchText("abc", targetParent, 0, mockPrincipal).getBody();
     assertNotNull(searchEntries);
-    assertEquals(20, searchEntries.size());
+    assertThat(searchEntries).hasSize(20);
 
     JournalEntry anEntry = searchEntries.get(0);
-    assertTrue(anEntry.getName().contains(TEST_DATA_RECORD_NAME));
+    assertThat(anEntry.getName()).contains(TEST_DATA_RECORD_NAME);
     assertNotNull(anEntry.getPosition()); // plugin sets and relies heavily
     // on position needs to
     // always be returned
@@ -332,7 +332,7 @@ public class JournalControllerTest extends SpringTransactionalTest {
     List<JournalEntry> searchEntries =
         journalController.searchText("abc", targetParent, 0, mockPrincipal).getBody();
     assertNotNull(searchEntries);
-    assertEquals(20, searchEntries.size());
+    assertThat(searchEntries).hasSize(20);
   }
 
   @Test

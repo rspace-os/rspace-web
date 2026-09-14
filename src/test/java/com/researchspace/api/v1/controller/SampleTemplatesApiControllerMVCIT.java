@@ -1,6 +1,7 @@
 package com.researchspace.api.v1.controller;
 
 import static com.researchspace.api.v1.controller.SamplesApiControllerMVCIT.NUM_FIELDS_IN_COMPLEX_SAMPLE;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -77,9 +78,9 @@ public class SampleTemplatesApiControllerMVCIT extends API_MVC_InventoryTestBase
   public void testListSampleTemplates() throws Exception {
     ApiSampleTemplateSearchResult searchHits = listAllSampleTemplates();
     int allTemplatesCount = searchHits.getTotalHits().intValue();
-    assertTrue(allTemplatesCount >= 2);
-    assertEquals(allTemplatesCount, searchHits.getTemplates().size());
-    assertEquals(1, searchHits.getLinks().size());
+    assertThat(allTemplatesCount).isGreaterThanOrEqualTo(2);
+    assertThat(searchHits.getTemplates()).hasSize(allTemplatesCount);
+    assertThat(searchHits.getLinks()).hasSize(1);
 
     Optional<ApiSampleTemplateInfo> complexTemplateInfoOpt =
         searchHits.getTemplates().stream()
@@ -88,21 +89,21 @@ public class SampleTemplatesApiControllerMVCIT extends API_MVC_InventoryTestBase
                     ContentInitializerForDevRunManager.COMPLEX_SAMPLE_TEMPLATE_NAME.equals(
                         st.getName()))
             .findFirst();
-    assertTrue(complexTemplateInfoOpt.isPresent());
+    assertThat(complexTemplateInfoOpt).isPresent();
     ApiSampleTemplateInfo complexTemplateInfo = complexTemplateInfoOpt.get();
     assertEquals("aliquot", complexTemplateInfo.getSubSampleAlias().getAlias());
     assertNotNull(complexTemplateInfo.getModifiedByFullName());
-    assertEquals(4, complexTemplateInfo.getLinks().size());
+    assertThat(complexTemplateInfo.getLinks()).hasSize(4);
 
     // check template image and icon linked correctly
     String iconLink = complexTemplateInfo.getLinkOfType(ApiLinkItem.ICON_REL).get().getLink();
-    assertTrue(iconLink.contains("/icon/"), "icon fragment not found in: " + iconLink);
+    assertThat(iconLink).as("icon fragment not found in: " + iconLink).contains("/icon/");
     String imageLink = complexTemplateInfo.getLinkOfType(ApiLinkItem.IMAGE_REL).get().getLink();
-    assertTrue(imageLink.contains("/image/"), "image fragment not found in: " + imageLink);
+    assertThat(imageLink).as("image fragment not found in: " + imageLink).contains("/image/");
 
     ApiSample sampleTemplate = retrieveSampleTemplate(complexTemplateInfo.getId());
     assertNotNull(sampleTemplate);
-    assertEquals(NUM_FIELDS_IN_COMPLEX_SAMPLE, sampleTemplate.getFields().size());
+    assertThat(sampleTemplate.getFields()).hasSize(NUM_FIELDS_IN_COMPLEX_SAMPLE);
 
     // list with pagination
     MvcResult result =
@@ -116,8 +117,8 @@ public class SampleTemplatesApiControllerMVCIT extends API_MVC_InventoryTestBase
     //	List<ApiSampleTemplateInfo>templates =
     // searchHits.getTemplates().stream().filter(f->f.isTemplate()).collect(Collectors.toList());
     assertEquals(allTemplatesCount, searchHits.getTotalHits().intValue());
-    assertEquals(1, searchHits.getTemplates().size());
-    assertTrue(searchHits.getLinks().size() > 1);
+    assertThat(searchHits.getTemplates()).hasSize(1);
+    assertThat(searchHits.getLinks().size()).isGreaterThan(1);
   }
 
   @Test
@@ -236,14 +237,14 @@ public class SampleTemplatesApiControllerMVCIT extends API_MVC_InventoryTestBase
             .andExpect(status().is4xxClientError())
             .andReturn();
     ApiError error = getErrorFromJsonResponseBody(result, ApiError.class);
-    assertEquals(1, error.getErrors().size());
+    assertThat(error.getErrors()).hasSize(1);
     String rendered = error.getErrors().get(0);
-    assertTrue(
-        rendered.startsWith("defaultUnitId:"),
-        "error should be on defaultUnitId, was: " + rendered);
-    assertTrue(
-        rendered.contains(String.valueOf(RSUnitDef.NANOMOLAR.getId())),
-        "error should mention the rejected unit id, was: " + rendered);
+    assertThat(rendered)
+        .as("error should be on defaultUnitId, was: " + rendered)
+        .startsWith("defaultUnitId:");
+    assertThat(rendered)
+        .as("error should mention the rejected unit id, was: " + rendered)
+        .contains(String.valueOf(RSUnitDef.NANOMOLAR.getId()));
   }
 
   /** RSDEV-1067: PUT must also reject a non-mass/volume/dimensionless default unit. */
@@ -264,14 +265,14 @@ public class SampleTemplatesApiControllerMVCIT extends API_MVC_InventoryTestBase
             .andExpect(status().is4xxClientError())
             .andReturn();
     ApiError error = getErrorFromJsonResponseBody(result, ApiError.class);
-    assertEquals(1, error.getErrors().size());
+    assertThat(error.getErrors()).hasSize(1);
     String rendered = error.getErrors().get(0);
-    assertTrue(
-        rendered.startsWith("defaultUnitId:"),
-        "error should be on defaultUnitId, was: " + rendered);
-    assertTrue(
-        rendered.contains(String.valueOf(RSUnitDef.NANOMOLAR.getId())),
-        "error should mention the rejected unit id, was: " + rendered);
+    assertThat(rendered)
+        .as("error should be on defaultUnitId, was: " + rendered)
+        .startsWith("defaultUnitId:");
+    assertThat(rendered)
+        .as("error should mention the rejected unit id, was: " + rendered)
+        .contains(String.valueOf(RSUnitDef.NANOMOLAR.getId()));
   }
 
   @Test
@@ -290,12 +291,12 @@ public class SampleTemplatesApiControllerMVCIT extends API_MVC_InventoryTestBase
             .andExpect(status().is4xxClientError())
             .andReturn();
     ApiError error = getErrorFromJsonResponseBody(result, ApiError.class);
-    assertTrue(
-        error.getErrors().stream().anyMatch(e -> e.contains("fields[1].name")),
-        "Expected error path fields[1].name, got: " + error.getErrors());
-    assertTrue(
-        error.getErrors().stream().anyMatch(e -> e.contains("dup")),
-        "Expected the duplicate name 'dup' in the error, got: " + error.getErrors());
+    assertThat(error.getErrors())
+        .as("Expected error path fields[1].name, got: " + error.getErrors())
+        .anyMatch(e -> e.contains("fields[1].name"));
+    assertThat(error.getErrors())
+        .as("Expected the duplicate name 'dup' in the error, got: " + error.getErrors())
+        .anyMatch(e -> e.contains("dup"));
   }
 
   @Test
@@ -316,10 +317,10 @@ public class SampleTemplatesApiControllerMVCIT extends API_MVC_InventoryTestBase
             .andReturn();
     ApiSampleTemplate sampleTemplate = getFromJsonResponseBody(result, ApiSampleTemplate.class);
     assertEquals("Restriction Enzyme", sampleTemplate.getName());
-    assertEquals(5, sampleTemplate.getFields().size());
+    assertThat(sampleTemplate.getFields()).hasSize(5);
     ApiInventoryEntityField firstField = sampleTemplate.getFields().get(0);
     assertEquals("Recognition sequence length", firstField.getName());
-    assertEquals(List.of("6"), firstField.getSelectedOptions());
+    assertThat(firstField.getSelectedOptions()).containsExactly("6");
   }
 
   @Test
@@ -339,7 +340,7 @@ public class SampleTemplatesApiControllerMVCIT extends API_MVC_InventoryTestBase
                     .header("apiKey", apiKey))
             .andReturn();
     ApiSampleInfo sampleTemplate = getFromJsonResponseBody(result, ApiSampleInfo.class);
-    assertTrue(sampleTemplate.getIconId() > 0);
+    assertThat(sampleTemplate.getIconId()).isGreaterThan(0);
 
     MvcResult iconImageResp =
         mockMvc
@@ -354,7 +355,7 @@ public class SampleTemplatesApiControllerMVCIT extends API_MVC_InventoryTestBase
             .andExpect(status().isOk())
             .andReturn();
     int thumbnailSize = iconImageResp.getResponse().getContentAsByteArray().length;
-    assertTrue(thumbnailSize == 1377 || thumbnailSize == 1410); // java 8 and 11 values
+    assertThat(thumbnailSize).isIn(1377, 1410); // java 8 and 11 values
   }
 
   @Test
@@ -447,7 +448,7 @@ public class SampleTemplatesApiControllerMVCIT extends API_MVC_InventoryTestBase
     assertTrue(savedTemplate.isTemplate());
     assertEquals(GlobalIdPrefix.IT.name(), savedTemplate.getGlobalId().substring(0, 2));
     assertEquals(initialCount + 1, listAllSampleTemplates().getTotalHits().intValue());
-    assertEquals(10, savedTemplate.getFields().size());
+    assertThat(savedTemplate.getFields()).hasSize(10);
     assertEquals(
         2, savedTemplate.getFields().stream().filter(f -> f.getDefinition() != null).count());
     ApiField savedTextField = savedTemplate.getFields().get(0);
@@ -459,16 +460,14 @@ public class SampleTemplatesApiControllerMVCIT extends API_MVC_InventoryTestBase
     assertEquals(
         SubSampleName.SUBSAMPLE.getDisplayName(), savedTemplate.getSubSampleAlias().getAlias());
     // assertLinks are made ok
-    assertTrue(
-        savedTemplate.getLinks().stream()
-            .anyMatch(ali -> ali.getRel().equals(ApiLinkItem.SELF_REL)));
-    assertTrue(
-        savedTemplate.getLinks().stream()
-            .filter(ali -> ali.getRel().equals(ApiLinkItem.SELF_REL))
-            .findFirst()
-            .get()
-            .getLink()
-            .contains(BaseApiInventoryController.SAMPLE_TEMPLATES_ENDPOINT));
+    assertThat(savedTemplate.getLinks()).anyMatch(ali -> ali.getRel().equals(ApiLinkItem.SELF_REL));
+    assertThat(
+            savedTemplate.getLinks().stream()
+                .filter(ali -> ali.getRel().equals(ApiLinkItem.SELF_REL))
+                .findFirst()
+                .get()
+                .getLink())
+        .contains(BaseApiInventoryController.SAMPLE_TEMPLATES_ENDPOINT);
 
     // update template: add one field, modify other, remove third
     String templateUpdateJson =
@@ -485,12 +484,11 @@ public class SampleTemplatesApiControllerMVCIT extends API_MVC_InventoryTestBase
     assertNotNull(updatedTemplate);
     assertEquals("updatedTemplateName", updatedTemplate.getName());
     assertEquals(2, updatedTemplate.getVersion());
-    assertEquals(10, updatedTemplate.getFields().size());
+    assertThat(updatedTemplate.getFields()).hasSize(10);
     assertEquals(
         "string", updatedTemplate.getFields().get(0).getName()); // string field is now first
-    assertEquals(
-        List.of("1", "2", "3", "4"),
-        updatedTemplate.getFields().get(4).getDefinition().getOptions()); // choice is updated
+    assertThat(updatedTemplate.getFields().get(4).getDefinition().getOptions())
+        .containsExactly("1", "2", "3", "4"); // choice is updated
     assertEquals("new number", updatedTemplate.getFields().get(9).getName()); // new number is last
 
     // create sample from updated template
@@ -503,7 +501,7 @@ public class SampleTemplatesApiControllerMVCIT extends API_MVC_InventoryTestBase
     assertEquals(updatedTemplate.getId(), retrievedSample.getTemplateId());
     assertEquals(updatedTemplate.getId(), retrievedSample.getTemplateId());
     assertEquals(2, retrievedSample.getTemplateVersion());
-    assertEquals(10, retrievedSample.getFields().size());
+    assertThat(retrievedSample.getFields()).hasSize(10);
     assertEquals("new number", retrievedSample.getFields().get(9).getName());
   }
 
@@ -528,19 +526,19 @@ public class SampleTemplatesApiControllerMVCIT extends API_MVC_InventoryTestBase
 
     // create template
     ApiSample createdTemplate = postValidSampleTemplate(sampleTemplatePost);
-    assertEquals(2, createdTemplate.getFields().size());
+    assertThat(createdTemplate.getFields()).hasSize(2);
 
     // retrieve the template
     ApiSampleTemplate retrievedTemplate = retrieveSampleTemplate(createdTemplate.getId());
     assertEquals("IT" + createdTemplate.getId(), retrievedTemplate.getGlobalId());
     assertFalse(retrievedTemplate.isHistoricalVersion());
-    assertEquals(2, retrievedTemplate.getFields().size());
+    assertThat(retrievedTemplate.getFields()).hasSize(2);
     ApiInventoryEntityField retrievedTemplateRadioField = retrievedTemplate.getFields().get(0);
     assertEquals("my radio", retrievedTemplateRadioField.getName());
-    assertEquals(List.of("r2"), retrievedTemplateRadioField.getSelectedOptions());
+    assertThat(retrievedTemplateRadioField.getSelectedOptions()).containsExactly("r2");
     ApiInventoryEntityField retrievedTemplateChoiceField = retrievedTemplate.getFields().get(1);
     assertEquals("my choice", retrievedTemplateChoiceField.getName());
-    assertEquals(List.of("c1", "c2"), retrievedTemplateChoiceField.getSelectedOptions());
+    assertThat(retrievedTemplateChoiceField.getSelectedOptions()).containsExactly("c1", "c2");
 
     // create sample from template
     ApiSampleWithFullSubSamples apiSample =
@@ -552,13 +550,13 @@ public class SampleTemplatesApiControllerMVCIT extends API_MVC_InventoryTestBase
     // retrieve the sample - field definition should come from template
     ApiSample retrievedSample = sampleApiMgr.getApiSampleById(createdSample.getId(), anyUser);
     assertEquals(retrievedTemplate.getId(), retrievedSample.getTemplateId());
-    assertEquals(2, retrievedSample.getFields().size());
+    assertThat(retrievedSample.getFields()).hasSize(2);
     assertEquals("my radio", retrievedSample.getFields().get(0).getName());
     assertEquals(null, retrievedSample.getFields().get(0).getContent());
-    assertEquals(List.of("r2"), retrievedSample.getFields().get(0).getSelectedOptions());
+    assertThat(retrievedSample.getFields().get(0).getSelectedOptions()).containsExactly("r2");
     assertEquals("my choice", retrievedSample.getFields().get(1).getName());
     assertEquals(null, retrievedSample.getFields().get(1).getContent());
-    assertEquals(List.of("c1", "c2"), retrievedSample.getFields().get(1).getSelectedOptions());
+    assertThat(retrievedSample.getFields().get(1).getSelectedOptions()).containsExactly("c1", "c2");
 
     // create another sample, but with empty fields
     ApiSampleWithFullSubSamples anotherApiSample =
@@ -570,7 +568,7 @@ public class SampleTemplatesApiControllerMVCIT extends API_MVC_InventoryTestBase
     ApiSampleWithFullSubSamples anotherCreatedSample =
         sampleApiMgr.createNewApiSample(anotherApiSample, anyUser);
     assertNotNull(anotherCreatedSample);
-    assertEquals(2, anotherCreatedSample.getFields().size());
+    assertThat(anotherCreatedSample.getFields()).hasSize(2);
     assertEquals("my radio", anotherCreatedSample.getFields().get(0).getName());
     assertEquals(null, anotherCreatedSample.getFields().get(0).getContent());
 
@@ -602,7 +600,7 @@ public class SampleTemplatesApiControllerMVCIT extends API_MVC_InventoryTestBase
     assertNotNull(updatedTemplate);
     assertEquals("IT" + createdTemplate.getId(), updatedTemplate.getGlobalId());
     assertEquals(2, updatedTemplate.getVersion());
-    assertEquals(2, updatedTemplate.getFields().size());
+    assertThat(updatedTemplate.getFields()).hasSize(2);
     retrievedTemplateRadioField = updatedTemplate.getFields().get(0);
     assertEquals("updated radio", retrievedTemplateRadioField.getName());
     retrievedTemplateChoiceField = updatedTemplate.getFields().get(1);
@@ -612,41 +610,41 @@ public class SampleTemplatesApiControllerMVCIT extends API_MVC_InventoryTestBase
     retrievedSample = sampleApiMgr.getApiSampleById(createdSample.getId(), anyUser);
     assertEquals(retrievedTemplate.getId(), retrievedSample.getTemplateId());
     assertEquals(1, retrievedSample.getTemplateVersion());
-    assertEquals(2, retrievedSample.getFields().size());
+    assertThat(retrievedSample.getFields()).hasSize(2);
     assertEquals("my radio", retrievedSample.getFields().get(0).getName());
     assertEquals(null, retrievedSample.getFields().get(0).getContent());
-    assertEquals(List.of("r2"), retrievedSample.getFields().get(0).getSelectedOptions());
-    assertEquals(
-        List.of("r1", "r2", "r3"), retrievedSample.getFields().get(0).getDefinition().getOptions());
+    assertThat(retrievedSample.getFields().get(0).getSelectedOptions()).containsExactly("r2");
+    assertThat(retrievedSample.getFields().get(0).getDefinition().getOptions())
+        .containsExactly("r1", "r2", "r3");
     assertEquals("my choice", retrievedSample.getFields().get(1).getName());
     assertEquals(null, retrievedSample.getFields().get(1).getContent());
-    assertEquals(List.of("c1", "c2"), retrievedSample.getFields().get(1).getSelectedOptions());
-    assertEquals(
-        List.of("c1", "c2", "c3"), retrievedSample.getFields().get(1).getDefinition().getOptions());
+    assertThat(retrievedSample.getFields().get(1).getSelectedOptions()).containsExactly("c1", "c2");
+    assertThat(retrievedSample.getFields().get(1).getDefinition().getOptions())
+        .containsExactly("c1", "c2", "c3");
 
     // retrieve first version of the template from /versions/ endpoint
     ApiSampleTemplate retrievedVersion1 =
         retrieveSampleTemplateVersion(retrievedTemplate.getId(), 1L);
     assertEquals("IT" + createdTemplate.getId() + "v1", retrievedVersion1.getGlobalId());
     assertTrue(retrievedVersion1.isHistoricalVersion());
-    assertEquals(2, retrievedVersion1.getFields().size());
+    assertThat(retrievedVersion1.getFields()).hasSize(2);
     retrievedTemplateRadioField = retrievedVersion1.getFields().get(0);
     assertEquals("my radio", retrievedTemplateRadioField.getName());
-    assertEquals(
-        List.of("r1", "r2", "r3"), retrievedTemplateRadioField.getDefinition().getOptions());
+    assertThat(retrievedTemplateRadioField.getDefinition().getOptions())
+        .containsExactly("r1", "r2", "r3");
 
     // retrieve second (current) version of the template from /versions/ endpoint
     ApiSampleTemplate retrievedVersion2 =
         retrieveSampleTemplateVersion(retrievedTemplate.getId(), 2L);
     assertEquals("IT" + createdTemplate.getId(), retrievedVersion2.getGlobalId());
     assertFalse(retrievedVersion2.isHistoricalVersion());
-    assertEquals(2, retrievedVersion2.getFields().size());
+    assertThat(retrievedVersion2.getFields()).hasSize(2);
     retrievedTemplateRadioField = retrievedVersion2.getFields().get(0);
     assertEquals("updated radio", retrievedTemplateRadioField.getName());
     assertEquals(null, retrievedTemplateRadioField.getContent());
-    assertEquals(List.of("r4"), retrievedTemplateRadioField.getSelectedOptions());
-    assertEquals(
-        List.of("r2", "r3", "r4"), retrievedTemplateRadioField.getDefinition().getOptions());
+    assertThat(retrievedTemplateRadioField.getSelectedOptions()).containsExactly("r4");
+    assertThat(retrievedTemplateRadioField.getDefinition().getOptions())
+        .containsExactly("r2", "r3", "r4");
 
     // try updating 1st sample to latest template definition
     MvcResult result =
@@ -703,7 +701,7 @@ public class SampleTemplatesApiControllerMVCIT extends API_MVC_InventoryTestBase
 
     // create template
     ApiSample createdTemplate = postValidSampleTemplate(sampleTemplatePost);
-    assertEquals(2, createdTemplate.getFields().size());
+    assertThat(createdTemplate.getFields()).hasSize(2);
 
     // create a few samples from that template
     ApiSampleWithFullSubSamples apiSample =
@@ -750,7 +748,7 @@ public class SampleTemplatesApiControllerMVCIT extends API_MVC_InventoryTestBase
     assertNotNull(updatedTemplate);
     assertEquals("IT" + createdTemplate.getId(), updatedTemplate.getGlobalId());
     assertEquals(2, updatedTemplate.getVersion());
-    assertEquals(1, updatedTemplate.getFields().size());
+    assertThat(updatedTemplate.getFields()).hasSize(1);
     ApiField retrievedTemplateRadioField = updatedTemplate.getFields().get(0);
     assertEquals("updated radio", retrievedTemplateRadioField.getName());
 

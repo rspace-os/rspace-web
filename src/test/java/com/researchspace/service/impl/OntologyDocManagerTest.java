@@ -1,5 +1,6 @@
 package com.researchspace.service.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.eq;
@@ -232,12 +233,12 @@ public class OntologyDocManagerTest {
     verify(firstFieldInontologyDocumentMock, times(2)).setData(captor.capture());
     List<String> tagsWritten = captor.getAllValues();
     // assertsThat all fields are cleared before writing new terms
-    assertEquals("", tagsWritten.get(0));
+    assertThat(tagsWritten.get(0)).isEmpty();
     assertEquals("<p>tag1</p><p>tag2</p><p>tag3</p>", tagsWritten.get(1));
     verify(secondFieldInontologyDocumentMock).setData(captor.capture());
     tagsWritten = captor.getAllValues();
     // assertsThat all fields are cleared before writing new terms
-    assertEquals("", tagsWritten.get(0));
+    assertThat(tagsWritten.get(0)).isEmpty();
   }
 
   @Test
@@ -309,12 +310,12 @@ public class OntologyDocManagerTest {
     verify(firstFieldInontologyDocumentMock, times(2)).setData(captor.capture());
     List<String> tagsWritten = captor.getAllValues();
     // assertsThat all fields are cleared before writing new terms
-    assertEquals("", tagsWritten.get(0));
-    assertEquals("", tagsWritten.get(1));
+    assertThat(tagsWritten.get(0)).isEmpty();
+    assertThat(tagsWritten.get(1)).isEmpty();
     verify(secondFieldInontologyDocumentMock).setData(captor.capture());
     tagsWritten = captor.getAllValues();
     // assertsThat all fields are cleared before writing new terms
-    assertEquals("", tagsWritten.get(0));
+    assertThat(tagsWritten.get(0)).isEmpty();
   }
 
   @Test

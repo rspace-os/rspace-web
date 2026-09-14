@@ -1,7 +1,7 @@
 package com.researchspace.service;
 
 import static com.researchspace.testutils.SearchTestUtils.createAdvSearchCfg;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -114,7 +114,7 @@ public class SearchPerformanceTest extends SearchSpringTestBase {
 
     sw.stop();
     long uniqueTime = sw.getTime();
-    assertEquals(numDocsPerUser, results.getResults().size());
+    assertThat(results.getResults()).hasSize(numDocsPerUser);
 
     sw.reset();
 
@@ -127,7 +127,7 @@ public class SearchPerformanceTest extends SearchSpringTestBase {
     sw.start();
     results = searchMgr.searchWorkspaceRecords(config, users[0]);
     sw.stop();
-    assertEquals(numDocsPerUser, results.getResults().size());
+    assertThat(results.getResults()).hasSize(numDocsPerUser);
     long commonTime = sw.getTime();
     // test that search for common term is roughly comparable with unique
     // term
@@ -144,14 +144,14 @@ public class SearchPerformanceTest extends SearchSpringTestBase {
     sw.start();
     results = searchMgr.searchWorkspaceRecords(config, users[0]);
     sw.stop();
-    assertEquals(numDocsPerUser, results.getResults().size());
+    assertThat(results.getResults()).hasSize(numDocsPerUser);
   }
 
   @Test
   public void testIndexingSingleThread() throws IOException {
     RandomTextFileGenerator tfgg = new RandomTextFileGenerator();
     List<FileSearchTerms> created = tfgg.generate(randomFilefolder, 100, 100);
-    assertEquals(100, created.size());
+    assertThat(created).hasSize(100);
     for (FileSearchTerms toIndex : created) {
       fileIndexer.indexFile(toIndex.getFile());
     }
@@ -159,7 +159,7 @@ public class SearchPerformanceTest extends SearchSpringTestBase {
     for (FileSearchTerms term : created) {
       List<FileSearchResult> results =
           fileIndexSearcher.getFileSearchStrategy().searchFiles(term.getTerms()[0], anyUser);
-      assertTrue(results.size() > 0, "No results for " + term);
+      assertThat(results).as("No results for " + term).isNotEmpty();
     }
   }
 
@@ -210,7 +210,7 @@ public class SearchPerformanceTest extends SearchSpringTestBase {
   private void assertSearchOK(FileSearchTerms term) throws IOException {
     List<FileSearchResult> results =
         fileIndexSearcher.getFileSearchStrategy().searchFiles(term.getTerms()[0], anyUser);
-    assertTrue(results.size() > 0, "No results for " + term);
+    assertThat(results).as("No results for " + term).isNotEmpty();
     if (!assertResultsContainsFile(results, term)) {
       fail(
           "Search hits for term ("

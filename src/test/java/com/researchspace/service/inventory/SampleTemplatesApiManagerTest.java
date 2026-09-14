@@ -1,6 +1,7 @@
 package com.researchspace.service.inventory;
 
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -83,9 +84,9 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
     assertEquals(initTemplateCount + 1, updatedTemplateCount);
     // user has permission to their own template...
     assertEquals(sampleTemplatePost.getName(), firstUserTemplates.getTemplates().get(0).getName());
-    assertEquals(3, firstUserTemplates.getTemplates().get(0).getPermittedActions().size());
+    assertThat(firstUserTemplates.getTemplates().get(0).getPermittedActions()).hasSize(3);
     // ... but only read premission to default templates
-    assertEquals(1, firstUserTemplates.getTemplates().get(1).getPermittedActions().size());
+    assertThat(firstUserTemplates.getTemplates().get(1).getPermittedActions()).hasSize(1);
     assertEquals(
         ApiInventoryRecordPermittedAction.READ,
         firstUserTemplates.getTemplates().get(1).getPermittedActions().get(0));
@@ -131,7 +132,7 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
     assertNotNull(user1Template.getGlobalId());
     assertEquals(
         ApiInventoryRecordInfo.ApiInventorySharingMode.WHITELIST, user1Template.getSharingMode());
-    assertEquals(2, user1Template.getSharedWith().size());
+    assertThat(user1Template.getSharedWith()).hasSize(2);
 
     // verify permissions,
     SampleTemplate createdTemplate =
@@ -190,7 +191,7 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
         ApiInventoryRecordInfo.ApiInventorySharingMode.OWNER_GROUPS,
         createdTemplate.getSharingMode());
     assertNotNull(createdTemplate.getSharedWith());
-    assertEquals(1, createdTemplate.getSharedWith().size());
+    assertThat(createdTemplate.getSharedWith()).hasSize(1);
     assertEquals("groupA", createdTemplate.getSharedWith().get(0).getGroupInfo().getName());
     assertFalse(createdTemplate.getSharedWith().get(0).isShared());
     assertTrue(createdTemplate.getSharedWith().get(0).isItemOwnerGroup());
@@ -213,7 +214,7 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
     // confirm that other user can read the sample, and limited-read the template
     ApiSample sampleRetrievedByOtherUser =
         sampleApiMgr.getApiSampleById(createdSample.getId(), otherUser);
-    assertEquals(2, sampleRetrievedByOtherUser.getPermittedActions().size());
+    assertThat(sampleRetrievedByOtherUser.getPermittedActions()).hasSize(2);
     templateRetrievedByOtherUser =
         sampleApiMgr.getApiSampleTemplateById(createdTemplate.getId(), otherUser);
     assertFalse(templateRetrievedByOtherUser.isClearedForPublicView());
@@ -231,7 +232,7 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
     // should create template fine
     ApiSampleTemplate createdTemplate =
         sampleApiMgr.createSampleTemplate(sampleTemplatePost, testUser);
-    assertEquals(2, createdTemplate.getFields().size());
+    assertThat(createdTemplate.getFields()).hasSize(2);
 
     sampleTemplatePost
         .getFields()
@@ -316,7 +317,7 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
   public void templatePutRejectsAddingDuplicateOfExistingFieldName() {
     ApiSampleTemplatePost post = getTemplatePostForTestTemplateWithTextField();
     ApiSampleTemplate created = sampleApiMgr.createSampleTemplate(post, testUser);
-    assertEquals(1, created.getFields().size());
+    assertThat(created.getFields()).hasSize(1);
 
     ApiSampleTemplate update = new ApiSampleTemplate();
     update.setId(created.getId());
@@ -339,7 +340,7 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
     post.getFields().add(createBasicApiSampleField("A", ApiFieldType.STRING, "av"));
     post.getFields().add(createBasicApiSampleField("B", ApiFieldType.STRING, "bv"));
     ApiSampleTemplate created = sampleApiMgr.createSampleTemplate(post, testUser);
-    assertEquals(2, created.getFields().size());
+    assertThat(created.getFields()).hasSize(2);
 
     Long aFieldId = created.getFields().get(0).getId();
     Long bFieldId = created.getFields().get(1).getId();
@@ -356,7 +357,7 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
     update.getFields().add(renameB);
 
     ApiSampleTemplate result = sampleApiMgr.updateApiSampleTemplate(update, testUser);
-    assertEquals(1, result.getFields().size());
+    assertThat(result.getFields()).hasSize(1);
     assertEquals("A", result.getFields().get(0).getName());
   }
 
@@ -399,8 +400,8 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
     // should create template fine
     ApiSampleTemplate createdTemplate =
         sampleApiMgr.createSampleTemplate(sampleTemplatePost, testUser);
-    assertEquals(3, createdTemplate.getFields().size());
-    assertEquals(3, createdTemplate.getPermittedActions().size());
+    assertThat(createdTemplate.getFields()).hasSize(3);
+    assertThat(createdTemplate.getPermittedActions()).hasSize(3);
 
     // retrieve the template
     ApiSampleTemplate retrievedTemplate =
@@ -408,9 +409,9 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
     assertEquals(
         SubSampleName.SUBSAMPLE.getDisplayName(), retrievedTemplate.getSubSampleAlias().getAlias());
     assertEquals(RSUnitDef.MILLI_LITRE.getId(), retrievedTemplate.getDefaultUnitId());
-    assertEquals(3, retrievedTemplate.getPermittedActions().size());
+    assertThat(retrievedTemplate.getPermittedActions()).hasSize(3);
     assertEquals(1, retrievedTemplate.getVersion());
-    assertEquals(3, retrievedTemplate.getFields().size());
+    assertThat(retrievedTemplate.getFields()).hasSize(3);
     ApiInventoryEntityField firstField = retrievedTemplate.getFields().get(0);
     assertEquals("text", firstField.getName());
     assertEquals("text value", firstField.getContent());
@@ -439,7 +440,7 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
     assertEquals(1, createdSample.getVersion());
     assertEquals(retrievedTemplate.getId(), createdSample.getTemplateId());
     assertEquals(1, createdSample.getTemplateVersion());
-    assertEquals(3, createdSample.getFields().size());
+    assertThat(createdSample.getFields()).hasSize(3);
     assertEquals("text", createdSample.getFields().get(0).getName());
     assertEquals("string", createdSample.getFields().get(1).getName());
     assertEquals("radio", createdSample.getFields().get(2).getName());
@@ -486,7 +487,7 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
     assertEquals(RSUnitDef.GRAM.getId(), updatedTemplate.getDefaultUnitId());
     assertTrue(updatedTemplate.getLastModifiedMillis() > retrievedTemplate.getLastModifiedMillis());
     assertEquals(2, updatedTemplate.getVersion());
-    assertEquals(3, updatedTemplate.getFields().size());
+    assertThat(updatedTemplate.getFields()).hasSize(3);
     firstField = updatedTemplate.getFields().get(0);
     assertEquals("number", firstField.getName());
     assertEquals(1, firstField.getColumnIndex());
@@ -511,7 +512,7 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
     assertEquals(1, createdSample2.getVersion());
     assertEquals(retrievedTemplate.getId(), createdSample2.getTemplateId());
     assertEquals(2, createdSample2.getTemplateVersion());
-    assertEquals(3, createdSample2.getFields().size());
+    assertThat(createdSample2.getFields()).hasSize(3);
     assertEquals("number", createdSample2.getFields().get(0).getName());
     assertEquals("updated string", createdSample2.getFields().get(1).getName());
     assertTrue(createdSample2.getFields().get(1).getMandatory());
@@ -575,7 +576,7 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
         sampleApiMgr.createSampleTemplate(sampleTemplatePost, testUser);
     ApiSampleTemplate testTemplate =
         sampleApiMgr.getApiSampleTemplateById(createdTemplate.getId(), testUser);
-    assertEquals(1, testTemplate.getFields().size());
+    assertThat(testTemplate.getFields()).hasSize(1);
 
     // lock template by pi
     ApiInventoryEditLock apiLock =
@@ -588,7 +589,7 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
         assertThrows(
             IllegalArgumentException.class,
             () -> sampleApiMgr.updateApiSampleTemplate(testTemplate, testUser));
-    assertTrue(iae.getMessage().startsWith("Item is currently edited by another user ("));
+    assertThat(iae.getMessage()).startsWith("Item is currently edited by another user (");
 
     // try delete by testUser
     Long templateId = testTemplate.getId();
@@ -596,7 +597,7 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
         assertThrows(
             IllegalArgumentException.class,
             () -> sampleApiMgr.markSampleAsDeleted(templateId, false, testUser));
-    assertTrue(iae.getMessage().startsWith("Item is currently edited by another user ("));
+    assertThat(iae.getMessage()).startsWith("Item is currently edited by another user (");
 
     // pi can edit fine
     ApiSample updatedTemplate = sampleApiMgr.updateApiSampleTemplate(testTemplate, piUser);
@@ -657,7 +658,7 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
     assertNotNull(createdSample);
     assertEquals(createdTemplate.getId(), createdSample.getTemplateId());
     assertEquals(1, createdSample.getTemplateVersion());
-    assertEquals(2, createdSample.getFields().size());
+    assertThat(createdSample.getFields()).hasSize(2);
     assertEquals("my radio", createdSample.getFields().get(0).getName());
     assertEquals("my number", createdSample.getFields().get(1).getName());
     assertEquals("3.14", createdSample.getFields().get(1).getContent());
@@ -682,7 +683,7 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
         sampleApiMgr.updateApiSampleTemplate(templateUpdates, testUser);
     assertNotNull(updatedTemplate);
     assertEquals(2, updatedTemplate.getVersion());
-    assertEquals(2, updatedTemplate.getFields().size());
+    assertThat(updatedTemplate.getFields()).hasSize(2);
 
     // create sample from updated template
     apiSample = new ApiSampleWithFullSubSamples("sample from template v1");
@@ -692,7 +693,7 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
     assertEquals(createdTemplate.getId(), createdSampleV2.getTemplateId());
     assertEquals(2, createdSampleV2.getTemplateVersion());
     // the fields active in latest template definition are created
-    assertEquals(2, createdSampleV2.getFields().size());
+    assertThat(createdSampleV2.getFields()).hasSize(2);
     assertEquals("my radio", createdSampleV2.getFields().get(0).getName());
     assertEquals("my text", createdSampleV2.getFields().get(1).getName());
 
@@ -711,7 +712,7 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
     assertEquals(2, updatedSample.getTemplateVersion());
     // field from latest definition is added, one deleted from definition still stays (was deleted
     // only for future samples)
-    assertEquals(3, updatedSample.getFields().size());
+    assertThat(updatedSample.getFields()).hasSize(3);
     assertEquals("my radio", updatedSample.getFields().get(0).getName());
     assertEquals("my number", updatedSample.getFields().get(1).getName());
     assertEquals("my text", updatedSample.getFields().get(2).getName());
@@ -737,7 +738,7 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
     assertNotNull(createdSample);
     assertEquals(createdTemplate.getId(), createdSample.getTemplateId());
     assertEquals(1, createdSample.getTemplateVersion());
-    assertEquals(2, createdSample.getFields().size());
+    assertThat(createdSample.getFields()).hasSize(2);
     assertEquals("my radio", createdSample.getFields().get(0).getName());
     assertEquals("my number", createdSample.getFields().get(1).getName());
     assertEquals("3.14", createdSample.getFields().get(1).getContent());
@@ -764,7 +765,7 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
         sampleApiMgr.updateApiSampleTemplate(templateUpdates, testUser);
     assertNotNull(updatedTemplate);
     assertEquals(2, updatedTemplate.getVersion());
-    assertEquals(0, updatedTemplate.getFields().size());
+    assertThat(updatedTemplate.getFields()).isEmpty();
 
     // create new sample from template
     apiSample = new ApiSampleWithFullSubSamples("sample from template v2");
@@ -773,13 +774,13 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
         sampleApiMgr.createNewApiSample(apiSample, testUser);
     assertEquals(createdTemplate.getId(), createdSampleV2.getTemplateId());
     assertEquals(2, createdSampleV2.getTemplateVersion());
-    assertEquals(0, createdSampleV2.getFields().size());
+    assertThat(createdSampleV2.getFields()).isEmpty();
 
     // retrieve pre-sample
     ApiSample retrievedSample = sampleApiMgr.getApiSampleById(createdSample.getId(), testUser);
     assertEquals(createdTemplate.getId(), retrievedSample.getTemplateId());
     assertEquals(1, retrievedSample.getTemplateVersion());
-    assertEquals(2, retrievedSample.getFields().size());
+    assertThat(retrievedSample.getFields()).hasSize(2);
 
     // update pre-existing sample to latest template definition
     sampleApiMgr.updateSampleToLatestTemplateVersion(createdSample.getId(), testUser);
@@ -789,7 +790,7 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
         sampleApiMgr.updateSampleToLatestTemplateVersion(createdSample.getId(), testUser);
     assertEquals(createdTemplate.getId(), updatedSample.getTemplateId());
     assertEquals(2, updatedSample.getTemplateVersion());
-    assertEquals(1, updatedSample.getFields().size());
+    assertThat(updatedSample.getFields()).hasSize(1);
     assertEquals("my radio", updatedSample.getFields().get(0).getName());
   }
 
@@ -812,7 +813,7 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
     // create template fine
     ApiSampleTemplate createdTemplate =
         sampleApiMgr.createSampleTemplate(sampleTemplatePost, testUser);
-    assertEquals(2, createdTemplate.getFields().size());
+    assertThat(createdTemplate.getFields()).hasSize(2);
 
     // create sample from template
     ApiSampleWithFullSubSamples apiSample =
@@ -823,7 +824,7 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
     assertNotNull(createdSample);
     assertEquals(createdTemplate.getId(), createdSample.getTemplateId());
     assertEquals(1, createdSample.getTemplateVersion());
-    assertEquals(2, createdSample.getFields().size());
+    assertThat(createdSample.getFields()).hasSize(2);
     assertEquals("my radio", createdSample.getFields().get(0).getName());
     assertEquals(
         List.of("r1", "r2", "r3"), createdSample.getFields().get(0).getDefinition().getOptions());
@@ -848,7 +849,7 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
     assertNotNull(updatedTemplate);
     assertEquals(2, updatedTemplate.getVersion());
     assertEquals("test template updated", updatedTemplate.getName());
-    assertEquals(2, updatedTemplate.getFields().size());
+    assertThat(updatedTemplate.getFields()).hasSize(2);
     // option removed from definition is also removed from selection
     assertEquals(Collections.emptyList(), updatedTemplate.getFields().get(0).getSelectedOptions());
 
@@ -885,7 +886,7 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
         sampleApiMgr.updateSampleToLatestTemplateVersion(createdSample.getId(), testUser);
     assertEquals(createdTemplate.getId(), updatedSample.getTemplateId());
     assertEquals(2, updatedSample.getTemplateVersion());
-    assertEquals(2, updatedSample.getFields().size());
+    assertThat(updatedSample.getFields()).hasSize(2);
     assertEquals("updated radio", updatedSample.getFields().get(0).getName());
     assertEquals(
         List.of("r2", "r3", "r4"), updatedSample.getFields().get(0).getDefinition().getOptions());
@@ -912,12 +913,12 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
     // create template fine
     ApiSampleTemplate createdTemplate =
         sampleApiMgr.createSampleTemplate(sampleTemplatePost, testUser);
-    assertEquals(2, createdTemplate.getFields().size());
+    assertThat(createdTemplate.getFields()).hasSize(2);
 
     // retrieve the template
     ApiSample retrievedTemplate =
         sampleApiMgr.getApiSampleTemplateById(createdTemplate.getId(), testUser);
-    assertEquals(2, retrievedTemplate.getFields().size());
+    assertThat(retrievedTemplate.getFields()).hasSize(2);
     assertEquals("my number", retrievedTemplate.getFields().get(0).getName());
     ApiInventoryEntityField retrievedTemplateChoiceField = retrievedTemplate.getFields().get(1);
     assertEquals("my choice", retrievedTemplateChoiceField.getName());
@@ -935,7 +936,7 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
     // retrieve the sample - field definition should come from template
     ApiSample retrievedSample1 = sampleApiMgr.getApiSampleById(createdSample1.getId(), testUser);
     assertEquals(retrievedTemplate.getId(), retrievedSample1.getTemplateId());
-    assertEquals(2, retrievedSample1.getFields().size());
+    assertThat(retrievedSample1.getFields()).hasSize(2);
     assertEquals("my number", retrievedSample1.getFields().get(0).getName());
     assertEquals("my choice", retrievedSample1.getFields().get(1).getName());
     assertEquals(null, retrievedSample1.getFields().get(1).getContent());
@@ -962,7 +963,7 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
     assertNotNull(updatedTemplate);
     assertEquals(retrievedTemplate.getGlobalId(), updatedTemplate.getGlobalId());
     assertEquals(2, updatedTemplate.getVersion());
-    assertEquals(2, updatedTemplate.getFields().size());
+    assertThat(updatedTemplate.getFields()).hasSize(2);
     assertEquals("my number", updatedTemplate.getFields().get(0).getName());
     retrievedTemplateChoiceField = updatedTemplate.getFields().get(1);
     assertEquals("updated choice", retrievedTemplateChoiceField.getName());
@@ -979,7 +980,7 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
         sampleApiMgr.createNewApiSample(apiSample2, testUser);
     assertNotNull(createdSample2);
     ApiSample retrievedSample2 = sampleApiMgr.getApiSampleById(createdSample2.getId(), testUser);
-    assertEquals(2, retrievedSample2.getFields().size());
+    assertThat(retrievedSample2.getFields()).hasSize(2);
     assertEquals("my number", retrievedSample2.getFields().get(0).getName());
     assertEquals("updated choice", retrievedSample2.getFields().get(1).getName());
     assertEquals(null, retrievedSample2.getFields().get(1).getContent());
@@ -992,7 +993,7 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
     retrievedSample1 = sampleApiMgr.getApiSampleById(createdSample1.getId(), testUser);
     assertEquals(retrievedTemplate.getId(), retrievedSample1.getTemplateId());
     assertEquals(1, retrievedSample1.getTemplateVersion());
-    assertEquals(2, retrievedSample1.getFields().size());
+    assertThat(retrievedSample1.getFields()).hasSize(2);
     assertEquals("my number", retrievedSample1.getFields().get(0).getName());
     assertEquals("my choice", retrievedSample1.getFields().get(1).getName());
     assertEquals(null, retrievedSample1.getFields().get(1).getContent());
@@ -1030,7 +1031,7 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
     retrievedSample1 = sampleApiMgr.getApiSampleById(createdSample1.getId(), testUser);
     assertEquals(retrievedTemplate.getId(), retrievedSample1.getTemplateId());
     assertEquals(2, retrievedSample1.getTemplateVersion());
-    assertEquals(2, retrievedSample1.getFields().size());
+    assertThat(retrievedSample1.getFields()).hasSize(2);
     assertEquals("my number", retrievedSample1.getFields().get(0).getName());
     assertEquals("updated choice", retrievedSample1.getFields().get(1).getName());
     assertEquals(null, retrievedSample1.getFields().get(1).getContent());

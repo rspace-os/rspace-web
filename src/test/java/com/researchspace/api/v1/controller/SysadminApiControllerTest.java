@@ -5,6 +5,7 @@ import static com.researchspace.testutils.MockAndStubUtils.modifyUserCreationDat
 import static com.researchspace.testutils.TestFactory.createAnyGroup;
 import static com.researchspace.testutils.TestFactory.createAnyUser;
 import static com.researchspace.testutils.TestFactory.createNUsers;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -375,9 +376,10 @@ public class SysadminApiControllerTest extends JakartaValidatorTest {
             .getMessage();
 
     // Generic message; no username leaked.
-    Assertions.assertFalse(
-        message.contains("alice"), "response message must not leak internal usernames");
-    Assertions.assertTrue(message.contains("within the last year"));
+    assertThat(message)
+        .as("response message must not leak internal usernames")
+        .doesNotContain("alice");
+    assertThat(message).contains("within the last year");
     verify(auditService, never()).notify(Mockito.any(GenericEvent.class));
   }
 

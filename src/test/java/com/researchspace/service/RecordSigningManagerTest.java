@@ -1,6 +1,7 @@
 package com.researchspace.service;
 
 import static com.researchspace.model.comms.MessageType.REQUEST_RECORD_WITNESS;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -70,9 +71,9 @@ public class RecordSigningManagerTest extends SpringTransactionalTest {
             sdoc.getId(), user, new String[] {witnessUser.getUsername()}, "statement");
 
     // ensure signature with content hash is immediately created
-    assertTrue(signResult.getSignature().isPresent());
+    assertThat(signResult.getSignature()).isPresent();
     Signature signature = signResult.getSignature().get();
-    assertEquals(1, signature.getHashes().size());
+    assertThat(signature.getHashes()).hasSize(1);
     SignatureHash signatureHash = signature.getHashes().iterator().next();
     String expectedHash = sdoc.getRecordContentHashForSigning().toHex();
     assertEquals(expectedHash, signatureHash.getHexValue());
@@ -163,7 +164,7 @@ public class RecordSigningManagerTest extends SpringTransactionalTest {
   public void testGetPotentialWitnesses() throws Exception {
     StructuredDocument sdoc = createBasicDocumentInRootFolderWithText(user, "any");
     // unless shared with a group
-    assertTrue(signingMgr.getPotentialWitnesses(sdoc, user).length == 0);
+    assertThat(signingMgr.getPotentialWitnesses(sdoc, user)).isEmpty();
   }
 
   @Test
@@ -174,12 +175,12 @@ public class RecordSigningManagerTest extends SpringTransactionalTest {
     Signature sig = signature.getSignature().get();
 
     final Long NOT_EXISTING_FP = -1l;
-    assertFalse(signingMgr.getSignedExport(sig.getId(), user, NOT_EXISTING_FP).isPresent());
+    assertThat(signingMgr.getSignedExport(sig.getId(), user, NOT_EXISTING_FP)).isNotPresent();
     FileProperty fp = createAndSaveAFileProperty();
     sig.addHash(SecureStringUtils.getHashForSigning("anystring"), SignatureHashType.PDF_EXPORT, fp);
     signingDao.save(sig);
 
-    assertTrue(signingMgr.getSignedExport(sig.getId(), user, fp.getId()).isPresent());
+    assertThat(signingMgr.getSignedExport(sig.getId(), user, fp.getId())).isPresent();
     User other = createAndSaveRandomUser();
 
     // unauthorised access for other user.
