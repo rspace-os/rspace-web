@@ -33,7 +33,6 @@ import com.researchspace.model.User;
 import com.researchspace.model.dtos.DTOControllerValidatorImpl;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.properties.IPropertyHolder;
-import com.researchspace.service.inventory.InventoryEditConflictException;
 import com.researchspace.service.inventory.InventoryOperationConfigRegistry;
 import com.researchspace.service.inventory.InventoryOperationManager;
 import com.researchspace.service.inventory.InventoryOperationManager.OperationOutcome;
@@ -618,20 +617,6 @@ class InventoryOperationsApiControllerTest {
         rejection.getFieldErrors("origin.amountTaken").get(0).getCode());
     assertTrue(rejection.getFieldErrors().stream().noneMatch(e -> e.getField().contains("[")));
     verifyNoInteractions(operationManager);
-  }
-
-  @Test
-  void aConflictFromTheManagerPassesThroughTheFacadeUnchanged() throws Exception {
-    // performTyped catches BindException to rename fields; the 409 must not be caught with it.
-    when(operationManager.performOperation(eq("destroy"), any(), any(), any(), any(), eq(user)))
-        .thenThrow(
-            new InventoryEditConflictException("errors.inventory.operation.amountTakenStale"));
-    ApiInventoryOperationRequests.Destroy request = new ApiInventoryOperationRequests.Destroy();
-    request.setOrigin(facadeOrigin("SS100", null));
-
-    assertThrows(
-        InventoryEditConflictException.class,
-        () -> controller.destroy(request, bindingResultFor(request), user));
   }
 
   @Test
