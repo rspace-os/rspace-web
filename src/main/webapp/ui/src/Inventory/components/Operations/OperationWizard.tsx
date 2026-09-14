@@ -15,7 +15,7 @@ import { observer } from "mobx-react-lite";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import SubmitSpinnerButton from "@/components/SubmitSpinnerButton";
-import useUiPreference, { PREFERENCES } from "@/hooks/api/useUiPreference";
+import useUiPreference, { PREFERENCES, readUiPreference, useRawUiPreferences } from "@/hooks/api/useUiPreference";
 import useViewportDimensions from "@/hooks/browser/useViewportDimensions";
 import { mkAlert } from "@/stores/contexts/Alert";
 import { CELSIUS, categoryOfUnit, toCommonUnit } from "@/stores/definitions/Units";
@@ -256,12 +256,11 @@ function OperationWizard({
     processValuesPreferenceFor(operation?.key ?? ""),
     { defaultValue: {} },
   );
-  // Read-only: bundles saved before the split above lived here. Never written to; falls out of use
-  // once every user who saved a bundle under it has re-saved it under their operation's own key.
-  const [legacyProcessValues] = useUiPreference<Record<string, ProcessValues>>(
-    PREFERENCES.INVENTORY_OPERATION_PROCESS_VALUES,
-    { defaultValue: {} },
-  );
+  // The raw context, for reading a bundle for an operation OTHER than the one `processValues` above
+  // is currently bound to: selecting a new operation needs that operation's own collection, and
+  // `processValues` only starts reading it on the render AFTER `operation` state actually changes
+  // (RSDEV-1231, Codex review, PR #1090). See `bundleFor`.
+  const uiPreferences = useRawUiPreferences();
   const [processNames, setProcessNames] = useUiPreference<Record<string, Array<string>>>(
     PREFERENCES.INVENTORY_OPERATION_PROCESS_NAMES,
     { defaultValue: {} },
@@ -417,12 +416,26 @@ function OperationWizard({
       perOriginUnitIds: Object.fromEntries(origins.map((o) => [o.globalId ?? "", getUnitId(o.quantity)])),
     });
 
+  // The remembered bundle for a specific operation + remember-key, read straight from context for
+  // THAT operation rather than through `processValues` above: `op` here may be an operation the
+  // user is in the middle of selecting, not yet the `operation` state `processValues` is bound to
+  // (RSDEV-1231, Codex review, PR #1090).
+  const bundleFor = (op: InventoryOperation, key: string): ProcessValues | null => {
+    const own = readUiPreference<Record<string, ProcessValues>>(uiPreferences, processValuesPreferenceFor(op.key), {});
+    const legacy = readUiPreference<Record<string, ProcessValues>>(
+      uiPreferences,
+      PREFERENCES.INVENTORY_OPERATION_PROCESS_VALUES,
+      {},
+    );
+    return normalizeProcessValues(own[key] ?? legacy[key]);
+  };
+
   // The saved bundle for a given values set, and the wizard state (values + template + documentation +
   // whether remember is on) that a process name resolves to: its saved bundle if one exists, else the
   // defaults. Used on operation select and whenever the process name changes.
   const stateForKey = (op: InventoryOperation, vals: OperationInputs) => {
     const key = rememberKey(op, vals);
-    const bundle = normalizeProcessValues(processValues?.[key] ?? legacyProcessValues?.[key]);
+    const bundle = bundleFor(op, key);
     const base = freshValues(op, origin, vals);
     if (bundle) {
       const restoredTemplate = restoredTemplateSelection(templateSelectionFor(bundle.template));
@@ -515,7 +528,7 @@ function OperationWizard({
     setRemember(checked);
     if (checked) {
       const key = rememberKey(operation, values);
-      const bundle = normalizeProcessValues(processValues?.[key] ?? legacyProcessValues?.[key]);
+      const bundle = bundleFor(operation, key);
       if (bundle) {
         // Same reconciliation as the load path: ticking the box restores the same bundle, so it can
         // carry the same cross-category amounts.
