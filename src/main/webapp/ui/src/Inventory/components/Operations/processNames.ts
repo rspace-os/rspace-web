@@ -8,6 +8,7 @@
  * is an unambiguous separator.
  */
 import { omit } from "es-toolkit";
+import { PREFERENCES } from "@/hooks/api/useUiPreference";
 import { type InventoryOperation, resolveProcessName } from "./operationsConfig";
 
 /**
@@ -19,6 +20,31 @@ export function rememberKey(operation: InventoryOperation, values: Record<string
   if (!operation.effect.processNameFrom) return operation.key;
   const name = resolveProcessName(operation, values);
   return name === "" ? operation.key : `${operation.key} ${name}`;
+}
+
+/**
+ * The seven operation types' own "remember" bundle collections (RSDEV-1231): before this, every
+ * operation's remembered processes lived in ONE collection (INVENTORY_OPERATION_PROCESS_VALUES),
+ * which a heavy "Remember" user could grow past the server's per-key size cap for good, since
+ * nothing ever removes an entry (grill Q1). Splitting by operation type gives each its own budget.
+ * `operation.key` comes from the server's operation config (a runtime string, not a TypeScript
+ * literal union), so an operation this map does not recognise - only possible if a new operation
+ * type is added server-side before this map is - falls back to the retained legacy collection
+ * rather than throwing or silently picking one of the seven arbitrarily.
+ */
+const PROCESS_VALUES_PREFERENCE_BY_OPERATION_KEY: Readonly<Record<string, symbol>> = {
+  aliquot: PREFERENCES.INVENTORY_OPERATION_PROCESS_VALUES_ALIQUOT,
+  passage: PREFERENCES.INVENTORY_OPERATION_PROCESS_VALUES_PASSAGE,
+  pool: PREFERENCES.INVENTORY_OPERATION_PROCESS_VALUES_POOL,
+  derive: PREFERENCES.INVENTORY_OPERATION_PROCESS_VALUES_DERIVE,
+  cryopreserve: PREFERENCES.INVENTORY_OPERATION_PROCESS_VALUES_CRYOPRESERVE,
+  revive: PREFERENCES.INVENTORY_OPERATION_PROCESS_VALUES_REVIVE,
+  destroy: PREFERENCES.INVENTORY_OPERATION_PROCESS_VALUES_DESTROY,
+};
+
+/** The preference key this operation's remembered-process bundles are read from and written to. */
+export function processValuesPreferenceFor(operationKey: string): symbol {
+  return PROCESS_VALUES_PREFERENCE_BY_OPERATION_KEY[operationKey] ?? PREFERENCES.INVENTORY_OPERATION_PROCESS_VALUES;
 }
 
 /** Adds a trimmed, non-empty process name to the operation's saved list (deduped). */
