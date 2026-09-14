@@ -12,6 +12,7 @@ import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.comms.CommunicationTarget;
 import com.researchspace.model.comms.MessageOrRequest;
+import com.researchspace.model.sort.CommunicationSort;
 import com.researchspace.service.archive.ExportImport;
 import jakarta.xml.bind.JAXBException;
 import java.io.File;
@@ -51,7 +52,7 @@ public class MessageArchiveDataHandler extends AbstractDataHandler implements Ar
     PaginationCriteria<CommunicationTarget> pgCrit =
         PaginationCriteria.createDefaultForClass(CommunicationTarget.class);
     pgCrit.setGetAllResults();
-    pgCrit.setOrderBy("communication.creationTime");
+    pgCrit.setOrderBy(CommunicationSort.CREATION_TIME.key());
     pgCrit.setSortOrder(SortOrder.ASC);
     for (User user : usersToInclude) {
       ISearchResults<MessageOrRequest> messages =
