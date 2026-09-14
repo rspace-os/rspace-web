@@ -10,6 +10,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -18,6 +19,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.researchspace.api.v1.model.ApiExtraField;
 import com.researchspace.api.v1.model.ApiInventoryLink;
 import com.researchspace.api.v1.model.ApiInventoryOperationOriginUpdate;
@@ -123,6 +125,75 @@ class InventoryOperationsApiControllerTest {
     assertTrue(
         inputs.getValue().get("eachAmount") instanceof ApiQuantityInfo,
         "the bound quantity Map must reach the manager typed");
+  }
+
+  /**
+   * A converter configured the way {@code WebConfig.extendMessageConverters} configures the app's
+   * real one: {@code USE_BIG_DECIMAL_FOR_FLOATS} enabled, so a JSON number written with a decimal
+   * point binds as {@link BigDecimal} rather than {@code Double} wherever Jackson has to guess an
+   * untyped value's Java type (RSDEV-1231, Codex review, PR #1090). {@code
+   * yamlBodiesAreRejectedWith415BeforeAnyInventoryEffect} below builds its own converter the same
+   * way, for the same reason: constructing the bean's dependencies just to get its message
+   * converters is out of proportion for a unit test.
+   */
+  private static MappingJackson2HttpMessageConverter preciseJsonConverter() {
+    MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter();
+    converter.getObjectMapper().configure(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS, true);
+    return converter;
+  }
+
+  @Test
+  void genericAndTypedEndpointsAgreeOnAQuantityBeyondDoublesExactPrecision() throws Exception {
+    // 9007199254740992 is 2^53, the largest integer a double represents exactly; appending ".001"
+    // demands more significant digits than a double has room for, so Jackson's default untyped
+    // binding (Double, for a field with no declared type to bind into) already cannot hold it. The
+    // typed facades bind straight into a BigDecimal-typed field and were never affected; the
+    // generic endpoint's inputs map had no such field to guide Jackson until WebConfig's
+    // USE_BIG_DECIMAL_FOR_FLOATS was turned on (RSDEV-1231, Codex review, PR #1090). Both must
+    // agree, since they are meant to be two doors onto the same request.
+    String precise = "9007199254740992.001";
+    ApiSampleWithFullSubSamples created = new ApiSampleWithFullSubSamples("Precise");
+    when(operationManager.performOperation(any(), any(), any(), any(), any(), eq(user)))
+        .thenReturn(new OperationOutcome(created, List.of(originAfter(100L))));
+    MockMvc mvc =
+        MockMvcBuilders.standaloneSetup(controller)
+            .setMessageConverters(preciseJsonConverter())
+            .build();
+
+    mvc.perform(
+            post("/api/inventory/v1/operations")
+                .contentType("application/json")
+                .requestAttr("user", user)
+                .content(
+                    "{\"operationType\":\"aliquot\","
+                        + "\"origins\":[{\"id\":100,\"amountMode\":\"explicit\","
+                        + "\"amountTaken\":{\"numericValue\":1,\"unitId\":3}}],"
+                        + "\"inputs\":{\"sampleName\":\"Precise\",\"count\":1,"
+                        + "\"eachAmount\":{\"numericValue\":"
+                        + precise
+                        + ",\"unitId\":3}}}"))
+        .andExpect(status().isCreated());
+    mvc.perform(
+            post("/api/inventory/v1/operations/aliquot")
+                .contentType("application/json")
+                .requestAttr("user", user)
+                .content(
+                    "{\"origin\":{\"globalId\":\"SS100\","
+                        + "\"amountTaken\":{\"numericValue\":1,\"unitId\":3}},"
+                        + "\"sampleName\":\"Precise\",\"count\":1,"
+                        + "\"eachAmount\":{\"numericValue\":"
+                        + precise
+                        + ",\"unitId\":3}}"))
+        .andExpect(status().isCreated());
+
+    @SuppressWarnings("unchecked")
+    ArgumentCaptor<Map<String, Object>> inputs = ArgumentCaptor.forClass(Map.class);
+    verify(operationManager, times(2))
+        .performOperation(eq("aliquot"), any(), inputs.capture(), any(), any(), eq(user));
+    for (Map<String, Object> captured : inputs.getAllValues()) {
+      ApiQuantityInfo eachAmount = (ApiQuantityInfo) captured.get("eachAmount");
+      assertEquals(new BigDecimal(precise), eachAmount.getNumericValue());
+    }
   }
 
   @Test
