@@ -28,7 +28,7 @@ import org.springframework.test.web.servlet.MvcResult;
  * DevDocs/adr/0007: the created sample and each origin's remaining quantity come back in one
  * envelope (D2), a creating operation answers 201 with a Location, Destroy 200; plus the
  * facade-only rules a unit test cannot reach end to end: every error names a field the caller sent,
- * a stale expectedQuantity is a 409, and the server defaults apply.
+ * and the server defaults apply.
  *
  * <p>Not run automatically (extends a real-transaction MVC base).
  */
@@ -365,25 +365,27 @@ public class InventoryOperationFacadesMVCIT extends API_MVC_InventoryTestBase {
   }
 
   @Test
-  public void aStaleExpectedQuantityIsAConflictThatLeavesTheOriginUntouched() throws Exception {
-    // M0 D5: the caller believed the origin held 4 g; it holds 5, so the read was stale.
+  public void anExpectedQuantityIsAcceptedRegardlessOfWhetherItMatchesTheOrigin() throws Exception {
+    // expectedQuantity (M0 D5) is still accepted on the wire but no longer compared against the
+    // origin's live quantity: this branch has no concurrency control
+    // (RSDEV-1231-no-concurrency), so a mismatched value proceeds exactly like a matching one.
     ApiSubSample origin = origin();
-    post(
-        "aliquot",
-        "{\"origin\":{\"globalId\":\""
-            + origin.getGlobalId()
-            + "\",\"amountTaken\":"
-            + q("1", GRAM)
-            + ",\"expectedQuantity\":"
-            + q("4", GRAM)
-            + "},\"sampleName\":\"Stale\",\"eachAmount\":"
-            + q("0.5", GRAM)
-            + "}",
-        409);
-    assertUnchanged(origin);
+    ApiInventoryOperationResult stale =
+        created(
+            "aliquot",
+            "{\"origin\":{\"globalId\":\""
+                + origin.getGlobalId()
+                + "\",\"amountTaken\":"
+                + q("1", GRAM)
+                + ",\"expectedQuantity\":"
+                + q("4", GRAM)
+                + "},\"sampleName\":\"Stale\",\"eachAmount\":"
+                + q("0.5", GRAM)
+                + "}");
+    assertRemaining(stale, origin, "4");
 
-    // and a matching expected quantity proceeds
-    ApiInventoryOperationResult result =
+    // a matching expected quantity proceeds too, taking a further 1 g off the same origin
+    ApiInventoryOperationResult matching =
         created(
             "aliquot",
             "{\"origin\":{\"globalId\":\""
@@ -395,7 +397,7 @@ public class InventoryOperationFacadesMVCIT extends API_MVC_InventoryTestBase {
                 + "},\"sampleName\":\"Fresh\",\"eachAmount\":"
                 + q("0.5", GRAM)
                 + "}");
-    assertRemaining(result, origin, "4");
+    assertRemaining(matching, origin, "3");
   }
 
   // --- helpers ---
