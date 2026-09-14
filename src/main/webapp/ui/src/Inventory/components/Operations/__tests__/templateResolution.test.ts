@@ -159,6 +159,8 @@ describe("templateSelectionFor", () => {
         templateName: "T5",
         quantityCategory: "mass",
         remember: true,
+        // Restored unchecked: the stored name may be stale and the template may have been trashed.
+        pendingCheck: true,
       },
     );
   });
@@ -179,9 +181,18 @@ describe("templateStepValid", () => {
     expect(templateStepValid({ mode: "pick", templateId: 5 })).toBe(true);
   });
 
-  it("is valid for none / remembered", () => {
+  it("is valid for none", () => {
     expect(templateStepValid({ mode: "none", templateId: null })).toBe(true);
-    expect(templateStepValid({ mode: "remembered", templateId: 5 })).toBe(true);
+  });
+
+  it("holds a remembered template invalid until its restore-time check has passed", () => {
+    // The stored id was written by a previous run, not by a check, so the template may since have
+    // been renamed, trashed, or have gained a mandatory field with no default. Until the wizard
+    // re-checks it against the server the step is incomplete, which is also what keeps the step-one
+    // one-click Perform off a template that no longer exists.
+    const restored = templateSelectionFor({ mode: "pick", templateId: 5, templateName: "T5" });
+    expect(templateStepValid(restored)).toBe(false);
+    expect(templateStepValid({ ...restored, pendingCheck: false })).toBe(true);
   });
 
   it("holds fromSample to the same id rule as pick", () => {
