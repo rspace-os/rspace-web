@@ -101,7 +101,14 @@ export class BatchUserRegistrationComponent {
   }
 
   async clickCreateAll(): Promise<void> {
+    const batchCreateResponse = this.page
+      .waitForResponse(
+        (res) => res.url().includes("/system/userRegistration/batchCreate") && res.request().method() === "POST",
+        { timeout: 1_000 },
+      )
+      .catch(() => undefined);
     await this.createAllButton.click();
+    await batchCreateResponse;
   }
 
   async validationErrorCount(): Promise<number> {
