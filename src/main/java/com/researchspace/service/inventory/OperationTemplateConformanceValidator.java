@@ -83,7 +83,7 @@ public class OperationTemplateConformanceValidator {
       // the sample unbounded: the length, tag and extra-field rules live on sampleApiPostValidator,
       // and nothing else bounded them - the input validator only checks that a "text" input is a
       // CharSequence, so an over-long sampleName reached EditInfo.name (varchar(255)) inside the
-      // manager's transaction, after the origin locks were taken (parallel review).
+      // manager's transaction, after the origins were decremented (parallel review).
       //
       // Both name fields relative to the sample (name, quantity, subSamples[i].quantity); this
       // binding result is rooted at the request, so nest the path or a rejection would fail to

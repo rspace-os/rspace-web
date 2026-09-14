@@ -5586,9 +5586,7 @@ export default interface Resources {
           "userApiDisabled": "Access to API has been disabled for user ''{0}''",
           "userOAuthDisabled": "Access through OAuth tokens has been disabled for user ''{0}''"
         },
-        "concurrentUpdate": "Another request modified this item at the same time; retry the request.",
-        "detected": "Errors detected: {0}",
-        "generalServerError": "General server error"
+        "detected": "Errors detected: {0}"
       },
       "pubchem": {
         "errors": {
@@ -7110,7 +7108,6 @@ export default interface Resources {
           "amountTakenInvalid": "Each origin must specify a non-negative amount, with a unit, to take from it.",
           "amountTakenNotSubtractable": "The amount taken is too fine to record against this origin; it cannot be represented in any unit of its category.",
           "amountTakenPositive": "This operation takes from each origin, so the amount taken must be greater than zero.",
-          "amountTakenStale": "The subsample's quantity changed since it was read; reload and retry.",
           "amountTakenTooPrecise": "The amount taken supports at most 3 decimal places.",
           "amountTakenZero": "This operation does not take from its origins, so the amount taken must be zero.",
           "createdAmountNotPositive": "Each created subsample must be given a quantity greater than zero.",
@@ -7189,7 +7186,6 @@ export default interface Resources {
           "unsupportedLinkTarget": "{0} is a sample template. Only Containers, Samples and Subsamples are valid for linking."
         },
         "subsample": {
-          "deletedSinceLoaded": "Subsample {0} was deleted and can no longer be edited.",
           "notFound": "No subsample with id: {0}",
           "unitIncompatibleWithSample": "Subsample quantity ''{0}'' is incompatible with quantity unit used by parent sample ({1})"
         },

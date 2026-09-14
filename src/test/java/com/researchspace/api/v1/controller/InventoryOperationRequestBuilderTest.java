@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.api.v1.model.ApiExtraField;
-import com.researchspace.api.v1.model.ApiInventoryOperationAmountMode;
 import com.researchspace.api.v1.model.ApiInventoryOperationPost;
 import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.model.record.BaseRecord;
@@ -227,16 +226,11 @@ class InventoryOperationRequestBuilderTest {
 
   @Test
   void buildsTheDestroyGoldenRequest() {
-    // The one place builder and golden fixture legitimately differ: the fixture predates
-    // amountMode and its own suite pins that ABSENT stays accepted (backward compatibility for old
-    // clients), but the wizard today sends "all" for an origin-emptying operation
-    // (buildOperationRequest.ts, takesWholeOrigin) and InventoryOperationManagerImpl consumes it as
-    // the compare-and-swap guard against emptying an origin someone else topped up. So the expected
-    // request is the fixture WITH that mode, asserted here rather than papered over in the builder.
-    ApiInventoryOperationPost expected = InventoryOperationPostValidatorTest.destroyRequest();
-    expected.getOrigins().get(0).setAmountMode(ApiInventoryOperationAmountMode.ALL);
+    // The builder emits no amountMode: only the post validator reads it and a built request never
+    // passes through that validator, so the golden fixture (which predates the field) matches
+    // as-is.
     assertBuildsTheGoldenRequest(
-        expected,
+        InventoryOperationPostValidatorTest.destroyRequest(),
         params("destroy").values(Map.of()).origins(List.of(origin(100, "5", List.of()))).build());
   }
 
