@@ -1,10 +1,19 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import useUiPreference, { PREFERENCES, UiPreferences } from "../useUiPreference";
 
+const addAlert = vi.fn();
+vi.mock("@/stores/stores/getRootStore", () => ({
+  default: () => ({ uiStore: { addAlert } }),
+}));
+
 describe("useUiPreference", () => {
+  beforeEach(() => {
+    addAlert.mockClear();
+  });
+
   it("writes one key at a time and never re-reads the whole object first", async () => {
     // Code review, finding 3: each setter used to read the full preference object, merge one key
     // and POST the lot back. Two writers that overlapped (two tabs, or two setters in one handler)
@@ -238,6 +247,9 @@ describe("useUiPreference", () => {
   });
 
   it("reports a failed write instead of swallowing it", async () => {
+    // Logging alone left a failed save invisible to the user: the session kept working off the
+    // optimistic local state, so nothing looked wrong until a later login found the save had never
+    // landed (RSDEV-1231, Codex review, PR #1090). A visible alert is the other half of "reports".
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
     server.use(
       http.get("/userform/ajax/preference", () => HttpResponse.json({})),
@@ -255,6 +267,9 @@ describe("useUiPreference", () => {
     });
 
     await waitFor(() => expect(consoleError).toHaveBeenCalled());
+    expect(addAlert).toHaveBeenCalled();
+    const alert = addAlert.mock.calls[0][0] as { variant: string };
+    expect(alert.variant).toBe("warning");
     consoleError.mockRestore();
   });
 });
