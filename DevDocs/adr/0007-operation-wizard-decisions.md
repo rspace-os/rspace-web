@@ -93,28 +93,23 @@ would differ from the validated one (0.0004 ml would take nothing). Created amou
 can be added during Derive). A zero decrement is a complete no-op, for
 operations that link to an origin without consuming it (Passage).
 
-`amountMode` says how the client decided the amount, and turns the amount into a
-compare-and-swap guard when the answer is "all of it". A client that means to
-empty an origin ("take all", and Destroy, whose whole promise is to empty it)
-still serialises the full quantity it read, and declares `amountMode: "all"`.
-The endpoint then checks that amount against the live locked quantity and
-rejects a mismatch with **409** (`EDIT_CONFLICT`,
-`errors.inventory.operation.amountTakenStale`).
-
-409 rather than 400 because nothing about the request is malformed: it was valid
-against the state the client saw, and the user typed no amount for them to
-correct. The remedy is to reload, not to fix a field. Resolving "all"
-server-side was rejected: a Perform must never do something other than what the
-user saw, and reading the live quantity at Perform time would silently empty an
-origin someone else had just topped up. This replaces the old 400
-`mustEmptyOrigin` for a DECLARED whole-origin claim only: that key is still raised when the
-mode is absent, because an absent mode earns no compare-and-swap. The structural half of that rule
-(an origin-emptying operation may not declare `amountMode: "explicit"`) moved to
-the request validator and is still a 400. The comparison is numeric after unit
-conversion, so 0.01 l and 10 ml are both "all" of a 10 ml origin. The field is
+`amountMode` says how the client decided the amount: `explicit` for a value the
+user typed, `all` for a declared claim on the origin's whole quantity (Destroy's
+whole promise is to empty its origin). The structural rule stays a 400: an
+origin-emptying operation may not declare `amountMode: "explicit"`. The field is
 optional on the wire and absent means EXPLICIT, so every request accepted before
 it existed keeps its meaning; absent on an origin-emptying operation is still a
 whole-origin claim, because that operation cannot mean anything else.
+
+**No concurrency control (RSDEV-1231-no-concurrency).** `amountMode` and the
+per-origin `expectedQuantity` are still accepted on the wire and threaded
+through the request builder, but neither is compared against a locked read of
+the origin's live quantity: this branch strips the row-locking and
+compare-and-swap work entirely, so a "take all" or an `expectedQuantity` is
+never rejected as stale (409 `EDIT_CONFLICT`) no matter what the origin holds
+when the request is processed. Two requests decrementing the same origin from
+one read is a real, accepted risk here, not a scenario this branch defends
+against; see the branch's own commit history for the removal.
 
 ## An unrecognised property is captured at binding and rejected by the validator
 
@@ -278,128 +273,24 @@ above) without computing it.
   2026-09-08): the check itself stays controller code (it delegates to the
   shared samples validator, a controller-layer class the service must not
   import), but the controller hands it to the manager as an
-  `InTransactionValidation` callback, run before any origin is read or locked.
+  `InTransactionValidation` callback, run before any origin is read.
   Run in its own transaction it only narrowed the window: a template edited
   between the check and the operation could fail mid-mutation or create the
   sample against a definition different from the one validated.
-- **Permission is asserted before the first lock** (review, 2026-09-08): the
-  operations manager, the List of Materials lock hoist and the Stoichiometry
-  deduction hoist all resolve caller-supplied ids into parent-sample sibling
-  sets to lock. Each now asserts (or filters on) the caller's permission per
-  record BEFORE taking any lock, so an under-permissioned request cannot lock
-  other users' sibling sets and delay their writers until it fails; the
-  existing locked re-checks before mutation are retained.
-- **Locking and freshness are separate guarantees** (code review, 2026-09-08,
-  superseding the 2026-09-03/04 lock bullets). `GenericDao.lockRowForUpdate`
-  takes `lock_mode X` on exactly one row of the entity's own table, via a
-  scalar `select id ... for update`, and then returns the entity from an
-  ordinary `session.get`. It deliberately never locks the loaded entity:
-  Hibernate would emit the entity's eager-fetch SELECT (a ~20-table join for
-  a subsample: `Container`, `User`, `FileProperty`, `Barcode`, ...) with
-  `FOR UPDATE` on the end, taking exclusive locks on rows in every joined
-  table (measured: "mysql tables in use 21, locked 20"). Graph-wide locks made
-  every earlier ordering claim here meaningless (the join decided the order)
-  and deadlocked inventory operations against unrelated features such as
-  container moves. `GenericDaoLockScopeIT` pins the narrow scope.
-
-  The returned entity holds the transaction's snapshot: under REPEATABLE READ
-  the lock serialises writers but does not make entity reads current. Every
-  value that must be computed from the last committed state is therefore read
-  as a SCALAR under the lock, which the persistence context cannot serve or
-  re-stale: origin quantities in `checkOriginLiveState` and
-  `registerApiSubSampleUsage` and the Stoichiometry over-use check
-  (`SubSampleDao.getQuantityForUpdate`), the sibling quantities behind a
-  parent total (`getActiveQuantitiesForUpdate`), and the UI-settings blob in
-  `mergeUiJsonSetting` (`UserDao.getPreferenceValueForUpdate`). An earlier
-  refresh-based design (re-read the row under the lock so the entity is
-  current) was measured failing: a refreshed sibling reverted to its pre-lock
-  value later in the same request, and the refresh discarded a caller's
-  unflushed changes.
-
-  Accepted tradeoff of dropping the refresh: the entity's OTHER columns are
-  snapshot values too, and with no `@Version` and no `@DynamicUpdate` a flush
-  writes all columns, so a locked writer can write a stale unrelated column
-  (a name, a description) back over a concurrent committed edit. This is the
-  same field-level last-write-wins every unlocked write path already has
-  (`InventoryEditLockTracker` does not exclude a user's own concurrent
-  requests, and there is no If-Match anywhere in api/v1); the refresh had
-  been shielding only these three call sites from it, by accident. Fixing it
-  properly is a global optimistic-locking/`@DynamicUpdate` change, which the
-  no-mapping-changes constraint rules out here; it belongs to the separate
-  concurrency ticket alongside the If-Match discussion.
-  - **Revisited 2026-09-12** (parallel review, P3): `@DynamicUpdate` is now on
-    `SampleEntity` alone, which narrows its UPDATE to the changed columns and
-    closes this case for the sample row the recompute writes. A real `@Version`
-    remains out of scope: it would turn a concurrent edit into
-    `OptimisticLockException`, which api/v1 has no mapping for. The cost of
-    losing Hibernate's cached static UPDATE on this entity has not been measured
-    against the workbench-bag write path.
-- **Lock acquisition order in an operation**: first every distinct parent
-  sample's subsample rows as a set, ascending by sample id (the locked scalar
-  read in `SampleSiblingRowLock.lockSiblingRowsAndRecalculateTotal`); then each origin
-  row, ascending by subsample id (a re-ask for a row the sibling set already
-  holds); then the parent sample rows themselves, ascending, matching every
-  other writer's subsample-then-sample order. The sibling set comes first
-  because each origin's own row belongs to it: acquiring the set after the
-  per-origin locks means two operations on two siblings each hold the row the
-  other wants, and InnoDB kills one (measured: 30 deadlocks per run).
-- **The parent total is recomputed from locked rows, not from sibling
-  entities** (code review finding 2, closed 2026-09-08):
-  `SubSample.setQuantity`'s cascade still sums the sibling entities, which a
-  transaction sees as of its own snapshot, so two operations on two siblings
-  of one sample each computed the total from stale stock (reproduced: children
-  held 14, stored total 17). `lockSiblingRowsAndRecalculateTotal` re-derives the
-  total from `getActiveQuantitiesForUpdate` scalars and assigns it onto the
-  sample so the commit flush writes it over the cascade's value.
-  `parallelAliquotsOnSiblingSubSamplesKeepTheParentTotalExact` in
-  `InventoryOperationsApiControllerMVCIT` settles it (proven red-green on
-  2026-09-08 against the pre-narrowing tree: both requests 201, total exact,
-  0 deadlocks, and failing with the recompute call removed; not yet re-run
-  since the lock was narrowed). The total stays denormalised because deriving it on read
-  would touch every sample listing and search projection. The 409 mapping in
-  `ApiControllerAdvice` stays as the fallback for anything the lock does not
-  cover. `InventoryEditLockTracker` is not a substitute: it is process-local
-  and treats a same-user re-lock as an extension.
-- **Every stock decrement takes the row lock, not just the operations one**
-  (code review, 2026-09-04): Stoichiometry deduction and List of Materials
-  usage decrement through the same `registerApiSubSampleUsage`, so the locked
-  read lives there and all three callers share it rather than each learning to
-  lock. The operations path locks the same row twice in one transaction, which
-  is harmless: the lock statement is a scalar query, so a repeat never
-  refreshes or upgrades the entity and a caller's unflushed changes survive.
-  Stoichiometry and List of Materials follow the same canonical acquisition
-  order as the operations endpoint (2026-09-08): every distinct parent
-  sample's sibling set up front, ascending by sample id, then the individual
-  rows. The sibling-set lock is row locks on all of a sample's subsamples, so
-  once the sets are held every later row lock is a re-acquisition and cannot
-  form a deadlock cycle across the three writers. Stoichiometry additionally
-  processes its links ordered by inventory record id; a lock failure still
-  aborts the whole deduction rather than becoming one failed row (Hibernate
-  leaves the session unusable afterwards) and surfaces as the 409 the
-  Stoichiometry refresh-and-retry UI already handles, which remains the
-  backstop for anything unforeseen (e.g. rows outside the set query, such as
-  deleted or quantity-less subsamples). The
-  whole-value `POST /userform/ajax/preference` path takes no lock, so until
-  every client sends a key, a cached-JS tab writing the whole UI settings blob
-  can still clobber a concurrent keyed merge.
-- **The lock-taking transactions run at READ COMMITTED** (live test against
-  MariaDB 12.3, 2026-09-08). Every writer above does at least one plain read
-  before its first `FOR UPDATE` (resolving an origin's parent sample, loading a
-  link, looking the user up). Under REPEATABLE READ that read fixes the
-  transaction's snapshot, and MariaDB's `innodb_snapshot_isolation` (on by
-  default from 11.6) then makes a locking read of a row committed since fail
-  with error 1020 instead of waiting: the second of two concurrent writers got
-  a 409 on every contended row (C1 to C14 and the keyed preference merge in
-  the live run; 87 of them, 0 deadlocks), while on 10.11 the same code
-  serialised correctly. At READ COMMITTED the read view closes after each
-  statement, so the locking read that waited sees the committed row and the
-  lock order above does its job on both versions. Set per method in the
-  `txAdvice` of `applicationContext-service.xml` and its test twin
-  (`performOperation`, `deductStock`, `createNewListOfMaterials`,
-  `updateListOfMaterials`, `mergeUiJsonSetting`), pinned by
-  `StockWriterTransactionIsolationTest`. Nothing else changes: the scalar
-  locked reads still supply freshness, and entity reads inside these
-  transactions were already treated as snapshot values.
+- **RSDEV-1231-no-concurrency: this branch has no concurrency control.** An
+  earlier iteration of this work (RSDEV-1231 proper) added row locking
+  (`GenericDao.lockRowForUpdate`), locked-scalar reads for quantities and the
+  UI-settings blob, a sibling-set lock ordering to keep a sample's
+  denormalised total consistent under concurrent writers, `READ COMMITTED`
+  isolation on the writing methods, and a 409 `EDIT_CONFLICT` mapping for a
+  detected conflict. All of it is deliberately absent here: permission is
+  still asserted per origin before any mutation, and the live-state rules
+  (empty origin, over-removal, must-empty, category mismatch) still run
+  inside the transaction, but nothing locks a row, nothing compares a request
+  against a fresher read, and two requests decrementing the same origin from
+  one read can both succeed. See the branch's commit history for what was
+  removed and why; a future concurrency effort starts from `rspace-os/main`,
+  not from reintroducing these bullets.
 - **Category and precision rules also apply to the created subsamples** (code
   review, 2026-09-03): the amount taken must be a real amount unit in the
   origin's category; each new subsample quantity must be in the origin's
@@ -492,8 +383,9 @@ internal and unpublished; the public contract is one typed endpoint per operatio
 origins by global id, a singular `origin` for the six single-origin operations and
 `origins` for Pool, input fields named exactly after the definition's input keys, numeric
 `templateId`, `documentedByGlobalId`, an optional per-origin `expectedQuantity`
-compare-and-swapped against the live quantity (409 on mismatch), and one response envelope
-of the created sample plus each origin's remaining state. The facades validate shape only
+(accepted on the wire but not enforced; see RSDEV-1231-no-concurrency above), and one
+response envelope of the created sample plus each origin's remaining state. The facades
+validate shape only
 and reuse the structural validator and the manager unchanged; error paths are renamed to
 the caller's fields on the way out. Three things the core had to learn for this: an origin
 element may carry no `amountTaken` where the definition decides it (Passage takes nothing,
