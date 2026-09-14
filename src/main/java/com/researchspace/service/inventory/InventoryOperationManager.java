@@ -54,25 +54,14 @@ public interface InventoryOperationManager {
    * against the same state the mutation sees. A violation is reported as a {@link BindException}
    * carrying field errors under {@code origins[i]}, before anything is written.
    *
-   * <p>An origin whose amount is a whole-origin claim (amountMode ALL, or an origin-emptying
-   * operation) is additionally compare-and-swapped against the live quantity, and a mismatch raises
-   * {@link InventoryEditConflictException} rather than a BindException: the request was valid
-   * against the state the client read, so it is a 409 to reload from, not a 400 to correct.
-   *
    * @return the newly created sample (with its subsamples), as returned by the sample-creation
    *     manager, or {@code null} for a terminal operation that creates nothing (noOutput, e.g.
    *     Destroy, which only acts on its origins). See DevDocs/adr/0007.
-   * @throws InventoryEditConflictException when a whole-origin claim no longer matches the origin's
-   *     live quantity, before any origin is decremented or any sample created. Unchecked, so
-   *     Spring's default rules roll the transaction back without a {@code rollback-for} entry.
    * @throws BindException when a live-state rule is violated, before any origin is decremented or
    *     any sample created. The txAdvice for this method declares {@code rollback-for
    *     BindException} (BindException is checked, so Spring's default rules would otherwise COMMIT
-   *     on it): the sibling-set locks the live-state pass takes go through {@code
-   *     lockSiblingRowsAndRecalculateTotal}, which writes each parent's recomputed total, and those
-   *     writes must not be committed alongside a 400 (Copilot review, PR #1090).
-   *     InventoryOperationManagerImplTest pins the ordering: performExpectingRejection asserts none
-   *     of the mutating collaborators were called.
+   *     on it). InventoryOperationManagerImplTest pins the ordering: performExpectingRejection
+   *     asserts none of the mutating collaborators were called.
    */
   ApiSampleWithFullSubSamples performOperation(
       ApiInventoryOperationPost request, User user, InTransactionValidation callerValidation)
@@ -101,14 +90,12 @@ public interface InventoryOperationManager {
    * #performOperation(ApiInventoryOperationPost, User, InTransactionValidation)}, unchanged.
    *
    * <p>Each origin element carries its own {@code amountTaken} and {@code amountMode}, which the
-   * core validates against the live locked quantity; they are not inputs. An origin element MAY
+   * core validates against the origin's live quantity; they are not inputs. An origin element MAY
    * carry no amount when the definition itself decides it (an operation that takes nothing, or one
    * that empties its origins): the builder then supplies zero, or the live quantity under a
-   * whole-origin claim. An element's {@code expectedQuantity}, when set, is compare-and-swapped
-   * against the live locked quantity (M0 D5), raising {@link InventoryEditConflictException} on a
-   * mismatch. Absent optional inputs that declare a {@code default} are filled before validation
-   * (M0 D7). Precondition otherwise as for the core overload: the origin list has passed the
-   * endpoint's structural validation.
+   * whole-origin claim. Absent optional inputs that declare a {@code default} are filled before
+   * validation (M0 D7). Precondition otherwise as for the core overload: the origin list has passed
+   * the endpoint's structural validation.
    *
    * <p>Generated field names resolve in the request's locale ({@code LocaleContextHolder}, M0 D1),
    * and a {@code today} computed value is the current date in the session's timezone ({@code
