@@ -1,6 +1,5 @@
 package com.researchspace.service.inventory.impl;
 
-import com.researchspace.api.v1.model.ApiInventoryOperationAmountMode;
 import com.researchspace.api.v1.model.ApiInventoryOperationOriginUpdate;
 import com.researchspace.api.v1.model.ApiInventoryOperationPost;
 import com.researchspace.api.v1.model.ApiQuantityInfo;
@@ -16,7 +15,6 @@ import com.researchspace.model.units.Quantifiable;
 import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.model.units.QuantityUtils;
 import com.researchspace.model.units.RSUnitDef;
-import com.researchspace.service.inventory.InventoryEditConflictException;
 import com.researchspace.service.inventory.InventoryOperationConfig;
 import com.researchspace.service.inventory.InventoryOperationConfigRegistry;
 import com.researchspace.service.inventory.InventoryOperationInputValidator;
@@ -26,7 +24,6 @@ import com.researchspace.service.inventory.InventoryOperationRequestBuilder;
 import com.researchspace.service.inventory.LinkTargetResolver;
 import com.researchspace.service.inventory.OperationTemplateConformanceValidator;
 import com.researchspace.service.inventory.SampleApiManager;
-import com.researchspace.service.inventory.SampleSiblingRowLock;
 import com.researchspace.service.inventory.SubSampleApiManager;
 import com.researchspace.session.SessionTimeZoneUtils;
 import java.math.BigDecimal;
@@ -38,8 +35,6 @@ import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
@@ -58,7 +53,6 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
   @Autowired private InventoryOperationConfigRegistry operationConfigs;
   @Autowired private MessageSource messageSource;
   @Autowired private OperationTemplateConformanceValidator templateConformance;
-  @Autowired private SampleSiblingRowLock siblingRowLock;
   @Autowired private LinkTargetResolver linkTargetResolver;
 
   /** Stateless; one instance per bean, as elsewhere in the codebase. */
@@ -161,41 +155,9 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
     // transaction rather than one per origin against a 100-origin cap (parallel review, A14).
     List<ApiSubSample> originsAfter = new ArrayList<>();
     for (ApiInventoryOperationOriginUpdate origin : origins) {
-      originsAfter.add(
-          withLockedQuantity(subSampleApiMgr.getApiSubSampleById(origin.getId(), user)));
+      originsAfter.add(subSampleApiMgr.getApiSubSampleById(origin.getId(), user));
     }
     return new OperationOutcome(created, originsAfter);
-  }
-
-  /**
-   * The mapped origin, with its quantity taken from the row lock this transaction still holds
-   * rather than from the persistence context.
-   *
-   * <p>An operation that takes a positive amount reconciles the entity itself, so the two already
-   * agree. One that takes nothing (Passage, M0) does not: {@code registerApiSubSampleUsage} returns
-   * before touching the entity, deliberately, because dirtying a stale instance on a no-op path is
-   * what resurrects exhausted stock. {@code getApiSubSampleById} then answers from the same
-   * persistence context and reports the quantity this request cached BEFORE it queued for the
-   * locks. The envelope promises the post-operation snapshot, and a client that reuses that number
-   * as {@code expectedQuantity} gets a false 409 on its next request (Codex review, P2, PR #1090).
-   *
-   * <p>Only the DTO is corrected; the entity is left alone, so this cannot introduce the stale
-   * full-row write the no-op protection exists to prevent. The scalar read is an HQL query against
-   * SubSample, so Hibernate's AUTO flush mode flushes first. That is safe here: the only operation
-   * that writes fields onto its origins is Destroy, whose {@code emptiesOrigin} effect always takes
-   * a positive amount, so an origin can never be both dirty and holding a stale quantity at this
-   * point.
-   *
-   * <p>The rest of the mapped record is still this transaction's snapshot. That is the field-level
-   * last-write-wins DevDocs/adr/0007 accepts everywhere; the quantity is singled out because the
-   * endpoint's own compare-and-swap contract is written in terms of it.
-   */
-  private ApiSubSample withLockedQuantity(ApiSubSample mapped) {
-    QuantityInfo locked = subSampleApiMgr.getQuantityForUpdate(mapped.getId());
-    if (locked != null) {
-      mapped.setQuantity(new ApiQuantityInfo(locked));
-    }
-    return mapped;
   }
 
   /**
@@ -280,20 +242,6 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
    * under-permissioned caller gets an authorization failure, not a misleading "origin empty" 400.
    * Violations surface as the same field-scoped 400 (BindException) the structural validator
    * produces, under {@code origins[i]} in request order.
-   *
-   * <p>Locking, in acquisition order. First, every distinct parent sample's subsample rows are
-   * locked as a set, ascending by sample id, via {@link
-   * SampleSiblingRowLock#lockSiblingRowsAndRecalculateTotal}: the recompute of each parent's
-   * denormalised total must read the sibling rows currently, and taking them any later would
-   * deadlock, because each origin's own row is one of them. Then each origin is locked through
-   * {@link SubSampleApiManager#lockSubSampleForEdit}, ascending by subsample id (a re-ask for a row
-   * the sibling set already holds, plus the permission check and 404), so a concurrent operation on
-   * the same origin waits and then decrements from the committed quantity, not a stale read (code
-   * review, finding 1). Each check below reads the origin's quantity as a locked scalar ({@link
-   * SubSampleApiManager#getQuantityForUpdate}): the locked entity itself holds this transaction's
-   * snapshot, and a check against that would pass on stock a concurrent committer already took.
-   * Finally the parent sample rows themselves are locked, ascending, after all subsample rows,
-   * matching every other writer's subsample-then-sample order (code review, finding 2).
    */
   private void checkOriginLiveState(
       ApiInventoryOperationPost request,
@@ -314,34 +262,16 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
     for (int i = 0; i < request.getOrigins().size(); i++) {
       requestIndex.put(request.getOrigins().get(i), i);
     }
-    // Edit permission is asserted on every origin BEFORE any lock is taken (unlocked read): an
-    // under-permissioned caller must not be able to lock other users' sibling sets and delay their
-    // writers until this transaction fails and rolls back (Copilot review, PR #1090). The locked
-    // per-origin re-check below (lockSubSampleForEdit) still closes the TOCTOU window.
-    // The parent ids collected here feed the FIRST locks of the transaction, before any origin is
-    // locked. Each origin's own row is one of its parent's sibling rows, so asking for the sibling
-    // set after the per-origin locks means two operations on two siblings each hold the row the
-    // other wants, and InnoDB kills one. Taking the whole sibling set up front makes the second
-    // operation WAIT here instead.
-    Set<Long> parentSampleIds = new TreeSet<>();
+    // Edit permission is asserted on every origin before its live state is read.
     for (ApiInventoryOperationOriginUpdate origin : originsById) {
-      parentSampleIds.add(
-          subSampleApiMgr.assertUserCanEditSubSample(origin.getId(), user).getSample().getId());
+      subSampleApiMgr.assertUserCanEditSubSample(origin.getId(), user);
     }
-    parentSampleIds.forEach(siblingRowLock::lockSiblingRowsAndRecalculateTotal);
 
     QuantityInfo firstOriginQuantity = null;
-    // Whether any origin's whole-origin claim no longer matches its live quantity. Collected rather
-    // than thrown on sight so a field error found elsewhere in the request can be reported instead.
-    boolean staleOrigin = false;
     for (ApiInventoryOperationOriginUpdate origin : originsById) {
-      subSampleApiMgr.lockSubSampleForEdit(origin.getId(), user);
       errors.pushNestedPath(String.format("origins[%d]", requestIndex.get(origin)));
       try {
-        // A locked scalar, not the locked entity: the entity holds this transaction's snapshot
-        // (locking guarantees serialisation only), and checking against that would pass on stock a
-        // concurrent committer already took.
-        QuantityInfo currentQuantity = subSampleApiMgr.getQuantityForUpdate(origin.getId());
+        QuantityInfo currentQuantity = subSampleApiMgr.getIfExists(origin.getId()).getQuantity();
         if (originHoldsNothing(currentQuantity)) {
           errors.rejectValue(
               "id",
@@ -365,33 +295,9 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
               "amountTaken",
               "errors.inventory.operation.amountTakenCategoryMismatch",
               "The amount taken must use the origin's measurement category.");
-        } else if (origin.getExpectedQuantity() != null
-            && !amountTakenEmptiesOrigin(origin.getExpectedQuantity(), currentQuantity)) {
-          // The typed facades' form of the same compare-and-swap (M0 D5): the caller said what it
-          // believed the origin held, and the locked quantity says otherwise, so this is a stale
-          // read to reload from, whatever amount is being taken. Unit-aware equality, like the
-          // whole-origin claim below. An incomparable category is a mismatch too: the caller's
-          // belief cannot be about this origin.
-          staleOrigin = true;
-        } else if (claimsWholeOrigin(origin)
-            && !amountTakenEmptiesOrigin(origin.getAmountTaken(), currentQuantity)) {
-          // Compare-and-swap, not a validation failure: the client DECLARED this amount was the
-          // origin's entire quantity when it read it, so a live quantity that no longer matches
-          // means the origin changed between wizard load and Perform. Emptying it anyway would
-          // destroy stock the user never saw, and rejecting it as a 400 would tell them to correct
-          // a field they never typed, so this is a 409 the client resolves by reloading
-          // (RSDEV-1231). Checked ahead of amountTakenExceedsOrigin because in this mode a
-          // too-large amount is equally a stale snapshot, not an over-removal the user chose.
-          // Recorded rather than thrown here: see the throw after the loop.
-          staleOrigin = true;
         } else if (emptiesOrigin
             && !amountTakenEmptiesOrigin(origin.getAmountTaken(), currentQuantity)) {
-          // An emptying operation whose client did NOT declare amountMode. Absent mode is not a
-          // whole-origin claim, so a mismatch here is a malformed request for this operation, not a
-          // conflict: nothing has necessarily changed, the caller simply asked Destroy to take part
-          // of the origin. Treating it as a 409 told such a client to reload and retry, which
-          // reloads the same quantity and retries forever (parallel review, I1). Requests from this
-          // wizard always declare "all", so they take the compare-and-swap branch above.
+          // An emptying operation whose client did NOT take the origin's entire remaining amount.
           errors.rejectValue(
               "amountTaken",
               "errors.inventory.operation.mustEmptyOrigin",
@@ -417,19 +323,8 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
       }
     }
     rejectNewSubSamplesOutsideOriginCategory(request, firstOriginQuantity, errors);
-    // Field errors take precedence over the conflict. Throwing the 409 the moment a stale origin
-    // was
-    // seen discarded errors already collected for earlier origins, so a caller with both problems
-    // got "reload and retry", reloaded, resubmitted, and only then learned about the 400 (parallel
-    // review, I4). A 400 is the more actionable answer and needs no reload.
     if (errors.hasErrors()) {
       throw new BindException(errors);
-    }
-    if (staleOrigin) {
-      throw new InventoryEditConflictException("errors.inventory.operation.amountTakenStale");
-    }
-    for (Long sampleId : parentSampleIds) {
-      sampleApiMgr.lockSampleForEdit(sampleId, user);
     }
   }
 
@@ -495,20 +390,6 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
       }
       index++;
     }
-  }
-
-  /**
-   * Whether this origin's submitted amount is a DECLARED claim on the origin's whole quantity
-   * rather than a value the user typed, which is what makes it a compare-and-swap guard.
-   *
-   * <p>Only an explicit {@code amountMode: "all"} counts. An absent mode is not a claim, even on an
-   * origin-emptying operation: a client predating the field that asks Destroy for part of an origin
-   * is making a malformed request, and answering that with a conflict tells it to reload and retry
-   * a request that can never succeed (parallel review, I1). That case is a 400 instead, which is
-   * what it was before this field existed. This wizard always declares the mode.
-   */
-  static boolean claimsWholeOrigin(ApiInventoryOperationOriginUpdate origin) {
-    return origin.getAmountMode() == ApiInventoryOperationAmountMode.ALL;
   }
 
   /**
