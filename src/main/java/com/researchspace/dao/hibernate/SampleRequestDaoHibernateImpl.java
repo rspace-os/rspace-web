@@ -10,6 +10,8 @@ import com.researchspace.model.inventory.SampleRequest;
 import com.researchspace.model.inventory.SampleRequestRole;
 import com.researchspace.model.inventory.SampleRequestStatus;
 import java.util.List;
+import java.util.Set;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -28,14 +30,15 @@ public class SampleRequestDaoHibernateImpl extends GenericDaoHibernate<SampleReq
   public ISearchResults<SampleRequest> getRequestsForUser(
       PaginationCriteria<SampleRequest> pgCrit,
       SampleRequestRole role,
-      SampleRequestStatus status,
+      Set<SampleRequestStatus> statuses,
       Long sampleId,
       User user) {
 
+    boolean hasStatusFilter = CollectionUtils.isNotEmpty(statuses);
     // a deleted sample must not drive a pending count; the request row itself is kept for history
     String where = " where " + roleClause(role) + " and req.sample.deleted = false";
-    if (status != null) {
-      where += " and req.status = :status";
+    if (hasStatusFilter) {
+      where += " and req.status in (:statuses)";
     }
     if (sampleId != null) {
       where += " and req.sample.id = :sampleId";
@@ -46,7 +49,7 @@ public class SampleRequestDaoHibernateImpl extends GenericDaoHibernate<SampleReq
                 sessionFactory
                     .getCurrentSession()
                     .createQuery("select count(req) from SampleRequest req" + where, Long.class),
-                status,
+                hasStatusFilter ? statuses : null,
                 sampleId,
                 user)
             .uniqueResult();
@@ -58,7 +61,7 @@ public class SampleRequestDaoHibernateImpl extends GenericDaoHibernate<SampleReq
                     .createQuery(
                         "from SampleRequest req" + where + " order by req.created desc",
                         SampleRequest.class),
-                status,
+                hasStatusFilter ? statuses : null,
                 sampleId,
                 user)
             .setFirstResult(pgCrit.getFirstResultIndex())
@@ -81,10 +84,13 @@ public class SampleRequestDaoHibernateImpl extends GenericDaoHibernate<SampleReq
   }
 
   private <T> org.hibernate.query.Query<T> bind(
-      org.hibernate.query.Query<T> query, SampleRequestStatus status, Long sampleId, User user) {
+      org.hibernate.query.Query<T> query,
+      Set<SampleRequestStatus> statuses,
+      Long sampleId,
+      User user) {
     query.setParameter("user", user);
-    if (status != null) {
-      query.setParameter("status", status);
+    if (CollectionUtils.isNotEmpty(statuses)) {
+      query.setParameterList("statuses", statuses);
     }
     if (sampleId != null) {
       query.setParameter("sampleId", sampleId);

@@ -8,6 +8,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.inventory.SampleRequest;
 import com.researchspace.model.inventory.SampleRequestRole;
 import com.researchspace.model.inventory.SampleRequestStatus;
+import java.util.Set;
 
 /** Handles requests for material from Inventory samples. */
 public interface SampleRequestApiManager {
@@ -33,13 +34,14 @@ public interface SampleRequestApiManager {
    *
    * @param role REQUESTER for requests the user raised, OWNER for requests against samples the user
    *     currently owns
-   * @param status optional status filter
+   * @param statuses optional status filter; a request matches if its status is any of these. Null
+   *     or empty means no status filtering.
    * @param sampleId optional filter to requests against one sample
    */
   ApiSampleRequestSearchResult getRequestsForUser(
       PaginationCriteria<SampleRequest> pgCrit,
       SampleRequestRole role,
-      SampleRequestStatus status,
+      Set<SampleRequestStatus> statuses,
       Long sampleId,
       User user);
 }

@@ -3760,6 +3760,7 @@ export default interface Resources {
         "myBench": "My Bench",
         "navigationLabel": "Inventory Sidebar Navigation",
         "otherActionsLabel": "Other places and action",
+        "requests": "Requests",
         "settings": "Settings"
       }
     },
@@ -4103,6 +4104,55 @@ export default interface Resources {
         "globalId": "Global ID",
         "name": "Name"
       }
+    },
+    "requestsManagement": {
+      "browserTitle": "Requests | RSpace Inventory",
+      "chips": {
+        "from": "From: {value}",
+        "status": "Status: {value}"
+      },
+      "columns": {
+        "id": "Request ID",
+        "requester": "Requester",
+        "sample": "Requested Sample",
+        "status": "Status",
+        "submitted": "Submitted"
+      },
+      "detail": {
+        "fields": {
+          "additionalNotes": "Additional Notes",
+          "loadingLocations": "Loading locations…",
+          "noNotes": "No notes provided.",
+          "noSubsamples": "This sample has no subsamples.",
+          "notInContainer": "Not in a container.",
+          "requester": "Requester",
+          "sampleLocation": "Sample Location",
+          "sampleRequested": "Sample Requested",
+          "submitted": "Submitted"
+        },
+        "sections": {
+          "details": "Details"
+        },
+        "title": "Request {id} for Sample {sampleName}"
+      },
+      "feedback": "{count} sample requests found.",
+      "filters": {
+        "from": {
+          "label": "From",
+          "me": "Me",
+          "others": "Others"
+        },
+        "status": {
+          "active": "Active",
+          "all": "All",
+          "label": "Status",
+          "past": "Past Requests"
+        }
+      },
+      "landmark": "Requests",
+      "noResults": "No requests found.",
+      "noSelection": "Select a request to see its details.",
+      "pageTitle": "Requests"
     },
     "sample": {
       "alerts": {

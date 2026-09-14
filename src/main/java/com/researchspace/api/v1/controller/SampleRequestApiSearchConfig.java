@@ -4,6 +4,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.researchspace.model.inventory.SampleRequestRole;
 import com.researchspace.model.inventory.SampleRequestStatus;
 import jakarta.validation.constraints.Pattern;
+import java.util.Arrays;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -17,12 +20,15 @@ import org.springframework.util.MultiValueMap;
 @NoArgsConstructor
 public class SampleRequestApiSearchConfig extends ApiSearchConfig {
 
+  private static final String STATUS_NAMES = "PENDING|APPROVED|REJECTED|FULFILLED|CANCELLED";
+
   @Pattern(regexp = "REQUESTER|OWNER", message = "{errors.inventory.sampleRequest.role.invalid}")
   @JsonProperty("role")
   private String role;
 
+  /** Comma-separated list of statuses, e.g. "PENDING,APPROVED". */
   @Pattern(
-      regexp = "PENDING|APPROVED|REJECTED|FULFILLED|CANCELLED",
+      regexp = "(" + STATUS_NAMES + ")(,(" + STATUS_NAMES + "))*",
       message = "{errors.inventory.sampleRequest.status.invalid}")
   @JsonProperty("status")
   private String status;
@@ -37,8 +43,14 @@ public class SampleRequestApiSearchConfig extends ApiSearchConfig {
         : SampleRequestRole.valueOf(role);
   }
 
-  public SampleRequestStatus getStatusAsEnum() {
-    return StringUtils.isBlank(status) ? null : SampleRequestStatus.valueOf(status);
+  /** Empty when no status filtering was requested. */
+  public Set<SampleRequestStatus> getStatusesAsEnumSet() {
+    if (StringUtils.isBlank(status)) {
+      return Set.of();
+    }
+    return Arrays.stream(status.split(","))
+        .map(SampleRequestStatus::valueOf)
+        .collect(Collectors.toSet());
   }
 
   @Override

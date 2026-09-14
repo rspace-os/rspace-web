@@ -45,7 +45,7 @@ public class SampleRequestsApiController extends BaseApiInventoryController
         sampleRequestMgr.getRequestsForUser(
             pgCrit,
             srchConfig.getRoleAsEnum(),
-            srchConfig.getStatusAsEnum(),
+            srchConfig.getStatusesAsEnumSet(),
             srchConfig.getSampleId(),
             user);
     result.getRequests().forEach(this::buildAndAddSelfLink);

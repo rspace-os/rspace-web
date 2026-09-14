@@ -22,6 +22,7 @@ import com.researchspace.service.inventory.SampleApiManager;
 import com.researchspace.service.inventory.SampleRequestApiManager;
 import jakarta.ws.rs.NotFoundException;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -48,13 +49,13 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
   public ApiSampleRequestSearchResult getRequestsForUser(
       PaginationCriteria<SampleRequest> pgCrit,
       SampleRequestRole role,
-      SampleRequestStatus status,
+      Set<SampleRequestStatus> statuses,
       Long sampleId,
       User user) {
 
     assertSampleRequestsEnabled(user);
     ISearchResults<SampleRequest> dbRequests =
-        sampleRequestDao.getRequestsForUser(pgCrit, role, status, sampleId, user);
+        sampleRequestDao.getRequestsForUser(pgCrit, role, statuses, sampleId, user);
 
     List<ApiSampleRequestInfo> requests =
         dbRequests.getResults().stream()

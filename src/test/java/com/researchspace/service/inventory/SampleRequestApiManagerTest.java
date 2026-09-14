@@ -10,6 +10,7 @@ import com.researchspace.api.v1.model.ApiSampleRequestPost;
 import com.researchspace.api.v1.model.ApiSampleRequestSearchResult;
 import com.researchspace.api.v1.model.ApiSampleRequestStatusChange;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
+import com.researchspace.dao.SampleRequestDao;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.SampleRequest;
@@ -20,6 +21,7 @@ import com.researchspace.service.SystemPropertyManager;
 import com.researchspace.service.SystemPropertyName;
 import com.researchspace.testutils.SpringTransactionalTest;
 import jakarta.ws.rs.NotFoundException;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +30,7 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
 
   private @Autowired SampleRequestApiManager sampleRequestApiMgr;
   private @Autowired SystemPropertyManager systemPropertyMgr;
+  private @Autowired SampleRequestDao sampleRequestDao;
 
   private User owner;
   private User requester;
@@ -101,6 +104,40 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
 
     assertEquals(1L, results.getTotalHits().longValue());
     assertEquals(onFirst.getId(), results.getRequests().get(0).getId());
+  }
+
+  @Test
+  public void getRequestsForUser_filteredByMultipleStatuses_returnsOnlyMatchingStatuses() {
+    ApiSampleRequest pending = raiseRequest("Need 2ml for the binding assay");
+    ApiSampleRequest toReject = raiseRequest("Need 5ml for another assay");
+    SampleRequest rejectedEntity = sampleRequestDao.get(toReject.getId());
+    rejectedEntity.setStatus(SampleRequestStatus.REJECTED);
+    sampleRequestDao.save(rejectedEntity);
+
+    ApiSampleRequestSearchResult activeOnly =
+        sampleRequestApiMgr.getRequestsForUser(
+            PaginationCriteria.createDefaultForClass(SampleRequest.class),
+            SampleRequestRole.REQUESTER,
+            Set.of(SampleRequestStatus.PENDING, SampleRequestStatus.APPROVED),
+            null,
+            requester);
+
+    assertEquals(1L, activeOnly.getTotalHits().longValue());
+    assertEquals(pending.getId(), activeOnly.getRequests().get(0).getId());
+
+    ApiSampleRequestSearchResult pastOnly =
+        sampleRequestApiMgr.getRequestsForUser(
+            PaginationCriteria.createDefaultForClass(SampleRequest.class),
+            SampleRequestRole.REQUESTER,
+            Set.of(
+                SampleRequestStatus.REJECTED,
+                SampleRequestStatus.FULFILLED,
+                SampleRequestStatus.CANCELLED),
+            null,
+            requester);
+
+    assertEquals(1L, pastOnly.getTotalHits().longValue());
+    assertEquals(toReject.getId(), pastOnly.getRequests().get(0).getId());
   }
 
   @Test
