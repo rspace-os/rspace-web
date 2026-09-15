@@ -78,6 +78,7 @@ public class ArchiveModelFactory {
   ArchivalFieldForm createArchivalFieldForm(FieldForm fm) {
     ArchivalFieldForm rc = new ArchivalFieldForm();
     rc.setFormFieldId(fm.getId());
+    rc.setMandatory(fm.isMandatory());
     rc.setName(fm.getName());
     rc.setColumnIndex(fm.getColumnIndex());
     rc.setModificationDate(fm.getModificationDate());
@@ -224,6 +225,7 @@ public class ArchiveModelFactory {
   public ArchivalField createArchivalField(Field fd) {
     ArchivalField rc = new ArchivalField();
     rc.setFieldId(fd.getId());
+    rc.setMandatory(fd.isMandatory());
     rc.setFieldName(fd.getName());
     rc.setFieldType(fd.getType().name());
     rc.setLastModifiedDate(
