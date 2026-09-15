@@ -111,6 +111,36 @@ when the request is processed. Two requests decrementing the same origin from
 one read is a real, accepted risk here, not a scenario this branch defends
 against; see the branch's own commit history for the removal.
 
+**An edit-session lock, and only that (RSDEV-1231).** What the wizard does take
+is the same courtesy lock the subsample edit form takes. When the wizard opens
+it locks every origin through `InventoryEditLockTracker`, holds them while it is
+open, extends them on each step, and releases them on close; the origins do NOT
+enter edit state. `InventoryOperationsApiController` independently locks every
+origin AND every distinct parent sample, ascending, outside the manager's
+transaction, and releases in a `finally` only the locks it created itself. A
+lock held by another user is `InventoryEditLockHeldException`, a 409
+`EDIT_CONFLICT` naming the holder.
+
+That closes two UI users Performing on one origin, two UI users Performing on
+siblings of one sample, and a wizard racing an open edit form. It does not
+close, and is not meant to:
+
+1. The same user in two tabs, or the wizard against their own open form: a
+   re-lock by the same user is an extension (`WAS_ALREADY_LOCKED`), which is a
+   pass. Identical to the form.
+2. Writers that never call `lockItemForEdit`, such as `split` and `duplicate`.
+   Pre-existing and out of scope.
+3. Two API scripts with no client lock, which are serialised only for the
+   seconds the controller holds its locks, i.e. the request duration. Good
+   enough for the UI, not a guarantee for automation.
+4. Anything outside this JVM. The tracker is process-local, so this is a
+   single-node guarantee, like the form's.
+5. An abandoned wizard tab, which holds its origins for up to five minutes until
+   the tracker expires them. Same as the form.
+6. The quantity the user saw versus the quantity the server acts on. A Destroy
+   after a colleague's top-up still empties the topped-up amount. Nothing here
+   is a compare-and-swap; see the note above.
+
 ## An unrecognised property is captured at binding and rejected by the validator
 
 The API's ObjectMapper comes from `Jackson2ObjectMapperBuilder`, which turns
