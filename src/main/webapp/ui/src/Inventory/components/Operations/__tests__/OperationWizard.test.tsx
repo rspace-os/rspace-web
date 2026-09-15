@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, render as renderWithoutQueryClient, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { runInAction } from "mobx";
 import { HttpResponse, http } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
@@ -804,6 +805,69 @@ describe("OperationWizard step flow", () => {
     // the wizard stays open on the confirmation so the user can retry; nothing is lost
     expect(onClose).not.toHaveBeenCalled();
     expect(screen.getByTestId("confirm")).toBeInTheDocument();
+  });
+
+  // --- the edit-session lock the wizard holds on its origins (RSDEV-1231 S5) ---
+
+  it("keeps the wizard and its locks when the server reports the origin is held by someone else", async () => {
+    // A 409 carries the holder in `message`, not in a field-scoped `errors` entry: there is no
+    // field to correct, only somebody to wait for.
+    server.use(
+      http.post(
+        OPERATIONS_URL,
+        () =>
+          HttpResponse.json(
+            { message: "SS1 is currently being edited by Carol Holder.", errors: [""] },
+            { status: 409 },
+          ),
+        { once: true },
+      ),
+    );
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    const origin = makeMockSubSample({});
+    const refresh = vi.spyOn(origin, "fetchAdditionalInfo").mockResolvedValue(undefined);
+    const release = vi.spyOn(origin, "releaseLock").mockResolvedValue(true);
+    render(<OperationWizard open onClose={onClose} origins={[origin]} />);
+    await reachConfirm(user, "held");
+    await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
+
+    await waitFor(() => expect(addAlert).toHaveBeenCalled());
+    const alert = addAlert.mock.calls[0][0] as { message: string };
+    expect(alert.message).toBe("SS1 is currently being edited by Carol Holder.");
+    // the wizard stays open for a retry once the holder is done, and keeps its own locks
+    expect(onClose).not.toHaveBeenCalled();
+    expect(screen.getByTestId("confirm")).toBeInTheDocument();
+    expect(release).not.toHaveBeenCalled();
+    await waitFor(() => expect(refresh).toHaveBeenCalled());
+  });
+
+  it("pushes the lock expiry out on each step, so a slow run does not lose its origins", async () => {
+    const user = userEvent.setup();
+    const origin = makeMockSubSample({});
+    const extend = vi.spyOn(origin, "acquireEditLock").mockResolvedValue("WAS_ALREADY_LOCKED");
+    render(<OperationWizard open onClose={vi.fn()} origins={[origin]} />);
+    await reachConfirm(user, "slow");
+
+    expect(extend.mock.calls.length).toBeGreaterThan(0);
+  });
+
+  it("refuses Perform once the lock has lapsed rather than sending a request the server will refuse", async () => {
+    const user = userEvent.setup();
+    const origin = makeMockSubSample({});
+    vi.spyOn(origin, "acquireEditLock").mockResolvedValue("WAS_ALREADY_LOCKED");
+    render(<OperationWizard open onClose={vi.fn()} origins={[origin]} />);
+    await reachConfirm(user, "lapsed");
+    expect(screen.getByRole("button", { name: /wizard\.perform/i })).toBeEnabled();
+
+    const before = posted.length;
+    runInAction(() => {
+      origin.lockExpired = true;
+    });
+
+    await waitFor(() => expect(screen.getByRole("button", { name: /wizard\.perform/i })).toBeDisabled());
+    await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
+    expect(posted).toHaveLength(before);
   });
 
   it("shows the field-scoped reason for a rejection and reloads the origin", async () => {

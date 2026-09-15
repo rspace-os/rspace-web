@@ -689,9 +689,33 @@ function OperationWizard({
     };
   }, [operation, sampleBaseName, sampleNameEdited]);
 
-  const next = () => setActiveStep((s) => s + 1);
+  /**
+   * The origins are locked for the wizard's lifetime (ProcessAction), and the tracker's lock lapses
+   * after five minutes, so each step the user completes pushes the expiry out. Best-effort: the
+   * server re-checks the lock at Perform and refuses with a 409 either way (RSDEV-1231).
+   */
+  const extendOriginLocks = () => {
+    for (const o of origins) {
+      void o.acquireEditLock().catch((error: unknown) => {
+        console.warn("Could not extend the edit lock on an operation origin", error);
+      });
+    }
+  };
+
+  /**
+   * Whether any origin's lock has lapsed, which makes Perform pointless: the server will refuse it.
+   * An origin with no lockExpiry was never locked (nothing here took one), which is not a lapse.
+   */
+  const locksLapsed = (): boolean =>
+    origins.some((o) => o.lockExpired || (Boolean(o.lockExpiry) && Date.now() >= o.lockExpiry.getTime()));
+
+  const next = () => {
+    extendOriginLocks();
+    setActiveStep((s) => s + 1);
+  };
 
   const back = () => {
+    extendOriginLocks();
     if (activeStep === 0) {
       setOperation(null);
       return;
@@ -761,7 +785,18 @@ function OperationWizard({
 
   const submit = async (): Promise<void> => {
     if (!operation) return;
+    if (locksLapsed()) {
+      getRootStore().uiStore.addAlert(
+        mkAlert({
+          title: t("operations.wizard.originsLocked"),
+          message: t("operations.wizard.lockExpired"),
+          variant: "error",
+        }),
+      );
+      return;
+    }
     setSubmitting(true);
+    extendOriginLocks();
     try {
       // "fromSample" reads the origin sample's own template, so the parent must be loaded first.
       if (templateSelection.mode === "fromSample") await origin.sample.fetchAdditionalInfo();
@@ -1028,7 +1063,7 @@ function OperationWizard({
                 loading={submitting}
                 // fastPath itself requires allStepsValid() in the same render, so only submitting
                 // can disable Perform here.
-                disabled={submitting}
+                disabled={submitting || locksLapsed()}
                 label={t("operations.wizard.perform")}
               />
             </>
@@ -1045,7 +1080,7 @@ function OperationWizard({
                   // Destroy's empty-origin block). Un-ticking "remember" here resets the earlier
                   // steps' values without leaving this step, so checking only this one could submit
                   // a run an earlier step would have blocked (Copilot review, PR #1090).
-                  disabled={submitting || !allStepsValid()}
+                  disabled={submitting || !allStepsValid() || locksLapsed()}
                   label={t("operations.wizard.perform")}
                 />
               ) : (

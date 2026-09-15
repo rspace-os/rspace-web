@@ -44,6 +44,24 @@ describe("acquireEditLock", () => {
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
+  test("records when the lock lapses, without starting the form's expiry prompt", async () => {
+    const subsample = makeMockSubSample();
+    vi.spyOn(subsample, "checkLock").mockResolvedValue({
+      status: "LOCKED_OK",
+      remainingTimeInSeconds: 300,
+      lockOwner: owner,
+    });
+    const expiryCheck = vi.spyOn(subsample, "expiryCheck");
+
+    await subsample.acquireEditLock();
+
+    expect(subsample.lockExpiry.getTime()).toBeGreaterThan(Date.now());
+    expect(subsample.lockExpired).toBe(false);
+    // the form's timer prompts to keep editing and otherwise discards the edit; the wizard has no
+    // edit to keep, so it must never run
+    expect(expiryCheck).not.toHaveBeenCalled();
+  });
+
   test("an extension of the caller's own lock is a pass", async () => {
     const subsample = makeMockSubSample();
     vi.spyOn(subsample, "checkLock").mockResolvedValue({
