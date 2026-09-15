@@ -1,7 +1,7 @@
 package com.researchspace.dao.customliquibaseupdates;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.core.util.imageutils.ImageUtils;
 import com.researchspace.model.record.IconEntity;
@@ -13,7 +13,7 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import liquibase.exception.CustomChangeException;
 import liquibase.exception.SetupException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class FormIconThumbnailatorIT extends RealTransactionSpringTestBase {

@@ -2,13 +2,14 @@ package com.researchspace.dao;
 
 // import org.compass.core.CompassTemplate;
 // import org.compass.gps.CompassGps;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.researchspace.model.User;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.testutils.SpringTransactionalTest;
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 
@@ -16,10 +17,9 @@ public class FieldDaoTest extends SpringTransactionalTest {
 
   @Autowired private FieldDao dao;
 
-  @Test(expected = DataAccessException.class)
+  @Test
   public void testGetFieldInvalid() {
-    // should throw DataAccessException
-    dao.get(1000L);
+    assertThrows(DataAccessException.class, () -> dao.get(1000L));
   }
 
   @Test
@@ -32,7 +32,7 @@ public class FieldDaoTest extends SpringTransactionalTest {
     assertEquals(1, dao.findByTextContent("ext").size());
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }

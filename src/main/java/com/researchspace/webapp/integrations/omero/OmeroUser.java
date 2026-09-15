@@ -1,18 +1,26 @@
 package com.researchspace.webapp.integrations.omero;
 
 import lombok.Data;
+import lombok.ToString;
 
 @Data
 public class OmeroUser {
   private String omerousername;
-  private String omeropassword;
+  @ToString.Exclude private String omeropassword;
   private String webClientUserName;
-  private String webClientPassword;
+
+  // holds a real third-party password; never let it reach a log via toString()
+  @ToString.Exclude private String webClientPassword;
 
   public OmeroUser(String omerousername, String omeropassword) {
     this.omeropassword = omeropassword;
     this.omerousername = omerousername;
-    this.webClientUserName = omerousername.replace("--omero.user=", "");
-    this.webClientPassword = omeropassword.replace("--omero.pass=", "");
+    this.webClientUserName = stripPrefix(omerousername, "--omero.user=");
+    this.webClientPassword = stripPrefix(omeropassword, "--omero.pass=");
+  }
+
+  // a form submission can omit either field, so neither is guaranteed non-null here
+  private static String stripPrefix(String value, String prefix) {
+    return value == null ? null : value.replace(prefix, "");
   }
 }

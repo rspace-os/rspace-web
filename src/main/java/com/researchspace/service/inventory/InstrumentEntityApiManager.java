@@ -105,11 +105,17 @@ public interface InstrumentEntityApiManager extends InventoryApiManager<Instrume
   /** Creates a new instrument template from the provided POST payload. */
   ApiInstrumentTemplate createInstrumentTemplate(ApiInstrumentTemplatePost post, User user);
 
-  /** Updates the instrument with the provided data. */
+  /**
+   * Updates the instrument with the provided data. A content edit bumps the user-facing version, at
+   * most once per instrument per transaction (RSDEV-1319, see
+   * InventoryApiManagerImpl#increaseVersionOncePerTransaction).
+   */
   ApiInstrument updateApiInstrument(ApiInstrument apiInstrument, User user);
 
   /**
-   * Updates the instrument template with the provided data; bumps its version on content change.
+   * Updates the instrument template with the provided data; bumps its version on content change, at
+   * most once per template per transaction (RSDEV-1319, see
+   * InventoryApiManagerImpl#increaseVersionOncePerTransaction).
    */
   ApiInstrumentTemplate updateApiInstrumentTemplate(ApiInstrumentTemplate apiTemplate, User user);
 

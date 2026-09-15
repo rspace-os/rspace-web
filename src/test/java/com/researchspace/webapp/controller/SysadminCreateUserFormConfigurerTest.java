@@ -1,18 +1,18 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.properties.PropertyHolder;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class SysadminCreateUserFormConfigurerTest {
 
   SysadminCreateUserFormConfigurerImpl impl;
   PropertyHolder propertyHolder;
 
-  @Before
+  @BeforeEach
   public void setup() {
     propertyHolder = new PropertyHolder();
     impl = new SysadminCreateUserFormConfigurerImpl(propertyHolder);

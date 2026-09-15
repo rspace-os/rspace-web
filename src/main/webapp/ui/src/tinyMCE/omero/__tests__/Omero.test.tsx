@@ -739,4 +739,18 @@ describe("Renders page with results data", () => {
       "Z-sections = 1Timepoints = 329Number of Channels = 2Pixels Type = uint16Dimensions(XY) = 1344 x 1024Pixel Size (XYZ) = 0.323 µm x 0.323 µm x n/a Z Channels = [name = Cy3 colour = -16776961 photo interpretation = Monochrome] [name = eGFP colour = 16711935 photo interpretation = Monochrome] Cell Line = HeLaGene Identifier = ENSG00000117399Gene Identifier URL = http://www.ensembl.org/id/ENSG00000117399Gene Symbol = CDC20Analysis Gene Annotation Build = GRCh37, Ensembl release 61, Feb 2011Organism = Homo sapienssiRNA Identifier = s2748siRNA Pool Identifier = Sense Sequence = CGAAAUGACUAUUACCUGATTAntisense Sequence = UCAGGUAAUAGUCAUUUCGGAReagent Design Gene Annotation Build = GRCh37, Ensembl release 61, Feb 2011Control Type = positive controlControl Comments = early mitotic phenotypeQuality Control = failChannels = H2B- mCherry/Cy3:chromatin;eGFP:nuclear lamina and report on nuclear envelope breakdown",
     );
   }, 9999);
+
+  // Building the table to insert strips controls out of the rendered dialog, so
+  // it must not happen while the user is still choosing what to insert.
+  test("selecting an item leaves the dialog controls in place", async () => {
+    await setUpProjectsAsData();
+    await findFirstByText("idr0018-neff-histopathology/experimentA", undefined, {
+      timeout: 5500,
+    });
+    expect(screen.getAllByTestId("project_fetch_details_101")[0]).toBeInTheDocument();
+
+    fireEvent.click(getFirstByTestId("checkbox-project-101"));
+
+    expect(screen.getAllByTestId("project_fetch_details_101")[0]).toBeInTheDocument();
+  }, 9999);
 });

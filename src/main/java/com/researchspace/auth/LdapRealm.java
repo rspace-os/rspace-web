@@ -3,6 +3,7 @@ package com.researchspace.auth;
 import com.researchspace.ldap.UserLdapRepo;
 import com.researchspace.model.SignupSource;
 import com.researchspace.model.User;
+import com.researchspace.model.permissions.SecurityLogger;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.UserSignupException;
@@ -22,6 +23,7 @@ public class LdapRealm extends RSpaceRealm {
   public static final String LDAP_REALM_NAME = "LDAP_REALM";
 
   private static final Logger log = LoggerFactory.getLogger(LdapRealm.class);
+  private static final Logger SECURITY_LOG = LoggerFactory.getLogger(SecurityLogger.class);
 
   private @Autowired UserLdapRepo userLdapRepo;
   private @Autowired UserManager userManager;
@@ -39,6 +41,14 @@ public class LdapRealm extends RSpaceRealm {
 
     UsernamePasswordToken upToken = (UsernamePasswordToken) token;
     String username = upToken.getUsername();
+
+    char[] password = upToken.getPassword();
+    if (password == null || password.length == 0) {
+      SECURITY_LOG.warn(
+          "Rejecting LDAP authentication attempt with empty password for user: {}", username);
+      return null;
+    }
+
     User rspaceUser = null;
 
     // if user found in RSpace proceed with LDAP authentication only if it's LDAP user
@@ -53,7 +63,7 @@ public class LdapRealm extends RSpaceRealm {
     // check provided username/password in LDAP
     log.info(
         "starting LdapRealm authentication for user: {} (exists: {})", username, rspaceUserExists);
-    User ldapUser = userLdapRepo.authenticate(username, new String(upToken.getPassword()));
+    User ldapUser = userLdapRepo.authenticate(username, new String(password));
 
     // incorrect LDAP credentials
     if (ldapUser == null) {

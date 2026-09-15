@@ -8,17 +8,15 @@ import org.apache.velocity.app.VelocityEngine;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.parser.Parser;
-import org.junit.Before;
-import org.junit.Rule;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public abstract class AbstractParserTest {
 
   protected @Mock AuditDao auditDao;
-
-  @Rule public MockitoRule mockery = MockitoJUnit.rule();
 
   protected RichTextUpdater rtu;
   protected ElementSelectorFactory selectorFactory;
@@ -27,7 +25,7 @@ public abstract class AbstractParserTest {
   protected FieldContents contents;
   protected VelocityEngine velocity;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     anyUser = TestFactory.createAnyUser("any");
     contents = new FieldContents();

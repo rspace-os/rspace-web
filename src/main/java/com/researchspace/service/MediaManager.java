@@ -336,6 +336,17 @@ public interface MediaManager {
   EcatImage getImage(Long imageId, User user, boolean includeImageBytes);
 
   /**
+   * Gets an {@link EcatImage} by ID with its {@code originalImage} association eagerly loaded, so
+   * that {@link EcatImage#toRecordInfo()} can be called safely after the Hibernate session closes.
+   *
+   * @param imageId
+   * @param user
+   * @return An {@link EcatImage} with {@code originalImage} initialised
+   * @throws AuthenticationException if user not permitted to access the image.
+   */
+  EcatImage getImageWithOriginalImage(Long imageId, User user);
+
+  /**
    * Creates or updates an {@link RSMath} element
    *
    * @param svg The SVG of the Math object
@@ -364,9 +375,15 @@ public interface MediaManager {
    * Gets IDs of linked documents
    *
    * @param mediaFileId
-   * @return
+   * @param user the subject; must have READ permission on the media file
+   * @return one entry per linking document. Entries the subject can READ carry full record
+   *     information; entries it cannot are replaced by a placeholder carrying only the owner's full
+   *     name, with no {@code id}, {@code oid} or owner username, so callers must not assume every
+   *     entry is identifiable (RSDEV-1329).
+   * @throws org.apache.shiro.authz.AuthorizationException if user is null or the anonymous guest,
+   *     the media file does not exist, or the user lacks READ permission on it (RSDEV-1329)
    */
-  List<RecordInformation> getIdsOfLinkedDocuments(Long mediaFileId);
+  List<RecordInformation> getIdsOfLinkedDocuments(Long mediaFileId, User user);
 
   /**
    * @return lock handler used by the manager

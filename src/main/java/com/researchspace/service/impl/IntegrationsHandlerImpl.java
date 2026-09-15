@@ -198,6 +198,9 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
       case DRYAD_APP_NAME:
         setSingleOAuthConnectionStatus(info, user, DRYAD_APP_NAME);
         return;
+      case OMERO_APP_NAME:
+        setSingleOAuthConnectionStatus(info, user, OMERO_APP_NAME);
+        return;
       case PYRAT_APP_NAME:
         setMultipleUserTokens(
             info, user, PYRAT_APP_NAME, PYRAT_CONFIGURED_SERVERS, PYRAT_ALIAS, PYRAT_APIKEY);
@@ -661,7 +664,6 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
       case FIGSHARE_APP_NAME:
       case OWNCLOUD_APP_NAME:
       case NEXTCLOUD_APP_NAME:
-      case EVERNOTE_APP_NAME:
       case MSTEAMS_APP_NAME:
       case ONBOARDING_APP_NAME:
       case DRYAD_APP_NAME:

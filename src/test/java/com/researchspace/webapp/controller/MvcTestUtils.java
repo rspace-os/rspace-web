@@ -1,7 +1,7 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -147,15 +147,15 @@ public class MvcTestUtils {
    */
   public void assertAuthorizationException(MvcResult result) {
     assertTrue(
-        "exception was " + result.getResolvedException(),
         (result.getResolvedException() instanceof AuthorizationException)
-            || (result.getResolvedException() instanceof RecordAccessDeniedException));
+            || (result.getResolvedException() instanceof RecordAccessDeniedException),
+        "exception was " + result.getResolvedException());
   }
 
   public void assertException(MvcResult result, Class<? extends Exception> clazz) {
     assertTrue(
-        "exception was " + result.getResolvedException(),
-        result.getResolvedException().getClass().isAssignableFrom(clazz));
+        result.getResolvedException().getClass().isAssignableFrom(clazz),
+        "exception was " + result.getResolvedException());
   }
 
   public <T> T getFromJsonAjaxReturnObject(MvcResult result, Class<T> clazz) throws Exception {

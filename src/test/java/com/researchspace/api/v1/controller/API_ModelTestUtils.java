@@ -1,8 +1,8 @@
 package com.researchspace.api.v1.controller;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.researchspace.api.v1.controller.SysadminApiController.UserApiPost;
 import com.researchspace.api.v1.model.ApiDocument;

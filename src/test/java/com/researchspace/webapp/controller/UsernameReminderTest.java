@@ -8,8 +8,8 @@ import com.researchspace.service.impl.DevEmailSenderImpl;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.List;
 import java.util.stream.IntStream;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,7 +24,7 @@ public class UsernameReminderTest extends SpringTransactionalTest {
   Logger logger;
   DevEmailSenderImpl emailSender;
 
-  @Before
+  @BeforeEach
   public void before() {
     logger = Mockito.mock(Logger.class);
     emailSender = new DevEmailSenderImpl();
@@ -57,7 +57,7 @@ public class UsernameReminderTest extends SpringTransactionalTest {
     // An email shouldn't be sent to a non-existing email -> no new log events
     usernameReminderByEmailHandlerTSS.sendUsernameReminderEmail(
         request, "non-existing-email@email.com");
-    Mockito.verifyZeroInteractions(logger);
+    Mockito.verifyNoInteractions(logger);
 
     usernameReminderByEmailHandlerTSS.sendUsernameReminderEmail(request, U2_EMAIL);
     Mockito.verify(logger)

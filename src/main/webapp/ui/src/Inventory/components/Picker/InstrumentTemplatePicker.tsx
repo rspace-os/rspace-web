@@ -12,9 +12,15 @@ type InstrumentTemplatePickerArgs = {
   setTemplate: (template: InstrumentTemplateModel) => void;
   disabled?: boolean;
   instrument?: InstrumentModel;
+  selectedTemplate?: InstrumentTemplateModel | null;
 };
 
-function InstrumentTemplatePicker({ setTemplate, disabled, instrument }: InstrumentTemplatePickerArgs): ReactNode {
+function InstrumentTemplatePicker({
+  setTemplate,
+  disabled,
+  instrument,
+  selectedTemplate,
+}: InstrumentTemplatePickerArgs): ReactNode {
   const [search] = useState(
     new Search({
       factory: new AlwaysNewFactory(),
@@ -37,6 +43,12 @@ function InstrumentTemplatePicker({ setTemplate, disabled, instrument }: Instrum
       search.setActiveResult(instrument.template, { defaultToFirstResult: false });
     }
   }, [instrument?.template]);
+
+  useEffect(() => {
+    if (typeof selectedTemplate !== "undefined" && search.activeResult !== selectedTemplate) {
+      void search.setActiveResult(selectedTemplate, { defaultToFirstResult: false });
+    }
+  }, [selectedTemplate]);
 
   useEffect(() => {
     if (!disabled) void search.fetcher.performInitialSearch(null);

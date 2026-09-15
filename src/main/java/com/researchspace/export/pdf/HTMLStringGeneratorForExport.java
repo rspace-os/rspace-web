@@ -46,7 +46,6 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Document.OutputSettings;
 import org.jsoup.nodes.Document.OutputSettings.Syntax;
 import org.jsoup.nodes.Element;
-import org.jsoup.parser.Parser;
 import org.jsoup.parser.Tag;
 import org.jsoup.select.Elements;
 import org.slf4j.Logger;
@@ -274,7 +273,7 @@ public class HTMLStringGeneratorForExport implements HTMLStringGenerator {
           String.format(
               "<p><i>&lt;embedded code from <a href='%s'>%s</a>&gt;</i></p>",
               iframe.attr("src"), iframe.attr("src"));
-      Element elem = Jsoup.parse(iframeReplacement, "", Parser.xmlParser()).selectFirst("p");
+      Element elem = Jsoup.parseBodyFragment(iframeReplacement).selectFirst("p");
       iframe.replaceWith(elem);
     }
   }

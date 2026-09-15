@@ -1,10 +1,10 @@
 package com.researchspace.webapp.integrations.digitalcommonsdata;
 
 import static com.researchspace.service.IntegrationsHandler.DIGITAL_COMMONS_DATA_APP_NAME;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -23,9 +23,9 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpEntity;
@@ -44,14 +44,14 @@ public class DigitalCommonsDataMVCIT extends API_MVC_TestBase {
   private @Autowired UserConnectionManager userConnectionManager;
   private User user;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     user = createInitAndLoginAnyUser();
   }
 
   @Test
-  @Ignore(
+  @Disabled(
       "This test was used for the Digital Commons data POC. "
           + "We leave the test Ignored so we can potentially run it manually")
   public void testGetAccessToken() throws Exception {
@@ -78,7 +78,7 @@ public class DigitalCommonsDataMVCIT extends API_MVC_TestBase {
   }
 
   @Test
-  @Ignore(
+  @Disabled(
       "This test was used for the Digital Commons data POC. We leave the test Ignored so we can"
           + " potentially run it manually by adding clientId and clientSecret")
   public void testGetDatasetsAndByIdCredentialFlow() throws IOException, URISyntaxException {
@@ -161,7 +161,7 @@ public class DigitalCommonsDataMVCIT extends API_MVC_TestBase {
   }
 
   @Test
-  @Ignore(
+  @Disabled(
       "This test was used for the Digital Commons data POC. "
           + "We leave the test Ignored so we can potentially run it manually by the access token")
   public void testCreateDatasetAndPushFile() throws IOException, URISyntaxException {
@@ -263,7 +263,7 @@ public class DigitalCommonsDataMVCIT extends API_MVC_TestBase {
   }
 
   @Test
-  @Ignore(
+  @Disabled(
       "This test was used for the Digital Commons data POC. "
           + "We leave the test Ignored so we can potentially run it manually")
   public void testConnectController() throws Exception {

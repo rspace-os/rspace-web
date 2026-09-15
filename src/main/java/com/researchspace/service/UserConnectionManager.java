@@ -47,4 +47,15 @@ public interface UserConnectionManager extends GenericManager<UserConnection, Us
   int deleteByUserAndProvider(String rspaceUserName, String providername);
 
   int deleteByUserAndProvider(String rspaceUserName, String providername, String discriminant);
+
+  /**
+   * Replaces any connection already held for the connection's RSpace user and provider with {@code
+   * connection}, in a single transaction. Use for providers that hold at most one connection per
+   * user and whose discriminant (the provider's own user id) can change from one connection to the
+   * next, where a plain save would collide with the existing row.
+   *
+   * @param connection the connection to store; its id supplies the user and provider to replace
+   * @return the saved connection
+   */
+  UserConnection replaceConnection(UserConnection connection);
 }

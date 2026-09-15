@@ -1,12 +1,12 @@
 package com.researchspace.service;
 
 import static com.researchspace.service.StoichiometryTestMother.createStoichiometry;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -43,18 +43,18 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class StoichiometryManagerImplTest {
 
   @Mock private StoichiometryDao stoichiometryDao;
@@ -71,24 +71,10 @@ public class StoichiometryManagerImplTest {
   private User user;
   private Record record;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     user = TestFactory.createAnyUser("testUser");
     record = TestFactory.createAnyRecord(user);
-    when(stoichiometryDao.save(stoichiometryCaptor.capture()))
-        .thenAnswer(
-            invocation -> {
-              Stoichiometry s = invocation.getArgument(0, Stoichiometry.class);
-              if (s.getMolecules() != null) {
-                long idCounter = 100L;
-                for (StoichiometryMolecule m : s.getMolecules()) {
-                  if (m.getId() == null) {
-                    m.setId(idCounter++);
-                  }
-                }
-              }
-              return s;
-            });
   }
 
   @Test
@@ -116,6 +102,7 @@ public class StoichiometryManagerImplTest {
   @Test
   public void whenCreateFromAnalysis_thenReturnStoichiometryWithMolecules()
       throws IOException, ChemicalImportException {
+    stubSave();
     Long parentReactionId = 1L;
     RSChemElement parentReaction = createRSChemElement(parentReactionId);
     ElementalAnalysisDTO analysisDTO = createElementalAnalysisDTO();
@@ -148,6 +135,7 @@ public class StoichiometryManagerImplTest {
   public void
       whenCreateFromAnalysisWithChemicalSearcherException_thenReturnStoichiometryWithNullName()
           throws IOException, ChemicalImportException {
+    stubSave();
     Long parentReactionId = 1L;
     RSChemElement parentReaction = createRSChemElement(parentReactionId);
     ElementalAnalysisDTO analysisDTO = createElementalAnalysisDTO();
@@ -174,6 +162,7 @@ public class StoichiometryManagerImplTest {
   @Test
   public void whenCreateFromAnalysis_withReactants_thenFirstReactantSetAsLimitingReagent()
       throws IOException, ChemicalImportException {
+    stubSave();
     Long parentReactionId = 1L;
     RSChemElement parentReaction = createRSChemElement(parentReactionId);
 
@@ -255,6 +244,7 @@ public class StoichiometryManagerImplTest {
   @Test
   public void whenCreateFromAnalysis_withOnlyProducts_thenNoLimitingReagentSet()
       throws IOException, ChemicalImportException {
+    stubSave();
     Long parentReactionId = 1L;
     RSChemElement parentReaction = createRSChemElement(parentReactionId);
 
@@ -350,6 +340,7 @@ public class StoichiometryManagerImplTest {
 
   @Test
   public void whenUpdateMoleculeWithValidData_thenUpdatesSuccessfully() {
+    stubSave();
     Long stoichiometryId = 1L;
     Stoichiometry existingStoichiometry = createStoichiometryWith2Molecules(stoichiometryId, 1L);
     Long existingMoleculeId = existingStoichiometry.getMolecules().get(0).getId();
@@ -384,6 +375,7 @@ public class StoichiometryManagerImplTest {
 
   @Test
   public void whenUpdate_withNewMolecules_thenAddsThemCorrectly() throws Exception {
+    stubSave();
     Long stoichiometryId = 1L;
     Stoichiometry existingStoichiometry = createStoichiometry(stoichiometryId, 1L, record);
     Long existingMoleculeId = existingStoichiometry.getMolecules().get(0).getId();
@@ -436,6 +428,7 @@ public class StoichiometryManagerImplTest {
 
   @Test
   public void whenUpdate_withMultipleOperations_thenHandlesAllCorrectly() throws Exception {
+    stubSave();
     Long stoichiometryId = 1L;
     Stoichiometry existingStoichiometry = createStoichiometryWith2Molecules(stoichiometryId, 1L);
     Long existingMoleculeId = existingStoichiometry.getMolecules().get(0).getId();
@@ -494,6 +487,7 @@ public class StoichiometryManagerImplTest {
 
   @Test
   public void whenCopyForReaction_withValidSource_thenCreatesCopyWithNewParent() throws Exception {
+    stubSave();
     Long sourceParentReactionId = 1L;
     Long targetParentReactionId = 2L;
     Stoichiometry sourceStoichiometry =
@@ -519,6 +513,7 @@ public class StoichiometryManagerImplTest {
 
   @Test
   public void whenCopy_withInventoryLinks_thenLinksAreCreatedForNewMolecules() throws Exception {
+    stubSave();
     Long sourceParentReactionId = 11L;
     RSChemElement targetParentReaction = createRSChemElement(22L);
 
@@ -594,6 +589,7 @@ public class StoichiometryManagerImplTest {
 
   @Test
   public void whenCopy_withIOException_thenThrowsStoichiometryException() throws Exception {
+    stubSave();
     Long sourceParentReactionId = 1L;
     Long targetParentReactionId = 2L;
     Stoichiometry sourceStoichiometry =
@@ -702,6 +698,7 @@ public class StoichiometryManagerImplTest {
 
   @Test
   public void whenUpdateWithInventoryLink_thenCreatesLink() {
+    stubSave();
     Long stoichiometryId = 1L;
     Stoichiometry existingStoichiometry = createStoichiometry(stoichiometryId, 1L, record);
     StoichiometryMolecule mol = existingStoichiometry.getMolecules().get(0);
@@ -729,6 +726,7 @@ public class StoichiometryManagerImplTest {
 
   @Test
   public void whenUpdateWithNullInventoryLink_thenRemovesLink() {
+    stubSave();
     Long stoichiometryId = 1L;
     Stoichiometry existingStoichiometry = createStoichiometry(stoichiometryId, 1L, record);
     StoichiometryMolecule mol = existingStoichiometry.getMolecules().get(0);
@@ -752,6 +750,7 @@ public class StoichiometryManagerImplTest {
   @Test
   public void whenCreateReactionlessFromArchive_thenStoichiometryHasNoParentReactionAndMolecules()
       throws Exception {
+    stubSave();
     StoichiometryDTO archived = new StoichiometryDTO();
     StoichiometryMoleculeDTO mol1 =
         StoichiometryMoleculeDTO.builder()
@@ -782,8 +781,8 @@ public class StoichiometryManagerImplTest {
         stoichiometryManager.createReactionlessFromArchive(archived, record, user);
 
     assertNull(
-        "Imported reaction-less stoichiometry must not link to a parent reaction",
-        result.getParentReaction());
+        result.getParentReaction(),
+        "Imported reaction-less stoichiometry must not link to a parent reaction");
     assertEquals(record, result.getRecord());
     assertEquals(2, result.getMolecules().size());
 
@@ -795,9 +794,9 @@ public class StoichiometryManagerImplTest {
     assertEquals(46.07, firstMol.getMolecularWeight(), 0.001);
     assertTrue(firstMol.getLimitingReagent());
     assertNotNull(
+        firstMol.getRsChemElement(),
         "rs_chem_id is NOT NULL in the DB; reaction-less import must create an RSChemElement"
-            + " per molecule",
-        firstMol.getRsChemElement());
+            + " per molecule");
 
     StoichiometryMolecule secondMol = result.getMolecules().get(1);
     assertEquals(MoleculeRole.PRODUCT, secondMol.getRole());
@@ -810,6 +809,7 @@ public class StoichiometryManagerImplTest {
   @Test
   public void whenCreateReactionlessFromArchive_withNoMolecules_thenCreatesEmptyStoichiometry()
       throws Exception {
+    stubSave();
     StoichiometryDTO archived = new StoichiometryDTO();
     archived.setMolecules(null);
 
@@ -819,8 +819,8 @@ public class StoichiometryManagerImplTest {
     assertNull(result.getParentReaction());
     assertEquals(record, result.getRecord());
     assertTrue(
-        "Empty molecule list should produce an empty molecules collection",
-        result.getMolecules() == null || result.getMolecules().isEmpty());
+        result.getMolecules() == null || result.getMolecules().isEmpty(),
+        "Empty molecule list should produce an empty molecules collection");
     verify(rsChemElementManager, never()).save(any(RSChemElement.class), any(User.class));
   }
 
@@ -851,5 +851,22 @@ public class StoichiometryManagerImplTest {
     when(stoichiometryDao.get(stoichiometryId)).thenReturn(existingStoichiometry);
 
     assertThrows(StoichiometryException.class, () -> stoichiometryManager.update(updateDTO, user));
+  }
+
+  private void stubSave() {
+    when(stoichiometryDao.save(stoichiometryCaptor.capture()))
+        .thenAnswer(
+            invocation -> {
+              Stoichiometry s = invocation.getArgument(0, Stoichiometry.class);
+              if (s.getMolecules() != null) {
+                long idCounter = 100L;
+                for (StoichiometryMolecule m : s.getMolecules()) {
+                  if (m.getId() == null) {
+                    m.setId(idCounter++);
+                  }
+                }
+              }
+              return s;
+            });
   }
 }

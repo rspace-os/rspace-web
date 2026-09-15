@@ -2,11 +2,13 @@ import type { Locator, Page } from "@playwright/test";
 
 export type GalleryAction =
   | "View"
+  | "Open"
   | "Edit"
   | "Duplicate"
   | "Move"
   | "Rename"
   | "Upload New Version"
+  | "View Version History"
   | "Download"
   | "Share"
   | "Export"
@@ -30,9 +32,6 @@ export class GalleryActionsMenu {
   }
 
   menuItem(action: GalleryAction): Locator {
-    if (action === "Share") {
-      return this.page.getByRole("menuitem", { name: "Share" });
-    }
     return this.page.getByRole("menuitem", { name: action, exact: true });
   }
 
@@ -41,7 +40,6 @@ export class GalleryActionsMenu {
   }
 
   async isActionEnabled(action: GalleryAction): Promise<boolean> {
-    const ariaDisabled = await this.menuItem(action).getAttribute("aria-disabled");
-    return ariaDisabled !== "true";
+    return (await this.menuItem(action).count()) > 0;
   }
 }

@@ -1,7 +1,7 @@
 package com.researchspace.api.v1.controller;
 
-import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.api.v1.throttling.APIRequestThrottler;
@@ -9,38 +9,32 @@ import com.researchspace.api.v1.throttling.APIUsageStats;
 import com.researchspace.core.util.throttling.ThrottleInterval;
 import com.researchspace.webapp.filter.OriginRefererChecker;
 import java.util.Optional;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
+@ExtendWith(MockitoExtension.class)
 public class APIThrottlingInterceptorTest {
   private static final String ANY_KEY = "any";
   @InjectMocks APIRequestThrottlingInterceptor apiThrottlingInterceptor;
   MockHttpServletRequest req;
   MockHttpServletResponse resp;
-
-  public @Rule MockitoRule rule = MockitoJUnit.rule();
   @Mock APIRequestThrottler userThrottler;
   @Mock APIRequestThrottler globalThrottler;
   @Mock APIRequestThrottler inventoryThrottler;
   @Mock OriginRefererChecker checker;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     req = new MockHttpServletRequest();
     resp = new MockHttpServletResponse();
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void testPreHandle() throws Exception {

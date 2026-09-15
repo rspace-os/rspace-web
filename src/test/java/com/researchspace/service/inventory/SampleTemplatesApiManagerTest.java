@@ -37,14 +37,14 @@ import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.Collections;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
 
   private User testUser;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     sampleTemplateDao.resetDefaultTemplateOwner();
 
@@ -280,8 +280,8 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
   @Test
   public void templateCreateRejectsFieldNamedAfterUILabel() {
     // RSDEV-1066: SampleTemplate's displayed-label set includes "Subsample Alias", so
-    // core-model's verifyFieldNameAllowed rejects the field at Sample.addSampleField time
-    // with the legacy reserved-name IAE.
+    // InventoryRecord's verifyFieldNameAllowed rejects the field at Sample.addSampleField
+    // time with the legacy reserved-name IAE.
     ApiSampleTemplatePost post = getTemplatePostForTestTemplateWithTextField();
     post.getFields().add(createBasicApiSampleField("Subsample Alias", ApiFieldType.STRING, "v"));
 

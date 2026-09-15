@@ -1,9 +1,9 @@
 package com.researchspace.service;
 
 import static com.researchspace.model.comms.MessageType.REQUEST_RECORD_WITNESS;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SecureStringUtils;
@@ -27,9 +27,9 @@ import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.testutils.TestFactory;
 import java.io.File;
 import java.io.IOException;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class RecordSigningManagerTest extends SpringTransactionalTest {
@@ -38,7 +38,7 @@ public class RecordSigningManagerTest extends SpringTransactionalTest {
   private @Autowired SignatureDao signingDao;
   private User user;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     user = createAndSaveUserIfNotExists("newUser");
     initialiseContentWithEmptyContent(user);
@@ -48,7 +48,7 @@ public class RecordSigningManagerTest extends SpringTransactionalTest {
     propertyHolder.setStandalone("true");
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     RSpaceTestUtils.logout();
   }

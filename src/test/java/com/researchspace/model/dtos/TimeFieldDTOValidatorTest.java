@@ -1,12 +1,11 @@
 package com.researchspace.model.dtos;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.field.TimeFieldForm;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
 
@@ -15,7 +14,7 @@ public class TimeFieldDTOValidatorTest {
   static TimeFieldDTO<TimeFieldForm> INITIAL_VALID;
   private TimeFieldDTOValidator validator;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     INITIAL_VALID = createValid();
     validator = new TimeFieldDTOValidator();
@@ -26,9 +25,6 @@ public class TimeFieldDTOValidatorTest {
         new TimeFieldDTO<TimeFieldForm>("11:51 AM", "11:12 AM", "11:52 AM", "hh:mm a", "time");
     return nfdto;
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   private BeanPropertyBindingResult setUpErrorsObject() {
     return new BeanPropertyBindingResult(INITIAL_VALID, "MyObject");

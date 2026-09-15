@@ -1,6 +1,6 @@
 package com.researchspace.dao.hibernate;
 
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 import com.axiope.search.IFileIndexer;
 import com.axiope.search.SearchConstants;
@@ -19,33 +19,33 @@ import com.researchspace.search.impl.FileIndexer;
 import com.researchspace.search.impl.LuceneSearchStrategy;
 import com.researchspace.service.IGroupCreationStrategy;
 import com.researchspace.service.SearchSpringTestBase;
+import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.hamcrest.collection.IsIterableContainingInAnyOrder;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class WithinRecordsSearchTest extends SearchSpringTestBase {
 
   @Autowired private IGroupCreationStrategy groupCreationStrategy;
 
-  public @Rule TemporaryFolder tempIndexFolder = new TemporaryFolder();
+  @TempDir public File tempIndexFolder;
   private @Autowired FileIndexSearcher searcher;
   private IFileIndexer fileIndexer;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     fileIndexer = new FileIndexer();
-    fileIndexer.setIndexFolderDirectly(tempIndexFolder.getRoot());
+    fileIndexer.setIndexFolderDirectly(tempIndexFolder);
     fileIndexer.init(true);
     getTargetObject(searcher.getFileSearchStrategy(), LuceneSearchStrategy.class)
-        .setIndexFolderDirectly(tempIndexFolder.getRoot());
+        .setIndexFolderDirectly(tempIndexFolder);
 
     setupRandomUser();
   }

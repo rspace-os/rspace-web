@@ -1,6 +1,6 @@
 package com.researchspace.service.impl;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.export.pdf.ExportProcessorInput;
@@ -10,18 +10,16 @@ import com.researchspace.model.User;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.RecordManager;
 import com.researchspace.testutils.TestFactory;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class DocumentHTMLPreviewHandlerImplTest {
-
-  public @Rule MockitoRule rule = MockitoJUnit.rule();
 
   private User anyUser;
   private @Mock RecordManager recordManager;
@@ -29,7 +27,7 @@ public class DocumentHTMLPreviewHandlerImplTest {
 
   @InjectMocks private DocumentHTMLPreviewHandlerImpl docPreviewer;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     anyUser = TestFactory.createAnyUser("any");
   }

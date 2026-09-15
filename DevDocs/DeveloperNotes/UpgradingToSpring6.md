@@ -96,8 +96,8 @@ Until the reindex finishes, search results will be missing or incomplete.
   not `DTYPE='...'`).
 - **Search mappings** use Hibernate Search 7 annotations (`@FullTextField`,
   `@GenericField`, `@KeywordField`, named `@IndexedEmbedded`). Index field names such as
-  `extraFields.fieldData` are a contract between rspace-core-model mappings and
-  rspace-web query builders; changing one side silently breaks search.
+  `extraFields.fieldData` are a contract between the entity mappings and the
+  query builders; changing one side silently breaks search.
 - **Caching** uses EhCache 3 via JCache (`ehcache.xml`, v3 schema). Every
   `@Cache`-annotated entity needs an explicit region; do not declare
   `key-type`/`value-type` on entity regions (Hibernate 6 cache keys are composite

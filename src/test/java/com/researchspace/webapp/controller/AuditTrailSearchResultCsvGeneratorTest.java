@@ -2,12 +2,12 @@ package com.researchspace.webapp.controller;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
 import static com.researchspace.testutils.TestFactory.createAnyRecord;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.startsWith;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SearchResultsImpl;
@@ -27,8 +27,8 @@ import com.researchspace.testutils.TestFactory;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Locale;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -36,7 +36,7 @@ public class AuditTrailSearchResultCsvGeneratorTest {
   AuditTrailSearchResultCsvGenerator auditTrailSearchResultCsvGenerator =
       new AuditTrailSearchResultCsvGenerator();
 
-  @Before
+  @BeforeEach
   public void setUp() {
     ReflectionTestUtils.setField(
         auditTrailSearchResultCsvGenerator,
@@ -122,7 +122,7 @@ public class AuditTrailSearchResultCsvGeneratorTest {
         createValidSearchResultForMoveEvent(aRecord, AuditData.fromJson(moveData)),
         defaultSearchConfig());
 
-    assertFalse("CSV content used the ambient request locale", implicitLocaleUsed[0]);
+    assertFalse(implicitLocaleUsed[0], "CSV content used the ambient request locale");
   }
 
   private String getCellByRowColumn(ResponseEntity<String> results, int row, int column) {

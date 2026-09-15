@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xs:schema version="1.0" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+  <xs:element name="archivalDocument" type="archivalDocument"/>
+
+  <xs:complexType name="archivalDocument">
+    <xs:sequence>
+      <xs:element name="code" type="xs:string" minOccurs="0"/>
+      <xs:element name="createBy" type="xs:string"/>
+      <xs:element name="createDate" type="xs:string"/>
+      <xs:element name="tag" type="xs:string" minOccurs="0"/>
+      <xs:element name="folderId" type="xs:long"/>
+      <xs:element name="folderName" type="xs:string" minOccurs="0"/>
+      <xs:element name="folderType" type="xs:string" minOccurs="0"/>
+      <xs:element name="formType" type="xs:string" minOccurs="0"/>
+      <xs:element name="lastModifiedDate" type="xs:string"/>
+      <xs:element name="listFields" minOccurs="0">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="field" type="archivalField" maxOccurs="unbounded"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="name" type="xs:string"/>
+      <xs:element name="parentFolder" type="xs:string" minOccurs="0"/>
+      <xs:element name="type" type="xs:string"/>
+      <xs:element name="recordVersion" type="xs:string"/>
+    </xs:sequence>
+    <xs:attribute name="docId" type="xs:long" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="archivalField">
+    <xs:sequence>
+      <xs:element name="code" type="xs:string" minOccurs="0"/>
+      <xs:element name="fieldName" type="xs:string" minOccurs="0"/>
+      <xs:element name="fieldType" type="xs:string" minOccurs="0"/>
+      <xs:element name="lastModifiedDate" type="xs:string" minOccurs="0"/>
+      <xs:element name="fieldData" type="xs:string" minOccurs="0"/>
+      <xs:element name="commentList" minOccurs="0">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="comment" type="archivalComment" minOccurs="0" maxOccurs="unbounded"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="imageList" minOccurs="0">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="image-Info" type="archivalGalleryMetadata" minOccurs="0" maxOccurs="unbounded"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="audioList" minOccurs="0">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="audio-Info" type="archivalGalleryMetadata" minOccurs="0" maxOccurs="unbounded"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="videoList" minOccurs="0">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="video-info" type="archivalGalleryMetadata" minOccurs="0" maxOccurs="unbounded"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="chemdooleImageList" minOccurs="0">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="chemdoodle-info" type="archivalGalleryMetadata" minOccurs="0" maxOccurs="unbounded"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="ImageAnnotationList" minOccurs="0">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="annotation-info" type="archivalGalleryMetadata" minOccurs="0" maxOccurs="unbounded"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="attachList" minOccurs="0">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="attach-info" type="archivalGalleryMetadata" minOccurs="0" maxOccurs="unbounded"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="linkRecordList" minOccurs="0">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="link-info" type="archivalGalleryMetadata" minOccurs="0" maxOccurs="unbounded"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="sketchImageList" minOccurs="0">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="sketch-info" type="archivalGalleryMetadata" minOccurs="0" maxOccurs="unbounded"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+    <xs:attribute name="id" type="xs:long" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="archivalComment">
+    <xs:sequence>
+      <xs:element name="code" type="xs:string" minOccurs="0"/>
+      <xs:element name="author" type="xs:string" minOccurs="0"/>
+      <xs:element name="lastUpdater" type="xs:string" minOccurs="0"/>
+      <xs:element name="updateDate" type="xs:string" minOccurs="0"/>
+      <xs:element name="listCommentItems" minOccurs="0">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="item" type="archivalCommentItem" minOccurs="0" maxOccurs="unbounded"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+    <xs:attribute name="id" type="xs:long" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="archivalCommentItem">
+    <xs:sequence>
+      <xs:element name="code" type="xs:string" minOccurs="0"/>
+      <xs:element name="createDate" type="xs:string" minOccurs="0"/>
+      <xs:element name="content" type="xs:string" minOccurs="0"/>
+      <xs:element name="gmtOffset" type="xs:int"/>
+    </xs:sequence>
+    <xs:attribute name="id" type="xs:long" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="archivalGalleryMetadata">
+    <xs:sequence>
+      <xs:element name="parentId" type="xs:long"/>
+      <xs:element name="fileName" type="xs:string" minOccurs="0"/>
+      <xs:element name="linkFile" type="xs:string" minOccurs="0"/>
+      <xs:element name="contentType" type="xs:string" minOccurs="0"/>
+      <xs:element name="extension" type="xs:string" minOccurs="0"/>
+      <xs:element name="annotation" type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="id" type="xs:long" use="required"/>
+  </xs:complexType>
+</xs:schema>
+

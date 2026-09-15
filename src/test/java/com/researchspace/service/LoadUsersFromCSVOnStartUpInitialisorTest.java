@@ -1,14 +1,13 @@
 package com.researchspace.service;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.service.impl.LoadUsersFromCSVOnStartUpInitialisor;
 import com.researchspace.testutils.SpringTransactionalTest;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
@@ -18,10 +17,7 @@ public class LoadUsersFromCSVOnStartUpInitialisorTest extends SpringTransactiona
   @Qualifier("loadUsersFromCSVOnStartUpInitialisor")
   private IApplicationInitialisor init;
 
-  @Before
-  public void setUp() throws Exception {}
-
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
     contentInitializer.setCustomInitActive(true); // restore default setting
@@ -41,7 +37,7 @@ public class LoadUsersFromCSVOnStartUpInitialisorTest extends SpringTransactiona
 
   // this code is currently not used in application - it has been superceded by liquibase
   // for loading in data.
-  @Ignore
+  @Disabled
   @Test
   public void testOnInitialAppDeploymentHappyCase() {
     int initialNumUsers = getTotalNumUsers();

@@ -4,7 +4,9 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 import type { AxiosRequestHeaders, AxiosResponse, InternalAxiosRequestConfig } from "@/common/axios";
 import InvApiService from "../../../../common/InvApiService";
 import getRootStore from "../../../stores/getRootStore";
-import ImportModel from "../../ImportModel";
+import { FieldTypes } from "../../FieldTypes";
+import ImportModel, { ColumnFieldMap, Fields } from "../../ImportModel";
+import { makeMockInstrumentTemplate } from "../InstrumentTemplateModel/mocking";
 import { templateAttrs } from "../TemplateModel/mocking";
 
 vi.mock("../../../../common/InvApiService", () => ({
@@ -12,6 +14,63 @@ vi.mock("../../../../common/InvApiService", () => ({
     post: vi.fn(),
   },
 }));
+
+function makeInstrumentNameMapping(model: ImportModel): ColumnFieldMap {
+  return new ColumnFieldMap({
+    recordType: "INSTRUMENTS",
+    selected: true,
+    columnName: "Name",
+    field: Fields.name,
+    fieldName: "Name",
+    fieldType: FieldTypes.plain_text,
+    quantityUnitId: null,
+    options: null,
+    fieldChangeCallback: () => {},
+    isNameUnique: (c) => model.isNameUnique(c),
+    columnsWithoutBlankValue: ["Name"],
+  });
+}
+
+describe("importFiles — instrumentSettings serialization", () => {
+  test("existing template: templateId is set and templateInfo is null", async () => {
+    const model = new ImportModel("INSTRUMENTS");
+    const template = makeMockInstrumentTemplate({ id: 42 });
+    runInAction(() => {
+      model.instrumentsFile = new File([""], "instruments.csv");
+      model.instrumentsMappings = [makeInstrumentNameMapping(model)];
+      model.instrumentCreateNewTemplate = false;
+      model.instrumentTemplate = template;
+    });
+    vi.spyOn(model.state, "transitionTo").mockImplementation(() => {});
+    vi.spyOn(InvApiService, "post").mockResolvedValueOnce({
+      data: {
+        status: "COMPLETED",
+        containerResults: null,
+        sampleResults: null,
+        subSampleResults: null,
+        instrumentResults: { type: "INSTRUMENT", status: "COMPLETED", results: [], templateResult: null },
+      },
+      status: 200,
+      statusText: "OK",
+      headers: {},
+      config: { headers: {} as AxiosRequestHeaders } as InternalAxiosRequestConfig,
+    });
+
+    await model.importFiles();
+
+    const [url, formData] = vi.mocked(InvApiService.post).mock.calls[0] as [string, FormData];
+    expect(url).toBe("/import/importFiles");
+    const { instrumentSettings } = JSON.parse(formData.get("importSettings") as string) as {
+      instrumentSettings: { templateId: number; templateInfo: null; fieldMappings: Record<string, string> };
+    };
+    expect(instrumentSettings).toEqual({
+      templateId: 42,
+      templateInfo: null,
+      fieldMappings: { Name: "name" },
+    });
+  });
+});
+
 const mockErrorMsg = "Unexpected number of values in CSV line, expected: 2, was: 3";
 describe("method: importFile", () => {
   describe("When the server responds with some errors,", () => {

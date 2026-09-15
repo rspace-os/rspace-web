@@ -1,7 +1,7 @@
 package com.researchspace.service.archive.export;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.archive.ExportScope;
 import com.researchspace.archive.model.ArchiveExportConfig;
@@ -11,11 +11,9 @@ import com.researchspace.testutils.SpringTransactionalTest;
 import jakarta.xml.bind.JAXBException;
 import java.io.File;
 import java.io.IOException;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
@@ -25,12 +23,9 @@ public class MessageArchiveDataTest extends SpringTransactionalTest {
   @Qualifier("messageArchiveHandler")
   private ArchiveDataHandler handler;
 
-  @Rule public TemporaryFolder tempFolder = new TemporaryFolder();
+  @TempDir public File tempFolder;
 
-  @Before
-  public void setUp() throws Exception {}
-
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }
@@ -43,17 +38,17 @@ public class MessageArchiveDataTest extends SpringTransactionalTest {
     aec.setExportScope(ExportScope.SELECTION);
     aec.setArchiveType(ArchiveExportConfig.XML);
     aec.setExporter(exporter);
-    handler.archiveData(aec, tempFolder.getRoot());
+    handler.archiveData(aec, tempFolder);
 
     // check no messages.xml on selection based export.
-    File messagesXML = new File(tempFolder.getRoot(), ExportImport.MESSAGES);
+    File messagesXML = new File(tempFolder, ExportImport.MESSAGES);
     assertFalse(messagesXML.exists());
     // but IS messages.xml o n message export
     aec.setExportScope(ExportScope.USER);
     aec.setUserOrGroupId(exporter.getOid());
-    handler.archiveData(aec, tempFolder.getRoot());
+    handler.archiveData(aec, tempFolder);
 
-    messagesXML = new File(tempFolder.getRoot(), ExportImport.MESSAGES);
+    messagesXML = new File(tempFolder, ExportImport.MESSAGES);
     assertTrue(messagesXML.exists());
   }
 }

@@ -3,7 +3,7 @@ package com.researchspace.webapp.controller;
 import static com.researchspace.session.SessionAttributeUtils.BATCH_REGISTRATION_PROGRESS;
 import static com.researchspace.session.SessionAttributeUtils.BATCH_WORDIMPORT_PROGRESS;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -12,20 +12,16 @@ import com.researchspace.core.util.progress.ProgressMonitor;
 import com.researchspace.session.SessionAttributeUtils;
 import com.researchspace.testutils.TestFactory;
 import org.hamcrest.Matchers;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.test.web.servlet.MvcResult;
 
 public class ProgressMonitorControllerMVCIT extends MVCTestBase {
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void progressReturnsNoopMonitorIfNoneSet() throws Exception {

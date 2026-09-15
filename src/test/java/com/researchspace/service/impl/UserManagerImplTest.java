@@ -5,8 +5,9 @@ import static com.researchspace.core.util.TransformerUtils.toSet;
 import static com.researchspace.model.Role.SYSTEM_ROLE;
 import static com.researchspace.testutils.TestFactory.createACommunity;
 import static com.researchspace.testutils.TestFactory.createAnyUser;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -26,23 +27,18 @@ import com.researchspace.service.UserExistsException;
 import com.researchspace.testutils.TestFactory;
 import java.util.Collections;
 import java.util.List;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoJUnitRunner;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.util.ReflectionTestUtils;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class UserManagerImplTest extends BaseManagerMockTestCase {
-
-  @Rule public MockitoRule rule = MockitoJUnit.rule();
 
   private @InjectMocks UserManagerImpl userManager;
   private @InjectMocks RoleManagerImpl roleManager;
@@ -51,7 +47,7 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
   private @Mock CommunityDao communityDao;
   private @Mock AnalyticsManager analyticsManager;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     ReflectionTestUtils.setField(
         userManager, "messages", new MessageSourceUtils(new JsonMessageSource()));
@@ -145,11 +141,15 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
     verify(analyticsManager, never()).userCreated(Mockito.any(User.class));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void isUserInAdminsCommunityThrowsIAEIfNotAdmin() {
-    User nonAdmin = createAnyUser("any");
-    User any = createAnyUser("any");
-    userManager.isUserInAdminsCommunity(nonAdmin, any.getUsername());
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          User nonAdmin = createAnyUser("any");
+          User any = createAnyUser("any");
+          userManager.isUserInAdminsCommunity(nonAdmin, any.getUsername());
+        });
   }
 
   @Test

@@ -1,15 +1,12 @@
-import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 import { expect } from "@playwright/test";
 import { storageStatePath } from "@/__tests__/e2e/authState";
 import { dynamicUserTest as test } from "@/__tests__/e2e/fixtures/dynamicUser";
 import { InventoryPage } from "@/__tests__/e2e/pageObjects/inventory/InventoryPage";
 import { tags } from "@/__tests__/e2e/tags";
-import { uniqueName } from "@/__tests__/e2e/testData";
+import { fixturePath, uniqueName } from "@/__tests__/e2e/testData";
 import { SYSADMIN } from "@/__tests__/e2e/users";
 
-const currentDir = dirname(fileURLToPath(import.meta.url));
-const SAMPLE_IMAGE = resolve(currentDir, "fixtures/add_sample_image.png");
+const SAMPLE_IMAGE = fixturePath(import.meta.url, "fixtures/add_sample_image.png");
 const NO_EDIT_PERMISSION = "You do not have permission to edit this sample.";
 
 test.describe(`Inventory Samples`, { tag: [tags.INVENTORY, tags.MOBILE] }, () => {
@@ -81,7 +78,7 @@ test.describe(`Inventory Samples`, { tag: [tags.INVENTORY, tags.MOBILE] }, () =>
     await expect(pageInventory.searchPanel.row(templateName)).toBeVisible();
   });
 
-  test(`As a sysadmin, I can create a Template—but not new or split Subsamples—from a Sample I don't own`, async ({
+  test(`As a sysadmin, I can create a Template,but not new or split Subsamples from a Sample I don't own`, async ({
     browser,
     browserContextOptions,
     clientInventory,

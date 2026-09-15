@@ -358,16 +358,6 @@
       },
       "usage": "You can include files from Egnyte in your RSpace documents. Files are embedded as links to the Egnyte location of that file."
     },
-    "evernote": {
-      "description": "Take notes, manage tasks, and organise your notes into notebooks with embedded media.",
-      "helpLink": "Evernote integration docs",
-      "name": "Evernote",
-      "setup": {
-        "import": "In the Workspace, select Create → Import from Evernote.",
-        "instructions": "<ol><li>Enable the integration.</li><li>In the Workspace, select Create → Import from Evernote.</li></ol>"
-      },
-      "usage": "You can directly import Evernote XML exports into RSpace. The import creates a separate RSpace document for each Note, and images and attachments will also be imported."
-    },
     "fieldmark": {
       "description": "Collect structured, geospatial sample and fieldwork data while offline, for easy importing into Inventory.",
       "fields": {

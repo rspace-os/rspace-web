@@ -1,28 +1,36 @@
 import type { Locator, Page } from "@playwright/test";
+import { GalleryActionsMenu } from "@/__tests__/e2e/components/gallery/GalleryActionsMenu";
+import type { GallerySection } from "@/__tests__/e2e/components/gallery/GallerySidebar";
+import { GallerySidebar } from "@/__tests__/e2e/components/gallery/GallerySidebar";
+import { GalleryVersionHistoryDialog } from "@/__tests__/e2e/components/gallery/GalleryVersionHistoryDialog";
 
 export class GalleryPickerComponent {
   readonly root: Locator;
-  readonly createButton: Locator;
   readonly addButton: Locator;
   readonly cancelButton: Locator;
+  readonly actions: GalleryActionsMenu;
+  readonly sidebar: GallerySidebar;
+  readonly versionHistoryDialog: GalleryVersionHistoryDialog;
 
   constructor(private readonly page: Page) {
     this.root = page.getByRole("dialog", { name: "Gallery" });
-    this.createButton = this.root.getByRole("button", { name: "Create", exact: true });
     this.addButton = this.root.getByRole("button", { name: "Add" });
     this.cancelButton = this.root.getByRole("button", { name: "Cancel" });
+    this.actions = new GalleryActionsMenu(page);
+    this.sidebar = new GallerySidebar(page);
+    this.versionHistoryDialog = new GalleryVersionHistoryDialog(page);
   }
 
   async waitForOpen(): Promise<void> {
     await this.root.waitFor({ state: "visible" });
   }
 
-  async goToSection(name: string): Promise<void> {
-    await this.root.getByRole("button", { name, exact: true }).click();
+  async goToSection(name: GallerySection): Promise<void> {
+    await this.sidebar.openSection(name);
   }
 
   async uploadFile(filePath: string, expectedName: string): Promise<void> {
-    await this.createButton.click();
+    await this.sidebar.clickCreate();
     const fileChooserPromise = this.page.waitForEvent("filechooser");
     await this.page.getByRole("menuitem", { name: "Upload Files" }).click();
     const fileChooser = await fileChooserPromise;
@@ -33,6 +41,20 @@ export class GalleryPickerComponent {
 
   async selectItem(name: string): Promise<void> {
     await this.root.getByText(name, { exact: true }).last().click();
+  }
+
+  async openFolder(name: string): Promise<void> {
+    await this.root.getByText(name, { exact: true }).last().dblclick();
+    await this.root
+      .getByRole("navigation", { name: "Breadcrumbs" })
+      .getByRole("button", { name, exact: true })
+      .waitFor({ state: "visible" });
+  }
+
+  async openVersionHistoryForSelected(): Promise<void> {
+    await this.actions.open();
+    await this.actions.clickAction("View Version History");
+    await this.versionHistoryDialog.waitForOpen();
   }
 
   async add(): Promise<void> {

@@ -34,9 +34,9 @@ import java.io.IOException;
 import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.TestPropertySource;
@@ -46,7 +46,7 @@ import org.springframework.test.web.servlet.MvcResult;
 @WebAppConfiguration
 @TestPropertySource(
     properties = {"chemistry.service.url=http://localhost:8090", "chemistry.provider=indigo"})
-@Ignore(
+@Disabled(
     "Requires chemistry service to run. See"
         + " https://documentation.researchspace.com/article/1jbygguzoa")
 public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
@@ -60,7 +60,7 @@ public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
 
   private static final String URL = "/api/v1/stoichiometry";
 
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     super.setUp();
     user = createInitAndLoginAnyUser();

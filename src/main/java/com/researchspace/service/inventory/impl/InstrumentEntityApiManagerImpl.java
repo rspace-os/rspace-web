@@ -12,7 +12,6 @@ import com.researchspace.api.v1.model.ApiInstrumentTemplatePost;
 import com.researchspace.api.v1.model.ApiInstrumentTemplateSearchResult;
 import com.researchspace.api.v1.model.ApiInventoryDOI;
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
-import com.researchspace.api.v1.model.ApiInventoryLink;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiInventorySearchResult;
 import com.researchspace.core.util.ISearchResults;
@@ -35,23 +34,18 @@ import com.researchspace.model.inventory.InstrumentEntity;
 import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.field.InventoryEntityField;
-import com.researchspace.model.inventory.field.InventoryLink;
 import com.researchspace.model.inventory.field.InventoryLinkField;
 import com.researchspace.model.record.IActiveUserStrategy;
 import com.researchspace.service.MessageSourceUtils;
-import com.researchspace.service.inventory.DataCiteRelationType;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import com.researchspace.service.inventory.InventoryAuditApiManager;
 import com.researchspace.service.inventory.InventoryFieldNameUniquenessValidator;
-import com.researchspace.service.inventory.InventoryLinkManager;
-import com.researchspace.service.inventory.InventoryLinkValidator;
 import com.researchspace.service.inventory.InventoryMoveHelper;
 import com.researchspace.service.inventory.InventoryUrls;
 import com.researchspace.service.inventory.SampleApiManager;
 import jakarta.ws.rs.NotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
@@ -75,7 +69,6 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
   private @Autowired InstrumentTemplateDao instrumentTemplateDao;
   private @Autowired InventoryEntityFieldDao inventoryEntityFieldDao;
   private @Autowired SampleApiManager sampleApiManager;
-  private @Autowired InventoryLinkManager inventoryLinkManager;
   private @Autowired InventoryMoveHelper inventoryMoveHelper;
   private @Autowired InventoryAuditApiManager inventoryAuditMgr;
   private @Autowired ApiFieldToModelFieldFactory apiFieldToModelFieldFactory;
@@ -302,8 +295,8 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
       String newFieldContent = apiField.getContent();
       InventoryEntityField inventoryEntityField = inventoryEntityFieldList.get(i);
 
-      if (inventoryEntityField instanceof InventoryLinkField) {
-        applyLinkFieldValue((InventoryLinkField) inventoryEntityField, apiField, user);
+      if (inventoryEntityField instanceof InventoryLinkField linkField) {
+        applyLinkFieldValueOnCreate(linkField, apiField, user);
       } else if (inventoryEntityField.isOptionsStoringField()) {
         inventoryEntityField.setSelectedOptions(apiField.getSelectedOptions());
       } else if (inventoryEntityField == landingPage
@@ -336,108 +329,18 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
   }
 
   /**
-   * Applies a link value to a structured link field, going through the {@link InventoryLinkManager}
-   * so the target is parsed/validated and the Envers revision captured. Mirrors the implementation
-   * in {@link SampleApiManagerImpl}.
+   * Applies link values to an existing instrument's (or instrument template's) structured link
+   * fields. The shared implementation cannot read {@code isTemplate()} off {@link InventoryRecord},
+   * so this passes it in.
    */
-  boolean applyLinkFieldValue(
-      InventoryLinkField field, ApiInventoryEntityField apiField, User user) {
-    ApiInventoryLink apiLink = apiField.getLink();
-    String target = apiLink == null ? null : apiLink.getTargetGlobalId();
-    InventoryLink existing = field.getLink();
-    if (target == null || target.trim().isEmpty()) {
-      if (existing == null) {
-        return false;
-      }
-      field.setLink(null);
-      return true;
-    }
-    Long effectivePin =
-        apiLink.derivedVersionPin() != null ? apiLink.derivedVersionPin() : apiLink.getVersionPin();
-    GlobalIdentifier incoming = parseTargetOrNull(target);
-    if (existing != null
-        && incoming != null
-        && incoming.getPrefix() == existing.getTargetPrefix()
-        && Objects.equals(incoming.getDbId(), existing.getTargetDbId())
-        && Objects.equals(effectivePin, existing.getVersionPin())
-        && Objects.equals(apiLink.getRelationType(), existing.getRelationType())) {
-      return false;
-    }
-    assertRelationAllowed(field, apiLink.getRelationType());
-    if (existing != null) {
-      field.setLink(inventoryLinkManager.updateLink(existing, apiLink, user));
-    } else {
-      field.setLink(inventoryLinkManager.createLink(apiLink, user));
-    }
-    return true;
-  }
-
-  /**
-   * Applies link values to an existing instrument's structured link fields (the update path). The
-   * DTO apply loop leaves link fields untouched because it cannot reach the service-layer {@link
-   * InventoryLinkManager}; this matches each modified link field by id and applies it here.
-   */
-  private boolean applyLinkFieldValuesOnUpdate(
-      ApiInstrument apiInstrument, Instrument dbInstrument, User user) {
-    if (apiInstrument.getFields() == null) {
-      return false;
-    }
-    boolean changed = false;
-    for (ApiInventoryEntityField apiField : apiInstrument.getFields()) {
-      if (apiField.isNewFieldRequest()
-          || apiField.isDeleteFieldRequest()
-          || apiField.getId() == null) {
-        continue;
-      }
-      Optional<InventoryEntityField> dbFieldOpt =
-          dbInstrument.getActiveFields().stream()
-              .filter(
-                  f ->
-                      f instanceof InventoryLinkField
-                          && Objects.equals(f.getId(), apiField.getId()))
-              .findFirst();
-      if (dbFieldOpt.isPresent()) {
-        rejectSelfLink(apiField.getLink(), dbInstrument);
-        changed |= applyLinkFieldValue((InventoryLinkField) dbFieldOpt.get(), apiField, user);
-      }
-    }
-    return changed;
-  }
-
-  private void assertRelationAllowed(InventoryLinkField field, String relationType) {
-    if (!DataCiteRelationType.isValid(relationType)) {
-      throw new ApiRuntimeException("errors.inventory.field.linkRelationTypeInvalid", relationType);
-    }
-    String allowed = field.getAllowedRelationTypes();
-    if (allowed == null || allowed.trim().isEmpty()) {
-      return;
-    }
-    if (!Arrays.asList(allowed.split("\\|")).contains(relationType)) {
-      throw new ApiRuntimeException(
-          "errors.inventory.field.linkRelationTypeNotPermitted", relationType, field.getName());
-    }
-  }
-
-  private void rejectSelfLink(ApiInventoryLink apiLink, Instrument dbInstrument) {
-    if (apiLink == null || dbInstrument.getOid() == null) {
-      return;
-    }
-    GlobalIdentifier target = parseTargetOrNull(apiLink.getTargetGlobalId());
-    if (target == null) {
-      return;
-    }
-    if (InventoryLinkValidator.isSelfLink(target, dbInstrument.getOid().toString())) {
-      throw new ApiRuntimeException(
-          "errors.inventory.field.link.selfLinkForbidden", apiLink.getTargetGlobalId());
-    }
-  }
-
-  private GlobalIdentifier parseTargetOrNull(String targetGlobalId) {
-    try {
-      return new GlobalIdentifier(targetGlobalId);
-    } catch (IllegalArgumentException | NullPointerException ex) {
-      return null;
-    }
+  boolean applyLinkFieldValuesOnUpdate(
+      ApiInstrumentEntity apiInstrument, InstrumentEntity dbInstrument, User user) {
+    return applyLinkFieldValuesOnUpdate(
+        apiInstrument.getFields(),
+        dbInstrument.getActiveFields(),
+        dbInstrument,
+        dbInstrument.isTemplate(),
+        user);
   }
 
   @Override
@@ -556,7 +459,7 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
   private void saveDbInstrumentUpdate(Instrument dbInstrument, User user) {
     dbInstrument.setModificationDate(new Date());
     dbInstrument.setModifiedBy(user.getUsername(), IActiveUserStrategy.CHECK_OPERATE_AS);
-    dbInstrument.increaseVersion();
+    increaseVersionOncePerTransaction(dbInstrument);
     instrumentDao.save(dbInstrument);
     publisher.publishEvent(new InventoryEditingEvent(dbInstrument, user));
   }
@@ -735,7 +638,7 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
     template.setCreatedBy(user.getUsername());
     template.setModifiedBy(user.getUsername(), IActiveUserStrategy.CHECK_OPERATE_AS);
     setBasicFieldsFromNewIncomingApiInventoryRecord(template, post, user);
-    addFieldsToNewInstrumentTemplate(post, template);
+    addFieldsToNewInstrumentTemplate(post, template, user);
     InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNames(template);
     InstrumentTemplate savedTemplate = instrumentTemplateDao.persistInstrumentTemplate(template);
     saveIncomingInstrumentImage(savedTemplate, post, user);
@@ -747,11 +650,12 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
     return result;
   }
 
-  private void addFieldsToNewInstrumentTemplate(
-      ApiInstrumentTemplatePost post, InstrumentTemplate template) {
+  void addFieldsToNewInstrumentTemplate(
+      ApiInstrumentTemplatePost post, InstrumentTemplate template, User user) {
     for (ApiInventoryEntityField apiField : post.getFields()) {
       InventoryEntityField toAdd =
           apiFieldToModelFieldFactory.apiInventoryFieldToModelField(apiField);
+      applyDefaultLinkOfNewTemplateField(toAdd, apiField, template, user);
       addNewFieldToInstrumentTemplate(template, toAdd);
     }
   }
@@ -785,7 +689,7 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
     try {
       dbTemplate = (InstrumentTemplate) getIfExists(dbTemplate.getId());
       boolean contentChanged =
-          createDeleteRequestedFieldsInDbInstrumentTemplate(apiTemplate, dbTemplate);
+          createDeleteRequestedFieldsInDbInstrumentTemplate(apiTemplate, dbTemplate, user);
       contentChanged |=
           extraFieldHelper.createDeleteRequestedExtraFieldsInDatabaseInstrument(
               apiTemplate, dbTemplate, user);
@@ -798,6 +702,10 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
           identifiersHelper.createAssignRequestedIdentifiers(
               apiTemplate.getIdentifiers(), dbTemplate, user);
       contentChanged |= apiTemplate.applyChangesToDatabaseInstrument(dbTemplate, user);
+      // a template link field carries a default link of its own (RSDEV-1246), so it goes through
+      // the same write path as a concrete instrument
+      contentChanged |= applyLinkFieldValuesOnUpdate(apiTemplate, dbTemplate, user);
+      assertDefaultLinksMatchWhitelists(dbTemplate.getActiveFields());
       contentChanged |= saveSharingACLForIncomingApiInvRec(dbTemplate, apiTemplate);
       contentChanged |= saveIncomingInstrumentImage(dbTemplate, apiTemplate, user);
       if (contentChanged) {
@@ -816,8 +724,8 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
     return result;
   }
 
-  private boolean createDeleteRequestedFieldsInDbInstrumentTemplate(
-      ApiInstrumentTemplate apiTemplate, InstrumentTemplate dbTemplate) {
+  boolean createDeleteRequestedFieldsInDbInstrumentTemplate(
+      ApiInstrumentTemplate apiTemplate, InstrumentTemplate dbTemplate, User user) {
     InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNamesInRequest(
         apiTemplate.getFields(), null);
     boolean changed = false;
@@ -825,26 +733,26 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
       if (apiField.isNewFieldRequest()) {
         InventoryEntityField toAdd =
             apiFieldToModelFieldFactory.apiInventoryFieldToModelField(apiField);
+        applyDefaultLinkOfNewTemplateField(toAdd, apiField, dbTemplate, user);
         addNewFieldToInstrumentTemplate(dbTemplate, toAdd);
         changed = true;
       }
       if (apiField.isDeleteFieldRequest()) {
+        // ApiRuntimeException so it maps to a resolved 422; a raw IllegalArgumentException
+        // reached clients as untranslated English. Same keys as the sample counterpart.
         if (apiField.getId() == null) {
-          throw new IllegalArgumentException(
-              "'id' property not provided "
-                  + "for a template field with 'deleteFieldRequest' flag");
+          throw new ApiRuntimeException("errors.inventory.field.deleteRequestIdMissing");
         }
         Optional<InventoryEntityField> dbFieldOpt =
             dbTemplate.getActiveFields().stream()
                 .filter(f -> apiField.getId().equals(f.getId()))
                 .findFirst();
         if (dbFieldOpt.isEmpty()) {
-          throw new IllegalArgumentException(
-              "Field id: "
-                  + apiField.getId()
-                  + " doesn't match id of any pre-existing template field");
+          throw new ApiRuntimeException(
+              "errors.inventory.field.deleteRequestIdUnknown", apiField.getId());
         }
         dbTemplate.deleteInstrumentField(dbFieldOpt.get(), apiField.isDeleteFieldOnSampleUpdate());
+        softDeleteLinkOfDeletedLinkField(dbFieldOpt.get(), user);
         changed = true;
       }
     }
@@ -854,7 +762,7 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
   private void saveDbInstrumentTemplateUpdate(InstrumentTemplate dbTemplate, User user) {
     dbTemplate.setModificationDate(new Date());
     dbTemplate.setModifiedBy(user.getUsername(), IActiveUserStrategy.CHECK_OPERATE_AS);
-    dbTemplate.increaseVersion();
+    increaseVersionOncePerTransaction(dbTemplate);
     instrumentTemplateDao.save(dbTemplate);
     publisher.publishEvent(new InventoryEditingEvent(dbTemplate, user));
   }
@@ -959,12 +867,22 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
     try {
       dbInstrument = (Instrument) getIfExists(dbInstrument.getId());
       if (!dbTemplate.getVersion().equals(dbInstrument.getTemplateLinkedVersion())) {
+        // snapshot before the sync: it marks matching fields deleted in the model layer, which
+        // cannot soft-delete their InventoryLink, and getActiveFields() no longer returns them
+        // afterwards, so the orphans are reconciled from this list (RSDEV-1270)
+        List<InventoryLinkField> linkFieldsBeforeUpdate =
+            dbInstrument.getActiveFields().stream()
+                .filter(InventoryLinkField.class::isInstance)
+                .map(InventoryLinkField.class::cast)
+                .collect(Collectors.toList());
         boolean updated = dbInstrument.updateToLatestTemplateVersion();
         // the model sync above does not copy link-field allowed-relation-types whitelists, so an
         // existing instrument would otherwise keep its create-time whitelist after a template edit
         // (RSDEV-1200) — mirror the sample path and re-apply them here.
         boolean whitelistsChanged =
             syncLinkFieldWhitelistsFromTemplate(dbInstrument.getActiveFields());
+        clearRetroStampedDefaultLinks(dbInstrument);
+        linkFieldsBeforeUpdate.forEach(field -> softDeleteLinkOfDeletedLinkField(field, user));
         if (updated || whitelistsChanged) {
           saveDbInstrumentUpdate(dbInstrument, user);
         }
@@ -975,6 +893,24 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
       }
     }
     return getApiInstrumentById(instrumentId, user);
+  }
+
+  /**
+   * Clears the link of any field the template sync has just cloned, so a default link is stamped at
+   * creation only and never retro-applied (ADR-0006).
+   *
+   * <p>Compensates for a model-layer asymmetry: {@code Sample#updateToLatestTemplateVersion} calls
+   * {@code clearValue()}, which {@code InventoryLinkField} overrides to null its link, whereas
+   * {@code Instrument#updateToLatestTemplateVersion} calls {@code setFieldData(null)}, which it
+   * does not override.
+   */
+  void clearRetroStampedDefaultLinks(InstrumentEntity dbInstrument) {
+    dbInstrument.getActiveFields().stream()
+        .filter(InventoryLinkField.class::isInstance)
+        .map(InventoryLinkField.class::cast)
+        // a just-cloned field is exactly the one with no id yet
+        .filter(field -> field.getId() == null)
+        .forEach(InventoryLinkField::clearValue);
   }
 
   @Override

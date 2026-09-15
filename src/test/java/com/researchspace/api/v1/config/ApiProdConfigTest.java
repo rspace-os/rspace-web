@@ -1,20 +1,18 @@
 package com.researchspace.api.v1.config;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.api.v1.controller.ApiAccountInitialiser;
-import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.model.User;
 import com.researchspace.testutils.TestFactory;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class ApiProdConfigTest {
-
-  public @Rule MockitoRule rule = MockitoJUnit.rule();
 
   @InjectMocks ProdAPIConfig cfg;
 
@@ -24,8 +22,7 @@ public class ApiProdConfigTest {
     cfg.setBetaApiEnabled(Boolean.FALSE);
     ApiAccountInitialiser initialiser = cfg.accountInitialiser();
 
-    CoreTestUtils.assertExceptionThrown(
-        () -> initialiser.initialiseUser(anyUser), UnsupportedOperationException.class);
+    assertThrows(UnsupportedOperationException.class, () -> initialiser.initialiseUser(anyUser));
 
     cfg.setBetaApiEnabled(Boolean.TRUE);
     ApiAccountInitialiser realInitialiser = cfg.accountInitialiser();

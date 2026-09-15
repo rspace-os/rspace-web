@@ -13,8 +13,8 @@ import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.service.SystemPropertyManager;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.Map;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.validation.BeanPropertyBindingResult;
@@ -29,7 +29,7 @@ public class SystemSettingsApiControllerTest extends SpringTransactionalTest {
   private MockHttpServletRequest request;
   private BindingResult mockBindingResult = mock(BindingResult.class);
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     request = new MockHttpServletRequest();
   }

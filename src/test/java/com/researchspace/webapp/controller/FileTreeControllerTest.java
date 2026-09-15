@@ -1,6 +1,6 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.core.util.ISearchResults;
@@ -18,20 +18,17 @@ import java.io.UnsupportedEncodingException;
 import java.security.Principal;
 import java.time.Instant;
 import java.util.List;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.ui.ExtendedModelMap;
 
+@ExtendWith(MockitoExtension.class)
 public class FileTreeControllerTest {
-
-  public @Rule MockitoRule rule = MockitoJUnit.rule();
   @Mock UserManager userMgr;
   @Mock FolderManager folderMgr;
   Folder root1, otherRoot, gallery1, gallery2;
@@ -39,7 +36,7 @@ public class FileTreeControllerTest {
 
   @InjectMocks FileTreeController fileTreeController;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     any = TestFactory.createAnyUser("anyuser");
     root1 = TestFactory.createASystemFolder("Home", any);
@@ -50,9 +47,6 @@ public class FileTreeControllerTest {
     otherRoot.addType(RecordType.ROOT);
     otherRoot.setId(4L);
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void nonGalleryAreDisplayed() throws UnsupportedEncodingException {

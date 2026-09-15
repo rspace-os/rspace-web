@@ -17,8 +17,8 @@ import com.researchspace.testutils.TestFactory;
 import com.researchspace.webapp.integrations.raid.RaIDReferenceDTO;
 import java.util.List;
 import java.util.Set;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -42,7 +42,7 @@ public class RaIDServiceManagerTest {
   private Group projectGroup;
   private UserRaid userRaid;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     MockitoAnnotations.openMocks(this);
     piUser = TestFactory.createAnyUserWithRole("pi", Constants.PI_ROLE);

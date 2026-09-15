@@ -19,7 +19,8 @@ import org.springframework.validation.MapBindingResult;
  * comparison, whitespace trimming, deleteFieldRequest skip, null/blank skip, cross-collection
  * collision, error-path naming, original-casing in error args) are pinned here; the
  * Spring-transactional layer ({@code InventoryExtraFieldUniquenessTest}) only needs to prove the
- * managers wire this validator (and core-model's verifyFieldNameAllowed) into the request path.
+ * managers wire this validator (and {@code InventoryRecord.verifyFieldNameAllowed}) into the
+ * request path.
  */
 class InventoryFieldNameUniquenessValidatorTest {
 

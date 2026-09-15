@@ -1,7 +1,7 @@
 package com.researchspace.service.archive;
 
 import static com.researchspace.core.util.XMLReadWriteUtils.fromXML;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.archive.ArchivalImportConfig;
 import com.researchspace.archive.ArchiveFolder;
@@ -19,9 +19,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.Map;
 import java.util.function.Predicate;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.xml.sax.SAXException;
 
@@ -40,13 +39,10 @@ public class FolderImporterTest extends SpringTransactionalTest {
     }
   }
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     folderXml = RSpaceTestUtils.getResource("archives/folderTree.xml");
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void testCreateFolderTreeTotalCounts()

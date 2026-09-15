@@ -4,7 +4,6 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
 import InputAdornment from "@mui/material/InputAdornment";
-import Popover from "@mui/material/Popover";
 import TextField from "@mui/material/TextField";
 import {
   DataGrid,
@@ -29,7 +28,7 @@ import useDebounce from "../../../hooks/ui/useDebounce";
 import LinkableRecordFromGlobalId from "../../../stores/models/LinkableRecordFromGlobalId";
 import RsSet from "../../../util/set";
 import { DataGridColumn } from "../../../util/table";
-import BarcodeScanner from "../../components/BarcodeScanner/AllBarcodeScanner";
+import BarcodeScanner from "../../components/BarcodeScanner/BarcodeScanner";
 import { type Identifier, useIdentifiersListing, useIdentifiersRefresh } from "../../useIdentifiers";
 
 declare module "@mui/x-data-grid" {
@@ -44,40 +43,6 @@ declare module "@mui/x-data-grid" {
   }
 }
 
-const Panel = ({
-  anchorEl,
-  children,
-  onClose,
-}: {
-  anchorEl: HTMLElement | null;
-  children: React.ReactNode;
-  onClose: () => void;
-}) => (
-  <Popover
-    open={Boolean(anchorEl)}
-    anchorEl={anchorEl}
-    onClose={onClose}
-    anchorOrigin={{
-      vertical: "bottom",
-      horizontal: "center",
-    }}
-    transformOrigin={{
-      vertical: "top",
-      horizontal: "center",
-    }}
-    slotProps={{
-      paper: {
-        variant: "outlined",
-        elevation: 0,
-        style: {
-          minWidth: 300,
-        },
-      },
-    }}
-  >
-    {Boolean(anchorEl) && children}
-  </Popover>
-);
 function Toolbar({
   setColumnsMenuAnchorEl,
   state,
@@ -128,7 +93,7 @@ function Toolbar({
     debouncedSetSearchTerm(value);
   };
 
-  const [scannerAnchorEl, setScannerAnchorEl] = React.useState<null | HTMLElement>(null);
+  const [scannerOpen, setScannerOpen] = React.useState(false);
 
   return (
     <GridToolbarContainer sx={{ width: "100%" }}>
@@ -168,23 +133,22 @@ function Toolbar({
       />
       <Button
         color="primary"
-        onClick={(event) => {
-          setScannerAnchorEl(event.currentTarget);
+        onClick={() => {
+          setScannerOpen(true);
         }}
         startIcon={<SearchBarcodeIcon />}
       >
         {t("igsnTable.scan")}
       </Button>
-      <Panel anchorEl={scannerAnchorEl} onClose={() => setScannerAnchorEl(null)}>
-        <BarcodeScanner
-          onScan={(result) => {
-            setLocalSearchTerm(result.rawValue);
-            setSearchTerm(result.rawValue);
-          }}
-          onClose={() => setScannerAnchorEl(null)}
-          buttonPrefix={t("igsnTable.searchButtonPrefix")}
-        />
-      </Panel>
+      <BarcodeScanner
+        open={scannerOpen}
+        onScan={(result) => {
+          setLocalSearchTerm(result.rawValue);
+          setSearchTerm(result.rawValue);
+        }}
+        onClose={() => setScannerOpen(false)}
+        cameraErrorMessage={t("barcodeScanner.cameraErrorSearchBox")}
+      />
       <MenuWithSelectedState
         label={t("igsnTable.filters.state")}
         currentState={state ? stateLabelFor(state) : t("igsnTable.filters.all")}

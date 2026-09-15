@@ -11,19 +11,17 @@ import com.researchspace.service.chemistry.ChemistryClient;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.io.IOException;
 import java.util.List;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 
+@ExtendWith(MockitoExtension.class)
 public class ChemistrySearchIndexInitialisorTest extends SpringTransactionalTest {
-
-  public @Rule MockitoRule mockito = MockitoJUnit.rule();
 
   @Mock private ChemistryClient mockChemistryClient;
 
@@ -31,7 +29,7 @@ public class ChemistrySearchIndexInitialisorTest extends SpringTransactionalTest
 
   private ChemistrySearchIndexInitialisor chemIndexInitializor;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
 
@@ -41,7 +39,7 @@ public class ChemistrySearchIndexInitialisorTest extends SpringTransactionalTest
     chemIndexInitializor.setRsChemElementMgr(rsChemElementMgr);
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }

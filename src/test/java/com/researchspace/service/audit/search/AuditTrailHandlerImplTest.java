@@ -1,6 +1,6 @@
 package com.researchspace.service.audit.search;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.api.v1.controller.ApiActivitySrchConfig;
 import com.researchspace.core.util.ISearchResults;
@@ -11,29 +11,20 @@ import com.researchspace.model.audittrail.AuditTrailService;
 import com.researchspace.service.UserManager;
 import com.researchspace.testutils.TestFactory;
 import java.util.ArrayList;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class AuditTrailHandlerImplTest {
-  @Rule public MockitoRule mockito = MockitoJUnit.rule();
   @Mock UserManager userManager;
   @Mock IAuditTrailSearch logSearcher;
   @Mock ISearchResults<User> searchResults;
   private @Mock AuditTrailService auditService;
   @InjectMocks AuditTrailHandlerImpl impl;
-
-  @Before
-  public void setUp() throws Exception {}
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void configureUserRestrictionDoesNotPermitUnauthorised() {

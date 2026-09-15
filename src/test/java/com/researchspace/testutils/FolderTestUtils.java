@@ -1,7 +1,6 @@
 package com.researchspace.testutils;
 
 import com.researchspace.model.User;
-import com.researchspace.model.record.Folder;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.UserFolderSetup;
 import com.researchspace.service.impl.MockFolderStructure;
@@ -28,9 +27,8 @@ public class FolderTestUtils {
     return setup;
   }
 
-  public static UserFolderSetup createDefaultFolderStructure(
-      User any, FolderManager fm, Folder folder) {
-    UserFolderSetup setup = new MockFolderStructure().create(any, fm, folder);
+  public static UserFolderSetup createDefaultFolderStructure(User any, FolderManager fm) {
+    UserFolderSetup setup = new MockFolderStructure().create(any, fm);
     setup
         .getUserRoot()
         .process(

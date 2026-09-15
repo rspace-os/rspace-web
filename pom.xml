@@ -6,14 +6,14 @@
   <modelVersion>4.0.0</modelVersion>
   <artifactId>researchspace</artifactId>
   <packaging>war</packaging>
-  <version>2.26.0-SNAPSHOT-${timestamp}</version><!-- appVersionID don't remove this comment it identifies this version -->
+  <version>2.27.0-SNAPSHOT-${timestamp}</version><!-- appVersionID don't remove this comment it identifies this version -->
   <name>ResearchSpace</name>
   <url>https://www.researchspace.com</url>
 
   <parent>
     <groupId>com.github.rspace-os</groupId>
     <artifactId>rspace-parent</artifactId>
-    <version>3.1.0</version>
+    <version>3.2.0</version>
   </parent>
 
   <repositories>
@@ -84,6 +84,13 @@
         <version>1.14.11</version>
       </dependency>
       <dependency>
+        <groupId>commons-io</groupId>
+        <artifactId>commons-io</artifactId>
+        <!-- The parent declares commons-io as a plain dependency, not a managed one, so the
+             rspace-os adapter jars drag in 2.20.0; pinned here for dependencyConvergence -->
+        <version>2.22.0</version>
+      </dependency>
+      <dependency>
         <groupId>jakarta.activation</groupId>
         <artifactId>jakarta.activation-api</artifactId>
         <version>2.1.3</version>
@@ -91,8 +98,8 @@
       <dependency>
         <groupId>org.eclipse.angus</groupId>
         <artifactId>angus-activation</artifactId>
-        <!-- Convergence: angus-mail 2.0.4 wants 2.0.2, jaxb-runtime 4.0.0 drags in 1.0.0 -->
-        <version>2.0.2</version>
+        <!-- Convergence: angus-mail 2.0.4 wants 2.0.2, jaxb-runtime 4.0.9 wants 2.0.3 -->
+        <version>2.0.3</version>
       </dependency>
       <dependency>
         <groupId>org.slf4j</groupId>
@@ -730,7 +737,7 @@
       <artifactId>jakarta.websocket-api</artifactId>
       <version>2.1.1</version>
       <scope>test</scope>
-    </dependency>    
+    </dependency>
     <dependency>
       <groupId>org.glassfish.web</groupId>
       <artifactId>jakarta.servlet.jsp.jstl</artifactId>
@@ -746,7 +753,7 @@
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>s3</artifactId>
-      <version>2.49.6</version>
+      <version>2.53.3</version>
       <exclusions>
         <exclusion>
           <groupId>org.slf4j</groupId>
@@ -769,18 +776,6 @@
       <version>5.4.3</version>
     </dependency>
     <dependency>
-      <groupId>com.github.rspace-os</groupId>
-      <artifactId>rspace-test-util</artifactId>
-      <version>3.0.0</version>
-      <scope>test</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>commons-io</groupId>
-          <artifactId>commons-io</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
       <groupId>commons-codec</groupId>
       <artifactId>commons-codec</artifactId>
     </dependency>
@@ -794,11 +789,6 @@
           <artifactId>rspace-core-util</artifactId>
         </exclusion>
       </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>com.github.rspace-os</groupId>
-      <artifactId>rspace-audit</artifactId>
-      <version>1.0.0</version>
     </dependency>
     <dependency>
       <groupId>org.reflections</groupId>
@@ -1316,7 +1306,6 @@
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-lang3</artifactId>
-      <version>3.18.0</version>
     </dependency>
     <dependency>
       <groupId>com.ibm.icu</groupId>
@@ -1597,42 +1586,26 @@
       <version>2.0.11</version>
     </dependency>
     <dependency>
-      <groupId>com.github.rspace-os</groupId>
-      <artifactId>rspace-core-util</artifactId>
-      <version>2.0.0</version>
-      <exclusions>
-        <exclusion>
-          <groupId>org.apache.shiro</groupId>
-          <artifactId>shiro-core</artifactId>
-        </exclusion>
-      </exclusions>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-compress</artifactId>
+      <version>1.28.0</version>
     </dependency>
     <dependency>
-      <groupId>com.github.rspace-os</groupId>
-      <artifactId>rspace-core-model</artifactId>
-      <version>3.3.1</version>
-      <exclusions>
-        <exclusion>
-          <groupId>commons-io</groupId>
-          <artifactId>commons-io</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>log4j</groupId>
-          <artifactId>log4j</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.slf4j</groupId>
-          <artifactId>slf4j-log4j12</artifactId>
-        </exclusion>
-        <!-- core-model (>= 2.26.1) re-introduces ical4j (calendar/ICS), which drags in older
-             slf4j-api:1.7.25 and commons-lang3:3.8.1 and breaks dependency convergence (the rest
-             of the build uses 1.7.21 / 3.18.0). rspace-web does not use ICS (it built against
-             2.26.0 which had no ical4j), so exclude ical4j entirely. -->
-        <exclusion>
-          <groupId>org.mnode.ical4j</groupId>
-          <artifactId>ical4j</artifactId>
-        </exclusion>
-      </exclusions>
+      <!-- barcode/QR generation and decoding, used by com.researchspace.core.util.imageutils.BarcodeUtils -->
+      <groupId>com.google.zxing</groupId>
+      <artifactId>core</artifactId>
+      <version>3.5.4</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.zxing</groupId>
+      <artifactId>javase</artifactId>
+      <version>3.5.4</version>
+    </dependency>
+    <dependency>
+      <!-- units of measurement (JSR 385) implementation, used by the inventory quantity model -->
+      <groupId>tech.units</groupId>
+      <artifactId>indriya</artifactId>
+      <version>2.0.2</version>
     </dependency>
     <dependency>
       <groupId>org.apache.httpcomponents</groupId>
@@ -1647,7 +1620,7 @@
     <dependency>
       <groupId>org.apache.httpcomponents.client5</groupId>
       <artifactId>httpclient5</artifactId>
-      <version>5.6.2</version>
+      <version>5.6.4</version>
       <exclusions>
         <exclusion>
           <groupId>org.slf4j</groupId>
@@ -1757,7 +1730,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>fieldmark-java-client</artifactId>
-      <version>4.0.0</version>
+      <version>4.1.0</version>
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>
@@ -1812,7 +1785,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>datacite-java-client</artifactId>
-      <version>1.0.0</version>
+      <version>1.2.0</version>
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>
@@ -1857,21 +1830,13 @@
       <artifactId>junit-jupiter-engine</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.junit.vintage</groupId>
-      <artifactId>junit-vintage-engine</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-migrationsupport</artifactId>
-    </dependency>
-    <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-params</artifactId>
     </dependency>
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-junit-jupiter</artifactId>
-      <version>3.7.7</version>
+      <version>${mockito.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -1943,11 +1908,6 @@
       <version>1.70</version>
     </dependency>
     <dependency>
-      <groupId>com.github.rspace-os</groupId>
-      <artifactId>rspace-evernote-parser</artifactId>
-      <version>2.0.0</version>
-    </dependency>
-    <dependency>
       <groupId>com.google.code.gson</groupId>
       <artifactId>gson</artifactId>
       <version>2.13.2</version>
@@ -1955,7 +1915,6 @@
     <dependency>
       <groupId>org.glassfish.jaxb</groupId>
       <artifactId>jaxb-runtime</artifactId>
-      <version>${jaxb.version}</version>
     </dependency>
     <dependency>
       <groupId>org.glassfish.jersey.core</groupId>

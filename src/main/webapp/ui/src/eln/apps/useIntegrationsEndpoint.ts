@@ -108,7 +108,6 @@ export type IntegrationStates = {
   EGNYTE: IntegrationState<{
     EGNYTE_DOMAIN: Optional<string>;
   }>;
-  EVERNOTE: IntegrationState<emptyObject>;
   FIELDMARK: IntegrationState<{
     FIELDMARK_USER_TOKEN: Optional<string>;
   }>;
@@ -155,7 +154,9 @@ export type IntegrationStates = {
   NEXTCLOUD: IntegrationState<{
     ACCESS_TOKEN: Optional<string>;
   }>;
-  OMERO: IntegrationState<emptyObject>;
+  OMERO: IntegrationState<{
+    ACCESS_TOKEN: Optional<string>;
+  }>;
   ONEDRIVE: IntegrationState<emptyObject>;
   OWNCLOUD: IntegrationState<{
     ACCESS_TOKEN: Optional<string>;
@@ -428,10 +429,6 @@ function decodeEgnyte(data: FetchedState): IntegrationStates["EGNYTE"] {
   };
 }
 
-function decodeEvernote(data: FetchedState): IntegrationStates["EVERNOTE"] {
-  return { mode: parseState(data), credentials: {} };
-}
-
 function decodeFieldmark(data: FetchedState): IntegrationStates["FIELDMARK"] {
   return {
     mode: parseState(data),
@@ -577,7 +574,12 @@ function decodeNextCloud(data: FetchedState): IntegrationStates["NEXTCLOUD"] {
 }
 
 function decodeOmero(data: FetchedState): IntegrationStates["OMERO"] {
-  return { mode: parseState(data), credentials: {} };
+  return {
+    mode: parseState(data),
+    credentials: {
+      ACCESS_TOKEN: parseCredentialString(data.options, "ACCESS_TOKEN"),
+    },
+  };
 }
 
 function decodeOneDrive(data: FetchedState): IntegrationStates["ONEDRIVE"] {
@@ -783,7 +785,6 @@ function decodeIntegrationStates(
     DRYAD: decodeDryad(data.DRYAD),
     DSW: decodeDsw(data.DSW),
     EGNYTE: decodeEgnyte(data.EGNYTE),
-    EVERNOTE: decodeEvernote(data.EVERNOTE),
     FIELDMARK: decodeFieldmark(data.FIELDMARK),
     FIGSHARE: decodeFigshare(data.FIGSHARE),
     GALAXY: decodeGalaxy(data.GALAXY),
@@ -1011,14 +1012,6 @@ const encodeIntegrationState = <I extends Integration>(integration: I, data: Int
           EGNYTE_DOMAIN: token,
         })).orElse({}),
       },
-    };
-  }
-  if (integration === "EVERNOTE") {
-    return {
-      name: "EVERNOTE",
-      available: data.mode !== "UNAVAILABLE",
-      enabled: data.mode === "ENABLED",
-      options: {},
     };
   }
   if (integration === "FIELDMARK") {
@@ -1396,8 +1389,6 @@ export function useIntegrationsEndpoint(): {
               return decodeDsw(responseData.data) as IntegrationStates[I];
             case "EGNYTE":
               return decodeEgnyte(responseData.data) as IntegrationStates[I];
-            case "EVERNOTE":
-              return decodeEvernote(responseData.data) as IntegrationStates[I];
             case "FIELDMARK":
               return decodeFieldmark(responseData.data) as IntegrationStates[I];
             case "FIGSHARE":
@@ -1498,8 +1489,6 @@ export function useIntegrationsEndpoint(): {
           return decodeDsw(response.data.data) as IntegrationStates[I];
         case "EGNYTE":
           return decodeEgnyte(response.data.data) as IntegrationStates[I];
-        case "EVERNOTE":
-          return decodeEvernote(response.data.data) as IntegrationStates[I];
         case "FIELDMARK":
           return decodeFieldmark(response.data.data) as IntegrationStates[I];
         case "FIGSHARE":

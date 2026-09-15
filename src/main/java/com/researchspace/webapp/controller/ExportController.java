@@ -7,6 +7,7 @@ import com.researchspace.archive.ArchiveResult;
 import com.researchspace.archive.ExportRecordList;
 import com.researchspace.archive.model.ArchiveExportConfig;
 import com.researchspace.core.util.ResponseUtil;
+import com.researchspace.core.util.UnsupportedFileExtensionException;
 import com.researchspace.core.util.progress.ProgressMonitor;
 import com.researchspace.export.pdf.ExportConfigurer;
 import com.researchspace.export.pdf.ExportFormat;
@@ -302,6 +303,13 @@ public class ExportController extends BaseController {
       progress.setDescription(getText("importExport.progress.completed"));
       session.setAttribute(SessionAttributeUtils.LATEST_IMPORT_REPORT, report);
       return "redirect:/import/archiveImportReport"; // redirect after post
+    } catch (UnsupportedFileExtensionException e) {
+      // the raw message names the rejected extension and is not localized
+      log.warn("Import rejected: {}", e.getMessage());
+      return returnToDashboardPageWithErrorMsg(
+          model,
+          getText("importExport.import.badFormat.unsupportedFileType"),
+          IMPORT_FORM_ERROR_ATTR_NAME);
     } catch (Exception e) {
       return returnToDashboardPageWithErrorMsg(
           model,

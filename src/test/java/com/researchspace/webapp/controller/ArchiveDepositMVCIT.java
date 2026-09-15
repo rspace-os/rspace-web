@@ -1,6 +1,6 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.Assert.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
@@ -15,22 +15,22 @@ import com.researchspace.model.repository.RepoDepositConfig;
 import com.researchspace.model.repository.RepoDepositMeta;
 import com.researchspace.model.repository.RepositoryTestFactory;
 import java.util.Arrays;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.test.web.servlet.MvcResult;
 
 public class ArchiveDepositMVCIT extends MVCTestBase {
 
   ObjectMapper jsonWriter;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     jsonWriter = new ObjectMapper();
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }

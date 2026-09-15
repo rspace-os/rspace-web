@@ -30,6 +30,7 @@ import type {
   AlternateIdentifier,
   CreatorType,
   DropdownOption,
+  ExternalMetadataUpdate,
   Identifier,
   IdentifierAttrs,
   IdentifierDate,
@@ -38,7 +39,18 @@ import type {
   IdentifierSubject,
   PublishingState,
 } from "../definitions/Identifier";
+import { identifierStateLabelKey } from "../definitions/Identifier";
 import GeoLocationModel from "./GeoLocationModel";
+
+/*
+ * The alert reports the state in the same words the identifiers table shows, so the two cannot
+ * disagree. The model has no component `t`, so it resolves the key on the shared i18n instance.
+ * An unrecognised provider status has no key and degrades to the raw value.
+ */
+const stateLabelOf = (state: PublishingState): string => {
+  const key = identifierStateLabelKey(state);
+  return key === null ? String(state) : i18n.t(key);
+};
 
 type GeoLocationBox = {
   eastBoundLongitude: string;
@@ -167,6 +179,12 @@ export default class IdentifierModel implements Identifier {
   _links: Array<_LINK> = [];
   editing: boolean = false;
   customFieldsOnPublicPage: boolean;
+  /*
+   * Deliberately absent from the makeObservable map below, unlike every sibling field: it is read
+   * once, imperatively, right after a save (see InventoryBaseRecord.update) and never rendered, so
+   * observing it would buy nothing and would make plain assignment to it an out-of-action write.
+   */
+  externalMetadataUpdate: ExternalMetadataUpdate | null = null;
 
   ApiServiceBase: typeof InvApiService | null = null;
 
@@ -220,6 +238,7 @@ export default class IdentifierModel implements Identifier {
       updateState: action,
       publish: action,
       retract: action,
+      refresh: action,
     });
 
     this.parentGlobalId = parentGlobalId;
@@ -251,6 +270,7 @@ export default class IdentifierModel implements Identifier {
     this.geoLocations = attrs.geoLocations?.map((gl) => new GeoLocationModel(gl)) ?? [];
     this._links = attrs._links;
     this.customFieldsOnPublicPage = attrs.customFieldsOnPublicPage;
+    this.externalMetadataUpdate = attrs.externalMetadataUpdate ?? null;
 
     if (ApiServiceBase) {
       this.ApiServiceBase = ApiServiceBase;
@@ -645,6 +665,47 @@ export default class IdentifierModel implements Identifier {
     }
   }
 
+  /**
+   * Re-reads the identifier's status from the provider via the refresh endpoint and applies the
+   * returned state and URLs (RSDEV-1260). Unlike publish/retract this does not rethrow: nothing
+   * awaits the outcome beyond the button spinner, and the alert already reports the failure.
+   */
+  async refresh({ addAlert }: { addAlert: (alert: Alert) => void }): Promise<void> {
+    if (!this.ApiServiceBase) throw new Error("This operation requires the user be authenticated");
+    if (this.id === null || typeof this.id === "undefined") throw new Error("DOI Id must be known.");
+    try {
+      const response = await this.ApiServiceBase.post<{
+        state: PublishingState;
+        url: string | null;
+        publicUrl: string | null;
+        providerUrl: string | null;
+      }>(`/identifiers/${this.id}/refresh`, {});
+      const { state, url, publicUrl, providerUrl } = response.data;
+      runInAction(() => {
+        this.state = state;
+        this.url = url;
+        this.publicUrl = publicUrl;
+        this.providerUrl = providerUrl;
+      });
+      addAlert(
+        mkAlert({
+          message: i18n.t("inventory:identifierModel.alerts.refreshed", {
+            state: stateLabelOf(state),
+          }),
+          variant: "success",
+        }),
+      );
+    } catch (error) {
+      addAlert(
+        mkAlert({
+          title: i18n.t("inventory:identifierModel.alerts.refreshFailed"),
+          message: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
+          variant: "error",
+        }),
+      );
+    }
+  }
+
   toJson(): object {
     return {
       parentGlobalId: this.parentGlobalId,
@@ -678,3 +739,71 @@ export default class IdentifierModel implements Identifier {
     };
   }
 }
+
+/**
+ * One external PIDINST metadata update worth telling the user about, classified but not yet
+ * rendered (RSDEV-1356). `UPDATED` and an absent update produce no report at all, because success
+ * is deliberately silent and absence means nothing was attempted.
+ *
+ * Kept separate from the toasts so the single-record and bulk callers can present the same
+ * classification differently without either one restating the outcome-to-variant mapping.
+ */
+export type ExternalMetadataUpdateReport = {
+  doi: string;
+  variant: "error" | "notice";
+  /** A localized sentence from the server, ready to show verbatim. */
+  reason: string;
+};
+
+/**
+ * Classifies the external PIDINST metadata updates attempted by the save or transfer that returned
+ * these identifiers. The variant is decided by `outcome`, never by the wording of `reason`.
+ *
+ * A record frozen by its own state is a `notice`: normal and expected. Every other outcome,
+ * including one added to the server's enum after this build shipped, is an `error`. That
+ * fall-through is deliberate: staying quiet about an outcome the UI does not recognise would
+ * reinstate the silent drift this feature exists to close (ADR 0008).
+ *
+ * A pure function rather than a method, so this module stays free of the global stores (see the
+ * note at the top of the file) and each caller raises its own alerts after its own success toast.
+ */
+export const externalMetadataUpdateReports = (
+  identifiers: ReadonlyArray<Identifier>,
+): Array<ExternalMetadataUpdateReport> =>
+  identifiers.flatMap((id) => {
+    const update = id.externalMetadataUpdate;
+    if (!update || update.outcome === "UPDATED") return [];
+    return [
+      {
+        doi: id.doi,
+        variant: update.outcome === "NOT_UPDATABLE" ? ("notice" as const) : ("error" as const),
+        reason: update.reason,
+      },
+    ];
+  });
+
+/**
+ * The title for one report, naming the identifier it belongs to. Shared by the single toast and by
+ * a grouped alert's detail rows, where two identifiers on one record are otherwise
+ * indistinguishable.
+ */
+export const externalMetadataUpdateTitle = ({ doi, variant }: ExternalMetadataUpdateReport): string =>
+  variant === "error"
+    ? i18n.t("inventory:identifierModel.alerts.externalUpdateFailed", { doi })
+    : i18n.t("inventory:identifierModel.alerts.externalUpdateNotPossible", { doi });
+
+/**
+ * The toast for one report. Neither variant expires on a timer: both carry a full sentence to read
+ * and no reading speed can be assumed for it (WCAG 2.2.1).
+ */
+export const externalMetadataUpdateAlert = (report: ExternalMetadataUpdateReport): Alert =>
+  mkAlert({
+    title: externalMetadataUpdateTitle(report),
+    message: report.reason,
+    variant: report.variant,
+    isInfinite: true,
+  });
+
+/** One toast per identifier. A bulk caller should group the reports instead. */
+export const externalMetadataUpdateAlerts = (identifiers: ReadonlyArray<Identifier>): Array<Alert> =>
+  externalMetadataUpdateReports(identifiers).map(externalMetadataUpdateAlert);

@@ -5,7 +5,6 @@ import IconButton from "@mui/material/IconButton";
 import InputAdornment from "@mui/material/InputAdornment";
 import { outlinedInputClasses } from "@mui/material/OutlinedInput";
 import Paper from "@mui/material/Paper";
-import Popover from "@mui/material/Popover";
 import TextField, { textFieldClasses } from "@mui/material/TextField";
 import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
@@ -49,7 +48,7 @@ const Form = observer(({ handleSearch }: FormArgs) => {
     });
   };
 
-  const [scannerAnchorEl, setScannerAnchorEl] = useState<HTMLElement | null>(null);
+  const [scannerOpen, setScannerOpen] = useState(false);
 
   const handleScan = (barcode: BarcodeInput) => {
     if (isInventoryPermalink(barcode.rawValue)) {
@@ -127,7 +126,7 @@ const Form = observer(({ handleSearch }: FormArgs) => {
                             data-test-id="s-search-scan"
                             aria-label={t("search.controls.searchbar.scanBarcode")}
                             color="inherit"
-                            onClick={({ currentTarget }) => setScannerAnchorEl(currentTarget)}
+                            onClick={() => setScannerOpen(true)}
                           >
                             <SearchBarcodeIcon fontSize="small" />
                           </IconButton>
@@ -154,32 +153,12 @@ const Form = observer(({ handleSearch }: FormArgs) => {
         query={search.fetcher.query ?? ""}
         setQuery={handleChange}
       />
-      <Popover
-        open={Boolean(scannerAnchorEl)}
-        anchorEl={scannerAnchorEl}
-        onClose={() => setScannerAnchorEl(null)}
-        anchorOrigin={{
-          vertical: "bottom",
-          horizontal: "center",
-        }}
-        transformOrigin={{
-          vertical: "top",
-          horizontal: "center",
-        }}
-        slotProps={{
-          paper: {
-            variant: "outlined",
-            elevation: 0,
-            /* nudged down so the popover doesn't overlap the search bar's border */
-            sx: { mt: 0.5 },
-            style: {
-              minWidth: 300,
-            },
-          },
-        }}
-      >
-        <BarcodeScanner onClose={() => setScannerAnchorEl(null)} onScan={handleScan} submitOnScan />
-      </Popover>
+      <BarcodeScanner
+        open={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        onScan={handleScan}
+        cameraErrorMessage={t("barcodeScanner.cameraErrorSearchBox")}
+      />
     </Box>
   );
 });

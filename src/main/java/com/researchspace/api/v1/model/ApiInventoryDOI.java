@@ -2,6 +2,7 @@
 package com.researchspace.api.v1.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.researchspace.core.util.JacksonUtil;
@@ -55,6 +56,7 @@ import org.apache.commons.lang3.StringUtils;
       "publicUrl",
       "providerUrl",
       "customFieldsOnPublicPage",
+      "externalMetadataUpdate",
       "_links"
     })
 public class ApiInventoryDOI extends LinkableApiObject {
@@ -118,12 +120,63 @@ public class ApiInventoryDOI extends LinkableApiObject {
     private DoiDateType type;
   }
 
+  /**
+   * Outcome of the external metadata update attempted while saving the record this identifier
+   * belongs to (RSDEV-1251, ADR 0008). Response-only and never persisted: it describes one push,
+   * not a state of the identifier, so it is absent from the next read of the same identifier.
+   */
+  @Data
+  @NoArgsConstructor
+  @AllArgsConstructor
+  public static class ApiExternalMetadataUpdate {
+
+    /**
+     * The result in machine-readable form, so a client can tell a provider failure from a record
+     * its own state has frozen without matching the wording of {@link #reason} (RSDEV-1356).
+     *
+     * <p>The only representation of the outcome, and the constant names are the wire contract: the
+     * Inventory UI switches on these exact strings and the API spec documents them.
+     */
+    public enum Outcome {
+      /** The provider accepted the rebuilt metadata. */
+      UPDATED,
+      /**
+       * The provider could not be reached or rejected the update, or the payload could not be
+       * built. The instrument is saved; saving it again retries.
+       */
+      FAILED,
+      /** The record's own state no longer allows an in-place update. Expected, not an error. */
+      NOT_UPDATABLE
+    }
+
+    /** Which of the three results this was. Never null on an object that exists. */
+    @JsonProperty("outcome")
+    private Outcome outcome;
+
+    /**
+     * Localized sentence for the user: what was updated, or why it was not. Carries the provider's
+     * own words for a rejection, which cannot be translated but say more than a generic failure.
+     */
+    @JsonProperty("reason")
+    private String reason;
+  }
+
   @JsonProperty("id")
   private Long id;
 
   @JsonProperty("doiType")
   private String doiType;
 
+  /**
+   * The provider's own record id: a B2INST draft RID, or a DataCite DOI.
+   *
+   * <p>Writable on the way in, but only ever applied to a <em>new</em> identifier - see the
+   * immutability guard in {@link #applyChangesToDatabaseDOI(DigitalObjectIdentifier)}, which is
+   * what stops a client retargeting an existing identifier at someone else's provider record.
+   * Deliberately not {@code Access.READ_ONLY} like {@link #state} and the URL properties: this
+   * value is part of every identifier response, and READ_ONLY would stop a Java client (our own
+   * MVCITs included) reading it back out of one.
+   */
   @JsonProperty("doi")
   private String doi;
 
@@ -153,7 +206,20 @@ public class ApiInventoryDOI extends LinkableApiObject {
   @JsonProperty("publicationYear")
   private Integer publicationYear;
 
-  @JsonProperty("state")
+  /**
+   * The identifier's publication state, owned by the server.
+   *
+   * <p>{@link JsonProperty.Access#READ_ONLY} for the same reason as {@link #url}, {@link
+   * #publicUrl} and {@link #providerUrl}, and more pressingly: this is the gate on the
+   * unauthenticated public landing page. {@code DigitalObjectIdentifier.isPublishedState} opens
+   * that page for {@code findable} and {@code accepted}, and {@link
+   * #applyChangesToDatabaseDOI(DigitalObjectIdentifier)} copies this field straight onto the
+   * entity, so without this a record update carrying {@code "state": "accepted"} would publish the
+   * page with no provider registration and no B2INST curator review behind it. State only ever
+   * changes through the register, publish, retract and refresh operations, which set it in Java and
+   * are unaffected by this annotation.
+   */
+  @JsonProperty(value = "state", access = JsonProperty.Access.READ_ONLY)
   private String state;
 
   @JsonProperty("resourceType")
@@ -190,7 +256,7 @@ public class ApiInventoryDOI extends LinkableApiObject {
    * constructor, which backs Jackson and the sparse update DTOs.
    */
   // No setter: generatePublicLinkSuffix() is the only way to populate this, so a brand-new
-  // entity can never be handed an already-persisted publicLink. core-model's counterpart
+  // entity can never be handed an already-persisted publicLink. The counterpart entity field
   // DigitalObjectIdentifier.publicLink is locked down the same way.
   // ToString.Exclude so the "kept out of logs" rule is enforced by the generated toString
   // rather than left to every future caller to remember.
@@ -247,6 +313,22 @@ public class ApiInventoryDOI extends LinkableApiObject {
 
   @JsonProperty("dates")
   private List<ApiInventoryDOIDate> dates;
+
+  /**
+   * Set on the way out by the instrument save that pushed to the provider, and by nothing else.
+   *
+   * <p>{@link JsonProperty.Access#READ_ONLY} and excluded from equality: it is transient decoration
+   * of one response, so a client sending it is ignored and two identifiers carrying the same
+   * metadata still compare equal. {@code NON_NULL} keeps the property out of the payload entirely
+   * when no push was attempted, which is how a client tells "not eligible" from "attempted".
+   * Deliberately absent from {@link #applyChangesToDatabaseDOI(DigitalObjectIdentifier)}: there is
+   * no column for it, by decision (ADR 0008 item 4).
+   */
+  @JsonProperty(value = "externalMetadataUpdate", access = JsonProperty.Access.READ_ONLY)
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  @EqualsAndHashCode.Exclude
+  @ToString.Exclude
+  private ApiExternalMetadataUpdate externalMetadataUpdate;
 
   @JsonIgnore
   public User getOwner() {
@@ -365,7 +447,17 @@ public class ApiInventoryDOI extends LinkableApiObject {
       dbIdentifier.setType(incomingType);
       contentChanged = true;
     }
-    if (getDoi() != null) {
+    /*
+     * Only while creating, exactly as with the type above. This value is the ADDRESS of the record
+     * at the provider, and the on-save external metadata update (RSDEV-1251, ADR 0008) sends the
+     * instrument's metadata to whatever record it names, using the deployment's own credentials.
+     * The id check in ApiInventoryRecordInfo.applyChangesToDatabaseIdentifiers stops a client
+     * naming ANOTHER record's identifier row, but not a client retargeting its OWN row: without
+     * this guard, one instrument PUT carrying a foreign RID or DOI would overwrite that external
+     * record. Registration is unaffected - it applies to a transient entity, having taken the id
+     * from the provider's own response.
+     */
+    if (dbIdentifier.getId() == null && getDoi() != null) {
       if (!getDoi().equals(dbIdentifier.getIdentifier())) {
         dbIdentifier.setIdentifier(getDoi());
         contentChanged = true;

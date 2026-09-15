@@ -1,15 +1,15 @@
 package com.researchspace.search.impl;
 
 import static com.researchspace.testutils.TestFactory.createNRecords;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Notebook;
 import com.researchspace.testutils.TestFactory;
 import java.util.List;
 import org.apache.lucene.search.BooleanQuery;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class PostTextSearchResultFiltererTest extends LuceneSrchCfgTestBase {
 
@@ -17,7 +17,7 @@ public class PostTextSearchResultFiltererTest extends LuceneSrchCfgTestBase {
   private PostTextSearchResultFilterer filterer;
   private List<BaseRecord> toFilter;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     toFilter = TestFactory.createNRecords(ORIGINAL_SIZE);
     filterer = new PostTextSearchResultFilterer(toFilter, luceneCfg);

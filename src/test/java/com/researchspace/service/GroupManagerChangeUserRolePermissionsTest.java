@@ -1,23 +1,23 @@
 package com.researchspace.service;
 
 import static com.researchspace.testutils.TestGroup.LABADMIN_PREFIX;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.RoleInGroup;
 import com.researchspace.model.User;
 import com.researchspace.testutils.TestGroup;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class GroupManagerChangeUserRolePermissionsTest extends GroupPermissionsTestBase {
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }

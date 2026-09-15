@@ -1,6 +1,6 @@
 package com.researchspace.dao.customliquibaseupdates.v53;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.dao.customliquibaseupdates.AbstractDBHelpers;
 import com.researchspace.model.User;
@@ -14,8 +14,8 @@ import java.io.IOException;
 import java.util.List;
 import liquibase.exception.CustomChangeException;
 import liquibase.exception.SetupException;
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class UpdateMediaLinksInSignedDocumentsIT extends AbstractDBHelpers {
@@ -27,7 +27,7 @@ public class UpdateMediaLinksInSignedDocumentsIT extends AbstractDBHelpers {
   private UpdateMediaLinksInSignedDocument updater;
   private User user;
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }

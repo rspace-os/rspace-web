@@ -1,0 +1,14 @@
+{
+  "3001": {
+    "title": "Astrophysics Data Plan",
+    "description": "A plan for managing astrophysics observational data.",
+    "created": "2024-05-01T00:00:00Z",
+    "modified": "2024-05-02T00:00:00Z"
+  },
+  "3002": {
+    "title": "Ecology Field Survey Plan",
+    "description": "A plan for managing ecology field survey data.",
+    "created": "2024-06-01T00:00:00Z",
+    "modified": "2024-06-02T00:00:00Z"
+  }
+}

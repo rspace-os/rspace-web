@@ -39,8 +39,8 @@ import com.researchspace.service.inventory.csvimport.CsvSampleImporter;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -78,7 +78,7 @@ public class InventoryImportApiControllerMVCIT extends API_MVC_InventoryTestBase
   @Autowired private CsvSampleImporter csvSampleImporter;
   @Mock private ApiAvailabilityHandler apiHandler;
 
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     super.setUp();
     MockitoAnnotations.openMocks(this);

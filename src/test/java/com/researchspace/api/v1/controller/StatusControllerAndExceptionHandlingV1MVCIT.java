@@ -2,8 +2,8 @@ package com.researchspace.api.v1.controller;
 
 import static com.researchspace.api.v1.controller.API_VERSION.ONE;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -11,10 +11,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import com.researchspace.api.v1.model.Status;
 import com.researchspace.apiutils.ApiError;
 import com.researchspace.model.User;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
@@ -30,15 +29,12 @@ public class StatusControllerAndExceptionHandlingV1MVCIT extends API_MVC_TestBas
 
   String apiKey = "";
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     apiUser = createAndSaveUser(getRandomAlphabeticString("user"));
     apiKey = createNewApiKeyForUser(apiUser);
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void statusHappyCase() throws Exception {
@@ -141,7 +137,7 @@ public class StatusControllerAndExceptionHandlingV1MVCIT extends API_MVC_TestBas
                 createBuilderForGet(ONE, apiKey, NON_EXISTENT_DOCUMENT, apiUser)
                     .accept(MediaType.valueOf("text/csv")))
             .andReturn();
-    Assert.assertNotNull(result.getResolvedException());
+    Assertions.assertNotNull(result.getResolvedException());
     String csvResponse = result.getResponse().getContentAsString();
     log.info(csvResponse);
 

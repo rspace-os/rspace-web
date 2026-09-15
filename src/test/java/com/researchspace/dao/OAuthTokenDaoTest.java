@@ -1,9 +1,9 @@
 package com.researchspace.dao;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.researchspace.model.User;
 import com.researchspace.model.oauth.OAuthToken;
@@ -14,8 +14,8 @@ import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.hamcrest.Matchers;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class OAuthTokenDaoTest extends SpringTransactionalTest {
@@ -24,7 +24,7 @@ public class OAuthTokenDaoTest extends SpringTransactionalTest {
   private final String anyClientId = "testapp1";
   private User anyUser;
 
-  @Before
+  @BeforeEach
   public void before() {
     anyUser = createAndSaveRandomUser();
   }

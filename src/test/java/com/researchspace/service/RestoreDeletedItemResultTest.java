@@ -1,21 +1,21 @@
 package com.researchspace.service;
 
-import static com.researchspace.core.testutil.CoreTestUtils.assertExceptionThrown;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.researchspace.model.User;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.testutils.TestFactory;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class RestoreDeletedItemResultTest {
   User u;
   StructuredDocument sd1;
   Folder folder;
 
-  @Before
+  @BeforeEach
   public void setup() {
     u = TestFactory.createAnyUser("anyuser");
     sd1 = TestFactory.createAnySD();
@@ -38,7 +38,6 @@ public class RestoreDeletedItemResultTest {
     assertEquals(2, result.getRestoredItemCount());
     assertEquals(folder, result.getFirstItem().get());
 
-    assertExceptionThrown(
-        () -> result.getRestoredItems().add(sd1), UnsupportedOperationException.class);
+    assertThrows(UnsupportedOperationException.class, () -> result.getRestoredItems().add(sd1));
   }
 }

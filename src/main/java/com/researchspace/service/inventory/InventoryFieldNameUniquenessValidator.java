@@ -26,15 +26,15 @@ import org.springframework.validation.Errors;
  * </ul>
  *
  * Names are compared <strong>case-insensitively</strong> after trimming leading/trailing
- * whitespace. This mirrors {@code InventoryRecord.verifyFieldNameAllowed} in {@code
- * rspace-core-model}, which stores reserved names lowercase and lowercases the candidate before
- * comparing — both checks therefore use the same key. Null or blank names are skipped (they have
- * their own validation upstream: required-name checks).
+ * whitespace. This mirrors {@code InventoryRecord.verifyFieldNameAllowed}, which stores reserved
+ * names lowercase and lowercases the candidate before comparing — both checks therefore use the
+ * same key. Null or blank names are skipped (they have their own validation upstream: required-name
+ * checks).
  *
  * <p>This class does NOT enforce collisions with the entity's hardcoded displayed labels (e.g.
  * ExtraField named {@code "Type"} on a Container). That rule is owned by {@code
- * InventoryRecord.verifyFieldNameAllowed} in {@code rspace-core-model}, which throws {@code
- * IllegalArgumentException} for both reserved-name and displayed-label clashes.
+ * InventoryRecord.verifyFieldNameAllowed}, which throws {@code IllegalArgumentException} for both
+ * reserved-name and displayed-label clashes.
  *
  * <p>For in-payload duplicates this class throws {@link ApiRuntimeException} with error code {@code
  * errors.inventory.field.duplicateName} (mapped to HTTP 422 by the controller advice) at the
@@ -119,7 +119,7 @@ public final class InventoryFieldNameUniquenessValidator {
    * skipped.
    *
    * <p>Like the manager-layer methods, this entry-point does NOT enforce collisions with displayed
-   * labels — that is owned by core-model.
+   * labels — that is owned by {@code InventoryRecord.verifyFieldNameAllowed}.
    */
   public static void rejectDuplicatesInPayload(
       List<ApiInventoryEntityField> fields, List<ApiExtraField> extraFields, Errors errors) {

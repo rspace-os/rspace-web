@@ -36,7 +36,15 @@ MariaDB:
 - Frontend: `src/main/webapp/ui/src`
 - Configuration and Liquibase: `src/main/resources`
 - Developer documentation: `DevDocs/DeveloperNotes`
-- Core domain models may live in the sibling `rspace-core-model` repository.
+- Core domain models, core utilities, and the audit-trail model live in-tree
+  (absorbed from the former `rspace-core-model`, `rspace-core-util`,
+  `rspace-audit`, and `rspace-test-util` repositories). A few libraries outside
+  this repository still consume the final `rspace-core-util` 2.0.0 release from
+  JitPack (the repository adapters, `rspace-rest-api-utils`, the chemistry
+  services, `aspose-web`), so treat the classes they use as a frozen API
+  surface: `JacksonUtil`, `TransformerUtils`, and the `zipprocessing` package.
+  Changing those in place will not reach those consumers; vendor the classes
+  into a consumer when one next needs a change.
 
 Backend dependencies flow downward:
 
@@ -126,13 +134,48 @@ mvn clean test                                 # unit + Spring tests; needs DB
 mvn clean verify -Denvironment=drop-recreate-db # includes *IT; resets DB
 ```
 
-Use JUnit 5 for new tests unless the existing class uses JUnit 4. Do not mix
-assertion styles in one class.
+All tests use JUnit 6 (Jupiter). Import only from `org.junit.jupiter`.
+
+Name test classes so surefire can find them. `Test*`, `*Test`, `*Tests` and
+`*TestCase` are surefire's defaults and run in the `test` phase; `*IT` is not a
+default and runs only via the `integration-tests` execution configured in
+`pom.xml`, so an `*IT` class does not run in `mvn test` at all unless `-Dtest=`
+names it. A class matching none of these never runs and nothing reports that it
+did not.
 
 - DAO test: extend `SpringTransactionalTest`.
 - Service behavior requiring commits: extend `RealTransactionSpringTestBase`
   and name it `*IT.java`.
 - Controller test: extend `MVCTestBase` and name it `*IT.java`.
+- Spring context only, without the DAO/transaction helpers: annotate the class
+  with `@WithSpringContext` plus a context annotation such as
+  `@DefaultTestContext` or `@ContextConfiguration`, rather than extending a base
+  class. `@WithSpringContext` deliberately adds only `SpringExtension`, so
+  Spring's default `@TestExecutionListeners` still apply; naming any set there
+  would replace those defaults for every annotated class.
+- Several class-level configurations of the same subject: one outer class with a
+  `@Nested` inner class per configuration, each carrying its own
+  `@TestPropertySource` / `@ContextConfiguration`. Keep Spring annotations off
+  the outer class; `@NestedTestConfiguration` defaults to `INHERIT`, so outer
+  config merges into every nested class.
+
+To assert on an exception message, nest the call rather than introducing a local:
+
+```java
+assertThat(assertThrows(IllegalStateException.class, () -> foo()).getMessage(),
+    containsString("expected text"));
+```
+
+Spring test subclasses can also use the inherited `assertExceptionThrown`,
+`assertAuthorisationExceptionThrown` and `assertLazyInitializationExceptionThrown`
+on `BaseManagerTestCaseBase`, which take the project's `Invokable` and delegate to
+`assertThrows`.
+
+Gate a test that needs an environment CI does not have with
+`@EnabledIfSystemProperty`, on the **class** when every test in it is gated.
+Jupiter constructs the test instance before evaluating a method-level condition,
+so a method-level gate on a Spring test still loads the application context and
+fails if that environment is absent.
 
 Build a WAR with the frontend using:
 
@@ -200,7 +243,6 @@ sibling `REFERENCE.md`.
 Useful references:
 
 - Setup and workflows: `DevDocs/DeveloperNotes/GettingStarted`
-- Architecture: `DevDocs/DeveloperNotes/MavenModuleOverview.md`
 - Transactions: `DevDocs/DeveloperNotes/Transactions.md`
 - Security: `DevDocs/DeveloperNotes/SecurityAndPermissions.md`
 - Logging: `DevDocs/DeveloperNotes/Logging.md`

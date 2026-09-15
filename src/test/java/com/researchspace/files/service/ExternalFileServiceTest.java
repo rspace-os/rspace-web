@@ -1,7 +1,7 @@
 package com.researchspace.files.service;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.dao.FileMetadataDao;
 import com.researchspace.model.EcatDocumentFile;
@@ -14,12 +14,13 @@ import com.researchspace.testutils.EgnyteTestConfig;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.io.File;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
@@ -29,7 +30,7 @@ import org.springframework.http.HttpStatus;
  * test exceptional cases;
  */
 @EgnyteTestConfig
-@Ignore
+@ExtendWith(MockitoExtension.class)
 public class ExternalFileServiceTest extends SpringTransactionalTest {
 
   private @Autowired ExternalFileService extFS;
@@ -44,23 +45,21 @@ public class ExternalFileServiceTest extends SpringTransactionalTest {
   File someFile;
   UserConnection uc;
 
-  @Before
+  @BeforeEach
   public void before() throws Exception {
     anyUser = createInitAndLoginAnyUser();
     // we have to set the FS to be local here, to simulate initial upload just being local
     // getTargetObject(mediaMgr, MediaManagerImpl.class).setFileStore(localFs);
     mediaFile = addDocumentToGallery(anyUser);
     someFile = RSpaceTestUtils.getAnyAttachment();
-    MockitoAnnotations.initMocks(this);
     // this stores access token
     uc =
         createAndSaveEgnyteUserConnectionWithAccessToken(
             anyUser, "anyToken - this is a mock API call");
   }
 
-  @Before
-  public void after() throws Exception {
-    // tidy up so that original FS is left
+  @AfterEach
+  public void restoreFileStore() throws Exception {
     getTargetObject(mediaMgr, MediaManagerImpl.class).setFileStore(fileStore);
   }
 

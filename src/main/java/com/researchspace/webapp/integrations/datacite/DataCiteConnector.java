@@ -16,6 +16,14 @@ public interface DataCiteConnector {
 
   DataCiteDoi publishDoi(DataCiteDoi dataCiteDoi, InventorySettingType settingType);
 
+  /**
+   * Rewrites a DOI's metadata in place, leaving its state alone. Unlike publish and retract, which
+   * are the same call carrying an {@code event}, this sends no event, so a {@code draft} DOI stays
+   * a draft; that is what makes it the external metadata update for a draft (RSDEV-1251, ADR 0008).
+   * A findable DOI is refreshed through the existing Republish instead.
+   */
+  DataCiteDoi updateDoi(DataCiteDoi dataCiteDoi, InventorySettingType settingType);
+
   DataCiteDoi retractDoi(DataCiteDoi dataCiteDoi, InventorySettingType settingType);
 
   void reloadDataCiteClient();

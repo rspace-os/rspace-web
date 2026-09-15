@@ -81,8 +81,6 @@ To bypass the hooks for a single commit (e.g. a work-in-progress), set
 
 Current location of the codebase is https://github.com/rspace-os/rspace-web
 
-(if you are a member of ResearchSpace Dev Team, please clone our fork of the codebase located at https://github.com/ResearchSpace-ELN/rspace-web)
-
 We recommend using a Git client to download and update the source code.
 
 #### Create your local deployment.properties
@@ -173,8 +171,16 @@ mysql -u "root" -p"password" -e "
   CREATE USER 'rspacedbuser'@'127.0.0.1' IDENTIFIED BY 'rspacedbpwd';
   CREATE DATABASE rspace collate 'utf8mb4_unicode_ci';
   GRANT ALL ON rspace.* TO 'rspacedbuser'@'127.0.0.1';
+  GRANT ALL ON hibtest.* TO 'rspacedbuser'@'127.0.0.1';
 "
 ```
+
+The second grant covers a scratch `hibtest` database used by the
+`HibernateTest` classes, which check the Hibernate mappings. They create that
+database themselves on first run and Hibernate builds and drops its schema each
+run, so nothing else is needed, but without the grant those tests skip rather
+than fail and the mappings go unchecked.
+
 **NOTE:** depending on OS and DB used, your may need to change the username in creation/grant commands
 from `'rspacedbuser'@'127.0.0.1'` to `'rspacedbuser'@'localhost'`. (Or you may need to just use `'rspacedbuser'` with no host)
 You will know if running the tests/app gets you db authentication error for user `'rspacedbuser'@'localhost'`
@@ -342,6 +348,38 @@ overrides the default filestore location.
 `-Drs.httpcache.enabled=true`
 true/false will enable/disable the ability to set HTTP response headers
 to cache.
+
+#### Capturing real emails locally with Mailpit
+
+`dev/deployment.properties` sets `email.enabled=false`. To exercise a real mail flow (password reset, forgotten username, signup verification, sharing notifications) against a
+local mailbox, run a [Mailpit](https://mailpit.axllent.org/) container and
+point RSpace's mail properties at it:
+
+```bash
+docker run -d --name mailpit --rm \
+  -p 1025:1025 -p 8025:8025 \
+  -e MP_SMTP_AUTH_ACCEPT_ANY=1 -e MP_SMTP_AUTH_ALLOW_INSECURE=1 \
+  axllent/mailpit:latest
+
+mvn clean jetty:run -Denvironment=keepdbintact -DRS.devlogLevel=INFO \
+  -Dspring.profiles.active=run -DreactDevMode=true \
+  -Demail.enabled=true -Dmail.emailHost=localhost -Dmail.port=1025 \
+  -Dmail.emailAccount=mailpit -Dmail.password=mailpit -Dmail.ssl.enabled=false \
+  -Dmail.from=noreply@rspace-e2e.local
+```
+
+`EmailBroadcastImpl` always performs SMTP AUTH; Mailpit accepts any
+credentials when started with `MP_SMTP_AUTH_ACCEPT_ANY=1`/
+`MP_SMTP_AUTH_ALLOW_INSECURE=1`, so `mail.emailAccount`/`mail.password` can be
+any placeholder; no code changes are needed. `mail.from` does need a
+syntactically valid override though: `deployments/dev/deployment.properties`
+doesn't set it, so it inherits `defaultDeployment.properties`' literal
+`support@<your_server>.com` placeholder, which Mailpit's strict SMTP
+validation rejects outright (`553 5.1.3 The address is not a valid RFC 5321
+address`) on `MAIL FROM`. Read captured mail at
+`http://localhost:8025`. If you're using the Docker dev stack instead of a
+bare `mvn jetty:run`, use `rspace-dev up --mailpit` instead (see
+`docker/dev/README.md`) — it wires the same properties automatically.
 
 #### Running RSpace in production mode locally
 

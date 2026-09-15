@@ -1,8 +1,8 @@
 package com.researchspace.service.inventory.impl;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.researchspace.api.v1.model.ApiInventoryLinkTargetSummary;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
@@ -10,9 +10,9 @@ import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.service.inventory.LinkTargetSnapshotResolver;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -28,12 +28,12 @@ public class LinkTargetSnapshotResolverIT extends RealTransactionSpringTestBase 
 
   private @Autowired LinkTargetSnapshotResolver snapshotResolver;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }
@@ -46,7 +46,7 @@ public class LinkTargetSnapshotResolverIT extends RealTransactionSpringTestBase 
     Long revision =
         snapshotResolver.resolveRevisionForVersion(GlobalIdPrefix.SA, sample.getId(), 1L);
 
-    assertNotNull("version 1 of a sample should map to an Envers revision", revision);
+    assertNotNull(revision, "version 1 of a sample should map to an Envers revision");
   }
 
   @Test

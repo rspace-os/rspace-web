@@ -1,5 +1,6 @@
 package com.researchspace.service.inventory.impl;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -16,7 +17,11 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.api.v1.auth.ApiRuntimeException;
+import com.researchspace.api.v1.model.ApiField.ApiFieldType;
+import com.researchspace.api.v1.model.ApiFieldToModelFieldFactory;
 import com.researchspace.api.v1.model.ApiInstrument;
+import com.researchspace.api.v1.model.ApiInstrumentTemplate;
+import com.researchspace.api.v1.model.ApiInstrumentTemplatePost;
 import com.researchspace.api.v1.model.ApiInventoryDOI;
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiInventoryLink;
@@ -37,6 +42,7 @@ import com.researchspace.model.inventory.field.InventoryLinkField;
 import com.researchspace.model.inventory.field.InventoryStringField;
 import com.researchspace.model.inventory.field.InventoryUriField;
 import com.researchspace.model.record.RecordFactory;
+import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.inventory.ApiExtraFieldsHelper;
@@ -45,6 +51,7 @@ import com.researchspace.service.inventory.InventoryMoveHelper;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
 import com.researchspace.testutils.TestFactory;
 import java.util.List;
+import java.util.Locale;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -57,9 +64,9 @@ import org.springframework.test.util.ReflectionTestUtils;
 /**
  * Unit tests for the link-field persistence logic in {@link InstrumentEntityApiManagerImpl}.
  *
- * <p>The {@code applyLinkFieldValue} method is the creation/update hot-path for structured
- * link-type template fields on instruments. It mirrors the equivalent in {@link
- * SampleApiManagerImpl}; these tests guard against independent drift or regression.
+ * <p>{@code applyLinkFieldValue} lives once on {@link InventoryApiManagerImpl}; what is
+ * instrument-specific is the {@code isTemplate} wiring, the template-create path, and {@code
+ * clearRetroStampedDefaultLinks}.
  */
 @ExtendWith(MockitoExtension.class)
 class InstrumentEntityApiManagerImplLinkFieldTest {
@@ -96,6 +103,9 @@ class InstrumentEntityApiManagerImplLinkFieldTest {
     ReflectionTestUtils.setField(manager, "extraFieldHelper", extraFieldHelper);
     ReflectionTestUtils.setField(manager, "inventoryMoveHelper", inventoryMoveHelper);
     ReflectionTestUtils.setField(manager, "messages", messages);
+    // the real factory is stateless, so the template-create path is exercised end to end
+    ReflectionTestUtils.setField(
+        manager, "apiFieldToModelFieldFactory", new ApiFieldToModelFieldFactory());
     user = TestFactory.createAnyUser("any");
     dbLink = new InventoryLink();
     dbLink.setRelationType("References");
@@ -178,11 +188,52 @@ class InstrumentEntityApiManagerImplLinkFieldTest {
   @Test
   void clearingTheValueDereferencesTheRowForOrphanRemoval() {
     ApiInventoryEntityField apiField = new ApiInventoryEntityField();
+    apiField.setLink(null);
 
     boolean changed = manager.applyLinkFieldValue(dbField, apiField, user);
 
     assertTrue(changed);
     assertNull(dbField.getLink());
+    verifyNoInteractions(inventoryLinkManager);
+  }
+
+  @Test
+  void aCreatePayloadThatOmitsTheLinkKeepsTheStampedDefault() {
+    // as the sample counterpart: the template's default is already stamped on the field by
+    // shallowCopy() before the create payload is applied, and an unmentioned link must not wipe it
+    ApiInventoryEntityField apiField = new ApiInventoryEntityField();
+    apiField.setContent("");
+
+    boolean changed = manager.applyLinkFieldValueOnCreate(dbField, apiField, user);
+
+    assertFalse(changed);
+    assertSame(dbLink, dbField.getLink());
+    verifyNoInteractions(inventoryLinkManager);
+  }
+
+  @Test
+  void anItemUpdateThatOmitsTheLinkEntirelyStillClearsIt() {
+    // RSDEV-1131 semantics: an instrument's field list arrives complete, so a link field carrying
+    // no link means the user cleared it. Only a TEMPLATE's field list can be partial.
+    ApiInventoryEntityField apiField = new ApiInventoryEntityField();
+
+    boolean changed = manager.applyLinkFieldValue(dbField, apiField, user);
+
+    assertTrue(changed);
+    assertNull(dbField.getLink());
+    verifyNoInteractions(inventoryLinkManager);
+  }
+
+  @Test
+  void aTemplatePutThatOmitsTheLinkKeepsTheDefault() {
+    // the whitelist-only template edit: absence there cannot mean "clear", or a legitimate partial
+    // edit would destroy the default link
+    ApiInventoryEntityField apiField = new ApiInventoryEntityField();
+
+    boolean changed = manager.applyLinkFieldValue(dbField, apiField, user, true);
+
+    assertFalse(changed);
+    assertSame(dbLink, dbField.getLink());
     verifyNoInteractions(inventoryLinkManager);
   }
 
@@ -727,5 +778,174 @@ class InstrumentEntityApiManagerImplLinkFieldTest {
 
     assertFalse(changed);
     assertEquals(otherPage, landingPageFieldData(instrument));
+  }
+
+  @Test
+  void theTemplateFieldDeleteErrorsResolveToRealMessages() {
+    // ApiRuntimeException carries a bare string literal, so a code that no longer matches the
+    // catalogue compiles, lints clean and fails only against a live server. Taking the code from
+    // the production path, rather than restating it, is what makes this a guard.
+    ApiInstrumentTemplate apiTemplate = new ApiInstrumentTemplate();
+    ApiInventoryEntityField deleteWithoutId = new ApiInventoryEntityField();
+    deleteWithoutId.setDeleteFieldRequest(true);
+    apiTemplate.setFields(List.of(deleteWithoutId));
+
+    ApiRuntimeException missingId =
+        assertThrows(
+            ApiRuntimeException.class,
+            () ->
+                manager.createDeleteRequestedFieldsInDbInstrumentTemplate(
+                    apiTemplate, new InstrumentTemplate(), user));
+
+    ApiInventoryEntityField deleteUnknownId = new ApiInventoryEntityField();
+    deleteUnknownId.setDeleteFieldRequest(true);
+    deleteUnknownId.setId(404L);
+    apiTemplate.setFields(List.of(deleteUnknownId));
+
+    ApiRuntimeException unknownId =
+        assertThrows(
+            ApiRuntimeException.class,
+            () ->
+                manager.createDeleteRequestedFieldsInDbInstrumentTemplate(
+                    apiTemplate, new InstrumentTemplate(), user));
+
+    assertEquals("errors.inventory.field.deleteRequestIdMissing", missingId.getErrorCode());
+    assertEquals("errors.inventory.field.deleteRequestIdUnknown", unknownId.getErrorCode());
+    assertResolves(missingId.getErrorCode(), unknownId.getErrorCode());
+  }
+
+  @Test
+  void everyErrorCodeTheLinkPathsThrowResolves() {
+    // same failure mode as above, for the codes reached from the shared link write path
+    assertResolves(
+        "errors.inventory.field.link.defaultRelationTypeNotPermitted",
+        "errors.inventory.field.link.selfLinkForbidden",
+        "errors.inventory.field.linkRelationTypeInvalid",
+        "errors.inventory.field.linkRelationTypeNotPermitted",
+        "errors.inventory.field.linkTargetNotFound",
+        "errors.inventory.field.linkTargetKindUnsupported");
+  }
+
+  private static void assertResolves(String... errorCodes) {
+    JsonMessageSource messages = new JsonMessageSource();
+    Locale enUs = Locale.forLanguageTag("en-US");
+    for (String code : errorCodes) {
+      assertDoesNotThrow(
+          () -> messages.getMessage(code, new Object[] {"a", "b"}, enUs),
+          () -> code + " is thrown by a link path but resolves to no message");
+    }
+  }
+
+  @Test
+  void aLinkFieldTheTemplateSyncJustClonedHasItsDefaultCleared() {
+    // Stamped at creation only, never retro-applied (ADR-0006). Instrument-only compensation:
+    // Sample's updateToLatestTemplateVersion calls clearValue(), which InventoryLinkField overrides
+    // to null its link, while Instrument's calls setFieldData(null), which it does not override.
+    Instrument dbInstrument = new Instrument();
+
+    InventoryLinkField existingField = new InventoryLinkField();
+    existingField.setName("already here");
+    existingField.setId(11L);
+    existingField.setColumnIndex(1);
+    InventoryLink keptLink = new InventoryLink();
+    existingField.setLink(keptLink);
+
+    InventoryLinkField clonedField = new InventoryLinkField();
+    clonedField.setName("just arrived from the template");
+    clonedField.setColumnIndex(2);
+    clonedField.setLink(new InventoryLink());
+
+    dbInstrument.getFields().add(existingField);
+    dbInstrument.getFields().add(clonedField);
+    dbInstrument.refreshActiveFieldsAndColumnIndex();
+
+    manager.clearRetroStampedDefaultLinks(dbInstrument);
+
+    assertNull(clonedField.getLink(), "a newly cloned field must not inherit the current default");
+    assertSame(keptLink, existingField.getLink(), "an existing field's own link is untouched");
+  }
+
+  @Test
+  void deletingAnInstrumentLinkFieldSoftDeletesItsLink() {
+    // RSDEV-1270: the instrument manager had no equivalent of the sample manager's reconciliation,
+    // so a deleted link field left its InventoryLink row with deleted=false
+    dbField.setDeleted(true);
+
+    manager.softDeleteLinkOfDeletedLinkField(dbField, user);
+
+    verify(inventoryLinkManager).deleteLink(dbLink, user);
+  }
+
+  @Test
+  void aDeletedInstrumentLinkFieldWhoseLinkIsAlreadyDeletedIsLeftAlone() {
+    dbLink.setDeleted(true);
+    dbField.setDeleted(true);
+
+    manager.softDeleteLinkOfDeletedLinkField(dbField, user);
+
+    verifyNoInteractions(inventoryLinkManager);
+  }
+
+  @Test
+  void aLiveInstrumentLinkFieldKeepsItsLink() {
+    manager.softDeleteLinkOfDeletedLinkField(dbField, user);
+
+    verifyNoInteractions(inventoryLinkManager);
+  }
+
+  @Test
+  void aNewInstrumentTemplateLinkFieldIsCreatedWithItsDefaultLink() {
+    // RSDEV-1246: mirrors the sample template create path
+    ApiInstrumentTemplatePost post = new ApiInstrumentTemplatePost();
+    ApiInventoryEntityField apiField = apiLinkField("SA2", "References", null);
+    apiField.setType(ApiFieldType.LINK);
+    apiField.setName("default related sample");
+    post.setFields(List.of(apiField));
+    InventoryLink created = new InventoryLink();
+    when(inventoryLinkManager.createLink(apiField.getLink(), user)).thenReturn(created);
+
+    InstrumentTemplate dbTemplate = new InstrumentTemplate();
+    manager.addFieldsToNewInstrumentTemplate(post, dbTemplate, user);
+
+    InventoryLinkField added = (InventoryLinkField) dbTemplate.getActiveFields().get(0);
+    assertSame(created, added.getLink());
+  }
+
+  @Test
+  void aLinkFieldAddedToAnExistingInstrumentTemplateIsCreatedWithItsDefaultLink() {
+    ApiInstrumentTemplate apiTemplate = new ApiInstrumentTemplate();
+    ApiInventoryEntityField apiField = apiLinkField("SA2", "References", null);
+    apiField.setType(ApiFieldType.LINK);
+    apiField.setName("default related sample");
+    apiField.setNewFieldRequest(true);
+    apiTemplate.setFields(List.of(apiField));
+    InventoryLink created = new InventoryLink();
+    when(inventoryLinkManager.createLink(apiField.getLink(), user)).thenReturn(created);
+
+    InstrumentTemplate dbTemplate = new InstrumentTemplate();
+    assertTrue(
+        manager.createDeleteRequestedFieldsInDbInstrumentTemplate(apiTemplate, dbTemplate, user));
+
+    InventoryLinkField added = (InventoryLinkField) dbTemplate.getActiveFields().get(0);
+    assertSame(created, added.getLink());
+  }
+
+  @Test
+  void editingAnInstrumentTemplatesDefaultLinkUpdatesItsRowInPlace() {
+    ApiInstrumentTemplate apiTemplate = new ApiInstrumentTemplate();
+    ApiInventoryEntityField apiField = apiLinkField("SA3", "References", null);
+    apiField.setId(7L);
+    apiTemplate.setFields(List.of(apiField));
+    when(inventoryLinkManager.updateLink(dbLink, apiField.getLink(), user)).thenReturn(dbLink);
+
+    InstrumentTemplate dbTemplate = new InstrumentTemplate();
+    dbTemplate.setId(1L);
+    dbField.setId(7L);
+    dbField.setInventoryRecord(dbTemplate);
+    dbTemplate.getFields().add(dbField);
+    dbTemplate.refreshActiveFieldsAndColumnIndex();
+
+    assertTrue(manager.applyLinkFieldValuesOnUpdate(apiTemplate, dbTemplate, user));
+    verify(inventoryLinkManager).updateLink(dbLink, apiField.getLink(), user);
   }
 }

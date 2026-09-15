@@ -4,6 +4,10 @@ import { DocumentsClient } from "../api/clients/DocumentsClient";
 import { FilesClient } from "../api/clients/FilesClient";
 import { FoldersClient } from "../api/clients/FoldersClient";
 import { InventoryClient } from "../api/clients/InventoryClient";
+import { MailpitClient } from "../api/clients/MailpitClient";
+import { ShareClient } from "../api/clients/ShareClient";
+import { SnippetsClient } from "../api/clients/SnippetsClient";
+import { StatusClient } from "../api/clients/StatusClient";
 import { SysadminClient } from "../api/clients/SysadminClient";
 import { env } from "../env";
 import { SYSADMIN } from "../users";
@@ -15,7 +19,11 @@ type ApiFixtures = {
   clientFiles: FilesClient;
   clientFolders: FoldersClient;
   clientInventory: InventoryClient;
+  clientSnippets: SnippetsClient;
+  clientShare: ShareClient;
+  clientStatus: StatusClient;
   clientSysadmin: SysadminClient;
+  clientMailpit: MailpitClient;
 };
 
 export const apiTest = uiTest.extend<ApiFixtures>({
@@ -43,6 +51,15 @@ export const apiTest = uiTest.extend<ApiFixtures>({
   clientInventory: async ({ apiContext, appUser }, use) => {
     await use(new InventoryClient(apiContext, appUser.apiKey));
   },
+  clientSnippets: async ({ page }, use) => {
+    await use(new SnippetsClient(page));
+  },
+  clientShare: async ({ apiContext, appUser }, use) => {
+    await use(new ShareClient(apiContext, appUser.apiKey));
+  },
+  clientStatus: async ({ apiContext, appUser }, use) => {
+    await use(new StatusClient(apiContext, appUser.apiKey));
+  },
   clientSysadmin: async ({ apiContext }, use) => {
     const client = new SysadminClient(apiContext, SYSADMIN.apiKey);
     try {
@@ -56,5 +73,12 @@ export const apiTest = uiTest.extend<ApiFixtures>({
         }
       }
     }
+  },
+
+  // biome-ignore lint/correctness/noEmptyPattern: Playwright requires destructuring pattern for fixture arg
+  clientMailpit: async ({}, use) => {
+    const context = await request.newContext({ baseURL: env.mailpitBaseUrl });
+    await use(new MailpitClient(context));
+    await context.dispose();
   },
 });

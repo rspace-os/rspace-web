@@ -30,7 +30,12 @@ export default function ImportRouter(): React.ReactNode {
   const mainContentRef = useLandmark(t("import.landmark"));
 
   const recordType = importStore.importData?.recordType;
-  if (recordType === "SAMPLES" || recordType === "CONTAINERS" || recordType === "SUBSAMPLES") {
+  if (
+    recordType === "SAMPLES" ||
+    recordType === "CONTAINERS" ||
+    recordType === "SUBSAMPLES" ||
+    recordType === "INSTRUMENTS"
+  ) {
     return (
       <NavigationContext>
         <title>{t("import.browserTitle")}</title>

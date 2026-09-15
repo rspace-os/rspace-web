@@ -3,6 +3,8 @@ import Dialog, { dialogClasses } from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import { paperClasses } from "@mui/material/Paper";
+import { encode as encodeBmp } from "fast-bmp";
+import { applyPalette, GIFEncoder, quantize } from "gifenc";
 import { observer } from "mobx-react-lite";
 import React from "react";
 import ReactCrop from "react-image-crop";
@@ -28,6 +30,21 @@ const readAsBinaryString = (file: Blob): Promise<string> =>
     };
     reader.readAsBinaryString(file);
   });
+const encodeAsGif = (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement): Blob => {
+  const { data, width, height } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const palette = quantize(data, 256);
+  const index = applyPalette(data, palette);
+  const gif = GIFEncoder();
+  gif.writeFrame(index, width, height, { palette });
+  gif.finish();
+  return new Blob([gif.bytes()], { type: "image/gif" });
+};
+const encodeAsBmp = (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement): Blob => {
+  const { data, width, height } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  return new Blob([encodeBmp({ data, width, height, channels: 4, bitsPerPixel: 32 }) as Uint8Array<ArrayBuffer>], {
+    type: "image/bmp",
+  });
+};
 type ImageEditingDialogArgs = {
   imageFile: Blob | null;
   open: boolean;
@@ -67,7 +84,7 @@ function ImageEditingDialog({
     if (imageFile) {
       setImageType(imageTypeFromFile(imageFile));
       void readAsBinaryString(imageFile).then((binaryString: string) => {
-        if (settable) setEditorData(`data:${imageType};base64,${btoa(binaryString)}`);
+        if (settable) setEditorData(`data:image/${imageType};base64,${btoa(binaryString)}`);
       });
     }
     return () => {
@@ -108,7 +125,7 @@ function ImageEditingDialog({
         ctx.rotate(((direction === "clockwise" ? 90 : -90) * Math.PI) / 180);
         ctx.drawImage(image, -image.naturalWidth / 2, -image.naturalHeight / 2);
       }
-      return canvas.toDataURL(imageType, 1.0);
+      return canvas.toDataURL(`image/${imageType}`, 1.0);
     };
     setEditorData(getRotatedImageURL());
   };
@@ -121,18 +138,21 @@ function ImageEditingDialog({
     canvas.width = maxWidth;
     canvas.height = crop.height * imageRatio;
     const ctx = canvas.getContext("2d");
-    if (ctx)
-      ctx.drawImage(
-        image,
-        crop.x * scale.x,
-        crop.y * scale.y,
-        crop.width * scale.x,
-        crop.height * scale.y,
-        0,
-        0,
-        crop.width * imageRatio,
-        crop.height * imageRatio,
-      );
+    if (!ctx) throw new Error("Canvas context not available");
+    ctx.drawImage(
+      image,
+      crop.x * scale.x,
+      crop.y * scale.y,
+      crop.width * scale.x,
+      crop.height * scale.y,
+      0,
+      0,
+      crop.width * imageRatio,
+      crop.height * imageRatio,
+    );
+    if (format === "gif") return Promise.resolve(encodeAsGif(ctx, canvas));
+    if (format === "bmp" || format === "x-bmp" || format === "x-ms-bmp" || format === "octet-stream")
+      return Promise.resolve(encodeAsBmp(ctx, canvas));
     return new Promise((resolve) => {
       canvas.toBlob(
         (blob) => {
@@ -140,7 +160,7 @@ function ImageEditingDialog({
             resolve(blob);
           }
         },
-        format,
+        `image/${format}`,
         1.0,
       );
     });

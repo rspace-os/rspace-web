@@ -211,7 +211,8 @@ public class DetailedRecordInformationProviderImpl implements DetailedRecordInfo
         linkedByRecords.add(link.getSource().toRecordInfo());
       } else {
         RecordInformation ownersInfo = new RecordInformation();
-        ownersInfo.setOwnerUsername(link.getSource().getOwner().getUsername());
+        // full name only: the username is a login identifier, and no consumer of the placeholder
+        // reads it (RSDEV-1329)
         ownersInfo.setOwnerFullName(link.getSource().getOwner().getFullName());
         linkedByRecords.add(ownersInfo);
       }

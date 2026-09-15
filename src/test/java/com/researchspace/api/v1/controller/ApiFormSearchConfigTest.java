@@ -1,7 +1,7 @@
 package com.researchspace.api.v1.controller;
 
 import com.researchspace.core.testutil.JakartaValidatorTest;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class ApiFormSearchConfigTest extends JakartaValidatorTest {
 

@@ -1,12 +1,11 @@
 package com.researchspace.model.dtos;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.field.DateFieldForm;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
 
@@ -15,7 +14,7 @@ public class DateFieldDTOValidatorTest {
   static DateFieldDTO<DateFieldForm> INITIAL_VALID;
   private DateFieldDTOValidator validator;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     INITIAL_VALID = createValid();
     validator = new DateFieldDTOValidator();
@@ -26,9 +25,6 @@ public class DateFieldDTOValidatorTest {
         new DateFieldDTO<>("1/1/2010", "31/12/2009", "2/2/2010", "dd/mm/yyyy", "name");
     return nfdto;
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void testSupports() {

@@ -1,10 +1,10 @@
 package com.researchspace.service.cloud;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -17,8 +17,8 @@ import com.researchspace.model.User;
 import com.researchspace.service.cloud.impl.CloudUserManagerImpl;
 import com.researchspace.testutils.CommunityTestContext;
 import com.researchspace.testutils.SpringTransactionalTest;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -28,7 +28,7 @@ public class CloudUserManagerTest extends SpringTransactionalTest {
   private @Autowired CommunityUserManager cloudUserMgr;
   private @Autowired AnalyticsManager analyticsManager;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     ((CloudUserManagerImpl) cloudUserMgr).setAnalyticsManager(analyticsManager);

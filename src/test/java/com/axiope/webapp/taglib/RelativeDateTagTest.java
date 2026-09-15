@@ -1,21 +1,13 @@
 package com.axiope.webapp.taglib;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Date;
 import org.joda.time.DateTime;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class RelativeDateTagTest {
-
-  @Before
-  public void setUp() throws Exception {}
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void testGetStringNullDate() {
@@ -38,8 +30,8 @@ public class RelativeDateTagTest {
     DateTime yesterday = localDateTime.minusDays(1).minusMinutes(1);
     tag.setInput(yesterday.toDate());
     assertTrue(
-        "should contain 'Yesterday' but was: " + tag.getString(),
-        tag.getString().contains("Yesterday"));
+        tag.getString().contains("Yesterday"),
+        "should contain 'Yesterday' but was: " + tag.getString());
 
     // check spans year gaps
     DateTime lastDayOfYear = localDateTime.year().setCopy(2013); // not a leap year
@@ -50,8 +42,8 @@ public class RelativeDateTagTest {
     tag.setInput(lastDayOfYear.toDate());
     tag.setNowTime(firstDayOfNewYear);
     assertTrue(
-        "should contain 'Yesterday' but was: " + tag.getString(),
-        tag.getString().contains("Yesterday"));
+        tag.getString().contains("Yesterday"),
+        "should contain 'Yesterday' but was: " + tag.getString());
 
     tag.setNowTime(null);
     DateTime secondDayOfNewYear = firstDayOfNewYear.dayOfYear().setCopy(2);
@@ -71,14 +63,14 @@ public class RelativeDateTagTest {
     fourDaysAndYearAgo = fourDaysAndYearAgo.dayOfMonth().addToCopy(-4);
     tag.setInput(fourDaysAndYearAgo.toDate());
     assertTrue(
-        "should contain day of the month but was: " + tag.getString(),
-        tag.getString().contains("" + fourDaysAndYearAgo.dayOfMonth().get()));
+        tag.getString().contains("" + fourDaysAndYearAgo.dayOfMonth().get()),
+        "should contain day of the month but was: " + tag.getString());
 
     DateTime lastDayTwoYearsAgo = lastDayOfYear.year().addToCopy(-1);
     tag.setInput(lastDayTwoYearsAgo.toDate());
     tag.setNowTime(firstDayOfNewYear);
-    assertTrue("should contain '31' but was: " + tag.getString(), tag.getString().contains("31"));
+    assertTrue(tag.getString().contains("31"), "should contain '31' but was: " + tag.getString());
     assertTrue(
-        "should contain hour but was: " + tag.getString(), tag.getString().contains(HOUR + ""));
+        tag.getString().contains(HOUR + ""), "should contain hour but was: " + tag.getString());
   }
 }

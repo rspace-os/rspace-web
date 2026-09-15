@@ -42,8 +42,8 @@ import com.researchspace.service.inventory.impl.InstrumentEntityApiManagerImpl;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.context.ApplicationEventPublisher;
 
@@ -62,7 +62,7 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
   private ApplicationEventPublisher mockPublisher;
   private User testUser;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     testUser = createAndSaveUserIfNotExists(getRandomAlphabeticString("instApi"));
@@ -470,6 +470,22 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
   }
 
   @Test
+  public void twoInstrumentTemplateUpdatesInOneTransactionBumpVersionOnce() {
+    // RSDEV-1319: Envers writes one revision per entity per transaction, so a second update in
+    // the same transaction must not advance the version past the single revision carrying it
+    ApiInstrumentTemplate template = createBasicInstrumentTemplateForUser(testUser);
+
+    template.setName("first rename");
+    instrumentApiMgr.updateApiInstrumentTemplate(template, testUser);
+    template.setName("second rename");
+    ApiInstrumentTemplate updated =
+        instrumentApiMgr.updateApiInstrumentTemplate(template, testUser);
+
+    assertEquals("second rename", updated.getName());
+    assertEquals(2L, (long) updated.getVersion());
+  }
+
+  @Test
   public void updateApiInstrumentTemplate_canAddAndDeleteFields() {
     ApiInstrumentTemplate template = createBasicInstrumentTemplateForUser(testUser);
     Long existingFieldId = template.getFields().get(0).getId();
@@ -723,6 +739,21 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
     assertEquals("renamed instrument", updated.getName());
     assertEquals("updated description", updated.getDescription());
     verify(mockPublisher).publishEvent(Mockito.any(InventoryEditingEvent.class));
+  }
+
+  @Test
+  public void twoInstrumentUpdatesInOneTransactionBumpVersionOnce() {
+    // RSDEV-1319: Envers writes one revision per entity per transaction, so a second update in
+    // the same transaction must not advance the version past the single revision carrying it
+    ApiInstrument created = createBasicInstrumentForUser(testUser, "bump-once-test");
+
+    created.setName("first rename");
+    instrumentApiMgr.updateApiInstrument(created, testUser);
+    created.setName("second rename");
+    ApiInstrument updated = instrumentApiMgr.updateApiInstrument(created, testUser);
+
+    assertEquals("second rename", updated.getName());
+    assertEquals(2L, (long) updated.getVersion());
   }
 
   @Test

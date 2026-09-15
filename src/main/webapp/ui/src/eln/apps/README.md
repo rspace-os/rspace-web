@@ -37,7 +37,8 @@ to enable and configure the services they need:
 - **`CardListing.tsx`** - Grid layout component that renders integration cards filtered by status
 - **`IntegrationCard.tsx`** - Reusable card component with theming and dialog management
 - **`useIntegrationsEndpoint.ts`** - Central API communication hub with type-safe serialization/deserialization
-- **Individual service hooks** (e.g., `useClustermarket.tsx`, `useFigshare.tsx`) - Service-specific API wrappers
+- **`useDisconnect.ts`** - Shared hook that DELETEs `{basePath}/connect` for apps whose credentials live server-side; resolves `false` if the deletion failed, so callers do not report a disconnection that did not happen
+- **Individual service hooks** (e.g., `useFigshare.tsx`) - Service-specific API wrappers
 
 Each integration is implemented as a standalone component in the `/integrations` directory:
 

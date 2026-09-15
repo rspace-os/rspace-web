@@ -28,21 +28,20 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.jetbrains.annotations.NotNull;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class OntologyDocManagerTest {
   public static final long ONTOLOGY_FOLDER_ID = 111L;
   public static final long USER_ROOT_FOLDER_ID = 666L;
   public static final long ICON_ID = 777L;
   public static final long ONTOLOGY_FORM_ID = 1001L;
-  @Rule public MockitoRule rule = MockitoJUnit.rule();
   @Mock private RecordManager recordMgr;
   @Mock private UserManager userManager;
   @Mock private FolderManager folderManagerMock;
@@ -70,7 +69,7 @@ public class OntologyDocManagerTest {
   @Mock private Folder ontologyFolderMock;
   private String[] witnesses;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     ClassLoader classLoader = getClass().getClassLoader();
     lineBreakMidQuotedStringontologyDocument =
@@ -80,12 +79,13 @@ public class OntologyDocManagerTest {
     singleColumnNoCommasSpecifiedDocument =
         new File(classLoader.getResource(singleColumnNoCommasSpecifiedResourceName).getFile());
     tooLargeResourceFile = new File(classLoader.getResource(tooLargeResourceName).getFile());
-    when(ontologyDocumentCreatedInWorkspaceMock.getId()).thenReturn(1L);
     witnesses = new String[] {"NoWitnesses"};
   }
 
   @Test
   public void shouldWriteCSVWithLineBreakMidQuotedTextToontologyDocument() throws IOException {
+    when(ontologyDocumentCreatedInWorkspaceMock.getId()).thenReturn(1L);
+    when(userManager.getAuthenticatedUserInSession()).thenReturn(userMock);
     setUpMocksForCreatingontologyDocumentToWriteTo();
     ArgumentCaptor<String> captor = setupMocksForWritingDataToOntologyDocument();
     testee.writeImportToOntologyDoc(
@@ -104,6 +104,8 @@ public class OntologyDocManagerTest {
 
   @Test
   public void shouldWriteCSVWithSingleColumnNoCommasToOntologyDocument() throws IOException {
+    when(ontologyDocumentCreatedInWorkspaceMock.getId()).thenReturn(1L);
+    when(userManager.getAuthenticatedUserInSession()).thenReturn(userMock);
     setUpMocksForCreatingontologyDocumentToWriteTo();
     ArgumentCaptor<String> captor = setupMocksForWritingDataToOntologyDocument();
     testee.writeImportToOntologyDoc(
@@ -124,6 +126,8 @@ public class OntologyDocManagerTest {
 
   @Test
   public void shouldWriteCSVWithMultipleLinesToontologyDocument() throws IOException {
+    when(ontologyDocumentCreatedInWorkspaceMock.getId()).thenReturn(1L);
+    when(userManager.getAuthenticatedUserInSession()).thenReturn(userMock);
     setUpMocksForCreatingontologyDocumentToWriteTo();
     ArgumentCaptor<String> captor = setupMocksForWritingDataToOntologyDocument();
     testee.writeImportToOntologyDoc(
@@ -143,8 +147,8 @@ public class OntologyDocManagerTest {
 
   @Test
   public void shouldThrowExceptionWhenIncorrectUrlColumnSpecified() {
+    when(userManager.getAuthenticatedUserInSession()).thenReturn(userMock);
     setUpMocksForCreatingontologyDocumentToWriteTo();
-    ArgumentCaptor<String> captor = setupMocksForWritingDataToOntologyDocument();
     Exception thrown =
         assertThrows(
             RuntimeException.class,
@@ -241,6 +245,7 @@ public class OntologyDocManagerTest {
     Set<String> tags = Set.of("tag1", "tag2", "tag3");
     setupMocksForWritingDataToOntologyDocument();
     setUpMocksForUsersOwnOntologyDocumentDoesNotExist();
+    when(rootFolderMock.getId()).thenReturn(USER_ROOT_FOLDER_ID);
     setupMocksForOntologyFolderAndFileCreation();
     testee.writeTagsToUsersOntologyTagDoc(userMock, tags);
     verify(folderManagerMock)
@@ -256,7 +261,6 @@ public class OntologyDocManagerTest {
     when(recordMgr.createNewStructuredDocument(
             eq(ONTOLOGY_FOLDER_ID), eq(ONTOLOGY_FORM_ID), eq(userMock)))
         .thenReturn(ontologyDocumentCreatedInWorkspaceMock);
-    when(ontologyFolderMock.getName()).thenReturn("Ontologies");
   }
 
   @Test
@@ -265,8 +269,10 @@ public class OntologyDocManagerTest {
     Set<String> tags = Set.of("tag1", "tag2", "tag3");
     setupMocksForWritingDataToOntologyDocument();
     setUpMocksForUsersOwnOntologyDocumentDoesNotExist();
+    when(rootFolderMock.getId()).thenReturn(USER_ROOT_FOLDER_ID);
     setupMocksForOntologyFolderAndFileCreation();
     when(rootFolderMock.getChildrens()).thenReturn(Set.of(ontologyFolderMock));
+    when(ontologyFolderMock.getName()).thenReturn("Ontologies");
     when(ontologyFolderMock.isDeleted()).thenReturn(true);
     testee.writeTagsToUsersOntologyTagDoc(userMock, tags);
     verify(folderManagerMock)
@@ -323,7 +329,6 @@ public class OntologyDocManagerTest {
   @NotNull
   private ArgumentCaptor<String> setupMocksForWritingDataToOntologyDocument() {
     ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
-    when(userManager.getAuthenticatedUserInSession()).thenReturn(userMock);
     when(ontologyDocumentCreatedInWorkspaceMock.getFields())
         .thenReturn(List.of(firstFieldInontologyDocumentMock, secondFieldInontologyDocumentMock));
     return captor;
@@ -335,7 +340,6 @@ public class OntologyDocManagerTest {
     when(formManager.findOldestFormByName(eq(CustomFormAppInitialiser.ONTOLOGY_FORM_NAME)))
         .thenReturn(ontologyForm);
     when(folderManagerMock.getRootRecordForUser(userMock, userMock)).thenReturn(rootFolderMock);
-    when(rootFolderMock.getId()).thenReturn(USER_ROOT_FOLDER_ID);
     when(recordMgr.getOntologyTagsFilesForUserCalled(
             eq(userMock), eq(OntologyDocManager.USER_TAGS_ONTOLOGY_FILE)))
         .thenReturn(List.of(ontologyDocumentCreatedInWorkspaceMock));
@@ -347,7 +351,6 @@ public class OntologyDocManagerTest {
     when(formManager.findOldestFormByName(eq(CustomFormAppInitialiser.ONTOLOGY_FORM_NAME)))
         .thenReturn(ontologyForm);
     when(folderManagerMock.getRootRecordForUser(userMock, userMock)).thenReturn(rootFolderMock);
-    when(rootFolderMock.getId()).thenReturn(USER_ROOT_FOLDER_ID);
     when(recordMgr.getOntologyTagsFilesForUserCalled(
             eq(userMock), eq(OntologyDocManager.USER_TAGS_ONTOLOGY_FILE)))
         .thenReturn(new ArrayList<>());
@@ -361,7 +364,7 @@ public class OntologyDocManagerTest {
     when(folderManagerMock.getRootRecordForUser(userMock, userMock)).thenReturn(rootFolderMock);
     when(rootFolderMock.getId()).thenReturn(USER_ROOT_FOLDER_ID);
     when(recordMgr.createNewStructuredDocument(
-            eq(rootFolderMock.getId()), eq(ontologyForm.getId()), eq(userMock)))
+            eq(USER_ROOT_FOLDER_ID), eq(ontologyForm.getId()), eq(userMock)))
         .thenReturn(ontologyDocumentCreatedInWorkspaceMock);
   }
 
@@ -372,8 +375,6 @@ public class OntologyDocManagerTest {
     when(userManager.getUserByUsername(eq(uName), eq(true))).thenReturn(userMock);
     when(formManager.findOldestFormByName(eq(CustomFormAppInitialiser.ONTOLOGY_FORM_NAME)))
         .thenReturn(ontologyForm);
-    when(folderManagerMock.getRootRecordForUser(userMock, userMock)).thenReturn(rootFolderMock);
-    when(rootFolderMock.getId()).thenReturn(USER_ROOT_FOLDER_ID);
     when(recordMgr.getontologyDocumentsCreatedInPastThirtyMinutesByCurrentUser(eq(uName)))
         .thenReturn(List.of(ontologyDocumentCreatedInWorkspaceMock));
   }

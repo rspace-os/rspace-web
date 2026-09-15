@@ -93,8 +93,7 @@ describe("Searchbar barcode scanning", () => {
     renderSearchbar({ search, handleSearch });
 
     await openScanner(user);
-    /* no confirmation step: the scanner has a Cancel button but no manual entry */
-    expect(screen.queryByText("inventory:barcodeScanner.altEntry")).not.toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "inventory:barcodeScanner.heading" })).toBeVisible();
 
     await waitFor(() => expect(handleSearch).toHaveBeenCalledWith("BC-1234"), DETECTION_TIMEOUT);
     expect(search.fetcher.query).toBe("BC-1234");

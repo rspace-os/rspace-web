@@ -1,16 +1,16 @@
 package com.researchspace.api.v1.controller;
 
 import static com.researchspace.api.v1.controller.API_ModelTestUtils.createAnyUserPost;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.researchspace.api.v1.controller.SysadminApiController.UserApiPost;
 import com.researchspace.api.v1.model.ApiUser;
 import com.researchspace.apiutils.ApiError;
 import com.researchspace.model.User;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MvcResult;
@@ -25,7 +25,7 @@ import org.springframework.test.web.servlet.MvcResult;
     })
 public class SysadminUsersAPIController2MVCIT extends API_MVC_TestBase {
 
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     super.setUp();
   }

@@ -35,8 +35,8 @@ import jakarta.ws.rs.InternalServerErrorException;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -51,7 +51,7 @@ public class InventoryFilesApiControllerTest extends SpringTransactionalTest {
 
   @Autowired private ContainerApiManager containerMgr;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     MockitoAnnotations.openMocks(this);
@@ -188,7 +188,7 @@ public class InventoryFilesApiControllerTest extends SpringTransactionalTest {
     assertEquals("123chemString", chemDto.getData().getChemElements());
   }
 
-  @Test()
+  @Test
   public void uploadChemicalAndRetrieveImageBadRequest() throws Exception {
     User user = createInitAndLoginAnyUser();
     ApiSampleInfo apiSample = createBasicSampleForUser(user);

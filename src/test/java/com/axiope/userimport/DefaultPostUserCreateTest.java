@@ -13,19 +13,17 @@ import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.UserRoleHandler;
 import com.researchspace.testutils.TestFactory;
 import jakarta.servlet.http.HttpServletRequest;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
 
+@ExtendWith(MockitoExtension.class)
 public class DefaultPostUserCreateTest {
-
-  @Rule public MockitoRule rule = MockitoJUnit.rule();
 
   @Mock IPropertyHolder properties;
   @Mock LoginHelper loginHelper;
@@ -35,7 +33,7 @@ public class DefaultPostUserCreateTest {
   HttpServletRequest mockRequest;
   User anyUser;
 
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     mockRequest = new MockHttpServletRequest();
     anyUser = TestFactory.createAnyUser("any");
@@ -50,7 +48,6 @@ public class DefaultPostUserCreateTest {
 
   @Test
   public void postUserCreateMakesGroupIfEnabled() {
-    //
     when(properties.isPicreateGroupOnSignupEnabled()).thenReturn(Boolean.TRUE);
     postUserCreate.postUserCreate(anyUser, mockRequest, "any");
     assertLoginAndNotifyCalled();
@@ -61,7 +58,6 @@ public class DefaultPostUserCreateTest {
     assertLoginAndNotifyCalled();
     assertGroupNotCreated();
 
-    // both conditions must be true
     when(properties.isPicreateGroupOnSignupEnabled()).thenReturn(Boolean.TRUE);
     when(roleHandler.setNewlySignedUpUserAsPi(anyUser)).thenReturn(anyUser);
     postUserCreate.postUserCreate(anyUser, mockRequest, "any");

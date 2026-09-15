@@ -1,6 +1,7 @@
 package com.researchspace.api.v1.controller;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.researchspace.api.v1.controller.ExportApiController.ExportApiConfig;
 import com.researchspace.api.v1.controller.ExportApiController.ExportRetrievalConfig;
@@ -15,22 +16,21 @@ import com.researchspace.service.archive.ExportImport;
 import com.researchspace.service.archive.export.ExportFailureException;
 import com.researchspace.testutils.TestFactory;
 import java.util.Optional;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindException;
 
+@ExtendWith(MockitoExtension.class)
 public class ExportApiControllerTest {
-  public @Rule MockitoRule rule = MockitoJUnit.rule();
   @Mock ExportApiHandler handler;
   @Mock IPropertyHolder props;
   @Mock ExportImport exporterService;
@@ -41,12 +41,12 @@ public class ExportApiControllerTest {
   User exporter = TestFactory.createAnyUser("any");
   MockHttpServletResponse response;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     response = new MockHttpServletResponse();
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {}
 
   @Test
@@ -64,11 +64,15 @@ public class ExportApiControllerTest {
     assertEquals(ApiLinkItem.SELF_REL, expected.getLinks().get(0).getRel());
   }
 
-  @Test(expected = ExportFailureException.class)
+  @Test
   public void testExportFailureExecptionTrhownIfJobNotlaunched() throws BindException {
-    ExportApiConfig cfg = new ExportApiConfig("html", "user");
-    Mockito.when(handler.export(cfg, exporter)).thenReturn(Optional.empty());
-    controller.export(cfg, new BeanPropertyBindingResult(cfg, "bean"), exporter);
+    assertThrows(
+        ExportFailureException.class,
+        () -> {
+          ExportApiConfig cfg = new ExportApiConfig("html", "user");
+          Mockito.when(handler.export(cfg, exporter)).thenReturn(Optional.empty());
+          controller.export(cfg, new BeanPropertyBindingResult(cfg, "bean"), exporter);
+        });
   }
 
   @Test

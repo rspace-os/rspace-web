@@ -1,8 +1,8 @@
 package com.researchspace.service;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.researchspace.model.EcatImage;
 import com.researchspace.model.Thumbnail;
@@ -11,8 +11,8 @@ import com.researchspace.model.User;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class ThumbnailManagerTest extends SpringTransactionalTest {
@@ -21,7 +21,7 @@ public class ThumbnailManagerTest extends SpringTransactionalTest {
 
   private User user;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     user = createAndSaveRandomUser();
     initialiseContentWithEmptyContent(user);

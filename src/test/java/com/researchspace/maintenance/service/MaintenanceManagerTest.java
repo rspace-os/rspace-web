@@ -1,7 +1,8 @@
 package com.researchspace.maintenance.service;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.researchspace.Constants;
 import com.researchspace.maintenance.model.ScheduledMaintenance;
@@ -10,9 +11,9 @@ import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.Calendar;
 import java.util.Date;
 import org.apache.shiro.authz.AuthorizationException;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /** Unit tests covering scheduled maintenance. */
@@ -30,7 +31,7 @@ public class MaintenanceManagerTest extends SpringTransactionalTest {
   private static Date dateNextHour;
   private static Date dateNextDay;
 
-  @BeforeClass
+  @BeforeAll
   public static void initDates() {
     Calendar cal = Calendar.getInstance();
     dateNow = cal.getTime();
@@ -46,7 +47,7 @@ public class MaintenanceManagerTest extends SpringTransactionalTest {
     dateNextDay = cal.getTime();
   }
 
-  @Before
+  @BeforeEach
   public void setUp() {
     initSysadminUser();
   }
@@ -69,15 +70,19 @@ public class MaintenanceManagerTest extends SpringTransactionalTest {
     ScheduledMaintenance retrieved = maintenanceManager.getScheduledMaintenance(saved.getId());
     assertNotNull(retrieved);
     assertEquals(
-        "saved and retrieved message should be the same", TEST_MSG, retrieved.getMessage());
+        TEST_MSG, retrieved.getMessage(), "saved and retrieved message should be the same");
 
     // cleanup
     maintenanceManager.removeScheduledMaintenance(saved.getId(), sysUser);
   }
 
-  @Test(expected = AuthorizationException.class)
+  @Test
   public void onlySysadminCanSaveScheduledMaintenance() {
-    maintenanceManager.saveScheduledMaintenance(new ScheduledMaintenance(null, null), regularUser);
+    assertThrows(
+        AuthorizationException.class,
+        () ->
+            maintenanceManager.saveScheduledMaintenance(
+                new ScheduledMaintenance(null, null), regularUser));
   }
 
   @Test
@@ -93,7 +98,7 @@ public class MaintenanceManagerTest extends SpringTransactionalTest {
     nextMaintenance = maintenanceManager.getNextScheduledMaintenance();
     assertNotNull(nextMaintenance);
     assertEquals(
-        "next maintenance should be the saved one", firstSavedMaintenance, nextMaintenance);
+        firstSavedMaintenance, nextMaintenance, "next maintenance should be the saved one");
 
     ScheduledMaintenance secondMaintenance = new ScheduledMaintenance(dateLastHour, dateNextHour);
     ScheduledMaintenance secondSavedMaintenance =
@@ -102,9 +107,9 @@ public class MaintenanceManagerTest extends SpringTransactionalTest {
     nextMaintenance = maintenanceManager.getNextScheduledMaintenance();
     assertNotNull(nextMaintenance);
     assertEquals(
-        "next maintenance should be closest future maintenance",
         secondSavedMaintenance,
-        nextMaintenance);
+        nextMaintenance,
+        "next maintenance should be closest future maintenance");
 
     // cleanup
     maintenanceManager.removeScheduledMaintenance(firstMaintenance.getId(), sysUser);
@@ -126,8 +131,10 @@ public class MaintenanceManagerTest extends SpringTransactionalTest {
     assertEquals(ScheduledMaintenance.NULL, nextMaintenance);
   }
 
-  @Test(expected = AuthorizationException.class)
+  @Test
   public void onlySysadminCanRemoveScheduledMaintenance() {
-    maintenanceManager.removeScheduledMaintenance(1L, regularUser);
+    assertThrows(
+        AuthorizationException.class,
+        () -> maintenanceManager.removeScheduledMaintenance(1L, regularUser));
   }
 }

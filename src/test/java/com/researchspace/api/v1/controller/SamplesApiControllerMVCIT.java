@@ -38,8 +38,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MvcResult;
@@ -49,7 +49,7 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
 
   static final int NUM_FIELDS_IN_COMPLEX_SAMPLE = 10;
 
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     super.setUp();
   }

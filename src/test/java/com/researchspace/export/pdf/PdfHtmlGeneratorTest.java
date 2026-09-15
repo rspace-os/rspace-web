@@ -1,8 +1,8 @@
 package com.researchspace.export.pdf;
 
 import static com.researchspace.export.pdf.PdfHtmlGenerator.MAX_TITLE_WIDTH;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -446,17 +446,17 @@ public class PdfHtmlGeneratorTest {
     String processedHtml = pdfHtmlGenerator.prepareHtml(input, doc, config);
     // verify doc name chars converted
     assertFalse(
-        "unexpected: " + processedHtml,
-        processedHtml.contains("&∅∈∌") || processedHtml.contains("&#x3"));
+        processedHtml.contains("&∅∈∌") || processedHtml.contains("&#x3"),
+        "unexpected: " + processedHtml);
     assertTrue(
-        "unexpected: " + processedHtml, processedHtml.contains("name with non-ascii &amp;</span>"));
+        processedHtml.contains("name with non-ascii &amp;</span>"), "unexpected: " + processedHtml);
     assertTrue(
-        "unexpected: " + processedHtml,
-        processedHtml.contains("<span style=\"font-family: noto sans math;\">∅∈∌ </span>"));
-    assertTrue("unexpected: " + processedHtml, processedHtml.contains("&amp;#x3"));
+        processedHtml.contains("<span style=\"font-family: noto sans math;\">∅∈∌ </span>"),
+        "unexpected: " + processedHtml);
+    assertTrue(processedHtml.contains("&amp;#x3"), "unexpected: " + processedHtml);
     // verify owner name chars converted
-    assertFalse("unexpected: " + processedHtml, processedHtml.contains("Dev&Ops"));
-    assertTrue("unexpected: " + processedHtml, processedHtml.contains("Dev&amp;Ops"));
+    assertFalse(processedHtml.contains("Dev&Ops"), "unexpected: " + processedHtml);
+    assertTrue(processedHtml.contains("Dev&amp;Ops"), "unexpected: " + processedHtml);
   }
 
   private List<ArchivalNfsFile> makeArchiveFileList() {
