@@ -25,6 +25,7 @@ import com.researchspace.b2inst.model.metadata.B2instInstrumentMetadata;
 import com.researchspace.b2inst.model.request.B2instDoi;
 import com.researchspace.b2inst.model.response.B2instDraftRecord;
 import com.researchspace.b2inst.model.response.B2instRequestResponse;
+import com.researchspace.b2inst.model.response.B2instSearchResult;
 import com.researchspace.model.system.SystemProperty;
 import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.service.MessageSourceUtils;
@@ -984,6 +985,100 @@ class B2instConnectorImplTest {
             () -> connector.updateDraftDoi("k2j9p-7yh21", draftWithName("X")));
 
     assertEquals("The persistent identifier does not exist.", thrown.getReason());
+    server.verify();
+  }
+
+  @Test
+  void searchRecordsQueriesPublishedRecordsWithTheTokenAndParsesTheHits() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    server
+        .expect(requestTo("https://b2inst-test.gwdg.de/api/records?q=microscope&size=50"))
+        .andExpect(method(HttpMethod.GET))
+        .andExpect(header("Authorization", "Bearer TOK123"))
+        .andRespond(
+            withSuccess(
+                "{\"hits\":{\"hits\":[{\"id\":\"tpqdy-6zd98\",\"is_published\":true,\"metadata\":{\"Name\":\"Olympus"
+                    + " IX71 TIRF\",\"Identifier\":{\"identifierType\":\"Handle\","
+                    + "\"identifierValue\":\"21.11157/44b18238-bba1-4b42-abcc-975017181420\"}},"
+                    + "\"links\":{\"self_html\":\"https://b2inst-test.gwdg.de/records/tpqdy-6zd98\"}}],"
+                    + "\"total\":3}}",
+                MediaType.APPLICATION_JSON));
+
+    B2instSearchResult result = connector.searchRecords("microscope", 50);
+
+    assertEquals(3, result.getHits().getTotal());
+    assertEquals("tpqdy-6zd98", result.getHits().getHits().get(0).getId());
+    assertEquals(
+        "21.11157/44b18238-bba1-4b42-abcc-975017181420",
+        result.getHits().getHits().get(0).getMetadata().getIdentifier().getIdentifierValue());
+    server.verify();
+  }
+
+  /**
+   * The whole query must reach B2INST exactly as the user typed it, and must not be able to add a
+   * parameter of its own. Only the alphanumeric case was covered, which is the one case that cannot
+   * show a double-encoding bug: handing RestTemplate a pre-encoded String makes it treat that
+   * String as a URI template and encode it a second time, so a space would arrive as %2520.
+   */
+  @Test
+  void searchRecordsSendsAQueryWithDelimitersExactlyOnceEncoded() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    server
+        .expect(
+            requestTo(
+                "https://b2inst-test.gwdg.de/api/records"
+                    + "?q=Zeiss%20microscope%20%26size%3D999%20100%25%20%23top&size=50"))
+        .andExpect(method(HttpMethod.GET))
+        .andRespond(
+            withSuccess("{\"hits\":{\"hits\":[],\"total\":0}}", MediaType.APPLICATION_JSON));
+
+    connector.searchRecords("Zeiss microscope &size=999 100% #top", 50);
+
+    server.verify();
+  }
+
+  @Test
+  void getRecordByHandleReadsThePublishedRecordUnderTheHandleSuffix() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    server
+        .expect(
+            requestTo(
+                "https://b2inst-test.gwdg.de/api/records/44b18238-bba1-4b42-abcc-975017181420"))
+        .andExpect(method(HttpMethod.GET))
+        .andRespond(
+            withSuccess(
+                "{\"id\":\"tpqdy-6zd98\",\"is_published\":true}", MediaType.APPLICATION_JSON));
+
+    Optional<B2instDraftRecord> record =
+        connector.getRecordByHandle(
+            "https://hdl.handle.net/21.11157/44b18238-bba1-4b42-abcc-975017181420");
+
+    assertTrue(record.isPresent());
+    assertEquals("tpqdy-6zd98", record.get().getId());
+    // a suffix that is not a record id shape is answered locally, never sent to the provider
+    assertTrue(connector.getRecordByHandle("21.11157/not a record id!").isEmpty());
+    server.verify();
+  }
+
+  @Test
+  void getRecordByHandleFindsOnlyAPublishedRecord() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    // /api/records/{rid} serves published records only, and only those may be imported
+    // (RSDEV-1326): a draft, submitted or declined record answers 404 there and is not looked
+    // for anywhere else
+    server
+        .expect(requestTo("https://b2inst-test.gwdg.de/api/records/anaf6-fk223"))
+        .andRespond(withStatus(HttpStatus.NOT_FOUND));
+
+    assertTrue(connector.getRecordByHandle("21.T11975/anaf6-fk223").isEmpty());
     server.verify();
   }
 }

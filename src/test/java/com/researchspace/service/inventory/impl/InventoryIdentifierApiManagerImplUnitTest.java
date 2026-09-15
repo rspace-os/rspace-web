@@ -456,6 +456,12 @@ class InventoryIdentifierApiManagerImplUnitTest {
     return doi;
   }
 
+  /**
+   * {@code declined} is not a hypothetical status: it is what B2INST leaves behind when a curator
+   * presses DECLINE, verified against b2inst-test on 2026-09-11 (RSDEV-1326). The request stays
+   * readable, so the status is stored as it stands and the identifier moves to the panel's
+   * closed-review handling. Contrast {@link #refreshFallsBackToDraftWhenOnlyTheDraftSurvives}.
+   */
   @Test
   void refreshPersistsOpenReviewStatusVerbatim() throws Exception {
     InventoryIdentifierApiManagerImpl mgr = new InventoryIdentifierApiManagerImpl();
@@ -500,6 +506,13 @@ class InventoryIdentifierApiManagerImplUnitTest {
         "https://rspace.example.com/public/inventory/" + doi.getPublicLink(), result.getUrl());
   }
 
+  /**
+   * This is what a CANCELLED review looks like, and the reason cancel and decline are not
+   * symmetric: cancelling removes the review from the draft, so the review URL answers 404 while
+   * the draft itself survives, and the identifier drops back to {@code draft} - publishable and
+   * deletable again rather than stuck. Verified against b2inst-test on 2026-09-11 (RSDEV-1326). The
+   * identifier therefore never reaches {@code cancelled} by this route.
+   */
   @Test
   void refreshFallsBackToDraftWhenOnlyTheDraftSurvives() throws Exception {
     InventoryIdentifierApiManagerImpl mgr = new InventoryIdentifierApiManagerImpl();
@@ -621,5 +634,28 @@ class InventoryIdentifierApiManagerImplUnitTest {
     ApiRuntimeException cause = assertInstanceOf(ApiRuntimeException.class, thrown.getCause());
     assertEquals(
         "errors.inventory.identifier.b2instAcceptedRecordUnavailable", cause.getErrorCode());
+  }
+
+  @Test
+  void publishRetractAndRefreshRefuseALinkedIdentifierBeforeAnyProviderCall() {
+    InventoryIdentifierApiManagerImpl mgr = new InventoryIdentifierApiManagerImpl();
+    InventoryRecordRetriever retriever = mock(InventoryRecordRetriever.class);
+    ReflectionTestUtils.setField(mgr, "invRecRetriever", retriever);
+    Instrument instrument = new Instrument();
+    DigitalObjectIdentifier linked =
+        new DigitalObjectIdentifier(
+            "21.11157/44b18238-bba1-4b42-abcc-975017181420", "Microscope", "suffix1234567890");
+    linked.setType(IdentifierType.PIDINST_B2INST);
+    linked.setState("accepted");
+    linked.markLinked();
+    instrument.addIdentifier(linked);
+    GlobalIdentifier oid = new GlobalIdentifier("IN1");
+    when(retriever.getInvRecordByGlobalId(oid)).thenReturn(instrument);
+    User user = new User("someone");
+
+    // connectors are null on this bare manager: reaching one would be an NPE, not this exception
+    assertThrows(ApiRuntimeException.class, () -> mgr.publishIdentifier(oid, user));
+    assertThrows(ApiRuntimeException.class, () -> mgr.retractIdentifier(oid, user));
+    assertThrows(ApiRuntimeException.class, () -> mgr.refreshIdentifier(oid, user));
   }
 }
