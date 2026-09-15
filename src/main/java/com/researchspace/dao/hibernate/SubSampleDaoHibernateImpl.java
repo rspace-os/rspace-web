@@ -8,9 +8,14 @@ import com.researchspace.model.FileProperty;
 import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
+import com.researchspace.model.inventory.ContainerLocation;
 import com.researchspace.model.inventory.SubSample;
+import com.researchspace.model.units.QuantityInfo;
+import jakarta.persistence.LockModeType;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import org.hibernate.query.Query;
 import org.springframework.stereotype.Repository;
@@ -112,5 +117,80 @@ public class SubSampleDaoHibernateImpl extends InventoryDaoHibernate<SubSample, 
             SubSample.class)
         .setParameter("fileProperty", fileProperty)
         .list();
+  }
+
+  @Override
+  public List<QuantityInfo> getActiveQuantitiesForUpdate(Long sampleId, boolean sampleDeleted) {
+    return getSession()
+        .createQuery(
+            "select ss.quantityInfo.numericValue, ss.quantityInfo.unitId from SubSample ss"
+                + " where ss.sample.id = :sampleId"
+                + " and ss.quantityInfo.numericValue is not null"
+                + " and (ss.deleted = false or (:sampleDeleted = true and"
+                + " ss.deletedOnSampleDeletion = true))",
+            Object[].class)
+        .setParameter("sampleId", sampleId)
+        .setParameter("sampleDeleted", sampleDeleted)
+        .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+        .list()
+        .stream()
+        .map(row -> new QuantityInfo((BigDecimal) row[0], ((Number) row[1]).intValue()))
+        .collect(Collectors.toList());
+  }
+
+  @Override
+  public QuantityInfo getQuantityForUpdate(Long subSampleId) {
+    Object[] row =
+        getSession()
+            .createQuery(
+                "select ss.quantityInfo.numericValue, ss.quantityInfo.unitId from SubSample ss"
+                    + " where ss.id = :id",
+                Object[].class)
+            .setParameter("id", subSampleId)
+            .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+            .uniqueResult();
+    if (row == null || row[0] == null) {
+      return null;
+    }
+    return new QuantityInfo((BigDecimal) row[0], ((Number) row[1]).intValue());
+  }
+
+  @Override
+  public Long getVersionForUpdate(Long subSampleId) {
+    return getSession()
+        .createQuery("select ss.version from SubSample ss where ss.id = :id", Long.class)
+        .setParameter("id", subSampleId)
+        .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+        .uniqueResult();
+  }
+
+  @Override
+  public void refreshParentLocationFromLockedRow(SubSample subSample) {
+    // ss.parentLocation.id reads the foreign key COLUMN: dereferencing the id of a to-one needs no
+    // join, so a row whose parent location is null still comes back (as null) rather than being
+    // dropped by one.
+    Long committed =
+        getSession()
+            .createQuery(
+                "select ss.parentLocation.id from SubSample ss where ss.id = :id", Long.class)
+            .setParameter("id", subSample.getId())
+            .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+            .uniqueResult();
+    Long cached =
+        subSample.getParentLocation() == null ? null : subSample.getParentLocation().getId();
+    if (Objects.equals(committed, cached)) {
+      return;
+    }
+    subSample.setParentLocation(
+        committed == null ? null : getSession().getReference(ContainerLocation.class, committed));
+  }
+
+  @Override
+  public Boolean isDeletedForUpdate(Long subSampleId) {
+    return getSession()
+        .createQuery("select ss.deleted from SubSample ss where ss.id = :id", Boolean.class)
+        .setParameter("id", subSampleId)
+        .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+        .uniqueResult();
   }
 }

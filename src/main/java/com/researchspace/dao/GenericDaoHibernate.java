@@ -3,6 +3,7 @@ package com.researchspace.dao;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SearchResultsImpl;
 import com.researchspace.model.PaginationCriteria;
+import jakarta.persistence.LockModeType;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -73,6 +74,25 @@ public class GenericDaoHibernate<T, PK extends Serializable> implements GenericD
    */
   protected Session getSession() {
     return sessionFactory.getCurrentSession();
+  }
+
+  @Override
+  public T lockRowForUpdate(PK id) {
+    Session session = getSession();
+    // Lock exactly one row in one table by selecting only the id. Locking a loaded ENTITY instead
+    // makes Hibernate emit the entity's eager-fetch SELECT (a ~20-table join for inventory records)
+    // with FOR UPDATE on the end, taking lock_mode X on rows in every joined table (measured:
+    // "mysql tables in use 21, locked 20"), which deadlocks against unrelated writers (RSDEV-1231).
+    session
+        .createQuery(
+            "select e.id from " + persistentClass.getName() + " e where e.id = :id", Object.class)
+        .setParameter("id", id)
+        .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+        .uniqueResultOptional();
+    // An ordinary load, identical to every other read path, so mappings and initialisation are
+    // untouched. Under REPEATABLE READ this holds the transaction's snapshot, NOT the current row
+    // values: see GenericDao#lockRowForUpdate for the freshness contract.
+    return session.get(persistentClass, id);
   }
 
   @Autowired

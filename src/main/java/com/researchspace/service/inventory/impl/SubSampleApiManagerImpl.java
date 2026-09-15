@@ -23,15 +23,17 @@ import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.record.IActiveUserStrategy;
 import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.model.units.QuantityUtils;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.inventory.InventoryAuditApiManager;
+import com.researchspace.service.inventory.InventoryEditConflictException;
 import com.researchspace.service.inventory.InventoryFieldNameUniquenessValidator;
 import com.researchspace.service.inventory.InventoryMoveHelper;
 import com.researchspace.service.inventory.SampleApiManager;
+import com.researchspace.service.inventory.SampleSiblingRowLock;
 import com.researchspace.service.inventory.SubSampleApiManager;
 import jakarta.ws.rs.NotFoundException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,10 +45,12 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
     implements SubSampleApiManager {
 
   private @Autowired SubSampleDao subSampleDao;
+  private @Autowired MessageSourceUtils messages;
   private @Autowired InventoryMoveHelper moveHelper;
   private @Autowired InventoryAuditApiManager inventoryAuditMgr;
 
   private @Autowired @Lazy SampleApiManager sampleApiMgr;
+  private @Autowired @Lazy SampleSiblingRowLock siblingRowLock;
 
   private QuantityUtils qUtils = new QuantityUtils();
 
@@ -91,6 +95,40 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
     SubSample subSample = getIfExists(id);
     invPermissions.assertUserCanEditInventoryRecord(subSample, user);
     return subSample;
+  }
+
+  @Override
+  public SubSample lockSubSampleForEdit(Long id, User user) {
+    SubSample subSample = subSampleDao.lockRowForUpdate(id);
+    if (subSample == null) {
+      throw new NotFoundException(
+          messages.getMessage("errors.inventory.subsample.notFound", new Object[] {id}));
+    }
+    invPermissions.assertUserCanEditInventoryRecord(subSample, user);
+    // That assertion includes an isDeleted() check, but it asks the ENTITY, which callers loaded
+    // before taking any lock and which lockRowForUpdate hands straight back: it answers from before
+    // the wait. A soft delete keeps the row and its quantity, so a delete committed while this
+    // request queued is invisible to every other check on this path - the decrement proceeds and
+    // the
+    // full-row write puts deleted = false back, resurrecting the record while creating material
+    // from
+    // it. So the flag is read as a scalar under the lock, exactly as the quantity and version below
+    // are, and for the same reason (Codex review, P1).
+    //
+    // A 409, not a 400 or a 500: the request was valid against the state the client read, and the
+    // row changed underneath it while this request queued, which is the same shape as the
+    // stale-quantity conflict. IllegalArgumentException has no handler in ApiControllerAdvice, so
+    // it surfaced as a 500. The exception carries the catalog KEY and the id rather than resolved
+    // text: handleInventoryEditConflict formats getMessageKey() with getArgs().
+    if (Boolean.TRUE.equals(subSampleDao.isDeletedForUpdate(id))) {
+      throw new InventoryEditConflictException("errors.inventory.subsample.deletedSinceLoaded", id);
+    }
+    return subSample;
+  }
+
+  @Override
+  public QuantityInfo getQuantityForUpdate(Long subSampleId) {
+    return subSampleDao.getQuantityForUpdate(subSampleId);
   }
 
   @Override
@@ -150,10 +188,25 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
   public ApiSubSample updateApiSubSample(ApiSubSample apiSubSample, User user) {
     SubSample dbSubSample = getIfExists(apiSubSample.getId());
     ApiSubSample original = new ApiSubSample(dbSubSample);
+
+    // Taken as the FIRST lock of the transaction, for the reasons registerApiSubSampleUsage spells
+    // out and in the same order. Applying the edit runs SubSample.setQuantity, which cascades into
+    // SampleEntity.recalculateTotalQuantity and sums the sibling ENTITIES: this transaction's
+    // snapshot, which does not include a decrement another writer committed against a sibling while
+    // this edit was in flight. The sample then advertises stock that does not exist (review
+    // 2026-09-14, C1).
+    //
+    // Before the row lock, not after: this subsample's own row is one of its parent's sibling rows,
+    // so acquiring the set second is the inversion where two edits on two siblings each hold the
+    // row
+    // the other wants. Unconditional rather than only when the payload carries a quantity, so the
+    // lock order of this method does not depend on what a client chose to send.
+    siblingRowLock.lockSiblingRowsAndRecalculateTotal(dbSubSample.getSample().getId());
     boolean temporaryLock = lockItemForEdit(dbSubSample, user);
 
     try {
       dbSubSample = getIfExists(dbSubSample.getId());
+      reconcileWithCommittedRow(dbSubSample, user);
       Container orgParent = dbSubSample.getParentContainer();
       boolean contentChanged =
           extraFieldHelper.createDeleteRequestedExtraFieldsInDatabaseSubSample(
@@ -189,6 +242,11 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
       if (contentChanged || moveSuccessful) {
         dbSubSample = subSampleDao.save(dbSubSample);
       }
+      // The cascade above has already written a total summed from unlocked sibling entities.
+      // Recompute
+      // it from the rows read under the locks taken at the top, which is the value that must
+      // survive.
+      siblingRowLock.lockSiblingRowsAndRecalculateTotal(dbSubSample.getSample().getId());
     } finally {
       if (temporaryLock) {
         unlockItemAfterEdit(dbSubSample, user);
@@ -269,12 +327,41 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
       return getPopulatedApiSubSampleFull(dbSubSample, user);
     }
 
+    // Taken as the FIRST lock of the transaction, before the origin's own. The sibling rows have
+    // to be locked before the recompute at the end can read them currently, and acquiring them
+    // afterwards deadlocks: the origin's own row is one of the sibling rows, so two operations on
+    // two siblings each end up holding the row the other wants. Locking the whole sibling set up
+    // front makes the second operation WAIT here instead, which is why both can then succeed.
+    siblingRowLock.lockSiblingRowsAndRecalculateTotal(dbSubSample.getSample().getId());
     boolean temporaryLock = lockItemForEdit(dbSubSample, user);
     try {
-      dbSubSample = getIfExists(dbSubSample.getId());
+      // Every recorded USAGE of stock funnels through here (the operations endpoint,
+      // Stoichiometry, List of Materials), so the row lock is taken once here rather than in each
+      // caller.
+      //
+      // Not every write that reduces stock, and the difference matters. split() reads
+      // origSubSample.getQuantity() off the entity snapshot with no row lock and no
+      // getQuantityForUpdate, divides it and saves, so a 10 g subsample split in two while an
+      // operation commits a 4 g withdrawal writes 5 g + 5 g over rows that should total 6 g.
+      // duplicate() and markSubSampleAsDeleted() share the shape. Pre-existing, outside the change
+      // that added this lock, and deliberately not widened into here: extending the reconcile idiom
+      // to those paths is a separate piece of work (review 2026-09-14, I5). Without it two
+      // decrements racing the same subsample both subtract from the same
+      // stale quantity. Routed through lockSubSampleForEdit rather than the DAO so a row that
+      // vanished between the two reads is the same localised 404 as anywhere else, instead of a
+      // null dereference; the repeat permission check it performs is the same verdict as the one
+      // above.
+      dbSubSample = lockSubSampleForEdit(dbSubSample.getId(), user);
 
-      QuantityInfo orgQuantity = dbSubSample.getQuantity();
-      QuantityInfo newQuantity = qUtils.sum(Arrays.asList(orgQuantity, usedQuantity.negate()));
+      // The entity above holds this transaction's snapshot (the lock serialises, it does not
+      // refresh), so the value the subtraction starts from is read as a scalar under the lock:
+      // what the last committed writer stored.
+      QuantityInfo orgQuantity = subSampleDao.getQuantityForUpdate(dbSubSample.getId());
+
+      // subtract, not sum: a remainder that will not fit 3dp in the origin's unit is stored one
+      // rung down the ladder where it does, so 2.5 mg from a 5 g origin leaves 4997.5 mg exactly
+      // rather than rounding 4.9975 g away (review 2026-09-14, Q1a).
+      QuantityInfo newQuantity = qUtils.subtract(orgQuantity, usedQuantity);
 
       // if usage is larger than remaining quantity set remaining to zero, in the stored unit
       // (qUtils.sum may return a different unit, and "0 g" must not relabel itself to "0 mg")
@@ -288,10 +375,39 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
           orgQuantity.getNumericValue().compareTo(newQuantity.getNumericValue()) != 0
               || !orgQuantity.getUnitId().equals(newQuantity.getUnitId());
       if (quantityChanged) {
+        // The entity's version is this transaction's snapshot too. A decrement that committed while
+        // this request waited for the lock advanced the row past it, so bumping the cached number
+        // would reissue a version the earlier decrement already used and make the stock state it
+        // labelled unaddressable (Codex review, PR #1090). The committed version is read as a
+        // scalar under the lock, like the quantity, so the bump below lands on top of it.
+        //
+        // Read FIRST, into a local, because this is an HQL query against the SubSample table and
+        // Hibernate's default AUTO flush mode flushes pending changes to a query's tables before
+        // running it. Dirtying the entity before this line would flush the whole row, stale version
+        // included, and the query would read back the value this transaction just wrote rather than
+        // the committed one (third Codex review, PR #1090).
+        //
+        // Inside this branch, not above it, because applying it mutates the entity while the entity
+        // still carries this transaction's stale quantity. Dirtying it on the no-op path would make
+        // the full-row flush write that stale quantity back and resurrect stock a concurrent writer
+        // had exhausted, even though nothing was deducted (second Codex review, PR #1090).
+        Long committedVersion = subSampleDao.getVersionForUpdate(dbSubSample.getId());
+        // The parent location is a column on this row too, so the full-row write puts the snapshot
+        // one back: a move committed while this request queued would be reverted, and because the
+        // move drops the vacated ContainerLocation row, the stale foreign key fails the constraint
+        // and takes the decrement down with it. Reconciled with the locked row like the two values
+        // above. Placed HERE, after the version read and before the first mutation, because it is
+        // also an HQL query against SubSample: a dirty entity would be flushed ahead of it.
+        subSampleDao.refreshParentLocationFromLockedRow(dbSubSample);
         dbSubSample.setQuantity(newQuantity);
+        dbSubSample.refreshVersionFromLockedRow(committedVersion);
         increaseVersionOncePerTransaction(dbSubSample);
         registerSubSampleModification(user, dbSubSample);
         dbSubSample = subSampleDao.save(dbSubSample);
+        // setQuantity above recomputed the parent total from the sibling ENTITIES, which this
+        // transaction sees as of its own snapshot and so can be stale. Recompute it from the rows,
+        // read under their locks, which is the value that must survive.
+        siblingRowLock.lockSiblingRowsAndRecalculateTotal(dbSubSample.getSample().getId());
       }
 
     } finally {
@@ -301,6 +417,38 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
     }
 
     return getPopulatedApiSubSampleFull(dbSubSample, user);
+  }
+
+  /**
+   * Adopts the columns of this row that another transaction may have committed since this one
+   * loaded it, before anything dirties the entity.
+   *
+   * <p>An edit ends in a full-row UPDATE written from the pre-lock snapshot, so every column it did
+   * not set is put back as it was read. For the name that is the field-level last-write-wins {@code
+   * GenericDao.lockRowForUpdate} documents and DevDocs/adr/0007 accepts. For the QUANTITY it is
+   * not: a decrement that committed while this edit was in flight is silently reverted, so the
+   * stock reappears with material already made from it and both requests report success. That is
+   * live-run finding F1b (2026-09-13) - an aliquot took 4 g from a 10 g origin, a rename 300 ms
+   * later returned 200, and the origin was still 10 g - and the same run's C13, where the competing
+   * edit was a move, which is also this method.
+   *
+   * <p>The version and the parent location are reconciled for the reasons {@link
+   * #registerApiSubSampleUsage} spells out: reusing a version number makes the state the earlier
+   * one labelled unaddressable, and a stale location foreign key refiles the record where it is not
+   * or fails the constraint outright.
+   *
+   * <p>Order matters, as it does there. Both scalar reads and the location reconcile are queries
+   * against the SubSample table, and Hibernate's AUTO flush mode flushes pending changes to a
+   * query's tables before running it: a dirty entity here would be written from the snapshot this
+   * call exists to correct, and the queries would then read back what this transaction just wrote.
+   */
+  private void reconcileWithCommittedRow(SubSample dbSubSample, User user) {
+    lockSubSampleForEdit(dbSubSample.getId(), user);
+    QuantityInfo committedQuantity = subSampleDao.getQuantityForUpdate(dbSubSample.getId());
+    Long committedVersion = subSampleDao.getVersionForUpdate(dbSubSample.getId());
+    subSampleDao.refreshParentLocationFromLockedRow(dbSubSample);
+    dbSubSample.refreshQuantityFromLockedRow(committedQuantity);
+    dbSubSample.refreshVersionFromLockedRow(committedVersion);
   }
 
   private void registerSubSampleModification(User user, SubSample dbSubSample) {

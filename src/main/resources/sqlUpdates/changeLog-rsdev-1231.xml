@@ -1,0 +1,48 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+  <!--
+    RSDEV-1231: persist the operation definition key that produced an extra field.
+
+    An Inventory operation generates fields whose NAMES are localized ("Passage number" comes from
+    operations.passage.numberField). The name was the only thing stored, so the next run of that
+    operation had to find the previous generation's field by matching the current locale's
+    resolution of the key: a second locale, or a reworded translation, silently missed and reset
+    the Passage counter to 1, forking the lineage into per-locale counters.
+
+    Nullable, with null meaning "not owned by any operation definition" - which is every field
+    created by hand and every field that predates this column, so there is nothing to backfill.
+    Only the operations endpoint may write a non-null value. Every other endpoint that binds
+    ApiExtraField ignores an incoming key rather than rejecting it, because the API returns this
+    column and rejecting broke read-modify-write.
+
+    Enforcement is @JsonProperty(access = READ_ONLY) on ApiExtraField.operationFieldKey, which
+    drops a client's value at Jackson binding on every endpoint. There is no flag and no check at
+    the write point: ApiExtraFieldsHelper copies whatever the bound DTO carries, which for a
+    client-supplied body is always null. The invariant therefore depends on that one annotation -
+    remove it and every endpoint binding ApiExtraField becomes a way to claim a field was
+    operation-generated.
+  -->
+  <changeSet id="2026-09-09a-a" context="run" author="neil">
+    <comment>RSDEV-1231 add operationFieldKey to ExtraField</comment>
+    <addColumn tableName="ExtraField">
+      <column name="operationFieldKey" type="varchar(255)">
+        <constraints nullable="true"/>
+      </column>
+    </addColumn>
+  </changeSet>
+
+  <!-- ExtraField is @Audited, so envers writes the same columns to its audit table. -->
+  <changeSet id="2026-09-09a-b" context="run" author="neil">
+    <comment>RSDEV-1231 add operationFieldKey to ExtraField_AUD</comment>
+    <addColumn tableName="ExtraField_AUD">
+      <column name="operationFieldKey" type="varchar(255)">
+        <constraints nullable="true"/>
+      </column>
+    </addColumn>
+  </changeSet>
+
+</databaseChangeLog>
