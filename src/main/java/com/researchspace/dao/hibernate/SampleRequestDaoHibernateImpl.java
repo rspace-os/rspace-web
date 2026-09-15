@@ -73,7 +73,9 @@ public class SampleRequestDaoHibernateImpl extends GenericDaoHibernate<SampleReq
                 sessionFactory
                     .getCurrentSession()
                     .createQuery(
-                        "from SampleRequest req" + where + " order by req.created desc",
+                        "from SampleRequest req"
+                            + where
+                            + " order by req.created desc, req.id desc",
                         SampleRequest.class),
                 hasStatusFilter ? statuses : null,
                 sampleId,
@@ -91,7 +93,7 @@ public class SampleRequestDaoHibernateImpl extends GenericDaoHibernate<SampleReq
    */
   private String roleClause(SampleRequestRole role) {
     if (role == null) {
-      return "(req.requester = :user or req.sample.owner = :user)";
+      return "(req.requesterUsername = :username or req.sample.owner = :user)";
     }
     switch (role) {
       case REQUESTER:
@@ -109,8 +111,11 @@ public class SampleRequestDaoHibernateImpl extends GenericDaoHibernate<SampleReq
       Set<SampleRequestStatus> statuses,
       Long sampleId,
       User user) {
-    // only the clause for the requested role is in the query, so bind only its parameter
-    if (SampleRequestRole.REQUESTER.equals(role)) {
+    // only the parameters named by the role's clause are in the query, so bind exactly those
+    if (role == null) {
+      query.setParameter("username", user.getUsername());
+      query.setParameter("user", user);
+    } else if (SampleRequestRole.REQUESTER.equals(role)) {
       query.setParameter("username", user.getUsername());
     } else {
       query.setParameter("user", user);

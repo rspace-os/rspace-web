@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.api.v1.model.ApiSample;
 import com.researchspace.api.v1.model.ApiSampleRequest;
+import com.researchspace.api.v1.model.ApiSampleRequestInfo;
 import com.researchspace.api.v1.model.ApiSampleRequestPost;
 import com.researchspace.api.v1.model.ApiSampleRequestSearchResult;
 import com.researchspace.api.v1.model.ApiSampleRequestStatusChange;
@@ -25,6 +26,7 @@ import com.researchspace.service.SystemPropertyManager;
 import com.researchspace.service.SystemPropertyName;
 import com.researchspace.testutils.SpringTransactionalTest;
 import jakarta.ws.rs.NotFoundException;
+import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -115,6 +117,19 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
   }
 
   @Test
+  public void getRequestsForUser_returnsNewestFirst() {
+    ApiSampleRequest older = raiseRequest("raised first");
+    ApiSampleRequest newer = raiseRequest("raised second");
+
+    List<ApiSampleRequestInfo> listed =
+        listFor(SampleRequestRole.REQUESTER, requester).getRequests();
+
+    assertEquals(2, listed.size());
+    assertEquals(newer.getId(), listed.get(0).getId(), "the most recent request comes first");
+    assertEquals(older.getId(), listed.get(1).getId());
+  }
+
+  @Test
   public void getRequestsForUser_filteredBySample_returnsOnlyThatSamplesRequests() {
     ApiSampleWithFullSubSamples otherSample = createBasicSampleForUser(owner);
     markRequestable(otherSample);
@@ -173,6 +188,10 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
     // is instance-wide and read permission is deliberately not required here
     User outsider = createAndSaveUserIfNotExists(getRandomAlphabeticString("outsider"));
     initialiseContentWithEmptyContent(outsider);
+    // the premise: this user genuinely cannot read the sample
+    assertThrows(
+        NotFoundException.class,
+        () -> sampleApiMgr.assertUserCanReadSample(sample.getId(), outsider));
 
     ApiSampleRequest raised = raiseRequestAs(outsider);
 
@@ -226,6 +245,21 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
         getSysAdminUser());
 
     assertThrows(UnsupportedOperationException.class, () -> raiseRequestAs(requester));
+  }
+
+  @Test
+  public void updateStatus_isRefusedWhenSampleRequestsDisabled() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+    systemPropertyMgr.save(
+        SystemPropertyName.SAMPLE_REQUESTS_AVAILABLE,
+        HierarchicalPermission.DENIED,
+        getSysAdminUser());
+
+    assertThrows(
+        UnsupportedOperationException.class,
+        () ->
+            sampleRequestApiMgr.updateStatus(
+                raised.getId(), statusPost(SampleRequestStatus.APPROVED, null), owner));
   }
 
   @Test
