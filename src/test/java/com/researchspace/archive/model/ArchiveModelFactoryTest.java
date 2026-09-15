@@ -4,10 +4,10 @@ import static com.researchspace.model.field.FieldType.NUMBER;
 import static com.researchspace.testutils.NetFilesTestFactory.createAnyNfsFileStore;
 import static com.researchspace.testutils.TestFactory.createAnySD;
 import static com.researchspace.testutils.TestFactory.createAnyUser;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.archive.ArchivalDocument;
 import com.researchspace.archive.ArchivalForm;
