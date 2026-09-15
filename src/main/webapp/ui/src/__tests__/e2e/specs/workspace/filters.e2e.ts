@@ -98,10 +98,11 @@ test.describe(`Workspace filters`, () => {
 
       const recipient = await flowCreateUser("ROLE_USER");
 
-      await test.step("Given a second user exists in a lab group with me, and I own a document", async () => {
+      await test.step("Given a second user exists in a project group with me, and I own a document", async () => {
+        // a project group gives every member move permission, so hiding Move is the code under test
         await clientSysadmin.createGroup({
           displayName: groupName,
-          type: "LAB_GROUP",
+          type: "PROJECT_GROUP",
           users: [
             { username: appUser.username, roleInGroup: "PI" },
             { username: recipient.username, roleInGroup: "DEFAULT" },
