@@ -19,12 +19,14 @@ vi.mock("@/stores/stores/getRootStore", () => ({
 function processIsOffered(
   menuID: (typeof menuIDs)[keyof typeof menuIDs],
   selectedResults: Array<InventoryRecord>,
+  processAvailable = true,
 ): boolean {
   const entries = contextActions({
     selectedResults,
     closeMenu: () => {},
     menuID,
     basketSearch: false,
+    processAvailable,
   })("menuitem");
   const process = entries.find((entry) => entry.component.key === "process");
   expect(process, "ContextActions no longer has a 'process' entry").toBeDefined();
@@ -54,5 +56,11 @@ describe("ContextActions: the Process entry", () => {
 
   it("is hidden for a deleted subsample, which holds no material to operate on", () => {
     expect(processIsOffered(menuIDs.RESULTS, [makeMockSubSample({ deleted: true })])).toBe(false);
+  });
+
+  // RSDEV-1231: inventory.operations.available is seeded DENIED, so the entry is absent until a
+  // sysadmin turns it on, whatever the selection.
+  it("is hidden while inventory.operations.available is not ALLOWED", () => {
+    expect(processIsOffered(menuIDs.RESULTS, [makeMockSubSample({})], false)).toBe(false);
   });
 });
