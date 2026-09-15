@@ -16,6 +16,7 @@ import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.archive.export.ExportFailureException;
 import com.researchspace.service.chemistry.ChemistryClientException;
 import com.researchspace.service.chemistry.StoichiometryException;
+import com.researchspace.service.inventory.InventoryEditLockHeldException;
 import jakarta.ws.rs.NotFoundException;
 import java.util.ArrayList;
 import java.util.List;
@@ -77,6 +78,26 @@ public class ApiControllerAdvice extends RestControllerAdvice {
             HttpStatus.CONFLICT,
             ApiErrorCodes.EDIT_CONFLICT.getCode(),
             ex.getLocalizedMessage(),
+            "");
+    return new ResponseEntity<Object>(apiError, new HttpHeaders(), apiError.getStatus());
+  }
+
+  /**
+   * Another user's Inventory edit session holds the lock, so this request cannot take it: a
+   * conflict the caller can retry, named so they know who to wait for (RSDEV-1231).
+   */
+  @ResponseStatus(HttpStatus.CONFLICT)
+  @ExceptionHandler(InventoryEditLockHeldException.class)
+  public ResponseEntity<Object> handleInventoryEditLockHeld(
+      final InventoryEditLockHeldException ex, final WebRequest request) {
+    log.warn("inventory edit lock held: {}", ex.getMessage());
+    final ApiError apiError =
+        new ApiError(
+            HttpStatus.CONFLICT,
+            ApiErrorCodes.EDIT_CONFLICT.getCode(),
+            messages.getMessage(
+                "errors.inventory.editLock.heldBy",
+                new Object[] {ex.getGlobalId(), ex.getOwnerDisplayName()}),
             "");
     return new ResponseEntity<Object>(apiError, new HttpHeaders(), apiError.getStatus());
   }
