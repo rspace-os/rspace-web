@@ -730,6 +730,21 @@ export default class InventoryBaseRecord
     }
   }
 
+  /**
+   * Takes the edit-session lock WITHOUT entering edit state: the operation wizard holds its origins
+   * for its lifetime, but the records are not being edited, so nothing may flip them into "edit" or
+   * refetch them (RSDEV-1231). Throws RecordLockedError when another user's session holds it.
+   */
+  async acquireEditLock(): Promise<LockStatus> {
+    const { status, lockOwner, remainingTimeInSeconds } = await this.checkLock(true);
+    if (status === "CANNOT_LOCK") throw new RecordLockedError(this, lockOwner);
+    runInAction(() => {
+      this.lastEditInput = new Date();
+    });
+    this.handleLockExpiry(remainingTimeInSeconds);
+    return status;
+  }
+
   autoExtendLock() {
     clearInterval(this.expiryCheckInterval);
     void this.checkLock().then(({ status, remainingTimeInSeconds }) => {
