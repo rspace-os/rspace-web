@@ -60,10 +60,10 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
       String parentContainerName,
       ContainerType parentContainerType) {}
 
-  private record BookingCatalogueLocationRow(
+  public record BookingCatalogueLocationRow(
       Long containerId, String containerName, ContainerType containerType) {}
 
-  private record BookingSummaryRow(Long instrumentId, String name, boolean deleted) {}
+  public record BookingSummaryRow(Long instrumentId, String name, boolean deleted) {}
 
   private String defaultTemplateOwner;
 
