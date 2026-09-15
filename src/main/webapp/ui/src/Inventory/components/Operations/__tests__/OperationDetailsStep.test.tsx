@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type React from "react";
+import React from "react";
 import { describe, expect, it, vi } from "vitest";
 import type SubSampleModel from "@/stores/models/SubSampleModel";
 import OperationDetailsStep from "../OperationDetailsStep";
@@ -514,7 +514,7 @@ describe("OperationDetailsStep count errors and temperature unit", () => {
         onChange={onChange}
       />,
     );
-    fireEvent.change(screen.getByRole("spinbutton", { name: /fields\.storageTemp/i }), { target: { value: "-20" } });
+    fireEvent.change(screen.getByRole("textbox", { name: /fields\.storageTemp/i }), { target: { value: "-20" } });
     // the origin is a millilitre subsample, yet the temperature's unit is Celsius, not the origin's
     expect(onChange).toHaveBeenCalledWith({ storageTemp: { numericValue: -20, unitId: CELSIUS_UNIT } });
   });
@@ -576,5 +576,65 @@ describe("OperationDetailsStep inline field errors", () => {
     );
     expect(screen.getByText(/storageTempInvalid/)).toBeInTheDocument();
     expect(screen.queryByText(/storageTempMin/)).not.toBeInTheDocument();
+  });
+});
+
+// Editing a sub-zero temperature (cryopreserve runs at -18 °C or colder) means passing through a
+// lone minus sign, both when clearing the digits of an existing value and when typing a new one.
+describe("OperationDetailsStep sub-zero temperature entry", () => {
+  const cryoOp = {
+    ...operation,
+    inputs: [{ key: "storageTemp", type: "temperature", labelKey: "operations.fields.storageTemp", maxCelsius: -18 }],
+    effect: { ...operation.effect, storageTempFrom: "storageTemp" },
+  } as unknown as InventoryOperation;
+
+  // The wizard feeds every edit straight back down as new props, so the field has to survive that
+  // round trip rather than only hold the sign in its own state.
+  const Stateful = ({ onChange }: { onChange: (values: OperationInputs) => void }) => {
+    const [vals, setVals] = React.useState<OperationInputs>({
+      storageTemp: { numericValue: -18, unitId: CELSIUS_UNIT },
+    });
+    return (
+      <OperationDetailsStep
+        operation={cryoOp}
+        origin={origin}
+        values={vals}
+        onChange={(next) => {
+          setVals(next);
+          onChange(next);
+        }}
+      />
+    );
+  };
+
+  const tempField = () => screen.getByRole("textbox", { name: /fields\.storageTemp/i });
+
+  it("keeps the minus sign when every digit is deleted", async () => {
+    const user = userEvent.setup();
+    render(<Stateful onChange={() => undefined} />);
+    await user.click(tempField());
+    await user.keyboard("{End}{Backspace}{Backspace}");
+    expect(tempField()).toHaveValue("-");
+  });
+
+  it("reports a temperature stripped back to its sign as incomplete, not as zero", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(<Stateful onChange={onChange} />);
+    await user.click(tempField());
+    await user.keyboard("{End}{Backspace}{Backspace}");
+    expect(onChange).toHaveBeenLastCalledWith({
+      storageTemp: { numericValue: Number.NaN, unitId: CELSIUS_UNIT },
+    });
+  });
+
+  it("accepts a temperature typed minus sign first", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(<Stateful onChange={onChange} />);
+    await user.clear(tempField());
+    await user.type(tempField(), "-80");
+    expect(tempField()).toHaveValue("-80");
+    expect(onChange).toHaveBeenLastCalledWith({ storageTemp: { numericValue: -80, unitId: CELSIUS_UNIT } });
   });
 });
