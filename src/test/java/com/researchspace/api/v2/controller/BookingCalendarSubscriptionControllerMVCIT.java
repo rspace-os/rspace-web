@@ -156,6 +156,32 @@ class BookingCalendarSubscriptionControllerMVCIT {
   }
 
   @Test
+  void itemCalendarCreateRequiresTheExactCurrentEtag() throws Exception {
+    fixture.enableBookings();
+    long configurationId = readableConfiguration();
+    String apiKey = fixture.userKey();
+
+    mockMvc
+        .perform(post(path(configurationId)).header("apiKey", apiKey))
+        .andExpect(status().isPreconditionRequired())
+        .andExpect(jsonPath("$.code").value("errors.api.v2.bookingCalendar.ifMatchRequired"));
+    mockMvc
+        .perform(
+            post(path(configurationId))
+                .header("apiKey", apiKey)
+                .header(HttpHeaders.IF_MATCH, "inactive"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("errors.api.v2.invalidRequest"));
+    mockMvc
+        .perform(
+            post(path(configurationId))
+                .header("apiKey", apiKey)
+                .header(HttpHeaders.IF_MATCH, "\"subscription-99\""))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.code").value("errors.api.v2.bookingCalendar.subscriptionConflict"));
+  }
+
+  @Test
   void managementRejectsNonPositiveConfigurationIds() throws Exception {
     String apiKey = fixture.userKey();
 
