@@ -4065,6 +4065,7 @@ export default interface Resources {
         "rememberedDeleted": "The remembered template \"{name}\" is in the trash and cannot be used. Choose another template.",
         "searchLabel": "Search templates",
         "selectedLabel": "Selected template: {name}",
+        "templateDeleted": "The template \"{name}\" is in the trash and cannot be used. Choose another template.",
         "valueFromSample": "From {name}",
         "valueNone": "None (ad-hoc sample)"
       },
@@ -7190,6 +7191,7 @@ export default interface Resources {
           "unitsNotComparable": "Temperature units are not mutually comparable."
         },
         "template": {
+          "deleted": "Sample template {0} is in the trash and cannot be used to create a sample. Restore it, or choose another template.",
           "emptyFieldName": "Field name cannot be empty",
           "emptyFieldType": "Field type cannot be empty",
           "fieldNameTooLong": "{0} is too long for a template field name, max length is {1}",
