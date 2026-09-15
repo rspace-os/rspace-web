@@ -3,6 +3,7 @@ package com.researchspace.service.inventory;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.api.v1.model.ApiSample;
@@ -88,6 +89,27 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
 
     // the requester owns no requested sample, so nothing is awaiting them
     assertEquals(0L, listFor(SampleRequestRole.OWNER, requester).getTotalHits().longValue());
+  }
+
+  @Test
+  public void getRequestsForUser_nullRole_returnsBothSentAndReceivedRequests() {
+    ApiSampleRequest sent = raiseRequest("Need 2ml for the binding assay");
+
+    ApiSampleWithFullSubSamples requesterOwnedSample = createBasicSampleForUser(requester);
+    ApiSample requesterOwnedSampleUpdate = new ApiSample();
+    requesterOwnedSampleUpdate.setId(requesterOwnedSample.getId());
+    requesterOwnedSampleUpdate.setRequestable(true);
+    sampleApiMgr.updateApiSample(requesterOwnedSampleUpdate, requester);
+    ApiSampleRequestPost post = new ApiSampleRequestPost();
+    post.setSampleGlobalId(requesterOwnedSample.getGlobalId());
+    post.setNote("Need 1ml of yours");
+    ApiSampleRequest received = sampleRequestApiMgr.createRequest(post, owner);
+
+    ApiSampleRequestSearchResult results = listFor(null, requester);
+
+    assertEquals(2L, results.getTotalHits().longValue());
+    assertTrue(results.getRequests().stream().anyMatch(r -> r.getId().equals(sent.getId())));
+    assertTrue(results.getRequests().stream().anyMatch(r -> r.getId().equals(received.getId())));
   }
 
   @Test

@@ -36,11 +36,9 @@ public class SampleRequestApiSearchConfig extends ApiSearchConfig {
   @JsonProperty("sampleId")
   private Long sampleId;
 
-  /** Defaults to the caller's own requests when unspecified. */
+  /** Null when unspecified, meaning: match either role (requester or owner). */
   public SampleRequestRole getRoleAsEnum() {
-    return StringUtils.isBlank(role)
-        ? SampleRequestRole.REQUESTER
-        : SampleRequestRole.valueOf(role);
+    return StringUtils.isBlank(role) ? null : SampleRequestRole.valueOf(role);
   }
 
   /** Empty when no status filtering was requested. */

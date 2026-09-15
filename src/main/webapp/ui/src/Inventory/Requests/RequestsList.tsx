@@ -37,7 +37,7 @@ export type ApiSampleRequestListItem = {
   sample: { id: number; globalId: string; name: string };
 };
 
-export type From = "me" | "others";
+export type RequestsFilter = "all" | "sent" | "received";
 export type StatusFilter = "all" | "active" | "past";
 
 const ACTIVE_STATUSES = "PENDING,APPROVED";
@@ -88,7 +88,7 @@ export default function RequestsList({
   onSelect: (request: ApiSampleRequestListItem) => void;
 }): React.ReactNode {
   const { t } = useTranslation("inventory");
-  const [from, setFrom] = useState<From>("me");
+  const [requestsFilter, setRequestsFilter] = useState<RequestsFilter>("all");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [fromDropdown, setFromDropdown] = useState<HTMLElement | null>(null);
   const [statusDropdown, setStatusDropdown] = useState<HTMLElement | null>(null);
@@ -104,10 +104,10 @@ export default function RequestsList({
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    const params = new URLSearchParams({
-      role: from === "me" ? "REQUESTER" : "OWNER",
-      pageSize: "100",
-    });
+    const params = new URLSearchParams({ pageSize: "100" });
+    if (requestsFilter === "sent") params.set("role", "REQUESTER");
+    if (requestsFilter === "received") params.set("role", "OWNER");
+    // "all" omits the role filter entirely, so the API returns both sent and received requests.
     if (statusFilter === "active") params.set("status", ACTIVE_STATUSES);
     if (statusFilter === "past") params.set("status", PAST_STATUSES);
 
@@ -127,7 +127,7 @@ export default function RequestsList({
     return () => {
       cancelled = true;
     };
-  }, [from, statusFilter]);
+  }, [requestsFilter, statusFilter]);
 
   const handleSort = (column: ColumnKey) => {
     if (sortBy === column) {
@@ -154,8 +154,12 @@ export default function RequestsList({
     return sorted;
   }, [requests, sortBy, sortDirection]);
 
-  const fromLabel =
-    from === "me" ? t("requestsManagement.filters.from.me") : t("requestsManagement.filters.from.others");
+  const requestsFilterLabel =
+    requestsFilter === "all"
+      ? t("requestsManagement.filters.requests.all")
+      : requestsFilter === "sent"
+        ? t("requestsManagement.filters.requests.sent")
+        : t("requestsManagement.filters.requests.received");
   const statusLabel =
     statusFilter === "all"
       ? t("requestsManagement.filters.status.all")
@@ -173,27 +177,36 @@ export default function RequestsList({
       </Stack>
       <Grid container direction="row" spacing={1} sx={{ pt: 1 }}>
         <DropdownButton
-          name={`${t("requestsManagement.filters.from.label")}: ${fromLabel}`}
+          name={`${t("requestsManagement.filters.requests.label")}: ${requestsFilterLabel}`}
           onClick={({ target }) => setFromDropdown(target as HTMLElement)}
         >
           <StyledMenu anchorEl={fromDropdown} open={Boolean(fromDropdown)} onClose={() => setFromDropdown(null)}>
             <MenuItem
-              selected={from === "me"}
+              selected={requestsFilter === "all"}
               onClick={() => {
-                setFrom("me");
+                setRequestsFilter("all");
                 setFromDropdown(null);
               }}
             >
-              <ListItemText primary={t("requestsManagement.filters.from.me")} />
+              <ListItemText primary={t("requestsManagement.filters.requests.all")} />
             </MenuItem>
             <MenuItem
-              selected={from === "others"}
+              selected={requestsFilter === "sent"}
               onClick={() => {
-                setFrom("others");
+                setRequestsFilter("sent");
                 setFromDropdown(null);
               }}
             >
-              <ListItemText primary={t("requestsManagement.filters.from.others")} />
+              <ListItemText primary={t("requestsManagement.filters.requests.sent")} />
+            </MenuItem>
+            <MenuItem
+              selected={requestsFilter === "received"}
+              onClick={() => {
+                setRequestsFilter("received");
+                setFromDropdown(null);
+              }}
+            >
+              <ListItemText primary={t("requestsManagement.filters.requests.received")} />
             </MenuItem>
           </StyledMenu>
         </DropdownButton>
@@ -233,7 +246,7 @@ export default function RequestsList({
         </DropdownButton>
       </Grid>
       <Box sx={{ pt: 1 }}>
-        <RequestsParameterChips from={from} statusFilter={statusFilter} />
+        <RequestsParameterChips requestsFilter={requestsFilter} statusFilter={statusFilter} />
       </Box>
       <Divider orientation="horizontal" sx={{ my: 0.75 }} />
       <Alert

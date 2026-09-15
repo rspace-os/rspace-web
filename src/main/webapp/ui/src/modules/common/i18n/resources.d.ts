@@ -4108,7 +4108,7 @@ export default interface Resources {
     "requestsManagement": {
       "browserTitle": "Requests | RSpace Inventory",
       "chips": {
-        "from": "From: {value}",
+        "requests": "Requests: {value}",
         "status": "Status: {value}"
       },
       "columns": {
@@ -4116,37 +4116,41 @@ export default interface Resources {
         "requester": "Requester",
         "sample": "Requested Sample",
         "status": "Status",
-        "submitted": "Submitted"
+        "submitted": "Date Submitted"
       },
       "detail": {
         "fields": {
-          "additionalNotes": "Additional Notes",
+          "additionalNotes": "Notes from requester",
           "loadingLocations": "Loading locations…",
+          "locationColumn": "Location",
           "noNotes": "No notes provided.",
           "noSubsamples": "This sample has no subsamples.",
           "notInContainer": "Not in a container.",
           "requester": "Requester",
-          "sampleLocation": "Sample Location",
-          "sampleRequested": "Sample Requested",
-          "submitted": "Submitted"
+          "sampleLocation": "Sample Locations",
+          "sampleLocationTooltip": "Samples are located via their subsamples",
+          "sampleRequested": "Requested Sample",
+          "submitted": "Submitted",
+          "subsampleColumn": "Subsample"
         },
         "sections": {
           "details": "Details"
         },
-        "title": "Request {id} for Sample {sampleName}"
+        "title": "Request {id}: {sampleName}"
       },
       "feedback": "{count} sample requests found.",
       "filters": {
-        "from": {
-          "label": "From",
-          "me": "Me",
-          "others": "Others"
+        "requests": {
+          "all": "All",
+          "label": "Requests",
+          "received": "Received",
+          "sent": "Sent"
         },
         "status": {
-          "active": "Active",
+          "active": "Open",
           "all": "All",
-          "label": "Status",
-          "past": "Past Requests"
+          "label": "Show",
+          "past": "Closed"
         }
       },
       "landmark": "Requests",

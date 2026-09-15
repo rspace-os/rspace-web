@@ -3,6 +3,12 @@ import Breadcrumbs from "@mui/material/Breadcrumbs";
 import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
 import Stack from "@mui/material/Stack";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
 import type React from "react";
 import { useContext, useEffect, useState } from "react";
@@ -94,30 +100,46 @@ export default function RequestSampleLocations({ sampleId }: { sampleId: number 
   }
 
   return (
-    <Stack spacing={1}>
-      {subSamples.map((subSample) => (
-        <Stack key={subSample.id} direction="row" spacing={1} sx={{ alignItems: "center", flexWrap: "wrap" }}>
-          <NamedRecordChip globalId={subSample.globalId} name={subSample.name} />
-          {(() => {
-            // A subsample kept directly on a user's bench has that bench (prefix "BE") as
-            // its top parent; benches aren't a normal Inventory record type and are never
-            // shown as a chip elsewhere in the app, so exclude them from the breadcrumb.
-            const containers = subSample.parentContainers.filter((container) => !container.globalId.startsWith("BE"));
-            if (containers.length === 0) {
-              return <NoValue label={t("requestsManagement.detail.fields.notInContainer")} />;
-            }
-            return (
-              <Breadcrumbs aria-label={t("breadcrumbs.label")}>
-                {containers.toReversed().map((container) => (
-                  <Box key={container.id}>
-                    <NamedRecordChip globalId={container.globalId} name={container.name} />
-                  </Box>
-                ))}
-              </Breadcrumbs>
-            );
-          })()}
-        </Stack>
-      ))}
-    </Stack>
+    <TableContainer>
+      <Table size="small" stickyHeader>
+        <TableHead>
+          <TableRow>
+            <TableCell>{t("requestsManagement.detail.fields.subsampleColumn")}</TableCell>
+            <TableCell>{t("requestsManagement.detail.fields.locationColumn")}</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {subSamples.map((subSample) => (
+            <TableRow key={subSample.id}>
+              <TableCell>
+                <NamedRecordChip globalId={subSample.globalId} name={subSample.name} />
+              </TableCell>
+              <TableCell>
+                {(() => {
+                  // A subsample kept directly on a user's bench has that bench (prefix "BE") as
+                  // its top parent; benches aren't a normal Inventory record type and are never
+                  // shown as a chip elsewhere in the app, so exclude them from the breadcrumb.
+                  const containers = subSample.parentContainers.filter(
+                    (container) => !container.globalId.startsWith("BE"),
+                  );
+                  if (containers.length === 0) {
+                    return <NoValue label={t("requestsManagement.detail.fields.notInContainer")} />;
+                  }
+                  return (
+                    <Breadcrumbs aria-label={t("breadcrumbs.label")}>
+                      {containers.toReversed().map((container) => (
+                        <Box key={container.id}>
+                          <NamedRecordChip globalId={container.globalId} name={container.name} />
+                        </Box>
+                      ))}
+                    </Breadcrumbs>
+                  );
+                })()}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </TableContainer>
   );
 }

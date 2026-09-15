@@ -71,8 +71,14 @@ public class SampleRequestDaoHibernateImpl extends GenericDaoHibernate<SampleReq
     return new SearchResultsImpl<>(page, pgCrit, total.intValue());
   }
 
-  /** The approver is never stored, so the owner side joins through the sample's current owner. */
+  /**
+   * The approver is never stored, so the owner side joins through the sample's current owner. A
+   * null role means no filtering by role: the user is either the requester or the owner.
+   */
   private String roleClause(SampleRequestRole role) {
+    if (role == null) {
+      return "(req.requester = :user or req.sample.owner = :user)";
+    }
     switch (role) {
       case REQUESTER:
         return "req.requester = :user";

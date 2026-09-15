@@ -9,6 +9,7 @@ import Typography from "@mui/material/Typography";
 import type React from "react";
 import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
+import CustomTooltip from "@/components/CustomTooltip";
 import { Heading, HeadingContext } from "@/components/DynamicHeadingLevel";
 import GlobalId from "@/components/GlobalId";
 import NoValue from "@/components/NoValue";
@@ -18,13 +19,24 @@ import { isoToLocale } from "@/util/Util";
 import RequestSampleLocations from "./RequestSampleLocations";
 import type { ApiSampleRequestListItem } from "./RequestsList";
 
-function DetailField({ label, children }: { label: string; children: React.ReactNode }): React.ReactNode {
+function DetailField({
+  label,
+  tooltip,
+  children,
+}: {
+  label: string;
+  tooltip?: string;
+  children: React.ReactNode;
+}): React.ReactNode {
   const labelId = useId();
+  const heading = (
+    <Heading sx={{ mt: 0 }} id={labelId}>
+      {label}
+    </Heading>
+  );
   return (
     <FormControl fullWidth role="group" aria-labelledby={labelId}>
-      <Heading sx={{ mt: 0 }} id={labelId}>
-        {label}
-      </Heading>
+      {tooltip ? <CustomTooltip title={tooltip}>{heading}</CustomTooltip> : heading}
       <Box sx={{ wordBreak: "break-all" }}>{children}</Box>
     </FormControl>
   );
@@ -107,7 +119,10 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
               <DetailField label={t("requestsManagement.detail.fields.sampleRequested")}>
                 <GlobalId record={new LinkableRecordFromGlobalId(request.sample.globalId)} onClick={() => {}} />
               </DetailField>
-              <DetailField label={t("requestsManagement.detail.fields.sampleLocation")}>
+              <DetailField
+                label={t("requestsManagement.detail.fields.sampleLocation")}
+                tooltip={t("requestsManagement.detail.fields.sampleLocationTooltip")}
+              >
                 <RequestSampleLocations sampleId={request.sample.id} />
               </DetailField>
               <DetailField label={t("requestsManagement.detail.fields.additionalNotes")}>

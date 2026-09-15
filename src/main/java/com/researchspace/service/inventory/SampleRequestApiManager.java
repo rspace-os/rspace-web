@@ -33,7 +33,7 @@ public interface SampleRequestApiManager {
    * Page of requests involving the user, on the given side of the request.
    *
    * @param role REQUESTER for requests the user raised, OWNER for requests against samples the user
-   *     currently owns
+   *     currently owns; null means either role
    * @param statuses optional status filter; a request matches if its status is any of these. Null
    *     or empty means no status filtering.
    * @param sampleId optional filter to requests against one sample
