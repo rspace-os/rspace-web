@@ -104,7 +104,7 @@ test.describe(`Workspace filters`, () => {
           displayName: groupName,
           type: "PROJECT_GROUP",
           users: [
-            { username: appUser.username, roleInGroup: "PI" },
+            { username: appUser.username, roleInGroup: "GROUP_OWNER" },
             { username: recipient.username, roleInGroup: "DEFAULT" },
           ],
         });
