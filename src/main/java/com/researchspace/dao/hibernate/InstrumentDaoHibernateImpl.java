@@ -36,10 +36,10 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
       new CollectionQueryExecutor<>(
           Instrument.class, ApiV2InstrumentResource.DESCRIPTION, "collectionInstrument");
 
-  private record ParentLocationRow(
+  public record ParentLocationRow(
       Long instrumentId, Long containerId, String containerName, ContainerType containerType) {}
 
-  private record InstrumentNameRow(Long instrumentId, String name) {}
+  public record InstrumentNameRow(Long instrumentId, String name) {}
 
   private String defaultTemplateOwner;
 

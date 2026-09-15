@@ -34,7 +34,7 @@ import org.springframework.stereotype.Repository;
 @Repository("instrumentCustomFieldDao")
 public class InstrumentCustomFieldDaoHibernateImpl implements InstrumentCustomFieldDao {
 
-  private record OptionRow(Long fieldId, String storedOptions) {}
+  public record OptionRow(Long fieldId, String storedOptions) {}
 
   private static final String DEFINITION_ALIAS = "customFieldDef";
   private static final String COPY_ALIAS = "customFieldCopy";

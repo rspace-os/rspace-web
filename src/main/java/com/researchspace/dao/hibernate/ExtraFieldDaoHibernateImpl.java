@@ -34,9 +34,9 @@ import org.springframework.stereotype.Repository;
 @Repository("extraFieldDao")
 public class ExtraFieldDaoHibernateImpl implements ExtraFieldDao {
 
-  private record DefinitionProjection(String name, Object entityType) {}
+  public record DefinitionProjection(String name, Object entityType) {}
 
-  private record ValueProjection(Long parentId, String name, Object entityType, String value) {}
+  public record ValueProjection(Long parentId, String name, Object entityType, String value) {}
 
   private static final String FIELD_ALIAS = "extraField";
   private static final String PARENT_ALIAS = "extraFieldParent";
