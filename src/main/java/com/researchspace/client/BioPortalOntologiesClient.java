@@ -36,6 +36,14 @@ public class BioPortalOntologiesClient {
   private static final String ALLOWED_API_SCHEME = "https";
   private static final String ALLOWED_API_HOST = "data.bioontology.org";
 
+  // The only origin ever sent to RestTemplate, never the configured value itself.
+  private static final URI CANONICAL_API_ORIGIN =
+      UriComponentsBuilder.newInstance()
+          .scheme(ALLOWED_API_SCHEME)
+          .host(ALLOWED_API_HOST)
+          .build()
+          .toUri();
+
   @Getter
   @Value("${bioportal.base.url}")
   private String bioportalBaseUrl;
@@ -91,8 +99,8 @@ public class BioPortalOntologiesClient {
     return results;
   }
 
-  // Pins the request destination so only searchTerm's *value*, never its host/scheme/path,
-  // can ever reach doSearch; null means "don't call BioPortal".
+  // Gates on the configured value but returns CANONICAL_API_ORIGIN, not the parsed candidate,
+  // so a stray port/user-info/query never reaches the request. Null skips the call.
   private static URI validateApiBaseUri(String candidate) {
     if (StringUtils.isBlank(candidate)) {
       return null;
@@ -109,7 +117,7 @@ public class BioPortalOntologiesClient {
     if (!ALLOWED_API_HOST.equalsIgnoreCase(parsed.getHost())) {
       return null;
     }
-    return parsed;
+    return CANONICAL_API_ORIGIN;
   }
 
   private List<BioPortalSearchResult> doSearch(URI validatedApiBaseUri, String searchTerm) {

@@ -287,6 +287,19 @@ class BioPortalOntologiesClientTest {
   }
 
   @Test
+  void shouldCanonicalizeAwayNonDefaultPortOnAllowlistedHost() {
+    ReflectionTestUtils.setField(
+        client, "bioportalApiBaseUrl", "https://data.bioontology.org:8443");
+    mockServer
+        .expect(requestTo(startsWithUri(API_BASE_URL + "/search")))
+        .andExpect(request -> assertEquals(-1, request.getURI().getPort(), "request port"))
+        .andRespond(withSuccess(emptyCollectionJson(), MediaType.APPLICATION_JSON));
+
+    assertTrue(client.search("Tolstoy").isEmpty());
+    mockServer.verify();
+  }
+
+  @Test
   void shouldReturnEmptyAndSkipRequestWhenApiBaseUrlIsMalformed() {
     ReflectionTestUtils.setField(client, "bioportalApiBaseUrl", "not a url");
 
