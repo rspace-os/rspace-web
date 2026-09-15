@@ -10,6 +10,7 @@ import com.researchspace.dao.query.IndexedTextNarrowing;
 import com.researchspace.dao.query.LikeEscaper;
 import com.researchspace.inventory.model.ApiV2InstrumentResource;
 import com.researchspace.model.FileProperty;
+import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.RoleInGroup;
 import com.researchspace.model.User;
@@ -253,7 +254,7 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
     Query<Long> countQuery =
         getSession().createQuery("select count(distinct parent.id)" + fromAndWhere, Long.class);
     CriteriaBuilder<BookingCatalogueLocationRow> pageQuery =
-        criteriaBuilderFactory
+        criteriaBuilderFactory()
             .create(getSession(), BookingCatalogueLocationRow.class)
             .from(BookingConfiguration.class, "configuration")
             .from(Instrument.class, "instrument")
@@ -445,7 +446,7 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
     if (instrumentIds.isEmpty()) {
       return Map.of();
     }
-    return criteriaBuilderFactory
+    return criteriaBuilderFactory()
         .create(getSession(), BookingSummaryRow.class)
         .from(Instrument.class, "instrument")
         .selectNew(BookingSummaryRow.class)

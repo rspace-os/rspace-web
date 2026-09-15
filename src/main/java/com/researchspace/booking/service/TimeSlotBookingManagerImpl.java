@@ -338,7 +338,6 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
         .findReadableById(id, targetAccess(subject))
         .map(
             booking -> {
-              requireExpectedVersion(booking, expectedVersion);
               BookingConfiguration configuration =
                   currentSchedule(
                           () ->
@@ -350,6 +349,7 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
               if (!access.hasCapability(ResourceRoleScheme.READ_RESOURCE_CAPABILITY)) {
                 return null;
               }
+              requireExpectedVersion(booking, expectedVersion);
               requireCanEdit(booking, access, subject);
               if (booking.getState() != BookingState.CONFIRMED) {
                 throw new BookingStateTransitionException();

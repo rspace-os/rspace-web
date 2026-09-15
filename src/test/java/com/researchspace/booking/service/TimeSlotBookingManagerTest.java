@@ -685,6 +685,29 @@ class TimeSlotBookingManagerTest {
                 actor));
   }
 
+  @Test
+  void unreadableBookingIsConcealedRegardlessOfExpectedVersion() {
+    TimeSlotBooking existing = booking(41L, 12L, actor);
+    when(bookingDao.findReadableById(eq(41L), any())).thenReturn(Optional.of(existing));
+    when(configurationDao.lockActiveById(4L))
+        .thenReturn(Optional.of(existing.getBookingConfiguration()));
+    when(accessManager.resolve(existing.getBookingConfiguration().getResourceAccess(), actor))
+        .thenReturn(noAccess());
+
+    for (long version : new long[] {existing.getVersion(), existing.getVersion() + 1}) {
+      assertTrue(
+          manager
+              .updateBooking(
+                  41L,
+                  new TimeSlotBookingManager.Patch(null, null, true, "Changed", null),
+                  version,
+                  actor,
+                  actor)
+              .isEmpty());
+    }
+    assertEquals("Private purpose", existing.getPurpose());
+  }
+
   private static TimeSlotBooking booking(long id, long targetId, User requester) {
     TimeSlotBooking booking = new TimeSlotBooking();
     booking.setId(id);
