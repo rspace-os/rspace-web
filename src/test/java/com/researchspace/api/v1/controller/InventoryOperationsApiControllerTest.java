@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -21,6 +22,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.researchspace.api.v1.model.ApiExtraField;
+import com.researchspace.api.v1.model.ApiInventoryEditLock;
+import com.researchspace.api.v1.model.ApiInventoryEditLock.ApiInventoryEditLockStatus;
 import com.researchspace.api.v1.model.ApiInventoryLink;
 import com.researchspace.api.v1.model.ApiInventoryOperationOriginUpdate;
 import com.researchspace.api.v1.model.ApiInventoryOperationPost;
@@ -29,15 +32,20 @@ import com.researchspace.api.v1.model.ApiInventoryOperationResult;
 import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
+import com.researchspace.api.v1.model.ApiUser;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.DTOControllerValidatorImpl;
+import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.service.inventory.InventoryEditLockHeldException;
 import com.researchspace.service.inventory.InventoryOperationConfigRegistry;
 import com.researchspace.service.inventory.InventoryOperationManager;
 import com.researchspace.service.inventory.InventoryOperationManager.OperationOutcome;
 import com.researchspace.service.inventory.SampleApiManager;
 import com.researchspace.service.inventory.SubSampleApiManager;
+import com.researchspace.service.inventory.impl.InventoryEditLockTracker;
 import com.researchspace.webapp.config.WebConfig;
 import java.math.BigDecimal;
 import java.util.Arrays;
@@ -47,6 +55,7 @@ import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
@@ -72,11 +81,41 @@ class InventoryOperationsApiControllerTest {
 
   private final SampleApiManager sampleApiMgr = mock(SampleApiManager.class);
   private final SubSampleApiManager subSampleApiMgr = mock(SubSampleApiManager.class);
+  private final InventoryEditLockTracker tracker = mock(InventoryEditLockTracker.class);
+
+  /**
+   * An origin the controller can resolve: the subsample it names and the sample that holds it,
+   * which together are the two global ids it locks for the operation (RSDEV-1231).
+   */
+  private void originExists(long subSampleId, long sampleId) {
+    Sample sample = new Sample();
+    sample.setId(sampleId);
+    SubSample subSample = new SubSample(sample);
+    subSample.setId(subSampleId);
+    when(subSampleApiMgr.assertUserCanEditSubSample(subSampleId, user)).thenReturn(subSample);
+  }
+
+  private void lockIsFree(String globalId) {
+    when(tracker.attemptToLockForEdit(eq(globalId), any()))
+        .thenReturn(lock(globalId, ApiInventoryEditLockStatus.LOCKED_OK));
+  }
+
+  private static ApiInventoryEditLock lock(String globalId, ApiInventoryEditLockStatus status) {
+    ApiInventoryEditLock editLock = new ApiInventoryEditLock();
+    editLock.setGlobalId(globalId);
+    editLock.setStatus(status);
+    editLock.setOwner(new ApiUser(1L, "carol", "carol@x.com", "Carol", "Holder"));
+    return editLock;
+  }
 
   @BeforeEach
   void wireController() {
     controller.sampleApiMgr = sampleApiMgr;
     controller.subSampleApiMgr = subSampleApiMgr;
+    controller.tracker = tracker;
+    originExists(100L, 10L);
+    lockIsFree("SS100");
+    lockIsFree("SA10");
     IPropertyHolder properties = mock(IPropertyHolder.class);
     when(properties.getServerUrl()).thenReturn("https://rspace.example");
     controller.properties = properties;
@@ -237,6 +276,127 @@ class InventoryOperationsApiControllerTest {
             controller.performOperation(
                 request, new BeanPropertyBindingResult(request, "request"), user));
     verifyNoInteractions(operationManager);
+  }
+
+  // --- the edit-session lock the controller holds around the manager (RSDEV-1231) ---
+
+  /**
+   * The lock set is every origin plus every distinct parent sample, taken in ascending global-id
+   * order. The order is what keeps two multi-origin Pools that overlap from deadlocking against
+   * each other; the parent sample is what stops two operations on siblings of one sample running at
+   * once.
+   */
+  @Test
+  void locksEveryOriginAndParentSampleInAscendingOrder() throws Exception {
+    originExists(300L, 20L);
+    lockIsFree("SS300");
+    lockIsFree("SA20");
+    ApiInventoryOperationPost request = poolInputs(300L, 100L);
+    when(operationManager.performOperation(any(), any(), any(), any(), any(), eq(user)))
+        .thenReturn(new OperationOutcome(new ApiSampleWithFullSubSamples("Pooled"), List.of()));
+
+    controller.performOperation(request, new BeanPropertyBindingResult(request, "request"), user);
+
+    InOrder inOrder = inOrder(tracker);
+    inOrder.verify(tracker).attemptToLockForEdit("SA10", user);
+    inOrder.verify(tracker).attemptToLockForEdit("SA20", user);
+    inOrder.verify(tracker).attemptToLockForEdit("SS100", user);
+    inOrder.verify(tracker).attemptToLockForEdit("SS300", user);
+  }
+
+  /**
+   * A lock this request took is its own to give back; one the caller's own session already held is
+   * not.
+   */
+  @Test
+  void releasesOnlyTheLocksItTookItself() throws Exception {
+    when(tracker.attemptToLockForEdit(eq("SA10"), any()))
+        .thenReturn(lock("SA10", ApiInventoryEditLockStatus.WAS_ALREADY_LOCKED));
+    ApiInventoryOperationPost request = aliquotInputs();
+    when(operationManager.performOperation(any(), any(), any(), any(), any(), eq(user)))
+        .thenReturn(new OperationOutcome(new ApiSampleWithFullSubSamples("Aliquots"), List.of()));
+
+    controller.performOperation(request, new BeanPropertyBindingResult(request, "request"), user);
+
+    verify(tracker).attemptToUnlock("SS100", user);
+    verify(tracker, never()).attemptToUnlock("SA10", user);
+  }
+
+  /**
+   * Nothing is operated on while a lock is missing, and nothing this request took is left behind.
+   */
+  @Test
+  void aHeldLockReleasesWhatWasTakenAndNeverReachesTheManager() {
+    when(tracker.attemptToLockForEdit(eq("SS100"), any()))
+        .thenReturn(lock("SS100", ApiInventoryEditLockStatus.CANNOT_LOCK));
+    ApiInventoryOperationPost request = aliquotInputs();
+
+    InventoryEditLockHeldException held =
+        assertThrows(
+            InventoryEditLockHeldException.class,
+            () ->
+                controller.performOperation(
+                    request, new BeanPropertyBindingResult(request, "request"), user));
+
+    assertEquals("SS100", held.getGlobalId());
+    assertEquals("Carol Holder", held.getOwnerDisplayName());
+    verify(tracker).attemptToUnlock("SA10", user);
+    verifyNoInteractions(operationManager);
+  }
+
+  /** A rejected operation must not leave the origins locked for the next five minutes. */
+  @Test
+  void releasesTheLocksWhenTheManagerRejectsTheRequest() throws Exception {
+    ApiInventoryOperationPost request = aliquotInputs();
+    when(operationManager.performOperation(any(), any(), any(), any(), any(), eq(user)))
+        .thenThrow(new IllegalStateException("boom"));
+
+    assertThrows(
+        IllegalStateException.class,
+        () ->
+            controller.performOperation(
+                request, new BeanPropertyBindingResult(request, "request"), user));
+
+    verify(tracker).attemptToUnlock("SS100", user);
+    verify(tracker).attemptToUnlock("SA10", user);
+  }
+
+  /**
+   * Permission is asserted on every origin before the first lock is taken, so a caller who may not
+   * edit an origin cannot hold other users' records for the duration of the request.
+   */
+  @Test
+  void assertsEditPermissionOnEveryOriginBeforeTakingAnyLock() {
+    when(subSampleApiMgr.assertUserCanEditSubSample(100L, user))
+        .thenThrow(new org.apache.shiro.authz.AuthorizationException("no"));
+    ApiInventoryOperationPost request = aliquotInputs();
+
+    assertThrows(
+        org.apache.shiro.authz.AuthorizationException.class,
+        () ->
+            controller.performOperation(
+                request, new BeanPropertyBindingResult(request, "request"), user));
+
+    verifyNoInteractions(tracker);
+    verifyNoInteractions(operationManager);
+  }
+
+  /** A Pool over two origins, in the generic endpoint's shape. */
+  private static ApiInventoryOperationPost poolInputs(long... originIds) {
+    ApiInventoryOperationPost request = new ApiInventoryOperationPost();
+    request.setOperationType("pool");
+    for (long id : originIds) {
+      ApiInventoryOperationOriginUpdate origin = new ApiInventoryOperationOriginUpdate();
+      origin.setId(id);
+      origin.setAmountTaken(
+          new ApiQuantityInfo(new BigDecimal("0.1"), RSUnitDef.MILLI_LITRE.getId()));
+      request.getOrigins().add(origin);
+    }
+    Map<String, Object> inputs = new LinkedHashMap<>();
+    inputs.put("sampleName", "Pooled");
+    inputs.put("eachAmount", Map.of("numericValue", 0.2, "unitId", RSUnitDef.MILLI_LITRE.getId()));
+    request.setInputs(inputs);
+    return request;
   }
 
   // --- the typed facades (M6) ---
@@ -424,7 +584,26 @@ class InventoryOperationsApiControllerTest {
     assertEquals(
         "Cannot take more from an origin than it currently holds.", renamed.getDefaultMessage());
     assertTrue(rejection.getFieldErrors("origins[0].amountTaken").isEmpty());
-    verifyNoInteractions(subSampleApiMgr);
+  }
+
+  /**
+   * The facade's BindException catch renames the core's field errors; a held lock is not one of
+   * them and must reach the caller as the 409 it is, not as a 400 with no field to correct
+   * (RSDEV-1231 S3).
+   */
+  @Test
+  void aHeldLockFromTheControllerPassesThroughTheFacadeUnchanged() {
+    when(tracker.attemptToLockForEdit(eq("SS100"), any()))
+        .thenReturn(lock("SS100", ApiInventoryEditLockStatus.CANNOT_LOCK));
+    ApiInventoryOperationRequests.Aliquot request = aliquotFacade();
+
+    InventoryEditLockHeldException held =
+        assertThrows(
+            InventoryEditLockHeldException.class,
+            () -> controller.aliquot(request, bindingResultFor(request), user));
+
+    assertEquals("SS100", held.getGlobalId());
+    verifyNoInteractions(operationManager);
   }
 
   @Test
