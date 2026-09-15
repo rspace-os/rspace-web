@@ -12,7 +12,7 @@ export async function createDynamicUser(
 ): Promise<DynamicUser> {
   const username = alphaNumericUnique(namePrefix);
   const apiKey = alphaNumericUnique("e2eApiKey");
-  await clientSysadmin.createUser({
+  const created = await clientSysadmin.createUser({
     username,
     password: DYNAMIC_USER_PASSWORD,
     email: `${username}@example.com`,
