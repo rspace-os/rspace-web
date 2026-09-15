@@ -117,6 +117,9 @@ importers:
       es-toolkit:
         specifier: 1.51.0
         version: 1.51.0
+      events:
+        specifier: 3.3.0
+        version: 3.3.0
       fast-bmp:
         specifier: 4.0.1
         version: 4.0.1
@@ -3377,6 +3380,10 @@ packages:
 
   eve-raphael@0.5.0:
     resolution: {integrity: sha512-jrxnPsCGqng1UZuEp9DecX/AuSyAszATSjf4oEcRxvfxa1Oux4KkIPKBAAWWnpdwfARtr+Q0o9aPYWjsROD7ug==}
+
+  events@3.3.0:
+    resolution: {integrity: sha512-mQw+2fkQbALzQ7V0MY0IqdnXNOeTtP4r0lN9z7AAawCXgqea7bDii20AYrIBrFd/Hx0M2Ocz6S111CaFkUcb0Q==}
+    engines: {node: '>=0.8.x'}
 
   eventsource-parser@3.1.1:
     resolution: {integrity: sha512-EKN1vKAMcZ8MlYMpaNuxN6R9yakzH6uajHcHVTqWJzvu5pWw9DyhbP35HH8MVBQ+dZjAfDxk+A8NiR9KWaXiyQ==}
@@ -9117,6 +9124,8 @@ snapshots:
   etag@1.8.1: {}
 
   eve-raphael@0.5.0: {}
+
+  events@3.3.0: {}
 
   eventsource-parser@3.1.1: {}
 
