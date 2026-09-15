@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
@@ -39,6 +40,9 @@ import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.service.SystemPropertyName;
+import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.inventory.InventoryEditLockHeldException;
 import com.researchspace.service.inventory.InventoryOperationConfigRegistry;
 import com.researchspace.service.inventory.InventoryOperationManager;
@@ -54,6 +58,7 @@ import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.springframework.http.HttpHeaders;
@@ -82,6 +87,15 @@ class InventoryOperationsApiControllerTest {
   private final SampleApiManager sampleApiMgr = mock(SampleApiManager.class);
   private final SubSampleApiManager subSampleApiMgr = mock(SubSampleApiManager.class);
   private final InventoryEditLockTracker tracker = mock(InventoryEditLockTracker.class);
+  private final SystemPropertyPermissionManager systemPropertyManager =
+      mock(SystemPropertyPermissionManager.class);
+
+  /** The sysadmin toggle turned off, as it is seeded (RSDEV-1231). */
+  private void operationsDenied() {
+    when(systemPropertyManager.isPropertyAllowed(
+            user, SystemPropertyName.INVENTORY_OPERATIONS_AVAILABLE))
+        .thenReturn(false);
+  }
 
   /**
    * An origin the controller can resolve: the subsample it names and the sample that holds it,
@@ -123,6 +137,13 @@ class InventoryOperationsApiControllerTest {
     controller.operationPostValidator = InventoryOperationPostValidatorTest.newValidator();
     controller.operationConfigs = new InventoryOperationConfigRegistry();
     controller.inventoryOperationManager = operationManager;
+    controller.systemPropertyManager = systemPropertyManager;
+    when(systemPropertyManager.isPropertyAllowed(
+            user, SystemPropertyName.INVENTORY_OPERATIONS_AVAILABLE))
+        .thenReturn(true);
+    MessageSourceUtils messages = mock(MessageSourceUtils.class);
+    when(messages.getMessage(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
+    controller.setMessageSource(messages);
   }
 
   /** An Aliquot in the shape the endpoint accepts: the origin, and the typed inputs as bound. */
@@ -260,7 +281,7 @@ class InventoryOperationsApiControllerTest {
     // The frontend has no copy of operations_config.json (DevDocs/adr/0007): the wizard fetches
     // this endpoint and renders whatever the backend's authoritative copy declares.
     MockMvc mvc = MockMvcBuilders.standaloneSetup(controller).build();
-    mvc.perform(get("/api/inventory/v1/operations/config"))
+    mvc.perform(get("/api/inventory/v1/operations/config").requestAttr("user", user))
         .andExpect(status().isOk())
         .andExpect(content().contentTypeCompatibleWith("application/json"))
         .andExpect(content().string(controller.operationConfigs.rawConfigJson()));
@@ -819,5 +840,57 @@ class InventoryOperationsApiControllerTest {
           "[" + nearMiss + "]");
     }
     verifyNoInteractions(operationManager);
+  }
+
+  @Test
+  void performIsRefusedWhileTheOperationsPropertyIsDenied() {
+    operationsDenied();
+    ApiInventoryOperationPost request = aliquotInputs();
+
+    assertEquals(
+        "errors.inventory.operations.notEnabled",
+        assertThrows(
+                UnsupportedOperationException.class,
+                () ->
+                    controller.performOperation(
+                        request, new BeanPropertyBindingResult(request, "request"), user))
+            .getMessage());
+    verifyNoInteractions(operationManager);
+  }
+
+  @Test
+  void everyOtherRouteIsRefusedTheSameWayWhileTheOperationsPropertyIsDenied() {
+    operationsDenied();
+    // The gate is the first statement of each route, ahead of body validation, so an empty body is
+    // still answered with the configured-unavailable refusal rather than a 400 that would tell a
+    // caller the feature is there.
+    Map<String, Executable> routes = new LinkedHashMap<>();
+    routes.put("config", () -> controller.getOperationsConfig(user));
+    ApiInventoryOperationRequests.Aliquot aliquot = new ApiInventoryOperationRequests.Aliquot();
+    routes.put("aliquot", () -> controller.aliquot(aliquot, bindingResultFor(aliquot), user));
+    ApiInventoryOperationRequests.Passage passage = new ApiInventoryOperationRequests.Passage();
+    routes.put("passage", () -> controller.passage(passage, bindingResultFor(passage), user));
+    ApiInventoryOperationRequests.Pool pool = new ApiInventoryOperationRequests.Pool();
+    routes.put("pool", () -> controller.pool(pool, bindingResultFor(pool), user));
+    ApiInventoryOperationRequests.Derive derive = new ApiInventoryOperationRequests.Derive();
+    routes.put("derive", () -> controller.derive(derive, bindingResultFor(derive), user));
+    ApiInventoryOperationRequests.Cryopreserve cryo =
+        new ApiInventoryOperationRequests.Cryopreserve();
+    routes.put("cryopreserve", () -> controller.cryopreserve(cryo, bindingResultFor(cryo), user));
+    ApiInventoryOperationRequests.Revive revive = new ApiInventoryOperationRequests.Revive();
+    routes.put("revive", () -> controller.revive(revive, bindingResultFor(revive), user));
+    ApiInventoryOperationRequests.Destroy destroy = new ApiInventoryOperationRequests.Destroy();
+    routes.put("destroy", () -> controller.destroy(destroy, bindingResultFor(destroy), user));
+
+    for (Map.Entry<String, Executable> route : routes.entrySet()) {
+      assertEquals(
+          "errors.inventory.operations.notEnabled",
+          assertThrows(
+                  UnsupportedOperationException.class, route.getValue(), "[" + route.getKey() + "]")
+              .getMessage(),
+          "[" + route.getKey() + "]");
+    }
+    verifyNoInteractions(operationManager);
+    verifyNoInteractions(tracker);
   }
 }

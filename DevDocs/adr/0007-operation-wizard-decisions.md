@@ -111,6 +111,13 @@ when the request is processed. Two requests decrementing the same origin from
 one read is a real, accepted risk here, not a scenario this branch defends
 against; see the branch's own commit history for the removal.
 
+**Off by default (RSDEV-1231).** The wizard and every `/operations` endpoint are
+gated on the system property `inventory.operations.available`, seeded `DENIED`,
+so a sysadmin turns the feature on per deployment at System > Configuration. The
+API answers 404 `CONFIGURED_UNAVAILABLE` while it is off, as
+`inventory.available` does, and the Process context-menu entry is hidden.
+`DENIED` rather than `DENIED_BY_DEFAULT` so a community admin cannot enable it.
+
 **An edit-session lock, and only that (RSDEV-1231).** What the wizard does take
 is the same courtesy lock the subsample edit form takes. When the wizard opens
 it locks every origin through `InventoryEditLockTracker`, holds them while it is

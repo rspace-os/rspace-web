@@ -190,6 +190,9 @@
         "totalNotStorable": "The new subsamples hold more in total than a quantity can store; reduce the amount or the number of subsamples.",
         "unknownType": "Unknown operation type [{0}]."
       },
+      "operations": {
+        "notEnabled": "Inventory operations API is not enabled on this RSpace instance (inventory.operations.available=DENIED)."
+      },
       "publicLink": {
         "unavailable": "The item you try to see is not publicly available right now."
       },
