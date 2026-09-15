@@ -4073,7 +4073,9 @@ export default interface Resources {
         "fieldReason": "{label}: {reason}",
         "headingWithProcess": "{operation}: {process}",
         "inProgress": "Performing operation…",
+        "lockExpired": "Your edit session on these subsamples has expired. Close the wizard and start again.",
         "originIndex": "{reason} (origin {index})",
+        "originsLocked": "Cannot start this operation",
         "perform": "Perform",
         "refreshFailed": "The operation completed, but the view could not be refreshed. Reload to see the changes.",
         "reviewEdit": "Review / edit",
@@ -6891,6 +6893,9 @@ export default interface Resources {
           "locationsImageTooLarge": "Container locations image cannot be larger than 10MB",
           "notFound": "No container with id: {0}",
           "typeRequired": "Container type (cType) is required and must be one of {0}."
+        },
+        "editLock": {
+          "heldBy": "{0} is currently being edited by {1}."
         },
         "export": {
           "exportMode": {
