@@ -2,9 +2,9 @@ package com.researchspace.service;
 
 import static com.researchspace.model.record.StructuredDocument.MAX_TAG_LENGTH;
 import static com.researchspace.service.DocumentTagManager.FINAL_DATA;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
@@ -30,9 +30,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.springframework.aop.framework.AopProxyUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,7 +50,7 @@ public class DocumentTagManagerTest extends SpringTransactionalTest {
   @Mock private OntologyDocManager ontologyDocManagerMock;
   @Mock private InventoryTagApiManager inventoryTagsApiManagerMock;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     openMocks(this);
     super.setUp();
@@ -84,7 +84,7 @@ public class DocumentTagManagerTest extends SpringTransactionalTest {
     formDao.save(ontologiesForm);
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }

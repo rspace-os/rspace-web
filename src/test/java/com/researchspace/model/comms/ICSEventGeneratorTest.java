@@ -1,7 +1,7 @@
 package com.researchspace.model.comms;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.record.TestFactory;
 import java.io.IOException;
@@ -11,20 +11,20 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import net.fortuna.ical4j.model.Date;
 import net.fortuna.ical4j.validate.ValidationException;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class ICSEventGeneratorTest {
 
   ICSEventGenerator icalgen;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     icalgen = new ICSEventGenerator();
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {}
 
   @Test

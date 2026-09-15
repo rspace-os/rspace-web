@@ -3,14 +3,14 @@ package com.researchspace.maintenance.model;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class WhiteListedSysAdminIPAddressTest {
 
   WhiteListedSysAdminIPAddress ip1, ip2;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {}
 
   @Test

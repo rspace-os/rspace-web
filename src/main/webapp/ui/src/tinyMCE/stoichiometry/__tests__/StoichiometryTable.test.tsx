@@ -470,6 +470,10 @@ describe("StoichiometryTable", () => {
       expect(await screen.findByRole("dialog", { name: "common:stoichiometry.addReagent.title" })).toBeVisible();
     });
 
+    // The Gallery picker is a React.lazy import with a large dependency graph,
+    // and jsdom pays the whole transform cost inside the test. It measured
+    // ~9.7s on CI against the old 10s wait, so any slowdown failed the test;
+    // the waits below are sized for headroom, not for expected duration.
     it("opens the Gallery dialog from the Add Chemical menu", async () => {
       const { user } = await renderLoadedTable();
 
@@ -480,13 +484,10 @@ describe("StoichiometryTable", () => {
         }),
       );
 
-      // The Gallery picker is a React.lazy import with a large dependency
-      // graph; allow extra time for the chunk to load and render before the
-      // dialog appears (the sibling PubChem/SMILES dialogs are not lazy).
       expect(
-        await screen.findByRole("dialog", { name: "common:appBar.sections.gallery.title" }, { timeout: 10000 }),
+        await screen.findByRole("dialog", { name: "common:appBar.sections.gallery.title" }, { timeout: 30000 }),
       ).toBeVisible();
-    });
+    }, 45000);
 
     it("keeps Update Inventory Stock disabled until inventory quantities load", async () => {
       let releaseSubSampleResponses: () => void = () => {};

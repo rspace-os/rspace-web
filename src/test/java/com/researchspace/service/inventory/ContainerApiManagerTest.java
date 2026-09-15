@@ -58,8 +58,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.apache.commons.io.IOUtils;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.context.ApplicationEventPublisher;
 
@@ -68,7 +68,7 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
   private ApplicationEventPublisher mockPublisher;
   User testUser;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     testUser = createAndSaveUserIfNotExists(getRandomAlphabeticString("api"));
     initialiseContentWithExampleContent(testUser);
@@ -668,6 +668,26 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
         .publishEvent(Mockito.any(InventoryAccessEvent.class));
 
     Mockito.verifyNoMoreInteractions(mockPublisher);
+  }
+
+  @Test
+  public void twoContainerUpdatesInOneTransactionBumpVersionOnce() {
+    // RSDEV-1319: Envers writes one revision per entity per transaction, so a second update in
+    // the same transaction must not advance the version past the single revision carrying it
+    ApiContainer newContainer = createBasicContainerForUser(testUser);
+
+    ApiContainer firstUpdate = new ApiContainer();
+    firstUpdate.setId(newContainer.getId());
+    firstUpdate.setName("first rename");
+    containerApiMgr.updateApiContainer(firstUpdate, testUser);
+
+    ApiContainer secondUpdate = new ApiContainer();
+    secondUpdate.setId(newContainer.getId());
+    secondUpdate.setName("second rename");
+    ApiContainer updatedContainer = containerApiMgr.updateApiContainer(secondUpdate, testUser);
+
+    assertEquals("second rename", updatedContainer.getName());
+    assertEquals(2L, updatedContainer.getVersion());
   }
 
   @Test

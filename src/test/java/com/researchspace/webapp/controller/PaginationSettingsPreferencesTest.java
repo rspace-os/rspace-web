@@ -2,7 +2,7 @@ package com.researchspace.webapp.controller;
 
 import static com.researchspace.core.testutil.CoreTestUtils.assertIllegalArgumentException;
 import static com.researchspace.model.preference.Preference.FORM_RESULTS_PER_PAGE;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
@@ -13,24 +13,18 @@ import com.researchspace.model.preference.Preference;
 import com.researchspace.service.UserManager;
 import com.researchspace.testutils.TestFactory;
 import java.util.EnumSet;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class PaginationSettingsPreferencesTest {
-
-  @Rule public MockitoRule rule = MockitoJUnit.rule();
   @Mock UserManager userMgr;
   @InjectMocks PaginationSettingsPreferences paginationSettingsPreferences;
   User anyUser = TestFactory.createAnyUser("any");
-
-  @Before
-  public void setUp() throws Exception {}
 
   @Test
   public void rejectNonRESULTS_PER_PAGEPrefs() {

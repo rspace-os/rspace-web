@@ -1,30 +1,35 @@
 package com.researchspace.model.record;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.User;
 import com.researchspace.model.core.RecordType;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class BreadcrumbGeneratorTest {
 
   private DefaultBreadcrumbGenerator bGen;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     bGen = new DefaultBreadcrumbGenerator();
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testGenerateBreadcrumbNoNull1stArg() {
-    bGen.generateBreadcrumb(null, TestFactory.createAFolder("any", createAUser()));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> bGen.generateBreadcrumb(null, TestFactory.createAFolder("any", createAUser())));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testGenerateBreadcrumbNoNull2ndArg() {
-    bGen.generateBreadcrumb(TestFactory.createAFolder("any", createAUser()), null);
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> bGen.generateBreadcrumb(TestFactory.createAFolder("any", createAUser()), null));
   }
 
   private User createAUser() {

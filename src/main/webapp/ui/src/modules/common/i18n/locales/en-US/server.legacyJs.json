@@ -931,8 +931,6 @@
         "chooseFormTitle": "Choose a form",
         "displaySettingsAction": "Display Workspace Settings",
         "folderEmpty": "This folder is empty.",
-        "importEvernoteFileType": "Evernote XML",
-        "importEvernoteTitle": "Import from Evernote",
         "importWordFileType": "Word or Open Office",
         "importWordTitle": "Import from Word/Open Office",
         "listView": "List View",

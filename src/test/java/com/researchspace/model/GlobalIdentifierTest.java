@@ -1,21 +1,22 @@
 package com.researchspace.model;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.GlobalIdentifier;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class GlobalIdentifierTest {
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {}
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {}
 
   @Test
@@ -29,28 +30,44 @@ public class GlobalIdentifierTest {
     assertEquals(gid3, gid4);
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testGlobalIdentifierNotNullString() {
-    assertFalse(GlobalIdentifier.isValid(null));
-    new GlobalIdentifier(null);
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          assertFalse(GlobalIdentifier.isValid(null));
+          new GlobalIdentifier(null);
+        });
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testGlobalIdentifierStringNotEmpty() {
-    assertFalse(GlobalIdentifier.isValid(""));
-    new GlobalIdentifier("");
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          assertFalse(GlobalIdentifier.isValid(""));
+          new GlobalIdentifier("");
+        });
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testGlobalIdentifierStringWrongSyntax() {
-    assertFalse(GlobalIdentifier.isValid("12345"));
-    new GlobalIdentifier("12345");
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          assertFalse(GlobalIdentifier.isValid("12345"));
+          new GlobalIdentifier("12345");
+        });
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testGlobalIdentifierStringUnknownPrefix() {
-    assertFalse(GlobalIdentifier.isValid("XX12345"));
-    new GlobalIdentifier("XX12345");
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          assertFalse(GlobalIdentifier.isValid("XX12345"));
+          new GlobalIdentifier("XX12345");
+        });
   }
 
   @Test

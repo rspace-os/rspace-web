@@ -1,7 +1,7 @@
 package com.researchspace.service;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.Constants;
 import com.researchspace.model.Community;
@@ -11,9 +11,9 @@ import com.researchspace.model.preference.HierarchicalPermission;
 import com.researchspace.model.system.SystemProperty;
 import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 // Most of these tests are about enabling system features hierarchically described in RSPAC-1185
@@ -23,12 +23,12 @@ public class SystemPropertyManagerIT extends RealTransactionSpringTestBase {
   private @Autowired SystemPropertyPermissionManager systemPropertyPermissionUtils;
   private User subject;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }

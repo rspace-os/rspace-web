@@ -176,6 +176,42 @@ class InventoryIdentifiersApiControllerTest {
   }
 
   @Test
+  void deleteAllowsB2instClosedReviewStates() {
+    for (String state : java.util.List.of("declined", "cancelled", "expired")) {
+      ApiInventoryDOI doi = new ApiInventoryDOI();
+      doi.setDoiType("PIDINST_B2INST");
+      doi.setState(state);
+      // unassociated path keeps the test small; the state gate under test runs before the split
+      when(mockIdentifierMgr.getIdentifierById(7L)).thenReturn(doi);
+      when(mockIdentifierMgr.deleteUnassociatedIdentifier(doi, user)).thenReturn(true);
+
+      assertTrue(controller.deleteIdentifier(7L, user));
+    }
+  }
+
+  @Test
+  void deleteRejectsB2instOpenOrPublishedStates() {
+    for (String state : java.util.List.of("submitted", "created", "accepted")) {
+      ApiInventoryDOI doi = new ApiInventoryDOI();
+      doi.setDoiType("PIDINST_B2INST");
+      doi.setState(state);
+      when(mockIdentifierMgr.getIdentifierById(7L)).thenReturn(doi);
+
+      assertThrows(IllegalArgumentException.class, () -> controller.deleteIdentifier(7L, user));
+    }
+  }
+
+  @Test
+  void deleteRejectsClosedReviewStatesForNonB2instTypes() {
+    ApiInventoryDOI doi = new ApiInventoryDOI();
+    doi.setDoiType("IGSN_DATACITE");
+    doi.setState("declined");
+    when(mockIdentifierMgr.getIdentifierById(7L)).thenReturn(doi);
+
+    assertThrows(IllegalArgumentException.class, () -> controller.deleteIdentifier(7L, user));
+  }
+
+  @Test
   void deleteTranslatesMissingIdentifierTo404() {
     // getIdentifierById -> GenericDaoHibernate#get throws (never returns null) for an unknown id
     when(mockIdentifierMgr.getIdentifierById(404L))
@@ -190,6 +226,31 @@ class InventoryIdentifiersApiControllerTest {
         .thenThrow(new ObjectRetrievalFailureException(DigitalObjectIdentifier.class, 404L));
 
     assertThrows(NotFoundException.class, () -> controller.publishIdentifier(404L, user));
+  }
+
+  @Test
+  void refreshGatesByIdentifierTypeAndDelegates() {
+    ApiInventoryDOI pidinstDoi = new ApiInventoryDOI();
+    pidinstDoi.setDoiType("PIDINST_B2INST");
+    InventoryRecord instrumentRecord = recordWithOid("IN12345");
+    when(mockIdentifierMgr.getIdentifierById(5L)).thenReturn(pidinstDoi);
+    when(mockIdentifierMgr.getInventoryRecordByIdentifierId(5L)).thenReturn(instrumentRecord);
+    when(mockIdentifierMgr.refreshIdentifier(any(), eq(user)))
+        .thenReturn(recordWithOneIdentifier());
+
+    controller.refreshIdentifier(5L, user);
+
+    verify(mockApiHandler)
+        .assertInventoryAndIdentifierTypeEnabled(user, InventorySettingType.PIDINST);
+    verify(mockIdentifierMgr).refreshIdentifier(any(), eq(user));
+  }
+
+  @Test
+  void refreshTranslatesMissingIdentifierTo404() {
+    when(mockIdentifierMgr.getIdentifierById(404L))
+        .thenThrow(new ObjectRetrievalFailureException(DigitalObjectIdentifier.class, 404L));
+
+    assertThrows(NotFoundException.class, () -> controller.refreshIdentifier(404L, user));
   }
 
   @Test

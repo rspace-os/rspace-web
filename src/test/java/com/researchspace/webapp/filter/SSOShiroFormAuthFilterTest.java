@@ -1,9 +1,9 @@
 package com.researchspace.webapp.filter;
 
 import static com.researchspace.webapp.filter.RemoteUserRetrievalPolicy.SSO_DUMMY_PASSWORD;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.auth.AccountEnabledAuthorizer;
 import com.researchspace.auth.LoginAuthorizer;
@@ -18,9 +18,9 @@ import com.researchspace.testutils.TestFactory;
 import com.researchspace.webapp.controller.SignupController;
 import com.researchspace.webapp.controller.WorkspaceController;
 import org.apache.shiro.SecurityUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -45,7 +45,7 @@ public class SSOShiroFormAuthFilterTest extends SpringTransactionalTest {
   @Qualifier("manualLoginHelper")
   private LoginHelper loginHelper;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     this.remoteUserPolicy = new MockRemoteUserPolicy();
     filter = new SSOShiroFormAuthFilterExt(remoteUserPolicy);
@@ -58,7 +58,7 @@ public class SSOShiroFormAuthFilterTest extends SpringTransactionalTest {
     resp = new MockHttpServletResponse();
   }
 
-  @After
+  @AfterEach
   public void tearDown() {
     RSpaceTestUtils.logout();
   }
@@ -138,9 +138,9 @@ public class SSOShiroFormAuthFilterTest extends SpringTransactionalTest {
     req.setRequestURI("/login");
     assertTrue(filter.isAccessAllowed(req, resp, null));
     assertEquals(
-        "should be redirected to workspace, but location was " + resp.getHeaderValue("Location"),
         WorkspaceController.ROOT_URL,
-        resp.getHeaderValue("Location"));
+        resp.getHeaderValue("Location"),
+        "should be redirected to workspace, but location was " + resp.getHeaderValue("Location"));
   }
 
   @Test
@@ -150,9 +150,9 @@ public class SSOShiroFormAuthFilterTest extends SpringTransactionalTest {
     req.setRequestURI("/login?maintenanceLogin");
     assertTrue(filter.isAccessAllowed(req, resp, null));
     assertEquals(
-        "should be redirected to workspace, but location was " + resp.getHeaderValue("Location"),
         WorkspaceController.ROOT_URL,
-        resp.getHeaderValue("Location"));
+        resp.getHeaderValue("Location"),
+        "should be redirected to workspace, but location was " + resp.getHeaderValue("Location"));
   }
 
   @Test
@@ -166,9 +166,9 @@ public class SSOShiroFormAuthFilterTest extends SpringTransactionalTest {
     req.setRequestURI("/login");
     assertFalse(filter.isAccessAllowed(req, resp, null));
     assertEquals(
-        "sso username matching username of user with alias should redirected to info page",
         SSOShiroFormAuthFilterExt.SSOINFO_USERNAMENOTALIAS_URL,
-        resp.getHeaderValue("Location"));
+        resp.getHeaderValue("Location"),
+        "sso username matching username of user with alias should redirected to info page");
 
     // confirm that user can login with alias
     logoutAndResetMockRequestResponse();
@@ -185,9 +185,9 @@ public class SSOShiroFormAuthFilterTest extends SpringTransactionalTest {
     req.setRequestURI("/login");
     assertFalse(filter.isAccessAllowed(req, resp, null));
     assertEquals(
-        "sso username matching internal user should be redirected to username conflict page",
         SSOShiroFormAuthFilterExt.SSOINFO_USERNAMECONFLICT_URL,
-        resp.getHeaderValue("Location"));
+        resp.getHeaderValue("Location"),
+        "sso username matching internal user should be redirected to username conflict page");
   }
 
   @Test

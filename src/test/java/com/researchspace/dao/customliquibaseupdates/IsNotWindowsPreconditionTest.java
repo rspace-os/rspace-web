@@ -1,12 +1,12 @@
 package com.researchspace.dao.customliquibaseupdates;
 
 import static org.apache.commons.lang3.SystemUtils.IS_OS_WINDOWS;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import liquibase.exception.CustomPreconditionErrorException;
 import liquibase.exception.CustomPreconditionFailedException;
 import liquibase.precondition.CustomPrecondition;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class IsNotWindowsPreconditionTest {
 

@@ -209,7 +209,32 @@ function generate$RecordInfoPanel(info) {
       $.get('/gallery/ajax/getLinkedDocuments/' + info.id, function (resp) {
         if (resp.data) {
           var data = resp.data;
-          var templateData = { items: data, isEmpty: (data.length == 0 ? true : false) };
+          // RSDEV-1329: the endpoint now returns owner-only placeholders (no id/oid) for
+          // documents the caller cannot read. Aggregate those into a per-owner "private" count
+          // rather than rendering empty /globalId/ links. Mirrors _setInfoPanelInternalLinksHtml
+          // below and the React consumer in ui/src/modules/workspace/linkedRecords.ts.
+          var items = [];
+          // Object.create(null): owner full names are user-controlled and must not collide
+          // with Object.prototype members (e.g. a user named "__proto__" or "constructor")
+          var privateCounts = Object.create(null);
+          $.each(data, function (i, row) {
+            if (row.id != null && row.oid) {
+              items.push(row);
+            } else {
+              var owner = row.ownerFullName || '';
+              privateCounts[owner] = (privateCounts[owner] || 0) + 1;
+            }
+          });
+          var privateByOwner = [];
+          $.each(privateCounts, function (owner, count) {
+            privateByOwner.push({ text: RS.msg("legacyjs.workspace.recordInfoPanel.privateDocsBelongingTo", count, owner) });
+          });
+          var templateData = {
+            items: items,
+            hasReadable: items.length > 0,
+            privateByOwner: privateByOwner,
+            isEmpty: data.length === 0
+          };
           $('.linkedRecordsForAttachments').html('');
           var linkedRecordsTemplate = $('#linkedRecordsTemplate').html();
           var linkedRecordsHtml = Mustache.render(linkedRecordsTemplate, templateData);

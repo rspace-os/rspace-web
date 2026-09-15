@@ -15,14 +15,14 @@ import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.model.Group;
 import com.researchspace.model.User;
 import com.researchspace.testutils.SpringTransactionalTest;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class InventoryEditLockTrackerTest extends SpringTransactionalTest {
 
   private User testUser;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     testUser = createAndSaveUserIfNotExists(getRandomAlphabeticString("editLock"));
     initialiseContentWithEmptyContent(testUser);

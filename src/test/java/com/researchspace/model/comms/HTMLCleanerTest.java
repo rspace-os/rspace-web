@@ -1,25 +1,25 @@
 package com.researchspace.model.comms;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class HTMLCleanerTest {
 
   HTMLCleaner rtu;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     rtu = new HTMLCleaner();
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {}
 
   @Test

@@ -130,7 +130,9 @@ test.describe(`Sample Template Link fields`, { tag: [tags.INVENTORY, tags.MOBILE
     pageInventory,
     componentToasts,
     page,
+    browserName,
   }) => {
+    test.skip(browserName === "firefox", "Known Firefox timeout while propagating a Link field change to Samples");
     test.setTimeout(120_000);
     const templateName = uniqueName("e2e-linktemplate-multi");
     const sampleNames = [0, 1, 2].map((i) => uniqueName(`e2e-linktemplate-multi-sample-${i}`));

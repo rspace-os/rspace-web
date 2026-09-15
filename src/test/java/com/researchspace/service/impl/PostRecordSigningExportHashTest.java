@@ -20,20 +20,17 @@ import com.researchspace.testutils.TestFactory;
 import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.Future;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.scheduling.annotation.AsyncResult;
 
+@ExtendWith(MockitoExtension.class)
 public class PostRecordSigningExportHashTest {
-
-  @Rule public MockitoRule rule = MockitoJUnit.rule();
   @Mock CommunicationManager comms;
   @Mock FileStore fStore;
   @Mock SignatureDao sigDao;
@@ -46,7 +43,7 @@ public class PostRecordSigningExportHashTest {
   SigningResult signatureResult = null;
   ExportFileResult mockPdfExportFile = null;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     postSigner.setServerURLPrefix("http://anywhere.com");
     any = TestFactory.createAnyUser("any");
@@ -58,9 +55,6 @@ public class PostRecordSigningExportHashTest {
     signatureResult = new SigningResult(doc, "OK", sig);
     mockPdfExportFile = new ExportFileResult(File.createTempFile("pdf", ".pdf"), null);
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void testBasicExportAndSigning() throws IOException {

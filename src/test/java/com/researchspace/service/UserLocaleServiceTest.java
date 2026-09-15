@@ -1,10 +1,10 @@
 package com.researchspace.service;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.model.User;
 import java.util.Locale;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
 public class UserLocaleServiceTest {

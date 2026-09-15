@@ -1,13 +1,13 @@
 package com.researchspace.core.util;
 
 import static com.researchspace.core.util.RSCollectionUtils.mergeLists;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
 import java.util.List;
 import org.apache.commons.collections4.CollectionUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class RSCollectionUtilsTest {
 

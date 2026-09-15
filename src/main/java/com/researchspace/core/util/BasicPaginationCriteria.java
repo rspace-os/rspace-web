@@ -1,7 +1,7 @@
 package com.researchspace.core.util;
 
 import java.io.Serializable;
-import java.util.regex.Matcher;
+import java.util.Set;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import org.apache.commons.beanutils.BeanUtils;
@@ -304,12 +304,23 @@ public class BasicPaginationCriteria<T> implements Serializable, IPagination<T> 
    *
    * @see com.axiope.util.IPagination#isOrderBySafe(java.lang.String)
    */
+  /**
+   * Dispatch keys for the sysadmin usage listing (see {@code SysAdminManager}), which matches them
+   * with {@code equals} to select an aggregate query branch rather than using them as sort fields.
+   *
+   * <p>This predicate is shared by every listing, so these literals are accepted everywhere but
+   * only interpreted on that one path. A listing that concatenates its sort field instead (form and
+   * workspace listings do) would emit them verbatim and fail to parse, which is a rejected query
+   * rather than an injection: matching is exact, so no payload built around these names, such as
+   * {@code fileUsage(),rand()}, satisfies either the set or the identifier pattern.
+   */
+  private static final Set<String> VIRTUAL_SORT_TOKENS = Set.of("fileUsage()", "recordCount()");
+
   @Override
   public boolean isOrderBySafe(String orderBy) {
     if (StringUtils.isEmpty(orderBy)) {
       return true;
     }
-    Matcher m = ORDERBYBLACKLIST.matcher(orderBy);
-    return !m.find();
+    return VIRTUAL_SORT_TOKENS.contains(orderBy) || SAFE_ORDER_BY_TOKEN.matcher(orderBy).matches();
   }
 }

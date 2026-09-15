@@ -5,10 +5,10 @@ import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static com.researchspace.core.util.DateUtil.localDateToDateUTC;
 import static com.researchspace.core.util.TransformerUtils.toList;
 import static com.researchspace.testutils.MockAndStubUtils.modifyUserCreationDate;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.jdbc.JdbcTestUtils.countRowsInTable;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -28,8 +28,8 @@ import com.researchspace.model.User;
 import com.researchspace.testutils.MockAndStubUtils;
 import com.researchspace.testutils.TestGroup;
 import java.time.LocalDate;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.TestPropertySource;
@@ -49,7 +49,7 @@ public class SysadminUsersAPIControllerMVCIT extends API_MVC_TestBase {
 
   private @Autowired JdbcTemplate jdbcTemplate;
 
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     super.setUp();
   }

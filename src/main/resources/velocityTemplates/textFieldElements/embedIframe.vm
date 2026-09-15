@@ -18,5 +18,4 @@
 
 <iframe $width $height $src $title
     $border $frameborder $marginwheight $marginwidth
-    $allow $referrerpolicy $allowfullscreen $allowtransparency $scrolling >
-</iframe>
+    $allow $referrerpolicy $allowfullscreen $allowtransparency $scrolling ></iframe>

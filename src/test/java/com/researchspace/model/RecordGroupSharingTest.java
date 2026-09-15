@@ -1,6 +1,6 @@
 package com.researchspace.model;
 
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.when;
@@ -29,7 +29,7 @@ public class RecordGroupSharingTest {
     RecordGroupSharing rgs = new RecordGroupSharing();
     Date date = new Date();
     rgs.setCreationDate(date);
-    assertFalse("RGS should store its own date", date == rgs.getCreationDate());
+    assertFalse(date == rgs.getCreationDate(), "RGS should store its own date");
     date.setTime(1L);
     assertFalse(rgs.getCreationDate().getTime() == date.getTime());
   }

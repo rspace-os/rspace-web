@@ -1,6 +1,7 @@
 import { expect, request } from "@playwright/test";
+import { createDynamicUser } from "@/__tests__/e2e/createDynamicUser";
 import { env } from "@/__tests__/e2e/env";
-import { dynamicUserTest as base, createDynamicUser } from "@/__tests__/e2e/fixtures/dynamicUser";
+import { dynamicUserTest as base } from "@/__tests__/e2e/fixtures/dynamicUser";
 import { GroupViewPage } from "@/__tests__/e2e/pageObjects/groups/GroupViewPage";
 import { tags } from "@/__tests__/e2e/tags";
 import { alphaNumericUnique } from "@/__tests__/e2e/testData";

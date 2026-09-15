@@ -2,13 +2,16 @@ package com.researchspace.search.impl;
 
 import static com.axiope.search.SearchConstants.RECORDS_SEARCH_OPTION;
 import static com.researchspace.testutils.TestFactory.createNRecords;
-import static org.junit.Assert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Collections;
 import java.util.Set;
 import org.apache.lucene.search.BooleanQuery;
 import org.hamcrest.collection.IsIterableContainingInAnyOrder;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class LuceneSrchCfgTest extends LuceneSrchCfgTestBase {
 

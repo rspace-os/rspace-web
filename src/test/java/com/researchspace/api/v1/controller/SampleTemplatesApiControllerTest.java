@@ -26,8 +26,8 @@ import com.researchspace.service.impl.ContentInitializerForDevRunManager;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.List;
 import java.util.Optional;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindException;
@@ -40,7 +40,7 @@ public class SampleTemplatesApiControllerTest extends SpringTransactionalTest {
   private BindingResult mockBindingResult = mock(BindingResult.class);
   private User testUser;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     testUser = createInitAndLoginAnyUser();
     assertTrue(testUser.isContentInitialized());

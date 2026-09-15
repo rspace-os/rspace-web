@@ -17,9 +17,9 @@ import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import java.util.List;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -30,12 +30,12 @@ public class InventoryAuditApiManagerIT extends RealTransactionSpringTestBase {
 
   private @Autowired InventoryAuditApiManager inventoryAuditMgr;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }

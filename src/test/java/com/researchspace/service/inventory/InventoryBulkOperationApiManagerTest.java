@@ -28,8 +28,8 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
@@ -42,7 +42,7 @@ public class InventoryBulkOperationApiManagerTest extends SpringTransactionalTes
 
   @Autowired private InventoryMoveHelper moveHelper;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     testUser = createAndSaveUserIfNotExists(getRandomAlphabeticString("api"));
     initialiseContentWithEmptyContent(testUser);

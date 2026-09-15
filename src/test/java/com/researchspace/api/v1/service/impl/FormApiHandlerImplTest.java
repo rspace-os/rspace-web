@@ -19,19 +19,17 @@ import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.session.UserSessionTracker;
 import com.researchspace.testutils.TestFactory;
 import java.util.List;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+@ExtendWith(MockitoExtension.class)
 public class FormApiHandlerImplTest {
-
-  public @Rule MockitoRule rule = MockitoJUnit.rule();
   @Mock FormManager formMgr;
   @InjectMocks RSFormApiHandlerImpl impl;
   User anyUser;
@@ -41,7 +39,7 @@ public class FormApiHandlerImplTest {
   UserSessionTracker sessionTracker;
   FormPost toPost;
 
-  @Before
+  @BeforeEach
   public void setup() {
     ReflectionTestUtils.setField(impl, "messages", new MessageSourceUtils(new JsonMessageSource()));
     anyUser = TestFactory.createAnyUser("any");

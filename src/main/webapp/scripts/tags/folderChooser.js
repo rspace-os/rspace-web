@@ -45,15 +45,10 @@ function setFolderChooserLinkDesc(folderChooserId, linkDesc) {
     $('#folderChooserLnk' + folderChooserId).html(linkDesc);
 }
 
-function setFolderChooserDirListingParams(folderChooserId, params) {
-    $('#folderChooserTree' + folderChooserId).data('dirListingUrlParams', params)
-}
-
 function _setUpFolderTree(folderId, folderChooserId, afterDirSelectionCallback) {
     var scriptUrl = '/fileTree/ajax/directoriesInModel';
     const folderChooserEl = $('#folderChooserTree' + folderChooserId);
-    var dirListingParams = folderChooserEl.data('dirListingUrlParams');
-    var scriptUrlParams = dirListingParams || 'showNotebooks=true';
+    var scriptUrlParams = 'showNotebooks=true';
 
     folderChooserEl.fileTree({
         // custom argument! This is so we show the root folder of the 

@@ -12,7 +12,6 @@ import static com.researchspace.service.IntegrationsHandler.DMPTOOL_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.DRYAD_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.DSW_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.EGNYTE_APP_NAME;
-import static com.researchspace.service.IntegrationsHandler.EVERNOTE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.FIELDMARK_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.FIGSHARE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.GALAXY_APP_NAME;
@@ -32,11 +31,11 @@ import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_ALIA
 import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_APIKEY;
 import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_CONFIGURED_SERVERS;
 import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_URL;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -47,7 +46,6 @@ import com.researchspace.model.preference.BoxLinkType;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.service.IntegrationsHandler;
 import com.researchspace.service.UserConnectionManager;
-import com.researchspace.service.impl.ConditionalTestRunner;
 import java.security.Principal;
 import java.util.HashMap;
 import java.util.List;
@@ -55,16 +53,14 @@ import java.util.Map;
 import java.util.TreeMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.util.Strings;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MvcResult;
 
-@RunWith(ConditionalTestRunner.class)
 @TestPropertySource(
     properties = {
       "pyrat.server.config={\"mice server\": {\"url\": \"https://pyrat1.server.com\", \"token\":"
@@ -78,19 +74,19 @@ import org.springframework.test.web.servlet.MvcResult;
     })
 public class IntegrationControllerMVCIT extends MVCTestBase {
 
-  final int TOTAL_INTEGRATIONS = 29;
+  final int TOTAL_INTEGRATIONS = 28;
   Principal mockPrincipal = null;
 
   @Autowired private UserConnectionManager userConnectionManager;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     mockPrincipal = piUser::getUsername;
     logoutAndLoginAs(piUser);
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }
@@ -122,7 +118,6 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
     expectedOptions.put(FIGSHARE_APP_NAME, new String[] {});
     expectedOptions.put(OWNCLOUD_APP_NAME, new String[] {});
     expectedOptions.put(NEXTCLOUD_APP_NAME, new String[] {});
-    expectedOptions.put(EVERNOTE_APP_NAME, new String[] {});
     expectedOptions.put(EGNYTE_APP_NAME, new String[] {});
     expectedOptions.put(MSTEAMS_APP_NAME, new String[] {});
     expectedOptions.put(PROTOCOLS_IO_APP_NAME, new String[] {}); // no token if not authenticated
@@ -145,11 +140,11 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
       String integrationName = (String) info.get("name");
       Map options = (Map) info.get("options");
       assertEquals(
-          "For " + integrationName, expectedOptions.get(integrationName).length, options.size());
+          expectedOptions.get(integrationName).length, options.size(), "For " + integrationName);
       for (String expectedOption : expectedOptions.get(integrationName)) {
         assertTrue(
-            integrationName + " should contain " + expectedOption,
-            options.containsKey(expectedOption));
+            options.containsKey(expectedOption),
+            integrationName + " should contain " + expectedOption);
       }
     }
   }

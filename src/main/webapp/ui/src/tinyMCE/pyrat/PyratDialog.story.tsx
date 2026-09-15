@@ -12,7 +12,7 @@ import PyratDialog from "./PyratDialog";
  * plugin glue. With a single configured server the dialog auto-selects it and
  * mounts the animal listing, which is where the pagination logic lives.
  */
-export function PyratDialogStory(): React.ReactNode {
+export function PyratDialogStory({ onInsert }: { onInsert?: (html: string) => void } = {}): React.ReactNode {
   const [open, setOpen] = React.useState(true);
   return (
     <StyledEngineProvider injectFirst>
@@ -37,6 +37,9 @@ export function PyratDialogStory(): React.ReactNode {
                 },
                 execCommand: (command: string, ui: boolean, value?: string) => {
                   console.log(`Executed command: ${command}`, { ui, value });
+                  if (command === "mceInsertContent" && value) {
+                    onInsert?.(value);
+                  }
                 },
               }}
             />

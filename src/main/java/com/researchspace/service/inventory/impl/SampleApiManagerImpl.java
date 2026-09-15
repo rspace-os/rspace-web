@@ -689,7 +689,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
   public void saveDbSampleUpdate(SampleEntity dbSample, User user) {
     dbSample.setModificationDate(new Date());
     dbSample.setModifiedBy(user.getUsername(), IActiveUserStrategy.CHECK_OPERATE_AS);
-    dbSample.increaseVersion();
+    increaseVersionOncePerTransaction(dbSample);
     dbSample = saveSampleEntity(dbSample);
     publisher.publishEvent(new InventoryEditingEvent(dbSample, user));
   }

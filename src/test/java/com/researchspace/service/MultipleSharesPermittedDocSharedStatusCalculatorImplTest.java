@@ -1,7 +1,7 @@
 package com.researchspace.service;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.core.util.TransformerUtils;
@@ -14,20 +14,18 @@ import com.researchspace.service.impl.MultipleSharesPermittedDocSharedStatusCalc
 import com.researchspace.testutils.TestFactory;
 import java.util.Collections;
 import java.util.List;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class MultipleSharesPermittedDocSharedStatusCalculatorImplTest {
-
-  @Rule public MockitoRule rule = MockitoJUnit.rule();
   @Mock private RecordGroupSharingDao groupSharingDao;
   MultipleSharesPermittedDocSharedStatusCalculatorImpl sharingStatusImpl;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     sharingStatusImpl = new MultipleSharesPermittedDocSharedStatusCalculatorImpl();
     sharingStatusImpl.setGroupshareRecordDao(groupSharingDao);

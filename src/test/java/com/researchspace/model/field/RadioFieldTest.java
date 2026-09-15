@@ -1,17 +1,17 @@
 package com.researchspace.model.field;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class RadioFieldTest {
 
   RadioField nf;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     RadioFieldForm rft = new RadioFieldForm();
 
@@ -25,7 +25,7 @@ public class RadioFieldTest {
     nf.setId(5L);
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {}
 
   @Test

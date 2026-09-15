@@ -1,8 +1,8 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -14,9 +14,9 @@ import com.researchspace.model.Group;
 import com.researchspace.model.User;
 import com.researchspace.model.views.PublicUserList;
 import java.security.Principal;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -24,12 +24,12 @@ public class DirectoryControllerMVCIT extends MVCTestBase {
 
   @Autowired DirectoryController directoryController;
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
   }
@@ -162,14 +162,14 @@ public class DirectoryControllerMVCIT extends MVCTestBase {
     assertEquals(uui2.getTotalHits().intValue(), totalHits);
     PublicUserList last = uui2.getLastResult();
     assertEquals(
+        first,
+        last,
         "mismatch: "
             + first.getUserInfo().getLastName()
             + "/"
             + last.getUserInfo().getLastName()
             + "; total hits: "
-            + totalHits,
-        first,
-        last);
+            + totalHits);
   }
 
   @Test

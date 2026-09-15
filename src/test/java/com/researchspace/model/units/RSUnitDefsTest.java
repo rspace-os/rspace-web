@@ -2,10 +2,10 @@ package com.researchspace.model.units;
 
 import static java.util.stream.Collectors.groupingBy;
 import static javax.measure.MetricPrefix.MILLI;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.core.util.JacksonUtil;
 import java.util.EnumSet;
@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import javax.measure.Quantity;
 import javax.measure.quantity.Temperature;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import tech.units.indriya.quantity.Quantities;
 import tech.units.indriya.unit.Units;
 

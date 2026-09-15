@@ -1,13 +1,14 @@
 package com.researchspace.model.permissions;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class PropertyConstraintTest {
 
@@ -27,10 +28,10 @@ public class PropertyConstraintTest {
     }
   }
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {}
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {}
 
   @Test
@@ -107,19 +108,31 @@ public class PropertyConstraintTest {
     assertFalse(constraint.satisfies(toTest));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testPropertyConstraintInvalidCharactersThrowsIAE() {
-    constraint = create("any", "dsds_");
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          constraint = create("any", "dsds_");
+        });
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testPropertyConstraintInvalidCharactersThrowsIAE2() {
-    constraint = create("any", "ds:ds");
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          constraint = create("any", "ds:ds");
+        });
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testPropertyConstraintInvalidCharactersThrowsIAE3() {
-    constraint = create("any", "ds=ds");
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          constraint = create("any", "ds=ds");
+        });
   }
 
   PropertyConstraint create(String name, String value) {

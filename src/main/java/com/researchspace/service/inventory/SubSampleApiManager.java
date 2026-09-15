@@ -48,6 +48,10 @@ public interface SubSampleApiManager extends InventoryApiManager<SubSample> {
   ApiSubSample getApiSubSampleVersion(Long subSampleId, Long version, User user);
 
   /**
+   * Updates the database subsample based on the incoming one. A content edit bumps the user-facing
+   * version, at most once per subsample per transaction (RSDEV-1319, see
+   * InventoryApiManagerImpl#increaseVersionOncePerTransaction).
+   *
    * @return updated subSample
    */
   ApiSubSample updateApiSubSample(ApiSubSample incomingSubSample, User user);
@@ -74,6 +78,11 @@ public interface SubSampleApiManager extends InventoryApiManager<SubSample> {
    * content edit: it bumps the subsample's user-facing version and is recorded in its revision
    * history (RSDEV-1318). A usage that leaves the quantity unchanged (null or zero usage, or usage
    * against already-empty stock) makes no change to the stored subsample.
+   *
+   * <p>The version bump happens at most once per subsample per transaction (RSDEV-1319, see
+   * InventoryApiManagerImpl#increaseVersionOncePerTransaction). Only the version bump is
+   * deduplicated: each call still reduces the stored quantity whenever that quantity actually
+   * changes.
    *
    * @return the updated subsample
    */

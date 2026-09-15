@@ -9,8 +9,8 @@ import com.researchspace.api.v1.model.ApiInstrumentTemplate;
 import com.researchspace.api.v1.model.ApiInventoryReferencingItems;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.model.User;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.test.web.servlet.MvcResult;
 
 /**
@@ -22,7 +22,7 @@ import org.springframework.test.web.servlet.MvcResult;
  */
 public class InventoryLinkInstrumentTemplateTargetMVCIT extends API_MVC_InventoryTestBase {
 
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     super.setUp();
   }

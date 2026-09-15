@@ -1,7 +1,7 @@
 package com.researchspace.model.oauth;
 
-import static org.junit.Assert.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import com.researchspace.model.permissions.SymmetricTextEncryptor;
 import com.researchspace.model.record.TestFactory;

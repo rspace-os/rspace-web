@@ -1,13 +1,13 @@
 package com.axiope.service.cfg;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.researchspace.snapgene.wclient.SnapgeneWSClientImpl;
 import com.researchspace.webapp.integrations.snapgene.SnapgeneDummy;
 import com.researchspace.webapp.integrations.snapgene.SnapgeneWSNoop;
 import org.hamcrest.Matchers;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class BaseConfigurationTest {
 

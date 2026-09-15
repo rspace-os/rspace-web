@@ -195,7 +195,7 @@ public class RecordDaoHibernate extends GenericDaoHibernate<Record, Long> implem
 
   static String makeOrderBy(PaginationCriteria<? extends BaseRecord> pgCrit) {
     String orderBy;
-    if (!StringUtils.isEmpty(pgCrit.getOrderBy())) {
+    if (!StringUtils.isEmpty(pgCrit.getOrderBy()) && pgCrit.isOrderBySafe(pgCrit.getOrderBy())) {
       String field = pgCrit.getOrderBy();
       if (EDIT_INFO_ORDER_BY_FIELDS.contains(field)) {
         field = "editInfo." + field;

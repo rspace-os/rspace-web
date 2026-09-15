@@ -14,14 +14,14 @@ import com.researchspace.model.oauth.UserConnectionId;
 import com.researchspace.service.UserConnectionManager;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.List;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
 
-@Ignore(
+@Disabled(
     "We leave the test Disabled so we can potentially run it manually by adding the bearer token")
 public class FieldmarkApiControllerRealConnectionTest extends SpringTransactionalTest {
 
@@ -34,7 +34,7 @@ public class FieldmarkApiControllerRealConnectionTest extends SpringTransactiona
   private BindingResult mockBindingResult = mock(BindingResult.class);
   private User user;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     user = createInitAndLoginAnyUser();
     assertTrue(user.isContentInitialized());

@@ -1,8 +1,8 @@
 package com.researchspace.dao.hibernate;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.dao.BaseDaoTestCase;
 import com.researchspace.model.Group;
@@ -20,7 +20,7 @@ import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.generator.Generator;
 import org.hibernate.id.enhanced.TableGenerator;
 import org.hibernate.metamodel.MappingMetamodel;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -47,10 +47,10 @@ public class TableIdGeneratorConfigTest extends BaseDaoTestCase {
               }
             });
     assertTrue(
+        offenders.isEmpty(),
         "Entities allocating ids from the shared \"default\" segment (add a named @TableGenerator"
             + " to each): "
-            + offenders,
-        offenders.isEmpty());
+            + offenders);
   }
 
   @Test
@@ -81,10 +81,10 @@ public class TableIdGeneratorConfigTest extends BaseDaoTestCase {
 
   private TableGenerator tableGeneratorOf(Class<?> entityClass) {
     Generator generator = mappingMetamodel().getEntityDescriptor(entityClass).getGenerator();
-    assertNotEquals(entityClass + " has no generator", null, generator);
+    assertNotEquals(null, generator, entityClass + " has no generator");
     assertTrue(
-        entityClass + " expected a TableGenerator but was " + generator.getClass(),
-        generator instanceof TableGenerator);
+        generator instanceof TableGenerator,
+        entityClass + " expected a TableGenerator but was " + generator.getClass());
     return (TableGenerator) generator;
   }
 

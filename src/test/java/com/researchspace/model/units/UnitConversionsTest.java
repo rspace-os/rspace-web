@@ -5,7 +5,7 @@ import javax.measure.MetricPrefix;
 import javax.measure.Quantity;
 import javax.measure.Unit;
 import javax.measure.quantity.Radioactivity;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import tech.units.indriya.AbstractUnit;
 import tech.units.indriya.format.SimpleUnitFormat;
 import tech.units.indriya.quantity.Quantities;

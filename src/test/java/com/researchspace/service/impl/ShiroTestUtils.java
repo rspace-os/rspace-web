@@ -10,7 +10,7 @@ import org.apache.shiro.mgt.SecurityManager;
 import org.apache.shiro.subject.Subject;
 import org.apache.shiro.subject.support.SubjectThreadState;
 import org.apache.shiro.util.ThreadState;
-import org.junit.AfterClass;
+import org.junit.jupiter.api.AfterAll;
 
 /** Test case enabling Shiro config in test environments. */
 public class ShiroTestUtils {
@@ -54,7 +54,7 @@ public class ShiroTestUtils {
     return SecurityUtils.getSecurityManager();
   }
 
-  @AfterClass
+  @AfterAll
   public static void tearDownShiro() {
     doClearSubject();
     try {

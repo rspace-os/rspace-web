@@ -76,6 +76,9 @@ export const env = {
   igsnPassword: optional("IGSN_PASSWORD", ""),
   igsnRepoPrefix: optional("IGSN_REPO_PREFIX", ""),
   igsnServerUrl: optional("IGSN_SERVER_URL", "https://api.test.datacite.org"),
+  pidinstB2instCommunityId: optional("PIDINST_B2INST_COMMUNITY_ID", ""),
+  pidinstB2instToken: optional("PIDINST_B2INST_TOKEN", ""),
+  pidinstB2instServerUrl: optional("PIDINST_B2INST_SERVER_URL", "https://b2inst-test.gwdg.de"),
 
   // Some fixtures create real sysadmin-owned accounts or overwrite instance-global
   // settings (IGSN/DataCite config) with no restore step. Only safe against a

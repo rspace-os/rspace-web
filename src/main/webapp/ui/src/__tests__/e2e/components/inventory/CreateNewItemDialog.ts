@@ -1,15 +1,18 @@
 import type { Locator, Page } from "@playwright/test";
 import { openDialog } from "./DialogHelpers";
 import { type NewContainerFormComponent, newContainerFormComponent } from "./NewContainerFormComponent";
+import { type NewInstrumentFormComponent, newInstrumentFormComponent } from "./NewInstrumentFormComponent";
 import { type NewSampleFormComponent, newSampleFormComponent } from "./NewSampleFormComponent";
 
 export class CreateNewItemDialog {
   readonly root: Locator;
   readonly sampleOption: Locator;
   readonly containerOption: Locator;
+  private readonly instrumentOption: Locator;
   private readonly newSubsamplesRadio: Locator;
   private readonly splitSampleRadio: Locator;
   private readonly templateRadio: Locator;
+  private readonly instrumentTemplateRadio: Locator;
   private readonly createButton: Locator;
   private readonly cancelButton: Locator;
 
@@ -17,11 +20,13 @@ export class CreateNewItemDialog {
     this.root = page.getByRole("dialog", { name: "Create new items from" });
     this.sampleOption = this.root.getByRole("radio", { name: "Sample", exact: true });
     this.containerOption = this.root.getByRole("radio", { name: "Container", exact: true });
+    this.instrumentOption = this.root.getByRole("radio", { name: "Instrument", exact: true });
     this.newSubsamplesRadio = this.root.getByRole("radio", { name: "Subsamples, by creating new ones" });
     this.splitSampleRadio = this.root.getByRole("radio", {
       name: "Subsamples, by splitting the existing subsample",
     });
     this.templateRadio = this.root.getByRole("radio", { name: "Template", exact: true });
+    this.instrumentTemplateRadio = this.root.getByRole("radio", { name: "Instrument Template", exact: true });
     this.createButton = this.root.getByRole("button", { name: "Create", exact: true });
     this.cancelButton = this.root.getByRole("button", { name: "Cancel" });
   }
@@ -54,6 +59,13 @@ export class CreateNewItemDialog {
     }, newContainerFormComponent(this.page));
   }
 
+  async chooseInstrument(): Promise<NewInstrumentFormComponent> {
+    return openDialog(async () => {
+      await this.instrumentOption.click();
+      await this.createButton.click();
+    }, newInstrumentFormComponent(this.page));
+  }
+
   newSubsamplesOption(): Locator {
     return this.newSubsamplesRadio;
   }
@@ -73,12 +85,27 @@ export class CreateNewItemDialog {
     await this.root.waitFor({ state: "detached" });
   }
 
-  async createTemplate(name: string): Promise<void> {
-    await this.templateRadio.click();
+  private async createTemplateVia(
+    radio: Locator,
+    name: string,
+    options?: { copyContentForFields?: string[] },
+  ): Promise<void> {
+    await radio.click();
     await this.root.getByRole("textbox", { name: "Name" }).fill(name);
     await this.root.getByRole("button", { name: "Next" }).click();
+    for (const fieldName of options?.copyContentForFields ?? []) {
+      await this.root.getByRole("row").filter({ hasText: fieldName }).getByRole("checkbox").check();
+    }
     await this.createButton.click();
     await this.root.waitFor({ state: "detached" });
+  }
+
+  async createTemplate(name: string, options?: { copyContentForFields?: string[] }): Promise<void> {
+    await this.createTemplateVia(this.templateRadio, name, options);
+  }
+
+  async createInstrumentTemplate(name: string, options?: { copyContentForFields?: string[] }): Promise<void> {
+    await this.createTemplateVia(this.instrumentTemplateRadio, name, options);
   }
 
   async cancel(): Promise<void> {

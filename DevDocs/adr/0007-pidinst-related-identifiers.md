@@ -52,12 +52,22 @@ B2INST draft metadata (`RelatedIdentifier`) and the DataCite attributes
   target being deleted or redacted. What a qualifying entry still discloses publicly is the
   bare globalId plus a fixed label, never a name or content, and the address resolves only
   for signed-in users who pass the target's own checks.
-- B2INST receives the entries at draft-register time (its only metadata write). DataCite
-  receives them on publish and again on retract, because both resend full metadata and
-  the entries are computed from the instrument, not persisted on the DOI.
+- B2INST receives the entries at draft-register time. DataCite receives them on publish and
+  again on retract, because both resend full metadata and the entries are computed from the
+  instrument, not persisted on the DOI.
+
+  **Amended by ADR 0008 (RSDEV-1251).** Register and publish/retract are no longer the only
+  metadata writes: an ordinary instrument save now also pushes to a writable provider record,
+  through `B2instConnector.updateDraftDoi` and `DataCiteConnector.updateDoi`, so both providers
+  receive the entries on that path too.
 - For DataCite the list is sent **unconditionally, the empty list included**. DataCite
   replaces the whole property with what the payload carries and clears it only on an
-  explicit empty array; an absent or null property leaves the registered value alone. An
+  explicit empty array; an absent property leaves the registered value alone.
+
+  **Corrected by ADR 0008.** An explicit `null` does *not* leave the value alone: it clears it
+  exactly as `[]` does, and only a key absent from the payload preserves it (verified against
+  api.test.datacite.org, August 2026). That is why `DataCiteDoiAttributes` is now serialized
+  `@JsonInclude(NON_NULL)`, so a null property becomes an absent key. An
   instrument whose link fields were all cleared after registration therefore has to send
   `[]`, or the entries registered beforehand stay attached to a findable DOI with no way to
   withdraw them. The one exception is an **environment failure**: when no usable http(s)
@@ -80,8 +90,11 @@ field keeps the two registries recognisably in step.
 
 ## Consequences
 
-- `datacite-java-client` >= 1.1.0 is required (`relatedIdentifiers` on
-  `DataCiteDoiAttributes`).
+- `datacite-java-client` >= 1.2.0 is required. 1.1.0 adds `relatedIdentifiers` to
+  `DataCiteDoiAttributes`, but serializes a null property as an explicit null, which
+  DataCite treats as "clear it". The mapping below leaves `relatedIdentifiers` null when
+  it cannot build the addresses, meaning "leave the registered entries alone", so against
+  1.1.0 that strips them from a findable DOI. 1.2.0 omits a null property instead.
 - The registered entries reflect the link fields at register/publish time; editing a
   link afterwards updates nothing at the provider (B2INST has no metadata-update call;
   DataCite would refresh on the next publish/retract).

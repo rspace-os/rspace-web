@@ -1,12 +1,12 @@
 package com.researchspace.webapp.filter;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.researchspace.webapp.filter.RemoteUserRetrievalPolicy.RemoteUserAttribute;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 
 public class SAMLRemoteUserPolicyTest {
@@ -14,7 +14,7 @@ public class SAMLRemoteUserPolicyTest {
   SAMLRemoteUserPolicy samlPolicy;
   MockHttpServletRequest req;
 
-  @Before
+  @BeforeEach
   public void before() {
     samlPolicy = new SAMLRemoteUserPolicy();
     req = new MockHttpServletRequest();

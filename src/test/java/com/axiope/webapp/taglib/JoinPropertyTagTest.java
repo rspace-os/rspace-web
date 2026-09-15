@@ -1,28 +1,29 @@
 package com.axiope.webapp.taglib;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.researchspace.model.User;
 import com.researchspace.testutils.TestFactory;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.context.i18n.LocaleContextHolder;
 
 public class JoinPropertyTagTest {
 
   JoinPropertyStringFromCollection tag;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     LocaleContextHolder.setLocale(Locale.US);
     tag = new JoinPropertyStringFromCollection();
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     LocaleContextHolder.resetLocaleContext();
   }
@@ -48,9 +49,9 @@ public class JoinPropertyTagTest {
     return users;
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testGetStringMaxSizeREquiresPositiveGt1() {
-    tag.setMaxSize(0);
+    assertThrows(IllegalArgumentException.class, () -> tag.setMaxSize(0));
   }
 
   @Test

@@ -1,10 +1,10 @@
 package com.researchspace.webapp.integrations.raid;
 
 import static java.net.URLEncoder.encode;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -18,8 +18,8 @@ import com.researchspace.raid.model.exception.RaIDException;
 import com.researchspace.service.raid.RaIDServiceClientAdapter;
 import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller.AccessToken;
 import java.nio.charset.StandardCharsets;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,7 +39,7 @@ public class RaIDOAuthControllerMVCIT extends API_MVC_TestBase {
 
   private User user;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     MockitoAnnotations.openMocks(this);

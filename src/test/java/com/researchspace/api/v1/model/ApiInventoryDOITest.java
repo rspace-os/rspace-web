@@ -8,6 +8,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.researchspace.api.v1.model.ApiInventoryDOI.ApiExternalMetadataUpdate;
+import com.researchspace.api.v1.model.ApiInventoryDOI.ApiExternalMetadataUpdate.Outcome;
 import com.researchspace.model.inventory.DigitalObjectIdentifier;
 import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
 import org.junit.jupiter.api.Test;
@@ -57,6 +59,50 @@ class ApiInventoryDOITest {
         json.contains("\"providerUrl\":\"https://b2inst-test.gwdg.de/uploads/k2j9p-7yh21\""));
     assertTrue(json.contains("\"publicUrl\":\"https://doi.org/10.1234/abc\""));
     assertTrue(json.contains("\"url\":\"https://rspace.example.com/globalId/IN5\""));
+  }
+
+  /**
+   * The provider record id is the ADDRESS of the external record RSpace writes to, so an existing
+   * identifier must not be retargeted by a payload. The id check in {@code
+   * ApiInventoryRecordInfo.applyChangesToDatabaseIdentifiers} stops a client naming someone else's
+   * identifier row, but not a client pointing its OWN row at someone else's record: without this
+   * guard, one instrument PUT carrying a foreign RID or DOI made the RSDEV-1251 on-save push
+   * overwrite that record with this instrument's metadata, under the deployment's own provider
+   * credentials.
+   *
+   * <p>Guarded here rather than with {@code Access.READ_ONLY} on the field, because the value is
+   * part of every identifier response and READ_ONLY would also stop a Java client reading it back
+   * out of one.
+   */
+  @Test
+  void providerRecordIdNotMutatedOnExistingIdentifier() {
+    DigitalObjectIdentifier existing = new DigitalObjectIdentifier("10.12345/ours-1234", "t");
+    existing.setId(1L);
+
+    ApiInventoryDOI apiDoi = new ApiInventoryDOI();
+    apiDoi.setDoi("10.12345/someone-elses");
+
+    boolean changed = apiDoi.applyChangesToDatabaseDOI(existing);
+
+    assertEquals(
+        "10.12345/ours-1234",
+        existing.getIdentifier(),
+        "an existing identifier must not be retargeted at another provider record");
+    assertFalse(changed);
+  }
+
+  /** Registration must still work: it applies the provider's own response to a new identifier. */
+  @Test
+  void providerRecordIdIsAppliedWhileTheIdentifierIsStillBeingCreated() {
+    DigitalObjectIdentifier brandNew = new DigitalObjectIdentifier(null, null, "aSuffix");
+
+    ApiInventoryDOI apiDoi = new ApiInventoryDOI();
+    apiDoi.setDoi("10.12345/minted-by-the-provider");
+
+    boolean changed = apiDoi.applyChangesToDatabaseDOI(brandNew);
+
+    assertEquals("10.12345/minted-by-the-provider", brandNew.getIdentifier());
+    assertTrue(changed);
   }
 
   @Test
@@ -159,5 +205,55 @@ class ApiInventoryDOITest {
 
     assertNull(api.getPublicLinkSuffix(), "an entity-derived DTO must not carry a suffix");
     assertEquals(entity.getPublicLink(), api.getRsPublicId());
+  }
+
+  /**
+   * The Inventory UI switches on these exact strings, and the API spec documents them, so the enum
+   * constant names are the wire contract rather than an implementation detail: renaming one would
+   * silently make the frontend report every outcome as a failure.
+   *
+   * <p>Pinned here as well as in {@code InstrumentExternalMetadataUpdateMVCIT} because that test
+   * needs a database and a real Spring context, so it does not run in the fast unit suite that
+   * guards an ordinary change to this class.
+   */
+  @Test
+  void externalMetadataUpdateOutcomeSerializesAsTheLiteralTokenTheUiSwitchesOn() {
+    ObjectMapper mapper = new ObjectMapper();
+
+    for (Outcome outcome : Outcome.values()) {
+      assertEquals(
+          outcome.name(),
+          mapper
+              .valueToTree(new ApiExternalMetadataUpdate(outcome, "any reason"))
+              .path("outcome")
+              .asText(),
+          outcome::name);
+    }
+    /*
+     * And only the outcome. RSDEV-1251's redundant succeeded boolean was removed here; asserted so it
+     * cannot come back by accident, for instance as a derived convenience getter.
+     */
+    assertTrue(
+        mapper
+            .valueToTree(new ApiExternalMetadataUpdate(Outcome.UPDATED, "any reason"))
+            .path("succeeded")
+            .isMissingNode());
+  }
+
+  /**
+   * The guard on the outcome the UI trusts. {@code externalMetadataUpdate} is {@code
+   * Access.READ_ONLY}, so a client cannot forge an {@code UPDATED} on the way in. Pinned because
+   * this project has already had to replace that annotation on the sibling {@code doi} field, which
+   * makes it exactly the kind of thing a future author removes without realising what it holds up.
+   */
+  @Test
+  void externalMetadataUpdateIsDiscardedOnTheWayIn() throws Exception {
+    String forged =
+        "{\"externalMetadataUpdate\": {\"outcome\": \"UPDATED\", \"reason\": \"trust me\"}}";
+
+    ApiInventoryDOI incoming = new ObjectMapper().readValue(forged, ApiInventoryDOI.class);
+
+    assertNull(
+        incoming.getExternalMetadataUpdate(), "a client must not be able to state an outcome");
   }
 }

@@ -1,16 +1,16 @@
 package com.researchspace.session;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class SessionTimeZoneUtilsTest {
   SessionTimeZoneUtilsTSS dateUtiltss;
@@ -24,7 +24,7 @@ public class SessionTimeZoneUtilsTest {
     }
   }
 
-  @Before
+  @BeforeEach
   public void setup() {
     dateUtiltss = new SessionTimeZoneUtilsTSS();
   }

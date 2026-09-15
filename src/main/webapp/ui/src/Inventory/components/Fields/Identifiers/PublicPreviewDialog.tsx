@@ -15,6 +15,7 @@ import { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import AlwaysNewWindowNavigationContext from "../../../../components/AlwaysNewWindowNavigationContext";
 import HelpLinkIcon from "../../../../components/HelpLinkIcon";
 import type { Identifier } from "../../../../stores/definitions/Identifier";
+import { isPublishedState } from "../../../../stores/definitions/Identifier";
 import type { InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
 import useStores from "../../../../stores/use-stores";
 import PublishButton from "./PublishButton";
@@ -87,13 +88,13 @@ const PublicPreviewDialog = ({ open, onClose, id, record }: PreviewDialogArgs): 
       </DialogTitle>
       <DialogContent>
         <Box sx={(theme) => ({ border: `1px dashed ${theme.palette.lightestGrey}` })}>
-          {id.state === "findable" ? (
+          {isPublishedState(id.state) ? (
             <Suspense>
               {/*
-               * If the identifier has been published then we fetch the data
-               * from the public API, even though we have all the same data,
-               * to ensure that what is shown is exactly what is shown on the
-               * public page.
+               * If the identifier has been published (a findable IGSN, or a PIDINST whose B2INST
+               * community review accepted it) then we fetch the data from the public API, even
+               * though we have all the same data, to ensure that what is shown is exactly what is
+               * shown on the public page.
                */}
               <IdentifierPublicPage publicId={publicId} />
             </Suspense>

@@ -37,14 +37,14 @@ import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.Collections;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
 
   private User testUser;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     sampleTemplateDao.resetDefaultTemplateOwner();
 

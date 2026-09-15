@@ -9,7 +9,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.model.User;
@@ -162,14 +161,18 @@ class RepositoryConfigurationControllerTest {
 
   @Test
   void getAllActiveReposDetectsOAuthConnected() throws Exception {
-    App app = new App("app.figshare", "figshare", true);
-    UserAppConfig appCfg = new UserAppConfig(exporter, app, true);
     // initially inactive for figshare - not oauthconnec
     IntegrationInfo figshareIntegrationInfo = createEnabledAvailableInfo(FIGSHARE_APP_NAME);
-    lenient()
-        .when(integrationsHandler.getIntegration(exporter, FIGSHARE_APP_NAME))
-        .thenReturn(figshareIntegrationInfo);
-    mockUICfgInfo();
+    when(integrationsHandler.getIntegration(eq(exporter), anyString()))
+        .thenAnswer(
+            invocation ->
+                FIGSHARE_APP_NAME.equals(invocation.getArgument(1))
+                    ? figshareIntegrationInfo
+                    : null);
+    RepoUIConfigInfo uiCfgInfo =
+        new RepoUIConfigInfo("A repo", null, null, Collections.emptyList());
+    when(repositoryDepositHandler.getFigshareRepoUIConfigInfo(any(User.class)))
+        .thenReturn(uiCfgInfo);
     assertEquals(1, repositoryConfigurationController.getAllActiveRepositories().size());
     figshareIntegrationInfo.setOauthConnected(false);
     assertEquals(0, repositoryConfigurationController.getAllActiveRepositories().size());
@@ -182,13 +185,8 @@ class RepositoryConfigurationControllerTest {
   }
 
   private void mockRepoConfigInfo(RepoUIConfigInfo mockResult) throws MalformedURLException {
-    lenient()
-        .when(
-            repositoryDepositHandler.getDataverseRepoUIConfigInfo(
-                any(AppConfigElementSet.class), any(User.class)))
-        .thenReturn(mockResult);
-    lenient()
-        .when(repositoryDepositHandler.getFigshareRepoUIConfigInfo(any(User.class)))
+    when(repositoryDepositHandler.getDataverseRepoUIConfigInfo(
+            any(AppConfigElementSet.class), any(User.class)))
         .thenReturn(mockResult);
   }
 

@@ -1,6 +1,7 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.license.InactiveLicenseTestService;
@@ -9,26 +10,20 @@ import com.researchspace.service.impl.license.NoCheckLicenseService;
 import com.researchspace.testutils.SpringTransactionalTest;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.Signature;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 
+@ExtendWith(MockitoExtension.class)
 public class ServiceLoggerAspectTest extends SpringTransactionalTest {
-
-  @Rule public MockitoRule mockito = MockitoJUnit.rule();
   @Mock JoinPoint joinpoint;
   @Mock Signature signature;
   @Autowired private ServiceLoggerAspct aspect;
 
-  @Before
-  public void setUp() throws Exception {}
-
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     // return to default after test ends
     aspect.setLicenseService(new NoCheckLicenseService());
@@ -44,10 +39,10 @@ public class ServiceLoggerAspectTest extends SpringTransactionalTest {
             < "LongerThanLimit".length());
   }
 
-  @Test(expected = LicenseExpiredException.class)
+  @Test
   public void testInvalidLicenseThrowsException() {
     aspect.setLicenseService(new InactiveLicenseTestService());
     when(joinpoint.getSignature()).thenReturn(signature);
-    aspect.assertValidLicense(joinpoint);
+    assertThrows(LicenseExpiredException.class, () -> aspect.assertValidLicense(joinpoint));
   }
 }

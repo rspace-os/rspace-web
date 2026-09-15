@@ -158,7 +158,6 @@ function configurePermittedActions() {
   $("#createFolder").toggle(canCreateFolder);
   $("#create").toggle(canCreateFolder || canCreateRecord);
   $('#createFromWord').toggle(canCreateRecord);
-  $('#createFromEvernote').toggle(canCreateRecord);
   $('#createFromProtocolsIo').toggle(canCreateRecord);
   $('#createNewForm').toggle(canCreateRecord && canCreateFormRecord);
   // if permitted to create a record, there will be at least one option in the 2nd and 3rd menu sections therefore show the dividers
@@ -280,19 +279,9 @@ function toolbarButtonsEventHandler() {
     e.preventDefault();
     openWordChooserDlg({
       title: RS.msg("legacyjs.workspace.main.importWordTitle"),
-      fileType: RS.msg("legacyjs.workspace.main.importWordFileType"),
-      listNotebooks: true
+      fileType: RS.msg("legacyjs.workspace.main.importWordFileType")
     });
     RS.trackEvent("user:open:create_from_word_dialog:workspace");
-  });
-
-  $('#createFromEvernote').click(function (e) {
-    e.preventDefault();
-    openWordChooserDlg({
-      title: RS.msg("legacyjs.workspace.main.importEvernoteTitle"),
-      fileType: RS.msg("legacyjs.workspace.main.importEvernoteFileType"), listNotebooks: false
-    });
-    RS.trackEvent("user:open:create_from_evernote_dialog:workspace");
   });
 
   $('#createFromProtocolsIo').click(function (e) {

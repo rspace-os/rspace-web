@@ -6,8 +6,8 @@ import { useTranslation } from "react-i18next";
 import GlobalId from "../../../components/GlobalId";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
 import { DataGridColumn } from "../../../util/table";
+import { type Document, useLinkedDocumentsQuery } from "../queries";
 import type { GalleryFile } from "../useGalleryListing";
-import useLinkedDocuments, { type Document } from "../useLinkedDocuments";
 
 /**
  * This table lists all of the ELN documents that reference the passed
@@ -23,7 +23,9 @@ import useLinkedDocuments, { type Document } from "../useLinkedDocuments";
 export function LinkedDocumentsPanel({ file }: { file: GalleryFile }): React.ReactNode {
   const { t } = useTranslation("gallery");
   const apiRef = useGridApiRef();
-  const linkedDocuments = useLinkedDocuments(file);
+  const linkedDocuments = useLinkedDocumentsQuery(file);
+  const documents = linkedDocuments.data?.documents ?? [];
+  const privateByOwner = linkedDocuments.data?.privateByOwner ?? [];
   const { trackEvent } = React.useContext(AnalyticsContext);
 
   React.useEffect(() => {
@@ -33,7 +35,7 @@ export function LinkedDocumentsPanel({ file }: { file: GalleryFile }): React.Rea
         includeOutliers: true,
       });
     }, 10); // 10ms for react to re-render
-  }, [linkedDocuments.documents]);
+  }, [documents, apiRef]);
 
   return (
     <Box component="section" sx={{ flexGrow: 1, mt: 0.5, "--DataGrid-overlayHeight": "40px" }}>
@@ -63,7 +65,7 @@ export function LinkedDocumentsPanel({ file }: { file: GalleryFile }): React.Rea
             ),
           }),
         ]}
-        rows={linkedDocuments.documents}
+        rows={documents}
         initialState={{
           columns: {},
         }}
@@ -76,14 +78,30 @@ export function LinkedDocumentsPanel({ file }: { file: GalleryFile }): React.Rea
           pagination: null,
         }}
         localeText={{
-          noRowsLabel: linkedDocuments.errorMessage ?? t("linkedDocumentsPanel.noRows"),
+          // when only private placeholders exist the per-owner counts below explain the
+          // empty grid, so "No Linked Documents" would contradict them
+          noRowsLabel: linkedDocuments.isError
+            ? t("linkedDocumentsPanel.loadFailed")
+            : privateByOwner.length > 0
+              ? ""
+              : t("linkedDocumentsPanel.noRows"),
         }}
-        loading={linkedDocuments.loading}
+        loading={linkedDocuments.isLoading}
         getRowId={(row) => row.id}
         sx={{
           ml: 2,
         }}
       />
+      {privateByOwner.map((p) => (
+        // splitLinkedRecords buckets a row with no owner name under "", so fall back to a
+        // named unknown-owner string rather than rendering a dangling "belonging to "
+        <Typography key={p.ownerFullName || "unknownOwner"} variant="body2" sx={{ ml: 2, mt: 0.5 }}>
+          {t("linkedDocumentsPanel.privateDocs", {
+            count: p.count,
+            ownerFullName: p.ownerFullName || t("linkedDocumentsPanel.unknownOwner"),
+          })}
+        </Typography>
+      ))}
     </Box>
   );
 }

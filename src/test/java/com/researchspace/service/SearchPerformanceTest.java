@@ -1,9 +1,9 @@
 package com.researchspace.service;
 
 import static com.researchspace.testutils.SearchTestUtils.createAdvSearchCfg;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import com.axiope.search.FileSearchResult;
 import com.axiope.search.IFileIndexer;
@@ -22,10 +22,9 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.search.impl.FileIndexSearcher;
 import com.researchspace.search.impl.FileIndexer;
 import com.researchspace.search.impl.LuceneSearchStrategy;
-import com.researchspace.service.impl.ConditionalTestRunner;
-import com.researchspace.service.impl.RunIfSystemPropertyDefined;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.TestFactory;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -42,37 +41,35 @@ import java.util.concurrent.TimeoutException;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.lucene.queryparser.classic.ParseException;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
+import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
-@RunWith(ConditionalTestRunner.class)
 public class SearchPerformanceTest extends SearchSpringTestBase {
 
   Logger log = LoggerFactory.getLogger(SearchPerformanceTest.class);
 
   IFileIndexer fileIndexer;
-  @Rule public TemporaryFolder randomFilefolder = new TemporaryFolder();
-  @Rule public TemporaryFolder indexfolder = new TemporaryFolder();
+  @TempDir public File randomFilefolder;
+  @TempDir public File indexfolder;
   @Autowired FileIndexSearcher fileIndexSearcher;
 
   @Autowired FullTextSearcherImpl fullTextSearcher;
   User anyUser = null;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     anyUser = TestFactory.createAnyUser("any");
     fileIndexer = new FileIndexer();
-    fileIndexer.setIndexFolderDirectly(indexfolder.getRoot());
+    fileIndexer.setIndexFolderDirectly(indexfolder);
     fileIndexer.init(true);
     getTargetObject(fileIndexSearcher.getFileSearchStrategy(), LuceneSearchStrategy.class)
-        .setIndexFolderDirectly(indexfolder.getRoot());
+        .setIndexFolderDirectly(indexfolder);
     fileIndexSearcher.getFileSearchStrategy().setDefaultReturnDocs(2000);
   }
 
@@ -104,7 +101,7 @@ public class SearchPerformanceTest extends SearchSpringTestBase {
   }
 
   @Test
-  @Ignore
+  @Disabled
   public void testConcurrentSearch() throws InterruptedException {
     int numUsers = 2;
     User[] users = new User[numUsers];
@@ -132,7 +129,7 @@ public class SearchPerformanceTest extends SearchSpringTestBase {
   }
 
   @Test
-  @RunIfSystemPropertyDefined(value = "nightly")
+  @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
   public void testPerformance()
       throws IllegalAddChildOperation, InterruptedException, IOException, ParseException {
     final int numUsers = 50;
@@ -211,10 +208,10 @@ public class SearchPerformanceTest extends SearchSpringTestBase {
   }
 
   @Test
-  @RunIfSystemPropertyDefined(value = "nightly")
+  @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
   public void testIndexingSingleThread() throws IOException {
     RandomTextFileGenerator tfgg = new RandomTextFileGenerator();
-    List<FileSearchTerms> created = tfgg.generate(randomFilefolder.getRoot(), 100, 100);
+    List<FileSearchTerms> created = tfgg.generate(randomFilefolder, 100, 100);
     assertEquals(100, created.size());
     for (FileSearchTerms toIndex : created) {
       fileIndexer.indexFile(toIndex.getFile());
@@ -223,13 +220,13 @@ public class SearchPerformanceTest extends SearchSpringTestBase {
     for (FileSearchTerms term : created) {
       List<FileSearchResult> results =
           fileIndexSearcher.getFileSearchStrategy().searchFiles(term.getTerms()[0], anyUser);
-      assertTrue("No results for " + term, results.size() > 0);
+      assertTrue(results.size() > 0, "No results for " + term);
     }
   }
 
   // this indexes, then searches
   @Test
-  @RunIfSystemPropertyDefined(value = "nightly")
+  @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
   public void testIndexingMultiThread()
       throws IOException,
           ParseException,
@@ -237,7 +234,7 @@ public class SearchPerformanceTest extends SearchSpringTestBase {
           ExecutionException,
           TimeoutException {
     RandomTextFileGenerator tfgg = new RandomTextFileGenerator();
-    List<FileSearchTerms> created = tfgg.generate(randomFilefolder.getRoot(), 100, 50);
+    List<FileSearchTerms> created = tfgg.generate(randomFilefolder, 100, 50);
     log.info("file generation completed");
     // each tread will index one file at a time from the queue
     final Queue<FileSearchTerms> toIndexqueue = new ConcurrentLinkedQueue<>();
@@ -275,7 +272,7 @@ public class SearchPerformanceTest extends SearchSpringTestBase {
   private void assertSearchOK(FileSearchTerms term) throws IOException {
     List<FileSearchResult> results =
         fileIndexSearcher.getFileSearchStrategy().searchFiles(term.getTerms()[0], anyUser);
-    assertTrue("No results for " + term, results.size() > 0);
+    assertTrue(results.size() > 0, "No results for " + term);
     if (!assertResultsContainsFile(results, term)) {
       fail(
           "Search hits for term ("
@@ -288,11 +285,11 @@ public class SearchPerformanceTest extends SearchSpringTestBase {
 
   // this indexes, and searches at the same time
   @Test
-  @RunIfSystemPropertyDefined(value = "nightly")
+  @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
   public void testIndexingAndSearchingAtSameTime()
       throws IOException, InterruptedException, ExecutionException, TimeoutException {
     RandomTextFileGenerator tfgg = new RandomTextFileGenerator();
-    List<FileSearchTerms> created = tfgg.generate(randomFilefolder.getRoot(), 100, 200);
+    List<FileSearchTerms> created = tfgg.generate(randomFilefolder, 100, 200);
     // each tread will index one file at a time from the queue
     final Queue<FileSearchTerms> toIndexqueue = new ConcurrentLinkedQueue<>();
     final BlockingQueue<FileSearchTerms> toSearchQueue = new LinkedBlockingQueue<>();

@@ -1,16 +1,17 @@
 package com.researchspace.core.util;
 
 import static java.util.Arrays.asList;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class ObjectToStringTransformerTest {
 
@@ -62,10 +63,10 @@ public class ObjectToStringTransformerTest {
     }
   }
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {}
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {}
 
   @Test
@@ -91,12 +92,16 @@ public class ObjectToStringTransformerTest {
     assertThat(usages, hasItems("inner1", "inner2"));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testTransformThrowsIAEIfPropertyNotFound() {
-    TestObject f1 = new TestObject("u1", "1234");
-    TestObject f2 = new TestObject("u12", "5678");
-    List<TestObject> list = Arrays.asList(new TestObject[] {f1, f2});
-    transformer = new ObjectToStringPropertyTransformer<>("uXXXXs");
-    list.stream().map(transformer).collect(Collectors.toList());
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          TestObject f1 = new TestObject("u1", "1234");
+          TestObject f2 = new TestObject("u12", "5678");
+          List<TestObject> list = Arrays.asList(new TestObject[] {f1, f2});
+          transformer = new ObjectToStringPropertyTransformer<>("uXXXXs");
+          list.stream().map(transformer).collect(Collectors.toList());
+        });
   }
 }

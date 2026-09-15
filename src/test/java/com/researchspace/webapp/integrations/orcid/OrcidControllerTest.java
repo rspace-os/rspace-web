@@ -1,8 +1,8 @@
 package com.researchspace.webapp.integrations.orcid;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.User;
 import com.researchspace.model.dto.IntegrationInfo;
@@ -15,8 +15,8 @@ import com.researchspace.service.UserExternalIdResolver;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.Map;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class OrcidControllerTest extends SpringTransactionalTest {
@@ -26,7 +26,7 @@ public class OrcidControllerTest extends SpringTransactionalTest {
   private @Autowired UserExternalIdResolver extIdResolver;
   private @Autowired SystemPropertyManager systemPropertyManager;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     User sysadmin = logoutAndLoginAsSysAdmin();

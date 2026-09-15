@@ -1,15 +1,15 @@
 package com.researchspace.api.v1.controller;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.api.v1.model.ApiExtraField;
 import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.service.inventory.InventoryFieldNameUniquenessValidator;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
@@ -18,7 +18,7 @@ public class InstrumentApiPutValidatorTest extends InventoryRecordValidationTest
 
   @Autowired private InstrumentApiPutValidator instrumentPutValidator;
 
-  @Before
+  @BeforeEach
   public void setup() {
     validator = instrumentPutValidator;
   }

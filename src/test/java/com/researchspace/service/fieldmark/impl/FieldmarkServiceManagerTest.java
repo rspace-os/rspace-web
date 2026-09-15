@@ -45,8 +45,8 @@ import java.util.Collections;
 import java.util.List;
 import javax.naming.InvalidNameException;
 import org.apache.commons.io.IOUtils;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -99,7 +99,7 @@ public class FieldmarkServiceManagerTest extends SpringTransactionalTest {
   private final ApiInventoryDOI DOI_TEST_1 = new ApiInventoryDOI();
   private final ApiInventoryDOI DOI_TEST_2 = new ApiInventoryDOI();
 
-  @Before
+  @BeforeEach
   public void setUp() throws IOException, URISyntaxException, BindException, InvalidNameException {
     MockitoAnnotations.openMocks(this);
     bindingResult = new BeanPropertyBindingResult(null, "fieldmark");

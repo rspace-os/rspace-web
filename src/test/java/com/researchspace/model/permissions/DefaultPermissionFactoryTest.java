@@ -1,7 +1,8 @@
 package com.researchspace.model.permissions;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.Constants;
 import com.researchspace.model.Community;
@@ -16,9 +17,9 @@ import com.researchspace.model.record.TestFactory;
 import java.util.List;
 import java.util.Set;
 import org.apache.shiro.authz.AuthorizationException;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class DefaultPermissionFactoryTest {
 
@@ -26,12 +27,12 @@ public class DefaultPermissionFactoryTest {
   private User pi = TestFactory.createAnyUser("u1");
   private User u2 = TestFactory.createAnyUser("u2");
 
-  @Before
+  @BeforeEach
   public void setUp() {
     pi.addRole(Role.PI_ROLE);
   }
 
-  @After
+  @AfterEach
   public void tearDown() {}
 
   @Test
@@ -49,16 +50,24 @@ public class DefaultPermissionFactoryTest {
     assertTrue(f1.getSharingACL().isPermitted(u2, PermissionType.CREATE_FOLDER));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void setUpACLForApiInboxFolderThrowsIAEIfNotAPiInboxFolder() {
-    Folder folder = TestFactory.createAFolder("any", u2);
-    fac.setUpAclForIndividualInboxFolder(folder, u2);
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          Folder folder = TestFactory.createAFolder("any", u2);
+          fac.setUpAclForIndividualInboxFolder(folder, u2);
+        });
   }
 
-  @Test(expected = AuthorizationException.class)
+  @Test
   public void setUpACLForApiInboxFolderThrowsAuthExceptionIfSubjectNotOwner() {
-    Folder folder = TestFactory.createAnAPiInboxFolder(u2);
-    fac.setUpAclForIndividualInboxFolder(folder, pi);
+    assertThrows(
+        AuthorizationException.class,
+        () -> {
+          Folder folder = TestFactory.createAnAPiInboxFolder(u2);
+          fac.setUpAclForIndividualInboxFolder(folder, pi);
+        });
   }
 
   @Test
@@ -68,10 +77,14 @@ public class DefaultPermissionFactoryTest {
     assertTrue(folder.getSharingACL().isPermitted(u2, PermissionType.WRITE));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void communityEditPermsCannotBeAddedtoANonAdminUser() {
-    User u = TestFactory.createAnyUserWithRole("any", Constants.USER_ROLE);
-    fac.createCommunityPermissionsForAdmin(u, new Community());
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          User u = TestFactory.createAnyUserWithRole("any", Constants.USER_ROLE);
+          fac.createCommunityPermissionsForAdmin(u, new Community());
+        });
   }
 
   @Test
@@ -118,7 +131,7 @@ public class DefaultPermissionFactoryTest {
     String expectedGroupPermission = "GROUP:READ,WRITE:group=" + grp.getUniqueName();
     ConstraintBasedPermission cbp = parser.resolvePermission(expectedGroupPermission);
 
-    assertTrue("permissions don't allow group read", perms.contains(cbp));
+    assertTrue(perms.contains(cbp), "permissions don't allow group read");
 
     Set<ConstraintBasedPermission> perms2 = fac.createDefaultPermissionsForCollabGroupAdmin(grp);
     assertTrue(perms2.contains(cbp));

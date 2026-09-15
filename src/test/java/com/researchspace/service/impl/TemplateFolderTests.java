@@ -1,20 +1,20 @@
 package com.researchspace.service.impl;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.User;
 import com.researchspace.model.core.RecordType;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.Folder;
 import com.researchspace.testutils.SpringTransactionalTest;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class TemplateFolderTests extends SpringTransactionalTest {
   User any = null;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
   }

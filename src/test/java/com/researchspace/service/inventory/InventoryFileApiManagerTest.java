@@ -28,12 +28,12 @@ import com.researchspace.testutils.TestGroup;
 import jakarta.ws.rs.NotFoundException;
 import java.io.IOException;
 import java.util.List;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class InventoryFileApiManagerTest extends SpringTransactionalTest {
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
 

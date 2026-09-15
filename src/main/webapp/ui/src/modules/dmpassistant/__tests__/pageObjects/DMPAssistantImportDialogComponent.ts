@@ -3,16 +3,16 @@ import type { Locator, Page } from "@playwright/test";
 export class DMPAssistantImportDialogComponent {
   readonly root: Locator;
   readonly importButton: Locator;
-  private readonly plansBody: Locator;
+  private readonly plansGrid: Locator;
 
   constructor(private readonly page: Page) {
     this.root = page.getByRole("dialog", { name: "Import DMPs into the Gallery" });
     this.importButton = this.root.getByRole("button", { name: "Import", exact: true });
-    this.plansBody = this.root.getByRole("grid").getByRole("rowgroup");
+    this.plansGrid = this.root.getByRole("grid");
   }
 
   planCheckbox(name: string): Locator {
-    return this.plansBody.getByRole("checkbox", { name: `Select plan: ${name}` });
+    return this.plansGrid.getByRole("checkbox", { name: `Select plan: ${name}` });
   }
 
   async waitForOpen(): Promise<void> {
@@ -25,7 +25,7 @@ export class DMPAssistantImportDialogComponent {
   }
 
   async selectFirstPlan(): Promise<string> {
-    const checkbox = this.plansBody.getByRole("checkbox").first();
+    const checkbox = this.plansGrid.getByRole("gridcell").getByRole("checkbox").first();
     const label = await checkbox.getAttribute("aria-label");
     if (!label?.startsWith("Select plan: ")) throw new Error("The first DMP Assistant plan has no accessible name.");
     await checkbox.click();

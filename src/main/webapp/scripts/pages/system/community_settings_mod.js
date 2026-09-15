@@ -53,7 +53,6 @@ function printSettingsList() {
             'dropbox.available',
             'dropbox.linking.enabled',
             'egnyte.available',
-            'evernote.available',
             'googledrive.available',
             'onedrive.available',
             'onedrive.linking.enabled',

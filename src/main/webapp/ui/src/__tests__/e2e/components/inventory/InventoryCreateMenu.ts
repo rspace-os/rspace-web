@@ -12,8 +12,6 @@ export type InventoryCreateMenuItem =
   | "New Sample Template"
   | "New Instrument Template";
 
-export type InventoryCsvImportItem = "Samples" | "Subsamples" | "Containers";
-
 export class InventoryCreateMenu {
   readonly root: Locator;
 
@@ -37,8 +35,8 @@ export class InventoryCreateMenu {
     await this.menuItem(item).click();
   }
 
-  async clickCsvImport(item: InventoryCsvImportItem): Promise<void> {
-    await this.menuItem(item).click();
+  async clickCsvImport(): Promise<void> {
+    await this.root.getByRole("menuitem", { name: "From CSV" }).click();
   }
 
   async newSample(): Promise<NewSampleFormComponent> {

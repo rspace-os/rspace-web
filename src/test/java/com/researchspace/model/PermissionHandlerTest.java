@@ -1,10 +1,10 @@
 package com.researchspace.model;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.HashSet;
 import java.util.Set;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class PermissionHandlerTest {
 
@@ -20,8 +20,8 @@ public class PermissionHandlerTest {
 
     permHandler.setPermissionStrings(permissionStrings);
     assertEquals(
-        "invariants not kept",
         permHandler.getPermissions().size(),
-        permHandler.getPermissionStrings().size());
+        permHandler.getPermissionStrings().size(),
+        "invariants not kept");
   }
 }

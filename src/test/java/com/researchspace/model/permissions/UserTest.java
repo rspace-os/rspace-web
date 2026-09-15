@@ -1,27 +1,27 @@
 package com.researchspace.model.permissions;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.Group;
 import com.researchspace.model.RoleInGroup;
 import com.researchspace.model.User;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class UserTest {
   User u1;
   Group gp1;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     u1 = new User("user1");
     gp1 = new Group("group1", u1);
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {}
 
   @Test

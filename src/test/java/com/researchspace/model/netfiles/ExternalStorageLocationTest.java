@@ -1,13 +1,13 @@
 package com.researchspace.model.netfiles;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.researchspace.model.EcatMediaFile;
 import com.researchspace.model.User;
 import com.researchspace.model.record.TestFactory;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class ExternalStorageLocationTest {
 
@@ -16,7 +16,7 @@ public class ExternalStorageLocationTest {
   private NfsFileStore fileStore;
   private ExternalStorageLocation toTest;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     String testClientOptionsString =
         "IRODS_ZONE=tempZone\nIRODS_HOME_DIR=/tempZone/home/alice\nIRODS_PORT=1247\n";

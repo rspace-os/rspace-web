@@ -1,8 +1,8 @@
 package com.researchspace.api.v1.throttling;
 
-import static com.researchspace.core.testutil.CoreTestUtils.assertExceptionThrown;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -22,26 +22,17 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.commons.lang3.ArrayUtils;
 import org.joda.time.DateTime;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class ApiFileUploadThrottlerTest {
-  public @Rule MockitoRule rule = MockitoJUnit.rule();
   ApiFileUploadThrottlerImpl fileThrottler;
   @Mock TimeSource timesource;
   private String anyId = "any";
-
-  @Before
-  public void setUp() throws Exception {}
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void testFileUploadOK() {
@@ -55,11 +46,7 @@ public class ApiFileUploadThrottlerTest {
         .thenReturn(
             sequentialTimes[0], ArrayUtils.subarray(sequentialTimes, 1, numTimeSourceRequests));
     fileThrottler = setUpThrottler();
-    IntStream.range(0, numCalls)
-        .forEach(
-            i -> {
-              assertTrue(fileThrottler.proceed(anyId, 0.5));
-            });
+    IntStream.range(0, numCalls).forEach(i -> assertTrue(fileThrottler.proceed(anyId, 0.5)));
     APIFileUploadStats stats = getStatsForHourBucket();
     // after 10 calls over 20s, we've used up 5.0Mb of allowance, but due to recovery has added
     // 0.03Mb allowance back
@@ -84,13 +71,8 @@ public class ApiFileUploadThrottlerTest {
         .thenReturn(
             sequentialTimes[0], ArrayUtils.subarray(sequentialTimes, 1, numTimeSourceRequests));
     fileThrottler = setUpThrottler(); // 10Mb limit per hour
-    IntStream.range(0, numCalls)
-        .forEach(
-            i -> {
-              assertTrue(fileThrottler.proceed(anyId, 5.0));
-            });
-    assertExceptionThrown(
-        () -> fileThrottler.proceed(anyId, 5.0), FileUploadLimitExceededException.class);
+    IntStream.range(0, numCalls).forEach(i -> assertTrue(fileThrottler.proceed(anyId, 5.0)));
+    assertThrows(FileUploadLimitExceededException.class, () -> fileThrottler.proceed(anyId, 5.0));
   }
 
   @Test
@@ -110,8 +92,7 @@ public class ApiFileUploadThrottlerTest {
     assertTrue(stats.getRemainingCapacityInPeriod() < 0);
 
     // next request, we've still not recovered from previous upload
-    assertExceptionThrown(
-        () -> fileThrottler.proceed(anyId, 9.0), FileUploadLimitExceededException.class);
+    assertThrows(FileUploadLimitExceededException.class, () -> fileThrottler.proceed(anyId, 9.0));
     // now, we're in the next hour, so OK
     assertTrue(fileThrottler.proceed(anyId, 10.0)); // single file ok
   }
@@ -165,11 +146,7 @@ public class ApiFileUploadThrottlerTest {
               timesource, set, new AllowanceTrackerSourceImpl(timesource, set));
       Callable<APIFileUploadStats> callable =
           () -> {
-            IntStream.range(0, numCalls)
-                .forEach(
-                    i -> {
-                      assertTrue(fileThrottler.proceed(key, 0.5));
-                    });
+            IntStream.range(0, numCalls).forEach(i -> assertTrue(fileThrottler.proceed(key, 0.5)));
             return fileThrottler.getStats(key, ThrottleInterval.HOUR).get();
           };
       callables.add(callable);

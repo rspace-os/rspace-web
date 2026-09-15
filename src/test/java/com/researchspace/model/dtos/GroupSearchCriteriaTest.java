@@ -1,26 +1,22 @@
 package com.researchspace.model.dtos;
 
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.GroupType;
 import java.lang.reflect.InvocationTargetException;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class GroupSearchCriteriaTest {
   GroupSearchCriteria filter;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     filter = new GroupSearchCriteria();
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void testAllFiltersAreInitiallyOff() {
@@ -30,10 +26,10 @@ public class GroupSearchCriteriaTest {
   @Test
   public void inputValidation() {
     filter.setDisplayName(getRandomName(300));
-    assertEquals("display name not truncated", 255, filter.getDisplayName().length());
+    assertEquals(255, filter.getDisplayName().length(), "display name not truncated");
 
     filter.setUniqueName(getRandomName(300));
-    assertEquals("unique name  not trunctated", 255, filter.getUniqueName().length());
+    assertEquals(255, filter.getUniqueName().length(), "unique name  not trunctated");
   }
 
   @Test

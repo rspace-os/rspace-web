@@ -1,9 +1,9 @@
 package com.researchspace.webapp.controller;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -36,21 +36,18 @@ import com.researchspace.testutils.TestFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.ui.ExtendedModelMap;
 import org.springframework.ui.Model;
 
+@ExtendWith(MockitoExtension.class)
 public class WorkspacePermissionsDTOBuilderTest {
-
-  @Rule public MockitoRule mockito = MockitoJUnit.rule();
   @Mock ISearchResults<BaseRecord> results;
   @Mock FolderManager folderMger;
   @Mock RecordManager recMger;
@@ -63,18 +60,14 @@ public class WorkspacePermissionsDTOBuilderTest {
   final long DOC_ID = 1l;
   RecordFactory recordFac;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     model = new ExtendedModelMap();
     permFac = new DefaultPermissionFactory();
     user = TestFactory.createAnyUser("any");
     parentFolder = TestFactory.createAFolder("folder", user);
     recordFac = new RecordFactory();
-    when(permissionUtils.isPermitted(any(), any(), any())).thenReturn(true);
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void optionsForMediaRecords() throws IllegalAddChildOperation {
@@ -89,8 +82,6 @@ public class WorkspacePermissionsDTOBuilderTest {
 
     parentFolder.addChild(media, user);
     Mockito.when(results.getResults()).thenReturn(records);
-    Mockito.when(recMger.canMove(media, parentFolder, user)).thenReturn(true);
-
     // folder owned by user enables crud operations on contents
     ActionPermissionsDTO result =
         dtoBuilder.addCreateAndOptionsMenuPermissions(
@@ -101,6 +92,7 @@ public class WorkspacePermissionsDTOBuilderTest {
     // can't copy or move from workspace
     assertFalse(can(result, DOC_ID, PermissionType.SEND));
     assertFalse(can(result, DOC_ID, PermissionType.COPY));
+    Mockito.verify(recMger, Mockito.never()).canMove(media, parentFolder, user);
   }
 
   @Test
@@ -153,8 +145,6 @@ public class WorkspacePermissionsDTOBuilderTest {
     final List<BaseRecord> records = toList(snip);
     parentFolder.addChild(snip, user);
     when(results.getResults()).thenReturn(records);
-    when(recMger.canMove(Mockito.eq(snip), Mockito.eq(parentFolder), any(User.class)))
-        .thenReturn(true);
     ActionPermissionsDTO result =
         dtoBuilder.addCreateAndOptionsMenuPermissions(
             parentFolder, user, model, results.getResults(), parentFolderId, false);
@@ -165,6 +155,7 @@ public class WorkspacePermissionsDTOBuilderTest {
             parentFolder, user, model, results.getResults(), parentFolderId, true);
     assertFalse(can(result, DOC_ID, PermissionType.SEND));
     assertFalse(can(result, DOC_ID, PermissionType.EXPORT));
+    Mockito.verify(recMger, Mockito.never()).canMove(snip, parentFolder, user);
   }
 
   @Test
@@ -246,6 +237,7 @@ public class WorkspacePermissionsDTOBuilderTest {
   // RSPAC-940
   @Test
   public void notebookOwnerCanCopySharedNotebookEntry() throws IllegalAddChildOperation {
+    when(permissionUtils.isPermitted(any(), any(), any())).thenReturn(true);
 
     User pi = TestFactory.createAnyUserWithRole("pi", Constants.PI_ROLE);
     parentFolder = TestFactory.createAFolder("folder", pi);
@@ -297,6 +289,7 @@ public class WorkspacePermissionsDTOBuilderTest {
 
   @Test
   public void testAddCreateAndOptionsMenuPermissions() throws IllegalAddChildOperation {
+    when(permissionUtils.isPermitted(any(), any(), any())).thenReturn(true);
 
     final StructuredDocument sdoc = TestFactory.createAnySD();
     sdoc.setId(DOC_ID);

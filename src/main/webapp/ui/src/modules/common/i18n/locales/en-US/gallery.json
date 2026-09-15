@@ -252,7 +252,10 @@
       "name": "Name"
     },
     "heading": "Linked Documents",
-    "noRows": "No Linked Documents"
+    "loadFailed": "Error loading linked documents.",
+    "noRows": "No Linked Documents",
+    "privateDocs": "{count, plural, one {# private doc belonging to {ownerFullName}} other {# private docs belonging to {ownerFullName}}}",
+    "unknownOwner": "an unknown user"
   },
   "listing": {
     "alerts": {
@@ -401,7 +404,8 @@
     "viewLatest": "View the latest version"
   },
   "referencingInventoryItems": {
-    "loadFailed": "Error loading related inventory items."
+    "loadFailed": "Error loading related inventory items.",
+    "noRows": "No related inventory items"
   },
   "s3": {
     "errors": {

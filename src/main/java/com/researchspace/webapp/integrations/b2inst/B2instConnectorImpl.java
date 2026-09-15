@@ -7,12 +7,15 @@ import com.researchspace.b2inst.model.response.B2instDraftRecord;
 import com.researchspace.b2inst.model.response.B2instRequestResponse;
 import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.model.system.SystemPropertyValue;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.SystemPropertyManager;
 import com.researchspace.service.SystemPropertyName;
 import jakarta.annotation.PostConstruct;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +29,7 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
 /**
  * {@link B2instConnector} implementation over Spring {@link RestTemplate}. Reads its configuration
@@ -52,6 +56,7 @@ public class B2instConnectorImpl implements B2instConnector {
   private static final Duration READ_TIMEOUT = Duration.ofSeconds(30);
 
   @Autowired private SystemPropertyManager sysPropertyMgr;
+  @Autowired private MessageSourceUtils messages;
 
   private boolean enabled;
   private String serverUrl;
@@ -111,19 +116,36 @@ public class B2instConnectorImpl implements B2instConnector {
     } catch (RestClientException e) {
       String reason = describeFailure(e);
       throw new B2instConnectionException(
-          "Error creating B2INST draft record: " + reason, reason, e);
+          "Error creating B2INST draft record: " + developerDetail(e), reason, e);
+    }
+  }
+
+  @Override
+  public B2instDraftRecord updateDraftDoi(String rid, B2instDoi doi) {
+    try {
+      return restTemplate
+          .exchange(
+              recordUrl(rid, "draft"),
+              HttpMethod.PUT,
+              new HttpEntity<>(doi),
+              B2instDraftRecord.class)
+          .getBody();
+    } catch (RestClientException e) {
+      String reason = describeFailure(e);
+      throw new B2instConnectionException(
+          "Error updating B2INST draft record " + rid + ": " + developerDetail(e), reason, e);
     }
   }
 
   @Override
   public boolean deleteDoi(String rid) {
     try {
-      restTemplate.delete(apiBase() + "/records/" + rid + "/draft");
+      restTemplate.delete(recordUrl(rid, "draft"));
       return true;
     } catch (RestClientException e) {
       String reason = describeFailure(e);
       throw new B2instConnectionException(
-          "Error deleting B2INST draft record " + rid + ": " + reason, reason, e);
+          "Error deleting B2INST draft record " + rid + ": " + developerDetail(e), reason, e);
     }
   }
 
@@ -133,7 +155,7 @@ public class B2instConnectorImpl implements B2instConnector {
       throw new B2instConnectionException(
           "No B2INST community configured (pidinst.b2inst.community.id); cannot submit " + rid,
           // deliberately omits the property name: this reason is shown to an ordinary user
-          "B2INST is not fully configured for publishing, because no community has been set.");
+          messages.getMessage("errors.inventory.identifier.b2instNoCommunity"));
     }
     try {
       B2instRequestResponse alreadySubmitted = openReviewOf(rid);
@@ -145,7 +167,7 @@ public class B2instConnectorImpl implements B2instConnector {
       B2instRequestResponse created =
           restTemplate
               .exchange(
-                  apiBase() + "/records/" + rid + "/draft/review",
+                  recordUrl(rid, "draft", "review"),
                   HttpMethod.PUT,
                   new HttpEntity<>(review),
                   B2instRequestResponse.class)
@@ -154,13 +176,15 @@ public class B2instConnectorImpl implements B2instConnector {
       if (submitUrl == null) {
         throw new B2instConnectionException(
             "B2INST review did not return a submit action for record " + rid,
-            "B2INST did not offer a submit action for this record.");
+            messages.getMessage("errors.inventory.identifier.b2instNoSubmitAction"));
       }
       return restTemplate.postForObject(submitUrl, emptyJsonBody(), B2instRequestResponse.class);
     } catch (RestClientException e) {
       String reason = describeFailure(e);
       throw new B2instConnectionException(
-          "Error submitting B2INST record " + rid + " for community review: " + reason, reason, e);
+          "Error submitting B2INST record " + rid + " for community review: " + developerDetail(e),
+          reason,
+          e);
     }
   }
 
@@ -189,36 +213,63 @@ public class B2instConnectorImpl implements B2instConnector {
    * without a response (transport error) falls back to the client exception message, or the
    * exception type when even that is blank.
    */
+  /**
+   * The user-safe reason. Redacted at a single exit, deliberately: this is interpolated into
+   * user-facing localized text and into the audit trail at five call sites, so every branch below
+   * is a path to a user rather than only to the log, and redacting here instead of at each return
+   * means a branch added later cannot skip it.
+   */
   private String describeFailure(RestClientException e) {
-    /*
-     * Redacted at a single exit, deliberately. This value is the exception's reason, and since the
-     * reason/message split it is interpolated into user-facing localized text at three call sites, so
-     * every branch below is a path to a user rather than only to the log. Redacting here instead of
-     * at each return means a branch added later cannot skip it.
-     */
-    return redactToken(describeFailureText(e));
-  }
-
-  private String describeFailureText(RestClientException e) {
     if (e instanceof RestClientResponseException restError) {
-      String body = restError.getResponseBodyAsString();
-      String parsedDescription =
-          JacksonUtil.fromJsonOpt(body, B2instErrorResponse.class)
-              .map(B2instErrorResponse::describe)
-              .orElse(null);
-      if (parsedDescription != null) {
-        return parsedDescription;
+      String parsed = providerDescription(restError);
+      if (parsed != null) {
+        return redactToken(parsed);
       }
       log.warn(
           "No usable failure reason in B2INST error response (HTTP {}): {}",
           restError.getRawStatusCode(),
-          StringUtils.abbreviate(redactToken(body), 500));
-      return "B2INST returned HTTP "
-          + restError.getRawStatusCode()
-          + " "
-          + restError.getStatusText();
+          StringUtils.abbreviate(redactToken(restError.getResponseBodyAsString()), 500));
+      return messages.getMessage(
+          "errors.inventory.identifier.b2instHttpStatus",
+          new Object[] {restError.getRawStatusCode(), restError.getStatusText()});
     }
-    return StringUtils.defaultIfBlank(e.getMessage(), e.getClass().getSimpleName());
+    log.warn(
+        "Could not reach B2INST: {}", redactToken(StringUtils.defaultString(e.getMessage())), e);
+    return messages.getMessage("errors.inventory.identifier.b2instUnreachable");
+  }
+
+  /**
+   * The developer-facing detail, for the exception message and so the log.
+   *
+   * <p>Same as the reason while B2INST explained itself: its own parsed description is the most
+   * readable thing for both audiences, and Spring's own message for an HTTP failure puts the whole
+   * response body in the sentence.
+   *
+   * <p>It diverges wherever the sentence is RSpace's own. A developer wants fixed English and, for
+   * a transport failure, Spring's message naming the request URL and the cause; a user must be
+   * shown neither, and gets localized text instead. Redacted all the same.
+   */
+  private String developerDetail(RestClientException e) {
+    if (e instanceof RestClientResponseException restError) {
+      String parsed = providerDescription(restError);
+      // Deliberately English and unlocalized, unlike the reason: this goes to the log, where a
+      // translated sentence would be worse than a fixed one. The status is kept because it is the
+      // only thing left when the body explains nothing (404 the record is gone, 403 credentials).
+      return parsed != null
+          ? redactToken(parsed)
+          : "B2INST returned HTTP "
+              + restError.getRawStatusCode()
+              + " "
+              + restError.getStatusText();
+    }
+    return redactToken(StringUtils.defaultIfBlank(e.getMessage(), e.getClass().getSimpleName()));
+  }
+
+  /** B2INST's own description of the failure, or null when its response body carried none. */
+  private String providerDescription(RestClientResponseException restError) {
+    return JacksonUtil.fromJsonOpt(restError.getResponseBodyAsString(), B2instErrorResponse.class)
+        .map(B2instErrorResponse::describe)
+        .orElse(null);
   }
 
   /**
@@ -249,6 +300,78 @@ public class B2instConnectorImpl implements B2instConnector {
   }
 
   /**
+   * Pattern a record id (RID) must match before it is put into a URL. Both observed B2INST/Invenio
+   * forms fit it (for example {@code k2j9p-7yh21}, {@code abcde-12345}).
+   */
+  private static final Pattern VALID_RID = Pattern.compile("[A-Za-z0-9_-]{1,64}");
+
+  /**
+   * A record URL with the RID as one escaped path segment.
+   *
+   * <p>The RID is {@code DigitalObjectIdentifier.identifier}, which {@code
+   * ApiInventoryDOI.applyChangesToDatabaseDOI} writes from a record update, so it is not trusted
+   * input. Concatenated raw, a crafted value could point these calls - and the bearer token they
+   * carry - at other paths on the provider host, with parts of the answer reaching the user through
+   * the identifier's state, provider URL and failure message.
+   *
+   * <p>Guarded at both ends: the RID is checked against {@link #VALID_RID} first, which rules out
+   * the {@code .} and {@code ..} segments a URL normaliser could still collapse after escaping, and
+   * {@code pathSegment} then escapes anything else so a value can only ever be one segment. A
+   * rejected RID throws rather than being cleaned up: RSpace did not mint it, so there is no
+   * correct request to send.
+   */
+  private String recordUrl(String rid, String... trailingSegments) {
+    if (rid == null || !VALID_RID.matcher(rid).matches()) {
+      throw new B2instConnectionException(
+          "Refusing to call B2INST with an unexpected record id", "invalid record id", null);
+    }
+    return UriComponentsBuilder.fromUriString(apiBase())
+        .pathSegment("records")
+        .pathSegment(rid)
+        .pathSegment(trailingSegments)
+        .build()
+        .encode()
+        .toUriString();
+  }
+
+  @Override
+  public Optional<B2instRequestResponse> getReviewOf(String rid) {
+    try {
+      return Optional.ofNullable(
+          restTemplate.getForObject(
+              recordUrl(rid, "draft", "review"), B2instRequestResponse.class));
+    } catch (HttpClientErrorException.NotFound e) {
+      return Optional.empty();
+    } catch (RestClientException e) {
+      String reason = describeFailure(e);
+      throw new B2instConnectionException(
+          "Error reading B2INST review of record " + rid + ": " + developerDetail(e), reason, e);
+    }
+  }
+
+  @Override
+  public Optional<B2instDraftRecord> getPublishedRecord(String rid) {
+    return getRecord(recordUrl(rid), rid);
+  }
+
+  @Override
+  public Optional<B2instDraftRecord> getDraftRecord(String rid) {
+    return getRecord(recordUrl(rid, "draft"), rid);
+  }
+
+  private Optional<B2instDraftRecord> getRecord(String url, String rid) {
+    try {
+      return Optional.ofNullable(restTemplate.getForObject(url, B2instDraftRecord.class));
+    } catch (HttpClientErrorException.NotFound e) {
+      return Optional.empty();
+    } catch (RestClientException e) {
+      String reason = describeFailure(e);
+      throw new B2instConnectionException(
+          "Error reading B2INST record " + rid + ": " + developerDetail(e), reason, e);
+    }
+  }
+
+  /**
    * The record's review request when one is already open, otherwise {@code null}.
    *
    * <p>Makes publishing idempotent. Submitting is two calls (PUT the review, POST its submit
@@ -263,14 +386,7 @@ public class B2instConnectorImpl implements B2instConnector {
    * is both accepted by B2INST and necessary, since it returns the submit link the caller needs.
    */
   private B2instRequestResponse openReviewOf(String rid) {
-    try {
-      B2instRequestResponse review =
-          restTemplate.getForObject(
-              apiBase() + "/records/" + rid + "/draft/review", B2instRequestResponse.class);
-      return review != null && Boolean.TRUE.equals(review.getIsOpen()) ? review : null;
-    } catch (HttpClientErrorException.NotFound e) {
-      return null; // no review yet: the ordinary first-publish path
-    }
+    return getReviewOf(rid).filter(review -> Boolean.TRUE.equals(review.getIsOpen())).orElse(null);
   }
 
   private String submitUrlOf(B2instRequestResponse created) {

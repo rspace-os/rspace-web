@@ -1,24 +1,25 @@
 package com.researchspace.model;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.model.record.TestFactory;
 import org.apache.commons.lang3.StringUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class UserPreferenceTest {
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {}
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {}
 
   @Test
@@ -27,35 +28,44 @@ public class UserPreferenceTest {
         Preference.NOTIFICATION_DOCUMENT_EDITED_PREF, TestFactory.createAnyUser("user"), "true");
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testUserPreferenceMaxStringLength() {
-    String str = CoreTestUtils.getRandomName(256); // just a string > max length
-    new UserPreference(
-        Preference.NOTIFICATION_DOCUMENT_EDITED_PREF, TestFactory.createAnyUser("user"), str);
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          String str = CoreTestUtils.getRandomName(256); // just a string > max length
+          new UserPreference(
+              Preference.NOTIFICATION_DOCUMENT_EDITED_PREF, TestFactory.createAnyUser("user"), str);
+        });
   }
 
-  @Test(expected = IllegalStateException.class)
+  @Test
   public void testUserPreferenceGetWrongValueTypeThrosISE() {
-    UserPreference up =
-        new UserPreference(
-            Preference.NOTIFICATION_DOCUMENT_EDITED_PREF,
-            TestFactory.createAnyUser("user"),
-            "false");
-    up.getValueAsNumber();
+    assertThrows(
+        IllegalStateException.class,
+        () -> {
+          UserPreference up =
+              new UserPreference(
+                  Preference.NOTIFICATION_DOCUMENT_EDITED_PREF,
+                  TestFactory.createAnyUser("user"),
+                  "false");
+          up.getValueAsNumber();
+        });
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testBooleanPreferenceChecksArgs() {
-    // this is a boolean pref, can only be set with string representation of booleans
-    UserPreference up = createUserPref(Preference.NOTIFICATION_DOCUMENT_EDITED_PREF);
-    // all ok
-    up.setValue("true");
-    up.setValue("false");
-    up.setValue("FALSE");
-    up.setValue("TRUE");
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          UserPreference up = createUserPref(Preference.NOTIFICATION_DOCUMENT_EDITED_PREF);
+          up.setValue("true");
+          up.setValue("false");
+          up.setValue("FALSE");
+          up.setValue("TRUE");
 
-    // throws IAE
-    up.setValue("otherstring");
+          up.setValue("otherstring");
+        });
   }
 
   @Test

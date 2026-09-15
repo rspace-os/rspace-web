@@ -2,27 +2,27 @@ package com.researchspace.core.util;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.not;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 public class FolderOperatorTest {
   FolderOperator folderOps;
-  @Rule public TemporaryFolder fStoreRoot = new TemporaryFolder();
-  @Rule public TemporaryFolder fStoreRootToSet = new TemporaryFolder();
+  @TempDir public File fStoreRoot;
+  @TempDir public File fStoreRootToSet;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {}
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {}
 
   @Test
@@ -41,7 +41,7 @@ public class FolderOperatorTest {
 
   @Test
   public void testFolderOperatorString() throws IOException {
-    folderOps = new FolderOperator(fStoreRoot.getRoot().getAbsolutePath());
+    folderOps = new FolderOperator(fStoreRoot.getAbsolutePath());
     assertNotNull(folderOps.getBaseDir());
     assertNotNull(folderOps.getFileRoot());
     String baseDir = folderOps.getBaseDir().getAbsolutePath();
@@ -51,27 +51,31 @@ public class FolderOperatorTest {
         folderOps.getFileRoot().getAbsolutePath(),
         not(containsString(FolderOperator.FILE_STORE_DIR_NAME)));
     assertThat(baseDir, containsString(rootDir));
-    assertThat(baseDir, containsString(fStoreRoot.getRoot().getName()));
+    assertThat(baseDir, containsString(fStoreRoot.getName()));
   }
 
   @Test
   public void testSetFileStoreRootDir() {
     folderOps = new FolderOperator();
-    folderOps.setFileStoreRootDir(fStoreRootToSet.getRoot().getAbsolutePath());
+    folderOps.setFileStoreRootDir(fStoreRootToSet.getAbsolutePath());
     String baseDir = folderOps.getBaseDir().getAbsolutePath();
-    assertThat(baseDir, containsString(fStoreRootToSet.getRoot().getName()));
-    assertThat(baseDir, not(containsString(fStoreRoot.getRoot().getName())));
+    assertThat(baseDir, containsString(fStoreRootToSet.getName()));
+    assertThat(baseDir, not(containsString(fStoreRoot.getName())));
   }
 
-  @Test(expected = NullPointerException.class)
+  @Test
   public void testCreateNullPathThrowsNPE() throws IOException {
-    folderOps = new FolderOperator(fStoreRoot.getRoot().getAbsolutePath());
-    folderOps.createPath(null);
+    assertThrows(
+        NullPointerException.class,
+        () -> {
+          folderOps = new FolderOperator(fStoreRoot.getAbsolutePath());
+          folderOps.createPath(null);
+        });
   }
 
   @Test
   public void testCreatePath() throws IOException {
-    folderOps = new FolderOperator(fStoreRoot.getRoot().getAbsolutePath());
+    folderOps = new FolderOperator(fStoreRoot.getAbsolutePath());
     folderOps.createPath("a");
     assertTrue(new File(folderOps.getBaseDir(), "a").exists());
     assertTrue(new File(folderOps.getBaseDir(), "a").isDirectory());

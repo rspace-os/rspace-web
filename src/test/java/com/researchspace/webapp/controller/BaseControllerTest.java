@@ -1,7 +1,7 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -10,7 +10,7 @@ import com.researchspace.model.dto.IntegrationInfo;
 import com.researchspace.service.IntegrationsHandler;
 import com.researchspace.testutils.TestFactory;
 import java.util.Date;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 
 public class BaseControllerTest {

@@ -1,6 +1,6 @@
 package com.researchspace.chemistry;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.model.ChemSearchedItem;
 import com.researchspace.model.RSChemElement;
@@ -11,12 +11,12 @@ import com.researchspace.service.RSChemElementManager;
 import com.researchspace.service.RecordManager;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import java.util.List;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.TestPropertySource;
 
-@Ignore(
+@Disabled(
     "Requires chemistry service to run. See"
         + " https://documentation.researchspace.com/article/1jbygguzoa")
 @TestPropertySource(

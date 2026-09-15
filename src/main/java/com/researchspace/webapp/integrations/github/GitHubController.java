@@ -15,8 +15,6 @@ import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError.OauthAuthorizationErrorBuilder;
 import jakarta.servlet.http.HttpServletRequest;
 import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.security.Principal;
 import java.util.ArrayList;
@@ -200,18 +198,9 @@ public class GitHubController extends BaseOAuth2Controller {
   @GetMapping("/oauthUrl")
   @ResponseBody
   public AjaxReturnObject<String> oauthUrl() {
-    String redirectUri =
-        URLEncoder.encode(
-            properties.getServerUrl() + "/github/redirect_uri", StandardCharsets.UTF_8);
     String state = generateState();
     var url =
-        githubAuthorizeUrl
-            + "?scope=repo,user&client_id="
-            + this.clientId
-            + "&redirect_uri="
-            + redirectUri
-            + "&state="
-            + state;
+        githubAuthorizeUrl + "?scope=repo,user&client_id=" + this.clientId + "&state=" + state;
     return new AjaxReturnObject<>(url, null);
   }
 

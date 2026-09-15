@@ -2,7 +2,7 @@ import type React from "react";
 import type { Alert } from "../../../../../stores/contexts/Alert";
 import type { Identifier, IdentifierAttrs } from "../../../../../stores/definitions/Identifier";
 
-type TestRecordType = "sample" | "container"; // render for subSample like for sample
+type TestRecordType = "sample" | "container" | "instrument"; // render for subSample like for sample
 
 export const mockIGSNAttrs = (): IdentifierAttrs => {
   return {
@@ -43,10 +43,16 @@ export const mockIGSNAttrs = (): IdentifierAttrs => {
   };
 };
 
+const GLOBAL_IDS: Record<TestRecordType, string> = {
+  sample: "SA1",
+  container: "IC1",
+  instrument: "IN1",
+};
+
 const itemData = (recordType: TestRecordType) => {
   return {
     recordType,
-    globalId: recordType === "sample" ? "SA1" : "IC1",
+    globalId: GLOBAL_IDS[recordType],
     description: "An Inventory Record for testing",
   };
 };
@@ -115,6 +121,7 @@ export const mockIGSNIdentifier = (recordType: TestRecordType): Identifier => {
     }): Promise<void> => {},
     // biome-ignore lint/correctness/noUnusedFunctionParameters: initial biome migration
     republish: async ({ addAlert }: { addAlert: (alert: Alert) => void }): Promise<void> => {},
+    refresh: async (_args: { addAlert: (alert: Alert) => void }): Promise<void> => {},
 
     toJson() {
       return {};

@@ -1,12 +1,12 @@
 package com.researchspace.webapp.controller;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.http.MediaType.APPLICATION_OCTET_STREAM_VALUE;
 import static org.springframework.http.MediaType.TEXT_PLAIN_VALUE;
@@ -29,8 +29,6 @@ import com.researchspace.model.field.Field;
 import com.researchspace.model.record.RecordInformation;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.AuditManager;
-import com.researchspace.service.impl.ConditionalTestRunner;
-import com.researchspace.service.impl.RunIfSystemPropertyDefined;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.webapp.controller.RSChemController.ChemEditorInputDto;
 import com.researchspace.webapp.controller.RSChemController.ChemSearchResultsPage;
@@ -41,10 +39,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.hamcrest.Matchers;
 import org.jsoup.Jsoup;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.TestPropertySource;
@@ -52,11 +50,10 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-@Ignore(
+@Disabled(
     "Requires chemistry service to run. See"
         + " https://documentation.researchspace.com/article/1jbygguzoa")
 @WebAppConfiguration
-@RunWith(ConditionalTestRunner.class)
 @TestPropertySource(
     properties = {
       "chemistry.service.url=http://your-chem-service:8090",
@@ -71,7 +68,7 @@ public class RSChemControllerMVCIT extends MVCTestBase {
   @Autowired private FieldParser parser;
   @Autowired private AuditManager auditMgr;
 
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     super.setUp();
     user = createInitAndLoginAnyUser();
@@ -288,7 +285,7 @@ public class RSChemControllerMVCIT extends MVCTestBase {
   }
 
   @Test
-  @RunIfSystemPropertyDefined("nightly")
+  @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
   public void testChemImageCreationDuplication() throws Exception {
     doc1 = createBasicDocumentInRootFolderWithText(user, "any");
     Field fld = doc1.getFields().get(0);
@@ -306,7 +303,7 @@ public class RSChemControllerMVCIT extends MVCTestBase {
   }
 
   @Test
-  @RunIfSystemPropertyDefined("nightly")
+  @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
   public void cachingPerformanceOfChemImages() throws Exception {
     final int NUM_CHEMS = 30;
     // set up
@@ -344,13 +341,13 @@ public class RSChemControllerMVCIT extends MVCTestBase {
 
     double SPEEDUP = 1.33; // is around 1.5 on new jenkins, but 1.33 is conservative estimate
     assertTrue(
-        "cache speedup should be min 25%, was: " + cached + "-" + uncached,
-        cached * SPEEDUP < uncached);
+        cached * SPEEDUP < uncached,
+        "cache speedup should be min 25%, was: " + cached + "-" + uncached);
   }
 
   @Test
   // RSPAC-1928
-  @RunIfSystemPropertyDefined("nightly")
+  @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
   public void fileUploadSuccess() throws Exception {
 
     MockMultipartFile mf1 =

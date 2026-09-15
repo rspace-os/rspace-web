@@ -1,16 +1,13 @@
 package com.researchspace.auth;
 
 import static com.researchspace.testutils.TestFactory.createAnyUserWithRole;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
-import com.researchspace.model.Community;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.service.UserManager;
-import com.researchspace.testutils.TestFactory;
-import java.util.Collections;
-import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -22,7 +19,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
@@ -31,8 +27,6 @@ class UserPermissionUtilsTest {
   User sysadminSubject, communityAdminSubject, piSubject, userSubject;
   private @Mock UserManager userManager;
   @InjectMocks UserPermissionUtils userPermissionUtils;
-  static Community c1 = TestFactory.createACommunity();
-  static Community c2 = TestFactory.createACommunity();
 
   @BeforeEach
   void setUp() {
@@ -73,27 +67,21 @@ class UserPermissionUtilsTest {
   @DisplayName("CA can't access any sysadmin")
   @Test
   void communityAdminCannotAccessSysadminRole() {
-    enableLenientMockGetUser(sysadminSubject);
+    stubGetUser(sysadminSubject);
     assertFalse(
         userPermissionUtils.isTargetUserValidForSubjectRole(
             communityAdminSubject, sysadminSubject.getUsername()));
   }
 
-  @DisplayName("CA can't access any  CA in other community")
-  @ParameterizedTest
-  @MethodSource("unauthorisedCommunityLists")
-  void communityAdminCannotAccessCAInOtherCommunity(List<Community> communities) {
-    assertCommunityAdminAccess(communityAdminSubject, List.of(c1), communities, false);
-  }
-
-  static Stream<List<Community>> unauthorisedCommunityLists() {
-    return Stream.of(Collections.emptyList(), List.of(c2), List.of(c1, c2));
-  }
-
-  @DisplayName("CA cannot access another CA in the same community")
+  @DisplayName("CA cannot access another CA")
   @Test
-  void communityAdminCannotAccessCAInSameCommunity() {
-    assertCommunityAdminAccess(communityAdminSubject, List.of(c1), List.of(c1), false);
+  void communityAdminCannotAccessAnotherCommunityAdmin() {
+    User targetCommunityAdmin = createTargetCommunityAdmin();
+    stubGetUser(targetCommunityAdmin);
+
+    assertFalse(
+        userPermissionUtils.isTargetUserValidForSubjectRole(
+            communityAdminSubject, targetCommunityAdmin.getUsername()));
   }
 
   @DisplayName("CA can access another user or PI in the same community")
@@ -101,7 +89,7 @@ class UserPermissionUtilsTest {
   @ValueSource(strings = {"ROLE_PI", "ROLE_USER"})
   void communityAdminCanAccessPIOrUserInSameCommunity(String roleName) {
     User target = createAnyUserWithRole("target", roleName);
-    enableLenientMockGetUser(target);
+    stubGetUser(target);
     setTargetUserInSameCommunity(target, true);
 
     assertTrue(
@@ -114,29 +102,12 @@ class UserPermissionUtilsTest {
   @ValueSource(strings = {"ROLE_PI", "ROLE_USER"})
   void communityAdminCannotAccessPIOrUserInDifferentCommunity(String roleName) {
     User target = createAnyUserWithRole("target", roleName);
-    enableLenientMockGetUser(target);
+    stubGetUser(target);
     setTargetUserInSameCommunity(target, false);
 
     assertFalse(
         userPermissionUtils.isTargetUserValidForSubjectRole(
             communityAdminSubject, target.getUsername()));
-  }
-
-  private void assertCommunityAdminAccess(
-      User subject,
-      List<Community> subjectCommunities,
-      List<Community> targetCommunities,
-      boolean expected) {
-    User targetCommunityAdmin = createTargetCommunityAdmin();
-    enableLenientMockGetUser(targetCommunityAdmin);
-    boolean accessible =
-        userPermissionUtils.isTargetUserValidForSubjectRole(
-            communityAdminSubject, targetCommunityAdmin.getUsername());
-    if (expected) {
-      assertTrue(accessible);
-    } else {
-      assertFalse(accessible);
-    }
   }
 
   private User createTargetCommunityAdmin() {
@@ -151,8 +122,8 @@ class UserPermissionUtilsTest {
         .thenReturn(sameCommunity);
   }
 
-  private void enableLenientMockGetUser(User target) {
-    Mockito.lenient().when(userManager.getUserByUsername(target.getUsername())).thenReturn(target);
+  private void stubGetUser(User target) {
+    when(userManager.getUserByUsername(target.getUsername())).thenReturn(target);
   }
 
   private static Stream<Arguments> targetUsersByRole() {

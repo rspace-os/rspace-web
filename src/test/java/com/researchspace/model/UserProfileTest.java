@@ -1,25 +1,26 @@
 package com.researchspace.model;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.researchspace.model.record.TestFactory;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class UserProfileTest {
 
   User user;
   User other;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     user = TestFactory.createAnyUser("any");
     other = TestFactory.createAnyUser("other");
   }
 
-  @After
+  @AfterEach
   public void tearDown() {}
 
   @Test
@@ -33,14 +34,22 @@ public class UserProfileTest {
     assertFalse(otherProfile.equals(profile));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testUserProfileUserThrowsIAEIfNullUser() {
-    new UserProfile(null);
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          new UserProfile(null);
+        });
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testSetOwner() {
-    UserProfile profile = new UserProfile(user);
-    profile.setOwner(null);
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          UserProfile profile = new UserProfile(user);
+          profile.setOwner(null);
+        });
   }
 }

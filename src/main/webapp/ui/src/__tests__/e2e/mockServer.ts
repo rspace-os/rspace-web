@@ -30,6 +30,7 @@ import { raidHandlers } from "../../modules/raid/__tests__/mock.ts";
 import { slackHandlers } from "../../modules/slack/__tests__/mock.ts";
 import { snapgeneHandlers } from "../../modules/snapgene/__tests__/mock.ts";
 import { zenodoHandlers } from "../../modules/zenodo/__tests__/mock.ts";
+import { b2instHandlers } from "./mocks/b2inst.ts";
 import { dataciteHandlers } from "./mocks/datacite.ts";
 
 const PORT = Number(process.argv[2] ?? process.env.E2E_MOCK_PORT ?? "9099");
@@ -68,6 +69,7 @@ const handlers = [
   ...nextcloudHandlers,
   ...protocolsioHandlers,
   ...dataciteHandlers,
+  ...b2instHandlers,
 ];
 const mswMiddleware = createMiddleware(...handlers);
 

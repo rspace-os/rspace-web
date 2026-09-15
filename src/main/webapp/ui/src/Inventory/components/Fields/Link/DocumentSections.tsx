@@ -322,7 +322,7 @@ export default function DocumentSections({
 
       <LinkedByDocs info={info} recordTypeName={recordTypeName} />
 
-      <RelatedInventoryItems globalId={info.oid.idString} recordTypeName={recordTypeName} />
+      <RelatedInventoryItems globalId={info.oid.idString} recordType={isNotebook ? "notebook" : "document"} />
 
       <SharingAndPublication info={info} isNotebook={isNotebook} recordTypeName={recordTypeName} />
     </Stack>

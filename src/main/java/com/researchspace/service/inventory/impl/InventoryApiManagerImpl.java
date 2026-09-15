@@ -617,6 +617,15 @@ public abstract class InventoryApiManagerImpl<T extends InventoryRecord>
   }
 
   /**
+   * Bumps the record's user-facing version, at most once per record per transaction, because Envers
+   * writes one revision per entity per transaction (RSDEV-1319). The why and the lifecycle rules
+   * live on {@link TransactionScopedVersionBumpGuard}.
+   */
+  protected void increaseVersionOncePerTransaction(InventoryRecord dbRecord) {
+    TransactionScopedVersionBumpGuard.increaseVersionOncePerTransaction(dbRecord);
+  }
+
+  /**
    * If the item is located in workbench of originalOwner, move it to workbench of targetOwner.
    *
    * @param movableInvRec

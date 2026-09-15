@@ -10,8 +10,12 @@ public interface IPagination<T> {
 
   int DEFAULT_RESULTS_PERPAGE = 10;
 
-  /** Pattern of disallowed characters in orderby clauses to prevent SQL injection attacks. */
-  Pattern ORDERBYBLACKLIST = Pattern.compile("['\";%^&]");
+  /**
+   * Matches bare or dot-separated identifier paths, excluding SQL expressions, so an orderby clause
+   * cannot alter the generated query.
+   */
+  Pattern SAFE_ORDER_BY_TOKEN =
+      Pattern.compile("[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*");
 
   Class<T> getClazz();
 

@@ -2,11 +2,11 @@ package com.researchspace.service;
 
 import static com.researchspace.service.FileDuplicateStrategy.AS_NEW;
 import static org.apache.commons.io.IOUtils.readLines;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.FileProperty;
 import com.researchspace.model.User;
@@ -24,9 +24,9 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -38,7 +38,7 @@ public class FileStoreTest extends SpringTransactionalTest {
   final String testFilePath = "src/test/resources/TestResources/testTxt.txt";
   private @Autowired FileStoreMetaManager fileStoreMetaMgr;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
   }
@@ -81,7 +81,7 @@ public class FileStoreTest extends SpringTransactionalTest {
   }
 
   @Test
-  @Ignore
+  @Disabled
   public void testVersion() throws IOException {
     User user = createAndSaveRandomUser();
     // a text file
@@ -173,7 +173,7 @@ public class FileStoreTest extends SpringTransactionalTest {
     assertTrue(fileStore.exists(fp));
     File found = fileStore.findFile(fp);
 
-    assertEquals("found file isn't the same as original!", found.getName(), file.getName());
+    assertEquals(found.getName(), file.getName(), "found file isn't the same as original!");
 
     // change properties so doesn't exist...
     fp.setFileCategory("pdf2");

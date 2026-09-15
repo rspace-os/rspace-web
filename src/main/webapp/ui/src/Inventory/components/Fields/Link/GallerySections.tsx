@@ -27,7 +27,7 @@ export interface GallerySectionsProps {
  * preview, and the Download / Show-linked-docs / Upload-new-version actions.
  */
 export default function GallerySections({ info, onRecordChanged }: GallerySectionsProps): React.ReactElement {
-  const { t } = useTranslation(["inventory", "common"]);
+  const { t } = useTranslation("inventory");
   const isRevisionView = info.revision != null;
   const isImage = info.type === "Image";
   // The ELN gates upload on `!isRevisionView && (owner || VIEW_MODE)`. `VIEW_MODE` is
@@ -190,10 +190,7 @@ export default function GallerySections({ info, onRecordChanged }: GallerySectio
 
       {showRelatedInventory ? (
         <Box sx={{ mt: 1 }}>
-          <RelatedInventoryItems
-            globalId={info.oid.idString}
-            recordTypeName={t("common:recordTypes.galleryFile.lower")}
-          />
+          <RelatedInventoryItems globalId={info.oid.idString} recordType="galleryFile" />
         </Box>
       ) : null}
     </Box>

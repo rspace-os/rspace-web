@@ -1,6 +1,8 @@
 package com.axiope.webapp.listener;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.Constants;
 import com.researchspace.testutils.SpringTransactionalTest;
@@ -8,8 +10,9 @@ import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletContextEvent;
 import jakarta.servlet.ServletContextListener;
 import java.util.Map;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.context.ApplicationContext;
 import org.springframework.mock.web.MockServletContext;
 
@@ -39,7 +42,7 @@ public class StartupListenerTest extends SpringTransactionalTest {
     }
   }
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
 
     sc = new MockServletContext("");
@@ -49,6 +52,7 @@ public class StartupListenerTest extends SpringTransactionalTest {
     listener = new StartupListenerTss();
   }
 
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
     listener = null;

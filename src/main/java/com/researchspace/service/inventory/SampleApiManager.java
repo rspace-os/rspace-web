@@ -186,6 +186,12 @@ public interface SampleApiManager extends InventoryApiManager<SampleEntity> {
    */
   ApiSample changeApiSampleOwner(ApiSampleInfo apiSample, User user);
 
+  /**
+   * Stamps modification details on the sample, saves it and publishes an editing event. The
+   * user-facing version bumps at most once per sample per transaction, so repeated saves in one
+   * transaction (e.g. adding several subsamples) advance it by exactly one (RSDEV-1319, see
+   * InventoryApiManagerImpl#increaseVersionOncePerTransaction).
+   */
   void saveDbSampleUpdate(SampleEntity dbSample, User user);
 
   /**

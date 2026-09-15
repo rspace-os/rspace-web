@@ -384,16 +384,6 @@ export default interface Resources {
         },
         "usage": "You can include files from Egnyte in your RSpace documents. Files are embedded as links to the Egnyte location of that file."
       },
-      "evernote": {
-        "description": "Take notes, manage tasks, and organise your notes into notebooks with embedded media.",
-        "helpLink": "Evernote integration docs",
-        "name": "Evernote",
-        "setup": {
-          "import": "In the Workspace, select Create → Import from Evernote.",
-          "instructions": "<ol><li>Enable the integration.</li><li>In the Workspace, select Create → Import from Evernote.</li></ol>"
-        },
-        "usage": "You can directly import Evernote XML exports into RSpace. The import creates a separate RSpace document for each Note, and images and attachments will also be imported."
-      },
       "fieldmark": {
         "description": "Collect structured, geospatial sample and fieldwork data while offline, for easy importing into Inventory.",
         "fields": {
@@ -1009,7 +999,6 @@ export default interface Resources {
       "dryad": "i1xvubndhm-dryad-integration",
       "dsw": "6adimrmy9m-dsw-fair-wizard-integration",
       "editLocationsInVisualContainers": "jya8j336dt-edit-locations-in-visual-containers",
-      "evernote": "9ckpmfdq8m-evernote-integration",
       "fieldmark": "idbaaggghu-fieldmark-integration",
       "figshare": "ir4ybsamcn-figshare-integration",
       "formsRadiosAndPicklists": "rozak8tlwr-forms#radios_and_picklists",
@@ -1633,7 +1622,6 @@ export default interface Resources {
       "displayingLockedVersion": "Displaying version {version} of the document - this is locked for editing.",
       "folder": "Folder",
       "folderIcon": "Folder icon",
-      "fromEvernote": "From Evernote",
       "fromForm": "From Form",
       "fromProtocolsIo": "From Protocols.io",
       "fromTemplate": "From Template",
@@ -1959,7 +1947,10 @@ export default interface Resources {
         "name": "Name"
       },
       "heading": "Linked Documents",
-      "noRows": "No Linked Documents"
+      "loadFailed": "Error loading linked documents.",
+      "noRows": "No Linked Documents",
+      "privateDocs": "{count, plural, one {# private doc belonging to {ownerFullName}} other {# private docs belonging to {ownerFullName}}}",
+      "unknownOwner": "an unknown user"
     },
     "listing": {
       "alerts": {
@@ -2108,7 +2099,8 @@ export default interface Resources {
       "viewLatest": "View the latest version"
     },
     "referencingInventoryItems": {
-      "loadFailed": "Error loading related inventory items."
+      "loadFailed": "Error loading related inventory items.",
+      "noRows": "No related inventory items"
     },
     "s3": {
       "errors": {
@@ -2654,7 +2646,9 @@ export default interface Resources {
       }
     },
     "createNew": {
-      "csvImport": "CSV Import",
+      "csvImport": "Import",
+      "fromCsv": "From CSV",
+      "fromCsvDescription": "Samples, Subsamples, Containers and Instruments",
       "helpTitles": {
         "container": "Info on creating containers.",
         "instrument": "Info on creating instruments.",
@@ -3023,6 +3017,8 @@ export default interface Resources {
           "pidinstDocLink": "See PIDINST Documentation for details",
           "preview": "Preview",
           "publishAwaitingReview": "This instrument PID has been submitted to the B2INST community and is awaiting curator review.",
+          "publishPidinstPublished": "The community accepted this submission. The instrument PID is already published and cannot be published again.",
+          "refresh": "Refresh",
           "rorError": "Could not get RoR data.",
           "show": "Show",
           "stateInfo": {
@@ -3030,10 +3026,11 @@ export default interface Resources {
             "draftPidinst": "This PIDINST is a Draft. Metadata can be specified, but no information is publicly available.",
             "findable": "This IGSN ID is Findable. The IGSN ID is a citable URL that redirects to the <externalLink href=\"{link}\">RSpace landing page</externalLink>. The metadata is publicly available through the landing page, DataCite Commons and the DataCite APIs.",
             "findablePidinst": "This PIDINST is Findable. The PIDINST is a citable URL that redirects to the <externalLink href=\"{link}\">RSpace landing page</externalLink>. The metadata is publicly available through the landing page, DataCite Commons and the DataCite APIs.",
-            "pidinstAccepted": "The community accepted this submission. The instrument PID is registered and publicly resolvable.",
-            "pidinstCancelled": "The submission was cancelled before review. The instrument PID remains a draft.",
-            "pidinstDeclined": "The community declined this submission. The instrument PID remains a draft.",
-            "pidinstExpired": "The submission expired before it was reviewed. The instrument PID remains a draft.",
+            "pidinstAccepted": "This PIDINST ID is Accepted. The PIDINST ID is a citable ePIC Handle that redirects to the <externalLink href=\"{link}\">registered landing page</externalLink>. The metadata is publicly available through that page and the instrument's B2INST record.",
+            "pidinstCancelled": "The submission was cancelled before review. The instrument PID remains a draft. You can delete this identifier and register a new one.",
+            "pidinstCreated": "The review request was created but has not been submitted to the community yet. Press Publish to submit it.",
+            "pidinstDeclined": "The community declined this submission. The instrument PID remains a draft. You can delete this identifier and register a new one.",
+            "pidinstExpired": "The submission expired before it was reviewed. The instrument PID remains a draft. You can delete this identifier and register a new one.",
             "pidinstSubmitted": "Submitted to the B2INST community for review. A curator decides whether the instrument PID is published.",
             "registered": "This IGSN ID is Registered. The metadata is not publicly available through the <externalLink href=\"{link}\">RSpace landing page</externalLink>, DataCite Commons or the Public API, but is available through the Members API.",
             "registeredPidinst": "This PIDINST is Registered. The metadata is not publicly available through the <externalLink href=\"{link}\">RSpace landing page</externalLink>, DataCite Commons or the Public API, but is available through the Members API."
@@ -3052,11 +3049,13 @@ export default interface Resources {
             "show": "Show identifier's details"
           },
           "tooltips": {
+            "deleteClosedReview": "Delete this identifier so a new one can be registered",
             "deleteDraft": "Delete Draft",
             "missingData": "Some missing data",
             "notPublished": "Not published yet",
             "pidinstNotRetractable": "B2INST instrument PIDs cannot be retracted or deleted once the record has been sent for community review.",
             "previewPage": "Preview Landing Page",
+            "refresh": "Check the current status of the community review",
             "retract": "Retract"
           }
         },
@@ -3268,7 +3267,8 @@ export default interface Resources {
             "relation": "Relation"
           },
           "loading": "Loading...",
-          "none": "No Inventory items link to this {recordTypeName}.",
+          "none": "{recordType, select, document {No Inventory items link to this document.} notebook {No Inventory items link to this notebook.} galleryFile {No Inventory items link to this gallery file.} other {No Inventory items link to this record.}}",
+          "row": "<globalId>{globalId}</globalId>: {name}{relationKind, select, attachment { <relation>(Attachment)</relation>} relation { <relation>({relationType})</relation>} other {}}",
           "title": "Related inventory items"
         },
         "targetBrowser": {
@@ -3475,8 +3475,14 @@ export default interface Resources {
     "identifierModel": {
       "alerts": {
         "doiRequired": "DOI must be known",
+        "externalUpdateFailed": "Instrument PID not updated ({doi})",
+        "externalUpdateFailedMany": "{count, plural, one {# instrument PID was not updated} other {# instrument PIDs were not updated}}",
+        "externalUpdateNotPossible": "Instrument PID left unchanged ({doi})",
+        "externalUpdateNotPossibleMany": "{count, plural, one {# instrument PID was left unchanged} other {# instrument PIDs were left unchanged}}",
         "publishFailed": "The identifier could not be published.",
         "published": "The identifier {doi} has been published.",
+        "refreshFailed": "Could not refresh the identifier status",
+        "refreshed": "The identifier status is now \"{state}\".",
         "republishAfterRetractFailed": "Identifier has been retracted. Tap publish to try again.\n{reason}",
         "republishFailed": "The identifier could not be republished.",
         "republished": "The identifier {doi} has been republished.",
@@ -3674,6 +3680,7 @@ export default interface Resources {
       "templateDetails": {
         "chooseExistingTemplate": "Choose existing template.",
         "createNewTemplate": "Create new template.",
+        "selectInstrumentTemplate": "Select a template from which these imported instruments will be created.",
         "selectTemplate": "Select a template from which these imported samples will be created."
       },
       "title": "IMPORT"
@@ -3722,7 +3729,7 @@ export default interface Resources {
         "explanation": "If you select an instrument template below, initial metadata and custom fields will be automatically generated.",
         "fetchError": "Could not fetch instrument template details.",
         "label": "Instrument Template",
-        "noTemplate": "No template",
+        "noTemplate": "No Template",
         "noTemplateTitle": "No Template",
         "unknownReason": "Unknown reason.",
         "version": "Version {version}"
@@ -5409,12 +5416,15 @@ export default interface Resources {
           "grantGlobalPiRole": "Unauthorized attempt by {0} to grant the global PI role",
           "insertComment": "Unauthorized attempt by {0} to insert a comment",
           "listAllUsers": "Unauthorized attempt by {0} to list all users",
+          "listLinkedDocuments": "Unauthorized attempt by {0} to list documents linked to media file [{1}]",
           "openDeletedFolder": "Unauthorized attempt by {0} to open a deleted folder",
           "openNotebook": "Unauthorized attempt by {0} to open notebook [{1}]",
           "openUnauthorisedFolder": "Unauthorized attempt by {0} to open an unauthorised folder",
           "polite": "Sorry, you don''t have permission to {0}",
           "promoteUserToPi": "Unauthorized attempt by {0} to promote a user to PI",
           "readCommunication": "Unauthorized attempt by {0} to view a communication",
+          "readDraftFields": "Unauthorized attempt by {0} to read draft fields of record [{1}]",
+          "readFields": "Unauthorized attempt by {0} to read fields of record [{1}]",
           "readMediaFile": "Unauthorized attempt by {0} to read a media file",
           "readRecord": "Unauthorized attempt by {0} to read a record",
           "removePiFromGroup": "Unauthorized attempt by {0} to remove a PI from a group. Only a PI or an administrator can remove another PI from a group.",
@@ -5431,7 +5441,8 @@ export default interface Resources {
           "sendExternalMessage": "Unauthorized attempt by {0} to send an external message",
           "shareFolder": "Unauthorized attempt by {0} to share folder {1}",
           "swapGroupPis": "Unauthorized attempt by {0} to swap group PIs",
-          "unlockUserAccount": "Unauthorized attempt by {0} to unlock a user account"
+          "unlockUserAccount": "Unauthorized attempt by {0} to unlock a user account",
+          "viewComments": "Unauthorized attempt by {0} to view comments"
         },
         "formIconUpdate": "Unauthorized attempt to update form icon",
         "maintenanceSysadminOnly": "Only sysadmin can manage scheduled maintenances",
@@ -6770,17 +6781,31 @@ export default interface Resources {
         },
         "identifier": {
           "assignTypeMismatch": "Identifier of type {0} cannot be assigned to inventory item [{1}]",
+          "b2instAcceptedRecordUnavailable": "B2INST accepted this submission but its record is not available yet, so the instrument PID cannot be shown. Please try again shortly.",
           "b2instDeleteFailed": "Could not delete the instrument PID from B2INST. {0}",
+          "b2instHttpStatus": "B2INST returned HTTP {0} {1}.",
+          "b2instNoCommunity": "B2INST is not fully configured for publishing, because no community has been set.",
+          "b2instNoSubmitAction": "B2INST did not offer a submit action for this record.",
           "b2instPublishFailed": "Could not publish the instrument PID in B2INST. {0}",
+          "b2instRecordGone": "B2INST no longer holds this record, so there is no status to refresh. The record was removed on the provider side.",
+          "b2instRefreshFailed": "Could not refresh the instrument PID status from B2INST. {0}",
           "b2instRegisterFailed": "Could not register a new instrument PID with B2INST. {0}",
           "b2instRegisterNoDraft": "Could not register a new instrument PID with B2INST: the service accepted the request but returned no draft record.",
           "b2instRetractUnsupported": "Instrument PIDs registered with B2INST cannot be retracted from RSpace.",
+          "b2instUnreachable": "B2INST could not be reached.",
           "bulkMaxExceeded": "cannot allocate more than {0} IGSNs in a single request",
           "bulkPositiveRequired": "not a valid number of IGSNs to allocate: \"{0}\". The number must be greater than 0",
+          "dataCitePublishFailed": "Error when publishing the DOI in DataCite. If the problem persists, please contact your System Admin",
           "dataCiteRegisterNoDraft": "Could not register a new identifier with DataCite: the service accepted the request but returned no draft record.",
+          "dataCiteRetractFailed": "Error when retracting the DOI in DataCite. If the problem persists, please contact your System Admin",
           "deleteNotOwner": "You can only delete an identifier that you own.",
+          "deleteWrongState": "You can only delete identifiers in \"draft\" state, or B2INST instrument PIDs whose community review was declined, cancelled or expired.",
+          "externalUpdateFailed": "Could not update the instrument metadata held by {0}. The instrument itself was saved, so saving it again will try the update once more. {1}",
+          "externalUpdateNotPossibleB2inst": "The instrument metadata held by {0} could not be updated because its community review has been accepted, so the record no longer has a draft open for changes. The instrument itself was saved.",
+          "externalUpdateNotPossibleDataCite": "The instrument metadata held by {0} could not be updated because its identifier is no longer a draft. Publishing or republishing the identifier sends its current metadata. The instrument itself was saved.",
           "integrationNotEnabled": "{0} integration is not enabled on this RSpace instance.",
           "mintingUnsupportedType": "unsupported type for minting: {0}",
+          "refreshNoIdentifier": "This item has no identifier to refresh. Register an identifier before refreshing its status.",
           "typeUnsupported": "identifiers of type {0} are not supported yet"
         },
         "imageTooLarge": "Image cannot be larger than 10MB",
@@ -6874,6 +6899,7 @@ export default interface Resources {
         "stoichiometry": {
           "actualAmountRequired": "Molecule actual amount must be set for deduction",
           "alreadyLinked": "Stoichiometry molecule already has an inventory link",
+          "deductionFailed": "An internal error occurred while deducting stock",
           "insufficientStock": "Insufficient stock to perform this action. Attempting to use {0} of stock amount {1} for {2}",
           "linkNotFound": "Stoichiometry link not found: id={0}",
           "linkNotInStoichiometry": "Link with id {0} does not belong to stoichiometry with id {1}",
@@ -6937,6 +6963,9 @@ export default interface Resources {
           "itemsAdded": "Added inventory items: {0}.",
           "itemsRemoved": "Removed inventory items: {0}."
         }
+      },
+      "identifier": {
+        "externalUpdated": "The instrument metadata held by {0} was updated."
       },
       "listOfMaterials": {
         "label": "List of materials"
@@ -7876,8 +7905,6 @@ export default interface Resources {
           "chooseFormTitle": "Choose a form",
           "displaySettingsAction": "Display Workspace Settings",
           "folderEmpty": "This folder is empty.",
-          "importEvernoteFileType": "Evernote XML",
-          "importEvernoteTitle": "Import from Evernote",
           "importWordFileType": "Word or Open Office",
           "importWordTitle": "Import from Word/Open Office",
           "listView": "List View",
@@ -8735,7 +8762,6 @@ export default interface Resources {
           "dryadAvailable": "Makes Dryad integration available. User can create new dryad submissionand attach RSpace exports or documents to that submission.",
           "dswAvailable": "Makes DSW integration available.",
           "egnyteAvailable": "Makes Egnyte integration available to the users. After enabling the integration, users can link to Egnyte in text field editor",
-          "evernoteAvailable": "Enables users to import Evernote XML export files via Create->Import",
           "fieldmarkAvailable": "Makes Fieldmark integration available.",
           "galaxyAvailable": "Makes Galaxy integration available.",
           "githubAvailable": "Makes Github integration available. After enabling, user can add links to files in Github repositories.",
@@ -9940,10 +9966,10 @@ export default interface Resources {
         "import": {
           "createFailed": "Could not create document from {0}",
           "createFailedWithReason": "Could not create document from {0} - {1}",
-          "evernoteExtensionRequired": "File must be in Evernote XML ending in .enex",
           "noFilesError": "No files were submitted! Please choose some Word or text files to upload.",
           "noImporterForFileType": "No importer for file type {0}",
-          "progressDescription": "Processed file ''{0}''. Import is {1}% complete."
+          "progressDescription": "Processed file ''{0}''. Import is {1}% complete.",
+          "progressStarted": "Importing files..."
         }
       }
     },
@@ -10586,6 +10612,7 @@ export default interface Resources {
         },
         "fromPyrat": "From PyRAT",
         "helpTitle": "PyRAT help",
+        "importedFrom": "Imported from <serverLink>{server}</serverLink> on {timestamp}",
         "linkTooltip": "Link to PyRAT",
         "selectedCount": "Selected: {count}",
         "tableLabel": "animal search results"

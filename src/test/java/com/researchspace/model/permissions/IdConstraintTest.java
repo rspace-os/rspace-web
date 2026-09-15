@@ -1,37 +1,39 @@
 package com.researchspace.model.permissions;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class IdConstraintTest {
   Set<Long> ids = null;
   IdConstraint constraint;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {}
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {}
 
-  @Test(expected = UnsupportedOperationException.class)
+  @Test
   public void testInvariants2() {
-    createConstraintFromLongArray(new Long[] {2L, 3L, 1L});
-    ids.clear();
-    // encapsulated  set is unaltered
-    assertEquals(3, constraint.getId().size());
-    // check ids are ordered in ascending order
-    assertEquals(1L, constraint.getId().iterator().next().longValue());
+    assertThrows(
+        UnsupportedOperationException.class,
+        () -> {
+          createConstraintFromLongArray(new Long[] {2L, 3L, 1L});
+          ids.clear();
+          assertEquals(3, constraint.getId().size());
+          assertEquals(1L, constraint.getId().iterator().next().longValue());
 
-    // return list is read only!
-    constraint.getId().clear();
+          constraint.getId().clear();
+        });
   }
 
   @Test

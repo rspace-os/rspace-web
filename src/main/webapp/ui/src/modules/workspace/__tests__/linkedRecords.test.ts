@@ -37,8 +37,8 @@ describe("getLinkedByRecords", () => {
     const result = await getLinkedByRecords(123);
 
     expect(result.readable).toEqual([
-      { globalId: "SD11", name: "Doc one", ownerFullName: "Ada Lovelace" },
-      { globalId: "SD12", name: "Doc two", ownerFullName: "Grace Hopper" },
+      { id: 11, globalId: "SD11", name: "Doc one", ownerFullName: "Ada Lovelace" },
+      { id: 12, globalId: "SD12", name: "Doc two", ownerFullName: "Grace Hopper" },
     ]);
     expect(result.privateByOwner).toEqual([
       { ownerFullName: "Grace Hopper", count: 2 },
@@ -90,7 +90,7 @@ describe("getLinkedDocuments", () => {
 
     const result = await getLinkedDocuments(55);
 
-    expect(result.readable).toEqual([{ globalId: "SD7", name: "Linked doc", ownerFullName: "Ada Lovelace" }]);
+    expect(result.readable).toEqual([{ id: 7, globalId: "SD7", name: "Linked doc", ownerFullName: "Ada Lovelace" }]);
     expect(result.privateByOwner).toEqual([]);
   });
 });
