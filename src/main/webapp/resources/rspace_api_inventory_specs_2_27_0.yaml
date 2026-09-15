@@ -17,6 +17,14 @@ info:
 security:
   - ApiKeySecurity: []
   - OAuthJWT: []
+tags:
+  - name: Operations
+    description: >
+      Configured Inventory operations. Every endpoint under `/operations` answers `404` with
+      errorCode `CONFIGURED_UNAVAILABLE` while the system property
+      `inventory.operations.available` is `DENIED`, which is how it is seeded; a sysadmin turns it
+      on at System > Configuration.
+
 paths:
   /workbenches:
     get:
