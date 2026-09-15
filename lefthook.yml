@@ -17,9 +17,16 @@ pre-commit:
     # sensible production value. Never your own `deployment.properties`: it is
     # git-ignored, so nobody else would ever see the change.
     # Escape hatch: `git commit --no-verify`.
-    # Kept simple for Windows: the previous $(...) capture with double-quoted
-    # echoes failed to parse through lefthook's Git-for-Windows `sh -c` wrapper.
-    # (Not a blanket rule; the spotless hook below uses both fine.)
+    # Windows note: lefthook 2.1.x folds this `run:` block into its
+    # Git-for-Windows `sh -c "…"` wrapper, and a double-quoted string CONTAINING
+    # A SPACE inside an `if…then…fi` desyncs the wrapper's quoting -> `syntax
+    # error: unexpected end of file` (bisected: the same string single-quoted,
+    # or a space-free "$var", or that string at top level, all parse fine; it is
+    # not $(...), not `>&2`, not the multi-line capture). So every message below
+    # is single-quoted -- inside single quotes the `(`, `)`, `<` are literal too.
+    # The match+print grep chain is duplicated (once to test, once to print):
+    # keep the two in step or the hook blocks with no message, or prints a path
+    # it then allows. Dropping the captured variable is what forced that.
     secret-files:
       run: |
         if printf '%s\n' {staged_files} | grep -iE '(^|/)(\.env(\..+)?|deployment\.properties)$' | grep -qviE '\.example$'; then
@@ -34,11 +41,12 @@ pre-commit:
     # spotlessFiles matches the absolute path via String#matches, so each
     # staged (repo-relative) path is prefixed with `.*` to anchor correctly.
     # git reports forward slashes, but the absolute path spotless matches uses
-    # the OS separator (backslashes on Windows), so each `/` becomes `.`, a
-    # wildcard that matches the separator on any OS (and, harmlessly for these
-    # paths, any other char too). A separator-exact `[/\\]` class would need
-    # backslashes that lefthook's Windows `sh -c "…"` wrapper halves into an
-    # invalid regex.
+    # the OS separator (backslashes on Windows), so each `/` becomes
+    # `[^A-Za-z0-9_]`, a class matching the separator on any OS without matching
+    # mid-identifier. A separator-exact `[/\\]` can't be used: lefthook's Windows
+    # `sh -c "…"` wrapper halves its backslashes into an invalid regex (`[/\]`,
+    # "Unclosed character class"). `[^A-Za-z0-9_]` has no backslash, so it clears
+    # the wrapper the way a bare `.` would, but without `.`'s any-char looseness.
     # Guard against an empty list (drop blank lines) so we never fall back to
     # `-DspotlessFiles=".*"`, which would match every file in the repo.
     # -DspotlessStrict adds the CleanThat checks; scoped to staged files, so it
@@ -47,7 +55,7 @@ pre-commit:
       glob: "**/*.java"
       run: |
         spotless_files=$(printf '%s\n' {staged_files} \
-          | sed '/^$/d; s/[.[\](){}+^$|\\]/\\&/g; s#/#.#g; s#^#.*#' \
+          | sed '/^$/d; s/[.[\](){}+^$|\\]/\\&/g; s#/#[^A-Za-z0-9_]#g; s#^#.*#' \
           | paste -sd, -)
         if [ -n "$spotless_files" ]; then
           ./mvnw -q spotless:check -DspotlessStrict -DspotlessFiles="$spotless_files"
