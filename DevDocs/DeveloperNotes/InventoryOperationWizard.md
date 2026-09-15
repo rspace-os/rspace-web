@@ -255,7 +255,27 @@ is gone, along with the controller method behind it. Moving it down took
 `sampleApiPostValidator` is injected as a plain Spring `Validator` by bean name, since its
 own type extends a package-private hierarchy that stays in the controller package. Edit
 permission is asserted on every origin before any origin is mutated (this branch has no
-row locking; see DevDocs/adr/0007's RSDEV-1231-no-concurrency note). The live-state rules
+row locking; see DevDocs/adr/0007's RSDEV-1231-no-concurrency note).
+
+**Lock lifecycle.** The wizard and the endpoint both take the Inventory edit-session
+lock, the same courtesy lock the subsample edit form takes. `ProcessAction` calls
+`acquireEditLock()` on every origin before opening the wizard (lock only: the records
+stay in preview and are never refetched), the wizard extends them on each step and at
+Perform, and `onClose` releases them all, which covers cancel, escape, backdrop and a
+successful Perform. A failed Perform keeps the wizard open AND keeps its locks, so a
+retry does not race. `InventoryOperationsApiController.withOriginsLocked` independently
+locks every origin and every distinct parent sample, ascending, outside the manager's
+transaction, and releases in a `finally` only the locks it created (`LOCKED_OK`);
+`WAS_ALREADY_LOCKED` is the caller's own wizard and is left alone. A lock another user
+holds is `InventoryEditLockHeldException` → 409 `EDIT_CONFLICT` naming them. What this
+does and does not close is listed in DevDocs/adr/0007. Tests:
+`InventoryOperationsApiControllerTest` (lock order, partial release, permission before
+lock), `InventoryOperationsApiControllerMVCIT`
+(`anOriginHeldByAnotherUserIsRefusedWithoutTouchingIt`,
+`aParentSampleHeldByAnotherUserIsRefused`,
+`theCallersOwnClientLockNeitherBlocksNorIsReleasedByPerform`),
+`ApiControllerAdviceTest` (the 409 mapping), `acquireEditLock.test.ts`,
+`ProcessAction.test.tsx` and `OperationWizard.test.tsx`. The live-state rules
 themselves: every origin must
 currently hold something, all origins must share one measurement category (a Pool of
 5 ml + 5 g is meaningless), the amount taken must not exceed what the origin holds
