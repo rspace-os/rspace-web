@@ -35,6 +35,9 @@
         "locationsImageTooLarge": "Container locations image cannot be larger than 10MB",
         "typeRequired": "Container type (cType) is required and must be one of {0}."
       },
+      "editLock": {
+        "heldBy": "{0} is currently being edited by {1}."
+      },
       "export": {
         "exportMode": {
           "invalid": "exportMode should be either 'FULL' or 'COMPACT'"
