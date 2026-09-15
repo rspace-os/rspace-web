@@ -10,6 +10,7 @@ import StyledMenu from "../../../components/StyledMenu";
 import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import type { SplitButtonOption } from "../../components/ContextMenu/ContextMenuSplitButton";
 import contextActions from "./ContextActions";
+import { useProcessAvailable } from "./useProcessAvailable";
 
 type ContextAction = {
   hidden?: boolean;
@@ -34,6 +35,7 @@ function ContextMenu({
   basketSearch,
 }: ContextMenuArgs): React.ReactNode {
   const { t } = useTranslation("inventory");
+  const processAvailable = useProcessAvailable();
   const anySelected = selectedResults.length > 0;
   const mixedSelectedStatus = selectedResults.some((r) => r.deleted) && selectedResults.some((r) => !r.deleted);
 
@@ -52,6 +54,7 @@ function ContextMenu({
     onSelectOptions,
     menuID,
     basketSearch,
+    processAvailable,
   });
 
   const buttonList = actions("button");
