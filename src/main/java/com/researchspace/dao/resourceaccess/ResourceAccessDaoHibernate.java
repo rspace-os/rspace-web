@@ -32,7 +32,7 @@ public class ResourceAccessDaoHibernate implements ResourceAccessDao {
   @org.springframework.beans.factory.annotation.Autowired
   private CriteriaBuilderFactory criteriaBuilderFactory;
 
-  private record UserGroupRow(Long userId, Long groupId) {}
+  public record UserGroupRow(Long userId, Long groupId) {}
 
   public ResourceAccessDaoHibernate(SessionFactory sessionFactory) {
     this.sessionFactory = sessionFactory;
