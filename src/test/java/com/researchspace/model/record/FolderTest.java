@@ -165,7 +165,7 @@ public class FolderTest {
   }
 
   @Test
-  public void moveFromSharedFolderToNotebookIgnoresAnonymousAudience() {
+  public void moveFromSharedFolderToNotebookAllowedWhenOnlyAnonymousAudienceIsShared() {
     Folder sharedFolder = TestFactory.createAFolder("shared", anyuser);
     sharedFolder.addType(RecordType.SHARED_FOLDER);
     Notebook notebook = TestFactory.createANotebook("notebook", anyuser);
@@ -182,7 +182,28 @@ public class FolderTest {
         .getSharingACL()
         .addACLElement(new ACLElement(RecordGroupSharing.ANONYMOUS_USER, readPermission));
 
+    assertTrue(document.move(sharedFolder, notebook, anyuser));
+  }
+
+  @Test
+  public void moveFromSharedFolderToNotebookBlockedWhenDestinationCoversOnlyPartOfAudience() {
+    Folder sharedFolder = TestFactory.createAFolder("shared", anyuser);
+    sharedFolder.addType(RecordType.SHARED_FOLDER);
+    Notebook notebook = TestFactory.createANotebook("notebook", anyuser);
+    StructuredDocument document = TestFactory.createAnySD();
+    document.setOwner(anyuser);
+    sharedFolder.addChild(document, anyuser);
+
+    ConstraintBasedPermission readPermission =
+        new ConstraintBasedPermission(PermissionDomain.RECORD, PermissionType.READ);
+    sharedFolder.getSharingACL().addACLElement(new ACLElement("alice", readPermission));
+    sharedFolder.getSharingACL().addACLElement(new ACLElement("bob", readPermission));
+    notebook.getSharingACL().addACLElement(new ACLElement("alice", readPermission));
+
     assertFalse(document.move(sharedFolder, notebook, anyuser));
+
+    notebook.getSharingACL().addACLElement(new ACLElement("bob", readPermission));
+    assertTrue(document.move(sharedFolder, notebook, anyuser));
   }
 
   @Test

@@ -1067,6 +1067,15 @@ public class RecordManagerTest extends SpringTransactionalTest {
         recordMgr
             .move(doc.getId(), sharedSubfolder.getId(), g.getCommunalGroupFolderId(), pi)
             .isSucceeded());
+    // and from there into a notebook shared with the same lab group
+    Notebook groupNotebook =
+        folderMgr.createNewNotebook(
+            pi.getRootFolder().getId(), "group notebook", new DefaultRecordContext(), pi);
+    assertTrue(shareNotebookWithGroup(pi, groupNotebook, g, "write").isPresent());
+    assertTrue(
+        recordMgr
+            .move(doc.getId(), groupNotebook.getId(), sharedSubfolder.getId(), pi)
+            .isSucceeded());
   }
 
   @Test
