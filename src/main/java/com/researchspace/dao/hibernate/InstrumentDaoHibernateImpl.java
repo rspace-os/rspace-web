@@ -41,6 +41,14 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
 
   public record InstrumentNameRow(Long instrumentId, String name) {}
 
+  public record InstrumentReadSummaryRow(
+      Long instrumentId,
+      String name,
+      Boolean deleted,
+      Long parentContainerId,
+      String parentContainerName,
+      ContainerType parentContainerType) {}
+
   private String defaultTemplateOwner;
 
   @Autowired(required = false)
@@ -136,14 +144,14 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
     }
     InventoryReadQueryContext context = readQueryContext(user);
     String permission = context.permissionPredicate(this, "instrument.");
-    CriteriaBuilder<InstrumentReadSummary> query =
+    CriteriaBuilder<InstrumentReadSummaryRow> query =
         criteriaBuilderFactory()
-            .create(getSession(), InstrumentReadSummary.class)
+            .create(getSession(), InstrumentReadSummaryRow.class)
             .from(Instrument.class, "instrument")
             .leftJoinOn("instrument.parentLocation", "location")
             .setOnExpression("location.storedInstrument.id = instrument.id")
             .leftJoin("location.container", "parent")
-            .selectNew(InstrumentReadSummary.class)
+            .selectNew(InstrumentReadSummaryRow.class)
             .with("instrument.id")
             .with("instrument.editInfo.name")
             .with("instrument.deleted")
@@ -158,6 +166,15 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
     context.bind(query, null);
     return query
         .getResultStream()
+        .map(
+            row ->
+                new InstrumentReadSummary(
+                    row.instrumentId(),
+                    row.name(),
+                    row.deleted(),
+                    row.parentContainerId(),
+                    row.parentContainerName(),
+                    row.parentContainerType()))
         .collect(Collectors.toMap(InstrumentReadSummary::id, summary -> summary));
   }
 
