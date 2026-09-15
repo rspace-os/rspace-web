@@ -234,6 +234,68 @@ class BioPortalOntologiesClientTest {
     mockServer.verify(); // no expectations were set up, and none should have been requested
   }
 
+  @Test
+  void shouldAllowRequestWhenApiBaseUrlIsAllowlistedHttpsHost() {
+    mockServer
+        .expect(requestTo(startsWithUri(API_BASE_URL + "/search")))
+        .andRespond(withSuccess(emptyCollectionJson(), MediaType.APPLICATION_JSON));
+
+    assertTrue(client.search("Tolstoy").isEmpty());
+    mockServer.verify();
+  }
+
+  @Test
+  void shouldReturnEmptyAndSkipRequestWhenApiBaseUrlIsNotHttps() {
+    ReflectionTestUtils.setField(client, "bioportalApiBaseUrl", "http://data.bioontology.org");
+
+    List<BioPortalSearchResult> results = client.search("Tolstoy");
+
+    assertEquals(0, results.size());
+    mockServer.verify(); // no expectations were set up, and none should have been requested
+  }
+
+  @Test
+  void shouldReturnEmptyAndSkipRequestWhenApiBaseUrlIsDifferentHost() {
+    ReflectionTestUtils.setField(client, "bioportalApiBaseUrl", "https://evil.example");
+
+    List<BioPortalSearchResult> results = client.search("Tolstoy");
+
+    assertEquals(0, results.size());
+    mockServer.verify(); // no expectations were set up, and none should have been requested
+  }
+
+  @Test
+  void shouldReturnEmptyAndSkipRequestWhenApiBaseUrlIsMaliciousSubdomainSuffix() {
+    // "startsWith" would fall for this; exact host match won't
+    ReflectionTestUtils.setField(
+        client, "bioportalApiBaseUrl", "https://data.bioontology.org.evil.example");
+
+    List<BioPortalSearchResult> results = client.search("Tolstoy");
+
+    assertEquals(0, results.size());
+    mockServer.verify(); // no expectations were set up, and none should have been requested
+  }
+
+  @Test
+  void shouldReturnEmptyAndSkipRequestWhenApiBaseUrlIsBlank() {
+    ReflectionTestUtils.setField(client, "bioportalApiBaseUrl", "");
+
+    List<BioPortalSearchResult> results = client.search("Tolstoy");
+
+    assertEquals(0, results.size());
+    mockServer.verify(); // no expectations were set up, and none should have been requested
+  }
+
+  @Test
+  void shouldReturnEmptyAndSkipRequestWhenApiBaseUrlIsMalformed() {
+    ReflectionTestUtils.setField(client, "bioportalApiBaseUrl", "not a url");
+
+    List<BioPortalSearchResult> results = client.search("Tolstoy");
+
+    assertEquals(0, results.size());
+    mockServer.verify(); // no expectations were set up, and none should have been requested
+  }
+
   private static String lastPathSegment(String url) {
     return url.substring(url.lastIndexOf('/') + 1);
   }
