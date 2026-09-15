@@ -1,6 +1,7 @@
 package com.researchspace.model.inventory;
 
 import com.researchspace.model.User;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -10,11 +11,15 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
 import jakarta.persistence.TableGenerator;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
@@ -40,6 +45,7 @@ public class SampleRequest implements Serializable {
   private SampleRequestStatus status = SampleRequestStatus.PENDING;
   private String note;
   private Date created = new Date();
+  private List<SampleRequestStatusChange> statusChanges = new ArrayList<>();
 
   /** for hibernate and pagination criteria */
   public SampleRequest() {}
@@ -92,5 +98,22 @@ public class SampleRequest implements Serializable {
   @Column(nullable = false, updatable = false)
   public Date getCreated() {
     return created;
+  }
+
+  /** Full status history, oldest first, starting with the PENDING entry written at creation. */
+  @OneToMany(mappedBy = "sampleRequest", cascade = CascadeType.ALL, orphanRemoval = true)
+  @OrderBy("created, id")
+  public List<SampleRequestStatusChange> getStatusChanges() {
+    return statusChanges;
+  }
+
+  /** Records a new current status and appends it to the history. */
+  public SampleRequestStatusChange recordStatus(
+      User author, SampleRequestStatus newStatus, String reason) {
+    SampleRequestStatusChange change =
+        new SampleRequestStatusChange(this, author, newStatus, reason);
+    statusChanges.add(change);
+    setStatus(newStatus);
+    return change;
   }
 }

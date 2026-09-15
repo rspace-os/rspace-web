@@ -1217,6 +1217,54 @@ paths:
           description: >-
             The request is not valid: the sample is not marked requestable, is
             owned by the current user, or the global id does not name a sample.
+  "/sampleRequests/{id}/status":
+    put:
+      summary: Move a sample request to a new status
+      description: >
+        Records a status transition and appends an entry to the request's
+        `statusChanges` history, noting who made the change and when.
+
+        Permitted transitions, actors and reasons:
+
+        | To | From | Who | Reason |
+
+        | --- | --- | --- | --- |
+
+        | APPROVED | PENDING | sample's current owner | not accepted |
+
+        | REJECTED | PENDING | sample's current owner | required |
+
+        | CANCELLED | PENDING | the requester | not accepted |
+
+        | FULFILLED | APPROVED | sample's current owner | not accepted |
+
+        REJECTED, CANCELLED and FULFILLED are terminal. PENDING is written only
+        when the request is raised and cannot be set here.
+      tags:
+        - Sample Requests
+      parameters:
+        - $ref: "#/components/parameters/sampleRequestIdParam"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              example:
+                status: REJECTED
+                reason: Insufficient material left
+        description: The target status, and a reason when rejecting.
+        required: true
+      responses:
+        "200":
+          description: The updated request, including its extended status history.
+        "404":
+          description: >-
+            No such request, the caller is neither its requester nor the
+            sample's owner, or sample requests are not enabled on this instance.
+        "422":
+          description: >-
+            The caller is not the permitted actor for this transition, the
+            transition is not legal from the request's current status, or the
+            reason is missing on a rejection or supplied when not accepted.
   "/sampleRequests/{id}":
     get:
       summary: Get a specific sample request

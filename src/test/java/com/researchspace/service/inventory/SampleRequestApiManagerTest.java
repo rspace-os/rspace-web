@@ -2,6 +2,7 @@ package com.researchspace.service.inventory;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -11,6 +12,7 @@ import com.researchspace.api.v1.model.ApiSampleRequest;
 import com.researchspace.api.v1.model.ApiSampleRequestPost;
 import com.researchspace.api.v1.model.ApiSampleRequestSearchResult;
 import com.researchspace.api.v1.model.ApiSampleRequestStatusChange;
+import com.researchspace.api.v1.model.ApiSampleRequestStatusPut;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.dao.SampleRequestDao;
 import com.researchspace.model.PaginationCriteria;
@@ -234,6 +236,7 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
 
     assertEquals(1, fetched.getStatusChanges().size());
     ApiSampleRequestStatusChange creation = fetched.getStatusChanges().get(0);
+    assertNotNull(creation.getId(), "the creation entry must be a persisted row, not synthesised");
     assertEquals(SampleRequestStatus.PENDING, creation.getStatus());
     assertEquals(requester.getUsername(), creation.getCreatedBy().getUsername());
     assertEquals(fetched.getCreatedMillis(), creation.getCreatedMillis());
@@ -273,6 +276,143 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
     assertThrows(
         UnsupportedOperationException.class,
         () -> sampleRequestApiMgr.getRequestById(raised.getId(), requester));
+  }
+
+  @Test
+  public void updateStatus_ownerApprovesPendingRequest() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+
+    ApiSampleRequest approved =
+        sampleRequestApiMgr.updateStatus(
+            raised.getId(), statusPost(SampleRequestStatus.APPROVED, null), owner);
+
+    assertEquals(SampleRequestStatus.APPROVED, approved.getStatus());
+    assertEquals(2, approved.getStatusChanges().size());
+    ApiSampleRequestStatusChange latest = approved.getStatusChanges().get(1);
+    assertEquals(SampleRequestStatus.APPROVED, latest.getStatus());
+    assertEquals(owner.getUsername(), latest.getCreatedBy().getUsername());
+    assertNull(latest.getReason());
+  }
+
+  @Test
+  public void updateStatus_ownerRejectsWithAReasonStoredOnTheRow() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+
+    ApiSampleRequest rejected =
+        sampleRequestApiMgr.updateStatus(
+            raised.getId(),
+            statusPost(SampleRequestStatus.REJECTED, "Insufficient material left"),
+            owner);
+
+    assertEquals(SampleRequestStatus.REJECTED, rejected.getStatus());
+    ApiSampleRequestStatusChange latest = rejected.getStatusChanges().get(1);
+    assertEquals("Insufficient material left", latest.getReason());
+    assertEquals(owner.getUsername(), latest.getCreatedBy().getUsername());
+  }
+
+  @Test
+  public void updateStatus_rejectionWithoutAReasonIsRefused() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+
+    assertThrows(
+        ApiRuntimeException.class,
+        () ->
+            sampleRequestApiMgr.updateStatus(
+                raised.getId(), statusPost(SampleRequestStatus.REJECTED, "  "), owner));
+  }
+
+  @Test
+  public void updateStatus_reasonOnANonRejectionIsRefused() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+
+    assertThrows(
+        ApiRuntimeException.class,
+        () ->
+            sampleRequestApiMgr.updateStatus(
+                raised.getId(),
+                statusPost(SampleRequestStatus.APPROVED, "no reason expected here"),
+                owner));
+  }
+
+  @Test
+  public void updateStatus_requesterCancelsTheirOwnPendingRequest() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+
+    ApiSampleRequest cancelled =
+        sampleRequestApiMgr.updateStatus(
+            raised.getId(), statusPost(SampleRequestStatus.CANCELLED, null), requester);
+
+    assertEquals(SampleRequestStatus.CANCELLED, cancelled.getStatus());
+    assertEquals(
+        requester.getUsername(), cancelled.getStatusChanges().get(1).getCreatedBy().getUsername());
+  }
+
+  @Test
+  public void updateStatus_isRefusedForTheWrongActor() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+
+    // the requester cannot approve their own request
+    assertThrows(
+        ApiRuntimeException.class,
+        () ->
+            sampleRequestApiMgr.updateStatus(
+                raised.getId(), statusPost(SampleRequestStatus.APPROVED, null), requester));
+
+    // and the owner cannot withdraw it on the requester's behalf
+    assertThrows(
+        ApiRuntimeException.class,
+        () ->
+            sampleRequestApiMgr.updateStatus(
+                raised.getId(), statusPost(SampleRequestStatus.CANCELLED, null), owner));
+  }
+
+  @Test
+  public void updateStatus_isRefusedForAnIllegalTransition() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+
+    // FULFILLED is only reachable from APPROVED
+    assertThrows(
+        ApiRuntimeException.class,
+        () ->
+            sampleRequestApiMgr.updateStatus(
+                raised.getId(), statusPost(SampleRequestStatus.FULFILLED, null), owner));
+
+    sampleRequestApiMgr.updateStatus(
+        raised.getId(), statusPost(SampleRequestStatus.APPROVED, null), owner);
+
+    // approving twice is not legal, the request is no longer PENDING
+    assertThrows(
+        ApiRuntimeException.class,
+        () ->
+            sampleRequestApiMgr.updateStatus(
+                raised.getId(), statusPost(SampleRequestStatus.APPROVED, null), owner));
+
+    // APPROVED to FULFILLED is legal, and FULFILLED is terminal
+    sampleRequestApiMgr.updateStatus(
+        raised.getId(), statusPost(SampleRequestStatus.FULFILLED, null), owner);
+    assertThrows(
+        ApiRuntimeException.class,
+        () ->
+            sampleRequestApiMgr.updateStatus(
+                raised.getId(), statusPost(SampleRequestStatus.REJECTED, "too late"), owner));
+  }
+
+  @Test
+  public void updateStatus_cannotSetPendingExplicitly() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+
+    assertThrows(
+        ApiRuntimeException.class,
+        () ->
+            sampleRequestApiMgr.updateStatus(
+                raised.getId(), statusPost(SampleRequestStatus.PENDING, null), owner));
+  }
+
+  private ApiSampleRequestStatusPut statusPost(SampleRequestStatus status, String reason) {
+    ApiSampleRequestStatusPut post = new ApiSampleRequestStatusPut();
+    post.setStatus(status);
+    post.setReason(reason);
+    return post;
   }
 
   private void markRequestable(ApiSampleWithFullSubSamples target) {

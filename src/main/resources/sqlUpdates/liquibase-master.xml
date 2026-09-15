@@ -68,6 +68,7 @@
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1341-remove-evernote.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1309.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1366.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-1368.xml"/>
 
   <!-- These two run last: recurring-changeLog.xml (runAlways diagnostics / batch re-init) then
        customUpdates-changeLog.xml. customUpdates-changeLog.xml must ALWAYS be the final include

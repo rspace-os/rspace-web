@@ -5,6 +5,7 @@ import com.researchspace.api.v1.model.ApiSampleRequest;
 import com.researchspace.api.v1.model.ApiSampleRequestInfo;
 import com.researchspace.api.v1.model.ApiSampleRequestPost;
 import com.researchspace.api.v1.model.ApiSampleRequestSearchResult;
+import com.researchspace.api.v1.model.ApiSampleRequestStatusPut;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.dao.SampleDao;
 import com.researchspace.dao.SampleRequestDao;
@@ -25,6 +26,7 @@ import jakarta.ws.rs.NotFoundException;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -37,14 +39,35 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
   private @Autowired MessageSourceUtils messages;
   private @Autowired SystemPropertyPermissionManager systemPropertyPermissions;
 
+  private enum Actor {
+    OWNER,
+    REQUESTER
+  }
+
+  private record Transition(
+      SampleRequestStatus to, SampleRequestStatus from, Actor actor, boolean reasonRequired) {}
+
+  /** The whole state machine. PENDING is absent: it is written only when a request is raised. */
+  private static final List<Transition> TRANSITIONS =
+      List.of(
+          new Transition(
+              SampleRequestStatus.APPROVED, SampleRequestStatus.PENDING, Actor.OWNER, false),
+          new Transition(
+              SampleRequestStatus.REJECTED, SampleRequestStatus.PENDING, Actor.OWNER, true),
+          new Transition(
+              SampleRequestStatus.CANCELLED, SampleRequestStatus.PENDING, Actor.REQUESTER, false),
+          new Transition(
+              SampleRequestStatus.FULFILLED, SampleRequestStatus.APPROVED, Actor.OWNER, false));
+
   @Override
   public ApiSampleRequest createRequest(ApiSampleRequestPost post, User user) {
     assertSampleRequestsEnabled(user);
     Sample sample = readRequestedSample(post.getSampleGlobalId());
     assertNotOwnSample(sample, user);
     assertRequestable(sample);
-    SampleRequest saved = sampleRequestDao.save(new SampleRequest(sample, user, post.getNote()));
-    return toDetail(saved, user);
+    SampleRequest request = new SampleRequest(sample, user, post.getNote());
+    request.recordStatus(user, SampleRequestStatus.PENDING, null);
+    return toDetail(sampleRequestDao.save(request), user);
   }
 
   @Override
@@ -77,6 +100,60 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
     SampleRequest request = sampleRequestDao.getSafeNull(id).orElseThrow(() -> requestNotFound(id));
     assertUserIsPartyToRequest(request, user);
     return toDetail(request, user);
+  }
+
+  @Override
+  public ApiSampleRequest updateStatus(Long id, ApiSampleRequestStatusPut post, User user) {
+    assertSampleRequestsEnabled(user);
+    SampleRequest request = sampleRequestDao.getSafeNull(id).orElseThrow(() -> requestNotFound(id));
+    assertUserIsPartyToRequest(request, user);
+
+    Transition transition = transitionTo(post.getStatus());
+    assertPermittedActor(request, user, transition);
+    assertLegalFrom(request, transition);
+    String reason = validatedReason(post, transition);
+
+    request.recordStatus(user, post.getStatus(), reason);
+    return toDetail(sampleRequestDao.save(request), user);
+  }
+
+  private void assertPermittedActor(SampleRequest request, User user, Transition transition) {
+    User permitted =
+        Actor.OWNER.equals(transition.actor())
+            ? request.getSample().getOwner()
+            : request.getRequester();
+    if (!user.equals(permitted)) {
+      throw new ApiRuntimeException("errors.inventory.sampleRequest.wrongActor");
+    }
+  }
+
+  private Transition transitionTo(SampleRequestStatus target) {
+    return TRANSITIONS.stream()
+        .filter(t -> t.to().equals(target))
+        .findFirst()
+        .orElseThrow(
+            () ->
+                new ApiRuntimeException(
+                    "errors.inventory.sampleRequest.statusNotSettable", target));
+  }
+
+  private void assertLegalFrom(SampleRequest request, Transition transition) {
+    if (!transition.from().equals(request.getStatus())) {
+      throw new ApiRuntimeException(
+          "errors.inventory.sampleRequest.illegalTransition", request.getStatus(), transition.to());
+    }
+  }
+
+  private String validatedReason(ApiSampleRequestStatusPut post, Transition transition) {
+    boolean supplied = StringUtils.isNotBlank(post.getReason());
+    if (transition.reasonRequired() && !supplied) {
+      throw new ApiRuntimeException("errors.inventory.sampleRequest.reasonRequired");
+    }
+    if (!transition.reasonRequired() && supplied) {
+      throw new ApiRuntimeException(
+          "errors.inventory.sampleRequest.reasonNotAllowed", post.getStatus());
+    }
+    return supplied ? post.getReason() : null;
   }
 
   private ApiSampleRequestInfo toInfo(SampleRequest request, User user) {
