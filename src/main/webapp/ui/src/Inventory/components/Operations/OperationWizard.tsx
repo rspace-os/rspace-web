@@ -341,6 +341,14 @@ function OperationWizard({
       try {
         const template = await getRootStore().searchStore.getTemplate(parentTemplateId, null, new AlwaysNewFactory());
         if (checkId !== parentCheckIdRef.current) return;
+        // The parent sample was usually created FROM the template, so trashing that template makes
+        // this the same defect as the remembered one: soft deletion leaves it readable and with its
+        // mandatory fields intact, so it passed and was offered as "From <sample name>" until the
+        // server refused it at Perform (RSDEV-1231).
+        if (template.deleted) {
+          setParentTemplateError(t("operations.template.templateDeleted", { name: template.name }));
+          return;
+        }
         const reason = templateBlockReason(template, i18n.resolvedLanguage ?? i18n.language);
         if (reason.blocked) {
           setParentTemplateError(
@@ -397,12 +405,16 @@ function OperationWizard({
     const checkId = ++rememberedCheckIdRef.current;
     setRememberedTemplateError(null);
     void (async () => {
-      // Drops the remembered selection back to a first-run choice, keeping the user's remember tick.
+      // Always "unselected", never initialTemplateSelection: on the origin the bundle was saved from
+      // the parent sample usually HAS a template, so a first-run fallback resolved to "fromSample",
+      // which the parent-template check then validated, which handed back one-click Perform against
+      // a template the user never chose ("From <sample name>"). A rejected remembered template has
+      // to be replaced by an explicit choice, so the step stays incomplete until the user makes one.
       const reject = (message: string) => {
         setRememberedTemplateError(message);
         setTemplateSelection((previous) =>
           previous.mode === "remembered" && previous.templateId === rememberedTemplateId
-            ? { ...initialTemplateSelection(parentHasTemplate), remember: previous.remember }
+            ? { mode: "unselected", templateId: null, remember: previous.remember }
             : previous,
         );
       };
