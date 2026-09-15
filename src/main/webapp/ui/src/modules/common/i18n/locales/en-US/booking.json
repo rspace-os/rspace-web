@@ -98,9 +98,9 @@
         "openingHours": "Outside opening hours"
       },
       "states": {
-        "blockout": "Outside opening hours",
+        "blockout": "Blocked out",
         "booking": "Booked",
-        "overlap": "Booked and outside opening hours"
+        "overlap": "Booked and blocked out"
       },
       "trigger": "{itemName}, {state}, {period}, {count, plural, one {# event} other {# events}}"
     },
