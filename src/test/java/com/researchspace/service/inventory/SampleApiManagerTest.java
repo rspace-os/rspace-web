@@ -1095,26 +1095,26 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
 
     // try edit by testUser
     testSample.setName("updated name");
-    IllegalArgumentException iae =
+    InventoryEditLockHeldException held =
         assertThrows(
-            IllegalArgumentException.class,
+            InventoryEditLockHeldException.class,
             () -> sampleApiMgr.updateApiSample(testSample, testUser));
-    assertThat(iae.getMessage()).startsWith("Item is currently edited by another user (");
+    assertEquals(piUser.getUsername(), held.getOwner().getUsername());
 
     // try delete by testUser
     Long sampleId = testSample.getId();
-    iae =
+    held =
         assertThrows(
-            IllegalArgumentException.class,
+            InventoryEditLockHeldException.class,
             () -> sampleApiMgr.markSampleAsDeleted(sampleId, false, testUser));
-    assertThat(iae.getMessage()).startsWith("Item is currently edited by another user (");
+    assertEquals(piUser.getUsername(), held.getOwner().getUsername());
 
     // try transfer by testUser
-    iae =
+    held =
         assertThrows(
-            IllegalArgumentException.class,
+            InventoryEditLockHeldException.class,
             () -> sampleApiMgr.changeApiSampleOwner(testSample, testUser));
-    assertThat(iae.getMessage()).startsWith("Item is currently edited by another user (");
+    assertEquals(piUser.getUsername(), held.getOwner().getUsername());
 
     // pi can edit fine
     ApiSample updatedSample = sampleApiMgr.updateApiSample(testSample, piUser);
