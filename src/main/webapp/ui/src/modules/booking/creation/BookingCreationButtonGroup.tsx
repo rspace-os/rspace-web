@@ -5,6 +5,7 @@ import type { BookableItemOption } from "@/modules/booking/creation/bookableItem
 import { useBookingCreationStore } from "@/modules/booking/creation/bookingCreationStore";
 import type { BookingEventKind } from "@/modules/booking/domain/booking";
 import type { BookingWindowDraft } from "@/modules/booking/domain/bookingTime";
+import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { Button } from "@/modules/common/ui/button";
 import { ButtonGroup } from "@/modules/common/ui/button-group";
 import { Menu, MenuContent, MenuItem, MenuTrigger } from "@/modules/common/ui/menu";
@@ -28,6 +29,7 @@ export function BookingCreationButtonGroup({
   size?: "sm" | "default";
 }) {
   const { t } = useTranslation("booking");
+  const { data: currentUser } = useCurrentUserQuery();
   const beginCreation = useBookingCreationStore((state) => state.beginCreation);
   const creationActive = useBookingCreationStore((state) => state.activeCreation !== null);
   const reactId = React.useId();
@@ -35,7 +37,8 @@ export function BookingCreationButtonGroup({
   const bookingTriggerId = `${ownerId}-${id}-new-booking`;
   const maintenanceTriggerId = `${ownerId}-${id}-new-maintenance`;
   // Without a selected item, the maintenance picker offers only authorized targets.
-  const canManageMaintenance = !target || target.capabilities?.canCreateBlockout === true;
+  const canManageMaintenance =
+    !currentUser.session.operatedAs && (!target || target.capabilities?.canCreateBlockout === true);
   const unavailable = disabled || creationActive;
   const iconSize = size === "sm" ? "icon-sm" : "icon";
 

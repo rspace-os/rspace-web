@@ -520,9 +520,9 @@ describe("BookableItemPage", () => {
   });
 
   it("keeps a caller without edit capability in view mode on the direct edit URL", async () => {
-    mockedUseCurrentUserQuery.mockReturnValue({ data: { hasSysAdminRole: false } } as ReturnType<
-      typeof useCurrentUserQuery
-    >);
+    mockedUseCurrentUserQuery.mockReturnValue({
+      data: { hasSysAdminRole: false, session: { operatedAs: false } },
+    } as ReturnType<typeof useCurrentUserQuery>);
     server.use(
       http.get("/api/v2/booking-configurations", () =>
         HttpResponse.json(envelope([{ ...configuration, ...bookerBookingAccess }], 2)),
@@ -588,9 +588,9 @@ describe("BookableItemPage", () => {
     const user = userEvent.setup();
     let lookupFails = true;
     let eventRequests = 0;
-    mockedUseCurrentUserQuery.mockReturnValue({ data: { hasSysAdminRole: false } } as ReturnType<
-      typeof useCurrentUserQuery
-    >);
+    mockedUseCurrentUserQuery.mockReturnValue({
+      data: { hasSysAdminRole: false, session: { operatedAs: false } },
+    } as ReturnType<typeof useCurrentUserQuery>);
     server.use(
       http.get("/api/v2/booking-configurations", () =>
         lookupFails ? HttpResponse.json(envelope([], 2)) : HttpResponse.json(envelope([configuration], 2)),
