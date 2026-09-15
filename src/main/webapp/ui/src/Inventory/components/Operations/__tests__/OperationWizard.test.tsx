@@ -66,7 +66,7 @@ const operationHandlers = [
 const performSearch = vi.fn();
 // The wizard loads the origin sample's own template to validate "use parent template" (F5). Default
 // to a template with no defaultless mandatory field, i.e. a passing check.
-const getTemplate = vi.fn(() =>
+const getTemplate = vi.fn((_id?: number) =>
   Promise.resolve({
     id: 9,
     name: "Parent template",
@@ -468,6 +468,68 @@ describe("OperationWizard step flow", () => {
     await user.click(nextButton());
     expect(screen.getByTestId("tmpl-mode")).toHaveTextContent("unselected");
     expect(screen.getByTestId("tmpl-remembered-error")).toHaveTextContent(/rememberedDeleted/);
+  });
+
+  it("never substitutes the parent's template for a trashed remembered one", async () => {
+    // The origin whose parent sample HAS a template is the common case: it is the subsample the
+    // bundle was saved from. Falling back to initialTemplateSelection there resolved to
+    // "fromSample", which the parent-template check then validated, which re-enabled one-click
+    // Perform against a DIFFERENT template ("From <sample name>") that the user never chose. The
+    // rejection must land on "unselected": the user has to pick a template themselves.
+    getTemplate.mockImplementation((id?: number) =>
+      Promise.resolve(
+        id === 9
+          ? { id: 9, name: "Cell line", quantityCategory: "volume", deleted: true, fields: [] }
+          : { id: id ?? 4, name: "Parent template", quantityCategory: "volume", deleted: false, fields: [] },
+      ),
+    );
+    prefs.store.INVENTORY_OPERATION_PROCESS_VALUES = {
+      "derive dna": {
+        values: { count: 2, eachAmount: { numericValue: 1, unitId: 3 }, amountTaken: { numericValue: 1, unitId: 3 } },
+        template: { mode: "pick", templateId: 9, templateName: "Cell line" },
+        documentation: null,
+      },
+    };
+    const user = userEvent.setup();
+    const origin = makeMockSubSample({});
+    // The parent has its own template, which is what made the fallback reachable.
+    origin.sample.templateId = 4;
+    render(<OperationWizard open onClose={vi.fn()} origins={[origin]} />);
+    await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
+    await user.type(screen.getByTestId("proc"), "dna");
+
+    await waitFor(() => expect(getTemplate).toHaveBeenCalledWith(9, null, expect.anything()));
+    // No one-click Perform, and no silent switch to the parent's template.
+    expect(screen.queryByRole("button", { name: /wizard\.perform/i })).not.toBeInTheDocument();
+    await user.click(nextButton());
+    expect(screen.getByTestId("tmpl-mode")).toHaveTextContent("unselected");
+    expect(screen.getByTestId("tmpl-remembered-error")).toHaveTextContent(/rememberedDeleted/);
+    expect(nextButton()).toBeDisabled();
+  });
+
+  it("blocks 'use parent template' when the parent's own template is in the trash", async () => {
+    // Reachable from the same user action: the origin's parent sample was usually created FROM the
+    // template being trashed, so origin.sample.templateId points at it. The parent check validated
+    // on mandatory fields alone, so the trashed template came back as "From <sample name>" and was
+    // one-click performable. The server rejects it at Perform (422), which is a worse place to find
+    // out than the step that offered it.
+    getTemplate.mockResolvedValue({
+      id: 9,
+      name: "Cell line",
+      quantityCategory: "volume",
+      deleted: true,
+      fields: [],
+    });
+    const user = userEvent.setup();
+    const origin = makeMockSubSample({});
+    origin.sample.templateId = 9;
+    render(<OperationWizard open onClose={vi.fn()} origins={[origin]} />);
+    await fillDerive(user, "dna");
+    await user.click(nextButton()); // details -> template
+
+    await waitFor(() => expect(screen.getByTestId("tmpl-parent-error")).toHaveTextContent(/templateDeleted/));
+    expect(screen.getByTestId("tmpl-id")).toHaveTextContent("null");
+    expect(nextButton()).toBeDisabled();
   });
 
   it("shows the remembered template's current name after it has been renamed", async () => {
