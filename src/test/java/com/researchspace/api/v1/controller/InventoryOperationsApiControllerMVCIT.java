@@ -15,8 +15,12 @@ import com.researchspace.api.v1.model.ApiSampleTemplatePost;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.apiutils.ApiError;
+import com.researchspace.apiutils.ApiErrorCodes;
 import com.researchspace.model.User;
+import com.researchspace.model.preference.HierarchicalPermission;
 import com.researchspace.model.units.RSUnitDef;
+import com.researchspace.service.SystemPropertyManager;
+import com.researchspace.service.SystemPropertyName;
 import com.researchspace.service.inventory.SubSampleApiManager;
 import com.researchspace.service.inventory.impl.InventoryEditLockTracker;
 import java.util.List;
@@ -43,6 +47,8 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
   private @Autowired SubSampleApiManager subSampleApiManager;
   private @Autowired InventoryEditLockTracker editLockTracker;
 
+  private @Autowired SystemPropertyManager systemPropertyManager;
+
   private User anyUser;
   private String apiKey;
 
@@ -51,6 +57,18 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
     super.setUp();
     anyUser = createInitAndLoginAnyUser();
     apiKey = createNewApiKeyForUser(anyUser);
+    enableOperations();
+  }
+
+  /**
+   * RSDEV-1231 seeds {@code inventory.operations.available} DENIED, so each test turns it on first:
+   * what is under test in this class is the operation, not the toggle.
+   */
+  private void enableOperations() {
+    systemPropertyManager.save(
+        SystemPropertyName.INVENTORY_OPERATIONS_AVAILABLE,
+        HierarchicalPermission.ALLOWED,
+        getSysAdminUser());
   }
 
   // --- request bodies, in the shape the wizard sends ---
@@ -743,5 +761,46 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
                 .compareTo(reloaded.getQuantity().getNumericValue())
             == 0,
         () -> "origin should be reduced by 1 g, got " + reloaded.getQuantity().getNumericValue());
+  }
+
+  // --- the inventory.operations.available toggle (RSDEV-1231) ---
+
+  @Test
+  public void everyRouteIsRefusedWhileOperationsAreDenied() throws Exception {
+    ApiSampleWithFullSubSamples source = createBasicSampleForUser(anyUser);
+    ApiSubSample origin = source.getSubSamples().get(0);
+    java.math.BigDecimal originalAmount = origin.getQuantity().getNumericValue();
+    systemPropertyManager.save(
+        SystemPropertyName.INVENTORY_OPERATIONS_AVAILABLE,
+        HierarchicalPermission.DENIED,
+        getSysAdminUser());
+
+    MvcResult post =
+        mockMvc
+            .perform(
+                createBuilderForPostWithJSONBody(
+                    apiKey, "/operations", anyUser, aliquotTakingJson(origin, "0.1")))
+            .andExpect(status().isNotFound())
+            .andReturn();
+    ApiError postError = getErrorFromJsonResponseBody(post, ApiError.class);
+    assertEquals(ApiErrorCodes.CONFIGURED_UNAVAILABLE.getCode(), postError.getInternalCode());
+    assertTrue(
+        postError.getMessage().contains("inventory.operations.available"),
+        () -> "the refusal must name the property, got " + postError.getMessage());
+
+    MvcResult config =
+        mockMvc
+            .perform(
+                createBuilderForInventoryGet(
+                    API_VERSION.ONE, apiKey, "/operations/config", anyUser))
+            .andExpect(status().isNotFound())
+            .andReturn();
+    assertEquals(
+        ApiErrorCodes.CONFIGURED_UNAVAILABLE.getCode(),
+        getErrorFromJsonResponseBody(config, ApiError.class).getInternalCode());
+
+    // refused before anything is read or written: the origin is untouched
+    ApiSubSample reloaded = subSampleApiManager.getApiSubSampleById(origin.getId(), anyUser);
+    assertEquals(0, originalAmount.compareTo(reloaded.getQuantity().getNumericValue()));
   }
 }

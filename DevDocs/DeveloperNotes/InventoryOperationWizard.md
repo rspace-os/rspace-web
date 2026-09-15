@@ -30,6 +30,18 @@ Before assuming a new operation is config-only, decompose its effects and check 
 the schema table below; if one is missing, it is a (usually small) code story. The full
 reasoning is in `.claude/remaining-operations-plan.md` ("The limits of config-only").
 
+## Enabling
+
+The feature ships off. `inventory.operations.available` is a system property
+seeded `DENIED` (`changeLog-rsdev-1231.xml`, changeSet `2026-09-15a`); until a
+sysadmin sets it to `ALLOWED` at **System > Configuration**, every
+`/api/inventory/v1/operations` route answers 404 with errorCode
+`CONFIGURED_UNAVAILABLE` (`InventoryOperationsApiController.assertOperationsAvailable`)
+and the Process entry is hidden from every Inventory context menu
+(`ContextMenu.tsx` reads the property, `ContextActions.tsx` hides the entry).
+There is no sysadmin bypass. Any test or e2e spec that exercises the wizard has
+to turn the property on first, as the operation MVCITs do in their `setup()`.
+
 ## How it fits together
 
 ```
