@@ -331,6 +331,22 @@
   </div>
 </div>
 
+<div id="dbrepoInfoDialog" style="display: none">
+  <div class="dbrepoInfoPanel">
+    <table class="dbrepoInfoTable">
+      <tr><td colspan="2" class="dbrepoInfoTableHeaderRow"><spring:message code="apps.dbrepo.info.dialog.header"/></td></tr>
+      <tr><td class="dbrepoInfoLabelCell"><spring:message code="apps.dbrepo.info.dialog.nameLabel"/></td><td class="dbrepoInfoPanel-name"> </td></tr>
+      <tr><td class="dbrepoInfoLabelCell"><spring:message code="apps.dbrepo.info.dialog.typeLabel"/></td><td class="dbrepoInfoPanel-type"> </td></tr>
+      <tr class="dbrepoInfoDatabaseRow"><td class="dbrepoInfoLabelCell"><spring:message code="apps.dbrepo.info.dialog.databaseLabel"/></td><td class="dbrepoInfoPanel-database"> </td></tr>
+      <tr class="dbrepoInfoQueryRow"><td class="dbrepoInfoLabelCell"><spring:message code="apps.dbrepo.info.dialog.queryLabel"/></td><td class="dbrepoInfoPanel-query"> </td></tr>
+    </table>
+    <div class="dbrepoInfoPanelButtons">
+      <button type='button' title="<spring:message code="apps.dbrepo.info.dialog.openButtonTitle"/>" class='dbrepoInfoPanelBtn dbrepoOpenBtn'><spring:message code="apps.dbrepo.info.dialog.openButton"/></button>
+      <button type='button' title="<spring:message code="apps.dbrepo.info.dialog.downloadButtonTitle"/>" class='dbrepoInfoPanelBtn dbrepoDownloadBtn'><spring:message code="apps.dbrepo.info.dialog.downloadButton"/></button>
+    </div>
+  </div>
+</div>
+
 <!-- React Scripts -->
 <div id="exportModal" style="display: inline-block;"></div>
 <rst:bundle bundle="exportModal" />
