@@ -46,6 +46,7 @@ import com.researchspace.service.inventory.ApiExtraFieldsHelper;
 import com.researchspace.service.inventory.ApiIdentifiersHelper;
 import com.researchspace.service.inventory.DataCiteRelationType;
 import com.researchspace.service.inventory.InventoryApiManager;
+import com.researchspace.service.inventory.InventoryEditLockHeldException;
 import com.researchspace.service.inventory.InventoryFileApiManager;
 import com.researchspace.service.inventory.InventoryLinkManager;
 import com.researchspace.service.inventory.InventoryLinkValidator;
@@ -658,7 +659,7 @@ public abstract class InventoryApiManagerImpl<T extends InventoryRecord>
   protected boolean lockItemForEdit(InventoryRecord invRec, User user) {
     ApiInventoryEditLock apiLock = tracker.attemptToLockForEdit(invRec.getGlobalIdentifier(), user);
     if (ApiInventoryEditLockStatus.CANNOT_LOCK.equals(apiLock.getStatus())) {
-      throw new IllegalArgumentException(apiLock.getMessage());
+      throw new InventoryEditLockHeldException(invRec.getGlobalIdentifier(), apiLock.getOwner());
     }
 
     return ApiInventoryEditLockStatus.LOCKED_OK.equals(apiLock.getStatus());
