@@ -2,6 +2,7 @@ package com.researchspace.api.v1.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -17,6 +18,7 @@ import com.researchspace.apiutils.ApiError;
 import com.researchspace.model.User;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.inventory.SubSampleApiManager;
+import com.researchspace.service.inventory.impl.InventoryEditLockTracker;
 import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,6 +41,7 @@ import org.springframework.test.web.servlet.MvcResult;
 public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTestBase {
 
   private @Autowired SubSampleApiManager subSampleApiManager;
+  private @Autowired InventoryEditLockTracker editLockTracker;
 
   private User anyUser;
   private String apiKey;
@@ -125,6 +128,98 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
         "aliquot",
         originJson(origin, null, quantityJson(amount, unitId)),
         creatingInputs("Aliquot of " + origin.getGlobalId(), 1, quantityJson(amount, unitId)));
+  }
+
+  // --- the edit-session lock the controller holds around Perform (RSDEV-1231 S2/S3) ---
+
+  /**
+   * A stand-in for another user's open edit session. The tracker holds locks by username and never
+   * touches the database, so the lock holder needs no account here, only a name.
+   */
+  private User aColleague() {
+    return com.researchspace.testutils.TestFactory.createAnyUser(
+        com.researchspace.core.testutil.CoreTestUtils.getRandomName(10));
+  }
+
+  private ApiError performExpectingConflict(String operationJson) throws Exception {
+    MvcResult result =
+        mockMvc
+            .perform(
+                createBuilderForPostWithJSONBody(apiKey, "/operations", anyUser, operationJson))
+            .andExpect(status().isConflict())
+            .andReturn();
+    return getErrorFromJsonResponseBody(result, ApiError.class);
+  }
+
+  @Test
+  public void anOriginHeldByAnotherUserIsRefusedWithoutTouchingIt() throws Exception {
+    ApiSampleWithFullSubSamples source = createBasicSampleForUser(anyUser);
+    ApiSubSample origin = source.getSubSamples().get(0);
+    java.math.BigDecimal originalAmount = origin.getQuantity().getNumericValue();
+    User colleague = aColleague();
+    editLockTracker.attemptToLockForEdit(origin.getGlobalId(), colleague);
+
+    ApiError error = performExpectingConflict(aliquotTakingJson(origin, "0.1"));
+
+    assertTrue(
+        error.getMessage().contains(origin.getGlobalId()),
+        () -> "the conflict must name the origin, got " + error.getMessage());
+    assertTrue(
+        error.getMessage().contains(colleague.getUsername())
+            || error.getMessage().contains(colleague.getFirstName()),
+        () -> "the conflict must name the holder, got " + error.getMessage());
+    ApiSubSample reloaded = subSampleApiManager.getApiSubSampleById(origin.getId(), anyUser);
+    assertEquals(0, originalAmount.compareTo(reloaded.getQuantity().getNumericValue()));
+
+    // and the same request succeeds once the colleague is done
+    editLockTracker.attemptToUnlock(origin.getGlobalId(), colleague);
+    mockMvc
+        .perform(
+            createBuilderForPostWithJSONBody(
+                apiKey, "/operations", anyUser, aliquotTakingJson(origin, "0.1")))
+        .andExpect(status().isCreated());
+  }
+
+  /**
+   * The sibling case: the colleague holds the PARENT sample, not the origin itself. Two operations
+   * on children of one sample write the same sample row, so the parent is in the lock set too.
+   */
+  @Test
+  public void aParentSampleHeldByAnotherUserIsRefused() throws Exception {
+    ApiSampleWithFullSubSamples source = createBasicSampleForUser(anyUser);
+    ApiSubSample origin = source.getSubSamples().get(0);
+    User colleague = aColleague();
+    editLockTracker.attemptToLockForEdit(source.getGlobalId(), colleague);
+
+    ApiError error = performExpectingConflict(aliquotTakingJson(origin, "0.1"));
+
+    assertTrue(
+        error.getMessage().contains(source.getGlobalId()),
+        () -> "the conflict must name the parent sample, got " + error.getMessage());
+    editLockTracker.attemptToUnlock(source.getGlobalId(), colleague);
+  }
+
+  /**
+   * The wizard holds the client lock on its origins for its whole lifetime, so the caller's own
+   * lock must not refuse the caller's own Perform, and must survive it: the wizard releases it on
+   * close.
+   */
+  @Test
+  public void theCallersOwnClientLockNeitherBlocksNorIsReleasedByPerform() throws Exception {
+    ApiSampleWithFullSubSamples source = createBasicSampleForUser(anyUser);
+    ApiSubSample origin = source.getSubSamples().get(0);
+    editLockTracker.attemptToLockForEdit(origin.getGlobalId(), anyUser);
+
+    mockMvc
+        .perform(
+            createBuilderForPostWithJSONBody(
+                apiKey, "/operations", anyUser, aliquotTakingJson(origin, "0.1")))
+        .andExpect(status().isCreated());
+
+    assertEquals(anyUser.getUsername(), editLockTracker.getLockOwnerForItem(origin.getGlobalId()));
+    // the parent sample lock was this request's own and is given back
+    assertNull(editLockTracker.getLockOwnerForItem(source.getGlobalId()));
+    editLockTracker.attemptToUnlock(origin.getGlobalId(), anyUser);
   }
 
   @Test
