@@ -20,6 +20,7 @@ import com.researchspace.model.collection.DocumentValidationException.Reason;
 import com.researchspace.model.collection.DocumentValidationException.Violation;
 import com.researchspace.model.collection.Field;
 import com.researchspace.model.collection.ParsedDocument;
+import com.researchspace.model.collection.Relationship;
 import com.researchspace.model.collection.RelationshipTarget;
 import com.researchspace.model.collection.ResourceReference;
 import com.researchspace.model.collection.Sort;

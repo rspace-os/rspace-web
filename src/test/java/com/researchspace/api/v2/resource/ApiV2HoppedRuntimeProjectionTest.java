@@ -13,6 +13,7 @@ import com.researchspace.model.collection.CollectionFieldTypes;
 import com.researchspace.model.collection.CollectionMutationLimits;
 import com.researchspace.model.collection.CollectionQueryException;
 import com.researchspace.model.collection.Field;
+import com.researchspace.model.collection.Relationship;
 import com.researchspace.model.collection.RelationshipTarget;
 import com.researchspace.model.collection.ResolvedRuntimeField;
 import com.researchspace.model.collection.ResourcePage;
