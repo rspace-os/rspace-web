@@ -36,7 +36,7 @@ public class SampleRequestStatusChange implements Serializable {
 
   private Long id;
   private SampleRequest sampleRequest;
-  private User createdBy;
+  private String createdByUsername;
   private SampleRequestStatus status;
   private String reason;
   private Date created = new Date();
@@ -47,7 +47,7 @@ public class SampleRequestStatusChange implements Serializable {
   public SampleRequestStatusChange(
       SampleRequest sampleRequest, User createdBy, SampleRequestStatus status, String reason) {
     this.sampleRequest = sampleRequest;
-    this.createdBy = createdBy;
+    this.createdByUsername = createdBy.getUsername();
     this.status = status;
     this.reason = reason;
   }
@@ -71,11 +71,13 @@ public class SampleRequestStatusChange implements Serializable {
     return sampleRequest;
   }
 
-  /** The requester for the PENDING entry and for a cancellation, otherwise the sample owner. */
-  @ManyToOne(optional = false)
-  @JoinColumn(nullable = false)
-  public User getCreatedBy() {
-    return createdBy;
+  /**
+   * The requester for the PENDING entry and for a cancellation, otherwise the sample owner. Stored
+   * as a username so the history survives that user's deletion and cannot block it.
+   */
+  @Column(nullable = false, length = User.MAX_UNAME_LENGTH)
+  public String getCreatedByUsername() {
+    return createdByUsername;
   }
 
   @Enumerated(EnumType.STRING)

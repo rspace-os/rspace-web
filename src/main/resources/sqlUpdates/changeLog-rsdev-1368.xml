@@ -17,9 +17,9 @@
                 <constraints nullable="false" foreignKeyName="fk_srsc_samplerequest"
                              references="SampleRequest(id)"/>
             </column>
-            <column name="createdBy_id" type="BIGINT">
-                <constraints nullable="false" foreignKeyName="fk_srsc_createdby"
-                             references="User(id)"/>
+            <!-- username, not an FK: the history must survive that user's deletion -->
+            <column name="createdByUsername" type="VARCHAR(50)">
+                <constraints nullable="false"/>
             </column>
             <column name="status" type="VARCHAR(20)">
                 <constraints nullable="false"/>

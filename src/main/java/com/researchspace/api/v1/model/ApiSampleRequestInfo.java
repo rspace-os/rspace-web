@@ -46,7 +46,6 @@ public class ApiSampleRequestInfo extends LinkableApiObject implements Identifia
     this.status = request.getStatus();
     this.note = request.getNote();
     this.createdMillis = request.getCreated().getTime();
-    this.requester = new ApiUser(request.getRequester());
     this.sample = new ApiSampleInfo(request.getSample());
   }
 }

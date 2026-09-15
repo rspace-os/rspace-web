@@ -46,6 +46,7 @@ public class SampleRequestDaoHibernateImpl extends GenericDaoHibernate<SampleReq
 
     Long total =
         bind(
+                role,
                 sessionFactory
                     .getCurrentSession()
                     .createQuery("select count(req) from SampleRequest req" + where, Long.class),
@@ -56,6 +57,7 @@ public class SampleRequestDaoHibernateImpl extends GenericDaoHibernate<SampleReq
 
     List<SampleRequest> page =
         bind(
+                role,
                 sessionFactory
                     .getCurrentSession()
                     .createQuery(
@@ -81,7 +83,7 @@ public class SampleRequestDaoHibernateImpl extends GenericDaoHibernate<SampleReq
     }
     switch (role) {
       case REQUESTER:
-        return "req.requester = :user";
+        return "req.requesterUsername = :username";
       case OWNER:
         return "req.sample.owner = :user";
       default:
@@ -90,11 +92,17 @@ public class SampleRequestDaoHibernateImpl extends GenericDaoHibernate<SampleReq
   }
 
   private <T> org.hibernate.query.Query<T> bind(
+      SampleRequestRole role,
       org.hibernate.query.Query<T> query,
       Set<SampleRequestStatus> statuses,
       Long sampleId,
       User user) {
-    query.setParameter("user", user);
+    // only the clause for the requested role is in the query, so bind only its parameter
+    if (SampleRequestRole.REQUESTER.equals(role)) {
+      query.setParameter("username", user.getUsername());
+    } else {
+      query.setParameter("user", user);
+    }
     if (CollectionUtils.isNotEmpty(statuses)) {
       query.setParameterList("statuses", statuses);
     }
