@@ -75,6 +75,27 @@ public class ContainerTest {
   }
 
   @Test
+  void addsContentToACoordinateNothingHoldsWhenStoredLocationsAreNotContiguous() {
+    // A list container's coordinates are normally 1..n, so "next free" used to be read off the
+    // size of the collection. A concurrent batch create whose transaction rolled back after part
+    // of its rows had been written leaves the persisted rows with a gap, so the count is lower
+    // than the highest coordinate already in use, and size()+1 then resolves to an occupied
+    // location on EVERY subsequent add: the container can never be added to again (live test
+    // 2026-09-13, F1). The next coordinate must come from what is in use, not from how many.
+    Container listContainer = Container.createListContainer(true, true, true);
+    listContainer.setId(1L);
+    listContainer.addToNewLocation(new SubSample());
+    listContainer.addToNewLocation(new SubSample());
+    listContainer.getLocations().get(0).setCoordX(3);
+
+    SubSample nextRecord = new SubSample();
+    listContainer.addToNewLocation(nextRecord);
+
+    assertEquals(3, listContainer.getContentCount());
+    assertEquals(4, nextRecord.getParentLocation().getCoordX());
+  }
+
+  @Test
   void addContentToGridContainer() throws Exception {
 
     Container gridContainer6by4 = Container.createGridContainer(6, 4, true, true, true);

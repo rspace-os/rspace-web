@@ -90,7 +90,7 @@ export const isSortable = (propKey: string): boolean => sortProperties.map((p) =
 
 const calculateUploadProgress = (soFar: number, total: number): number => Math.floor((soFar / total) * 10) * 10;
 
-type LockOwner = {
+export type LockOwner = {
   firstName: string;
   lastName: string;
   username: string;
@@ -730,6 +730,28 @@ export default class InventoryBaseRecord
     }
   }
 
+  /**
+   * Takes (or extends) the edit-session lock WITHOUT entering edit state: the operation wizard holds
+   * its origins for its lifetime, but the records are not being edited, so nothing may flip them
+   * into "edit" or refetch them (RSDEV-1231). Throws RecordLockedError when another user's session
+   * holds it.
+   *
+   * Deliberately no expiryCheck interval: that timer belongs to the form, where running out means
+   * prompting to keep editing and, if declined, discarding the edit. The wizard has no edit to
+   * keep, so it only needs to know when the lock has lapsed, which `lockExpiry` records. The server
+   * re-checks the lock at Perform regardless.
+   */
+  async acquireEditLock(): Promise<LockStatus> {
+    const { status, lockOwner, remainingTimeInSeconds } = await this.checkLock(true);
+    if (status === "CANNOT_LOCK") throw new RecordLockedError(this, lockOwner);
+    runInAction(() => {
+      this.lastEditInput = new Date();
+      this.lockExpiry = new Date(this.lastEditInput.getTime() + remainingTimeInSeconds * 1000);
+      this.lockExpired = false;
+    });
+    return status;
+  }
+
   autoExtendLock() {
     clearInterval(this.expiryCheckInterval);
     void this.checkLock().then(({ status, remainingTimeInSeconds }) => {
@@ -970,7 +992,6 @@ export default class InventoryBaseRecord
           : `${this.recordType}s/${id}`;
       this.fetchingAdditionalInfo = ApiService.query<object>(endpoint, new URLSearchParams(queryParameters));
       const { data } = await this.fetchingAdditionalInfo;
-      this.fetchingAdditionalInfo = null;
       runInAction(() => {
         this.infoLoaded = true;
       });
@@ -993,6 +1014,9 @@ export default class InventoryBaseRecord
       console.error(`Error fetching additional info for ${this.globalId ?? "UNKNOWN"}`, error);
       throw new Error(`Error fetching additional info for ${this.globalId ?? "UNKNOWN"}`, { cause: error });
     } finally {
+      // Cleared on failure too, or every later call would await this same rejected promise instead
+      // of re-fetching (code review, finding 2).
+      this.fetchingAdditionalInfo = null;
       this.setLoading(false);
     }
   }

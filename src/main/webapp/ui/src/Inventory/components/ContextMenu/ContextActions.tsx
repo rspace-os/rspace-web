@@ -11,6 +11,7 @@ import EditAction from "./EditAction";
 import ExportAction from "./ExportAction";
 import MoveAction from "./MoveAction";
 import PrintBarcodeAction from "./PrintBarcodeAction";
+import ProcessAction, { isProcessableSelection } from "./ProcessAction";
 import RemoveFromBasketAction from "./RemoveFromBasketAction";
 import RestoreAction from "./RestoreAction";
 import SelectAction from "./SelectAction";
@@ -24,6 +25,8 @@ type ContextActionsArgs = {
   onSelectOptions?: Array<SplitButtonOption>;
   menuID: (typeof menuIDs)[keyof typeof menuIDs];
   basketSearch: boolean;
+  /** inventory.operations.available is ALLOWED. Seeded DENIED, so Process is off by default. */
+  processAvailable: boolean;
 };
 
 type ContextAction = {
@@ -39,6 +42,7 @@ const contextActions = ({
   closeMenu,
   menuID,
   basketSearch,
+  processAvailable,
 }: ContextActionsArgs): ((as: ContextMenuRenderOptions) => Array<ContextAction>) => {
   const contextActionsGenerator = (as: ContextMenuRenderOptions) => {
     const allSelectedAvailable: boolean = selectedResults.every((r: InventoryRecord) => !r.deleted);
@@ -88,6 +92,18 @@ const contextActions = ({
           />
         ),
         hidden: hideInPickerAndWhenNotAllCurrent,
+      },
+      {
+        component: (
+          <ProcessAction
+            key="process"
+            selectedResults={selectedResults}
+            as={as}
+            disabled={disableAllActions}
+            closeMenu={closeMenu}
+          />
+        ),
+        hidden: hideInPickerAndWhenNotAllCurrent || !processAvailable || !isProcessableSelection(selectedResults),
       },
       {
         component: (

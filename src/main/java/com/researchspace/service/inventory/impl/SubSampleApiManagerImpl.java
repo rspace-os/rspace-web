@@ -31,7 +31,6 @@ import com.researchspace.service.inventory.SubSampleApiManager;
 import jakarta.ws.rs.NotFoundException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -271,13 +270,15 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
 
     boolean temporaryLock = lockItemForEdit(dbSubSample, user);
     try {
-      dbSubSample = getIfExists(dbSubSample.getId());
-
       QuantityInfo orgQuantity = dbSubSample.getQuantity();
-      QuantityInfo newQuantity = qUtils.sum(Arrays.asList(orgQuantity, usedQuantity.negate()));
+
+      // subtract, not sum: a remainder that will not fit 3dp in the origin's unit is stored one
+      // rung down the ladder where it does, so 2.5 mg from a 5 g origin leaves 4997.5 mg exactly
+      // rather than rounding 4.9975 g away (review 2026-09-14, Q1a).
+      QuantityInfo newQuantity = qUtils.subtract(orgQuantity, usedQuantity);
 
       // if usage is larger than remaining quantity set remaining to zero, in the stored unit
-      // (qUtils.sum may return a different unit, and "0 g" must not relabel itself to "0 mg")
+      // (qUtils.subtract may return a different unit, and "0 g" must not relabel itself to "0 mg")
       if (newQuantity.getNumericValue().compareTo(BigDecimal.ZERO) < 0) {
         newQuantity = new QuantityInfo(BigDecimal.ZERO, orgQuantity.getUnitId());
       }

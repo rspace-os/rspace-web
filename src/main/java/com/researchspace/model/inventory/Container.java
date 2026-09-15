@@ -40,6 +40,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.Validate;
 import org.hibernate.envers.Audited;
 import org.hibernate.envers.NotAudited;
@@ -52,6 +53,7 @@ import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexingDe
 /** Represents RSpace Inventory Container. */
 @Entity
 @Audited
+@Slf4j
 @Getter
 @Setter
 @NoArgsConstructor
@@ -344,9 +346,48 @@ public class Container extends MovableInventoryRecord implements Serializable {
           getContainerType()
               + " container cannot store content without providing specific coordinates");
     }
-    ContainerLocation newLocation = createOrRetrieveLocationWithCoords(locations.size() + 1, 1);
+    ContainerLocation newLocation = createOrRetrieveLocationWithCoords(nextFreeCoordX(), 1);
     setRecordInLocation(record, newLocation);
     return newLocation;
+  }
+
+  /**
+   * One past the highest coordinate in use, NOT one past how many locations there are.
+   *
+   * <p>A list container's coordinates are normally the contiguous 1..n that {@code
+   * resetListLayoutLocationCoords} restores after every removal, and for that state the two agree.
+   * They stop agreeing when the persisted rows have a gap: the count is then lower than the highest
+   * coordinate already occupied, and counting resolves to a location that holds a record. That is
+   * not a transient clash - it recurs identically on every subsequent add, so the container can
+   * never be added to again (live test 2026-09-13, F1). Reading the coordinates themselves steps
+   * past the gap instead, and the container heals.
+   *
+   * <p>WHAT PRODUCES THE GAP IS NOT KNOWN. An earlier version of this comment blamed a concurrent
+   * batch create rolling back after part of its rows were written, which is not something a
+   * rollback can do: either those rows were committed outside the caller's transaction (an
+   * autocommit connection, REQUIRES_NEW, a Liquibase custom update) or the diagnosis is wrong.
+   * Until that is settled the producer of corrupt containers is unidentified and live, which is why
+   * the heal logs rather than staying silent (review 2026-09-14, I6).
+   *
+   * <p>The result cannot collide with an occupied location, so this needs no conflict handling: no
+   * stored coordinate can equal one past the maximum, and {@code coordX} is a primitive on a NOT
+   * NULL column so there is no absent-coordinate case for the maximum to miss.
+   */
+  private int nextFreeCoordX() {
+    int highestInUse = locations.stream().mapToInt(ContainerLocation::getCoordX).max().orElse(0);
+    if (highestInUse != locations.size()) {
+      log.warn(
+          "Container {} holds {} locations but its highest coordinate in use is {}; adding the next"
+              + " record at {} rather than at {}. A list container's coordinates should be the"
+              + " contiguous 1..n that resetListLayoutLocationCoords restores, so these rows were"
+              + " written outside that invariant and whatever wrote them is still doing so.",
+          getId(),
+          locations.size(),
+          highestInUse,
+          highestInUse + 1,
+          locations.size() + 1);
+    }
+    return highestInUse + 1;
   }
 
   public ContainerLocation addToNewLocationWithCoords(

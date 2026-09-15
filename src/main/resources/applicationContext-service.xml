@@ -70,6 +70,11 @@
         <tx:attributes>
             <!-- Read-only commented out to make things easier for end-users -->
             <!--tx:method name="get*" read-only="true"/-->
+            <!-- performOperation rolls back for BindException: a live-state rejection is checked,
+                 so Spring's default rules would otherwise commit partial writes alongside the 400
+                 (Copilot review, PR #1090). -->
+            <tx:method name="performOperation"
+                rollback-for="org.springframework.validation.BindException"/>
             <tx:method name="*"/>
         </tx:attributes>
     </tx:advice>

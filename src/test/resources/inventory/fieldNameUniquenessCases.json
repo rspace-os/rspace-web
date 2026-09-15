@@ -1,0 +1,76 @@
+{
+  "_comment": [
+    "Shared cases for the field-name uniqueness rule, which is implemented TWICE: once in Java",
+    "(InventoryOperationRequestBuilder.withUniqueFieldNames, which decides the names actually",
+    "stored) and once in TypeScript (buildOperationRequest.withUniqueFieldNames, which the",
+    "confirmation preview uses to show the user those same names before they commit).",
+    "",
+    "Both had their own tests and nothing pinned them to each other, so a change to the suffix",
+    "format on one side left the preview promising names the server would not store, with both",
+    "suites green (parallel review, A10). Asserted from InventoryOperationRequestBuilderTest and",
+    "from buildOperationRequest.test.ts; a change to the rule must be made on both sides or one of",
+    "them goes red.",
+    "",
+    "A field is {name, type, targetGlobalId}. type 'link' is the only one disambiguated by its",
+    "target; anything else falls back to an ordinal."
+  ],
+  "cases": [
+    {
+      "description": "names that do not collide are left exactly as they are",
+      "fields": [
+        { "name": "Pooled from: Aliquot", "type": "link", "targetGlobalId": "SS1" },
+        { "name": "Pooled from: Stock", "type": "link", "targetGlobalId": "SS2" }
+      ],
+      "expected": ["Pooled from: Aliquot", "Pooled from: Stock"]
+    },
+    {
+      "description": "colliding links are BOTH suffixed by target, so the names stay symmetrical",
+      "fields": [
+        { "name": "Pooled from: Aliquot", "type": "link", "targetGlobalId": "SS1" },
+        { "name": "Pooled from: Aliquot", "type": "link", "targetGlobalId": "SS2" }
+      ],
+      "expected": ["Pooled from: Aliquot (SS1)", "Pooled from: Aliquot (SS2)"]
+    },
+    {
+      "description": "collision is judged trimmed and case-insensitively, as the backend judges it",
+      "fields": [
+        { "name": "Pooled from: Aliquot", "type": "link", "targetGlobalId": "SS1" },
+        { "name": "  pooled from: aliquot  ", "type": "link", "targetGlobalId": "SS2" }
+      ],
+      "expected": ["Pooled from: Aliquot (SS1)", "  pooled from: aliquot   (SS2)"]
+    },
+    {
+      "description": "a non-link collision has no target to use, so it falls back to an ordinal",
+      "fields": [
+        { "name": "Passage number", "type": "text" },
+        { "name": "Passage number", "type": "text" }
+      ],
+      "expected": ["Passage number", "Passage number (2)"]
+    },
+    {
+      "description": "three colliding non-links keep counting",
+      "fields": [
+        { "name": "Note", "type": "text" },
+        { "name": "Note", "type": "text" },
+        { "name": "Note", "type": "text" }
+      ],
+      "expected": ["Note", "Note (2)", "Note (3)"]
+    },
+    {
+      "description": "two links sharing a name AND a target: the suffixed names collide in turn, so the second takes an ordinal on top",
+      "fields": [
+        { "name": "Pooled from: Aliquot", "type": "link", "targetGlobalId": "SS1" },
+        { "name": "Pooled from: Aliquot", "type": "link", "targetGlobalId": "SS1" }
+      ],
+      "expected": ["Pooled from: Aliquot (SS1)", "Pooled from: Aliquot (SS1) (2)"]
+    },
+    {
+      "description": "a link colliding with a non-link: only the link gets a target suffix",
+      "fields": [
+        { "name": "Source", "type": "link", "targetGlobalId": "SS7" },
+        { "name": "Source", "type": "text" }
+      ],
+      "expected": ["Source (SS7)", "Source"]
+    }
+  ]
+}

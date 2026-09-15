@@ -12,6 +12,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class StockDeductionRequest {
   @NotNull private Long stoichiometryId;
-  @NotNull @NotEmpty private List<Long> linkIds;
+
+  // Element-level @NotNull: a null id would otherwise turn a malformed public request into a 500
+  // instead of a 400 (Copilot review, PR #1090).
+  @NotNull @NotEmpty private List<@NotNull Long> linkIds;
+
   private boolean updateFieldHtml;
 }

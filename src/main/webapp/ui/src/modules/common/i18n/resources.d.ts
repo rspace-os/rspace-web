@@ -1115,6 +1115,10 @@ export default interface Resources {
       "viewerTitle": "Ketcher Chemical Viewer (Read-Only)"
     },
     "loading": "Loading",
+    "preferences": {
+      "saveFailedMessage": "This preference did not save to your account and may be lost when you next sign in. Try again, or contact support if this keeps happening.",
+      "saveFailedTitle": "A setting could not be saved"
+    },
     "profile": {
       "accountActivity": {
         "action": "Action",
@@ -3939,6 +3943,151 @@ export default interface Resources {
       },
       "showItems": "Show items being moved"
     },
+    "operations": {
+      "action": {
+        "process": "Process"
+      },
+      "aliquot": {
+        "description": "Take equal-volume aliquots. Same material; parent volume decremented.",
+        "label": "Aliquot",
+        "linkFieldName": "Derived from"
+      },
+      "confirm": {
+        "cardSubheader": "New sample · via {operation}",
+        "cardSubheaderTerminal": "Origin subsample · via {operation}",
+        "labels": {
+          "amountTaken": "Amount taken",
+          "amountTakenEach": "Amount taken from each subsample",
+          "documentation": "Documented by",
+          "linkBack": "Links back to",
+          "originEmptied": "Origin volume",
+          "process": "Process",
+          "storageTemp": "Storage temperature",
+          "subsamples": "New subsamples",
+          "template": "Template"
+        },
+        "values": {
+          "amountTaken": "{amount} {unit}",
+          "emptied": "Will be set to 0",
+          "originAmount": "{origin}: {amount}",
+          "storageTemp": "{temp} °C",
+          "subsamples": "{count} × {amount} {unit} each",
+          "takeAll": "All (subsamples emptied)"
+        }
+      },
+      "cryopreserve": {
+        "cryomediumField": "Cryomedium",
+        "description": "Freeze material into new vials at a chosen storage temperature.",
+        "label": "Cryopreserve",
+        "linkFieldName": "Frozen from"
+      },
+      "derive": {
+        "description": "Extract or process material into a new sample, recording a derivation.",
+        "label": "Derive",
+        "linkFieldName": "Is Derived From using process: {processName}"
+      },
+      "destroy": {
+        "description": "Dispose of the subsample: set its volume to zero and record today's disposal date.",
+        "disposedField": "Disposed",
+        "label": "Destroy"
+      },
+      "documentation": {
+        "choose": "Choose document",
+        "description": "Optionally link this operation to a document in ELN or Gallery, such as a protocol (SOP).",
+        "fieldName": "Documented by",
+        "none": "No document linked.",
+        "selected": "Linked document: {name}"
+      },
+      "fields": {
+        "amountMode": "Amount to take",
+        "amountModeAll": "Take all",
+        "amountModeAllHelp": "Every selected subsample will be emptied (reduced to 0).",
+        "amountModePerSubsample": "Per subsample",
+        "amountModeSame": "Same amount",
+        "amountTaken": "Amount taken from original",
+        "amountTakenEach": "Amount taken from each",
+        "amountTakenExceedsOrigin": "Cannot take more than the original holds.",
+        "count": "Number of new subsamples",
+        "countMin": "Enter a whole number of {min} or more.",
+        "countRange": "Enter a whole number between {min} and {max}.",
+        "cryomedium": "Cryomedium",
+        "eachAmount": "Amount per new subsample",
+        "originAmountZero": "Subsample has an amount of 0.",
+        "originCategoryUnsupported": "This subsample's quantity is not an amount (volume, mass or count), so no operation can take from it.",
+        "processName": "Process name",
+        "processNameRequired": "Enter a process name first.",
+        "rememberProcessValues": "Remember values for this process: {name}",
+        "rememberProcessValuesHelp": "Reuses this process's template, amounts and documentation next time.",
+        "sampleName": "New sample name",
+        "storageTemp": "Storage temperature",
+        "storageTempInvalid": "Enter a temperature at or above -273.15°C, with at most 3 decimal places.",
+        "storageTempMax": "Storage temperature must be at most {max}°C.",
+        "storageTempMin": "Storage temperature must be at least {min}°C.",
+        "temperatureUnit": "°C"
+      },
+      "passage": {
+        "description": "Create the next passage as a new sample, numbering it from the parent's passage number.",
+        "label": "Passage",
+        "linkFieldName": "Passaged from",
+        "numberField": "Passage number"
+      },
+      "picker": {
+        "loadFailed": "The available operations could not be loaded. Close this dialog and try again.",
+        "loading": "Loading operations",
+        "needsMultiple": "Select two or more subsamples to pool.",
+        "sameCategory": "Select subsamples of the same measurement type to pool.",
+        "singleOnly": "Select a single subsample for this operation.",
+        "tooManySelected": "Select at most 100 subsamples for this operation."
+      },
+      "pool": {
+        "description": "Combine an equal amount from several subsamples into one new pooled sample.",
+        "label": "Pool",
+        "linkFieldName": "Pooled from: {originName}"
+      },
+      "revive": {
+        "description": "Revive frozen material into a new sample, recorded as a variant of the original.",
+        "label": "Revive",
+        "linkFieldName": "Revived from"
+      },
+      "template": {
+        "checking": "Checking template…",
+        "description": "Optionally choose a template for the new sample.",
+        "fromSample": "Use the parent sample's template",
+        "loadingTemplates": "Loading templates…",
+        "lookupFailed": "This template could not be checked. Try choosing it again.",
+        "mandatoryFieldsError": "{count, plural, one {This template cannot be used: the required field {fields} has no default value. Choose another template.} other {This template cannot be used: the required fields {fields} have no default value. Choose another template.}}",
+        "noTemplates": "No templates found",
+        "none": "No template",
+        "parentHasNoTemplate": "The parent sample has no template, so this option is unavailable. Choose an existing template or none.",
+        "pick": "Choose an existing template",
+        "rememberedDeleted": "The remembered template \"{name}\" is in the trash and cannot be used. Choose another template.",
+        "searchLabel": "Search templates",
+        "selectedLabel": "Selected template: {name}",
+        "templateDeleted": "The template \"{name}\" is in the trash and cannot be used. Choose another template.",
+        "valueFromSample": "From {name}",
+        "valueNone": "None (ad-hoc sample)"
+      },
+      "wizard": {
+        "failed": "The operation could not be completed",
+        "fieldReason": "{label}: {reason}",
+        "headingWithProcess": "{operation}: {process}",
+        "inProgress": "Performing operation…",
+        "lockExpired": "Your edit session on these subsamples has expired. Close the wizard and start again.",
+        "originIndex": "{reason} (origin {index})",
+        "originsLocked": "Cannot start this operation",
+        "perform": "Perform",
+        "refreshFailed": "The operation completed, but the view could not be refreshed. Reload to see the changes.",
+        "reviewEdit": "Review / edit",
+        "step": {
+          "amounts": "Amounts",
+          "confirm": "Confirm",
+          "details": "Details",
+          "documentation": "Documentation",
+          "template": "Template"
+        },
+        "title": "Process subsample"
+      }
+    },
     "pageTitle": "RSpace Inventory",
     "pageTitleWithContext": "{pageContext} | RSpace Inventory",
     "peopleField": {
@@ -5559,6 +5708,12 @@ export default interface Resources {
         "invalid": "Invalid password.",
         "notEqualUsername": "Please use a password other than your username."
       },
+      "preference": {
+        "invalidJsonValue": "The value for preference key ''{0}'' is not valid JSON.",
+        "invalidKey": "''{0}'' is not a valid preference key.",
+        "keyNotSupported": "Preference ''{0}'' is stored as a single value, so it cannot be updated one key at a time.",
+        "valueTooLarge": "The value for preference key ''{0}'' is too large. The limit is {1} characters."
+      },
       "rateLimitExceeded": "You have exceeded the number of {0} requests. Please contact ResearchSpace support for assistance.",
       "reauthentication": {
         "failed": "Reauthentication failed, please try again."
@@ -6738,6 +6893,9 @@ export default interface Resources {
           "notFound": "No container with id: {0}",
           "typeRequired": "Container type (cType) is required and must be one of {0}."
         },
+        "editLock": {
+          "heldBy": "{0} is currently being edited by {1}."
+        },
         "export": {
           "exportMode": {
             "invalid": "exportMode should be either 'FULL' or 'COMPACT'"
@@ -6840,7 +6998,8 @@ export default interface Resources {
           "descriptionTooLong": "Description cannot be longer than 255 chars",
           "elnFieldIdRequired": "elnFieldId cannot be null",
           "nameRequired": "name cannot be empty",
-          "nameTooLong": "Name cannot be longer than 255 chars"
+          "nameTooLong": "Name cannot be longer than 255 chars",
+          "tooManyMaterials": "A list of materials accepts at most {max} materials."
         },
         "location": {
           "outsideGridDimensions": "Location ({0},{1}) is outside container grid dimensions (columns: {2}, rows: {3}).",
@@ -6860,6 +7019,48 @@ export default interface Resources {
           "validationTooLong": "Name cannot be longer than 255 characters"
         },
         "notEnabled": "Inventory is not enabled on this RSpace instance.",
+        "operation": {
+          "amountModeMustBeAll": "This operation empties its origins, so the amount taken cannot be an explicit amount.",
+          "amountModeNotApplicable": "This operation does not take from its origins, so the amount taken cannot be a whole-origin claim.",
+          "amountModeUnknown": "Unrecognised amount mode. Use \"explicit\" for an amount the user chose, or \"all\" to take the origin's whole quantity.",
+          "amountTakenCategoryMismatch": "The amount taken must use the origin's measurement category (e.g. millilitres from a volume origin).",
+          "amountTakenExceedsOrigin": "Cannot take more from an origin than it currently holds.",
+          "amountTakenInvalid": "Each origin must specify a non-negative amount, with a unit, to take from it.",
+          "amountTakenNotSubtractable": "The amount taken is too fine to record against this origin; it cannot be represented in any unit of its category.",
+          "amountTakenPositive": "This operation takes from each origin, so the amount taken must be greater than zero.",
+          "amountTakenTooPrecise": "The amount taken supports at most 3 decimal places.",
+          "amountTakenZero": "This operation does not take from its origins, so the amount taken must be zero.",
+          "createdAmountNotPositive": "Each created subsample must be given a quantity greater than zero.",
+          "documentationLinkTargetInvalid": "A documentation link must target an ELN document, notebook or Gallery file.",
+          "duplicateOrigin": "An origin subsample may appear at most once in an operation.",
+          "expectedQuantityInvalid": "The expected quantity must be a non-negative amount, with a unit.",
+          "inputAboveMaximum": "Must be at most {0}.",
+          "inputBelowMinimum": "Must be at least {0}.",
+          "inputNotStorable": "Supports at most 3 decimal places.",
+          "inputRequired": "Required by this operation.",
+          "inputTooLong": "This input supports at most {0} characters.",
+          "inputWrongType": "Not the type this operation expects.",
+          "mustEmptyOrigin": "This operation must take the origin's entire remaining quantity.",
+          "operationTypeRequired": "An operation type is required.",
+          "originCategoryMismatch": "All origin subsamples must use the same measurement category (e.g. all volume or all mass).",
+          "originCountExact": "This operation requires exactly one origin subsample.",
+          "originCountMaximum": "This operation accepts at most {0} origin subsamples.",
+          "originCountMinimum": "This operation requires at least two origin subsamples.",
+          "originEmpty": "An origin subsample that currently holds nothing cannot be operated on.",
+          "originGlobalIdInvalid": "Each origin must be identified by a subsample global id (SS followed by a number), was [{0}].",
+          "originIdRequired": "Each origin must identify a subsample by id.",
+          "originsRequired": "At least one origin subsample must be provided for the operation.",
+          "storageTempAboveMax": "The storage temperature must be at most {0}°C for this operation.",
+          "storageTempBelowMin": "The storage temperature must be at least {0}°C for this operation.",
+          "subSampleCategoryMismatch": "Each new subsample must use the origin's measurement category (e.g. all volume or all mass).",
+          "tooManyInputs": "An operation request accepts at most {max} inputs.",
+          "tooManyOrigins": "This operation accepts at most {max} origin subsamples.",
+          "totalNotStorable": "The new subsamples hold more in total than a quantity can store; reduce the amount or the number of subsamples.",
+          "unknownType": "Unknown operation type [{0}]."
+        },
+        "operations": {
+          "notEnabled": "Inventory operations API is not enabled on this RSpace instance (inventory.operations.available=DENIED)."
+        },
         "publicLink": {
           "unavailable": "The item you try to see is not publicly available right now."
         },
@@ -6878,6 +7079,7 @@ export default interface Resources {
           "subSamplesCountOutOfRange": "{0} supported values are 1-100, was [{1}]",
           "templateActionsNotAllowed": "Please use /sampleTemplates endpoint for template actions",
           "templateNotFound": "No sample template with id: {0}",
+          "tooManySubSamples": "A sample can be created with at most {max} subsamples",
           "unitIncompatibleWithTemplate": "Sample quantity unit {0} ({1}) is incompatible with template quantity unit {2} ({3})"
         },
         "search": {
@@ -6913,9 +7115,11 @@ export default interface Resources {
         "temperature": {
           "invalidUnit": "Unit id is not a valid temperature unit.",
           "minGreaterThanMax": "Min temperature is greater than max temperature.",
+          "notStorable": "Temperature must be within the range the system stores, with at most 3 decimal places.",
           "unitsNotComparable": "Temperature units are not mutually comparable."
         },
         "template": {
+          "deleted": "Sample template {0} is in the trash and cannot be used to create a sample. Restore it, or choose another template.",
           "emptyFieldName": "Field name cannot be empty",
           "emptyFieldType": "Field type cannot be empty",
           "fieldNameTooLong": "{0} is too long for a template field name, max length is {1}",
@@ -8768,6 +8972,7 @@ export default interface Resources {
           "googleDriveAvailable": "Makes Google Drive integration available to the users. After enabling the integration, user can link to Google Drive in text field editor",
           "groupAutosharingAvailable": "Enables the management of group-wide autosharing.Enables PIs and lab admins with the 'View All' permission to manage the autoshare status for non-PI lab members.",
           "inventoryAvailable": "Enables Inventory module.",
+          "inventoryOperationsAvailable": "Makes the Inventory operations wizard and its API available.",
           "msTeamsAvailable": "Makes MS Teams integration available to the users. After enabling the integration, user can connect to their MS Teams channels to send messages or forward notifications",
           "nextcloudAvailable": "Makes Nextcloud integration available to the users. After enabling the integration, users can link to Nextcloud in text field editor",
           "omeroAvailable": "Makes Omero integration available. After enabling the integration, users can link to Omero image data.",

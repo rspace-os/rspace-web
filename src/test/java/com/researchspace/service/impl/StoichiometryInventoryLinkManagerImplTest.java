@@ -10,6 +10,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -80,6 +81,8 @@ public class StoichiometryInventoryLinkManagerImplTest {
     invSample.setId(200L);
     invSubSample = new SubSample();
     invSubSample.setId(300L);
+    // every subsample a deduction touches needs a parent to resolve
+    invSubSample.setSample(invSample);
     owningRecord = mock(StructuredDocument.class);
   }
 
@@ -189,6 +192,29 @@ public class StoichiometryInventoryLinkManagerImplTest {
   }
 
   @Test
+  public void eachSubmittedLinkIdIsResolvedExactlyOnce() {
+    // A repeated id must be loaded once, whatever the submitted cardinality: the deduction loop
+    // dedupes the submitted ids before resolving any of them (RSDEV-1319).
+    StoichiometryInventoryLink original = new StoichiometryInventoryLink();
+    original.setId(321L);
+    long stoichiometryId = 55L;
+    molecule.getStoichiometry().setId(stoichiometryId);
+    molecule.setActualAmount(10.0);
+    original.setStoichiometryMolecule(molecule);
+    original.setInventoryRecord(invSubSample);
+
+    invSubSample.setQuantity(new QuantityInfo(BigDecimal.valueOf(100), RSUnitDef.GRAM.getId()));
+
+    when(linkDao.getSafeNull(321L)).thenReturn(java.util.Optional.of(original));
+    when(moleculeManager.getDocContainingMolecule(molecule)).thenReturn(owningRecord);
+    when(elnPerms.isPermitted(owningRecord, PermissionType.WRITE, user)).thenReturn(true);
+
+    manager.deductStock(stoichiometryId, List.of(321L, 321L), user);
+
+    verify(linkDao, times(1)).getSafeNull(321L);
+  }
+
+  @Test
   public void repeatedLinkIdIsDeductedOnce() {
     StoichiometryInventoryLink original = new StoichiometryInventoryLink();
     original.setId(321L);
@@ -256,6 +282,10 @@ public class StoichiometryInventoryLinkManagerImplTest {
       Long linkId, Long subSampleId, StoichiometryMolecule mol) {
     SubSample sub = new SubSample();
     sub.setId(subSampleId);
+    // parent sample id derived from the subsample id (800 -> 8000)
+    Sample parent = new Sample();
+    parent.setId(subSampleId * 10);
+    sub.setSample(parent);
     StoichiometryInventoryLink link = new StoichiometryInventoryLink();
     link.setId(linkId);
     link.setStoichiometryMolecule(mol);
