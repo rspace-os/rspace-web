@@ -602,7 +602,6 @@ public abstract class BaseRecord
     return added != null && removed;
   }
 
-  /** Whether this record can move between the supplied folders. */
   private boolean isMoveValid(Folder from, Folder to, User u, boolean allowUnsafeMove) {
     if (from == null || to == null || u == null || !getParentFolders().contains(from)) {
       return false;
