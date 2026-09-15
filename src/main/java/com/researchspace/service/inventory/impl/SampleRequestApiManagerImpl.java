@@ -108,7 +108,11 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
   @Override
   public ApiSampleRequest updateStatus(Long id, ApiSampleRequestStatusPut post, User user) {
     assertSampleRequestsEnabled(user);
-    SampleRequest request = sampleRequestDao.getSafeNull(id).orElseThrow(() -> requestNotFound(id));
+    // locked, so two concurrent transitions serialise and the second sees the committed status
+    SampleRequest request = sampleRequestDao.getForUpdate(id);
+    if (request == null) {
+      throw requestNotFound(id);
+    }
     assertUserIsPartyToRequest(request, user);
 
     Transition transition = transitionTo(post.getStatus());

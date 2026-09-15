@@ -12,6 +12,12 @@ import java.util.Set;
 public interface SampleRequestDao extends GenericDao<SampleRequest, Long> {
 
   /**
+   * Loads a request for update, taking a row lock so concurrent transitions serialise. The second
+   * caller then sees the committed status and fails the normal transition check.
+   */
+  SampleRequest getForUpdate(Long id);
+
+  /**
    * Page of requests involving the user, on the given side of the request.
    *
    * @param role REQUESTER for requests the user raised, OWNER for requests against samples the user

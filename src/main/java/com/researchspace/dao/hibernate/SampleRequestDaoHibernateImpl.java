@@ -9,6 +9,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.inventory.SampleRequest;
 import com.researchspace.model.inventory.SampleRequestRole;
 import com.researchspace.model.inventory.SampleRequestStatus;
+import jakarta.persistence.LockModeType;
 import java.util.List;
 import java.util.Set;
 import org.apache.commons.collections.CollectionUtils;
@@ -24,6 +25,17 @@ public class SampleRequestDaoHibernateImpl extends GenericDaoHibernate<SampleReq
 
   public SampleRequestDaoHibernateImpl() {
     super(SampleRequest.class);
+  }
+
+  @Override
+  public SampleRequest getForUpdate(Long id) {
+    // a query rather than get(), so pending changes are flushed before the row is locked
+    return sessionFactory
+        .getCurrentSession()
+        .createQuery("from SampleRequest where id = :id", SampleRequest.class)
+        .setParameter("id", id)
+        .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+        .uniqueResult();
   }
 
   @Override

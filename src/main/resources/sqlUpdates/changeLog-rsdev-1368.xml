@@ -29,6 +29,11 @@
                 <constraints nullable="false"/>
             </column>
         </createTable>
+
+        <!-- backstop behind the row lock: every status is reachable at most once per request -->
+        <addUniqueConstraint tableName="SampleRequestStatusChange"
+                             columnNames="sampleRequest_id, status"
+                             constraintName="uc_srsc_request_status"/>
     </changeSet>
 
 </databaseChangeLog>
