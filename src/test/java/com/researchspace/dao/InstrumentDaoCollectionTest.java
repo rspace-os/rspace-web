@@ -1,6 +1,7 @@
 package com.researchspace.dao;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.User;
@@ -14,9 +15,11 @@ import com.researchspace.model.collection.Operator;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.collection.Sort;
 import com.researchspace.model.inventory.Instrument;
+import com.researchspace.model.inventory.InstrumentReadSummary;
 import com.researchspace.service.inventory.InstrumentReadAccess;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -139,5 +142,20 @@ public class InstrumentDaoCollectionTest extends SpringTransactionalTest {
     assertTrue(
         instrumentDao.getReadableResources(request, readAccess(owner)).resources().isEmpty());
     assertEquals(0, instrumentDao.countReadableResources(request, readAccess(owner)));
+  }
+
+  @Test
+  public void readsScalarSummariesThroughTheTypedProjection() {
+    User owner = createInitAndLoginAnyUser();
+    Instrument instrument =
+        instrumentDao.get(createBasicInstrumentForUser(owner, "Summary scope").getId());
+
+    InstrumentReadSummary summary =
+        instrumentDao
+            .getReadableSummaries(Set.of(instrument.getId()), owner)
+            .get(instrument.getId());
+
+    assertEquals("Summary scope", summary.name());
+    assertFalse(summary.deleted());
   }
 }
