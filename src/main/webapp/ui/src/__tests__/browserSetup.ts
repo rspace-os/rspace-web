@@ -38,7 +38,12 @@ await i18n.loadNamespaces([
  * each test so suites stay isolated (the MSW equivalent of Playwright's
  * per-test `router.route`).
  */
-export const worker = setupWorker(...appShellHandlers(), oauthTokenHandler(), ...galleryAppShellHandlers());
+export const worker = setupWorker(
+  ...appShellHandlers(),
+  oauthTokenHandler(),
+  oauthTokenHandler(true),
+  ...galleryAppShellHandlers(),
+);
 
 type AxiosLikeRejection = {
   isAxiosError?: boolean;
