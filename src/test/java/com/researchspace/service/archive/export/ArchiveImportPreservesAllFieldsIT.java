@@ -2,8 +2,8 @@ package com.researchspace.service.archive.export;
 
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static com.researchspace.core.util.progress.ProgressMonitor.NULL_MONITOR;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.Assert.assertEquals;
 
 import com.researchspace.archive.ArchivalImportConfig;
 import com.researchspace.archive.ArchiveManifest;
@@ -35,12 +35,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import javax.xml.parsers.DocumentBuilderFactory;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import javax.xml.parsers.DocumentBuilderFactory;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.w3c.dom.Document;
@@ -112,11 +109,11 @@ public class ArchiveImportPreservesAllFieldsIT extends RealTransactionSpringTest
     ArchiveManifest manifest = new ArchiveManifest();
     ExportRecordList exportList = new ExportRecordList();
     exportList.add(doc.getOid());
-    ArchiveExportConfig expCfg = createDefaultArchiveConfig(user, tempExportFolder.getRoot());
+    ArchiveExportConfig expCfg = createDefaultArchiveConfig(user, tempExportFolder);
     archivePlanner.updateExportListWithLinkedRecords(exportList, expCfg);
     File zipFile = archiveService.exportArchive(manifest, exportList, expCfg).getExportFile();
 
-    File expandedArchive = tempImportFolder.newFolder("expanded-export");
+    File expandedArchive = newFolder(tempImportFolder, "expanded-export");
     ZipUtils.extractZip(zipFile, expandedArchive);
     File documentXml = findXmlContaining(expandedArchive, "<fieldName>" + mandatoryFieldName);
     File formXml = findXmlContaining(expandedArchive, "<name>" + mandatoryFieldName);
@@ -129,7 +126,7 @@ public class ArchiveImportPreservesAllFieldsIT extends RealTransactionSpringTest
     assertEquals("false", getRequiredAttribute(formXml, "fieldForm", "name", optionalFieldName));
 
     ArchivalImportConfig importConfig =
-        createDefaultArchiveImportConfig(user, tempImportFolder.newFolder("imported-archive"));
+        createDefaultArchiveImportConfig(user, newFolder(tempImportFolder, "imported-archive"));
     ImportArchiveReport report =
         importer.importArchive(zipFile, importConfig, NULL_MONITOR, importStrategy::doImport);
 
