@@ -21,13 +21,12 @@ registerHandlers();
 
 beforeEach(() => {
   resetBookingPageRequests();
-  window.history.replaceState({}, "", "/");
+  window.history.replaceState({}, "", "/booking/all-items?date=2026-08-17");
   registerHandlers();
 });
 
 afterEach(() => {
   cleanup();
-  window.history.replaceState({}, "", "/");
 });
 
 describe("the All Bookable Items page", () => {

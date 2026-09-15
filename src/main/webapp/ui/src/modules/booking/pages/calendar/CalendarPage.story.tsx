@@ -30,9 +30,6 @@ export function CalendarPageStory({
   user?: CurrentUser;
   preferences?: BookingDisplayPreferencesDocument;
 } = {}) {
-  if (window.location.pathname === "/") {
-    window.history.replaceState({}, "", "/booking/calendar?date=2026-08-17");
-  }
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   queryClient.setQueryData(["rspace.common.auth", "oauthToken", "v2"], OAUTH_TOKEN);
   queryClient.setQueryData(bookingDisplayPreferencesQueryKey, preferences);

@@ -30,13 +30,13 @@ registerHandlers();
 
 beforeEach(() => {
   resetBookingPageRequests();
+  window.history.replaceState({}, "", "/booking/calendar?date=2026-08-17");
   registerHandlers();
 });
 
 afterEach(() => {
   cleanup();
   vi.useRealTimers();
-  window.history.replaceState({}, "", "/");
 });
 
 describe("Calendar page", () => {
