@@ -3,6 +3,8 @@ package com.researchspace.api.v1.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.api.v1.InventoryOperationsApi;
 import com.researchspace.api.v1.model.ApiExtraField;
+import com.researchspace.api.v1.model.ApiInventoryEditLock;
+import com.researchspace.api.v1.model.ApiInventoryEditLock.ApiInventoryEditLockStatus;
 import com.researchspace.api.v1.model.ApiInventoryOperationOriginUpdate;
 import com.researchspace.api.v1.model.ApiInventoryOperationPost;
 import com.researchspace.api.v1.model.ApiInventoryOperationRequests;
@@ -13,16 +15,23 @@ import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.GlobalIdentifier;
+import com.researchspace.model.inventory.SampleEntity;
+import com.researchspace.model.inventory.SubSample;
+import com.researchspace.service.inventory.InventoryEditLockHeldException;
 import com.researchspace.service.inventory.InventoryOperationConfig;
 import com.researchspace.service.inventory.InventoryOperationConfigRegistry;
 import com.researchspace.service.inventory.InventoryOperationManager;
 import com.researchspace.service.inventory.InventoryOperationRequestBuilder;
 import jakarta.validation.Valid;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -98,14 +107,17 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
     // returns are discarded here. They are assembled from entities the operation just loaded and
     // wrote, so they come off the persistence context rather than the database; the typed endpoints
     // below are what actually publish them.
-    return inventoryOperationManager
-        .performOperation(
-            request.getOperationType(),
+    return withOriginsLocked(
             request.getOrigins(),
-            typedInputs(request),
-            request.getTemplateId(),
-            request.getDocumentedByGlobalId(),
-            user)
+            user,
+            () ->
+                inventoryOperationManager.performOperation(
+                    request.getOperationType(),
+                    request.getOrigins(),
+                    typedInputs(request),
+                    request.getTemplateId(),
+                    request.getDocumentedByGlobalId(),
+                    user))
         .sample();
   }
 
@@ -220,13 +232,17 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
       inputValidator.validate(generic, operationPostValidator, genericErrors);
       throwBindExceptionIfErrors(genericErrors);
       outcome =
-          inventoryOperationManager.performOperation(
-              operationKey,
+          withOriginsLocked(
               generic.getOrigins(),
-              typedInputs(generic),
-              generic.getTemplateId(),
-              generic.getDocumentedByGlobalId(),
-              user);
+              user,
+              () ->
+                  inventoryOperationManager.performOperation(
+                      operationKey,
+                      generic.getOrigins(),
+                      typedInputs(generic),
+                      generic.getTemplateId(),
+                      generic.getDocumentedByGlobalId(),
+                      user));
     } catch (BindException coreRejection) {
       throw new BindException(facadeFieldNames(coreRejection.getBindingResult(), singleOrigin));
     }
@@ -249,6 +265,63 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
                 .encode()
                 .toUriString());
     return ResponseEntity.created(location).body(result);
+  }
+
+  /** The manager call, so the lock helper can wrap either entry point's. */
+  @FunctionalInterface
+  private interface OperationCall {
+    InventoryOperationManager.OperationOutcome call() throws BindException;
+  }
+
+  /** Ascending by prefix then numeric id, so SA10 sorts before SA20 and both before SS100. */
+  private static final Comparator<String> ASCENDING_GLOBAL_ID =
+      Comparator.comparing((String id) -> new GlobalIdentifier(id).getPrefix())
+          .thenComparing(id -> new GlobalIdentifier(id).getDbId());
+
+  /**
+   * Runs the operation with the Inventory edit-session lock held on every origin and every parent
+   * sample, the same courtesy lock the subsample edit form takes (DevDocs/adr/0007). The parent
+   * sample is in the set because two operations on siblings of one sample write the same sample
+   * row; the ascending order is what keeps two overlapping multi-origin Pools from deadlocking.
+   *
+   * <p>It lives here rather than in the manager because the release has to happen after the
+   * manager's transaction has committed or rolled back, and the controller is outside that AOP
+   * boundary.
+   *
+   * <p>Only the locks this request actually created are released: WAS_ALREADY_LOCKED means the
+   * caller's own session (the open wizard, or a form in another tab) holds it and keeps it.
+   */
+  private InventoryOperationManager.OperationOutcome withOriginsLocked(
+      List<ApiInventoryOperationOriginUpdate> origins, User user, OperationCall work)
+      throws BindException {
+    SortedSet<String> toLock = new TreeSet<>(ASCENDING_GLOBAL_ID);
+    for (ApiInventoryOperationOriginUpdate origin : origins) {
+      // Asserted before any lock is taken, so a caller who may not edit an origin cannot hold other
+      // users' records for the duration of the request. The manager asserts again inside.
+      SubSample subSample = subSampleApiMgr.assertUserCanEditSubSample(origin.getId(), user);
+      toLock.add(subSample.getGlobalIdentifier());
+      SampleEntity parent = subSample.getSample();
+      if (parent != null) {
+        toLock.add(parent.getGlobalIdentifier());
+      }
+    }
+    List<String> taken = new ArrayList<>();
+    try {
+      for (String globalId : toLock) {
+        ApiInventoryEditLock lock = tracker.attemptToLockForEdit(globalId, user);
+        if (ApiInventoryEditLockStatus.CANNOT_LOCK.equals(lock.getStatus())) {
+          throw new InventoryEditLockHeldException(globalId, lock.getOwner());
+        }
+        if (ApiInventoryEditLockStatus.LOCKED_OK.equals(lock.getStatus())) {
+          taken.add(globalId);
+        }
+      }
+      return work.call();
+    } finally {
+      for (int i = taken.size() - 1; i >= 0; i--) {
+        tracker.attemptToUnlock(taken.get(i), user);
+      }
+    }
   }
 
   /**
