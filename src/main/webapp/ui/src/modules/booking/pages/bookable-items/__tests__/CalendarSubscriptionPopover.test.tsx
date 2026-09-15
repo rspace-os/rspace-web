@@ -44,11 +44,17 @@ describe("CalendarSubscriptionPopover", () => {
     server.use(
       http.get(path, () => {
         gets += 1;
-        return HttpResponse.json({ active: false, updatedAt: null, subscriptionUrl: null });
+        return HttpResponse.json(
+          { active: false, updatedAt: null, subscriptionUrl: null },
+          { headers: { ETag: '"inactive"' } },
+        );
       }),
       http.post(path, () => {
         posts += 1;
-        return HttpResponse.json({ active: true, updatedAt, subscriptionUrl: urlFor("a") });
+        return HttpResponse.json(
+          { active: true, updatedAt, subscriptionUrl: urlFor("a") },
+          { headers: { ETag: '"current"' } },
+        );
       }),
     );
     const { container } = renderPopover();
@@ -80,10 +86,18 @@ describe("CalendarSubscriptionPopover", () => {
     const user = userEvent.setup();
     let posts = 0;
     server.use(
-      http.get(path, () => HttpResponse.json({ active: true, updatedAt, subscriptionUrl: urlFor("b") })),
+      http.get(path, () =>
+        HttpResponse.json(
+          { active: true, updatedAt, subscriptionUrl: urlFor("b") },
+          { headers: { ETag: '"current"' } },
+        ),
+      ),
       http.post(path, () => {
         posts += 1;
-        return HttpResponse.json({ active: true, updatedAt, subscriptionUrl: urlFor("c") });
+        return HttpResponse.json(
+          { active: true, updatedAt, subscriptionUrl: urlFor("c") },
+          { headers: { ETag: '"current"' } },
+        );
       }),
     );
     renderPopover();
@@ -100,10 +114,18 @@ describe("CalendarSubscriptionPopover", () => {
     const user = userEvent.setup();
     let posts = 0;
     server.use(
-      http.get(path, () => HttpResponse.json({ active: false, updatedAt: null, subscriptionUrl: null })),
+      http.get(path, () =>
+        HttpResponse.json(
+          { active: false, updatedAt: null, subscriptionUrl: null },
+          { headers: { ETag: '"inactive"' } },
+        ),
+      ),
       http.post(path, () => {
         posts += 1;
-        return HttpResponse.json({ active: true, updatedAt, subscriptionUrl: urlFor("z") });
+        return HttpResponse.json(
+          { active: true, updatedAt, subscriptionUrl: urlFor("z") },
+          { headers: { ETag: '"current"' } },
+        );
       }),
     );
     renderPopover(true);
@@ -125,13 +147,19 @@ describe("CalendarSubscriptionPopover", () => {
         gets += 1;
         return gets === 1
           ? HttpResponse.json({ status: 503 }, { status: 503 })
-          : HttpResponse.json({ active: false, updatedAt: null, subscriptionUrl: null });
+          : HttpResponse.json(
+              { active: false, updatedAt: null, subscriptionUrl: null },
+              { headers: { ETag: '"inactive"' } },
+            );
       }),
       http.post(path, () => {
         posts += 1;
         return posts === 1
           ? HttpResponse.json({ status: 503 }, { status: 503 })
-          : HttpResponse.json({ active: true, updatedAt, subscriptionUrl: urlFor("d") });
+          : HttpResponse.json(
+              { active: true, updatedAt, subscriptionUrl: urlFor("d") },
+              { headers: { ETag: '"current"' } },
+            );
       }),
     );
     renderPopover();
@@ -149,9 +177,48 @@ describe("CalendarSubscriptionPopover", () => {
     ).toHaveValue(urlFor("d"));
   });
 
+  it("recovers a concurrent creation by loading the winning link without rotating it", async () => {
+    const user = userEvent.setup();
+    let created = false;
+    let posts = 0;
+    server.use(
+      http.get(path, () =>
+        HttpResponse.json(
+          created
+            ? { active: true, updatedAt, subscriptionUrl: urlFor("w") }
+            : { active: false, updatedAt: null, subscriptionUrl: null },
+          { headers: { ETag: created ? '"winner"' : '"inactive"' } },
+        ),
+      ),
+      http.post(path, ({ request }) => {
+        expect(request.headers.get("If-Match")).toBe('"inactive"');
+        posts += 1;
+        created = true;
+        return HttpResponse.json(
+          { status: 409, code: "errors.api.v2.bookingCalendar.subscriptionConflict" },
+          { status: 409 },
+        );
+      }),
+    );
+    renderPopover();
+    await user.click(screen.getByRole("button", { name: "booking:bookableItemDetails.calendarSubscription.trigger" }));
+    expect(
+      await screen.findByRole("textbox", { name: "booking:bookableItemDetails.calendarSubscription.copyPrompt" }),
+    ).toHaveValue(urlFor("w"));
+    expect(posts).toBe(1);
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
   it("copies the link and reports a clipboard failure without moving focus", async () => {
     const user = userEvent.setup();
-    server.use(http.get(path, () => HttpResponse.json({ active: true, updatedAt, subscriptionUrl: urlFor("e") })));
+    server.use(
+      http.get(path, () =>
+        HttpResponse.json(
+          { active: true, updatedAt, subscriptionUrl: urlFor("e") },
+          { headers: { ETag: '"current"' } },
+        ),
+      ),
+    );
     renderPopover();
     await user.click(screen.getByRole("button", { name: "booking:bookableItemDetails.calendarSubscription.trigger" }));
     const copy = await screen.findByRole("button", { name: "booking:bookableItemDetails.calendarSubscription.copy" });
@@ -172,7 +239,14 @@ describe("CalendarSubscriptionPopover", () => {
 
   it("closes with Escape and restores focus to the trigger", async () => {
     const user = userEvent.setup();
-    server.use(http.get(path, () => HttpResponse.json({ active: true, updatedAt, subscriptionUrl: urlFor("f") })));
+    server.use(
+      http.get(path, () =>
+        HttpResponse.json(
+          { active: true, updatedAt, subscriptionUrl: urlFor("f") },
+          { headers: { ETag: '"current"' } },
+        ),
+      ),
+    );
     renderPopover();
     const trigger = screen.getByRole("button", { name: "booking:bookableItemDetails.calendarSubscription.trigger" });
     await user.click(trigger);

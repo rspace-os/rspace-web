@@ -79,6 +79,7 @@ public final class BookingCalendarFeedController {
     HttpHeaders headers = new HttpHeaders();
     headers.set(HttpHeaders.CACHE_CONTROL, "private, no-store");
     headers.set("Referrer-Policy", "no-referrer");
+    headers.set("X-Content-Type-Options", "nosniff");
     return headers;
   }
 }

@@ -22,7 +22,7 @@ describe("bookable item calendar subscription client", () => {
     server.use(
       http.get(path, ({ request: received }) => {
         request = received;
-        return HttpResponse.json({ active: false, updatedAt: null });
+        return HttpResponse.json({ active: false, updatedAt: null }, { headers: { ETag: '"inactive"' } });
       }),
     );
 
@@ -30,14 +30,19 @@ describe("bookable item calendar subscription client", () => {
       active: false,
       updatedAt: null,
       subscriptionUrl: null,
+      etag: '"inactive"',
     });
     expect(request?.method).toBe("GET");
     expect(request?.headers.get("Authorization")).toBe("Bearer secret");
 
     const subscriptionUrl = "https://example.test/feed.ics?token=current";
-    server.use(http.get(path, () => HttpResponse.json({ active: true, updatedAt: timestamp, subscriptionUrl })));
+    server.use(
+      http.get(path, () =>
+        HttpResponse.json({ active: true, updatedAt: timestamp, subscriptionUrl }, { headers: { ETag: '"current"' } }),
+      ),
+    );
     const active = await fetchCalendarSubscriptionStatus(7, "secret");
-    expect(active).toEqual({ active: true, updatedAt: timestamp, subscriptionUrl });
+    expect(active).toEqual({ active: true, updatedAt: timestamp, subscriptionUrl, etag: '"current"' });
   });
 
   it("rejects status shapes that violate the active timestamp contract", async () => {
@@ -60,15 +65,21 @@ describe("bookable item calendar subscription client", () => {
     server.use(
       http.post(path, async ({ request }) => {
         bodies.push(await request.text());
-        return HttpResponse.json({
-          active: true,
-          updatedAt: timestamp,
-          subscriptionUrl: "http://localhost:8097/rspace/public/booking/calendars/feed.ics?token=value",
-        });
+        expect(request.headers.get("If-Match")).toBe('"inactive"');
+        return HttpResponse.json(
+          {
+            active: true,
+            updatedAt: timestamp,
+            subscriptionUrl: "http://localhost:8097/rspace/public/booking/calendars/feed.ics?token=value",
+          },
+          { headers: { ETag: '"current"' } },
+        );
       }),
     );
 
-    await expect(createOrReplaceCalendarSubscription(7, "secret")).resolves.toMatchObject({ active: true });
+    await expect(createOrReplaceCalendarSubscription(7, "secret", '"inactive"')).resolves.toMatchObject({
+      active: true,
+    });
     expect(bodies).toEqual([""]);
   });
 
@@ -78,7 +89,7 @@ describe("bookable item calendar subscription client", () => {
         HttpResponse.json({ active: false, updatedAt: null, subscriptionUrl: "javascript:alert(1)" }),
       ),
     );
-    await expect(createOrReplaceCalendarSubscription(7, "token")).rejects.toThrow();
+    await expect(createOrReplaceCalendarSubscription(7, "token", '"inactive"')).rejects.toThrow();
   });
 
   it.each([401, 403, 404])("parses a %s API problem", async (status) => {

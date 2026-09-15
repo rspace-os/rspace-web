@@ -56,7 +56,10 @@ export function CalendarSubscriptionPopover({
   });
 
   const createMutation = useMutation({
-    mutationFn: () => createOrReplaceCalendarSubscription(configurationId, token),
+    mutationFn: () => {
+      if (status.data === undefined) throw new Error("Calendar subscription status is unavailable");
+      return createOrReplaceCalendarSubscription(configurationId, token, status.data.etag);
+    },
     retry: false,
     onMutate: () => {
       setCopied(false);
@@ -65,6 +68,9 @@ export function CalendarSubscriptionPopover({
     onSuccess: (created) => {
       queryClient.setQueryData(queryKey, created);
       setFocusGoogle(true);
+    },
+    onError: () => {
+      void status.refetch();
     },
   });
 

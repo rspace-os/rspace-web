@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestAttribute;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -64,29 +65,40 @@ public class BookingCalendarSubscriptionController {
         @ApiResponse(responseCode = "403", description = "Booking is unavailable."),
         @ApiResponse(responseCode = "404", description = "The bookable item was not found.")
       })
-  public StatusDocument get(
+  public ResponseEntity<StatusDocument> get(
       @PathVariable @Positive(message = "{errors.api.v2.invalidRequest}") Long configurationId,
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
-    return StatusDocument.from(manager.status(configurationId, caller.subject(), caller.actor()));
+    BookingCalendarManager.Status status =
+        manager.status(configurationId, caller.subject(), caller.actor());
+    return ResponseEntity.ok().eTag(status.etag()).body(StatusDocument.from(status));
   }
 
   @PostMapping
   @Operation(
       operationId = "createOrReplaceBookingCalendarSubscription",
       summary = "Create or replace a calendar subscription",
-      description = "Replaces any active credential and returns the new subscription URL.",
+      description =
+          "Requires the current status ETag in If-Match and returns a new subscription URL.",
       responses = {
         @ApiResponse(responseCode = "200", description = "The new subscription URL."),
         @ApiResponse(responseCode = "401", description = "Authentication is required."),
         @ApiResponse(responseCode = "403", description = "Booking is unavailable."),
         @ApiResponse(responseCode = "404", description = "The bookable item was not found."),
-        @ApiResponse(responseCode = "409", description = "The bookable item is archived.")
+        @ApiResponse(
+            responseCode = "409",
+            description = "The item is archived or the subscription changed."),
+        @ApiResponse(responseCode = "428", description = "If-Match is required.")
       })
-  public CreatedDocument createOrReplace(
+  public ResponseEntity<CreatedDocument> createOrReplace(
       @PathVariable @Positive(message = "{errors.api.v2.invalidRequest}") Long configurationId,
+      @RequestHeader(name = "If-Match", required = false) String ifMatch,
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
-    return CreatedDocument.from(
-        manager.createOrRotate(configurationId, caller.subject(), caller.actor()));
+    String expectedEtag =
+        ApiV2ConditionalRequest.parseStrongEtag(
+            ifMatch, "errors.api.v2.bookingCalendar.ifMatchRequired");
+    BookingCalendarManager.Created created =
+        manager.createOrRotate(configurationId, caller.subject(), caller.actor(), expectedEtag);
+    return ResponseEntity.ok().eTag(created.status().etag()).body(CreatedDocument.from(created));
   }
 
   @DeleteMapping

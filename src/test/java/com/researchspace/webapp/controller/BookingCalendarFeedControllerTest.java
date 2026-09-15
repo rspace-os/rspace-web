@@ -44,6 +44,7 @@ class BookingCalendarFeedControllerTest {
         .perform(get(PATH).param("token", TOKEN))
         .andExpect(status().isOk())
         .andExpect(content().contentType("text/calendar;charset=UTF-8"))
+        .andExpect(header().string("X-Content-Type-Options", "nosniff"))
         .andExpect(
             header()
                 .string(
@@ -83,6 +84,7 @@ class BookingCalendarFeedControllerTest {
         .perform(get(PATH).param("token", TOKEN))
         .andExpect(status().isNotFound())
         .andExpect(header().string(HttpHeaders.CACHE_CONTROL, "private, no-store"))
+        .andExpect(header().string("X-Content-Type-Options", "nosniff"))
         .andExpect(header().string("Referrer-Policy", "no-referrer"))
         .andExpect(content().string(""));
     mockMvc

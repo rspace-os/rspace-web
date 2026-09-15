@@ -62,27 +62,30 @@ export async function fetchCalendarSubscriptionStatus(
   configurationId: number,
   token: string,
   signal?: AbortSignal,
-): Promise<CalendarSubscriptionStatus> {
+): Promise<UserCalendarSubscriptionStatus> {
   const response = await requireSuccess(
     await fetch(calendarSubscriptionPath(configurationId), {
       headers: bookingApiV2Headers(token),
       signal,
     }),
   );
-  return parseOrThrow(CalendarSubscriptionStatusSchema, (await response.json()) as unknown);
+  const status = parseOrThrow(CalendarSubscriptionStatusSchema, (await response.json()) as unknown);
+  return { ...status, etag: requireEtag(response) };
 }
 
 export async function createOrReplaceCalendarSubscription(
   configurationId: number,
   token: string,
-): Promise<CalendarSubscriptionCreated> {
+  etag: string,
+): Promise<UserCalendarSubscriptionCreated> {
   const response = await requireSuccess(
     await fetch(calendarSubscriptionPath(configurationId), {
       method: "POST",
-      headers: bookingApiV2Headers(token),
+      headers: bookingApiV2Headers(token, { "If-Match": etag }),
     }),
   );
-  return parseOrThrow(CalendarSubscriptionCreatedSchema, (await response.json()) as unknown);
+  const created = parseOrThrow(CalendarSubscriptionCreatedSchema, (await response.json()) as unknown);
+  return { ...created, etag: requireEtag(response) };
 }
 
 export async function revokeCalendarSubscription(configurationId: number, token: string): Promise<void> {

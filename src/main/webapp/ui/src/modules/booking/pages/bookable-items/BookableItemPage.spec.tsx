@@ -296,14 +296,20 @@ describe("BookableItemPage", () => {
     const subscriptionUrl = `${window.location.origin}/public/booking/calendars/feed.ics?token=${"k".repeat(43)}`;
     worker.use(
       http.get("/api/v2/booking-configurations/7/calendar-subscription", () =>
-        HttpResponse.json({ active: false, updatedAt: null, subscriptionUrl: null }),
+        HttpResponse.json(
+          { active: false, updatedAt: null, subscriptionUrl: null },
+          { headers: { ETag: '"inactive"' } },
+        ),
       ),
       http.post("/api/v2/booking-configurations/7/calendar-subscription", () =>
-        HttpResponse.json({
-          active: true,
-          updatedAt: "2026-08-27T12:00:00.000Z",
-          subscriptionUrl,
-        }),
+        HttpResponse.json(
+          {
+            active: true,
+            updatedAt: "2026-08-27T12:00:00.000Z",
+            subscriptionUrl,
+          },
+          { headers: { ETag: '"current"' } },
+        ),
       ),
     );
     const clipboard = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue(undefined);

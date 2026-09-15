@@ -136,7 +136,7 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
     requireFeatureRead(subject);
     BookingConfiguration configuration = requireReadableConfiguration(configurationId, subject);
     if (configuration.getState() == BookingConfigurationState.ARCHIVED) {
-      return new Status(false, null, null);
+      return new Status(false, null, null, INACTIVE_USER_ETAG);
     }
     return subscriptionDao
         .findByUserIdAndConfigurationId(subject.getId(), configurationId)
@@ -147,12 +147,14 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
                     subscription.getUpdatedAt(),
                     subscription.getRawToken() == null
                         ? null
-                        : subscriptionUrl(subscription.getRawToken())))
-        .orElseGet(() -> new Status(false, null, null));
+                        : subscriptionUrl(subscription.getRawToken()),
+                    itemEtag(subscription)))
+        .orElseGet(() -> new Status(false, null, null, INACTIVE_USER_ETAG));
   }
 
   @Override
-  public Created createOrRotate(Long configurationId, User subject, User actor) {
+  public Created createOrRotate(
+      Long configurationId, User subject, User actor, String expectedEtag) {
     requirePersonalCaller(subject, actor);
     requireFeatureMutation(subject);
     BookingConfiguration configuration =
@@ -166,6 +168,11 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
         configuration, subject, BookingResourceRoleScheme.CREATE_CALENDAR_SUBSCRIPTION);
     Optional<BookableItemCalendarSubscription> existing =
         subscriptionDao.findByUserIdAndConfigurationId(subject.getId(), configurationId);
+    String currentEtag =
+        existing.map(BookingCalendarManagerImpl::itemEtag).orElse(INACTIVE_USER_ETAG);
+    if (!Objects.equals(expectedEtag, currentEtag)) {
+      throw new UserSubscriptionConflictException();
+    }
     String rawToken = tokenSupplier.get();
     Date updatedAt = new Date();
     BookableItemCalendarSubscription subscription;
@@ -192,8 +199,12 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
         configurationId,
         saved.getId());
     String url = subscriptionUrl(rawToken);
-    Status status = new Status(true, saved.getUpdatedAt(), url);
+    Status status = new Status(true, saved.getUpdatedAt(), url, itemEtag(saved));
     return new Created(status, url);
+  }
+
+  private static String itemEtag(BookableItemCalendarSubscription subscription) {
+    return "\"" + subscription.getTokenHash() + "\"";
   }
 
   private String subscriptionUrl(String rawToken) {

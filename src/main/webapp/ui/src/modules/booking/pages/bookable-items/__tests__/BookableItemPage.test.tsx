@@ -363,7 +363,10 @@ describe("BookableItemPage", () => {
       http.get("/api/v2/booking-configurations", () => HttpResponse.json(envelope([archived], 2))),
       http.get("/api/v2/bookings", () => HttpResponse.json(envelope([], 10))),
       http.get("/api/v2/booking-configurations/7/calendar-subscription", () =>
-        HttpResponse.json({ active: false, updatedAt: null, subscriptionUrl: null }),
+        HttpResponse.json(
+          { active: false, updatedAt: null, subscriptionUrl: null },
+          { headers: { ETag: '"inactive"' } },
+        ),
       ),
       http.post("/api/v2/booking-configurations/7/calendar-subscription", () => {
         posts += 1;
@@ -522,22 +525,28 @@ describe("BookableItemPage", () => {
     let statusRequests = 0;
     let createRequests = 0;
     vi.mocked(useCurrentUserQuery).mockReturnValue({
-      data: { hasSysAdminRole: false },
+      data: { hasSysAdminRole: false, session: { operatedAs: false } },
     } as ReturnType<typeof useCurrentUserQuery>);
     server.use(
       http.get("/api/v2/booking-configurations", () => HttpResponse.json(envelope([configuration], 2))),
       http.get("/api/v2/bookings", () => HttpResponse.json(envelope([], 10))),
       http.get("/api/v2/booking-configurations/7/calendar-subscription", () => {
         statusRequests += 1;
-        return HttpResponse.json({ active: false, updatedAt: null, subscriptionUrl: null });
+        return HttpResponse.json(
+          { active: false, updatedAt: null, subscriptionUrl: null },
+          { headers: { ETag: '"inactive"' } },
+        );
       }),
       http.post("/api/v2/booking-configurations/7/calendar-subscription", () => {
         createRequests += 1;
-        return HttpResponse.json({
-          active: true,
-          updatedAt: "2026-08-27T12:00:00.000Z",
-          subscriptionUrl: `https://rspace.example/public/booking/calendars/feed.ics?token=${"c".repeat(43)}`,
-        });
+        return HttpResponse.json(
+          {
+            active: true,
+            updatedAt: "2026-08-27T12:00:00.000Z",
+            subscriptionUrl: `https://rspace.example/public/booking/calendars/feed.ics?token=${"c".repeat(43)}`,
+          },
+          { headers: { ETag: '"current"' } },
+        );
       }),
     );
     const user = userEvent.setup();

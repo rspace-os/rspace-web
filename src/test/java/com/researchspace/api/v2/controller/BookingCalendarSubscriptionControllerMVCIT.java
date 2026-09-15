@@ -181,14 +181,20 @@ class BookingCalendarSubscriptionControllerMVCIT {
         .perform(get(path(Long.MAX_VALUE)).header("apiKey", fixture.userKey()))
         .andExpect(status().isNotFound());
     mockMvc
-        .perform(post(path(Long.MAX_VALUE)).header("apiKey", fixture.userKey()))
+        .perform(
+            post(path(Long.MAX_VALUE))
+                .header("apiKey", fixture.userKey())
+                .header(HttpHeaders.IF_MATCH, "\"inactive\""))
         .andExpect(status().isNotFound());
 
     mockMvc
         .perform(get(path(configurationId)).header("apiKey", fixture.otherUserKey()))
         .andExpect(status().isNotFound());
     mockMvc
-        .perform(post(path(configurationId)).header("apiKey", fixture.otherUserKey()))
+        .perform(
+            post(path(configurationId))
+                .header("apiKey", fixture.otherUserKey())
+                .header(HttpHeaders.IF_MATCH, "\"inactive\""))
         .andExpect(status().isNotFound());
   }
 
@@ -400,9 +406,19 @@ class BookingCalendarSubscriptionControllerMVCIT {
   }
 
   private String create(long configurationId, String apiKey) throws Exception {
+    String etag =
+        mockMvc
+            .perform(get(path(configurationId)).header("apiKey", apiKey))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getHeader(HttpHeaders.ETAG);
     MvcResult result =
         mockMvc
-            .perform(post(path(configurationId)).header("apiKey", apiKey))
+            .perform(
+                post(path(configurationId))
+                    .header("apiKey", apiKey)
+                    .header(HttpHeaders.IF_MATCH, etag))
             .andExpect(status().isOk())
             .andExpect(header().string("Cache-Control", containsString("no-store")))
             .andExpect(header().string("Cache-Control", containsString("private")))
