@@ -127,6 +127,8 @@ test.describe(`Workspace filters`, () => {
         await recipient.workspace.open();
         await recipient.workspace.toolbar.toggleFilter("shared");
         await expect(recipient.workspace.table.row(docName)).toBeVisible();
+        await recipient.workspace.table.selectRecord(docName);
+        expect(await recipient.workspace.selectionBar.isActionVisible("Move")).toBe(false);
       });
     });
   });

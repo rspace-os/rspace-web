@@ -602,6 +602,7 @@ public abstract class BaseRecord
     return added != null && removed;
   }
 
+  /** Whether this record can move between the supplied folders. */
   private boolean isMoveValid(Folder from, Folder to, User u, boolean allowUnsafeMove) {
     if (from == null || to == null || u == null || !getParentFolders().contains(from)) {
       return false;
@@ -612,6 +613,7 @@ public abstract class BaseRecord
     return allowUnsafeMove || satisfiesMoveRestrictions(from, to);
   }
 
+  /** Whether this move satisfies the normal folder and sharing restrictions. */
   private boolean satisfiesMoveRestrictions(Folder from, Folder to) {
     if (isFolder() && ((Folder) this).isSystemFolder()) {
       return false;

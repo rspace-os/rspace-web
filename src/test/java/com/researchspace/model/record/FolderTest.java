@@ -165,6 +165,27 @@ public class FolderTest {
   }
 
   @Test
+  public void moveFromSharedFolderToNotebookIgnoresAnonymousAudience() {
+    Folder sharedFolder = TestFactory.createAFolder("shared", anyuser);
+    sharedFolder.addType(RecordType.SHARED_FOLDER);
+    Notebook notebook = TestFactory.createANotebook("notebook", anyuser);
+    StructuredDocument document = TestFactory.createAnySD();
+    document.setOwner(anyuser);
+    sharedFolder.addChild(document, anyuser);
+
+    ConstraintBasedPermission readPermission =
+        new ConstraintBasedPermission(PermissionDomain.RECORD, PermissionType.READ);
+    sharedFolder
+        .getSharingACL()
+        .addACLElement(new ACLElement(RecordGroupSharing.ANONYMOUS_USER, readPermission));
+    notebook
+        .getSharingACL()
+        .addACLElement(new ACLElement(RecordGroupSharing.ANONYMOUS_USER, readPermission));
+
+    assertFalse(document.move(sharedFolder, notebook, anyuser));
+  }
+
+  @Test
   public void isRoot() throws IllegalAddChildOperation {
     Folder f = new Folder();
     assertFalse(f.isRootFolder());
