@@ -69,9 +69,11 @@ export class AllBookableItemsPage {
     return page.getByRole("img", { name: "Confocal microscope availability" });
   }
 
-  availabilitySlice(itemName: string, contributorCount: number, state = ".*"): Locator {
+  availabilitySlice(itemName: string, contributorCount: number, state = ".*", period = ".*"): Locator {
     return page.getByRole("button", {
-      name: new RegExp(`^${itemName}, ${state}, .*, ${contributorCount} event${contributorCount === 1 ? "" : "s"}$`),
+      name: new RegExp(
+        `^${itemName}, ${state}, ${period}, ${contributorCount} event${contributorCount === 1 ? "" : "s"}$`,
+      ),
     });
   }
 

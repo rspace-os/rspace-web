@@ -8,7 +8,7 @@ import {
   RouterProvider,
 } from "@tanstack/react-router";
 import { NuqsAdapter } from "nuqs/adapters/react";
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 import { OAUTH_TOKEN } from "@/__tests__/mocks/oauthTokenMocks";
 import { bookingDisplayPreferencesQueryKey } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { apiV2CollectionMetadataFromOpenApi } from "@/modules/common/table-list/adapters/apiV2/apiV2CollectionMetadata";
@@ -43,6 +43,13 @@ export function AllBookableItemsStory({ containerWidth = 1500 }: { containerWidt
     ]),
     history: createBrowserHistory(),
   });
+  useEffect(
+    () => () => {
+      router.history.destroy();
+      queryClient.clear();
+    },
+    [router, queryClient],
+  );
 
   return (
     <QueryClientProvider client={queryClient}>
