@@ -17,6 +17,8 @@ import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.inventory.SubSample;
+import com.researchspace.service.SystemPropertyName;
+import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.inventory.InventoryEditLockHeldException;
 import com.researchspace.service.inventory.InventoryOperationConfig;
 import com.researchspace.service.inventory.InventoryOperationConfigRegistry;
@@ -64,6 +66,7 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
   @Autowired InventoryOperationManager inventoryOperationManager;
   @Autowired InventoryOperationPostValidator operationPostValidator;
   @Autowired InventoryOperationConfigRegistry operationConfigs;
+  @Autowired SystemPropertyPermissionManager systemPropertyManager;
 
   /** Only converts an already-bound Map into a DTO, so it needs none of the API mapper's setup. */
   private static final ObjectMapper MAPPER = new ObjectMapper();
@@ -85,8 +88,24 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
   private static final InventoryOperationConfigRegistry DEFINITIONS =
       new InventoryOperationConfigRegistry();
 
+  /**
+   * Refuses every route on this controller while the sysadmin has {@code
+   * inventory.operations.available} at DENIED, which is how it is seeded (RSDEV-1231). Modelled on
+   * {@code GalleryFilestoresBaseApiController.assertFilestoresApiEnabled}: {@link
+   * UnsupportedOperationException} is what {@code ApiControllerAdvice} already maps to a 404 with
+   * errorCode CONFIGURED_UNAVAILABLE, so a disabled feature is indistinguishable from one this
+   * build does not have. No sysadmin bypass, as with {@code inventory.available}.
+   */
+  private void assertOperationsAvailable(User user) {
+    if (!systemPropertyManager.isPropertyAllowed(
+        user, SystemPropertyName.INVENTORY_OPERATIONS_AVAILABLE)) {
+      throw new UnsupportedOperationException(getMessage("errors.inventory.operations.notEnabled"));
+    }
+  }
+
   @Override
-  public String getOperationsConfig() {
+  public String getOperationsConfig(@RequestAttribute(name = "user") User user) {
+    assertOperationsAvailable(user);
     return operationConfigs.rawConfigJson();
   }
 
@@ -96,6 +115,7 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
       BindingResult errors,
       @RequestAttribute(name = "user") User user)
       throws BindException {
+    assertOperationsAvailable(user);
     inputValidator.validate(request, operationPostValidator, errors);
     throwBindExceptionIfErrors(errors);
     // The manager validates the inputs, builds the sample and runs the transactional core. The
@@ -200,6 +220,7 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
       BindingResult errors,
       User user)
       throws BindException {
+    assertOperationsAvailable(user);
     throwBindExceptionIfErrors(errors);
     boolean singleOrigin = !operationConfigs.get(operationKey).orElseThrow().requiresMultiple();
     ApiInventoryOperationPost generic = new ApiInventoryOperationPost();

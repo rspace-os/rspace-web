@@ -14,7 +14,10 @@ import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.api.v1.model.ApiSubSampleInfo;
 import com.researchspace.apiutils.ApiError;
 import com.researchspace.model.User;
+import com.researchspace.model.preference.HierarchicalPermission;
 import com.researchspace.model.units.RSUnitDef;
+import com.researchspace.service.SystemPropertyManager;
+import com.researchspace.service.SystemPropertyName;
 import com.researchspace.service.inventory.SubSampleApiManager;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -50,6 +53,8 @@ public class InventoryOperationsInputsShapeMVCIT extends API_MVC_InventoryTestBa
 
   private @Autowired SubSampleApiManager subSampleApiManager;
 
+  private @Autowired SystemPropertyManager systemPropertyManager;
+
   private User anyUser;
   private String apiKey;
 
@@ -58,6 +63,18 @@ public class InventoryOperationsInputsShapeMVCIT extends API_MVC_InventoryTestBa
     super.setUp();
     anyUser = createInitAndLoginAnyUser();
     apiKey = createNewApiKeyForUser(anyUser);
+    enableOperations();
+  }
+
+  /**
+   * RSDEV-1231 seeds {@code inventory.operations.available} DENIED, so each test turns it on first:
+   * what is under test in this class is the operation, not the toggle.
+   */
+  private void enableOperations() {
+    systemPropertyManager.save(
+        SystemPropertyName.INVENTORY_OPERATIONS_AVAILABLE,
+        HierarchicalPermission.ALLOWED,
+        getSysAdminUser());
   }
 
   @Test

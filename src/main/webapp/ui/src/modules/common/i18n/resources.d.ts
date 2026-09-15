@@ -7145,6 +7145,9 @@ export default interface Resources {
           "totalNotStorable": "The new subsamples hold more in total than a quantity can store; reduce the amount or the number of subsamples.",
           "unknownType": "Unknown operation type [{0}]."
         },
+        "operations": {
+          "notEnabled": "Inventory operations API is not enabled on this RSpace instance (inventory.operations.available=DENIED)."
+        },
         "publicLink": {
           "unavailable": "The item you try to see is not publicly available right now."
         },
@@ -9056,6 +9059,7 @@ export default interface Resources {
           "googleDriveAvailable": "Makes Google Drive integration available to the users. After enabling the integration, user can link to Google Drive in text field editor",
           "groupAutosharingAvailable": "Enables the management of group-wide autosharing.Enables PIs and lab admins with the 'View All' permission to manage the autoshare status for non-PI lab members.",
           "inventoryAvailable": "Enables Inventory module.",
+          "inventoryOperationsAvailable": "Makes the Inventory operations wizard and its API available.",
           "msTeamsAvailable": "Makes MS Teams integration available to the users. After enabling the integration, user can connect to their MS Teams channels to send messages or forward notifications",
           "nextcloudAvailable": "Makes Nextcloud integration available to the users. After enabling the integration, users can link to Nextcloud in text field editor",
           "omeroAvailable": "Makes Omero integration available. After enabling the integration, users can link to Omero image data.",

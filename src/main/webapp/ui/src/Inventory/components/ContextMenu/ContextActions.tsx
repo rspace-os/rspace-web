@@ -25,6 +25,8 @@ type ContextActionsArgs = {
   onSelectOptions?: Array<SplitButtonOption>;
   menuID: (typeof menuIDs)[keyof typeof menuIDs];
   basketSearch: boolean;
+  /** inventory.operations.available is ALLOWED. Seeded DENIED, so Process is off by default. */
+  processAvailable: boolean;
 };
 
 type ContextAction = {
@@ -40,6 +42,7 @@ const contextActions = ({
   closeMenu,
   menuID,
   basketSearch,
+  processAvailable,
 }: ContextActionsArgs): ((as: ContextMenuRenderOptions) => Array<ContextAction>) => {
   const contextActionsGenerator = (as: ContextMenuRenderOptions) => {
     const allSelectedAvailable: boolean = selectedResults.every((r: InventoryRecord) => !r.deleted);
@@ -100,7 +103,7 @@ const contextActions = ({
             closeMenu={closeMenu}
           />
         ),
-        hidden: hideInPickerAndWhenNotAllCurrent || !isProcessableSelection(selectedResults),
+        hidden: hideInPickerAndWhenNotAllCurrent || !processAvailable || !isProcessableSelection(selectedResults),
       },
       {
         component: (
