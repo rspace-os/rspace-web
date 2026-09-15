@@ -10,7 +10,7 @@ import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
-import type React from "react";
+import React from "react";
 import { useTranslation } from "react-i18next";
 import UnitSelect from "@/components/Inputs/UnitSelect";
 import { CELSIUS, categoryOfUnit } from "@/stores/definitions/Units";
@@ -40,6 +40,70 @@ import { resolveLabelFrom } from "./types";
 // both the decimal(19,3) DB column and JS's safe-integer range, so entering huge values can neither
 // overflow the number input (which silently resets to zero) nor lose precision.
 const MAX_QUANTITY = 1e9;
+
+// Anything the user can type on the way to a temperature: the empty string, a lone minus sign, and
+// a trailing decimal point all have to be held while they finish.
+const PARTIAL_TEMPERATURE = /^-?\d*(\.\d*)?$/;
+
+// Number("") and Number("-") are 0 and NaN respectively; both mean "not a temperature yet", and
+// detailsValid already blocks Next on a non-finite value.
+const parseTemperature = (raw: string): number => (/\d/.test(raw) ? Number(raw) : NaN);
+
+/**
+ * The temperature control, deliberately a text input and not type="number".
+ *
+ * A number input reports an empty value for anything that is not yet a complete number, so a lone
+ * minus sign never reached onChange: deleting the digits of -18 dropped the sign and stored
+ * Number("") as 0 °C, and a value could not be typed sign-first either. Cryopreserve runs at -18 °C
+ * or colder, so passing through a lone minus is part of ordinary use.
+ *
+ * The raw string is held here and only parsed for the caller, so an in-progress "-" stays on screen
+ * while the reported value is NaN.
+ */
+function TemperatureField({
+  value,
+  onChange,
+  label,
+  error,
+  helperText,
+  unitLabel,
+}: {
+  value: number | undefined;
+  onChange: (value: number) => void;
+  label: string;
+  error: boolean;
+  helperText: string | undefined;
+  unitLabel: string;
+}): React.ReactNode {
+  const [raw, setRaw] = React.useState(value === undefined || Number.isNaN(value) ? "" : String(value));
+
+  // The wizard can replace the value from outside this field (a restored "remember" bundle, a reset
+  // between runs). Adopt such a change, but leave the string alone when it is this field's own edit
+  // arriving back as a prop, which is what keeps a partial "-" on screen.
+  React.useEffect(() => {
+    if (!Object.is(parseTemperature(raw), value ?? Number.NaN))
+      setRaw(value === undefined || Number.isNaN(value) ? "" : String(value));
+  }, [value]);
+
+  return (
+    <TextField
+      label={label}
+      value={raw}
+      fullWidth
+      margin="dense"
+      error={error}
+      helperText={helperText}
+      onChange={(e) => {
+        if (!PARTIAL_TEMPERATURE.test(e.target.value)) return;
+        setRaw(e.target.value);
+        onChange(parseTemperature(e.target.value));
+      }}
+      slotProps={{
+        input: { endAdornment: <InputAdornment position="end">{unitLabel}</InputAdornment> },
+      }}
+    />
+  );
+}
 
 /**
  * The unit categories a subsample's amount may be expressed in: its own, or none while that cannot
@@ -204,7 +268,7 @@ function OperationDetailsStep({
     const originCategories = categoriesOfSubSample(origin);
     const categoriesForInput =
       input.key === operation.effect.amountTakenFrom ? originCategories : (unitCategories ?? originCategories);
-    const numericValue = (raw: number) => (isTemperature ? raw : Math.min(MAX_QUANTITY, Math.max(0, raw)));
+    const numericValue = (raw: number) => Math.min(MAX_QUANTITY, Math.max(0, raw));
     // The amount taken cannot exceed what the origin currently holds (DevDocs/adr/0007). Flag it inline on the
     // amount-taken field; the wizard blocks Next on the same condition.
     const overRemoval =
@@ -222,6 +286,26 @@ function OperationDetailsStep({
     // decimal places) is flagged inline too; the wizard blocks Next on the same condition
     // (Copilot review, PR #1090).
     const unstorableTemp = temperatureNotStorable(input, quantity);
+    if (isTemperature)
+      return (
+        <TemperatureField
+          key={input.key}
+          value={quantity?.numericValue}
+          onChange={(numericValue) => set(input.key, { numericValue, unitId: currentUnitId })}
+          label={label(input.labelKey)}
+          error={overMaxTemp || underMinTemp || unstorableTemp}
+          helperText={
+            unstorableTemp
+              ? label("operations.fields.storageTempInvalid")
+              : overMaxTemp
+                ? label("operations.fields.storageTempMax", { max: input.maxCelsius })
+                : underMinTemp
+                  ? label("operations.fields.storageTempMin", { min: input.minCelsius })
+                  : undefined
+          }
+          unitLabel={label("operations.fields.temperatureUnit")}
+        />
+      );
     return (
       <TextField
         key={input.key}
@@ -230,25 +314,13 @@ function OperationDetailsStep({
         value={quantity ? String(quantity.numericValue) : ""}
         fullWidth
         margin="dense"
-        error={overRemoval || overMaxTemp || underMinTemp || unstorableTemp}
-        helperText={
-          overRemoval
-            ? label("operations.fields.amountTakenExceedsOrigin")
-            : unstorableTemp
-              ? label("operations.fields.storageTempInvalid")
-              : overMaxTemp
-                ? label("operations.fields.storageTempMax", { max: input.maxCelsius })
-                : underMinTemp
-                  ? label("operations.fields.storageTempMin", { min: input.minCelsius })
-                  : undefined
-        }
+        error={overRemoval}
+        helperText={overRemoval ? label("operations.fields.amountTakenExceedsOrigin") : undefined}
         onChange={(e) => set(input.key, { numericValue: numericValue(Number(e.target.value)), unitId: currentUnitId })}
         slotProps={{
-          htmlInput: isTemperature ? {} : { min: 0, max: MAX_QUANTITY },
+          htmlInput: { min: 0, max: MAX_QUANTITY },
           input: {
-            endAdornment: isTemperature ? (
-              <InputAdornment position="end">{label("operations.fields.temperatureUnit")}</InputAdornment>
-            ) : (
+            endAdornment: (
               <UnitSelect
                 categories={categoriesForInput}
                 value={currentUnitId}
