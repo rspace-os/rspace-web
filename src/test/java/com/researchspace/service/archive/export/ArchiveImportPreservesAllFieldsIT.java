@@ -3,12 +3,14 @@ package com.researchspace.service.archive.export;
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static com.researchspace.core.util.progress.ProgressMonitor.NULL_MONITOR;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.Assert.assertEquals;
 
 import com.researchspace.archive.ArchivalImportConfig;
 import com.researchspace.archive.ArchiveManifest;
 import com.researchspace.archive.ExportRecordList;
 import com.researchspace.archive.ExportScope;
 import com.researchspace.archive.model.ArchiveExportConfig;
+import com.researchspace.core.util.ZipUtils;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.TextFieldDTO;
 import com.researchspace.model.field.Field;
@@ -21,9 +23,11 @@ import com.researchspace.service.archive.ArchiveExportServiceManager;
 import com.researchspace.service.archive.ArchiveImporterManager;
 import com.researchspace.service.archive.ImportArchiveReport;
 import com.researchspace.service.archive.ImportStrategy;
+import com.researchspace.testutils.ArchiveTestUtils;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -33,8 +37,15 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import javax.xml.parsers.DocumentBuilderFactory;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 
 /**
  * RSDEV-1140 regression test: an XML archive of ordinary multi-field documents must re-import with
@@ -74,6 +85,64 @@ public class ArchiveImportPreservesAllFieldsIT extends RealTransactionSpringTest
 
   @TempDir public File tempExportFolder;
   @TempDir public File tempImportFolder;
+
+  @Test
+  public void mandatoryFieldRemainsRequiredThroughXmlExportAndImport() throws Exception {
+    User user = createAndSaveUser(getRandomAlphabeticString("exporter"));
+    initUser(user);
+    logoutAndLoginAs(user);
+
+    String run = getRandomName(6);
+    String mandatoryFieldName = "Mandatory_" + run;
+    String optionalFieldName = "Optional_" + run;
+
+    RSForm form = formMgr.create(user);
+    formMgr.createFieldForm(
+        new TextFieldDTO<TextFieldForm>(mandatoryFieldName, true, ""), form.getId(), user);
+    formMgr.createFieldForm(
+        new TextFieldDTO<TextFieldForm>(optionalFieldName, false, ""), form.getId(), user);
+    formMgr.publish(form.getId(), true, null, user);
+
+    StructuredDocument doc =
+        recordMgr.createNewStructuredDocument(user.getRootFolder().getId(), form.getId(), user);
+    String docName = "Doc_with_required_field_" + run;
+    doc.setName(docName);
+    recordMgr.save(doc, user);
+
+    ArchiveManifest manifest = new ArchiveManifest();
+    ExportRecordList exportList = new ExportRecordList();
+    exportList.add(doc.getOid());
+    ArchiveExportConfig expCfg = createDefaultArchiveConfig(user, tempExportFolder.getRoot());
+    archivePlanner.updateExportListWithLinkedRecords(exportList, expCfg);
+    File zipFile = archiveService.exportArchive(manifest, exportList, expCfg).getExportFile();
+
+    File expandedArchive = tempImportFolder.newFolder("expanded-export");
+    ZipUtils.extractZip(zipFile, expandedArchive);
+    File documentXml = findXmlContaining(expandedArchive, "<fieldName>" + mandatoryFieldName);
+    File formXml = findXmlContaining(expandedArchive, "<name>" + mandatoryFieldName);
+
+    assertEquals(
+        "true", getRequiredAttribute(documentXml, "field", "fieldName", mandatoryFieldName));
+    assertEquals(
+        "false", getRequiredAttribute(documentXml, "field", "fieldName", optionalFieldName));
+    assertEquals("true", getRequiredAttribute(formXml, "fieldForm", "name", mandatoryFieldName));
+    assertEquals("false", getRequiredAttribute(formXml, "fieldForm", "name", optionalFieldName));
+
+    ArchivalImportConfig importConfig =
+        createDefaultArchiveImportConfig(user, tempImportFolder.newFolder("imported-archive"));
+    ImportArchiveReport report =
+        importer.importArchive(zipFile, importConfig, NULL_MONITOR, importStrategy::doImport);
+
+    assertTrue(report.isSuccessful());
+    StructuredDocument importedDoc = findImportedDoc(report, docName, user);
+    RSForm importedForm = formMgr.getWithPopulatedFieldForms(importedDoc.getForm().getId(), user);
+    Map<String, Boolean> importedFieldRequirements =
+        importedForm.getFieldForms().stream()
+            .collect(Collectors.toMap(FieldForm::getName, FieldForm::isMandatory));
+
+    assertEquals(Boolean.TRUE, importedFieldRequirements.get(mandatoryFieldName));
+    assertEquals(Boolean.FALSE, importedFieldRequirements.get(optionalFieldName));
+  }
 
   @Test
   public void everyFieldOfEveryDocumentSurvivesRepeatedImportInOrder() throws Exception {
@@ -216,5 +285,39 @@ public class ArchiveImportPreservesAllFieldsIT extends RealTransactionSpringTest
       throw new IOException("Couldn't create folders " + root);
     }
     return result;
+  }
+
+  private File findXmlContaining(File expandedArchive, String expectedText) throws Exception {
+    for (File xmlFile : ArchiveTestUtils.getAllXMLFilesInArchive(expandedArchive)) {
+      if (Files.readString(xmlFile.toPath()).contains(expectedText)) {
+        return xmlFile;
+      }
+    }
+    throw new IllegalStateException("No exported XML file contained '" + expectedText + "'");
+  }
+
+  private String getRequiredAttribute(
+      File xmlFile, String elementName, String childElementName, String childValue)
+      throws Exception {
+    Element element = findElementByChildText(xmlFile, elementName, childElementName, childValue);
+    return element.getAttribute("required");
+  }
+
+  private Element findElementByChildText(
+      File xmlFile, String elementName, String childElementName, String childValue)
+      throws Exception {
+    DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+    Document document = factory.newDocumentBuilder().parse(xmlFile);
+    NodeList elements = document.getElementsByTagName(elementName);
+    for (int i = 0; i < elements.getLength(); i++) {
+      Element element = (Element) elements.item(i);
+      NodeList childElements = element.getElementsByTagName(childElementName);
+      if (childElements.getLength() > 0
+          && childValue.equals(childElements.item(0).getTextContent())) {
+        return element;
+      }
+    }
+    throw new IllegalStateException(
+        "No <" + elementName + "> in " + xmlFile + " has <" + childElementName + ">" + childValue);
   }
 }
