@@ -612,7 +612,6 @@ public abstract class BaseRecord
     return allowUnsafeMove || satisfiesMoveRestrictions(from, to);
   }
 
-  /** Whether this move satisfies the normal folder and sharing restrictions. */
   private boolean satisfiesMoveRestrictions(Folder from, Folder to) {
     if (isFolder() && ((Folder) this).isSystemFolder()) {
       return false;
