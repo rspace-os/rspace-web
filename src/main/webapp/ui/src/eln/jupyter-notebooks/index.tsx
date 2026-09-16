@@ -83,11 +83,12 @@ function getNextAttachmentDivs(button: Element | null): Element[] {
 }
 
 function parseAttachmentsFromTextField(fieldId: string | null): Element[] {
-  const container = document.createElement("div");
+  // template content is inert: nothing in the field HTML is fetched or run while we query it
+  const template = document.createElement("template");
 
-  container.innerHTML = getTextFieldHtml(fieldId);
+  template.innerHTML = getTextFieldHtml(fieldId);
 
-  return [...container.querySelectorAll(".attachmentDiv")];
+  return [...template.content.querySelectorAll(".attachmentDiv")];
 }
 
 function getAttachmentRecordId(attachment: Element, isNotebook: boolean): string | null {
