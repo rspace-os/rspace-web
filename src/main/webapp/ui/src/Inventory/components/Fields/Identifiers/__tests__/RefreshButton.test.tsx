@@ -41,7 +41,10 @@ describe("RefreshButton", () => {
     expect(vi.mocked(refresh)).toHaveBeenCalled();
   });
 
-  test.each(["draft", "created", "declined", "findable"] as const)("renders nothing when the state is %s", (state) => {
+  /*
+   * A review closed without publishing is terminal at B2INST, so there is nothing left to pull.
+   */
+  test.each(["declined", "cancelled", "expired"] as const)("renders nothing when the state is %s", (state) => {
     render(
       <ThemeProvider theme={materialTheme}>
         <RefreshButton identifier={submittedPidinst({ state })} />
@@ -51,28 +54,69 @@ describe("RefreshButton", () => {
   });
 
   /*
-   * Acceptance takes the minted ePIC PID out of the published record's loosely typed `pids` block,
-   * which can come back without one. Refresh is the only action that can pick it up later, so it
-   * stays offered until there is a Handle (Copilot review, PR 1066).
+   * Registration puts a newly created PIDINST in `draft`, and a draft can be submitted for review,
+   * or deleted, in the B2INST UI without RSpace hearing about it. `created` is the same case: it is
+   * a review PUT but never submitted, which the B2INST probe behind ADR 0008 confirmed an
+   * identifier can really be sitting in, and the submitter can drive it forward at B2INST just as
+   * they can a draft. Neither reaches RSpace any other way (RSDEV-1326).
    */
-  test("stays available for an accepted identifier that has no Handle yet", () => {
+  test.each(["draft", "created"] as const)("renders for a B2INST identifier in state %s", (state) => {
     render(
       <ThemeProvider theme={materialTheme}>
-        <RefreshButton identifier={submittedPidinst({ state: "accepted", publicUrl: null })} />
+        <RefreshButton identifier={submittedPidinst({ state })} />
       </ThemeProvider>,
     );
     expect(screen.getByRole("button", { name: REFRESH })).toBeVisible();
   });
 
-  test("retires once an accepted identifier has its Handle", () => {
+  /*
+   * A DataCite identifier never has a provider read to make: refreshIdentifier returns the record
+   * untouched for it, because its state only changes through RSpace's own publish and retract. The
+   * check has to be on the provider, since "draft" is a state both of them use, and an IGSN sample
+   * would otherwise grow a button that reports success having done nothing.
+   */
+  test.each([
+    ["DATACITE_IGSN", "draft"],
+    ["DATACITE_IGSN", "findable"],
+    ["PIDINST_DATACITE", "draft"],
+    ["PIDINST_DATACITE", "registered"],
+  ] as const)("renders nothing for a %s identifier in state %s", (doiType, state) => {
     render(
       <ThemeProvider theme={materialTheme}>
-        <RefreshButton
-          identifier={submittedPidinst({
-            state: "accepted",
-            publicUrl: "http://hdl.handle.net/21.T11975/k2j9p-7yh21",
-          })}
-        />
+        <RefreshButton identifier={submittedPidinst({ doiType, state })} />
+      </ThemeProvider>,
+    );
+    expect(screen.queryByRole("button", { name: REFRESH })).not.toBeInTheDocument();
+  });
+
+  /*
+   * Acceptance takes the minted ePIC PID out of the published record's loosely typed `pids` block,
+   * which can come back without one, and refresh is the only action that can pick it up later
+   * (Copilot review, PR 1066). Since RSDEV-1326 it does not retire once that Handle is present
+   * either: the landing page and record URLs B2INST holds can still move after publication, and
+   * this is the only way to re-read them.
+   */
+  test.each([null, "http://hdl.handle.net/21.T11975/k2j9p-7yh21"])(
+    "stays available for an accepted identifier, Handle %s",
+    (publicUrl) => {
+      render(
+        <ThemeProvider theme={materialTheme}>
+          <RefreshButton identifier={submittedPidinst({ state: "accepted", publicUrl })} />
+        </ThemeProvider>,
+      );
+      expect(screen.getByRole("button", { name: REFRESH })).toBeVisible();
+    },
+  );
+
+  /*
+   * A linked identifier is a PID another party minted, so the server refuses refresh with 422 like
+   * publish and retract (ADR 0009). It has to be withheld on the flag, not incidentally: an
+   * imported PID is accepted and arrives with its Handle, which is exactly the case just widened.
+   */
+  test("is withheld for a linked identifier even in a refreshable state", () => {
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <RefreshButton identifier={submittedPidinst({ state: "accepted", linked: true })} />
       </ThemeProvider>,
     );
     expect(screen.queryByRole("button", { name: REFRESH })).not.toBeInTheDocument();
@@ -105,7 +149,7 @@ describe("a refreshed status reaching the UI", () => {
     return record;
   };
 
-  test("an accepted review replaces the state, retires Refresh and closes Publish", async () => {
+  test("an accepted review replaces the state, keeps Refresh and closes Publish", async () => {
     const user = userEvent.setup();
     const post = vi.fn().mockResolvedValue({
       data: {
@@ -127,12 +171,14 @@ describe("a refreshed status reaching the UI", () => {
 
     await user.click(screen.getByRole("button", { name: REFRESH }));
 
-    // after the curator accepted: the new state is rendered, and Refresh has nothing left to do
+    // after the curator accepted: the new state is rendered, and Refresh stays offered because
+    // what B2INST holds for a published record can still change (RSDEV-1326)
     expect(await screen.findByText(stateLabel("accepted"))).toBeVisible();
     expect(post).toHaveBeenCalledWith("/identifiers/1/refresh", {});
-    expect(screen.queryByRole("button", { name: REFRESH })).not.toBeInTheDocument();
-    // an accepted B2INST PID cannot be published again, and B2INST has no retract
-    expect(screen.getByRole("button", { name: PUBLISH })).toBeDisabled();
+    expect(screen.getByRole("button", { name: REFRESH })).toBeVisible();
+    // an accepted B2INST PID cannot be published again, and B2INST has no retract, so since
+    // RSDEV-1326 the action is withdrawn rather than shown disabled
+    expect(screen.queryByRole("button", { name: PUBLISH })).not.toBeInTheDocument();
   });
 
   test("a declined review is rendered and also retires Refresh", async () => {

@@ -1,6 +1,7 @@
 package com.researchspace.dao;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -10,6 +11,7 @@ import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.testutils.SpringTransactionalTest;
+import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -121,5 +123,29 @@ public class InstrumentTemplateDaoTest extends SpringTransactionalTest {
     assertTrue(
         results.getResults().stream().noneMatch(t -> t.getId().equals(privateTemplate.getId())),
         "a non-owner must not see a non-default-owner's private template");
+  }
+
+  /**
+   * The instrument import resolves the default template by name AND lock (RSDEV-1326). Its own
+   * fixtures rather than the Liquibase-seeded row: {@code DatabaseCleaner.cleanUp} deletes every
+   * {@code InstrumentEntity} row after an integration-test class, and a changeset already recorded
+   * in DATABASECHANGELOG never runs again, so a test depending on that row passes or fails on the
+   * order the suite happened to run in.
+   */
+  @Test
+  public void findLockedTemplateByNameIgnoresEditableAndDifferentlyNamedTemplates() {
+    User owner = createInitAndLoginAnyUser();
+    String sharedName = "Instrument (PIDINST 1.0) junit";
+    // an editable template of the SAME name must not be mistaken for the locked default: only the
+    // seeder writes isEditable=false, so a user's same-named template is never the import target
+    persistEditableTemplateFor(owner, sharedName);
+    InstrumentTemplate locked = persistLockedTemplateFor(owner, sharedName);
+
+    Optional<InstrumentTemplate> found = instrumentTemplateDao.findLockedTemplateByName(sharedName);
+
+    assertTrue(found.isPresent());
+    assertEquals(locked.getId(), found.get().getId());
+    assertFalse(found.get().isEditable());
+    assertTrue(instrumentTemplateDao.findLockedTemplateByName("no such template").isEmpty());
   }
 }
