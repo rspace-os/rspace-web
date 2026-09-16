@@ -67,6 +67,44 @@ class OperationOriginRulesTest {
   }
 
   @Test
+  void refusesTheSameSubsampleUnderTwoSpellingsOfItsGlobalId() {
+    // GlobalIdentifier parses SS100, SS0100 and SS100v1 all to db id 100, so a caller can name one
+    // subsample three ways. Every amount is checked against the origin's pre-operation quantity,
+    // so aliases would each pass and each be decremented.
+    ApiInventoryOperationRequests.Pool request =
+        pool(
+            List.of(
+                requestOrigin("SS100", millilitres("1")),
+                requestOrigin("SS0100", millilitres("1")),
+                requestOrigin("SS100v1", millilitres("1"))));
+    BeanPropertyBindingResult errors = errorsFor(request);
+
+    OperationOriginRules.validate(POOL, request, errors);
+
+    assertEquals(
+        "errors.inventory.operation.duplicateOrigin",
+        errors.getFieldError("origins[1].globalId").getCode());
+    assertEquals(
+        "errors.inventory.operation.duplicateOrigin",
+        errors.getFieldError("origins[2].globalId").getCode());
+    assertNull(errors.getFieldError("origins[0].globalId"));
+  }
+
+  @Test
+  void treatsTwoDifferentSubsamplesAsDistinctHoweverTheyAreSpelled() {
+    ApiInventoryOperationRequests.Pool request =
+        pool(
+            List.of(
+                requestOrigin("SS100", millilitres("1")),
+                requestOrigin("SS1000", millilitres("1"))));
+    BeanPropertyBindingResult errors = errorsFor(request);
+
+    OperationOriginRules.validate(POOL, request, errors);
+
+    assertNull(errors.getFieldError("origins[1].globalId"));
+  }
+
+  @Test
   void refusesANullOriginEntryAtItsOwnIndex() {
     ApiInventoryOperationRequests.Pool request =
         pool(Arrays.asList(requestOrigin(100, millilitres("1")), null));

@@ -307,10 +307,11 @@ above) without computing it.
   decrement produce a 201 with a silently clamped origin instead of the
   documented 400.
 - **The template-conformance check also runs inside that transaction** (review,
-  2026-09-08): the check itself stays controller code (it delegates to the
-  shared samples validator, a controller-layer class the service must not
-  import), but the controller hands it to the manager as an
-  `InTransactionValidation` callback, run before any origin is read.
+  2026-09-08): the manager calls `OperationTemplateConformanceValidator` itself,
+  before any origin is read. It was first passed in from the controller as an
+  `InTransactionValidation` callback; once the validator moved to the service
+  layer the callback had one caller and one implementation, and was inlined
+  (review, 2026-09-16).
   Run in its own transaction it only narrowed the window: a template edited
   between the check and the operation could fail mid-mutation or create the
   sample against a definition different from the one validated.

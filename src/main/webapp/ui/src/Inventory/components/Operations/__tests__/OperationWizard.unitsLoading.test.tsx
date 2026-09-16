@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render as renderWithoutQueryClient, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { makeMockSubSample } from "@/stores/models/__tests__/SubSampleModel/mocking";
 import OperationDetailsStep from "../OperationDetailsStep";
@@ -59,8 +59,6 @@ function render(ui: React.ReactElement) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return renderWithoutQueryClient(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
 }
-
-beforeEach(() => {});
 
 describe("OperationWizard while the unit store is still loading", () => {
   it("mounts for a closed dialog without dereferencing the unit store", () => {

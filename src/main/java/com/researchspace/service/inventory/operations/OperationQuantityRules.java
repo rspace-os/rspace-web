@@ -1,7 +1,6 @@
 package com.researchspace.service.inventory.operations;
 
 import com.researchspace.api.v1.model.ApiQuantityInfo;
-import com.researchspace.model.units.Quantifiable;
 import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.model.units.QuantityUtils;
 import com.researchspace.model.units.RSUnitDef;
@@ -66,7 +65,7 @@ public final class OperationQuantityRules {
     if (!QuantityInfo.canStoreWithoutRounding(amount.getNumericValue())) {
       // Quantities persist at 3dp (HALF_UP), so a finer value would be stored as a rounded
       // surrogate the caller never sent (0.0004 ml would take nothing at all).
-      errors.rejectValue(field, notStorableCode, "The quantity supports at most 3 decimal places.");
+      errors.rejectValue(field, notStorableCode, "This amount supports at most 3 decimal places.");
     }
     Integer unitId = amount.getUnitId();
     if (unitId == null || !RSUnitDef.exists(unitId)) {
@@ -161,11 +160,5 @@ public final class OperationQuantityRules {
           "errors.inventory.operation.totalNotStorable",
           "The created subsamples hold more in total than a quantity can store.");
     }
-  }
-
-  /** Whether a quantity is a usable amount at all, for a caller that only needs the verdict. */
-  static boolean isAmountUnit(Quantifiable quantity) {
-    Integer unitId = quantity == null ? null : quantity.getUnitId();
-    return unitId != null && RSUnitDef.exists(unitId) && RSUnitDef.getUnitById(unitId).isAmount();
   }
 }

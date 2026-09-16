@@ -12,7 +12,7 @@ import type { OperationInputs } from "../types";
 import { UNSET_UNIT } from "../types";
 import { operations } from "./testOperations";
 
-/** One of the real definitions from operations_config.json, parsed exactly as the wizard does. */
+/** One of the real shipped definitions, exactly as the wizard reads it. */
 function real(key: string): InventoryOperation {
   const operation = operations.find((o) => o.key === key);
   if (!operation) throw new Error(`no configured operation ${key}`);
