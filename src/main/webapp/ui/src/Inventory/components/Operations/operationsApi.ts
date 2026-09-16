@@ -1,36 +1,36 @@
 import ApiService from "@/common/InvApiService";
 import { getApiErrorDetail } from "@/util/error";
-import { type InventoryOperation, parseOperationsConfig } from "./operationsConfig";
-import type { OperationInputsRequest, ResolveLabel } from "./types";
+import type { FacadeRequest } from "./buildOperationRequest";
+import type { InventoryOperation } from "./operationsConfig";
+import type { ResolveLabel } from "./types";
 
-/** Minimal view of the created sample returned by the operations endpoint. */
+/** Minimal view of the created sample returned by an operation endpoint. */
 export type OperationResult = { id: number; globalId: string; name: string };
 
-/** Throws on a fetch failure or an invalid config, so callers can show one load-failed state for both. */
-export async function fetchOperationsConfig(): Promise<Array<InventoryOperation>> {
-  const { data } = await ApiService.get<unknown>("operations", "config");
-  return parseOperationsConfig(data);
-}
+/** The envelope all seven endpoints answer with: the created sample, and the origins after. */
+type OperationEnvelope = { sample: OperationResult | null };
 
 /**
- * POST a configured operation to the thin backend endpoint. The /api/inventory/v1/ prefix is
- * already applied by InvApiService, so the resource is just "operations". Resolves to null for a
- * terminal operation (noOutput, e.g. Destroy), which creates no sample and so returns an empty body.
+ * POST an operation to its own endpoint. The /api/inventory/v1/ prefix is already applied by
+ * InvApiService, so the resource is just "operations/<key>". Resolves to null for a terminal
+ * operation (Destroy), which creates no sample.
  */
-export async function performOperation(request: OperationInputsRequest): Promise<OperationResult | null> {
-  const { data } = await ApiService.post<OperationResult | null>("operations", request);
-  return data || null;
+export async function performOperation(
+  operation: InventoryOperation,
+  body: FacadeRequest,
+): Promise<OperationResult | null> {
+  const { data } = await ApiService.post<OperationEnvelope | null>(`operations/${operation.key}`, body);
+  return data?.sample ?? null;
 }
 
-/** A field-scoped error's leading path, when it is a bare word: the inputs shape names an input by its key alone. */
+/** A field-scoped error's leading path, when it is a bare word: an operation's own field names. */
 const BARE_KEY_PREFIX = /^([A-Za-z_]\w*):\s*/;
 
 /**
- * The reason a Perform was rejected, worded for the wizard. An error against a declared input comes
- * back keyed by the bare input key ("sampleName: Required by this operation.", never
- * "inputs.sampleName": Spring cannot address a map entry by a dotted path, and the bare key is what a
- * typed client would have sent), so that key is swapped for the input's label as the wizard shows it.
- * Anything else (an origin error under "origins[0].amountTaken", a 409, a bare message) is left to
+ * The reason a Perform was rejected, worded for the wizard. An error against one of the
+ * operation's own fields comes back keyed by that bare field name ("sampleName: Required by this
+ * operation."), so the key is swapped for the input's label as the wizard shows it. Anything else
+ * (an origin error under "origins[0].amountTaken", a 409, a bare message) is left to
  * getApiErrorDetail, which strips a dotted path and falls back to the response message.
  */
 export function describeOperationError(

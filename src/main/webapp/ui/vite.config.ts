@@ -259,10 +259,6 @@ const vitestAliases: Alias[] = [
   {
     // Also defined in tsconfig paths, but must be repeated here: resolve.alias is what
     // vitest runs actually use for resolution.
-    find: /^@resources\//,
-    replacement: `${resolveFromRoot("../../resources")}/`,
-  },
-  {
     find: /^@testresources\//,
     replacement: `${resolveFromRoot("../../../test/resources")}/`,
   },

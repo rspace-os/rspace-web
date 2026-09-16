@@ -9,7 +9,6 @@ import { server } from "@/__tests__/mswServer";
 import { InEnglish } from "@/__tests__/realI18n";
 import { makeMockSubSample } from "@/stores/models/__tests__/SubSampleModel/mocking";
 import OperationWizard from "../OperationWizard";
-import { rawConfig } from "./testOperations";
 
 // The wizard fetches the operation definitions with React Query (mocked fetchOperationsConfig
 // below), so every render needs a QueryClient; a fresh one per render keeps tests isolated.
@@ -45,16 +44,19 @@ vi.mock("@/hooks/api/useUiPreference", () => ({
 }));
 
 // The wizard talks to the backend through the real operationsApi client, answered here by MSW, so
-// the resource names and response handling are exercised rather than mocked away. `posted` collects
-// every operation request body; `taken` lists sample names the name check should report as in use.
-const OPERATIONS_URL = "/api/inventory/v1/operations";
+// the endpoint paths and response handling are exercised rather than mocked away. One handler
+// covers all seven, matching on the operation key. `posted` collects every request body (and the
+// key it went to); `taken` lists sample names the name check should report as in use.
+const OPERATION_URL = "/api/inventory/v1/operations/:key";
 const posted: Array<Record<string, unknown>> = [];
+const postedTo: Array<string> = [];
 const taken: Array<string> = [];
+const created = { sample: { id: 1, globalId: "SS9", name: "New" } };
 const operationHandlers = [
-  http.get(`${OPERATIONS_URL}/config`, () => HttpResponse.json(rawConfig)),
-  http.post(OPERATIONS_URL, async ({ request }) => {
+  http.post(OPERATION_URL, async ({ request, params }) => {
+    postedTo.push(String(params.key));
     posted.push((await request.json()) as Record<string, unknown>);
-    return HttpResponse.json({ id: 1, globalId: "SS9", name: "New" }, { status: 201 });
+    return HttpResponse.json(created, { status: 201 });
   }),
   http.get("/api/inventory/v1/samples/validateNameForNewSample", ({ request }) => {
     const name = new URL(request.url).searchParams.get("name") ?? "";
@@ -278,6 +280,7 @@ const backButton = () => screen.getByRole("button", { name: /actions\.back/i });
 beforeEach(() => {
   for (const k of Object.keys(prefs.store)) delete prefs.store[k];
   posted.length = 0;
+  postedTo.length = 0;
   taken.length = 0;
   performSearch.mockClear();
   addAlert.mockClear();
@@ -314,30 +317,6 @@ async function reachConfirm(user: ReturnType<typeof userEvent.setup>, processNam
   await user.click(nextButton()); // amounts -> documentation
   await user.click(nextButton()); // documentation -> confirm
 }
-
-describe("OperationWizard config load", () => {
-  it("shows the load-failed alert and no picker when GET /operations/config fails", async () => {
-    // Every other test in this file serves a valid config, and operationsApi.test.ts never mocked
-    // ApiService.get, so fetchOperationsConfig was never invoked in any test: the failure alert and
-    // the spinner beneath it were unreachable in the whole suite.
-    server.use(http.get(`${OPERATIONS_URL}/config`, () => HttpResponse.error()));
-    render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
-
-    expect(await screen.findByRole("alert")).toHaveTextContent(/picker\.loadFailed/);
-    // and the wizard does not advance: there is no operation to pick, so no step buttons at all
-    expect(screen.queryByRole("button", { name: /operations\.derive\.label/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /actions\.next/i })).not.toBeInTheDocument();
-  });
-
-  it("shows the load-failed alert when the config is served but does not match the schema", async () => {
-    // parseOperationsConfig throws for an invalid config, and the picker shows ONE failed state for
-    // both causes, as fetchOperationsConfig's contract says.
-    server.use(http.get(`${OPERATIONS_URL}/config`, () => HttpResponse.json([{ key: "broken" }])));
-    render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
-
-    expect(await screen.findByRole("alert")).toHaveTextContent(/picker\.loadFailed/);
-  });
-});
 
 describe("OperationWizard step flow", () => {
   it("keeps Next disabled on the details step until a process name (and derived sample name) exist", async () => {
@@ -771,7 +750,7 @@ describe("OperationWizard step flow", () => {
 
   it("surfaces a rejected Perform as an alert and keeps the wizard open for retry", async () => {
     server.use(
-      http.post(OPERATIONS_URL, () => HttpResponse.json({ message: "backend rejected the request" }, { status: 400 }), {
+      http.post(OPERATION_URL, () => HttpResponse.json({ message: "backend rejected the request" }, { status: 400 }), {
         once: true,
       }),
     );
@@ -794,7 +773,7 @@ describe("OperationWizard step flow", () => {
     // field to correct, only somebody to wait for.
     server.use(
       http.post(
-        OPERATIONS_URL,
+        OPERATION_URL,
         () =>
           HttpResponse.json(
             { message: "SS1 is currently being edited by Carol Holder.", errors: [""] },
@@ -855,7 +834,7 @@ describe("OperationWizard step flow", () => {
     // against a quantity the wizard had not refreshed, so it could only fail the same way again.
     server.use(
       http.post(
-        OPERATIONS_URL,
+        OPERATION_URL,
         () =>
           HttpResponse.json(
             {
@@ -890,7 +869,7 @@ describe("OperationWizard step flow", () => {
     // The refresh is best-effort: the alert above already names the real problem, and a refresh
     // failure must not replace it with a less useful one.
     server.use(
-      http.post(OPERATIONS_URL, () => HttpResponse.json({ message: "backend rejected the request" }, { status: 400 }), {
+      http.post(OPERATION_URL, () => HttpResponse.json({ message: "backend rejected the request" }, { status: 400 }), {
         once: true,
       }),
     );
@@ -941,16 +920,11 @@ describe("OperationWizard step flow", () => {
     await user.click(await screen.findByRole("button", { name: /operations\.destroy\.label/i }));
     await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
     await waitFor(() => expect(onClose).toHaveBeenCalled());
-    // Destroy empties the origin: the amount taken is its full current quantity, sent as a
-    // whole-origin claim. The disposed date is stamped server-side in
-    // the session's timezone (DevDocs/adr/0007, M4), so nothing about it travels.
-    expect(posted[0]).toEqual({
-      operationType: "destroy",
-      origins: [{ id: 1, amountMode: "all", amountTaken: { numericValue: 1, unitId: 3 } }],
-      inputs: {},
-      templateId: null,
-      documentedByGlobalId: null,
-    });
+    // Destroy empties the origin, so no amount travels at all: the server takes whatever is
+    // there at processing time. The disposed date is stamped server-side in the session's
+    // timezone (DevDocs/adr/0007, M4), so nothing about it travels either.
+    expect(postedTo[0]).toBe("destroy");
+    expect(posted[0]).toEqual({ origin: { globalId: "SS1" } });
   });
 
   it("names a rejected input by its label rather than the bare key the server reports", async () => {
@@ -958,7 +932,7 @@ describe("OperationWizard step flow", () => {
     // typed client sent but not what the wizard shows; the alert swaps it for the input's label.
     server.use(
       http.post(
-        OPERATIONS_URL,
+        OPERATION_URL,
         () =>
           HttpResponse.json(
             { message: "Errors detected: 1", errors: ["sampleName: Required by this operation."] },
@@ -1017,7 +991,7 @@ describe("OperationWizard step flow", () => {
     });
     server.use(
       http.post(
-        OPERATIONS_URL,
+        OPERATION_URL,
         async () => {
           await pending;
           return HttpResponse.json({ id: 1, globalId: "SS9", name: "New" }, { status: 201 });
@@ -1078,7 +1052,7 @@ describe("OperationWizard step flow", () => {
     // code with a hard-coded ": " no other locale need use.
     server.use(
       http.post(
-        OPERATIONS_URL,
+        OPERATION_URL,
         () =>
           HttpResponse.json(
             { message: "Errors detected: 1", errors: ["sampleName: Required by this operation."] },
@@ -1116,7 +1090,7 @@ describe("OperationWizard step flow", () => {
     // reason the server already localized.
     server.use(
       http.post(
-        OPERATIONS_URL,
+        OPERATION_URL,
         () =>
           HttpResponse.json(
             {
@@ -1219,18 +1193,15 @@ describe("OperationWizard remember bundle", () => {
     await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
 
     await waitFor(() => expect(onClose).toHaveBeenCalled());
-    // Pin the posted request shape: the typed inputs by key, the origin's amount, the chosen
-    // template and the documentation target. The amount taken travels on the origin only, and no
-    // sample is assembled client-side.
+    // Pin the posted body: Derive's own fields at the top level, the origin's amount on the
+    // origin, and the two wizard-level choices. No sample is assembled client-side.
+    expect(postedTo[0]).toBe("derive");
     expect(posted[0]).toEqual({
-      operationType: "derive",
-      origins: [{ id: 1, amountMode: "explicit", amountTaken: { numericValue: 1, unitId: 3 } }],
-      inputs: {
-        processName: "dna extraction",
-        sampleName: expect.any(String),
-        count: 1,
-        eachAmount: { numericValue: 5, unitId: 3 },
-      },
+      origin: { globalId: "SS1", amountTaken: { numericValue: 1, unitId: 3 } },
+      processName: "dna extraction",
+      sampleName: expect.any(String),
+      count: 1,
+      eachAmount: { numericValue: 5, unitId: 3 },
       templateId: 5,
       documentedByGlobalId: "SD1",
     });
@@ -1274,16 +1245,13 @@ describe("OperationWizard remember bundle", () => {
 
     await waitFor(() => expect(onClose).toHaveBeenCalled());
 
-    const request = posted[0] as {
-      operationType: string;
-      origins: Array<{ id: number; amountMode: string; amountTaken: unknown }>;
-    };
-    expect(request.operationType).toBe("pool");
+    const request = posted[0] as { origins: Array<{ globalId: string; amountTaken: unknown }> };
+    expect(postedTo[0]).toBe("pool");
     // BOTH origins are posted, each carrying its own amount: a Pool that sent one origin, or sent
     // the same amount for both, would have passed every other test in this file.
     expect(request.origins).toEqual([
-      { id: 1, amountMode: "explicit", amountTaken: { numericValue: 1, unitId: 3 } },
-      { id: 2, amountMode: "explicit", amountTaken: { numericValue: 1, unitId: 3 } },
+      { globalId: "SS1", amountTaken: { numericValue: 1, unitId: 3 } },
+      { globalId: "SS2", amountTaken: { numericValue: 1, unitId: 3 } },
     ]);
 
     // and the multi-origin half of the remember bundle round-trips: the mode and the per-origin
@@ -1514,7 +1482,7 @@ describe("OperationWizard rejection paths and multi-origin gating", () => {
   it("keeps a Pool open on a non-field rejection, shows its message and re-reads every origin", async () => {
     server.use(
       http.post(
-        OPERATIONS_URL,
+        OPERATION_URL,
         () => HttpResponse.json({ message: "The subsample's quantity changed", errors: [""] }, { status: 409 }),
         { once: true },
       ),
@@ -1552,7 +1520,7 @@ describe("OperationWizard rejection paths and multi-origin gating", () => {
   });
 
   it("reports a connection failure once, re-reads the origin and stays open for a retry", async () => {
-    server.use(http.post(OPERATIONS_URL, () => HttpResponse.error(), { once: true }));
+    server.use(http.post(OPERATION_URL, () => HttpResponse.error(), { once: true }));
     const user = userEvent.setup();
     const onClose = vi.fn();
     const origin = makeMockSubSample({});
@@ -1614,13 +1582,14 @@ describe("OperationWizard rejection paths and multi-origin gating", () => {
     await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
 
     await waitFor(() => expect(onClose).toHaveBeenCalled());
+    expect(postedTo[0]).toBe("passage");
     expect(posted[0]).toEqual({
-      operationType: "passage",
-      origins: [{ id: 1, amountMode: "explicit", amountTaken: { numericValue: 0, unitId: 3 } }],
-      inputs: { sampleName: expect.any(String), count: 1, eachAmount: { numericValue: 1, unitId: 3 } },
+      origin: { globalId: "SS1" },
+      sampleName: expect.any(String),
+      count: 1,
+      eachAmount: { numericValue: 1, unitId: 3 },
       templateId: 5,
-      documentedByGlobalId: null,
     });
-    expect(posted[0].inputs).not.toHaveProperty("passageNumber");
+    expect(posted[0]).not.toHaveProperty("passageNumber");
   });
 });

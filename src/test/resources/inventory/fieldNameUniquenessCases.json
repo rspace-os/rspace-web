@@ -1,15 +1,15 @@
 {
   "_comment": [
     "Shared cases for the field-name uniqueness rule, which is implemented TWICE: once in Java",
-    "(InventoryOperationRequestBuilder.withUniqueFieldNames, which decides the names actually",
-    "stored) and once in TypeScript (buildOperationRequest.withUniqueFieldNames, which the",
-    "confirmation preview uses to show the user those same names before they commit).",
+    "(OperationFieldNames.withUniqueFieldNames, which decides the names actually stored) and once",
+    "in TypeScript (buildOperationRequest.withUniqueFieldNames, which the confirmation preview",
+    "uses to show the user those same names before they commit).",
     "",
     "Both had their own tests and nothing pinned them to each other, so a change to the suffix",
     "format on one side left the preview promising names the server would not store, with both",
-    "suites green (parallel review, A10). Asserted from InventoryOperationRequestBuilderTest and",
-    "from buildOperationRequest.test.ts; a change to the rule must be made on both sides or one of",
-    "them goes red.",
+    "suites green (parallel review, A10). Asserted from OperationFieldNamesTest and from",
+    "buildOperationRequest.test.ts; a change to the rule must be made on both sides or one of them",
+    "goes red.",
     "",
     "A field is {name, type, targetGlobalId}. type 'link' is the only one disambiguated by its",
     "target; anything else falls back to an ordinal."
