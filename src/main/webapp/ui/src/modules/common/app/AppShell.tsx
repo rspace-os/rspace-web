@@ -127,11 +127,7 @@ export default function AppShell() {
           </NuqsAdapter>
         </SidebarInset>
       </div>
-      {appBarProps !== false && appBarProps.authenticated !== false && (
-        <React.Suspense fallback={null}>
-          <FeatureFlagDevtoolsMount />
-        </React.Suspense>
-      )}
+      <FeatureFlagDevtoolsMount />
     </SidebarProvider>
   );
 }

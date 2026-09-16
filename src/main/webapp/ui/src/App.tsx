@@ -11,6 +11,7 @@ import Analytics from "./components/Analytics";
 import { ERROR_MSG } from "./components/ErrorBoundary";
 import GoogleLoginProvider from "./components/GoogleLoginProvider";
 import LoaderCircular from "./components/LoadingCircular";
+import FeatureFlagDevtoolsMount from "./featureFlags/FeatureFlagDevtoolsMount";
 import I18nRoot from "./modules/common/i18n/I18nRoot";
 import Router from "./Router";
 import useStores from "./stores/use-stores";
@@ -55,6 +56,7 @@ function App(): React.ReactNode {
                   <Analytics>
                     <Router />
                   </Analytics>
+                  <FeatureFlagDevtoolsMount />
                 </QueryClientProvider>
               </ThemeProvider>
             </StyledEngineProvider>

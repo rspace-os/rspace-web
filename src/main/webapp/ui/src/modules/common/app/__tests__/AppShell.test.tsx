@@ -30,7 +30,9 @@ vi.mock("@/modules/common/stores/userSessionStore", () => ({
   UserSessionBootstrap: () => null,
 }));
 
-vi.mock("@/featureFlags/FeatureFlagDevtoolsMount", () => ({ default: () => null }));
+vi.mock("@/featureFlags/FeatureFlagDevtoolsMount", () => ({
+  default: () => <output aria-label="Feature flag devtools" />,
+}));
 
 function testQueryClient() {
   return new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -56,7 +58,7 @@ const renderTestSidebar = () => <SidebarState />;
 const plainRouteText = "Plain route";
 const sidebarRouteText = "Sidebar route";
 
-function renderShell(initialPath: "/plain" | "/with-sidebar") {
+function renderShell(initialPath: "/plain" | "/public" | "/without-app-bar" | "/with-sidebar") {
   const rootRoute = createRootRoute({ component: AppShell });
   const plainRoute = createRoute({
     getParentRoute: () => rootRoute,
@@ -70,8 +72,20 @@ function renderShell(initialPath: "/plain" | "/with-sidebar") {
     beforeLoad: () => ({ appBar: { currentPage: "rspace" }, sidebar: renderTestSidebar }),
     component: () => <p>{sidebarRouteText}</p>,
   });
+  const publicRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: "/public",
+    beforeLoad: () => ({ appBar: { currentPage: "rspace", authenticated: false } }),
+    component: () => null,
+  });
+  const withoutAppBarRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: "/without-app-bar",
+    beforeLoad: () => ({ appBar: false as const }),
+    component: () => null,
+  });
   const router = createRouter({
-    routeTree: rootRoute.addChildren([plainRoute, sidebarRoute]),
+    routeTree: rootRoute.addChildren([plainRoute, publicRoute, withoutAppBarRoute, sidebarRoute]),
     history: createMemoryHistory({ initialEntries: [initialPath] }),
   });
 
@@ -124,6 +138,12 @@ describe("getSidebarRenderer", () => {
 });
 
 describe("route sidebar state", () => {
+  it.each(["/plain", "/public", "/without-app-bar"] as const)("mounts feature flag devtools on %s", async (path) => {
+    renderShell(path);
+
+    expect(await screen.findByRole("status", { name: "Feature flag devtools" })).toBeVisible();
+  });
+
   it("opens on entry and removes the empty sidebar when leaving", async () => {
     const router = renderShell("/plain");
     expect(await screen.findByText(plainRouteText)).toBeVisible();
