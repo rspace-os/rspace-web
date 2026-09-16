@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -207,6 +208,27 @@ class ResourceAccessManagerTest {
 
     assertEquals(ResourceAccessException.Reason.FORBIDDEN, error.reason());
     verify(gateway, never()).flush();
+  }
+
+  @Test
+  void replacementChecksMutationCapabilityBeforeDomainLifecycle() {
+    User viewer = user(14L, "Viewer");
+    access.addAssignment(ResourceRoleAssignment.forUser(BookingResourceRoleScheme.VIEWER, viewer));
+    when(gateway.lockAuthorizationFacts(access, viewer)).thenReturn(viewer);
+    doThrow(new IllegalStateException("archived"))
+        .when(resource)
+        .beforeAccessMutation(protectedEntity);
+    ReplaceResourceAccess<Long> command =
+        new ReplaceResourceAccess<>(
+            9L, 7L, grants(new ResourceAccessGrant("user:12", BookingResourceRoleScheme.OWNER)));
+
+    ResourceAccessException error =
+        assertThrows(
+            ResourceAccessException.class,
+            () -> manager.replace(resource, command, viewer, viewer));
+
+    assertEquals(ResourceAccessException.Reason.FORBIDDEN, error.reason());
+    verify(resource, never()).beforeAccessMutation(protectedEntity);
   }
 
   @Test

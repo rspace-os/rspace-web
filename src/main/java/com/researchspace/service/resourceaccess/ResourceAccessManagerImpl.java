@@ -132,6 +132,7 @@ public class ResourceAccessManagerImpl implements ResourceAccessManager {
     }
     Locked<T> locked = lockAndAuthorize(resource, command.resourceId(), subject);
     requireCapability(locked.resolved(), resource.manageAssignmentsCapability());
+    resource.beforeAccessMutation(locked.resource());
     if (locked.access().getVersion() != command.expectedVersion()) {
       throw failure(ResourceAccessException.Reason.STALE);
     }
@@ -186,6 +187,7 @@ public class ResourceAccessManagerImpl implements ResourceAccessManager {
     }
     Locked<T> locked = lockAndAuthorize(resource, id, subject);
     requireCapability(locked.resolved(), resource.manageOwnersCapability());
+    resource.beforeAccessMutation(locked.resource());
     if (outgoingOwner.getId().equals(incomingOwner.getId())) {
       return;
     }
@@ -253,6 +255,7 @@ public class ResourceAccessManagerImpl implements ResourceAccessManager {
       requireRead(resolved);
       return;
     }
+    resource.beforeAccessMutation(protectedEntity);
     resource.beforeSelfRemoval(protectedEntity, lockedSubject, actor);
     Map<String, ResourceRoleAssignment> remaining = assignmentsByKey(access);
     remaining.remove(subjectKey);

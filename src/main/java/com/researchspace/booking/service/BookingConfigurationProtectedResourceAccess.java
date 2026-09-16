@@ -40,14 +40,7 @@ public class BookingConfigurationProtectedResourceAccess
 
   @Override
   public Optional<BookingConfiguration> lock(Long id) {
-    Optional<BookingConfiguration> configuration = configurationDao.lockById(id);
-    configuration
-        .filter(value -> value.getState() == BookingConfigurationState.ARCHIVED)
-        .ifPresent(
-            ignored -> {
-              throw new BookingConfigurationLifecycleException();
-            });
-    return configuration;
+    return configurationDao.lockById(id);
   }
 
   @Override
@@ -68,6 +61,13 @@ public class BookingConfigurationProtectedResourceAccess
   @Override
   public String manageOwnersCapability() {
     return BookingResourceRoleScheme.MANAGE_OWNERS;
+  }
+
+  @Override
+  public void beforeAccessMutation(BookingConfiguration configuration) {
+    if (configuration.getState() == BookingConfigurationState.ARCHIVED) {
+      throw new BookingConfigurationLifecycleException();
+    }
   }
 
   @Override

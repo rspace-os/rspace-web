@@ -340,6 +340,19 @@ class ApiV2AuditStrictSearchTest {
     assertEquals(3, results.size());
   }
 
+  @Test
+  void blockTailReadPreservesUtf8AcrossBlocksAndTrailingBlankLines() throws IOException {
+    String description = "é".repeat(5_000);
+    write(
+        "RSLogs.txt",
+        event("01 Jan 2026 12:00:00,000", "BC1") + " description:[" + description + "]\r\n\r\n");
+
+    List<AuditTrailSearchResult> results = search(ReadObserver.NONE, 10).search(request(10));
+
+    assertEquals(1, results.size());
+    assertEquals(description, results.get(0).getEvent().getDescription());
+  }
+
   private ApiV2AuditStrictSearch search(ReadObserver observer, int ceiling) {
     return new ApiV2AuditStrictSearch(directory, "RSLogs", ZoneOffset.UTC, visibility, observer);
   }

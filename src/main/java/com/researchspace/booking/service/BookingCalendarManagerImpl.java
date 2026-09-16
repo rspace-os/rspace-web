@@ -161,11 +161,11 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
         configurationDao
             .lockById(configurationId)
             .orElseThrow(BookingCalendarNotFoundException::new);
+    requireCapability(
+        configuration, subject, BookingResourceRoleScheme.CREATE_CALENDAR_SUBSCRIPTION);
     if (configuration.getState() == BookingConfigurationState.ARCHIVED) {
       throw new BookingConfigurationLifecycleException();
     }
-    requireCapability(
-        configuration, subject, BookingResourceRoleScheme.CREATE_CALENDAR_SUBSCRIPTION);
     Optional<BookableItemCalendarSubscription> existing =
         subscriptionDao.findByUserIdAndConfigurationId(subject.getId(), configurationId);
     String currentEtag =
@@ -409,7 +409,7 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
         try {
           return new Available(
               generator.generate(source.get(), serverBaseUrl, locale, limits.maxBytes()));
-        } catch (CalendarTooLargeException | CalendarSourceTooLargeException ex) {
+        } catch (CalendarTooLargeException ex) {
           SECURITY_LOG.warn(
               "Booking calendar feed exceeds a safety limit for configuration [{}], subscription"
                   + " [{}]",
@@ -442,7 +442,7 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
           bookingManager.getUserCalendarSource(owner, refreshedAt, limits.maxEvents());
       try {
         return new Available(generator.generate(source, serverBaseUrl, locale, limits.maxBytes()));
-      } catch (CalendarTooLargeException | CalendarSourceTooLargeException ex) {
+      } catch (CalendarTooLargeException ex) {
         SECURITY_LOG.warn(
             "User booking calendar feed exceeds a safety limit for subscription [{}]",
             value.getId(),

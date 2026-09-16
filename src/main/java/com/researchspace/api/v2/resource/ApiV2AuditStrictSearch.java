@@ -72,6 +72,7 @@ public final class ApiV2AuditStrictSearch {
           .withResolverStyle(ResolverStyle.STRICT);
   private static final Set<OpenOption> READ_OPTIONS =
       Set.of(StandardOpenOption.READ, LinkOption.NOFOLLOW_LINKS);
+  private static final int TAIL_READ_BLOCK_SIZE = 8192;
 
   private final Path logDirectory;
   private final String filePrefix;
@@ -227,22 +228,30 @@ public final class ApiV2AuditStrictSearch {
       throw failure(file, 1);
     }
     try (FileChannel channel = open(file)) {
-      if (readByte(channel, file.size() - 1) != '\n') {
-        throw failure(file, 0);
-      }
-      long position = file.size() - 2;
+      long position = file.size();
+      ByteBuffer block = ByteBuffer.allocate(TAIL_READ_BLOCK_SIZE);
       ByteArrayOutputStream reversed = new ByteArrayOutputStream();
-      while (position >= 0) {
-        byte value = readByte(channel, position--);
-        if (value == '\n') {
-          String candidate = reverseUtf8(reversed);
-          if (!candidate.isBlank()) {
-            // Line 0 means unknown; counting a tail line would scan excluded files in full.
-            return new BoundaryLine(candidate, 0);
+      boolean firstBlock = true;
+      while (position > 0) {
+        int blockSize = (int) Math.min(TAIL_READ_BLOCK_SIZE, position);
+        position -= blockSize;
+        readBlock(channel, block, position, blockSize);
+        if (firstBlock && block.get(blockSize - 1) != '\n') {
+          throw failure(file, 0);
+        }
+        firstBlock = false;
+        for (int index = blockSize - 1; index >= 0; index--) {
+          byte value = block.get(index);
+          if (value == '\n') {
+            String candidate = reverseUtf8(reversed);
+            if (!candidate.isBlank()) {
+              // Line 0 means unknown; counting a tail line would scan excluded files in full.
+              return new BoundaryLine(candidate, 0);
+            }
+            reversed.reset();
+          } else if (value != '\r') {
+            reversed.write(value);
           }
-          reversed.reset();
-        } else if (value != '\r') {
-          reversed.write(value);
         }
       }
       String candidate = reverseUtf8(reversed);
@@ -254,6 +263,18 @@ public final class ApiV2AuditStrictSearch {
       throw ex;
     } catch (IOException | SecurityException ex) {
       throw failure(file, 0, ex);
+    }
+  }
+
+  private static void readBlock(FileChannel channel, ByteBuffer block, long position, int size)
+      throws IOException {
+    block.clear();
+    block.limit(size);
+    while (block.hasRemaining()) {
+      int read = channel.read(block, position + block.position());
+      if (read <= 0) {
+        throw new IOException("Audit file changed during read");
+      }
     }
   }
 

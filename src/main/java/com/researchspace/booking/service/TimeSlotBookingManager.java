@@ -137,8 +137,11 @@ public interface TimeSlotBookingManager {
     }
   }
 
-  /** Signals that a complete calendar cannot fit within the configured event limit. */
-  final class CalendarSourceTooLargeException extends RuntimeException {
+  /**
+   * Signals that a complete calendar cannot fit within the configured event limit. This is a
+   * checked exception because reaching the limit must not mark a read transaction for rollback.
+   */
+  final class CalendarSourceTooLargeException extends Exception {
 
     private static final long serialVersionUID = 1L;
   }
@@ -158,12 +161,22 @@ public interface TimeSlotBookingManager {
   /** Requires the parent configuration's audit capability for an already readable booking. */
   void requireCanViewAudit(TimeSlotBooking booking, User actor);
 
-  /** Returns one readable item's privacy-shaped calendar source or empty when unavailable. */
+  /**
+   * Returns one readable item's privacy-shaped calendar source or empty when unavailable.
+   *
+   * @throws CalendarSourceTooLargeException when the source exceeds {@code maxEvents}
+   */
   Optional<CalendarSource> getCalendarSource(
-      Long configurationId, User actor, Date refreshedAt, int maxEvents);
+      Long configurationId, User actor, Date refreshedAt, int maxEvents)
+      throws CalendarSourceTooLargeException;
 
-  /** Returns the caller's confirmed bookings across all bookable items. */
-  CalendarSource getUserCalendarSource(User actor, Date refreshedAt, int maxEvents);
+  /**
+   * Returns the caller's confirmed bookings across all bookable items.
+   *
+   * @throws CalendarSourceTooLargeException when the source exceeds {@code maxEvents}
+   */
+  CalendarSource getUserCalendarSource(User actor, Date refreshedAt, int maxEvents)
+      throws CalendarSourceTooLargeException;
 
   /** Creates one booking as subject and retains the originating actor for audit. */
   TimeSlotBooking createBooking(Create create, User subject, User actor);

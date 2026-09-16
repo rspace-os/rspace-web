@@ -362,6 +362,43 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
     create(target, owner, "2026-10-17T09:00:00Z", "2026-10-17T09:50:00Z");
   }
 
+  @Test
+  public void oversizedCalendarSourceDoesNotMarkTheCallerTransactionForRollback() {
+    User owner = createInitAndLoginAnyUser();
+    ApiInstrument created = createBasicInstrumentForUser(owner, "Oversized calendar scope");
+    Setup setup = persistConfiguration(owner, created.getId(), false, 0, 0);
+    ResolvedBookableTarget target = new ResolvedBookableTarget(setup.target(), setup.instrument());
+    Instant start = Instant.now().plus(7, ChronoUnit.DAYS).truncatedTo(ChronoUnit.HOURS);
+    bookingManager.createBooking(
+        new TimeSlotBookingManager.Create(
+            target, Date.from(start), Date.from(start.plus(1, ChronoUnit.HOURS)), null),
+        owner,
+        owner);
+    bookingManager.createBooking(
+        new TimeSlotBookingManager.Create(
+            target,
+            Date.from(start.plus(2, ChronoUnit.HOURS)),
+            Date.from(start.plus(3, ChronoUnit.HOURS)),
+            null),
+        owner,
+        owner);
+
+    new TransactionTemplate(getTxMger())
+        .executeWithoutResult(
+            ignored ->
+                assertThrows(
+                    TimeSlotBookingManager.CalendarSourceTooLargeException.class,
+                    () ->
+                        bookingManager.getCalendarSource(
+                            setup.configurationId(), owner, new Date(), 1)));
+    new TransactionTemplate(getTxMger())
+        .executeWithoutResult(
+            ignored ->
+                assertThrows(
+                    TimeSlotBookingManager.CalendarSourceTooLargeException.class,
+                    () -> bookingManager.getUserCalendarSource(owner, new Date(), 1)));
+  }
+
   private void assertConcurrentOverlappingCreates(
       boolean allowDoubleBooking, long expectedSaved, long expectedOverlaps) throws Exception {
     User owner = createInitAndLoginAnyUser();

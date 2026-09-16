@@ -4,6 +4,10 @@ The REST API v2 item-audit endpoint reads the file-backed audit trail into a dai
 
 This is not a retention limit and does not change the legacy Activity API. It applies only to one REST API v2 resource-audit request.
 
+Tail boundaries are read backward in 8 KiB blocks. This retains captured-size
+reads, file identity checks, append/rotation certification, and failure on an
+incomplete final line.
+
 ## Measurement method
 
 `ApiV2AuditSearchStressTest` is opt-in:

@@ -217,7 +217,7 @@ class BookingCalendarManagerTest {
   }
 
   @Test
-  void userSubscriptionTokenGeneratesTheOwnersCrossItemSource() {
+  void userSubscriptionTokenGeneratesTheOwnersCrossItemSource() throws Exception {
     UserBookingCalendarSubscription subscription =
         new UserBookingCalendarSubscription(
             owner, CryptoUtils.hashToken(RAW_TOKEN), RAW_TOKEN, new java.util.Date());
@@ -280,6 +280,17 @@ class BookingCalendarManagerTest {
   }
 
   @Test
+  void createConcealsAnArchivedConfigurationWithoutBookingAccess() {
+    configuration.setState(BookingConfigurationState.ARCHIVED);
+    when(accessManager.resolve(configuration.getResourceAccess(), owner))
+        .thenReturn(ResolvedResourceAccess.none());
+
+    assertThrows(
+        BookingCalendarManagerImpl.BookingCalendarNotFoundException.class,
+        () -> manager.createOrRotate(CONFIGURATION_ID, owner, owner, "\"inactive\""));
+  }
+
+  @Test
   void replaceUpdatesTheExistingCredentialInsteadOfCreatingAnotherRow() {
     BookableItemCalendarSubscription existing = subscription();
     String previousHash = existing.getTokenHash();
@@ -323,7 +334,7 @@ class BookingCalendarManagerTest {
   }
 
   @Test
-  void validFeedUsesTheOwnersCurrentSourceAndRequestedLocale() {
+  void validFeedUsesTheOwnersCurrentSourceAndRequestedLocale() throws Exception {
     BookableItemCalendarSubscription subscription = subscription();
     CalendarSource source = new CalendarSource("Microscope", "UTC", List.of());
     java.util.Date refreshedAt = new java.util.Date(1234L);
@@ -343,7 +354,7 @@ class BookingCalendarManagerTest {
   }
 
   @Test
-  void unavailableOwnerOrCurrentSourceRemainsConcealedWithoutDeletingTheRow() {
+  void unavailableOwnerOrCurrentSourceRemainsConcealedWithoutDeletingTheRow() throws Exception {
     BookableItemCalendarSubscription subscription = subscription();
     when(subscriptionDao.findByTokenHash(any())).thenReturn(Optional.of(subscription));
     owner.setEnabled(false);
@@ -399,7 +410,7 @@ class BookingCalendarManagerTest {
   }
 
   @Test
-  void generationAndSizeFailuresAreUnavailable() {
+  void generationAndSizeFailuresAreUnavailable() throws Exception {
     BookableItemCalendarSubscription subscription = subscription();
     CalendarSource source = new CalendarSource("Microscope", "UTC", List.of());
     when(subscriptionDao.findByTokenHash(any())).thenReturn(Optional.of(subscription));

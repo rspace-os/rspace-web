@@ -20,6 +20,7 @@ import com.researchspace.booking.dao.BookingConfigurationDao;
 import com.researchspace.core.util.CryptoUtils;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.BookableItemCalendarSubscription;
+import com.researchspace.model.booking.BookingConfigurationState;
 import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.GroupManager;
 import com.researchspace.service.UserManager;
@@ -200,7 +201,7 @@ class BookingCalendarSubscriptionControllerMVCIT {
   }
 
   @Test
-  void getAndPostConcealMissingAndUnreadableConfigurations() throws Exception {
+  void getAndPostConcealMissingUnreadableAndArchivedPrivateConfigurations() throws Exception {
     long configurationId = readableConfiguration();
     restrictToOwner(configurationId);
     mockMvc
@@ -216,6 +217,20 @@ class BookingCalendarSubscriptionControllerMVCIT {
     mockMvc
         .perform(get(path(configurationId)).header("apiKey", fixture.otherUserKey()))
         .andExpect(status().isNotFound());
+    mockMvc
+        .perform(
+            post(path(configurationId))
+                .header("apiKey", fixture.otherUserKey())
+                .header(HttpHeaders.IF_MATCH, "\"inactive\""))
+        .andExpect(status().isNotFound());
+
+    new TransactionTemplate(transactionManager)
+        .executeWithoutResult(
+            ignored -> {
+              var configuration = configurationDao.lockById(configurationId).orElseThrow();
+              configuration.setState(BookingConfigurationState.ARCHIVED);
+              configurationDao.saveAndFlush(configuration);
+            });
     mockMvc
         .perform(
             post(path(configurationId))

@@ -29,6 +29,9 @@ public interface ProtectedResourceAccess<T, ID> {
 
   String manageOwnersCapability();
 
+  /** Runs domain-specific mutation validation after the caller has been authorized. */
+  default void beforeAccessMutation(T resource) {}
+
   /** Capability required by the registered generic audit route. */
   default String viewAuditCapability() {
     return viewAccessCapability();

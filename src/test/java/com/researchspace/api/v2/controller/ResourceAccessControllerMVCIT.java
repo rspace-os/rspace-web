@@ -8,7 +8,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.researchspace.booking.dao.BookingConfigurationDao;
 import com.researchspace.model.User;
+import com.researchspace.model.booking.BookingConfigurationState;
 import com.researchspace.testutils.ApiV2Fixture;
 import com.researchspace.testutils.ApiV2WebIntegrationTest;
 import java.util.stream.Collectors;
@@ -21,12 +23,16 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.context.WebApplicationContext;
 
 @ApiV2WebIntegrationTest
 class ResourceAccessControllerMVCIT {
 
   @Autowired private WebApplicationContext context;
+  @Autowired private BookingConfigurationDao configurationDao;
+  @Autowired private PlatformTransactionManager transactionManager;
   private ApiV2Fixture fixture;
   private MockMvc mockMvc;
 
@@ -222,6 +228,53 @@ class ResourceAccessControllerMVCIT {
         .perform(
             get("/api/v2/booking-configurations/" + configurationId)
                 .header("apiKey", fixture.thirdUserKey()))
+        .andExpect(status().isNotFound());
+  }
+
+  @Test
+  void archivedPrivateMutationIsConcealedBeforeLifecycleValidation() throws Exception {
+    User owner = fixture.user();
+    long instrumentId = fixture.instrument(owner, fixture.marker());
+    long configurationId = fixture.bookingConfiguration(instrumentId, "UTC", fixture.userKey());
+    String path = accessPath(configurationId);
+    MvcResult initial =
+        mockMvc
+            .perform(get(path).header("apiKey", fixture.userKey()))
+            .andExpect(status().isOk())
+            .andReturn();
+    MvcResult restricted =
+        mockMvc
+            .perform(
+                put(path)
+                    .header("apiKey", fixture.userKey())
+                    .header(HttpHeaders.IF_MATCH, initial.getResponse().getHeader(HttpHeaders.ETAG))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        assignments(
+                            new String[][] {
+                              {"user:" + owner.getId(), "OWNER"},
+                            })))
+            .andExpect(status().isOk())
+            .andReturn();
+    new TransactionTemplate(transactionManager)
+        .executeWithoutResult(
+            ignored -> {
+              var configuration = configurationDao.lockById(configurationId).orElseThrow();
+              configuration.setState(BookingConfigurationState.ARCHIVED);
+              configurationDao.saveAndFlush(configuration);
+            });
+
+    mockMvc
+        .perform(
+            put(path)
+                .header("apiKey", fixture.otherUserKey())
+                .header(HttpHeaders.IF_MATCH, restricted.getResponse().getHeader(HttpHeaders.ETAG))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    assignments(
+                        new String[][] {
+                          {"user:" + owner.getId(), "OWNER"},
+                        })))
         .andExpect(status().isNotFound());
   }
 

@@ -16,7 +16,6 @@ import com.researchspace.model.RoleInGroup;
 import com.researchspace.model.User;
 import com.researchspace.model.UserGroup;
 import com.researchspace.model.booking.BookableTargetType;
-import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.BookingConfigurationState;
 import com.researchspace.model.collection.AccessResult;
 import com.researchspace.model.collection.ResourcePage;
@@ -59,9 +58,6 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
       Long parentContainerId,
       String parentContainerName,
       ContainerType parentContainerType) {}
-
-  public record BookingCatalogueLocationRow(
-      Long containerId, String containerName, ContainerType containerType) {}
 
   public record BookingSummaryRow(Long instrumentId, String name, Boolean deleted) {}
 
@@ -168,20 +164,27 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
       return Map.of();
     }
     InventoryReadQueryContext context = readQueryContext(caller);
-    CriteriaBuilder<ParentLocationRow> query = parentLocationQuery();
-    query.whereExpression("instrument.id IN :instrumentIds");
-    query.whereExpression("location.storedInstrument.id = instrument.id");
-    query.whereExpression("parent.deleted = false");
-    query.whereExpression(context.readableContainerPredicate(this, "parent"));
-    query.setParameter("instrumentIds", instrumentIds);
+    String hql =
+        "select instrument.id, parent.id, parent.editInfo.name, parent.containerType "
+            + "from Instrument instrument "
+            + "join instrument.parentLocation location "
+            + "join location.container parent "
+            + "where instrument.id in (:instrumentIds) "
+            + "and location.storedInstrument.id = instrument.id "
+            + "and parent.deleted = false and "
+            + context.readableContainerPredicate(this, "parent");
+    Query<Object[]> query =
+        getSession()
+            .createQuery(hql, Object[].class)
+            .setParameterList("instrumentIds", instrumentIds);
     context.bind(query, null);
     return query.getResultList().stream()
         .collect(
             Collectors.toMap(
-                ParentLocationRow::instrumentId,
+                row -> (Long) row[0],
                 row ->
                     new InstrumentParentLocationSummary(
-                        row.containerId(), row.containerName(), row.containerType())));
+                        (Long) row[1], (String) row[2], (ContainerType) row[3])));
   }
 
   private CriteriaBuilder<ParentLocationRow> parentLocationQuery() {
@@ -253,25 +256,16 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
 
     Query<Long> countQuery =
         getSession().createQuery("select count(distinct parent.id)" + fromAndWhere, Long.class);
-    CriteriaBuilder<BookingCatalogueLocationRow> pageQuery =
-        criteriaBuilderFactory()
-            .create(getSession(), BookingCatalogueLocationRow.class)
-            .from(BookingConfiguration.class, "configuration")
-            .from(Instrument.class, "instrument")
-            .innerJoin("instrument.parentLocation", "location")
-            .innerJoin("location.container", "parent")
-            .selectNew(BookingCatalogueLocationRow.class)
-            .with("parent.id")
-            .with("parent.editInfo.name")
-            .with("parent.containerType")
-            .end();
-    pageQuery
-        .whereExpression(whereClause)
-        .groupBy("parent.id", "parent.editInfo.name", "parent.containerType")
-        .orderByAsc("LOWER(parent.editInfo.name)")
-        .orderByAsc("parent.id")
-        .setFirstResult((page - 1) * limit)
-        .setMaxResults(limit);
+    Query<Object[]> pageQuery =
+        getSession()
+            .createQuery(
+                "select parent.id, parent.editInfo.name, parent.containerType"
+                    + fromAndWhere
+                    + " group by parent.id, parent.editInfo.name, parent.containerType"
+                    + " order by lower(parent.editInfo.name), parent.id",
+                Object[].class)
+            .setFirstResult((page - 1) * limit)
+            .setMaxResults(limit);
     setBookingCatalogueLocationParameters(
         countQuery,
         caller,
@@ -281,7 +275,7 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
         groupNames,
         visibleOwners,
         query);
-    bindBookingCatalogueLocationParameters(
+    setBookingCatalogueLocationParameters(
         pageQuery,
         caller,
         readableRoleKeys,
@@ -297,7 +291,7 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
             .map(
                 row ->
                     new InstrumentParentLocationSummary(
-                        row.containerId(), row.containerName(), row.containerType()))
+                        (Long) row[0], (String) row[1], (ContainerType) row[2]))
             .toList();
     return new ResourcePage<>(locations, total);
   }
@@ -334,51 +328,6 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
       query.setParameter(
           "locationQuery",
           "%" + LikeEscaper.escape(locationQuery.trim().toLowerCase(Locale.ROOT)) + "%");
-    }
-  }
-
-  private void bindBookingCatalogueLocationParameters(
-      com.blazebit.persistence.CommonQueryBuilder<?> query,
-      User caller,
-      Set<String> readableRoleKeys,
-      Set<Long> bookingGroupIds,
-      List<String> groupMembers,
-      List<String> groupNames,
-      List<String> visibleOwners,
-      String locationQuery) {
-    query.setParameter("targetType", BookableTargetType.INSTRUMENT);
-    query.setParameter("configurationState", BookingConfigurationState.ACTIVE);
-    if (!caller.hasSysadminRole()) {
-      query.setParameter("readableRoleKeys", readableRoleKeys);
-      query.setParameter("bookingUserId", caller.getId());
-      query.setParameter("bookingGroupIds", bookingGroupIds);
-      query.setParameter("bookingAudience", ResourceAudience.ALL_USERS);
-    }
-    bindQueryParams(query, caller, visibleOwners, groupMembers, groupNames);
-    if (locationQuery != null && !locationQuery.isBlank()) {
-      query.setParameter(
-          "locationQuery",
-          "%" + LikeEscaper.escape(locationQuery.trim().toLowerCase(Locale.ROOT)) + "%");
-    }
-  }
-
-  private void bindQueryParams(
-      com.blazebit.persistence.CommonQueryBuilder<?> query,
-      User caller,
-      List<String> visibleOwners,
-      List<String> groupMembers,
-      List<String> groupNames) {
-    if (!caller.hasSysadminRole()) {
-      query.setParameter("currentUser", caller.getUsername());
-      if (!visibleOwners.isEmpty()) {
-        query.setParameter("visibleOwners", visibleOwners);
-      }
-      if (!groupMembers.isEmpty()) {
-        query.setParameter("userGroupMembers", groupMembers);
-      }
-      for (int i = 0; i < groupNames.size(); i++) {
-        query.setParameter("userGroupUniqueName" + i, "%" + groupNames.get(i) + "%");
-      }
     }
   }
 
@@ -493,7 +442,7 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
             .append(searchPredicate)
             .append(" and not exists (select configuration.id from")
             .append(" BookingConfiguration configuration where configuration.target.type =")
-            .append(" :targetType and configuration.target.id = instrument.id");
+            .append(" :targetType and configuration.target.id = instrument.id)");
     if (!subject.hasSysadminRole()) {
       hql.append(" and instrument.owner.id = :subjectId");
     }

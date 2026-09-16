@@ -677,13 +677,14 @@ class BookingConfigurationManagerTest {
   void rejectsPermanentDeleteForANonSysadmin() {
     BookingConfiguration configuration = configuration(42L, 12L);
     configuration.setState(BookingConfigurationState.ARCHIVED);
-    when(dao.lockById(42L)).thenReturn(Optional.of(configuration));
+    configuration.setConfigurationVersion(7L);
     when(actor.hasSysadminRole()).thenReturn(false);
 
     assertThrows(
         AuthorizationException.class,
         () -> manager.permanentlyDeleteConfiguration(42L, 0L, actor, actor));
 
+    verify(dao, never()).lockById(any());
     verify(timeSlotBookings, never()).removeAllByConfigurationId(any());
     verify(dao, never()).removeConfigurationAndAccess(any());
   }

@@ -357,6 +357,7 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
   public Optional<Long> permanentlyDeleteConfiguration(
       Long id, long expectedVersion, User subject, User actor) {
     requireAuthenticated(subject);
+    requireDirectSysadmin(subject, actor);
     Optional<BookingConfiguration> found = bookingConfigurationDao.lockById(id);
     if (found.isEmpty()) {
       return Optional.empty();
@@ -365,8 +366,6 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
     if (configuration.getConfigurationVersion() != expectedVersion) {
       throw new BookingConcurrentModificationException();
     }
-    requireDirectSysadmin(subject, actor);
-
     int assignmentCount = configuration.getResourceAccess().getAssignments().size();
     String targetName =
         instrumentDao
