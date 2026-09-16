@@ -6794,6 +6794,7 @@ export default interface Resources {
           "b2instRegisterFailed": "Could not register a new instrument PID with B2INST. {0}",
           "b2instRegisterNoDraft": "Could not register a new instrument PID with B2INST: the service accepted the request but returned no draft record.",
           "b2instRetractUnsupported": "Instrument PIDs registered with B2INST cannot be retracted from RSpace.",
+          "b2instSubmitActionOtherHost": "B2INST offered a submit action on a different server, so the record was not submitted.",
           "b2instUnreachable": "B2INST could not be reached.",
           "bulkMaxExceeded": "cannot allocate more than {0} IGSNs in a single request",
           "bulkPositiveRequired": "not a valid number of IGSNs to allocate: \"{0}\". The number must be greater than 0",

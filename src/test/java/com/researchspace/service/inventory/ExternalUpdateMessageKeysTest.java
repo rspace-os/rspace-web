@@ -45,6 +45,7 @@ class ExternalUpdateMessageKeysTest {
         "errors.inventory.identifier.b2instUnreachable",
         "errors.inventory.identifier.b2instNoCommunity",
         "errors.inventory.identifier.b2instNoSubmitAction",
+        "errors.inventory.identifier.b2instSubmitActionOtherHost",
         // RSDEV-1326: the linked-PID lookup and import path
         "errors.inventory.identifier.linkedReadOnly",
         "errors.inventory.identifier.pidinstAlreadyLinked",
