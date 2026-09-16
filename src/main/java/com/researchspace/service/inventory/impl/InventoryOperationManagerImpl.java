@@ -2,6 +2,7 @@ package com.researchspace.service.inventory.impl;
 
 import com.researchspace.api.v1.model.ApiInventoryOperationOriginUpdate;
 import com.researchspace.api.v1.model.ApiInventoryOperationPost;
+import com.researchspace.api.v1.model.ApiInventoryOperationRequests;
 import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
@@ -15,23 +16,21 @@ import com.researchspace.model.units.Quantifiable;
 import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.model.units.QuantityUtils;
 import com.researchspace.model.units.RSUnitDef;
-import com.researchspace.service.inventory.InventoryOperationConfig;
-import com.researchspace.service.inventory.InventoryOperationConfigRegistry;
-import com.researchspace.service.inventory.InventoryOperationInputValidator;
 import com.researchspace.service.inventory.InventoryOperationManager;
 import com.researchspace.service.inventory.InventoryOperationManager.OperationOutcome;
-import com.researchspace.service.inventory.InventoryOperationRequestBuilder;
 import com.researchspace.service.inventory.LinkTargetResolver;
 import com.researchspace.service.inventory.OperationTemplateConformanceValidator;
 import com.researchspace.service.inventory.SampleApiManager;
 import com.researchspace.service.inventory.SubSampleApiManager;
+import com.researchspace.service.inventory.operations.InventoryOperation;
+import com.researchspace.service.inventory.operations.LabelResolver;
+import com.researchspace.service.inventory.operations.OriginState;
 import com.researchspace.session.SessionTimeZoneUtils;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,7 +41,6 @@ import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindException;
-import org.springframework.validation.MapBindingResult;
 import tech.units.indriya.quantity.Quantities;
 
 @Service("inventoryOperationManager")
@@ -50,7 +48,6 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
 
   @Autowired private SampleApiManager sampleApiMgr;
   @Autowired private SubSampleApiManager subSampleApiMgr;
-  @Autowired private InventoryOperationConfigRegistry operationConfigs;
   @Autowired private MessageSource messageSource;
   @Autowired private OperationTemplateConformanceValidator templateConformance;
   @Autowired private LinkTargetResolver linkTargetResolver;
@@ -58,80 +55,44 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
   private static final QuantityUtils quantityUtils = new QuantityUtils();
 
   @Override
-  public OperationOutcome performOperation(
-      String operationKey,
-      List<ApiInventoryOperationOriginUpdate> origins,
-      Map<String, Object> inputs,
-      Long templateId,
-      String documentedByGlobalId,
-      User user)
+  public <R extends ApiInventoryOperationRequests.Request> OperationOutcome perform(
+      InventoryOperation<R> operation, R request, List<Long> originIds, User user)
       throws BindException {
-    InventoryOperationConfig definition =
-        operationConfigs
-            .get(operationKey)
-            .orElseThrow(() -> new IllegalArgumentException("unknown operation " + operationKey));
-    // Inputs are validated before any origin is read, so a bad input is rejected before anything is
-    // touched. Defaults fill an absent optional input first, and the filled-in value is then
-    // validated like anything the client sent.
-    inputs = InventoryOperationInputValidator.withDefaults(definition, inputs);
-    MapBindingResult inputErrors = new MapBindingResult(inputs, "apiInventoryOperationPost");
-    InventoryOperationInputValidator.validate(definition, inputs, inputErrors);
-    rejectUnreadableDocumentationTarget(documentedByGlobalId, user, inputErrors);
-    if (inputErrors.hasErrors()) {
-      throw new BindException(inputErrors);
-    }
-
-    List<InventoryOperationRequestBuilder.Origin> builderOrigins = new ArrayList<>();
-    Map<String, ApiQuantityInfo> amountsByGlobalId = new HashMap<>();
-    for (ApiInventoryOperationOriginUpdate origin : origins) {
-      SubSample subSample = subSampleApiMgr.assertUserCanEditSubSample(origin.getId(), user);
-      builderOrigins.add(
-          new InventoryOperationRequestBuilder.Origin(
-              origin.getId(),
+    // Permission is asserted while the state is snapshotted, before anything is validated against
+    // it, so an under-permissioned caller gets an authorization failure rather than a value error
+    // about state they may not see.
+    List<OriginState> origins = new ArrayList<>();
+    for (Long originId : originIds) {
+      SubSample subSample = subSampleApiMgr.assertUserCanEditSubSample(originId, user);
+      origins.add(
+          new OriginState(
+              originId,
               subSample.getGlobalIdentifier(),
               subSample.getName(),
               subSample.getQuantityInfo() == null
                   ? null
                   : new ApiQuantityInfo(subSample.getQuantityInfo()),
               parentFields(subSample.getSample())));
-      if (origin.getAmountTaken() != null) {
-        amountsByGlobalId.put(subSample.getGlobalIdentifier(), origin.getAmountTaken());
-      }
     }
-    InventoryOperationRequestBuilder.LabelResolver resolveLabel =
-        InventoryOperationRequestBuilder.messageSourceResolver(
-            messageSource, LocaleContextHolder.getLocale());
+
+    // Values are checked before any origin is written to, so a bad request touches nothing.
+    BeanPropertyBindingResult valueErrors =
+        new BeanPropertyBindingResult(request, "apiInventoryOperationPost");
+    operation.validate(request, valueErrors);
+    rejectUnreadableDocumentationTarget(request.getDocumentedByGlobalId(), user, valueErrors);
+    if (valueErrors.hasErrors()) {
+      throw new BindException(valueErrors);
+    }
+
     ApiInventoryOperationPost built =
-        InventoryOperationRequestBuilder.build(
-            InventoryOperationRequestBuilder.Params.builder()
-                .operation(definition)
-                .values(inputs)
-                .origins(builderOrigins)
-                .resolveLabel(resolveLabel)
-                .templateId(templateId)
-                .documentationLink(
-                    documentedByGlobalId == null
-                        ? null
-                        : new InventoryOperationRequestBuilder.DocumentationLink(
-                            resolveLabel.resolve("operations.documentation.fieldName", Map.of()),
-                            documentedByGlobalId))
-                // Each origin's amountTaken lives on the origin element itself, not in inputs, so
-                // it's passed here rather than read from the inputs map.
-                .perSubsampleAmounts(amountsByGlobalId)
-                // The session's recorded browser timezone gives the user's local date; an API-key
-                // session has none, so this falls back to the server's.
-                .clientToday(
-                    LocalDate.parse(new SessionTimeZoneUtils().formatDateForClient(new Date())))
-                .build());
-    // An origin that carries the client's own amount takes it into the core; one without keeps the
-    // builder's. amountMode and expectedQuantity are shape-checked by the post validator and read
-    // nowhere else, so neither is copied. This index-based copy relies on the builder emitting one
-    // update per origin, in the same order the origins were given.
-    for (int i = 0; i < origins.size(); i++) {
-      if (origins.get(i).getAmountTaken() != null) {
-        built.getOrigins().get(i).setAmountTaken(origins.get(i).getAmountTaken());
-      }
-    }
+        operation.build(
+            request,
+            origins,
+            LabelResolver.fromMessageSource(messageSource, LocaleContextHolder.getLocale()),
+            // The session's recorded browser timezone gives the user's local date; an API-key
+            // session has none, so this falls back to the server's.
+            LocalDate.parse(new SessionTimeZoneUtils().formatDateForClient(new Date())));
+
     // Template conformance runs on the request just built, inside this transaction and before any
     // origin is read, so the template validated is the template the sample is created from.
     ApiSampleWithFullSubSamples created =
@@ -141,26 +102,24 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
     // transaction, so they are one consistent snapshot of what this operation produced, and one
     // transaction rather than one per origin against a 100-origin cap.
     List<ApiSubSample> originsAfter = new ArrayList<>();
-    for (ApiInventoryOperationOriginUpdate origin : origins) {
-      originsAfter.add(subSampleApiMgr.getApiSubSampleById(origin.getId(), user));
+    for (Long originId : originIds) {
+      originsAfter.add(subSampleApiMgr.getApiSubSampleById(originId, user));
     }
     return new OperationOutcome(created, originsAfter);
   }
 
   /**
-   * The origin's parent sample's fields a computed value may read: its template-defined fields
-   * (which carry no definition key) and its ad-hoc extra fields.
+   * The origin's parent sample's fields an operation may read: its template-defined fields (which
+   * carry no operation key) and its ad-hoc extra fields.
    */
-  private static List<InventoryOperationRequestBuilder.ParentField> parentFields(
-      SampleEntity parent) {
-    List<InventoryOperationRequestBuilder.ParentField> fields = new ArrayList<>();
+  private static List<OriginState.ParentField> parentFields(SampleEntity parent) {
+    List<OriginState.ParentField> fields = new ArrayList<>();
     for (InventoryEntityField field : parent.getActiveFields()) {
-      fields.add(
-          new InventoryOperationRequestBuilder.ParentField(field.getName(), field.getData(), null));
+      fields.add(new OriginState.ParentField(field.getName(), field.getData(), null));
     }
     for (ExtraField field : parent.getActiveExtraFields()) {
       fields.add(
-          new InventoryOperationRequestBuilder.ParentField(
+          new OriginState.ParentField(
               field.getName(), field.getData(), field.getOperationFieldKey()));
     }
     return fields;
@@ -216,11 +175,7 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
       List<ApiInventoryOperationOriginUpdate> originsById,
       User user)
       throws BindException {
-    boolean emptiesOrigin =
-        operationConfigs
-            .get(request.getOperationType())
-            .map(config -> config.effect().emptiesOrigin())
-            .orElse(false);
+    boolean emptiesOrigin = request.isEmptiesOrigin();
     BeanPropertyBindingResult errors =
         new BeanPropertyBindingResult(request, "apiInventoryOperationPost");
     // Origins are processed in id order but reported at their REQUEST index. Keyed by identity: a
@@ -292,12 +247,12 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
    * A documentation target the caller cannot read is a field error on {@code documentedByGlobalId},
    * the field they sent it in.
    *
-   * <p>Checked here, alongside the declared inputs and before any origin is read, so a request
-   * already known to be bad touches no origin. The prefix is checked earlier, by the post
-   * validator; this is the existence and read-permission half, which needs the acting user.
+   * <p>Checked here, alongside the operation's own value rules and before any origin is written to,
+   * so a request already known to be bad changes nothing. The record KIND is checked earlier, on
+   * shape alone; this is the existence and read-permission half, which needs the acting user.
    */
   private void rejectUnreadableDocumentationTarget(
-      String documentedByGlobalId, User user, MapBindingResult errors) {
+      String documentedByGlobalId, User user, BeanPropertyBindingResult errors) {
     if (documentedByGlobalId == null) {
       return;
     }
