@@ -1,6 +1,5 @@
 package com.researchspace.service.inventory;
 
-import static com.researchspace.api.v1.controller.InventoryOperationPostValidatorTest.aliquotRequest;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -11,16 +10,21 @@ import static org.mockito.Mockito.when;
 
 import com.researchspace.api.v1.controller.SampleApiPostValidator;
 import com.researchspace.api.v1.model.ApiInventoryOperationPost;
+import com.researchspace.api.v1.model.ApiInventoryOperationRequests;
 import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.api.v1.service.ApiFieldsHelper;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.DTOControllerValidatorImpl;
 import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.units.RSUnitDef;
+import com.researchspace.service.inventory.operations.AliquotOperation;
+import com.researchspace.service.inventory.operations.OriginState;
 import jakarta.ws.rs.NotFoundException;
 import java.beans.Introspector;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Arrays;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -29,6 +33,33 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.validation.BindException;
 
 class OperationTemplateConformanceValidatorTest {
+
+  /**
+   * A request as the Aliquot operation actually builds one, so what the validator sees here is what
+   * it sees in production rather than a hand-assembled lookalike.
+   */
+  private static ApiInventoryOperationPost aliquotRequest() {
+    ApiInventoryOperationRequests.Aliquot request = new ApiInventoryOperationRequests.Aliquot();
+    ApiInventoryOperationRequests.Origin origin = new ApiInventoryOperationRequests.Origin();
+    origin.setGlobalId("SS100");
+    origin.setAmountTaken(new ApiQuantityInfo(new BigDecimal("6"), RSUnitDef.MILLI_LITRE.getId()));
+    request.setOrigin(origin);
+    request.setSampleName("Aliquots");
+    request.setCount(new BigDecimal("2"));
+    request.setEachAmount(new ApiQuantityInfo(new BigDecimal("2"), RSUnitDef.MILLI_LITRE.getId()));
+    return new AliquotOperation()
+        .build(
+            request,
+            List.of(
+                new OriginState(
+                    100L,
+                    "SS100",
+                    "subsample",
+                    new ApiQuantityInfo(new BigDecimal("10"), RSUnitDef.MILLI_LITRE.getId()),
+                    List.of())),
+            (key, args) -> key,
+            LocalDate.parse("2026-08-20"));
+  }
 
   private final SampleApiManager sampleApiMgr = mock(SampleApiManager.class);
   private final User user = mock(User.class);
