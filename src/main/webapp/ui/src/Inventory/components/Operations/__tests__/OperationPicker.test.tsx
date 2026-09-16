@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
 import OperationPicker from "../OperationPicker";
 import { operations } from "./testOperations";
+
 describe("OperationPicker", () => {
   it("is accessible", async () => {
     const { container } = render(
