@@ -1,5 +1,6 @@
 package com.researchspace.service;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -7,6 +8,7 @@ import static org.mockito.Mockito.verify;
 
 import com.researchspace.dao.RSMetaDataDao;
 import com.researchspace.model.RSMetaData;
+import com.researchspace.model.Version;
 import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.service.impl.GlobalInitManagerImpl;
 import java.util.Arrays;
@@ -21,6 +23,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.core.env.Environment;
 import org.springframework.mock.env.MockEnvironment;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
 public class GlobalInitTest {
@@ -78,5 +81,25 @@ public class GlobalInitTest {
     verify(mockInitializor, times(1)).onAppStartup(ac);
 
     assertTrue(meta.isInitialized());
+  }
+
+  @Test
+  void invokesVersionUpdateInitialisorsWhenTheStoredVersionChanges()
+      throws IllegalAddChildOperation {
+    GlobalInitManagerImpl mgr = new GlobalInitManagerImplTSS();
+    mgr.setApplicationInitialisors(List.of(mockInitializor));
+    mgr.setMetadataDao(metadao);
+    ReflectionTestUtils.setField(mgr, "versionFromRsProperties", "2");
+    ContextRefreshedEvent event = new ContextRefreshedEvent(ac);
+    RSMetaData meta = new RSMetaData();
+    meta.setInitialized(true);
+    meta.setDBVersion(new Version(1));
+    Mockito.when(metadao.getAll()).thenReturn(List.of(meta));
+    Mockito.when(ac.getEnvironment()).thenReturn(new MockEnvironment());
+
+    mgr.onApplicationEvent(event);
+
+    verify(mockInitializor, times(1)).onAppVersionUpdate();
+    assertEquals(new Version(2), meta.getDBVersion());
   }
 }
