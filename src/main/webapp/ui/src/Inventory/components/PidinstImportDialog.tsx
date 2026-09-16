@@ -459,7 +459,8 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
                 )}
               </Typography>
             )}
-            <Box>
+            {/* fixed so a long result set scrolls inside the grid instead of pushing the preview off-screen */}
+            <Box sx={{ height: "380px" }}>
               <DataGridWithRadioSelection
                 columns={[
                   DataGridColumn.newColumnWithValueGetter<"name", PidinstRecord, string>(
@@ -578,7 +579,6 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
                 selectRadioAriaLabelFunc={(row) => t("pidinstImport.selectRadioLabel", { name: row.name ?? row.pid })}
                 disableColumnFilter
                 hideFooter
-                autoHeight
                 // without this the toolbar slot does not render, so the hidden columns have no Columns button
                 showToolbar
                 localeText={{

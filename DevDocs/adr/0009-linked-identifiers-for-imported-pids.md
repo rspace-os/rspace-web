@@ -70,6 +70,24 @@ and API field names were ported instead.
    resolvable landing page, so linking one would put an address in the Identifiers card
    that answers nothing.
 
+6. **A search needs at least 4 characters**, counted after trimming, for either provider
+   (RSDEV-1325). Below that a free-text query matches a large part of the registry, which is a slow
+   provider call for a page nobody wanted, and it is the shortest DOI suffix fragment worth
+   matching. The rule lives in `PidinstLookupManagerImpl.search`, not the controller, so a direct
+   caller gets it too; it subsumes the blank check the controller used to make, and answers 422
+   with `errors.inventory.identifier.pidinstQueryTooShort` rather than a bare
+   IllegalArgumentException.
+7. **A DataCite free-text search that finds nothing is retried as `doi:*<query>*`** (RSDEV-1325).
+   DataCite indexes the DOI as a keyword, so free text never matches a suffix or part of one: a
+   search for `qvtb-aw74` answers nothing though `10.82316/qvtb-aw74` is findable, which is what a
+   user who pasted half a DOI sees. Verified against api.test.datacite.org on 2026-09-16: the bare
+   suffix returns 0, `doi:*qvtb-aw74*` returns 1, `doi:*qvtb*` returns 1, and the wildcard matches
+   across the slash and whatever the case. The retry runs only when the first page is empty, so a
+   search that already found something still costs one call, and only when the query is a bare
+   `[A-Za-z0-9._/-]+`, so what the user typed cannot turn the wildcard into a different query. The
+   B2INST side is left alone: InvenioRDM tokenises its Handle field, and no equivalent miss has
+   been reported.
+
 ## Considered options
 
 - **Fields only** (Alternate Identifier and Landing page, no identifier row): no link
@@ -83,6 +101,11 @@ and API field names were ported instead.
 - **Two-step import** (the server returns a prefilled instrument the client posts
   back): the create endpoint would have to re-fetch the PID to verify client-sent
   metadata, and `identifiers` are ignored on create today.
+- **For the DOI miss: always search `(<query>) OR doi:*<query>*`.** One call instead of two on a
+  miss, but it interpolates user text into Elasticsearch query syntax on every search, where a
+  stray quote or `AND` changes the query or errors. Rejected in favour of the guarded retry.
+- **For the DOI miss: reconstruct the full DOI from the deployment's repository prefix.** Exact,
+  but it only finds a DOI minted under that prefix, and the lookup is for the whole registry.
 - **Allow duplicate links, flagged**: rejected in favour of one RSpace record per PID;
   the search response still flags an already-linked PID. The UI (RSDEV-1325) keeps such a hit
   selectable and refuses Import with the reason, rather than disabling the button, so the user
@@ -111,9 +134,10 @@ and API field names were ported instead.
   choice that the provider also enforces, not merely a policy of ours.
 - The UI offers no way to unlink, and that is intended for now (Nico, 2026-09-09): the row shows
   Retract, disabled, and never Delete, so removing a link needs the API (`DELETE
-  /identifiers/{id}`, which the server allows in every state). Revisit in RSDEV-1325 if users need
-  to unlink from the page. Half-superseded by ADR 0010: there is still no unlink action on the
-  page, but trashing the Instrument now unlinks whatever it carried (RSDEV-1504).
+  /identifiers/{id}`, which the server allows in every state). RSDEV-1325 shipped the import UI
+  without an unlink action, so this stands; revisit if users ask to unlink from the page.
+  Half-superseded by ADR 0010: there is still no unlink action on the page, but trashing the
+  Instrument now unlinks whatever it carried (RSDEV-1504).
   - The disabling is now explicit rather than incidental. It used to hold only for B2INST, where
     the review-state rule happened to disable the button; a linked DataCite PID is `findable`, so
     nothing caught it and the row offered an enabled Retract that the server answers with 422.
