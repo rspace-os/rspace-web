@@ -24,8 +24,10 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.commons.beanutils.BeanUtils;
@@ -104,11 +106,19 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
 
     boolean actionMatch = false;
     List<String> clausesToOr = new ArrayList<>();
+    Map<String, Object> boundValues = new LinkedHashMap<>();
     for (Permission permission : usersPermissions) {
       ConstraintBasedPermission constraintBasedPermission = (ConstraintBasedPermission) permission;
       if (!constraintBasedPermission.isEnabled()) {
         continue;
       }
+      // a permission for another action or domain adds no clause, so skip it before any is
+      // built: a value bound for a clause that is then thrown away is still set on the query
+      if (!constraintBasedPermission.getActions().contains(requestedAction)
+          || !constraintBasedPermission.getDomain().equals(PermissionDomain.FORM)) {
+        continue;
+      }
+      actionMatch = true;
 
       List<String> andClauses = new ArrayList<>();
       andClauses.add(" form.current=true ");
@@ -121,7 +131,7 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
           andClauses.add(" menu.user_id=" + user.getId());
         }
         if (searchCriteria.isUserFormsOnly()) {
-          andClauses.add(" owner.username = '" + user.getUsername() + "' ");
+          andClauses.add(" owner.username = :" + bind(boundValues, user.getUsername()));
         }
 
         if (searchCriteria.getFormType() != null) {
@@ -138,61 +148,55 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
         }
       }
 
-      if (constraintBasedPermission.getActions().contains(requestedAction)
-          && constraintBasedPermission.getDomain().equals(PermissionDomain.FORM)) {
-        actionMatch = true;
-        if (constraintBasedPermission.getIdConstraint() != null) {
-          String idConstraints = join(constraintBasedPermission.getIdConstraint().getId(), false);
-          String sqlIdSub = " form.id in (" + idConstraints + ")";
-          andClauses.add(sqlIdSub);
-        }
-        for (String propName : constraintBasedPermission.getPropertyConstraints().keySet()) {
-          PropertyConstraint pc = constraintBasedPermission.getPropertyConstraints().get(propName);
-          if (pc.getName().equals("global")) {
-            if (requestedAction.equals(PermissionType.READ)) {
-              String access1 = " form.worldPermissionType in (" + join(RW, true) + ")";
-              andClauses.add(access1);
-            } else if (requestedAction.equals(PermissionType.WRITE)) {
-              String access1 = " form.worldPermissionType = " + requestedAction;
-              andClauses.add(access1);
-            }
-          } else if (pc.getName().equals("group")) {
-            if (requestedAction.equals(PermissionType.READ)) {
-              String access1 = " form.groupPermissionType in (" + join(RW, true) + ")";
-              andClauses.add(access1);
-            } else if (requestedAction.equals(PermissionType.WRITE)) {
-              String access1 = " form.groupPermissionType = " + requestedAction;
-              andClauses.add(access1);
-            }
-          } else if (pc.getName().equals("owner")) {
-            if (requestedAction.equals(PermissionType.READ)) {
-              String access1 = " form.ownerPermissionType in (" + join(RW, true) + ")";
-              andClauses.add(access1);
-            } else if (requestedAction.equals(PermissionType.WRITE)) {
-              String access1 = " form.ownerPermissionType = " + requestedAction;
-              andClauses.add(access1);
-            }
-
-            String ownerRestriction = null;
-            if (pc.getValue().equals("${self}")) {
-              ownerRestriction = user.getUsername();
-            } else if (!(pc.getValue().equals("*"))) {
-              ownerRestriction = pc.getValue();
-            }
-            if (ownerRestriction != null) {
-              andClauses.add(" owner.username= " + "'" + ownerRestriction + "'");
-            }
-          } else if (isEditInfoProperty(pc.getName())) {
-            andClauses.add(" form." + pc.getName() + "=" + "'" + pc.getValue() + "'");
+      if (constraintBasedPermission.getIdConstraint() != null) {
+        String idConstraints = join(constraintBasedPermission.getIdConstraint().getId(), false);
+        String sqlIdSub = " form.id in (" + idConstraints + ")";
+        andClauses.add(sqlIdSub);
+      }
+      for (String propName : constraintBasedPermission.getPropertyConstraints().keySet()) {
+        PropertyConstraint pc = constraintBasedPermission.getPropertyConstraints().get(propName);
+        if (pc.getName().equals("global")) {
+          if (requestedAction.equals(PermissionType.READ)) {
+            String access1 = " form.worldPermissionType in (" + join(RW, true) + ")";
+            andClauses.add(access1);
+          } else if (requestedAction.equals(PermissionType.WRITE)) {
+            String access1 = " form.worldPermissionType = " + requestedAction;
+            andClauses.add(access1);
           }
+        } else if (pc.getName().equals("group")) {
+          if (requestedAction.equals(PermissionType.READ)) {
+            String access1 = " form.groupPermissionType in (" + join(RW, true) + ")";
+            andClauses.add(access1);
+          } else if (requestedAction.equals(PermissionType.WRITE)) {
+            String access1 = " form.groupPermissionType = " + requestedAction;
+            andClauses.add(access1);
+          }
+        } else if (pc.getName().equals("owner")) {
+          if (requestedAction.equals(PermissionType.READ)) {
+            String access1 = " form.ownerPermissionType in (" + join(RW, true) + ")";
+            andClauses.add(access1);
+          } else if (requestedAction.equals(PermissionType.WRITE)) {
+            String access1 = " form.ownerPermissionType = " + requestedAction;
+            andClauses.add(access1);
+          }
+
+          String ownerRestriction = null;
+          if (pc.getValue().equals("${self}")) {
+            ownerRestriction = user.getUsername();
+          } else if (!(pc.getValue().equals("*"))) {
+            ownerRestriction = pc.getValue();
+          }
+          if (ownerRestriction != null) {
+            andClauses.add(" owner.username= :" + bind(boundValues, ownerRestriction));
+          }
+        } else if (isEditInfoProperty(pc.getName())) {
+          andClauses.add(" form." + pc.getName() + "= :" + bind(boundValues, pc.getValue()));
         }
-        if (constraintBasedPermission.getGroupConstraint() != null) {
-          GroupConstraint gc = constraintBasedPermission.getGroupConstraint();
-          String grpName = gc.getGroupName();
-          andClauses.add("grp.uniqueName=" + "'" + grpName + "'");
-        }
-      } else { // end if perm match
-        continue;
+      }
+      if (constraintBasedPermission.getGroupConstraint() != null) {
+        GroupConstraint gc = constraintBasedPermission.getGroupConstraint();
+        String grpName = gc.getGroupName();
+        andClauses.add("grp.uniqueName= :" + bind(boundValues, grpName));
       }
 
       StringBuilder baseQuery = new StringBuilder(" select distinct form.id");
@@ -256,6 +260,7 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
     if (searchTerm != null) {
       countQuery.setParameter("searchTerm", searchTerm);
     }
+    boundValues.forEach(countQuery::setParameter);
     // Hibernate 6: native SQL count(*) returns Long, not BigInteger
     Number count = (Number) countQuery.uniqueResult();
 
@@ -263,6 +268,7 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
     if (searchTerm != null) {
       query.setParameter("searchTerm", searchTerm);
     }
+    boundValues.forEach(query::setParameter);
     if (pagCriteria != null) {
       query.setFirstResult(pagCriteria.getFirstResultIndex());
       query.setMaxResults(pagCriteria.getResultsPerPage());
@@ -579,5 +585,12 @@ public class FormDaoHibernate extends AbstractFormDaoImpl<RSForm> implements For
     }
 
     return allFormIds;
+  }
+
+  /** Registers a value to bind and returns the unique parameter name to use in the SQL. */
+  private static String bind(Map<String, Object> boundValues, Object value) {
+    String name = "p" + boundValues.size();
+    boundValues.put(name, value);
+    return name;
   }
 }
