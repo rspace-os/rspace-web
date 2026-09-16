@@ -2,7 +2,7 @@
 status: accepted
 ---
 
-# Linked identifiers for instruments imported from a PID registry (RSDEV-1326)
+# Linked identifiers for instruments imported from a PID registry (RSDEV-1326, UI RSDEV-1325)
 
 ## Context
 
@@ -84,7 +84,9 @@ and API field names were ported instead.
   back): the create endpoint would have to re-fetch the PID to verify client-sent
   metadata, and `identifiers` are ignored on create today.
 - **Allow duplicate links, flagged**: rejected in favour of one RSpace record per PID;
-  the search response still flags an already-linked PID so the UI can disable Import.
+  the search response still flags an already-linked PID. The UI (RSDEV-1325) keeps such a hit
+  selectable and refuses Import with the reason, rather than disabling the button, so the user
+  can still read the record and follow the chip to the instrument that holds the link.
 
 ## Consequences
 
