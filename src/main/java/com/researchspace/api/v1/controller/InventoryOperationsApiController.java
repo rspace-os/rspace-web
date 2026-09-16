@@ -54,9 +54,9 @@ import org.springframework.web.bind.annotation.RequestBody;
  * transaction and performs the whole effect atomically. No per-operation logic lives here (see
  * DevDocs/adr/0007).
  *
- * <p>The seven typed endpoints (DevDocs/adr/0007 M6) are facades over the same path: each converts
- * its typed body to the generic request, runs the same structural validator and the same manager
- * call, and renames the error paths back to the fields the caller sent on the way out ({@link
+ * <p>The seven typed endpoints (DevDocs/adr/0007) are facades over the same path: each converts its
+ * typed body to the generic request, runs the same structural validator and the same manager call,
+ * and renames the error paths back to the fields the caller sent on the way out ({@link
  * #facadeField}). Their only own rules are the shape ones the typed body carries.
  */
 @ApiController
@@ -71,10 +71,7 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
   /** Only converts an already-bound Map into a DTO, so it needs none of the API mapper's setup. */
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
-  /**
-   * A generated field on the built sample, by its index in {@code newSample.extraFields}: the
-   * rename has to look the field up to know what the caller sent for it.
-   */
+  /** A generated field on the built sample, by its index in {@code newSample.extraFields}. */
   private static final Pattern BUILT_FIELD =
       Pattern.compile("^newSample\\.extraFields\\[(\\d+)\\]\\.");
 
@@ -89,12 +86,9 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
       new InventoryOperationConfigRegistry();
 
   /**
-   * Refuses every route on this controller while the sysadmin has {@code
-   * inventory.operations.available} at DENIED, which is how it is seeded (RSDEV-1231). Modelled on
-   * {@code GalleryFilestoresBaseApiController.assertFilestoresApiEnabled}: {@link
-   * UnsupportedOperationException} is what {@code ApiControllerAdvice} already maps to a 404 with
-   * errorCode CONFIGURED_UNAVAILABLE, so a disabled feature is indistinguishable from one this
-   * build does not have. No sysadmin bypass, as with {@code inventory.available}.
+   * {@link UnsupportedOperationException} is what {@code ApiControllerAdvice} already maps to a 404
+   * with errorCode CONFIGURED_UNAVAILABLE, so a disabled feature is indistinguishable from one this
+   * build does not have. No sysadmin bypass.
    */
   private void assertOperationsAvailable(User user) {
     if (!systemPropertyManager.isPropertyAllowed(
@@ -118,15 +112,8 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
     assertOperationsAvailable(user);
     inputValidator.validate(request, operationPostValidator, errors);
     throwBindExceptionIfErrors(errors);
-    // The manager validates the inputs, builds the sample and runs the transactional core. The
-    // template-conformance check below is handed in and run there too, on what it built and before
-    // any origin is read, so the template the sample is created from is the one this request was
-    // validated against (Copilot review, PR #1090). Either kind of rejection propagates as the same
-    // field-scoped 400 BindException the structural checks above produce.
-    // This endpoint's contract is the created sample alone, so the origins-after the manager also
-    // returns are discarded here. They are assembled from entities the operation just loaded and
-    // wrote, so they come off the persistence context rather than the database; the typed endpoints
-    // below are what actually publish them.
+    // This endpoint's contract is the created sample alone, so the origins the manager also
+    // returns are discarded here.
     return withOriginsLocked(
             request.getOrigins(),
             user,
@@ -141,7 +128,7 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
         .sample();
   }
 
-  // --- the seven typed endpoints (M6) ---
+  // --- the seven typed endpoints ---
 
   @Override
   public ResponseEntity<ApiInventoryOperationResult> aliquot(
@@ -208,11 +195,10 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
 
   /**
    * One typed facade: the bean-validated shape, origins parsed from global ids (a non-subsample
-   * prefix is rejected here, M0 D3), then the generic request through the same validator and
-   * manager call as {@link #performOperation}, with every error path renamed to the field the
-   * caller sent. The response is M0's envelope: the created sample (null for Destroy) and each
-   * origin as it stands afterwards, read back after the transaction committed. 201 with a Location
-   * header for a created sample, 200 otherwise.
+   * prefix is rejected here), then the generic request through the same validator and manager call
+   * as {@link #performOperation}, with every error path renamed to the field the caller sent. The
+   * response is the created sample (null for Destroy) and each origin as it stands afterwards, read
+   * back after the transaction committed.
    */
   private ResponseEntity<ApiInventoryOperationResult> performTyped(
       String operationKey,
@@ -269,7 +255,7 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
     }
 
     // The manager read these inside its own transaction, so they are one consistent snapshot of
-    // what the operation produced (parallel review, A14). Only the hypermedia is added here.
+    // what the operation produced. Only the hypermedia is added here.
     ApiSampleWithFullSubSamples sample = outcome.sample();
     List<ApiSubSample> originsAfter = outcome.originsAfter();
     originsAfter.forEach(this::buildAndAddInventoryRecordLinks);
@@ -294,31 +280,19 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
     InventoryOperationManager.OperationOutcome call() throws BindException;
   }
 
-  /** Ascending by prefix then numeric id, so SA10 sorts before SA20 and both before SS100. */
   private static final Comparator<String> ASCENDING_GLOBAL_ID =
       Comparator.comparing((String id) -> new GlobalIdentifier(id).getPrefix())
           .thenComparing(id -> new GlobalIdentifier(id).getDbId());
 
   /**
    * Runs the operation with the Inventory edit-session lock held on every origin and every parent
-   * sample, the same courtesy lock the subsample edit form takes (DevDocs/adr/0007). The parent
-   * sample is in the set because two operations on siblings of one sample write the same sample
-   * row; the ascending order is what keeps two overlapping multi-origin Pools from deadlocking.
-   *
-   * <p>It lives here rather than in the manager because the release has to happen after the
-   * manager's transaction has committed or rolled back, and the controller is outside that AOP
-   * boundary.
-   *
-   * <p>Only the locks this request actually created are released: WAS_ALREADY_LOCKED means the
-   * caller's own session (the open wizard, or a form in another tab) holds it and keeps it.
+   * sample, in ascending id order.
    */
   private InventoryOperationManager.OperationOutcome withOriginsLocked(
       List<ApiInventoryOperationOriginUpdate> origins, User user, OperationCall work)
       throws BindException {
     SortedSet<String> toLock = new TreeSet<>(ASCENDING_GLOBAL_ID);
     for (ApiInventoryOperationOriginUpdate origin : origins) {
-      // Asserted before any lock is taken, so a caller who may not edit an origin cannot hold other
-      // users' records for the duration of the request. The manager asserts again inside.
       SubSample subSample = subSampleApiMgr.assertUserCanEditSubSample(origin.getId(), user);
       toLock.add(subSample.getGlobalIdentifier());
       SampleEntity parent = subSample.getSample();
@@ -347,8 +321,8 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
 
   /**
    * The subsample id a facade origin's global id names, or null with a field error: the prefix is
-   * what makes "SS1234" unambiguous where a bare number could be a sample or a container (M0 D3),
-   * so anything but a well-formed SS id is rejected at bind time rather than through a confusing
+   * what makes "SS1234" unambiguous where a bare number could be a sample or a container, so
+   * anything but a well-formed SS id is rejected at bind time rather than through a confusing
    * lookup failure later.
    */
   private static Long subSampleId(String globalId, String field, BindingResult errors) {
@@ -395,11 +369,11 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
   /**
    * The typed facade's name for a field the core reports. The core works with an origin LIST and a
    * server-built sample, so it names {@code origins[0].amountTaken} where a six-operation client
-   * sent {@code origin.amountTaken} (M0: an M6 concern precisely so it is not shipped), numeric
-   * {@code id} where the client sent {@code globalId}, and {@code newSample.*} for what the
-   * template check finds on the built sample: its template id is the caller's {@code templateId},
-   * and a subsample quantity is the caller's {@code eachAmount}, which every built subsample
-   * copies. Bare input keys are already the caller's field names and pass through.
+   * sent {@code origin.amountTaken}, numeric {@code id} where the client sent {@code globalId}, and
+   * {@code newSample.*} for what the template check finds on the built sample: its template id is
+   * the caller's {@code templateId}, and a subsample quantity is the caller's {@code eachAmount},
+   * which every built subsample copies. Bare input keys are already the caller's field names and
+   * pass through.
    */
   static String facadeField(String field, boolean singleOrigin) {
     String renamed = field;
@@ -419,8 +393,7 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
    *
    * <p>Every field on the built sample traces to something the caller sent, and the field records
    * which through its {@code operationFieldKey}: the documentation link to {@code
-   * documentedByGlobalId} (whose target the shared link validation checks for existence and
-   * readability), a text field to the input its definition's {@code contentFrom} names, a
+   * documentedByGlobalId}, a text field to the input its definition's {@code contentFrom} names, a
    * provenance link to the origin it targets. Without this, an unreadable documentation target came
    * back as {@code newSample.extraFields[2].link.targetGlobalId}: a path with no field the caller
    * could correct.
@@ -453,7 +426,6 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
         : originNamed(request, built.getLink().getTargetGlobalId(), singleOrigin);
   }
 
-  /** The input key whose value became this generated field's content, per the definition. */
   private static Optional<String> inputBehindGeneratedField(String operationType, String fieldKey) {
     return DEFINITIONS
         .get(String.valueOf(operationType))
@@ -470,7 +442,6 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
                     .findFirst());
   }
 
-  /** The caller's path for the origin a provenance link points at. */
   private static Optional<String> originNamed(
       ApiInventoryOperationPost request, String targetGlobalId, boolean singleOrigin) {
     List<ApiInventoryOperationOriginUpdate> origins = request.getOrigins();
@@ -488,8 +459,7 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
    * object to a LinkedHashMap, never to {@link ApiQuantityInfo}, and the input validator rightly
    * rejects a Map as the wrong type, so each declared quantity or temperature that arrived as a
    * well-formed object is converted first. Anything else is left as bound for the validator to
-   * judge. (Probed: a JSON number binds as Integer, Long or Double; convertValue turns a Double 0.6
-   * into the BigDecimal 0.6.) Absent inputs are an empty map: Destroy declares none.
+   * judge. Absent inputs are an empty map: Destroy declares none.
    */
   private Map<String, Object> typedInputs(ApiInventoryOperationPost request) {
     InventoryOperationConfig definition =

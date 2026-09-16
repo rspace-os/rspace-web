@@ -19,8 +19,8 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 
 /**
- * Guards the operation endpoint's error catalog (DevDocs/adr/0007): every message code the backend
- * raises must have a catalog entry, or the API would show users a raw code instead of a message.
+ * Guards the operation endpoint's error catalog: every message code the backend raises must have a
+ * catalog entry, or the API would show users a raw code instead of a message.
  *
  * <p>Covers every code the endpoint can raise, not just the {@code errors.inventory.operation.*}
  * block: the validator also raises {@code errors.inventory.quantity.*}, the controller raises a
@@ -42,8 +42,8 @@ class InventoryOperationsErrorCatalogTest {
   /**
    * Every file in the controller package whose name starts with Operation or InventoryOperation is
    * matched, rather than named one by one, so splitting a validator cannot quietly take its codes
-   * out of scope: that is exactly what happened when the 994-line validator became four classes
-   * (parallel review). The three files outside that package are named explicitly.
+   * out of scope: that is exactly what happened when the 994-line validator became four classes.
+   * The three files outside that package are named explicitly.
    */
   private static Path[] sourcesRaisingOperationErrors() throws IOException {
     List<Path> sources = new ArrayList<>();
@@ -87,11 +87,6 @@ class InventoryOperationsErrorCatalogTest {
         raised.add(matcher.group(1));
       }
     }
-    // A floor, not just non-empty. The G1 split moved 30-odd codes out of the validator into three
-    // new files, and because the source list was not updated with them this guard went on passing
-    // while scanning almost nothing (parallel review). "Not empty" is satisfied by a single file,
-    // so
-    // it cannot detect that narrowing; a count can.
     assertTrue(
         raised.size() >= MINIMUM_CODES_RAISED,
         () ->

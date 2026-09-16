@@ -34,8 +34,7 @@ vi.mock("@/hooks/api/useUiPreference", () => ({
     return [value, (v: unknown) => (prefs.store[key] = v)];
   },
   // The wizard reads per-operation bundles through readUiPreference over the raw map rather than
-  // through the bound hook (bundleFor). Both were missing from this mock, so every test in this file
-  // threw "No useRawUiPreferences export is defined" from the wizard's first render.
+  // through the bound hook (bundleFor); both must be present in this mock.
   useRawUiPreferences: () => prefs.store,
   readUiPreference: (uiPreferences: Record<string, unknown>, pref: symbol, defaultValue: unknown) => {
     const key = Symbol.keyFor(pref) ?? "";
@@ -52,7 +51,6 @@ const OPERATIONS_URL = "/api/inventory/v1/operations";
 const posted: Array<Record<string, unknown>> = [];
 const taken: Array<string> = [];
 const operationHandlers = [
-  // The real definitions, exactly as the backend's config endpoint serves them.
   http.get(`${OPERATIONS_URL}/config`, () => HttpResponse.json(rawConfig)),
   http.post(OPERATIONS_URL, async ({ request }) => {
     posted.push((await request.json()) as Record<string, unknown>);
@@ -65,7 +63,7 @@ const operationHandlers = [
 ];
 
 const performSearch = vi.fn();
-// The wizard loads the origin sample's own template to validate "use parent template" (F5). Default
+// The wizard loads the origin sample's own template to validate "use parent template". Default
 // to a template with no defaultless mandatory field, i.e. a passing check.
 const getTemplate = vi.fn((_id?: number) =>
   Promise.resolve({
@@ -102,7 +100,6 @@ vi.mock("@/components/SubmitSpinnerButton", () => ({
     </button>
   ),
 }));
-// ContextDialog wraps the content in a MUI Dialog; render its children inline when open.
 // ContextDialog wraps the content in a MUI Dialog; render its children inline when open. The
 // "dialog-close" button stands in for the dialog's own close paths (Escape), which reach the wizard
 // through this same onClose prop.
@@ -286,8 +283,8 @@ beforeEach(() => {
   addAlert.mockClear();
   // Reset, not merely cleared: mockClear drops call history but LEAVES a queued
   // mockResolvedValueOnce/mockRejectedValueOnce, so an unconsumed Once would be handed to the next
-  // test, which matters because one test here asserts getTemplate is never called (parallel
-  // review). mockReset also restores the implementation passed to vi.fn.
+  // test, which matters because one test here asserts getTemplate is never called. mockReset also
+  // restores the implementation passed to vi.fn.
   getTemplate.mockReset();
   getTemplate.mockImplementation(() =>
     Promise.resolve({
@@ -322,7 +319,7 @@ describe("OperationWizard config load", () => {
   it("shows the load-failed alert and no picker when GET /operations/config fails", async () => {
     // Every other test in this file serves a valid config, and operationsApi.test.ts never mocked
     // ApiService.get, so fetchOperationsConfig was never invoked in any test: the failure alert and
-    // the spinner beneath it were unreachable in the whole suite (parallel review, Q12).
+    // the spinner beneath it were unreachable in the whole suite.
     server.use(http.get(`${OPERATIONS_URL}/config`, () => HttpResponse.error()));
     render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
 
@@ -347,7 +344,7 @@ describe("OperationWizard step flow", () => {
     const user = userEvent.setup();
     render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
     await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
-    expect(nextButton()).toBeDisabled(); // no process name yet
+    expect(nextButton()).toBeDisabled();
     await user.type(screen.getByTestId("proc"), "dna");
     expect(nextButton()).toBeEnabled();
   });
@@ -376,7 +373,6 @@ describe("OperationWizard step flow", () => {
   });
 
   it("de-duplicates the derived sample name against existing names with a numeric suffix", async () => {
-    // "A sample dna" and its _1 are taken, so the wizard must land on _2.
     taken.push("A sample dna", "A sample dna_1");
     const user = userEvent.setup();
     render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
@@ -390,8 +386,8 @@ describe("OperationWizard step flow", () => {
     render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
     await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
     await user.type(screen.getByTestId("proc"), "dna");
-    await user.click(screen.getByTestId("edit-sample")); // manual override
-    await user.type(screen.getByTestId("proc"), "x"); // process name changes again
+    await user.click(screen.getByTestId("edit-sample"));
+    await user.type(screen.getByTestId("proc"), "x");
     expect(screen.getByTestId("sample-name")).toHaveTextContent("Custom name");
   });
 
@@ -405,7 +401,7 @@ describe("OperationWizard step flow", () => {
     expect(screen.getByTestId("tmpl-mode")).toHaveTextContent("fromSample");
     // Preselected AND validated by the wizard: the parent's template can have a defaultless
     // mandatory field just as a picked one can, so it is checked, and a passing check writes the id
-    // that enables Next (F5).
+    // that enables Next.
     await waitFor(() => expect(screen.getByTestId("tmpl-id")).toHaveTextContent("9"));
     expect(nextButton()).toBeEnabled();
     expect(getTemplate).toHaveBeenCalledWith(9, null, expect.anything());
@@ -415,7 +411,7 @@ describe("OperationWizard step flow", () => {
     // The gate (templateStepValid) is evaluated for EVERY step, but the wizard renders only the
     // active one. A check owned by TemplateStep therefore never ran while the user was on step one,
     // which is exactly where the fast path lives, so Perform was permanently disabled for the most
-    // common template mode (parallel review, C2). The check belongs to the wizard for that reason.
+    // common template mode. The check belongs to the wizard for that reason.
     prefs.store.INVENTORY_OPERATION_PROCESS_VALUES = {
       "derive dna": {
         values: { count: 2, eachAmount: { numericValue: 1, unitId: 3 }, amountTaken: { numericValue: 1, unitId: 3 } },
@@ -430,7 +426,6 @@ describe("OperationWizard step flow", () => {
     await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
     await user.type(screen.getByTestId("proc"), "dna");
 
-    // Never navigated to the template step, yet the check ran and Perform is offered.
     await waitFor(() => expect(screen.getByRole("button", { name: /wizard\.perform/i })).toBeInTheDocument());
     expect(getTemplate).toHaveBeenCalledWith(9, null, expect.anything());
   });
@@ -438,8 +433,7 @@ describe("OperationWizard step flow", () => {
   it("withholds the one-click fast path when the remembered template has been trashed", async () => {
     // The stored bundle's template id is a snapshot from a previous run. The template may since have
     // been moved to trash, and RSpace soft-deletes, so the lookup SUCCEEDS and only the deleted flag
-    // tells the wizard. Left unchecked, step one offered Perform against a trashed template
-    // (RSDEV-1231, F2).
+    // tells the wizard. Left unchecked, step one offered Perform against a trashed template.
     getTemplate.mockResolvedValue({
       id: 9,
       name: "Cell line",
@@ -460,7 +454,6 @@ describe("OperationWizard step flow", () => {
     await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
     await user.type(screen.getByTestId("proc"), "dna");
 
-    // The check runs at step one, where the fast path lives, so Perform is never offered.
     await waitFor(() => expect(getTemplate).toHaveBeenCalledWith(9, null, expect.anything()));
     expect(screen.queryByRole("button", { name: /wizard\.perform/i })).not.toBeInTheDocument();
 
@@ -500,7 +493,6 @@ describe("OperationWizard step flow", () => {
     await user.type(screen.getByTestId("proc"), "dna");
 
     await waitFor(() => expect(getTemplate).toHaveBeenCalledWith(9, null, expect.anything()));
-    // No one-click Perform, and no silent switch to the parent's template.
     expect(screen.queryByRole("button", { name: /wizard\.perform/i })).not.toBeInTheDocument();
     await user.click(nextButton());
     expect(screen.getByTestId("tmpl-mode")).toHaveTextContent("unselected");
@@ -536,7 +528,7 @@ describe("OperationWizard step flow", () => {
   it("shows the remembered template's current name after it has been renamed", async () => {
     // The bundle stores the name alongside the id, and it was read straight back out, so a template
     // renamed since the bundle was saved was shown - and confirmed on the one-click summary - under
-    // its old name (RSDEV-1231, F1). The name is display-only; only the id travels.
+    // its old name. The name is display-only; only the id travels.
     getTemplate.mockResolvedValue({
       id: 9,
       name: "Cell line v2",
@@ -557,7 +549,6 @@ describe("OperationWizard step flow", () => {
     await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
     await user.type(screen.getByTestId("proc"), "dna");
 
-    // Still the remembered template, still one-click performable: only its label has changed.
     await waitFor(() => expect(screen.getByRole("button", { name: /wizard\.perform/i })).toBeInTheDocument());
     // Step into the wizard (the fast path replaces Next with review/Perform) to read the banner.
     await user.click(screen.getByRole("button", { name: /wizard\.reviewEdit/i }));
@@ -582,7 +573,6 @@ describe("OperationWizard step flow", () => {
     await fillDerive(user, "dna");
     await user.click(nextButton()); // details -> template
 
-    // No id written, so Next stays disabled, and the step is told WHY rather than left silent.
     await waitFor(() => expect(screen.getByTestId("tmpl-parent-error")).toHaveTextContent(/mandatoryFieldsError/));
     expect(screen.getByTestId("tmpl-id")).toHaveTextContent("null");
     expect(nextButton()).toBeDisabled();
@@ -602,10 +592,6 @@ describe("OperationWizard step flow", () => {
   });
 
   it("retires an in-flight parent-template check when the user switches away from that mode", async () => {
-    // The check's early return used to leave the in-flight lookup owning the token and the
-    // "checking" flag: a late rejection then reported lookupFailed against the mode the user had
-    // just switched TO, and the spinner belonged to a request whose answer no longer mattered
-    // (Copilot review, PR #1090).
     let rejectLookup: (reason: Error) => void = () => {};
     getTemplate.mockImplementationOnce(
       () =>
@@ -621,12 +607,10 @@ describe("OperationWizard step flow", () => {
     await user.click(nextButton()); // details -> template
     await waitFor(() => expect(screen.getByTestId("tmpl-checking")).toHaveTextContent("true"));
 
-    // Switch to a picked template while the parent lookup is still outstanding.
     await user.click(screen.getByTestId("tmpl-pick5"));
     expect(screen.getByTestId("tmpl-mode")).toHaveTextContent("pick");
     expect(screen.getByTestId("tmpl-checking")).toHaveTextContent("false");
 
-    // The abandoned lookup now fails. Its result must not touch the new selection's status.
     await act(async () => {
       rejectLookup(new Error("late failure"));
       await Promise.resolve();
@@ -640,7 +624,7 @@ describe("OperationWizard step flow", () => {
     // Reachable whenever a bundle is reused on a different origin, or on a Pool where "the parent"
     // is ambiguous. Left as it was, the step wanted a validated id nothing could supply and the
     // radio is disabled in that state, so Next stuck with no spinner, no message and nothing the
-    // user could change (parallel review, C3). Falling back to "unselected" asks for the one thing
+    // user could change. Falling back to "unselected" asks for the one thing
     // that resolves it.
     prefs.store.INVENTORY_OPERATION_PROCESS_VALUES = {
       "derive dna": {
@@ -666,9 +650,6 @@ describe("OperationWizard step flow", () => {
   });
 
   it("keeps the rest of the template selection when the check writes the parent's id", async () => {
-    // The check used to run from a closure frozen at the step's mount render, so a passing result
-    // wrote a stale snapshot of the whole selection and could revert a mode the user had since
-    // changed (parallel review, I7). A functional update writes only the id and category.
     const user = userEvent.setup();
     const origin = makeMockSubSample({});
     origin.sample.templateId = 9;
@@ -802,12 +783,11 @@ describe("OperationWizard step flow", () => {
     await reachConfirm(user, "boom");
     await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
     await waitFor(() => expect(addAlert).toHaveBeenCalled());
-    // the wizard stays open on the confirmation so the user can retry; nothing is lost
     expect(onClose).not.toHaveBeenCalled();
     expect(screen.getByTestId("confirm")).toBeInTheDocument();
   });
 
-  // --- the edit-session lock the wizard holds on its origins (RSDEV-1231 S5) ---
+  // --- the edit-session lock the wizard holds on its origins ---
 
   it("keeps the wizard and its locks when the server reports the origin is held by someone else", async () => {
     // A 409 carries the holder in `message`, not in a field-scoped `errors` entry: there is no
@@ -835,7 +815,6 @@ describe("OperationWizard step flow", () => {
     await waitFor(() => expect(addAlert).toHaveBeenCalled());
     const alert = addAlert.mock.calls[0][0] as { message: string };
     expect(alert.message).toBe("SS1 is currently being edited by Carol Holder.");
-    // the wizard stays open for a retry once the holder is done, and keeps its own locks
     expect(onClose).not.toHaveBeenCalled();
     expect(screen.getByTestId("confirm")).toBeInTheDocument();
     expect(release).not.toHaveBeenCalled();
@@ -898,8 +877,8 @@ describe("OperationWizard step flow", () => {
     await waitFor(() => expect(addAlert).toHaveBeenCalled());
     const alert = addAlert.mock.calls[0][0] as { message: string; variant: string };
     expect(alert.variant).toBe("error");
-    // and it names WHICH origin, so a multi-origin rejection is actionable (FE11). The marker is
-    // worded from the catalog rather than concatenated in English (parallel review, A4), so under
+    // and it names WHICH origin, so a multi-origin rejection is actionable. The marker is
+    // worded from the catalog rather than concatenated in English, so under
     // cimode it renders as the key; the assembled English is asserted in the InEnglish test below.
     expect(alert.message).toBe("inventory:operations.wizard.originIndex");
     // the amounts step validates against origin.quantity, so it has to be re-read or the user can
@@ -936,7 +915,7 @@ describe("OperationWizard step flow", () => {
   });
 
   it("treats a successful Perform as done even when refreshing the origin afterwards fails", async () => {
-    // Code review, finding 2: the POST committed (output created, origin decremented), so a failed
+    // The POST committed (output created, origin decremented), so a failed
     // refresh must not be reported as a failed operation with the wizard left open for a retry that
     // would charge the origin twice. The wizard closes and the refresh failure is a warning.
     const user = userEvent.setup();
@@ -996,7 +975,7 @@ describe("OperationWizard step flow", () => {
     await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
     await waitFor(() => expect(addAlert).toHaveBeenCalled());
     const alert = addAlert.mock.calls[0][0] as { message: string };
-    // The "<label>: <reason>" join goes through the catalog now (FE14), and cimode renders a key
+    // The "<label>: <reason>" join goes through the catalog now, and cimode renders a key
     // without its parameters, so all this branch can show is that the join message was chosen and
     // the bare input key is gone. The sentence itself is asserted in English below.
     expect(alert.message).toMatch(/operations\.wizard\.fieldReason/);
@@ -1013,9 +992,9 @@ describe("OperationWizard step flow", () => {
     await user.click(screen.getByTestId("tmpl-pick5"));
     await user.click(nextButton()); // template -> amounts
     await user.click(screen.getByTestId("mode-per"));
-    expect(nextButton()).toBeDisabled(); // no per-origin amounts entered yet
+    expect(nextButton()).toBeDisabled();
     await user.click(screen.getByTestId("fill-per-first"));
-    expect(nextButton()).toBeDisabled(); // the second origin still has no amount
+    expect(nextButton()).toBeDisabled();
     await user.click(screen.getByTestId("fill-per-both"));
     expect(nextButton()).toBeEnabled();
   });
@@ -1032,9 +1011,6 @@ describe("OperationWizard step flow", () => {
   });
 
   it("blocks Cancel while a Perform is in flight, so the origin cannot be charged twice", async () => {
-    // Closing does not cancel the POST, so a user who cancelled mid-request could reopen the wizard
-    // and submit the same operation again against origins the first request was still decrementing
-    // (Copilot review, PR #1090).
     let releasePost: () => void = () => {};
     const pending = new Promise<void>((resolve) => {
       releasePost = resolve;
@@ -1070,11 +1046,11 @@ describe("OperationWizard step flow", () => {
   it("re-gates Perform on every step when un-ticking remember resets the earlier ones", async () => {
     // Un-ticking resets the template/documentation/values but stays on the confirm step. Gating
     // Perform on the confirm step alone left it enabled with no template chosen, producing an
-    // avoidable backend rejection (Copilot review, PR #1090).
+    // avoidable backend rejection.
     const user = userEvent.setup();
     render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
     await reachConfirm(user, "dna");
-    await user.click(screen.getByTestId("toggle-remember")); // tick
+    await user.click(screen.getByTestId("toggle-remember"));
     expect(screen.getByRole("button", { name: /wizard\.perform/i })).toBeEnabled();
 
     await user.click(screen.getByTestId("toggle-remember")); // un-tick: template selection is reset
@@ -1083,8 +1059,8 @@ describe("OperationWizard step flow", () => {
 
   it("reads that heading as 'Derive: dna' in English", async () => {
     // The key above proves the right branch rendered; only the real catalogs show that both
-    // parameters actually arrive rather than the heading being assembled in code (code review,
-    // finding 10). cimode renders the key alone and hides interpolation entirely.
+    // parameters actually arrive rather than the heading being assembled in code. cimode renders
+    // the key alone and hides interpolation entirely.
     const user = userEvent.setup();
     render(
       <InEnglish>
@@ -1099,7 +1075,7 @@ describe("OperationWizard step flow", () => {
   it("reads a rejected input as 'New sample name: ...' in English", async () => {
     // The cimode assertion above can only show that the catalog's join message was chosen; the real
     // catalogs are what show both parameters arriving, rather than the sentence being assembled in
-    // code with a hard-coded ": " no other locale need use (parallel review, FE14).
+    // code with a hard-coded ": " no other locale need use.
     server.use(
       http.post(
         OPERATIONS_URL,
@@ -1137,7 +1113,7 @@ describe("OperationWizard step flow", () => {
   it("reads an origin rejection as '... (origin 1)' in English", async () => {
     // The cimode assertion above can only show the catalog's marker message was chosen. This is
     // what shows BOTH parameters arriving, rather than the aside being welded on in English after a
-    // reason the server already localized (parallel review, A4).
+    // reason the server already localized.
     server.use(
       http.post(
         OPERATIONS_URL,
@@ -1177,8 +1153,8 @@ describe("OperationWizard step flow", () => {
 
   it("inflects the parent-template block for one field and for several", async () => {
     // The same message as TemplateStep's own pick error, so the count has to arrive from this call
-    // site too; "field(s) ... have" was a parenthetical plural no other language can follow
-    // (PR #963 review). cimode renders the key alone, so only English shows the inflection.
+    // site too; "field(s) ... have" was a parenthetical plural no other language can follow.
+    // cimode renders the key alone, so only English shows the inflection.
     for (const [fields, expected] of [
       [["Batch"], "the required field Batch has no default value"],
       [["Batch", "Concentration"], "the required fields Batch and Concentration have no default value"],
@@ -1213,7 +1189,6 @@ describe("OperationWizard remember bundle", () => {
     const user = userEvent.setup();
     render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
     await fillDerive(user, "dna");
-    // details: no remember handler is passed, so the step renders no checkbox
     expect(screen.getByTestId("details-has-toggle")).toHaveTextContent("false");
     await user.click(nextButton()); // -> template
     await user.click(screen.getByTestId("tmpl-pick5"));
@@ -1240,13 +1215,13 @@ describe("OperationWizard remember bundle", () => {
     await user.click(nextButton()); // -> documentation
     await user.click(screen.getByTestId("doc-choose"));
     await user.click(nextButton()); // -> confirm
-    await user.click(screen.getByTestId("toggle-remember")); // tick remember on the confirm step
+    await user.click(screen.getByTestId("toggle-remember"));
     await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
 
     await waitFor(() => expect(onClose).toHaveBeenCalled());
-    // Pin the posted request (the inputs shape, DevDocs/adr/0007 M4): the typed
-    // inputs by key, the origin's amount, the chosen template and the documentation target. The
-    // amount taken travels on the origin only, and no sample is assembled client-side.
+    // Pin the posted request shape: the typed inputs by key, the origin's amount, the chosen
+    // template and the documentation target. The amount taken travels on the origin only, and no
+    // sample is assembled client-side.
     expect(posted[0]).toEqual({
       operationType: "derive",
       origins: [{ id: 1, amountMode: "explicit", amountTaken: { numericValue: 1, unitId: 3 } }],
@@ -1271,13 +1246,11 @@ describe("OperationWizard remember bundle", () => {
   });
 
   it("performs a Pool: per-origin amounts posted for every origin, and remembered", async () => {
-    // No test ran a multi-origin operation through to Perform. Three things were unpinned because
-    // of it: the multi-origin remember bundle (amountMode plus perSubsampleAmounts) was never
-    // persisted in any test, representativeOrigin's smallest-origin choice was unexercised
-    // (replacing the reduce with origins[0] broke nothing), and the multi-origin POST body was
-    // never asserted. That is the path C1 hid in: commonQuantity threw for a multi-origin molarity
-    // selection and nothing noticed, because reduce on a one-element array never calls its callback
-    // and every test used one origin (parallel review, Q14).
+    // No earlier test ran a multi-origin operation through to Perform: the multi-origin remember
+    // bundle (amountMode plus perSubsampleAmounts) was never persisted, representativeOrigin's
+    // smallest-origin choice was unexercised, and the multi-origin POST body was never asserted.
+    // commonQuantity threw for a multi-origin molarity selection and nothing noticed, because
+    // reduce on a one-element array never calls its callback and every test used one origin.
     const user = userEvent.setup();
     const onClose = vi.fn();
     const first = makeMockSubSample({});
@@ -1333,7 +1306,7 @@ describe("OperationWizard remember bundle", () => {
     const origin = makeMockSubSample({});
     vi.spyOn(origin, "fetchAdditionalInfo").mockResolvedValue(undefined);
     render(<OperationWizard open onClose={onClose} origins={[origin]} />);
-    await reachConfirm(user, "dna extraction"); // remember never ticked
+    await reachConfirm(user, "dna extraction");
     await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
 
     await waitFor(() => expect(onClose).toHaveBeenCalled());
@@ -1386,8 +1359,8 @@ describe("OperationWizard remember bundle", () => {
 
     // BOTH amounts have their unit cleared (unitId 0), not defaulted to the origin's. A defaulted
     // unit is a valid amount, so nothing downstream blocked and the one-click fast path stayed armed
-    // on a number the user never chose - it would have removed 1 g where the bundle says 2 mL
-    // (parallel review, C4). An unset unit forces the amounts step, where the user picks the amount
+    // on a number the user never chose - it would have removed 1 g where the bundle says 2 mL.
+    // An unset unit forces the amounts step, where the user picks the amount
     // in the right category. The saved numbers are kept so the user sees what to re-enter.
     expect(screen.getByTestId("amount-taken")).toHaveTextContent('{"numericValue":2,"unitId":0}');
     expect(screen.getByTestId("each-amount")).toHaveTextContent('{"numericValue":7,"unitId":0}');
@@ -1481,13 +1454,10 @@ describe("OperationWizard remember bundle", () => {
     const user = userEvent.setup();
     render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
     await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
-    // Fast path: the confirmation (carrying the ticked remember checkbox) and an enabled Perform
-    // show; the details form is not rendered yet.
     expect(screen.getByTestId("confirm")).toBeInTheDocument();
     expect(screen.getByTestId("remember")).toHaveTextContent("true");
     expect(screen.getByRole("button", { name: /wizard\.perform/i })).toBeEnabled();
     expect(screen.queryByTestId("proc")).not.toBeInTheDocument();
-    // Review / edit drops into the normal wizard with the bundle pre-filled.
     await user.click(screen.getByRole("button", { name: /wizard\.reviewEdit/i }));
     expect(screen.getByTestId("proc")).toHaveValue("boil");
     expect(screen.getByTestId("count")).toHaveTextContent("3");
@@ -1536,10 +1506,10 @@ describe("OperationWizard remember bundle", () => {
 });
 
 // Every rejection the suite above serves is a field-scoped 400. The submit handler has one catch
-// for everything, so a non-field rejection (a bare message with a 409 status, as the ELN's
-// document-lock path still answers) and a connection failure share it, and what they share had
-// never been asserted: the message chosen, that EVERY origin is re-read (the snapshot and the
-// over-removal gate both read origin.quantity), and that the wizard stays put.
+// for everything, so a non-field rejection (a bare message with a 409 status) and a connection
+// failure share it, and what they share had never been asserted: the message chosen, that EVERY
+// origin is re-read (the snapshot and the over-removal gate both read origin.quantity), and that
+// the wizard stays put.
 describe("OperationWizard rejection paths and multi-origin gating", () => {
   it("keeps a Pool open on a non-field rejection, shows its message and re-reads every origin", async () => {
     server.use(
@@ -1574,7 +1544,6 @@ describe("OperationWizard rejection paths and multi-origin gating", () => {
     expect(alerts).toHaveLength(1);
     expect(alerts[0].variant).toBe("error");
     expect(alerts[0].message).toBe("The subsample's quantity changed");
-    // BOTH origins are re-read, not just the representative one
     await waitFor(() => expect(refreshFirst).toHaveBeenCalledTimes(1));
     expect(refreshSecond).toHaveBeenCalledTimes(1);
     expect(onClose).not.toHaveBeenCalled();
@@ -1601,7 +1570,6 @@ describe("OperationWizard rejection paths and multi-origin gating", () => {
     expect(alerts[0].message).toBe("Network Error");
     expect(onClose).not.toHaveBeenCalled();
     expect(screen.getByTestId("confirm")).toBeInTheDocument();
-    // the Perform button is live again for the retry
     expect(screen.getByRole("button", { name: /wizard\.perform/i })).toBeEnabled();
   });
 
@@ -1653,7 +1621,6 @@ describe("OperationWizard rejection paths and multi-origin gating", () => {
       templateId: 5,
       documentedByGlobalId: null,
     });
-    // the passage number is the server's computed value, never assembled or sent from here
     expect(posted[0].inputs).not.toHaveProperty("passageNumber");
   });
 });

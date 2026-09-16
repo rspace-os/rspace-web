@@ -229,7 +229,6 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
     return comms;
   }
 
-  /** A user whose UI_JSON_SETTINGS blob currently holds the given JSON (null for never written). */
   private User userWithUiJsonSettings(String storedJson) {
     User user = createAnyUser("jbloggs");
     user.setId(7L);
@@ -276,7 +275,6 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
     // lets a caller fill that column with arbitrary names until it hits the TEXT limit, after which
     // every keyed write for that user fails for good. Only a name the client actually declares is
     // accepted.
-    // no DAO stubbing: the key is rejected before the user is even read
     assertThrows(
         IllegalArgumentException.class,
         () -> userManager.mergeUiJsonSetting("../evil key", "{}", "jbloggs"));
@@ -291,13 +289,6 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
 
   @Test
   public void mergeUiJsonSettingRejectsAWellFormedKeyThatNoPreferenceDeclares() {
-    // A syntax rule alone (uppercase identifier) leaves the key space unbounded: every distinct
-    // name a caller invents becomes another property of the blob, and nothing ever deletes one. The
-    // oversize guard then makes that permanent, because once the accumulated junk brings the column
-    // to its limit EVERY later keyed write for that user is rejected for good. Only the names the
-    // client declares are accepted, so junk never enters the blob in the first place (Copilot
-    // review, PR #1090).
-    // no DAO stubbing: the key is rejected before the user is even read
     assertThrows(
         IllegalArgumentException.class,
         () -> userManager.mergeUiJsonSetting("AAAAAAAA", "{}", "jbloggs"));
@@ -321,8 +312,8 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
    * <p>Deliberately NOT a hand-written copy. Transcribing them here made a third copy of one list
    * (the TS map, the Java allowlist, this test), and a third copy cannot catch the drift the test
    * exists to catch: adding a preference to the TS map and forgetting UI_JSON_SETTINGS_KEYS left
-   * every Java test green while the new preference silently stopped persisting (parallel review).
-   * Reading the real file is the same technique InventoryOperationsErrorCatalogTest uses.
+   * every Java test green while the new preference silently stopped persisting. Reading the real
+   * file is the same technique InventoryOperationsErrorCatalogTest uses.
    */
   private static List<String> declaredPreferenceNames() throws IOException {
     String source = Files.readString(UI_PREFERENCES_SOURCE);
@@ -347,8 +338,6 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
 
   @Test
   public void mergeUiJsonSettingAcceptsEveryDeclaredPreferenceName() throws IOException {
-    // The counterpart to the rejection above: the allowlist has to admit every name the client
-    // declares in its PREFERENCES map, or a legitimate preference silently stops persisting.
     for (String declared : declaredPreferenceNames()) {
       User user = userWithUiJsonSettings("{}");
       when(userDao.save(user)).thenReturn(user);
@@ -363,7 +352,7 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
     // The merged blob is one TEXT column (65535 chars). The UserPreference constructor fail-fast
     // validates that limit (SettingsType.validate), so a merge that would overflow throws before
     // anything is saved and the controller maps it to a 400; this test pins that the keyed path
-    // cannot reach the database with an oversized blob (Copilot review, PR #1090).
+    // cannot reach the database with an oversized blob.
     //
     // The overflow is reached by ACCUMULATION, not by one huge value: the per-key ceiling (S6)
     // rejects a single value big enough to overflow the column on its own, so this guard now only
@@ -382,7 +371,7 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
     // holding a near-65535-char value passes it and then makes every later keyed write for that
     // user overflow permanently: the same wedge the allowlist exists to prevent, reached through
     // one key instead of many. The per-key ceiling is checked before the user is even read, so an
-    // oversized value never reaches the database (parallel review, S6).
+    // oversized value never reaches the database.
     String oversized = "{\"value\":\"" + "x".repeat(9_000) + "\"}";
     assertThrows(
         IllegalArgumentException.class,
@@ -395,7 +384,6 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
   public void mergeUiJsonSettingRejectsAValueThatIsNotJson() {
     // The value is stored verbatim inside the blob, so an unparseable one would corrupt every
     // other key in it on the next read.
-    // no DAO stubbing: the value is rejected before the user is even read
     assertThrows(
         IllegalArgumentException.class,
         () -> userManager.mergeUiJsonSetting("GALLERY_SORT_BY", "not json", "jbloggs"));

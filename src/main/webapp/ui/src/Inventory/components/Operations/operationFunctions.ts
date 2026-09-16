@@ -16,7 +16,7 @@
 export type OperationFunctionArgs = Record<string, string | number | undefined>;
 
 export type OperationFunction = {
-  /** The argument names this function reads; config must bind exactly these. */
+  /** config must bind exactly these. */
   params: ReadonlyArray<string>;
   fn: (args: OperationFunctionArgs) => string | number;
 };
@@ -40,8 +40,7 @@ export const operationFunctions = {
     },
   },
   /**
-   * Today's date in the user's local timezone as an ISO calendar date (YYYY-MM-DD). Takes no
-   * arguments. Destroy writes it into the origin's "disposed" field. Built from local date parts (not
+   * Destroy writes it into the origin's "disposed" field. Built from local date parts (not
    * toISOString, which is UTC) so it is the user's local "today" even near midnight.
    */
   today: {

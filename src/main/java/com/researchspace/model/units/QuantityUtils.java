@@ -216,8 +216,8 @@ public class QuantityUtils {
    * sample's displayed total is better as 4.017 g than as 4017.089 mg, and rounding the last 0.089
    * mg off a figure recomputed from the rows it is displaying costs nothing. A remainder is STOCK:
    * rounding it loses material, and taking 2.5 mg from a 5 g origin was refused outright rather
-   * than stored as 4997.5 mg (review 2026-09-14, Q1a). So this one steps down the ladder until the
-   * value fits and the sum does not.
+   * than stored as 4997.5 mg. So this one steps down the ladder until the value fits and the sum
+   * does not.
    *
    * @param from the quantity being drawn down
    * @param amountTaken the amount to remove, in any commensurate unit
@@ -265,8 +265,7 @@ public class QuantityUtils {
    *
    * <p>The value is carried across as a {@link BigDecimal} whenever the arithmetic produced one,
    * rather than through {@code doubleValue()}. A double cannot represent every terminating decimal,
-   * so that round trip could introduce error before {@link QuantityInfo} has even seen the value
-   * (review 2026-09-14, Q1d).
+   * so that round trip could introduce error before {@link QuantityInfo} has even seen the value.
    */
   private QuantityInfo asQuantityInfo(Quantity<?> result) {
     Quantity<?> inBestUnit = convertToMoreUsefulUnit(result);
@@ -305,10 +304,8 @@ public class QuantityUtils {
     while (!QuantityInfo.canStoreWithoutRounding(value)) {
       RSUnitDef smaller = RSUnitDef.getUnitSmallerThan(unit);
       if (smaller == null) {
-        // Nothing on the ladder holds it. Hand back the value AS IT AROSE, so QuantityInfo rounds
-        // it exactly as before: a part-converted value under the original unit's label would be
-        // wrong by a factor of a thousand per rung descended. Relabelling an unrepresentable amount
-        // buys nothing either, and rejecting it is the caller's job.
+        // a part-converted value under the original unit's label would be
+        // wrong by a factor of a thousand per rung descended.
         return QuantityInfo.of(originalValue, originalUnit);
       }
       value = value.multiply(exactUnitFactor(unit, smaller));

@@ -68,7 +68,7 @@ public class ApiSampleWithoutSubSamples extends ApiSampleInfo {
   protected List<ApiInventoryEntityField> fields = new ArrayList<>();
 
   // Null list elements ("extraFields": [null]) would 500 in the apply loops; element-level
-  // @NotNull turns each into a clean 400 at binding (security review, finding 6).
+  // @NotNull turns each into a clean 400 at binding.
   @JsonProperty("extraFields")
   protected List<@NotNull ApiExtraField> extraFields = new ArrayList<>();
 

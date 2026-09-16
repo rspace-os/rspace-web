@@ -22,14 +22,6 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
 
-/**
- * The backend's registry of Inventory operation definitions, parsed once at startup from the single
- * authoritative {@code operations_config.json} on the classpath (DevDocs/adr/0007; the frontend has
- * no copy and fetches GET /operations/config instead). Construction fails fast on a missing or
- * unparseable file so a bad build cannot boot with an unvalidated public endpoint. Stage 2
- * (DevDocs/adr/0007) replaces this source with user-editable definitions without changing
- * consumers.
- */
 @Component
 public class InventoryOperationConfigRegistry {
 
@@ -118,11 +110,10 @@ public class InventoryOperationConfigRegistry {
     }
 
     InventoryOperationConfig.Effect effect = operation.effect();
-    // A computed value is written into its own slot, NOT into a declared input: the wizard derives
-    // it rather than asking for it (Passage's passageNumber, Destroy's disposedDate). So the names
-    // a
-    // field's contentFrom may resolve to are the inputs PLUS those slots, while the effect's
-    // user-entered sources (nameFrom and friends) must be inputs proper.
+    // A computed value is written into its own slot, NOT into a declared input (Passage's
+    // passageNumber, Destroy's disposedDate). So the names a field's contentFrom may resolve to are
+    // the inputs PLUS those slots, while the effect's user-entered sources (nameFrom and friends)
+    // must be inputs proper.
     Set<String> computedSlots = new LinkedHashSet<>();
     for (InventoryOperationConfig.Computed computed : effect.computed()) {
       if (StringUtils.isBlank(computed.into())) {
@@ -136,8 +127,7 @@ public class InventoryOperationConfigRegistry {
       }
       // Blank-checked before the set lookup: Set.of(...) throws NullPointerException from
       // contains(null), which would abort the whole pass with a bare NPE naming neither the
-      // operation nor the problem - the exact failure this validation exists to replace
-      // (parallel review, C5).
+      // operation nor the problem - the exact failure this validation exists to replace.
       if (StringUtils.isBlank(computed.fn())
           || !InventoryOperationConfig.INTERPRETED_COMPUTED_FUNCTIONS.contains(computed.fn())) {
         problems.add(
@@ -217,7 +207,7 @@ public class InventoryOperationConfigRegistry {
    * shared advice maps to a 422 carrying the exception's raw English message - untranslated text,
    * echoing the client's input, shown in the wizard's alert. Every configured operation already
    * declares {@code min: 1, max: 100}; this makes the endpoint's 400 depend on the config saying so
-   * rather than on it happening to (parallel review).
+   * rather than on it happening to.
    */
   private static List<String> validateCountBounds(
       InventoryOperationConfig operation, InventoryOperationConfig.Effect effect) {
@@ -267,15 +257,14 @@ public class InventoryOperationConfigRegistry {
   }
 
   /**
-   * The full config file verbatim, for the GET /operations/config endpoint: the frontend renders
-   * the wizard from fields (labels, icons, steps) the backend's parsed subset does not bind, so the
-   * endpoint must serve the file itself, not a re-serialisation.
+   * The full config file verbatim, for the GET /operations/config endpoint: the frontend needs
+   * fields (labels, icons, steps) this class's parsed model does not capture, so the endpoint must
+   * serve the file itself, not a re-serialisation of {@link #operationsByKey}.
    */
   public String rawConfigJson() {
     return rawConfigJson;
   }
 
-  /** The definition for the given operation key (exact match), if one is configured. */
   public Optional<InventoryOperationConfig> get(String operationKey) {
     return Optional.ofNullable(operationKey).map(operationsByKey::get);
   }
@@ -286,8 +275,7 @@ public class InventoryOperationConfigRegistry {
    * <p>A TEST SEAM, not live API: nothing in production calls it, and its three callers are the
    * contract tests that assert there is exactly one facade, one golden input set and one registry
    * entry per configured operation. Public rather than package-private only because two of those
-   * tests live in other packages. Do not delete it for want of a production caller (parallel
-   * review, Q9).
+   * tests live in other packages. Do not delete it for want of a production caller.
    */
   public Set<String> keys() {
     return operationsByKey.keySet();

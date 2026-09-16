@@ -55,9 +55,8 @@ class ApiControllerAdviceTest {
   }
 
   /**
-   * The Inventory edit-session lock is a 409, not the 500 an IllegalArgumentException produced: the
-   * caller can retry once the holder is done, and the holder's name is what tells them who to wait
-   * for (RSDEV-1231).
+   * The Inventory edit-session lock maps to 409, and the holder's name is what tells the caller who
+   * to wait for.
    */
   @Test
   void inventoryEditLockHeldMapsTo409NamingTheHolder() {
@@ -76,7 +75,6 @@ class ApiControllerAdviceTest {
     assertEquals("SS123 is currently being edited by Bob Builder.", error.getMessage());
   }
 
-  /** No name on the account, so the username is what the caller is told to wait for. */
   @Test
   void inventoryEditLockHeldFallsBackToTheHoldersUsername() {
     ApiControllerAdvice advice = new ApiControllerAdvice();

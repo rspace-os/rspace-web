@@ -66,7 +66,6 @@ class JsonMessageSourceTest {
 
   @Test
   void passesBigDecimalArgumentsThroughWithoutLocaleFormatting() {
-    // Operation bounds are BigDecimal and interpolated bare: no grouping or comma decimal.
     assertEquals(
         "1000.5",
         SOURCE.getMessage(

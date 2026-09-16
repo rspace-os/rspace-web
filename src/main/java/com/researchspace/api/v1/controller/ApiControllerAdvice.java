@@ -102,10 +102,6 @@ public class ApiControllerAdvice extends RestControllerAdvice {
     return new ResponseEntity<Object>(apiError, new HttpHeaders(), apiError.getStatus());
   }
 
-  /**
-   * Another user's Inventory edit session holds the lock, so this request cannot take it: a
-   * conflict the caller can retry, named so they know who to wait for (RSDEV-1231).
-   */
   @ResponseStatus(HttpStatus.CONFLICT)
   @ExceptionHandler(InventoryEditLockHeldException.class)
   public ResponseEntity<Object> handleInventoryEditLockHeld(

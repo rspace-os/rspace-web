@@ -27,19 +27,18 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 
 /**
- * M1's gate (DevDocs/adr/0007): for each configured operation, the server-side builder must produce
- * exactly the golden request InventoryOperationPostValidatorTest holds - the shape the wizard posts
- * today. Lives in this package to reuse those fixtures verbatim.
+ * For each configured operation, the server-side builder must produce exactly the golden request
+ * {@code InventoryOperationPostValidatorTest} holds. Lives in this package to reuse those fixtures
+ * verbatim.
  *
  * <p>Two comparisons per operation, because each covers the other's blind spot: Lombok equality
- * (ApiExtraField's equals excludes the inherited name, but sees the WRITE_ONLY newFieldRequest) and
- * JSON-tree equality through the API's own mapper (sees every serialized field, including names,
- * but drops WRITE_ONLY ones).
+ * ({@code ApiExtraField}'s equals excludes the inherited name, but sees the WRITE_ONLY
+ * newFieldRequest) and JSON-tree equality through the API's own mapper (sees every serialized
+ * field, including names, but drops WRITE_ONLY ones).
  *
- * <p>The fixture RESOLVER below reproduces the fixtures' synthetic display names ("IsPartOf
+ * <p>The fixture resolver below reproduces the fixtures' synthetic display names ("IsPartOf
  * SS100"), which are not the shipped catalog's. Real name resolution is covered separately by the
- * production-resolver test, and its non-en-US behaviour is untestable while only en-US ships - the
- * deliberate-review hole the plan calls out.
+ * production-resolver test below, and its non-en-US behaviour is untestable while only en-US ships.
  */
 class InventoryOperationRequestBuilderTest {
 
@@ -265,8 +264,7 @@ class InventoryOperationRequestBuilderTest {
 
   @Test
   void collidingPoolLinkNamesAreDisambiguatedByTargetGlobalId() {
-    // Two pooled origins sharing the display name "Aliquot" must not yield two identically named
-    // fields (the backend rejects duplicates trimmed and case-insensitively).
+    // the backend rejects duplicates trimmed and case-insensitively
     ApiInventoryOperationPost built =
         InventoryOperationRequestBuilder.build(
             params("pool")
@@ -306,8 +304,8 @@ class InventoryOperationRequestBuilderTest {
   @Test
   void incrementFallsBackToMatchingTheParentFieldByLocalizedName() {
     // A hand-created "Passage number" field carries no operationFieldKey; it is matched by the
-    // key's resolved name instead (deliberate, see computedValues.ts). The fixture resolver
-    // resolves unknown keys to themselves, so the field is named after the key here.
+    // key's resolved name instead. The fixture resolver resolves unknown keys to themselves, so
+    // the field is named after the key here.
     ApiInventoryOperationPost built =
         InventoryOperationRequestBuilder.build(
             params("passage")
@@ -333,8 +331,6 @@ class InventoryOperationRequestBuilderTest {
 
   @Test
   void theProductionResolverReadsTheSharedCatalogAndFormatsIcuNamedArguments() {
-    // JsonMessageSource loads the same i18next JSON files the wizard uses (copied to the classpath
-    // as i18n/locales, namespace "inventory:"); ICU named-argument formatting mirrors i18next-icu.
     LabelResolver resolver =
         InventoryOperationRequestBuilder.messageSourceResolver(
             new JsonMessageSource(), Locale.forLanguageTag("en-US"));
@@ -353,8 +349,8 @@ class InventoryOperationRequestBuilderTest {
   @Test
   void everyLocaleFallsBackToTheShippedEnUsCatalog() {
     // Only en-US ships, so JsonMessageSource resolves any Accept-Language to the en-US text; the
-    // locale still selects ICU's formatting rules. This is the testable half of the locale
-    // decision (M0, D1); genuine non-English catalogs have no test until one ships.
+    // locale still selects ICU's formatting rules. Genuine non-English catalogs have no test until
+    // one ships.
     LabelResolver resolver =
         InventoryOperationRequestBuilder.messageSourceResolver(
             new JsonMessageSource(), Locale.GERMANY);
@@ -364,13 +360,9 @@ class InventoryOperationRequestBuilderTest {
   }
 
   /**
-   * Every generated field name is persisted in EditInfo.name, varchar(255), and nothing downstream
-   * bounds it: ApiExtraFieldsHelper checks a link field's payload, not its name's length, so an
-   * over-long name fails at the INSERT as a 500 inside the manager's transaction, after the origin
-   * locks. Two inputs compose into names: the process name ("Is Derived From using process: X") and
-   * the origin's own name ("Pooled from: X"), the latter legitimately up to 255 characters already,
-   * and longer still once the uniqueness suffix is appended. The builder must fit what it composes,
-   * suffix included, and keep the names unique the way the backend judges uniqueness.
+   * Generated field names are persisted in EditInfo.name, varchar(255). Covers the two ways a
+   * composed name can exceed it - a long process name, and a long origin name plus its uniqueness
+   * suffix - and that fitted names stay unique across pooled fields.
    */
   @Test
   void generatedFieldNamesFitTheStoredNameColumnAndStayUnique() {

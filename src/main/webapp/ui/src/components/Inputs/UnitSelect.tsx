@@ -37,7 +37,7 @@ function UnitSelect({ disabled, handleChange, value, categories }: UnitSelectArg
           Pinned to <number> so the change event keeps its true domain: every MenuItem below carries
           a numeric unit id, so onChange can only ever emit a number. MUI's own SelectProps types
           `value` as `Value | ""` precisely for the empty-display case, so the unset marker needs no
-          cast (Copilot review, PR #1090).
+          cast.
         */}
         <Select<number>
           disabled={disabled}

@@ -28,8 +28,6 @@ describe("normalizeProcessValues", () => {
 });
 
 describe("processValuesAfterPerform", () => {
-  // The wizard calls this only for a remembered Perform; an unremembered one never reaches it, so
-  // "unticking never deletes" holds by construction (grill Q1).
   it("stores the bundle under the key", () => {
     expect(processValuesAfterPerform({}, "derive dna", bundle)).toEqual({ "derive dna": bundle });
   });
@@ -74,7 +72,7 @@ describe("normalizeProcessValues (amount modes, DevDocs/adr/0007)", () => {
 describe("normalizeProcessValues: the stored template choice", () => {
   // Preferences are persisted JSON that outlives the code that wrote them. An unrecognised mode was
   // cast straight through, and resolveTemplateId then treated it as "fromSample", silently swapping
-  // the user's template choice (Copilot review, PR #1090).
+  // the user's template choice.
   const bundleWith = (template: unknown) => normalizeProcessValues({ values: { count: 1 }, template });
 
   it("falls back to unselected for a mode this version does not know", () => {
