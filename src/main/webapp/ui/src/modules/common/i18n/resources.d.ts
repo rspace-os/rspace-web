@@ -7126,6 +7126,7 @@ export default interface Resources {
           "inputNotStorable": "Supports at most 3 decimal places.",
           "inputRequired": "Required by this operation.",
           "inputTooLong": "This input supports at most {0} characters.",
+          "inputUnknown": "This operation does not declare this input.",
           "inputWrongType": "Not the type this operation expects.",
           "mustEmptyOrigin": "This operation must take the origin's entire remaining quantity.",
           "operationTypeRequired": "An operation type is required.",
