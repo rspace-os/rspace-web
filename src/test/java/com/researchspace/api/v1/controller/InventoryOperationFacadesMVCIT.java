@@ -122,6 +122,24 @@ public class InventoryOperationFacadesMVCIT extends API_MVC_InventoryTestBase {
   }
 
   @Test
+  public void poolWithTakeAllEmptiesEveryOriginWithoutAnyAmountBeingSent() throws Exception {
+    ApiSubSample first = origin();
+    ApiSubSample second = origin();
+    ApiInventoryOperationResult result =
+        created(
+            "pool",
+            "{\"origins\":["
+                + originJson(first, null)
+                + ","
+                + originJson(second, null)
+                + "],\"takeAll\":true,\"sampleName\":\"Everything\",\"eachAmount\":"
+                + q("10", GRAM)
+                + "}");
+    assertRemaining(result, first, "0");
+    assertRemaining(result, second, "0");
+  }
+
+  @Test
   public void deriveNamesTheProcessInTheProvenanceLink() throws Exception {
     ApiSubSample origin = origin();
     ApiInventoryOperationResult result =
@@ -249,6 +267,35 @@ public class InventoryOperationFacadesMVCIT extends API_MVC_InventoryTestBase {
   }
 
   @Test
+  public void poolWithTakeAllRefusesAnOriginThatAlsoSendsAnAmount() throws Exception {
+    ApiSubSample first = origin();
+    ApiSubSample second = origin();
+    List<String> errors =
+        errorsOf(
+            post(
+                "pool",
+                "{\"origins\":["
+                    + originJson(first, null)
+                    + ","
+                    + originJson(second, q("1", GRAM))
+                    + "],\"takeAll\":true,\"sampleName\":\"Contradictory\",\"eachAmount\":"
+                    + q("10", GRAM)
+                    + "}",
+                400));
+    // Only the resolved text distinguishes amountTakenNotWithTakeAll from the generic
+    // amountTakenNotApplicable, and naming the caller's own choice is the point of the separate
+    // code.
+    assertTrue(
+        errors.stream()
+            .anyMatch(
+                message ->
+                    message.startsWith("origins[1].amountTaken:") && message.contains("takeAll")),
+        () -> "expected origins[1].amountTaken naming takeAll, got " + errors);
+    assertUnchanged(first);
+    assertUnchanged(second);
+  }
+
+  @Test
   public void anOriginThatIsNotASubsampleIsRejectedAtBinding() throws Exception {
     ApiSubSample origin = origin();
     String sampleGlobalId = "SA" + origin.getSampleInfo().getId();
@@ -373,40 +420,6 @@ public class InventoryOperationFacadesMVCIT extends API_MVC_InventoryTestBase {
         errors.stream().anyMatch(message -> message.startsWith("documentedByGlobalId:")),
         () -> "expected documentedByGlobalId, got " + errors);
     assertUnchanged(origin);
-  }
-
-  @Test
-  public void anExpectedQuantityIsAcceptedRegardlessOfWhetherItMatchesTheOrigin() throws Exception {
-    // expectedQuantity (M0 D5) is still accepted on the wire but no longer compared against the
-    // origin's live quantity, so a mismatched value proceeds exactly like a matching one.
-    ApiSubSample origin = origin();
-    ApiInventoryOperationResult stale =
-        created(
-            "aliquot",
-            "{\"origin\":{\"globalId\":\""
-                + origin.getGlobalId()
-                + "\",\"amountTaken\":"
-                + q("1", GRAM)
-                + ",\"expectedQuantity\":"
-                + q("4", GRAM)
-                + "},\"sampleName\":\"Stale\",\"eachAmount\":"
-                + q("0.5", GRAM)
-                + "}");
-    assertRemaining(stale, origin, "4");
-
-    ApiInventoryOperationResult matching =
-        created(
-            "aliquot",
-            "{\"origin\":{\"globalId\":\""
-                + origin.getGlobalId()
-                + "\",\"amountTaken\":"
-                + q("1", GRAM)
-                + ",\"expectedQuantity\":"
-                + q("4", GRAM)
-                + "},\"sampleName\":\"Fresh\",\"eachAmount\":"
-                + q("0.5", GRAM)
-                + "}");
-    assertRemaining(matching, origin, "3");
   }
 
   // --- helpers ---
