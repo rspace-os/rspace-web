@@ -148,6 +148,45 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
         creatingInputs("Aliquot of " + origin.getGlobalId(), 1, quantityJson(amount, unitId)));
   }
 
+  /**
+   * An input key the definition does not declare is refused, and nothing happens (RSDEV-1231 F8).
+   *
+   * <p>"Count" is the drift that matters: count is OPTIONAL and declares a default of 1, so before
+   * this rule the misspelling was dropped, the default applied, and a caller who asked for four
+   * aliquots got one with a 201. A misspelled REQUIRED key always failed, because the declared key
+   * was then absent, which is why the silent case needs its own guard.
+   */
+  @Test
+  public void anUndeclaredInputKeyIsRefusedAndTakesNothing() throws Exception {
+    ApiSampleWithFullSubSamples source = createBasicSampleForUser(anyUser);
+    ApiSubSample origin = source.getSubSamples().get(0);
+    Long originId = origin.getId();
+    java.math.BigDecimal originalAmount = origin.getQuantity().getNumericValue();
+    int unitId = origin.getQuantity().getUnitId();
+
+    String drifted =
+        body(
+            "aliquot",
+            originJson(origin, null, quantityJson("0.1", unitId)),
+            "\"sampleName\":\"Drifted\",\"Count\":4,\"eachAmount\":" + quantityJson("0.1", unitId));
+
+    MvcResult result =
+        mockMvc
+            .perform(createBuilderForPostWithJSONBody(apiKey, "/operations", anyUser, drifted))
+            .andExpect(status().isBadRequest())
+            .andReturn();
+
+    List<String> errors = getErrorFromJsonResponseBody(result, ApiError.class).getErrors();
+    assertTrue(
+        errors.stream().anyMatch(error -> error.startsWith("Count:")),
+        () -> "the refusal must name the key the caller sent, got " + errors);
+
+    ApiSubSample reloaded = subSampleApiManager.getApiSubSampleById(originId, anyUser);
+    assertTrue(
+        originalAmount.compareTo(reloaded.getQuantity().getNumericValue()) == 0,
+        "origin quantity must be unchanged when an undeclared input is rejected");
+  }
+
   // --- the edit-session lock the controller holds around Perform (RSDEV-1231 S2/S3) ---
 
   /**
