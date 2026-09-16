@@ -28,13 +28,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.validation.BindException;
 
-/**
- * The operation's template-conformance invariant, tested where it lives. It used to be a private
- * method of {@code InventoryOperationsApiController}, handed to the manager as a callback, so these
- * cases could only be reached by capturing that callback from a controller call (parallel review,
- * L1). They now run the check directly, which is also what a reader of {@code service.inventory}
- * would expect to find.
- */
 class OperationTemplateConformanceValidatorTest {
 
   private final SampleApiManager sampleApiMgr = mock(SampleApiManager.class);
@@ -42,15 +35,9 @@ class OperationTemplateConformanceValidatorTest {
   private OperationTemplateConformanceValidator validator;
 
   /**
-   * The one wire this class has that the compiler cannot see.
-   *
-   * <p>{@code sampleApiPostValidator} is injected as a plain {@link org.springframework.validation
-   * .Validator} by BEAN NAME, deliberately: naming its type would put back the {@code
-   * api.v1.controller} import this class was moved out of the controller package to remove. The
-   * compile-time arrow is gone; the runtime one is not, and it is invisible to the compiler, to IDE
-   * refactoring and to any static layering check. The bean has no explicit name, so the qualifier
-   * matches only through Spring's default naming - rename the class and the context fails to start,
-   * which nothing short of an MVCIT would otherwise catch (parallel review, A8).
+   * {@code sampleApiPostValidator} is injected by bean name, not by type. The bean has no explicit
+   * name, so the qualifier resolves only through Spring's default naming - renaming the class
+   * breaks the wire at context startup with no compile-time warning.
    */
   @Test
   void theQualifierNamingTheControllerValidatorStillResolves() throws Exception {
@@ -112,8 +99,6 @@ class OperationTemplateConformanceValidatorTest {
 
   @Test
   void rejectsATemplateIdThatDoesNotResolveToAReadableTemplate() {
-    // Mirrors POST /samples: a bogus templateId must be a clean 400, not a failure after the
-    // manager has started mutating.
     when(sampleApiMgr.getSampleTemplateByIdWithPopulatedFields(999L, user))
         .thenThrow(new NotFoundException("no template"));
     ApiInventoryOperationPost built = aliquotRequest();
@@ -129,9 +114,7 @@ class OperationTemplateConformanceValidatorTest {
 
   @Test
   void rejectsNewSubSamplesOutsideTheChosenTemplatesCategory() {
-    // The server derives the sample's total from its children, so the template's unit must be
-    // checked against every child the builder produced, not only the aggregate (code review,
-    // finding 5).
+    // The template's unit is checked against every child, not only the sample's aggregate total.
     ApiInventoryOperationPost built = templateBackedAliquot(RSUnitDef.GRAM);
 
     BindException rejection =
@@ -144,9 +127,7 @@ class OperationTemplateConformanceValidatorTest {
 
   @Test
   void acceptsNewSubSamplesInAnotherUnitOfTheTemplatesCategory() {
-    // The template fixes the measurement category, not the exact unit, so microlitre children under
-    // a millilitre template are a legitimate request: the check above must not have tightened into
-    // unit equality (code review, finding 5).
+    // The template fixes the measurement category, not the exact unit.
     ApiInventoryOperationPost built = templateBackedAliquot(RSUnitDef.MICRO_LITRE);
 
     assertDoesNotThrow(() -> validator.validate(built, user));
@@ -154,12 +135,7 @@ class OperationTemplateConformanceValidatorTest {
 
   @Test
   void boundsTheBuiltSampleNameLikeTheSamplesEndpointDoes() {
-    // SamplesApiController.validateCreateSampleInput runs sampleApiPostValidator AND
-    // sampleApiPostFullValidator; this path ran only the second, so the name/description/tag length
-    // rules never applied. EditInfo.name is varchar(255), and nothing between the input validator
-    // (which only checks that a "text" input is a CharSequence) and the entity bounded it, so an
-    // over-long sampleName reached Hibernate inside the transaction, after the origins were
-    // decremented (parallel review).
+    // EditInfo.name is varchar(255).
     ApiInventoryOperationPost built = aliquotRequest();
     built.getNewSample().setName("x".repeat(256));
 
@@ -170,7 +146,6 @@ class OperationTemplateConformanceValidatorTest {
         () -> "expected a newSample.name rejection, got: " + thrown.getFieldErrors());
   }
 
-  /** An Aliquot under a millilitre template, its first child measured in {@code childUnit}. */
   private ApiInventoryOperationPost templateBackedAliquot(RSUnitDef childUnit) {
     SampleTemplate volumeTemplate = new SampleTemplate();
     volumeTemplate.setDefaultUnitId(RSUnitDef.MILLI_LITRE.getId());

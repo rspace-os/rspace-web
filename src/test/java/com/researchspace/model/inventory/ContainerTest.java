@@ -76,12 +76,9 @@ public class ContainerTest {
 
   @Test
   void addsContentToACoordinateNothingHoldsWhenStoredLocationsAreNotContiguous() {
-    // A list container's coordinates are normally 1..n, so "next free" used to be read off the
-    // size of the collection. A concurrent batch create whose transaction rolled back after part
-    // of its rows had been written leaves the persisted rows with a gap, so the count is lower
-    // than the highest coordinate already in use, and size()+1 then resolves to an occupied
-    // location on EVERY subsequent add: the container can never be added to again (live test
-    // 2026-09-13, F1). The next coordinate must come from what is in use, not from how many.
+    // A persisted gap (e.g. from a partial rollback) means the collection's size no longer
+    // matches the highest coordinate in use, so the next coordinate must come from what is
+    // actually in use, not from count()+1.
     Container listContainer = Container.createListContainer(true, true, true);
     listContainer.setId(1L);
     listContainer.addToNewLocation(new SubSample());

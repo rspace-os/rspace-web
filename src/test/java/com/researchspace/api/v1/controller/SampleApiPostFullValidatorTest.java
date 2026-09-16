@@ -72,8 +72,7 @@ public class SampleApiPostFullValidatorTest extends InventoryRecordValidationTes
   @Test
   public void validateSubSampleQuantityUnitsAgainstTemplate() {
     // The sample's total is derived from its subsamples when any are posted, so a comparable
-    // top-level quantity must not stand in front of children in another category (code review,
-    // finding 5). RSDEV-1231 reaches this validator from POST /operations too.
+    // top-level quantity must not stand in front of children in another category.
     SampleTemplate massTemplate = new SampleTemplate();
     massTemplate.setDefaultUnitId(RSUnitDef.GRAM.getId());
 

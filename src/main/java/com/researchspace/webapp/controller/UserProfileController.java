@@ -710,7 +710,7 @@ public class UserProfileController extends BaseController {
       @RequestParam(value = "value") String value,
       // Optional: with a key, only that key of the UI_JSON_SETTINGS object is written, merged
       // server-side. Without one the whole preference value is replaced, which is
-      // what every other preference and every legacy JSP caller means (code review, finding 3).
+      // what every other preference and every legacy JSP caller means.
       @RequestParam(value = "key", required = false) String key,
       Principal principal,
       HttpServletRequest req,
@@ -719,11 +719,10 @@ public class UserProfileController extends BaseController {
     Preference pref = Preference.valueOf(preferenceName);
     // Supplied means keyed, even when blank: treating "" or " " as absent would route the request
     // to setPreference and silently replace the whole JSON blob, bypassing the key validation and
-    // the merge; the merge itself rejects a blank key as a 400 (Copilot review, PR #1090).
+    // the merge; the merge itself rejects a blank key as a 400.
     boolean keyed = key != null;
     if (keyed && !Preference.UI_JSON_SETTINGS.equals(pref)) {
-      // 400 like the malformed-key/value branch below: without the status a client would treat
-      // this rejected update as successful (Copilot review, PR #1090).
+      // Without an explicit status here the client would see this rejection as a 200.
       response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
       return new AjaxReturnObject<>(
           null,
@@ -739,7 +738,7 @@ public class UserProfileController extends BaseController {
               : userManager.setPreference(pref, "" + value, user.getUsername());
     } catch (IllegalArgumentException rejected) {
       // A value that is not JSON or a malformed key is the caller's mistake, not a server fault:
-      // the generic handler would turn it into a 500 (RSDEV-1231 live test, row P5).
+      // the generic handler would turn it into a 500.
       response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
       return new AjaxReturnObject<>(null, ErrorList.of(rejected.getMessage()));
     }

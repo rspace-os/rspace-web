@@ -193,8 +193,6 @@ public class StoichiometryInventoryLinkManagerImplTest {
 
   @Test
   public void eachSubmittedLinkIdIsResolvedExactlyOnce() {
-    // A repeated id must be loaded once, whatever the submitted cardinality: the deduction loop
-    // dedupes the submitted ids before resolving any of them (RSDEV-1319).
     StoichiometryInventoryLink original = new StoichiometryInventoryLink();
     original.setId(321L);
     long stoichiometryId = 55L;
@@ -282,7 +280,6 @@ public class StoichiometryInventoryLinkManagerImplTest {
       Long linkId, Long subSampleId, StoichiometryMolecule mol) {
     SubSample sub = new SubSample();
     sub.setId(subSampleId);
-    // parent sample id derived from the subsample id (800 -> 8000)
     Sample parent = new Sample();
     parent.setId(subSampleId * 10);
     sub.setSample(parent);

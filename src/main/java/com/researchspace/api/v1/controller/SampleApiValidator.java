@@ -42,14 +42,11 @@ abstract class SampleApiValidator extends InventoryRecordValidator {
   }
 
   /**
-   * The temperature as a {@link QuantityInfo}, or null when it is absent or malformed (in which
-   * case the reason is recorded against {@code field}).
-   *
-   * <p>The unit is resolved here, so an absent or unknown unit id has to be rejected rather than
-   * left to throw out of {@link RSUnitDef#getUnitById} as an unchecked exception: a temperature
-   * object of {@code {}} was surfacing as a 500 instead of a field-scoped 400. The magnitude is
-   * checked for the same reason the amounts are: the column is DECIMAL(19,3), so a value outside it
-   * would be stored as a different temperature, or overflow (Copilot review, PR #1090).
+   * The unit is resolved here, so an absent or unknown unit id has to be rejected rather than left
+   * to throw out of {@link RSUnitDef#getUnitById} as an unchecked exception: a temperature object
+   * of {@code {}} was surfacing as a 500 instead of a field-scoped 400. The magnitude is checked
+   * because the column is DECIMAL(19,3): a value outside it would be stored as a different
+   * temperature, or overflow.
    */
   private QuantityInfo validatedTemperature(
       com.researchspace.api.v1.model.ApiQuantityInfo temperature, String field, Errors errors) {
@@ -64,7 +61,7 @@ abstract class SampleApiValidator extends InventoryRecordValidator {
     }
     // A missing number stays unresolved: whether a temperature is required at all is each caller's
     // own rule, but the min/max comparison below dereferences the number, so returning the value
-    // here turned a malformed request into a 500 (Copilot review, PR #1090).
+    // here turned a malformed request into a 500.
     if (temperature.getNumericValue() == null) {
       return null;
     }
@@ -82,7 +79,7 @@ abstract class SampleApiValidator extends InventoryRecordValidator {
       ApiSubSampleInfo sub = apiSamplePost.get().get(i);
       // A null element ("subSamples": [null]) is already a bean-validation error at binding, but
       // the controllers accept a BindingResult so this validator still runs; dereferencing the
-      // element would turn that reported 400 into a 500 (Copilot review, PR #1090).
+      // element would turn that reported 400 into a 500.
       if (sub != null && sub.getQuantity() != null) {
         errors.pushNestedPath("subSamples[" + i + "]");
         validateInventoryRecordQuantity(sub, errors);

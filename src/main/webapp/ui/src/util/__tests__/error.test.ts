@@ -93,9 +93,6 @@ describe("getErrorMessage", () => {
 });
 
 describe("getApiErrorDetail", () => {
-  // A field-scoped 400 from the Inventory API puts "Errors detected: 1" in `message` and the actual
-  // reason in `errors[0]`, prefixed by the path it applies to. Showing only `message` told the user
-  // nothing they could act on.
   test("returns the first error, with its path prefix stripped", () => {
     const error = {
       response: {
@@ -131,8 +128,8 @@ describe("getApiErrorDetail", () => {
 
   test("names which origin failed, so a Pool rejection is actionable", () => {
     // Stripping the whole path left "Cannot take more than the subsample holds" with no indication
-    // which of five pooled origins was at fault (parallel review, FE11). Reported 1-based: the user
-    // reads it, nothing sends it back.
+    // which of five pooled origins was at fault. Reported 1-based: the user reads it, nothing sends
+    // it back.
     const error = {
       response: {
         data: {
@@ -141,8 +138,6 @@ describe("getApiErrorDetail", () => {
         },
       },
     };
-    // The wording is the caller's: this module has no `t`, and appending English to a reason the
-    // server already localized is exactly the bug (parallel review, A4).
     expect(getApiErrorDetail(error, "fallback", (reason, index) => `${reason} [#${index}]`)).toBe(
       "Cannot take more from an origin than it currently holds [#4]",
     );
@@ -159,9 +154,6 @@ describe("getApiErrorDetail", () => {
   });
 
   test("falls back to the message when the only error is blank", () => {
-    // ApiError wraps its fourth constructor argument in a singleton list, so every response that is
-    // not a BindException carries `errors: [""]`. That covers the 409, 404 and 403 cases this very
-    // change cares about, and returning "" would show a titled alert with no message at all.
     const error = { response: { data: { message: "Edit conflict", errors: [""] } } };
     expect(getApiErrorDetail(error, "fallback")).toBe("Edit conflict");
   });

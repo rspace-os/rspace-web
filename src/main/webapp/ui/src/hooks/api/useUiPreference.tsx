@@ -22,7 +22,7 @@ export const PREFERENCES: { [pref: string]: symbol } = {
   INVENTORY_HIDDEN_RIGHT_PANEL: Symbol.for("INVENTORY_HIDDEN_RIGHT_PANEL"),
   // Legacy: the single per-process "remember" bundle for every operation type combined into one
   // ever-growing collection, which is what let a heavy user of "Remember" eventually exceed the
-  // per-key size cap for good (RSDEV-1231, Codex review, PR #1090). Read-only fallback for bundles
+  // per-key size cap for good (RSDEV-1231). Read-only fallback for bundles
   // saved before the per-operation keys below existed; nothing writes it anymore.
   INVENTORY_OPERATION_PROCESS_VALUES: Symbol.for("INVENTORY_OPERATION_PROCESS_VALUES"),
   // One "remember" bundle collection per operation type, so one operation's heavy use cannot crowd
@@ -46,7 +46,7 @@ type UiPreferencesContextType = {
   /*
    * One write chain per key, so two writes of the same key from one page land in the order they
    * were made. Losing a key to an overlapping writer is no longer possible: each write sends only
-   * its own key and the server merges it (code review, finding 3), which is also why the chains are
+   * its own key and the server merges it, which is also why the chains are
    * per key rather than one shared one - a single chain would let one stalled request hold up every
    * other preference for the rest of the session, with nothing left to gain from the ordering.
    */
@@ -113,8 +113,8 @@ export function UiPreferences({ children }: { children: React.ReactNode }): Reac
  * the way `useUiPreference` does. For the rare case that needs a DIFFERENT preference's current
  * value than whatever a `useUiPreference` call in the same component happens to be bound to this
  * render - e.g. computing the bundle for an operation the user is in the middle of selecting, whose
- * key `useUiPreference` will only start reading on the NEXT render (RSDEV-1231, Codex review, PR
- * #1090). Pair with `useRawUiPreferences` for the context value to pass in.
+ * key `useUiPreference` will only start reading on the NEXT render (RSDEV-1231).
+ * Pair with `useRawUiPreferences` for the context value to pass in.
  */
 export function readUiPreference<T>(
   uiPreferences: UiPreferencesContextType["uiPreferences"],
@@ -155,8 +155,8 @@ export default function useUiPreference<T>(
   const { uiPreferences, setUiPreferences, pendingWrites } = React.useContext(UiPreferencesContext);
   // Not getRootStore().uiStore: this hook also serves Gallery and Sysadmin, which mount the generic
   // Alerts component, not Inventory's adapter - the only place that wires UiStore.addAlert to
-  // anything real. Elsewhere it is a silent no-op, so a save failure never reached the user
-  // (Codex review, PR #1090). AlertContext's default value is itself a safe no-op, so this is never
+  // anything real. Elsewhere it is a silent no-op, so a save failure never reached the user.
+  // AlertContext's default value is itself a safe no-op, so this is never
   // undefined, unlike RootStore, which is not always bootstrapped outside Inventory.
   const { addAlert } = React.useContext(AlertContext);
   const { t } = useTranslation("common");
@@ -172,8 +172,8 @@ export default function useUiPreference<T>(
     v,
     // Takes a VALUE, not React's SetStateAction. It was typed as a full setter but treated
     // `newValue` as a value everywhere below, so `setPref(prev => prev + 1)` stored the function
-    // object in the context and JSON.stringify'd it into the POST body, persisting undefined
-    // (parallel review, FE12). Every caller passes a value; narrowing the type makes the updater
+    // object in the context and JSON.stringify'd it into the POST body, persisting undefined.
+    // Every caller passes a value; narrowing the type makes the updater
     // form a compile error rather than a silent data loss.
     (newValue: T) => {
       setUiPreferences((old: { [k in keyof typeof PREFERENCES]: unknown } | null) => {
@@ -193,10 +193,9 @@ export default function useUiPreference<T>(
       const write = previous.then(async () => {
         const formData = new FormData();
         formData.append("preference", "UI_JSON_SETTINGS");
-        // Only this key is sent; the server merges it into the stored object in one transaction.
-        // Reading the whole object here first and posting it back was the collision: two writers
-        // that overlapped both merged into the same snapshot and the later one dropped the
-        // other's key (code review, finding 3).
+        // Only this key is sent; the server merges it into the stored object. Posting the whole
+        // object instead would let two overlapping writers both merge into the same snapshot,
+        // silently dropping one of their keys.
         formData.append("key", key);
         formData.append(
           "value",
@@ -210,10 +209,7 @@ export default function useUiPreference<T>(
         await axios.post<unknown>("/userform/ajax/preference", formData);
       });
       // Caught so a failure cannot block this key's chain (callers never await it), but reported
-      // two ways: logged for a developer, and alerted for the user. A silently dropped preference
-      // save used to be invisible to both - the session kept working off the optimistic local
-      // state above, so nothing looked wrong until a later login found the save had never landed
-      // (RSDEV-1231, Codex review, PR #1090).
+      // two ways: logged for a developer, and alerted for the user.
       pendingWrites.current.set(
         key,
         write.catch((e) => {
@@ -221,7 +217,7 @@ export default function useUiPreference<T>(
           // Never let raising the alert itself throw past this point: a throw here would make
           // THIS handler's own returned promise reject, and that rejection becomes `previous` for
           // this key's next write - which then skips its POST entirely, chained onto a promise
-          // that already rejected, failing silently forever (Codex review, PR #1090).
+          // that already rejected, failing silently forever.
           try {
             addAlert(
               mkAlert({

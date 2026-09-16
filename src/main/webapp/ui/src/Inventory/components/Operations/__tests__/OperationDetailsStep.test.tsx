@@ -64,8 +64,6 @@ const values: OperationInputs = {
   eachAmount: { numericValue: 5, unitId: 3 },
   amountTaken: { numericValue: 10, unitId: 3 },
 };
-
-// A Derive-shaped operation that also declares a process-name field (a details-section input).
 const processOperation = {
   ...operation,
   inputs: [
@@ -74,8 +72,6 @@ const processOperation = {
   ],
   effect: { ...operation.effect, processNameFrom: "processName" },
 } as unknown as InventoryOperation;
-
-// A Derive-shaped operation with both a process-name and a derived sample-name field.
 const nameOperation = {
   ...operation,
   inputs: [
@@ -143,14 +139,8 @@ describe("OperationDetailsStep", () => {
   });
 
   it("bounds the count input to whole numbers within the definition's own min and max", () => {
-    // The count decides how many subsamples the operation creates; the backend rejects a
-    // fractional count and caps it (DevDocs/adr/0007), so the input must not invite a value the
-    // request builder would then throw on (code review, finding 12).
-    //
-    // Driven by the REAL aliquot definition, not a hand-written fixture: the cap used to be a
-    // frontend constant, so lowering it server-side left the wizard offering counts the endpoint
-    // rejects, with the 400 arriving only at Perform (parallel review, FE9). The fixture this test
-    // used carried no max at all, which is how the drift went unnoticed.
+    // Driven by the real aliquot definition, not a hand-written fixture, so a future drift between
+    // the config's max and this cap would fail here.
     const aliquot = operations.find((o) => o.key === "aliquot");
     if (!aliquot) throw new Error("the aliquot definition must exist in operations_config.json");
     const countInput = aliquot.inputs.find((i) => i.key === "count");
@@ -256,7 +246,6 @@ describe("OperationDetailsStep", () => {
     );
     const message = screen.getByText(/originAmountZero/);
     expect(message).toBeInTheDocument();
-    // shown as a prominent MUI error alert (red background), not easy-to-miss plain text
     expect(message.closest(".MuiAlert-colorError")).not.toBeNull();
   });
 
@@ -283,7 +272,6 @@ describe("OperationDetailsStep", () => {
     );
     expect(screen.getByText(/storageTempMax/)).toBeInTheDocument();
 
-    // at or below the maximum, no error
     rerender(
       <OperationDetailsStep
         operation={cryoOp}
@@ -311,7 +299,6 @@ describe("OperationDetailsStep", () => {
     );
     expect(screen.getByText(/storageTempMin/)).toBeInTheDocument();
 
-    // at or above the minimum, no error
     rerender(
       <OperationDetailsStep
         operation={reviveOp}
@@ -346,7 +333,6 @@ describe("OperationDetailsStep", () => {
   });
 });
 
-// The "amount to take" modes for a multi-origin operation (DevDocs/adr/0007).
 describe("OperationDetailsStep (amount modes)", () => {
   const poolOp = {
     ...operation,
@@ -407,10 +393,6 @@ describe("OperationDetailsStep (amount modes)", () => {
   });
 
   it("flags a per-origin amount that exceeds THAT origin, naming only the offending field", async () => {
-    // The per-origin over-removal check and its wiring into error/helperText had no test: the
-    // predicate was unit-tested in isolation, but nothing asserted the message reaches the field,
-    // and the callback was stubbed as () => undefined everywhere so the field's own change path was
-    // unexercised too (parallel review, Q15).
     renderPool({
       amountMode: "perSubsample",
       // Vial A holds 5, Vial B holds 8: only A is over-drawn.
@@ -439,7 +421,7 @@ describe("OperationDetailsStep (amount modes)", () => {
   it("flags any positive per-origin amount for an origin whose quantity was never set", () => {
     // A subsample whose quantity is null holds nothing (getValue reads null as 0), so 1 ml from it
     // is over-removal; the unit select still gets a category (the default ml unit) so the field
-    // renders rather than crashing. The full origin beside it stays clean.
+    // renders rather than crashing.
     const unset = { globalId: "SS9", name: "Vial Z", quantity: null } as unknown as SubSampleModel;
     renderPool({
       amountMode: "perSubsample",
@@ -452,8 +434,6 @@ describe("OperationDetailsStep (amount modes)", () => {
   });
 });
 
-// The integer field's error state and helper text (FE10) had no test: only its min/max/step
-// attributes were asserted. The temperature field's unit had none either.
 describe("OperationDetailsStep count errors and temperature unit", () => {
   const aliquot = operations.find((o) => o.key === "aliquot");
   if (!aliquot) throw new Error("the aliquot definition must exist in operations_config.json");
@@ -515,15 +495,13 @@ describe("OperationDetailsStep count errors and temperature unit", () => {
       />,
     );
     fireEvent.change(screen.getByRole("textbox", { name: /fields\.storageTemp/i }), { target: { value: "-20" } });
-    // the origin is a millilitre subsample, yet the temperature's unit is Celsius, not the origin's
     expect(onChange).toHaveBeenCalledWith({ storageTemp: { numericValue: -20, unitId: CELSIUS_UNIT } });
   });
 });
 
 describe("OperationDetailsStep inline field errors", () => {
   // Each predicate below is unit-tested in operationValidation.test.ts; what was untested is that
-  // its outcome reaches the FIELD, and that the four-way helper-text precedence picks the right one
-  // (parallel review, Q15).
+  // its outcome reaches the FIELD, and that the four-way helper-text precedence picks the right one.
   const renderWith = (props: Partial<React.ComponentProps<typeof OperationDetailsStep>>) =>
     render(
       <OperationDetailsStep
@@ -537,7 +515,6 @@ describe("OperationDetailsStep inline field errors", () => {
     );
 
   it("flags an amount taken that exceeds what the origin holds, on that field", () => {
-    // the origin holds 10; take 11
     renderWith({ values: { ...values, amountTaken: { numericValue: 11, unitId: 3 } } });
     expect(screen.getByRole("spinbutton", { name: /fields\.amountTaken/i })).toBeInvalid();
     expect(screen.getByText(/amountTakenExceedsOrigin/)).toBeInTheDocument();
