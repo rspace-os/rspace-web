@@ -61,10 +61,44 @@ class OperationQuantityRulesTest {
   }
 
   @Test
+  void aCreatedAmountObjectSentWithoutANumberIsRejected() {
+    // @NotNull asserts the object is present, not that it carries a number, so {unitId: 3} alone
+    // reaches here; unchecked it becomes subsamples holding null while the origin is decremented.
+    OperationQuantityRules.createdAmount(
+        new ApiQuantityInfo(null, RSUnitDef.MILLI_LITRE.getId()), "eachAmount", errors);
+
+    assertEquals("errors.inventory.operation.createdAmountNotPositive", codeOn("eachAmount"));
+  }
+
+  @Test
   void aTemperatureMustCarryATemperatureUnit() {
     OperationQuantityRules.temperature(millilitres("4"), "storageTemp", null, null, errors);
 
     assertEquals("errors.inventory.temperature.invalidUnit", codeOn("storageTemp"));
+  }
+
+  @Test
+  void aTemperatureObjectSentWithoutANumberIsRejected() {
+    // Cryopreserve's @NotNull only asserts storageTemp is present. A number-less one passed every
+    // rule here and every rule on the sample, then failed while the entity was persisted.
+    OperationQuantityRules.temperature(
+        new ApiQuantityInfo(null, RSUnitDef.CELSIUS.getId()),
+        "storageTemp",
+        null,
+        new BigDecimal("-18"),
+        errors);
+
+    assertEquals("errors.inventory.operation.inputRequired", codeOn("storageTemp"));
+  }
+
+  @Test
+  void aTemperatureBelowAbsoluteZeroIsRejectedEvenInsideTheOperationsBounds() {
+    // Cryopreserve sets no lower bound, so -300 C sits under its -18 C ceiling and passed; the
+    // sample's own @ValidTemperature would have caught it, but only once the entity was persisted.
+    OperationQuantityRules.temperature(
+        celsius("-300"), "storageTemp", null, new BigDecimal("-18"), errors);
+
+    assertEquals("errors.inventory.temperature.belowAbsoluteZero", codeOn("storageTemp"));
   }
 
   @Test

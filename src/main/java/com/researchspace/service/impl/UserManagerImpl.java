@@ -38,6 +38,7 @@ import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserExistsException;
 import com.researchspace.service.UserManager;
 import com.researchspace.session.SessionAttributeUtils;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -355,6 +356,16 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
   private static final int MAX_UI_JSON_SETTING_VALUE_CHARS = 6500;
 
   /**
+   * Aggregate ceiling for the whole merged object, in BYTES, matching {@code UserPreference.value}
+   * (MySQL TEXT, utf8mb4). Two gaps make this the only check the INSERT agrees with: the per-key
+   * ceiling above bounds one value, while eighteen of them each within it still add up past the
+   * column; and {@link com.researchspace.model.preference.SettingsType#validate} counts Java
+   * characters, while the column is bounded in bytes, so a blob of multi-byte characters passes it
+   * and then fails during persistence.
+   */
+  private static final int MAX_UI_JSON_SETTINGS_BYTES = 65535;
+
+  /**
    * The keys a UI settings object may hold: exactly the names the client declares in its
    * PREFERENCES map (src/main/webapp/ui/src/hooks/api/useUiPreference.tsx). Adding a preference
    * there means adding it here.
@@ -416,8 +427,14 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
         uiJsonSettingsFrom(
             user.getValueForPreference(Preference.UI_JSON_SETTINGS).getValue(), user.getUsername());
     settings.set(key, newValue);
-    UserPreference merged =
-        new UserPreference(Preference.UI_JSON_SETTINGS, user, settings.toString());
+    String serialized = settings.toString();
+    if (serialized.getBytes(StandardCharsets.UTF_8).length > MAX_UI_JSON_SETTINGS_BYTES) {
+      throw new IllegalArgumentException(
+          messages.getMessage(
+              "errors.preference.settingsTooLarge",
+              new Object[] {key, MAX_UI_JSON_SETTINGS_BYTES}));
+    }
+    UserPreference merged = new UserPreference(Preference.UI_JSON_SETTINGS, user, serialized);
     user.setPreference(merged);
     // Deliberately not delegating to setPreference: a self-invocation bypasses the Spring cache
     // proxy, so the annotations above would never run.
