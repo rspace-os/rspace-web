@@ -3,32 +3,26 @@
 A framework for Inventory "operations": a user picks a subsample, a wizard gathers
 input, and the system atomically creates one new Sample that parents N new
 subsamples, links the new records back to the origin, and adjusts the origin's
-quantity. Derive, Cryopreserve, Aliquot, and Revive ship as pure config; **Passage**
-adds an **operation function** (registry code) plus a backend relaxation; **Pool** is
-multi-origin (2+ subsamples → one pooled sample, `HasPart` links back to each); **Destroy**
-is **terminal** - it creates no sample, empties the origin, and stamps a disposal date on
-the origin itself (DevDocs/adr/0007). Passage is the worked example that the "no Java" promise holds
-only within the vocabulary of config primitives and registered functions. See the schema
-table below and, for the full reasoning, `.claude/remaining-operations-plan.md` ("The limits
-of config-only").
+quantity. Aliquot, Passage, Pool, Derive, Cryopreserve, Revive and Destroy ship.
+**Pool** is multi-origin (2+ subsamples into one pooled sample, `HasPart` links back
+to each) and can pour every origin out completely; **Destroy** is **terminal**, it
+creates no sample, empties the origin, and stamps a disposal date on the origin
+itself (DevDocs/adr/0007).
 
-The design rationale is in the single consolidated ADR `DevDocs/adr/0007`. The
+The design rationale is in the single consolidated ADR `DevDocs/adr/0007`, whose
+2026-09-16 amendment records why the operations stopped being configuration. The
 shared vocabulary is in the top-level `CONTEXT.md`.
 
 ## The one thing to know
 
-**Adding a new operation is a frontend-config change - *if* its every effect is already
-a primitive in the config vocabulary.** For such operations you add an entry to
-`operations_config.json` and some i18n strings; the backend endpoint and wizard UI are
-generic and never change. This holds for Derive, Cryopreserve, Aliquot, and Revive.
+**An operation is a Java class, and the wizard's copy of it is a TypeScript
+constant.** Both are hand-written and hand-kept in step; nothing pins them to each
+other, so a drift between them shows up as a 400 at Perform.
 
-It does **not** hold when an operation needs an effect the vocabulary cannot express -
-then you add an operation function (or change the backend), i.e. you write a small amount
-of code. Passage was the first such case (a `computed` value backed by the `increment`
-operation function, plus a backend change to allow a linked-but-not-decremented origin).
-Before assuming a new operation is config-only, decompose its effects and check each against
-the schema table below; if one is missing, it is a (usually small) code story. The full
-reasoning is in `.claude/remaining-operations-plan.md` ("The limits of config-only").
+There is no configuration file, no definition registry and no interpreter. The
+backend class decides what the operation takes from its origins and what sample it
+builds; the frontend entry decides what the wizard asks for. Adding an operation
+means writing both, plus a typed request body and an endpoint.
 
 ## Enabling
 
@@ -45,142 +39,122 @@ to turn the property on first, as the operation MVCITs do in their `setup()`.
 ## How it fits together
 
 ```
-operations_config.json (backend) ──► GET /operations/config ──► operationsConfig.ts
-                                                                (valibot-validated)
-                                                                          │
-                                                                          ▼
-                                                                OperationWizard (UI)
-                                                                          │  collects inputs
-                                                                          ▼
-                                        buildOperationRequest.ts ──► OperationInputsRequest
-                                                                          │  POST {operationType, origins,
-                                                                          ▼        inputs, templateId,
-                                    POST /api/inventory/v1/operations     documentedByGlobalId}
-                                    InventoryOperationsApiController ──► InventoryOperationManager
-                                       validate                           @Transactional: validate inputs,
-                                                                          build the sample from the
-                                                                          definition, create Sample +
-                                                                          N subsamples + links, set
-                                                                          origin quantity
+operationsConfig.ts (a hand-typed constant)
+          │
+          ▼
+OperationWizard (UI) ──collects the operation's values──► buildFacadeRequest.ts
+                                                                  │
+                                                                  ▼
+                                    POST /api/inventory/v1/operations/<key>
+                                    InventoryOperationsApiController
+                                      shape rules, edit lock
+                                                  │
+                                                  ▼
+                                    InventoryOperationManager
+                                      @Transactional: snapshot the origins,
+                                      op.validate, op.build, live-state rules,
+                                      create Sample + N subsamples + links,
+                                      decrement each origin
 ```
 
 Files:
 
-- Config: `src/main/resources/inventory/operations_config.json` — the single
-  authoritative operation definitions (the file you edit; DevDocs/adr/0007). The
-  backend validates against it and serves it verbatim from
-  `GET /api/inventory/v1/operations/config`.
-- Frontend logic: `src/main/webapp/ui/src/Inventory/components/Operations/`
-  - `operationsConfig.ts` — valibot schema (the frontend's source of truth for
-    the shape) + `parseOperationsConfig`, applied to the fetched config. The schema
-    must declare every field the wizard needs: valibot strips what it does not
-    declare, which is how `max` was silently dropped and the count cap ended up
-    hand-copied in the frontend. Value bounds come from the definition, never from a
-    constant here. The one exception is `MAX_ORIGINS`, which has no home in a file
-    that is a list of definitions; it is pinned to the server's constant by
-    `InventoryOperationPostValidatorTest`.
-  - `buildOperationRequest.ts` — pure. `buildOperationInputsRequest`: (operation +
-    collected values + origins) → the posted body: the declared inputs by key, each
-    origin's amount taken, `templateId` and `documentedByGlobalId`. The server builds
-    the sample from the definition (`InventoryOperationRequestBuilder`), including the
-    computed values. `buildOperationRequest` is the wizard's model of that build (the
-    former client-assembled body) and is only used to check the confirmation preview
-    against it; the model puts provenance and documentation links, and text fields
-    (e.g. Cryomedium), on the new sample only, **never on the created subsamples**,
-    as the server does.
-  - `types.ts` — request/response types mirroring the backend DTO.
+- Backend, one class per operation, in
+  `com.researchspace.service.inventory.operations`:
+  - `InventoryOperation<R>` — what an operation is: its key, whether it needs
+    several origins, whether it takes a chosen amount or empties them, the value
+    rules its request body cannot state, and the request it builds.
+  - `CreatingOperation<R>` — the six that create a sample. A subclass supplies its
+    provenance relation and, if it has them, its text fields or storage temperature.
+  - `AliquotOperation`, `PassageOperation`, `PoolOperation`, `DeriveOperation`,
+    `CryopreserveOperation`, `ReviveOperation`, `DestroyOperation`.
+  - `OperationQuantityRules` — every rule that needs `RSUnitDef` to say what a unit id
+    means: a real amount or temperature unit, storable at 3dp, positive, inside the
+    operation's Celsius bounds, and a `count x eachAmount` total the column can hold.
+  - `OperationOriginRules` — the origin list and the documentation target: no
+    duplicates, an amount exactly where the operation takes one, a documentable record
+    kind, and a well-formed subsample global id.
+  - `OperationFieldNames` — builds the generated fields and keeps their names unique
+    and inside the column. `LabelResolver`, `OriginState` — what an operation is given.
+- Backend, shared: `InventoryOperationsApiController` (shape rules, the edit-session
+  lock, renaming the core's error paths back to the caller's fields),
+  `InventoryOperationManager(+Impl)` (the transactional core), the request bodies
+  `ApiInventoryOperationRequests`, and the internal carrier
+  `ApiInventoryOperationPost` / `ApiInventoryOperationOriginUpdate`.
+- Frontend: `src/main/webapp/ui/src/Inventory/components/Operations/`
+  - `operationsConfig.ts` — the `operations` constant, one entry per Java class, plus
+    the helpers the wizard derives from it. Label and field-name keys are typed as the
+    `inventory:` catalog's own key union, so a mistyped key fails at compile time.
+    `MAX_ORIGINS` repeats the Pool body's own ceiling.
+  - `buildFacadeRequest.ts` — pure: (operation + collected values + origins) into the
+    body that operation's endpoint takes. `withUniqueFieldNames` lives here too, for
+    the confirmation preview; it is the same rule as `OperationFieldNames`, pinned to
+    it by `FieldNameUniquenessParityTest` over the shared cases in
+    `src/test/resources/inventory/fieldNameUniquenessCases.json`.
+  - `computedValues.ts`, `operationFunctions.ts` — the preview's model of the values
+    the server computes. They render the confirmation card; they never build a request.
+  - `types.ts` — the wizard's own types, mirroring the request bodies.
   - the wizard components (`OperationWizard`, `OperationPicker`,
     `OperationDetailsStep`, `DocumentationStep`, `OperationConfirmation`,
     `ProcessAction`).
-- Backend (generic, do not edit per operation):
-  `com.researchspace.api.v1.controller.InventoryOperationsApiController`,
-  `InventoryOperationPostValidator` (the request's structure: origins, their amounts,
-  the documentation target), and in `com.researchspace.service.inventory`:
-  `InventoryOperationInputValidator` (the typed inputs against the definition),
-  `InventoryOperationRequestBuilder` (builds the sample and its fields from the
-  definition), `InventoryOperationManager(+Impl)` (the transactional core), DTOs
-  `ApiInventoryOperationPost` / `ApiInventoryOperationOriginUpdate`.
 
 ## Adding a new operation
 
-1. **Add an entry to `operations_config.json`.** Schema:
+1. **Write the Java class** in `com.researchspace.service.inventory.operations`.
+   Extend `CreatingOperation<R>` if it creates a sample: supply `key()`,
+   `linkRelation()` and `linkFieldNameKey()`, and override only what differs.
+   The hooks are `textFields` (a field on the created sample, e.g. Cryopreserve's
+   cryomedium), `storageTemp`, `amountTakenFrom` (what this operation takes from one
+   origin: the default is the amount the caller chose), `requiresMultiple`,
+   `takesAmount`, `emptiesOrigin` and `validate`. Implement `InventoryOperation<R>`
+   directly for a terminal operation, as `DestroyOperation` does.
 
-   | field | meaning |
-   | --- | --- |
-   | `key` | stable id (sent as `operationType`; names the definition the backend validates the request against, DevDocs/adr/0007) |
-   | `labelKey`, `descriptionKey` | i18n keys shown in the picker |
-   | `requiresMultiple` | `true` for a multi-origin operation (Pool: consumes 2+ subsamples); omit/false = single-origin. The picker shows every operation and enables single-origin ones for exactly one subsample, a `requiresMultiple` one for two or more of the same measurement category (DevDocs/adr/0007) |
-   | `noOutput` | `true` for a **terminal** operation that creates no new sample and only acts on its origins (Destroy). The server builds no sample; the backend creates nothing and returns null (DevDocs/adr/0007). Its `effect` omits `nameFrom`/`countFrom`/`eachAmountFrom` |
-   | `documentationStep` | `true` to offer the optional `IsDocumentedBy` SOP-link step |
-   | `steps[]` | explicit ordered subset of wizard steps to show, from `details` \| `template` \| `amounts` \| `documentation` \| `confirm`. Optional; when omitted the default sequence is used (details, template, amounts, documentation if `documentationStep`, confirm). Destroy sets `["confirm"]` — it needs no input, so it goes straight to confirmation (DevDocs/adr/0007) |
-   | `inputs[]` | wizard fields: `{ key, type, labelKey, required?, min?, maxCelsius?, minCelsius?, default? }`; `type` is `text` \| `integer` \| `quantity` \| `temperature`. `maxCelsius`/`minCelsius` bound a `temperature` input (Cryopreserve's `storageTemp` is `≤ -18`; Revive's is `4..120`): an out-of-bounds value shows an inline error and blocks the step. `default` (a number) seeds a `temperature` input's opening value, e.g. Revive's `4` so it starts in range (an unconfigured one opens at `-80`) |
-   | `effect.nameFrom` | input key holding the new sample's name (omit for a `noOutput` operation) |
-   | `effect.countFrom` | input key holding N (number of new subsamples) (omit for a `noOutput` operation) |
-   | `effect.eachAmountFrom` | input key holding each subsample's amount (unit category follows the chosen template, else the origin's — see the amounts step below) (omit for a `noOutput` operation) |
-   | `effect.amountTakenFrom` | input key holding the amount to remove from the origin (a positive decrement; the wizard blocks and the backend rejects taking more than the origin holds — see DevDocs/adr/0007); omit for operations that never change the origin. For a multi-origin operation (Pool) this is a single shared amount taken from **each** origin (DevDocs/adr/0007) |
-   | `effect.emptiesOrigin` | `true` to set the amount taken from each origin to that origin's **own full current quantity**, so its volume ends at zero (Destroy). Reuses the decrement path (clamps at zero; taking the full amount is not over-removal). Mutually exclusive with `amountTakenFrom` (DevDocs/adr/0007) |
-   | `effect.originFields[]` | `{ nameKey, contentFrom, type? }`; a custom field added to the origin subsample **itself** (not the created sample), e.g. Destroy's disposed date. `type` is `text` (default) \| `number` — subsample fields have no native date type, so a date is a text field holding an ISO date. `contentFrom` is usually a `computed` value (DevDocs/adr/0007) |
-   | `effect.links[]` (multi-origin) | each link spec fans out to **one link per origin**, so a single-origin operation yields one link and Pool yields one `HasPart` link back to every pooled subsample (DevDocs/adr/0007). A link's `fieldNameKey` may interpolate `{originName}` (the origin subsample's name) so the per-origin names are **distinct** — Pool uses `"Pooled from: {originName}"` because a record cannot hold two fields with the same name |
-   | `effect.processNameFrom` | input key holding a user-entered process name (Derive). **Omit** for a fixed process name equal to the operation `key` (Cryopreserve → `"cryopreserve"`); every operation has a process name (DevDocs/adr/0007) |
-   | `effect.storageTempFrom` | input key holding a temperature → set as the new sample's `storageTempMin/Max` (Cryopreserve, Revive) |
-   | `effect.computed[]` | `{ fn, into, args }`; a **computed value** (DevDocs/adr/0007). At submit the wizard applies operation function `fn` (from the registry in `operationFunctions.ts`) to the bound `args` and writes the single result into input `into`, which other wiring (e.g. `textFields`) then consumes. Each arg is sourced by `{ parentSampleField: <i18nKey> }` (that field's content on the origin's parent sample, or absent), `{ constant: <n\|str> }`, or `{ input: <inputKey> }`. Evaluated in array order (a later entry can read an earlier `into` via `input`). Results never enter the remembered bundle. **A new computation is a new registry function** (code) referenced here — see "Operation functions" below |
-   | `effect.links[]` | `{ relationType, fieldNameKey }`; a DataCite relation link back to the origin. `fieldNameKey` may interpolate an input, e.g. `"Is Derived From using process: {processName}"` |
-   | `effect.textFields[]` | `{ nameKey, contentFrom }`; plain-text field on the new sample (e.g. Cryomedium) |
-   | `confirmSummary[]` | ordered list of rows the confirmation step shows, from `process` \| `template` \| `subsamples` \| `amountTaken` \| `storageTemp` \| `linkBack` \| `documentation` \| `originEmptied` \| `originFields` (Cryopreserve lists `storageTemp`; Destroy lists `originEmptied`, `originFields`). A configured row whose value is absent (e.g. `documentation` with no linked doc) is skipped. Optional; a default order is used when omitted |
+   Call `super.validate(...)` from an override: it checks the created amount and the
+   total. Put a rule needing `RSUnitDef` in `OperationQuantityRules` rather than
+   writing it out, so every operation judges a unit the same way.
 
-   Order the `inputs[]` with the process name first and the name second: the wizard
-   derives the sample name from the process name (see the Details step below).
+2. **Write the request body** as a nested class of `ApiInventoryOperationRequests`,
+   extending `SingleOriginCreating` or `Creating`. Every rule about one field in
+   isolation belongs here as a jakarta annotation with a catalog key for its message:
+   presence, bounds, and the length of the column the value lands in. A generated
+   client can then enforce them, and the endpoint rejects them before any code runs.
 
-2. **Add the i18n keys** you referenced to the `inventory` namespace
+3. **Add the endpoint**: one method on `InventoryOperationsApi`, one on the
+   controller delegating to `perform(theOperation, request, errors, user)`, and one
+   `@Autowired` field for the operation. The controller has no per-operation logic.
+
+4. **Add the wizard entry** to the `operations` constant in `operationsConfig.ts`,
+   mirroring the Java class: which inputs the wizard collects, the effect wiring the
+   confirmation preview reads, and which summary rows to show. The picker, the steps,
+   the request builder and the preview pick it up from there.
+
+5. **Add the i18n keys** to the `inventory` namespace
    (`src/modules/common/i18n/locales/en-US/inventory.json`), then run
-   `pnpm run i18n:check` → fill English → `pnpm run i18n:types` →
-   `pnpm run i18n:lint`. Field names written onto records are resolved in the
-   user's locale on the frontend and stored as data; use ICU interpolation
-   (single braces), never string concatenation. See `FrontendI18nKeys.md`.
+   `pnpm run i18n:check`, fill English, `pnpm run i18n:types`, `pnpm run i18n:lint`.
+   Field names written onto records are resolved in the user's locale and stored as
+   data; use ICU interpolation (single braces), never concatenation. Any new error
+   message needs an entry in `server.inventory.json`, which
+   `InventoryOperationsErrorCatalogTest` enforces. See `FrontendI18nKeys.md`.
 
-3. **A typed endpoint, if the operation is public.** The generic endpoint is not
-   in the published OpenAPI spec: the public contract is the typed per-operation
-   endpoints (`POST /operations/<key>`, see "The seven typed endpoints" below).
-   A new public operation needs one request class in
-   `ApiInventoryOperationRequests` whose input fields are named exactly after
-   its input keys, one method on `InventoryOperationsApi` and the controller,
-   and one path plus one request schema in
-   `src/main/webapp/resources/rspace_api_inventory_specs_2_26_0.yaml`, under the
-   `Operations` tag, alongside the seven already there.
-   `InventoryOperationFacadeShapesTest` fails until the class agrees with the
-   definition. (There is only one config file — the backend's — and both sides
-   read it, so there is nothing to sync.)
+6. **Add it to the published OpenAPI spec**
+   (`src/main/webapp/resources/rspace_api_inventory_specs_2_27_0.yaml`, tag
+   `Operations`): one path and one request schema, alongside the seven already there.
 
-4. That's it. The picker, wizard, request builder, and backend pick the new
-   operation up automatically. Add a case to
-   `operationsConfig.test.ts` / `buildOperationRequest.test.ts` if the operation
-   has novel effect wiring, a golden built request to
-   `InventoryOperationPostValidatorTest` for `InventoryOperationRequestBuilderTest` to
-   check the server's build against, and a case to
-   `InventoryOperationInputValidatorTest` if it has a novel input type or rule.
+7. **Test it**: a `*OperationTest` for what it builds and what it rejects, a case in
+   `ApiInventoryOperationRequestsBeanValidationTest` for any new annotation, and an
+   end-to-end case in `InventoryOperationFacadesMVCIT`.
 
-### Worked example: Cryopreserve
+## Computed values in the confirmation preview
 
-Cryopreserve is Derive plus a Cryomedium text field and a storage temperature. It
-required **only** a config entry: a `cryomedium` text input written to a
-`Cryomedium` text field, a `storageTemp` temperature input mapped via
-`storageTempFrom`, and a `"Frozen from"` link name. No bespoke backend or wizard
-code — the backend enforces the new entry (including its `maxCelsius` bound)
-generically, from the synced copy of the same config.
-That is the framework's acceptance test: if a new operation needs Java or bespoke
-wizard code, the framework has a gap worth fixing rather than working around.
+Two operations record a value the user never types: Passage's passage number and
+Destroy's disposal date. **The server computes both** (`PassageOperation`,
+`DestroyOperation`), because the value that matters is the one that gets stored.
 
-## Operation functions (computed values) — DevDocs/adr/0007
-
-When an operation needs a value the declarative config cannot express (a computation),
-you write an **operation function** rather than a one-off config primitive. The registry
-is `operationFunctions.ts`: each entry is a named pure function that declares its
-parameter names and returns a single value. Config selects it via `effect.computed[]` and
-binds each argument to a source; the wizard resolves the arguments at submit
-(`computedValues.ts`) and writes the result into the `into` input, which normal wiring
-(usually `textFields`) then persists.
-
-**To add a computation:** add a function to the registry, then reference it from config.
+The wizard keeps its own model of those computations so the confirmation card can show
+the user what the operation will record before they commit. `operationFunctions.ts` is
+a small registry of named pure functions, `computedValues.ts` applies them, and an
+operation's `effect.computed[]` entry says which function, where each argument comes
+from, and which slot the result lands in:
 
 ```ts
 // operationFunctions.ts — the computation, in code
@@ -193,169 +167,98 @@ increment: {
 },
 ```
 
-```json
-// operations_config.json — which function, how to source its args, where the result goes
-"effect": {
-  "computed": [{
-    "fn": "increment",
-    "into": "passageNumber",
-    "args": {
-      "current": { "parentSampleField": "operations.passage.numberField" },
-      "start":   { "constant": 1 }
-    }
+```ts
+// operationsConfig.ts — which function, how to source its args, where the result goes
+effect: {
+  computed: [{
+    fn: "increment",
+    into: "passageNumber",
+    args: {
+      current: { parentSampleField: "operations.passage.numberField" },
+      start: { constant: 1 },
+    },
   }],
-  "textFields": [{ "nameKey": "operations.passage.numberField", "contentFrom": "passageNumber" }]
+  textFields: [{ nameKey: "operations.passage.numberField", contentFrom: "passageNumber" }],
 }
 ```
 
-That is Passage's passage number: read the "Passage number" field on the origin's parent
-sample, add one (or start at 1 when absent), and write it back onto the new sample under
-the same field name, so successive passages increment. The reference is validated at module
-load — an unknown function or a mismatched argument throws at startup, not at submit. The
-registry is **dev-only**: it is not an end-user expression language, so config carries no
-executable logic (DevDocs/adr/0007).
+The registry also has `today` (no arguments): the user's local date as an ISO calendar
+date, which is what Destroy's preview shows for the disposed field.
 
-The registry also has `today` (no arguments): the user's local date as an ISO calendar date
-(`YYYY-MM-DD`). Destroy writes it into the origin's disposed field via `effect.originFields`
-(DevDocs/adr/0007). A `computed` result can flow into an `originFields` content just as it flows into
-a `textFields` content — the difference is only where the field lands (the origin vs the new
-sample).
+This is a preview, not a request: nothing computed here is ever posted. If the preview
+and the server disagree, the server wins and the user sees a value they were not shown,
+so a change to `PassageOperation`'s counter or `DestroyOperation`'s date belongs on both
+sides.
 
 ## What the backend does
 
-`POST /api/inventory/v1/operations` is a thin, generic coordinator. The request carries
-the origins with the amount taken from each, the values the user typed (`inputs`, keyed
-by the definition's input keys), the template and the documentation target. The
-controller's `InventoryOperationPostValidator` checks the structure against the
-definition `operationType` names (DevDocs/adr/0007): origin count and uniqueness,
-per-origin amount semantics (a real amount unit, storable at 3dp, positive for a
-decrementing operation and zero for one that only links), the amount mode, and the kind
-of record the documentation target names. The manager then validates the inputs against
-the definition's `inputs[]` (`InventoryOperationInputValidator`: required, type,
-`min`/`max`, Celsius bounds on a temperature, storable quantities, and the length of a
-text input bounded by the column the built sample stores it in — the definition says
-which, so `nameFrom` gets `EditInfo.name`'s 255 and a `contentFrom` gets
-`EditInfo.description`'s 250; errors name the bare
-input key), builds the sample and every generated field from the definition
-(`InventoryOperationRequestBuilder`: N equal subsamples from `count` and `eachAmount`, one
-provenance link per origin, the declared text and origin fields, the computed values),
-and runs the transactional core. The built sample goes through the same
-template-conformance check as the public samples endpoint, inside that transaction.
+`POST /api/inventory/v1/operations/<key>` is the only way in. There are seven, one
+per operation, and the only difference between them is which operation the controller
+names.
+
+The controller checks what it can before touching anything: the body's own
+annotations have already run at binding, then `OperationOriginRules` checks the origin
+list and the documentation target, then each origin's global id is parsed to a
+subsample id. It takes the Inventory edit-session lock on every origin and every
+parent sample, in ascending global-id order, and calls the manager.
+
+The manager runs in one transaction. It asserts edit permission on each origin while
+snapshotting its live state (`OriginState`: id, global id, name, quantity, and the
+parent sample's fields), lets the operation check its own values and the documentation
+target's readability, then asks the operation to build the request the core executes:
+one update per origin with the amount to take, and the sample to create. The core
+enforces the live-state rules, runs the same template-conformance check as the public
+samples endpoint, decrements each origin and creates the sample, then reads every
+origin back. Everything the caller sees comes from that one transaction.
 
 Generated field names are resolved server-side in the request's locale from the same
 i18next catalogs the wizard uses (they are on the backend classpath under the
-`inventory:` namespace), interpolating `{processName}` and `{originName}` exactly as the
-wizard's own model of the build does (`buildOperationRequest`, kept for the confirmation
-preview). Every generated field is stamped with `operationFieldKey` (a link spec's
-`fieldNameKey`, a text/origin field's `nameKey`, or the fixed
-`operations.documentationLink`), which is persisted and returned on GET so a later run
-matches the previous generation by key; the property is read-only on the API, so no
-request on any endpoint can set it. Computed values are computed here: `increment` reads
-the origin's parent sample's fields (by key, then by localized name) and `today` resolves
-in the session's timezone.
+`inventory:` namespace), interpolating `{originName}`. Every generated field is stamped
+with `operationFieldKey`, which is persisted and returned on GET so a later run matches
+the previous generation by key; the property is read-only on the API, so no request on
+any endpoint can set it. A date an operation records (Destroy's disposed) resolves in
+the session's timezone, so it is the user's local date rather than the server's.
 
-The
-live-state rules run in `InventoryOperationManagerImpl`, inside the operation's own
-transaction so they hold against the state the mutation sees. The template-conformance check
-runs in that transaction too, on the built request before any origin is read, so
-the template the sample is created from is the one the request was validated against. It
-lives in `service.inventory.OperationTemplateConformanceValidator`, which the manager calls
-directly; the `BuiltRequestValidation` callback that used to carry it in from the controller
-is gone, along with the controller method behind it. Moving it down took
-`SampleApiPostFullValidator` and `ApiSampleFullPost` with it (to `service.inventory` and
-`api.v1.model`), because the service layer may not import `api.v1.controller`;
-`sampleApiPostValidator` is injected as a plain Spring `Validator` by bean name, since its
-own type extends a package-private hierarchy that stays in the controller package. Edit
-permission is asserted on every origin before any origin is mutated (this branch has no
-row locking; see DevDocs/adr/0007's RSDEV-1231-no-concurrency note).
+The live-state rules are in `InventoryOperationManagerImpl` rather than in a stateless
+validator because each needs the origin's live quantity, read in the mutation's own
+transaction: an origin must currently hold something, the amount taken may not exceed
+what it holds or be too fine to subtract from it, all origins must share one
+measurement category, and an emptying operation must take exactly what is there. They
+report through the same `rejectValue` to `BindException` to HTTP 400 path as the shape
+rules.
 
-**Lock lifecycle.** The wizard and the endpoint both take the Inventory edit-session
-lock, the same courtesy lock the subsample edit form takes. `ProcessAction` calls
-`acquireEditLock()` on every origin before opening the wizard (lock only: the records
-stay in preview and are never refetched), the wizard extends them on each step and at
-Perform, and `onClose` releases them all, which covers cancel, escape, backdrop and a
-successful Perform. A failed Perform keeps the wizard open AND keeps its locks, so a
-retry does not race. `InventoryOperationsApiController.withOriginsLocked` independently
-locks every origin and every distinct parent sample, ascending, outside the manager's
-transaction, and releases in a `finally` only the locks it created (`LOCKED_OK`);
-`WAS_ALREADY_LOCKED` is the caller's own wizard and is left alone. A lock another user
-holds is `InventoryEditLockHeldException` → 409 `EDIT_CONFLICT` naming them. What this
-does and does not close is listed in DevDocs/adr/0007. Tests:
-`InventoryOperationsApiControllerTest` (lock order, partial release, permission before
-lock), `InventoryOperationsApiControllerMVCIT`
-(`anOriginHeldByAnotherUserIsRefusedWithoutTouchingIt`,
-`aParentSampleHeldByAnotherUserIsRefused`,
-`theCallersOwnClientLockNeitherBlocksNorIsReleasedByPerform`),
-`ApiControllerAdviceTest` (the 409 mapping), `acquireEditLock.test.ts`,
-`ProcessAction.test.tsx` and `OperationWizard.test.tsx`. The live-state rules
-themselves: every origin must
-currently hold something, all origins must share one measurement category (a Pool of
-5 ml + 5 g is meaningless), the amount taken must not exceed what the origin holds
-(DevDocs/adr/0007), and
-an origin-emptying operation (Destroy) must take exactly what the origin holds. In
-that same transaction it then
-**reduces each origin by its amount-taken first**, applies any custom fields the
-definition adds to an origin (Destroy's disposed date, via `updateApiSubSample`), and
-creates the new sample + subsamples (reusing `SampleApiManager`). A terminal operation
-(`noOutput`, e.g. Destroy) builds no sample: the endpoint creates nothing and returns
-null (DevDocs/adr/0007). The decrement-before-create order (DevDocs/adr/0007) makes the new
-subsample the most-recently-modified record, so it sorts first in a
-modification-date-descending listing (the generic listing default is name-asc, so this
-only shows when that sort is requested). Reducing reuses
-`SubSampleApiManager.registerApiSubSampleUsage`, which subtracts unit-aware and clamps
-at zero as defence-in-depth, so an origin can never be increased. There is still no
-per-operation Java: the rules are read generically from the shared definitions.
-Permissions and invariants are enforced server-side whatever the client sends.
+The decrement-before-create order (DevDocs/adr/0007) makes the new subsample the
+most-recently-modified record, so it sorts first in a modification-date-descending
+listing. Reducing reuses `SubSampleApiManager.registerApiSubSampleUsage`, which
+subtracts unit-aware and clamps at zero as defence-in-depth, so an origin can never be
+increased. A terminal operation builds no sample and the endpoint creates nothing.
 
-The over-removal check lives in the manager, not the stateless
-`InventoryOperationPostValidator`, because it needs each origin's live quantity, read
-in the mutation's own transaction (from the entity `assertUserCanEditSubSample`
-returns). It uses the pure, unit-aware helpers in `InventoryOperationManagerImpl` and
-reports through the same `rejectValue` → `BindException` → HTTP 400 path as the
-structural rules.
+### What each request looks like
 
-### The seven typed endpoints (the public API)
+Six operations send a singular `origin`, identified by global id (`"SS1234"`); Pool
+sends `origins`. An origin carries `amountTaken` exactly when the operation takes a
+chosen amount: never for Passage, which leaves the origin alone, never for Destroy,
+which takes all of it, and never on a Pool that sets `takeAll`. Sending one anyway is
+a 400. The operation's own values are top-level fields named after what they are
+(`sampleName`, `count`, `eachAmount`, `processName`, `cryomedium`, `storageTemp`),
+alongside `templateId` and `documentedByGlobalId`.
 
-`POST /api/inventory/v1/operations/{aliquot,passage,pool,derive,cryopreserve,revive,destroy}`
-are facades over the same path (DevDocs/adr/0007 M6; shapes frozen in
-DevDocs/adr/0007). Each request class in
-`ApiInventoryOperationRequests` carries what is consumed (`origin` for six, `origins`
-for Pool, identified by global id `"SS1234"`) with an optional `expectedQuantity` per
-origin, the definition's inputs as fields named exactly after the input keys, and for a
-creating operation `templateId` (numeric, like `POST /samples`) and
-`documentedByGlobalId`. `amountTaken` travels on the origin element and is omitted
-for Passage and Destroy, where the definition decides what is taken; `count` and
-Revive's `storageTemp` may be omitted and take the definition's `default`
-(`InventoryOperationInputValidator.withDefaults`).
+`count` may be omitted and defaults to 1; Revive's `storageTemp` may be omitted and
+defaults to 4 degrees Celsius. Both defaults are applied by the operation class.
 
-The controller converts the typed body to the generic request, runs the same structural
-validator and the same manager call, then renames every error path to the field the
-caller sent (`origins[0].amountTaken` → `origin.amountTaken`, `origins[1].id` →
-`origins[1].globalId`, `newSample.templateId` → `templateId`,
-`newSample.subSamples[i].quantity` → `eachAmount`, `newSample.name` → `sampleName`,
-`newSample.storageTempMin`/`Max` → `storageTemp`; bare input keys pass through). A
-rejection on a GENERATED field is renamed through that field's `operationFieldKey`: the
-documentation link to `documentedByGlobalId`, a text field to the input its definition's
-`contentFrom` names, a provenance link to the origin it targets. No `newSample.*` path
-reaches a caller, because none of them is a field the caller sent. The
-facades validate shape only (the origin is present, a Pool has at least two); every value
-rule stays in the core so it cannot drift from the config, which
-`InventoryOperationFacadeShapesTest` pins. `expectedQuantity`, when sent, is
-shape-checked at the door exactly as `amountTaken` is (a non-negative value in a known
-amount unit; a malformed one is a 400), but not compared against the origin's live
-quantity: this branch has no concurrency control, so `expectedQuantity` and
-`amountMode: "all"` are accepted and threaded through unchecked (DevDocs/adr/0007's
-RSDEV-1231-no-concurrency note). All seven answer with one envelope
-(`ApiInventoryOperationResult`: the created `sample`, null for Destroy, and each
-`origin` as it stands afterwards), 201 with a `Location` at the new sample for the six
-creating operations, 200 for Destroy.
+The core works with an origin LIST and a server-built sample, so the controller
+renames its error paths back to what the caller sent on the way out
+(`InventoryOperationsApiController.facadeField`): `origins[0].amountTaken` to
+`origin.amountTaken`, `origins[1].id` to `origins[1].globalId`,
+`newSample.templateId` to `templateId`, `newSample.subSamples[i].quantity` to
+`eachAmount`, `newSample.name` to `sampleName`, `newSample.storageTempMin`/`Max` to
+`storageTemp`. The caller's own field names pass through untouched.
 
-All seven are in the published OpenAPI spec
-(`src/main/webapp/resources/rspace_api_inventory_specs_2_26_0.yaml`, tag `Operations`,
-DevDocs/adr/0007 M7): a path each, a request schema each, the shared
-`OperationOrigin` / `OperationOriginWithAmount` elements and the `OperationResult`
-envelope. The generic `POST /operations` and `GET /operations/config` stay unpublished
-until user-defined operations ship (M8), so the config endpoint remains the wizard's.
+All seven answer with one envelope (`ApiInventoryOperationResult`: the created
+`sample`, null for Destroy, and each `origin` as it stands afterwards), 201 with a
+`Location` at the new sample for the six creating operations, 200 for Destroy. All
+seven are in the published OpenAPI spec
+(`src/main/webapp/resources/rspace_api_inventory_specs_2_27_0.yaml`, tag `Operations`).
 
 ## Wizard steps
 
@@ -492,28 +395,29 @@ fields in the wizard is deferred.
 
 ## Testing
 
-- Frontend logic (pure): `buildOperationRequest.test.ts`, `operationsConfig.test.ts`,
+- Backend, per operation: `AliquotOperationTest`, `PassageOperationTest`,
+  `PoolOperationTest` (incl. `takeAll`), `CryopreserveOperationTest`,
+  `ReviveOperationTest`, `DestroyOperationTest` — what each builds and what it
+  rejects. Shared rules: `OperationQuantityRulesTest`, `OperationOriginRulesTest`,
+  `OperationFieldNamesTest`, `FieldNameUniquenessParityTest`.
+- Backend, shared: `ApiInventoryOperationRequestsBeanValidationTest` (the annotations
+  on the request bodies), `InventoryOperationsApiControllerTest` (the shape rules, the
+  edit lock, the error-path renaming), `InventoryOperationManagerImplTest` (the
+  transactional core, incl. decrement-before-create order),
+  `InventoryOperationsErrorCatalogTest` (every raised code has a catalog entry).
+  `mvn test -Dtest=... -Dfast=true`.
+- Backend, end to end: `InventoryOperationsApiControllerMVCIT` and
+  `InventoryOperationFacadesMVCIT`. Run with
+  `mvn verify -Denvironment=drop-recreate-db -Dtest=A,B`; this resets the database.
+- Frontend, pure: `buildOperationRequest.test.ts`, `operationsApi.test.ts`,
   `sampleNaming.test.ts` (derive + dedup), `processValues.test.ts` (the remember
-  bundle), `templateResolution.test.ts`, `operationValidation.test.ts` (incl.
-  `amountTakenExceedsOrigin`). Component/flow: `OperationWizard.test.tsx`,
-  `OperationDetailsStep.test.tsx`, `TemplateStep.test.tsx`. `pnpm test <path>` from the
-  repo root.
-- The published OpenAPI spec (`rspace_api_inventory_specs_2_26_0.yaml`) states the
-  operations' bounds in prose rather than as schema constraints, so
-  `InventoryOperationFacadeShapesTest` asserts those sentences against
-  `operations_config.json`: change a bound in the config and that test names the spec
-  file to update.
-- Backend: `InventoryOperationManagerImplTest` (incl. decrement-before-create order),
-  `InventoryOperationPostValidatorTest` (the request structure; it also holds the golden
-  built request per operation that `InventoryOperationRequestBuilderTest` checks the
-  builder against), `InventoryOperationInputValidatorTest`
-  (`mvn test -Dtest=... -Dfast=true`), `InventoryOperationFacadeShapesTest` (each typed
-  request class agrees with its definition, and the M0 examples bind), plus
-  `InventoryOperationsApiControllerMVCIT` (end-to-end, incl. over-removal rejection),
-  `InventoryOperationsInputsShapeMVCIT` (the records each
-  operation persists, as a golden fingerprint) and `InventoryOperationFacadesMVCIT` (the
-  seven typed endpoints: envelope, status codes, renamed error paths, the
-  defaults). Run the MVCITs with `mvn verify -Dtest=A,B` (comma-separated).
+  bundle), `templateResolution.test.ts`, `operationValidation.test.ts`. Component and
+  flow: `OperationWizard.test.tsx`, `OperationDetailsStep.test.tsx`,
+  `TemplateStep.test.tsx`. `pnpm test <path>` from the repo root.
+- The field-name uniqueness rule is implemented in both languages, and
+  `src/test/resources/inventory/fieldNameUniquenessCases.json` is the only thing tying
+  them together: `FieldNameUniquenessParityTest` and `buildOperationRequest.test.ts` both
+  assert it, so changing the rule on one side alone turns the other red.
 
 ## Out of scope (current)
 
