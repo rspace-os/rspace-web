@@ -1,8 +1,9 @@
+import type { InventoryKey } from "./operationsConfig";
+
 /**
- * Types for the Inventory operation wizard request. The wizard collects values per the operation's
- * config, then buildOperationInputsRequest turns them into an OperationInputsRequest which is
- * POSTed to the thin backend endpoint. Shapes mirror the backend
- * ApiInventoryOperationPost / ApiSampleWithFullSubSamples so the JSON maps straight through.
+ * Types for the Inventory operation wizard. The wizard collects the operation's values, then
+ * buildFacadeRequest turns them into the body its endpoint takes. Shapes mirror the backend
+ * ApiInventoryOperationRequests so the JSON maps straight through.
  */
 
 export type OperationQuantity = { numericValue: number; unitId: number };
@@ -58,32 +59,6 @@ export type OperationTextFieldValue = OperationFieldKey & {
 
 export type OperationExtraField = OperationLinkField | OperationTextFieldValue;
 
-export type OperationOriginUpdate = {
-  id: number;
-  /** How `amountTaken` was decided. "all" means the amount IS the origin's whole quantity as this
-   * client read it; "explicit" amounts are user-entered. The backend checks the mode for shape only
-   * (an emptying operation cannot take an explicit amount, a linking one cannot take all) and does
-   * not compare it against the live quantity. */
-  amountMode: "explicit" | "all";
-  amountTaken: OperationQuantity;
-};
-
-/**
- * The request the wizard POSTs: the values the user typed, keyed by the definition's input key,
- * from which the server builds the sample itself. Each origin still carries the amount taken and
- * how it was decided (shape-checked, not compared against the live quantity); the origin fields an
- * operation adds (Destroy's disposed date) are the server's.
- */
-export type OperationInputsRequest = {
-  operationType: string;
-  origins: Array<OperationOriginUpdate>;
-  inputs: OperationInputs;
-  /** null for an ad-hoc sample; numeric like POST /samples. */
-  templateId: number | null;
-  /** The document chosen in the documentation step, linked as IsDocumentedBy; null for none. */
-  documentedByGlobalId: string | null;
-};
-
 /** An origin subsample the wizard was launched on. */
 export type OperationOrigin = {
   id: number;
@@ -96,12 +71,13 @@ export type OperationOrigin = {
 };
 
 /** i18next-style resolver, injected so the builder stays pure and unit-testable. */
-export type ResolveLabel = (key: string, params?: Record<string, unknown>) => string;
+export type ResolveLabel = (key: InventoryKey, params?: Record<string, unknown>) => string;
 
 /**
- * The one sanctioned escape hatch from i18next's typed `t` to the dynamic-key resolver the
- * config-driven components need: operation labels/field names come from operations_config.json at
- * runtime, so their keys cannot be statechecked. Keep the cast here, in one commented place.
+ * Adapts i18next's `t` to the two-argument resolver the wizard's shared components take. `t` is
+ * overloaded on its second parameter in ways no plain function type can express (one overload
+ * requires a defaultValue), so no signature TypeScript will accept exists and the cast stays. The
+ * KEYS are checked, here and at every call site, because ResolveLabel takes an InventoryKey.
  */
 export function resolveLabelFrom(t: unknown): ResolveLabel {
   return t as ResolveLabel;
