@@ -7,8 +7,7 @@ import { server } from "@/__tests__/mswServer";
 import { makeMockSubSample } from "@/stores/models/__tests__/SubSampleModel/mocking";
 import OperationDetailsStep from "../OperationDetailsStep";
 import OperationWizard from "../OperationWizard";
-import { parseOperationsConfig } from "../operationsConfig";
-import { rawConfig } from "./testOperations";
+import { operations } from "./testOperations";
 
 /*
  * The unit store starts empty on a fresh profile: SAVED_UNITS reads localStorage, which has no
@@ -51,7 +50,7 @@ vi.mock("../../ContextMenu/ContextDialog", () => ({
 
 /** The Pool definition from the real config, the one operation with a per-subsample amount mode. */
 const poolOperation = (() => {
-  const pool = parseOperationsConfig(rawConfig).find((o) => o.key === "pool");
+  const pool = operations.find((o) => o.key === "pool");
   if (!pool) throw new Error("the test config must declare pool");
   return pool;
 })();
@@ -61,9 +60,7 @@ function render(ui: React.ReactElement) {
   return renderWithoutQueryClient(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
 }
 
-beforeEach(() => {
-  server.use(http.get("/api/inventory/v1/operations/config", () => HttpResponse.json(rawConfig)));
-});
+beforeEach(() => {});
 
 describe("OperationWizard while the unit store is still loading", () => {
   it("mounts for a closed dialog without dereferencing the unit store", () => {

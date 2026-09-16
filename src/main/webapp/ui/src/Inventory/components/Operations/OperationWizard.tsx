@@ -1,7 +1,4 @@
-import Alert from "@mui/material/Alert";
-import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import CircularProgress from "@mui/material/CircularProgress";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
@@ -9,7 +6,6 @@ import Step from "@mui/material/Step";
 import StepContent from "@mui/material/StepContent";
 import StepLabel from "@mui/material/StepLabel";
 import Stepper from "@mui/material/Stepper";
-import { useQuery } from "@tanstack/react-query";
 import { omit } from "es-toolkit";
 import { observer } from "mobx-react-lite";
 import React from "react";
@@ -27,16 +23,17 @@ import type { UnitCategory } from "@/stores/stores/UnitStore";
 import { showToastWhilstPending } from "@/util/alerts";
 import { getErrorMessage } from "@/util/error";
 import ContextDialog from "../ContextMenu/ContextDialog";
-import { buildOperationInputsRequest } from "./buildOperationRequest";
+import { buildFacadeRequest } from "./buildOperationRequest";
 import type { DocumentationSelection } from "./DocumentationStep";
 import DocumentationStep from "./DocumentationStep";
 import OperationConfirmation from "./OperationConfirmation";
 import OperationDetailsStep from "./OperationDetailsStep";
 import OperationPicker from "./OperationPicker";
-import { describeOperationError, fetchOperationsConfig, performOperation, sampleNameAvailable } from "./operationsApi";
+import { describeOperationError, performOperation, sampleNameAvailable } from "./operationsApi";
 import {
   amountKeysFor,
   type InventoryOperation,
+  operations,
   resolveDefaultAmountMode,
   resolveProcessName,
   usesAmountModes,
@@ -169,21 +166,6 @@ function OperationWizard({
   // comparing equal.
   const allSameCategory = originCategory !== null && origins.every((o) => categoryOf(o) === originCategory);
   const { isViewportSmall } = useViewportDimensions();
-  // Config data changes only on deployment, so cache it for the session.
-  const {
-    data: availableOperations,
-    isError: operationsLoadFailed,
-    error: operationsLoadError,
-  } = useQuery({
-    queryKey: ["inventory", "operationsConfig"],
-    queryFn: fetchOperationsConfig,
-    staleTime: Infinity,
-  });
-  React.useEffect(() => {
-    if (operationsLoadError) {
-      console.error("Could not load the operation definitions", operationsLoadError);
-    }
-  }, [operationsLoadError]);
   const [operation, setOperation] = React.useState<InventoryOperation | null>(null);
   const [values, setValues] = React.useState<OperationInputs>({});
   const [documentation, setDocumentation] = React.useState<DocumentationSelection>(null);
@@ -224,7 +206,7 @@ function OperationWizard({
     { defaultValue: {} },
   );
 
-  const stepKeys: Array<string> = operation
+  const stepKeys: ReadonlyArray<string> = operation
     ? (operation.steps ?? [
         "details",
         "template",
@@ -668,7 +650,7 @@ function OperationWizard({
             pickedTemplateId: templateSelection.templateId,
             originSampleTemplateId: origin.sample.templateId ?? null,
           });
-      const request = buildOperationInputsRequest({
+      const request = buildFacadeRequest({
         operation,
         values,
         origins: origins.map(toOrigin),
@@ -677,7 +659,7 @@ function OperationWizard({
         amountMode,
         perSubsampleAmounts,
       });
-      await showToastWhilstPending(t("operations.wizard.inProgress"), performOperation(request));
+      await showToastWhilstPending(t("operations.wizard.inProgress"), performOperation(operation, request));
     } catch (error) {
       // The error's `message` for a rejected request is just "Errors detected: 1"; the actual reason
       // lives in the field-scoped errors array, which describeOperationError reads instead.
@@ -871,19 +853,13 @@ function OperationWizard({
               {isViewportSmall ? null : stepContent(stepKeys[activeStep])}
             </>
           )
-        ) : operationsLoadFailed ? (
-          <Alert severity="error">{t("operations.picker.loadFailed")}</Alert>
-        ) : availableOperations ? (
+        ) : (
           <OperationPicker
-            operations={availableOperations}
+            operations={operations}
             onSelect={selectOperation}
             selectionCount={origins.length}
             allSameCategory={allSameCategory}
           />
-        ) : (
-          <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-            <CircularProgress aria-label={t("operations.picker.loading")} />
-          </Box>
         )}
       </DialogContent>
       <DialogActions>
