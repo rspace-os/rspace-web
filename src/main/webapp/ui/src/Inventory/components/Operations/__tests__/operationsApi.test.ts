@@ -1,7 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { describeOperationError, performOperation, sampleNameAvailable } from "../operationsApi";
 import type { InventoryOperation } from "../operationsConfig";
-import type { OperationInputsRequest } from "../types";
+import { operations } from "./testOperations";
+
+function operationNamed(key: string): InventoryOperation {
+  const operation = operations.find((o) => o.key === key);
+  if (!operation) throw new Error(`no operation ${key}`);
+  return operation;
+}
 
 const query = vi.fn((_resource: string, _params: URLSearchParams) =>
   Promise.resolve({ data: { valid: true } as { valid?: boolean; message?: string } }),
@@ -44,15 +50,27 @@ describe("sampleNameAvailable", () => {
 describe("performOperation", () => {
   beforeEach(() => post.mockClear());
 
-  it("normalises a terminal operation's empty response body to null", async () => {
-    post.mockResolvedValueOnce({ data: "" });
-    expect(await performOperation({} as OperationInputsRequest)).toBeNull();
+  it("posts to the operation's own endpoint", async () => {
+    post.mockResolvedValueOnce({ data: { sample: null } });
+    const body = { origin: { globalId: "SS100" } };
+
+    await performOperation(operationNamed("cryopreserve"), body);
+
+    expect(post.mock.calls[0]).toEqual(["operations/cryopreserve", body]);
   });
 
-  it("returns the created sample for a producing operation", async () => {
+  it("unwraps the created sample from the response envelope", async () => {
     const created = { id: 7, globalId: "SA7", name: "Derived" };
-    post.mockResolvedValueOnce({ data: created });
-    expect(await performOperation({} as OperationInputsRequest)).toEqual(created);
+    post.mockResolvedValueOnce({ data: { sample: created } });
+
+    expect(await performOperation(operationNamed("derive"), {})).toEqual(created);
+  });
+
+  it("reports no sample for a terminal operation, whatever shape the empty body takes", async () => {
+    for (const empty of [{ sample: null }, null, ""]) {
+      post.mockResolvedValueOnce({ data: empty });
+      expect(await performOperation(operationNamed("destroy"), {})).toBeNull();
+    }
   });
 });
 

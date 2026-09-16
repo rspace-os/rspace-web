@@ -7,7 +7,6 @@ import { server } from "@/__tests__/mswServer";
 import { UiPreferences } from "@/hooks/api/useUiPreference";
 import { makeMockSubSample } from "@/stores/models/__tests__/SubSampleModel/mocking";
 import OperationWizard from "../OperationWizard";
-import { rawConfig } from "./testOperations";
 
 /*
  * OperationWizard.test.tsx mocks useUiPreference at module level (vi.mock is file-wide), so the
@@ -19,7 +18,7 @@ import { rawConfig } from "./testOperations";
  */
 
 const PREFERENCE_URL = "/userform/ajax/preference";
-const OPERATIONS_URL = "/api/inventory/v1/operations";
+const OPERATION_URL = "/api/inventory/v1/operations/:key";
 
 /** The server's UI_JSON_SETTINGS object, as the preference endpoint would persist it. */
 let stored: Record<string, { value: unknown; time: number }> = {};
@@ -38,8 +37,9 @@ beforeEach(() => {
       writes += 1;
       return HttpResponse.json({});
     }),
-    http.get(`${OPERATIONS_URL}/config`, () => HttpResponse.json(rawConfig)),
-    http.post(OPERATIONS_URL, () => HttpResponse.json({ id: 1, globalId: "SS9", name: "New" }, { status: 201 })),
+    http.post(OPERATION_URL, () =>
+      HttpResponse.json({ sample: { id: 1, globalId: "SS9", name: "New" } }, { status: 201 }),
+    ),
     http.get("/api/inventory/v1/samples/validateNameForNewSample", () => HttpResponse.json({ valid: true })),
   );
 });

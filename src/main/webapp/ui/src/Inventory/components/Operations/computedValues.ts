@@ -1,5 +1,5 @@
 import { type OperationFunctionArgs, type OperationFunctionName, operationFunctions } from "./operationFunctions";
-import type { ComputedArgSource, InventoryOperation } from "./operationsConfig";
+import type { ComputedArgSource, InventoryKey, InventoryOperation } from "./operationsConfig";
 import type { OperationInputs } from "./types";
 
 /**
@@ -24,7 +24,7 @@ export type ComputedContext = {
   parentFields: ReadonlyArray<SampleField>;
   /** The current input values, for `input` args, and where each result is written. */
   values: OperationInputs;
-  resolveFieldName: (key: string) => string;
+  resolveFieldName: (key: InventoryKey) => string;
 };
 
 /**
