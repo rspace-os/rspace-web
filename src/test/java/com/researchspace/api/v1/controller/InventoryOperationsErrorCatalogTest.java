@@ -39,14 +39,27 @@ class InventoryOperationsErrorCatalogTest {
   private static final Path CONTROLLER_DIR =
       Path.of("src/main/java/com/researchspace/api/v1/controller");
 
+  /** Every operation class and shared rule holder; each raises codes of its own. */
+  private static final Path OPERATIONS_DIR =
+      Path.of("src/main/java/com/researchspace/service/inventory/operations");
+
+  /** The request bodies, whose annotations name catalog keys the same way Java code does. */
+  private static final Path REQUESTS =
+      Path.of("src/main/java/com/researchspace/api/v1/model/ApiInventoryOperationRequests.java");
+
   /**
    * Every file in the controller package whose name starts with Operation or InventoryOperation is
    * matched, rather than named one by one, so splitting a validator cannot quietly take its codes
    * out of scope: that is exactly what happened when the 994-line validator became four classes.
-   * The three files outside that package are named explicitly.
+   * The whole operations package is scanned for the same reason, and the two files outside both
+   * packages are named explicitly.
    */
   private static Path[] sourcesRaisingOperationErrors() throws IOException {
     List<Path> sources = new ArrayList<>();
+    try (Stream<Path> files = Files.list(OPERATIONS_DIR)) {
+      files.filter(file -> file.getFileName().toString().endsWith(".java")).forEach(sources::add);
+    }
+    sources.add(REQUESTS);
     try (Stream<Path> files = Files.list(CONTROLLER_DIR)) {
       files
           .filter(
@@ -60,19 +73,17 @@ class InventoryOperationsErrorCatalogTest {
     sources.add(
         Path.of(
             "src/main/java/com/researchspace/service/inventory/impl/InventoryOperationManagerImpl.java"));
-    sources.add(
-        Path.of(
-            "src/main/java/com/researchspace/service/inventory/InventoryOperationInputValidator.java"));
     sources.add(CONTROLLER_DIR.resolve("ApiControllerAdvice.java"));
     return sources.toArray(new Path[0]);
   }
 
   /**
    * The endpoint raised this many distinct codes when the guard was last reviewed. Raise it when
-   * codes are added; a DROP means a source file stopped being scanned rather than that rules were
-   * removed, which is the failure this floor exists to catch.
+   * codes are added; an unexplained DROP means a source file stopped being scanned rather than that
+   * rules were removed, which is the failure this floor exists to catch. Lowered from 40 to 30 when
+   * the config layer went and its nine config-shape codes went with it.
    */
-  private static final int MINIMUM_CODES_RAISED = 40;
+  private static final int MINIMUM_CODES_RAISED = 30;
 
   /** A dotted code in a string literal: errors.inventory.operation.foo, api.errors.bar. */
   private static final Pattern RAISED_CODE =
