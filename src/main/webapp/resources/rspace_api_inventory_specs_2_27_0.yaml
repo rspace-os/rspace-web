@@ -2624,8 +2624,9 @@ paths:
 
 
         Each origin carries its own `amountTaken`, so a pool may take 5 ml from one and 8 ml from
-        another. All origins must hold the same measurement category: 5 ml cannot be pooled with
-        5 g. A subsample may appear at most once in the list.
+        another. Send `takeAll` instead to pour every origin out completely, which takes whatever
+        each holds when the operation runs. All origins must hold the same measurement category:
+        5 ml cannot be pooled with 5 g. A subsample may appear at most once in the list.
 
 
         The operation is atomic across every origin: if one is rejected, none is decremented.
@@ -2656,10 +2657,11 @@ paths:
           description: >
             Rejected, leaving every origin unchanged. Fewer than two origins were sent, or the
             same subsample twice; `sampleName`, `eachAmount` or an origin's `amountTaken` is
-            missing; `count` is below 1 or above 100; an amount taken is not positive, does not
-            use a unit of that origin's measurement category, or is more than the origin holds;
-            the origins do not share one measurement category; or an origin is empty. Each error
-            names the field that was sent, with the index of the origin it concerns.
+            missing; an `amountTaken` was sent alongside `takeAll`; `count` is below 1, above 100
+            or not a whole number; an amount taken is not positive, does not use a unit of that
+            origin's measurement category, or is more than the origin holds; the origins do not
+            share one measurement category; or an origin is empty. Each error names the field
+            that was sent, with the index of the origin it concerns.
           content:
             application/json:
               schema:
@@ -2823,8 +2825,7 @@ paths:
 
         This operation creates nothing, so it answers 200 rather than 201, there is no `Location`
         header, and `sample` in the response is null. Do not send `amountTaken`: the server takes
-        whatever the origin holds when the operation runs. `expectedQuantity` is accepted but not
-        enforced.
+        whatever the origin holds when the operation runs, and an amount sent anyway is rejected.
       tags:
         - Operations
       requestBody:
@@ -5298,17 +5299,14 @@ components:
         A subsample an operation consumes, identified by its global id (`SS` prefix). A sample or
         container id is rejected.
 
-        `expectedQuantity` is optional and, when sent, is checked for shape only (a numeric value
-        and a known unit). It is not compared with the origin's live quantity: the operation always
-        takes whatever the origin holds at the moment it runs. There is no concurrency control on
-        this endpoint.
+        The operation decides what it takes from this origin, so no amount is sent. The server
+        reads the origin's live quantity at the moment the operation runs; there is no concurrency
+        control on these endpoints.
       properties:
         globalId:
           type: string
           description: Global id of the origin subsample.
           example: SS1234
-        expectedQuantity:
-          $ref: "#/components/schemas/Quantity"
       required:
         - globalId
     OperationOriginWithAmount:
@@ -5320,8 +5318,6 @@ components:
         not be more than the origin currently holds. Quantities are stored to three decimal
         places, so an amount that cannot be subtracted exactly at that precision is rejected
         rather than rounded.
-
-        `expectedQuantity` behaves as on `OperationOrigin`.
       properties:
         globalId:
           type: string
@@ -5329,11 +5325,23 @@ components:
           example: SS1234
         amountTaken:
           $ref: "#/components/schemas/Quantity"
-        expectedQuantity:
-          $ref: "#/components/schemas/Quantity"
       required:
         - globalId
         - amountTaken
+    PoolOrigin:
+      description: |
+        An origin of a Pool, otherwise as `OperationOriginWithAmount`. `amountTaken` is required
+        unless the request sets `takeAll`, in which case it must be absent: a pool either takes
+        chosen amounts or pours every origin out completely.
+      properties:
+        globalId:
+          type: string
+          description: Global id of the origin subsample.
+          example: SS1234
+        amountTaken:
+          $ref: "#/components/schemas/Quantity"
+      required:
+        - globalId
     AliquotOperation:
       description: |
         Aliquot request. `count` is optional and defaults to 1; it may not exceed 100.
@@ -5420,14 +5428,21 @@ components:
           unitId: 3
     PoolOperation:
       description: |
-        Pool request. Two or more origins, each with its own `amountTaken`, all holding the same
-        measurement category. `count` is optional and defaults to 1; it may not exceed 100.
+        Pool request. Two or more origins, all holding the same measurement category. `count` is
+        optional and defaults to 1; it may not exceed 100.
+
+        Either every origin carries its own `amountTaken`, or `takeAll` is true and none does.
       properties:
         origins:
           type: array
           minItems: 2
           items:
-            $ref: "#/components/schemas/OperationOriginWithAmount"
+            $ref: "#/components/schemas/PoolOrigin"
+        takeAll:
+          type: boolean
+          description: >
+            Pool every origin's whole remaining quantity, read when the operation runs, leaving
+            each of them empty. No origin may then carry an `amountTaken`.
         sampleName:
           type: string
           description: Name of the sample the operation creates.
