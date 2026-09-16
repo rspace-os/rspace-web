@@ -173,3 +173,9 @@ address with the provider.
   generating the suffix up front.
 - `DigitalObjectIdentifier` lives in rspace-core-model, so the constructor
   change rides a core-model release and a pinned-version bump here.
+- The page also stops being served at the other end of the identifier's life, and
+  since RSDEV-1504 that end arrives without anyone deleting the identifier by hand:
+  trashing the instrument soft-deletes it, and `getLatestIdentifierByPublicLink`
+  filters on `deleted = false`. A findable DataCite DOI therefore goes on resolving
+  to an address RSpace no longer answers. Accepted in ADR 0010, which also records
+  why the Landing page *field* is left alone there while item 5 clears it here.

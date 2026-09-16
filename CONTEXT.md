@@ -213,6 +213,15 @@ resolved during design. This file is a glossary only — no implementation detai
   _Avoid_: external identifier (ambiguous with *external metadata update*, which is about
   registered identifiers), imported identifier, foreign PID
 
+- **Unlinking** — removing a record's identifier in RSpace and nowhere else, leaving whatever
+  the provider holds exactly as it was. It releases the PID, which can then be imported again.
+  A user unlinks by deleting the identifier, and trashing an Instrument unlinks whatever it
+  carried. Applies to a registered identifier as well as a linked one: there, unlinking is
+  *not* the same as deleting the identifier, which also removes it at the provider, and RSpace
+  keeps owning a provider record that no longer describes anything of ours. Restoring a trashed
+  Instrument does not undo it.
+  _Avoid_: detaching, disconnecting, deleting the PID (nothing is deleted at the provider)
+
 - **PID lookup** — searching a PID registry for instrument records, by free text or by a
   PID, in order to import one. A lookup always goes to the deployment's enabled PIDINST
   provider, with that provider's configured server and credentials; while no PIDINST

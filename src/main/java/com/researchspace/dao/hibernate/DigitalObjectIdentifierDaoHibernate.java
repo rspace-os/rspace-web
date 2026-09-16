@@ -144,7 +144,10 @@ public class DigitalObjectIdentifierDaoHibernate
         .getCurrentSession()
         .createQuery(
             // deleted = false: the published-state check is the only other gate on an
-            // unauthenticated page, and a soft-deleted identifier must take its page with it
+            // unauthenticated page, and a soft-deleted identifier must take its page with it.
+            // Note what now reaches here: trashing an instrument soft-deletes its identifier
+            // (RSDEV-1504), so a registered DOI that stays findable at the provider loses the
+            // RSpace page it resolves to. Accepted deliberately in ADR 0010.
             "from DigitalObjectIdentifier where publicLink=:publicLink and deleted = false",
             DigitalObjectIdentifier.class)
         .setParameter("publicLink", publicLink)

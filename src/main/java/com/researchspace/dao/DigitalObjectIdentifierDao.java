@@ -21,6 +21,10 @@ public interface DigitalObjectIdentifierDao extends GenericDao<DigitalObjectIden
    * an imported identifier but the provider's record id for one RSpace registered through B2INST,
    * so a caller asking "is this PID linked?" must try both. Oldest row first should two ever exist
    * (there is no unique key).
+   *
+   * <p>"Active" is the identifier's own flag, never the state of the record it hangs off, so a PID
+   * is released only when something soft-deletes the identifier. Trashing an instrument does
+   * (RSDEV-1504, ADR 0010); trashing a sample or container does not.
    */
   Optional<DigitalObjectIdentifier> findActiveByIdentifierAndType(
       String identifier, IdentifierType type);

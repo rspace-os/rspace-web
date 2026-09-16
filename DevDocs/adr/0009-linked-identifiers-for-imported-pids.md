@@ -110,7 +110,8 @@ and API field names were ported instead.
 - The UI offers no way to unlink, and that is intended for now (Nico, 2026-09-09): the row shows
   Retract, disabled, and never Delete, so removing a link needs the API (`DELETE
   /identifiers/{id}`, which the server allows in every state). Revisit in RSDEV-1325 if users need
-  to unlink from the page.
+  to unlink from the page. Half-superseded by ADR 0010: there is still no unlink action on the
+  page, but trashing the Instrument now unlinks whatever it carried (RSDEV-1504).
   - The disabling is now explicit rather than incidental. It used to hold only for B2INST, where
     the review-state rule happened to disable the button; a linked DataCite PID is `findable`, so
     nothing caught it and the row offered an enabled Retract that the server answers with 422.
