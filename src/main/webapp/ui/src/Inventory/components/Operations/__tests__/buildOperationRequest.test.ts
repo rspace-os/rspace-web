@@ -55,6 +55,22 @@ describe("buildFacadeRequest, single-origin operations", () => {
     });
   });
 
+  it("sends only the operation's declared inputs, not everything the wizard is holding", () => {
+    // The body is built by walking operation.inputs, not values, so a value left over from an
+    // earlier step of a different operation cannot reach an endpoint that would 400 on it.
+    const request = buildFacadeRequest({
+      operation: operationNamed("derive"),
+      values: { ...deriveValues, cryomedium: "DMSO", storageTemp: { numericValue: -80, unitId: 8 } },
+      origins: [origin(100)],
+      templateId: null,
+      documentedByGlobalId: null,
+    });
+
+    expect(request).not.toHaveProperty("cryomedium");
+    expect(request).not.toHaveProperty("storageTemp");
+    expect(request).toHaveProperty("processName", "PCR");
+  });
+
   it("omits the template and the documentation target rather than sending null", () => {
     const request = buildFacadeRequest({
       operation: operationNamed("derive"),

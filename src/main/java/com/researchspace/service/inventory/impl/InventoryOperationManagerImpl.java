@@ -95,8 +95,7 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
 
     // Template conformance runs on the request just built, inside this transaction and before any
     // origin is read, so the template validated is the template the sample is created from.
-    ApiSampleWithFullSubSamples created =
-        performOperation(built, user, () -> templateConformance.validate(built, user));
+    ApiSampleWithFullSubSamples created = performOperation(built, user);
 
     // The origins as they stand afterwards, read HERE rather than by the caller: still inside this
     // transaction, so they are one consistent snapshot of what this operation produced, and one
@@ -110,10 +109,15 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
 
   /**
    * The origin's parent sample's fields an operation may read: its template-defined fields (which
-   * carry no operation key) and its ad-hoc extra fields.
+   * carry no operation key) and its ad-hoc extra fields. A subsample without a parent contributes
+   * none; {@code SubSample.getSample()} is nullable enough that the entity guards it in getOwner(),
+   * getSharingACL() and getParentId(), so the permission check above passes it through.
    */
   private static List<OriginState.ParentField> parentFields(SampleEntity parent) {
     List<OriginState.ParentField> fields = new ArrayList<>();
+    if (parent == null) {
+      return fields;
+    }
     for (InventoryEntityField field : parent.getActiveFields()) {
       fields.add(new OriginState.ParentField(field.getName(), field.getData(), null));
     }
@@ -125,11 +129,18 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
     return fields;
   }
 
-  @Override
-  public ApiSampleWithFullSubSamples performOperation(
-      ApiInventoryOperationPost request, User user, InTransactionValidation callerValidation)
+  /**
+   * The transactional core, run on a request an operation built. Not on {@link
+   * InventoryOperationManager}: it dereferences every origin's id and amount without guards and
+   * asserts nothing about permission itself, so it is only safe after {@link #perform} has
+   * snapshotted and validated. Reached by self-invocation, which is why {@code perform} carries the
+   * rollback rule.
+   */
+  ApiSampleWithFullSubSamples performOperation(ApiInventoryOperationPost request, User user)
       throws BindException {
-    callerValidation.validate();
+    // Inside this transaction and before any origin is read, so the template validated is the
+    // template the sample is created from.
+    templateConformance.validate(request, user);
     // The validator guarantees unique, non-null ids by this point.
     List<ApiInventoryOperationOriginUpdate> originsById =
         request.getOrigins().stream()
@@ -274,8 +285,8 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
 
   /**
    * Applies only when there is no template: with one, the created amounts follow the template's
-   * category instead, which the controller's template check enforces, and the origin category is
-   * not consulted.
+   * category instead, which the template-conformance check above enforces, and the origin category
+   * is not consulted.
    */
   private static void rejectNewSubSamplesOutsideOriginCategory(
       ApiInventoryOperationPost request,

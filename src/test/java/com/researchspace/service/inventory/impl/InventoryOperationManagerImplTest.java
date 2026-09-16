@@ -1,6 +1,5 @@
 package com.researchspace.service.inventory.impl;
 
-import static com.researchspace.service.inventory.InventoryOperationManager.InTransactionValidation.NONE;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -58,6 +57,10 @@ class InventoryOperationManagerImplTest {
   @Mock private com.researchspace.service.inventory.SubSampleApiManager subSampleApiMgr;
   @Mock private com.researchspace.service.inventory.LinkTargetResolver linkTargetResolver;
 
+  @Mock
+  private com.researchspace.service.inventory.OperationTemplateConformanceValidator
+      templateConformance;
+
   private InventoryOperationManagerImpl manager;
   private final User user = new User("anyUser");
   private long nextParentSampleId = 900L;
@@ -102,6 +105,7 @@ class InventoryOperationManagerImplTest {
     ReflectionTestUtils.setField(manager, "sampleApiMgr", sampleApiMgr);
     ReflectionTestUtils.setField(manager, "subSampleApiMgr", subSampleApiMgr);
     ReflectionTestUtils.setField(manager, "linkTargetResolver", linkTargetResolver);
+    ReflectionTestUtils.setField(manager, "templateConformance", templateConformance);
   }
 
   @Test
@@ -116,7 +120,7 @@ class InventoryOperationManagerImplTest {
     ApiSampleWithFullSubSamples created = new ApiSampleWithFullSubSamples("Derived material");
     when(sampleApiMgr.createNewApiSample(newSample, user)).thenReturn(created);
 
-    ApiSampleWithFullSubSamples result = manager.performOperation(request, user, NONE);
+    ApiSampleWithFullSubSamples result = manager.performOperation(request, user);
 
     assertSame(created, result);
     verify(subSampleApiMgr).assertUserCanEditSubSample(100L, user);
@@ -140,7 +144,7 @@ class InventoryOperationManagerImplTest {
     when(sampleApiMgr.createNewApiSample(newSample, user))
         .thenReturn(new ApiSampleWithFullSubSamples("Derived material"));
 
-    manager.performOperation(request, user, NONE);
+    manager.performOperation(request, user);
 
     InOrder inOrder = inOrder(subSampleApiMgr, sampleApiMgr);
     inOrder.verify(subSampleApiMgr).registerApiSubSampleUsage(eq(100L), any(), eq(user));
@@ -156,7 +160,7 @@ class InventoryOperationManagerImplTest {
         .when(subSampleApiMgr)
         .assertUserCanEditSubSample(100L, user);
 
-    assertThrows(RuntimeException.class, () -> manager.performOperation(request, user, NONE));
+    assertThrows(RuntimeException.class, () -> manager.performOperation(request, user));
 
     verify(sampleApiMgr, never()).createNewApiSample(any(), any());
     verify(subSampleApiMgr, never()).registerApiSubSampleUsage(any(), any(), any());
@@ -179,7 +183,7 @@ class InventoryOperationManagerImplTest {
             origin(200L, new ApiQuantityInfo(new BigDecimal("1.5"), 3))));
     request.setNewSample(new ApiSampleWithFullSubSamples("Derived material"));
 
-    assertThrows(RuntimeException.class, () -> manager.performOperation(request, user, NONE));
+    assertThrows(RuntimeException.class, () -> manager.performOperation(request, user));
 
     verify(subSampleApiMgr, never()).registerApiSubSampleUsage(eq(100L), any(), eq(user));
     verify(sampleApiMgr, never()).createNewApiSample(any(), any());
@@ -200,7 +204,7 @@ class InventoryOperationManagerImplTest {
     request.setNewSample(null);
     originHolds(100L, subSampleHolding("2", 3));
 
-    ApiSampleWithFullSubSamples result = manager.performOperation(request, user, NONE);
+    ApiSampleWithFullSubSamples result = manager.performOperation(request, user);
 
     assertNull(result);
     verify(sampleApiMgr, never()).createNewApiSample(any(), any());
@@ -228,7 +232,7 @@ class InventoryOperationManagerImplTest {
     when(sampleApiMgr.createNewApiSample(newSample, user))
         .thenReturn(new ApiSampleWithFullSubSamples("Derived material"));
 
-    manager.performOperation(request, user, NONE);
+    manager.performOperation(request, user);
 
     InOrder inOrder = inOrder(subSampleApiMgr);
     inOrder.verify(subSampleApiMgr).registerApiSubSampleUsage(eq(100L), any(), eq(user));
@@ -249,7 +253,7 @@ class InventoryOperationManagerImplTest {
     when(sampleApiMgr.createNewApiSample(newSample, user))
         .thenReturn(new ApiSampleWithFullSubSamples("Derived material"));
 
-    manager.performOperation(request, user, NONE);
+    manager.performOperation(request, user);
 
     verify(subSampleApiMgr).assertUserCanEditSubSample(100L, user);
     verify(subSampleApiMgr).assertUserCanEditSubSample(200L, user);
@@ -263,7 +267,7 @@ class InventoryOperationManagerImplTest {
 
   private BindException performExpectingRejection(ApiInventoryOperationPost request) {
     BindException rejection =
-        assertThrows(BindException.class, () -> manager.performOperation(request, user, NONE));
+        assertThrows(BindException.class, () -> manager.performOperation(request, user));
     verifyNoMutation();
     return rejection;
   }
@@ -312,7 +316,7 @@ class InventoryOperationManagerImplTest {
     when(sampleApiMgr.createNewApiSample(newSample, user))
         .thenReturn(new ApiSampleWithFullSubSamples("Derived material"));
 
-    assertDoesNotThrow(() -> manager.performOperation(request, user, NONE));
+    assertDoesNotThrow(() -> manager.performOperation(request, user));
     verify(subSampleApiMgr).registerApiSubSampleUsage(eq(100L), any(), eq(user));
   }
 
@@ -330,7 +334,7 @@ class InventoryOperationManagerImplTest {
     when(sampleApiMgr.createNewApiSample(newSample, user))
         .thenReturn(new ApiSampleWithFullSubSamples("Derived material"));
 
-    assertDoesNotThrow(() -> manager.performOperation(request, user, NONE));
+    assertDoesNotThrow(() -> manager.performOperation(request, user));
   }
 
   @Test
@@ -345,7 +349,7 @@ class InventoryOperationManagerImplTest {
     when(sampleApiMgr.createNewApiSample(newSample, user))
         .thenReturn(new ApiSampleWithFullSubSamples("Derived material"));
 
-    assertDoesNotThrow(() -> manager.performOperation(request, user, NONE));
+    assertDoesNotThrow(() -> manager.performOperation(request, user));
   }
 
   @Test
@@ -357,7 +361,7 @@ class InventoryOperationManagerImplTest {
     request.setOrigins(List.of(origin));
     originHolds(100L, subSampleHolding("5", 3));
 
-    assertDoesNotThrow(() -> manager.performOperation(request, user, NONE));
+    assertDoesNotThrow(() -> manager.performOperation(request, user));
   }
 
   @Test
@@ -406,7 +410,7 @@ class InventoryOperationManagerImplTest {
     when(sampleApiMgr.createNewApiSample(newSample, user))
         .thenReturn(new ApiSampleWithFullSubSamples("Pooled material"));
 
-    manager.performOperation(request, user, NONE);
+    manager.performOperation(request, user);
 
     verify(subSampleApiMgr).registerApiSubSampleUsage(eq(100L), any(), eq(user));
     verify(subSampleApiMgr).registerApiSubSampleUsage(eq(200L), any(), eq(user));
@@ -554,7 +558,7 @@ class InventoryOperationManagerImplTest {
     originHolds(100L, subSampleHolding("5", RSUnitDef.GRAM.getId()));
     when(sampleApiMgr.createNewApiSample(newSample, user)).thenReturn(newSample);
 
-    manager.performOperation(request, user, NONE);
+    manager.performOperation(request, user);
 
     verify(sampleApiMgr).createNewApiSample(newSample, user);
   }
@@ -593,7 +597,7 @@ class InventoryOperationManagerImplTest {
     when(sampleApiMgr.createNewApiSample(any(ApiSampleWithFullSubSamples.class), eq(user)))
         .thenReturn(new ApiSampleWithFullSubSamples("Derived material"));
 
-    assertDoesNotThrow(() -> manager.performOperation(request, user, NONE));
+    assertDoesNotThrow(() -> manager.performOperation(request, user));
 
     verify(subSampleApiMgr).registerApiSubSampleUsage(eq(100L), any(), eq(user));
   }
@@ -611,7 +615,7 @@ class InventoryOperationManagerImplTest {
     when(sampleApiMgr.createNewApiSample(any(ApiSampleWithFullSubSamples.class), eq(user)))
         .thenReturn(new ApiSampleWithFullSubSamples("Derived material"));
 
-    assertDoesNotThrow(() -> manager.performOperation(request, user, NONE));
+    assertDoesNotThrow(() -> manager.performOperation(request, user));
 
     verify(subSampleApiMgr).registerApiSubSampleUsage(eq(100L), any(), eq(user));
   }
@@ -631,7 +635,7 @@ class InventoryOperationManagerImplTest {
     when(sampleApiMgr.createNewApiSample(any(ApiSampleWithFullSubSamples.class), eq(user)))
         .thenReturn(new ApiSampleWithFullSubSamples("Derived material"));
 
-    assertDoesNotThrow(() -> manager.performOperation(request, user, NONE));
+    assertDoesNotThrow(() -> manager.performOperation(request, user));
 
     verify(subSampleApiMgr).registerApiSubSampleUsage(eq(100L), any(), eq(user));
   }
@@ -651,7 +655,7 @@ class InventoryOperationManagerImplTest {
     when(sampleApiMgr.createNewApiSample(any(ApiSampleWithFullSubSamples.class), eq(user)))
         .thenReturn(new ApiSampleWithFullSubSamples("Derived material"));
 
-    assertDoesNotThrow(() -> manager.performOperation(request, user, NONE));
+    assertDoesNotThrow(() -> manager.performOperation(request, user));
 
     verify(subSampleApiMgr)
         .registerApiSubSampleUsage(
@@ -673,15 +677,15 @@ class InventoryOperationManagerImplTest {
     when(sampleApiMgr.createNewApiSample(any(), any()))
         .thenReturn(new ApiSampleWithFullSubSamples("Derived material"));
 
-    assertDoesNotThrow(() -> manager.performOperation(request, user, NONE));
+    assertDoesNotThrow(() -> manager.performOperation(request, user));
   }
 
-  // --- the caller-supplied in-transaction validation (template conformance) ---
+  // --- template conformance ---
 
   @Test
-  void runsTheInTransactionValidationBeforeAnyOriginRead() throws Exception {
-    // The template-conformance check used to run in its own, separate transaction. It is now
-    // handed in and run HERE, inside the operation's transaction, before any origin is read.
+  void runsTheTemplateConformanceCheckBeforeAnyOriginRead() throws Exception {
+    // The check used to run in its own, separate transaction. It now runs HERE, inside the
+    // operation's transaction, before any origin is read.
     ApiInventoryOperationPost request = new ApiInventoryOperationPost();
     request.setOrigins(List.of(origin(100L, new ApiQuantityInfo(new BigDecimal("0.6"), 3))));
     ApiSampleWithFullSubSamples newSample = new ApiSampleWithFullSubSamples("Derived material");
@@ -689,13 +693,11 @@ class InventoryOperationManagerImplTest {
     originHolds(100L, subSampleHolding("5", 3));
     when(sampleApiMgr.createNewApiSample(newSample, user))
         .thenReturn(new ApiSampleWithFullSubSamples("Derived material"));
-    InventoryOperationManager.InTransactionValidation check =
-        mock(InventoryOperationManager.InTransactionValidation.class);
 
-    manager.performOperation(request, user, check);
+    manager.performOperation(request, user);
 
-    InOrder inOrder = inOrder(check, subSampleApiMgr);
-    inOrder.verify(check).validate();
+    InOrder inOrder = inOrder(templateConformance, subSampleApiMgr);
+    inOrder.verify(templateConformance).validate(request, user);
     inOrder.verify(subSampleApiMgr).assertUserCanEditSubSample(100L, user);
   }
 
@@ -764,7 +766,7 @@ class InventoryOperationManagerImplTest {
     when(sampleApiMgr.createNewApiSample(newSample, user))
         .thenReturn(new ApiSampleWithFullSubSamples("HeLa p3"));
 
-    manager.performOperation(request, user, NONE);
+    manager.performOperation(request, user);
 
     ArgumentCaptor<QuantityInfo> used = ArgumentCaptor.forClass(QuantityInfo.class);
     verify(subSampleApiMgr).registerApiSubSampleUsage(eq(100L), used.capture(), eq(user));
@@ -810,7 +812,7 @@ class InventoryOperationManagerImplTest {
     when(sampleApiMgr.createNewApiSample(newSample, user))
         .thenReturn(new ApiSampleWithFullSubSamples("Aliquots"));
 
-    manager.performOperation(request, user, NONE);
+    manager.performOperation(request, user);
 
     ArgumentCaptor<QuantityInfo> used = ArgumentCaptor.forClass(QuantityInfo.class);
     verify(subSampleApiMgr).registerApiSubSampleUsage(eq(100L), used.capture(), eq(user));
@@ -866,6 +868,36 @@ class InventoryOperationManagerImplTest {
     verify(subSampleApiMgr).registerApiSubSampleUsage(eq(100L), taken.capture(), eq(user));
     assertEquals(0, taken.getValue().getNumericValue().signum());
     assertEquals(ML, taken.getValue().getUnitId());
+  }
+
+  @Test
+  void anOriginWhoseParentSampleIsAbsentStillPerformsWithNoParentFields() throws Exception {
+    // SubSample.getSample() is nullable enough that the entity null-guards it in getOwner(),
+    // getSharingACL() and getParentId(), and the controller guards it when collecting lock
+    // targets. Reading the parent's fields unguarded would 500 before anything was validated.
+    SubSample subSample = mock(SubSample.class);
+    QuantityInfo quantity = new QuantityInfo(new BigDecimal("5"), ML);
+    when(subSample.getQuantity()).thenReturn(quantity);
+    when(subSample.getQuantityInfo()).thenReturn(quantity);
+    when(subSample.getGlobalIdentifier()).thenReturn("SS100");
+    when(subSample.getName()).thenReturn("Orphan vial");
+    when(subSample.getSample()).thenReturn(null);
+    originHolds(100L, subSample);
+    wireServerBuiltCollaborators();
+    when(sampleApiMgr.createNewApiSample(any(), eq(user)))
+        .thenReturn(new ApiSampleWithFullSubSamples("Aliquots"));
+
+    manager.perform(
+        new AliquotOperation(),
+        creating(
+            new ApiInventoryOperationRequests.Aliquot(),
+            facadeOrigin(100L, millilitres("1")),
+            "Aliquots",
+            1),
+        List.of(100L),
+        user);
+
+    verify(subSampleApiMgr).registerApiSubSampleUsage(eq(100L), any(), eq(user));
   }
 
   @Test

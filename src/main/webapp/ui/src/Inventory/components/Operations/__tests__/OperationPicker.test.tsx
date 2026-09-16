@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
 import OperationPicker from "../OperationPicker";
+import { MAX_ORIGINS } from "../operationsConfig";
 import { operations } from "./testOperations";
 
 describe("OperationPicker", () => {
@@ -34,6 +35,33 @@ describe("OperationPicker", () => {
       "true",
     );
     expect(screen.getByRole("button", { name: /operations\.derive\.label/i })).toHaveAttribute("aria-disabled", "true");
+  });
+
+  it("disables Pool above the backend's origin cap, so the wizard never opens a flow Perform rejects", () => {
+    render(
+      <OperationPicker
+        operations={operations}
+        onSelect={() => undefined}
+        selectionCount={MAX_ORIGINS + 1}
+        allSameCategory
+      />,
+    );
+    expect(screen.getByRole("button", { name: /operations\.pool\.label/i })).toHaveAttribute("aria-disabled", "true");
+  });
+
+  it("enables Pool at exactly the cap", () => {
+    render(
+      <OperationPicker
+        operations={operations}
+        onSelect={() => undefined}
+        selectionCount={MAX_ORIGINS}
+        allSameCategory
+      />,
+    );
+    expect(screen.getByRole("button", { name: /operations\.pool\.label/i })).not.toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
   });
 
   it("disables Pool when the selected subsamples span measurement categories", () => {
