@@ -35,7 +35,7 @@ export function validSubSampleCount(count: unknown, min = 1, max?: number): bool
 
 /**
  * Whether a temperature input's value is above its configured Celsius ceiling (e.g. cryopreserve must
- * be stored at or below -18 °C, set via `maxCelsius` in operations_config.json). Returns false for a
+ * be stored at or below -18 °C, the operation's own `maxCelsius`). Returns false for a
  * non-temperature input, an unconfigured ceiling, or an incomplete value - none of which is an
  * over-temperature. Pure and shared by detailsValid (gating) and the field's inline error.
  */
@@ -47,7 +47,7 @@ export function temperatureExceedsMax(input: OperationInputConfig, value: Operat
 
 /**
  * Whether a temperature input's value is below its configured Celsius floor (e.g. revive must be
- * stored at or above 4 °C, set via `minCelsius` in operations_config.json). The mirror of
+ * stored at or above 4 °C, the operation's own `minCelsius`). The mirror of
  * temperatureExceedsMax: false for a non-temperature input, an unconfigured floor, or an incomplete
  * value. Pure and shared by detailsValid (gating) and the field's inline error.
  */

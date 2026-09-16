@@ -29,8 +29,14 @@ final class OperationTestFixtures {
   }
 
   static ApiInventoryOperationRequests.Origin requestOrigin(long id, ApiQuantityInfo amountTaken) {
+    return requestOrigin("SS" + id, amountTaken);
+  }
+
+  /** An origin named by a literal global id, for the spellings that alias to the same subsample. */
+  static ApiInventoryOperationRequests.Origin requestOrigin(
+      String globalId, ApiQuantityInfo amountTaken) {
     ApiInventoryOperationRequests.Origin origin = new ApiInventoryOperationRequests.Origin();
-    origin.setGlobalId("SS" + id);
+    origin.setGlobalId(globalId);
     origin.setAmountTaken(amountTaken);
     return origin;
   }
