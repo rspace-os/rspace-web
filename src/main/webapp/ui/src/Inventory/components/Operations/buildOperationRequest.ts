@@ -47,8 +47,10 @@ export type FacadeRequest = {
  *
  * <p>Every member of a colliding group is suffixed, not just the later ones, so the names stay
  * symmetrical. The server applies the same rule when it builds the sample
- * (OperationFieldNames.withUniqueFieldNames), so the confirmation preview shows the names the
- * server will actually store.
+ * (OperationFieldNames.withUniqueFieldNames), pinned across the two languages by
+ * FieldNameUniquenessParityTest. It then also truncates each name to the 255-char column width
+ * (OperationFieldNames.fit), which this does not, so a preview of a name composed from a very
+ * long origin name can be longer than what is stored.
  */
 export function withUniqueFieldNames(fields: Array<OperationExtraField>): Array<OperationExtraField> {
   const comparable = (name: string): string => name.trim().toLowerCase();
@@ -108,12 +110,12 @@ export function buildFacadeRequest(params: BuildParams): FacadeRequest {
   // An operation that decides what it takes (Passage, Destroy, and Pool under takeAll) sends no
   // amount at all: the server reads the origin's live quantity instead, and an amount sent
   // alongside is a 400.
-  const takesNothing = !effect.amountTakenFrom;
+  const amountTakenFrom = effect.amountTakenFrom;
   const takeAll = takesWholeOrigins(params);
   const amountFor = (origin: OperationOrigin): OperationQuantity | undefined => {
-    if (takesNothing || takeAll) return undefined;
+    if (amountTakenFrom === undefined || takeAll) return undefined;
     if (params.amountMode === "perSubsample") return params.perSubsampleAmounts?.[origin.globalId];
-    return values[effect.amountTakenFrom as string] as OperationQuantity | undefined;
+    return values[amountTakenFrom] as OperationQuantity | undefined;
   };
   const wireOrigin = (origin: OperationOrigin): FacadeOrigin => {
     const amountTaken = amountFor(origin);

@@ -7,7 +7,10 @@ import type { ResolveLabel } from "./types";
 /** Minimal view of the created sample returned by an operation endpoint. */
 export type OperationResult = { id: number; globalId: string; name: string };
 
-/** The envelope all seven endpoints answer with: the created sample, and the origins after. */
+/**
+ * The part of the endpoints' envelope the wizard reads. They also return the origins as they
+ * stand afterwards, which the wizard re-fetches from its own stores instead.
+ */
 type OperationEnvelope = { sample: OperationResult | null };
 
 /**
