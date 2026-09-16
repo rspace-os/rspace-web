@@ -1,14 +1,12 @@
 /**
- * Turns an operation definition plus the user's collected input values into the request the wizard
- * POSTs. Pure and operation-agnostic: it only follows the effect spec, so a new operation needs a
- * new config entry, not new code here.
+ * Turns an operation plus the user's collected values into the body its endpoint takes.
  *
  * The server builds the created sample and its generated fields itself, so only what the user
- * chose travels: the declared inputs by key, each origin's amount taken, the template and the
+ * chose travels: the operation's own values, each origin's amount taken, the template and the
  * documentation target.
  *
- * Each origin's amount-taken is a positive decrement; the backend rejects taking more than the
- * origin holds and clamps at zero only as defence-in-depth.
+ * Each amount taken is a positive decrement; the backend rejects taking more than the origin
+ * holds.
  */
 import type { InventoryOperation } from "./operationsConfig";
 import { usesAmountModes } from "./operationsConfig";
@@ -16,17 +14,28 @@ import type {
   AmountMode,
   OperationExtraField,
   OperationInputs,
-  OperationInputsRequest,
   OperationOrigin,
-  OperationOriginUpdate,
   OperationQuantity,
   PerSubsampleAmounts,
 } from "./types";
-import { UNSET_UNIT } from "./types";
 
-function quantityValue(values: OperationInputs, key: string): OperationQuantity {
-  return values[key] as OperationQuantity;
-}
+/** One origin on the wire: which subsample, and how much this operation takes from it. */
+type FacadeOrigin = { globalId: string; amountTaken?: OperationQuantity };
+
+/**
+ * A request body for `POST /operations/<key>`. The six single-origin operations send `origin`;
+ * Pool sends `origins` and may send `takeAll`. The remaining fields are the operation's own, which
+ * is why the rest of the body is open: each operation declares different ones, and the endpoint,
+ * not this type, is what rejects a field it does not take.
+ */
+export type FacadeRequest = {
+  origin?: FacadeOrigin;
+  origins?: Array<FacadeOrigin>;
+  takeAll?: true;
+  templateId?: number;
+  documentedByGlobalId?: string;
+  [field: string]: unknown;
+};
 
 /**
  * Makes every generated field name unique, the way the backend judges uniqueness.
@@ -38,8 +47,8 @@ function quantityValue(values: OperationInputs, key: string): OperationQuantity 
  *
  * <p>Every member of a colliding group is suffixed, not just the later ones, so the names stay
  * symmetrical. The server applies the same rule when it builds the sample
- * (InventoryOperationRequestBuilder.withUniqueFieldNames), so the confirmation preview shows the
- * names the server will actually store.
+ * (OperationFieldNames.withUniqueFieldNames), so the confirmation preview shows the names the
+ * server will actually store.
  */
 export function withUniqueFieldNames(fields: Array<OperationExtraField>): Array<OperationExtraField> {
   const comparable = (name: string): string => name.trim().toLowerCase();
@@ -70,6 +79,8 @@ type BuildParams = {
   origins: Array<OperationOrigin>;
   /** The template for the new sample, resolved by the wizard's template step. null = ad-hoc. */
   templateId: number | null;
+  /** The document chosen in the documentation step, linked as IsDocumentedBy; null for none. */
+  documentedByGlobalId: string | null;
   /** How the amount taken is decided across origins. Defaults to "same" (single shared amount),
    *  which is also every single-origin operation's mode. */
   amountMode?: AmountMode;
@@ -78,82 +89,57 @@ type BuildParams = {
 };
 
 /**
- * Computed values (Passage's counter, Destroy's disposed date) are the server's; the origin
- * element owns the amount taken, so it is not repeated in the inputs.
+ * Computed values (Passage's counter, Destroy's disposed date) are the server's, and so is every
+ * generated field; the origin owns the amount taken, so it is not repeated among the values.
  */
-export function buildOperationInputsRequest(
-  params: BuildParams & { documentedByGlobalId: string | null },
-): OperationInputsRequest {
-  const { operation, values, templateId, documentedByGlobalId } = params;
-  const inputs: OperationInputs = {};
+export function buildFacadeRequest(params: BuildParams): FacadeRequest {
+  const { operation, values, origins, templateId, documentedByGlobalId } = params;
+  const { effect } = operation;
+
+  const request: FacadeRequest = {};
   for (const input of operation.inputs) {
-    if (input.key === operation.effect.amountTakenFrom) continue;
+    if (input.key === effect.amountTakenFrom) continue;
     const value = values[input.key];
-    if (value !== undefined) inputs[input.key] = value;
+    if (value !== undefined) request[input.key] = value;
   }
-  return {
-    operationType: operation.key,
-    origins: buildOriginUpdates(params).map(({ id, amountMode, amountTaken }) => ({ id, amountMode, amountTaken })),
-    inputs,
-    templateId,
-    documentedByGlobalId,
+  if (templateId !== null) request.templateId = templateId;
+  if (documentedByGlobalId !== null) request.documentedByGlobalId = documentedByGlobalId;
+
+  // An operation that decides what it takes (Passage, Destroy, and Pool under takeAll) sends no
+  // amount at all: the server reads the origin's live quantity instead, and an amount sent
+  // alongside is a 400.
+  const takesNothing = !effect.amountTakenFrom;
+  const takeAll = takesWholeOrigins(params);
+  const amountFor = (origin: OperationOrigin): OperationQuantity | undefined => {
+    if (takesNothing || takeAll) return undefined;
+    if (params.amountMode === "perSubsample") return params.perSubsampleAmounts?.[origin.globalId];
+    return values[effect.amountTakenFrom as string] as OperationQuantity | undefined;
   };
+  const wireOrigin = (origin: OperationOrigin): FacadeOrigin => {
+    const amountTaken = amountFor(origin);
+    return amountTaken === undefined
+      ? { globalId: origin.globalId }
+      : { globalId: origin.globalId, amountTaken: { ...amountTaken } };
+  };
+
+  if (operation.requiresMultiple) {
+    request.origins = origins.map(wireOrigin);
+    if (takeAll) request.takeAll = true;
+  } else {
+    request.origin = wireOrigin(origins[0]);
+  }
+  return request;
 }
 
 /**
- * One update per origin: its amount taken and how it was decided.
+ * Whether this request empties its origins rather than taking chosen amounts: Destroy always, and
+ * Pool in the runtime "take all" mode.
  *
- * Fields the operation adds to the origin itself (Destroy's disposed date) are NOT built here: the
- * server builds them from the definition (InventoryOperationRequestBuilder).
+ * amountMode is only meaningful for an operation that OFFERS it (a multi-origin operation that
+ * takes an amount), but the wizard restores a stored bundle's amountMode for every operation, so
+ * usesAmountModes gates it here too: a stale single-origin bundle carrying "all" must not empty
+ * the origin while the summary still shows the typed amount.
  */
-function buildOriginUpdates(params: BuildParams): Array<OperationOriginUpdate> {
-  const { operation, values, origins, amountMode = "same", perSubsampleAmounts = {} } = params;
-  const { effect } = operation;
-
-  // The unit used when an amount-taken has to be defaulted (a no-op zero) and the origin carries no
-  // unit of its own: fall back to the created "each amount"'s unit, or the unset marker if neither.
-  const eachAmountUnit = effect.eachAmountFrom
-    ? (values[effect.eachAmountFrom] as OperationQuantity | undefined)?.unitId
-    : undefined;
-
-  const fullQuantity = (origin: OperationOrigin): OperationQuantity =>
-    origin.quantity ? { ...origin.quantity } : { numericValue: 0, unitId: eachAmountUnit ?? UNSET_UNIT };
-
-  // Whether this request's amount is a snapshot of the origin's whole quantity rather than something
-  // the user typed: Destroy (emptiesOrigin) and the runtime "take all" mode. The backend checks the
-  // mode for shape only, not against the live quantity. "same" and "perSubsample" amounts are
-  // user-entered, so they are "explicit".
-  //
-  // amountMode is only meaningful for an operation that OFFERS it (a multi-origin operation that
-  // takes an amount), but the wizard restores a stored bundle's amountMode for every operation, so
-  // usesAmountModes must gate it here too - otherwise a stale single-origin bundle carrying "all"
-  // would empty the origin while the summary still showed the typed amount.
-  const takesWholeOrigin = effect.emptiesOrigin || (amountMode === "all" && usesAmountModes(operation));
-
-  // The amount to take from a given origin:
-  // - `emptiesOrigin` (Destroy) and the runtime "take all" mode both take the origin's own full
-  //   current quantity, so its volume ends at zero.
-  // - "perSubsample" mode takes the per-origin amount chosen for this origin (by global id); an origin
-  //   with none recorded takes a zero (no-op) decrement.
-  // - otherwise ("same" mode, and every single-origin operation) it takes the configured shared
-  //   amount. An operation that leaves the origin untouched (Passage) has no amountTakenFrom and
-  //   takes zero: the backend treats a 0 decrement as a no-op, so the origin is still
-  //   linked/permission-checked.
-  const amountTakenFor = (origin: OperationOrigin): OperationQuantity => {
-    if (takesWholeOrigin) return fullQuantity(origin);
-    if (amountMode === "perSubsample") {
-      const chosen = perSubsampleAmounts[origin.globalId];
-      return chosen
-        ? { ...chosen }
-        : { numericValue: 0, unitId: origin.quantity?.unitId ?? eachAmountUnit ?? UNSET_UNIT };
-    }
-    if (effect.amountTakenFrom) return quantityValue(values, effect.amountTakenFrom);
-    return { numericValue: 0, unitId: origin.quantity?.unitId ?? eachAmountUnit ?? UNSET_UNIT };
-  };
-
-  return origins.map((origin) => ({
-    id: origin.id,
-    amountMode: takesWholeOrigin ? "all" : "explicit",
-    amountTaken: amountTakenFor(origin),
-  }));
+function takesWholeOrigins({ operation, amountMode }: BuildParams): boolean {
+  return Boolean(operation.effect.emptiesOrigin) || (amountMode === "all" && usesAmountModes(operation));
 }
