@@ -5782,6 +5782,7 @@ export default interface Resources {
         "invalidJsonValue": "The value for preference key ''{0}'' is not valid JSON.",
         "invalidKey": "''{0}'' is not a valid preference key.",
         "keyNotSupported": "Preference ''{0}'' is stored as a single value, so it cannot be updated one key at a time.",
+        "settingsTooLarge": "Saving ''{0}'' would make your saved UI settings too large. The limit is {1} bytes.",
         "valueTooLarge": "The value for preference key ''{0}'' is too large. The limit is {1} characters."
       },
       "rateLimitExceeded": "You have exceeded the number of {0} requests. Please contact ResearchSpace support for assistance.",
@@ -7181,6 +7182,7 @@ export default interface Resources {
           "unitIncompatibleWithSample": "Subsample quantity ''{0}'' is incompatible with quantity unit used by parent sample ({1})"
         },
         "temperature": {
+          "belowAbsoluteZero": "The temperature is below absolute zero.",
           "invalidUnit": "Unit id is not a valid temperature unit.",
           "minGreaterThanMax": "Min temperature is greater than max temperature.",
           "notStorable": "Temperature must be within the range the system stores, with at most 3 decimal places.",
