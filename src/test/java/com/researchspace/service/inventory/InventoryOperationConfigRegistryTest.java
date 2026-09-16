@@ -200,9 +200,8 @@ class InventoryOperationConfigRegistryTest {
                     "not json".getBytes(java.nio.charset.StandardCharsets.UTF_8))));
   }
 
-  // --- semantic validation of the definitions themselves (F3) ---
+  // --- semantic validation of the definitions themselves ---
 
-  /** The registry over the given definitions, or the message of the rejection it produced. */
   private static String rejectionMessage(String json) {
     return assertThrows(
             IllegalStateException.class,
@@ -264,8 +263,6 @@ class InventoryOperationConfigRegistryTest {
 
   @Test
   void acceptsAContentReferenceToAComputedValueRatherThanAnInput() {
-    // Passage and Destroy both do this: the wizard DERIVES the value instead of asking for it, so
-    // the field's contentFrom names a computed slot, not a declared input.
     assertDoesNotThrow(
         () ->
             new InventoryOperationConfigRegistry(
@@ -358,7 +355,6 @@ class InventoryOperationConfigRegistryTest {
 
   @Test
   void reportsEveryViolationAtOnceRatherThanTheFirst() {
-    // One round trip to fix a bad config file, not one per boot.
     String message =
         rejectionMessage(
             """
@@ -380,7 +376,7 @@ class InventoryOperationConfigRegistryTest {
   void reportsAMissingComputedFunctionAsAViolationRatherThanCrashing() {
     // Set.of(...) throws NullPointerException from contains(null), so an omitted "fn" aborted the
     // whole pass with a bare NPE naming neither the operation nor the problem - the exact failure
-    // this validation exists to replace (parallel review, C5).
+    // this validation exists to replace.
     String message =
         rejectionMessage(
             """

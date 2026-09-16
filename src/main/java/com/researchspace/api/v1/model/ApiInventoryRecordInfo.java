@@ -85,8 +85,8 @@ public abstract class ApiInventoryRecordInfo extends IdentifiableNameableApiObje
   @JsonProperty("quantity")
   private ApiQuantityInfo quantity;
 
-  // Null list elements ("extraFields": [null]) would 500 in the apply loops; element-level
-  // @NotNull turns each into a clean 400 at binding (security review, finding 6).
+  // A null list element ("tags": [null]) would 500 downstream; element-level @NotNull turns it
+  // into a clean 400 at binding.
   @JsonProperty("tags")
   private List<@NotNull ApiTagInfo> tags = new ArrayList<>();
 

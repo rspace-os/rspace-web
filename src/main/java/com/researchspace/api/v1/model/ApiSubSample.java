@@ -59,12 +59,10 @@ import lombok.ToString;
 public class ApiSubSample extends ApiSubSampleInfoWithSampleInfo {
 
   // Null list elements ("extraFields": [null]) would 500 in the apply loops; element-level
-  // @NotNull turns each into a clean 400 at binding (security review, finding 6).
+  // @NotNull turns each into a clean 400 at binding.
   @JsonProperty("extraFields")
   private List<@NotNull ApiExtraField> extraFields = new ArrayList<>();
 
-  // Cascade so each note's own constraints (@NotBlank, @Size content) hold wherever a subsample is
-  // bound as part of a @Valid request body.
   @Valid
   @JsonProperty("notes")
   private List<@NotNull ApiSubSampleNote> notes = new ArrayList<>();

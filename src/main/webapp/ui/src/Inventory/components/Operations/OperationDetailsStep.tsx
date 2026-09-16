@@ -41,12 +41,9 @@ import { resolveLabelFrom } from "./types";
 // overflow the number input (which silently resets to zero) nor lose precision.
 const MAX_QUANTITY = 1e9;
 
-// Anything the user can type on the way to a temperature: the empty string, a lone minus sign, and
-// a trailing decimal point all have to be held while they finish.
 const PARTIAL_TEMPERATURE = /^-?\d*(\.\d*)?$/;
 
-// Number("") and Number("-") are 0 and NaN respectively; both mean "not a temperature yet", and
-// detailsValid already blocks Next on a non-finite value.
+// Number("") and Number("-") are 0 and NaN respectively; both mean "not a temperature yet".
 const parseTemperature = (raw: string): number => (/\d/.test(raw) ? Number(raw) : NaN);
 
 /**
@@ -56,9 +53,6 @@ const parseTemperature = (raw: string): number => (/\d/.test(raw) ? Number(raw) 
  * minus sign never reached onChange: deleting the digits of -18 dropped the sign and stored
  * Number("") as 0 °C, and a value could not be typed sign-first either. Cryopreserve runs at -18 °C
  * or colder, so passing through a lone minus is part of ordinary use.
- *
- * The raw string is held here and only parsed for the caller, so an in-progress "-" stays on screen
- * while the reported value is NaN.
  */
 function TemperatureField({
   value,
@@ -113,7 +107,7 @@ function TemperatureField({
  * SubSampleModel.quantityCategory, because that getter resolves the unit through the MobX unit
  * store and THROWS when the store holds no entry for the id. The store seeds itself from
  * localStorage, so it is empty until GET /units has resolved once and every id misses in that
- * window (Copilot review, PR #1090). An unknown category yields an empty list, which offers no unit
+ * window. An unknown category yields an empty list, which offers no unit
  * rather than crashing the step.
  */
 const categoriesOfSubSample = (subSample: SubSampleModel): Array<string> => {
@@ -121,16 +115,6 @@ const categoriesOfSubSample = (subSample: SubSampleModel): Array<string> => {
   return category ? [category] : [];
 };
 
-/**
- * Renders a slice of the operation's declared inputs generically. The wizard shows the process name
- * and derived sample name first ("details"; the single "remember" checkbox lives on the confirmation
- * step), then the quantities on a later step ("amounts") with the count full-width and the two
- * amounts sharing a row. Quantity inputs
- * default to the origin's unit but the user may pick any unit in the same category; the amount-taken
- * input stays in the origin's own category (DevDocs/adr/0007). The process-name input is a free-solo
- * autocomplete of previously-saved names, and the derived sample name is disabled until a process
- * name is entered (DevDocs/adr/0007).
- */
 function OperationDetailsStep({
   operation,
   origin,
@@ -150,19 +134,11 @@ function OperationDetailsStep({
   values: OperationInputs;
   onChange: (values: OperationInputs) => void;
   section?: "details" | "amounts";
-  /**
-   * Unit categories offered in the amount dropdowns. Defaults to the origin subsample's category, but
-   * the wizard overrides it with a chosen template's category so the amounts match the template.
-   */
   unitCategories?: Array<string>;
-  /** Saved process names for this operation, offered in the process-name autocomplete. */
   processNameOptions?: Array<string>;
-  /** Every selected origin, for the "per subsample" amounts list (DevDocs/adr/0007); defaults to [origin]. */
   origins?: Array<SubSampleModel>;
-  /** The amount mode for a multi-origin operation (DevDocs/adr/0007); "same" for single-origin operations. */
   amountMode?: AmountMode;
   onAmountModeChange?: (mode: AmountMode) => void;
-  /** Per-origin amounts (by origin global id) for "perSubsample" mode. */
   perSubsampleAmounts?: PerSubsampleAmounts;
   onPerSubsampleAmountsChange?: (amounts: PerSubsampleAmounts) => void;
 }): React.ReactNode {
@@ -179,7 +155,6 @@ function OperationDetailsStep({
 
   const renderInput = (input: OperationInputConfig): React.ReactNode => {
     if (input.type === "text") {
-      // The process-name field is a free-solo autocomplete of saved names (a new name is allowed).
       if (input.key === operation.effect.processNameFrom) {
         return (
           <Autocomplete
@@ -200,8 +175,7 @@ function OperationDetailsStep({
           />
         );
       }
-      // The derived sample name: disabled (with a hint) until a process name exists, editable once it
-      // does. The wizard seeds and de-duplicates the value; the user may override it.
+      // The wizard seeds and de-duplicates the value; the user may override it.
       if (input.key === operation.effect.nameFrom) {
         return (
           <TextField
@@ -230,10 +204,6 @@ function OperationDetailsStep({
       );
     }
     if (input.type === "integer") {
-      // The field carried min/max but neither error nor helperText, unlike every quantity and
-      // temperature field below: clearing it makes Number("") === 0, which fails the gate, so Next
-      // greyed out with nothing on screen explaining why (parallel review, FE10). Driven by the
-      // same predicate the step gate uses, so the two cannot disagree.
       const min = input.min ?? 1;
       const badCount = !validSubSampleCount(values[input.key], min, input.max);
       return (
@@ -257,7 +227,6 @@ function OperationDetailsStep({
         />
       );
     }
-    // quantity or temperature: value is { numericValue, unitId }
     const quantity = values[input.key] as OperationQuantity | undefined;
     const isTemperature = input.type === "temperature";
     const currentUnitId = isTemperature ? CELSIUS : (quantity?.unitId ?? originUnitId);
@@ -269,8 +238,6 @@ function OperationDetailsStep({
     const categoriesForInput =
       input.key === operation.effect.amountTakenFrom ? originCategories : (unitCategories ?? originCategories);
     const numericValue = (raw: number) => Math.min(MAX_QUANTITY, Math.max(0, raw));
-    // The amount taken cannot exceed what the origin currently holds (DevDocs/adr/0007). Flag it inline on the
-    // amount-taken field; the wizard blocks Next on the same condition.
     const overRemoval =
       input.key === operation.effect.amountTakenFrom &&
       amountTakenExceedsOrigin(
@@ -278,13 +245,10 @@ function OperationDetailsStep({
         values,
         origin.quantity ? { numericValue: getValue(origin.quantity), unitId: getUnitId(origin.quantity) } : null,
       );
-    // A temperature outside its configured bounds (cryopreserve > -18 °C, revive < 4 °C) is flagged
-    // inline; the wizard blocks Next on the same condition (detailsValid).
     const overMaxTemp = temperatureExceedsMax(input, quantity);
     const underMinTemp = temperatureBelowMin(input, quantity);
-    // A temperature the backend rejects outright (below absolute zero, or finer than the stored 3
-    // decimal places) is flagged inline too; the wizard blocks Next on the same condition
-    // (Copilot review, PR #1090).
+    // A temperature the backend rejects outright: below absolute zero, or finer than the stored 3
+    // decimal places.
     const unstorableTemp = temperatureNotStorable(input, quantity);
     if (isTemperature)
       return (
@@ -335,9 +299,6 @@ function OperationDetailsStep({
     );
   };
 
-  // One amount field for a single origin in "per subsample" mode: blank until entered, with the unit
-  // prefilled to that subsample's own unit (Pool subsamples share a category, so no unit-picking is
-  // needed) and its own over-removal check against that subsample's quantity (DevDocs/adr/0007).
   const renderPerSubsampleAmount = (sub: SubSampleModel): React.ReactNode => {
     const globalId = sub.globalId ?? "";
     const current = perSubsampleAmounts[globalId];
@@ -364,9 +325,6 @@ function OperationDetailsStep({
           input: {
             endAdornment: (
               <UnitSelect
-                // Same static derivation as the shared-amount input above, and for the same reason:
-                // sub.quantityCategory throws while the unit store is unpopulated, which would take
-                // out the amounts step on Pool -> Per subsample (Copilot review, PR #1090).
                 categories={categoriesOfSubSample(sub)}
                 value={currentUnitId}
                 handleChange={(e) => setAmount(current?.numericValue ?? 0, Number(e.target.value))}
@@ -379,16 +337,12 @@ function OperationDetailsStep({
   };
 
   if (section === "amounts") {
-    // Count full-width above; the two amounts share a row (they are narrow), stacking on small
-    // screens. Any other amount-section inputs fall in below.
     const byKey = new Map(operation.inputs.filter((i) => amountKeys.has(i.key)).map((i) => [i.key, i]));
     const each = eachAmountFrom ? byKey.get(eachAmountFrom) : undefined;
     const taken = amountTakenFrom ? byKey.get(amountTakenFrom) : undefined;
     const count = countFrom ? byKey.get(countFrom) : undefined;
 
-    // Multi-origin operations offer the "amount to take" modes (DevDocs/adr/0007): "same" keeps the single
-    // shared amount-taken field; "all" empties every origin (no field); "per subsample" shows one
-    // amount field per origin. The created-sample count/each-amount stay above and independent (DevDocs/adr/0007).
+    // "all" takes everything from every origin, so it renders no amount field of its own.
     if (usesAmountModes(operation)) {
       const originsList = origins ?? [origin];
       return (
@@ -398,7 +352,6 @@ function OperationDetailsStep({
           <FormControl>
             <FormLabel>{label("operations.fields.amountMode")}</FormLabel>
             <RadioGroup value={amountMode} onChange={(e) => onAmountModeChange?.(e.target.value as AmountMode)}>
-              {/* "Take all" is listed first as the common default (DevDocs/adr/0007). */}
               <FormControlLabel value="all" control={<Radio />} label={label("operations.fields.amountModeAll")} />
               <FormControlLabel value="same" control={<Radio />} label={label("operations.fields.amountModeSame")} />
               <FormControlLabel
@@ -432,9 +385,6 @@ function OperationDetailsStep({
     );
   }
 
-  // An origin the backend will not accept blocks the first step, and the wizard disables Next on the
-  // same condition. Both reasons are explained: an empty origin, and one whose unit is not an amount
-  // (a molarity or concentration), which used to disable Next with nothing on screen saying why.
   const blocked = originBlockedReason(origin.quantity);
 
   return (

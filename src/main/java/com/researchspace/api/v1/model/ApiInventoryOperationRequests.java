@@ -12,11 +12,11 @@ import lombok.Setter;
 
 /**
  * The request bodies of the seven typed operation endpoints, {@code POST /operations/<key>}: the
- * public API contract (DevDocs/adr/0007 M6, shapes frozen in DevDocs/adr/0007). Each carries what
- * is consumed ({@code origin}, or {@code origins} for Pool, identified by global id, M0 D3), the
- * values the definition declares as inputs, and for a creating operation the template (numeric like
- * {@code POST /samples}, D4) and the documentation target (D8: no other sample metadata; set it
- * with a follow-up {@code PUT}).
+ * public API contract (shapes frozen in DevDocs/adr/0007). Each carries what is consumed ({@code
+ * origin}, or {@code origins} for Pool, identified by global id), the values the definition
+ * declares as inputs, and for a creating operation the template (numeric like {@code POST
+ * /samples}) and the documentation target (no other sample metadata; set it with a follow-up {@code
+ * PUT}).
  *
  * <p>Every input field is named exactly after the definition's input key, so {@link
  * Request#toOperationInputs()} is a mechanical copy and a core validation error about, say, {@code
@@ -33,8 +33,8 @@ public final class ApiInventoryOperationRequests {
   /**
    * One origin subsample. {@code amountTaken} is what the operation removes from it, and is only
    * meaningful where the definition takes something (absent for Passage and Destroy: the server
-   * takes nothing, or everything). {@code expectedQuantity} is optional on every operation (M0 D5):
-   * the quantity the caller saw, shape-checked and otherwise accepted without comparison
+   * takes nothing, or everything). {@code expectedQuantity} is optional on every operation: the
+   * quantity the caller saw, shape-checked and otherwise accepted without comparison
    * (DevDocs/adr/0007). The operation takes whatever is there either way.
    */
   @Getter
@@ -67,7 +67,6 @@ public final class ApiInventoryOperationRequests {
     }
   }
 
-  /** The fields every creating operation declares. */
   @Getter
   @Setter
   public abstract static class Creating implements Request {
@@ -83,7 +82,7 @@ public final class ApiInventoryOperationRequests {
      * amountTaken but created one subsample, and {@code 100.9} became 100 and slipped past the
      * definition's declared maximum. The generic endpoint binds into a {@code Map<String, Object>},
      * where the same value arrives as a Double and the input validator's integrality check rejects
-     * it - so the typed facades were quietly laxer than the endpoint they front (Codex review, P2).
+     * it - so the typed facades were quietly laxer than the endpoint they front.
      *
      * <p>{@link #toOperationInputs} narrows a whole value to an Integer and passes anything else
      * through unchanged, so the rejection is the validator's usual field-scoped 400 on {@code
@@ -133,7 +132,7 @@ public final class ApiInventoryOperationRequests {
     }
   }
 
-  /** A creating operation over exactly one origin (M0 D6: singular {@code origin}). */
+  /** A creating operation over exactly one origin (singular {@code origin}). */
   @Getter
   @Setter
   public abstract static class SingleOriginCreating extends Creating {
@@ -203,10 +202,10 @@ public final class ApiInventoryOperationRequests {
   }
 
   /**
-   * {@code POST /operations/pool}: the one multi-origin operation (M0 D6: plural {@code origins}),
-   * each origin with its own amount taken. {@code minItems} is the one list rule kept here because
-   * a generated client can enforce it before the call; the core re-checks it against the
-   * definition's {@code requiresMultiple}.
+   * {@code POST /operations/pool}: the one multi-origin operation (plural {@code origins}), each
+   * origin with its own amount taken. {@code minItems} is the one list rule kept here because a
+   * generated client can enforce it before the call; the core re-checks it against the definition's
+   * {@code requiresMultiple}.
    */
   @Getter
   @Setter
@@ -216,7 +215,7 @@ public final class ApiInventoryOperationRequests {
     // least two". The ceiling is capped here as well as in InventoryOperationPostValidator
     // (MAX_ORIGINS), for the same reason the generic request caps it: the core's check runs only
     // after Jackson has materialised every element and performTyped has walked all of them parsing
-    // global ids, so the ceiling belongs at binding too (parallel review). Same key and same value
+    // global ids, so the ceiling belongs at binding too. Same key and same value
     // as ApiInventoryOperationPost, so the two endpoints cannot disagree.
     @Size.List({
       @Size(min = 2, message = "{errors.inventory.operation.originCountMinimum}"),

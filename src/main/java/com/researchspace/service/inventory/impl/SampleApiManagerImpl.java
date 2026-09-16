@@ -81,8 +81,6 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
   private @Autowired InventoryMoveHelper inventoryMoveHelper;
   private @Autowired InventoryAuditApiManager inventoryAuditMgr;
   private @Autowired ApiFieldToModelFieldFactory apiFieldToModelFieldFactory;
-  // Reinstated for the trashed-template rejection. Dropped by S5-S7 only because the lock path was
-  // its last remaining user; it is the ordinary i18n helper, not concurrency machinery.
   private @Autowired MessageSourceUtils messages;
 
   @Override
@@ -246,12 +244,9 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
       return null;
     }
     SampleTemplate template = assertUserCanReadSampleTemplate(templateId, user);
-    // Soft deletion means a trashed template still exists and is still readable, so neither the
-    // existence check nor the permission check above rejects one. Creating a sample from a template
-    // the user has thrown away is never intended: the operations wizard could restore a remembered
-    // template that had since been trashed and perform against it (RSDEV-1231). Checked here rather
-    // than in assertUserCanReadSampleTemplate, whose other callers (the template's own GET, its
-    // image and thumbnail, export) must keep reading trashed templates.
+    // Soft deletion means a trashed template is still readable, so the checks above do not reject
+    // it. Checked here rather than in assertUserCanReadSampleTemplate, whose other callers (the
+    // template's own GET, its image and thumbnail, export) must keep reading trashed templates.
     if (template.isDeleted()) {
       throw new IllegalArgumentException(
           messages.getMessage("errors.inventory.template.deleted", new Object[] {templateId}));
@@ -276,9 +271,6 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
             : recordFactory.createSample(sampleName, user);
 
     if (sampleTemplate != null) {
-      // Before the extra fields are added below: an operation-generated field whose name the
-      // template already declares is absorbed into that inherited field rather than added beside it
-      // as a duplicate (Codex review, PR #1090).
       mergeOperationFieldsIntoInheritedTemplateFields(apiSample, sample.getActiveFields());
     }
     setBasicFieldsFromNewIncomingApiInventoryRecord(sample, apiSample, user);
@@ -406,28 +398,18 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
   }
 
   /**
-   * Writes an operation's generated field into the identically named field the created sample
-   * inherits from its template, instead of adding a second field with that name.
+   * Merges an operation-generated field into the identically named field the sample inherits from
+   * its template, instead of adding a second field with that name and failing {@link
+   * InventoryFieldNameUniquenessValidator#assertNoDuplicateFieldNames}.
    *
-   * <p>A template may legitimately declare a field an operation also produces: a Passage template
-   * with "Passage number", a Cryopreserve one with "Cryomedium". Adding the generated field
-   * alongside the inherited one gives the sample two fields of the same name, which {@link
-   * InventoryFieldNameUniquenessValidator#assertNoDuplicateFieldNames} rejects, so the operation
-   * failed for every such template and the wizard offered no way to repair the generated name
-   * (Codex review, PR #1090). Renaming the generated field would clear the rejection but break the
-   * Passage counter, which finds the previous number by looking the field up by name
-   * (computedValues.ts, {@code parentFieldValue}): the number would land beside an untouched
-   * template counter and the next Passage would read the empty one. Merging keeps one field of that
-   * name carrying the operation's value, so the lookup still works with or without a template.
+   * <p>Renaming the generated field instead of merging would break the Passage counter, which finds
+   * the previous number by looking up a field with that exact name (computedValues.ts, {@code
+   * parentFieldValue}).
    *
-   * <p>Only fields the operation generated are merged, identified by their {@code
-   * operationFieldKey}: a user's own extra field on POST /samples carries none and keeps the
-   * existing duplicate-name rejection rather than silently overwriting template content. The key is
-   * evidence because no request can set it: the DTO property is READ_ONLY, so only the server's
-   * request builder ever puts one on a field (RSDEV-1231). Link fields are never merged in either
-   * direction, because a link holds a structured {@code InventoryLink} rather than text. Names are
-   * matched the way the uniqueness check compares them, trimmed and case-insensitively, or a
-   * collision it would reject could survive this merge.
+   * <p>Only fields carrying an {@code operationFieldKey} are merged; a user's own extra field on
+   * POST /samples has none and keeps the normal duplicate-name rejection. Link fields are never
+   * merged, since a link holds a structured {@code InventoryLink} rather than text. Names are
+   * matched trimmed and case-insensitively, the same way the uniqueness check compares them.
    */
   static void mergeOperationFieldsIntoInheritedTemplateFields(
       ApiSampleWithFullSubSamples apiSample, List<InventoryEntityField> inheritedFields) {
@@ -457,13 +439,10 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
       }
       InventoryEntityField target =
           mergeTargets.get(field.getName().trim().toLowerCase(Locale.ROOT));
-      // A name match says nothing about the inherited field's TYPE: a template may declare a NUMBER
-      // field called "Cryomedium" while the operation generates a text one holding "10% DMSO".
-      // setFieldData validates before storing and throws, which would leave the manager as an
-      // uncontrolled failure rather than the request's own validation response. Asked first with
-      // the
-      // non-throwing validate, so an incompatible field is simply not absorbed: it stays in
-      // extraFields and collects the ordinary duplicate-name rejection (Copilot review, PR #1090).
+      // A name match doesn't guarantee the inherited field's type matches (e.g. a NUMBER template
+      // field vs. a generated text value). setFieldData throws on a mismatch, so validate first and
+      // leave an incompatible field in extraFields to fall back to the ordinary duplicate-name
+      // rejection instead of failing the request unpredictably.
       if (target != null && !target.validate(field.getContent()).hasErrorMessages()) {
         target.setFieldData(field.getContent());
         generated.remove();

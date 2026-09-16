@@ -1,17 +1,8 @@
-/**
- * Resolves an operation's `effect.computed` values at submit (DevDocs/adr/0007): for each computed value, it
- * sources every argument, applies the named Operation function, and writes the single result into the
- * `into` input. Pure and operation-agnostic - the wizard supplies the parent-sample fields and the
- * current values; the computation lives in the operation function registry, not here.
- */
-
 import { type OperationFunctionArgs, type OperationFunctionName, operationFunctions } from "./operationFunctions";
 import type { ComputedArgSource, InventoryOperation } from "./operationsConfig";
 import type { OperationInputs } from "./types";
 
 /**
- * The minimal shape the resolver needs of a sample field.
- *
  * `operationFieldKey` is the field's STABLE identity when an operation generated it; `name` is a
  * localized resolution of that key, so it changes with the locale and with any rewording of the
  * translation. Absent (null/undefined) on every hand-created field.
@@ -29,13 +20,10 @@ export type ComputedContext = {
    * value like Passage number is often added as a custom field, so it lives in `extraFields`, and
    * passing only `fields` makes every `parentSampleField` lookup fall back to its start value (the
    * original Passage "stuck at 1" bug).
-   *
-   * The confirmation preview passes an empty array deliberately; see the comment at its call site.
    */
   parentFields: ReadonlyArray<SampleField>;
   /** The current input values, for `input` args, and where each result is written. */
   values: OperationInputs;
-  /** Resolves a field-name i18n key to the field name to match, in the user's locale. */
   resolveFieldName: (key: string) => string;
 };
 
@@ -47,7 +35,7 @@ export type ComputedContext = {
  * whose previous generation was created under a different locale, or under an earlier wording of the
  * same translation, is still found and still increments. Matching only on the current locale's
  * resolution of the key silently missed it and restarted the count at 1, forking the lineage into
- * one counter per locale (F6).
+ * one counter per locale.
  *
  * The name fallback is PERMANENT, not migration cover: it is how a user's own hand-created "Passage
  * number" (no key at all) is picked up on the first Passage of an existing culture, which is
@@ -72,8 +60,7 @@ function resolveArg(source: ComputedArgSource, ctx: ComputedContext): string | n
 }
 
 /**
- * Applies the operation's computed values in config order, returning the values map augmented with
- * each result under its `into` key. Because results are written back, a later computed value can read
+ * Because results are written back, a later computed value can read
  * an earlier one via an `input` arg (chaining follows the array order). Assumes the config passed
  * load-time validation (operationsConfig), so every `fn` resolves.
  */

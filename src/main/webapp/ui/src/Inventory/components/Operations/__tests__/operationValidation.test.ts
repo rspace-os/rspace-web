@@ -24,8 +24,6 @@ const cryo = {
   key: "cryopreserve",
   inputs: [
     { key: "sampleName", type: "text", labelKey: "x", required: true },
-    // min AND max, as the shipped definitions declare them: the cap is the definition's, not a
-    // constant in the frontend (parallel review, FE9), so a fixture without one no longer bounds it.
     { key: "count", type: "integer", labelKey: "x", min: 1, max: 100 },
     { key: "eachAmount", type: "quantity", labelKey: "x" },
     { key: "amountTaken", type: "quantity", labelKey: "x" },
@@ -59,8 +57,6 @@ describe("detailsValid", () => {
   });
 
   it("requires the child count to be a whole number within the definition's own min and max", () => {
-    // Code review, finding 12: 1.5 used to pass and Array.from truncated it to one child; 101 was
-    // built client-side only to be rejected by the server's @Size(max = 100).
     expect(detailsValid(cryo, { ...validValues, count: 1.5 })).toBe(false);
     expect(detailsValid(cryo, { ...validValues, count: 101 })).toBe(false);
     expect(detailsValid(cryo, { ...validValues, count: 0 })).toBe(false);
@@ -72,26 +68,21 @@ describe("detailsValid", () => {
   });
 
   it("rejects an amount whose unit has been cleared (no unit chosen)", () => {
-    // A cleared unit (unitId 0, set when switching to a new process name) is an incomplete amount and
-    // must block the step even if a numeric value is present.
     expect(detailsValid(cryo, { ...validValues, eachAmount: { numericValue: 5, unitId: 0 } })).toBe(false);
     expect(detailsValid(cryo, { ...validValues, amountTaken: { numericValue: 5, unitId: 0 } })).toBe(false);
   });
 
   it("validates only the given keys when allowedKeys is passed (per-step validation)", () => {
-    // The wizard validates the name/template step and the amounts step separately: a blank amount unit
-    // fails the amounts step but is ignored while validating only the name inputs, and vice versa.
     const blankUnit = { ...validValues, eachAmount: { numericValue: 5, unitId: 0 } };
-    expect(detailsValid(cryo, blankUnit, new Set(["sampleName"]))).toBe(true); // amounts not checked
-    expect(detailsValid(cryo, blankUnit, new Set(["eachAmount"]))).toBe(false); // amounts checked
+    expect(detailsValid(cryo, blankUnit, new Set(["sampleName"]))).toBe(true);
+    expect(detailsValid(cryo, blankUnit, new Set(["eachAmount"]))).toBe(false);
     const blankName = { ...validValues, sampleName: "  " };
-    expect(detailsValid(cryo, blankName, new Set(["eachAmount", "amountTaken"]))).toBe(true); // name skipped
-    expect(detailsValid(cryo, blankName, new Set(["sampleName"]))).toBe(false); // name checked
+    expect(detailsValid(cryo, blankName, new Set(["eachAmount", "amountTaken"]))).toBe(true);
+    expect(detailsValid(cryo, blankName, new Set(["sampleName"]))).toBe(false);
   });
 });
 
 describe("detailsValid temperature limit", () => {
-  // cryo with a configured storage-temperature ceiling of -18 C (as in operations_config.json)
   const cryoWithMax = {
     ...cryo,
     inputs: cryo.inputs.map((i) => (i.key === "storageTemp" ? { ...i, maxCelsius: -18 } : i)),
@@ -110,7 +101,6 @@ describe("detailsValid temperature limit", () => {
     expect(detailsValid(cryo, { ...validValues, storageTemp: { numericValue: 20, unitId: 8 } })).toBe(true);
   });
 
-  // revive-style floor: minCelsius 4 (as in operations_config.json)
   const reviveWithMin = {
     ...cryo,
     inputs: cryo.inputs.map((i) => (i.key === "storageTemp" ? { ...i, minCelsius: 4 } : i)),
@@ -126,9 +116,7 @@ describe("detailsValid temperature limit", () => {
   });
 
   it("rejects a temperature the backend would refuse outright", () => {
-    // -300 satisfies the -18 C ceiling but is below absolute zero (@ValidTemperature), and
-    // -80.0005 is finer than the stored 3 decimal places; both used to enable Perform only to fail
-    // at the backend (Copilot review, PR #1090).
+    // -300 is below absolute zero (@ValidTemperature); -80.0005 is finer than the stored 3 decimal places.
     for (const numericValue of [-300, -80.0005]) {
       expect(detailsValid(cryoWithMax, { ...validValues, storageTemp: { numericValue, unitId: 8 } })).toBe(false);
     }
@@ -177,8 +165,6 @@ describe("amountTakenExceedsOrigin", () => {
   });
 });
 
-// The per-origin over-removal check used for "per subsample" amounts (DevDocs/adr/0007): each origin's chosen
-// amount is checked against its own quantity, unit-aware within a category.
 describe("quantityExceedsOrigin", () => {
   it("is false at or within the origin's quantity, true above it (same unit)", () => {
     expect(quantityExceedsOrigin({ numericValue: 5, unitId: 3 }, { numericValue: 5, unitId: 3 })).toBe(false);
@@ -202,15 +188,13 @@ describe("quantityExceedsOrigin", () => {
 });
 
 describe("amountIsStorable", () => {
-  // Quantities persist in a DECIMAL(19,3) column and the endpoint rejects anything finer, so the
-  // wizard must block it rather than let Perform fail (Copilot review, PR #1090).
+  // Quantities persist in a DECIMAL(19,3) column, so anything finer than 3 decimal places is rejected.
   it("accepts up to three decimal places and rejects finer values", () => {
     expect(amountIsStorable(1)).toBe(true);
     expect(amountIsStorable(0.001)).toBe(true);
     expect(amountIsStorable(2.5)).toBe(true);
-    // Binary floating point: 1.001 * 1000 is 1000.9999999999999, so a naive integer test on the
-    // scaled value rejects a three-decimal amount the backend stores happily (Copilot review,
-    // PR #1090).
+    // Binary floating point: 1.001 * 1000 is 1000.9999999999999, so a naive rounding check would
+    // wrongly reject a three-decimal amount.
     expect(amountIsStorable(1.001)).toBe(true);
     expect(amountIsStorable(2.002)).toBe(true);
     expect(amountIsStorable(0.007)).toBe(true);
@@ -226,11 +210,8 @@ const ML = 3;
 const L = 4;
 const G = 7;
 
-/**
- * A remembered bundle is keyed by operation plus process name only, so the same bundle is offered on
- * any origin. Nothing downstream catches a category mismatch, so a mL bundle reused on a gram origin
- * used to make allStepsValid() true and offer one-click Perform on a request the endpoint rejects.
- */
+// A remembered bundle is keyed by operation plus process name only, so the same bundle can be offered
+// on a different-category origin; reconcileRestoredQuantities exists to catch that mismatch.
 describe("reconcileRestoredQuantities", () => {
   const reconcile = (
     values: OperationInputs,
@@ -252,10 +233,9 @@ describe("reconcileRestoredQuantities", () => {
       amountTaken: { numericValue: 5, unitId: ML },
       eachAmount: { numericValue: 2, unitId: G },
     });
-    // Unit CLEARED, not defaulted to the origin's. A defaulted unit is a valid amount, so nothing
-    // downstream blocked and the one-click fast path stayed armed on a number the user never chose:
-    // a bundle remembering 50 mL on a gram origin silently removed 1 g (parallel review, C4). The
-    // saved number is kept so the user can see what to re-enter.
+    // Unit CLEARED, not defaulted to the origin's: a defaulted unit reads as valid and would arm the
+    // one-click fast path on an amount the user never chose. The number is kept so the user can see
+    // what to re-enter.
     expect(values.amountTaken).toEqual({ numericValue: 5, unitId: UNSET_UNIT });
   });
 
@@ -264,7 +244,6 @@ describe("reconcileRestoredQuantities", () => {
       amountTaken: { numericValue: 5, unitId: G },
       eachAmount: { numericValue: 2, unitId: ML },
     });
-    // Mirrors a cross-category template pick: unset unit, number kept, so the amounts step is walked.
     expect(values.eachAmount).toEqual({ numericValue: 2, unitId: UNSET_UNIT });
   });
 
@@ -276,7 +255,6 @@ describe("reconcileRestoredQuantities", () => {
       },
       { originUnitId: ML, createdCategory: "volume" },
     );
-    // Litres on a millilitre origin is a unit choice, not a mismatch, so the bundle survives whole.
     expect(values.amountTaken).toEqual({ numericValue: 0.5, unitId: L });
     expect(values.eachAmount).toEqual({ numericValue: 2, unitId: ML });
   });
@@ -293,8 +271,6 @@ describe("reconcileRestoredQuantities", () => {
   });
 
   it("checks the created amount against the RESTORED TEMPLATE's category, not the origin's", () => {
-    // With a template restored, the created amounts follow the template; a gram origin does not make
-    // a millilitre created amount wrong.
     const { values } = reconcile(
       {
         amountTaken: { numericValue: 5, unitId: G },
@@ -321,11 +297,9 @@ describe("reconcileRestoredQuantities", () => {
   });
 
   it("leaves an amount alone when its unit's category cannot be determined", () => {
-    // categoryOfUnit knows only volume, mass and dimensionless ids, while the expected category
-    // comes from a server-supplied unit list that also has temperature, molarity and concentration.
-    // Comparing "actual !== expected" therefore reported a mismatch for every unit this module does
-    // not enumerate, wiping a perfectly good saved amount every time (parallel review, I9). Unknown
-    // is not the same as wrong.
+    // categoryOfUnit only recognizes volume, mass and dimensionless ids; a unit outside those (e.g.
+    // temperature, molarity, concentration) has an unknown category, which is not the same as a
+    // mismatch and must be left alone.
     const unknownUnit = 9999;
     const { values } = reconcile(
       {
@@ -376,10 +350,6 @@ describe("quantityExceedsOrigin across categories", () => {
   });
 });
 
-// Branches of detailsValid that the suite above reaches only by accident, or not at all: the count's
-// lower bound below zero and its non-numeric forms, a quantity or temperature input that is absent
-// rather than malformed, the storability rule on the QUANTITY branch (it was only ever exercised via
-// temperature), and the created amount's sign.
 describe("detailsValid edge cases", () => {
   it("rejects a negative child count", () => {
     expect(detailsValid(cryo, { ...validValues, count: -1 })).toBe(false);
@@ -404,8 +374,6 @@ describe("detailsValid edge cases", () => {
   });
 
   it("rejects an amount finer than three decimal places on either quantity input", () => {
-    // Quantities persist in DECIMAL(19,3); the storability rule was pinned only through the
-    // temperature branch, so this is the first assertion that reaches it through a quantity.
     expect(detailsValid(cryo, { ...validValues, eachAmount: { numericValue: 1.0005, unitId: 3 } })).toBe(false);
     expect(detailsValid(cryo, { ...validValues, amountTaken: { numericValue: 1.0005, unitId: 3 } })).toBe(false);
     // and exactly three decimal places are still fine on both
@@ -423,9 +391,8 @@ describe("detailsValid edge cases", () => {
   });
 });
 
-// The shipped Revive definition, not a hand-written fixture: the cryopreserve ceiling is pinned
-// against the real config elsewhere, but Revive's 4..120 range and its default of 4 were not, so the
-// config could drift from what the suite believes it enforces.
+// Uses the real Revive config rather than a fixture, so a change to Revive's temperature range
+// doesn't silently drift from what this suite believes it enforces.
 describe("detailsValid against the real Revive definition", () => {
   const revive = real("revive");
   const reviveValues: OperationInputs = {
@@ -488,8 +455,6 @@ describe("amountTakenExceedsOrigin edge cases", () => {
   });
 
   it("answers 'not exceeding' for a cross-category amount taken, through the operation-level check", () => {
-    // Pinned only through quantityExceedsOrigin before; the operation-level wrapper is what the
-    // wizard and the amounts step actually call.
     expect(
       amountTakenExceedsOrigin(
         cryo,

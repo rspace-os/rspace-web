@@ -216,7 +216,7 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
     // preserving the legacy behaviour that treated them as a single name-uniqueness namespace.
     // The explicit editInfo.name path is required: unqualified embedded sub-properties (like
     // "name") resolve only on concrete-leaf persisters, not on the abstract hierarchy root.
-    // Deleted (soft-deleted) records do not count: a deleted sample's name is free to reuse.
+    // Soft-deleted samples are excluded, so a deleted sample's name can be reused.
     long count =
         sessionFactory
             .getCurrentSession()

@@ -44,9 +44,6 @@ describe("operationFunctions.today", () => {
 });
 
 describe("increment guards against values the endpoint always rejects", () => {
-  // The backend accepts a Passage number only as a positive whole number, so a field that somehow
-  // holds a fraction or a negative would have the wizard build a request its own endpoint refuses
-  // every time, with no way for the user to see why (Copilot review, PR #1090).
   test.each([
     ["a fraction", "1.5"],
     ["a negative", "-3"],
