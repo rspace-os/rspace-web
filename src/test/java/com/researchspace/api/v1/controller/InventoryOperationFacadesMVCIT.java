@@ -422,6 +422,30 @@ public class InventoryOperationFacadesMVCIT extends API_MVC_InventoryTestBase {
     assertUnchanged(origin);
   }
 
+  @Test
+  public void oneSubsampleNamedTwiceUnderDifferentSpellingsTakesNothingFromIt() throws Exception {
+    // SS<id> and SS<id>v1 name one subsample. The duplicate check deduped on the raw string, so
+    // both spellings got past it, each was checked against the origin's pre-operation quantity,
+    // and each was decremented: 5 g lost 2 g to a request that asked for 1 g.
+    ApiSubSample origin = origin();
+    List<String> errors =
+        errorsOf(
+            post(
+                "pool",
+                "{\"origins\":["
+                    + originJson(origin.getGlobalId(), q("1", GRAM))
+                    + ","
+                    + originJson(origin.getGlobalId() + "v1", q("1", GRAM))
+                    + "],\"sampleName\":\"Aliased\",\"count\":1,\"eachAmount\":"
+                    + q("2", GRAM)
+                    + "}",
+                400));
+    assertTrue(
+        errors.stream().anyMatch(message -> message.startsWith("origins[1].globalId:")),
+        () -> "expected origins[1].globalId, got " + errors);
+    assertUnchanged(origin);
+  }
+
   // --- helpers ---
 
   /** A fresh 5 g origin. */
@@ -498,8 +522,12 @@ public class InventoryOperationFacadesMVCIT extends API_MVC_InventoryTestBase {
   }
 
   private static String originJson(ApiSubSample origin, String amountTakenJson) {
+    return originJson(origin.getGlobalId(), amountTakenJson);
+  }
+
+  private static String originJson(String globalId, String amountTakenJson) {
     return "{\"globalId\":\""
-        + origin.getGlobalId()
+        + globalId
         + "\""
         + (amountTakenJson == null ? "" : ",\"amountTaken\":" + amountTakenJson)
         + "}";

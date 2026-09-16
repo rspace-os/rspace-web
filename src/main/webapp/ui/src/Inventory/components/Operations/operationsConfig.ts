@@ -1,5 +1,6 @@
 // See DevDocs/adr/0007-operation-wizard-decisions.md for this module's design.
 import type { ParseKeys } from "i18next";
+import type { OperationFunctionName } from "./operationFunctions";
 import type { AmountMode } from "./types";
 
 /** An `inventory:` catalog key, so a mistyped label fails at compile time. */
@@ -38,7 +39,9 @@ type OriginFieldSpec = TextFieldSpec & { type?: "text" | "number" };
 
 // Evaluated in array order, so a later entry may read an earlier one's `into` via an `input` arg.
 type Computed = {
-  fn: string;
+  // The registry's own key type: the load-time check that used to catch a typo is gone, so this
+  // is what stops one reaching applyComputedValues as an undefined lookup at render.
+  fn: OperationFunctionName;
   into: string;
   args: Record<string, ComputedArgSource>;
 };
@@ -79,37 +82,40 @@ export type InventoryOperation = {
   confirmSummary?: ReadonlyArray<ConfirmSummaryField>;
 };
 
-const sampleName: OperationInputConfig = {
+// Frozen: each of these is aliased into six of the seven operations, so a mutation of one
+// operation's input config would otherwise reach all of them.
+const sampleName = {
   key: "sampleName",
   type: "text",
   labelKey: "operations.fields.sampleName",
   required: true,
-};
+} as const satisfies OperationInputConfig;
 
 // The backend's own bound (ApiInventoryOperationRequests.Creating), repeated here so the wizard
 // stops the user at the field rather than at Perform. The two are hand-kept in step; a drift
 // shows as a 400.
-const count: OperationInputConfig = {
+const count = {
   key: "count",
   type: "integer",
   labelKey: "operations.fields.count",
   min: 1,
   max: 100,
   default: 1,
-};
+} as const satisfies OperationInputConfig;
 
-const eachAmount: OperationInputConfig = {
+const eachAmount = {
   key: "eachAmount",
   type: "quantity",
   labelKey: "operations.fields.eachAmount",
   required: true,
-};
+} as const satisfies OperationInputConfig;
 
-const amountTaken = (labelKey: InventoryKey): OperationInputConfig => ({
-  key: "amountTaken",
-  type: "quantity",
-  labelKey,
-});
+const amountTaken = (labelKey: InventoryKey) =>
+  ({
+    key: "amountTaken",
+    type: "quantity",
+    labelKey,
+  }) as const satisfies OperationInputConfig;
 
 /**
  * The seven operations, mirroring the Java classes in

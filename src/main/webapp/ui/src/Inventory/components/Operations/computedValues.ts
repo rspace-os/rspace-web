@@ -1,4 +1,4 @@
-import { type OperationFunctionArgs, type OperationFunctionName, operationFunctions } from "./operationFunctions";
+import { type OperationFunctionArgs, operationFunctions } from "./operationFunctions";
 import type { ComputedArgSource, InventoryKey, InventoryOperation } from "./operationsConfig";
 import type { OperationInputs } from "./types";
 
@@ -60,9 +60,8 @@ function resolveArg(source: ComputedArgSource, ctx: ComputedContext): string | n
 }
 
 /**
- * Because results are written back, a later computed value can read
- * an earlier one via an `input` arg (chaining follows the array order). Assumes the config passed
- * load-time validation (operationsConfig), so every `fn` resolves.
+ * Because results are written back, a later computed value can read an earlier one via an `input`
+ * arg (chaining follows the array order).
  */
 export function applyComputedValues(operation: InventoryOperation, ctx: ComputedContext): OperationInputs {
   let values = ctx.values;
@@ -71,7 +70,7 @@ export function applyComputedValues(operation: InventoryOperation, ctx: Computed
     for (const [name, source] of Object.entries(computed.args)) {
       args[name] = resolveArg(source, { ...ctx, values });
     }
-    const def = operationFunctions[computed.fn as OperationFunctionName];
+    const def = operationFunctions[computed.fn];
     values = { ...values, [computed.into]: def.fn(args) };
   }
   return values;

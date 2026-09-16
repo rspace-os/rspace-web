@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.researchspace.service.inventory.operations.OperationFieldNames;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -81,13 +82,26 @@ class InventoryOperationsErrorCatalogTest {
    * The endpoint raised this many distinct codes when the guard was last reviewed. Raise it when
    * codes are added; an unexplained DROP means a source file stopped being scanned rather than that
    * rules were removed, which is the failure this floor exists to catch. Lowered from 40 to 30 when
-   * the config layer went and its nine config-shape codes went with it.
+   * the config layer went and its nine config-shape codes went with it, then raised to 38 when the
+   * pattern learned the brace form and picked up the eight bean-validation keys.
    */
-  private static final int MINIMUM_CODES_RAISED = 30;
+  private static final int MINIMUM_CODES_RAISED = 38;
 
-  /** A dotted code in a string literal: errors.inventory.operation.foo, api.errors.bar. */
+  /**
+   * A dotted code in a string literal: errors.inventory.operation.foo, api.errors.bar. The optional
+   * braces are the bean-validation message template form, {@code
+   * "{errors.inventory.operation.foo}"}, which the request bodies use in their annotations; without
+   * them those keys were scanned and silently matched nothing.
+   */
   private static final Pattern RAISED_CODE =
-      Pattern.compile("\"((?:errors|api)\\.[A-Za-z0-9]+(?:\\.[A-Za-z0-9]+)+)\"");
+      Pattern.compile("\"\\{?((?:errors|api)\\.[A-Za-z0-9]+(?:\\.[A-Za-z0-9]+)+)\\}?\"");
+
+  /** A field-label key in a string literal: operations.passage.numberField. */
+  private static final Pattern LABEL_KEY =
+      Pattern.compile("\"(operations\\.[A-Za-z0-9]+(?:\\.[A-Za-z0-9]+)*)\"");
+
+  /** As above: a DROP means a file stopped being scanned, not that labels were removed. */
+  private static final int MINIMUM_LABELS_REFERENCED = 10;
 
   @Test
   void everyRaisedErrorCodeHasACatalogEntry() throws IOException {
@@ -115,6 +129,40 @@ class InventoryOperationsErrorCatalogTest {
     assertTrue(
         missing.isEmpty(),
         "error codes raised in Java with no entry under " + CATALOG_DIR + ": " + missing);
+  }
+
+  /**
+   * The names an operation gives the fields it generates. Unlike an error code, a key that misses
+   * the catalog is not a bad message on screen: {@link
+   * com.researchspace.service.inventory.operations.LabelResolver} falls back to the key itself, and
+   * {@code CreatingOperation} stores that as the created sample's extra-field name, so the string
+   * {@code operations.passage.numberField} is persisted and outlives the typo.
+   */
+  @Test
+  void everyOperationFieldLabelHasACatalogEntry() throws IOException {
+    Set<String> referenced = new HashSet<>();
+    try (Stream<Path> files = Files.list(OPERATIONS_DIR)) {
+      for (Path source : files.filter(f -> f.toString().endsWith(".java")).toList()) {
+        Matcher matcher = LABEL_KEY.matcher(Files.readString(source));
+        while (matcher.find()) {
+          referenced.add(matcher.group(1));
+        }
+      }
+    }
+    // Not a label: it is only ever an operationFieldKey, the stable identifier a later operation
+    // matches on. The documentation link's visible name is operations.documentation.fieldName.
+    referenced.remove(OperationFieldNames.DOCUMENTATION_LINK_KEY);
+    assertTrue(
+        referenced.size() >= MINIMUM_LABELS_REFERENCED,
+        () -> "only " + referenced.size() + " label keys scanned under " + OPERATIONS_DIR);
+
+    Map<String, String> catalog = new TreeMap<>();
+    flatten(
+        "", new ObjectMapper().readTree(CATALOG_DIR.resolve("inventory.json").toFile()), catalog);
+    Set<String> missing = new java.util.TreeSet<>(referenced);
+    missing.removeAll(catalog.keySet());
+    assertTrue(
+        missing.isEmpty(), "operation field labels with no entry in inventory.json: " + missing);
   }
 
   /** Flattens every server.*.json exactly as JsonMessageSource does, i.e. with no prefix. */

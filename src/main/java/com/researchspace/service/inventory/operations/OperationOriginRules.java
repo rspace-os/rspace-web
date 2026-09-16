@@ -49,7 +49,7 @@ public final class OperationOriginRules {
             "Each origin must identify a subsample by id.");
         continue;
       }
-      if (origin.getGlobalId() != null && !seen.add(origin.getGlobalId())) {
+      if (origin.getGlobalId() != null && !seen.add(canonical(origin.getGlobalId()))) {
         // Each origin's amount is checked against that origin's original quantity, but the
         // decrements are applied in order, so the same id listed twice would be checked twice
         // against the full quantity yet decremented twice.
@@ -61,6 +61,19 @@ public final class OperationOriginRules {
       validateAmountTaken(origin, field, takesAmount, operation.amountNotApplicableCode(), errors);
     }
     validateDocumentationTarget(request.getDocumentedByGlobalId(), errors);
+  }
+
+  /**
+   * What the origin's global id resolves to, so the duplicate check sees one subsample rather than
+   * its spellings: {@code SS100}, {@code SS0100} and {@code SS100v1} all name db id 100, and all
+   * reach the decrement. A malformed id is its own key; {@link #subSampleId} rejects it later.
+   */
+  private static String canonical(String globalId) {
+    if (!GlobalIdentifier.isValid(globalId)) {
+      return globalId;
+    }
+    GlobalIdentifier parsed = new GlobalIdentifier(globalId);
+    return parsed.getPrefix() + String.valueOf(parsed.getDbId());
   }
 
   private static void validateAmountTaken(
@@ -78,14 +91,8 @@ public final class OperationOriginRules {
       }
       return;
     }
-    if (origin.getAmountTaken() == null) {
-      errors.rejectValue(
-          field + ".amountTaken",
-          "errors.inventory.operation.amountTakenInvalid",
-          "Each origin must specify a non-negative amount, with a unit, to take from it.");
-      return;
-    }
     OperationQuantityRules.amountTaken(origin.getAmountTaken(), field + ".amountTaken", errors);
+    // No error means the amount is present and well-formed, so the value read below is safe.
     if (errors.getFieldErrorCount(field + ".amountTaken") == 0
         && origin.getAmountTaken().getNumericValue().signum() <= 0) {
       errors.rejectValue(

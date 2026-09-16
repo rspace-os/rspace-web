@@ -142,7 +142,7 @@ describe("OperationDetailsStep", () => {
     // Driven by the real aliquot definition, not a hand-written fixture, so a future drift between
     // the config's max and this cap would fail here.
     const aliquot = operations.find((o) => o.key === "aliquot");
-    if (!aliquot) throw new Error("the aliquot definition must exist in operations_config.json");
+    if (!aliquot) throw new Error("the aliquot definition must exist in operationsConfig");
     const countInput = aliquot.inputs.find((i) => i.key === "count");
     if (!countInput) throw new Error("aliquot must declare a count input");
     render(
@@ -436,7 +436,7 @@ describe("OperationDetailsStep (amount modes)", () => {
 
 describe("OperationDetailsStep count errors and temperature unit", () => {
   const aliquot = operations.find((o) => o.key === "aliquot");
-  if (!aliquot) throw new Error("the aliquot definition must exist in operations_config.json");
+  if (!aliquot) throw new Error("the aliquot definition must exist in operationsConfig");
   const renderCount = (count: number, onChange: (v: OperationInputs) => void = () => undefined) =>
     render(
       <OperationDetailsStep

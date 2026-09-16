@@ -81,6 +81,33 @@ class PassageOperationTest {
   }
 
   @Test
+  void restartsAtOneRatherThanCarryForwardANumberItCannotIncrementSafely() {
+    // A negative is not a passage count, and one at the JS safe-integer ceiling could not survive
+    // the round trip through the wizard, so both restart rather than store a number the next
+    // passage would read back wrong.
+    assertEquals(
+        "1",
+        passageNumber(
+            originWithParentFields(
+                List.of(new OriginState.ParentField("Passage number", "-1", NUMBER_FIELD)))));
+    assertEquals(
+        "1",
+        passageNumber(
+            originWithParentFields(
+                List.of(
+                    new OriginState.ParentField(
+                        "Passage number", "9007199254740991", NUMBER_FIELD)))));
+    assertEquals(
+        "9007199254740990",
+        passageNumber(
+            originWithParentFields(
+                List.of(
+                    new OriginState.ParentField(
+                        "Passage number", "9007199254740989", NUMBER_FIELD)))),
+        "just below the ceiling still increments");
+  }
+
+  @Test
   void derivesTheCreatedSampleFromItsOrigin() {
     ApiExtraField link =
         PASSAGE

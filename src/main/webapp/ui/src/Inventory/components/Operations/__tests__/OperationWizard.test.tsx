@@ -10,8 +10,9 @@ import { InEnglish } from "@/__tests__/realI18n";
 import { makeMockSubSample } from "@/stores/models/__tests__/SubSampleModel/mocking";
 import OperationWizard from "../OperationWizard";
 
-// The wizard fetches the operation definitions with React Query (mocked fetchOperationsConfig
-// below), so every render needs a QueryClient; a fresh one per render keeps tests isolated.
+// The wizard reads the operation definitions from a constant, but its steps still query the
+// server (templates, name availability), so every render needs a QueryClient; a fresh one per
+// render keeps tests isolated.
 function render(ui: React.ReactElement) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return renderWithoutQueryClient(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
@@ -994,7 +995,7 @@ describe("OperationWizard step flow", () => {
         OPERATION_URL,
         async () => {
           await pending;
-          return HttpResponse.json({ id: 1, globalId: "SS9", name: "New" }, { status: 201 });
+          return HttpResponse.json(created, { status: 201 });
         },
         { once: true },
       ),

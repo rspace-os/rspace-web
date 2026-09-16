@@ -51,9 +51,8 @@ export default function OperationPicker({
   allSameCategory: boolean;
 }): React.ReactNode {
   const { t } = useTranslation("inventory");
-  // Cast so config-driven (dynamic) keys resolve: they arrive at runtime, so i18next's typed key
-  // union cannot describe them. Nothing here can check them, so operationsConfigKeys.test.ts asserts
-  // every key the shipped config names exists in the catalog.
+  // See resolveLabelFrom: the cast is about t's overloads, not the keys, which are InventoryKey
+  // and so checked by the compiler.
   const label = resolveLabelFrom(t);
   return (
     // A flex column with a small gap keeps the spacing even without per-item margins.
