@@ -245,6 +245,7 @@
         "unitIncompatibleWithSample": "Subsample quantity ''{0}'' is incompatible with quantity unit used by parent sample ({1})"
       },
       "temperature": {
+        "belowAbsoluteZero": "The temperature is below absolute zero.",
         "invalidUnit": "Unit id is not a valid temperature unit.",
         "minGreaterThanMax": "Min temperature is greater than max temperature.",
         "notStorable": "Temperature must be within the range the system stores, with at most 3 decimal places.",

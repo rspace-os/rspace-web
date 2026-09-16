@@ -366,6 +366,20 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
   }
 
   @Test
+  public void mergeUiJsonSettingRejectsAMergeWhoseBytesOverflowTheColumnThoughItsCharactersDoNot() {
+    // MySQL bounds a TEXT column in BYTES, while SettingsType.validate bounds it in Java
+    // CHARACTERS. A blob of multi-byte characters therefore passes that check and then fails
+    // inside the INSERT as a 500. 25000 euro signs are 25000 characters but 75000 utf8 bytes.
+    userWithUiJsonSettings(
+        "{\"GALLERY_VIEW_MODE\":{\"value\":\"" + "\u20ac".repeat(25_000) + "\"}}");
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> userManager.mergeUiJsonSetting("GALLERY_SORT_BY", "{\"value\":\"name\"}", "jbloggs"));
+    verify(userDao, never()).save(Mockito.any(User.class));
+  }
+
+  @Test
   public void mergeUiJsonSettingRejectsASingleValueAboveThePerKeyCeiling() {
     // The column-level guard above only fires once the MERGED blob overflows, so one allowed key
     // holding a near-65535-char value passes it and then makes every later keyed write for that
