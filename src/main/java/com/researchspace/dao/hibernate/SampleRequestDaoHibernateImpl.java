@@ -9,6 +9,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.inventory.SampleRequest;
 import com.researchspace.model.inventory.SampleRequestRole;
 import com.researchspace.model.inventory.SampleRequestStatus;
+import jakarta.persistence.LockModeType;
 import java.util.List;
 import java.util.Set;
 import org.apache.commons.collections.CollectionUtils;
@@ -24,6 +25,17 @@ public class SampleRequestDaoHibernateImpl extends GenericDaoHibernate<SampleReq
 
   public SampleRequestDaoHibernateImpl() {
     super(SampleRequest.class);
+  }
+
+  @Override
+  public SampleRequest getForUpdate(Long id) {
+    // a query rather than get(), so pending changes are flushed before the row is locked
+    return sessionFactory
+        .getCurrentSession()
+        .createQuery("from SampleRequest where id = :id", SampleRequest.class)
+        .setParameter("id", id)
+        .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+        .uniqueResult();
   }
 
   @Override
@@ -46,6 +58,7 @@ public class SampleRequestDaoHibernateImpl extends GenericDaoHibernate<SampleReq
 
     Long total =
         bind(
+                role,
                 sessionFactory
                     .getCurrentSession()
                     .createQuery("select count(req) from SampleRequest req" + where, Long.class),
@@ -56,10 +69,13 @@ public class SampleRequestDaoHibernateImpl extends GenericDaoHibernate<SampleReq
 
     List<SampleRequest> page =
         bind(
+                role,
                 sessionFactory
                     .getCurrentSession()
                     .createQuery(
-                        "from SampleRequest req" + where + " order by req.created desc",
+                        "from SampleRequest req"
+                            + where
+                            + " order by req.created desc, req.id desc",
                         SampleRequest.class),
                 hasStatusFilter ? statuses : null,
                 sampleId,
@@ -77,11 +93,11 @@ public class SampleRequestDaoHibernateImpl extends GenericDaoHibernate<SampleReq
    */
   private String roleClause(SampleRequestRole role) {
     if (role == null) {
-      return "(req.requester = :user or req.sample.owner = :user)";
+      return "(req.requesterUsername = :username or req.sample.owner = :user)";
     }
     switch (role) {
       case REQUESTER:
-        return "req.requester = :user";
+        return "req.requesterUsername = :username";
       case OWNER:
         return "req.sample.owner = :user";
       default:
@@ -90,11 +106,20 @@ public class SampleRequestDaoHibernateImpl extends GenericDaoHibernate<SampleReq
   }
 
   private <T> org.hibernate.query.Query<T> bind(
+      SampleRequestRole role,
       org.hibernate.query.Query<T> query,
       Set<SampleRequestStatus> statuses,
       Long sampleId,
       User user) {
-    query.setParameter("user", user);
+    // only the parameters named by the role's clause are in the query, so bind exactly those
+    if (role == null) {
+      query.setParameter("username", user.getUsername());
+      query.setParameter("user", user);
+    } else if (SampleRequestRole.REQUESTER.equals(role)) {
+      query.setParameter("username", user.getUsername());
+    } else {
+      query.setParameter("user", user);
+    }
     if (CollectionUtils.isNotEmpty(statuses)) {
       query.setParameterList("statuses", statuses);
     }

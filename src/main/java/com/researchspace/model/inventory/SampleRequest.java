@@ -41,7 +41,7 @@ public class SampleRequest implements Serializable {
 
   private Long id;
   private Sample sample;
-  private User requester;
+  private String requesterUsername;
   private SampleRequestStatus status = SampleRequestStatus.PENDING;
   private String note;
   private Date created = new Date();
@@ -52,7 +52,7 @@ public class SampleRequest implements Serializable {
 
   public SampleRequest(Sample sample, User requester, String note) {
     this.sample = sample;
-    this.requester = requester;
+    this.requesterUsername = requester.getUsername();
     this.note = note;
   }
 
@@ -76,10 +76,13 @@ public class SampleRequest implements Serializable {
     return sample;
   }
 
-  @ManyToOne(optional = false)
-  @JoinColumn(nullable = false)
-  public User getRequester() {
-    return requester;
+  /**
+   * Username rather than a User reference, so the record survives the requester's deletion and
+   * cannot block it. Matches how InventoryRecord records createdBy and modifiedBy.
+   */
+  @Column(nullable = false, length = User.MAX_UNAME_LENGTH)
+  public String getRequesterUsername() {
+    return requesterUsername;
   }
 
   @Enumerated(EnumType.STRING)

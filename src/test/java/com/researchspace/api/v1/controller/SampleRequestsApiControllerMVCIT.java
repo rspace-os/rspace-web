@@ -18,6 +18,7 @@ import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
 public class SampleRequestsApiControllerMVCIT extends API_MVC_InventoryTestBase {
 
@@ -159,6 +160,15 @@ public class SampleRequestsApiControllerMVCIT extends API_MVC_InventoryTestBase 
             createBuilderForInventoryGet(
                 API_VERSION.ONE, requesterApiKey, "/sampleRequests/" + created.getId(), requester))
         .andExpect(status().isNotFound());
+
+    this.mockMvc
+        .perform(
+            createBuilderForInventoryPutWithJSONBody(
+                requesterApiKey,
+                "/sampleRequests/" + created.getId() + "/status",
+                requester,
+                Map.of("status", "CANCELLED")))
+        .andExpect(status().isNotFound());
   }
 
   @Test
@@ -223,5 +233,100 @@ public class SampleRequestsApiControllerMVCIT extends API_MVC_InventoryTestBase 
                 requester,
                 Map.of("status", "APPROVED")))
         .andExpect(status().isUnprocessableEntity());
+  }
+
+  @Test
+  public void fullRequestLifecycleOverHttp() throws Exception {
+    User owner = createAndSaveUser(getRandomName(10), Constants.PI_ROLE);
+    User requester = createAndSaveUser(getRandomName(10));
+    initUsers(owner, requester);
+    createGroupForUsersWithDefaultPi(owner, requester);
+
+    String requesterApiKey = createNewApiKeyForUser(requester);
+    String ownerApiKey = createNewApiKeyForUser(owner);
+    sysPropMgr.save(
+        SystemPropertyName.SAMPLE_REQUESTS_AVAILABLE,
+        HierarchicalPermission.ALLOWED,
+        getSysAdminUser());
+
+    ApiSampleWithFullSubSamples sample = createBasicSampleForUser(owner);
+    markRequestable(sample, owner);
+
+    // raise it
+    MvcResult postResult =
+        this.mockMvc
+            .perform(
+                createBuilderForInventoryPostWithJSONBody(
+                    requesterApiKey,
+                    "/sampleRequests",
+                    requester,
+                    Map.of("sampleGlobalId", sample.getGlobalId(), "note", "2ml for the assay")))
+            .andReturn();
+    assertNull(postResult.getResolvedException());
+    ApiSampleRequest created = mvcUtils.getFromJsonResponseBody(postResult, ApiSampleRequest.class);
+    assertEquals(SampleRequestStatus.PENDING, created.getStatus());
+
+    // the requester sees it among their own
+    assertEquals(
+        1L, listRequests(requesterApiKey, requester, "REQUESTER", null).getTotalHits().longValue());
+
+    // and it is waiting in the owner's pending queue, which drives the badge count
+    assertEquals(
+        1L, listRequests(ownerApiKey, owner, "OWNER", "PENDING").getTotalHits().longValue());
+
+    // the owner approves
+    MvcResult approveResult =
+        this.mockMvc
+            .perform(
+                createBuilderForInventoryPutWithJSONBody(
+                    ownerApiKey,
+                    "/sampleRequests/" + created.getId() + "/status",
+                    owner,
+                    Map.of("status", "APPROVED")))
+            .andReturn();
+    assertNull(approveResult.getResolvedException());
+
+    // fetching the single request returns the full history, actors resolved
+    MvcResult detailResult =
+        this.mockMvc
+            .perform(
+                createBuilderForInventoryGet(
+                    API_VERSION.ONE,
+                    requesterApiKey,
+                    "/sampleRequests/" + created.getId(),
+                    requester))
+            .andReturn();
+    assertNull(detailResult.getResolvedException());
+    ApiSampleRequest detail =
+        mvcUtils.getFromJsonResponseBody(detailResult, ApiSampleRequest.class);
+    assertEquals(SampleRequestStatus.APPROVED, detail.getStatus());
+    assertEquals(requester.getUsername(), detail.getRequester().getUsername());
+    assertEquals(2, detail.getStatusChanges().size());
+    assertEquals(SampleRequestStatus.PENDING, detail.getStatusChanges().get(0).getStatus());
+    assertEquals(
+        requester.getUsername(), detail.getStatusChanges().get(0).getCreatedBy().getUsername());
+    assertEquals(SampleRequestStatus.APPROVED, detail.getStatusChanges().get(1).getStatus());
+    assertEquals(
+        owner.getUsername(), detail.getStatusChanges().get(1).getCreatedBy().getUsername());
+
+    // the pending queue has emptied, and the multi-status filter still finds it
+    assertEquals(
+        0L, listRequests(ownerApiKey, owner, "OWNER", "PENDING").getTotalHits().longValue());
+    assertEquals(
+        1L,
+        listRequests(ownerApiKey, owner, "OWNER", "PENDING,APPROVED").getTotalHits().longValue());
+  }
+
+  private ApiSampleRequestSearchResult listRequests(
+      String apiKey, User user, String role, String statuses) throws Exception {
+    MockHttpServletRequestBuilder request =
+        createBuilderForInventoryGet(API_VERSION.ONE, apiKey, "/sampleRequests", user)
+            .param("role", role);
+    if (statuses != null) {
+      request = request.param("status", statuses);
+    }
+    MvcResult result = this.mockMvc.perform(request).andReturn();
+    assertNull(result.getResolvedException());
+    return mvcUtils.getFromJsonResponseBody(result, ApiSampleRequestSearchResult.class);
   }
 }

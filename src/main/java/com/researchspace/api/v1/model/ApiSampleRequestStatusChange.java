@@ -42,7 +42,6 @@ public class ApiSampleRequestStatusChange {
     this.id = change.getId();
     this.status = change.getStatus();
     this.createdMillis = change.getCreated().getTime();
-    this.createdBy = new ApiUser(change.getCreatedBy());
     this.reason = change.getReason();
   }
 }

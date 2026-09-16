@@ -6,9 +6,11 @@ import com.researchspace.api.v1.model.ApiSampleRequestInfo;
 import com.researchspace.api.v1.model.ApiSampleRequestPost;
 import com.researchspace.api.v1.model.ApiSampleRequestSearchResult;
 import com.researchspace.api.v1.model.ApiSampleRequestStatusPut;
+import com.researchspace.api.v1.model.ApiUser;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.dao.SampleDao;
 import com.researchspace.dao.SampleRequestDao;
+import com.researchspace.dao.UserDao;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
@@ -38,6 +40,7 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
   private @Autowired SampleApiManager sampleApiManager;
   private @Autowired MessageSourceUtils messages;
   private @Autowired SystemPropertyPermissionManager systemPropertyPermissions;
+  private @Autowired UserDao userDao;
 
   private enum Actor {
     OWNER,
@@ -105,7 +108,11 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
   @Override
   public ApiSampleRequest updateStatus(Long id, ApiSampleRequestStatusPut post, User user) {
     assertSampleRequestsEnabled(user);
-    SampleRequest request = sampleRequestDao.getSafeNull(id).orElseThrow(() -> requestNotFound(id));
+    // locked, so two concurrent transitions serialise and the second sees the committed status
+    SampleRequest request = sampleRequestDao.getForUpdate(id);
+    if (request == null) {
+      throw requestNotFound(id);
+    }
     assertUserIsPartyToRequest(request, user);
 
     Transition transition = transitionTo(post.getStatus());
@@ -118,11 +125,11 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
   }
 
   private void assertPermittedActor(SampleRequest request, User user, Transition transition) {
-    User permitted =
+    String permitted =
         Actor.OWNER.equals(transition.actor())
-            ? request.getSample().getOwner()
-            : request.getRequester();
-    if (!user.equals(permitted)) {
+            ? request.getSample().getOwner().getUsername()
+            : request.getRequesterUsername();
+    if (!user.getUsername().equals(permitted)) {
       throw new ApiRuntimeException("errors.inventory.sampleRequest.wrongActor");
     }
   }
@@ -157,11 +164,34 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
   }
 
   private ApiSampleRequestInfo toInfo(SampleRequest request, User user) {
-    return applyOutgoingSampleRules(new ApiSampleRequestInfo(request), request, user);
+    ApiSampleRequestInfo info = new ApiSampleRequestInfo(request);
+    info.setRequester(toApiUser(request.getRequesterUsername()));
+    return applyOutgoingSampleRules(info, request, user);
   }
 
   private ApiSampleRequest toDetail(SampleRequest request, User user) {
-    return applyOutgoingSampleRules(new ApiSampleRequest(request), request, user);
+    ApiSampleRequest detail = new ApiSampleRequest(request);
+    detail.setRequester(toApiUser(request.getRequesterUsername()));
+    for (int i = 0; i < detail.getStatusChanges().size(); i++) {
+      detail
+          .getStatusChanges()
+          .get(i)
+          .setCreatedBy(toApiUser(request.getStatusChanges().get(i).getCreatedByUsername()));
+    }
+    return applyOutgoingSampleRules(detail, request, user);
+  }
+
+  /** A deleted user keeps their username in the record, with no id or name to resolve. */
+  private ApiUser toApiUser(String username) {
+    return userDao
+        .getOptionalUserByUsername(username)
+        .map(ApiUser::new)
+        .orElseGet(
+            () -> {
+              ApiUser deleted = new ApiUser();
+              deleted.setUsername(username);
+              return deleted;
+            });
   }
 
   /**
@@ -197,7 +227,8 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
 
   /** Only the requester and the sample's current owner may see a request. */
   private void assertUserIsPartyToRequest(SampleRequest request, User user) {
-    if (!user.equals(request.getRequester()) && !user.equals(request.getSample().getOwner())) {
+    if (!user.getUsername().equals(request.getRequesterUsername())
+        && !user.equals(request.getSample().getOwner())) {
       throw requestNotFound(request.getId());
     }
   }
