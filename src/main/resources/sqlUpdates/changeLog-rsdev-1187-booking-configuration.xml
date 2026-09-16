@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.17.xsd">
+
+  <changeSet id="rsdev-1187-booking-configuration" author="researchspace" context="run">
+    <comment>Create the BookingConfiguration entity and bookable target</comment>
+    <createTable tableName="BookingConfiguration">
+      <column name="id" type="BIGINT" autoIncrement="true">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+      <column name="enabled" type="BIT(1)" defaultValueBoolean="false">
+        <constraints nullable="false"/>
+      </column>
+      <column name="timeZone" type="VARCHAR(255)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="targetType" type="VARCHAR(32)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="targetId" type="BIGINT">
+        <constraints nullable="false"/>
+      </column>
+      <column name="configurationVersion" type="BIGINT" defaultValueNumeric="0">
+        <constraints nullable="false"/>
+      </column>
+      <column name="createdAt" type="DATETIME(6)"/>
+      <column name="updatedAt" type="DATETIME(6)"/>
+      <column name="createdBy_id" type="BIGINT"/>
+      <column name="updatedBy_id" type="BIGINT"/>
+    </createTable>
+    <addUniqueConstraint
+        tableName="BookingConfiguration"
+        columnNames="targetType, targetId"
+        constraintName="UK_BookingConfiguration_target"/>
+    <createIndex tableName="BookingConfiguration" indexName="IX_BookingConfiguration_targetId">
+      <column name="targetId"/>
+    </createIndex>
+    <addForeignKeyConstraint
+        constraintName="FK_BookingConfiguration_createdBy"
+        baseTableName="BookingConfiguration"
+        baseColumnNames="createdBy_id"
+        referencedTableName="User"
+        referencedColumnNames="id"
+        onDelete="SET NULL"/>
+    <addForeignKeyConstraint
+        constraintName="FK_BookingConfiguration_updatedBy"
+        baseTableName="BookingConfiguration"
+        baseColumnNames="updatedBy_id"
+        referencedTableName="User"
+        referencedColumnNames="id"
+        onDelete="SET NULL"/>
+    <sql>
+      ALTER TABLE BookingConfiguration ENGINE=InnoDB,
+      CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+    </sql>
+  </changeSet>
+
+  <changeSet id="rsdev-1187-booking-configuration-audit" author="researchspace" context="run">
+    <comment>Create Envers history for BookingConfiguration</comment>
+    <createTable tableName="BookingConfiguration_AUD">
+      <column name="id" type="BIGINT">
+        <constraints nullable="false"/>
+      </column>
+      <column name="REV" type="INT">
+        <constraints nullable="false"/>
+      </column>
+      <column name="REVTYPE" type="TINYINT"/>
+      <column name="enabled" type="BIT(1)"/>
+      <column name="timeZone" type="VARCHAR(255)"/>
+      <column name="targetType" type="VARCHAR(32)"/>
+      <column name="targetId" type="BIGINT"/>
+      <column name="configurationVersion" type="BIGINT"/>
+      <column name="createdAt" type="DATETIME(6)"/>
+      <column name="updatedAt" type="DATETIME(6)"/>
+      <column name="createdBy_id" type="BIGINT"/>
+      <column name="updatedBy_id" type="BIGINT"/>
+    </createTable>
+    <addPrimaryKey
+        tableName="BookingConfiguration_AUD"
+        columnNames="id, REV"
+        constraintName="PK_BookingConfiguration_AUD"/>
+    <addForeignKeyConstraint
+        constraintName="FK_BookingConfiguration_AUD_REV"
+        baseTableName="BookingConfiguration_AUD"
+        baseColumnNames="REV"
+        referencedTableName="REVINFO"
+        referencedColumnNames="REV"/>
+    <sql>
+      ALTER TABLE BookingConfiguration_AUD ENGINE=InnoDB,
+      CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+    </sql>
+  </changeSet>
+</databaseChangeLog>

@@ -1,10 +1,10 @@
 package com.researchspace.model.inventory.field;
 
+import com.researchspace.model.collection.RuntimeFieldValueType;
 import com.researchspace.model.field.FieldType;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Transient;
-import java.math.BigDecimal;
 import lombok.EqualsAndHashCode;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.envers.Audited;
@@ -46,8 +46,8 @@ public class ExtraNumberField extends ExtraField {
   public String validateNewData(String data) {
     if (StringUtils.isNotEmpty(data)) {
       try {
-        new BigDecimal(data);
-      } catch (NumberFormatException nfe) {
+        RuntimeFieldValueType.parseNumber(data);
+      } catch (IllegalArgumentException nfe) {
         return "'" + data + "' cannot be parsed into number";
       }
     }
