@@ -5300,8 +5300,10 @@ components:
         container id is rejected.
 
         The operation decides what it takes from this origin, so no amount is sent. The server
-        reads the origin's live quantity at the moment the operation runs; there is no concurrency
-        control on these endpoints.
+        reads the origin's live quantity at the moment the operation runs. It holds the Inventory
+        edit lock on every origin and its parent sample for the duration, but there is no
+        optimistic-concurrency token on these endpoints: a quantity read before the call may
+        already be stale by the time it returns.
       properties:
         globalId:
           type: string

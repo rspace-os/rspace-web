@@ -70,14 +70,16 @@
         <tx:attributes>
             <!-- Read-only commented out to make things easier for end-users -->
             <!--tx:method name="get*" read-only="true"/-->
-            <!-- perform and performOperation roll back for BindException: a rejection is checked,
-                 so Spring's default rules would otherwise commit partial writes alongside the 400
-                 (Copilot review, PR #1090). The commit is not merely wasteful: a rejected read
-                 inside the transaction (an unresolvable documentation target) has already marked
-                 it rollback-only, and committing it then answers 500 instead of the 400.
-                 Wildcarded because perform calls performOperation on itself, so only the outer
-                 method's rule is ever applied. -->
-            <tx:method name="perform*"
+            <!-- InventoryOperationManager.perform rolls back for BindException: a rejection is
+                 checked, so Spring's default rules would otherwise commit partial writes
+                 alongside the 400 (Copilot review, PR #1090). The commit is not merely wasteful:
+                 a rejected read inside the transaction (an unresolvable documentation target) has
+                 already marked it rollback-only, and committing it then answers 500 instead of
+                 the 400. Named exactly rather than wildcarded: txAdvice is shared by every
+                 *Manager advisor, and perform is the one transactional entry point (the core it
+                 calls is self-invoked, so no advice applies to that call at all).
+                 InventoryOperationTransactionRuleTest pins this to the interface. -->
+            <tx:method name="perform"
                 rollback-for="org.springframework.validation.BindException"/>
             <tx:method name="*"/>
         </tx:attributes>
