@@ -70,10 +70,14 @@
         <tx:attributes>
             <!-- Read-only commented out to make things easier for end-users -->
             <!--tx:method name="get*" read-only="true"/-->
-            <!-- performOperation rolls back for BindException: a live-state rejection is checked,
+            <!-- perform and performOperation roll back for BindException: a rejection is checked,
                  so Spring's default rules would otherwise commit partial writes alongside the 400
-                 (Copilot review, PR #1090). -->
-            <tx:method name="performOperation"
+                 (Copilot review, PR #1090). The commit is not merely wasteful: a rejected read
+                 inside the transaction (an unresolvable documentation target) has already marked
+                 it rollback-only, and committing it then answers 500 instead of the 400.
+                 Wildcarded because perform calls performOperation on itself, so only the outer
+                 method's rule is ever applied. -->
+            <tx:method name="perform*"
                 rollback-for="org.springframework.validation.BindException"/>
             <tx:method name="*"/>
         </tx:attributes>

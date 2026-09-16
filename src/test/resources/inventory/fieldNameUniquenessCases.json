@@ -7,7 +7,7 @@
     "",
     "Both had their own tests and nothing pinned them to each other, so a change to the suffix",
     "format on one side left the preview promising names the server would not store, with both",
-    "suites green (parallel review, A10). Asserted from OperationFieldNamesTest and from",
+    "suites green (parallel review, A10). Asserted from FieldNameUniquenessParityTest and from",
     "buildOperationRequest.test.ts; a change to the rule must be made on both sides or one of them",
     "goes red.",
     "",

@@ -33,6 +33,16 @@ public abstract class CreatingOperation<R extends ApiInventoryOperationRequests.
   /** The i18n key naming that link field; it may interpolate {@code originName}. */
   protected abstract String linkFieldNameKey();
 
+  /**
+   * What that key interpolates beyond {@code originName}, for an operation whose link field name
+   * quotes one of the caller's own values (Derive's process name). The wizard's confirmation screen
+   * renders the same pattern against the whole request, so anything it shows there has to be
+   * supplied here too or the stored name keeps the placeholder.
+   */
+  protected Map<String, Object> linkFieldNameArgs(R request) {
+    return Map.of();
+  }
+
   /** Text fields the operation adds to the created sample; empty for most. */
   protected List<ApiExtraField> textFields(
       R request, List<OriginState> origins, LabelResolver labels) {
@@ -88,6 +98,7 @@ public abstract class CreatingOperation<R extends ApiInventoryOperationRequests.
     for (OriginState origin : origins) {
       Map<String, Object> args = new HashMap<>();
       args.put("originName", origin.name());
+      args.putAll(linkFieldNameArgs(request));
       fields.add(
           OperationFieldNames.link(
               labels.resolve(linkFieldNameKey(), args),

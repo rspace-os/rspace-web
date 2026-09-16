@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.api.v1.model.ApiExtraField;
 import com.researchspace.api.v1.model.ApiInventoryLink;
+import com.researchspace.service.inventory.operations.OperationFieldNames;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,18 +17,15 @@ import org.junit.jupiter.api.Test;
  * The field-name uniqueness rule is implemented TWICE, and this is the only thing tying the two
  * together.
  *
- * <p>{@code InventoryOperationRequestBuilder.withUniqueFieldNames} decides the names actually
- * stored; the wizard's {@code buildOperationRequest.withUniqueFieldNames} decides the names the
- * confirmation card shows the user before they commit. Each had its own tests and nothing compared
- * them, so changing the suffix format on one side left the preview promising names the server would
- * not store, with both suites green.
+ * <p>{@code OperationFieldNames.withUniqueFieldNames} decides the names actually stored; the
+ * wizard's {@code buildOperationRequest.withUniqueFieldNames} decides the names the confirmation
+ * card shows the user before they commit. Each had its own tests and nothing compared them, so
+ * changing the suffix format on one side left the preview promising names the server would not
+ * store, with both suites green.
  *
  * <p>The cases live in a JSON file rather than here so {@code buildOperationRequest.test.ts} can
  * assert the same ones, which it reads through the {@code @testresources} alias. Changing the rule
  * now means changing it on both sides or turning one of the two suites red.
- *
- * <p>Kept apart from {@code InventoryOperationRequestBuilderTest}, which lives in {@code
- * api.v1.controller} to reuse the golden fixtures and so cannot reach this package-private method.
  */
 class FieldNameUniquenessParityTest {
 
@@ -52,7 +50,7 @@ class FieldNameUniquenessParityTest {
       }
 
       List<String> actual =
-          InventoryOperationRequestBuilder.withUniqueFieldNames(fields).stream()
+          OperationFieldNames.withUniqueFieldNames(fields).stream()
               .map(ApiExtraField::getName)
               .toList();
 
