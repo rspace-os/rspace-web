@@ -11,15 +11,51 @@ const STATUS_PALETTE_KEY: Record<string, "warning" | "success" | "error"> = {
   APPROVED: "success",
   FULFILLED: "success",
   REJECTED: "error",
-  CANCELLED: "error",
 };
 
 /**
  * A display-only chip for a SampleRequest's status: "Pending" in orange,
- * "Approved"/"Fulfilled" in green, "Rejected"/"Cancelled" in red.
+ * "Approved"/"Fulfilled" in green, "Rejected" in red, "Cancelled" in gray.
  */
 export default function RequestsStatusChip({ status }: { status: string }): React.ReactNode {
   const theme = useTheme();
+
+  if (status === "PENDING") {
+    // Matches the "Request pending" decoration in the Sample form's "Request this sample" box.
+    return (
+      <Chip
+        size="small"
+        label={toTitleCase(status)}
+        sx={{
+          fontWeight: theme.typography.fontWeightMedium,
+          // The Inventory accented theme's MuiChip override targets the compound
+          // `.MuiChip-root.MuiChip-filled` class, which out-specifies a plain sx class;
+          // "&&" repeats this rule's own selector to match that specificity and win.
+          "&&": {
+            backgroundColor: "rgb(251, 241, 222)",
+            color: "rgb(183, 121, 31)",
+          },
+        }}
+      />
+    );
+  }
+
+  if (status === "CANCELLED") {
+    return (
+      <Chip
+        size="small"
+        label={toTitleCase(status)}
+        sx={{
+          fontWeight: theme.typography.fontWeightMedium,
+          "&&": {
+            backgroundColor: theme.palette.grey[300],
+            color: theme.palette.grey[700],
+          },
+        }}
+      />
+    );
+  }
+
   const paletteColor = theme.palette[STATUS_PALETTE_KEY[status] ?? "warning"];
 
   return (
@@ -27,9 +63,11 @@ export default function RequestsStatusChip({ status }: { status: string }): Reac
       size="small"
       label={toTitleCase(status)}
       sx={{
-        backgroundColor: lighten(paletteColor.light, 0.5),
-        color: darken(paletteColor.dark, 0.3),
         fontWeight: theme.typography.fontWeightMedium,
+        "&&": {
+          backgroundColor: lighten(paletteColor.light, 0.5),
+          color: darken(paletteColor.dark, 0.3),
+        },
       }}
     />
   );

@@ -4119,21 +4119,34 @@ export default interface Resources {
         "submitted": "Date Submitted"
       },
       "detail": {
+        "approveButton": "Approve",
         "fields": {
           "additionalNotes": "Notes from requester",
+          "commentFromApprover": "Comment from approver",
           "loadingLocations": "Loading locations…",
           "locationColumn": "Location",
           "noNotes": "No notes provided.",
           "noSubsamples": "This sample has no subsamples.",
           "notInContainer": "Not in a container.",
+          "reasonPlaceholder": "Reason to be supplied later",
           "requester": "Requester",
           "sampleLocation": "Sample Locations",
+          "sampleLocationRestricted": "You do not have permission to view locations for subsamples of this sample. To gain full access, please contact the owner, {owner}.",
           "sampleLocationTooltip": "Samples are located via their subsamples",
           "sampleRequested": "Requested Sample",
+          "status": "Status",
           "submitted": "Submitted",
           "subsampleColumn": "Subsample"
         },
+        "rejectButton": "Reject",
+        "rejectDialog": {
+          "reasonLabel": "Provide a reason for rejecting this request.",
+          "rejectRequestButton": "Reject Request",
+          "title": "Confirm request rejection"
+        },
         "sections": {
+          "approvalResult": "Approval Result",
+          "approveReject": "Approve/Reject",
           "details": "Details"
         },
         "title": "Request {id}: {sampleName}"
@@ -4276,12 +4289,12 @@ export default interface Resources {
       "newImageAlt": "What the new sample looks like",
       "permissionsExplanation": "Sample permission settings affect all of its subsamples, and cannot be set for individual subsamples.",
       "requestMaterialSection": {
+        "cancelRequestButton": "Cancel",
         "compactDescription": "{owner} reviews each request before producing material.",
         "compactTitle": "Request this sample",
         "dialogTitle": "Request {sampleName}",
         "notAvailableBody": "The owner has not made this sample requestable.",
         "notAvailableHeader": "Not available for request",
-        "pendingChipLabel": "Request pending",
         "pendingDescription": "Waiting for {owner} to review your request",
         "pendingSentText": "Sent {date} - waiting for {owner}",
         "requestSampleButton": "Request Sample",

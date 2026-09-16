@@ -39,6 +39,7 @@ import LimitedAccessAlert from "../components/LimitedAccessAlert";
 import Stepper from "../components/Stepper/Stepper";
 import StepperPanel from "../components/Stepper/StepperPanel";
 import { setFormSectionError, useFormSectionError } from "../components/Stepper/StepperPanelHeader";
+import RequestsStatusChip from "../Requests/RequestsStatusChip";
 import SubsampleDetails from "./Content/SubsampleDetails";
 import SubsampleListing from "./Content/SubsampleListing";
 import Expiry from "./Fields/Expiry";
@@ -154,6 +155,28 @@ const DetailsSection = observer(({ activeResult }: { activeResult: SampleModel }
   );
 });
 
+function RequestSampleButton({ onClick }: { onClick: () => void }): React.ReactNode {
+  const { t } = useTranslation("inventory");
+  const theme = useTheme();
+  return (
+    <Button
+      variant="outlined"
+      onClick={onClick}
+      sx={{
+        color: theme.palette.record.sample.lighter,
+        backgroundColor: theme.palette.primary.main,
+        borderColor: theme.palette.primary.main,
+        "&:hover": {
+          backgroundColor: theme.palette.primary.dark,
+          borderColor: theme.palette.primary.dark,
+        },
+      }}
+    >
+      {t("sample.requestMaterialSection.requestSampleButton")}
+    </Button>
+  );
+}
+
 const RequestMaterialSection = observer(({ activeResult }: { activeResult: SampleModel }) => {
   const { t } = useTranslation(["inventory", "common"]);
   const theme = useTheme();
@@ -161,7 +184,11 @@ const RequestMaterialSection = observer(({ activeResult }: { activeResult: Sampl
   const [requestText, setRequestText] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [checkingForExistingRequest, setCheckingForExistingRequest] = useState(true);
-  const [existingRequest, setExistingRequest] = useState<{ status: string; created: string } | null>(null);
+  const [existingRequest, setExistingRequest] = useState<{
+    id: number;
+    status: string;
+    created: string;
+  } | null>(null);
   const sampleRequestsAvailable = FetchingData.getSuccessValue(useDeploymentProperty("sampleRequests.available"))
     .flatMap(Parser.isString)
     .map((value) => value === "ALLOWED")
@@ -178,13 +205,13 @@ const RequestMaterialSection = observer(({ activeResult }: { activeResult: Sampl
     }
     let cancelled = false;
     setCheckingForExistingRequest(true);
-    ApiService.query<{ requests: Array<{ status: string; created: string }> }>(
+    ApiService.query<{ requests: Array<{ id: number; status: string; created: string }> }>(
       "sampleRequests",
       new URLSearchParams({ sampleId: String(activeResult.id) }),
     )
       .then(({ data }) => {
         if (cancelled) return;
-        const mostRecent = data.requests.reduce<{ status: string; created: string } | null>(
+        const mostRecent = data.requests.reduce<{ id: number; status: string; created: string } | null>(
           (latest, request) =>
             !latest || new Date(request.created).getTime() > new Date(latest.created).getTime() ? request : latest,
           null,
@@ -211,7 +238,7 @@ const RequestMaterialSection = observer(({ activeResult }: { activeResult: Sampl
   // dialog closes.
   const sendRequest = () => {
     if (!activeResult.globalId) return;
-    void ApiService.post<{ status: string; created: string }>("sampleRequests", {
+    void ApiService.post<{ id: number; status: string; created: string }>("sampleRequests", {
       sampleGlobalId: activeResult.globalId,
       note: requestText,
     })
@@ -221,6 +248,22 @@ const RequestMaterialSection = observer(({ activeResult }: { activeResult: Sampl
       })
       .catch((error: unknown) => {
         console.error("Failed to send sample request", error);
+      });
+  };
+
+  // Cancelling is only legal for the requester, and only while the request is PENDING.
+  const cancelRequest = () => {
+    if (!existingRequest) return;
+    void ApiService.update<{ id: number; status: string; created: string }>(
+      "sampleRequests",
+      `${existingRequest.id}/status`,
+      { status: "CANCELLED" },
+    )
+      .then(({ data }) => {
+        setExistingRequest(data);
+      })
+      .catch((error: unknown) => {
+        console.error("Failed to cancel sample request", error);
       });
   };
 
@@ -251,33 +294,26 @@ const RequestMaterialSection = observer(({ activeResult }: { activeResult: Sampl
                   })}
             </Typography>
           </Box>
-          {checkingForExistingRequest ? null : existingRequest ? (
+          {checkingForExistingRequest ? null : existingRequest && existingRequest.status !== "CANCELLED" ? (
             existingRequest.status === "PENDING" ? (
               <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 0.5 }}>
-                <Box
-                  sx={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 0.75,
-                    px: 2,
-                    py: 0.75,
-                    borderRadius: 1,
-                    backgroundColor: "rgb(251, 241, 222)",
-                    color: "rgb(183, 121, 31)",
-                    fontSize: "0.8125rem",
-                    fontWeight: 500,
-                  }}
-                >
-                  <Box
-                    component="span"
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <RequestsStatusChip status={existingRequest.status} />
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={cancelRequest}
                     sx={{
-                      width: 8,
-                      height: 8,
-                      borderRadius: "50%",
-                      backgroundColor: "currentColor",
+                      // The Inventory accented theme's MuiButton override out-specifies a plain
+                      // sx class; "&&" repeats this rule's own selector to match and win.
+                      "&&": {
+                        backgroundColor: "white",
+                        "&:hover": { backgroundColor: "white" },
+                      },
                     }}
-                  />
-                  {t("sample.requestMaterialSection.pendingChipLabel")}
+                  >
+                    {t("sample.requestMaterialSection.cancelRequestButton")}
+                  </Button>
                 </Box>
                 <Typography variant="body2">
                   {t("sample.requestMaterialSection.pendingSentText", {
@@ -286,25 +322,16 @@ const RequestMaterialSection = observer(({ activeResult }: { activeResult: Sampl
                   })}
                 </Typography>
               </Box>
+            ) : existingRequest.status === "APPROVED" || existingRequest.status === "REJECTED" ? (
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <RequestsStatusChip status={existingRequest.status} />
+                <RequestSampleButton onClick={() => setDialogOpen(true)} />
+              </Box>
             ) : (
-              <Typography variant="body2">{existingRequest.status}</Typography>
+              <RequestsStatusChip status={existingRequest.status} />
             )
           ) : (
-            <Button
-              variant="outlined"
-              onClick={() => setDialogOpen(true)}
-              sx={{
-                color: theme.palette.record.sample.lighter,
-                backgroundColor: theme.palette.primary.main,
-                borderColor: theme.palette.primary.main,
-                "&:hover": {
-                  backgroundColor: theme.palette.primary.dark,
-                  borderColor: theme.palette.primary.dark,
-                },
-              }}
-            >
-              {t("sample.requestMaterialSection.requestSampleButton")}
-            </Button>
+            <RequestSampleButton onClick={() => setDialogOpen(true)} />
           )}
         </>
       ) : (

@@ -1,10 +1,16 @@
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import Collapse from "@mui/material/Collapse";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
 import Divider from "@mui/material/Divider";
 import FormControl from "@mui/material/FormControl";
 import IconButton from "@mui/material/IconButton";
 import { useTheme } from "@mui/material/styles";
+import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import type React from "react";
 import { useId, useState } from "react";
@@ -14,10 +20,14 @@ import { Heading, HeadingContext } from "@/components/DynamicHeadingLevel";
 import GlobalId from "@/components/GlobalId";
 import NoValue from "@/components/NoValue";
 import UserDetails from "@/components/UserDetails";
+import useWhoAmI from "@/hooks/api/useWhoAmI";
 import LinkableRecordFromGlobalId from "@/stores/models/LinkableRecordFromGlobalId";
+import * as FetchingData from "@/util/fetchingData";
 import { isoToLocale } from "@/util/Util";
+import ApiService from "../../common/InvApiService";
 import RequestSampleLocations from "./RequestSampleLocations";
 import type { ApiSampleRequestListItem } from "./RequestsList";
+import RequestsStatusChip from "./RequestsStatusChip";
 
 function DetailField({
   label,
@@ -48,9 +58,18 @@ function DetailField({
  * shows the requester, submission date, requested sample, and any note.
  */
 export default function RequestDetailPanel({ request }: { request: ApiSampleRequestListItem | null }): React.ReactNode {
-  const { t } = useTranslation("inventory");
+  const { t } = useTranslation(["inventory", "common"]);
   const theme = useTheme();
+  const reasonFieldId = useId();
   const [detailsExpanded, setDetailsExpanded] = useState(true);
+  const [approvalResultExpanded, setApprovalResultExpanded] = useState(true);
+  const [status, setStatus] = useState(request?.status);
+  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
+  const currentUser = useWhoAmI();
+  const isSampleOwner = FetchingData.getSuccessValue(currentUser)
+    .map((user) => request != null && user.id === request.sample.owner.id)
+    .orElse(false);
 
   if (!request) {
     return (
@@ -71,12 +90,48 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
     );
   }
 
+  const approveRequest = () => {
+    void ApiService.update<{ status: string }>("sampleRequests", `${request.id}/status`, {
+      status: "APPROVED",
+    })
+      .then(({ data }) => {
+        setStatus(data.status);
+      })
+      .catch((error: unknown) => {
+        console.error("Failed to approve sample request", error);
+      });
+  };
+
+  const rejectRequest = () => {
+    void ApiService.update<{ status: string }>("sampleRequests", `${request.id}/status`, {
+      status: "REJECTED",
+      reason: rejectReason,
+    })
+      .then(({ data }) => {
+        setStatus(data.status);
+        setRejectDialogOpen(false);
+      })
+      .catch((error: unknown) => {
+        console.error("Failed to reject sample request", error);
+      });
+  };
+
   return (
     <Box sx={{ display: "flex", flexDirection: "column", flexGrow: 1, width: "100%", height: "100%", minWidth: 0 }}>
-      <Box sx={{ p: 2, backgroundColor: theme.palette.grey[200] }}>
+      <Box
+        sx={{
+          p: 2,
+          backgroundColor: theme.palette.grey[200],
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 1.5,
+        }}
+      >
         <Typography variant="h5">
           {t("requestsManagement.detail.title", { id: request.id, sampleName: request.sample.name })}
         </Typography>
+        {status && <RequestsStatusChip status={status} />}
       </Box>
       <Box sx={{ overflow: "auto", flexGrow: 1 }}>
         <Box
@@ -131,7 +186,98 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
             </Box>
           </HeadingContext>
         </Collapse>
+        {(status === "APPROVED" || status === "REJECTED") && (
+          <>
+            <Box
+              sx={{
+                p: 1,
+                backgroundColor: theme.palette.grey[100],
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                cursor: "pointer",
+              }}
+              onClick={() => setApprovalResultExpanded(!approvalResultExpanded)}
+            >
+              <Typography variant="subtitle1">{t("requestsManagement.detail.sections.approvalResult")}</Typography>
+              <IconButton
+                size="small"
+                aria-label={
+                  approvalResultExpanded ? t("formSections.collapseSection") : t("formSections.expandSection")
+                }
+                sx={{
+                  transform: approvalResultExpanded ? "rotate(180deg)" : "rotate(0deg)",
+                  transition: theme.transitions.create("transform"),
+                }}
+              >
+                <ExpandMoreIcon />
+              </IconButton>
+            </Box>
+            <Divider />
+            <Collapse in={approvalResultExpanded}>
+              <HeadingContext level={4}>
+                <Box sx={{ p: 2, display: "flex", flexDirection: "column", gap: 2 }}>
+                  <DetailField label={t("requestsManagement.detail.fields.status")}>
+                    <RequestsStatusChip status={status} />
+                  </DetailField>
+                  <DetailField label={t("requestsManagement.detail.fields.commentFromApprover")}>
+                    <NoValue label={t("requestsManagement.detail.fields.reasonPlaceholder")} />
+                  </DetailField>
+                </Box>
+              </HeadingContext>
+            </Collapse>
+          </>
+        )}
+        {isSampleOwner && status === "PENDING" && (
+          <>
+            <Box sx={{ p: 1, backgroundColor: theme.palette.grey[100] }}>
+              <Typography variant="subtitle1">{t("requestsManagement.detail.sections.approveReject")}</Typography>
+            </Box>
+            <Divider />
+            <Box sx={{ p: 2, display: "flex", gap: 2 }}>
+              <Button variant="contained" color="success" sx={{ "&&": { color: "white" } }} onClick={approveRequest}>
+                {t("requestsManagement.detail.approveButton")}
+              </Button>
+              <Button
+                variant="contained"
+                color="error"
+                sx={{ "&&": { color: "white" } }}
+                onClick={() => setRejectDialogOpen(true)}
+              >
+                {t("requestsManagement.detail.rejectButton")}
+              </Button>
+            </Box>
+          </>
+        )}
       </Box>
+      <Dialog open={rejectDialogOpen} onClose={() => setRejectDialogOpen(false)} fullWidth maxWidth="sm">
+        <DialogTitle>{t("requestsManagement.detail.rejectDialog.title")}</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}>
+            <Typography variant="body2">{t("requestsManagement.detail.rejectDialog.reasonLabel")}</Typography>
+            <TextField
+              id={reasonFieldId}
+              multiline
+              minRows={3}
+              fullWidth
+              value={rejectReason}
+              onChange={({ target: { value } }) => setRejectReason(value)}
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setRejectDialogOpen(false)}>{t("common:actions.cancel")}</Button>
+          <Button
+            color="error"
+            variant="contained"
+            sx={{ "&&": { color: "white" } }}
+            disabled={!rejectReason.trim()}
+            onClick={rejectRequest}
+          >
+            {t("requestsManagement.detail.rejectDialog.rejectRequestButton")}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

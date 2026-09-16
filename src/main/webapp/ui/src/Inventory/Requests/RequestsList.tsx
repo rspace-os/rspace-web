@@ -34,7 +34,7 @@ export type ApiSampleRequestListItem = {
   created: string;
   note: string | null;
   requester: { id: number; firstName: string; lastName: string };
-  sample: { id: number; globalId: string; name: string };
+  sample: { id: number; globalId: string; name: string; owner: { id: number } };
 };
 
 export type RequestsFilter = "all" | "sent" | "received";

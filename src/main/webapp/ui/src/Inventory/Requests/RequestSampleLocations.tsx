@@ -21,7 +21,18 @@ import ApiService from "../../common/InvApiService";
 
 type ApiContainerInfo = { id: number; globalId: string; name: string };
 type ApiSubSampleInfo = { id: number; globalId: string; name: string; parentContainers: Array<ApiContainerInfo> };
-type ApiSampleWithSubSamples = { subSamples: Array<ApiSubSampleInfo> };
+// The backend nulls `subSamples` (rather than omitting/emptying it) when the viewer only has
+// limited/public read access to the sample, so a null here specifically means "restricted",
+// not "no subsamples".
+type ApiSampleWithSubSamples = {
+  subSamples: Array<ApiSubSampleInfo> | null;
+  owner: { firstName: string; lastName: string };
+};
+
+type LoadState =
+  | { status: "loading" }
+  | { status: "restricted"; ownerName: string }
+  | { status: "loaded"; subSamples: Array<ApiSubSampleInfo> };
 
 /**
  * A chip showing a record's full name (not its Global ID), reusing the same
@@ -66,27 +77,31 @@ function NamedRecordChip({ globalId, name }: { globalId: string; name: string })
  */
 export default function RequestSampleLocations({ sampleId }: { sampleId: number }): React.ReactNode {
   const { t } = useTranslation("inventory");
-  const [subSamples, setSubSamples] = useState<Array<ApiSubSampleInfo> | null>(null);
+  const [state, setState] = useState<LoadState>({ status: "loading" });
 
   useEffect(() => {
     let cancelled = false;
-    setSubSamples(null);
+    setState({ status: "loading" });
     ApiService.get<ApiSampleWithSubSamples>("samples", sampleId)
       .then(({ data }) => {
         if (cancelled) return;
-        setSubSamples(data.subSamples);
+        if (data.subSamples === null) {
+          setState({ status: "restricted", ownerName: `${data.owner.firstName} ${data.owner.lastName}` });
+        } else {
+          setState({ status: "loaded", subSamples: data.subSamples });
+        }
       })
       .catch((error: unknown) => {
         if (cancelled) return;
         console.error("Failed to fetch subsample locations", error);
-        setSubSamples([]);
+        setState({ status: "loaded", subSamples: [] });
       });
     return () => {
       cancelled = true;
     };
   }, [sampleId]);
 
-  if (subSamples === null) {
+  if (state.status === "loading") {
     return (
       <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
         <CircularProgress size="1em" />
@@ -94,6 +109,16 @@ export default function RequestSampleLocations({ sampleId }: { sampleId: number 
       </Stack>
     );
   }
+
+  if (state.status === "restricted") {
+    return (
+      <Typography variant="body2">
+        {t("requestsManagement.detail.fields.sampleLocationRestricted", { owner: state.ownerName })}
+      </Typography>
+    );
+  }
+
+  const { subSamples } = state;
 
   if (subSamples.length === 0) {
     return <NoValue label={t("requestsManagement.detail.fields.noSubsamples")} />;

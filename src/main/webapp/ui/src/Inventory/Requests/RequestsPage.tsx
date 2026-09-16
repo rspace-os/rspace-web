@@ -34,7 +34,7 @@ export default function RequestsPage(): React.ReactNode {
           <RequestsList selectedRequestId={selectedRequest?.id ?? null} onSelect={setSelectedRequest} />
         </Box>
         <Box sx={{ display: "flex", flex: "1 1 60%", minWidth: 0 }}>
-          <RequestDetailPanel request={selectedRequest} />
+          <RequestDetailPanel key={selectedRequest?.id ?? "none"} request={selectedRequest} />
         </Box>
       </Box>
     </Main>
