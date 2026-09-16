@@ -24,6 +24,8 @@ tags:
       errorCode `CONFIGURED_UNAVAILABLE` while the system property
       `inventory.operations.available` is `DENIED`, which is how it is seeded; a sysadmin turns it
       on at System > Configuration.
+      An operation accepts only the inputs its own definition declares: a field name the operation
+      does not declare is rejected with `400`, naming the field as sent, rather than ignored.
 
 paths:
   /workbenches:

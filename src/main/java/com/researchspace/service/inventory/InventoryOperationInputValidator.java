@@ -11,6 +11,8 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.springframework.validation.Errors;
 
 /**
@@ -94,7 +96,39 @@ public final class InventoryOperationInputValidator {
         default -> {}
       }
     }
+    rejectUndeclaredInputs(definition, inputs, errors);
     rejectUnstorableTotal(definition, inputs, errors);
+  }
+
+  /**
+   * Rejects an input key the definition does not declare (RSDEV-1231 F8).
+   *
+   * <p>The loop above walks the DEFINITION's inputs and reads each declared key out of the caller's
+   * map, and never walks the map itself, so an undeclared key was unreachable rather than wrong. A
+   * misspelled REQUIRED key still failed, because the declared key was then absent; a misspelled
+   * OPTIONAL one did not, and its value was dropped with a 201. "Count" for "count" created one
+   * subsample instead of the four asked for, because count declares a default of 1.
+   *
+   * <p>The undeclared key IS the caller's field here, so it is also the field the error names:
+   * pointing at the declared key would name something the caller never sent.
+   */
+  private static void rejectUndeclaredInputs(
+      InventoryOperationConfig definition, Map<String, ?> inputs, Errors errors) {
+    if (inputs == null) {
+      return;
+    }
+    Set<String> declared =
+        definition.inputs().stream()
+            .map(InventoryOperationConfig.Input::key)
+            .collect(Collectors.toSet());
+    for (String key : inputs.keySet()) {
+      if (!declared.contains(key)) {
+        errors.rejectValue(
+            key,
+            "errors.inventory.operation.inputUnknown",
+            "This operation does not declare this input.");
+      }
+    }
   }
 
   /**
