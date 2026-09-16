@@ -402,6 +402,77 @@ public class InventoryOperationFacadesMVCIT extends API_MVC_InventoryTestBase {
   }
 
   @Test
+  public void anEachAmountCarryingOnlyAUnitIsRejectedRatherThanCreatingEmptyStock()
+      throws Exception {
+    // @NotNull asserts eachAmount is present, not that it carries a number, so {"unitId":..} alone
+    // passed every rule; the null was copied into each created subsample while the origin was
+    // still decremented.
+    ApiSubSample origin = origin();
+    List<String> errors =
+        errorsOf(
+            post(
+                "aliquot",
+                "{\"origin\":"
+                    + originJson(origin, q("1", GRAM))
+                    + ",\"sampleName\":\"Numberless\",\"eachAmount\":{\"unitId\":"
+                    + GRAM
+                    + "}}",
+                400));
+    assertTrue(
+        errors.stream().anyMatch(message -> message.startsWith("eachAmount:")),
+        () -> "expected eachAmount, got " + errors);
+    assertUnchanged(origin);
+  }
+
+  @Test
+  public void aStorageTempCarryingOnlyAUnitIsRejectedRatherThanFailingDuringPersistence()
+      throws Exception {
+    // The sample's own @ValidTemperature treats a number-less temperature as unresolved and lets
+    // it through, so this reached the INSERT and came back as a 500.
+    ApiSubSample origin = origin();
+    List<String> errors =
+        errorsOf(
+            post(
+                "cryopreserve",
+                "{\"origin\":"
+                    + originJson(origin, q("1", GRAM))
+                    + ",\"sampleName\":\"Numberless\",\"count\":1,\"eachAmount\":"
+                    + q("0.5", GRAM)
+                    + ",\"storageTemp\":{\"unitId\":"
+                    + CELSIUS
+                    + "}}",
+                400));
+    assertTrue(
+        errors.stream().anyMatch(message -> message.startsWith("storageTemp:")),
+        () -> "expected storageTemp, got " + errors);
+    assertUnchanged(origin);
+  }
+
+  @Test
+  public void aStorageTempBelowAbsoluteZeroIsRejectedThoughItIsUnderTheOperationsCeiling()
+      throws Exception {
+    // Cryopreserve sets no lower bound, so -300 C sat under its -18 C ceiling and passed here;
+    // only the entity's @ValidTemperature caught it, once the transaction was already writing.
+    ApiSubSample origin = origin();
+    List<String> errors =
+        errorsOf(
+            post(
+                "cryopreserve",
+                "{\"origin\":"
+                    + originJson(origin, q("1", GRAM))
+                    + ",\"sampleName\":\"Impossible\",\"count\":1,\"eachAmount\":"
+                    + q("0.5", GRAM)
+                    + ",\"storageTemp\":"
+                    + q("-300", CELSIUS)
+                    + "}",
+                400));
+    assertTrue(
+        errors.stream().anyMatch(message -> message.startsWith("storageTemp:")),
+        () -> "expected storageTemp, got " + errors);
+    assertUnchanged(origin);
+  }
+
+  @Test
   public void anUnreadableDocumentationTargetNamesTheFieldTheCallerSent() throws Exception {
     // Resolved only while the built sample's link was created, deep in the transaction, this came
     // back as a bare 422 with no field path on it.

@@ -4,6 +4,7 @@ import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.model.units.QuantityUtils;
 import com.researchspace.model.units.RSUnitDef;
+import com.researchspace.model.units.TemperatureValidator;
 import java.math.BigDecimal;
 import org.springframework.validation.Errors;
 
@@ -26,14 +27,20 @@ public final class OperationQuantityRules {
    * the origin.
    */
   public static void createdAmount(ApiQuantityInfo amount, String field, Errors errors) {
-    if (amount == null || amount.getNumericValue() == null) {
+    if (amount == null) {
       return; // absence is the body's own @NotNull
     }
-    if (amount.getNumericValue().signum() <= 0) {
+    // @NotNull asserts the object is present, not that it carries a number, so a body sending only
+    // a unit arrives here. Left unchecked that null is copied into every created subsample while
+    // the origin is still decremented, so the operation yields empty stock or a 500.
+    if (amount.getNumericValue() == null || amount.getNumericValue().signum() <= 0) {
       errors.rejectValue(
           field,
           "errors.inventory.operation.createdAmountNotPositive",
           "Each created subsample must be given a quantity greater than zero.");
+    }
+    if (amount.getNumericValue() == null) {
+      return; // the remaining rules read the number
     }
     storableAmountUnit(amount, field, "errors.inventory.operation.inputNotStorable", errors);
   }
@@ -94,8 +101,16 @@ public final class OperationQuantityRules {
       BigDecimal minCelsius,
       BigDecimal maxCelsius,
       Errors errors) {
-    if (temperature == null || temperature.getNumericValue() == null) {
+    if (temperature == null) {
       return; // absence is the body's own @NotNull
+    }
+    if (temperature.getNumericValue() == null) {
+      // @NotNull asserts the object is present, not that it carries a number. The sample's own
+      // @ValidTemperature treats a number-less temperature as unresolved and passes it too, so
+      // unchecked it reached the INSERT and failed there as a 500.
+      errors.rejectValue(
+          field, "errors.inventory.operation.inputRequired", "A temperature value is required.");
+      return;
     }
     Integer unitId = temperature.getUnitId();
     if (unitId == null
@@ -110,6 +125,16 @@ public final class OperationQuantityRules {
           field,
           "errors.inventory.temperature.notStorable",
           "The temperature supports at most 3 decimal places.");
+      return;
+    }
+    if (!TemperatureValidator.validate(temperature)) {
+      // The one remaining thing the validator judges that the checks above do not: a temperature
+      // below absolute zero. An operation's own bounds need not exclude it (Cryopreserve sets no
+      // lower bound at all), so without this -300 C reached the INSERT.
+      errors.rejectValue(
+          field,
+          "errors.inventory.temperature.belowAbsoluteZero",
+          "The temperature is below absolute zero.");
       return;
     }
     QuantityInfo value = QuantityInfo.of(temperature);
