@@ -272,9 +272,6 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
     try {
       QuantityInfo orgQuantity = dbSubSample.getQuantity();
 
-      // subtract, not sum: a remainder that will not fit 3dp in the origin's unit is stored one
-      // rung down the ladder where it does, so 2.5 mg from a 5 g origin leaves 4997.5 mg exactly
-      // rather than rounding 4.9975 g away (review 2026-09-14, Q1a).
       QuantityInfo newQuantity = qUtils.subtract(orgQuantity, usedQuantity);
 
       // if usage is larger than remaining quantity set remaining to zero, in the stored unit

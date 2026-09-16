@@ -17,7 +17,7 @@ vi.mock("../../../../stores/stores/getRootStore", () => ({
  * generated; the server sets it and ignores it in every request. `paramsForBackend` builds an
  * explicit allowlist, so an ordinary save does not echo it back. Both halves are pinned here
  * because a refactor to `{...ef}` would look harmless and would start sending a read-only
- * property on every save of an operation-created sample (parallel review, I18).
+ * property on every save of an operation-created sample.
  */
 describe("paramsForBackend and operationFieldKey", () => {
   const operationCreatedField = {
@@ -34,8 +34,6 @@ describe("paramsForBackend and operationFieldKey", () => {
   };
 
   test("reads the key in from the API response", () => {
-    // What computedValues' key-first matching depends on: if the model dropped it, the next Passage
-    // would fall back to matching a localized name and restart the counter.
     const sample = makeMockSample();
     sample.addExtraField(operationCreatedField);
     expect(sample.extraFields[0].operationFieldKey).toEqual("operations.passage.numberField");

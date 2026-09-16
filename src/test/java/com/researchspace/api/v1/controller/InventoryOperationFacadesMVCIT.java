@@ -160,7 +160,6 @@ public class InventoryOperationFacadesMVCIT extends API_MVC_InventoryTestBase {
 
   @Test
   public void reviveWithoutAStorageTempGetsTheServerDefault() throws Exception {
-    // M0 D7: revive's storageTemp is optional with a server default of 4 degC.
     ApiSubSample origin = origin();
     ApiInventoryOperationResult result =
         created(
@@ -284,7 +283,7 @@ public class InventoryOperationFacadesMVCIT extends API_MVC_InventoryTestBase {
   public void aFractionalCountIsRejectedNamingTheFieldRatherThanSilentlyCoerced() throws Exception {
     // Asserted through the running converter, not the DTO: the coercion this guards against is
     // Jackson's, and only a request that actually crosses the HTTP boundary exercises the mapper
-    // the endpoint is wired to (live test 2026-09-13, F2).
+    // the endpoint is wired to.
     ApiSubSample origin = origin();
     List<String> errors =
         errorsOf(
@@ -305,15 +304,10 @@ public class InventoryOperationFacadesMVCIT extends API_MVC_InventoryTestBase {
   @Test
   public void anAmountTakenTheOriginsOwnUnitCannotExpressRedenominatesTheOrigin() throws Exception {
     // 4999.999 mg from a 5 g origin leaves 0.000001 g, which the origin's own unit cannot store.
-    // It IS 0.001 mg, and the whole ladder is powers of a thousand, so the remainder is stored in
-    // the unit that holds it exactly rather than the operation being refused (review 2026-09-14,
-    // Q1a/Q1b). Milligrams, not micrograms: the descent stops at the FIRST unit that fits, so the
-    // quantity is relabelled no further than storing it requires. This is the end-to-end version:
-    // over HTTP, through the real validator, the real decrement and the real column.
-    //
-    // The origin's unit changing underneath the user was the recorded half of live-run finding F3.
-    // The new unit is in the response payload, as asserted below, so the card re-renders showing
-    // it; nothing yet ANNOUNCES the change, which is Q1c and is a product decision.
+    // It IS 0.001 mg, and the descent stops at the FIRST unit that fits, so the remainder is stored
+    // in milligrams, not micrograms, rather than the operation being refused. This is the
+    // end-to-end version: over HTTP, through the real validator, the real decrement and the real
+    // column.
     ApiSubSample origin = origin();
 
     ApiInventoryOperationResult result =
@@ -342,7 +336,7 @@ public class InventoryOperationFacadesMVCIT extends API_MVC_InventoryTestBase {
     // Each of the two children fits the DECIMAL(19,3) quantity column on its own; the parent total
     // the created sample recalculates from them does not. That recompute happens during
     // persistence, so the request passed validation, decremented the origins, and then failed
-    // inside the transaction as a 500 (Codex review, PR #1090).
+    // inside the transaction as a 500.
     ApiSubSample origin = origin();
     List<String> errors =
         errorsOf(
@@ -363,7 +357,7 @@ public class InventoryOperationFacadesMVCIT extends API_MVC_InventoryTestBase {
   @Test
   public void anUnreadableDocumentationTargetNamesTheFieldTheCallerSent() throws Exception {
     // Resolved only while the built sample's link was created, deep in the transaction, this came
-    // back as a bare 422 with no field path on it (live test 2026-09-13, F4).
+    // back as a bare 422 with no field path on it.
     ApiSubSample origin = origin();
     List<String> errors =
         errorsOf(
@@ -384,8 +378,7 @@ public class InventoryOperationFacadesMVCIT extends API_MVC_InventoryTestBase {
   @Test
   public void anExpectedQuantityIsAcceptedRegardlessOfWhetherItMatchesTheOrigin() throws Exception {
     // expectedQuantity (M0 D5) is still accepted on the wire but no longer compared against the
-    // origin's live quantity: this branch has no concurrency control
-    // (RSDEV-1231-no-concurrency), so a mismatched value proceeds exactly like a matching one.
+    // origin's live quantity, so a mismatched value proceeds exactly like a matching one.
     ApiSubSample origin = origin();
     ApiInventoryOperationResult stale =
         created(
@@ -401,7 +394,6 @@ public class InventoryOperationFacadesMVCIT extends API_MVC_InventoryTestBase {
                 + "}");
     assertRemaining(stale, origin, "4");
 
-    // a matching expected quantity proceeds too, taking a further 1 g off the same origin
     ApiInventoryOperationResult matching =
         created(
             "aliquot",
@@ -445,9 +437,6 @@ public class InventoryOperationFacadesMVCIT extends API_MVC_InventoryTestBase {
     }
   }
 
-  /**
-   * Posts a creating operation, asserts 201 with a Location at the new sample, returns the body.
-   */
   private ApiInventoryOperationResult created(String operation, String json) throws Exception {
     MvcResult response = post(operation, json, 201);
     ApiInventoryOperationResult result =
@@ -470,7 +459,6 @@ public class InventoryOperationFacadesMVCIT extends API_MVC_InventoryTestBase {
     return subSample.getQuantity().getNumericValue();
   }
 
-  /** The envelope reports the origin's remainder, and it matches what is stored. */
   private void assertRemaining(
       ApiInventoryOperationResult result, ApiSubSample origin, String expected) {
     ApiSubSample reported =
@@ -496,7 +484,6 @@ public class InventoryOperationFacadesMVCIT extends API_MVC_InventoryTestBase {
     return "{\"numericValue\":" + value + ",\"unitId\":" + unitId + "}";
   }
 
-  /** One M0 origin element; a null amount leaves the property absent. */
   private static String originJson(ApiSubSample origin, String amountTakenJson) {
     return "{\"globalId\":\""
         + origin.getGlobalId()

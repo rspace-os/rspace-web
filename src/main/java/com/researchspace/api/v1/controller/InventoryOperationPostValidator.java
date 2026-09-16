@@ -38,10 +38,7 @@ import org.springframework.validation.Validator;
 @Component
 public class InventoryOperationPostValidator implements Validator {
 
-  /**
-   * Ceiling on origins per request: each origin costs a read and an update cycle, so the batch is
-   * capped like the samples endpoint caps newSampleSubSamplesCount (both 100).
-   */
+  /** Ceiling on origins per request: each origin costs a read and an update cycle. */
   static final int MAX_ORIGINS = 100;
 
   /** The ELN record kinds the documentation picker offers (ElnFolderBrowser.PICKABLE_TYPES). */
@@ -98,7 +95,7 @@ public class InventoryOperationPostValidator implements Validator {
     // The ceiling is checked before the cardinality, and returns: an oversized list is the more
     // specific reason (a single-origin operation would otherwise report only "exactly one" and hide
     // it), and stopping here keeps the per-origin work bounded by the cap rather than by whatever
-    // the caller sent (Copilot review, PR #1090).
+    // the caller sent.
     if (request.getOrigins().size() > MAX_ORIGINS) {
       errors.rejectValue(
           "origins",
@@ -121,8 +118,7 @@ public class InventoryOperationPostValidator implements Validator {
 
     validateOrigins(request, config, errors);
 
-    // The id arrives bare, so a malformed one is rejected here too; readability of the target is
-    // checked by the shared link validation when the built sample is created.
+    // The id arrives bare, so a malformed global id is rejected here.
     if (request.getDocumentedByGlobalId() != null
         && !targetsDocumentableRecord(request.getDocumentedByGlobalId())) {
       errors.rejectValue(
@@ -156,14 +152,14 @@ public class InventoryOperationPostValidator implements Validator {
       }
       // An origin-emptying operation (Destroy) means to take the whole origin. A client that
       // declares amountMode "explicit" is saying the opposite, that this is an amount the user
-      // chose, which this operation cannot honour: malformed, so a 400 here (RSDEV-1231). An ABSENT
+      // chose, which this operation cannot honour: malformed, so a 400 here. An ABSENT
       // mode stays acceptable, so requests predating the field keep working. Whether the amount
       // actually empties the origin is the manager's mustEmptyOrigin rule; the mode itself is not
       // compared against the live quantity (DevDocs/adr/0007).
       if (origin.getAmountMode() == ApiInventoryOperationAmountMode.UNKNOWN) {
         // A wire value the enum does not recognise. It binds to UNKNOWN rather than throwing from
         // the @JsonCreator so that the rejection is a catalog key here, not the raw English of an
-        // HttpMessageNotReadableException copied into the 400 body (parallel review). Reported
+        // HttpMessageNotReadableException copied into the 400 body. Reported
         // before the two rules below because neither can mean anything for an unknown mode.
         errors.rejectValue(
             "amountMode",
@@ -179,9 +175,6 @@ public class InventoryOperationPostValidator implements Validator {
       } else if (!config.effect().emptiesOrigin()
           && config.effect().amountTakenFrom() == null
           && origin.getAmountMode() == ApiInventoryOperationAmountMode.ALL) {
-        // The mirror of the rule above. An operation that only links to its origins (Passage)
-        // requires an amount of exactly zero, so a whole-origin claim can never be meant.
-        // Malformed, so it is a 400 here (parallel review).
         errors.rejectValue(
             "amountMode",
             "errors.inventory.operation.amountModeNotApplicable",
@@ -192,9 +185,7 @@ public class InventoryOperationPostValidator implements Validator {
         // Deliberately empty. The definition, not the caller, decides what this operation takes:
         // nothing (Passage) or the whole origin (Destroy). A typed facade sends no amount for
         // either, and the manager's request builder supplies it from the definition and the
-        // origin's live quantity (M0). The wizard still sends one, which is then checked like any
-        // other. Inverting this to avoid the empty body would have to restructure the whole
-        // else-chain below, which is not worth it (parallel review).
+        // origin's live quantity.
       } else if (!isValidAmountTaken(origin.getAmountTaken())) {
         errors.rejectValue(
             "amountTaken",
@@ -202,7 +193,7 @@ public class InventoryOperationPostValidator implements Validator {
             "Each origin must specify a non-negative amount, with a unit, to take from it.");
       } else if (!RSUnitDef.exists(origin.getAmountTaken().getUnitId())) {
         // The manager subtracts unit-aware, so an unknown unit would fail there as a 422 rather
-        // than a field-scoped 400 (code review, finding 4).
+        // than a field-scoped 400.
         errors.rejectValue(
             "amountTaken",
             "errors.inventory.quantity.unitInvalid",
@@ -223,10 +214,7 @@ public class InventoryOperationPostValidator implements Validator {
             "errors.inventory.operation.amountTakenTooPrecise",
             "The amount taken supports at most 3 decimal places.");
       } else if (!config.effect().emptiesOrigin()) {
-        // What the amount taken must be follows the operation's effect (DevDocs/adr/0007): an
-        // operation that decrements its origins (amountTakenFrom configured) must take a positive
-        // amount from each; one that only links to them (e.g. Passage) must take exactly zero. An
-        // origin-emptying operation (Destroy) is checked live in the manager instead, where the
+        // An origin-emptying operation (Destroy) is checked live in the manager instead, where the
         // amount must equal the origin's current quantity (mustEmptyOrigin).
         int amountSignum = origin.getAmountTaken().getNumericValue().signum();
         if (config.effect().amountTakenFrom() != null && amountSignum <= 0) {
@@ -250,8 +238,7 @@ public class InventoryOperationPostValidator implements Validator {
   /**
    * {@code expectedQuantity} gets the same shape check the amount taken gets: a null numeric value
    * or an unknown unit id is a malformed request, so both are 400s here. Absent is allowed, and a
-   * well-formed value is otherwise accepted without being compared against the live quantity (M0
-   * D5; DevDocs/adr/0007: no concurrency control).
+   * well-formed value is otherwise accepted without being compared against the live quantity.
    */
   private static void validateExpectedQuantity(ApiQuantityInfo expected, Errors errors) {
     if (expected == null) {

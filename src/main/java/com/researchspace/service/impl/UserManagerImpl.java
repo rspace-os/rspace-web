@@ -347,20 +347,10 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
   }
 
   /**
-   * The ceiling on ONE key's value, well under the 65535-char TEXT column the merged blob lives in.
-   * The column-level guard in {@link UserPreference} only fires once the merge overflows, by which
-   * point a single near-column-sized value has already been stored and every later keyed write for
-   * that user fails permanently. Every preference the client declares is a short scalar or a small
-   * list, so a few KB is ample (parallel review, S6) - except INVENTORY_OPERATION_PROCESS_VALUES,
-   * which was one shared, ever-growing collection across all seven operation types: a user who
-   * never unticks "Remember" (by design, see processValues.ts) eventually pushed that single key
-   * over this cap, after which every later save of it was refused forever (RSDEV-1231, Codex
-   * review, PR #1090). Splitting it into one key per operation type (below) bounds growth across
-   * operation types but not within one, so this cap is lower per key than it once needed to be,
-   * while the seven keys together give substantially more usable headroom than the one shared key
-   * did. Sized to leave comfortable room under the column limit even with all seven at once: 6500*7
-   * + 8192 (the retained legacy key, see below) + 3000 (generous budget for the other ten small
-   * keys) = 56692.
+   * Per-key ceiling, kept well under the 65535-char TEXT column shared by all UI_JSON_SETTINGS
+   * keys. Sized so every key stays comfortably under the column limit even with all seven
+   * per-operation keys at once: 6500*7 + 8192 (the legacy key, see below) + 3000 (the other keys) =
+   * 56692.
    */
   private static final int MAX_UI_JSON_SETTING_VALUE_CHARS = 6500;
 
@@ -369,13 +359,10 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
    * PREFERENCES map (src/main/webapp/ui/src/hooks/api/useUiPreference.tsx). Adding a preference
    * there means adding it here.
    *
-   * <p>An allowlist rather than a syntax rule, because the key is written verbatim into the user's
-   * single settings column and nothing ever deletes one. A rule that only constrained the shape (an
-   * uppercase identifier, say) would still leave the key space unbounded, so a caller could invent
-   * name after name until the accumulated junk brought the column to its TEXT limit, at which point
-   * the oversize guard rejects EVERY later keyed write for that user, permanently. A closed set has
-   * no such growth: each write either replaces a known key or is refused (Copilot review, PR
-   * #1090).
+   * <p>An allowlist rather than a syntax rule: the key is written verbatim into the user's single
+   * settings column and nothing ever deletes one, so an open-ended rule would let a caller add
+   * names until the column hit its TEXT limit, after which the oversize guard permanently rejects
+   * every later keyed write for that user.
    *
    * <p>INVENTORY_OPERATION_PROCESS_VALUES is kept, read-only from the client's perspective, as a
    * legacy fallback source for bundles saved before RSDEV-1231 split it into the seven
@@ -413,7 +400,6 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
       throw new IllegalArgumentException(
           messages.getMessage("errors.preference.invalidKey", new Object[] {key}));
     }
-    // Before the parse: an oversized value should not be materialised as a tree to be rejected.
     if (valueJson != null && valueJson.length() > MAX_UI_JSON_SETTING_VALUE_CHARS) {
       throw new IllegalArgumentException(
           messages.getMessage(
@@ -440,10 +426,9 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
   }
 
   /**
-   * The stored UI settings blob as a mutable object. A blank or unparseable value starts a fresh
-   * object rather than failing every later write: only this method's caller writes the column, and
-   * refusing to write over a corrupt value would leave the user unable to save any preference
-   * again.
+   * A blank or unparseable stored value starts a fresh object rather than failing every later
+   * write, since refusing to write over a corrupt value would leave the user unable to save any
+   * preference again.
    */
   private ObjectNode uiJsonSettingsFrom(String stored, String username) {
     if (StringUtils.isEmpty(stored)) {

@@ -89,14 +89,9 @@ const isUnitless = (q: QuantityUnitId) => Object.values(unitlessIds).includes(q)
 /**
  * The measurement category a unit belongs to, or null for a unit id this module does not know.
  *
- * Built from the same predicates the rest of this module uses, so there is exactly one unit-to-
- * category table. Callers that hold a bare unit id (rather than a record carrying its own
- * `quantityCategory`) need this to tell whether two quantities are even comparable: adding a
- * millilitre to a gram is not a smaller-or-larger question, it is a different measurement.
- *
- * Returns null rather than throwing, unlike `atomicUnitOfSameCategory`: the callers are validating
- * possibly-stale stored input, where an unrecognised unit is an answer ("not this category") rather
- * than a programming error. `UNSET_UNIT` and any other sentinel therefore come back as null.
+ * Returns null rather than throwing, unlike `atomicUnitOfSameCategory`: an unrecognised unit here
+ * is a valid answer ("not this category"), not a programming error, so `UNSET_UNIT` and other
+ * sentinels come back as null.
  */
 export const categoryOfUnit = (id: QuantityUnitId): UnitCategory | null =>
   match<void, () => UnitCategory | null>([

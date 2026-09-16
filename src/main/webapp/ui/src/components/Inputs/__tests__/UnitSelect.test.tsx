@@ -2,7 +2,6 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import UnitSelect from "../UnitSelect";
 
-// A minimal unit store: two volume units, so the dropdown has real options to (not) display.
 vi.mock("@/stores/use-stores", () => ({
   default: () => ({
     unitStore: {
@@ -22,8 +21,6 @@ describe("UnitSelect", () => {
   });
 
   it("renders empty for the unset-unit marker instead of an out-of-range value", () => {
-    // A non-positive id means "no unit chosen" (the operation wizard clears the unit when a picked
-    // template changes the measurement category); MUI would warn on an out-of-range value.
     render(<UnitSelect categories={["volume"]} value={0} handleChange={() => undefined} />);
     expect(screen.getByRole("combobox")).toHaveTextContent(/^[​\s]*$/);
   });

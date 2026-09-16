@@ -23,8 +23,8 @@ import org.junit.jupiter.api.Test;
  * "Cryomedium"). Adding the generated one alongside it makes two fields with the same name, which
  * {@code InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNames} rejects, so the
  * operation always failed for such a template and the wizard offered no way to repair the generated
- * name (Codex review, PR #1090). Renaming the generated field instead would break the Passage
- * counter, which finds the previous number by looking the field up by name.
+ * name. Renaming the generated field instead would break the Passage counter, which finds the
+ * previous number by looking the field up by name.
  */
 class SampleApiManagerImplTemplateFieldMergeTest {
 
@@ -60,9 +60,9 @@ class SampleApiManagerImplTemplateFieldMergeTest {
 
     SampleApiManagerImpl.mergeOperationFieldsIntoInheritedTemplateFields(sample, templateFields);
 
-    // The value lands in the inherited field, so the next Passage still finds it by name.
+    // so the next Passage still finds it by name.
     assertEquals("4", templateFields.get(0).getFieldData());
-    // and the duplicate is gone, so the uniqueness check passes.
+    // so the uniqueness check passes.
     assertTrue(sample.getExtraFields().isEmpty(), "the generated duplicate should be absorbed");
   }
 
@@ -142,7 +142,7 @@ class SampleApiManagerImplTemplateFieldMergeTest {
     // declare a number field called "Cryomedium"; Cryopreserve then generates a text field of that
     // name whose content is "10% DMSO". setFieldData validates before storing, so merging it threw
     // IllegalArgumentException out of the manager instead of letting the request reach the
-    // duplicate-name rejection that reports a controlled error (Copilot review, PR #1090).
+    // duplicate-name rejection that reports a controlled error.
     ApiSampleWithFullSubSamples sample = sampleWith(operationField("Cryomedium", "10% DMSO"));
     List<InventoryEntityField> templateFields = new ArrayList<>();
     templateFields.add(new InventoryNumberField("Cryomedium"));

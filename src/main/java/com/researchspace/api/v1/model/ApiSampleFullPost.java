@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
  *
  * <p>Lives here rather than nested in {@code SamplesApiController} because the same conformance
  * check runs inside the operations transaction, in {@code service.inventory}: a nested controller
- * class would make the service layer import the controller layer (parallel review, L1).
+ * class would make the service layer import the controller layer.
  */
 @Data
 @AllArgsConstructor

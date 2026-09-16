@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
  * stored; the wizard's {@code buildOperationRequest.withUniqueFieldNames} decides the names the
  * confirmation card shows the user before they commit. Each had its own tests and nothing compared
  * them, so changing the suffix format on one side left the preview promising names the server would
- * not store, with both suites green (parallel review, A10).
+ * not store, with both suites green.
  *
  * <p>The cases live in a JSON file rather than here so {@code buildOperationRequest.test.ts} can
  * assert the same ones, which it reads through the {@code @testresources} alias. Changing the rule

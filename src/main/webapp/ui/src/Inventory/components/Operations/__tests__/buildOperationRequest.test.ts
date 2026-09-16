@@ -10,7 +10,7 @@ import { operations } from "./testOperations";
  * These tests used to drive a TS buildOperationRequest, the wizard's own model of the sample the
  * server builds. That function had no production caller: since the server started building the
  * sample itself it was a second implementation that could drift from the real one while both suites
- * stayed green, so it was deleted (parallel review). What the server builds is pinned server-side by
+ * stayed green, so it was deleted. What the server builds is pinned server-side by
  * InventoryOperationRequestBuilderTest and InventoryOperationsInputsShapeMVCIT.
  *
  * What remains here is the part the wizard still owns: the request it POSTs, and the field-name
@@ -43,7 +43,6 @@ describe("buildOperationInputsRequest (the inputs shape)", () => {
   it("sends the declared inputs by key, the origins' amounts, the template and the documentation target", () => {
     const request = buildOperationInputsRequest({
       operation: real("derive"),
-      // an undeclared key never travels; the amount taken belongs to the origin element (M3)
       values: { ...deriveValues, undeclared: "x" },
       origins: [origin],
       templateId: 77,
@@ -81,9 +80,6 @@ describe("buildOperationInputsRequest (the inputs shape)", () => {
   });
 
   it("never sends fields for the origin itself: the server builds those from the definition", () => {
-    // Destroy declares an originFields entry (the disposed date). The wizard used to map it onto
-    // every origin update and the request builder then dropped it, so it was built on each request
-    // and thrown away (parallel review). An origin update carries only id, mode and amount.
     const request = buildOperationInputsRequest({
       operation: real("destroy"),
       values: { disposedDate: "2026-09-12" },
@@ -162,10 +158,6 @@ describe("buildOperationInputsRequest (amount modes, multi-origin)", () => {
   });
 });
 
-// The origin-update branches no test above reaches: an operation with no amount-taken input at all
-// (Passage), a whole-origin claim on an origin that holds no quantity, the inputs map's handling of
-// a computed key and of an undeclared-because-untouched optional input, and the amount mode's
-// interaction with a single-origin operation.
 describe("buildOperationInputsRequest (remaining origin-update branches)", () => {
   const passageValues: OperationInputs = {
     sampleName: "Culture P2",
@@ -189,8 +181,7 @@ describe("buildOperationInputsRequest (remaining origin-update branches)", () =>
 
   it("Destroy on an origin with no quantity claims the whole (empty) origin with an unset unit", () => {
     // Destroy declares no each-amount either, so there is no unit to borrow: the fallback is the
-    // unset marker. The wizard never lets this reach Perform (its empty-origin gate), so this pins
-    // the builder's own defence rather than a reachable request.
+    // unset marker.
     const request = buildOperationInputsRequest({
       operation: real("destroy"),
       values: {},
@@ -256,7 +247,7 @@ describe("buildOperationInputsRequest (remaining origin-update branches)", () =>
  * The rule is implemented twice, once per language, and these cases are the only thing tying the two
  * together: the same file is asserted from InventoryOperationRequestBuilderTest. Without it, changing
  * the suffix format on one side left the preview promising names the server would not store, with
- * both suites green (parallel review, A10).
+ * both suites green.
  */
 describe("withUniqueFieldNames, against the cases the Java implementation is held to", () => {
   it.each(sharedCases.cases)("$description", ({ fields, expected }) => {
@@ -282,8 +273,6 @@ describe("withUniqueFieldNames, against the cases the Java implementation is hel
 });
 
 describe("withUniqueFieldNames", () => {
-  // The confirmation preview applies this so it shows the names the server will actually store;
-  // the server applies the same rule in InventoryOperationRequestBuilder.withUniqueFieldNames.
   const link = (name: string, targetGlobalId: string): OperationExtraField => ({
     name,
     type: "link",
@@ -298,9 +287,6 @@ describe("withUniqueFieldNames", () => {
   });
 
   it("suffixes every member of a colliding group with the global id it targets", () => {
-    // Two distinct subsamples may share a name ("Aliquot"), which produced two fields called
-    // "Pooled from: Aliquot"; the endpoint rejects duplicates, so a valid Pool always failed at
-    // Perform. Every member is suffixed, not just the later ones, so the names stay symmetrical.
     const fields = [link("Pooled from: Aliquot", "SS1"), link("Pooled from: Aliquot", "SS2")];
     expect(withUniqueFieldNames(fields).map((f) => f.name)).toEqual([
       "Pooled from: Aliquot (SS1)",

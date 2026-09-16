@@ -10,13 +10,13 @@ import { UNSET_UNIT } from "./types";
  * Whether an amount is one the server can store exactly. Quantities persist in a DECIMAL(19,3)
  * column, so the endpoint rejects anything finer than three decimal places rather than round it to
  * a different amount (mirrors QuantityInfo.canStoreWithoutRounding). Gating on it here means the
- * wizard blocks Next instead of letting Perform fail at the backend (Copilot review, PR #1090).
+ * wizard blocks Next instead of letting Perform fail at the backend.
  */
 export function amountIsStorable(value: number): boolean {
   if (!Number.isFinite(value)) return false;
   // Compared as a three-decimal round trip, not as an integer test on the scaled value: binary
   // floating point makes 1.001 * 1000 equal 1000.9999999999999, which would reject an amount the
-  // backend stores exactly (Copilot review, PR #1090).
+  // backend stores exactly.
   return Math.round(value * 1000) / 1000 === value;
 }
 
@@ -24,10 +24,9 @@ export function amountIsStorable(value: number): boolean {
  * Whether a child count is a whole number within [min, max].
  *
  * Both bounds come from the operation definition the server serves, not from a constant retyped
- * here: the cap was hand-copied as 100, so lowering it server-side would have left the wizard
- * offering counts the endpoint rejects, with the 400 arriving only at Perform and naming no limit
- * (parallel review, FE9). `max` is undefined only for a definition that declares none, which is
- * unbounded by the definition's own account.
+ * here, so a server-side change to the cap cannot drift from what the wizard offers. `max` is
+ * undefined only for a definition that declares none, which is unbounded by the definition's own
+ * account.
  */
 export function validSubSampleCount(count: unknown, min = 1, max?: number): boolean {
   const n = Number(count);
@@ -63,7 +62,7 @@ export function temperatureBelowMin(input: OperationInputConfig, value: Operatio
  * bounds: below absolute zero (the control is fixed to Celsius, so below -273.15), or finer than
  * the DECIMAL(19,3) column stores. Without this a value like -300 or -80.0005 satisfied the
  * configured Cryopreserve ceiling and enabled Perform, only to fail at the backend via
- * @ValidTemperature / the storability check (Copilot review, PR #1090). Pure and shared by
+ * @ValidTemperature / the storability check. Pure and shared by
  * detailsValid (gating) and the field's inline error.
  */
 export function temperatureNotStorable(input: OperationInputConfig, value: OperationQuantity | undefined): boolean {
@@ -103,7 +102,7 @@ export function detailsValid(
       // The control is fixed to Celsius, and every bound below (the configured ceiling and floor,
       // absolute zero) compares numericValue AS Celsius. A value carrying any other unit - an unset
       // 0 from a cleared control, or a Kelvin id restored from a stored preferences bundle - would
-      // be judged against the wrong scale here and travel to the server as sent (BUG-4).
+      // be judged against the wrong scale here and travel to the server as sent.
       if (input.type === "temperature" && q.unitId !== CELSIUS) return false;
       if (temperatureExceedsMax(input, q)) return false;
       if (temperatureBelowMin(input, q)) return false;
@@ -127,7 +126,7 @@ export function detailsValid(
 }
 
 /**
- * Whether the amount taken from the origin exceeds the origin's current quantity (DevDocs/adr/0007). The
+ * Whether the amount taken from the origin exceeds the origin's current quantity. The
  * comparison is unit-aware: both are converted to the atomic unit of their (shared) category, so an
  * entry in a different unit within the same category (e.g. 0.5 L against a 400 ml origin) is compared
  * correctly. The amount-taken field is constrained to the origin's category, so a cross-category
@@ -146,9 +145,9 @@ export function amountTakenExceedsOrigin(
 }
 
 /**
- * The lower-level, operation-agnostic over-removal check (DevDocs/adr/0007): whether a single amount exceeds
+ * The lower-level, operation-agnostic over-removal check: whether a single amount exceeds
  * an origin's current quantity, unit-aware within the shared category. Used directly for a per-origin
- * amount ("perSubsample" mode, DevDocs/adr/0007), where each origin is checked against its own quantity rather
+ * amount ("perSubsample" mode), where each origin is checked against its own quantity rather
  * than against the representative origin. An incomplete (unit-unset) amount is not flagged; a missing
  * origin quantity means the origin holds nothing, so any positive amount is over-removal.
  */
@@ -217,7 +216,7 @@ export function reconcileRestoredQuantities({
     // dimensionless ids, while the expected category comes from a server-supplied unit list that
     // also has temperature, molarity and concentration - so "actual !== expected" reported a
     // mismatch for every unit this module does not enumerate, wiping a perfectly good saved amount
-    // on, say, a molarity template every single time (parallel review, I9). An unrecognised unit is
+    // on, say, a molarity template every single time. An unrecognised unit is
     // left alone instead: unknown is not the same as wrong.
     const actual = categoryOfUnit(unitId);
     return actual !== null && actual !== expected;
@@ -227,8 +226,8 @@ export function reconcileRestoredQuantities({
   if (amountTakenFrom && wrongCategory(values[amountTakenFrom], originCategory)) {
     // Unit CLEARED, not defaulted to the origin's. Defaulting produced a valid amount, so nothing
     // downstream blocked and the one-click fast path stayed armed on a number the user never chose:
-    // a bundle remembering 50 mL, reused on a gram origin, silently removed 1 g (parallel review,
-    // C4). An unset unit makes detailsValid false, so the wizard walks the amounts step and the
+    // a bundle remembering 50 mL, reused on a gram origin, silently removed 1 g. An unset unit
+    // makes detailsValid false, so the wizard walks the amounts step and the
     // user chooses the amount in the right category - the same treatment the created amount below
     // already gets.
     const taken = values[amountTakenFrom] as OperationQuantity | undefined;
@@ -273,8 +272,8 @@ export function reconcileRestoredQuantities({
  * Both disable the step, and both did before this existed: the wizard gates on commonQuantity(),
  * which returns 0 for a unit with no category, so a real 1 M origin disabled Next while the only
  * alert on screen was "the origin holds nothing", whose own condition was false. The user got a
- * dead button with no explanation (BUG-1). Shared so the gate and the two places that explain it
- * cannot drift apart.
+ * dead button with no explanation. Shared so the gate and the two places that explain it cannot
+ * drift apart.
  */
 export type OriginBlockedReason = "empty" | "unsupportedCategory";
 

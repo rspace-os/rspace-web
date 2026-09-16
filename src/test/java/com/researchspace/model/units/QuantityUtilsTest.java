@@ -398,7 +398,7 @@ public class QuantityUtilsTest {
    * DECIMAL(19,3) rounds it and 0.0005 g of stock disappears. The same value is 4997.5 mg, which
    * needs one. Every category ladder steps by 1000, so moving one unit down shifts the point three
    * places and drops the scale by three: any terminating decimal that fits the ladder at all fits
-   * at 3dp in some unit of it (review 2026-09-14, Q1a).
+   * at 3dp in some unit of it.
    */
   @Test
   public void aRemainderIsStoredInTheFinestUnitThatHoldsItExactly() {
@@ -413,7 +413,7 @@ public class QuantityUtilsTest {
 
   @Test
   public void theConversionStopsAtTheFirstUnitThatFits() {
-    // One step, not all the way down: 4.9975 g becomes milligrams and not micrograms. Stepping
+    // Stepping
     // further would cost integer digits for nothing and would relabel the quantity more than the
     // storage required.
     QuantityInfo remainder =
@@ -426,8 +426,7 @@ public class QuantityUtilsTest {
 
   @Test
   public void anOrdinaryQuantityKeepsItsUnit() {
-    // The regression that matters most: the conversion must not fire on normal work. 5 g less 1 g
-    // already fits, so the loop never runs and the unit is untouched.
+    // The regression that matters most: the conversion must not fire on normal work.
     QuantityInfo remainder =
         qUtils.subtract(
             QuantityInfo.of(new BigDecimal("5"), RSUnitDef.GRAM),
@@ -439,7 +438,7 @@ public class QuantityUtilsTest {
 
   @Test
   public void theLadderIsTraversedToItsBottomRungWithoutRunningOffTheEnd() {
-    // The full descent, five rungs from kilograms to picograms, and the termination guard. Both
+    // Both
     // operands are QuantityInfos and so already hold at most 3dp in their own units, which means
     // the difference always holds at most 3dp in the category's SMALLEST unit: the loop can always
     // find a rung and the give-up branch is defensive rather than reachable from here.

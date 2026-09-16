@@ -52,10 +52,7 @@ function renderAction(records: Array<InventoryRecord>) {
   );
 }
 
-/**
- * The wizard holds the same edit-session lock the form does, for as long as it is open, so two
- * users cannot Perform on one origin at once (RSDEV-1231).
- */
+/** The wizard holds the edit-session lock on each origin for as long as it is open (RSDEV-1231). */
 describe("ProcessAction lock acquisition", () => {
   beforeEach(() => {
     addAlert.mockClear();
@@ -88,7 +85,6 @@ describe("ProcessAction lock acquisition", () => {
     await waitFor(() => expect(addAlert).toHaveBeenCalled());
     expect(screen.queryByTestId("wizard")).not.toBeInTheDocument();
     expect(release).toHaveBeenCalled();
-    // the alert names the record that could not be taken, and whose session holds it
     const details = (addAlert.mock.calls[0][0] as { details: Array<{ record: unknown }> }).details;
     expect(details).toHaveLength(1);
     expect(details[0].record).toBe(held);
