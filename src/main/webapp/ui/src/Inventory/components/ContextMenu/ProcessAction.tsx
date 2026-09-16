@@ -36,14 +36,23 @@ const ProcessAction = forwardRef<React.ElementRef<typeof MenuItem>, ProcessActio
     const [open, setOpen] = React.useState(false);
     const origins = selectedResults.filter((r): r is SubSampleModel => r instanceof SubSampleModel);
 
+    // The origins this wizard actually locked, so close gives back only those. A fulfilled
+    // acquisition may be WAS_ALREADY_LOCKED, meaning another tab or an edit form already held it;
+    // releasing that would strip protection the wizard never took.
+    const taken = React.useRef<Array<SubSampleModel>>([]);
+
     const releaseAll = (records: Array<SubSampleModel>) => Promise.allSettled(records.map((r) => r.releaseLock(true)));
 
     // Holds an edit lock on each origin while the wizard is open.
     const openWithOriginsLocked = async () => {
       const results = await Promise.allSettled(origins.map((o) => o.acquireEditLock()));
+      const newlyLocked = origins.filter((_, i) => {
+        const result = results[i];
+        return result.status === "fulfilled" && result.value === "LOCKED_OK";
+      });
       const failure = results.find((r) => r.status === "rejected");
       if (failure) {
-        await releaseAll(origins.filter((_, i) => results[i].status === "fulfilled"));
+        await releaseAll(newlyLocked);
         const shown = displayErrorIfAllLocksCouldNotBeAcquired({
           error: new AggregateError(results.filter((r) => r.status === "rejected").map((r) => r.reason)),
           title: t("operations.wizard.originsLocked"),
@@ -54,11 +63,13 @@ const ProcessAction = forwardRef<React.ElementRef<typeof MenuItem>, ProcessActio
         if (!shown) console.error("Could not lock the operation origins", failure.reason);
         return;
       }
+      taken.current = newlyLocked;
       setOpen(true);
     };
 
     const onCloseHandler = () => {
-      void releaseAll(origins);
+      void releaseAll(taken.current);
+      taken.current = [];
       setOpen(false);
       closeMenu();
     };

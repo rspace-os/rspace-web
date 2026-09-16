@@ -2729,7 +2729,7 @@ paths:
 
 
         `cryomedium` is optional and is stored as a Cryomedium field on the new sample. Omitting
-        it still creates that field, with no content.
+        it, or sending it blank, creates no such field.
       tags:
         - Operations
       requestBody:
@@ -5459,6 +5459,7 @@ components:
         origins:
           type: array
           minItems: 2
+          maxItems: 100
           items:
             $ref: "#/components/schemas/PoolOrigin"
         takeAll:
