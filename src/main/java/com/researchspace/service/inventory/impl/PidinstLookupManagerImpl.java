@@ -1,5 +1,6 @@
 package com.researchspace.service.inventory.impl;
 
+import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.api.v1.model.ApiContainerInfo;
 import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInventoryDOI;
@@ -55,6 +56,13 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
       Pattern.compile(
           "^(?:https?://(?:dx\\.)?doi\\.org/)?(10\\.\\d{4,9}/\\S+)$", Pattern.CASE_INSENSITIVE);
 
+  /**
+   * A query that may be pasted into DataCite's {@code doi:*...*} wildcard: no whitespace and no
+   * character that means something in Elasticsearch query syntax, so the retry cannot be turned
+   * into a different query by what the user typed.
+   */
+  static final Pattern DOI_FRAGMENT = Pattern.compile("^[A-Za-z0-9._/-]+$");
+
   /** A Handle under an ePIC prefix (B2INST mints 21.xxx), bare or behind hdl.handle.net. */
   static final Pattern HANDLE_QUERY =
       Pattern.compile(
@@ -70,8 +78,12 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
 
   @Override
   public ApiPidinstSearchResult search(String query, User user) {
+    String q = StringUtils.trimToEmpty(query);
+    if (q.length() < MIN_QUERY_LENGTH) {
+      throw new ApiRuntimeException(
+          "errors.inventory.identifier.pidinstQueryTooShort", MIN_QUERY_LENGTH);
+    }
     IdentifierType provider = enabledProvider();
-    String q = query.trim();
     ApiPidinstSearchResult result = new ApiPidinstSearchResult();
     result.setProvider(provider.name());
     if (isPidOfTheOtherRegistry(q, provider)) {
@@ -85,8 +97,7 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
     } else if (provider == IdentifierType.PIDINST_B2INST) {
       searchB2inst(q, result);
     } else {
-      DataCiteDoiSearchResult hits =
-          dataCiteConnector.searchInstrumentDois(q, MAX_HITS, InventorySettingType.PIDINST);
+      DataCiteDoiSearchResult hits = searchDataCite(q);
       // re-checked here as well as asked for in the request, so the rule holds whatever the index
       // returns (ADR 0009), and so this path cannot offer what fetchByPid would refuse
       hits.getData().stream()
@@ -165,6 +176,26 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
         .forEach(result.getHits()::add);
     Integer total = page.getHits().getTotal();
     result.setTotal(total == null ? result.getHits().size() : total);
+  }
+
+  /**
+   * The DataCite half of a free-text search, with one retry.
+   *
+   * <p>DataCite indexes the DOI as a keyword, so free text never matches a suffix or part of one: a
+   * search for "qvtb-aw74" answers nothing though 10.82316/qvtb-aw74 is findable, which is how a
+   * user who pasted half a DOI sees it. A {@code doi:*...*} wildcard does match, across the slash
+   * and whatever the case, so an empty free-text page is retried that way. Only on an empty page,
+   * so a search that already found something costs one call, and only for a query safe to paste
+   * into the wildcard.
+   */
+  private DataCiteDoiSearchResult searchDataCite(String query) {
+    DataCiteDoiSearchResult hits =
+        dataCiteConnector.searchInstrumentDois(query, MAX_HITS, InventorySettingType.PIDINST);
+    if (!hits.getData().isEmpty() || !DOI_FRAGMENT.matcher(query).matches()) {
+      return hits;
+    }
+    return dataCiteConnector.searchInstrumentDois(
+        "doi:*" + query + "*", MAX_HITS, InventorySettingType.PIDINST);
   }
 
   private IdentifierType enabledProvider() {

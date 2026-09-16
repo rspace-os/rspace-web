@@ -12,6 +12,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.api.v1.model.ApiContainerLocation;
 import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInventoryDOI;
@@ -376,6 +377,68 @@ class PidinstLookupManagerImplTest {
     when(b2instConnector.isConfiguredAndEnabled()).thenReturn(false);
     when(dataCiteConnector.isDataCiteConfiguredAndEnabled(InventorySettingType.PIDINST))
         .thenReturn(true);
+  }
+
+  @Test
+  void searchRefusesAQueryShorterThanTheMinimum() {
+    ApiRuntimeException thrown =
+        assertThrows(ApiRuntimeException.class, () -> manager.search("qvt", user));
+
+    assertEquals("errors.inventory.identifier.pidinstQueryTooShort", thrown.getErrorCode());
+    verify(b2instConnector, never()).searchRecords(anyString(), eq(50));
+    verify(dataCiteConnector, never()).searchInstrumentDois(anyString(), eq(50), any());
+  }
+
+  @Test
+  void searchCountsTheTrimmedQueryTowardsTheMinimum() {
+    assertThrows(ApiRuntimeException.class, () -> manager.search("  ab  ", user));
+  }
+
+  /**
+   * DataCite indexes the DOI as a keyword, so free text never matches a suffix or part of one:
+   * "qvtb-aw74" finds nothing though 10.82316/qvtb-aw74 is findable. Verified against
+   * api.test.datacite.org on 2026-09-16.
+   */
+  @Test
+  void dataCiteRetriesADoiWildcardWhenFreeTextFindsNothing() {
+    onADataCiteDeployment();
+    when(dataCiteConnector.searchInstrumentDois("qvtb-aw74", 50, InventorySettingType.PIDINST))
+        .thenReturn(dataCitePage(0));
+    when(dataCiteConnector.searchInstrumentDois(
+            "doi:*qvtb-aw74*", 50, InventorySettingType.PIDINST))
+        .thenReturn(dataCitePage(1, dataCiteInstrument(DOI, "findable", "Instrument")));
+
+    ApiPidinstSearchResult result = manager.search("qvtb-aw74", user);
+
+    assertEquals(1, result.getHits().size(), "the wildcard retry's hit is returned");
+    assertEquals(DOI, result.getHits().get(0).getPid());
+    assertEquals(1, result.getTotal(), "the total comes from the retry, not the empty first page");
+  }
+
+  @Test
+  void dataCiteDoesNotRetryWhenFreeTextAlreadyFoundSomething() {
+    onADataCiteDeployment();
+    when(dataCiteConnector.searchInstrumentDois("Zeiss", 50, InventorySettingType.PIDINST))
+        .thenReturn(dataCitePage(3, dataCiteInstrument(DOI, "findable", "Instrument")));
+
+    manager.search("Zeiss", user);
+
+    verify(dataCiteConnector, never())
+        .searchInstrumentDois("doi:*Zeiss*", 50, InventorySettingType.PIDINST);
+  }
+
+  /** A phrase is free text, and pasting one into a wildcard would build a broken query. */
+  @Test
+  void dataCiteDoesNotRetryAQueryThatIsNotADoiFragment() {
+    onADataCiteDeployment();
+    when(dataCiteConnector.searchInstrumentDois("Carl Zeiss", 50, InventorySettingType.PIDINST))
+        .thenReturn(dataCitePage(0));
+
+    ApiPidinstSearchResult result = manager.search("Carl Zeiss", user);
+
+    assertTrue(result.getHits().isEmpty());
+    verify(dataCiteConnector, never())
+        .searchInstrumentDois("doi:*Carl Zeiss*", 50, InventorySettingType.PIDINST);
   }
 
   @Test
