@@ -13,7 +13,7 @@ import { rawConfig } from "./testOperations";
  * OperationWizard.test.tsx mocks useUiPreference at module level (vi.mock is file-wide), so the
  * wizard and the real preference hook are never exercised together there. Perform saves three
  * preference keys in one handler, and each save is a read-merge-write of the whole UI settings
- * object; before the write chain (code review, finding 8) the last POST dropped the other two.
+ * object; before the write chain the last POST dropped the other two.
  * This file therefore uses the real hook and provider over an MSW-backed store, so a regression in
  * either the wizard's save order or the hook's chaining shows up as a missing key on the server.
  */
@@ -47,8 +47,8 @@ beforeEach(() => {
 vi.mock("@/stores/stores/getRootStore", () => ({
   default: () => ({
     authStore: { isSynchronizing: false },
-    // A remembered specific template is re-checked against the server on restore (RSDEV-1231), so
-    // the bundles here resolve their template through this.
+    // A remembered specific template is re-checked against the server on restore, so the bundles
+    // here resolve their template through this.
     searchStore: {
       search: { performSearch: vi.fn() },
       getTemplate: () => Promise.resolve({ id: 5, name: "T5", quantityCategory: "volume", deleted: false, fields: [] }),
@@ -166,8 +166,8 @@ describe("OperationWizard with the real preference hook", () => {
     expect(Object.keys(stored).sort()).toEqual([
       "INVENTORY_OPERATION_PROCESS_NAMES",
       "INVENTORY_OPERATION_PROCESS_NAME_DEFAULTS",
-      // Derive's own collection (RSDEV-1231), not the legacy shared
-      // INVENTORY_OPERATION_PROCESS_VALUES: nothing writes that key anymore.
+      // Derive's own collection, not the legacy shared INVENTORY_OPERATION_PROCESS_VALUES key:
+      // nothing writes that key anymore.
       "INVENTORY_OPERATION_PROCESS_VALUES_DERIVE",
     ]);
     expect(stored.INVENTORY_OPERATION_PROCESS_VALUES_DERIVE.value).toEqual({
@@ -182,9 +182,9 @@ describe("OperationWizard with the real preference hook", () => {
   });
 
   it("still loads a bundle saved under the legacy shared key before the per-operation split", async () => {
-    // Pre-RSDEV-1231 data lives under INVENTORY_OPERATION_PROCESS_VALUES; nothing migrates it, so the
-    // wizard must keep reading it as a fallback until the user re-Performs and re-saves it under
-    // their operation's own key.
+    // Data saved before the per-operation split lives under INVENTORY_OPERATION_PROCESS_VALUES;
+    // nothing migrates it, so the wizard must keep reading it as a fallback until the user
+    // re-Performs and re-saves it under their operation's own key.
     stored = {
       INVENTORY_OPERATION_PROCESS_VALUES: {
         value: {
@@ -222,12 +222,10 @@ describe("OperationWizard with the real preference hook", () => {
   });
 
   it("restores a bundle saved only under the new per-operation key on selecting that operation", async () => {
-    // Codex review, PR #1090: selectOperation used to call stateForKey(op, ...) with `processValues`
-    // still bound to whatever operation (or none) was PREVIOUSLY selected - the per-operation split
-    // only takes effect on the render after `operation` state actually changes. A bundle that exists
-    // ONLY under the new key (no legacy fallback to lean on) was therefore never restored on the very
-    // pick that should load it. The saved process-name default pre-fills the process name on
-    // selection alone, so this covers the exact repro: no typing, no manual Remember toggle.
+    // selectOperation used to read `processValues` before it updated for the newly selected
+    // operation, so a bundle existing only under the new per-operation key (no legacy fallback to
+    // lean on) was never restored on the very pick that should load it. This reproduces that exactly:
+    // no typing, no manual Remember toggle.
     stored = {
       INVENTORY_OPERATION_PROCESS_NAME_DEFAULTS: { value: { derive: "dna extraction" }, time: 0 },
       INVENTORY_OPERATION_PROCESS_VALUES_DERIVE: {
@@ -258,9 +256,6 @@ describe("OperationWizard with the real preference hook", () => {
     );
 
     await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
-
-    // No typing, no toggling Remember: selecting the operation alone must find and restore the
-    // per-operation bundle, offering Perform straight away.
     await waitFor(() => expect(screen.getByRole("button", { name: /wizard\.perform/i })).toBeEnabled());
     // The process name came back with the bundle. Step one is showing the confirmation (that is what
     // the fast path means), so the details field holding it is only rendered once we step in.

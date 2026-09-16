@@ -69,8 +69,6 @@ import {
 import type { AmountMode, OperationInputs, OperationOrigin, OperationQuantity, PerSubsampleAmounts } from "./types";
 import { resolveLabelFrom, UNSET_UNIT } from "./types";
 
-// How long to wait after the process name settles before querying existing names to de-duplicate the
-// derived sample name. Keeps typing from firing a search per keystroke.
 const DEDUP_DEBOUNCE_MS = 300;
 
 function buildInitialValues(operation: InventoryOperation, origin: SubSampleModel): OperationInputs {
@@ -95,12 +93,6 @@ function buildInitialValues(operation: InventoryOperation, origin: SubSampleMode
   return values;
 }
 
-/**
- * The amount fields for a fresh amounts step: count and both amounts default to 1, and the quantity
- * units are prefilled from the origin subsample's own unit (the overwhelmingly common choice), which
- * the user may change to any unit in the amount's category. A template picked in a different
- * measurement category resets the created amount's unit (see onTemplateSelectionChange).
- */
 function blankAmounts(operation: InventoryOperation, origin: SubSampleModel): OperationInputs {
   const out: OperationInputs = {};
   const unitId = getUnitId(origin.quantity);
@@ -111,11 +103,6 @@ function blankAmounts(operation: InventoryOperation, origin: SubSampleModel): Op
   return out;
 }
 
-/**
- * A fresh set of values for the "defaults" state (nothing remembered, or the user unticked remember):
- * every input at its config default, amounts reset to 1 with the origin's own unit prefilled,
- * keeping only the current names.
- */
 function freshValues(operation: InventoryOperation, origin: SubSampleModel, current: OperationInputs): OperationInputs {
   const values = { ...buildInitialValues(operation, origin), ...blankAmounts(operation, origin) };
   const nameFrom = operation.effect.nameFrom;
@@ -138,15 +125,10 @@ function toOrigin(origin: SubSampleModel): OperationOrigin {
  * A subsample's quantity in its category's atomic unit, or 0 when it has no quantity or holds one
  * this module cannot convert.
  *
- * toCommonUnit THROWS ("Unknown unit: N") for any unit outside volume/mass/dimensionless, and
- * molarity (ids 11-14) and concentration (15-17) are real, server-supported inventory units that a
- * subsample can genuinely hold. Because this runs during render (representativeOrigin) and
- * ProcessAction mounts the wizard as soon as the selection is processable, that throw took out the
- * whole context menu - the same failure the categoryOfUnit comment below describes, reached through
- * a different helper. categoryOfUnit is the total unit-to-category test, so gate on it.
- *
- * 0 is the safe answer: an unconvertible origin sorts as smallest and becomes representative, and
- * allSameCategory is already false for those units, so Pool stays disabled either way.
+ * toCommonUnit throws for any unit outside volume/mass/dimensionless, and molarity/concentration
+ * units are real, server-supported units a subsample can hold - so gate with categoryOfUnit first.
+ * 0 is the safe fallback: an unconvertible origin sorts as smallest, and allSameCategory is already
+ * false for those units, so Pool stays disabled either way.
  */
 function commonQuantity(origin: SubSampleModel): number {
   if (!origin.quantity) return 0;
@@ -157,24 +139,12 @@ function commonQuantity(origin: SubSampleModel): number {
 /**
  * The origin the wizard treats as representative for a (possibly multi-origin) run: the one holding
  * the *least* material. Because a Pool takes the same shared amount from every origin, the smallest
- * origin is the binding constraint - checking the amount against it (over-removal, the empty-origin
- * block) is equivalent to checking every origin, so the single-origin wizard logic needs no change.
- * For a single-origin operation this is just that origin.
+ * origin is the binding constraint, so checking against it is equivalent to checking every origin.
  */
 function representativeOrigin(origins: Array<SubSampleModel>): SubSampleModel {
   return origins.reduce((smallest, o) => (commonQuantity(o) < commonQuantity(smallest) ? o : smallest));
 }
 
-/**
- * The operation wizard: pick operation -> details (process name, derived sample name) -> template
- * -> amounts -> (optional documentation) -> confirm (summary + the remember checkbox) -> perform.
- * The origin subsample is pre-selected (launched from its detail pane). The whole effect is one
- * atomic backend call (DevDocs/adr/0007).
- *
- * A single "remember" checkbox governs everything kept for a process name: the template, the
- * documentation, and the collected amounts (DevDocs/adr/0007). Ticking it loads the saved bundle; unticking
- * resets the form to defaults without deleting what was saved.
- */
 function OperationWizard({
   open,
   onClose,
@@ -187,31 +157,19 @@ function OperationWizard({
 }): React.ReactNode {
   const { t, i18n } = useTranslation(["inventory", "common"]);
   const resolveLabel = resolveLabelFrom(t);
-  // The representative origin (the smallest; see representativeOrigin) drives the single-origin wizard
-  // logic - units, the derived name base, over-removal - unchanged. Multi-origin specifics (all the
-  // origins, the shared amount, the per-origin links) are threaded in only where they differ.
   const origin = representativeOrigin(origins);
-  // The measurement category of an origin, derived from its unit id through the static unit table
-  // rather than read off SubSampleModel.quantityCategory. That getter goes through the unit store
-  // and THROWS ("Could not get unit category") whenever the store holds no entry for the id, which
-  // is every id on a fresh profile: UnitStore seeds itself from localStorage, so it stays empty
-  // until GET /units has resolved once. ProcessAction mounts this wizard as soon as the selection
-  // is processable, not only while the dialog is open, so that throw took out the whole context
-  // menu before the operation picker had appeared (Copilot review, PR #1090). categoryOfUnit needs
-  // no store, so it is right immediately, and it answers null rather than throwing for an unset or
-  // unrecognised unit - which is also the honest answer for an origin holding no quantity at all.
+  // Derived via categoryOfUnit rather than SubSampleModel.quantityCategory: that getter throws when
+  // the (localStorage-backed) unit store has no entry for the id, which is every id before GET
+  // /units first resolves, crashing the wizard before it renders. categoryOfUnit needs no store and
+  // returns null instead for an unset or unrecognised unit.
   const categoryOf = (subSample: SubSampleModel): UnitCategory | null => categoryOfUnit(getUnitId(subSample.quantity));
   const originCategory = categoryOf(origin);
-  // Pool requires every selected origin to share one measurement category (the shared amount is in one
-  // unit); the picker only enables Pool when this holds, but keep it here for the picker's own gating.
-  // An undeterminable category is not a match: it must leave Pool disabled rather than enable it on
-  // the accident of two nulls comparing equal.
+  // Pool requires every selected origin to share one measurement category. An undeterminable
+  // category is not a match: it must leave Pool disabled rather than enable it on two nulls
+  // comparing equal.
   const allSameCategory = originCategory !== null && origins.every((o) => categoryOf(o) === originCategory);
-  // On small viewports (phones/tablets) the horizontal label row gets cramped, so fall back to the
-  // classic vertical stepper (labels stacked, active step's content inline beneath its label).
   const { isViewportSmall } = useViewportDimensions();
-  // The operation definitions come from the backend's single authoritative operations_config.json
-  // (DevDocs/adr/0007). The config only changes on deployment, so cache it for the session.
+  // Config data changes only on deployment, so cache it for the session.
   const {
     data: availableOperations,
     isError: operationsLoadFailed,
@@ -230,8 +188,6 @@ function OperationWizard({
   const [values, setValues] = React.useState<OperationInputs>({});
   const [documentation, setDocumentation] = React.useState<DocumentationSelection>(null);
   const [remember, setRemember] = React.useState(false);
-  // The multi-origin amount mode (DevDocs/adr/0007) and, for "perSubsample", the per-origin amounts by global
-  // id. Single-origin operations stay on "same".
   const [amountMode, setAmountMode] = React.useState<AmountMode>("same");
   const [perSubsampleAmounts, setPerSubsampleAmounts] = React.useState<PerSubsampleAmounts>({});
   // When a complete remembered bundle loads, step one offers Perform straight away; "reviewing" is set
@@ -247,19 +203,17 @@ function OperationWizard({
     templateId: null,
     remember: false,
   });
-  // Each operation type's own collection (RSDEV-1231): `useUiPreference` derives its value fresh
-  // from context every render rather than caching it in a `useState`, precisely so that passing a
-  // DIFFERENT preference symbol here as `operation` changes (no remount - `operation` is this
-  // component's own state, set by selectOperation) reads that operation's data immediately, not a
-  // stale mirror of whichever operation was selected first.
+  // Each operation type has its own collection: useUiPreference derives its value fresh from
+  // context every render rather than caching it in a useState, so passing a DIFFERENT preference
+  // key as `operation` changes reads that operation's data immediately rather than a stale mirror
+  // of whichever operation was selected first.
   const [processValues, setProcessValues] = useUiPreference<Record<string, ProcessValues>>(
     processValuesPreferenceFor(operation?.key ?? ""),
     { defaultValue: {} },
   );
   // The raw context, for reading a bundle for an operation OTHER than the one `processValues` above
-  // is currently bound to: selecting a new operation needs that operation's own collection, and
-  // `processValues` only starts reading it on the render AFTER `operation` state actually changes
-  // (RSDEV-1231, Codex review, PR #1090). See `bundleFor`.
+  // is currently bound to: `processValues` only starts reading a new operation's collection on the
+  // render AFTER `operation` state actually changes.
   const uiPreferences = useRawUiPreferences();
   const [processNames, setProcessNames] = useUiPreference<Record<string, Array<string>>>(
     PREFERENCES.INVENTORY_OPERATION_PROCESS_NAMES,
@@ -270,8 +224,6 @@ function OperationWizard({
     { defaultValue: {} },
   );
 
-  // The wizard steps: an operation may declare an explicit `steps` subset (Destroy skips template and
-  // amounts); otherwise the default full sequence, with the documentation step gated by documentationStep.
   const stepKeys: Array<string> = operation
     ? (operation.steps ?? [
         "details",
@@ -283,37 +235,23 @@ function OperationWizard({
     : [];
   const isLast = activeStep === stepKeys.length - 1;
 
-  // Count / each-amount / amount-taken live on the "amounts" step; everything else (process name,
-  // sample name, cryomedium, storage temperature) on "details". Template is its own step.
   const amountKeys: ReadonlySet<string> = operation ? amountKeysFor(operation) : new Set();
   const detailKeys: ReadonlySet<string> = operation
     ? new Set(operation.inputs.map((i) => i.key).filter((k) => !amountKeys.has(k)))
     : new Set();
-  // The amounts step offers the chosen template's units, or the origin subsample's when no specific
-  // template is picked.
   const amountCategory = templateSelection.quantityCategory ?? originCategory;
-  // Only "use parent template" needs the parent's template; when the parent has none, that option is
-  // disabled and the user must pick an existing template or none. A multi-origin operation (Pool) has
-  // several parent samples, so "use parent template" is ambiguous and always disabled for it.
+  // A multi-origin operation (Pool) has several parent samples, so "use parent template" is
+  // ambiguous and always disabled for it.
   const parentHasTemplate = !operation?.requiresMultiple && (origin.sample.templateId ?? null) !== null;
 
-  // Loads the origin sample's own template so the template step can hold "use parent template" to
-  // the same mandatory-without-default check a picked template goes through (F5). GET
-  // /sampleTemplates/{id} returns the fields the check reads, so no second fetch is needed.
-  // Referentially stable per parent template id: TemplateStep's mount effect keys on this callback,
-  // so a fresh identity each render would re-run the lookup continuously.
   const parentTemplateId = origin.sample.templateId ?? null;
 
-  // The "use parent template" check lives HERE, not in TemplateStep, because the gate it feeds
-  // (templateStepValid, via allStepsValid) is evaluated on every step including step one, while the
-  // wizard renders only the ACTIVE step. A check owned by the step therefore never ran for the
-  // one-click fast path, leaving Perform permanently disabled for the most common template mode
-  // (parallel review, C2). The step now only displays this status.
+  // This check lives HERE, not in TemplateStep, because the gate it feeds (templateStepValid) is
+  // evaluated on every step including step one, while the wizard renders only the active step - a
+  // check owned by the step would never run for the one-click fast path. The step only displays
+  // this status.
   const [parentTemplateError, setParentTemplateError] = React.useState<string | null>(null);
   const [parentTemplateChecking, setParentTemplateChecking] = React.useState(false);
-  // Monotonic, not a fixed sentinel: two overlapping lookups previously carried the same token, so
-  // a late failure could overwrite an earlier success with a "lookup failed" message on a selection
-  // that had actually passed (parallel review, I8).
   const parentCheckIdRef = React.useRef(0);
 
   const needsParentTemplateCheck =
@@ -324,11 +262,6 @@ function OperationWizard({
 
   React.useEffect(() => {
     if (!needsParentTemplateCheck || parentTemplateId === null) {
-      // The check is no longer wanted, typically because the user switched to a picked template
-      // while a lookup was outstanding. Advance the token so that lookup's result is discarded, and
-      // release the status it owned: otherwise a late rejection reported lookupFailed against the
-      // mode just switched TO, and "checking" stayed true until a request whose answer no longer
-      // matters happened to settle (Copilot review, PR #1090).
       parentCheckIdRef.current++;
       setParentTemplateError(null);
       setParentTemplateChecking(false);
@@ -341,10 +274,9 @@ function OperationWizard({
       try {
         const template = await getRootStore().searchStore.getTemplate(parentTemplateId, null, new AlwaysNewFactory());
         if (checkId !== parentCheckIdRef.current) return;
-        // The parent sample was usually created FROM the template, so trashing that template makes
-        // this the same defect as the remembered one: soft deletion leaves it readable and with its
-        // mandatory fields intact, so it passed and was offered as "From <sample name>" until the
-        // server refused it at Perform (RSDEV-1231).
+        // A trashed template is still readable (soft deletion) and its mandatory fields stay intact,
+        // so it would otherwise pass here and be offered as "From <sample name>", only to be
+        // refused by the server at Perform.
         if (template.deleted) {
           setParentTemplateError(t("operations.template.templateDeleted", { name: template.name }));
           return;
@@ -360,8 +292,7 @@ function OperationWizard({
           return;
         }
         // Only a PASSING check writes the id, which is what makes templateStepValid's id test the
-        // signal that this step is done. Functional update, so a concurrent change to another part
-        // of the selection is not clobbered by a stale snapshot (parallel review, I7).
+        // signal that this step is done.
         setTemplateSelection((previous) =>
           previous.mode === "fromSample"
             ? { ...previous, templateId: parentTemplateId, quantityCategory: template.quantityCategory }
@@ -376,16 +307,10 @@ function OperationWizard({
     })();
   }, [needsParentTemplateCheck, parentTemplateId, t, i18n.language]);
 
-  // The restored-template check, for the same reason the parent check lives here: the gate it feeds
-  // is evaluated on every step while only the active step renders, and step one is exactly where the
-  // one-click fast path is offered.
-  //
-  // A remembered template's id and name come from the stored bundle, not from a check, so by now it
-  // may have been renamed (the wizard showed and confirmed the OLD name) or moved to trash (the
-  // wizard offered one-click Perform against it, and the server accepts a trashed template because
-  // RSpace soft-deletes). One lookup settles both: the name is refreshed from the server, and a
-  // template that is gone, trashed or no longer usable drops the selection back so the user must
-  // choose another (RSDEV-1231, F1/F2).
+  // A remembered template's id and name come from the stored bundle, not a check, so by now it may
+  // have been renamed or moved to trash. One lookup settles both: the name is refreshed from the
+  // server, and a template that is gone, trashed, or no longer usable drops the selection so the
+  // user must choose another.
   const [rememberedTemplateError, setRememberedTemplateError] = React.useState<string | null>(null);
   const rememberedCheckIdRef = React.useRef(0);
   const rememberedTemplateId = templateSelection.mode === "remembered" ? templateSelection.templateId : null;
@@ -393,23 +318,20 @@ function OperationWizard({
 
   React.useEffect(() => {
     if (!needsRememberedTemplateCheck || rememberedTemplateId === null) {
-      // Retire any in-flight lookup, as the parent check does, so a late answer cannot report against
-      // a selection the user has since changed.
-      //
-      // Deliberately does NOT clear the message: rejecting a remembered template resets the mode,
-      // which lands here on the very next render and wiped the explanation the user needed. It is
-      // cleared instead when the user makes their own choice, or on switching operation.
+      // Deliberately does NOT clear the error message here: rejecting a remembered template resets
+      // the mode, which lands in this branch on the very next render and would wipe the explanation
+      // the user still needs to see. It's cleared instead when the user makes their own choice, or
+      // switches operation.
       rememberedCheckIdRef.current++;
       return;
     }
     const checkId = ++rememberedCheckIdRef.current;
     setRememberedTemplateError(null);
     void (async () => {
-      // Always "unselected", never initialTemplateSelection: on the origin the bundle was saved from
-      // the parent sample usually HAS a template, so a first-run fallback resolved to "fromSample",
-      // which the parent-template check then validated, which handed back one-click Perform against
-      // a template the user never chose ("From <sample name>"). A rejected remembered template has
-      // to be replaced by an explicit choice, so the step stays incomplete until the user makes one.
+      // Always resets to "unselected", never initialTemplateSelection: the parent sample usually has
+      // a template, so that fallback would resolve to "fromSample" and hand back one-click Perform
+      // against a template the user never chose. The step must stay incomplete until they make an
+      // explicit choice.
       const reject = (message: string) => {
         setRememberedTemplateError(message);
         setTemplateSelection((previous) =>
@@ -454,32 +376,21 @@ function OperationWizard({
     })();
   }, [needsRememberedTemplateCheck, rememberedTemplateId, parentHasTemplate, t, i18n.language]);
 
-  // The base the derived sample name is built from: the origin's own sample name for a single-origin
-  // operation, or the operation's label for a multi-origin one (Pool combines several samples, so no
-  // single origin name applies - it becomes just "Pool", de-duplicated).
   const sampleNameBase = (op: InventoryOperation): string =>
     op.requiresMultiple ? resolveLabel(op.labelKey) : origin.sample.name;
 
   /**
    * A restored template selection, with "use parent template" dropped when this run has no parent
-   * template to use.
-   *
-   * That combination is reachable whenever a bundle is reused on a different origin, or on a Pool
-   * (where "the parent" is ambiguous, so parentHasTemplate is forced false). Left as it was, the
-   * step demanded a validated template id that nothing could ever supply, and the radio is disabled
-   * in that state, so Next stayed disabled with no spinner, no message and no way for the user to
-   * change anything (parallel review, C3). Falling back to "unselected" asks for the one thing that
-   * does resolve it: an explicit choice.
+   * template to use (reachable when a bundle is reused on a different origin, or on a Pool where
+   * "the parent" is ambiguous). Left as "fromSample", the step would demand a validated template id
+   * that nothing could ever supply, leaving Next permanently disabled with no way for the user to
+   * fix it.
    */
   const restoredTemplateSelection = (remembered: TemplateSelection): TemplateSelection =>
     remembered.mode === "fromSample" && !parentHasTemplate
       ? { ...initialTemplateSelection(parentHasTemplate), remember: remembered.remember }
       : remembered;
 
-  // Binds reconcileRestoredQuantities to this run's origins. The amount taken is checked against
-  // the representative origin (the same one the amounts step validates against); the created
-  // amount against the restored template's category when a template came back, else the origin's;
-  // and each per-origin amount against that origin's own unit.
   const reconcileForOrigins = (
     op: InventoryOperation,
     restoredTemplate: TemplateSelection,
@@ -492,20 +403,10 @@ function OperationWizard({
       amountTakenFrom: op.effect.amountTakenFrom,
       eachAmountFrom: op.effect.eachAmountFrom,
       originUnitId: getUnitId(origin.quantity),
-      // originCategory, never origin.quantityCategory: the store-backed getter throws for a unit the
-      // store has no entry for, which is every unit on a fresh profile and any origin holding no
-      // quantity at all (unit id 0). That threw inside the operation-select click handler, before
-      // the "origin holds nothing" guard downstream ever ran (parallel review, I10). An
-      // undeterminable category means "leave the amounts alone", which reconcileRestoredQuantities
-      // already treats as such.
       createdCategory: restoredTemplate.quantityCategory ?? originCategory,
       perOriginUnitIds: Object.fromEntries(origins.map((o) => [o.globalId ?? "", getUnitId(o.quantity)])),
     });
 
-  // The remembered bundle for a specific operation + remember-key, read straight from context for
-  // THAT operation rather than through `processValues` above: `op` here may be an operation the
-  // user is in the middle of selecting, not yet the `operation` state `processValues` is bound to
-  // (RSDEV-1231, Codex review, PR #1090).
   const bundleFor = (op: InventoryOperation, key: string): ProcessValues | null => {
     const own = readUiPreference<Record<string, ProcessValues>>(uiPreferences, processValuesPreferenceFor(op.key), {});
     const legacy = readUiPreference<Record<string, ProcessValues>>(
@@ -516,9 +417,6 @@ function OperationWizard({
     return normalizeProcessValues(own[key] ?? legacy[key]);
   };
 
-  // The saved bundle for a given values set, and the wizard state (values + template + documentation +
-  // whether remember is on) that a process name resolves to: its saved bundle if one exists, else the
-  // defaults. Used on operation select and whenever the process name changes.
   const stateForKey = (op: InventoryOperation, vals: OperationInputs) => {
     const key = rememberKey(op, vals);
     const bundle = bundleFor(op, key);
@@ -548,7 +446,6 @@ function OperationWizard({
     }
     return {
       values: base,
-      // First-time run: preselect the parent's own template when it has one (DevDocs/adr/0007).
       templateSelection: initialTemplateSelection(parentHasTemplate),
       documentation: null,
       amountMode: resolveDefaultAmountMode(op),
@@ -559,13 +456,11 @@ function OperationWizard({
 
   const selectOperation = (op: InventoryOperation) => {
     const initial = buildInitialValues(op, origin);
-    // Pre-fill the most-recently-remembered process name for this operation, so a repeat run starts
-    // from it (and loads its bundle).
     const savedProcessName = (op.effect.processNameFrom ? (processNameDefaults?.[op.key] ?? "") : "").trim();
     if (op.effect.processNameFrom && savedProcessName) initial[op.effect.processNameFrom] = savedProcessName;
     const s = stateForKey(op, initial);
-    // Seed the derived sample name straight away (the dedup effect refines it once names are fetched).
-    // A terminal operation (Destroy) creates no sample, so it has no name to derive.
+    // Seed the derived sample name immediately; the dedup effect (below) refines it once existing
+    // names are fetched. A terminal operation (Destroy) has no name to derive, hence the guard.
     if (op.effect.nameFrom)
       s.values[op.effect.nameFrom] = derivedSampleName(sampleNameBase(op), resolveProcessName(op, s.values));
     setOperation(op);
@@ -581,9 +476,6 @@ function OperationWizard({
     setActiveStep(0);
   };
 
-  // Details-step change handler. When the process name changes, reload that name's saved state (or
-  // reset to defaults) and re-derive the sample name; otherwise a change to the sample-name field is
-  // treated as a manual edit that stops further auto-derivation.
   const onDetailsChange = (next: OperationInputs) => {
     if (!operation) {
       setValues(next);
@@ -608,8 +500,7 @@ function OperationWizard({
     setValues(next);
   };
 
-  // The single "remember" checkbox. Ticking loads the saved bundle for the current process name (if
-  // any); unticking resets the form to defaults. Neither deletes the stored bundle (grill Q1).
+  // Neither ticking nor unticking deletes the stored bundle.
   const onRememberChange = (checked: boolean) => {
     if (!operation) return;
     setRemember(checked);
@@ -617,8 +508,6 @@ function OperationWizard({
       const key = rememberKey(operation, values);
       const bundle = bundleFor(operation, key);
       if (bundle) {
-        // Same reconciliation as the load path: ticking the box restores the same bundle, so it can
-        // carry the same cross-category amounts.
         const restoredTemplate = restoredTemplateSelection(templateSelectionFor(bundle.template));
         const reconciled = reconcileForOrigins(
           operation,
@@ -636,25 +525,19 @@ function OperationWizard({
       setValues((v) => freshValues(operation, origin, v));
       setTemplateSelection(initialTemplateSelection(parentHasTemplate));
       setDocumentation(null);
-      // Back to the operation's own configured default (Pool: "all"), like every other reset path.
       setAmountMode(resolveDefaultAmountMode(operation));
       setPerSubsampleAmounts({});
     }
   };
 
-  // Template-step edits flow through here so a template picked in a DIFFERENT measurement category
-  // resets the created amount's prefilled unit (the amounts step will offer the new category's units,
-  // and a stale unit from the old category must not survive into the request). The amount taken FROM
-  // the origin always stays in the origin's own category, so its unit is kept.
+  // A template picked in a DIFFERENT measurement category resets the created amount's prefilled
+  // unit, so a stale unit from the old category can't survive into the request. The amount taken
+  // FROM the origin stays in the origin's own category, so its unit is untouched.
   const onTemplateSelectionChange = (next: React.SetStateAction<TemplateSelection>) => {
     // The user is making their own choice, which answers the "choose another template" the dropped
     // remembered template asked for.
     setRememberedTemplateError(null);
     const eachAmountFrom = operation?.effect.eachAmountFrom;
-    // The step may send an updater rather than a value, because its post-lookup write crosses an
-    // await (FE6). Resolving it here decides the category reset; the WRITE below resolves it again
-    // against the freshest state, which is the point. Updaters are pure, so running one twice is
-    // safe.
     const resolved = typeof next === "function" ? next(templateSelection) : next;
     const previousCategory = templateSelection.quantityCategory ?? originCategory;
     const nextCategory = resolved.quantityCategory ?? originCategory;
@@ -667,9 +550,8 @@ function OperationWizard({
     setTemplateSelection((previous) => (typeof next === "function" ? next(previous) : next));
   };
 
-  // Auto-derive the sample name "<origin> <process>" and de-duplicate it against existing sample
-  // names, keyed on the base name so it re-runs only when the process name changes (not when it sets
-  // the sample name). Skipped once the user hand-edits the name.
+  // Keyed on the derived base name (not `values` itself) so this re-runs only when the process name
+  // changes, not when it sets the sample name. Skipped once the user hand-edits the name.
   const sampleBaseName =
     operation?.effect.nameFrom && !sampleNameEdited
       ? derivedSampleName(sampleNameBase(operation), resolveProcessName(operation, values))
@@ -689,11 +571,7 @@ function OperationWizard({
     };
   }, [operation, sampleBaseName, sampleNameEdited]);
 
-  /**
-   * The origins are locked for the wizard's lifetime (ProcessAction), and the tracker's lock lapses
-   * after five minutes, so each step the user completes pushes the expiry out. Best-effort: the
-   * server re-checks the lock at Perform and refuses with a 409 either way (RSDEV-1231).
-   */
+  /** Extends the edit-session lock on each origin as the wizard's steps complete (RSDEV-1231). */
   const extendOriginLocks = () => {
     for (const o of origins) {
       void o.acquireEditLock().catch((error: unknown) => {
@@ -702,10 +580,6 @@ function OperationWizard({
     }
   };
 
-  /**
-   * Whether any origin's lock has lapsed, which makes Perform pointless: the server will refuse it.
-   * An origin with no lockExpiry was never locked (nothing here took one), which is not a lapse.
-   */
   const locksLapsed = (): boolean =>
     origins.some((o) => o.lockExpired || (Boolean(o.lockExpiry) && Date.now() >= o.lockExpiry.getTime()));
 
@@ -723,11 +597,8 @@ function OperationWizard({
     setActiveStep((s) => s - 1);
   };
 
-  // Whether the amounts step is valid, given the amount mode (DevDocs/adr/0007). "same" (and any operation
-  // without amount modes) checks the shared amount against the representative (smallest) origin; "all"
-  // is always valid (every origin emptied, never over-removal); "perSubsample" needs a positive,
-  // in-range amount for every origin, each checked against its own quantity. The created-sample
-  // count/each-amount must be valid in every mode.
+  // "all" is always valid: every origin is fully emptied, so over-removal cannot occur. "same" and
+  // "perSubsample" are checked against the origin(s)' actual quantity.
   const amountsStepValid = (): boolean => {
     if (!operation) return false;
     const sharedValid =
@@ -753,14 +624,11 @@ function OperationWizard({
 
   const stepValidFor = (key: string): boolean => {
     if (!operation) return false;
-    // An operation that empties its origin (Destroy) cannot run on an empty subsample. It skips the
-    // details step (where other operations gate this), so enforce it for every step here, blocking
-    // Perform on the confirmation with the reason shown there.
+    // An operation that empties its origin (Destroy) skips the details step, where other operations
+    // gate this, so enforce it for every step here instead.
     if (operation.effect.emptiesOrigin && origins.some((o) => commonQuantity(o) <= 0)) return false;
-    // An origin with no amount (0, or a quantity never set) cannot be operated on - the backend
-    // rejects it (DevDocs/adr/0007) - so block the first step (OperationDetailsStep shows the
-    // matching error). Checked on EVERY origin explicitly: the representative is the smallest, which
-    // makes the two equivalent today, but the backend rule is per-origin so the gate is too.
+    // Checked on EVERY origin explicitly, not just the representative: the two are equivalent today
+    // (representative is the smallest), but the backend rule is per-origin, so the gate matches it.
     if (key === "details")
       return detailsValid(operation, values, detailKeys) && origins.every((o) => commonQuantity(o) > 0);
     if (key === "template") return templateStepValid(templateSelection);
@@ -769,16 +637,9 @@ function OperationWizard({
   };
 
   const stepValid = (): boolean => stepValidFor(stepKeys[activeStep]);
-  // Every step complete and valid: the gate for the step-one fast path (DevDocs/adr/0007), only offered when a
-  // remembered bundle already makes the whole run performable.
   const allStepsValid = (): boolean => operation !== null && stepKeys.every(stepValidFor);
-  // Step one shows the confirmation and Perform (skipping the wizard) when a remembered bundle fully
-  // specifies a valid run and the user has not chosen to step through it.
   const fastPath = operation !== null && activeStep === 0 && remember && !reviewing && allStepsValid();
 
-  // Closing does not cancel the in-flight POST, so allowing it (Cancel, or Escape via the dialog)
-  // would let the user reopen the wizard and submit a second operation while the first is still
-  // decrementing the same origins (Copilot review, PR #1090).
   const closeUnlessSubmitting = () => {
     if (!submitting) onClose();
   };
@@ -800,8 +661,6 @@ function OperationWizard({
     try {
       // "fromSample" reads the origin sample's own template, so the parent must be loaded first.
       if (templateSelection.mode === "fromSample") await origin.sample.fetchAdditionalInfo();
-      // A terminal operation (Destroy) skips the template step and creates no sample, so it needs no
-      // template; resolve one only for producing operations.
       const templateId = operation.noOutput
         ? null
         : resolveTemplateId({
@@ -809,9 +668,6 @@ function OperationWizard({
             pickedTemplateId: templateSelection.templateId,
             originSampleTemplateId: origin.sample.templateId ?? null,
           });
-      // The server builds the sample from the definition and these inputs (plan-operations-server-
-      // builds.md, M4), including the computed values (Passage number = parent's + 1, the disposed
-      // date in the session's timezone), so none of that is assembled here any more.
       const request = buildOperationInputsRequest({
         operation,
         values,
@@ -823,11 +679,8 @@ function OperationWizard({
       });
       await showToastWhilstPending(t("operations.wizard.inProgress"), performOperation(request));
     } catch (error) {
-      // Never fail silently: surface the reason (e.g. a backend rejection) instead of leaving the
-      // Perform button looking dead. The wizard stays open so the user can retry. The reason comes
-      // from the field-scoped errors array, not `message`, which for a rejected request is only
-      // "Errors detected: 1" (code review, finding 4); an error on a declared input is worded with
-      // the input's label rather than its bare key.
+      // The error's `message` for a rejected request is just "Errors detected: 1"; the actual reason
+      // lives in the field-scoped errors array, which describeOperationError reads instead.
       getRootStore().uiStore.addAlert(
         mkAlert({
           title: t("operations.wizard.failed"),
@@ -836,8 +689,8 @@ function OperationWizard({
         }),
       );
       // Re-read the origins: the usual rejection is "you asked for more than it holds", and the
-      // amounts step validates against origin.quantity, so without this the user can only fail the
-      // same way again. Best-effort - the alert above already names the real problem.
+      // amounts step validates against origin.quantity, so without a refresh the user could only
+      // fail the same way again.
       try {
         await Promise.all(origins.map((o) => o.fetchAdditionalInfo()));
       } catch (refreshError) {
@@ -848,10 +701,8 @@ function OperationWizard({
     }
     // From here the operation has committed (output created, origins decremented), so nothing below
     // may report it as failed or leave the wizard open for a retry that would charge the origins
-    // again (code review, finding 2). Bookkeeping errors are warnings, and the wizard closes.
+    // again. Bookkeeping errors are warnings, and the wizard closes.
     try {
-      // Persist the "remember" bundle only now that Perform has succeeded, and only when the box is
-      // ticked. Keyed per operation + process name; unticking never deletes a prior bundle (DevDocs/adr/0007).
       if (remember) {
         const key = rememberKey(operation, values);
         const bundle: ProcessValues = {
@@ -861,9 +712,8 @@ function OperationWizard({
           ),
           template: templateSelectionToDefault(templateSelection),
           documentation,
-          // The amount mode and (for "perSubsample") the per-origin amounts are only meaningful for a
-          // multi-origin run, so store them only for such operations (DevDocs/adr/0007); a single-origin bundle
-          // stays as before, and an older bundle without them keeps normalising to "same".
+          // Amount mode and per-origin amounts are only meaningful for a multi-origin run, so store
+          // them only then; an older bundle without them keeps normalising to "same".
           ...(usesAmountModes(operation)
             ? { amountMode, perSubsampleAmounts: amountMode === "perSubsample" ? perSubsampleAmounts : {} }
             : {}),
@@ -879,7 +729,6 @@ function OperationWizard({
       }
       onClose();
       await Promise.all(origins.map((o) => o.fetchAdditionalInfo()));
-      // Re-run the main search so the newly created sample appears without a manual re-search.
       getRootStore().searchStore.search.performSearch();
     } catch (error) {
       getRootStore().uiStore.addAlert(
@@ -961,8 +810,8 @@ function OperationWizard({
     return confirmationStep();
   };
 
-  // The confirmation card, shared by the confirm step and the step-one fast path (DevDocs/adr/0007). Origins
-  // are passed as name + global id so a "per subsample" run can break the amounts down per origin.
+  // Origins are passed as name + global id so a "per subsample" run can break the amounts down per
+  // origin.
   const confirmationStep = (): React.ReactNode => {
     if (!operation) return null;
     return (
@@ -978,17 +827,13 @@ function OperationWizard({
         perSubsampleAmounts={perSubsampleAmounts}
         origins={origins.map((o) => ({ globalId: o.globalId ?? "", name: o.name ?? "" }))}
         remember={remember}
-        // The single "remember" checkbox sits with the summary (this card), on both the confirm step
-        // and the step-one fast path. A terminal operation (Destroy) has nothing to remember (no
-        // template/amounts/documentation), so passing no handler hides it.
+        // A terminal operation (Destroy) has nothing to remember (no template/amounts/documentation),
+        // so passing no handler hides the checkbox.
         onRememberChange={operation.noOutput ? undefined : onRememberChange}
       />
     );
   };
 
-  // The dialog heading names the operation on every step, appending a user-entered process name where
-  // the operation has one (e.g. "Derive: dna extraction"); operations with a fixed process name
-  // (Cryopreserve) show just the operation name.
   const headingProcessName = operation?.effect.processNameFrom ? resolveProcessName(operation, values) : "";
   const heading = operation
     ? headingProcessName
@@ -1005,15 +850,9 @@ function OperationWizard({
       <DialogContent dividers sx={{ minHeight: operation ? "60vh" : undefined }}>
         {operation ? (
           fastPath ? (
-            // A remembered run: show its confirmation on step one so the user can Perform without
-            // stepping through the wizard (DevDocs/adr/0007). "Review / edit" (below) drops into the stepper.
             confirmationStep()
           ) : (
             <>
-              {/* Wide viewports: horizontal stepper (labels in one compact top row) so each step's
-                content — especially the confirmation card and its varied display formats — gets the
-                dialog's full width. Small viewports: vertical stepper with the active step's content
-                rendered inline beneath its label, which reads better on a narrow screen. */}
               <Stepper
                 activeStep={activeStep}
                 orientation={isViewportSmall ? "vertical" : "horizontal"}
@@ -1053,7 +892,6 @@ function OperationWizard({
         </Button>
         {operation ? (
           fastPath ? (
-            // Remembered run: perform straight from step one, or drop into the wizard to change it.
             <>
               <Button onClick={() => setReviewing(true)} disabled={submitting}>
                 {t("operations.wizard.reviewEdit")}
@@ -1079,7 +917,7 @@ function OperationWizard({
                   // Gate Perform on EVERY step, not just the confirm step's own guards (e.g.
                   // Destroy's empty-origin block). Un-ticking "remember" here resets the earlier
                   // steps' values without leaving this step, so checking only this one could submit
-                  // a run an earlier step would have blocked (Copilot review, PR #1090).
+                  // a run an earlier step would have blocked.
                   disabled={submitting || !allStepsValid() || locksLapsed()}
                   label={t("operations.wizard.perform")}
                 />

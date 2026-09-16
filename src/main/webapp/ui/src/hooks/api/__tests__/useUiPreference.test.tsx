@@ -8,9 +8,7 @@ import useUiPreference, { PREFERENCES, UiPreferences } from "../useUiPreference"
 /**
  * Wraps a `renderHook` under test with both providers a real page supplies: `UiPreferences` (always
  * present) and `AlertContext` with a caller-supplied `addAlert` (present everywhere - Gallery and
- * Sysadmin mount the generic Alerts component, Inventory its own adapter - unlike `getRootStore`,
- * which the hook no longer depends on precisely because it is NOT always bootstrapped outside
- * Inventory, Codex review, PR #1090).
+ * Sysadmin mount the generic Alerts component, Inventory its own adapter).
  */
 function withAlerts(addAlert: (alert: unknown) => void) {
   return function Wrapper({ children }: { children: React.ReactNode }) {
@@ -24,10 +22,6 @@ function withAlerts(addAlert: (alert: unknown) => void) {
 
 describe("useUiPreference", () => {
   it("writes one key at a time and never re-reads the whole object first", async () => {
-    // Code review, finding 3: each setter used to read the full preference object, merge one key
-    // and POST the lot back. Two writers that overlapped (two tabs, or two setters in one handler)
-    // read the same snapshot and the later POST dropped the other's key. The server merges the one
-    // key now, so the read before each write is gone and cannot go stale.
     let stored: Record<string, unknown> = {};
     const postedKeys: Array<string> = [];
     let reads = 0;
@@ -64,7 +58,7 @@ describe("useUiPreference", () => {
     await waitFor(() => expect(postedKeys).toHaveLength(3));
     expect(postedKeys.sort()).toEqual(["GALLERY_SORT_BY", "GALLERY_SORT_ORDER", "GALLERY_VIEW_MODE"]);
     expect(Object.keys(stored).sort()).toEqual(["GALLERY_SORT_BY", "GALLERY_SORT_ORDER", "GALLERY_VIEW_MODE"]);
-    // one read: the provider mounting. A read per write is what went stale.
+    // One read only: the provider's initial fetch.
     expect(reads).toBe(1);
   });
 
@@ -103,10 +97,6 @@ describe("useUiPreference", () => {
   });
 
   it("writes two updates of ONE key in the order they were made", async () => {
-    // The per-key chain (previous.then(...)) exists so two writes of one key land in order: without
-    // it a slow first POST and a fast second one leave the server holding the OLDER value. No test
-    // covered it - replacing the chain with a bare `void write` passed every test in this file
-    // (parallel review, Q13).
     const order: Array<string> = [];
     let releaseFirst: () => void = () => undefined;
     const firstInFlight = new Promise<void>((resolve) => (releaseFirst = resolve));
@@ -116,8 +106,7 @@ describe("useUiPreference", () => {
       http.post("/userform/ajax/preference", async ({ request }) => {
         const form = await request.formData();
         const value = JSON.parse(String(form.get("value"))) as { value: string };
-        // The first write stalls until released, so a chain-less implementation would let the
-        // second overtake it.
+        // Stall the first write so a chain-less implementation would let the second overtake it.
         if (++seen === 1) await firstInFlight;
         order.push(value.value);
         return HttpResponse.json({ data: "{}" });
@@ -141,9 +130,8 @@ describe("useUiPreference", () => {
   });
 
   it("keeps writing a key after one of its writes fails", async () => {
-    // The .catch on the chain is what stops a failed write wedging that key forever: the rejected
-    // promise would otherwise become the `previous` every later write of this key chains onto, so
-    // every subsequent save is dropped. Unverified before (parallel review, Q13).
+    // The .catch on the chain is what stops a failed write wedging that key forever: without it the
+    // rejected promise becomes every later write's `previous`, dropping every subsequent save.
     const posted: Array<string> = [];
     let attempts = 0;
     server.use(
@@ -173,10 +161,8 @@ describe("useUiPreference", () => {
   });
 
   it("does not let a stalled write of one key block a different key", async () => {
-    // The chain exists to order repeated writes of the SAME key and to report a failure once.
-    // Sharing one chain across every key in a provider would make a single hung request block every
-    // other preference in that provider for the rest of the session, which is the same head-of-line
-    // problem, one level down.
+    // Sharing one chain across every key in a provider would make a single hung request block
+    // every other preference in that provider for the rest of the session.
     let releaseHungWrite: () => void = () => {};
     const hungWrite = new Promise<void>((resolve) => {
       releaseHungWrite = resolve;
@@ -214,9 +200,8 @@ describe("useUiPreference", () => {
   });
 
   it("does not let one provider's stalled write block another provider's", async () => {
-    // The write chain orders one page's writes of the same key, but a module-level chain would
-    // serialise every preference write in the app: one hung request would stall unrelated writes
-    // (Gallery view mode, sysadmin columns) for the rest of the session.
+    // A module-level chain (rather than one per provider) would serialise every preference write
+    // in the app: one hung request would stall unrelated writes for the rest of the session.
     let releaseHungWrite: () => void = () => {};
     const hungWrite = new Promise<void>((resolve) => {
       releaseHungWrite = resolve;
@@ -256,9 +241,7 @@ describe("useUiPreference", () => {
   });
 
   it("reports a failed write instead of swallowing it", async () => {
-    // Logging alone left a failed save invisible to the user: the session kept working off the
-    // optimistic local state, so nothing looked wrong until a later login found the save had never
-    // landed (RSDEV-1231, Codex review, PR #1090). A visible alert is the other half of "reports".
+    // A visible alert, not just a console log, is what makes a failed save visible to the user.
     const addAlert = vi.fn();
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
     server.use(
@@ -284,12 +267,9 @@ describe("useUiPreference", () => {
   });
 
   it("keeps writing a key even when raising the failure alert itself throws", async () => {
-    // getRootStore().uiStore.addAlert used to throw here whenever RootStore had not been
-    // bootstrapped - true for every page outside Inventory, since only Inventory's Alerts adapter
-    // wires UiStore.addAlert to anything real (Codex review, PR #1090). A throw inside this .catch
-    // handler rejected the promise stored in `pendingWrites`, so every LATER write of that key
-    // chained onto an already-rejected promise and silently skipped its POST, forever. Whatever
-    // raises the alert must never be able to do that again, however badly it misbehaves.
+    // A throw inside this .catch handler would reject the promise stored in `pendingWrites`, so
+    // every later write of that key would chain onto an already-rejected promise and silently skip
+    // its POST, forever.
     const throwingAddAlert = vi.fn(() => {
       throw new Error("no alert host mounted");
     });

@@ -28,10 +28,10 @@ class ApiInventoryOperationPostBindingTest {
 
   @Test
   void theApiMapperIgnoresAPropertyNoDtoDeclares() {
-    // Pins the endpoint's behaviour on a mistyped or obsolete property: dropped silently, like on
-    // every other endpoint, since the server builds the sample and a client property cannot change
-    // what it builds. If a future Spring or config change makes the shared mapper strict, this
-    // fails and the contract changes to a binding 400.
+    // Pins current behaviour: a mistyped or obsolete property is dropped silently, since the server
+    // builds the sample and a client property cannot change what it builds. If a future config
+    // change makes the shared mapper strict, this test starts failing and the contract becomes a
+    // binding 400.
     assertDoesNotThrow(
         () ->
             apiMapper.readValue(
@@ -42,10 +42,9 @@ class ApiInventoryOperationPostBindingTest {
   @Test
   void aClientAssembledSampleAndOriginFieldsAreDroppedAtBinding() {
     // newSample and origins[].extraFields are the server's: the request builder fills them from
-    // the definition, and the core reads them. Both are @JsonIgnore, so a body in the shape the
-    // endpoint accepted before DevDocs/adr/0007 M5 binds with neither, even under a
-    // mapper that rejects unknown properties (probed: Jackson treats an ignored property as
-    // ignorable, not as unknown).
+    // the definition, and the core reads them. Both are @JsonIgnore, so a client-supplied value
+    // binds to neither, even under a mapper that rejects unknown properties (Jackson treats an
+    // ignored property as ignorable, not as unknown).
     for (ObjectMapper mapper : new ObjectMapper[] {apiMapper, new ObjectMapper()}) {
       ApiInventoryOperationPost request =
           assertDoesNotThrow(
@@ -97,7 +96,7 @@ class ApiInventoryOperationPostBindingTest {
     // An unrecognised mode binds to UNKNOWN, which the validator rejects with a catalog key, rather
     // than throwing out of the @JsonCreator: that throw became an HttpMessageNotReadableException
     // whose raw English message the shared advice copied into the 400 body, echoing the client's
-    // own input back untranslated (parallel review). Still a 400 either way, and crucially still
+    // own input back untranslated. Still a 400 either way, and crucially still
     // NOT a silent fallthrough to EXPLICIT, which would turn a client's "all" typo into a partial
     // take.
     assertEquals(
@@ -120,8 +119,8 @@ class ApiInventoryOperationPostBindingTest {
 
   @Test
   void extraFieldsSerialiseTheirOperationFieldKeyButNeverBindIt() {
-    // Serialised, because the next run of an operation reads the parent's fields over GET and needs
-    // the key to identify the previous generation (RSDEV-1231, F6).
+    // Serialised because the next run of an operation reads the parent's fields over GET and needs
+    // the key to identify the previous generation.
     ApiExtraField field = new ApiExtraField(ApiExtraField.ExtraFieldTypeEnum.TEXT);
     field.setName("Passage number");
     field.setOperationFieldKey("operations.passage.numberField");

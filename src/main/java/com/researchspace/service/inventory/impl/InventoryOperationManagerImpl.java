@@ -55,7 +55,6 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
   @Autowired private OperationTemplateConformanceValidator templateConformance;
   @Autowired private LinkTargetResolver linkTargetResolver;
 
-  /** Stateless; one instance per bean, as elsewhere in the codebase. */
   private static final QuantityUtils quantityUtils = new QuantityUtils();
 
   @Override
@@ -71,9 +70,9 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
         operationConfigs
             .get(operationKey)
             .orElseThrow(() -> new IllegalArgumentException("unknown operation " + operationKey));
-    // Inputs first: one that fails its declared rule is a 400 before any origin is read. The errors
-    // name the bare input key (M0: a typed facade's field IS the key). Declared defaults fill an
-    // absent optional input first (M0 D7), and are then validated like anything the client sent.
+    // Inputs are validated before any origin is read, so a bad input is rejected before anything is
+    // touched. Defaults fill an absent optional input first, and the filled-in value is then
+    // validated like anything the client sent.
     inputs = InventoryOperationInputValidator.withDefaults(definition, inputs);
     MapBindingResult inputErrors = new MapBindingResult(inputs, "apiInventoryOperationPost");
     InventoryOperationInputValidator.validate(definition, inputs, inputErrors);
@@ -82,9 +81,6 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
       throw new BindException(inputErrors);
     }
 
-    // Then the builder, which needs each origin's name (link field names), global id (link targets)
-    // and its parent's fields (the Passage counter). Read with the same edit assertion the core
-    // repeats inside checkOriginLiveState.
     List<InventoryOperationRequestBuilder.Origin> builderOrigins = new ArrayList<>();
     Map<String, ApiQuantityInfo> amountsByGlobalId = new HashMap<>();
     for (ApiInventoryOperationOriginUpdate origin : origins) {
@@ -113,28 +109,24 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
                 .origins(builderOrigins)
                 .resolveLabel(resolveLabel)
                 .templateId(templateId)
-                // The link's display name is the wizard's fixed "Documented by" label, resolved
-                // here in the request's locale exactly like the generated field names.
                 .documentationLink(
                     documentedByGlobalId == null
                         ? null
                         : new InventoryOperationRequestBuilder.DocumentationLink(
                             resolveLabel.resolve("operations.documentation.fieldName", Map.of()),
                             documentedByGlobalId))
-                // The origin element owns amountTaken (M3 decision), so the builder is given the
-                // client's per-origin amounts rather than reading one from the inputs.
+                // Each origin's amountTaken lives on the origin element itself, not in inputs, so
+                // it's passed here rather than read from the inputs map.
                 .perSubsampleAmounts(amountsByGlobalId)
-                // The session timezone is the browser's, recorded at login (TimezoneAdjuster), so
-                // this is the user's local date; an API-key session has none and gets the server's.
+                // The session's recorded browser timezone gives the user's local date; an API-key
+                // session has none, so this falls back to the server's.
                 .clientToday(
                     LocalDate.parse(new SessionTimeZoneUtils().formatDateForClient(new Date())))
                 .build());
-    // The builder decides amounts the way the wizard does (a whole-origin operation snapshots the
-    // LIVE quantity). An origin that carries the client's own amount takes it into the core; one
-    // without (a typed facade's Passage or Destroy element, M0) keeps the builder's. amountMode and
-    // expectedQuantity are shape-checked by the post validator and read nowhere else
-    // (DevDocs/adr/0007: no concurrency control), so neither is copied. Same order in and out: the
-    // builder emits one update per origin, in the order given.
+    // An origin that carries the client's own amount takes it into the core; one without keeps the
+    // builder's. amountMode and expectedQuantity are shape-checked by the post validator and read
+    // nowhere else, so neither is copied. This index-based copy relies on the builder emitting one
+    // update per origin, in the same order the origins were given.
     for (int i = 0; i < origins.size(); i++) {
       if (origins.get(i).getAmountTaken() != null) {
         built.getOrigins().get(i).setAmountTaken(origins.get(i).getAmountTaken());
@@ -147,7 +139,7 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
 
     // The origins as they stand afterwards, read HERE rather than by the caller: still inside this
     // transaction, so they are one consistent snapshot of what this operation produced, and one
-    // transaction rather than one per origin against a 100-origin cap (parallel review, A14).
+    // transaction rather than one per origin against a 100-origin cap.
     List<ApiSubSample> originsAfter = new ArrayList<>();
     for (ApiInventoryOperationOriginUpdate origin : origins) {
       originsAfter.add(subSampleApiMgr.getApiSubSampleById(origin.getId(), user));
@@ -157,8 +149,7 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
 
   /**
    * The origin's parent sample's fields a computed value may read: its template-defined fields
-   * (which carry no definition key) and its ad-hoc extra fields, both, as the wizard's
-   * computedValues.ts does.
+   * (which carry no definition key) and its ad-hoc extra fields.
    */
   private static List<InventoryOperationRequestBuilder.ParentField> parentFields(
       SampleEntity parent) {
@@ -179,35 +170,18 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
   public ApiSampleWithFullSubSamples performOperation(
       ApiInventoryOperationPost request, User user, InTransactionValidation callerValidation)
       throws BindException {
-    // The caller's own validation (the controller's template-conformance check) runs FIRST, inside
-    // this transaction, before any origin is read: a template changed after an
-    // out-of-transaction check could otherwise fail the operation mid-mutation or create the sample
-    // against a definition different from the one validated (Copilot review, PR #1090).
     callerValidation.validate();
-    // Origins are handled in ascending id order (not request order) so the processing order is
-    // deterministic however the client listed them; errors are still reported at the request
-    // index. The validator guarantees unique, non-null ids by this point.
+    // The validator guarantees unique, non-null ids by this point.
     List<ApiInventoryOperationOriginUpdate> originsById =
         request.getOrigins().stream()
             .sorted(Comparator.comparing(ApiInventoryOperationOriginUpdate::getId))
             .toList();
 
-    // Validate-before-mutate, inside this method's own transaction so the rules hold against the
-    // same state the mutation sees (not an advisory read in a separate transaction): read each
-    // origin, assert edit permission on it and check its live quantity against
-    // its amountTaken. Any violation throws before anything is written. See DevDocs/adr/0007.
     checkOriginLiveState(request, originsById, user);
 
-    // Reduce each origin by the amount taken from it BEFORE creating the new sample, so the new
-    // subsample is the most-recently-modified record and therefore sorts first in a
-    // modification-date-descending listing (registerApiSubSampleUsage stamps each origin's
-    // modification date now; the new subsample is stamped later, when created below).
-    // registerApiSubSampleUsage subtracts (unit-aware) and clamps at zero, so an operation can only
-    // ever decrease the origin, never increase it. Any custom fields the operation adds to the
-    // origin itself (Destroy's disposed date) are applied through the ordinary subsample-edit path,
-    // each marked newFieldRequest by the request builder. Coordinated inside this manager so it
-    // joins the
-    // one transaction with the sample creation. See DevDocs/adr/0007.
+    // Reduce each origin BEFORE creating the new sample, so the new subsample is the
+    // most-recently-modified record and sorts first in a modification-date listing. Coordinated
+    // here, in the same transaction as the sample creation, rather than as a separate step.
     for (ApiInventoryOperationOriginUpdate origin : originsById) {
       subSampleApiMgr.registerApiSubSampleUsage(
           origin.getId(), origin.getAmountTaken().toQuantityInfo(), user);
@@ -216,15 +190,14 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
         fieldUpdate.setId(origin.getId());
         fieldUpdate.setExtraFields(origin.getExtraFields());
         // Sparse update: null tags means "leave tags untouched"; the DTO's default empty list
-        // would be applied as "clear all tags" and silently wipe a tagged origin's tags (same
-        // idiom as InventoryIdentifierApiManagerImpl's sparse updates).
+        // would be applied as "clear all tags" and silently wipe a tagged origin's tags.
         fieldUpdate.setTags(null);
         subSampleApiMgr.updateApiSubSample(fieldUpdate, user);
       }
     }
 
     // A terminal operation (noOutput, e.g. Destroy) sends no new sample: it only acts on its
-    // origins, so there is nothing to create and nothing to return. See DevDocs/adr/0007.
+    // origins, so there is nothing to create and nothing to return.
     return request.getNewSample() == null
         ? null
         : sampleApiMgr.createNewApiSample(request.getNewSample(), user);
@@ -257,7 +230,6 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
     for (int i = 0; i < request.getOrigins().size(); i++) {
       requestIndex.put(request.getOrigins().get(i), i);
     }
-    // Edit permission is asserted on every origin before its live state is read.
     for (ApiInventoryOperationOriginUpdate origin : originsById) {
       subSampleApiMgr.assertUserCanEditSubSample(origin.getId(), user);
     }
@@ -274,25 +246,18 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
               "An origin subsample that currently holds nothing cannot be operated on.");
         } else if (firstOriginQuantity != null
             && !quantityUtils.isComparableQuantities(firstOriginQuantity, currentQuantity)) {
-          // A multi-origin operation (Pool) combines its origins into one quantity, which is
-          // meaningless across measurement categories (5 ml + 5 g); the wizard blocks it, so the
-          // endpoint must too (security review, finding 4).
           errors.rejectValue(
               "id",
               "errors.inventory.operation.originCategoryMismatch",
               "All origin subsamples must use the same measurement category.");
         } else if (origin.getAmountTaken() != null
             && !quantityUtils.isComparableQuantities(origin.getAmountTaken(), currentQuantity)) {
-          // The wizard keeps the amount taken in the origin's own category; grams taken from a
-          // millilitre origin would otherwise fail inside the unit-aware subtraction as a 422
-          // (code review, finding 4).
           errors.rejectValue(
               "amountTaken",
               "errors.inventory.operation.amountTakenCategoryMismatch",
               "The amount taken must use the origin's measurement category.");
         } else if (emptiesOrigin
             && !amountTakenEmptiesOrigin(origin.getAmountTaken(), currentQuantity)) {
-          // An emptying operation whose client did NOT take the origin's entire remaining amount.
           errors.rejectValue(
               "amountTaken",
               "errors.inventory.operation.mustEmptyOrigin",
@@ -327,10 +292,7 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
    * A documentation target the caller cannot read is a field error on {@code documentedByGlobalId},
    * the field they sent it in.
    *
-   * <p>The target used to be resolved only when the built sample's link was created, inside the
-   * transaction and after the origins were decremented, where it surfaced as a bare 422 with no
-   * field path on it at all: every other 4xx this API answers names a field (live test 2026-09-13,
-   * F4). Checked here, alongside the declared inputs and before any origin is read, so a request
+   * <p>Checked here, alongside the declared inputs and before any origin is read, so a request
    * already known to be bad touches no origin. The prefix is checked earlier, by the post
    * validator; this is the existence and read-permission half, which needs the acting user.
    */
@@ -356,10 +318,9 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
   }
 
   /**
-   * Without a template the wizard offers only the origin's measurement category for the created
-   * amounts, so a gram child from a millilitre origin is a request it never builds (code review,
-   * finding 5). With a template the created amounts follow the template's category instead, which
-   * the controller's template check enforces; the origin category is not consulted then.
+   * Applies only when there is no template: with one, the created amounts follow the template's
+   * category instead, which the controller's template check enforces, and the origin category is
+   * not consulted.
    */
   private static void rejectNewSubSamplesOutsideOriginCategory(
       ApiInventoryOperationPost request,
@@ -388,8 +349,7 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
   }
 
   /**
-   * Whether an origin currently holds nothing: a null quantity (never set), a quantity without a
-   * numeric value, or a non-positive amount. No operation may act on such an origin: there is
+   * Whether an origin currently holds nothing. No operation may act on such an origin: there is
    * nothing to take, pool, preserve or destroy.
    */
   static boolean originHoldsNothing(Quantifiable originQuantity) {
@@ -400,9 +360,9 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
 
   /**
    * Whether the amount taken exceeds the origin's current quantity, unit-aware within a measurement
-   * category (e.g. 0.006 kg against a 5 g origin). A null amount, or a pair in different categories
-   * (which the UI never produces), is not treated as over-removal. A null/absent origin quantity
-   * means the origin holds nothing, so any positive amount taken from it is over-removal.
+   * category (e.g. 0.006 kg against a 5 g origin). A null amount, or a pair in different
+   * categories, is not treated as over-removal. A null/absent origin quantity means the origin
+   * holds nothing, so any positive amount taken from it is over-removal.
    */
   static boolean amountTakenExceedsOrigin(
       ApiQuantityInfo amountTaken, Quantifiable originQuantity) {
@@ -410,14 +370,12 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
       return false;
     }
     if (originQuantity == null || originQuantity.getNumericValue() == null) {
-      // Origin holds nothing: any positive amount taken is over-removal.
-      //
       // Unreachable from the only production caller: checkOriginLiveState tests
       // originHoldsNothing(currentQuantity) first and takes a different branch, and that covers
       // exactly the null / null-numericValue cases handled here. Kept so this stays a total
       // function
       // of its two arguments rather than one with an undocumented precondition, which is how its
-      // direct unit test exercises it (parallel review, A9).
+      // direct unit test exercises it.
       return amountTaken.getNumericValue().signum() > 0;
     }
     if (!quantityUtils.isComparableQuantities(amountTaken, originQuantity)) {
@@ -434,7 +392,7 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
    * from a 5 g origin leaves 4.9975 g, four decimal places, refused; and 0.001 ul from a 1 ml
    * origin leaves 999.999 ul, which is exact and was refused anyway. The column stores a number and
    * a UNIT ID, so a remainder that will not fit the origin's own unit usually fits one rung down,
-   * and {@code QuantityUtils.subtract} now stores it there (review 2026-09-14, Q1a/Q1b).
+   * and {@code QuantityUtils.subtract} now stores it there.
    *
    * <p>What remains rejected is a genuinely unrepresentable amount, and it reaches here through the
    * arithmetic rather than through the column: summing across a span of unit rungs wide enough to
@@ -449,11 +407,6 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
    * negative. Missing values, a zero amount and incomparable categories are handled by their own
    * rules; two quantities in the SAME unit are both already stored at 3dp, so their difference is
    * exact and needs no check at all.
-   *
-   * <p>NOT COVERED: telling the caller that the origin's unit was re-denominated as a result. The
-   * operation response returns the origins, so the new unit is in the payload and the card
-   * re-renders showing it, but nothing announces the change. That is the half of live-run finding
-   * F3 that is a product decision rather than a technical one (review 2026-09-14, Q1c).
    */
   static boolean amountTakenLostToRounding(
       ApiQuantityInfo amountTaken, QuantityInfo originQuantity) {

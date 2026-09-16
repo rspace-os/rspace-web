@@ -64,9 +64,8 @@ import org.springframework.web.util.UriComponentsBuilder;
 })
 public class ApiSampleWithFullSubSamples extends ApiSampleWithoutSubSamples {
 
-  // Cascade (@Valid) so each explicit subsample's own constraints (image size, note length) hold
-  // wherever this DTO is bound as a request body. Capped at 100 like newSampleSubSamplesCount
-  // (SampleApiPostFullValidator): each subsample costs a full create cycle.
+  // @Valid cascades so each subsample's own constraints (e.g. image size, note length) are
+  // enforced.
   @Valid
   @Size(max = 100, message = "{errors.inventory.sample.tooManySubSamples}")
   @JsonProperty("subSamples")

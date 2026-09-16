@@ -21,14 +21,8 @@ import org.springframework.validation.Validator;
  * readable template, and its fields and quantity unit must match that template, so a mismatch is a
  * clean 400 instead of a 500 inside the manager transaction.
  *
- * <p>This is a domain invariant of the operation and it runs INSIDE the operation's transaction, on
- * the request the server built and before any origin is read, so the template it validates is the
- * template the sample is created from. It lived in {@code InventoryOperationsApiController} until
- * the parallel review (L1): the import direction was legal, because the manager defined the
- * callback interface it was handed through, but a check with a transactional precondition sat in a
- * package nothing reasons about or tests as transactional. Someone moving that controller method to
- * a cached, non-transactional template read - a normal thing to do in a controller - would reopen
- * exactly the race the callback was introduced to close.
+ * <p>Must run inside the operation's transaction, on the request the server built, before any
+ * origin is read, so the template it checks is the one the sample is actually created from.
  */
 @Component
 public class OperationTemplateConformanceValidator {
@@ -79,15 +73,14 @@ public class OperationTemplateConformanceValidator {
       }
     }
     if (!errors.hasErrors()) {
-      // Both validators, exactly as POST /samples runs them. Running only the full-post one left
-      // the sample unbounded: the length, tag and extra-field rules live on sampleApiPostValidator,
-      // and nothing else bounded them - the input validator only checks that a "text" input is a
-      // CharSequence, so an over-long sampleName reached EditInfo.name (varchar(255)) inside the
-      // manager's transaction, after the origins were decremented (parallel review).
+      // Both validators, as POST /samples runs them: sampleApiPostValidator carries the length, tag
+      // and extra-field checks that inputValidator alone does not enforce, so skipping it let an
+      // over-long sampleName reach EditInfo.name (varchar(255)) inside the transaction, after the
+      // origins were already decremented.
       //
-      // Both name fields relative to the sample (name, quantity, subSamples[i].quantity); this
-      // binding result is rooted at the request, so nest the path or a rejection would fail to
-      // resolve the field and surface as a 500.
+      // Both validators name fields relative to the sample (name, quantity,
+      // subSamples[i].quantity), but this BindingResult is rooted at the request - nest the path or
+      // a rejection fails to resolve the field and surfaces as a 500.
       errors.pushNestedPath("newSample");
       try {
         inputValidator.validate(newSample, sampleApiPostValidator, errors);

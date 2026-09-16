@@ -11,11 +11,6 @@ vi.mock("@/stores/stores/getRootStore", () => ({
   default: () => ({ unitStore: { getUnit: () => ({ label: "ml" }) } }),
 }));
 
-/**
- * Whether the Process entry is offered for this menu and selection. RSDEV-1228 decided Process
- * belongs in every Inventory context menu except the picker (DevDocs/adr/0007); this pins that
- * decision so narrowing or widening it is a deliberate change rather than a silent regression.
- */
 function processIsOffered(
   menuID: (typeof menuIDs)[keyof typeof menuIDs],
   selectedResults: Array<InventoryRecord>,
@@ -49,7 +44,6 @@ describe("ContextActions: the Process entry", () => {
     expect(
       processIsOffered(menuIDs.RESULTS, [makeMockSubSample({}), makeMockSubSample({ id: 2, globalId: "SS2" })]),
     ).toBe(true);
-    // a sample is not an origin the wizard can operate on, so a mixed selection hides the entry
     expect(processIsOffered(menuIDs.RESULTS, [makeMockSubSample({}), makeMockSample()])).toBe(false);
     expect(processIsOffered(menuIDs.RESULTS, [])).toBe(false);
   });
@@ -58,8 +52,8 @@ describe("ContextActions: the Process entry", () => {
     expect(processIsOffered(menuIDs.RESULTS, [makeMockSubSample({ deleted: true })])).toBe(false);
   });
 
-  // RSDEV-1231: inventory.operations.available is seeded DENIED, so the entry is absent until a
-  // sysadmin turns it on, whatever the selection.
+  // inventory.operations.available is seeded DENIED, so the entry is absent until a sysadmin
+  // turns it on, whatever the selection.
   it("is hidden while inventory.operations.available is not ALLOWED", () => {
     expect(processIsOffered(menuIDs.RESULTS, [makeMockSubSample({})], false)).toBe(false);
   });

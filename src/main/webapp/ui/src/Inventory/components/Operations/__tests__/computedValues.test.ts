@@ -76,10 +76,6 @@ describe("applyComputedValues", () => {
 
 describe("parentFields drawn from both of the parent's field lists", () => {
   it("finds a parentSampleField that came from extraFields, so Passage increments X to X+1 (regression)", () => {
-    // The Passage "stuck at 1" bug: the passage number is a user-added custom field, so it is in the
-    // parent's extraFields, not its template-defined `fields`. A caller that passes only `fields`
-    // misses it and increment falls back to start (1); both lists have to be combined so increment
-    // sees "2" -> 3.
     const result = applyComputedValues(opWith(passageComputed), {
       parentFields: [...[], ...[{ name: "Passage number", content: "2" }]],
       values: {},
@@ -89,11 +85,6 @@ describe("parentFields drawn from both of the parent's field lists", () => {
   });
 });
 
-/**
- * A generated field's NAME is a localized resolution of its definition key, so name matching means
- * matching whatever the current locale says today. The key is exact and locale-independent, which is
- * what keeps a Passage lineage intact rather than forking it into one counter per locale (F6).
- */
 describe("parentSampleField matching", () => {
   const ctx = (parentFields: ComputedContext["parentFields"]): ComputedContext => ({
     parentFields,
@@ -105,9 +96,7 @@ describe("parentSampleField matching", () => {
     const values = applyComputedValues(
       opWith(passageComputed),
       ctx([
-        // A user's own field that happens to carry the current locale's wording.
         { name: "Passage number", content: "99", operationFieldKey: null },
-        // The field the previous Passage actually generated.
         { name: "Passagenummer", content: "4", operationFieldKey: "operations.passage.numberField" },
       ]),
     );
@@ -115,8 +104,6 @@ describe("parentSampleField matching", () => {
   });
 
   it("keeps incrementing when the stored name no longer matches the current locale's wording", () => {
-    // The exact regression: with only name matching this found nothing and restarted at 1, which
-    // silently forks the culture's lineage instead of continuing it.
     const values = applyComputedValues(
       opWith(passageComputed),
       ctx([{ name: "Passagenummer", content: "7", operationFieldKey: "operations.passage.numberField" }]),
@@ -125,8 +112,6 @@ describe("parentSampleField matching", () => {
   });
 
   it("still matches a hand-created field by name when it carries no key", () => {
-    // The name fallback is permanent, not migration cover: this is how the first Passage of an
-    // existing culture picks up the count the user has been keeping by hand.
     const values = applyComputedValues(opWith(passageComputed), ctx([{ name: "Passage number", content: "3" }]));
     expect(values.passageNumber).toEqual(4);
   });
@@ -139,8 +124,8 @@ describe("parentSampleField matching", () => {
   it("matches a keyed field gathered from either of the parent's two field lists", () => {
     // Both lists must be searched: a Passage number can be a template field or an ad-hoc custom
     // one. Asserting that a gather helper merely preserves the property would prove nothing - a
-    // spread of both arrays passes such a test with the key matching removed entirely (parallel
-    // review, I11). This goes through the lookup instead, with a same-named decoy in the other list
+    // spread of both arrays passes such a test with the key matching removed entirely. This goes
+    // through the lookup instead, with a same-named decoy in the other list
     // so only key matching can produce the right answer.
     for (const listName of ["fields", "extraFields"] as const) {
       const keyed = {

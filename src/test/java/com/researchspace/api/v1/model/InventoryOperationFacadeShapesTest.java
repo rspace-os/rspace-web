@@ -43,14 +43,6 @@ import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.validation.Errors;
 import org.springframework.validation.MapBindingResult;
 
-/**
- * Each typed facade agrees with the definition it fronts (DevDocs/adr/0007, M6 gate): its origin
- * cardinality follows {@code requiresMultiple}, so {@code @Size(min = 2)} cannot drift from it; its
- * input fields are exactly the definition's input keys, so {@code toOperationInputs()} stays a
- * mechanical copy and a core error names a field the client sent; and it carries no value rule, so
- * nothing can go stale against the config. Plus the seven request examples frozen in
- * DevDocs/adr/0007 bind as written.
- */
 class InventoryOperationFacadeShapesTest {
 
   private static final Map<String, Class<? extends Request>> FACADES =
@@ -63,13 +55,13 @@ class InventoryOperationFacadeShapesTest {
           "revive", Revive.class,
           "destroy", Destroy.class);
 
-  /** The fields that are not inputs: what is consumed, and the two wizard-level choices. */
+  /** The fields that are not inputs: what is consumed, and the two output-only choices. */
   private static final Set<String> STRUCTURAL =
       Set.of("origin", "origins", "templateId", "documentedByGlobalId");
 
   private final InventoryOperationConfigRegistry registry = new InventoryOperationConfigRegistry();
 
-  /** The mapper the API's converter is built from (see ApiInventoryOperationPostBindingTest). */
+  /** The mapper the API's converter is built from, so tests exercise production Jackson config. */
   private final ObjectMapper apiMapper = Jackson2ObjectMapperBuilder.json().build();
 
   /**
@@ -81,7 +73,7 @@ class InventoryOperationFacadeShapesTest {
    * becomes 100, slipping past the definition's declared maximum entirely. The generic endpoint
    * binds the same value into a {@code Map<String, Object>}, where it arrives as a Double and
    * {@code isIntegral} rejects it - so the typed facades were quietly laxer than the endpoint they
-   * front (Codex review, P2).
+   * front.
    *
    * <p>Asserted through the API's own mapper and then through the real input validator, because the
    * truncation happens at binding: constructing the DTO by hand cannot show it.
@@ -157,11 +149,10 @@ class InventoryOperationFacadeShapesTest {
             List<Size> sizes = sizeConstraints(origins);
             assertFalse(sizes.isEmpty(), key + ": minItems belongs in the published schema");
             assertEquals(2, sizes.stream().mapToInt(Size::min).max().orElse(0), key + ": minItems");
-            // The ceiling belongs at binding for the same reason the generic DTO carries one: the
-            // validator's MAX_ORIGINS check runs only after Jackson has materialised every element
-            // and performTyped has walked all of them parsing global ids, so without this an
-            // authenticated caller could post an unbounded origins array (parallel review). Read
-            // off the generic DTO rather than restated, so the two endpoints cannot disagree.
+            // The ceiling belongs at binding: the validator's MAX_ORIGINS check runs only after
+            // Jackson has materialised every element, so without this an authenticated caller could
+            // post an unbounded origins array. Read off the generic DTO rather than restated, so
+            // the two endpoints cannot disagree.
             assertEquals(
                 genericOriginsCeiling(),
                 sizes.stream().mapToInt(Size::max).min().orElse(Integer.MAX_VALUE),
@@ -179,8 +170,8 @@ class InventoryOperationFacadeShapesTest {
     FACADES.forEach(
         (key, facade) -> {
           InventoryOperationConfig definition = registry.get(key).orElseThrow();
-          // amountTaken is declared as an input so the wizard renders a field, but it travels on
-          // the origin element (M3 decision, M0 shapes), never in the inputs.
+          // amountTaken is declared as an input, but it travels on the origin element, never in
+          // the inputs.
           Set<String> declared =
               definition.inputs().stream()
                   .map(InventoryOperationConfig.Input::key)
@@ -192,8 +183,7 @@ class InventoryOperationFacadeShapesTest {
                   .filter(name -> !STRUCTURAL.contains(name))
                   .collect(Collectors.toCollection(TreeSet::new));
           assertEquals(declared, fields, key);
-          // The template and documentation target exist only where a sample is created (D8: no
-          // other sample metadata).
+          // The template and documentation target exist only where a sample is created.
           assertEquals(!definition.noOutput(), field(facade, "templateId") != null, key);
           assertEquals(!definition.noOutput(), field(facade, "documentedByGlobalId") != null, key);
         });
@@ -202,7 +192,7 @@ class InventoryOperationFacadeShapesTest {
   @Test
   void noFacadeCarriesAValueRule() {
     // Facades validate shape only; every value rule (required inputs, bounds, amount semantics) is
-    // the config-driven core's, so a stale published bound cannot exist (M6).
+    // the config-driven core's, so a stale published bound cannot exist.
     for (Class<?> facade : FACADES.values()) {
       for (Field field : fields(facade)) {
         for (Annotation annotation : field.getAnnotations()) {
@@ -296,8 +286,8 @@ class InventoryOperationFacadeShapesTest {
 
   @Test
   void anAbsentOptionalInputIsLeftOutSoTheServerDefaultApplies() throws Exception {
-    // D7: count is optional with a server default of 1. It must not arrive as a null value, which
-    // the input validator would have to treat specially; it simply is not sent.
+    // count is optional with a server default of 1. It must not arrive as a null value, which the
+    // input validator would have to treat specially; it simply is not sent.
     Aliquot aliquot =
         apiMapper.readValue(
             "{ \"origin\": { \"globalId\": \"SS1\" }, \"sampleName\": \"A\", \"eachAmount\":"
@@ -308,7 +298,7 @@ class InventoryOperationFacadeShapesTest {
 
   @Test
   void theOriginElementAcceptsAnExpectedQuantity() throws Exception {
-    // D5: optional on every origin, so a script that means "destroy SS1234" can omit it.
+    // Optional on every origin, so a script that means "destroy SS1234" can omit it.
     Destroy destroy =
         apiMapper.readValue(
             "{ \"origin\": { \"globalId\": \"SS1\", \"expectedQuantity\": {\"numericValue\": 10,"
@@ -384,20 +374,19 @@ class InventoryOperationFacadeShapesTest {
     return ceiling;
   }
 
-  // --- the published OpenAPI spec (parallel review, Q17) ---
+  // --- the published OpenAPI spec ---
 
   private static final Path PUBLISHED_SPEC =
       Path.of("src/main/webapp/resources/rspace_api_inventory_specs_2_26_0.yaml");
 
   /**
    * The published spec describes the same seven operations this class pins against the config, in
-   * prose, and nothing read it: it was the one copy of the facade shapes with no test at all. Its
-   * numbers are the ones a client builds against, so a bound left behind after a config change is a
-   * customer-visible lie that survives a deprecation cycle (parallel review, Q17).
+   * prose. Its numbers are the ones a client builds against, so a bound left behind after a config
+   * change is a customer-visible lie that survives a deprecation cycle.
    *
-   * <p>Prose, not schema constraints, is what is checked, because M7 deliberately kept value bounds
-   * out of the published schemas for exactly this staleness reason and stated them in the
-   * descriptions instead. That decision is what makes this test necessary rather than optional.
+   * <p>Prose, not schema constraints, is what is checked, because value bounds were deliberately
+   * kept out of the published schemas for this staleness reason and stated in the descriptions
+   * instead.
    */
   @Test
   void thePublishedSpecStatesTheBoundsTheConfigActuallyDeclares() throws IOException {

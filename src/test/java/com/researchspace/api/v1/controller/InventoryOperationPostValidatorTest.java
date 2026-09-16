@@ -31,8 +31,8 @@ import org.springframework.validation.FieldError;
 
 /**
  * The operations endpoint is public API, so every rule the wizard enforces client-side must be
- * enforced here too (DevDocs/adr/0007). One fixture per configured operation, each the exact shape
- * the wizard's request builder produces; the tests then break them one rule at a time.
+ * enforced here too. One fixture per configured operation, each the exact shape the wizard's
+ * request builder produces; the tests then break them one rule at a time.
  */
 public class InventoryOperationPostValidatorTest {
 
@@ -183,7 +183,7 @@ public class InventoryOperationPostValidatorTest {
   @Test
   void anAbsentAmountIsAcceptedWhereTheDefinitionDecidesWhatIsTaken() {
     // A typed facade sends no amount for Passage (takes nothing) or Destroy (takes everything);
-    // the manager's builder supplies it (M6). The wizard still sends one, checked as before.
+    // the manager's builder supplies it. The wizard still sends one, checked as before.
     ApiInventoryOperationPost passage = passageRequest();
     passage.getOrigins().get(0).setAmountTaken(null);
     assertFalse(validate(passage).hasErrors(), () -> validate(passage).getAllErrors().toString());
@@ -236,7 +236,7 @@ public class InventoryOperationPostValidatorTest {
     request.setOperationType(null);
     assertSingleErrorWithCode(
         // An omitted operationType is the likeliest first mistake against a new endpoint,
-        // and "Unknown operation type [null]." named nothing useful (parallel review).
+        // and "Unknown operation type [null]." named nothing useful.
         validate(request), "operationType", "errors.inventory.operation.operationTypeRequired");
   }
 
@@ -300,7 +300,7 @@ public class InventoryOperationPostValidatorTest {
   @Test
   void rejectsAnExplicitAmountModeOnAnOriginEmptyingOperation() {
     // Destroy's whole promise is to empty the origin. A client declaring "explicit" is claiming the
-    // opposite, which this operation cannot honour: malformed, so 400 here (RSDEV-1231).
+    // opposite, which this operation cannot honour: malformed, so 400 here.
     ApiInventoryOperationPost request = destroyRequest();
     request.getOrigins().get(0).setAmountMode(ApiInventoryOperationAmountMode.EXPLICIT);
     assertSingleErrorWithCode(
@@ -395,8 +395,6 @@ public class InventoryOperationPostValidatorTest {
         validate(request), "origins", "errors.inventory.operation.originIdRequired");
   }
 
-  // --- storage temperature shape and magnitude (Copilot review, PR #1090) ---
-
   // --- origin count ceiling (resource-exhaustion guard) ---
 
   @Test
@@ -420,7 +418,7 @@ public class InventoryOperationPostValidatorTest {
   @Test
   void reportsTheMaximumBeforeTheCardinalityForAnOversizedSingleOriginOperation() {
     // A single-origin operation with 500 origins used to report only "exactly one", hiding the
-    // actual reason and still walking every origin afterwards (Copilot review, PR #1090).
+    // actual reason and still walking every origin afterwards.
     ApiInventoryOperationPost request = aliquotRequest();
     List<ApiInventoryOperationOriginUpdate> origins = new ArrayList<>();
     for (long id = 1; id <= 101; id++) {
@@ -432,7 +430,6 @@ public class InventoryOperationPostValidatorTest {
         List.of("errors.inventory.operation.originCountMaximum"),
         errors.getFieldErrors("origins").stream().map(FieldError::getCode).toList(),
         () -> "expected only the ceiling error, got " + errors.getAllErrors());
-    // and validation stops there rather than reporting a per-origin error for each of the 101
     assertEquals(
         1, errors.getErrorCount(), () -> "expected one error, got " + errors.getAllErrors());
   }
@@ -498,8 +495,6 @@ public class InventoryOperationPostValidatorTest {
     assertTrue(validate(request).hasFieldErrors("origins[1].id"));
   }
 
-  // --- amount-taken unit: must be a real amount unit (code review F4) ---
-
   @Test
   void rejectsAmountTakenWithAUnitThatDoesNotExist() {
     // unitId > 0 is not enough: an unknown id reached QuantityUtils.sum in the manager and surfaced
@@ -518,13 +513,11 @@ public class InventoryOperationPostValidatorTest {
         validate(request), "origins[0].amountTaken", "errors.inventory.quantity.unitNotAmount");
   }
 
-  // --- documentation link target (code review, finding 6) ---
-
   @Test
   void rejectsAnAllAmountModeOnAnOperationThatTakesNothingFromItsOrigins() {
     // Passage links to its origin and takes nothing, so its amount must be exactly zero. Declaring
     // "all" claims the zero equals the origin's whole quantity. A whole-origin claim is meaningless
-    // here, so it is malformed: a 400, like the mirror rule for Destroy (parallel review).
+    // here, so it is malformed: a 400, like the mirror rule for Destroy.
     ApiInventoryOperationPost request = passageRequest();
     request.getOrigins().get(0).setAmountMode(ApiInventoryOperationAmountMode.ALL);
     assertSingleErrorWithCode(
@@ -539,7 +532,7 @@ public class InventoryOperationPostValidatorTest {
     // Throwing there produced an HttpMessageNotReadableException whose raw English message the
     // shared advice copied into the 400 body, so an untranslated developer string (echoing the
     // client's own input) reached the user. Rejecting it here keeps the 400 and makes the message
-    // a catalog key like every other rule on this endpoint (parallel review).
+    // a catalog key like every other rule on this endpoint.
     ApiInventoryOperationPost request = aliquotRequest();
     request.getOrigins().get(0).setAmountMode(ApiInventoryOperationAmountMode.UNKNOWN);
     assertSingleErrorWithCode(
@@ -548,7 +541,6 @@ public class InventoryOperationPostValidatorTest {
 
   @Test
   void stillAcceptsAnAllAmountModeOnAnOperationThatDoesTakeFromItsOrigins() {
-    // Aliquot decrements its origin, so "take all of it" is a real request, not a 400.
     ApiInventoryOperationPost request = aliquotRequest();
     request.getOrigins().get(0).setAmountMode(ApiInventoryOperationAmountMode.ALL);
     assertFalse(validate(request).hasErrors());
@@ -587,7 +579,7 @@ public class InventoryOperationPostValidatorTest {
     // of operation definitions, not a settings object) and reshaping that payload to carry one
     // number is a bigger change than the drift warrants. So it is pinned instead: lower MAX_ORIGINS
     // here and the wizard would keep offering a selection the endpoint rejects, with the 400
-    // arriving only at Perform and naming no limit (parallel review, FE9).
+    // arriving only at Perform and naming no limit.
     Matcher declaration =
         Pattern.compile("export const MAX_ORIGINS = (\\d+);")
             .matcher(Files.readString(MAX_ORIGINS_SOURCE));
@@ -613,7 +605,7 @@ public class InventoryOperationPostValidatorTest {
     }
   }
 
-  // --- the typed facades' expectedQuantity (M0 D5): its SHAPE is this validator's job ---
+  // --- the typed facades' expectedQuantity: its SHAPE is this validator's job ---
 
   /**
    * A typed facade copies the caller's {@code expectedQuantity} onto the origin element. Nothing
@@ -679,7 +671,7 @@ public class InventoryOperationPostValidatorTest {
 
   @Test
   void acceptsAWellFormedExpectedQuantityOnEveryOperation() {
-    // The value is accepted without comparison (DevDocs/adr/0007); only its shape is checked.
+    // The value is accepted without comparison; only its shape is checked.
     for (ApiInventoryOperationPost request :
         List.of(
             aliquotRequest(),

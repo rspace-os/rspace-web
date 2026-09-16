@@ -75,7 +75,7 @@ import org.springframework.validation.FieldError;
  * Unit coverage for the controller's structural pass: the request-shape validation chain runs
  * exactly as in production (real validators over mocked managers), and only a structurally valid
  * request reaches the transactional manager, which validates the inputs, builds the sample and owns
- * the live-state checks (DevDocs/adr/0007).
+ * the live-state checks.
  */
 class InventoryOperationsApiControllerTest {
 
@@ -90,17 +90,12 @@ class InventoryOperationsApiControllerTest {
   private final SystemPropertyPermissionManager systemPropertyManager =
       mock(SystemPropertyPermissionManager.class);
 
-  /** The sysadmin toggle turned off, as it is seeded (RSDEV-1231). */
   private void operationsDenied() {
     when(systemPropertyManager.isPropertyAllowed(
             user, SystemPropertyName.INVENTORY_OPERATIONS_AVAILABLE))
         .thenReturn(false);
   }
 
-  /**
-   * An origin the controller can resolve: the subsample it names and the sample that holds it,
-   * which together are the two global ids it locks for the operation (RSDEV-1231).
-   */
   private void originExists(long subSampleId, long sampleId) {
     Sample sample = new Sample();
     sample.setId(sampleId);
@@ -146,7 +141,6 @@ class InventoryOperationsApiControllerTest {
     controller.setMessageSource(messages);
   }
 
-  /** An Aliquot in the shape the endpoint accepts: the origin, and the typed inputs as bound. */
   private static ApiInventoryOperationPost aliquotInputs() {
     ApiInventoryOperationPost request = new ApiInventoryOperationPost();
     request.setOperationType("aliquot");
@@ -190,10 +184,7 @@ class InventoryOperationsApiControllerTest {
    * A converter configured the way {@code WebConfig.extendMessageConverters} configures the app's
    * real one: {@code USE_BIG_DECIMAL_FOR_FLOATS} enabled, so a JSON number written with a decimal
    * point binds as {@link BigDecimal} rather than {@code Double} wherever Jackson has to guess an
-   * untyped value's Java type (RSDEV-1231, Codex review, PR #1090). {@code
-   * yamlBodiesAreRejectedWith415BeforeAnyInventoryEffect} below builds its own converter the same
-   * way, for the same reason: constructing the bean's dependencies just to get its message
-   * converters is out of proportion for a unit test.
+   * untyped value's Java type.
    */
   private static MappingJackson2HttpMessageConverter preciseJsonConverter() {
     MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter();
@@ -204,12 +195,9 @@ class InventoryOperationsApiControllerTest {
   @Test
   void genericAndTypedEndpointsAgreeOnAQuantityBeyondDoublesExactPrecision() throws Exception {
     // 9007199254740992 is 2^53, the largest integer a double represents exactly; appending ".001"
-    // demands more significant digits than a double has room for, so Jackson's default untyped
-    // binding (Double, for a field with no declared type to bind into) already cannot hold it. The
-    // typed facades bind straight into a BigDecimal-typed field and were never affected; the
-    // generic endpoint's inputs map had no such field to guide Jackson until WebConfig's
-    // USE_BIG_DECIMAL_FOR_FLOATS was turned on (RSDEV-1231, Codex review, PR #1090). Both must
-    // agree, since they are meant to be two doors onto the same request.
+    // demands more significant digits than a double has room for, so an untyped Double binding
+    // cannot hold it. Both endpoints must agree on the value, since they are two doors onto the
+    // same request.
     String precise = "9007199254740992.001";
     ApiSampleWithFullSubSamples created = new ApiSampleWithFullSubSamples("Precise");
     when(operationManager.performOperation(any(), any(), any(), any(), any(), eq(user)))
@@ -278,8 +266,6 @@ class InventoryOperationsApiControllerTest {
 
   @Test
   void servesTheOperationDefinitionsVerbatimAsJson() throws Exception {
-    // The frontend has no copy of operations_config.json (DevDocs/adr/0007): the wizard fetches
-    // this endpoint and renders whatever the backend's authoritative copy declares.
     MockMvc mvc = MockMvcBuilders.standaloneSetup(controller).build();
     mvc.perform(get("/api/inventory/v1/operations/config").requestAttr("user", user))
         .andExpect(status().isOk())
@@ -299,14 +285,9 @@ class InventoryOperationsApiControllerTest {
     verifyNoInteractions(operationManager);
   }
 
-  // --- the edit-session lock the controller holds around the manager (RSDEV-1231) ---
+  // --- the edit-session lock the controller holds around the manager ---
 
-  /**
-   * The lock set is every origin plus every distinct parent sample, taken in ascending global-id
-   * order. The order is what keeps two multi-origin Pools that overlap from deadlocking against
-   * each other; the parent sample is what stops two operations on siblings of one sample running at
-   * once.
-   */
+  /** Locks every origin plus every distinct parent sample, in ascending global-id order. */
   @Test
   void locksEveryOriginAndParentSampleInAscendingOrder() throws Exception {
     originExists(300L, 20L);
@@ -325,10 +306,6 @@ class InventoryOperationsApiControllerTest {
     inOrder.verify(tracker).attemptToLockForEdit("SS300", user);
   }
 
-  /**
-   * A lock this request took is its own to give back; one the caller's own session already held is
-   * not.
-   */
   @Test
   void releasesOnlyTheLocksItTookItself() throws Exception {
     when(tracker.attemptToLockForEdit(eq("SA10"), any()))
@@ -343,9 +320,6 @@ class InventoryOperationsApiControllerTest {
     verify(tracker, never()).attemptToUnlock("SA10", user);
   }
 
-  /**
-   * Nothing is operated on while a lock is missing, and nothing this request took is left behind.
-   */
   @Test
   void aHeldLockReleasesWhatWasTakenAndNeverReachesTheManager() {
     when(tracker.attemptToLockForEdit(eq("SS100"), any()))
@@ -402,7 +376,6 @@ class InventoryOperationsApiControllerTest {
     verifyNoInteractions(operationManager);
   }
 
-  /** A Pool over two origins, in the generic endpoint's shape. */
   private static ApiInventoryOperationPost poolInputs(long... originIds) {
     ApiInventoryOperationPost request = new ApiInventoryOperationPost();
     request.setOperationType("pool");
@@ -420,7 +393,7 @@ class InventoryOperationsApiControllerTest {
     return request;
   }
 
-  // --- the typed facades (M6) ---
+  // --- the typed facades ---
 
   private static ApiInventoryOperationRequests.Origin facadeOrigin(
       String globalId, ApiQuantityInfo amountTaken) {
@@ -434,7 +407,6 @@ class InventoryOperationsApiControllerTest {
     return new ApiQuantityInfo(new BigDecimal(value), RSUnitDef.MILLI_LITRE.getId());
   }
 
-  /** An Aliquot in M0's shape, taking 0.6 ml from SS100 into two 0.5 ml children. */
   private static ApiInventoryOperationRequests.Aliquot aliquotFacade() {
     ApiInventoryOperationRequests.Aliquot request = new ApiInventoryOperationRequests.Aliquot();
     request.setOrigin(facadeOrigin("SS100", millilitres("0.6")));
@@ -448,10 +420,7 @@ class InventoryOperationsApiControllerTest {
     return new BeanPropertyBindingResult(request, "request");
   }
 
-  /**
-   * The origin as the manager reports it afterwards. The controller no longer re-reads origins
-   * itself: the manager returns them, read inside its own transaction (parallel review, A14).
-   */
+  /** The origin as the manager reports it afterwards; the controller does not re-read it. */
   private static ApiSubSample originAfter(long id) {
     ApiSubSample after = new ApiSubSample();
     after.setId(id);
@@ -460,20 +429,15 @@ class InventoryOperationsApiControllerTest {
 
   @Test
   void facadeFieldRenamesEveryCorePathToTheFieldTheCallerSent() {
-    // Single-origin: the list the core works with collapses to the singular the client sent.
     assertEquals("origin.amountTaken", facadeField("origins[0].amountTaken", true));
     assertEquals("origin.globalId", facadeField("origins[0].id", true));
     assertEquals("origin", facadeField("origins", true));
     assertEquals("origin.amountMode", facadeField("origins[0].amountMode", true));
-    // Pool keeps the plural and the index; only the id becomes the global id.
     assertEquals("origins[1].globalId", facadeField("origins[1].id", false));
     assertEquals("origins[1].amountTaken", facadeField("origins[1].amountTaken", false));
     assertEquals("origins", facadeField("origins", false));
-    // The built sample is the server's; what the template check finds on it maps back to the
-    // caller's template id and eachAmount.
     assertEquals("templateId", facadeField("newSample.templateId", true));
     assertEquals("eachAmount", facadeField("newSample.subSamples[3].quantity", true));
-    // Bare input keys and the documentation target already are the caller's names.
     assertEquals("sampleName", facadeField("sampleName", true));
     assertEquals("documentedByGlobalId", facadeField("documentedByGlobalId", false));
   }
@@ -519,8 +483,6 @@ class InventoryOperationsApiControllerTest {
 
   @Test
   void destroyAnswers200WithANullSampleAndTheOriginAsItStands() throws Exception {
-    // A terminal operation creates no sample, but still reports its origin: the outcome carries a
-    // null sample, not a null outcome (parallel review, A14).
     when(operationManager.performOperation(eq("destroy"), any(), any(), any(), any(), eq(user)))
         .thenReturn(new OperationOutcome(null, List.of(originAfter(100L))));
     ApiInventoryOperationRequests.Destroy request = new ApiInventoryOperationRequests.Destroy();
@@ -540,15 +502,12 @@ class InventoryOperationsApiControllerTest {
         ArgumentCaptor.forClass(List.class);
     verify(operationManager)
         .performOperation(eq("destroy"), origins.capture(), eq(Map.of()), any(), any(), eq(user));
-    // No amount: the manager's builder takes the whole origin. The expected quantity travels to
-    // the manager, which accepts it without comparison (DevDocs/adr/0007).
     assertNull(origins.getValue().get(0).getAmountTaken());
     assertEquals(millilitres("5"), origins.getValue().get(0).getExpectedQuantity());
   }
 
   @Test
   void passageSendsNoAmountAndStillReachesTheManager() throws Exception {
-    // The structural validator must accept an absent amount where the definition takes nothing.
     when(operationManager.performOperation(eq("passage"), any(), any(), any(), any(), eq(user)))
         .thenReturn(
             new OperationOutcome(
@@ -582,8 +541,6 @@ class InventoryOperationsApiControllerTest {
 
   @Test
   void aCoreRejectionIsRenamedToTheFieldTheCallerSent() throws Exception {
-    // The manager reports the live-state rules under origins[i], as it does for the wizard; the
-    // aliquot client sent origin.amountTaken and must be told about that field (M0, M6).
     ApiInventoryOperationPost generic = aliquotRequest();
     BeanPropertyBindingResult coreErrors = new BeanPropertyBindingResult(generic, "request");
     coreErrors.rejectValue(
@@ -609,8 +566,7 @@ class InventoryOperationsApiControllerTest {
 
   /**
    * The facade's BindException catch renames the core's field errors; a held lock is not one of
-   * them and must reach the caller as the 409 it is, not as a 400 with no field to correct
-   * (RSDEV-1231 S3).
+   * them and must reach the caller as the 409 it is, not as a 400 with no field to correct.
    */
   @Test
   void aHeldLockFromTheControllerPassesThroughTheFacadeUnchanged() {
@@ -648,7 +604,7 @@ class InventoryOperationsApiControllerTest {
   }
 
   // --- the rename must cover every path the core can report, or a caller is told about a field
-  // it never sent (M0: "every single-origin error must name a field the caller sent") ---
+  // it never sent ---
 
   @Test
   void facadeFieldRenamesTheExpectedQuantityPath() {
@@ -766,8 +722,6 @@ class InventoryOperationsApiControllerTest {
 
   @Test
   void poolRejectsANullOriginElementAtItsIndex() {
-    // JSON "origins": [{...}, null] binds a null element; it must be a clean 400 at that index, not
-    // a NullPointerException reading its global id.
     ApiInventoryOperationRequests.Pool request = new ApiInventoryOperationRequests.Pool();
     request.setOrigins(Arrays.asList(facadeOrigin("SS100", millilitres("1")), null));
     request.setSampleName("Pooled");
@@ -803,8 +757,6 @@ class InventoryOperationsApiControllerTest {
 
   @Test
   void aZeroAmountOnADecrementingFacadeIsRejectedOnTheCallersField() {
-    // Aliquot takes from its origin, so "take 0 ml" is a shape error the structural validator
-    // reports before any read, renamed to the singular field the caller sent.
     ApiInventoryOperationRequests.Aliquot request = aliquotFacade();
     request.getOrigin().setAmountTaken(millilitres("0"));
 
@@ -822,8 +774,7 @@ class InventoryOperationsApiControllerTest {
 
   @Test
   void typedFacadeRejectsEveryNearMissOfASubsampleGlobalId() {
-    // The wire form is exactly "SS" + digits. Case, whitespace, signs and decimals are all
-    // rejected at the door rather than parsed leniently into some other subsample's id.
+    // Strict "SS" + digits: a lenient parse could resolve to a different subsample's id.
     for (String nearMiss :
         List.of(
             "ss100", " SS100", "SS100 ", "SS-1", "SS1.5", "SS", "", "SS 100", "S100", "SSS100")) {

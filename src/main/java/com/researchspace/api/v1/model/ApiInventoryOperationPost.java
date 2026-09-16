@@ -12,7 +12,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * Request to perform a configured Inventory operation (DevDocs/adr/0007).
+ * Request to perform a configured Inventory operation.
  *
  * <p>The client sends the values the user typed ({@code inputs}, keyed by the definition's input
  * keys), the origin subsamples with the amount taken from each, and the two wizard-level choices
@@ -47,16 +47,13 @@ public class ApiInventoryOperationPost {
    * it once per link spec PER ORIGIN, so its size is multiplied by the 100-origin ceiling above.
    * The input validator iterates the DEFINITION's inputs and never rejects an undeclared key, so
    * without a bound here nothing limits what a client can send. 50 is far above the largest
-   * definition (cryopreserve declares 6) and far below anything that costs (parallel review, A15).
+   * definition (cryopreserve declares 6) and far below anything that costs.
    */
   @Size(max = 50, message = "{errors.inventory.operation.tooManyInputs}")
   @JsonProperty("inputs")
   private Map<String, Object> inputs;
 
-  /**
-   * The template for the sample the server builds; null means ad-hoc. Numeric like {@code POST
-   * /samples} (M0, D4).
-   */
+  /** The template for the sample the server builds; null means ad-hoc. */
   @JsonProperty("templateId")
   private Long templateId;
 

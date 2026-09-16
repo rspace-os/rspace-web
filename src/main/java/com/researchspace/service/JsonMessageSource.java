@@ -68,9 +68,6 @@ public class JsonMessageSource extends AbstractMessageSource {
    * turns a record id like 73662 into "73,662" and a bound like 0.5 into "0,5" in a comma-decimal
    * locale. Pass plain numbers through as text, leaving those the message types itself ({@code {0,
    * plural, ...}}, {@code {0, number}}) as numbers so they are formatted deliberately.
-   *
-   * <p>{@code BigDecimal} is included because the operation definitions' min/max bounds are
-   * BigDecimal and are interpolated bare (parallel review, A3).
    */
   private Object[] plainIntegersAsText(String pattern, Object[] args) {
     if (ObjectUtils.isEmpty(args)) {

@@ -13,7 +13,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 
-/** The list-of-materials endpoints bind {@code @Valid ApiListOfMaterials}; pins the size cap. */
 class ApiListOfMaterialsBeanValidationTest {
 
   private static final Validator validator =

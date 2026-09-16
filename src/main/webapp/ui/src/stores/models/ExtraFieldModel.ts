@@ -36,11 +36,8 @@ export default class ExtraFieldModel implements ExtraField {
   invalidInput: boolean;
   link: ExtraInventoryLink | null = null;
   fromTemplate = false;
-  /**
-   * Set from the API response by setAttributes. Not observable: nothing renders it, and it never
-   * changes for the life of a field. Deliberately absent from paramsForBackend: an ordinary save
-   * has no business claiming operation provenance, even though the endpoint would ignore it.
-   */
+  // Not observable: nothing renders it, and it never changes for the life of a field.
+  // Deliberately absent from paramsForBackend: an ordinary save must not claim operation provenance.
   operationFieldKey?: string | null;
 
   constructor(attrs: ExtraFieldAttrs, owner: InventoryBaseRecord) {

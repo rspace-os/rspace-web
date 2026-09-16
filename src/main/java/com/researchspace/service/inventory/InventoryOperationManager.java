@@ -14,28 +14,22 @@ import org.springframework.validation.BindException;
  * (with its subsamples, custom fields and relation links) and sets each origin subsample's
  * quantity, rolling everything back on any failure.
  *
- * <p>This is generic. The effect is described entirely by the request; there is no per-operation
- * logic here, so a new operation is a new {@code operations_config.json} entry rather than new
- * Java. Transactionality comes from the {@code service.inventory.*Manager} AOP advice (see {@code
- * applicationContext-service.xml}), whose pointcut matches this interface - it is in {@code
- * service.inventory} and named {@code *Manager}. Calls through it, including the implementation in
- * {@code service.inventory.impl}, run in one transaction that the coordinated sub-manager calls
- * join (see DevDocs/adr/0007).
+ * <p>There is no per-operation logic here: a new operation is a new {@code operations_config.json}
+ * entry, not new Java. Transactionality comes from the {@code service.inventory.*Manager} AOP
+ * advice (see {@code applicationContext-service.xml}), whose pointcut matches this interface
+ * because it is in {@code service.inventory} and named {@code *Manager} - moving or renaming it
+ * silently drops that transaction boundary.
  */
 public interface InventoryOperationManager {
 
   /**
    * A validation the caller needs run INSIDE the operation's transaction, before any origin is read
-   * or mutated. The manager's facade path supplies its template-conformance check this way ({@code
-   * OperationTemplateConformanceValidator}, which delegates to the shared samples validator);
-   * running it in a separate transaction would leave a window in which the template changes between
-   * validation and use, failing the operation mid-mutation (Copilot review, PR #1090). A rejection
-   * is the same field-scoped 400 every other validation produces.
+   * or mutated: validating in a separate transaction would leave a window for the checked state to
+   * change before the mutation actually runs.
    */
   @FunctionalInterface
   interface InTransactionValidation {
 
-    /** No additional validation; for callers with nothing to check transactionally. */
     InTransactionValidation NONE = () -> {};
 
     void validate() throws BindException;
@@ -55,13 +49,11 @@ public interface InventoryOperationManager {
    * carrying field errors under {@code origins[i]}, before anything is written.
    *
    * @return the newly created sample (with its subsamples), as returned by the sample-creation
-   *     manager, or {@code null} for a terminal operation that creates nothing (noOutput, e.g.
-   *     Destroy, which only acts on its origins). See DevDocs/adr/0007.
+   *     manager, or {@code null} for a terminal operation that creates nothing (noOutput).
    * @throws BindException when a live-state rule is violated, before any origin is decremented or
    *     any sample created. The txAdvice for this method declares {@code rollback-for
    *     BindException} (BindException is checked, so Spring's default rules would otherwise COMMIT
-   *     on it). InventoryOperationManagerImplTest pins the ordering: performExpectingRejection
-   *     asserts none of the mutating collaborators were called.
+   *     on it).
    */
   ApiSampleWithFullSubSamples performOperation(
       ApiInventoryOperationPost request, User user, InTransactionValidation callerValidation)
@@ -70,22 +62,18 @@ public interface InventoryOperationManager {
   /**
    * What an operation produced: the created sample, and each origin as it stands afterwards.
    *
-   * <p>Both are read INSIDE the operation's transaction. The controller used to re-read the origins
-   * one at a time after it returned, which made each read its own transaction: the "origins
-   * afterwards" it handed back were neither a single consistent snapshot nor necessarily the state
-   * this operation produced, since a concurrent writer landing between commit and read-back was
-   * reported as this operation's result. It was also N+1 transactions per request against a
-   * documented 100-origin cap (parallel review, A14).
+   * <p>Both are read INSIDE the operation's transaction, so together they are a single consistent
+   * snapshot of what this operation actually produced.
    *
-   * <p>{@code sample} is null for a terminal operation that creates nothing (noOutput, e.g.
-   * Destroy). {@code originsAfter} is in the order the origins were given.
+   * <p>{@code sample} is null for a terminal operation that creates nothing (noOutput). {@code
+   * originsAfter} is in the order the origins were given.
    */
   record OperationOutcome(ApiSampleWithFullSubSamples sample, List<ApiSubSample> originsAfter) {}
 
   /**
-   * The server-built path (DevDocs/adr/0007, M3): validates {@code inputs} against the definition's
-   * declared inputs ({@link InventoryOperationInputValidator}), builds the request the core
-   * executes from the definition, the origins' live state and those inputs ({@link
+   * The server-built path: validates {@code inputs} against the definition's declared inputs
+   * ({@link InventoryOperationInputValidator}), builds the request the core executes from the
+   * definition, the origins' live state and those inputs ({@link
    * InventoryOperationRequestBuilder}), then runs the same transactional core as {@link
    * #performOperation(ApiInventoryOperationPost, User, InTransactionValidation)}, unchanged.
    *
@@ -94,21 +82,20 @@ public interface InventoryOperationManager {
    * carry no amount when the definition itself decides it (an operation that takes nothing, or one
    * that empties its origins): the builder then supplies zero, or the live quantity under a
    * whole-origin claim. Absent optional inputs that declare a {@code default} are filled before
-   * validation (M0 D7). Precondition otherwise as for the core overload: the origin list has passed
-   * the endpoint's structural validation.
+   * validation. Precondition otherwise as for the core overload: the origin list has passed the
+   * endpoint's structural validation.
    *
-   * <p>Generated field names resolve in the request's locale ({@code LocaleContextHolder}, M0 D1),
-   * and a {@code today} computed value is the current date in the session's timezone ({@code
+   * <p>Generated field names resolve in the request's locale ({@code LocaleContextHolder}), and a
+   * {@code today} computed value is the current date in the session's timezone ({@code
    * SessionTimeZoneUtils}), which the login flow records from the browser.
    *
    * @param templateId the built sample's template; null for an ad-hoc sample
    * @param documentedByGlobalId the ELN record the built sample gets an {@code IsDocumentedBy} link
-   *     to (the wizard's documentation step); null for none. The caller has checked it names a
-   *     documentable record kind.
+   *     to; null for none. The caller has checked it names a documentable record kind.
    * @return the created sample (null for a terminal operation) together with each origin as it
    *     stands afterwards, in the order given
    * @throws BindException when an input fails the definition's rules (field errors named by the
-   *     bare input key, which is the name a typed facade client sends: M0), or as the core overload
+   *     bare input key, the name a typed facade client sends), or as the core overload
    */
   OperationOutcome performOperation(
       String operationKey,

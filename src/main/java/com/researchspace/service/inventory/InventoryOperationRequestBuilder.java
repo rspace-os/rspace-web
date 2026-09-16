@@ -23,54 +23,33 @@ import lombok.Value;
 import org.springframework.context.MessageSource;
 
 /**
- * Builds the request the operations endpoint executes, server-side, from an operation definition
- * plus the values the user typed: a Java port of the wizard's {@code buildOperationRequest.ts} and
- * {@code computedValues.ts} (DevDocs/adr/0007, M1). It interprets every effect primitive the config
- * vocabulary declares - {@code nameFrom}, {@code countFrom}, {@code eachAmountFrom}, {@code
- * amountTakenFrom}, {@code storageTempFrom}, {@code links[]}, {@code textFields[]}, {@code
- * originFields[]}, {@code computed[]} ({@code increment}, {@code today}) - plus the wizard-level
- * documentation link, and sets each generated field's {@code operationFieldKey} itself.
- *
- * <p>Deliberate divergences from the wizard's serialized request, each traced to its consumer:
+ * Builds the request the operations endpoint executes from an operation definition and the
+ * user-supplied input values.
  *
  * <ul>
- *   <li>No aggregate {@code newSample.quantity}. SampleApiManagerImpl reads it only when a
+ *   <li>No aggregate {@code newSample.quantity}: SampleApiManagerImpl reads it only when a
  *       subsample lacks its own quantity, and every subsample built here carries one.
- *   <li>No {@code amountMode}. Only the post validator reads it, and a built request never passes
- *       through that validator (DevDocs/adr/0007: no concurrency control).
+ *   <li>No {@code amountMode}: only the post validator reads it, and a built request never passes
+ *       through that validator.
  * </ul>
- *
- * <p>Locale: the builder itself is locale-free - generated field names come from the supplied
- * {@link LabelResolver}. {@link #messageSourceResolver} is the production resolver: it reads the
- * same i18next JSON catalogs the wizard uses (served to the backend via JsonMessageSource under the
- * {@code inventory:} namespace) and formats them with ICU named arguments, matching the frontend's
- * i18next-icu semantics. The caller decides the locale; per the M0 design (D1) that is the
- * request's Accept-Language, i.e. {@code LocaleContextHolder.getLocale()} at the endpoint. Only
- * en-US catalogs ship, so JsonMessageSource resolves every locale to the en-US text today; the
- * locale still selects ICU's formatting rules.
  */
 public final class InventoryOperationRequestBuilder {
 
-  /**
-   * The documentation link is a wizard-level feature rather than a per-operation declaration, so it
-   * carries this fixed key on every output-producing operation.
-   */
+  /** Fixed key, not read from config: the documentation link is added by the wizard. */
   public static final String DOCUMENTATION_LINK_KEY = "operations.documentationLink";
 
-  /** The wizard's UNSET_UNIT marker, used when a defaulted zero amount has no unit to inherit. */
+  /** Used when a defaulted zero amount has no unit to inherit. */
   private static final int UNSET_UNIT = 0;
 
-  /** Number.MAX_SAFE_INTEGER: the wizard's ceiling for a counter that can still be incremented. */
+  /** JS's Number.MAX_SAFE_INTEGER: the ceiling above which the counter stops incrementing. */
   private static final long MAX_SAFE_INTEGER = 9007199254740991L;
 
-  /**
-   * The largest subsample count the builder will produce; the config must bound `countFrom` by it.
-   */
+  /** Upper bound enforced by {@link #subSampleCount}; config must keep countFrom within it. */
   static final int MAX_SUBSAMPLES = 100;
 
   private InventoryOperationRequestBuilder() {}
 
-  /** Resolves a generated-field i18n key to a display name; args may interpolate (ICU). */
+  /** Resolves an i18n key to a display name, interpolating args as ICU MessageFormat. */
   @FunctionalInterface
   public interface LabelResolver {
     String resolve(String key, Map<String, Object> args);
@@ -87,7 +66,7 @@ public final class InventoryOperationRequestBuilder {
       ApiQuantityInfo quantity,
       List<ParentField> parentSampleFields) {}
 
-  /** The optional SOP link chosen in the wizard's documentation step. */
+  /** The optional SOP link, if the user chose one. */
   public record DocumentationLink(String fieldName, String targetGlobalId) {}
 
   @Value
@@ -107,9 +86,8 @@ public final class InventoryOperationRequestBuilder {
     DocumentationLink documentationLink;
 
     /**
-     * Per-origin amounts by origin global id. An origin with no entry takes zero, which is correct
-     * for an operation that decrements nothing (Passage). Ignored for an origin-emptying operation,
-     * which snapshots the origin's own quantity instead.
+     * Per-origin amounts by origin global id. A missing entry takes zero. Ignored when the
+     * operation empties its origin, which snapshots the origin's own quantity instead.
      */
     Map<String, ApiQuantityInfo> perSubsampleAmounts;
 
@@ -153,7 +131,7 @@ public final class InventoryOperationRequestBuilder {
       request.getOrigins().add(update);
     }
 
-    // A terminal operation (noOutput, e.g. Destroy) creates no sample: it only acts on its origins.
+    // A noOutput operation creates no sample; it only acts on its origins.
     if (!operation.noOutput()
         && effect.nameFrom() != null
         && effect.countFrom() != null
@@ -172,10 +150,8 @@ public final class InventoryOperationRequestBuilder {
     int count = subSampleCount(values.get(effect.countFrom()));
     ApiQuantityInfo eachAmount = (ApiQuantityInfo) values.get(effect.eachAmountFrom());
 
-    // Provenance links point back to each origin; the display name may interpolate inputs
-    // (e.g. {processName}) and the origin's own name as {originName}. Each link spec fans out to
-    // one link per origin. Uniqueness of the resolved names is enforced by withUniqueFieldNames,
-    // not assumed (two pooled subsamples may share a name).
+    // Origins can share a name (e.g. pooling); withUniqueFieldNames below deduplicates the
+    // resulting field names rather than assuming they're already unique.
     List<ApiExtraField> fields = new ArrayList<>();
     for (InventoryOperationConfig.Link spec : effect.links()) {
       for (Origin origin : origins) {
@@ -210,8 +186,6 @@ public final class InventoryOperationRequestBuilder {
         new ApiSampleWithFullSubSamples(String.valueOf(values.get(effect.nameFrom())));
     sample.setTemplateId(params.getTemplateId());
     sample.getExtraFields().addAll(withUniqueFieldNames(fields));
-    // The process links belong on the created sample, not on the subsamples it creates, so each
-    // subsample carries only its quantity.
     for (int i = 0; i < count; i++) {
       ApiSubSample subSample = new ApiSubSample();
       subSample.setQuantity(copy(eachAmount));
@@ -226,13 +200,8 @@ public final class InventoryOperationRequestBuilder {
   }
 
   /**
-   * The amount to take from a given origin, exactly as the wizard decides it: an origin-emptying
-   * operation snapshots the origin's own full quantity, and every other operation takes the amount
-   * chosen for this origin, or zero when none was (Passage, which decrements nothing).
-   *
-   * <p>There is no "one shared amount across origins" mode. The origin element owns amountTaken (M3
-   * decision), so the caller always supplies amounts per origin even when every origin gets the
-   * same one; a mode constant for it was a branch no caller could reach (parallel review).
+   * The full origin quantity when the operation empties its origin, otherwise the chosen per-origin
+   * amount, defaulting to zero when none was chosen.
    */
   private static ApiQuantityInfo amountTakenFor(
       Origin origin,
@@ -256,7 +225,7 @@ public final class InventoryOperationRequestBuilder {
     return new ApiQuantityInfo(BigDecimal.ZERO, fallbackUnit);
   }
 
-  /** Custom fields added to each origin subsample itself (Destroy's disposed date). */
+  /** Custom fields added to each origin subsample itself, not the created sample. */
   private static List<ApiExtraField> originFields(
       InventoryOperationConfig.Effect effect,
       Map<String, Object> values,
@@ -277,9 +246,8 @@ public final class InventoryOperationRequestBuilder {
   }
 
   /**
-   * Applies the operation's computed values in config order onto a copy of the input values, so a
-   * later computed value can read an earlier one via an {@code input} arg. The registry guarantees
-   * every {@code fn} is interpreted.
+   * Applies computed values in config order onto a copy of the input values, so a later computed
+   * value can read an earlier one via an {@code input} arg.
    */
   private static Map<String, Object> applyComputedValues(
       InventoryOperationConfig operation, Params params) {
@@ -314,11 +282,9 @@ public final class InventoryOperationRequestBuilder {
   }
 
   /**
-   * The content of the parent-sample field a {@code parentSampleField} arg refers to, matched by
-   * definition KEY first and by localized name second - the key keeps a lineage intact across
-   * locales and rewordings; the name fallback picks up a user's own hand-created field (both
-   * deliberate, see computedValues.ts). A computed value reads the FIRST origin's parent: every
-   * operation that declares one is single-origin.
+   * Matches by definition key first (stable across locale/rewording), falling back to localized
+   * name (picks up a user's own hand-created field). Reads only the first origin's parent, so any
+   * operation using this must be single-origin.
    */
   private static Object parentFieldValue(Params params, String key) {
     List<ParentField> fields =
@@ -341,10 +307,7 @@ public final class InventoryOperationRequestBuilder {
         .orElse(null);
   }
 
-  /**
-   * A running counter: {@code current + 1}, or {@code start} when {@code current} is not a count to
-   * carry on from (see operationFunctions.ts).
-   */
+  /** {@code current + 1}, or {@code start} when {@code current} isn't parseable as a count. */
   // ponytail: Long.parseLong after trim, not JS Number(); exotic contents JS would coerce
   // ("1e3", "0x10", "") restart from start instead. A passage number is never written that way.
   private static Object increment(Object current, Object start) {
@@ -358,11 +321,9 @@ public final class InventoryOperationRequestBuilder {
   }
 
   /**
-   * Makes every generated field name unique, the way the backend judges uniqueness (trimmed,
-   * case-insensitive): every member of a colliding group is suffixed, a link by the global id it
-   * targets, anything else by an ordinal. Port of the wizard's withUniqueFieldNames (Codex review,
-   * PR #1090: two pooled origins sharing a name produced two "Pooled from: X" fields and a
-   * guaranteed 400).
+   * Suffixes each name in a colliding group to make it unique - a link by the target global id,
+   * everything else by an ordinal - since two pooled origins sharing a name previously produced
+   * duplicate field names and a guaranteed 400.
    */
   static List<ApiExtraField> withUniqueFieldNames(List<ApiExtraField> fields) {
     Map<String, Integer> occurrences = new HashMap<>();
@@ -389,19 +350,12 @@ public final class InventoryOperationRequestBuilder {
   }
 
   /**
-   * A composed name cut to what {@code EditInfo.name} holds, leaving {@code reserve} characters for
-   * the uniqueness suffix that is about to be appended.
-   *
-   * <p>Generated names interpolate caller-supplied values: "Is Derived From using process: {X}" and
-   * "Pooled from: {originName}", where an origin's name may legitimately be the full 255 characters
-   * already. Nothing downstream bounds a field name - ApiExtraFieldsHelper checks a link field's
-   * payload, not its name's length - so an over-long name failed at the INSERT as a 500 inside the
-   * manager's transaction, after the origins were decremented.
-   *
-   * <p>Truncated rather than rejected: pooling two subsamples whose names are at the column limit
-   * has to remain possible, and the name is display text. The link TARGET, which is the part that
-   * carries meaning, is unaffected. Cutting before the suffix rather than after keeps the suffix,
-   * which is what makes the name unique.
+   * Truncates a composed name to leave {@code reserve} characters for the uniqueness suffix.
+   * Generated names can interpolate an origin's own name, which may already be at the 255-char
+   * column limit; without this bound, an over-long name failed at the INSERT as a 500 after the
+   * origins had already been decremented. Truncated rather than rejected because pooling near-limit
+   * names must stay possible and only the display name is affected, not the link target. Cutting
+   * before the suffix, not after, keeps the suffix that makes the name unique.
    */
   private static String fit(String name, int reserve) {
     int room = Math.max(0, BaseRecord.DEFAULT_VARCHAR_LENGTH - reserve);
@@ -409,11 +363,10 @@ public final class InventoryOperationRequestBuilder {
   }
 
   /**
-   * The production LabelResolver: raw pattern from the shared i18next catalogs (namespace {@code
-   * inventory:}, loaded by JsonMessageSource), formatted with ICU named arguments to match the
-   * frontend's i18next-icu. A missing key resolves to the key itself, as the wizard's t() would. A
-   * pattern is only ICU-formatted when arguments are supplied, so a literal apostrophe in an
-   * argument-free name survives.
+   * Reads the pattern from the {@code inventory:} catalog, falling back to the key itself when
+   * missing, and ICU-formats it only when args are supplied - an unconditional format() would
+   * mangle a literal apostrophe in an argument-free name, since ICU MessageFormat treats it as an
+   * escape character.
    */
   public static LabelResolver messageSourceResolver(MessageSource messages, Locale locale) {
     return (key, args) -> {
@@ -432,7 +385,6 @@ public final class InventoryOperationRequestBuilder {
         return (int) count;
       }
     } catch (NumberFormatException notACount) {
-      // fall through
     }
     throw new IllegalArgumentException("Invalid subsample count " + value);
   }

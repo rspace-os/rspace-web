@@ -492,18 +492,15 @@ export default class TemplateModel extends SampleModel implements Template {
   /**
    * The measurement category the template's samples are made in.
    *
-   * Overridden because the inherited HasQuantity getter derives the category from `quantity`, and a
-   * template's quantity is always null: it would fall back to unit id 3 and report every template
-   * as "volume", so a mass or count template offered volume units and produced a request the
-   * backend rejects (Copilot review, PR #1090). A template declares its unit as `defaultUnitId`.
+   * Overridden because the inherited HasQuantity getter derives the category from `quantity`, which
+   * is always null on a template: it would fall back to unit id 3 and report every template as
+   * "volume", so a mass or count template would offer volume units. A template declares its unit as
+   * `defaultUnitId` instead.
    *
-   * The static unit table is consulted before the unit store, because the store is seeded from
-   * localStorage and holds nothing until GET /units has resolved once. Going to the store first
-   * threw for every id in that window, and the operation wizard reads this inside a catch that
-   * reports "template lookup failed", so a perfectly valid template was blocked with a misleading
-   * reason on a fresh profile (parallel review). categoryOfUnit needs no store, so it is right
-   * immediately; the store still answers for molarity and concentration, which the static table
-   * does not enumerate.
+   * The static unit table is consulted before the unit store because the store is seeded from
+   * localStorage and holds nothing until GET /units has resolved once; going to the store first
+   * throws for every id until then. categoryOfUnit needs no store, so it is right immediately; the
+   * store still answers for molarity and concentration, which the static table does not enumerate.
    */
   get quantityCategory(): UnitCategory {
     const known = categoryOfUnit(this.defaultUnitId);

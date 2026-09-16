@@ -29,8 +29,7 @@ export type ExtraFieldAttrs = {
    * request, and `paramsForBackend` deliberately omits it so an ordinary save never echoes it back.
    *
    * Its purpose is identity: a generated field's NAME is a localized resolution of this key, so a
-   * later run of the same operation has to match on the key to recognise the previous generation
-   * (see computedValues).
+   * later run of the same operation has to match on the key to recognise the previous generation.
    */
   operationFieldKey?: string | null;
 };
@@ -54,10 +53,6 @@ export interface ExtraField {
    */
   readonly link: ExtraInventoryLink | null;
 
-  /**
-   * The operation definition key that generated this field, or null/undefined when nothing did.
-   * See ExtraFieldAttrs.
-   */
   readonly operationFieldKey?: string | null;
 
   /*

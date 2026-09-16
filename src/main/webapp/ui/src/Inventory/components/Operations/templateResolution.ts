@@ -1,52 +1,29 @@
-/**
- * Pure helpers for the wizard's template step (DevDocs/adr/0007).
- *
- * - resolveTemplateId turns the user's choice into a single templateId. Option "fromSample" reuses
- *   the origin sample's existing template; the wizard never creates a template (a template-less
- *   parent must have one made separately first), so "fromSample" with no parent template is blocked
- *   in the UI and resolves to no template defensively here.
- * - templateSelectionBlock decides whether a picked template must be blocked because it has
- *   mandatory fields with no default value (the wizard has no way to supply those values), so the
- *   user is warned in the template step rather than hitting a server error at submit.
- * - templateSelectionToDefault / templateSelectionFor round-trip the current selection to and from
- *   the stored "remember" bundle (see processValues.ts).
- */
-
 import { formatList } from "@/modules/common/i18n/listFormat";
 import type { UnitCategory } from "@/stores/stores/UnitStore";
 
 // "remembered" is a specific template restored from the user's saved default: it resolves to a
 // concrete templateId like "pick", but is presented as a banner with no radio selected so the user
-// can override it. "unselected" is the initial state when nothing is remembered: no radio is selected
-// and the user must make an explicit choice before Next is enabled (DevDocs/adr/0007).
+// can override it. "unselected" is the initial state when nothing is remembered: no radio is
+// selected and the user must make an explicit choice before Next is enabled.
 export type TemplateMode = "none" | "pick" | "fromSample" | "remembered" | "unselected";
 
 /**
- * The user's template choice for the new sample (DevDocs/adr/0007).
- *
- * Declared here, not in TemplateStep, so the module and the component cannot disagree: this type
- * and the step's own `TemplateSelection` were two structurally identical declarations, and
- * `TemplateMode` was written out a second time inline, so a sixth mode added to one compiled
- * cleanly against the other until a runtime `switch` fell through (parallel review, Q16).
- * TemplateStep re-exports it, which keeps every existing import path working.
+ * Declared here, not in TemplateStep, so the module and the component cannot disagree: previously
+ * duplicated declarations let a mode added to one compile cleanly against the other until a
+ * runtime `switch` fell through. TemplateStep re-exports this type to keep existing imports working.
  */
 export type TemplateSelection = {
-  // "remembered" = a specific template restored from the saved default: shown as a banner with no
-  // radio selected until the user picks a radio to override it. "unselected" = the initial state
-  // when nothing is remembered: no radio selected, and Next stays disabled until the user chooses.
   mode: TemplateMode;
   templateId: number | null;
   templateName?: string;
-  // The picked template's quantity category (mass/volume/dimensionless...). Set when the user picks
-  // a specific template so the amounts step can offer that template's units instead of the origin
-  // subsample's (a volume template overrides a mass subsample). Undefined = fall back to the origin.
+  // Set when the user picks a specific template, so the amounts step offers that template's units
+  // instead of the origin subsample's. Undefined falls back to the origin.
   quantityCategory?: UnitCategory;
   remember: boolean;
   /**
-   * A restored "remembered" template whose id came from the stored bundle rather than from a check
-   * against the server, so it is not yet known to exist, to still carry this name, or to still be
-   * usable. The wizard clears this by re-checking the template on restore; until then the template
-   * step is incomplete, which also withholds the step-one one-click Perform.
+   * Set on a restored "remembered" template whose id came from the stored bundle rather than a
+   * fresh check, so it is not yet confirmed to still exist or be usable. Cleared once the wizard
+   * re-checks it; until then the template step is incomplete.
    */
   pendingCheck?: boolean;
 };
@@ -59,10 +36,9 @@ export type TemplateDefault = {
 };
 
 /**
- * The current selection reduced to the shape stored in the per-process "remember" bundle. A specific
- * template (an explicit "pick" or a still-in-effect "remembered") is stored as a concrete "pick" with
- * its id, name and quantity category, so it is restored and shown as that template next time; every
- * other mode ("none"/"fromSample") is stored as itself with no template id.
+ * Reduces the selection to the shape stored in the per-process "remember" bundle: a specific
+ * template ("pick" or a still-in-effect "remembered") as a concrete "pick" with its id, name and
+ * quantity category; every other mode as itself with no template id.
  */
 export function templateSelectionToDefault(selection: {
   mode: TemplateMode;
@@ -80,11 +56,9 @@ export function templateSelectionToDefault(selection: {
 }
 
 /**
- * The template-step selection to show for a stored default (or its absence). Nothing remembered
- * (first run, or the previous run was not remembered) yields "unselected": no radio selected, so the
- * user must make an explicit choice before Next is enabled. A remembered specific template is shown
- * as a banner ("remembered", no radio); a remembered "none"/"fromSample" is applied as that radio
- * directly (DevDocs/adr/0007).
+ * Selection to show for a stored default. Nothing remembered yields "unselected", so the user must
+ * choose explicitly. A remembered specific template is shown as a banner ("remembered"); a
+ * remembered "none"/"fromSample" is applied as that radio directly.
  */
 export function templateSelectionFor(remembered: TemplateDefault | undefined): TemplateSelection {
   if (!remembered) return { mode: "unselected", templateId: null, remember: false };
@@ -95,18 +69,14 @@ export function templateSelectionFor(remembered: TemplateDefault | undefined): T
     templateName: remembered.templateName,
     quantityCategory: remembered.quantityCategory,
     remember: true,
-    // A specific template is restored unchecked: its stored name may be stale and the template
-    // itself may have been trashed since. The wizard re-checks it before the step counts as done.
     ...(isSpecific ? { pendingCheck: true } : {}),
   };
 }
 
 /**
- * The template-step selection for a first-time run (nothing remembered for this process name): when
- * the origin's parent sample has its own template, "use the parent's template" is preselected as the
- * common case, leaving the user free to override it; otherwise "unselected", so the user must make
- * an explicit choice before Next is enabled (DevDocs/adr/0007). A multi-origin operation (Pool)
- * passes parentHasTemplate=false, because "the parent" is ambiguous across several origins.
+ * Preselects "fromSample" when the origin's parent has its own template (the common case);
+ * otherwise "unselected", so the user must choose explicitly. Callers pass parentHasTemplate=false
+ * for a multi-origin operation, since "the parent" is ambiguous across origins.
  */
 export function initialTemplateSelection(parentHasTemplate: boolean): TemplateSelection {
   return {
@@ -117,18 +87,15 @@ export function initialTemplateSelection(parentHasTemplate: boolean): TemplateSe
 }
 
 /**
- * Whether the template step is complete enough to advance: the user has made a choice (not the
- * initial "unselected" state), and any specific template has finished validating (its id is set).
+ * Whether the template step is complete: the user made a choice (not "unselected"), and any
+ * specific template has finished validating (its id is set).
  *
- * "fromSample" is held to the SAME rule as "pick", which it previously escaped. Both end up creating
- * a sample against a concrete template, so both must clear the mandatory-without-default check
- * (templateSelectionBlock) before the step can advance. A mandatory template field with no default is
- * normal on the parent - its value was supplied on the parent sample itself - so the parent's own
- * template is exactly as likely to be unusable as a picked one, and "fromSample" is the PRESELECTED
- * default whenever the parent has a template. Letting it through unchecked meant the same template
- * was blocked up front via "pick" and rejected at the last click via "fromSample" (F5).
+ * "fromSample" is held to the same rule as "pick": both create a sample against a concrete
+ * template, so both must clear the mandatory-without-default check before the step can advance.
+ * Letting "fromSample" through unchecked meant the same template was blocked via "pick" but
+ * accepted via "fromSample".
  *
- * The id is therefore written only by a PASSING check, which is what makes its presence the signal.
+ * The id is written only by a passing check, which is what makes its presence the signal.
  */
 export function templateStepValid(selection: {
   mode: TemplateMode;
@@ -136,10 +103,9 @@ export function templateStepValid(selection: {
   pendingCheck?: boolean;
 }): boolean {
   if (selection.mode === "unselected") return false;
-  // A restored template is held to the same rule by a different route: its id was written by the
-  // stored bundle rather than by a check, so it counts only once the restore-time check has cleared
-  // pendingCheck. Without this the step was unconditionally valid, so a renamed template was shown
-  // under its old name and a trashed one was offered for one-click Perform (RSDEV-1231, F1/F2).
+  // A restored template's id came from the stored bundle, not a check, so it counts only once the
+  // restore-time check clears pendingCheck. Otherwise a renamed template could show its old name,
+  // or a trashed one be offered for Perform.
   if (selection.mode === "remembered") return !selection.pendingCheck;
   if (selection.mode === "pick" || selection.mode === "fromSample") return selection.templateId !== null;
   return true;
@@ -151,13 +117,12 @@ export function resolveTemplateId(params: {
   originSampleTemplateId: number | null;
 }): number | null {
   const { mode, pickedTemplateId, originSampleTemplateId } = params;
-  // "unselected" is unreachable here (Next is disabled until the user chooses); treat it as "no
-  // template" defensively.
+  // "unselected" is unreachable here (Next is disabled first); resolved to no template defensively.
   if (mode === "none" || mode === "unselected") return null;
-  // "remembered" is a concrete template restored from the saved default, so it resolves like "pick".
+  // "remembered" resolves like "pick": it's a concrete template restored from the saved default.
   if (mode === "pick" || mode === "remembered") return pickedTemplateId;
-  // fromSample: reuse the origin sample's own template. The wizard never creates one (DevDocs/adr/0007), so a
-  // template-less parent (null) resolves to no template - the UI blocks this choice up front.
+  // fromSample reuses the origin's own template; a template-less parent resolves to no template,
+  // though the UI blocks that choice.
   return originSampleTemplateId;
 }
 
@@ -182,17 +147,10 @@ type TemplateFieldsLike = {
 };
 
 /**
- * Whether a template field carries a default value the wizard can submit as it stands.
- *
- * Field-type-aware, because the value does not live in the same place for every type. A LINK
- * field's default is its `link.targetGlobalId`; its data column is unused and always empty, so a
- * content-only rule marked every populated mandatory link as missing and left Next disabled for a
- * template the server accepts - ApiFieldsHelper.validateMandatoryFieldsForEntityPost reads the link
- * target, and InventoryLinkField.shallowCopy carries the populated default into the new sample
- * (Codex review, PR #1090).
- *
- * Blank counts as absent, for content and for a link target alike, matching the server's own rule
- * (InventoryEntityField.isValidValueForMandatoryField, StringUtils.isNotBlank).
+ * Field-type aware: a LINK field's default lives in `link.targetGlobalId`, not `content` (which is
+ * always empty for links), so a content-only check marked every populated mandatory link as
+ * missing. Blank counts as absent for content and link target alike, matching the server's own
+ * mandatory-field check.
  */
 function fieldHasDefault(field: TemplateFieldsLike["fields"][number]): boolean {
   if ((field.selectedOptions?.length ?? 0) > 0) return true;
@@ -201,17 +159,13 @@ function fieldHasDefault(field: TemplateFieldsLike["fields"][number]): boolean {
 }
 
 /**
- * Whether a template is usable by the wizard, with the arguments its rejection message needs.
+ * Whether a template is usable, with the arguments its rejection message needs. Kept as one
+ * function since duplicating this check previously let two screens disagree about the same
+ * template after a fix landed on only one copy.
  *
- * The field mapping and the hasDefault rule were written out twice, in the wizard's "use parent
- * template" check and in the template step's pick check. A fix to one - treating a whitespace-only
- * default as absent, say - left the two screens disagreeing about the same template, with the user
- * blocked on one and not the other and no way to tell which was right (parallel review, Q10).
- *
- * The `t` call stays at each call site rather than moving in here: i18next's TFunction is typed
- * against the catalog's key union and does not assign to a plain `(key, options) => string`, so
- * taking it as a parameter would need either a cast or a forced `defaultValue`. What is returned is
- * exactly the ICU arguments, so the two sites cannot compute them differently.
+ * The `t` call stays at each call site, not here: i18next's TFunction is typed against the
+ * catalog's key union, so accepting it as a parameter would need a cast. Since only the ICU
+ * arguments are returned, the two call sites can't compute them differently.
  */
 export function templateBlockReason(
   template: TemplateFieldsLike,

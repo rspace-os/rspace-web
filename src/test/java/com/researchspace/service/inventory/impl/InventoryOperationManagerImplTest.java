@@ -67,29 +67,23 @@ class InventoryOperationManagerImplTest {
     return origin;
   }
 
-  /** An origin whose amount is a claim on the origin's whole quantity ("take all"). */
   private static ApiInventoryOperationOriginUpdate takeAll(Long id, ApiQuantityInfo amountTaken) {
     ApiInventoryOperationOriginUpdate origin = origin(id, amountTaken);
     origin.setAmountMode(ApiInventoryOperationAmountMode.ALL);
     return origin;
   }
 
-  /**
-   * A subsample entity mock currently holding the given quantity, in the given unit, under a parent
-   * sample of its own (the manager locks the parents too, and a real subsample always has one).
-   */
   private SubSample subSampleHolding(String value, int unitId) {
     return subSampleHolding(value, unitId, nextParentSampleId++);
   }
 
-  /** A subsample holding the given quantity whose parent sample has the given id. */
   private SubSample subSampleHolding(String value, int unitId, long sampleId) {
     SubSample subSample = mock(SubSample.class);
     when(subSample.getQuantity())
         .thenReturn(value == null ? null : new QuantityInfo(new BigDecimal(value), unitId));
     SampleEntity parent = mock(SampleEntity.class);
-    // Lenient: only the server-built path's parentFields(subSample.getSample()) reads the
-    // parent, so most callers of this helper never touch it.
+    // Lenient: only the server-built path reads the parent; most callers of this helper never
+    // touch it.
     lenient().when(parent.getId()).thenReturn(sampleId);
     lenient().when(subSample.getSample()).thenReturn(parent);
     return subSample;
@@ -98,9 +92,8 @@ class InventoryOperationManagerImplTest {
   private void originHolds(long originId, SubSample subSample) {
     when(subSampleApiMgr.assertUserCanEditSubSample(originId, user)).thenReturn(subSample);
     when(subSampleApiMgr.getIfExists(originId)).thenReturn(subSample);
-    // The server-built overload maps each origin again once the operation is done. Lenient because
-    // most tests here assert on the mutation rather than the envelope and never reach it; a test
-    // that cares stubs its own.
+    // Lenient because most tests here assert on the mutation rather than the envelope and never
+    // reach this stub; a test that cares stubs its own.
     ApiSubSample mapped = new ApiSubSample();
     mapped.setId(originId);
     lenient().when(subSampleApiMgr.getApiSubSampleById(originId, user)).thenReturn(mapped);
@@ -132,13 +125,10 @@ class InventoryOperationManagerImplTest {
 
     ApiSampleWithFullSubSamples result = manager.performOperation(request, user, NONE);
 
-    // the created sample is returned unchanged
     assertSame(created, result);
-    // permission on the origin is asserted, and the sample is created exactly once
     verify(subSampleApiMgr).assertUserCanEditSubSample(100L, user);
     verify(sampleApiMgr).createNewApiSample(newSample, user);
-    // the origin is REDUCED by the amount taken (registerApiSubSampleUsage subtracts and clamps at
-    // zero, so it can never increase the origin)
+    // registerApiSubSampleUsage subtracts and clamps at zero, so it can never increase the origin.
     ArgumentCaptor<QuantityInfo> used = ArgumentCaptor.forClass(QuantityInfo.class);
     verify(subSampleApiMgr).registerApiSubSampleUsage(eq(100L), used.capture(), eq(user));
     assertEquals(0, new BigDecimal("0.6").compareTo(used.getValue().getNumericValue()));
@@ -148,8 +138,7 @@ class InventoryOperationManagerImplTest {
   @Test
   void decrementsOriginBeforeCreatingTheNewSample() throws Exception {
     // The new subsample must end up most-recently-modified, so the origin is decremented (which
-    // stamps its modification date) BEFORE the new sample + subsample are created
-    // (DevDocs/adr/0007).
+    // stamps its modification date) BEFORE the new sample + subsample are created.
     ApiInventoryOperationPost request = new ApiInventoryOperationPost();
     request.setOperationType("derive");
     request.setOrigins(List.of(origin(100L, new ApiQuantityInfo(new BigDecimal("0.6"), 3))));
@@ -168,9 +157,6 @@ class InventoryOperationManagerImplTest {
 
   @Test
   void abortsBeforeAnyMutationWhenAnOriginIsNotEditable() {
-    // Validate-before-mutate (DevDocs/adr/0007): if the permission check on any origin fails,
-    // nothing must
-    // be written - neither the new sample created nor any origin reduced.
     ApiInventoryOperationPost request = new ApiInventoryOperationPost();
     request.setOperationType("derive");
     request.setOrigins(List.of(origin(100L, new ApiQuantityInfo(new BigDecimal("0.6"), 3))));
@@ -187,12 +173,8 @@ class InventoryOperationManagerImplTest {
 
   @Test
   void abortsBeforeAnyMutationWhenALaterOriginIsNotEditable() {
-    // Multi-origin (Pool): permission is asserted on EVERY origin before ANY origin is mutated
-    // (DevDocs/adr/0007). If a later origin fails the check, an earlier origin must NOT have been
-    // decremented.
     // A single-origin test cannot catch a refactor that merges the assert and mutate loops; this
-    // one
-    // does - it would decrement origin 100 before checking origin 200's permission.
+    // one does - it would decrement origin 100 before checking origin 200's permission.
     // Origin 100's permission check must succeed, but nothing past it ever runs, so it needs no
     // quantity stub (the permission loop rejects origin 200 before the quantity loop starts).
     when(subSampleApiMgr.assertUserCanEditSubSample(100L, user)).thenReturn(mock(SubSample.class));
@@ -215,11 +197,6 @@ class InventoryOperationManagerImplTest {
 
   @Test
   void terminalOperationAddsOriginFieldsAndCreatesNoSample() throws Exception {
-    // Destroy (noOutput): no new sample is sent, and the operation adds a custom field to the
-    // origin
-    // itself. The manager must create no sample, return null, and apply the origin's extra fields
-    // via
-    // the subsample-edit path (DevDocs/adr/0007).
     ApiExtraField disposed = new ApiExtraField(ExtraFieldTypeEnum.TEXT);
     disposed.setName("disposed");
     disposed.setContent("2026-07-20");
@@ -231,7 +208,6 @@ class InventoryOperationManagerImplTest {
     request.setOperationType("destroy");
     request.setOrigins(List.of(origin));
     request.setNewSample(null);
-    // destroy empties its origin: the amount taken equals what the origin currently holds
     originHolds(100L, subSampleHolding("2", 3));
 
     ApiSampleWithFullSubSamples result = manager.performOperation(request, user, NONE);
@@ -250,7 +226,6 @@ class InventoryOperationManagerImplTest {
 
   @Test
   void decrementsOriginsInAscendingIdOrderRegardlessOfRequestOrder() throws Exception {
-    // The manager mutates origins sorted by id, not in request order.
     ApiInventoryOperationPost request = new ApiInventoryOperationPost();
     request.setOperationType("pool");
     request.setOrigins(
@@ -288,7 +263,6 @@ class InventoryOperationManagerImplTest {
 
     manager.performOperation(request, user, NONE);
 
-    // both origins are permission-checked and each is reduced by its own amount
     verify(subSampleApiMgr).assertUserCanEditSubSample(100L, user);
     verify(subSampleApiMgr).assertUserCanEditSubSample(200L, user);
     ArgumentCaptor<QuantityInfo> first = ArgumentCaptor.forClass(QuantityInfo.class);
@@ -299,8 +273,6 @@ class InventoryOperationManagerImplTest {
     assertEquals(0, new BigDecimal("1.5").compareTo(second.getValue().getNumericValue()));
   }
 
-  // --- live-state rules, enforced inside the operation's transaction (DevDocs/adr/0007) ---
-
   private BindException performExpectingRejection(ApiInventoryOperationPost request) {
     BindException rejection =
         assertThrows(BindException.class, () -> manager.performOperation(request, user, NONE));
@@ -308,7 +280,6 @@ class InventoryOperationManagerImplTest {
     return rejection;
   }
 
-  /** Nothing was written: every rejection must land before the first mutating collaborator call. */
   private void verifyNoMutation() {
     verify(subSampleApiMgr, never()).registerApiSubSampleUsage(any(), any(), any());
     verify(subSampleApiMgr, never()).updateApiSubSample(any(), any());
@@ -380,8 +351,6 @@ class InventoryOperationManagerImplTest {
 
   @Test
   void doesNotCompareAnExplicitAmountAgainstTheWholeOrigin() throws Exception {
-    // An explicit amount is what the user typed; it is not a claim about the origin's total, so
-    // taking less than the origin holds is the ordinary case and must not conflict.
     ApiInventoryOperationPost request = new ApiInventoryOperationPost();
     request.setOperationType("derive");
     ApiInventoryOperationOriginUpdate origin =
@@ -399,8 +368,7 @@ class InventoryOperationManagerImplTest {
 
   @Test
   void acceptsAnAbsentAmountModeOnAnEmptyingOperationThatDoesTakeEverything() throws Exception {
-    // Backward compatibility: a Destroy request predating amountMode carries no mode at all, and
-    // one that takes exactly what the origin holds is still a valid request.
+    // Backward compatibility: a Destroy request predating amountMode carries no mode at all.
     ApiInventoryOperationPost request = new ApiInventoryOperationPost();
     request.setOperationType("destroy");
     ApiInventoryOperationOriginUpdate origin =
@@ -414,9 +382,8 @@ class InventoryOperationManagerImplTest {
 
   @Test
   void rejectsAnAbsentAmountModeOnAnEmptyingOperationAsA400() {
-    // A client predating amountMode asking Destroy for PART of an origin is making a malformed
-    // request: nothing has changed, so it gets the same field error it got before the mode
-    // existed.
+    // A client predating amountMode asking Destroy for part of an origin still gets the same
+    // field error it got before the mode existed.
     ApiInventoryOperationPost request = new ApiInventoryOperationPost();
     request.setOperationType("destroy");
     ApiInventoryOperationOriginUpdate origin =
@@ -433,8 +400,6 @@ class InventoryOperationManagerImplTest {
 
   @Test
   void rejectsPoolingOriginsFromDifferentMeasurementCategories() {
-    // The wizard blocks pooling a volume origin with a mass origin; the endpoint must too, or the
-    // pooled sample's quantity would be meaningless (security review, finding 4).
     ApiInventoryOperationPost request = new ApiInventoryOperationPost();
     request.setOperationType("pool");
     request.setOrigins(
@@ -453,7 +418,6 @@ class InventoryOperationManagerImplTest {
 
   @Test
   void allowsPoolingOriginsAcrossUnitsOfTheSameCategory() throws Exception {
-    // millilitres and litres share the volume category: unit variety is fine, category mixing not
     ApiInventoryOperationPost request = new ApiInventoryOperationPost();
     request.setOperationType("pool");
     request.setOrigins(
@@ -475,8 +439,6 @@ class InventoryOperationManagerImplTest {
 
   @Test
   void rejectionOnALaterOriginMutatesNothing() {
-    // The live checks run over EVERY origin before ANY origin is mutated, in the same transaction:
-    // a violation on the second origin must leave the first untouched.
     ApiInventoryOperationPost request = new ApiInventoryOperationPost();
     request.setOperationType("pool");
     request.setOrigins(
@@ -512,7 +474,6 @@ class InventoryOperationManagerImplTest {
 
   @Test
   void comparesUnitAwareAcrossUnitsInTheSameCategory() {
-    // 0.006 kg = 6 g, which exceeds a 5 g origin.
     ApiQuantityInfo sixGramsAsKilos =
         new ApiQuantityInfo(new BigDecimal("0.006"), RSUnitDef.KILO.getId());
     assertTrue(InventoryOperationManagerImpl.amountTakenExceedsOrigin(sixGramsAsKilos, grams("5")));
@@ -525,17 +486,14 @@ class InventoryOperationManagerImplTest {
   @Test
   void doesNotFlagNullAmountTakenOrDifferentCategories() {
     assertFalse(InventoryOperationManagerImpl.amountTakenExceedsOrigin(null, grams("5")));
-    // a volume amount against a mass origin is not commensurate, so it is not treated as
-    // over-removal
     assertFalse(
         InventoryOperationManagerImpl.amountTakenExceedsOrigin(millilitres("6"), grams("5")));
   }
 
   @Test
   void flagsPositiveAmountTakenFromOriginWithNoQuantity() {
-    // A subsample whose quantity was never set holds nothing, so taking any positive amount from it
-    // is over-removal (DevDocs/adr/0007). A null origin quantity, or one with a null numeric value,
-    // is treated as zero available rather than as "no limit".
+    // A null origin quantity, or one with a null numeric value, is treated as zero available
+    // rather than as "no limit".
     assertTrue(InventoryOperationManagerImpl.amountTakenExceedsOrigin(grams("6"), null));
     assertTrue(
         InventoryOperationManagerImpl.amountTakenExceedsOrigin(
@@ -556,20 +514,18 @@ class InventoryOperationManagerImplTest {
   @Test
   void amountTakenEmptiesOriginIsUnitAwareEquality() {
     assertTrue(InventoryOperationManagerImpl.amountTakenEmptiesOrigin(grams("5"), grams("5")));
-    // 0.005 kg denotes the same amount as 5 g
     assertTrue(
         InventoryOperationManagerImpl.amountTakenEmptiesOrigin(
             new ApiQuantityInfo(new BigDecimal("0.005"), RSUnitDef.KILO.getId()), grams("5")));
     assertFalse(InventoryOperationManagerImpl.amountTakenEmptiesOrigin(grams("4"), grams("5")));
     assertFalse(InventoryOperationManagerImpl.amountTakenEmptiesOrigin(grams("6"), grams("5")));
-    // incomparable categories and missing values never count as emptying
     assertFalse(
         InventoryOperationManagerImpl.amountTakenEmptiesOrigin(millilitres("5"), grams("5")));
     assertFalse(InventoryOperationManagerImpl.amountTakenEmptiesOrigin(null, grams("5")));
     assertFalse(InventoryOperationManagerImpl.amountTakenEmptiesOrigin(grams("5"), null));
   }
 
-  // --- measurement categories against the origin's live quantity (code review F4, F5) ---
+  // --- measurement categories against the origin's live quantity ---
 
   private static ApiSubSample subSampleOf(ApiQuantityInfo quantity) {
     ApiSubSample subSample = new ApiSubSample();
@@ -579,7 +535,6 @@ class InventoryOperationManagerImplTest {
 
   @Test
   void rejectsAmountTakenFromADifferentMeasurementCategoryThanTheOrigin() {
-    // Grams taken from a millilitre origin used to reach QuantityUtils.sum and surface as a 422.
     ApiInventoryOperationPost request = new ApiInventoryOperationPost();
     request.setOperationType("derive");
     request.setOrigins(List.of(origin(100L, grams("1"))));
@@ -594,8 +549,6 @@ class InventoryOperationManagerImplTest {
 
   @Test
   void rejectsNewSubSamplesInADifferentMeasurementCategoryThanTheOrigin() {
-    // Without a template the wizard offers only the origin's category for the created amounts, so
-    // a gram child from a millilitre origin is a request the wizard never builds.
     ApiInventoryOperationPost request = new ApiInventoryOperationPost();
     request.setOperationType("derive");
     request.setOrigins(List.of(origin(100L, millilitres("1"))));
@@ -618,9 +571,8 @@ class InventoryOperationManagerImplTest {
 
   @Test
   void leavesNewSubSampleCategoriesToTheTemplateCheckWhenATemplateIsChosen() throws Exception {
-    // With a template the created amounts follow the template's category, not the origin's (a
-    // DNA extract in microlitres derived from tissue in grams); the controller's template check
-    // owns that rule.
+    // With a template the created amounts follow the template's category, not the origin's; a
+    // separate template-conformance check owns that rule.
     ApiInventoryOperationPost request = new ApiInventoryOperationPost();
     request.setOperationType("derive");
     request.setOrigins(List.of(origin(100L, grams("1"))));
@@ -638,8 +590,6 @@ class InventoryOperationManagerImplTest {
 
   @Test
   void readsOriginsInAscendingIdOrderAndReportsErrorsAtTheirRequestIndex() {
-    // Origins are read in ascending id order regardless of request order; the error path still
-    // names the origin by its position in the request (code review, finding 1).
     ApiInventoryOperationPost request = new ApiInventoryOperationPost();
     request.setOperationType("pool");
     request.setOrigins(List.of(origin(300L, millilitres("1")), origin(100L, millilitres("9"))));
@@ -659,11 +609,9 @@ class InventoryOperationManagerImplTest {
 
   @Test
   void aWithdrawalFarBelowTheOriginsOwnResolutionIsAccepted() throws Exception {
-    // 0.001 ul from a 1 l origin leaves 999999.999 ul, which DECIMAL(19,3) holds exactly. This was
-    // rejected on the grounds that the operation would create its output without decrementing the
-    // origin at all, because 0.999999999 l rounds back to 1 l (Copilot review, PR #1090). True of
-    // the value expressed in litres; not true of the value, which is why the remedy is to store it
-    // in the unit that holds it rather than to refuse the operation (review 2026-09-14, Q1b).
+    // 0.001 ul from a 1 l origin leaves 999999.999 ul, which DECIMAL(19,3) holds exactly, even
+    // though 0.999999999 l rounds back to 1 l; storing the remainder in the unit that holds it
+    // exactly is what avoids losing it.
     ApiInventoryOperationPost request = new ApiInventoryOperationPost();
     request.setOperationType("derive");
     request.setOrigins(
@@ -683,10 +631,9 @@ class InventoryOperationManagerImplTest {
 
   @Test
   void aWithdrawalWhoseRemainderNeedsASmallerUnitThanEitherOperandIsAccepted() throws Exception {
-    // 1500.4 ml less 0.5 l. QuantitySummingVisitor works in the LARGEST unit of the operands, so
-    // the remainder arises as 1.0004 l, which does not fit 3dp and used to be rejected as silently
-    // losing an extra 0.4 ml (Codex review, PR #1090). It is 1000.4 ml, which fits, so the
-    // subtraction now steps down to the unit that holds it and no stock is lost either way.
+    // 1500.4 ml less 0.5 l: QuantitySummingVisitor works in the LARGEST unit of the operands, so
+    // the remainder arises as 1.0004 l, which does not fit 3dp. It is 1000.4 ml, which does, so the
+    // subtraction steps down to the unit that holds it and no stock is lost.
     ApiInventoryOperationPost request = new ApiInventoryOperationPost();
     request.setOperationType("derive");
     request.setOrigins(
@@ -703,11 +650,8 @@ class InventoryOperationManagerImplTest {
 
   @Test
   void aWithdrawalThatRedenominatesTheOriginIsAccepted() throws Exception {
-    // Live-run finding F3, revisited. 0.001 ul from a 1 ml origin came back as 999.999 ul, and the
-    // recorded complaint was that the origin's unit changed underneath the user. That result was
-    // EXACT: no stock was lost. The complaint is a UX one and it was answered by rejecting the
-    // arithmetic, which also made 2.5 mg from 5 g impossible. Accepted again, and the user-facing
-    // half of F3 - telling the caller the unit was re-denominated - is Q1c and still open.
+    // 0.001 ul taken from a 1 ml origin redenominates it to 999.999 ul; the result is EXACT (no
+    // stock lost), so it must not be rejected merely because the unit changed.
     ApiInventoryOperationPost request = new ApiInventoryOperationPost();
     request.setOperationType("derive");
     request.setOrigins(
@@ -727,11 +671,9 @@ class InventoryOperationManagerImplTest {
 
   @Test
   void aSubUnitWithdrawalIsAccepted() throws Exception {
-    // 2.5 mg from a 5 g origin leaves 4.9975 g, which needs four decimal places and so used to be
-    // refused as unsubtractable. The remainder is not unrepresentable, only unrepresentable IN
-    // GRAMS: it is 4997.5 mg, which the same DECIMAL(19,3) column holds exactly. The column stores
-    // a number and a unit id, so the fix is to store the remainder in the finer unit rather than
-    // to reject ordinary lab work (review 2026-09-14, Q1a/Q1b).
+    // 2.5 mg from a 5 g origin leaves 4.9975 g, which needs four decimal places and is
+    // unrepresentable only IN GRAMS: as 4997.5 mg the same DECIMAL(19,3) column holds it exactly,
+    // so the remainder must be stored in the finer unit rather than rejected.
     ApiInventoryOperationPost request = new ApiInventoryOperationPost();
     request.setOperationType("derive");
     request.setOrigins(
@@ -757,10 +699,7 @@ class InventoryOperationManagerImplTest {
 
   @Test
   void anUnreadableDocumentationTargetIsAFieldErrorNamingTheFieldTheCallerSent() {
-    // The target was only resolved while the built sample's link was being created, deep inside
-    // the transaction, where it became a bare 422 carrying no field path at all: every other 4xx
-    // this API answers names the field the caller sent (live test 2026-09-13, F4). Checked with
-    // the inputs, before any origin is read, so nothing is locked for a request already known bad.
+    // Checked with the inputs, before any origin is read.
     when(linkTargetResolver.targetExistsAndIsReadable(any(), eq(user))).thenReturn(false);
 
     BindException rejection =
@@ -790,8 +729,6 @@ class InventoryOperationManagerImplTest {
 
   @Test
   void acceptsACrossUnitAmountTakenWhoseSubtractionIsExact() throws Exception {
-    // The counterpart of the row above: 0.5 l from a 1500 ml origin leaves exactly 1 l, which is
-    // storable, so the guard must not reject a legitimate cross-unit take.
     ApiInventoryOperationPost request = new ApiInventoryOperationPost();
     request.setOperationType("derive");
     request.setOrigins(
@@ -808,10 +745,8 @@ class InventoryOperationManagerImplTest {
 
   @Test
   void runsTheInTransactionValidationBeforeAnyOriginRead() throws Exception {
-    // The controller's template-conformance check used to run in its own transaction, so a template
-    // changed between it and the operation could still fail mid-mutation. The check is now handed
-    // in and run HERE, inside the operation's transaction, before any origin is read or locked
-    // (Copilot review, PR #1090).
+    // The template-conformance check used to run in its own, separate transaction. It is now
+    // handed in and run HERE, inside the operation's transaction, before any origin is read.
     ApiInventoryOperationPost request = new ApiInventoryOperationPost();
     request.setOperationType("derive");
     request.setOrigins(List.of(origin(100L, new ApiQuantityInfo(new BigDecimal("0.6"), 3))));
@@ -830,7 +765,7 @@ class InventoryOperationManagerImplTest {
     inOrder.verify(subSampleApiMgr).assertUserCanEditSubSample(100L, user);
   }
 
-  // --- the server-built path, as the typed facades drive it (M6) ---
+  // --- the server-built path, as the typed facades drive it ---
 
   private static final int ML = RSUnitDef.MILLI_LITRE.getId();
 
@@ -865,22 +800,19 @@ class InventoryOperationManagerImplTest {
       return;
     }
     serverBuiltCollaboratorsWired = true;
-    // the field names resolve to their default (the key) rather than a real catalog
     org.springframework.context.MessageSource messages =
         mock(org.springframework.context.MessageSource.class);
     when(messages.getMessage(any(String.class), any(), any(String.class), any()))
         .thenAnswer(invocation -> invocation.getArgument(2));
     ReflectionTestUtils.setField(manager, "messageSource", messages);
-    // The template-conformance check moved out of the controller into service.inventory (parallel
-    // review, L1); these built-path cases are about the builder, not conformance, so it is a mock
-    // that accepts whatever the builder produced.
+    // These built-path cases are about the builder, not conformance, so templateConformance is a
+    // mock that accepts whatever the builder produced.
     ReflectionTestUtils.setField(
         manager,
         "templateConformance",
         mock(com.researchspace.service.inventory.OperationTemplateConformanceValidator.class));
   }
 
-  /** A facade origin element: an id, optionally an amount, no mode. */
   private static ApiInventoryOperationOriginUpdate facadeOrigin(long id, ApiQuantityInfo amount) {
     return origin(id, amount);
   }
@@ -904,8 +836,8 @@ class InventoryOperationManagerImplTest {
 
   @Test
   void aFacadeOriginWithoutAnAmountTakesNothingOnAnOperationThatTakesNothing() throws Exception {
-    // Passage: the facade sends no amount (M0 shape). The builder's zero, in the origin's unit,
-    // must reach the core rather than a null the decrement would dereference.
+    // Passage: the facade sends no amount. The builder's zero, in the origin's unit, must reach
+    // the core rather than a null the decrement would dereference.
     serverBuiltOriginHolds(100L, "5");
 
     manager.performOperation(
@@ -924,8 +856,8 @@ class InventoryOperationManagerImplTest {
 
   @Test
   void aFacadeOriginWithoutAnAmountEmptiesTheOriginOnADestroy() throws Exception {
-    // Destroy: no amount, no expected quantity means "take whatever is there" (M0 D5). The
-    // builder substitutes the origin's live snapshot as the amount taken.
+    // Destroy: no amount means "take whatever is there"; the builder substitutes the origin's
+    // live snapshot as the amount taken.
     serverBuiltOriginHolds(100L, "5");
 
     assertNull(
@@ -943,8 +875,8 @@ class InventoryOperationManagerImplTest {
 
   @Test
   void anAbsentCountDefaultsToOneSubsample() throws Exception {
-    // M0 D7: count is optional on the typed facades with a server default of 1; without the
-    // default the builder refuses a null count and the request would be a 500.
+    // count is optional on the typed facades with a server default of 1; without the default the
+    // builder refuses a null count and the request would be a 500.
     serverBuiltOriginHolds(100L, "5");
     when(sampleApiMgr.createNewApiSample(any(), eq(user)))
         .thenReturn(new ApiSampleWithFullSubSamples("Aliquots"));
@@ -1000,8 +932,6 @@ class InventoryOperationManagerImplTest {
   @Test
   void aPassageWithAnExplicitZeroAmountDecrementsNothingAndStillCreatesTheSample()
       throws Exception {
-    // The wizard's Passage sends amountTaken 0 in the origin's unit under an explicit mode. Zero
-    // passes every live rule, reaches the usage register as a no-op, and the sample is created.
     ApiInventoryOperationPost request = new ApiInventoryOperationPost();
     request.setOperationType("passage");
     ApiInventoryOperationOriginUpdate origin = origin(100L, millilitres("0"));
@@ -1024,8 +954,6 @@ class InventoryOperationManagerImplTest {
 
   @Test
   void aPassageOnAnOriginThatHoldsNothingIsStillRejectedAsEmpty() {
-    // Taking nothing from nothing is not allowed either: every operation needs an origin that
-    // currently holds something (DevDocs/adr/0007), so the zero amount earns no exemption.
     ApiInventoryOperationPost request = new ApiInventoryOperationPost();
     request.setOperationType("passage");
     request.setOrigins(List.of(origin(100L, millilitres("0"))));
@@ -1040,8 +968,6 @@ class InventoryOperationManagerImplTest {
 
   @Test
   void aZeroAmountOnAnEmptyingOperationWithoutAModeIsAMalformedRequest() {
-    // Destroy asked to take 0 of a 5 ml origin, with no whole-origin claim: a 400 on the amount,
-    // never a partial take.
     ApiInventoryOperationPost request = new ApiInventoryOperationPost();
     request.setOperationType("destroy");
     request.setOrigins(List.of(origin(100L, millilitres("0"))));
@@ -1055,8 +981,6 @@ class InventoryOperationManagerImplTest {
 
   @Test
   void anExplicitAmountEqualToTheOriginEmptiesIt() throws Exception {
-    // An Aliquot taking exactly what the origin holds is neither over-removal nor a whole-origin
-    // claim, so it proceeds and the register receives the full 5 ml, leaving the origin at zero.
     ApiInventoryOperationPost request = new ApiInventoryOperationPost();
     request.setOperationType("aliquot");
     ApiInventoryOperationOriginUpdate origin = origin(100L, millilitres("5"));
@@ -1075,11 +999,10 @@ class InventoryOperationManagerImplTest {
     assertEquals(0, new BigDecimal("5").compareTo(used.getValue().getNumericValue()));
   }
 
-  // --- expectedQuantity (M0 D5) at the edges ---
+  // --- expectedQuantity at the edges ---
 
   @Test
   void anExpectedQuantityOfZeroAgainstAnEmptyOriginIsStillTheEmptyOriginRule() {
-    // The caller correctly believes the origin is empty. There is still nothing to operate on.
     ApiInventoryOperationPost request = new ApiInventoryOperationPost();
     request.setOperationType("derive");
     ApiInventoryOperationOriginUpdate origin = origin(100L, millilitres("0.6"));
@@ -1096,8 +1019,6 @@ class InventoryOperationManagerImplTest {
 
   @Test
   void aMatchingExpectedQuantityEarnsNoPassOnOverRemoval() {
-    // The caller read the origin correctly (5 ml) and still asked for 6 ml: that is the ordinary
-    // over-removal 400.
     ApiInventoryOperationPost request = new ApiInventoryOperationPost();
     request.setOperationType("derive");
     ApiInventoryOperationOriginUpdate origin = origin(100L, millilitres("6"));
@@ -1114,9 +1035,8 @@ class InventoryOperationManagerImplTest {
 
   @Test
   void theOriginsAfterComeBackInRequestOrderRegardlessOfProcessingOrder() throws Exception {
-    // A Pool facade over origins 200 then 100: the outcome lists them as the caller gave them
-    // (M0 D2), even though the core processes origins ascending by id (see
-    // readsOriginsInAscendingIdOrderAndReportsErrorsAtTheirRequestIndex).
+    // The outcome lists origins in the order the caller gave them, even though the core processes
+    // them ascending by id.
     serverBuiltOriginHolds(200L, "5");
     serverBuiltOriginHolds(100L, "5");
     ApiSubSample after200 = new ApiSubSample();
@@ -1191,8 +1111,8 @@ class InventoryOperationManagerImplTest {
    * field's content in EditInfo.description (250). Today the only length check is the samples
    * validator run over the BUILT sample inside the transaction, after the origins were read, and it
    * reports {@code newSample.name}, a field the caller never sent; a text field's content has no
-   * check at all and fails at the INSERT as a 500 after the locks. The input rule must bound both
-   * at the door, on the input's own key, before anything is read.
+   * check at all and fails at the INSERT as a 500. The input rule must bound both at the door, on
+   * the input's own key, before anything is read.
    *
    * <p>No origin is stubbed on purpose: under the current code the builder runs and dereferences
    * the mock's null origin, which is the observable proof that a read happened.
