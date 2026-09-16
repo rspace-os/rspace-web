@@ -232,7 +232,7 @@ describe("buildFacadeRequest, Pool", () => {
 
 /**
  * The rule is implemented twice, once per language, and these cases are the only thing tying the two
- * together: the same file is asserted from OperationFieldNamesTest. Without it, changing
+ * together: the same file is asserted from FieldNameUniquenessParityTest. Without it, changing
  * the suffix format on one side left the preview promising names the server would not store, with
  * both suites green.
  */

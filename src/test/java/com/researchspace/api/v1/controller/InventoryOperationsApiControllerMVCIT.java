@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.researchspace.api.v1.model.ApiExtraField;
 import com.researchspace.api.v1.model.ApiField.ApiFieldType;
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
+import com.researchspace.api.v1.model.ApiInventoryOperationResult;
 import com.researchspace.api.v1.model.ApiSample;
 import com.researchspace.api.v1.model.ApiSampleTemplate;
 import com.researchspace.api.v1.model.ApiSampleTemplatePost;
@@ -30,14 +31,15 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.ResultActions;
 
 /**
- * End-to-end coverage for the RSDEV-1231 operation endpoint (POST /operations). A single POST
- * carries the origins with their amounts and the values the user typed; the server builds one new
- * Sample parenting N subsamples from them and the operation definition, puts a provenance link back
- * to each origin on the new Sample, and reduces each origin subsample by the amount taken from it
- * (never increasing it), all in one transaction. The live-state rules of that transaction are
- * exercised here against a real database. See DevDocs/adr/0007.
+ * End-to-end coverage for the RSDEV-1231 operation endpoints (POST /operations/{operation}). A
+ * single POST carries the origins with their amounts and the values the user typed; the server
+ * builds one new Sample parenting N subsamples from them and the operation's own rules, puts a
+ * provenance link back to each origin on the new Sample, and reduces each origin subsample by the
+ * amount taken from it (never increasing it), all in one transaction. The live-state rules of that
+ * transaction are exercised here against a real database. See DevDocs/adr/0007.
  *
  * <p>Authored with the feature; not run automatically (extends a real-transaction MVC base).
  */
@@ -73,22 +75,27 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
 
   // --- request bodies, in the shape the wizard sends ---
 
+  private ResultActions post(String operation, String operationJson) throws Exception {
+    return mockMvc.perform(
+        createBuilderForPostWithJSONBody(
+            apiKey, "/operations/" + operation, anyUser, operationJson));
+  }
+
   private static String quantityJson(String value, int unitId) {
     return "{\"numericValue\":" + value + ",\"unitId\":" + unitId + "}";
   }
 
-  /** One origin element; a null amountMode leaves the property absent. */
-  private static String originJson(ApiSubSample origin, String amountMode, String amountTakenJson) {
-    return "{\"id\":"
-        + origin.getId()
-        + (amountMode == null ? "" : ",\"amountMode\":\"" + amountMode + "\"")
-        + ",\"amountTaken\":"
-        + amountTakenJson
+  /** One origin; a null amountTakenJson leaves the property absent, as Passage and Destroy send. */
+  private static String originJson(ApiSubSample origin, String amountTakenJson) {
+    return "{\"globalId\":\""
+        + origin.getGlobalId()
+        + "\""
+        + (amountTakenJson == null ? "" : ",\"amountTaken\":" + amountTakenJson)
         + "}";
   }
 
-  /** The inputs every creating operation declares. */
-  private static String creatingInputs(String sampleName, int count, String eachAmountJson) {
+  /** The fields every creating operation carries. */
+  private static String creatingFields(String sampleName, int count, String eachAmountJson) {
     return "\"sampleName\":\""
         + sampleName
         + "\",\"count\":"
@@ -97,22 +104,14 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
         + eachAmountJson;
   }
 
-  private static String body(String operationType, String originsJson, String inputsJson) {
-    return body(operationType, originsJson, inputsJson, "");
+  /** topLevelExtras is appended verbatim, e.g. {@code ,"templateId":5}. */
+  private static String singleOriginBody(
+      String originJson, String fieldsJson, String topLevelExtras) {
+    return "{\"origin\":" + originJson + "," + fieldsJson + topLevelExtras + "}";
   }
 
-  /** topLevelExtras is appended verbatim, e.g. {@code ,"templateId":5}. */
-  private static String body(
-      String operationType, String originsJson, String inputsJson, String topLevelExtras) {
-    return "{\"operationType\":\""
-        + operationType
-        + "\",\"origins\":["
-        + originsJson
-        + "],\"inputs\":{"
-        + inputsJson
-        + "}"
-        + topLevelExtras
-        + "}";
+  private static String poolBody(String originsJson, String fieldsJson) {
+    return "{\"origins\":[" + originsJson + "]," + fieldsJson + "}";
   }
 
   /** A Derive taking the given amount from the origin into {@code count} children of eachAmount. */
@@ -123,66 +122,28 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
       int count,
       String eachAmountJson,
       String topLevelExtras) {
-    return body(
-        "derive",
-        originJson(origin, null, amountTakenJson),
-        "\"processName\":\"PCR\"," + creatingInputs(sampleName, count, eachAmountJson),
+    return singleOriginBody(
+        originJson(origin, amountTakenJson),
+        "\"processName\":\"PCR\"," + creatingFields(sampleName, count, eachAmountJson),
         topLevelExtras);
   }
 
   private static String aliquotJsonWith(
       ApiSubSample origin, String amountTakenJson, String eachAmountJson, String topLevelExtras) {
-    return body(
-        "aliquot",
-        originJson(origin, null, amountTakenJson),
-        creatingInputs("Aliquots", 1, eachAmountJson),
+    return singleOriginBody(
+        originJson(origin, amountTakenJson),
+        creatingFields("Aliquots", 1, eachAmountJson),
         topLevelExtras);
   }
 
   /** An Aliquot taking the given amount, in the origin's own unit, into one child of the same. */
   private static String aliquotTakingJson(ApiSubSample origin, String amount) {
     int unitId = origin.getQuantity().getUnitId();
-    return body(
-        "aliquot",
-        originJson(origin, null, quantityJson(amount, unitId)),
-        creatingInputs("Aliquot of " + origin.getGlobalId(), 1, quantityJson(amount, unitId)));
+    return aliquotJsonWith(origin, quantityJson(amount, unitId), quantityJson(amount, unitId), "");
   }
 
-  /**
-   * "Count" is the drift that matters: count is OPTIONAL and declares a default of 1, so before
-   * this rule the misspelling was dropped, the default applied, and a caller who asked for four
-   * aliquots got one with a 201. A misspelled REQUIRED key always failed, because the declared key
-   * was then absent, which is why the silent case needs its own guard.
-   */
-  @Test
-  public void anUndeclaredInputKeyIsRefusedAndTakesNothing() throws Exception {
-    ApiSampleWithFullSubSamples source = createBasicSampleForUser(anyUser);
-    ApiSubSample origin = source.getSubSamples().get(0);
-    Long originId = origin.getId();
-    java.math.BigDecimal originalAmount = origin.getQuantity().getNumericValue();
-    int unitId = origin.getQuantity().getUnitId();
-
-    String drifted =
-        body(
-            "aliquot",
-            originJson(origin, null, quantityJson("0.1", unitId)),
-            "\"sampleName\":\"Drifted\",\"Count\":4,\"eachAmount\":" + quantityJson("0.1", unitId));
-
-    MvcResult result =
-        mockMvc
-            .perform(createBuilderForPostWithJSONBody(apiKey, "/operations", anyUser, drifted))
-            .andExpect(status().isBadRequest())
-            .andReturn();
-
-    List<String> errors = getErrorFromJsonResponseBody(result, ApiError.class).getErrors();
-    assertTrue(
-        errors.stream().anyMatch(error -> error.startsWith("Count:")),
-        () -> "the refusal must name the key the caller sent, got " + errors);
-
-    ApiSubSample reloaded = subSampleApiManager.getApiSubSampleById(originId, anyUser);
-    assertTrue(
-        originalAmount.compareTo(reloaded.getQuantity().getNumericValue()) == 0,
-        "origin quantity must be unchanged when an undeclared input is rejected");
+  private ApiSampleWithFullSubSamples createdSample(MvcResult result) throws Exception {
+    return getFromJsonResponseBody(result, ApiInventoryOperationResult.class).getSample();
   }
 
   // --- the edit-session lock the controller holds around Perform (RSDEV-1231 S2/S3) ---
@@ -194,12 +155,7 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
   }
 
   private ApiError performExpectingConflict(String operationJson) throws Exception {
-    MvcResult result =
-        mockMvc
-            .perform(
-                createBuilderForPostWithJSONBody(apiKey, "/operations", anyUser, operationJson))
-            .andExpect(status().isConflict())
-            .andReturn();
+    MvcResult result = post("aliquot", operationJson).andExpect(status().isConflict()).andReturn();
     return getErrorFromJsonResponseBody(result, ApiError.class);
   }
 
@@ -223,11 +179,7 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
     ApiSubSample reloaded = subSampleApiManager.getApiSubSampleById(origin.getId(), anyUser);
     assertEquals(0, originalAmount.compareTo(reloaded.getQuantity().getNumericValue()));
     editLockTracker.attemptToUnlock(origin.getGlobalId(), colleague);
-    mockMvc
-        .perform(
-            createBuilderForPostWithJSONBody(
-                apiKey, "/operations", anyUser, aliquotTakingJson(origin, "0.1")))
-        .andExpect(status().isCreated());
+    post("aliquot", aliquotTakingJson(origin, "0.1")).andExpect(status().isCreated());
   }
 
   /** The sibling case: the colleague holds the PARENT sample, not the origin itself. */
@@ -253,11 +205,7 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
     ApiSubSample origin = source.getSubSamples().get(0);
     editLockTracker.attemptToLockForEdit(origin.getGlobalId(), anyUser);
 
-    mockMvc
-        .perform(
-            createBuilderForPostWithJSONBody(
-                apiKey, "/operations", anyUser, aliquotTakingJson(origin, "0.1")))
-        .andExpect(status().isCreated());
+    post("aliquot", aliquotTakingJson(origin, "0.1")).andExpect(status().isCreated());
 
     assertEquals(anyUser.getUsername(), editLockTracker.getLockOwnerForItem(origin.getGlobalId()));
     // the parent sample lock was this request's own and is given back
@@ -283,14 +231,8 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
             quantityJson("0.5", unitId),
             "");
 
-    MvcResult result =
-        mockMvc
-            .perform(
-                createBuilderForPostWithJSONBody(apiKey, "/operations", anyUser, operationJson))
-            .andExpect(status().isCreated())
-            .andReturn();
-    ApiSampleWithFullSubSamples created =
-        getFromJsonResponseBody(result, ApiSampleWithFullSubSamples.class);
+    MvcResult result = post("derive", operationJson).andExpect(status().isCreated()).andReturn();
+    ApiSampleWithFullSubSamples created = createdSample(result);
 
     ApiExtraField sampleLink = findLinkField(created.getExtraFields());
     assertNotNull(sampleLink, "the derived sample must carry the provenance link");
@@ -339,18 +281,11 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
             quantityJson("0.5", unitId),
             ",\"templateId\":" + template.getId());
 
-    MvcResult result =
-        mockMvc
-            .perform(
-                createBuilderForPostWithJSONBody(apiKey, "/operations", anyUser, operationJson))
-            .andExpect(status().isCreated())
-            .andReturn();
-    ApiSampleWithFullSubSamples created =
-        getFromJsonResponseBody(result, ApiSampleWithFullSubSamples.class);
+    MvcResult result = post("derive", operationJson).andExpect(status().isCreated()).andReturn();
 
     assertEquals(
         template.getId(),
-        created.getTemplateId(),
+        createdSample(result).getTemplateId(),
         "the derived sample must be created from the chosen template");
   }
 
@@ -374,9 +309,7 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
             quantityJson("0.5", unitId),
             "");
 
-    mockMvc
-        .perform(createBuilderForPostWithJSONBody(apiKey, "/operations", anyUser, operationJson))
-        .andExpect(status().isBadRequest());
+    post("derive", operationJson).andExpect(status().isBadRequest());
     ApiSubSample reloadedOrigin = subSampleApiManager.getApiSubSampleById(originId, anyUser);
     assertTrue(
         originalAmount.compareTo(reloadedOrigin.getQuantity().getNumericValue()) == 0,
@@ -386,8 +319,6 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
   @Test
   public void aDocumentationTargetThatCannotBeResolvedIsRejectedBeforeAnyMutation()
       throws Exception {
-    // The generic endpoint does not rename paths, so the error names the field as sent (F4).
-    //
     // This replaces rollsBackOriginDecrementWhenSampleCreationFailsInsideTheTransaction, which
     // used this same unresolvable target to force a failure AFTER the origin decrement and so
     // prove the AOP transaction rolls back. The target is now rejected before the transaction
@@ -403,19 +334,15 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
     java.math.BigDecimal originalAmount = origin.getQuantity().getNumericValue();
 
     MvcResult result =
-        mockMvc
-            .perform(
-                createBuilderForPostWithJSONBody(
-                    apiKey,
-                    "/operations",
-                    anyUser,
-                    deriveJson(
-                        origin,
-                        quantityJson("0.6", unitId),
-                        "Documented output",
-                        1,
-                        quantityJson("0.5", unitId),
-                        ",\"documentedByGlobalId\":\"SD999999999\"")))
+        post(
+                "derive",
+                deriveJson(
+                    origin,
+                    quantityJson("0.6", unitId),
+                    "Documented output",
+                    1,
+                    quantityJson("0.5", unitId),
+                    ",\"documentedByGlobalId\":\"SD999999999\""))
             .andExpect(status().isBadRequest())
             .andReturn();
     List<String> errors = getErrorFromJsonResponseBody(result, ApiError.class).getErrors();
@@ -443,11 +370,7 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
     ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
     java.math.BigDecimal beforeOperation = origin.getQuantity().getNumericValue();
 
-    mockMvc
-        .perform(
-            createBuilderForPostWithJSONBody(
-                apiKey, "/operations", anyUser, aliquotTakingJson(origin, "1")))
-        .andExpect(status().isCreated());
+    post("aliquot", aliquotTakingJson(origin, "1")).andExpect(status().isCreated());
     java.math.BigDecimal afterOperation =
         subSampleApiManager
             .getApiSubSampleById(origin.getId(), anyUser)
@@ -521,22 +444,14 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
     ApiSampleTemplate template = getFromJsonResponseBody(templateResult, ApiSampleTemplate.class);
 
     String operationJson =
-        body(
-            "passage",
-            originJson(origin, null, quantityJson("0", unitId)),
-            creatingInputs("Passaged", 1, quantityJson("1", unitId)),
+        singleOriginBody(
+            originJson(origin, null),
+            creatingFields("Passaged", 1, quantityJson("1", unitId)),
             ",\"templateId\":" + template.getId());
 
-    MvcResult result =
-        mockMvc
-            .perform(
-                createBuilderForPostWithJSONBody(apiKey, "/operations", anyUser, operationJson))
-            .andExpect(status().isCreated())
-            .andReturn();
+    MvcResult result = post("passage", operationJson).andExpect(status().isCreated()).andReturn();
 
-    ApiSampleWithFullSubSamples created =
-        getFromJsonResponseBody(result, ApiSampleWithFullSubSamples.class);
-    ApiSample reloaded = sampleApiMgr.getApiSampleById(created.getId(), anyUser);
+    ApiSample reloaded = sampleApiMgr.getApiSampleById(createdSample(result).getId(), anyUser);
     long counterFields =
         Stream.concat(
                 reloaded.getFields().stream().map(ApiInventoryEntityField::getName),
@@ -567,16 +482,13 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
         createSampleHolding("F4a mass", "5", RSUnitDef.GRAM.getId()).getSubSamples().get(0);
 
     String operationJson =
-        body(
-            "pool",
-            originJson(volumeOrigin, null, quantityJson("1", RSUnitDef.MILLI_LITRE.getId()))
+        poolBody(
+            originJson(volumeOrigin, quantityJson("1", RSUnitDef.MILLI_LITRE.getId()))
                 + ","
-                + originJson(massOrigin, null, quantityJson("1", RSUnitDef.GRAM.getId())),
-            creatingInputs("Mixed pool", 1, quantityJson("2", RSUnitDef.MILLI_LITRE.getId())));
+                + originJson(massOrigin, quantityJson("1", RSUnitDef.GRAM.getId())),
+            creatingFields("Mixed pool", 1, quantityJson("2", RSUnitDef.MILLI_LITRE.getId())));
 
-    mockMvc
-        .perform(createBuilderForPostWithJSONBody(apiKey, "/operations", anyUser, operationJson))
-        .andExpect(status().isBadRequest());
+    post("pool", operationJson).andExpect(status().isBadRequest());
 
     for (ApiSubSample origin : List.of(volumeOrigin, massOrigin)) {
       ApiSubSample reloaded = subSampleApiManager.getApiSubSampleById(origin.getId(), anyUser);
@@ -597,24 +509,17 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
     ApiSubSample foreignOrigin = createBasicSampleForUser(otherUser).getSubSamples().get(0);
     ApiSubSample ownOrigin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
     int unitId = foreignOrigin.getQuantity().getUnitId();
-    mockMvc
-        .perform(
-            createBuilderForPostWithJSONBody(
-                apiKey, "/operations", anyUser, aliquotTakingJson(foreignOrigin, "1")))
-        .andExpect(status().isNotFound());
+    post("aliquot", aliquotTakingJson(foreignOrigin, "1")).andExpect(status().isNotFound());
 
     // Pool over one origin the caller owns and one it does not: the whole request is refused
     // before either origin is decremented
     String poolJson =
-        body(
-            "pool",
-            originJson(ownOrigin, null, quantityJson("1", unitId))
+        poolBody(
+            originJson(ownOrigin, quantityJson("1", unitId))
                 + ","
-                + originJson(foreignOrigin, null, quantityJson("1", unitId)),
-            creatingInputs("Pooled with a foreign origin", 1, quantityJson("2", unitId)));
-    mockMvc
-        .perform(createBuilderForPostWithJSONBody(apiKey, "/operations", anyUser, poolJson))
-        .andExpect(status().isNotFound());
+                + originJson(foreignOrigin, quantityJson("1", unitId)),
+            creatingFields("Pooled with a foreign origin", 1, quantityJson("2", unitId)));
+    post("pool", poolJson).andExpect(status().isNotFound());
 
     ApiSubSample reloadedForeign =
         subSampleApiManager.getApiSubSampleById(foreignOrigin.getId(), otherUser);
@@ -635,16 +540,12 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
         "the caller's own origin must be untouched when a sibling origin is refused");
   }
 
-  /** Posts the body, expects a 400, asserts the origin was left untouched, returns the response. */
+  /** Posts the Aliquot body, expects a 400, asserts the origin was left untouched. */
   private MvcResult assertRejectedLeavingOriginUnchanged(ApiSubSample origin, String operationJson)
       throws Exception {
     java.math.BigDecimal before = origin.getQuantity().getNumericValue();
     MvcResult result =
-        mockMvc
-            .perform(
-                createBuilderForPostWithJSONBody(apiKey, "/operations", anyUser, operationJson))
-            .andExpect(status().isBadRequest())
-            .andReturn();
+        post("aliquot", operationJson).andExpect(status().isBadRequest()).andReturn();
     ApiSubSample reloaded = subSampleApiManager.getApiSubSampleById(origin.getId(), anyUser);
     assertTrue(
         before.compareTo(reloaded.getQuantity().getNumericValue()) == 0,
@@ -751,17 +652,13 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
     // tightened into unit equality.
     ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
     int unitId = origin.getQuantity().getUnitId();
-    mockMvc
-        .perform(
-            createBuilderForPostWithJSONBody(
-                apiKey,
-                "/operations",
-                anyUser,
-                aliquotJsonWith(
-                    origin,
-                    quantityJson("1000", RSUnitDef.MILLI_GRAM.getId()),
-                    quantityJson("0.5", unitId),
-                    "")))
+    post(
+            "aliquot",
+            aliquotJsonWith(
+                origin,
+                quantityJson("1000", RSUnitDef.MILLI_GRAM.getId()),
+                quantityJson("0.5", unitId),
+                ""))
         .andExpect(status().isCreated());
 
     ApiSubSample reloaded = subSampleApiManager.getApiSubSampleById(origin.getId(), anyUser);
@@ -787,29 +684,27 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
         HierarchicalPermission.DENIED,
         getSysAdminUser());
 
-    MvcResult post =
-        mockMvc
-            .perform(
-                createBuilderForPostWithJSONBody(
-                    apiKey, "/operations", anyUser, aliquotTakingJson(origin, "0.1")))
+    MvcResult refused =
+        post("aliquot", aliquotTakingJson(origin, "0.1"))
             .andExpect(status().isNotFound())
             .andReturn();
-    ApiError postError = getErrorFromJsonResponseBody(post, ApiError.class);
-    assertEquals(ApiErrorCodes.CONFIGURED_UNAVAILABLE.getCode(), postError.getInternalCode());
+    ApiError refusal = getErrorFromJsonResponseBody(refused, ApiError.class);
+    assertEquals(ApiErrorCodes.CONFIGURED_UNAVAILABLE.getCode(), refusal.getInternalCode());
     assertTrue(
-        postError.getMessage().contains("inventory.operations.available"),
-        () -> "the refusal must name the property, got " + postError.getMessage());
+        refusal.getMessage().contains("inventory.operations.available"),
+        () -> "the refusal must name the property, got " + refusal.getMessage());
 
-    MvcResult config =
-        mockMvc
-            .perform(
-                createBuilderForInventoryGet(
-                    API_VERSION.ONE, apiKey, "/operations/config", anyUser))
-            .andExpect(status().isNotFound())
-            .andReturn();
-    assertEquals(
-        ApiErrorCodes.CONFIGURED_UNAVAILABLE.getCode(),
-        getErrorFromJsonResponseBody(config, ApiError.class).getInternalCode());
+    // The availability check runs before the request's own rules, so the other six routes are
+    // refused identically without each needing a valid body.
+    for (String operation :
+        List.of("passage", "pool", "derive", "cryopreserve", "revive", "destroy")) {
+      MvcResult other = post(operation, "{}").andExpect(status().isNotFound()).andReturn();
+      assertEquals(
+          ApiErrorCodes.CONFIGURED_UNAVAILABLE.getCode(),
+          getErrorFromJsonResponseBody(other, ApiError.class).getInternalCode(),
+          operation);
+    }
+
     ApiSubSample reloaded = subSampleApiManager.getApiSubSampleById(origin.getId(), anyUser);
     assertEquals(0, originalAmount.compareTo(reloaded.getQuantity().getNumericValue()));
   }
