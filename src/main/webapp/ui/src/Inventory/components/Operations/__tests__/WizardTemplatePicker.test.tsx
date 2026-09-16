@@ -3,9 +3,8 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import WizardTemplatePicker from "../WizardTemplatePicker";
 
-// A controllable stand-in for the Search model: `results` feeds the Autocomplete options and
-// `performInitialSearch` records the (server) queries the picker fires. The picker is `observer`, but
-// `results` is set before render so the initial render already sees it (no reactive update needed).
+// The picker is `observer`, but `results` is set before render so the initial render already sees it
+// (no reactive update needed).
 const state = vi.hoisted(() => ({
   results: [] as Array<{ id: number; name: string; globalId: string }>,
   loading: false,
@@ -54,8 +53,6 @@ describe("WizardTemplatePicker", () => {
     await user.click(screen.getByRole("combobox"));
     const listbox = screen.getByRole("listbox");
     expect(within(listbox).getByText("Cells")).toBeInTheDocument();
-    // the id renders through the shared GlobalId pill (record icon + id chip), matching how
-    // Inventory presents records and their ids everywhere else
     const pills = within(listbox).getAllByTestId("global-id-pill");
     expect(pills.map((pill) => pill.textContent)).toEqual(["IT5", "IT7"]);
   });
@@ -75,7 +72,6 @@ describe("WizardTemplatePicker", () => {
     render(<WizardTemplatePicker setTemplate={setTemplate} />);
     await user.type(screen.getByRole("combobox"), "Buf");
     await waitFor(() => expect(performInitialSearch).toHaveBeenCalledWith(expect.objectContaining({ query: "Buf" })));
-    // typing alone selects nothing: the field is not free-solo
     expect(setTemplate).not.toHaveBeenCalled();
   });
 
@@ -84,7 +80,6 @@ describe("WizardTemplatePicker", () => {
     render(<WizardTemplatePicker setTemplate={vi.fn()} />);
     performInitialSearch.mockClear(); // ignore the initial-list fetch from mount
     await user.type(screen.getByRole("combobox"), "C");
-    // wait past the debounce, then assert no 1-character query term was ever sent
     await new Promise((resolve) => setTimeout(resolve, 400));
     expect(performInitialSearch).not.toHaveBeenCalledWith(expect.objectContaining({ query: "C" }));
   });
@@ -98,7 +93,7 @@ describe("WizardTemplatePicker", () => {
 describe("WizardTemplatePicker clearing", () => {
   it("tells the parent the selection is gone, so a cleared box cannot submit the old template", async () => {
     // Clearing used to reset only the picker's own value: the parent kept the previous templateId,
-    // so an empty-looking box still submitted that hidden selection (Copilot review, PR #1090).
+    // so an empty-looking box still submitted that hidden selection.
     const setTemplate = vi.fn();
     const user = userEvent.setup();
     render(<WizardTemplatePicker setTemplate={setTemplate} selectedTemplateId={5} selectedTemplateName="Cells" />);

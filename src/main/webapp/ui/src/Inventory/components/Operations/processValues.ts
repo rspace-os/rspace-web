@@ -1,10 +1,7 @@
 /**
- * Pure helpers for the single per-process "remember" bundle (DevDocs/adr/0007). One checkbox on
- * step 1 governs everything the user entered for a process name: the collected input values (amounts
- * and any operation-specific fields), the template choice, and the documentation link. The bundle is
- * saved under the process's rememberKey and re-applied when that process name is used again.
- *
- * Supersedes the previous per-item defaults (separate template / documentation / amount preferences).
+ * Pure helpers for the per-process "remember" bundle: the collected input values, template choice,
+ * and documentation link, saved under the process's rememberKey and re-applied when that process
+ * name is used again.
  */
 
 import type { UnitCategory } from "@/stores/stores/UnitStore";
@@ -13,17 +10,16 @@ import { normalizeDocumentation } from "./documentationResolution";
 import type { TemplateDefault, TemplateMode } from "./templateResolution";
 import type { AmountMode, OperationInputs, PerSubsampleAmounts } from "./types";
 
-/** The template modes a stored bundle may name; anything else is stale or corrupt. */
 const TEMPLATE_MODES: ReadonlySet<string> = new Set(["none", "pick", "fromSample", "remembered", "unselected"]);
 
 export type ProcessValues = {
-  /** The collected inputs to restore. The wizard omits the name/process-name keys before saving. */
+  /** The wizard omits the name/process-name keys before saving. */
   values: OperationInputs;
   template: TemplateDefault;
   documentation: DocumentationSelection;
-  /** The amount mode chosen for a multi-origin run (DevDocs/adr/0007); absent in older bundles = "same". */
+  /** Absent in an older bundle, which means "same". */
   amountMode?: AmountMode;
-  /** Per-origin amounts by origin global id, for "perSubsample" mode; absent otherwise. */
+  /** Set only when amountMode is "perSubsample". */
   perSubsampleAmounts?: PerSubsampleAmounts;
 };
 
@@ -36,7 +32,6 @@ function normalizeAmountMode(value: unknown): AmountMode {
     : "same";
 }
 
-/** Keep only entries that are a complete numeric quantity, dropping anything malformed in storage. */
 function normalizePerSubsampleAmounts(value: unknown): PerSubsampleAmounts {
   if (typeof value !== "object" || value === null) return {};
   const out: PerSubsampleAmounts = {};
@@ -50,11 +45,8 @@ function normalizePerSubsampleAmounts(value: unknown): PerSubsampleAmounts {
 }
 
 /**
- * Guard a stored template choice back into shape. Preferences are persisted JSON that outlives the
- * code that wrote them, so an unrecognised mode used to be cast straight through: templateStepValid
- * accepted it and resolveTemplateId then treated it as "fromSample", silently swapping the user's
- * template (Copilot review, PR #1090). Anything unrecognised falls back to "unselected", which
- * blocks the step until the user chooses.
+ * An unrecognised mode falls back to "unselected" rather than being passed through, which used to
+ * silently swap in the wrong template.
  */
 function normalizeTemplateDefault(stored: unknown): TemplateDefault {
   if (typeof stored !== "object" || stored === null) return UNSELECTED_TEMPLATE;
@@ -75,7 +67,6 @@ function normalizeTemplateDefault(stored: unknown): TemplateDefault {
   return result;
 }
 
-/** Guard a stored bundle back into shape, tolerating an absent template/documentation/amount mode. */
 export function normalizeProcessValues(stored: unknown): ProcessValues | null {
   if (typeof stored !== "object" || stored === null) return null;
   const s = stored as {
@@ -92,20 +83,12 @@ export function normalizeProcessValues(stored: unknown): ProcessValues | null {
     template,
     documentation: normalizeDocumentation(s.documentation),
   };
-  // Only carried for multi-origin runs; an older bundle without them normalises to no field, and
-  // consumers default the mode to "same" (DevDocs/adr/0007).
   if (s.amountMode !== undefined) result.amountMode = normalizeAmountMode(s.amountMode);
   if (s.perSubsampleAmounts !== undefined)
     result.perSubsampleAmounts = normalizePerSubsampleAmounts(s.perSubsampleAmounts);
   return result;
 }
 
-/**
- * The bundle store after a remembered Perform: this run's bundle stored under the key. The wizard
- * calls this only when "remember" is ticked; an unremembered Perform never reaches it, so the
- * previously-saved bundle (if any) is kept - unticking means "do not save this run", never "delete
- * what was saved" (grill Q1). Persisted only on Perform.
- */
 export function processValuesAfterPerform(
   current: Record<string, ProcessValues>,
   key: string,

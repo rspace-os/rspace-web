@@ -68,7 +68,7 @@ abstract class InventoryRecordValidator {
         errors.pushNestedPath(String.format("extraFields[%d]", i++));
         // A null element ("extraFields": [null]) is already a bean-validation error at binding,
         // but the controllers accept a BindingResult so this validator still runs; dereferencing
-        // the element would turn that reported 400 into a 500 (Copilot review, PR #1090).
+        // the element would turn that reported 400 into a 500.
         if (aef != null) {
           validateExtraFieldName(aef.getName(), errors);
           ValidationUtils.invokeValidator(extraFieldHelper, aef, errors);
@@ -81,11 +81,9 @@ abstract class InventoryRecordValidator {
   // No rejection of operationFieldKey here, deliberately. The DTO property is READ_ONLY, so a value
   // in any request body is dropped at binding before this method runs. Rejecting it in this shared
   // method was tried and was wrong twice over: the template validators never call this method, so
-  // a forged key still persisted (parallel review, C1); and rejecting a value the API itself
-  // returns broke read-modify-write, so any client that GETs an operation-created sample, edits
-  // one field and PUTs it back got a 400 on a field it never touched (C2 of that review). Ignoring
-  // is also truthful: no update path can change a persisted key, so there is nothing a caller could
-  // have meant by sending one. RSDEV-1231.
+  // a forged key still persisted; and rejecting a value the API itself returns broke
+  // read-modify-write, so any client that GETs an operation-created sample, edits one field and
+  // PUTs it back got a 400 on a field it never touched.
 
   boolean isValidUnit(ApiQuantityInfo quantity) {
     return quantity.getUnitId() != null && RSUnitDef.exists(quantity.getUnitId());
@@ -104,7 +102,7 @@ abstract class InventoryRecordValidator {
     tags.stream()
         // A null element ("tags": [null]) is already a bean-validation error at binding, but the
         // controllers accept a BindingResult so this validator still runs; dereferencing the
-        // element would turn that reported 400 into a 500 (Copilot review, PR #1090).
+        // element would turn that reported 400 into a 500.
         .filter(Objects::nonNull)
         .forEach(
             tag -> {

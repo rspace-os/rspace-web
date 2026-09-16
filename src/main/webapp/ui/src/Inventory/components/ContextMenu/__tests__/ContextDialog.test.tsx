@@ -15,7 +15,7 @@ vi.mock("@/stores/use-stores", () => ({
  * whether a backdrop click closes it by tracking where the MOUSEDOWN landed, so that a drag ending
  * on the backdrop does not close the dialog. Driving it with userEvent exercises the sequence the
  * component was actually built around, instead of a partial one that could break on an MUI upgrade
- * with no product bug, or stay green while real clicks stopped working (PR #963 review).
+ * with no product bug, or stay green while real clicks stopped working.
  *
  * The class selector stays: the backdrop is aria-hidden presentation with no role or name, so there
  * is nothing semantic to query it by.
@@ -50,10 +50,9 @@ describe("ContextDialog", () => {
   });
 
   it("still closes on Escape when disableBackdropClick is set", async () => {
-    // The guard narrows on reason === "backdropClick" precisely so Escape keeps working. Written
-    // as `if (disableBackdropClick) return;` it would trap a keyboard user in the operation wizard,
-    // the only component that sets the prop, and both backdrop tests above would still pass
-    // (parallel review).
+    // The guard narrows on reason === "backdropClick" precisely so Escape keeps working; written as
+    // `if (disableBackdropClick) return;` it would break Escape too, and both backdrop tests above
+    // would still pass.
     const onClose = vi.fn();
     render(
       <ContextDialog open onClose={onClose} disableBackdropClick>

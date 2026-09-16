@@ -364,8 +364,8 @@ public class UserProfileControllerTest {
 
   @Test
   public void updatePreferenceValueWithKeyMergesInsteadOfReplacing() {
-    // The whole UI_JSON_SETTINGS blob is one column: replacing it from the client meant two
-    // overlapping writers each dropped the other's key. With a key the server merges just that one.
+    // The whole UI_JSON_SETTINGS blob is one column: replacing it from the client would drop every
+    // other key already stored. With a key the server merges just that one.
     when(usrMgr.getUserByUsername("any")).thenReturn(anyUser);
     UserPreference merged =
         new UserPreference(Preference.UI_JSON_SETTINGS, anyUser, "{\"A\":1,\"B\":2}");
@@ -408,8 +408,8 @@ public class UserProfileControllerTest {
   @Test
   public void updatePreferenceValueReturns400WhenTheKeyedValueIsRejected() {
     // A value that is not JSON, or a key no preference declares, is refused by the merge with an
-    // IllegalArgumentException carrying the catalog text. Left to the web tier that is a 500
-    // (live test 2026-09-08, row P5); the caller sent a bad request and should be told so.
+    // IllegalArgumentException carrying the catalog text. Left to the web tier that is a 500;
+    // the caller sent a bad request and should be told so.
     when(usrMgr.getUserByUsername("any")).thenReturn(anyUser);
     when(usrMgr.mergeUiJsonSetting("BAD", "not json", "any"))
         .thenThrow(new IllegalArgumentException("not valid JSON"));
@@ -429,8 +429,8 @@ public class UserProfileControllerTest {
   public void updatePreferenceValueTreatsABlankSuppliedKeyAsInvalidNotAbsent() {
     // A supplied-but-blank key ("" or " ") used to be treated as if the parameter were absent,
     // routing the request to setPreference and silently replacing the whole JSON blob, bypassing
-    // both the key validation and the locked merge (Copilot review, PR #1090). A supplied key must
-    // always reach the keyed path, where the merge rejects the invalid shape as a 400.
+    // both the key validation and the merge. A supplied key must always reach the keyed path, where
+    // the merge rejects the invalid shape as a 400.
     when(usrMgr.getUserByUsername("any")).thenReturn(anyUser);
     when(usrMgr.mergeUiJsonSetting(anyString(), anyString(), anyString()))
         .thenThrow(new IllegalArgumentException("bad key"));
@@ -461,7 +461,7 @@ public class UserProfileControllerTest {
             "UI_CLIENT_SETTINGS", "whole", "B", () -> "any", mockRequest, servletResponse);
 
     // 400 like the other rejected shapes: without the status a client would treat this rejected
-    // update as successful (Copilot review, PR #1090)
+    // update as successful.
     assertEquals(400, servletResponse.getStatus());
     assertNull(response.getData());
     assertEquals("not a keyed preference", response.getErrorMsg().getErrorMessages().get(0));

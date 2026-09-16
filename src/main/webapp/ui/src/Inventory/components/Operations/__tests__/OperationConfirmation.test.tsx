@@ -150,8 +150,6 @@ describe("OperationConfirmation", () => {
     renderConf({ templateSelection: { mode: "none", templateId: null, remember: false } });
     expect(screen.queryByText(/confirm\.labels\.process/)).not.toBeInTheDocument();
   });
-
-  // Cryopreserve-shaped op: declares a storage temperature and lists it in its confirmSummary.
   const cryoOp = {
     key: "cryopreserve",
     labelKey: "operations.cryopreserve.label",
@@ -197,11 +195,8 @@ describe("OperationConfirmation", () => {
       </ThemeProvider>,
     );
     expect(screen.getByText(/confirm\.labels\.storageTemp/)).toBeInTheDocument();
-    // template is not in this confirmSummary, so it is not shown
     expect(screen.queryByText(/confirm\.labels\.template/)).not.toBeInTheDocument();
   });
-
-  // Pool-shaped op: multi-origin (requiresMultiple), its linkBack field name interpolates each origin.
   const poolOp = {
     key: "pool",
     labelKey: "operations.pool.label",
@@ -234,18 +229,13 @@ describe("OperationConfirmation", () => {
       </ThemeProvider>,
     );
     expect(screen.getByText(/confirm\.labels\.linkBack/)).toBeInTheDocument();
-    // The row fans out one line per origin (in cimode each renders the field-name key); the bug showed
-    // only one. Two origins -> two lines.
     expect(screen.getAllByText(/pool\.linkFieldName/)).toHaveLength(2);
-    // A per-subsample operation labels its amount-taken row "from each subsample", not just "Amount
-    // taken" (the plain label, anchored so it does not also match ...amountTakenEach, is absent).
+    // Anchored so it does not also match ...amountTakenEach.
     expect(screen.getByText(/confirm\.labels\.amountTakenEach/)).toBeInTheDocument();
     expect(screen.queryByText(/confirm\.labels\.amountTaken$/)).not.toBeInTheDocument();
   });
 
   it("reads the amount-taken row as 'take all' for a Pool in 'all' mode, with no per-origin lines", () => {
-    // Pool's DEFAULT mode, and the one branch of the amountTaken row no test rendered: the two
-    // Pool tests above use "same" and "perSubsample".
     render(
       <ThemeProvider theme={appTheme}>
         <OperationConfirmation
@@ -266,7 +256,6 @@ describe("OperationConfirmation", () => {
     );
     expect(screen.getByText(/confirm\.labels\.amountTakenEach/)).toBeInTheDocument();
     expect(screen.getByText(/confirm\.values\.takeAll/)).toBeInTheDocument();
-    // neither the per-origin breakdown nor the single shared amount is shown alongside it
     expect(screen.queryByText(/confirm\.values\.originAmount/)).not.toBeInTheDocument();
     expect(screen.queryByText(/confirm\.values\.amountTaken$/)).not.toBeInTheDocument();
   });
@@ -279,8 +268,8 @@ describe("OperationConfirmation", () => {
     expect(screen.queryByText(/undefined/)).not.toBeInTheDocument();
   });
 
-  // Destroy-shaped op (DevDocs/adr/0007): noOutput, so the card names the origin subsample, and the summary is
-  // the origin being emptied plus the disposed field it adds to the origin.
+  // Destroy-shaped op: noOutput, so the card names the origin subsample, and the summary is the
+  // origin being emptied plus the disposed field it adds to the origin.
   const destroyOp = {
     key: "destroy",
     labelKey: "operations.destroy.label",
@@ -337,7 +326,7 @@ describe("OperationConfirmation in English", () => {
 
   it("reads each per-subsample line as 'origin: amount unit'", () => {
     // The line is assembled by i18n from the originAmount and amountTaken keys, not concatenated in
-    // code (code review, finding 10). cimode renders the key and drops every parameter, so only the
+    // code. cimode renders the key and drops every parameter, so only the
     // real catalogs can show that the origin name and its amount both arrive.
     render(
       <InEnglish>
@@ -367,14 +356,10 @@ describe("OperationConfirmation in English", () => {
   });
 });
 
-// The server builds the record from the typed inputs (DevDocs/adr/0007) while
-// this card is computed from them separately, so the two can drift. The names the server stores are
-// pinned server-side by InventoryOperationsInputsShapeMVCIT and InventoryOperationRequestBuilderTest;
-// these tests spell those names out as literals and assert the card shows them, in English, on the
-// real definitions. They used to call a TS buildOperationRequest as an oracle, but that function had
-// no production caller: it was a second implementation of the server's build that could drift from
-// it while both suites stayed green, and the assertions already hardcoded the expected names anyway
-// (parallel review).
+// The server builds the record from the typed inputs while this card is computed from them
+// separately, so the two can drift. These tests spell out the names the server stores as literals
+// and assert the card shows them, on the real definitions, rather than compute them with a second TS
+// implementation of the server's build that could itself drift.
 describe("the confirmation preview matches the names the server stores", () => {
   const real = (key: string): InventoryOperation => {
     const found = operations.find((o) => o.key === key);
@@ -410,9 +395,8 @@ describe("the confirmation preview matches the names the server stores", () => {
         </ThemeProvider>
       </InEnglish>,
     );
-    // Both origins are named "Aliquot", so the interpolated link name collides and each member of
-    // the colliding group is suffixed with the global id it targets (withUniqueFieldNames, applied
-    // identically by InventoryOperationRequestBuilder server-side).
+    // Both origins are named "Aliquot", so the interpolated link name collides; each member of the
+    // colliding group is suffixed with the global id it targets.
     for (const name of ["Pooled from: Aliquot (SS1)", "Pooled from: Aliquot (SS2)"]) {
       expect(screen.getByText(name)).toBeInTheDocument();
     }

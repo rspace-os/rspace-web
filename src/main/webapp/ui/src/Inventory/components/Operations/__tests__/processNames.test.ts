@@ -70,9 +70,9 @@ describe("filterProcessNames", () => {
 });
 
 describe("processValuesPreferenceFor", () => {
-  // RSDEV-1231: each operation type has its own "remember" collection, so one operation's heavy
-  // use of Remember cannot push another's collection - or the pot every operation used to share -
-  // over the server's per-key size cap.
+  // Each operation type has its own "remember" collection, so one operation's heavy use of
+  // Remember cannot push another's collection - or the pot every operation used to share - over
+  // the server's per-key size cap.
   it("gives every one of the seven operations its own, distinct preference key", () => {
     const keys = [
       ["aliquot", PREFERENCES.INVENTORY_OPERATION_PROCESS_VALUES_ALIQUOT],
@@ -97,7 +97,7 @@ describe("processValuesPreferenceFor", () => {
 
 describe("processNameDefaultAfterPerform", () => {
   // The wizard calls this only for a remembered Perform, so there is no "remember off" branch:
-  // unticking never deletes what was saved (grill Q1).
+  // unticking never deletes what was saved.
   it("stores the trimmed name as the operation's default", () => {
     expect(processNameDefaultAfterPerform({}, "derive", "  dna extraction  ")).toEqual({
       derive: "dna extraction",

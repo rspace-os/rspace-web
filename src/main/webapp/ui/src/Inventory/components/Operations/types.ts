@@ -1,16 +1,16 @@
 /**
  * Types for the Inventory operation wizard request. The wizard collects values per the operation's
- * config, then buildOperationInputsRequest turns them into an OperationInputsRequest which is POSTed
- * to the thin backend endpoint (see DevDocs/adr/0007). Shapes mirror the backend
+ * config, then buildOperationInputsRequest turns them into an OperationInputsRequest which is
+ * POSTed to the thin backend endpoint. Shapes mirror the backend
  * ApiInventoryOperationPost / ApiSampleWithFullSubSamples so the JSON maps straight through.
  */
 
 export type OperationQuantity = { numericValue: number; unitId: number };
 
 /**
- * How the amount taken is decided across a multi-origin operation's origins (DevDocs/adr/0007). "same" is the
- * single shared amount (the default, and the only mode single-origin operations use); "all" empties
- * every origin to zero; "perSubsample" takes a separate amount from each origin.
+ * How the amount taken is decided across a multi-origin operation's origins. "same" is the single
+ * shared amount (the default, and the only mode single-origin operations use); "all" empties every
+ * origin to zero; "perSubsample" takes a separate amount from each origin.
  */
 export type AmountMode = "same" | "all" | "perSubsample";
 
@@ -32,11 +32,10 @@ export type OperationInputs = Record<string, OperationInputValue>;
 
 /**
  * The definition key that produced a field. The server stamps it when it builds an operation's
- * fields; the API returns it on GET and ignores it in every request (it is read-only on the wire),
- * which is what lets a later operation identify a field an earlier one generated regardless of the
- * locale its name was rendered in (F6, e.g. the Passage counter). A field absorbed
- * into an inherited TEMPLATE field carries no key, since InventoryEntityField has no such column;
- * that gap is a documented follow-up in DevDocs/adr/0007.
+ * fields, and ignores it in every request since it's read-only on the wire - which is what lets a
+ * later operation identify a field an earlier one generated regardless of the locale its name was
+ * rendered in. A field absorbed into an inherited template field carries no key, since
+ * InventoryEntityField has no such column.
  */
 export type OperationFieldKey = { operationFieldKey: string };
 
@@ -64,16 +63,16 @@ export type OperationOriginUpdate = {
   /** How `amountTaken` was decided. "all" means the amount IS the origin's whole quantity as this
    * client read it; "explicit" amounts are user-entered. The backend checks the mode for shape only
    * (an emptying operation cannot take an explicit amount, a linking one cannot take all) and does
-   * not compare it against the live quantity (DevDocs/adr/0007: no concurrency control). */
+   * not compare it against the live quantity. */
   amountMode: "explicit" | "all";
   amountTaken: OperationQuantity;
 };
 
 /**
- * The request the wizard POSTs (DevDocs/adr/0007, M4): the values the user typed,
- * keyed by the definition's input key, from which the server builds the sample itself. Each origin
- * still carries the amount taken and how it was decided (shape-checked, not compared against the
- * live quantity); the origin fields an operation adds (Destroy's disposed date) are the server's.
+ * The request the wizard POSTs: the values the user typed, keyed by the definition's input key,
+ * from which the server builds the sample itself. Each origin still carries the amount taken and
+ * how it was decided (shape-checked, not compared against the live quantity); the origin fields an
+ * operation adds (Destroy's disposed date) are the server's.
  */
 export type OperationInputsRequest = {
   operationType: string;
