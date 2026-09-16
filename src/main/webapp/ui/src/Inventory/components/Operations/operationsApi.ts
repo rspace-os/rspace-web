@@ -6,11 +6,7 @@ import type { OperationInputsRequest, ResolveLabel } from "./types";
 /** Minimal view of the created sample returned by the operations endpoint. */
 export type OperationResult = { id: number; globalId: string; name: string };
 
-/**
- * Fetch the operation definitions from the backend's single authoritative operations_config.json
- * (GET /operations/config; DevDocs/adr/0007) and validate them against the wizard's schema. Throws
- * on a fetch failure or an invalid config, so the picker can show one load-failed state for both.
- */
+/** Throws on a fetch failure or an invalid config, so callers can show one load-failed state for both. */
 export async function fetchOperationsConfig(): Promise<Array<InventoryOperation>> {
   const { data } = await ApiService.get<unknown>("operations", "config");
   return parseOperationsConfig(data);
@@ -20,19 +16,9 @@ export async function fetchOperationsConfig(): Promise<Array<InventoryOperation>
  * POST a configured operation to the thin backend endpoint. The /api/inventory/v1/ prefix is
  * already applied by InvApiService, so the resource is just "operations". Resolves to null for a
  * terminal operation (noOutput, e.g. Destroy), which creates no sample and so returns an empty body.
- *
- * The wizard currently discards the result: it reports success with a toast and leaves the user
- * where they were, rather than navigating away from a selection they may want to act on again. The
- * typing and the null normalisation are kept regardless - they describe the endpoint's contract,
- * which is what this module exists to state, and the normalisation guards a real Axios behaviour
- * (an empty body surfaces as "", not null, once JSON parsing of the empty string fails). Both are
- * covered by this module's own tests, independently of who calls it (parallel review, A11).
  */
 export async function performOperation(request: OperationInputsRequest): Promise<OperationResult | null> {
   const { data } = await ApiService.post<OperationResult | null>("operations", request);
-  // A terminal operation returns an empty body, which Axios surfaces as "" (not null) once JSON
-  // parsing of the empty string fails; normalise any empty/falsy response to null so the declared
-  // OperationResult | null return type holds and callers never see a stray "".
   return data || null;
 }
 
@@ -54,15 +40,14 @@ export function describeOperationError(
   fallback: string,
 ): string {
   // The "which origin" marker is worded from the catalog: welding " (origin 3)" onto a reason the
-  // server already localized shipped half an English sentence to a non-English user (parallel
-  // review, A4).
+  // server already localized shipped half an English sentence to a non-English user.
   const detail = getApiErrorDetail(error, fallback, (reason, index) =>
     resolveLabel("operations.wizard.originIndex", { reason, index }),
   );
   const match = BARE_KEY_PREFIX.exec(detail);
   const input = match ? operation.inputs.find((i) => i.key === match[1]) : undefined;
   // The "<label>: <reason>" join goes through the catalog: not every locale separates with a
-  // colon-space (parallel review, FE14).
+  // colon-space.
   if (input && match) {
     return resolveLabel("operations.wizard.fieldReason", {
       label: resolveLabel(input.labelKey),
@@ -74,13 +59,11 @@ export function describeOperationError(
 
 /**
  * Whether a sample name is free for the current user, used to de-duplicate the derived sample name
- * with a numeric suffix (DevDocs/adr/0007). Uses the purpose-built, exact, own-scoped endpoint
- * `samples/validateNameForNewSample` rather than the Inventory full-text search: that search is
- * tokenised Lucene, so a multi-word name plus a wildcard matches no single token (and a bare query
- * matches across every readable record's name/tags/description), neither of which is an exact
- * name-existence check. Inventory names are not uniqueness-constrained, so this is a usability
- * nicety: a blank name needs no check, and a failed check degrades to "available" (the name is used
- * as-is) rather than blocking the wizard.
+ * with a numeric suffix. Uses the purpose-built, exact, own-scoped endpoint
+ * `samples/validateNameForNewSample` rather than the Inventory full-text search, which is tokenised
+ * Lucene and can't do an exact name-existence check. Inventory names are not uniqueness-constrained,
+ * so this is only a usability nicety: a failed check degrades to "available" rather than blocking
+ * the wizard.
  */
 export async function sampleNameAvailable(name: string): Promise<boolean> {
   const trimmed = name.trim();

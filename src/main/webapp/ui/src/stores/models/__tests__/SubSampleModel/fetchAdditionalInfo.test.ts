@@ -49,8 +49,8 @@ describe("fetchAdditionalInfo", () => {
   });
 
   test("A refresh that failed does not poison later refreshes: the next call issues a new request.", async () => {
-    // Code review, finding 2: the in-progress promise used to be cleared only on success, so after
-    // one rejection every later call awaited the same rejected promise instead of re-fetching.
+    // The in-progress promise used to be cleared only on success, so after one rejection every
+    // later call awaited the same rejected promise instead of re-fetching.
     const subsample = makeMockSubSample();
     const query = vi.spyOn(InvApiService, "query") as MockInstance;
     query.mockImplementationOnce(() => Promise.reject(new Error("network down")));

@@ -17,8 +17,7 @@ import org.springframework.validation.MapBindingResult;
 
 /**
  * The inputs map is the values the user typed, keyed by the definition's input keys; nothing else.
- * One golden set per configured operation, each the shape the M0 facade design sends, then each
- * rule broken one at a time.
+ * One golden set per configured operation, then each rule broken one at a time.
  */
 class InventoryOperationInputValidatorTest {
 
@@ -43,9 +42,7 @@ class InventoryOperationInputValidatorTest {
    *
    * <p>An input key ("sampleName") and a declared type ("integer") are wire-contract tokens, not
    * words in any language. Interpolating one into a translated sentence ships half a message the
-   * user cannot read, and it is already redundant: the error carries the key as its FIELD, which is
-   * what the wizard swaps for the input's localized label before showing it (operationsApi's
-   * describeOperationError). The sentence only has to say what is wrong (parallel review, A3).
+   * user cannot read, and it is already redundant: the error carries the key as its FIELD.
    */
   @Test
   void noRejectionSpellsARawConfigIdentifierIntoItsMessage() {
@@ -53,7 +50,6 @@ class InventoryOperationInputValidatorTest {
         List.of("aliquot", "passage", "pool", "derive", "cryopreserve", "revive", "destroy")) {
       InventoryOperationConfig definition = registry.get(operation).orElseThrow();
       for (InventoryOperationConfig.Input input : definition.inputs()) {
-        // Every way this input can be rejected: absent, wrong type, and out of bounds.
         Map<String, Object> absent = goldenFor(operation);
         absent.remove(input.key());
         Map<String, Object> wrongType = goldenFor(operation);
@@ -95,18 +91,9 @@ class InventoryOperationInputValidatorTest {
   }
 
   /**
-   * The quantity each created subsample gets must be strictly positive.
-   *
-   * <p>Zero passed every check: {@code validateAmount} rejects only negatives, and the delegated
-   * {@code SampleApiPostValidator} does the same. So an Aliquot with a positive {@code amountTaken}
-   * and {@code eachAmount} of zero deducted real stock from the origin and created a subsample
-   * holding nothing. The wizard forbids it client-side ({@code detailsValid}) and the operation
-   * validator enforced it server-side before validation moved to the inputs map, so this restores a
-   * rule the redesign dropped (Codex review, P2).
-   *
-   * <p>Scoped to the input the definition names in {@code effect.eachAmountFrom}, so an operation
-   * that deliberately takes nothing from its origin (Passage: no {@code amountTakenFrom} at all) is
-   * untouched.
+   * The quantity each created subsample gets must be strictly positive: zero passes the plain
+   * negative-number check, so an Aliquot with a positive {@code amountTaken} and {@code eachAmount}
+   * of zero would deduct real stock from the origin while creating a subsample holding nothing.
    */
   @Test
   void everyOperationRejectsACreatedAmountOfZero() {
@@ -126,8 +113,6 @@ class InventoryOperationInputValidatorTest {
 
   @Test
   void aZeroAmountTakenIsStillAccepted() {
-    // Only the CREATED amount gained a positivity rule. Taking nothing from the origin is a real
-    // case the definitions rely on, and nothing here should start rejecting it.
     Map<String, Object> inputs = aliquot();
     inputs.put("amountTaken", millilitres("0"));
 
@@ -158,8 +143,6 @@ class InventoryOperationInputValidatorTest {
 
   @Test
   void withDefaultsFillsAnAbsentCountWithTheDeclaredOne() {
-    // M0 D7: a typed facade client may omit count; the server supplies the definition's default,
-    // typed as the integer the validator expects.
     Map<String, Object> inputs = aliquot();
     inputs.remove("count");
     Map<String, Object> filled =
@@ -192,8 +175,6 @@ class InventoryOperationInputValidatorTest {
 
   @Test
   void cryopreserveRequiresAStorageTemperature() {
-    // M0: storageTemp is required on cryopreserve (a frozen sample has a storage temperature); the
-    // config used to leave it optional, which would have built a Frozen sample with no range.
     Map<String, Object> inputs = cryopreserve();
     inputs.remove("storageTemp");
     assertSingleErrorOn(
@@ -212,8 +193,8 @@ class InventoryOperationInputValidatorTest {
 
   @Test
   void valueAboveTheDeclaredMaximumIsAFieldErrorOnItsKey() {
-    // 101 is the first count the request builder refuses (MAX_SUBSAMPLES); without this rule it
-    // surfaced as a 500 where the client-assembled shape, since deleted, returned a 400 (M3a).
+    // 101 is the first count MAX_SUBSAMPLES refuses; without this check it surfaced as an
+    // uncaught 500 instead of a rejected field.
     Map<String, Object> inputs = aliquot();
     inputs.put("count", 101);
     assertSingleErrorOn(
@@ -255,7 +236,7 @@ class InventoryOperationInputValidatorTest {
   void negativeQuantityIsAFieldErrorOnItsKey() {
     // Asserted on amountTaken rather than eachAmount: eachAmount is the definition's created
     // amount,
-    // which has the stricter "greater than zero" rule of its own (Codex review, P2), so a negative
+    // which has the stricter "greater than zero" rule of its own, so a negative
     // there is reported under that code instead. This keeps the plain negative rule covered.
     Map<String, Object> inputs = aliquot();
     inputs.put("amountTaken", millilitres("-1"));
@@ -283,8 +264,8 @@ class InventoryOperationInputValidatorTest {
 
   @Test
   void rawMapIsNotAQuantity() {
-    // What Jackson hands a Map<String, Object> for a JSON object (probed); the caller must bind
-    // quantities to a typed DTO before validating.
+    // A JSON object not bound to a typed DTO arrives as a Map<String, Object>, not an
+    // ApiQuantityInfo.
     Map<String, Object> inputs = aliquot();
     inputs.put("eachAmount", Map.of("numericValue", 3, "unitId", 3));
     assertSingleErrorOn(
@@ -353,7 +334,7 @@ class InventoryOperationInputValidatorTest {
 
   /**
    * A created subsample takes its quantity from eachAmount and nothing else, so a creating
-   * operation cannot succeed without it (M0 design, D7). The config must say so, or this validator
+   * operation cannot succeed without it. The config must declare it required, or this validator
    * would pass an inputs map the builder cannot turn into a sample.
    */
   @Test
@@ -377,9 +358,9 @@ class InventoryOperationInputValidatorTest {
   }
 
   /**
-   * The M0 shapes carry amountTaken on the origin, not in the inputs map, so the golden sets omit
-   * it. Five definitions still declare it as an input, so when a caller does put it in the map it
-   * is checked like any other quantity.
+   * The golden sets omit amountTaken because it normally travels on the origin, not the inputs map.
+   * Five definitions still declare it as an input, so a caller that does put it in the map gets it
+   * checked like any other quantity.
    */
   @Test
   void amountTakenInTheMapIsValidatedAsAQuantity() {
@@ -392,10 +373,8 @@ class InventoryOperationInputValidatorTest {
   }
 
   /**
-   * A key the definition does not declare is rejected, naming that key (RSDEV-1231 F8).
-   *
-   * <p>The declared-input loop reads the DEFINITION's keys out of the caller's map and never walks
-   * the map itself, so an undeclared key used to be unreachable rather than wrong: its value was
+   * The declared-input loop reads the DEFINITION's keys out of the caller's map and never walks the
+   * map itself, so an undeclared key used to be unreachable rather than wrong: its value was
    * dropped and the request answered 201.
    */
   @Test
@@ -427,9 +406,7 @@ class InventoryOperationInputValidatorTest {
 
   /**
    * The empty key is the one Errors cannot attach to a field: rejectValue("") is promoted to a
-   * global error by contract. It still has to be REJECTED rather than ignored, which is the whole
-   * point of F8, and ApiControllerAdvice renders global errors alongside field ones, so the caller
-   * still gets the 400.
+   * global error rather than a field error, so this checks the global error list instead.
    */
   @Test
   void theEmptyInputKeyIsRejectedGloballyRatherThanIgnored() {
@@ -442,10 +419,7 @@ class InventoryOperationInputValidatorTest {
         "errors.inventory.operation.inputUnknown", errors.getGlobalErrors().get(0).getCode());
   }
 
-  /**
-   * Destroy declares no inputs at all, so every key is undeclared. Its facade sends an empty map
-   * and the wizard builds one, so the empty map stays valid and anything else is refused.
-   */
+  /** Destroy declares no inputs at all, so every key is undeclared except the empty map itself. */
   @Test
   void anOperationThatDeclaresNoInputsAcceptsOnlyAnEmptyMap() {
     assertEquals(List.of(), validate("destroy", inputs()).getAllErrors());
@@ -484,7 +458,7 @@ class InventoryOperationInputValidatorTest {
     };
   }
 
-  // --- golden input sets, one per operation, as the M0 facade shapes send them ---
+  // --- golden input sets, one per operation ---
 
   private static Map<String, Object> inputs(Object... keysAndValues) {
     Map<String, Object> map = new LinkedHashMap<>();
@@ -510,7 +484,7 @@ class InventoryOperationInputValidatorTest {
     return inputs("sampleName", "HeLa p3", "count", 1, "eachAmount", millilitres("5"));
   }
 
-  /** Pool's per-origin amounts travel on the origins, not in the inputs map (M0, D6). */
+  /** Pool's per-origin amounts travel on the origins, not in the inputs map. */
   private static Map<String, Object> pool() {
     return inputs("sampleName", "Pooled lysate", "count", 1, "eachAmount", millilitres("13"));
   }
@@ -560,13 +534,9 @@ class InventoryOperationInputValidatorTest {
   // --- lengths: text inputs land in varchar columns ---
 
   /**
-   * The sample's name is EditInfo.name, varchar(255), and a text field's content is
-   * EditInfo.description, varchar(250). Nothing here bounded a text input, so the name reached the
-   * samples validator only after the origins were read (and came back as {@code newSample.name}, a
-   * field no facade caller sent), and a text field's content reached the INSERT as a 500. The
-   * definition says which role each text input plays ({@code nameFrom}, {@code
-   * textFields[].contentFrom}, {@code originFields[].contentFrom}), so the bound can follow the
-   * role, on the input's own key, like every other rule here.
+   * A name input is bound to EditInfo.name, varchar(255); a text-field-content input is bound to
+   * EditInfo.description, varchar(250). Without this check, an overlong value reached the INSERT as
+   * a 500 instead of being rejected on its own key.
    */
   @Test
   void aNameInputLongerThanTheRecordNameLimitIsAFieldErrorOnItsKey() {
@@ -597,8 +567,6 @@ class InventoryOperationInputValidatorTest {
     assertEquals(List.of(), validate("cryopreserve", atTheLimit).getAllErrors());
   }
 
-  // --- the integer and quantity rules at their edges ---
-
   @Test
   void aCountAsALongAboveTheMaximumIsAboveMaximumNotWrongType() {
     // Jackson binds a large JSON integer to Long; it is still a whole number, judged by the bound.
@@ -625,7 +593,7 @@ class InventoryOperationInputValidatorTest {
 
   @Test
   void aQuantityWithTheWizardsUnsetUnitIsAFieldErrorOnItsKey() {
-    // UNSET_UNIT = 0 is the wizard's "no unit chosen" marker; it is not a unit.
+    // unit id 0 is a "no unit chosen" marker, not a valid unit.
     Map<String, Object> inputs = aliquot();
     inputs.put("eachAmount", new ApiQuantityInfo(new BigDecimal("3"), 0));
     assertSingleErrorOn(
@@ -647,7 +615,7 @@ class InventoryOperationInputValidatorTest {
     // created sample recalculates from them does not. That recompute happens during persistence, so
     // without this the overflow is a 500 inside the transaction, after the origins were
     // decremented, instead of
-    // a rejected field (Codex review, PR #1090).
+    // a rejected field.
     Map<String, Object> inputs = passage();
     inputs.put("count", 2);
     inputs.put("eachAmount", millilitres("6E+15"));

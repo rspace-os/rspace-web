@@ -26,7 +26,7 @@ import org.springframework.validation.Validator;
  *
  * <p>Lives in {@code service.inventory} rather than in {@code api.v1.controller} because the same
  * check runs inside the operations transaction (see {@code OperationTemplateConformanceValidator}),
- * and the service layer may not import the controller layer (parallel review, L1).
+ * and the service layer may not import the controller layer.
  */
 @Component
 public class SampleApiPostFullValidator implements Validator {
@@ -63,8 +63,6 @@ public class SampleApiPostFullValidator implements Validator {
     ApiSampleWithFullSubSamples apiSample = apiSamplePost.getApiSample();
     Integer subSamplesCount = apiSample.getNewSampleSubSamplesCount();
 
-    // if we are defining instructions to create subsamples,we can't include subsample definition as
-    // well.
     if (subSamplesCount != null && !CollectionUtils.isEmpty(apiSample.getSubSamples())) {
       errors.reject("errors.inventory.sample.subSamplesArrayNotEmpty");
     }
@@ -86,7 +84,6 @@ public class SampleApiPostFullValidator implements Validator {
       List<InventoryEntityField> templateFields = apiSamplePost.getTemplate().getActiveFields();
 
       if (!incomingApiFields.isEmpty()) {
-        // run validation against template fields
         fieldHelper.checkApiFieldsMatchingFormFields(
             incomingApiFields,
             templateFields,

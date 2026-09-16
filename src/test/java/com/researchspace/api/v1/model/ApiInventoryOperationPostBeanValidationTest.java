@@ -44,7 +44,7 @@ class ApiInventoryOperationPostBeanValidationTest {
   void originsListIsCappedAtBindingNotOnlyInTheValidator() {
     // InventoryOperationPostValidator.MAX_ORIGINS rejects an over-long list, but only after Jackson
     // has materialised every element and the @Valid cascade has run bean validation over all of
-    // them. The same ceiling at binding stops that work happening at all (security review).
+    // them. The same ceiling at binding stops that work happening at all.
     ApiInventoryOperationPost post = minimalPost();
     post.getOrigins()
         .addAll(

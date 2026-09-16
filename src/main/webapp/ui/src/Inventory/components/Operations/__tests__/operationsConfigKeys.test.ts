@@ -2,14 +2,12 @@
  * Every i18n key the shipped operations config names must exist in the en-US catalog.
  *
  * This is the one gap the config-driven design leaves open. `resolveLabelFrom` (types.ts) casts `t`
- * to `(key, params) => string` precisely so a key the config supplies can be passed to a typed
- * i18next, which means TypeScript checks nothing about these keys and neither did any test: adding
- * an operation with an untranslated `labelKey` compiled, passed the whole suite, and rendered the
- * raw string "operations.foo.label" in the picker.
+ * to `(key, params) => string` so a key the config supplies can be passed to a typed i18next, which
+ * means TypeScript checks nothing about these keys: an operation with an untranslated `labelKey`
+ * would compile and pass the rest of the suite while rendering the raw key in the picker.
  *
  * The feature's premise is that a new operation needs a config entry and a catalog entry and no
- * frontend change. That premise is only true if something checks the second half, so this is it
- * (parallel review, A5).
+ * frontend change. That premise is only true if something checks the second half, so this is it.
  */
 import { describe, expect, test } from "vitest";
 import { createEnglishI18n } from "@/__tests__/realI18n";

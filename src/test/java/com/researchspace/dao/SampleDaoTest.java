@@ -56,10 +56,8 @@ public class SampleDaoTest extends SpringTransactionalTest {
     sample.getSubSamples().get(0).moveToNewParent(workbench);
     Sample created = sampleDao.persistNewSample(sample);
 
-    // an active sample with that name is a conflict...
     assertTrue(sampleDao.entityNameExistsForUser(name, user));
 
-    // ...but once it is (soft-)deleted, the name is free to reuse (no suffix should be appended)
     sampleApiMgr.markSampleAsDeleted(created.getId(), false, user);
     assertFalse(sampleDao.entityNameExistsForUser(name, user));
   }

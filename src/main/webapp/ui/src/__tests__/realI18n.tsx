@@ -33,7 +33,6 @@ export function createEnglishI18n(): I18nInstance {
   return instance;
 }
 
-/** Wraps `children` in a provider serving the real en-US catalogs. */
 export function InEnglish({ children }: { children: React.ReactNode }): React.ReactElement {
   return <I18nextProvider i18n={createEnglishI18n()}>{children}</I18nextProvider>;
 }

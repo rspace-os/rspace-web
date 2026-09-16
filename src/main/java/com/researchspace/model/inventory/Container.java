@@ -357,17 +357,11 @@ public class Container extends MovableInventoryRecord implements Serializable {
    * <p>A list container's coordinates are normally the contiguous 1..n that {@code
    * resetListLayoutLocationCoords} restores after every removal, and for that state the two agree.
    * They stop agreeing when the persisted rows have a gap: the count is then lower than the highest
-   * coordinate already occupied, and counting resolves to a location that holds a record. That is
-   * not a transient clash - it recurs identically on every subsequent add, so the container can
-   * never be added to again (live test 2026-09-13, F1). Reading the coordinates themselves steps
-   * past the gap instead, and the container heals.
+   * coordinate already occupied, and counting resolves to a location that holds a record. It recurs
+   * identically on every subsequent add, so the container can never be added to again. Reading the
+   * coordinates themselves steps past the gap instead, and the container heals.
    *
-   * <p>WHAT PRODUCES THE GAP IS NOT KNOWN. An earlier version of this comment blamed a concurrent
-   * batch create rolling back after part of its rows were written, which is not something a
-   * rollback can do: either those rows were committed outside the caller's transaction (an
-   * autocommit connection, REQUIRES_NEW, a Liquibase custom update) or the diagnosis is wrong.
-   * Until that is settled the producer of corrupt containers is unidentified and live, which is why
-   * the heal logs rather than staying silent (review 2026-09-14, I6).
+   * <p>The cause of the gap is not known, which is why the heal logs rather than staying silent.
    *
    * <p>The result cannot collide with an occupied location, so this needs no conflict handling: no
    * stored coordinate can equal one past the maximum, and {@code coordX} is a primitive on a NOT

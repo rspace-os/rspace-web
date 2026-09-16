@@ -36,12 +36,8 @@ import org.springframework.test.web.servlet.MvcResult;
  * range, every extra field with its definition key and link), each of its subsamples, and each
  * origin's quantity and fields afterwards.
  *
- * <p>The fingerprints are the records the client-assembled shape persisted before the server
- * started building the sample (DevDocs/adr/0007 M3 proved the two shapes identical, M5 deleted the
- * client-assembled one). The wizard's confirmation preview is checked against the wizard's own
- * model of the build (OperationConfirmation.test), so this is the only thing tying that model to
- * what the server actually stores: a change here that is not a deliberate change to the records is
- * the preview drifting.
+ * <p>A diff to one of these golden strings should reflect a deliberate change to what gets
+ * persisted, not incidental drift.
  *
  * <p>Not run automatically (extends a real-transaction MVC base).
  */
@@ -67,8 +63,8 @@ public class InventoryOperationsInputsShapeMVCIT extends API_MVC_InventoryTestBa
   }
 
   /**
-   * RSDEV-1231 seeds {@code inventory.operations.available} DENIED, so each test turns it on first:
-   * what is under test in this class is the operation, not the toggle.
+   * {@code inventory.operations.available} seeds DENIED, so each test turns it on first: what is
+   * under test in this class is the operation, not the toggle.
    */
   private void enableOperations() {
     systemPropertyManager.save(
@@ -203,8 +199,8 @@ public class InventoryOperationsInputsShapeMVCIT extends API_MVC_InventoryTestBa
 
   @Test
   public void templateAndDocumentationTargetTravelTopLevel() throws Exception {
-    // The two wizard-level choices that are not inputs. The server builds the sample from the
-    // template and adds the IsDocumentedBy link itself, named from the shared catalog.
+    // templateId and documentedByGlobalId travel outside the inputs map; the server builds from
+    // the template and adds the IsDocumentedBy link itself.
     ApiSampleTemplatePost templatePost = new ApiSampleTemplatePost();
     templatePost.setName("inputs shape template");
     templatePost.setDefaultUnitId(GRAM);

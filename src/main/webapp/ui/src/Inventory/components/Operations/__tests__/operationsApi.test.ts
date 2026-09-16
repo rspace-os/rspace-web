@@ -45,8 +45,6 @@ describe("performOperation", () => {
   beforeEach(() => post.mockClear());
 
   it("normalises a terminal operation's empty response body to null", async () => {
-    // A terminal operation (Destroy) creates no sample and returns an empty body, which Axios surfaces
-    // as "" rather than null; performOperation must still resolve to null (its declared return type).
     post.mockResolvedValueOnce({ data: "" });
     expect(await performOperation({} as OperationInputsRequest)).toBeNull();
   });
@@ -58,16 +56,12 @@ describe("performOperation", () => {
   });
 });
 
-// The inputs shape names a rejected input by its bare key ("sampleName: ..."), never a dotted path
-// (DevDocs/adr/0007, M4), so the wizard swaps the key for the label it shows.
 describe("describeOperationError", () => {
   const operation = {
     key: "aliquot",
     inputs: [{ key: "sampleName", type: "text", labelKey: "operations.fields.sampleName" }],
     effect: { links: [] },
   } as unknown as InventoryOperation;
-  // Stands in for i18next: resolves the one field label, and renders the "<label>: <reason>" join
-  // from the catalog rather than from a hard-coded separator (parallel review, FE14).
   const resolveLabel = (key: string, params?: Record<string, unknown>): string => {
     if (key === "operations.fields.sampleName") return "Sample name";
     if (key === "operations.wizard.fieldReason") return `${String(params?.label)}: ${String(params?.reason)}`;
@@ -89,7 +83,7 @@ describe("describeOperationError", () => {
 
   it("strips a dotted origin path but keeps which origin it was, through the catalog (FE11, A4)", () => {
     // The marker is a translated sentence, not English welded onto a localized reason: a non-English
-    // user got their reason back with " (origin 3)" appended in English (parallel review, A4).
+    // user got their reason back with " (origin 3)" appended in English.
     expect(
       describeOperationError(
         rejectedWith("origins[0].amountTaken: Cannot take more from an origin than it currently holds"),

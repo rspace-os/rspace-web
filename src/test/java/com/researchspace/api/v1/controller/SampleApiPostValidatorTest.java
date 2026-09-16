@@ -54,8 +54,7 @@ public class SampleApiPostValidatorTest extends InventoryRecordValidationTestBas
   public void aNullCollectionElementDoesNotBreakCustomValidation() {
     // A null element in extraFields, tags or subSamples is a bean-validation error at binding, but
     // the controllers accept a BindingResult, so this validator still runs over the lists; it must
-    // skip the null elements rather than turn the reported 400 into a 500 (Copilot review,
-    // PR #1090).
+    // skip the null elements rather than turn the reported 400 into a 500.
     ApiSampleWithFullSubSamples full = new ApiSampleWithFullSubSamples();
     full.setName("ok");
     full.getExtraFields().add(null);
@@ -151,9 +150,9 @@ public class SampleApiPostValidatorTest extends InventoryRecordValidationTestBas
     e = resetErrorsAndValidate(full);
     assertEquals(1, e.getErrorCount());
 
-    // set invalid unit, should be rejected, and only for being an invalid unit: a litre is not
+    // and only for being an invalid unit: a litre is not
     // comparable to a temperature either, but reporting that as well told the user nothing they
-    // did not already have to fix (Copilot review, PR #1090)
+    // did not already have to fix
     full.setStorageTempMin(new ApiQuantityInfo(BigDecimal.valueOf(5L), RSUnitDef.LITRE));
     e = resetErrorsAndValidate(full);
     assertEquals(1, e.getErrorCount(), "unexpected errors: " + e.getAllErrors());
@@ -259,7 +258,7 @@ public class SampleApiPostValidatorTest extends InventoryRecordValidationTestBas
   public void aTemperatureWithAUnitButNoNumberIsRejectedNotDereferenced() {
     // A valid temperature unit with no numericValue used to pass the unit check and then be sorted
     // against the other bound, where the unit-aware comparison dereferences the missing number and
-    // turns a malformed request into a 500 (Copilot review, PR #1090). Whether a temperature is
+    // turns a malformed request into a 500. Whether a temperature is
     // required at all is each caller's own rule, so this only has to not blow up.
     ApiSampleWithFullSubSamples full = new ApiSampleWithFullSubSamples();
     full.setName("s1");

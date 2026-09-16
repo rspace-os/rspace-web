@@ -9,12 +9,8 @@ import java.util.Set;
 
 /**
  * One operation definition from {@code operations_config.json}, reduced to the fields the backend
- * validation interprets (DevDocs/adr/0007). The wizard fetches the same file verbatim from GET
- * /operations/config and reads the full shape (labels, icons, wizard steps); everything the backend
- * does not enforce is ignored on binding, so purely presentational config changes cannot break the
- * API. Unknown properties are ignored on the CONFIG only: strictness applies to the request, which
- * is whitelisted against this definition. Stage 2 (DevDocs/adr/0007) swaps the source of these
- * definitions to user-editable data without changing this shape.
+ * validates. Unknown properties are ignored deliberately: strictness applies to the request, which
+ * is whitelisted against this definition, not to this config shape.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record InventoryOperationConfig(
@@ -26,18 +22,10 @@ public record InventoryOperationConfig(
   }
 
   /**
-   * The {@code inputs[].type} values the wizard renders and the config may declare.
-   *
-   * <p>Deliberately NOT described as "types the backend interprets": the request validator branches
-   * on the type in one place only ({@code "temperature"}, for the configured Celsius bounds), and
-   * the others are purely the wizard's business. The set exists so a typo ({@code "quantitiy"})
-   * fails the build rather than silently rendering nothing, not because the backend needs a branch
-   * per type.
-   *
-   * <p>That distinction matters because the registry rejects anything outside this set at
-   * construction: describing it as a backend concern invited the conclusion that a new wizard-only
-   * type needed no entry here, and adding one without it would boot-fail the whole application
-   * (parallel review, I16). Add the type here when the wizard learns to render it.
+   * The {@code inputs[].type} values the config may declare; only {@code "temperature"} is actually
+   * interpreted server-side (for its Celsius bounds), the rest are the wizard's business. The
+   * registry rejects any type outside this set at construction, so add a new wizard-only type here
+   * too or the application fails to boot.
    */
   public static final Set<String> INTERPRETED_INPUT_TYPES =
       Set.of("text", "integer", "quantity", "temperature");
@@ -50,10 +38,9 @@ public record InventoryOperationConfig(
   public static final Set<String> INTERPRETED_COMPUTED_FUNCTIONS = Set.of("increment", "today");
 
   /**
-   * A wizard input; the constraints the backend checks server-side, plus {@code default}, the value
-   * the server supplies for an absent optional input on the typed facades (M0 D7: {@code count} 1,
-   * Revive's {@code storageTemp} 4 degC). Bound as the JSON value (a number or a string) and typed
-   * by {@link InventoryOperationInputValidator#withDefaults} against the input's type.
+   * A wizard input's server-side constraints, plus {@code default}: the value substituted for an
+   * absent optional input. Bound as the raw JSON value and typed by {@link
+   * InventoryOperationInputValidator#withDefaults} against the input's type.
    */
   @JsonIgnoreProperties(ignoreUnknown = true)
   public record Input(
@@ -93,14 +80,12 @@ public record InventoryOperationConfig(
   }
 
   /**
-   * A value the wizard derives client-side and writes into the named input ({@code into}), which
-   * the declared text/origin fields then consume. The backend does not recompute it (the inputs are
-   * not on the wire and {@code today} would fight client/server timezones, DevDocs/adr/0007); it
-   * checks the shape the function promises.
+   * A value the wizard derives client-side and writes into the named input ({@code into}). The
+   * backend does not recompute it (the inputs are not on the wire, and {@code today} would fight
+   * client/server timezones); it only checks the shape the function promises.
    *
-   * <p>{@code args} binds how each function argument is sourced, mirroring the wizard's {@code
-   * ComputedArgSource}. The request validator ignores it; {@link InventoryOperationRequestBuilder}
-   * interprets it when building the request server-side (DevDocs/adr/0007, M1).
+   * <p>The request validator ignores {@code args}; {@link InventoryOperationRequestBuilder}
+   * interprets it when building the request server-side.
    */
   @JsonIgnoreProperties(ignoreUnknown = true)
   public record Computed(String fn, String into, Map<String, ArgSource> args) {
@@ -108,7 +93,6 @@ public record InventoryOperationConfig(
       args = args == null ? Map.of() : Map.copyOf(args);
     }
 
-    /** Convenience for callers interested only in the function wiring, not its arguments. */
     public Computed(String fn, String into) {
       this(fn, into, null);
     }

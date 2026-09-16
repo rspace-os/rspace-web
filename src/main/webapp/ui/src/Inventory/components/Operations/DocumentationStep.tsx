@@ -8,10 +8,9 @@ import ElnRecordPicker from "@/Inventory/components/Fields/Link/ElnRecordPicker"
 export type DocumentationSelection = { globalId: string; name: string } | null;
 
 /**
- * Shared optional step: link the new records to an ELN document (a SOP) via an IsDocumentedBy link.
- * Fully controlled by the wizard, which owns the chosen document and persists it (with everything
- * else this run) under the single per-process "remember" bundle on Perform (see OperationWizard).
- * This component only presents and edits the current selection.
+ * Optional step: link the new records to an ELN document via an IsDocumentedBy link. Fully
+ * controlled - the wizard owns the selection and persists it; this component only presents and
+ * edits the current value.
  */
 export default function DocumentationStep({
   value,

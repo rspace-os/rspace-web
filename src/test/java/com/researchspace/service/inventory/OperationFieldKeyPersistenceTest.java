@@ -19,22 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 
-/**
- * Only an Inventory operation may persist an {@code operationFieldKey} (RSDEV-1231).
- *
- * <p>The key is stored as the claim "an operation definition generated this field", and a later run
- * of that operation trusts it to identify the previous generation and continue a computed counter
- * from it. A caller able to set one could therefore have an unrelated field picked up as a previous
- * generation.
- *
- * <p>The rule is enforced at binding: the DTO property is READ_ONLY, so no request body on any
- * endpoint can put a key on a field, and the write point persists whatever the server's request
- * builder set. That is deliberately not the same as asking every other endpoint's validator to
- * reject a key: that was the first design and it leaked, because the sample- and
- * instrument-template validators never call the shared extra-field validation at all (parallel
- * review, C1). A rule that must be remembered in six sibling validators is a rule the seventh will
- * miss.
- */
+// See DevDocs/adr/RSDEV-1231-no-concurrency-comments.md for the design rationale behind this test.
 class OperationFieldKeyPersistenceTest {
 
   private ApiExtraFieldsHelper helper;
@@ -53,7 +38,6 @@ class OperationFieldKeyPersistenceTest {
     helper = new ApiExtraFieldsHelper(recordFactory);
   }
 
-  /** The key actually written to the entity for the given incoming field. */
   private String persistedKeyFor(ApiExtraField incoming) {
     SubSample parent = new SubSample();
     helper.addExtraFieldsForNewInventoryRecord(List.of(incoming), parent, user);
@@ -62,7 +46,6 @@ class OperationFieldKeyPersistenceTest {
 
   @Test
   void persistsTheKeyTheServerSet() {
-    // What the request builder does when it generates a field.
     ApiExtraField generated = new ApiExtraField(ExtraFieldTypeEnum.TEXT);
     generated.setName("Passage number");
     generated.setContent("4");

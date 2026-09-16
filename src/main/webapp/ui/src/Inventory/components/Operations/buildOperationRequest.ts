@@ -1,22 +1,14 @@
 /**
  * Turns an operation definition plus the user's collected input values into the request the wizard
- * POSTs (buildOperationInputsRequest). Pure and operation-agnostic: it only follows the effect spec,
- * so a new operation needs a new config entry, not new code here (see DevDocs/adr/0007).
+ * POSTs. Pure and operation-agnostic: it only follows the effect spec, so a new operation needs a
+ * new config entry, not new code here.
  *
- * The server builds the created sample and all of its generated fields itself (DevDocs/adr/0007)
- * (InventoryOperationRequestBuilder), so only what the user chose travels: the declared inputs by
- * key, each origin's amount taken, the template and the documentation target. This module used to
- * carry a second implementation of that build, as the wizard's own model of it, but it had no
- * production caller and could drift from the server while its tests stayed green, so it was deleted
- * (parallel review). Server-side parity is pinned by InventoryOperationsInputsShapeMVCIT and
- * InventoryOperationRequestBuilderTest.
+ * The server builds the created sample and its generated fields itself, so only what the user
+ * chose travels: the declared inputs by key, each origin's amount taken, the template and the
+ * documentation target.
  *
- * Each origin's amount-taken is a positive decrement; the backend
- * rejects taking more than the origin holds (HTTP 400, DevDocs/adr/0007) and clamps at zero only as
- * defence-in-depth (DevDocs/adr/0007). `templateId` is chosen by the user in the wizard's template step
- * (none / an existing template / a template created from the origin's sample); null means an ad-hoc
- * sample (DevDocs/adr/0007). A terminal operation (noOutput, e.g. Destroy) creates no sample, so newSample is
- * null and only the origins are affected.
+ * Each origin's amount-taken is a positive decrement; the backend rejects taking more than the
+ * origin holds and clamps at zero only as defence-in-depth.
  */
 import type { InventoryOperation } from "./operationsConfig";
 import { usesAmountModes } from "./operationsConfig";
@@ -39,19 +31,15 @@ function quantityValue(values: OperationInputs, key: string): OperationQuantity 
 /**
  * Makes every generated field name unique, the way the backend judges uniqueness.
  *
- * <p>A record cannot hold two fields with the same name, and the check compares them trimmed and
- * case-insensitively (InventoryFieldNameUniquenessValidator.rejectDuplicatesInPayload). Pool's link
- * name interpolates each origin's own name, and two distinct subsamples may share one ("Aliquot"),
- * which produced two fields called "Pooled from: Aliquot": the endpoint rejected the request, so a
- * perfectly valid Pool selection always failed at Perform and the wizard offered no way to repair
- * the generated names (Codex review, PR #1090).
+ * <p>A record cannot hold two fields with the same name, compared trimmed and case-insensitively
+ * (InventoryFieldNameUniquenessValidator.rejectDuplicatesInPayload). Pool's link name interpolates
+ * each origin's own name, and two origins can share one, which produced duplicate-named fields the
+ * endpoint rejected.
  *
  * <p>Every member of a colliding group is suffixed, not just the later ones, so the names stay
- * symmetrical and each still says which origin it refers to. A link is disambiguated by the global
- * id it targets, which is unique per origin; anything else falls back to an ordinal, as does the
- * pathological case where a suffixed name collides in turn. The server applies the same rule when
- * it builds the sample (InventoryOperationRequestBuilder.withUniqueFieldNames), so the confirmation
- * preview uses this to show the names the server will store.
+ * symmetrical. The server applies the same rule when it builds the sample
+ * (InventoryOperationRequestBuilder.withUniqueFieldNames), so the confirmation preview shows the
+ * names the server will actually store.
  */
 export function withUniqueFieldNames(fields: Array<OperationExtraField>): Array<OperationExtraField> {
   const comparable = (name: string): string => name.trim().toLowerCase();
@@ -82,19 +70,16 @@ type BuildParams = {
   origins: Array<OperationOrigin>;
   /** The template for the new sample, resolved by the wizard's template step. null = ad-hoc. */
   templateId: number | null;
-  /** How the amount taken is decided across origins (DevDocs/adr/0007). Defaults to "same" (single shared
-   *  amount), which is also every single-origin operation's mode. */
+  /** How the amount taken is decided across origins. Defaults to "same" (single shared amount),
+   *  which is also every single-origin operation's mode. */
   amountMode?: AmountMode;
   /** Per-origin amounts (by origin global id) for "perSubsample" mode; ignored in other modes. */
   perSubsampleAmounts?: PerSubsampleAmounts;
 };
 
 /**
- * The request the wizard POSTs (DevDocs/adr/0007, M4). The server builds the sample
- * and its generated fields itself, so only what the user chose travels: the declared inputs by key,
- * each origin's amount taken (decided exactly as for the model below), the template and the
- * documentation target. Computed values (Passage's counter, Destroy's disposed date) are the
- * server's; the origin element owns the amount taken (M3), so it is not repeated in the inputs.
+ * Computed values (Passage's counter, Destroy's disposed date) are the server's; the origin
+ * element owns the amount taken, so it is not repeated in the inputs.
  */
 export function buildOperationInputsRequest(
   params: BuildParams & { documentedByGlobalId: string | null },
@@ -119,8 +104,7 @@ export function buildOperationInputsRequest(
  * One update per origin: its amount taken and how it was decided.
  *
  * Fields the operation adds to the origin itself (Destroy's disposed date) are NOT built here: the
- * server builds them from the definition (InventoryOperationRequestBuilder), so a client-sent copy
- * was mapped on every request and then dropped by the only caller (parallel review).
+ * server builds them from the definition (InventoryOperationRequestBuilder).
  */
 function buildOriginUpdates(params: BuildParams): Array<OperationOriginUpdate> {
   const { operation, values, origins, amountMode = "same", perSubsampleAmounts = {} } = params;
@@ -136,25 +120,25 @@ function buildOriginUpdates(params: BuildParams): Array<OperationOriginUpdate> {
     origin.quantity ? { ...origin.quantity } : { numericValue: 0, unitId: eachAmountUnit ?? UNSET_UNIT };
 
   // Whether this request's amount is a snapshot of the origin's whole quantity rather than something
-  // the user typed. Exactly the two branches of amountTakenFor that call fullQuantity: Destroy
-  // (emptiesOrigin) and the runtime "take all" mode. The backend checks the mode for shape only
-  // (DevDocs/adr/0007: no concurrency control). "same" and "perSubsample" amounts are user-entered,
-  // so they are "explicit".
-  // The mode is only honoured for an operation that OFFERS it: only a multi-origin operation that
-  // takes an amount ever shows the modes, but the wizard restores a stored bundle's amountMode for
-  // every operation, so a stale or hand-edited single-origin bundle carrying "all" would empty the
-  // origin while the summary still showed the typed amount (BUG-2).
+  // the user typed: Destroy (emptiesOrigin) and the runtime "take all" mode. The backend checks the
+  // mode for shape only, not against the live quantity. "same" and "perSubsample" amounts are
+  // user-entered, so they are "explicit".
+  //
+  // amountMode is only meaningful for an operation that OFFERS it (a multi-origin operation that
+  // takes an amount), but the wizard restores a stored bundle's amountMode for every operation, so
+  // usesAmountModes must gate it here too - otherwise a stale single-origin bundle carrying "all"
+  // would empty the origin while the summary still showed the typed amount.
   const takesWholeOrigin = effect.emptiesOrigin || (amountMode === "all" && usesAmountModes(operation));
 
-  // The amount to take from a given origin (DevDocs/adr/0007):
+  // The amount to take from a given origin:
   // - `emptiesOrigin` (Destroy) and the runtime "take all" mode both take the origin's own full
   //   current quantity, so its volume ends at zero.
   // - "perSubsample" mode takes the per-origin amount chosen for this origin (by global id); an origin
   //   with none recorded takes a zero (no-op) decrement.
-  // - otherwise ("same" mode, and every single-origin operation) it takes the configured shared amount
-  //   (Pool takes the same amount from every origin; DevDocs/adr/0007). An operation that leaves the origin
-  //   untouched (Passage) has no amountTakenFrom and takes zero: the backend treats a 0 decrement as a
-  //   no-op (SubSampleApiManagerImpl returns early), so the origin is still linked/permission-checked.
+  // - otherwise ("same" mode, and every single-origin operation) it takes the configured shared
+  //   amount. An operation that leaves the origin untouched (Passage) has no amountTakenFrom and
+  //   takes zero: the backend treats a 0 decrement as a no-op, so the origin is still
+  //   linked/permission-checked.
   const amountTakenFor = (origin: OperationOrigin): OperationQuantity => {
     if (takesWholeOrigin) return fullQuantity(origin);
     if (amountMode === "perSubsample") {

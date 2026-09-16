@@ -731,15 +731,8 @@ export default class InventoryBaseRecord
   }
 
   /**
-   * Takes (or extends) the edit-session lock WITHOUT entering edit state: the operation wizard holds
-   * its origins for its lifetime, but the records are not being edited, so nothing may flip them
-   * into "edit" or refetch them (RSDEV-1231). Throws RecordLockedError when another user's session
-   * holds it.
-   *
-   * Deliberately no expiryCheck interval: that timer belongs to the form, where running out means
-   * prompting to keep editing and, if declined, discarding the edit. The wizard has no edit to
-   * keep, so it only needs to know when the lock has lapsed, which `lockExpiry` records. The server
-   * re-checks the lock at Perform regardless.
+   * Takes (or extends) the edit-session lock without entering edit state or scheduling an
+   * expiry-check interval: those exist to protect an edit in progress, and this method starts none.
    */
   async acquireEditLock(): Promise<LockStatus> {
     const { status, lockOwner, remainingTimeInSeconds } = await this.checkLock(true);
@@ -1014,8 +1007,6 @@ export default class InventoryBaseRecord
       console.error(`Error fetching additional info for ${this.globalId ?? "UNKNOWN"}`, error);
       throw new Error(`Error fetching additional info for ${this.globalId ?? "UNKNOWN"}`, { cause: error });
     } finally {
-      // Cleared on failure too, or every later call would await this same rejected promise instead
-      // of re-fetching (code review, finding 2).
       this.fetchingAdditionalInfo = null;
       this.setLoading(false);
     }

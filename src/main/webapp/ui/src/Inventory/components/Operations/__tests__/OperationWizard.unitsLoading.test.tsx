@@ -18,7 +18,7 @@ import { rawConfig } from "./testOperations";
  *
  * ProcessAction mounts this wizard whenever the selection is processable, NOT only while the dialog
  * is open, so the wizard's body runs as soon as a context menu opens. A throw there took out the
- * whole menu before the operation picker had appeared (Copilot review, PR #1090).
+ * whole menu before the operation picker had appeared.
  *
  * The store is therefore mocked as a fresh profile here - getUnit answering undefined for every id
  * - which is the one thing OperationWizard.test.tsx's category-aware mock cannot express.
@@ -28,8 +28,6 @@ vi.mock("@/stores/stores/getRootStore", () => ({
     authStore: { isSynchronizing: false },
     searchStore: { search: { performSearch: vi.fn() }, getTemplate: vi.fn(() => Promise.resolve(null)) },
     uiStore: { addAlert: vi.fn() },
-    // A real UnitStore in this state: seeded from an empty localStorage, so getUnit misses for
-    // every id and every category is empty until GET /units resolves.
     unitStore: { getUnit: () => undefined, unitsOfCategory: () => [] },
   }),
 }));
@@ -77,7 +75,7 @@ describe("OperationWizard while the unit store is still loading", () => {
   it("renders the per-subsample amount inputs without dereferencing the unit store", () => {
     // Pool -> Per subsample renders one amount input per origin, each with its own unit select.
     // That select asked the origin for its category through the throwing getter, so the amounts
-    // step crashed while /units was still in flight (Copilot review, PR #1090).
+    // step crashed while /units was still in flight.
     expect(() =>
       render(
         <OperationDetailsStep
@@ -157,8 +155,8 @@ describe("OperationWizard for an origin whose unit has no atomic unit", () => {
       />,
     );
     await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
-    // A process name alone would enable Next for a millilitre origin (see the main suite), so the
-    // only thing holding it here is the origin's unit.
+    // A process name alone would enable Next for a millilitre origin, so the only thing holding
+    // it here is the origin's unit.
     await user.type(screen.getByRole("combobox", { name: /fields\.processName/i }), "dna");
     expect(screen.getByRole("button", { name: /actions\.next/i })).toBeDisabled();
     expect(screen.getByRole("alert")).not.toBeEmptyDOMElement();

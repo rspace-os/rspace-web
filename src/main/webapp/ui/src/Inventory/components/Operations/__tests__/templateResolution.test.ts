@@ -188,8 +188,7 @@ describe("templateStepValid", () => {
   it("holds a remembered template invalid until its restore-time check has passed", () => {
     // The stored id was written by a previous run, not by a check, so the template may since have
     // been renamed, trashed, or have gained a mandatory field with no default. Until the wizard
-    // re-checks it against the server the step is incomplete, which is also what keeps the step-one
-    // one-click Perform off a template that no longer exists.
+    // re-checks it against the server the step is incomplete.
     const restored = templateSelectionFor({ mode: "pick", templateId: 5, templateName: "T5" });
     expect(templateStepValid(restored)).toBe(false);
     expect(templateStepValid({ ...restored, pendingCheck: false })).toBe(true);
@@ -199,7 +198,7 @@ describe("templateStepValid", () => {
     // Both end in a sample created against a concrete template, so both must clear the
     // mandatory-without-default check first, and only a passing check writes the id. fromSample
     // used to return true unconditionally, which is why the same template was blocked up front via
-    // "pick" and rejected at the last click via "fromSample" (F5).
+    // "pick" and rejected at the last click via "fromSample".
     expect(templateStepValid({ mode: "fromSample", templateId: null })).toBe(false);
     expect(templateStepValid({ mode: "fromSample", templateId: 9 })).toBe(true);
   });

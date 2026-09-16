@@ -18,8 +18,6 @@ type FakeTemplate = {
 };
 
 let currentTemplate: FakeTemplate;
-// Records the setTemplate prop passed on each render, so a test can assert its identity is stable
-// across re-renders.
 const capturedSetTemplate: Array<(t: FakeTemplate) => void> = [];
 
 // Stub the wizard's template picker so this test does not mount its real Search/fetcher; clicking
@@ -42,7 +40,7 @@ const pickMode: TemplateSelection = { mode: "pick", templateId: null, remember: 
 /**
  * Every selection the step asked for, with the updater form resolved against `from`.
  *
- * The post-lookup write sends an updater rather than a value, because it crosses an await (FE6), so
+ * The post-lookup write sends an updater rather than a value, because it crosses an await, so
  * asserting on the raw mock argument would silently match nothing - including the negative
  * assertions, which would stop being sensitive to the thing they guard.
  */
@@ -71,7 +69,7 @@ describe("TemplateStep", () => {
 
   it("disables 'use parent template' and shows a hint when the parent has no template", () => {
     render(<TemplateStep value={base} onChange={() => undefined} originSampleName="S1" parentHasTemplate={false} />);
-    // "use parent" is first; it is disabled and the hint is shown
+    // "use parent" is first
     expect(screen.getAllByRole("radio")[0]).toBeDisabled();
     expect(screen.getByText(/template\.parentHasNoTemplate/)).toBeInTheDocument();
   });
@@ -101,7 +99,7 @@ describe("TemplateStep", () => {
     );
     // cimode renders the key without its parameters, so the name itself is asserted in English
     // below: the "Selected template: {name}" join moved into the catalog, because not every locale
-    // separates with a colon-space (parallel review, FE14).
+    // separates with a colon-space.
     expect(screen.getByRole("alert")).toHaveTextContent(/template\.selectedLabel/);
     for (const radio of screen.getAllByRole("radio")) expect(radio).not.toBeChecked();
     expect(screen.queryByTestId("template-picker")).not.toBeInTheDocument();
@@ -142,9 +140,8 @@ describe("TemplateStep", () => {
   });
 
   it("keeps a change made while the template lookup was in flight", async () => {
-    // The write after the await used to spread the `value` captured BEFORE it, so ticking
-    // "remember" mid-lookup was silently undone and the user performed the operation believing the
-    // bundle had been saved (parallel review, FE6). The updater form sees the newer value.
+    // The write after an await must not spread a stale captured `value`, or a change made mid-lookup
+    // (like ticking "remember") is silently lost.
     let resolveLookup: () => void = () => undefined;
     currentTemplate = {
       id: 5,
@@ -168,7 +165,6 @@ describe("TemplateStep", () => {
   });
 
   it("discards a stale template lookup that resolves after a newer pick (latest wins)", async () => {
-    // Pick A then B before A's lookup resolves, then let A resolve last: B must survive, not A.
     let resolveA: () => void = () => undefined;
     const templateA: FakeTemplate = {
       id: 5,
@@ -199,10 +195,8 @@ describe("TemplateStep", () => {
   });
 
   it("abandons a pending template lookup when the step unmounts (wizard navigated away)", async () => {
-    // Pick a template, then unmount the step before its lookup resolves - as happens when the user
-    // steps back and a process-name / remembered-value / operation change replaces the wizard's
-    // template selection. The late result must not restore the abandoned template onto the newer
-    // selection (Greptile P1: only picker/mode changes invalidated the in-flight lookup before).
+    // A late-resolving lookup from an unmounted step must not restore the abandoned template onto
+    // whatever selection replaced it.
     let resolveA: () => void = () => undefined;
     const templateA: FakeTemplate = {
       id: 5,
@@ -216,15 +210,13 @@ describe("TemplateStep", () => {
 
     currentTemplate = templateA;
     await user.click(screen.getByTestId("template-picker"));
-    unmount(); // the wizard moved off the template step
+    unmount();
     resolveA();
     await Promise.resolve();
     expect(selectionsFrom(onChange)).not.toContainEqual(expect.objectContaining({ templateId: 5 }));
   });
 
   it("abandons a pending template lookup when the user switches mode (no stale restore)", async () => {
-    // Pick a template, then switch to "No template" before its lookup resolves: the late result
-    // must not restore the abandoned template.
     let resolveA: () => void = () => undefined;
     const templateA: FakeTemplate = {
       id: 5,
@@ -273,7 +265,7 @@ describe("TemplateStep in English", () => {
   });
 
   it("names the blocking fields as a list, not a bare join", async () => {
-    // The message is assembled by i18n, not in code (code review, finding 10): the field names go
+    // The message is assembled by i18n, not in code: the field names go
     // through Intl.ListFormat for the locale, so English reads "A, B, and C". cimode hides the
     // interpolated parameters entirely, which is why these tests use the real catalogs.
     await blockedBy(["A", "B", "C"]);
@@ -283,7 +275,7 @@ describe("TemplateStep in English", () => {
   it("inflects the sentence for a single blocking field rather than writing 'field(s)'", async () => {
     // "field(s) ... have" is a parenthetical plural, which only works in English and reads badly
     // even there. The count decides the wording in the catalog, so a translator can inflect it the
-    // way their own language requires (PR #963 review).
+    // way their own language requires.
     await blockedBy(["Batch"]);
     expect(await screen.findByText(/the required field Batch has no default value/)).toBeInTheDocument();
   });
@@ -292,7 +284,7 @@ describe("TemplateStep in English", () => {
 describe("TemplateStep failure and clearing paths", () => {
   it("reports a failed template lookup instead of leaving an unhandled rejection", async () => {
     // The check ran in a detached async task with no catch: a rejection escaped unhandled and the
-    // user saw only the spinner stop (Copilot review, PR #1090).
+    // user saw only the spinner stop.
     currentTemplate = {
       ...makeTemplate([]),
       fetchAdditionalInfo: () => Promise.reject(new Error("network down")),
@@ -301,7 +293,7 @@ describe("TemplateStep failure and clearing paths", () => {
     render(<TemplateStep value={pickMode} onChange={onChange} originSampleName="S1" />);
     await userEvent.setup().click(screen.getByTestId("template-picker"));
     expect(await screen.findByText(/template\.lookupFailed/)).toBeInTheDocument();
-    // and the selection stays unset, so Next remains blocked rather than submitting a bad template
+    // so Next remains blocked rather than submitting a bad template
     expect(selectionsFrom(onChange)).not.toContainEqual(expect.objectContaining({ templateId: 5 }));
   });
 
@@ -319,12 +311,8 @@ describe("TemplateStep failure and clearing paths", () => {
     expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ templateId: null, templateName: undefined }));
   });
 
-  // --- "use parent template" status is DISPLAYED here, checked by the wizard (F5) ---
-
-  // The check itself moved to OperationWizard, because the gate it feeds is evaluated on every
-  // step while only the active step is mounted (parallel review, C2). What remains here is that
-  // this step surfaces the wizard's status, and surfaces it accessibly: both messages now appear
-  // with no user action at all, on the preselected mode.
+  // The "use parent template" check itself runs in OperationWizard, not here; this step only
+  // displays its outcome, accessibly, since both messages can appear with no user action at all.
   const fromSampleMode: TemplateSelection = { mode: "fromSample", templateId: null, remember: false };
 
   it("shows the wizard's parent-template spinner as a live status", async () => {
@@ -349,13 +337,8 @@ describe("TemplateStep failure and clearing paths", () => {
 
   it("prefers its own pick error over the wizard's parent-template error", async () => {
     // Only one of the two can be current: picking a template abandons the parent-template mode, so
-    // the pick error is the one that describes what the user just did.
-    //
-    // This test used to render fromSampleMode with only parentTemplateError set and never pick a
-    // template, so blockError stayed null and `blockError ?? parentTemplateError` produced the same
-    // text either way - reversing the precedence kept it green and it was identical in force to the
-    // test above (parallel review). It now produces BOTH errors, which is the only arrangement that
-    // can distinguish the two orderings.
+    // the pick error is the one that describes what the user just did. Both errors must be set here,
+    // or the assertion cannot distinguish the two orderings.
     currentTemplate = makeTemplate([{ name: "Concentration", mandatory: true, content: "", selectedOptions: null }]);
     render(
       <TemplateStep

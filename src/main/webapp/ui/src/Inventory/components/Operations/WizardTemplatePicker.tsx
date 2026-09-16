@@ -11,24 +11,20 @@ import AlwaysNewFactory from "@/stores/models/Factory/AlwaysNewFactory";
 import Search from "@/stores/models/Search";
 import type TemplateModel from "@/stores/models/TemplateModel";
 
-// Matches the process-name field's debounce (and the Inventory tag search): long enough that typing a
-// name does not fire a request per keystroke, short enough to feel live.
 const SEARCH_DEBOUNCE_MS = 300;
 // The backend rejects a search term shorter than this (422). Below it, show the initial list rather
 // than sending a query that would only error.
 const MIN_SEARCH_CHARS = 2;
 
-/** One selectable template. `record` is the underlying model (null for a pre-filled placeholder that
+/** `record` is the underlying model (null for a pre-filled placeholder that
  *  represents an already-chosen template not present in the current result page). */
 type TemplateOption = { id: number; name: string; globalId: string; record: TemplateModel | null };
 
 /**
- * The wizard's "choose an existing template" control: a single-select, server-backed autocomplete
- * (DevDocs/adr/0007). It mirrors the process-name dropdown, except the user cannot enter free text - typing
- * re-queries the backend (debounced) and only a returned template can be chosen. Selecting one hands
- * the record to the parent, which validates it (a template with mandatory, defaultless fields is
- * blocked there). It reuses the shared Search model so it fetches the same permission-filtered
- * SAMPLE_TEMPLATE results, but renders its own minimal UI.
+ * The wizard's server-backed, single-select template picker: typing re-queries the backend and only
+ * a returned template can be chosen. Selecting one hands the record to the parent, which validates it
+ * (a template with mandatory, defaultless fields is blocked there). Reuses the shared Search model,
+ * so results are already permission-filtered to SAMPLE_TEMPLATE.
  */
 function WizardTemplatePicker({
   setTemplate,
@@ -46,8 +42,8 @@ function WizardTemplatePicker({
     () =>
       new Search({
         factory: new AlwaysNewFactory(),
-        // The server does the filtering (typing re-queries), so a modest page is enough; the box
-        // narrows anything larger. ponytail: no pager here, add one if template counts get big.
+        // Server does the filtering, so a small page is enough.
+        // ponytail: no pager here, add one if template counts get big.
         fetcherParams: { resultType: "SAMPLE_TEMPLATE", pageSize: 25, orderBy: "name", order: "asc" },
         uiConfig: {
           allowedSearchModules: new Set(["TYPE", "OWNER", "SAVEDSEARCHES", "TAG"]),
@@ -71,10 +67,8 @@ function WizardTemplatePicker({
     void search.fetcher.performInitialSearch(null);
   }, [search]);
 
-  // Re-query the backend as the user types, debounced. Filtering is server-side, so the Autocomplete's
-  // own client-side filter is disabled (see filterOptions below). A term shorter than the backend's
-  // minimum is not sent; instead the initial (unfiltered) list is shown, so a single keystroke never
-  // triggers a rejected request.
+  // Debounced. Below MIN_SEARCH_CHARS, the initial (unfiltered) list is shown instead of sending a
+  // query that would 422.
   const runSearch = React.useMemo(
     () =>
       debounce((query: string) => {
@@ -95,7 +89,6 @@ function WizardTemplatePicker({
     globalId: record.globalId ?? "",
     record: record as TemplateModel,
   }));
-  // Keep the pre-filled template selectable/visible even before (or if never) it appears in results.
   const options: Array<TemplateOption> =
     preselected && !results.some((option) => option.id === preselected.id) ? [preselected, ...results] : results;
 
@@ -111,10 +104,9 @@ function WizardTemplatePicker({
       filterOptions={(opts) => opts}
       onChange={(_event, next) => {
         setValue(next);
-        // Clearing must reach the parent: reporting only the local value left the wizard holding
-        // the previous template id, so an empty-looking box still submitted it (Copilot review,
-        // PR #1090). Re-picking the pre-filled placeholder (no record) is the one no-op: it is
-        // already the parent's selection.
+        // Must call setTemplate(null) on clear, or the wizard keeps the previous template id even
+        // though the box looks empty. Re-picking the pre-filled placeholder (no record) is the one
+        // no-op: it is already the parent's selection.
         if (next === null) setTemplate(null);
         else if (next.record) setTemplate(next.record);
       }}
@@ -126,9 +118,8 @@ function WizardTemplatePicker({
       }}
       renderOption={(props, option) => (
         <li {...props} key={option.id}>
-          {/* Name on the left, the standard GlobalId pill (record-type icon + id chip) on the right,
-              matching how Inventory presents records and their ids everywhere else. The pill needs
-              the underlying record, so the pre-filled placeholder (record null) shows the name only. */}
+          {/* The GlobalId pill needs the underlying record, so the pre-filled placeholder (record null)
+              shows the name only. */}
           <Stack direction="row" spacing={1} sx={{ alignItems: "center", justifyContent: "space-between", flex: 1 }}>
             <Typography variant="body2" component="span">
               {option.name}

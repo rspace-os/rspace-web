@@ -29,8 +29,7 @@ public class TemperatureValidator {
       return false;
     }
     // A present temperature must carry a number: Quantities.getQuantity throws on a null value,
-    // which would turn a malformed request's Bean Validation pass into a 500 (Copilot review,
-    // PR #1090).
+    // which would turn a malformed request's Bean Validation pass into a 500.
     if (value.getNumericValue() == null) {
       return false;
     }

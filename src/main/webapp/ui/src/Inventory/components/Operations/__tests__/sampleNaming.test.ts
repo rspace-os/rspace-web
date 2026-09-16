@@ -35,7 +35,6 @@ describe("derivedSampleName", () => {
 });
 
 describe("firstAvailableName", () => {
-  // isAvailable stub: a name is available unless it is in the "taken" set.
   const availabilityOf =
     (taken: ReadonlyArray<string>) =>
     (name: string): Promise<boolean> =>

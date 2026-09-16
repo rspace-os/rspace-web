@@ -18,16 +18,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 /**
- * A sample may not be created from a template that is in the trash.
- *
- * <p>RSpace soft-deletes, so a trashed template still exists and is still readable: the existence
- * and permission checks both pass and nothing else looked at the flag. The operations wizard could
- * therefore restore a remembered template that had since been trashed and perform against it, and
- * any other API client could do the same deliberately (RSDEV-1231).
- *
- * <p>The check is here, at the creation call site, rather than in {@code
- * assertUserCanReadSampleTemplate}: that assertion has a dozen callers including the template's own
- * GET, image and thumbnail endpoints and export, for which reading a trashed template is correct.
+ * The check belongs here, at the creation call site, rather than in {@code
+ * assertUserCanReadSampleTemplate}: that assertion has a dozen other callers, including the
+ * template's own GET, image and thumbnail endpoints and export, for which reading a trashed
+ * template is correct.
  */
 @ExtendWith(MockitoExtension.class)
 class SampleApiManagerImplDeletedTemplateTest {

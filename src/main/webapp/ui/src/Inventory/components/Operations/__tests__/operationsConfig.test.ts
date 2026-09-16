@@ -144,9 +144,6 @@ describe("usesAmountModes", () => {
   });
 
   it("disables Pool above the backend's 100-origin cap", () => {
-    // The public endpoint rejects more than 100 origins; without this mirror the wizard let a
-    // 101-subsample selection run the whole flow and only fail at Perform (Copilot review,
-    // PR #1090).
     expect(operationAvailability(op("pool"), 100, true).enabled).toBe(true);
     const availability = operationAvailability(op("pool"), 101, true);
     expect(availability.enabled).toBe(false);
@@ -173,10 +170,6 @@ describe("usesAmountModes", () => {
 });
 
 describe("assertComputedValuesValid", () => {
-  // Its three throws had no test at all: deleting the function's body left the suite green,
-  // defeating the documented "a bad config fails at fetch, not at submit" contract, while its
-  // sibling assertEffectReferencesValid has four (parallel review, Q11). Reached through
-  // parseOperationsConfig, which is how the wizard reaches it.
   const withComputed = (computed: unknown): unknown => [
     {
       key: "c",

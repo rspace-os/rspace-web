@@ -17,23 +17,21 @@ import org.springframework.validation.Errors;
 
 /**
  * Checks a supplied inputs map against an operation definition's {@code inputs[]}: present when
- * required, of the declared type, within the declared bounds, and structurally storable. It looks
- * only at the inputs map, never at a sample, because under the server-built design the sample does
- * not exist yet when this runs. Every problem is a field error on the input's own key.
+ * required, of the declared type, within the declared bounds, and structurally storable. Looks only
+ * at the inputs map, never at a sample, since the sample doesn't exist yet when this runs. Every
+ * problem is a field error on the input's own key.
  */
 public final class InventoryOperationInputValidator {
 
-  /** Stateless, so one instance serves every caller. */
   private static final QuantityUtils QUANTITY_UTILS = new QuantityUtils();
 
   private InventoryOperationInputValidator() {}
 
   /**
-   * The inputs with every absent optional input that declares a {@code default} filled in, typed as
-   * the input's type wants it (an integer, a Celsius temperature, text), so a typed facade client
-   * may omit {@code count} or Revive's {@code storageTemp} (M0 D7). Applied before {@link
-   * #validate}, so a default outside its own bounds is still rejected rather than trusted. The
-   * wizard fills the same defaults client-side and always sends them.
+   * Fills in every absent optional input that declares a {@code default}, typed as the input wants
+   * it (an integer, a Celsius temperature, text), so a caller may omit an optional input. Applied
+   * before {@link #validate}, so a default outside its own bounds is still rejected rather than
+   * trusted.
    */
   public static Map<String, Object> withDefaults(
       InventoryOperationConfig definition, Map<String, ?> inputs) {
@@ -101,15 +99,15 @@ public final class InventoryOperationInputValidator {
   }
 
   /**
-   * Rejects an input key the definition does not declare (RSDEV-1231 F8).
+   * Rejects an input key the definition does not declare.
    *
-   * <p>The loop above walks the DEFINITION's inputs and reads each declared key out of the caller's
-   * map, and never walks the map itself, so an undeclared key was unreachable rather than wrong. A
-   * misspelled REQUIRED key still failed, because the declared key was then absent; a misspelled
-   * OPTIONAL one did not, and its value was dropped with a 201. "Count" for "count" created one
-   * subsample instead of the four asked for, because count declares a default of 1.
+   * <p>The loop in {@link #validate} walks the DEFINITION's inputs and reads each declared key out
+   * of the caller's map, never the map itself, so an undeclared key was unreachable rather than
+   * wrong. A misspelled required key still failed, since the declared key was then absent; a
+   * misspelled optional one did not, and its value was silently dropped - e.g. "Count" for "count"
+   * created one subsample instead of the four asked for, since count declares a default of 1.
    *
-   * <p>The undeclared key IS the caller's field here, so it is also the field the error names:
+   * <p>The undeclared key is the caller's field here, so it is also the field the error names:
    * pointing at the declared key would name something the caller never sent.
    */
   private static void rejectUndeclaredInputs(
@@ -133,15 +131,14 @@ public final class InventoryOperationInputValidator {
 
   /**
    * The created sample's total quantity is the sum of the children the builder emits, recalculated
-   * while the sample is persisted. Each child can fit the DECIMAL(19,3) quantity column while
-   * {@code count x eachAmount} does not, and nothing between here and the INSERT looks at the sum:
-   * the delegated sample validators see the children only. So an otherwise valid request reached
-   * the origins, decremented them, and then failed inside the transaction as a 500 rather than as a
-   * field error (Codex review, PR #1090).
+   * while the sample is persisted. Each child fits the DECIMAL(19,3) quantity column while {@code
+   * count x eachAmount} may not, and nothing between here and the INSERT checks the sum - the
+   * delegated sample validators see only the children. Without this, an otherwise valid request
+   * reached the origins, decremented them, then failed inside the transaction as a 500.
    *
-   * <p>Reported on the amount rather than the count, because the amount is the value the caller
-   * chose freely: the definition already bounds the count to a small range. Skipped when either
-   * input was already rejected on its own terms, so the caller still sees one problem per field.
+   * <p>Reported on the amount, not the count, since the amount is the value the caller chose freely
+   * (the definition already bounds the count). Skipped when either input was already rejected on
+   * its own terms, so the caller sees one problem per field.
    */
   private static void rejectUnstorableTotal(
       InventoryOperationConfig definition, Map<String, ?> inputs, Errors errors) {
@@ -168,23 +165,16 @@ public final class InventoryOperationInputValidator {
   }
 
   /**
-   * A text input is bounded by the column the built sample stores it in, which the definition
-   * already names: {@code effect().nameFrom()} becomes the sample's name ({@code EditInfo.name},
-   * varchar 255), and the {@code contentFrom} of a {@code textFields[]} or {@code originFields[]}
-   * entry becomes that field's content ({@code EditInfo.description}, varchar 250).
+   * Bounded by the column the built sample stores it in: {@code effect().nameFrom()} becomes the
+   * sample's name ({@code EditInfo.name}, varchar 255); a {@code textFields[]}/{@code
+   * originFields[]} entry's {@code contentFrom} becomes that field's content ({@code
+   * EditInfo.description}, varchar 250). Without this, an over-long name failed only after the
+   * origins were read and came back as {@code newSample.name} - a field the caller never sent - and
+   * an over-long field content reached the INSERT as a 500 after the origins were already
+   * decremented. Any other text input gets the record-name limit as a ceiling.
    *
-   * <p>Without this the name reached the samples validator only after the origins were read, and
-   * came back as {@code newSample.name}, a field no facade caller sent; a field's content reached
-   * the INSERT as a 500 inside the transaction, after the origins were decremented, because {@code
-   * ExtraTextField.validateNewData} accepts any length. Any other text input (Derive's {@code
-   * processName}, which is interpolated into a generated field NAME rather than stored on its own)
-   * gets the record-name limit as a ceiling; what actually fits that name is the builder's business
-   * (F3).
-   *
-   * <p>The message carries the limit only. Spelling the input key or its type into a user-facing
-   * message would leak a raw config identifier, which {@code
-   * noRejectionSpellsARawConfigIdentifierIntoItsMessage} forbids; the error is already scoped to
-   * the field.
+   * <p>The message carries the limit only, not the input key or type, to avoid leaking a raw config
+   * identifier into a user-facing message.
    */
   private static void validateTextLength(
       String value,
@@ -234,10 +224,9 @@ public final class InventoryOperationInputValidator {
   }
 
   /**
-   * A temperature must carry a real temperature unit and be storable, and is then compared against
-   * the definition's Celsius bounds on the temperature it denotes, not its number, so a value sent
-   * in Kelvin or Fahrenheit is judged correctly. Each failure returns: the bounds can only be
-   * checked against a real, storable temperature.
+   * A temperature must carry a real temperature unit and be storable, then is compared against the
+   * definition's Celsius bounds on the temperature it denotes, not its raw number - so a value sent
+   * in Kelvin or Fahrenheit is judged correctly.
    */
   private static void validateTemperature(
       Quantifiable temperature, InventoryOperationConfig.Input input, Errors errors) {
@@ -279,15 +268,13 @@ public final class InventoryOperationInputValidator {
     }
   }
 
-  /** A quantity is its number and its unit; one without a number is not a quantity. */
   private static boolean isQuantity(Object value) {
     return value instanceof Quantifiable quantity && quantity.getNumericValue() != null;
   }
 
   /**
-   * Same rule and codes as the samples endpoint applies to a record quantity, plus the storability
-   * check: quantities persist at 3 decimal places (HALF_UP), so a finer value would be silently
-   * rounded to an amount the caller never sent.
+   * Quantities persist at 3 decimal places (HALF_UP); the storability check here catches a finer
+   * value before it gets silently rounded to an amount the caller never sent.
    */
   private static void validateAmount(
       Quantifiable quantity,
@@ -295,13 +282,10 @@ public final class InventoryOperationInputValidator {
       boolean isCreatedAmount,
       Errors errors) {
     if (isCreatedAmount && quantity.getNumericValue().signum() <= 0) {
-      // The quantity each created subsample gets, so zero creates a subsample holding nothing while
-      // still deducting real stock from the origin. Only negatives were rejected here and in the
-      // delegated SampleApiPostValidator, so an Aliquot with a positive amountTaken and a zero
-      // eachAmount was accepted; the wizard forbids it client-side and the pre-redesign operation
-      // validator enforced it server-side (Codex review, P2). Scoped to the input the definition
-      // names in eachAmountFrom, so an operation that deliberately takes nothing from its origin
-      // (Passage) is untouched.
+      // Zero would create a subsample holding nothing while still deducting real stock from the
+      // origin. Only negatives were rejected here, so a positive amountTaken paired with a zero
+      // eachAmount was accepted. Scoped to eachAmountFrom, so an operation that deliberately takes
+      // nothing from its origin is untouched.
       errors.rejectValue(
           input.key(),
           "errors.inventory.operation.createdAmountNotPositive",
@@ -333,9 +317,9 @@ public final class InventoryOperationInputValidator {
   }
 
   /**
-   * Whole numbers only. Probed: Jackson binds a JSON integer to Integer or Long by magnitude and a
-   * fractional literal to Double, so a Double here is a fractional count, not a representation
-   * quirk. BigInteger is accepted because it is also a whole number, not because it was probed.
+   * Whole numbers only: Jackson binds a JSON integer to Integer/Long by magnitude and a fractional
+   * literal to Double, so a Double here is a genuine fractional count, not a representation quirk.
+   * BigInteger is accepted because it's also whole, not by accident.
    */
   private static boolean isIntegral(Object value) {
     return value instanceof Integer

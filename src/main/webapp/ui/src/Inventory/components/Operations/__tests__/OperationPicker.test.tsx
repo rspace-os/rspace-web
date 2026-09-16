@@ -4,8 +4,6 @@ import { describe, expect, it } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
 import OperationPicker from "../OperationPicker";
 import { operations } from "./testOperations";
-
-// The picker shows every operation; each is enabled or aria-disabled for the current selection.
 describe("OperationPicker", () => {
   it("is accessible", async () => {
     const { container } = render(
@@ -16,13 +14,11 @@ describe("OperationPicker", () => {
 
   it("shows every operation, enabling single-origin ones and disabling Pool for one subsample", () => {
     render(<OperationPicker operations={operations} onSelect={() => undefined} selectionCount={1} allSameCategory />);
-    // Seven operations ship: derive, cryopreserve, aliquot, revive, passage, pool, destroy.
     expect(screen.getAllByRole("button")).toHaveLength(7);
     expect(screen.getByRole("button", { name: /operations\.derive\.label/i })).not.toHaveAttribute(
       "aria-disabled",
       "true",
     );
-    // Destroy is single-origin, so it is enabled for one subsample.
     expect(screen.getByRole("button", { name: /operations\.destroy\.label/i })).not.toHaveAttribute(
       "aria-disabled",
       "true",
