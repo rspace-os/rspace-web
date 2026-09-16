@@ -391,6 +391,86 @@ class InventoryOperationInputValidatorTest {
         validate("aliquot", inputs), "amountTaken", "errors.inventory.quantity.unitNotAmount");
   }
 
+  /**
+   * A key the definition does not declare is rejected, naming that key (RSDEV-1231 F8).
+   *
+   * <p>The declared-input loop reads the DEFINITION's keys out of the caller's map and never walks
+   * the map itself, so an undeclared key used to be unreachable rather than wrong: its value was
+   * dropped and the request answered 201.
+   */
+  @Test
+  void anInputKeyTheDefinitionDoesNotDeclareIsRejected() {
+    Map<String, Object> inputs = aliquot();
+    inputs.put("cryomedium", "DMSO");
+    assertSingleErrorOn(
+        validate("aliquot", inputs), "cryomedium", "errors.inventory.operation.inputUnknown");
+  }
+
+  /**
+   * An undeclared key is arbitrary client text, so it may look like a property path. The rejection
+   * still has to be a plain field error naming that key: Errors treats "a.b" and "a[0]" as
+   * navigation, and a caller must not be able to turn a 400 into a 500 by choosing a key.
+   */
+  @Test
+  void anUndeclaredKeyThatLooksLikeAPropertyPathIsStillRejectedOnThatKey() {
+    for (String key : List.of("a.b", "a[0]", "  ", "Cryomedium", "sampleName ")) {
+      Map<String, Object> inputs = aliquot();
+      inputs.put(key, "x");
+      Errors errors = validate("aliquot", inputs);
+      assertEquals(
+          1, errors.getFieldErrorCount(), () -> "key [" + key + "] gave " + errors.getAllErrors());
+      assertEquals(key, errors.getFieldErrors().get(0).getField());
+      assertEquals(
+          "errors.inventory.operation.inputUnknown", errors.getFieldErrors().get(0).getCode());
+    }
+  }
+
+  /**
+   * The empty key is the one Errors cannot attach to a field: rejectValue("") is promoted to a
+   * global error by contract. It still has to be REJECTED rather than ignored, which is the whole
+   * point of F8, and ApiControllerAdvice renders global errors alongside field ones, so the caller
+   * still gets the 400.
+   */
+  @Test
+  void theEmptyInputKeyIsRejectedGloballyRatherThanIgnored() {
+    Map<String, Object> inputs = aliquot();
+    inputs.put("", "x");
+    Errors errors = validate("aliquot", inputs);
+    assertEquals(0, errors.getFieldErrorCount());
+    assertEquals(1, errors.getGlobalErrorCount(), () -> "" + errors.getAllErrors());
+    assertEquals(
+        "errors.inventory.operation.inputUnknown", errors.getGlobalErrors().get(0).getCode());
+  }
+
+  /**
+   * Destroy declares no inputs at all, so every key is undeclared. Its facade sends an empty map
+   * and the wizard builds one, so the empty map stays valid and anything else is refused.
+   */
+  @Test
+  void anOperationThatDeclaresNoInputsAcceptsOnlyAnEmptyMap() {
+    assertEquals(List.of(), validate("destroy", inputs()).getAllErrors());
+    assertSingleErrorOn(
+        validate("destroy", inputs("sampleName", "anything")),
+        "sampleName",
+        "errors.inventory.operation.inputUnknown");
+  }
+
+  /**
+   * An undeclared key is reported ALONGSIDE the declared inputs' own problems, not instead of them:
+   * a caller fixing a typo should not then discover a second, previously hidden error.
+   */
+  @Test
+  void anUndeclaredKeyDoesNotHideTheDeclaredInputsOwnErrors() {
+    Map<String, Object> inputs = aliquot();
+    inputs.remove("sampleName");
+    inputs.put("cryomedium", "DMSO");
+    Errors errors = validate("aliquot", inputs);
+    assertEquals(2, errors.getFieldErrorCount(), () -> "" + errors.getAllErrors());
+    assertEquals(
+        List.of("sampleName", "cryomedium"),
+        errors.getFieldErrors().stream().map(FieldError::getField).toList());
+  }
+
   private static Map<String, Object> goldenFor(String operation) {
     return switch (operation) {
       case "aliquot" -> aliquot();
