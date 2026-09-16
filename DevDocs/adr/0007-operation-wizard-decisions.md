@@ -429,3 +429,58 @@ element may carry no `amountTaken` where the definition decides it (Passage take
 Destroy takes everything, the builder supplies it), a declared input `default` is applied to
 an absent optional input, and Cryopreserve's `storageTemp` is now `required` in the config
 as M0 specified.
+
+## Amended 2026-09-16: operations are code, not config
+
+RSDEV-1231-no-configuration. Supersedes "Foundation: operations are config,
+executed by one thin atomic endpoint", "The one thing a future reader must know
+first", "Why the backend validates against that config copy", "Operation
+definitions are validated at registry construction" and "Computations are a
+dev-only code registry". Everything else in this ADR still holds.
+
+### Why
+
+The config layer existed for a stage 2 that is not happening: user-editable
+operations, authored in the app and saved as definitions. Nothing else asked for
+it. With that gone, `operations_config.json` was a data format read by an
+interpreter (`InventoryOperationConfigRegistry`, `InventoryOperationRequestBuilder`,
+`InventoryOperationInputValidator`) that no user could write, whose authoring
+mistakes needed their own boot-time validator, and whose seven entries were
+written once and never edited. Both languages then parsed that file and could
+disagree about it. An operation is a paragraph of Java; expressing it as
+interpreted JSON cost three classes, a schema, a registry validator and a
+valibot copy, and bought nothing.
+
+### Decisions
+
+- D1 Each operation is a Java class in `com.researchspace.service.inventory.operations`,
+  implementing `InventoryOperation<R>`: what it takes from its origins, the value rules
+  its request body cannot state, and the request the transactional core executes. The
+  six creating operations share `CreatingOperation`. There is no registry: each endpoint
+  names its own operation, which is what makes the generics type-safe.
+- D2 The manager's transactional core is unchanged and still shared: live-state
+  rules, template conformance, create sample, decrement origins, read back.
+- D3 Value rules split three ways by what each needs. A rule about one field in
+  isolation (presence, bounds, the length of the column it lands in) is a jakarta
+  annotation on the request body, where a generated client can see it. A rule needing
+  `RSUnitDef` to say what a unit id means is `OperationQuantityRules`. A rule about the
+  origin list is `OperationOriginRules`. Anything left is the operation's own `validate`.
+- D4 Pool's take-all is `takeAll: true` on the body, not a per-origin mode. The
+  server then reads each origin's live quantity at processing time, as Destroy does,
+  so the client never has to state an amount it cannot know. An `amountTaken` sent
+  alongside is a 400.
+- D5 `expectedQuantity` and `amountMode` are gone from the wire. Neither was ever
+  compared against anything: both were shape-checked and discarded, which is a
+  contract that promises concurrency control and delivers none.
+- D6 The wizard's operations are a hand-typed TypeScript array, not a fetched
+  document: no request, no schema, no load state, no failure mode. Its label and
+  field-name keys are typed as the `inventory:` catalog's own key union, so a
+  mistyped key fails at compile time.
+
+### The cost, accepted
+
+The definitions are now two hand-maintained copies, one per language. Nothing
+pins the input keys, bounds and defaults together; a drift shows as a 400 at
+Perform rather than at build time. This is the same exposure every other endpoint
+in this application has with its frontend, and it replaces a runtime interpreter
+that could drift in more ways and more quietly.
