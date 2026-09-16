@@ -27,6 +27,7 @@ import RequestsParameterChips from "./RequestsParameterChips";
 import RequestsSearchbar from "./RequestsSearchbar";
 import RequestsStatusChip from "./RequestsStatusChip";
 import RequestsTableHead, { type ColumnKey, type SortDirection } from "./RequestsTableHead";
+import { SAMPLE_REQUEST_STATUS_CHANGED_EVENT } from "./sampleRequestEvents";
 
 export type ApiSampleRequestListItem = {
   id: number;
@@ -97,9 +98,21 @@ export default function RequestsList({
   // Not wired up to any filtering yet; that will come once the /sampleRequests
   // endpoint supports a free-text query.
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState<ColumnKey>("sample");
-  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+  const [sortBy, setSortBy] = useState<ColumnKey>("submitted");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [adjustableColumn, setAdjustableColumn] = useState<ColumnKey>("status");
+  const [refreshToken, setRefreshToken] = useState(0);
+
+  // Refetch whenever a request's status changes elsewhere (e.g. approved/rejected
+  // from the detail pane), since the active filters may mean it should appear,
+  // disappear, or just show a different status.
+  useEffect(() => {
+    const onStatusChanged = () => setRefreshToken((token) => token + 1);
+    window.addEventListener(SAMPLE_REQUEST_STATUS_CHANGED_EVENT, onStatusChanged);
+    return () => {
+      window.removeEventListener(SAMPLE_REQUEST_STATUS_CHANGED_EVENT, onStatusChanged);
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -127,7 +140,7 @@ export default function RequestsList({
     return () => {
       cancelled = true;
     };
-  }, [requestsFilter, statusFilter]);
+  }, [requestsFilter, statusFilter, refreshToken]);
 
   const handleSort = (column: ColumnKey) => {
     if (sortBy === column) {

@@ -1,10 +1,12 @@
 import Box from "@mui/material/Box";
 import { useTheme } from "@mui/material/styles";
 import type React from "react";
-import { useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useLandmark } from "@/components/LandmarksContext";
 import VisuallyHiddenHeading from "@/components/VisuallyHiddenHeading";
+import NavigateContext from "@/stores/contexts/Navigate";
+import ApiService from "../../common/InvApiService";
 import Main from "../Main";
 import RequestDetailPanel from "./RequestDetailPanel";
 import RequestsList, { type ApiSampleRequestListItem } from "./RequestsList";
@@ -18,6 +20,27 @@ export default function RequestsPage(): React.ReactNode {
   const theme = useTheme();
   const mainContentRef = useLandmark(t("requestsManagement.landmark"));
   const [selectedRequest, setSelectedRequest] = useState<ApiSampleRequestListItem | null>(null);
+  const { useLocation } = useContext(NavigateContext);
+  const location = useLocation();
+
+  // Supports deep-linking to a specific request (e.g. from the status chip in the
+  // Sample form's "Request this sample" box) via a `requestId` query param.
+  useEffect(() => {
+    const requestId = new URLSearchParams(location.search).get("requestId");
+    if (!requestId) return;
+    let cancelled = false;
+    ApiService.get<ApiSampleRequestListItem>("sampleRequests", requestId)
+      .then(({ data }) => {
+        if (cancelled) return;
+        setSelectedRequest(data);
+      })
+      .catch((error: unknown) => {
+        console.error("Failed to load the linked sample request", error);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [location.search]);
 
   return (
     <Main ref={mainContentRef} role="main" aria-label={t("requestsManagement.landmark")}>

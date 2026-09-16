@@ -14,11 +14,19 @@ const STATUS_PALETTE_KEY: Record<string, "warning" | "success" | "error"> = {
 };
 
 /**
- * A display-only chip for a SampleRequest's status: "Pending" in orange,
- * "Approved"/"Fulfilled" in green, "Rejected" in red, "Cancelled" in gray.
+ * A chip for a SampleRequest's status: "Pending" in orange, "Approved"/"Fulfilled"
+ * in green, "Rejected" in red, "Cancelled" in gray. Display-only unless an
+ * `onClick` is provided, in which case it becomes clickable.
  */
-export default function RequestsStatusChip({ status }: { status: string }): React.ReactNode {
+export default function RequestsStatusChip({
+  status,
+  onClick,
+}: {
+  status: string;
+  onClick?: () => void;
+}): React.ReactNode {
   const theme = useTheme();
+  const clickableProps = onClick ? { onClick, clickable: true } : {};
 
   if (status === "PENDING") {
     // Matches the "Request pending" decoration in the Sample form's "Request this sample" box.
@@ -26,6 +34,7 @@ export default function RequestsStatusChip({ status }: { status: string }): Reac
       <Chip
         size="small"
         label={toTitleCase(status)}
+        {...clickableProps}
         sx={{
           fontWeight: theme.typography.fontWeightMedium,
           // The Inventory accented theme's MuiChip override targets the compound
@@ -45,6 +54,7 @@ export default function RequestsStatusChip({ status }: { status: string }): Reac
       <Chip
         size="small"
         label={toTitleCase(status)}
+        {...clickableProps}
         sx={{
           fontWeight: theme.typography.fontWeightMedium,
           "&&": {
@@ -62,6 +72,7 @@ export default function RequestsStatusChip({ status }: { status: string }): Reac
     <Chip
       size="small"
       label={toTitleCase(status)}
+      {...clickableProps}
       sx={{
         fontWeight: theme.typography.fontWeightMedium,
         "&&": {

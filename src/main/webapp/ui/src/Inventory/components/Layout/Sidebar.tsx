@@ -9,12 +9,13 @@ import Drawer, { drawerClasses } from "@mui/material/Drawer";
 import List from "@mui/material/List";
 import { useTheme } from "@mui/material/styles";
 import { observer } from "mobx-react-lite";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { InvalidState } from "@/util/error";
 import { mapNullable } from "@/util/Util";
 import IgsnIcon from "../../../assets/graphics/RecordTypeGraphics/Icons/IgsnIcon";
 import MyBenchIcon from "../../../assets/graphics/RecordTypeGraphics/Icons/MyBench";
+import ApiService from "../../../common/InvApiService";
 import DrawerTab from "../../../components/DrawerTab";
 import { useLandmark } from "../../../components/LandmarksContext";
 import RecordTypeIcon from "../../../components/RecordTypeIcon";
@@ -22,6 +23,7 @@ import useOneDimensionalRovingTabIndex from "../../../hooks/ui/useOneDimensional
 import AnalyticsContext from "../../../stores/contexts/Analytics";
 import NavigateContext from "../../../stores/contexts/Navigate";
 import useStores from "../../../stores/use-stores";
+import { SAMPLE_REQUEST_STATUS_CHANGED_EVENT } from "../../Requests/sampleRequestEvents";
 import useNavigateHelpers from "../../useNavigateHelpers";
 import CreateNew from "../CreateNew";
 import ExportDialog from "../Export/ExportDialog";
@@ -406,6 +408,37 @@ const RequestsNavItem = observer(
     const { useNavigate } = React.useContext(NavigateContext);
     const { trackEvent } = React.useContext(AnalyticsContext);
     const navigate = useNavigate();
+    const [pendingCount, setPendingCount] = useState(0);
+    const [refreshToken, setRefreshToken] = useState(0);
+
+    // Refetch whenever a request's status changes elsewhere (e.g. approved/rejected
+    // from the Requests detail pane), so the badge stays in sync.
+    useEffect(() => {
+      const onStatusChanged = () => setRefreshToken((token) => token + 1);
+      window.addEventListener(SAMPLE_REQUEST_STATUS_CHANGED_EVENT, onStatusChanged);
+      return () => {
+        window.removeEventListener(SAMPLE_REQUEST_STATUS_CHANGED_EVENT, onStatusChanged);
+      };
+    }, []);
+
+    useEffect(() => {
+      let cancelled = false;
+      ApiService.query<{ totalHits: number }>(
+        "sampleRequests",
+        new URLSearchParams({ role: "OWNER", status: "PENDING", pageSize: "1" }),
+      )
+        .then(({ data }) => {
+          if (!cancelled) setPendingCount(data.totalHits);
+        })
+        .catch((error: unknown) => {
+          if (cancelled) return;
+          console.error("Failed to fetch pending sample request count", error);
+          setPendingCount(0);
+        });
+      return () => {
+        cancelled = true;
+      };
+    }, [refreshToken]);
 
     return (
       <DrawerTab
@@ -416,6 +449,7 @@ const RequestsNavItem = observer(
         tabIndex={tabIndex}
         ref={getRef(index)}
         drawerOpen={uiStore.sidebarOpen}
+        badge={Math.min(pendingCount, largestFittingCount)}
         onClick={() => {
           trackEvent("user:navigate:requestsPage:InventorySidebar");
           navigate("/inventory/requests");

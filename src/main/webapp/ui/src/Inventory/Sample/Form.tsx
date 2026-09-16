@@ -11,13 +11,14 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import type React from "react";
-import { useEffect, useId, useState } from "react";
+import { useContext, useEffect, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import PadlockIcon from "../../assets/graphics/PadlockIcon";
 import ApiService from "../../common/InvApiService";
 import { Heading } from "../../components/DynamicHeadingLevel";
 import FieldLabel from "../../components/Inputs/FieldLabel";
 import { useDeploymentProperty } from "../../hooks/api/useDeploymentProperty";
+import NavigateContext from "../../stores/contexts/Navigate";
 import type { Person } from "../../stores/definitions/Person";
 import SampleModel from "../../stores/models/SampleModel";
 import useStores from "../../stores/use-stores";
@@ -189,6 +190,12 @@ const RequestMaterialSection = observer(({ activeResult }: { activeResult: Sampl
     status: string;
     created: string;
   } | null>(null);
+  const { useNavigate } = useContext(NavigateContext);
+  const navigate = useNavigate();
+  const viewRequest = () => {
+    if (!existingRequest) return;
+    navigate(`/inventory/requests?requestId=${existingRequest.id}`);
+  };
   const sampleRequestsAvailable = FetchingData.getSuccessValue(useDeploymentProperty("sampleRequests.available"))
     .flatMap(Parser.isString)
     .map((value) => value === "ALLOWED")
@@ -298,7 +305,7 @@ const RequestMaterialSection = observer(({ activeResult }: { activeResult: Sampl
             existingRequest.status === "PENDING" ? (
               <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 0.5 }}>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <RequestsStatusChip status={existingRequest.status} />
+                  <RequestsStatusChip status={existingRequest.status} onClick={viewRequest} />
                   <Button
                     size="small"
                     variant="outlined"
@@ -324,11 +331,11 @@ const RequestMaterialSection = observer(({ activeResult }: { activeResult: Sampl
               </Box>
             ) : existingRequest.status === "APPROVED" || existingRequest.status === "REJECTED" ? (
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <RequestsStatusChip status={existingRequest.status} />
+                <RequestsStatusChip status={existingRequest.status} onClick={viewRequest} />
                 <RequestSampleButton onClick={() => setDialogOpen(true)} />
               </Box>
             ) : (
-              <RequestsStatusChip status={existingRequest.status} />
+              <RequestsStatusChip status={existingRequest.status} onClick={viewRequest} />
             )
           ) : (
             <RequestSampleButton onClick={() => setDialogOpen(true)} />

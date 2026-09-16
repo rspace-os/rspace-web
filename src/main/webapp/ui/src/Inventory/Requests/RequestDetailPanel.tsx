@@ -13,7 +13,7 @@ import { useTheme } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import type React from "react";
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import CustomTooltip from "@/components/CustomTooltip";
 import { Heading, HeadingContext } from "@/components/DynamicHeadingLevel";
@@ -25,9 +25,11 @@ import LinkableRecordFromGlobalId from "@/stores/models/LinkableRecordFromGlobal
 import * as FetchingData from "@/util/fetchingData";
 import { isoToLocale } from "@/util/Util";
 import ApiService from "../../common/InvApiService";
+import RequestHistoryTable, { type ApiSampleRequestStatusChangeItem } from "./RequestHistoryTable";
 import RequestSampleLocations from "./RequestSampleLocations";
 import type { ApiSampleRequestListItem } from "./RequestsList";
 import RequestsStatusChip from "./RequestsStatusChip";
+import { notifySampleRequestStatusChanged } from "./sampleRequestEvents";
 
 function DetailField({
   label,
@@ -63,13 +65,41 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
   const reasonFieldId = useId();
   const [detailsExpanded, setDetailsExpanded] = useState(true);
   const [approvalResultExpanded, setApprovalResultExpanded] = useState(true);
+  const [requestHistoryExpanded, setRequestHistoryExpanded] = useState(true);
   const [status, setStatus] = useState(request?.status);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
+  const [statusChanges, setStatusChanges] = useState<Array<ApiSampleRequestStatusChangeItem>>([]);
   const currentUser = useWhoAmI();
   const isSampleOwner = FetchingData.getSuccessValue(currentUser)
     .map((user) => request != null && user.id === request.sample.owner.id)
     .orElse(false);
+
+  useEffect(() => {
+    if (!request) return;
+    let cancelled = false;
+    ApiService.get<{ statusChanges: Array<ApiSampleRequestStatusChangeItem> }>("sampleRequests", request.id)
+      .then(({ data }) => {
+        if (cancelled) return;
+        setStatusChanges(data.statusChanges);
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return;
+        console.error("Failed to fetch sample request status changes", error);
+        setStatusChanges([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [request, status]);
+
+  const comment = statusChanges
+    .filter((change) => change.status === status)
+    .reduce<ApiSampleRequestStatusChangeItem | null>(
+      (latest, change) =>
+        !latest || new Date(change.created).getTime() > new Date(latest.created).getTime() ? change : latest,
+      null,
+    )?.reason;
 
   if (!request) {
     return (
@@ -96,6 +126,7 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
     })
       .then(({ data }) => {
         setStatus(data.status);
+        notifySampleRequestStatusChanged();
       })
       .catch((error: unknown) => {
         console.error("Failed to approve sample request", error);
@@ -110,6 +141,7 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
       .then(({ data }) => {
         setStatus(data.status);
         setRejectDialogOpen(false);
+        notifySampleRequestStatusChanged();
       })
       .catch((error: unknown) => {
         console.error("Failed to reject sample request", error);
@@ -186,48 +218,69 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
             </Box>
           </HeadingContext>
         </Collapse>
-        {(status === "APPROVED" || status === "REJECTED") && (
-          <>
-            <Box
-              sx={{
-                p: 1,
-                backgroundColor: theme.palette.grey[100],
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                cursor: "pointer",
-              }}
-              onClick={() => setApprovalResultExpanded(!approvalResultExpanded)}
-            >
-              <Typography variant="subtitle1">{t("requestsManagement.detail.sections.approvalResult")}</Typography>
-              <IconButton
-                size="small"
-                aria-label={
-                  approvalResultExpanded ? t("formSections.collapseSection") : t("formSections.expandSection")
-                }
-                sx={{
-                  transform: approvalResultExpanded ? "rotate(180deg)" : "rotate(0deg)",
-                  transition: theme.transitions.create("transform"),
-                }}
-              >
-                <ExpandMoreIcon />
-              </IconButton>
+        <Box
+          sx={{
+            p: 1,
+            backgroundColor: theme.palette.grey[100],
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            cursor: "pointer",
+          }}
+          onClick={() => setApprovalResultExpanded(!approvalResultExpanded)}
+        >
+          <Typography variant="subtitle1">{t("requestsManagement.detail.sections.approvalResult")}</Typography>
+          <IconButton
+            size="small"
+            aria-label={approvalResultExpanded ? t("formSections.collapseSection") : t("formSections.expandSection")}
+            sx={{
+              transform: approvalResultExpanded ? "rotate(180deg)" : "rotate(0deg)",
+              transition: theme.transitions.create("transform"),
+            }}
+          >
+            <ExpandMoreIcon />
+          </IconButton>
+        </Box>
+        <Divider />
+        <Collapse in={approvalResultExpanded}>
+          <HeadingContext level={4}>
+            <Box sx={{ p: 2, display: "flex", flexDirection: "column", gap: 2 }}>
+              <DetailField label={t("requestsManagement.detail.fields.status")}>
+                <RequestsStatusChip status={status ?? request.status} />
+              </DetailField>
+              <DetailField label={t("requestsManagement.detail.fields.commentFromApprover")}>
+                {comment ? comment : <NoValue label={t("requestsManagement.detail.fields.noComment")} />}
+              </DetailField>
             </Box>
-            <Divider />
-            <Collapse in={approvalResultExpanded}>
-              <HeadingContext level={4}>
-                <Box sx={{ p: 2, display: "flex", flexDirection: "column", gap: 2 }}>
-                  <DetailField label={t("requestsManagement.detail.fields.status")}>
-                    <RequestsStatusChip status={status} />
-                  </DetailField>
-                  <DetailField label={t("requestsManagement.detail.fields.commentFromApprover")}>
-                    <NoValue label={t("requestsManagement.detail.fields.reasonPlaceholder")} />
-                  </DetailField>
-                </Box>
-              </HeadingContext>
-            </Collapse>
-          </>
-        )}
+          </HeadingContext>
+        </Collapse>
+        <Box
+          sx={{
+            p: 1,
+            backgroundColor: theme.palette.grey[100],
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            cursor: "pointer",
+          }}
+          onClick={() => setRequestHistoryExpanded(!requestHistoryExpanded)}
+        >
+          <Typography variant="subtitle1">{t("requestsManagement.detail.history.sectionTitle")}</Typography>
+          <IconButton
+            size="small"
+            aria-label={requestHistoryExpanded ? t("formSections.collapseSection") : t("formSections.expandSection")}
+            sx={{
+              transform: requestHistoryExpanded ? "rotate(180deg)" : "rotate(0deg)",
+              transition: theme.transitions.create("transform"),
+            }}
+          >
+            <ExpandMoreIcon />
+          </IconButton>
+        </Box>
+        <Divider />
+        <Collapse in={requestHistoryExpanded}>
+          <RequestHistoryTable statusChanges={statusChanges} />
+        </Collapse>
         {isSampleOwner && status === "PENDING" && (
           <>
             <Box sx={{ p: 1, backgroundColor: theme.palette.grey[100] }}>

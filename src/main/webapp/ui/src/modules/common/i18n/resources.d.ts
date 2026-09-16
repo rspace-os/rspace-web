@@ -4113,7 +4113,7 @@ export default interface Resources {
       },
       "columns": {
         "id": "Request ID",
-        "requester": "Requester",
+        "requester": "Requested by",
         "sample": "Requested Sample",
         "status": "Status",
         "submitted": "Date Submitted"
@@ -4122,14 +4122,14 @@ export default interface Resources {
         "approveButton": "Approve",
         "fields": {
           "additionalNotes": "Notes from requester",
-          "commentFromApprover": "Comment from approver",
+          "commentFromApprover": "Additional notes",
           "loadingLocations": "Loading locations…",
           "locationColumn": "Location",
+          "noComment": "No additional notes.",
           "noNotes": "No notes provided.",
           "noSubsamples": "This sample has no subsamples.",
           "notInContainer": "Not in a container.",
-          "reasonPlaceholder": "Reason to be supplied later",
-          "requester": "Requester",
+          "requester": "Requested by",
           "sampleLocation": "Sample Locations",
           "sampleLocationRestricted": "You do not have permission to view locations for subsamples of this sample. To gain full access, please contact the owner, {owner}.",
           "sampleLocationTooltip": "Samples are located via their subsamples",
@@ -4138,6 +4138,15 @@ export default interface Resources {
           "submitted": "Submitted",
           "subsampleColumn": "Subsample"
         },
+        "history": {
+          "columns": {
+            "additionalNotes": "Additional Notes",
+            "date": "Date",
+            "status": "Status",
+            "user": "User"
+          },
+          "sectionTitle": "Request History"
+        },
         "rejectButton": "Reject",
         "rejectDialog": {
           "reasonLabel": "Provide a reason for rejecting this request.",
@@ -4145,7 +4154,7 @@ export default interface Resources {
           "title": "Confirm request rejection"
         },
         "sections": {
-          "approvalResult": "Approval Result",
+          "approvalResult": "Request Status",
           "approveReject": "Approve/Reject",
           "details": "Details"
         },
