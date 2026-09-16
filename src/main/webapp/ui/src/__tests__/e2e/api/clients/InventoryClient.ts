@@ -66,6 +66,12 @@ export class InventoryClient extends BaseApiClient {
     });
   }
 
+  async getSubSample(subSampleId: number): Promise<ApiInventorySubSample> {
+    return this.requestJson("get", `/api/inventory/v1/subSamples/${subSampleId}`, {
+      action: "getInventorySubSample",
+    });
+  }
+
   async moveSubSample(subSampleId: number, move: ApiInventorySubSampleMoveRequest): Promise<ApiInventorySubSample> {
     return this.requestJson("put", `/api/inventory/v1/subSamples/${subSampleId}`, {
       data: move,

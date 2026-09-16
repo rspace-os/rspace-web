@@ -8,6 +8,7 @@ import { TinyMceEditor } from "@/__tests__/e2e/components/document/TinyMceEditor
 import { VideoEmbedDialogComponent } from "@/__tests__/e2e/components/document/VideoEmbedDialogComponent";
 import { GalleryPickerComponent } from "@/__tests__/e2e/components/shared/GalleryPickerComponent";
 import { CaliraDialogComponent } from "@/modules/calira/__tests__/pageObjects/CaliraDialogComponent";
+import { KetcherDialogComponent } from "@/modules/chemistry/__tests__/pageObjects/KetcherDialogComponent";
 import { EgnyteDialogComponent } from "@/modules/egnyte/__tests__/pageObjects/EgnyteDialogComponent";
 import { ExternalWorkflowDialogComponent } from "@/modules/galaxy/__tests__/pageObjects/ExternalWorkflowDialogComponent";
 import { GalaxyDialogComponent } from "@/modules/galaxy/__tests__/pageObjects/GalaxyDialogComponent";
@@ -25,6 +26,7 @@ type ToolbarDialog = { waitForOpen(): Promise<void> };
 export class DocumentEditorPage extends DocumentPage {
   readonly editToolbar: DocumentToolbar;
   readonly pubchemDialog: PubchemDialogComponent;
+  readonly ketcherDialog: KetcherDialogComponent;
   readonly galleryPicker: GalleryPickerComponent;
   readonly galaxyDialog: GalaxyDialogComponent;
   readonly externalWorkflowDialog: ExternalWorkflowDialogComponent;
@@ -45,6 +47,7 @@ export class DocumentEditorPage extends DocumentPage {
     this.editToolbar = new DocumentToolbar(page);
     this.videoEmbedDialog = new VideoEmbedDialogComponent(page);
     this.pubchemDialog = new PubchemDialogComponent(page);
+    this.ketcherDialog = new KetcherDialogComponent(page);
     this.galleryPicker = new GalleryPickerComponent(page);
     this.galaxyDialog = new GalaxyDialogComponent(page);
     this.externalWorkflowDialog = new ExternalWorkflowDialogComponent(page);
@@ -94,6 +97,10 @@ export class DocumentEditorPage extends DocumentPage {
 
   async openPubchemDialog(): Promise<PubchemDialogComponent> {
     return this.openToolbarDialog("Insert from PubChem", this.pubchemDialog);
+  }
+
+  async openKetcherDialog(): Promise<KetcherDialogComponent> {
+    return this.openToolbarDialog("Ketcher Insert chemical structure", this.ketcherDialog);
   }
 
   get insertFromGalleryButton(): Locator {
