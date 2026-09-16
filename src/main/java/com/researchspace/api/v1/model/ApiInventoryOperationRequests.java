@@ -1,41 +1,40 @@
 package com.researchspace.api.v1.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.researchspace.model.record.BaseRecord;
+import com.researchspace.model.record.EditInfo;
+import jakarta.validation.constraints.Digits;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import lombok.Getter;
 import lombok.Setter;
 
 /**
  * The request bodies of the seven typed operation endpoints, {@code POST /operations/<key>}: the
  * public API contract (shapes frozen in DevDocs/adr/0007). Each carries what is consumed ({@code
- * origin}, or {@code origins} for Pool, identified by global id), the values the definition
- * declares as inputs, and for a creating operation the template (numeric like {@code POST
- * /samples}) and the documentation target (no other sample metadata; set it with a follow-up {@code
- * PUT}).
+ * origin}, or {@code origins} for Pool, identified by global id), the values that operation needs,
+ * and for a creating operation the template (numeric like {@code POST /samples}) and the
+ * documentation target (no other sample metadata; set it with a follow-up {@code PUT}).
  *
- * <p>Every input field is named exactly after the definition's input key, so {@link
- * Request#toOperationInputs()} is a mechanical copy and a core validation error about, say, {@code
- * sampleName} already names the field the client sent. The classes validate SHAPE only: presence of
- * the origin, the list size a generated client can enforce. Every value rule (presence of a
- * required input, bounds, amount semantics, cardinality) is the config-driven core's, applied once,
- * so nothing here can drift from the definition; {@code InventoryOperationFacadeShapesTest} pins
- * the agreement.
+ * <p>The annotations here are every rule that can be stated on a field in isolation: presence,
+ * bounds, and the length of the column the value is stored in. A rule needing {@link
+ * com.researchspace.model.units.RSUnitDef}, another field, or the origins' live state belongs to
+ * the operation class instead ({@code com.researchspace.service.inventory.operations}).
  */
 public final class ApiInventoryOperationRequests {
 
   private ApiInventoryOperationRequests() {}
 
   /**
-   * One origin subsample. {@code amountTaken} is what the operation removes from it, and is only
-   * meaningful where the definition takes something (absent for Passage and Destroy: the server
-   * takes nothing, or everything). {@code expectedQuantity} is optional on every operation: the
-   * quantity the caller saw, shape-checked and otherwise accepted without comparison
-   * (DevDocs/adr/0007). The operation takes whatever is there either way.
+   * One origin subsample. {@code amountTaken} is what the operation removes from it, and is sent
+   * exactly when the operation takes a chosen amount: never for Passage or Destroy, and never on a
+   * Pool request that sets {@code takeAll}, where the server takes each origin's whole live
+   * quantity instead.
    */
   @Getter
   @Setter
@@ -45,18 +44,12 @@ public final class ApiInventoryOperationRequests {
 
     @JsonProperty("amountTaken")
     private ApiQuantityInfo amountTaken;
-
-    @JsonProperty("expectedQuantity")
-    private ApiQuantityInfo expectedQuantity;
   }
 
   /** What the endpoint reads off any of the seven, whatever their fields. */
   public interface Request {
     /** The origins in request order; a single-origin request wraps its one origin. */
     List<Origin> originList();
-
-    /** The declared inputs the client sent, by input key; absent ones are left out. */
-    Map<String, Object> toOperationInputs();
 
     default Long getTemplateId() {
       return null;
@@ -70,27 +63,29 @@ public final class ApiInventoryOperationRequests {
   @Getter
   @Setter
   public abstract static class Creating implements Request {
+    @NotBlank(message = "{errors.inventory.operation.inputRequired}")
+    @Size(
+        max = BaseRecord.DEFAULT_VARCHAR_LENGTH,
+        message = "{errors.inventory.operation.inputTooLong}")
     @JsonProperty("sampleName")
     private String sampleName;
 
     /**
-     * Bound as a BigDecimal, NOT an Integer, so a fractional count survives binding long enough to
-     * be rejected.
+     * How many subsamples to create; absent means one.
      *
-     * <p>Jackson's {@code ACCEPT_FLOAT_AS_INT} is on by default and the API converter does not turn
-     * it off, so an Integer field takes {@code "count": 1.9} as 1: the request deducted the full
-     * amountTaken but created one subsample, and {@code 100.9} became 100 and slipped past the
-     * definition's declared maximum. The generic endpoint binds into a {@code Map<String, Object>},
-     * where the same value arrives as a Double and the input validator's integrality check rejects
-     * it - so the typed facades were quietly laxer than the endpoint they front.
-     *
-     * <p>{@link #toOperationInputs} narrows a whole value to an Integer and passes anything else
-     * through unchanged, so the rejection is the validator's usual field-scoped 400 on {@code
-     * count} rather than an unreadable-message 400 from a throwing deserializer.
+     * <p>Bound as a BigDecimal, NOT an Integer, so a fractional count survives binding long enough
+     * to be rejected by {@code @Digits}. Jackson's {@code ACCEPT_FLOAT_AS_INT} is on by default and
+     * the API converter does not turn it off, so an Integer field would take {@code "count": 1.9}
+     * as 1: the request would deduct the full amountTaken but create one subsample, and {@code
+     * 100.9} would become 100 and slip past the maximum.
      */
+    @Min(value = 1, message = "{errors.inventory.operation.inputBelowMinimum}")
+    @Max(value = 100, message = "{errors.inventory.operation.inputAboveMaximum}")
+    @Digits(integer = 3, fraction = 0, message = "{errors.inventory.operation.countNotWhole}")
     @JsonProperty("count")
     private BigDecimal count;
 
+    @NotNull(message = "{errors.inventory.operation.inputRequired}")
     @JsonProperty("eachAmount")
     private ApiQuantityInfo eachAmount;
 
@@ -99,37 +94,6 @@ public final class ApiInventoryOperationRequests {
 
     @JsonProperty("documentedByGlobalId")
     private String documentedByGlobalId;
-
-    @Override
-    public Map<String, Object> toOperationInputs() {
-      Map<String, Object> inputs = new LinkedHashMap<>();
-      put(inputs, "sampleName", sampleName);
-      put(inputs, "count", wholeOrAsSent(count));
-      put(inputs, "eachAmount", eachAmount);
-      return inputs;
-    }
-
-    static void put(Map<String, Object> inputs, String key, Object value) {
-      if (value != null) {
-        inputs.put(key, value);
-      }
-    }
-
-    /**
-     * A whole count as the Integer the definition declares; anything else exactly as sent, so the
-     * input validator judges its type and rejects it. Also covers a value too large for an int,
-     * which is not a usable count either.
-     */
-    private static Object wholeOrAsSent(BigDecimal count) {
-      if (count == null) {
-        return null;
-      }
-      try {
-        return count.intValueExact();
-      } catch (ArithmeticException notAWholeInt) {
-        return count;
-      }
-    }
   }
 
   /** A creating operation over exactly one origin (singular {@code origin}). */
@@ -156,67 +120,51 @@ public final class ApiInventoryOperationRequests {
   @Getter
   @Setter
   public static class Derive extends SingleOriginCreating {
+    @NotBlank(message = "{errors.inventory.operation.inputRequired}")
+    @Size(
+        max = BaseRecord.DEFAULT_VARCHAR_LENGTH,
+        message = "{errors.inventory.operation.inputTooLong}")
     @JsonProperty("processName")
     private String processName;
-
-    @Override
-    public Map<String, Object> toOperationInputs() {
-      Map<String, Object> inputs = super.toOperationInputs();
-      put(inputs, "processName", processName);
-      return inputs;
-    }
   }
 
   /** {@code POST /operations/cryopreserve}. */
   @Getter
   @Setter
   public static class Cryopreserve extends SingleOriginCreating {
+    /** Stored as the created sample's cryomedium field content, hence the description limit. */
+    @Size(max = EditInfo.DESCRIPTION_LENGTH, message = "{errors.inventory.operation.inputTooLong}")
     @JsonProperty("cryomedium")
     private String cryomedium;
 
+    @NotNull(message = "{errors.inventory.operation.inputRequired}")
     @JsonProperty("storageTemp")
     private ApiQuantityInfo storageTemp;
-
-    @Override
-    public Map<String, Object> toOperationInputs() {
-      Map<String, Object> inputs = super.toOperationInputs();
-      put(inputs, "cryomedium", cryomedium);
-      put(inputs, "storageTemp", storageTemp);
-      return inputs;
-    }
   }
 
-  /** {@code POST /operations/revive}. */
+  /** {@code POST /operations/revive}: {@code storageTemp} defaults to 4 degrees Celsius. */
   @Getter
   @Setter
   public static class Revive extends SingleOriginCreating {
     @JsonProperty("storageTemp")
     private ApiQuantityInfo storageTemp;
-
-    @Override
-    public Map<String, Object> toOperationInputs() {
-      Map<String, Object> inputs = super.toOperationInputs();
-      put(inputs, "storageTemp", storageTemp);
-      return inputs;
-    }
   }
 
   /**
-   * {@code POST /operations/pool}: the one multi-origin operation (plural {@code origins}), each
-   * origin with its own amount taken. {@code minItems} is the one list rule kept here because a
-   * generated client can enforce it before the call; the core re-checks it against the definition's
-   * {@code requiresMultiple}.
+   * {@code POST /operations/pool}: the one multi-origin operation (plural {@code origins}).
+   *
+   * <p>Each origin normally carries its own {@code amountTaken}. {@code takeAll} instead takes
+   * every origin's whole live quantity, read at processing time as Destroy does, and then no origin
+   * may carry an amount.
    */
   @Getter
   @Setter
   public static class Pool extends Creating {
     // Two constraints rather than one @Size(min, max) so each bound keeps its own message: a single
     // annotation carries a single message, which would report a 101-origin request as "requires at
-    // least two". The ceiling is capped here as well as in InventoryOperationPostValidator
-    // (MAX_ORIGINS), for the same reason the generic request caps it: the core's check runs only
-    // after Jackson has materialised every element and performTyped has walked all of them parsing
-    // global ids, so the ceiling belongs at binding too. Same key and same value
-    // as ApiInventoryOperationPost, so the two endpoints cannot disagree.
+    // least two". The ceiling is at binding because the per-origin work downstream is bounded by
+    // the list Jackson has already materialised.
+    @NotNull(message = "{errors.inventory.operation.originsRequired}")
     @Size.List({
       @Size(min = 2, message = "{errors.inventory.operation.originCountMinimum}"),
       @Size(max = 100, message = "{errors.inventory.operation.tooManyOrigins}")
@@ -224,9 +172,16 @@ public final class ApiInventoryOperationRequests {
     @JsonProperty("origins")
     private List<Origin> origins;
 
+    @JsonProperty("takeAll")
+    private Boolean takeAll;
+
     @Override
     public List<Origin> originList() {
       return origins == null ? List.of() : origins;
+    }
+
+    public boolean takesAll() {
+      return Boolean.TRUE.equals(takeAll);
     }
   }
 
@@ -241,11 +196,6 @@ public final class ApiInventoryOperationRequests {
     @Override
     public List<Origin> originList() {
       return List.of(origin);
-    }
-
-    @Override
-    public Map<String, Object> toOperationInputs() {
-      return Map.of();
     }
   }
 }
