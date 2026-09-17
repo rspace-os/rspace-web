@@ -134,7 +134,9 @@ close, and is not meant to:
 
 1. The same user in two tabs, or the wizard against their own open form: a
    re-lock by the same user is an extension (`WAS_ALREADY_LOCKED`), which is a
-   pass. Identical to the form.
+   pass. Identical to the form. The wizard refuses to open when any origin is
+   already locked, and the controller's in-flight claim (below) refuses the
+   second of two overlapping requests, so this is closed for the UI.
 2. Writers that never call `lockItemForEdit`, such as `split` and `duplicate`.
    Pre-existing and out of scope.
 3. Two API scripts with no client lock, which are serialised only for the
@@ -147,6 +149,16 @@ close, and is not meant to:
 6. The quantity the user saw versus the quantity the server acts on. A Destroy
    after a colleague's top-up still empties the topped-up amount. Nothing here
    is a compare-and-swap; see the note above.
+
+**An in-flight claim, owner-blind (RSDEV-1231).** `InventoryOperationInFlightOrigins`
+is a process-local map of the origins a request is acting on right now. The
+controller claims every origin (ascending, all or none) before taking the edit
+locks and releases the claim after the manager's transaction has ended. A second
+request naming a claimed origin is `InventoryOperationInProgressException`, a 409
+`EDIT_CONFLICT`, whoever sent it. Presence is the whole rule: no timing window,
+no row lock, no compare-and-swap. A 30-second staleness limit only frees a claim
+orphaned by a crash. This is what stops one user's double submit from decrementing
+an origin twice from one read, the case the edit lock cannot see.
 
 ## An unrecognised property is captured at binding and rejected by the validator
 
