@@ -20,11 +20,6 @@ export const PREFERENCES: { [pref: string]: symbol } = {
   GALLERY_SIDEBAR_OPEN: Symbol.for("GALLERY_SIDEBAR_OPEN"),
   INVENTORY_FORM_SECTIONS_EXPANDED: Symbol.for("INVENTORY_FORM_SECTIONS_EXPANDED"),
   INVENTORY_HIDDEN_RIGHT_PANEL: Symbol.for("INVENTORY_HIDDEN_RIGHT_PANEL"),
-  // Legacy: the single per-process "remember" bundle for every operation type combined into one
-  // ever-growing collection, which is what let a heavy user of "Remember" eventually exceed the
-  // per-key size cap for good (RSDEV-1231). Read-only fallback for bundles
-  // saved before the per-operation keys below existed; nothing writes it anymore.
-  INVENTORY_OPERATION_PROCESS_VALUES: Symbol.for("INVENTORY_OPERATION_PROCESS_VALUES"),
   // One "remember" bundle collection per operation type, so one operation's heavy use cannot crowd
   // out another's budget under a shared cap. Select the right one for the current operation with
   // `processValuesPreferenceFor` (processNames.ts) rather than referencing these directly.

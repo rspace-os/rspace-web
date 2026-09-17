@@ -41,7 +41,6 @@ import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindException;
-import tech.units.indriya.quantity.Quantities;
 
 @Service("inventoryOperationManager")
 public class InventoryOperationManagerImpl implements InventoryOperationManager {
@@ -391,7 +390,7 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
     BigDecimal takenInOriginUnit =
         amountTaken
             .getNumericValue()
-            .multiply(exactUnitFactor(amountTaken.getUnitId(), originQuantity.getUnitId()));
+            .multiply(factorBetween(amountTaken.getUnitId(), originQuantity.getUnitId()));
     BigDecimal exactRemainder = originQuantity.getNumericValue().subtract(takenInOriginUnit);
     QuantityInfo stored =
         quantityUtils.subtract(
@@ -400,25 +399,14 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
     BigDecimal storedInOriginUnit =
         stored
             .getNumericValue()
-            .multiply(exactUnitFactor(stored.getUnitId(), originQuantity.getUnitId()));
+            .multiply(factorBetween(stored.getUnitId(), originQuantity.getUnitId()));
     return exactRemainder.compareTo(storedInOriginUnit) != 0;
   }
 
-  /**
-   * The exact factor converting one unit into another within a measurement category. Factors are
-   * powers of ten, so the conversion is applied with {@link BigDecimal} and loses no precision
-   * before a scale or equality test. Raw-typed because the unit definitions are wildcard-typed;
-   * callers assert comparability first, so the conversion cannot mix categories.
-   */
-  @SuppressWarnings({"unchecked", "rawtypes"})
-  private static BigDecimal exactUnitFactor(Integer fromUnitId, Integer toUnitId) {
-    if (fromUnitId.equals(toUnitId)) {
-      return BigDecimal.ONE;
-    }
-    javax.measure.Quantity oneFromUnit =
-        Quantities.getQuantity(1, RSUnitDef.getUnitById(fromUnitId).getDefinition());
-    return BigDecimal.valueOf(
-        oneFromUnit.to(RSUnitDef.getUnitById(toUnitId).getDefinition()).getValue().doubleValue());
+  /** The exact conversion factor between two unit ids, delegated to {@link QuantityUtils}. */
+  private static BigDecimal factorBetween(Integer fromUnitId, Integer toUnitId) {
+    return QuantityUtils.exactUnitFactor(
+        RSUnitDef.getUnitById(fromUnitId), RSUnitDef.getUnitById(toUnitId));
   }
 
   /**
