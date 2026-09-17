@@ -69,4 +69,38 @@ describe("OperationWizard lock renewal and close ordering", () => {
     finishRenewal("LOCKED_OK");
     await waitFor(() => expect(onClose).toHaveBeenCalled());
   });
+
+  it("waits for every pending renewal, including one that settles after a later one", async () => {
+    // Next starts renewal A and Back starts renewal B. Tracking only the most recent batch drops A
+    // from the chain, so a close after B settles releases the locks while A's POST is still in
+    // flight, and A then recreates a five-minute lock on a wizard that is gone.
+    server.use(
+      http.get("/api/inventory/v1/samples/validateNameForNewSample", () => HttpResponse.json({ valid: true })),
+    );
+    const origin = makeMockSubSample({});
+    const finish: Array<(status: "LOCKED_OK") => void> = [];
+    vi.spyOn(origin, "acquireEditLock").mockImplementation(
+      () =>
+        new Promise<"LOCKED_OK">((resolve) => {
+          finish.push(resolve);
+        }),
+    );
+    const onClose = vi.fn();
+    const user = userEvent.setup();
+    render(<OperationWizard open onClose={onClose} origins={[origin]} />);
+
+    await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
+    await user.type(screen.getByRole("combobox", { name: /fields\.processName/i }), "dna");
+    await user.click(screen.getByRole("button", { name: /actions\.next/i }));
+    await user.click(screen.getByRole("button", { name: /actions\.back/i }));
+    expect(finish).toHaveLength(2);
+
+    // B settles first; A is still in flight, so close must still be held.
+    finish[1]("LOCKED_OK");
+    await user.click(screen.getByRole("button", { name: /actions\.cancel/i }));
+    expect(onClose).not.toHaveBeenCalled();
+
+    finish[0]("LOCKED_OK");
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+  });
 });
