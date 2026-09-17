@@ -374,11 +374,6 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
    * settings column and nothing ever deletes one, so an open-ended rule would let a caller add
    * names until the column hit its TEXT limit, after which the oversize guard permanently rejects
    * every later keyed write for that user.
-   *
-   * <p>INVENTORY_OPERATION_PROCESS_VALUES is kept, read-only from the client's perspective, as a
-   * legacy fallback source for bundles saved before RSDEV-1231 split it into the seven
-   * per-operation keys below; nothing writes it anymore. Remove it (and the frontend's fallback
-   * read) together, in a follow-up ticket, once it is no longer worth reading.
    */
   private static final Set<String> UI_JSON_SETTINGS_KEYS =
       Set.of(
@@ -389,7 +384,6 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
           "GALLERY_SIDEBAR_OPEN",
           "INVENTORY_FORM_SECTIONS_EXPANDED",
           "INVENTORY_HIDDEN_RIGHT_PANEL",
-          "INVENTORY_OPERATION_PROCESS_VALUES",
           "INVENTORY_OPERATION_PROCESS_VALUES_ALIQUOT",
           "INVENTORY_OPERATION_PROCESS_VALUES_PASSAGE",
           "INVENTORY_OPERATION_PROCESS_VALUES_POOL",

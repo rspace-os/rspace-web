@@ -19,7 +19,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 
-// See DevDocs/adr/RSDEV-1231-no-concurrency-comments.md for the design rationale behind this test.
+/**
+ * Only an Inventory operation may persist an {@code operationFieldKey} (RSDEV-1231): a later run
+ * trusts the key to identify the previous generation, so a caller able to set one could have an
+ * unrelated field picked up as that generation. Enforced at binding - the DTO property is
+ * READ_ONLY, so no request body on any endpoint can set one - rather than in each validator, since
+ * the sample- and instrument-template validators never call the shared extra-field validation.
+ */
 class OperationFieldKeyPersistenceTest {
 
   private ApiExtraFieldsHelper helper;

@@ -337,7 +337,6 @@ describe("OperationDetailsStep (amount modes)", () => {
   const poolOp = {
     ...operation,
     requiresMultiple: true,
-    takeAmountPerSubsample: true,
   } as unknown as InventoryOperation;
   const poolOrigins = [
     { globalId: "SS1", name: "Vial A", quantity: { numericValue: 5, unitId: 3 }, quantityCategory: "volume" },

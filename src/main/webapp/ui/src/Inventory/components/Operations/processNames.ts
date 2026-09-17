@@ -15,9 +15,8 @@ export function rememberKey(operation: InventoryOperation, values: Record<string
 /**
  * Each operation type gets its own "remember" bundle collection, so a heavy user's saved entries
  * for one operation don't grow the others past the server's per-key size cap (nothing ever removes
- * an entry). `operation.key` is a runtime string from the server config, not a TypeScript literal
- * union, so an operation this map doesn't recognise falls back to the legacy shared collection
- * rather than throwing.
+ * an entry). This map is the grep-able mirror of the backend's UI_JSON_SETTINGS_KEYS allowlist
+ * (UserManagerImpl): every entry here must appear there too, or writes of that key are refused.
  */
 const PROCESS_VALUES_PREFERENCE_BY_OPERATION_KEY: Readonly<Record<string, symbol>> = {
   aliquot: PREFERENCES.INVENTORY_OPERATION_PROCESS_VALUES_ALIQUOT,
@@ -29,8 +28,16 @@ const PROCESS_VALUES_PREFERENCE_BY_OPERATION_KEY: Readonly<Record<string, symbol
   destroy: PREFERENCES.INVENTORY_OPERATION_PROCESS_VALUES_DESTROY,
 };
 
+/**
+ * `operation.key` is a plain string, not a literal union, so a key the map does not list derives
+ * the same name rather than throwing. The backend's allowlist then refuses it, which is the right
+ * answer for an operation that does not exist.
+ */
 export function processValuesPreferenceFor(operationKey: string): symbol {
-  return PROCESS_VALUES_PREFERENCE_BY_OPERATION_KEY[operationKey] ?? PREFERENCES.INVENTORY_OPERATION_PROCESS_VALUES;
+  return (
+    PROCESS_VALUES_PREFERENCE_BY_OPERATION_KEY[operationKey] ??
+    Symbol.for(`INVENTORY_OPERATION_PROCESS_VALUES_${operationKey.toUpperCase()}`)
+  );
 }
 
 export function addProcessName(list: Array<string>, name: string): Array<string> {

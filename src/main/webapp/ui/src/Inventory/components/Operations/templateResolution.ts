@@ -28,12 +28,8 @@ export type TemplateSelection = {
   pendingCheck?: boolean;
 };
 
-export type TemplateDefault = {
-  mode: TemplateMode;
-  templateId: number | null;
-  templateName?: string;
-  quantityCategory?: UnitCategory;
-};
+/** The selection as it is stored in a "remember" bundle: no per-run state. */
+export type TemplateDefault = Omit<TemplateSelection, "remember" | "pendingCheck">;
 
 /**
  * Reduces the selection to the shape stored in the per-process "remember" bundle: a specific
