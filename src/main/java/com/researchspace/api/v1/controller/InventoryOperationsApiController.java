@@ -177,8 +177,7 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
               originIds,
               user,
               () ->
-                  inventoryOperationManager.performBiobankOperation(
-                      operation, request, originIds, user));
+                  inventoryOperationManager.performOperation(operation, request, originIds, user));
     } catch (BindException coreRejection) {
       throw new BindException(facadeFieldNames(coreRejection.getBindingResult(), singleOrigin));
     }
@@ -230,7 +229,11 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
       }
     }
     List<String> taken = new ArrayList<>();
-    try (InventoryOperationInFlightOrigins.Claim claim = inFlightOrigins.claim(originGlobalIds)) {
+    // Claimed first, released last: the claim must outlive the edit locks, or a second request
+    // could claim the origin and then meet this request's still-held parent-sample lock, or (same
+    // user) pass it and run on after this request's release had stripped the locks from under it.
+    InventoryOperationInFlightOrigins.Claim claim = inFlightOrigins.claim(originGlobalIds);
+    try {
       for (String globalId : toLock) {
         ApiInventoryEditLock lock = tracker.attemptToLockForEdit(globalId, user);
         if (ApiInventoryEditLockStatus.CANNOT_LOCK.equals(lock.getStatus())) {
@@ -242,8 +245,12 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
       }
       return work.call();
     } finally {
-      for (int i = taken.size() - 1; i >= 0; i--) {
-        tracker.attemptToUnlock(taken.get(i), user);
+      try {
+        for (int i = taken.size() - 1; i >= 0; i--) {
+          tracker.attemptToUnlock(taken.get(i), user);
+        }
+      } finally {
+        claim.close();
       }
     }
   }
