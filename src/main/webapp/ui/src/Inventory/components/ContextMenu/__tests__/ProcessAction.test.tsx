@@ -97,23 +97,6 @@ describe("ProcessAction lock acquisition", () => {
     expect(releaseAlreadyMine).not.toHaveBeenCalled();
   });
 
-  it("leaves a pre-existing same-user lock in place when the wizard closes", async () => {
-    const fresh = makeMockSubSample({});
-    const alreadyMine = makeMockSubSample({ id: 2, globalId: "SS2" });
-    vi.spyOn(fresh, "acquireEditLock").mockResolvedValue("LOCKED_OK");
-    vi.spyOn(alreadyMine, "acquireEditLock").mockResolvedValue("WAS_ALREADY_LOCKED");
-    const releaseFresh = vi.spyOn(fresh, "releaseLock").mockResolvedValue(true);
-    const releaseAlreadyMine = vi.spyOn(alreadyMine, "releaseLock").mockResolvedValue(true);
-    renderAction([fresh, alreadyMine]);
-
-    await userEvent.click(screen.getByRole("button", { name: /operations\.action\.process/i }));
-    await waitFor(() => expect(screen.getByTestId("wizard")).toBeInTheDocument());
-    await userEvent.click(screen.getByRole("button", { name: /close wizard/i }));
-
-    await waitFor(() => expect(releaseFresh).toHaveBeenCalled());
-    expect(releaseAlreadyMine).not.toHaveBeenCalled();
-  });
-
   it("refuses to open when someone else holds an origin, and gives back what it took", async () => {
     const free = makeMockSubSample({});
     const held = makeMockSubSample({ id: 2, globalId: "SS2" });
@@ -159,5 +142,51 @@ describe("ProcessAction lock acquisition", () => {
 
     await userEvent.click(screen.getByRole("button", { name: /close wizard/i }));
     await waitFor(() => expect(release).toHaveBeenCalled());
+  });
+  it("refuses to open when an origin is already locked by this user elsewhere", async () => {
+    // WAS_ALREADY_LOCKED identifies the holder only by username, so it may be this user's own edit
+    // form in another tab. That tab can still save its stale quantity over anything the wizard
+    // commits, so the operation must not start; the other tab's lock is left untouched.
+    const fresh = makeMockSubSample({});
+    const elsewhere = makeMockSubSample({ id: 2, globalId: "SS2" });
+    vi.spyOn(fresh, "acquireEditLock").mockResolvedValue("LOCKED_OK");
+    vi.spyOn(elsewhere, "acquireEditLock").mockResolvedValue("WAS_ALREADY_LOCKED");
+    const releaseFresh = vi.spyOn(fresh, "releaseLock").mockResolvedValue(true);
+    const releaseElsewhere = vi.spyOn(elsewhere, "releaseLock").mockResolvedValue(true);
+    renderAction([fresh, elsewhere]);
+
+    await userEvent.click(screen.getByRole("button", { name: /operations\.action\.process/i }));
+
+    await waitFor(() => expect(addAlert).toHaveBeenCalled());
+    expect(screen.queryByTestId("wizard")).not.toBeInTheDocument();
+    expect(releaseFresh).toHaveBeenCalled();
+    expect(releaseElsewhere).not.toHaveBeenCalled();
+  });
+  it("blocks reopening until the release started at close has settled", async () => {
+    // Reopening while the DELETE is still in flight would acquire the lock this wizard is in the
+    // middle of giving back: the new round sees WAS_ALREADY_LOCKED from the dying lock, and the
+    // late DELETE then removes the lock the reopened wizard believes it holds.
+    const origin = makeMockSubSample({});
+    const acquire = vi.spyOn(origin, "acquireEditLock").mockResolvedValue("LOCKED_OK");
+    let finishRelease: (released: boolean) => void = () => {};
+    vi.spyOn(origin, "releaseLock").mockReturnValue(
+      new Promise<boolean>((resolve) => {
+        finishRelease = resolve;
+      }),
+    );
+    renderAction([origin]);
+
+    const button = screen.getByRole("button", { name: /operations\.action\.process/i });
+    await userEvent.click(button);
+    await waitFor(() => expect(screen.getByTestId("wizard")).toBeInTheDocument());
+    await userEvent.click(screen.getByRole("button", { name: /close wizard/i }));
+
+    await userEvent.click(button);
+    expect(acquire).toHaveBeenCalledTimes(1);
+
+    finishRelease(true);
+    await waitFor(() => expect(screen.queryByTestId("wizard")).not.toBeInTheDocument());
+    await userEvent.click(button);
+    await waitFor(() => expect(acquire).toHaveBeenCalledTimes(2));
   });
 });

@@ -548,13 +548,28 @@ function OperationWizard({
     };
   }, [operation, sampleBaseName, sampleNameEdited]);
 
+  /*
+   * Renewal is a POST that recreates a five-minute lock, so it is ordered against the release the
+   * caller performs on close: closing while one is in flight lets the DELETE go first, and the late
+   * POST then re-locks an origin whose wizard is already gone, with nothing left to release it.
+   * The latest renewal is kept here and closeAfterRenewals waits for it (RSDEV-1231).
+   */
+  const renewals = React.useRef<Promise<unknown>>(Promise.resolve());
+
   /** Extends the edit-session lock on each origin as the wizard's steps complete (RSDEV-1231). */
   const extendOriginLocks = () => {
-    for (const o of origins) {
-      void o.acquireEditLock().catch((error: unknown) => {
-        console.warn("Could not extend the edit lock on an operation origin", error);
-      });
-    }
+    renewals.current = Promise.allSettled(
+      origins.map((o) =>
+        o.acquireEditLock().catch((error: unknown) => {
+          console.warn("Could not extend the edit lock on an operation origin", error);
+        }),
+      ),
+    );
+  };
+
+  /** Hands back to the caller only once no renewal can still land behind its release. */
+  const closeAfterRenewals = () => {
+    void renewals.current.then(onClose);
   };
 
   const locksLapsed = (): boolean =>
@@ -618,7 +633,7 @@ function OperationWizard({
   const fastPath = operation !== null && activeStep === 0 && remember && !reviewing && allStepsValid();
 
   const closeUnlessSubmitting = () => {
-    if (!submitting) onClose();
+    if (!submitting) closeAfterRenewals();
   };
 
   const submit = async (): Promise<void> => {
@@ -704,6 +719,7 @@ function OperationWizard({
           setProcessNameDefaults(processNameDefaultAfterPerform(processNameDefaults ?? {}, operation.key, name));
         }
       }
+      await renewals.current;
       onClose();
       await Promise.all(origins.map((o) => o.fetchAdditionalInfo()));
       getRootStore().searchStore.search.performSearch();
