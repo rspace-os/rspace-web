@@ -179,14 +179,9 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
   }
 
   /**
-   * The DataCite half of a free-text search, with one retry.
-   *
-   * <p>DataCite indexes the DOI as a keyword, so free text never matches a suffix or part of one: a
-   * search for "qvtb-aw74" answers nothing though 10.82316/qvtb-aw74 is findable, which is how a
-   * user who pasted half a DOI sees it. A {@code doi:*...*} wildcard does match, across the slash
-   * and whatever the case, so an empty free-text page is retried that way. Only on an empty page,
-   * so a search that already found something costs one call, and only for a query safe to paste
-   * into the wildcard.
+   * DataCite indexes the DOI as a keyword, so free text never matches a suffix or part of one, and
+   * a user who pasted half a DOI gets nothing. A {@code doi:*...*} wildcard does match, so an empty
+   * first page is retried that way (ADR 0009 decision 7).
    */
   private DataCiteDoiSearchResult searchDataCite(String query) {
     DataCiteDoiSearchResult hits =

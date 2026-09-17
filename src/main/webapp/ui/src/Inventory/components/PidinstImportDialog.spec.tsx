@@ -58,7 +58,6 @@ const searchHandler = () =>
 
 const importSuccessHandler = () => http.post(IMPORT_URL, () => HttpResponse.json(CREATED_INSTRUMENT, { status: 201 }));
 
-/** The ApiError body the server sends for a PID an instrument already links (409). */
 const importConflictHandler = () =>
   http.post(IMPORT_URL, () =>
     HttpResponse.json(
