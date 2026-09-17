@@ -469,7 +469,6 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     extraEmptyNumeric.setContent("");
     newSample.setExtraFields(List.of(extraNumeric, extraEmptyNumeric));
 
-    // add extra string to one of the subsamples
     ApiSubSample subSample1 = new ApiSubSample();
     ApiExtraField extraText = new ApiExtraField();
     extraText.setContent("test content");
@@ -685,7 +684,6 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
 
     ApiSampleWithFullSubSamples duplicate = sampleApiMgr.duplicate(newSample.getId(), testUser);
     assertNotNull(duplicate.getTemplateId());
-    // all extra fields are created ok
     assertEquals(
         initialSampleFieldCount + duplicate.getFields().size(),
         getCountOfEntityTable("InventoryEntityField"));

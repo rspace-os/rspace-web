@@ -53,10 +53,6 @@ class ApiControllerAdviceTest {
         errorList.getValidationErrors().get(1).getMessage());
   }
 
-  /**
-   * The Inventory edit-session lock maps to 409, and the holder's name is what tells the caller who
-   * to wait for.
-   */
   @Test
   void inventoryEditLockHeldMapsTo409NamingTheHolder() {
     ApiControllerAdvice advice = new ApiControllerAdvice();

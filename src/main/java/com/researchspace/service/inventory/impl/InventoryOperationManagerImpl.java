@@ -92,8 +92,6 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
             // session has none, so this falls back to the server's.
             LocalDate.parse(new SessionTimeZoneUtils().formatDateForClient(new Date())));
 
-    // Template conformance runs on the request just built, inside this transaction and before any
-    // origin is read, so the template validated is the template the sample is created from.
     ApiSampleWithFullSubSamples created = performOperation(built, user);
 
     // The origins as they stand afterwards, read HERE rather than by the caller: still inside this
@@ -106,12 +104,6 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
     return new OperationOutcome(created, originsAfter);
   }
 
-  /**
-   * The origin's parent sample's fields an operation may read: its template-defined fields (which
-   * carry no operation key) and its ad-hoc extra fields. A subsample without a parent contributes
-   * none; {@code SubSample.getSample()} is nullable enough that the entity guards it in getOwner(),
-   * getSharingACL() and getParentId(), so the permission check above passes it through.
-   */
   private static List<OriginState.ParentField> parentFields(SampleEntity parent) {
     List<OriginState.ParentField> fields = new ArrayList<>();
     if (parent == null) {
@@ -165,8 +157,6 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
       }
     }
 
-    // A terminal operation (noOutput, e.g. Destroy) sends no new sample: it only acts on its
-    // origins, so there is nothing to create and nothing to return.
     return request.getNewSample() == null
         ? null
         : sampleApiMgr.createNewApiSample(request.getNewSample(), user);
@@ -270,7 +260,6 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
     try {
       target = new GlobalIdentifier(documentedByGlobalId);
     } catch (IllegalArgumentException malformed) {
-      // Shape is the post validator's business; it has already rejected this one.
       return;
     }
     if (!linkTargetResolver.targetExistsAndIsReadable(target, user)) {
@@ -352,13 +341,6 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
   /**
    * Whether the decrement would not subtract exactly what the caller asked for.
    *
-   * <p>This now means one thing: the remainder fits NO unit in its measurement category. It used to
-   * mean "the remainder does not fit the ORIGIN's unit", which rejected ordinary lab work - 2.5 mg
-   * from a 5 g origin leaves 4.9975 g, four decimal places, refused; and 0.001 ul from a 1 ml
-   * origin leaves 999.999 ul, which is exact and was refused anyway. The column stores a number and
-   * a UNIT ID, so a remainder that will not fit the origin's own unit usually fits one rung down,
-   * and {@code QuantityUtils.subtract} now stores it there.
-   *
    * <p>What remains rejected is a genuinely unrepresentable amount, and it reaches here through the
    * arithmetic rather than through the column: summing across a span of unit rungs wide enough to
    * exceed the working precision loses the decrement outright, for example 0.001 ng taken from a 1
@@ -384,7 +366,6 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
     }
     if (!quantityUtils.isComparableQuantities(amountTaken, originQuantity)
         || amountTaken.getUnitId().equals(originQuantity.getUnitId())) {
-      // Same unit: both operands are already stored at 3dp, so the subtraction is exact.
       return false;
     }
     BigDecimal takenInOriginUnit =
@@ -403,7 +384,6 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
     return exactRemainder.compareTo(storedInOriginUnit) != 0;
   }
 
-  /** The exact conversion factor between two unit ids, delegated to {@link QuantityUtils}. */
   private static BigDecimal factorBetween(Integer fromUnitId, Integer toUnitId) {
     return QuantityUtils.exactUnitFactor(
         RSUnitDef.getUnitById(fromUnitId), RSUnitDef.getUnitById(toUnitId));

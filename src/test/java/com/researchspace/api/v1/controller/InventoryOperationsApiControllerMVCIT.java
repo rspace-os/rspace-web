@@ -40,8 +40,6 @@ import org.springframework.test.web.servlet.ResultActions;
  * provenance link back to each origin on the new Sample, and reduces each origin subsample by the
  * amount taken from it (never increasing it), all in one transaction. The live-state rules of that
  * transaction are exercised here against a real database. See DevDocs/adr/0007.
- *
- * <p>Authored with the feature; not run automatically (extends a real-transaction MVC base).
  */
 @WebAppConfiguration
 public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTestBase {
@@ -319,15 +317,6 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
   @Test
   public void aDocumentationTargetThatCannotBeResolvedIsRejectedBeforeAnyMutation()
       throws Exception {
-    // This replaces rollsBackOriginDecrementWhenSampleCreationFailsInsideTheTransaction, which
-    // used this same unresolvable target to force a failure AFTER the origin decrement and so
-    // prove the AOP transaction rolls back. The target is now rejected before the transaction
-    // opens, which leaves that test asserting nothing, and no other failure reachable through
-    // this endpoint writes before it throws: checkOriginLiveState runs every origin's checks
-    // before any decrement, and the parent-total recompute it does first writes the sum of the
-    // children, which a rejected request leaves unchanged either way. Real-transaction rollback
-    // therefore needs an injected failure rather than a request-shaped one, and is not covered
-    // here any more.
     ApiSampleWithFullSubSamples source = createBasicSampleForUser(anyUser);
     ApiSubSample origin = source.getSubSamples().get(0);
     Integer unitId = origin.getQuantity().getUnitId();
@@ -356,15 +345,6 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
         "origin quantity must be untouched");
   }
 
-  /**
-   * An operation commits, and only then does the user save an edit to the origin. What decides the
-   * outcome is whether the edit carries a quantity. A PUT that sends one replaces the stored value,
-   * deliberately: that is how a user corrects a quantity, and the server cannot tell a correction
-   * apart from a client echoing back the number the page was loaded with. So the client does not
-   * send one it was not given, and that is pinned where the payload is built (SubSampleModel
-   * paramsForBackend tests); this is the other half, that a payload without a quantity leaves the
-   * deduction standing.
-   */
   @Test
   public void aRenameSavedAfterAnOperationLeavesTheDeductionStanding() throws Exception {
     ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
@@ -421,12 +401,6 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
   @Test
   public void passageIntoATemplateThatAlreadyDeclaresTheCounterFieldMergesInsteadOfDuplicating()
       throws Exception {
-    // A Passage template may legitimately declare its own "Passage number" field. The operation
-    // generates a field of that name too, so the created sample used to end up with two and
-    // assertNoDuplicateFieldNames rejected the whole request: every Passage onto such a template
-    // failed, and the wizard could not rename the generated field.
-    // Renaming it would clear the rejection but strand the counter, which finds the previous number
-    // by name, so the value has to land in the inherited field instead.
     ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
     int unitId = origin.getQuantity().getUnitId();
     ApiSampleTemplatePost templatePost = new ApiSampleTemplatePost();
@@ -557,12 +531,8 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
     return extraFields.stream().filter(ef -> ef.getLink() != null).findFirst().orElse(null);
   }
 
-  // --- code review reproductions: each is a field-scoped 400 leaving the origin
-  // untouched, where it used to be a 422 or a 201 with wrong data ---
-
   @Test
   public void rejectsAmountTakenInAUnitThatDoesNotExist() throws Exception {
-    // Used to reach QuantityUtils.sum and surface as a 422
     ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
     int unitId = origin.getQuantity().getUnitId();
     assertRejectedLeavingOriginUnchanged(
@@ -572,7 +542,6 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
 
   @Test
   public void rejectsAmountTakenInADifferentCategoryThanTheOrigin() throws Exception {
-    // Millilitres taken from a gram origin used to be a 422
     ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
     int unitId = origin.getQuantity().getUnitId();
     assertRejectedLeavingOriginUnchanged(
@@ -586,7 +555,6 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
 
   @Test
   public void rejectsANewSubSampleInADifferentCategoryThanTheOrigin() throws Exception {
-    // A millilitre child from a gram origin used to be created
     ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
     int unitId = origin.getQuantity().getUnitId();
     assertRejectedLeavingOriginUnchanged(
@@ -600,7 +568,6 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
 
   @Test
   public void rejectsANewSubSampleOutsideTheChosenTemplatesCategory() throws Exception {
-    // Gram children under a volume template used to be created
     ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
     int unitId = origin.getQuantity().getUnitId();
     ApiSampleTemplatePost templatePost = new ApiSampleTemplatePost();
@@ -624,7 +591,6 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
 
   @Test
   public void rejectsADocumentationLinkToAnInventoryRecord() throws Exception {
-    // IsDocumentedBy pointing at the origin subsample itself used to be stored
     ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
     int unitId = origin.getQuantity().getUnitId();
     assertRejectedLeavingOriginUnchanged(
@@ -638,7 +604,6 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
 
   @Test
   public void rejectsANewSubSampleQuantityFinerThanTheStored3dp() throws Exception {
-    // 0.0004 used to persist as a subsample holding 0
     ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
     int unitId = origin.getQuantity().getUnitId();
     assertRejectedLeavingOriginUnchanged(

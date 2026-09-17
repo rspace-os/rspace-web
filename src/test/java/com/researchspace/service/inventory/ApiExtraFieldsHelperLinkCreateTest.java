@@ -24,13 +24,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
-/**
- * New link extra-fields (newFieldRequest) are persisted via {@code buildExtraLinkField}, a path the
- * controller-layer validator cannot fully guard: the payload's parentGlobalId is client-supplied
- * and can be forged, so the self-link rule must hold here against the authoritative parent record.
- * Covers both the operations origin-field route and ordinary PUT/POST field creation, which share
- * this code.
- */
 @ExtendWith(MockitoExtension.class)
 class ApiExtraFieldsHelperLinkCreateTest {
 

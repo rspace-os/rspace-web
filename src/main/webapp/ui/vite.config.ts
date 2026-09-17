@@ -80,8 +80,7 @@ function legacyMessages(): Plugin {
 function legacyI18n(): Plugin {
   const formatter = fs.readFileSync(intlMessageFormatBundlePath, "utf8");
   // Rendered as a blocking classic <script src>, so any top-level import/export left in the
-  // chunk is a SyntaxError that leaves `RS.msg` undefined on every page. `listFormat` keeps its
-  // own exports: thirteen other modules import it.
+  // chunk is a SyntaxError that leaves `RS.msg` undefined on every page.
   const inlinedModules = [
     {
       importLine: /^import \{ formatList as formatLocalizedList \} from "\.\/listFormat";$/m,
@@ -333,12 +332,7 @@ export default defineConfig(async ({ mode }) => {
     define: {
       global: "globalThis",
       process: processShim,
-      // Cache-busting token + base URL for the lazily-loaded, self-hosted
-      // TinyMCE assets. The base is injected at build time rather than
-      // hard-coded so different build targets can use different paths.
       __TINYMCE_VERSION__: JSON.stringify(tinymceVersion),
-      // Full directory URL the TinyMCE assets are served from (the
-      // rspace:tinymce-assets plugin serves /ui/dist/tinymce/*).
       __TINYMCE_BASE__: JSON.stringify("/ui/dist/tinymce/"),
     },
     plugins,
