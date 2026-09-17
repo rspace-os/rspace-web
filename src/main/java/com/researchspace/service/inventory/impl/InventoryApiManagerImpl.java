@@ -195,10 +195,9 @@ public abstract class InventoryApiManagerImpl<T extends InventoryRecord>
     InventoryLink existing = field.getLink();
     if (StringUtils.isBlank(target)) {
       if (existing == null) {
-        return false; // no link before, none requested now
+        return false;
       }
       if (omittedLinkPreservesExisting && !apiField.isLinkProvided()) {
-        // a partial template update that never mentions the link: leave it alone
         return false;
       }
       field.setLink(null); // orphanRemoval hard-deletes the dereferenced row at flush
@@ -215,7 +214,7 @@ public abstract class InventoryApiManagerImpl<T extends InventoryRecord>
         && Objects.equals(incoming.getDbId(), existing.getTargetDbId())
         && Objects.equals(effectivePin, existing.getVersionPin())
         && Objects.equals(apiLink.getRelationType(), existing.getRelationType())) {
-      return false; // unchanged
+      return false;
     }
     assertRelationAllowed(field, apiLink.getRelationType());
     if (existing != null) {
@@ -287,7 +286,6 @@ public abstract class InventoryApiManagerImpl<T extends InventoryRecord>
       InventoryRecord dbTemplate,
       User user) {
     if (toAdd instanceof InventoryLinkField linkField) {
-      // adding a link field to a saved template must not smuggle in a default targeting it
       rejectSelfLink(apiField.getLink(), dbTemplate);
       applyLinkFieldValue(linkField, apiField, user, true);
     }
@@ -545,11 +543,9 @@ public abstract class InventoryApiManagerImpl<T extends InventoryRecord>
   @Override
   public void createImagesForRecord(InventoryRecord invRec, String base64Image, User user)
       throws IOException {
-    // main image
     FileProperty mainImage = saveImageFile(user, base64Image);
     invRec.setImageFileProperty(mainImage);
 
-    // thumbnail version
     FileProperty thumbnail = saveThumbnailImageFile(user, base64Image);
     invRec.setThumbnailFileProperty(thumbnail);
   }

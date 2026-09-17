@@ -92,8 +92,6 @@ describe("WizardTemplatePicker", () => {
 
 describe("WizardTemplatePicker clearing", () => {
   it("tells the parent the selection is gone, so a cleared box cannot submit the old template", async () => {
-    // Clearing used to reset only the picker's own value: the parent kept the previous templateId,
-    // so an empty-looking box still submitted that hidden selection.
     const setTemplate = vi.fn();
     const user = userEvent.setup();
     render(<WizardTemplatePicker setTemplate={setTemplate} selectedTemplateId={5} selectedTemplateName="Cells" />);

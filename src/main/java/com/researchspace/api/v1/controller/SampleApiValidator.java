@@ -34,7 +34,6 @@ abstract class SampleApiValidator extends InventoryRecordValidator {
       List<QuantityInfo> toSort = toList(min, max);
       impl.sortAsc(toSort);
 
-      // unit comparison of temperature
       if (!toSort.get(0).equals(min)) {
         errors.rejectValue("storageTempMin", "errors.inventory.temperature.minGreaterThanMax");
       }
@@ -72,7 +71,6 @@ abstract class SampleApiValidator extends InventoryRecordValidator {
     return temperature.toQuantityInfo();
   }
 
-  // use supplier to reuse for ApiSampleFull and ApiSample
   void validateSubsampleQuantities(
       Supplier<List<? extends ApiSubSampleInfo>> apiSamplePost, Errors errors) {
     for (int i = 0; i < apiSamplePost.get().size(); i++) {

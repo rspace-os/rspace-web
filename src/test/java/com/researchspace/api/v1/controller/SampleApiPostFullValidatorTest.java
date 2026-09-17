@@ -41,15 +41,12 @@ public class SampleApiPostFullValidatorTest extends InventoryRecordValidationTes
   @Test
   public void validateQuantityUnit() {
 
-    // template defining grams as a default unit
     SampleTemplate baseTemplate = new SampleTemplate();
     baseTemplate.setDefaultUnitId(RSUnitDef.GRAM.getId());
 
-    // incoming sample with millilitre quantity
     ApiSampleWithFullSubSamples apiSamplePost = new ApiSampleWithFullSubSamples();
     apiSamplePost.setQuantity(new ApiQuantityInfo(BigDecimal.ONE, RSUnitDef.MILLI_LITRE.getId()));
 
-    // lets run the validation
     ApiSampleFullPost fullPost = new ApiSampleFullPost();
     fullPost.setApiSample(apiSamplePost);
     fullPost.setTemplate(baseTemplate);
@@ -61,7 +58,6 @@ public class SampleApiPostFullValidatorTest extends InventoryRecordValidationTes
     assertEquals(
         "errors.inventory.sample.unitIncompatibleWithTemplate", e.getFieldError().getCode());
 
-    // sanity check with comparable quantity
     fullPost
         .getApiSample()
         .setQuantity(new ApiQuantityInfo(BigDecimal.ONE, RSUnitDef.MILLI_GRAM.getId()));
@@ -119,7 +115,6 @@ public class SampleApiPostFullValidatorTest extends InventoryRecordValidationTes
         sampleApiMgr.getSampleTemplateByIdWithPopulatedFields(
             mandatoryFieldsTemplate.getId(), testUser));
 
-    // let's run the validation for incoming sample without fields (default values will be used)
     Errors e = new BeanPropertyBindingResult(apiSamplePost, "apiSample");
     validator.validate(fullPost, e);
     assertEquals(2, e.getErrorCount());
@@ -151,7 +146,6 @@ public class SampleApiPostFullValidatorTest extends InventoryRecordValidationTes
     assertEquals(
         "myRadio (mandatory - no default value)", e.getFieldErrors().get(3).getArguments()[0]);
 
-    // sanity check with valid non-empty field data
     apiSamplePost.getFields().get(0).setContent("test content");
     apiSamplePost.getFields().get(1).setContent("test content");
     apiSamplePost.getFields().get(3).setSelectedOptions(List.of("a"));

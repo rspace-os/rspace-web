@@ -136,7 +136,6 @@ public class ApiSampleWithoutSubSamples extends ApiSampleInfo {
           contentChanged |= field.applyChangesToDatabaseField(dbField, user);
         }
       }
-      // applyFieldOrderingChanges(modifiedFields, dbSample);
     }
     contentChanged |=
         applyChangesToDatabaseExtraFields(extraFields, dbSample.getActiveExtraFields(), user);

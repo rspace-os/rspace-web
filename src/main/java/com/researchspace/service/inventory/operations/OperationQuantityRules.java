@@ -47,7 +47,7 @@ public final class OperationQuantityRules {
 
   /**
    * An amount taken from an origin: non-negative, a real amount unit, storable at 3dp. Zero is
-   * allowed here (the manager's live-state rules decide whether this operation may take nothing).
+   * allowed here.
    */
   public static void amountTaken(ApiQuantityInfo amount, String field, Errors errors) {
     if (amount == null

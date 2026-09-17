@@ -68,10 +68,6 @@ const EditAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, EditAc
       await Promise.all(selectedResults.map((r) => r.setEditing(false, true, true)));
     };
 
-    /*
-     * Would be good if this could live in SearchStore, but importing Alert in
-     * SearchStore introduces a cyclical dependency.
-     */
     const doEdit = async () => {
       const isBatchEdit = selectedResults.length > 1;
 

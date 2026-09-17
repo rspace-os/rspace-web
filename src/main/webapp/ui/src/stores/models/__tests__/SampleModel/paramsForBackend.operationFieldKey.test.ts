@@ -49,7 +49,6 @@ describe("paramsForBackend and operationFieldKey", () => {
     };
     const sent = params.extraFields?.[0] ?? {};
     expect(Object.keys(sent)).not.toContain("operationFieldKey");
-    // The rest of the field is still sent, so this is an omission, not a dropped field.
     expect(sent.name).toEqual("Passage number");
     expect(sent.content).toEqual("4");
   });

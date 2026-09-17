@@ -33,7 +33,7 @@ import Search from "./Search";
 const mainSearch = () => getRootStore().searchStore.search;
 
 export type TemplateAttrs = Omit<SampleAttrs, "quantity"> & {
-  id: Id; // can't be null, because created on the server first
+  id: Id;
   iconId: number | null;
   defaultUnitId: number | null;
   historicalVersion: boolean;
@@ -274,13 +274,6 @@ export default class TemplateModel extends SampleModel implements Template {
     }
   }
 
-  /*
-   * A plain object that can be encoded to JSON for submission to the backend
-   * when API calls are made. It is vital that there are no cyclical memory
-   * references in the object returned by this computed properties. See
-   * ./__tests__/TemplateModel/paramsForBackend.test.js for the tests that assert
-   * that this object can be serialised; any changes should be reflected there.
-   */
   get paramsForBackend(): Record<string, unknown> {
     const params = super.paramsForBackend;
     if (this.currentlyEditableFields.has("defaultUnitId")) params.defaultUnitId = this.defaultUnitId;

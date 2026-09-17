@@ -347,12 +347,6 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
     return userPreference;
   }
 
-  /**
-   * Per-key ceiling, kept well under the 65535-char TEXT column shared by all UI_JSON_SETTINGS
-   * keys. Sized so every key stays comfortably under the column limit even with all seven
-   * per-operation keys at once: 6500*7 + 8192 (the legacy key, see below) + 3000 (the other keys) =
-   * 56692.
-   */
   private static final int MAX_UI_JSON_SETTING_VALUE_CHARS = 6500;
 
   /**
