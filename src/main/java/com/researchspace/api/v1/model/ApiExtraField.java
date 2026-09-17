@@ -183,11 +183,6 @@ public class ApiExtraField extends IdentifiableNameableApiObject {
     return false;
   }
 
-  /**
-   * TEXT is default (if not provided)
-   *
-   * @return
-   */
   @JsonIgnore
   public FieldType getTypeAsFieldType() {
     return type == null ? FieldType.TEXT : type.toFieldTypeEnum();

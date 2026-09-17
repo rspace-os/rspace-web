@@ -70,9 +70,6 @@ describe("filterProcessNames", () => {
 });
 
 describe("processValuesPreferenceFor", () => {
-  // Each operation type has its own "remember" collection, so one operation's heavy use of
-  // Remember cannot push another's collection - or the pot every operation used to share - over
-  // the server's per-key size cap.
   it("gives every one of the seven operations its own, distinct preference key", () => {
     const keys = [
       ["aliquot", PREFERENCES.INVENTORY_OPERATION_PROCESS_VALUES_ALIQUOT],

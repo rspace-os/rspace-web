@@ -23,7 +23,7 @@ import {
 } from "../../../stores/definitions/Units";
 import BatchFormField from "../../components/Inputs/BatchFormField";
 
-const DECIMAL = 10; // for parseInt/parseFloat
+const DECIMAL = 10;
 
 type LabelArgs = {
   min: number;

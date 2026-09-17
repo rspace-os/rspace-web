@@ -110,8 +110,6 @@ public class SampleTemplatesApiControllerMVCIT extends API_MVC_InventoryTestBase
             .andExpect(status().isOk())
             .andReturn();
     searchHits = getFromJsonResponseBody(result, ApiSampleTemplateSearchResult.class);
-    //	List<ApiSampleTemplateInfo>templates =
-    // searchHits.getTemplates().stream().filter(f->f.isTemplate()).collect(Collectors.toList());
     assertEquals(allTemplatesCount, searchHits.getTotalHits().intValue());
     assertEquals(1, searchHits.getTemplates().size());
     assertTrue(searchHits.getLinks().size() > 1);

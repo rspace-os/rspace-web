@@ -180,20 +180,6 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
         subSampleApiMgr.getApiSubSampleById(retrievedPiSubSample.getId(), testUser);
     assertFalse(fullPiSubSample.isClearedForPublicView());
 
-    /* *
-     *
-     * //FIXME
-     *
-     * For some reason next assertion fails in Jenkins:
-     *  - `assertEquals(2, fullPiSubSample.getPermittedActions().size())`
-     *
-     * in fact in JENKINS `fullPiSubSample.getPermittedActions()` is `[READ, UPDATE, CHANGE_OWNER]`
-     * and that is wrong because there should not be the `CHANGE_OWNER`.
-     *
-     * The `CHANGE_OWNER` is there because the condition `user.getUsername().equals(invRecOwner)`is `true`
-     * at this method `invPermissions.setPermissionsInApiInventoryRecord(recordInfo, invRec, user)`
-     *
-     * */
     System.out.println(
         " ### fullPiSubSample ### IN LOCAL is 2 (correct) , in JENKINS sometime is 3 ### : "
             + fullPiSubSample.getPermittedActions());

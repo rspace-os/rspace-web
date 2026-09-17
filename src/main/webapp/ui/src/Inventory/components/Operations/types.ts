@@ -15,7 +15,6 @@ export type OperationQuantity = { numericValue: number; unitId: number };
  */
 export type AmountMode = "same" | "all" | "perSubsample";
 
-/** Per-origin amount taken in "perSubsample" mode, keyed by the origin subsample's global id. */
 export type PerSubsampleAmounts = Record<string, OperationQuantity>;
 
 /**
@@ -27,7 +26,6 @@ export type PerSubsampleAmounts = Record<string, OperationQuantity>;
  */
 export const UNSET_UNIT = 0;
 
-/** A single collected input value. Quantity/temperature inputs carry their unit; text is a string. */
 export type OperationInputValue = string | number | OperationQuantity;
 export type OperationInputs = Record<string, OperationInputValue>;
 
@@ -59,7 +57,6 @@ export type OperationTextFieldValue = OperationFieldKey & {
 
 export type OperationExtraField = OperationLinkField | OperationTextFieldValue;
 
-/** An origin subsample the wizard was launched on. */
 export type OperationOrigin = {
   id: number;
   globalId: string;

@@ -429,10 +429,6 @@ public class UserProfileControllerTest {
 
   @Test
   public void updatePreferenceValueTreatsABlankSuppliedKeyAsInvalidNotAbsent() {
-    // A supplied-but-blank key ("" or " ") used to be treated as if the parameter were absent,
-    // routing the request to setPreference and silently replacing the whole JSON blob, bypassing
-    // both the key validation and the merge. A supplied key must always reach the keyed path, where
-    // the merge rejects the invalid shape as a 400.
     when(usrMgr.getUserByUsername("any")).thenReturn(anyUser);
     when(usrMgr.mergeUiJsonSetting(anyString(), anyString(), anyString()))
         .thenThrow(new IllegalArgumentException("bad key"));
