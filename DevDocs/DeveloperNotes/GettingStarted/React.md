@@ -14,6 +14,12 @@ replacing the previous ESLint + Prettier setup.
   needed; otherwise install the community types, e.g. `pnpm add -D @types/<package-name>`.
 
 ## Notes
+- Native `fetch` calls to APIs authenticated with a browser UI token should use
+  `fetchWithUiToken` from `modules/common/utils/fetchWithUiToken`. A rejected
+  token triggers a session-token refresh and validation, then reloads the tab
+  to discard caches and UI state belonging to the previous Operate As user.
+  Pending writes are not replayed under the replacement identity. If token
+  refresh or validation fails, the original response reaches the caller.
 - Biome formats and lints JavaScript, TypeScript, JSX/TSX, JSON, and CSS (not Markdown).
 - Type-checking is done by `tsc`; Biome handles linting and formatting. Both run
   in CI and in the pre-commit hook, and any Biome info/warning/error fails the
