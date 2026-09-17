@@ -36,10 +36,15 @@ public interface DataCiteConnector {
   Optional<DataCiteDoi> findDoi(String doiId, InventorySettingType settingType);
 
   /**
-   * One page of FINDABLE instrument DOIs matching a free-text query. Findable only, because only a
-   * publicly resolvable DOI may be linked to an instrument (RSDEV-1326); DataCite applies the
-   * filter itself through its {@code state} request parameter, so {@code meta.total} describes the
-   * same set as the page.
+   * One page of FINDABLE instrument DOIs matching the query. Findable only, because only a publicly
+   * resolvable DOI may be linked to an instrument (RSDEV-1326); DataCite applies the filter itself
+   * through its {@code state} request parameter, so {@code meta.total} describes the same set as
+   * the page.
+   *
+   * <p>The query reaches DataCite's {@code query} parameter as written, and that parameter is
+   * Elasticsearch query-string syntax rather than plain text: bare words work as free text, and a
+   * caller may also pass a clause such as {@code doi:*suffix*}. A caller that builds a clause owns
+   * escaping what it interpolates, because an unbalanced quote answers 400 rather than no hits.
    */
   DataCiteDoiSearchResult searchInstrumentDois(
       String query, int pageSize, InventorySettingType settingType);

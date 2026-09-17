@@ -166,16 +166,20 @@ describe("PidinstImportDialog", () => {
 
   test("shows an error toast when the search fails", async () => {
     const user = userEvent.setup();
-    const restoreConsole = silenceConsole(["error"], ["status code 500"]);
-    stubEndpoints({ searchReply: [500, { message: "B2INST did not answer." }] });
-    await renderOpenDialog();
+    const restoreConsole = silenceConsole(["error"], ["PIDINST search failed"]);
+    try {
+      stubEndpoints({ searchReply: [500, { message: "B2INST did not answer." }] });
+      await renderOpenDialog();
 
-    await user.type(screen.getByRole("textbox", { name: "inventory:pidinstImport.search.label" }), "microscope");
-    await user.click(screen.getByRole("button", { name: "common:actions.search" }));
+      await user.type(screen.getByRole("textbox", { name: "inventory:pidinstImport.search.label" }), "microscope");
+      await user.click(screen.getByRole("button", { name: "common:actions.search" }));
 
-    const toast = (await screen.findByText("inventory:pidinstImport.searchError")).closest('[role="group"]');
-    expect(toast).toHaveTextContent("B2INST did not answer.");
-    restoreConsole();
+      const toast = (await screen.findByText("inventory:pidinstImport.searchError")).closest('[role="group"]');
+      expect(toast).toHaveTextContent("B2INST did not answer.");
+    } finally {
+      // restored here so a failed assertion does not leave the console silenced for the rest of the file
+      restoreConsole();
+    }
   });
 
   test("offers the hidden columns through the grid's Columns toolbar button", async () => {
@@ -248,5 +252,91 @@ describe("PidinstImportDialog", () => {
     expect(await screen.findByText("inventory:pidinstImport.importSuccess")).toBeVisible();
     expect(onImported).toHaveBeenCalledWith({ id: 77, globalId: "IN77" });
     expect(onClose).toHaveBeenCalled();
+  });
+
+  test("clears the previous hits when a search fails", async () => {
+    const user = userEvent.setup();
+    const restoreConsole = silenceConsole(["error"], ["PIDINST search failed"]);
+    try {
+      await renderOpenDialog();
+      await search(user, "microscope");
+
+      stubEndpoints({ searchReply: [500, { message: "B2INST did not answer." }] });
+      await user.clear(screen.getByRole("textbox", { name: "inventory:pidinstImport.search.label" }));
+      await user.type(screen.getByRole("textbox", { name: "inventory:pidinstImport.search.label" }), "telescope");
+      await user.click(screen.getByRole("button", { name: "common:actions.search" }));
+
+      // the rows of the previous search must not sit under the new query
+      await waitFor(() => {
+        expect(screen.queryByRole("gridcell", { name: HITS[0].name })).toBeNull();
+      });
+      expect(screen.queryByRole("gridcell", { name: HITS[1].name })).toBeNull();
+    } finally {
+      restoreConsole();
+    }
+  });
+
+  test("announces the result summary in a live region that exists before the search", async () => {
+    const user = userEvent.setup();
+    await renderOpenDialog();
+
+    // present while empty, because a live region inserted along with its text is not announced
+    const liveRegion = screen.getByRole("status");
+    expect(liveRegion).toBeInTheDocument();
+    expect(liveRegion).toHaveTextContent("");
+
+    await search(user, "microscope");
+
+    expect(screen.getByRole("status")).toHaveTextContent("inventory:pidinstImport.results.summary");
+  });
+
+  test("keeps the summary grammatical when a single record is found", async () => {
+    const user = userEvent.setup();
+    stubEndpoints({ searchReply: [200, { provider: "PIDINST_B2INST", total: 1, hits: [HITS[0]] }] });
+    await renderOpenDialog(
+      await wrapWithRealI18n(<PidinstImportDialogStory />, {
+        resources: { common: commonEn, inventory: inventoryEn },
+        defaultNS: "inventory",
+      }),
+    );
+
+    await user.type(screen.getByRole("textbox", { name: "Search the registry" }), "21.T11975/aaaaa-11111");
+    await user.click(screen.getByRole("button", { name: "Search" }));
+
+    // a direct PID lookup always returns one hit, so "1 of 1 records" is the common case
+    expect(await screen.findByText("1 of 1 record found at B2INST.")).toBeVisible();
+  });
+
+  test("does not navigate away when the dialog is closed mid-import", async () => {
+    const user = userEvent.setup();
+    const onImported = vi.fn();
+    const onClose = vi.fn();
+    let finishImport: (() => void) | undefined;
+    stubEndpoints({ importReply: [201, CREATED_INSTRUMENT] });
+    mockAxios.onPost(IMPORT_URL).reply(
+      () =>
+        new Promise((resolve) => {
+          finishImport = () => {
+            resolve([201, CREATED_INSTRUMENT]);
+          };
+        }),
+    );
+    await renderOpenDialog(<PidinstImportDialogStory onImported={onImported} onClose={onClose} />);
+    await search(user, "microscope");
+    await user.click(radioFor("Confocal Microscope"));
+    await user.click(screen.getByRole("button", { name: "common:actions.import" }));
+
+    await user.click(screen.getByRole("button", { name: "common:actions.close" }));
+    expect(await screen.findByText("inventory:pidinstImport.closeConfirm.message")).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "inventory:pidinstImport.closeConfirm.confirm" }));
+    expect(onClose).toHaveBeenCalled();
+
+    finishImport?.();
+
+    // the confirm promised only that the result would not be shown here, not a change of page
+    await waitFor(() => {
+      expect(screen.getByText("inventory:pidinstImport.importSuccess")).toBeVisible();
+    });
+    expect(onImported).not.toHaveBeenCalled();
   });
 });

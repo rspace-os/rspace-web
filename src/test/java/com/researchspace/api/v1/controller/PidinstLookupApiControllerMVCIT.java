@@ -27,6 +27,7 @@ import com.researchspace.service.inventory.InventoryIdentifierApiManager;
 import com.researchspace.service.inventory.PidinstLookupManager;
 import com.researchspace.webapp.integrations.b2inst.B2instConnectorDummy;
 import java.io.InputStream;
+import java.util.List;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -228,6 +229,25 @@ public class PidinstLookupApiControllerMVCIT extends API_MVC_InventoryTestBase {
     assertEquals(
         created.getGlobalId(),
         json(afterImport).get("hits").get(0).get("linkedInstrumentGlobalId").asText());
+  }
+
+  /**
+   * The status is the part of the minimum-length rule a unit test cannot see: the manager throws,
+   * and it is {@code ApiControllerAdvice} that decides what a direct API caller actually gets. This
+   * also pins the change from the controller's old blank check, which answered 400.
+   */
+  @Test
+  public void searchRefusesAQueryShorterThanTheMinimumWith422() throws Exception {
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+
+    for (String tooShort : List.of("qvt", "%20%20", "")) {
+      mockMvc
+          .perform(
+              createBuilderForInventoryGet(
+                  API_VERSION.ONE, apiKey, "/pidinst/search?query=" + tooShort, anyUser))
+          .andExpect(status().isUnprocessableEntity());
+    }
   }
 
   @Test

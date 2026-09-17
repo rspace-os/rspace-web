@@ -10,6 +10,7 @@ import React, { useContext } from "react";
 import { useTranslation } from "react-i18next";
 import { ACCENT_COLOR as FIELDMARK_COLOR } from "../../assets/branding/fieldmark";
 import FieldmarkIcon from "../../assets/branding/fieldmark/logo.svg";
+import PidinstIcon from "../../assets/graphics/PIDINST.svg";
 import AccentMenuItem from "../../components/AccentMenuItem";
 import RecordTypeIcon from "../../components/RecordTypeIcon";
 import { useIntegrationIsAllowedAndEnabled } from "../../hooks/api/integrationHelpers";
@@ -249,7 +250,7 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
             compact
             title={t("createNew.importPidinst")}
             avatarBackgroundColor="white"
-            avatar={<CardMedia image="/images/icons/pidinst.svg" />}
+            avatar={<CardMedia image={PidinstIcon} />}
             onClick={() => {
               setPidinstOpen(true);
               // closed for the same reason as the Fieldmark item: the menu would float over the dialog
