@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.researchspace.api.v2.auth.ApiV2AuthenticationException;
 import com.researchspace.api.v2.controller.ApiV2CrudController;
@@ -16,18 +17,28 @@ import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
 import com.researchspace.api.v2.resource.ResourceOperations;
 import com.researchspace.api.v2.user.UserResourceOperations;
 import com.researchspace.booking.api.v2.BookingConfigurationResourceOperations;
+import com.researchspace.booking.api.v2.BookingInstrumentRelationshipOperations;
 import com.researchspace.booking.api.v2.TimeSlotBookingResourceOperations;
+import com.researchspace.booking.config.BookingResourceAccessConfiguration;
+import com.researchspace.booking.config.BookingTimeConfig;
 import com.researchspace.booking.service.BookingConfigurationManager;
+import com.researchspace.booking.service.BookingConfigurationProtectedResourceAccess;
+import com.researchspace.booking.service.BookingConfigurationTargetManager;
 import com.researchspace.booking.service.TimeSlotBookingManager;
+import com.researchspace.dao.ExtraFieldDao;
 import com.researchspace.inventory.api.v2.InstrumentResourceOperations;
 import com.researchspace.maintenance.api.v2.MaintenanceResourceOperations;
 import com.researchspace.maintenance.service.MaintenanceManager;
+import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
+import com.researchspace.model.booking.ApiV2TimeSlotBookingResource;
 import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.CollectionFieldTypes;
 import com.researchspace.model.collection.Field;
+import com.researchspace.model.collection.RuntimeFieldNamespaces;
 import com.researchspace.model.collection.Sort;
 import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.UserManager;
+import com.researchspace.service.inventory.InstrumentCustomFieldManager;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import com.researchspace.service.inventory.InstrumentReadAccess;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
@@ -67,7 +78,13 @@ class ApiV2ResourceConfigTest {
       assertTrue(context.containsBean("timeSlotBookingApiV2Resource"));
       assertNotNull(context.getBean(ApiV2CrudController.class));
       assertEquals(
-          List.of("booking-configurations", "bookings", "instruments", "maintenances", "users"),
+          List.of(
+              "booking-configurations",
+              "booking-instruments",
+              "bookings",
+              "instruments",
+              "maintenances",
+              "users"),
           context.getBean(ApiV2ResourceCatalog.class).registry().resources().stream()
               .map(CollectionDescription::resourceName)
               .sorted()
@@ -91,6 +108,7 @@ class ApiV2ResourceConfigTest {
       assertEquals(
           List.of(
               "booking-configurations",
+              "booking-instruments",
               "bookings",
               "instruments",
               "maintenances",
@@ -103,7 +121,7 @@ class ApiV2ResourceConfigTest {
       assertEquals(
           6,
           context.getBeansOfType(ApiV2ResourceSpec.class).size(),
-          "the four built-in specs plus the contributed one");
+          "the five built-in route specs plus the contributed one");
       assertNotNull(context.getBean(ApiV2CrudController.class));
     }
   }
@@ -133,14 +151,36 @@ class ApiV2ResourceConfigTest {
     context.registerBean(FeatureFlagManager.class, () -> mock(FeatureFlagManager.class));
     context.registerBean(
         BookingConfigurationManager.class, () -> mock(BookingConfigurationManager.class));
+    context.registerBean(
+        BookingConfigurationProtectedResourceAccess.class,
+        () -> mock(BookingConfigurationProtectedResourceAccess.class));
+    context.registerBean(
+        BookingConfigurationTargetManager.class,
+        () -> mock(BookingConfigurationTargetManager.class));
     context.registerBean(TimeSlotBookingManager.class, () -> mock(TimeSlotBookingManager.class));
     context.registerBean(
         InstrumentEntityApiManager.class, () -> mock(InstrumentEntityApiManager.class));
+    InstrumentCustomFieldManager customFields = mock(InstrumentCustomFieldManager.class);
+    when(customFields.namespace()).thenReturn(RuntimeFieldNamespaces.CUSTOM_FIELDS);
+    context.registerBean(InstrumentCustomFieldManager.class, () -> customFields);
+    context.registerBean(ExtraFieldDao.class, () -> mock(ExtraFieldDao.class));
     context.registerBean(
         InstrumentReadAccess.class,
         () -> new InstrumentReadAccess(mock(InventoryPermissionUtils.class)));
+    context
+        .getBeanFactory()
+        .registerSingleton(
+            BookingResourceAccessConfiguration.BOOKING_CONFIGURATION_DESCRIPTION,
+            ApiV2BookingConfigurationResource.DESCRIPTION);
+    context
+        .getBeanFactory()
+        .registerSingleton(
+            BookingResourceAccessConfiguration.TIME_SLOT_BOOKING_DESCRIPTION,
+            ApiV2TimeSlotBookingResource.DESCRIPTION);
     context.register(
+        BookingTimeConfig.class,
         BookingConfigurationResourceOperations.class,
+        BookingInstrumentRelationshipOperations.class,
         TimeSlotBookingResourceOperations.class,
         InstrumentResourceOperations.class,
         MaintenanceResourceOperations.class,
