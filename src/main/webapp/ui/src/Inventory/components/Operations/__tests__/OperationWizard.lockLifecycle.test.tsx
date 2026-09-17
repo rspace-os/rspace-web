@@ -103,4 +103,37 @@ describe("OperationWizard lock renewal and close ordering", () => {
     finish[0]("LOCKED_OK");
     await waitFor(() => expect(onClose).toHaveBeenCalled());
   });
+
+  it("starts no further renewal once close has begun", async () => {
+    // Close captures the renewals outstanding at that instant, so a batch started afterwards would
+    // not be waited for and could land behind the caller's release. Nothing may start one: a wizard
+    // that is closing has no lock left to keep alive.
+    server.use(
+      http.get("/api/inventory/v1/samples/validateNameForNewSample", () => HttpResponse.json({ valid: true })),
+    );
+    const origin = makeMockSubSample({});
+    const finish: Array<(status: "LOCKED_OK") => void> = [];
+    vi.spyOn(origin, "acquireEditLock").mockImplementation(
+      () =>
+        new Promise<"LOCKED_OK">((resolve) => {
+          finish.push(resolve);
+        }),
+    );
+    const onClose = vi.fn();
+    const user = userEvent.setup();
+    render(<OperationWizard open onClose={onClose} origins={[origin]} />);
+
+    await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
+    await user.type(screen.getByRole("combobox", { name: /fields\.processName/i }), "dna");
+    await user.click(screen.getByRole("button", { name: /actions\.next/i }));
+    expect(finish).toHaveLength(1);
+
+    // Close is now waiting on that first renewal; a step taken while it waits must renew nothing.
+    await user.click(screen.getByRole("button", { name: /actions\.cancel/i }));
+    await user.click(screen.getByRole("button", { name: /actions\.back/i }));
+    expect(finish).toHaveLength(1);
+
+    finish[0]("LOCKED_OK");
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+  });
 });
