@@ -4,6 +4,7 @@ import type MenuItem from "@mui/material/MenuItem";
 import { Observer } from "mobx-react-lite";
 import React, { forwardRef } from "react";
 import { useTranslation } from "react-i18next";
+import { mkAlert } from "@/stores/contexts/Alert";
 import type { InventoryRecord } from "@/stores/definitions/InventoryRecord";
 import SubSampleModel from "@/stores/models/SubSampleModel";
 import getRootStore from "@/stores/stores/getRootStore";
@@ -73,6 +74,21 @@ const ProcessAction = forwardRef<React.ElementRef<typeof MenuItem>, ProcessActio
           if (!shown) console.error("Could not lock the operation origins", failure.reason);
           return;
         }
+        // WAS_ALREADY_LOCKED names the holder by username alone, so the holder may be this user's
+        // own edit form in another tab. That tab still holds the quantity the user typed there and
+        // will send it on save, overwriting whatever this operation commits. Refusing to start is
+        // the only guard: the lock cannot tell the two sessions apart.
+        if (newlyLocked.length < origins.length) {
+          await releaseAll(newlyLocked);
+          getRootStore().uiStore.addAlert(
+            mkAlert({
+              title: t("operations.wizard.originsLocked"),
+              message: t("operations.wizard.originsOpenElsewhere"),
+              variant: "error",
+            }),
+          );
+          return;
+        }
         taken.current = newlyLocked;
         opened = true;
         setOpen(true);
@@ -83,11 +99,15 @@ const ProcessAction = forwardRef<React.ElementRef<typeof MenuItem>, ProcessActio
     };
 
     const onCloseHandler = () => {
-      void releaseAll(taken.current);
+      // The guard stays up until the release settles. Reopening before then would acquire the lock
+      // this close is still giving back, and the late DELETE would strip the reopened wizard's own.
+      const releasing = releaseAll(taken.current);
       taken.current = [];
-      busy.current = false;
       setOpen(false);
       closeMenu();
+      void releasing.finally(() => {
+        busy.current = false;
+      });
     };
 
     return (

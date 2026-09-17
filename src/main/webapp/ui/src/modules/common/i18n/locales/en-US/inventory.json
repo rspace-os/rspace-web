@@ -1816,6 +1816,7 @@
       "lockExpired": "Your edit session on these subsamples has expired. Close the wizard and start again.",
       "originIndex": "{reason} (origin {index})",
       "originsLocked": "Cannot start this operation",
+      "originsOpenElsewhere": "These subsamples are open for editing elsewhere, perhaps in another tab. Close that editor and try again.",
       "perform": "Perform",
       "refreshFailed": "The operation completed, but the view could not be refreshed. Reload to see the changes.",
       "reviewEdit": "Review / edit",
