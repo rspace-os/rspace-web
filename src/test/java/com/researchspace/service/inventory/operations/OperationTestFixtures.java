@@ -11,7 +11,6 @@ import org.springframework.validation.BeanPropertyBindingResult;
 /** Shared builders for the per-operation tests: an origin, an amount, a label resolver. */
 final class OperationTestFixtures {
 
-  /** Resolves every key to itself, so a test asserts on the key that was looked up. */
   static final LabelResolver KEYS = (key, args) -> args.isEmpty() ? key : key + " " + args;
 
   private OperationTestFixtures() {}

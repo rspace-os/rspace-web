@@ -11,17 +11,8 @@ import type TemplateModel from "@/stores/models/TemplateModel";
 import { type TemplateSelection, templateBlockReason } from "./templateResolution";
 import WizardTemplatePicker from "./WizardTemplatePicker";
 
-// Declared in templateResolution so the module and this component cannot drift apart, and
-// re-exported here so every existing `from "./TemplateStep"` import keeps working.
 export type { TemplateSelection };
 
-/**
- * Framework step (present for every operation): optionally choose the new sample's template - none
- * (ad-hoc), an existing template, or a template created from the origin's parent sample. A picked
- * template with mandatory fields that have no default value is blocked here with a clear message,
- * rather than failing at submit. The "remember" checkbox is persisted per user, per operation by the
- * wizard.
- */
 function TemplateStep({
   value,
   onChange,
@@ -64,7 +55,6 @@ function TemplateStep({
   const { t, i18n } = useTranslation("inventory");
   const [checking, setChecking] = React.useState(false);
   const [blockError, setBlockError] = React.useState<string | null>(null);
-  // The most recently picked template id, so the latest pick always wins.
   const latestPickRef = React.useRef<string | null>(null);
   React.useEffect(
     () => () => {
@@ -73,11 +63,6 @@ function TemplateStep({
     [],
   );
 
-  /**
-   * Runs the mandatory-without-default check against a template and applies the outcome. Shared by
-   * both paths that end in a concrete template, so "use parent template" cannot drift away from the
-   * rules a picked template is held to.
-   */
   const applyTemplateCheck = async (
     token: string,
     load: () => Promise<TemplateModel>,
@@ -98,10 +83,6 @@ function TemplateStep({
       }
       onChange((previous) => ({ ...previous, ...describe(template) }));
     } catch {
-      // The lookup failed (offline, permission change, template deleted): without this the rejection
-      // escaped the detached task unhandled and the user saw only the spinner stop, with no reason
-      // and no way to tell a failed check from a passed one. Leave the
-      // selection cleared so Next stays blocked, and say why.
       if (latestPickRef.current !== token) return;
       setBlockError(t("operations.template.lookupFailed"));
     } finally {
@@ -118,8 +99,6 @@ function TemplateStep({
       mode,
       templateId: mode === "pick" ? value.templateId : null,
       templateName: mode === "pick" ? value.templateName : undefined,
-      // A non-"pick" mode carries no specific template, so clear any category too; "fromSample"
-      // sets its own below once the parent's template has passed the check.
       quantityCategory: mode === "pick" ? value.quantityCategory : undefined,
     });
   };

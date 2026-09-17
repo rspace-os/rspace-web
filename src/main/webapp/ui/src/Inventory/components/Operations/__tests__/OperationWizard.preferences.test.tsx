@@ -10,9 +10,7 @@ import OperationWizard from "../OperationWizard";
 
 /*
  * OperationWizard.test.tsx mocks useUiPreference at module level (vi.mock is file-wide), so the
- * wizard and the real preference hook are never exercised together there. Perform saves three
- * preference keys in one handler, and each save is a read-merge-write of the whole UI settings
- * object; before the write chain the last POST dropped the other two.
+ * wizard and the real preference hook are never exercised together there.
  * This file therefore uses the real hook and provider over an MSW-backed store, so a regression in
  * either the wizard's save order or the hook's chaining shows up as a missing key on the server.
  */
@@ -58,9 +56,6 @@ vi.mock("@/stores/stores/getRootStore", () => ({
   }),
 }));
 vi.mock("@/util/alerts", () => ({ showToastWhilstPending: (_msg: string, p: Promise<unknown>) => p }));
-// Keeps the real AlertContext (its default export) and overrides only mkAlert: the wizard now
-// reports preference save failures through useContext(AlertContext), so a mock with mkAlert alone
-// left every test in this file throwing "No default export is defined".
 vi.mock("@/stores/contexts/Alert", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/stores/contexts/Alert")>()),
   mkAlert: (x: unknown) => x,

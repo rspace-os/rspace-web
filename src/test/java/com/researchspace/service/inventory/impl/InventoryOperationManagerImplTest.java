@@ -125,7 +125,6 @@ class InventoryOperationManagerImplTest {
     assertSame(created, result);
     verify(subSampleApiMgr).assertUserCanEditSubSample(100L, user);
     verify(sampleApiMgr).createNewApiSample(newSample, user);
-    // registerApiSubSampleUsage subtracts and clamps at zero, so it can never increase the origin.
     ArgumentCaptor<QuantityInfo> used = ArgumentCaptor.forClass(QuantityInfo.class);
     verify(subSampleApiMgr).registerApiSubSampleUsage(eq(100L), used.capture(), eq(user));
     assertEquals(0, new BigDecimal("0.6").compareTo(used.getValue().getNumericValue()));
@@ -684,8 +683,6 @@ class InventoryOperationManagerImplTest {
 
   @Test
   void runsTheTemplateConformanceCheckBeforeAnyOriginRead() throws Exception {
-    // The check used to run in its own, separate transaction. It now runs HERE, inside the
-    // operation's transaction, before any origin is read.
     ApiInventoryOperationPost request = new ApiInventoryOperationPost();
     request.setOrigins(List.of(origin(100L, new ApiQuantityInfo(new BigDecimal("0.6"), 3))));
     ApiSampleWithFullSubSamples newSample = new ApiSampleWithFullSubSamples("Derived material");

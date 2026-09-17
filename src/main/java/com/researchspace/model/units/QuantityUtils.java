@@ -172,16 +172,13 @@ public class QuantityUtils {
   }
 
   <Q extends Quantity<Q>> int doCompare(Quantifiable q1, Quantifiable q2, Class<Q> clazz) {
-    // if are same units, we can just compare the numeric values
     if (q1.getUnitId().equals(q2.getUnitId())) {
       return q1.getNumericValue().compareTo(q2.getNumericValue());
     }
-    // return Integer.MAX if not comparable
     if (!isComparableQuantities(q1, q2)) {
       return INCOMPARABLE;
     }
 
-    // else we have to convert to common units.
     Quantity<Q> qA = getQuantityFor(q1, clazz).toSystemUnit();
     Quantity<Q> qB = getQuantityFor(q2, clazz).toSystemUnit();
     return BigDecimal.valueOf(qA.getValue().doubleValue())
@@ -211,13 +208,6 @@ public class QuantityUtils {
 
   /**
    * Subtract an amount from a quantity, keeping the result exactly storable.
-   *
-   * <p>Separate from {@link #sum} because the two want different units. A sum is usually read: a
-   * sample's displayed total is better as 4.017 g than as 4017.089 mg, and rounding the last 0.089
-   * mg off a figure recomputed from the rows it is displaying costs nothing. A remainder is STOCK:
-   * rounding it loses material, and taking 2.5 mg from a 5 g origin was refused outright rather
-   * than stored as 4997.5 mg. So this one steps down the ladder until the value fits and the sum
-   * does not.
    *
    * @param from the quantity being drawn down
    * @param amountTaken the amount to remove, in any commensurate unit
@@ -357,7 +347,6 @@ public class QuantityUtils {
       return orgQuantity;
     }
 
-    // if abs(value) < 1: try switching to smaller unit
     if (Math.abs(orgQuantityValue) < 1.0) {
       RSUnitDef smallerUnit = RSUnitDef.getUnitSmallerThan(initialUnit);
       if (smallerUnit != null) {
@@ -365,13 +354,11 @@ public class QuantityUtils {
       }
     }
 
-    // if abs(value) >= 1000 and divides by 1000 without remainder: try switching to larger unit
     if (Math.abs(orgQuantityValue) >= 1000.0) {
       /* let's multiply to 1000, cast to long, then divide by 1000 * 1000 to check if there
        * is something on last 3 decimal and non-decimal places of the original double*/
       long quantityAsLong1000Times = (long) (orgQuantityValue * 1000);
       if (quantityAsLong1000Times % (1000 * 1000) == 0) {
-        // try switching to larger unit
         RSUnitDef largerUnit = RSUnitDef.getUnitLargerThan(initialUnit);
         if (largerUnit != null) {
           return orgQuantity.to(largerUnit.getDefinition());

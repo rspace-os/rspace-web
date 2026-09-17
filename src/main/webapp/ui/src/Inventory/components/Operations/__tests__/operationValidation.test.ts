@@ -376,7 +376,6 @@ describe("detailsValid edge cases", () => {
   it("rejects an amount finer than three decimal places on either quantity input", () => {
     expect(detailsValid(cryo, { ...validValues, eachAmount: { numericValue: 1.0005, unitId: 3 } })).toBe(false);
     expect(detailsValid(cryo, { ...validValues, amountTaken: { numericValue: 1.0005, unitId: 3 } })).toBe(false);
-    // and exactly three decimal places are still fine on both
     expect(
       detailsValid(cryo, {
         ...validValues,

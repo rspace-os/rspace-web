@@ -52,7 +52,6 @@ import com.researchspace.service.inventory.InventoryMoveHelper;
 import com.researchspace.service.inventory.SampleApiManager;
 import com.researchspace.service.inventory.SubSampleApiManager;
 import jakarta.ws.rs.NotFoundException;
-import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Date;
@@ -281,11 +280,9 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
     setSampleCoreProperties(apiSample, sample);
     List<ApiSubSample> apiSubSamples = apiSample.getSubSamples();
     if (apiSample.getQuantity() != null) {
-      // set quantity of default subsample from provided sample quantity
       if (apiSubSamples.isEmpty()) {
         sample.getOnlySubSample().get().setQuantity(apiSample.getQuantity().toQuantityInfo());
       }
-      // set quantity of single provided subsample that has no own quantity
       if (apiSubSamples.size() == 1 && apiSubSamples.get(0).getQuantity() == null) {
         apiSubSamples.get(0).setQuantity(apiSample.getQuantity());
       }
@@ -303,7 +300,6 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
           .get(0)
           .setName(InventorySeriesNamingHelper.getSerialNameForSubSample(sample.getName(), 1, 1));
     } else {
-      // use provided apiSubSamples
       List<SubSample> newSubSamples = new ArrayList<>();
       int subSampleCount = 1;
       int subSampleTotal = apiSubSamples.size();
@@ -402,10 +398,6 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
    * Merges an operation-generated field into the identically named field the sample inherits from
    * its template, instead of adding a second field with that name and failing {@link
    * InventoryFieldNameUniquenessValidator#assertNoDuplicateFieldNames}.
-   *
-   * <p>Renaming the generated field instead of merging would break the Passage counter, which finds
-   * the previous number by looking up a field with that exact name (computedValues.ts, {@code
-   * parentFieldValue}).
    *
    * <p>Only fields carrying an {@code operationFieldKey} are merged; a user's own extra field on
    * POST /samples has none and keeps the normal duplicate-name rejection. Link fields are never
@@ -614,8 +606,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
     SampleEntity template = getIfExists(templateId);
     boolean canRead = invPermissions.canUserReadInventoryRecord(template, user);
     if (!canRead) {
-      return ApiInventorySearchResult
-          .emptyResult(); // no searches for samples created from unreadable template
+      return ApiInventorySearchResult.emptyResult();
     }
 
     ISearchResults<Sample> dbSamples =
@@ -768,7 +759,6 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
     publisher.publishEvent(new InventoryEditingEvent(dbSample, user));
   }
 
-  /** Routes a plain save to the DAO matching the entity's concrete kind. */
   private SampleEntity saveSampleEntity(SampleEntity dbSample) {
     if (dbSample.isSampleTemplate()) {
       return sampleTemplateDao.save((SampleTemplate) dbSample);
@@ -796,7 +786,6 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
           dbSample.refreshActiveSubSamples();
           dbSample.recalculateTotalQuantity();
 
-          /* then delete the sample */
           dbSample.setRecordDeleted(true);
           // Recompute the active-subsample cache now the deleted flag is set: a deleted sample
           // lists its deletedOnSampleDeletion subsamples as active, but the refresh above ran
@@ -830,7 +819,6 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
           if (includeSubSamplesDeletedOnSampleDeletion) {
             subSampleMgr.restoreDeletedSubSample(ss.getId(), user, true);
           } else {
-            // forget the 'deletedOnSampleDeletion' status
             ss.setDeletedOnSampleDeletion(false);
           }
         }
@@ -851,12 +839,6 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
     return restored;
   }
 
-  /**
-   * Save incoming sample image.
-   *
-   * @throws IOException
-   * @returns true if any images were saved
-   */
   private boolean saveIncomingSampleImage(
       SampleEntity dbSample, ApiSampleInfo apiSample, User user) {
     if (dbSample.isTemplate()) {
@@ -903,8 +885,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
     } else {
       SampleTemplate templateCopy = ((SampleTemplate) dbSample).copy(user);
       /* persistSampleTemplate's choice/radio-definition pre-save is a no-op here: the copied
-       * fields share the original template's already-persistent definitions, so this matches
-       * the plain persist the legacy persistNewSample call performed for template copies. */
+       * fields share the original template's already-persistent definitions. */
       copy = sampleTemplateDao.persistSampleTemplate(templateCopy);
     }
     publisher.publishEvent(new InventoryCreationEvent(copy, user));
@@ -1025,7 +1006,6 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
 
     boolean temporaryLock = lockItemForEdit(dbTemplate, user);
     try {
-      // re-fetch by id returns the same template row
       dbTemplate = getSampleTemplateOrThrowNotFound(dbTemplate.getId());
       boolean contentChanged =
           createDeleteRequestedFieldsInDbSampleTemplate(apiSample, dbTemplate, user);
@@ -1085,9 +1065,6 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
 
     boolean temporaryLock = lockItemForEdit(dbSample, user);
     try {
-      // casts below are safe: templates throw earlier on the null parent-template id, and a
-      // re-fetch by the same id cannot change the entity kind (discriminator is written only on
-      // insert)
       dbSample = getIfExists(dbSample.getId());
       if (!dbTemplate.getVersion().equals(((Sample) dbSample).getSTemplateLinkedVersion())) {
         // Snapshot the link fields before the sync: propagating a deleted template link-field

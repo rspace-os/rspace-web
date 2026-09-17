@@ -546,8 +546,7 @@ class InventoryOperationsApiControllerTest {
    * OperationTemplateConformanceValidator runs the samples endpoint's validators over the BUILT
    * sample for every creating operation, templated or not, under the nested path {@code newSample}:
    * an over-long sampleName comes back as {@code newSample.name}, a storage temperature as {@code
-   * newSample.storageTempMin}/{@code Max}. Only {@code templateId} and {@code
-   * subSamples[i].quantity} were renamed, so every other path leaked a field the caller never sent.
+   * newSample.storageTempMin}/{@code Max}.
    */
   @Test
   void facadeFieldNeverLeaksTheServerBuiltSamplesPaths() {
@@ -603,9 +602,6 @@ class InventoryOperationsApiControllerTest {
   @Test
   void everyRouteIsRefusedTheSameWayWhileTheOperationsPropertyIsDenied() {
     operationsDenied();
-    // The gate is the first statement of each route, ahead of body validation, so an empty body is
-    // still answered with the configured-unavailable refusal rather than a 400 that would tell a
-    // caller the feature is there.
     Map<String, Executable> routes = new LinkedHashMap<>();
     ApiInventoryOperationRequests.Aliquot aliquot = new ApiInventoryOperationRequests.Aliquot();
     routes.put("aliquot", () -> controller.aliquot(aliquot, bindingResultFor(aliquot), user));

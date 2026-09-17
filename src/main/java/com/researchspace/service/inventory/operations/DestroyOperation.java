@@ -49,8 +49,6 @@ public class DestroyOperation implements InventoryOperation<ApiInventoryOperatio
       ApiInventoryOperationOriginUpdate update = new ApiInventoryOperationOriginUpdate();
       update.setId(origin.id());
       update.setAmountTaken(Amounts.wholeOf(origin));
-      // The date is the CALLER's, not the server's: a disposal recorded late in the evening in
-      // one timezone would otherwise be dated tomorrow.
       update.setExtraFields(
           List.of(
               OperationFieldNames.text(

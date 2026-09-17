@@ -125,7 +125,6 @@ public class SampleApiPutValidatorTest extends InventoryRecordValidationTestBase
     e = resetErrorsAndValidate(apiSample);
     assertEquals(0, e.getErrorCount());
 
-    // min == max, should be OK
     apiSample.setStorageTempMax(new ApiQuantityInfo(BigDecimal.valueOf(3L), RSUnitDef.CELSIUS));
     apiSample.setStorageTempMin(new ApiQuantityInfo(BigDecimal.valueOf(3L), RSUnitDef.CELSIUS));
     e = resetErrorsAndValidate(apiSample);

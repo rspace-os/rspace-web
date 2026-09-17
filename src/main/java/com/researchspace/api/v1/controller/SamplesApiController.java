@@ -63,7 +63,6 @@ public class SamplesApiController extends BaseApiInventoryController implements 
     Long templateId;
     // may be null
     SampleTemplate template;
-    // the db sample matching the api sample
     SampleEntity dbSample;
   }
 
@@ -81,7 +80,6 @@ public class SamplesApiController extends BaseApiInventoryController implements 
     if (apiPgCrit == null) {
       apiPgCrit = new InventoryApiPaginationCriteria();
     }
-    // samples-only listing: Sample.class (not SampleEntity.class) is correct here
     PaginationCriteria<Sample> pgCrit = getPaginationCriteriaForApiSearch(apiPgCrit, Sample.class);
 
     String ownedBy = null;
@@ -111,11 +109,9 @@ public class SamplesApiController extends BaseApiInventoryController implements 
 
     Integer subSamplesCount = apiSample.getNewSampleSubSamplesCount();
     if (subSamplesCount != null) {
-      // update prototype sample with a requested number of subsamples
       List<ApiSubSample> newSubSamples =
           Stream.generate(ApiSubSample::new).limit(subSamplesCount).collect(Collectors.toList());
       if (apiSample.getQuantity() != null) {
-        // split provided total quantity into subsamples
         BigDecimal newQuantityValue =
             apiSample
                 .getQuantity()
@@ -165,7 +161,7 @@ public class SamplesApiController extends BaseApiInventoryController implements 
   private void rejectIfSampleTemplate(
       Long id, User user, BiConsumer<Long, User> templatePermissionCheck) {
     if (!sampleApiMgr.getIfExists(id).isSampleTemplate()) {
-      return; // a plain sample (non-template) id: let normal sample handling proceed
+      return;
     }
     templatePermissionCheck.accept(id, user);
     throw new IllegalArgumentException(
@@ -186,7 +182,6 @@ public class SamplesApiController extends BaseApiInventoryController implements 
     ApiSampleFullPost allData = new ApiSampleFullPost(apiSample, user, template);
 
     inputValidator.validate(allData, sampleApiPostFullValidator, errors);
-    // this will collate all errors together.
     throwBindExceptionIfErrors(errors);
   }
 
@@ -222,7 +217,6 @@ public class SamplesApiController extends BaseApiInventoryController implements 
     try {
       return sampleApiMgr.getSampleTemplateByIdWithPopulatedFields(apiSample.getTemplateId(), user);
     } catch (NotFoundException e) {
-      // form ID is set, but is not a readable form.
       errors.rejectValue(
           "templateId",
           "errors.inventory.sample.templateNotFound",
@@ -286,12 +280,10 @@ public class SamplesApiController extends BaseApiInventoryController implements 
       @RequestAttribute(name = "user") User user)
       throws BindException {
     validateUpdateSampleInput(incomingSample, errors);
-    // update incoming object's id which could be omitted
     incomingSample.setIdIfNotSet(id);
     rejectIfSampleTemplate(id, user, sampleApiMgr::assertUserCanEditSampleTemplate);
     sampleApiMgr.assertUserCanEditSample(id, user);
 
-    // update the sample
     ApiSample updatedSample = sampleApiMgr.updateApiSample(incomingSample, user);
     buildAndAddInventoryRecordLinks(updatedSample);
 
@@ -346,11 +338,9 @@ public class SamplesApiController extends BaseApiInventoryController implements 
       @RequestAttribute(name = "user") User user)
       throws BindException {
 
-    // update incoming object's id which could be omitted
     incomingSample.setIdIfNotSet(id);
     sampleApiMgr.assertUserCanTransferSample(id, user);
 
-    // update sample's owner
     ApiSample updatedSample = sampleApiMgr.changeApiSampleOwner(incomingSample, user);
     buildAndAddInventoryRecordLinks(updatedSample);
 

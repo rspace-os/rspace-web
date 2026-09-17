@@ -166,7 +166,6 @@ public class UserProfileController extends BaseController {
   @Qualifier("loginPasswordResetHandler")
   private PasswordChangeHandlerBase passwordResetHandler;
 
-  // perf testing suggests <= items to share  will take less than 5s
   static final int MAX_TO_AUTO_SHARE_SYNC = 100;
 
   static final List<Preference> desiredMessageDisplayOrder =
@@ -207,7 +206,7 @@ public class UserProfileController extends BaseController {
     User user;
 
     if (userId == null) {
-      user = sessionUser; // own profile by default
+      user = sessionUser;
     } else {
       try {
         user = userManager.getUser(userId + "");
@@ -328,7 +327,6 @@ public class UserProfileController extends BaseController {
     model.addAttribute("categories", PreferenceCategory.values());
   }
 
-  // rspac 953
   private List<UserPreference> sortAndFilterDisplayedPrefs(List<UserPreference> anyOrder) {
     List<UserPreference> actual = new ArrayList<>();
     desiredMessageDisplayOrder.stream()
@@ -416,7 +414,6 @@ public class UserProfileController extends BaseController {
             AFFILIATION,
             ERRORS_REQUIRED,
             new Object[] {new DefaultMessageSourceResolvable("label.affiliation")});
-        // rspac-932
         if (!StringUtils.isBlank(u.getAffiliation())
             && u.getAffiliation().length() > Organisation.MAX_INDEXABLE_UTF_LENGTH) {
           errors.rejectValue(
@@ -546,7 +543,6 @@ public class UserProfileController extends BaseController {
     return new AjaxReturnObject<>(pui, null);
   }
 
-  // RSPAC-1208
   private ErrorList checkIfNameEditedWhenShouldntBe(
       User user, String firstNameInput, String surnameInput) {
     ErrorList el = new ErrorList();
@@ -670,8 +666,6 @@ public class UserProfileController extends BaseController {
     User user = userManager.getUserByUsername(principal.getName());
     Set<UserPreference> allPrefs = userManager.getUserAndPreferencesForUser(principal.getName());
     if (!allPrefs.isEmpty()) {
-      // assume at this stage that all are booleans; need to refactor when dealing with other
-      // preferences
       for (Preference pref : Preference.values()) {
         if (pref.getPrefType().equals(SettingsType.BOOLEAN) && pref.isMessagingPreference()) {
           boolean preferenceValue = prefsToEnable.contains(pref.toString());
@@ -684,11 +678,6 @@ public class UserProfileController extends BaseController {
     return new AjaxReturnObject<>(getText("userProfile.messageSettingsChanged.confirmation"), null);
   }
 
-  /**
-   * @param preference
-   * @param principal
-   * @return
-   */
   @ResponseBody
   @GetMapping("/ajax/preference")
   public String getPreferenceValue(
@@ -786,16 +775,12 @@ public class UserProfileController extends BaseController {
   @AllArgsConstructor
   @NoArgsConstructor
   public static class ApiKeyInfo {
-    /** The actual API key */
     private String key = null;
 
-    /** Whether or not key can be revoked */
     private boolean revokable = false;
 
-    /** Whether or not key can be regenerated */
     private boolean regenerable = true;
 
-    /** Whether or not key is enabled */
     private boolean enabled = true;
 
     /** If key is not available, an explanatory message */
@@ -929,12 +914,6 @@ public class UserProfileController extends BaseController {
 
   private static final String PROFILE_IMAGE_LINK_FMT = "/userform/profileImage/%d/%d";
 
-  /**
-   * Gets mini-profile information for a user RSPAC-683 without
-   *
-   * @param userId ID of user whose profile should be retrieved.
-   * @return AjaxReturnObject
-   */
   @GetMapping("/ajax/miniprofile/{userId}")
   @ResponseBody
   public AjaxReturnObject<MiniProfile> miniprofile(@PathVariable(name = "userId") Long userId) {
@@ -1043,7 +1022,6 @@ public class UserProfileController extends BaseController {
     private String groupDisplayName;
     private String roleInGroup;
     private Boolean labGroup = true;
-    // whether or not autoshare folder is set.
     private Boolean autoshareFolderSet = false;
 
     public UserGroupInfo(UserGroup ug) {

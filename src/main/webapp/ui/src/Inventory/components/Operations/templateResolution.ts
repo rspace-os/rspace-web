@@ -7,11 +7,6 @@ import type { UnitCategory } from "@/stores/stores/UnitStore";
 // selected and the user must make an explicit choice before Next is enabled.
 export type TemplateMode = "none" | "pick" | "fromSample" | "remembered" | "unselected";
 
-/**
- * Declared here, not in TemplateStep, so the module and the component cannot disagree: previously
- * duplicated declarations let a mode added to one compile cleanly against the other until a
- * runtime `switch` fell through. TemplateStep re-exports this type to keep existing imports working.
- */
 export type TemplateSelection = {
   mode: TemplateMode;
   templateId: number | null;
@@ -28,14 +23,8 @@ export type TemplateSelection = {
   pendingCheck?: boolean;
 };
 
-/** The selection as it is stored in a "remember" bundle: no per-run state. */
 export type TemplateDefault = Omit<TemplateSelection, "remember" | "pendingCheck">;
 
-/**
- * Reduces the selection to the shape stored in the per-process "remember" bundle: a specific
- * template ("pick" or a still-in-effect "remembered") as a concrete "pick" with its id, name and
- * quantity category; every other mode as itself with no template id.
- */
 export function templateSelectionToDefault(selection: {
   mode: TemplateMode;
   templateId: number | null;
@@ -51,11 +40,6 @@ export function templateSelectionToDefault(selection: {
   };
 }
 
-/**
- * Selection to show for a stored default. Nothing remembered yields "unselected", so the user must
- * choose explicitly. A remembered specific template is shown as a banner ("remembered"); a
- * remembered "none"/"fromSample" is applied as that radio directly.
- */
 export function templateSelectionFor(remembered: TemplateDefault | undefined): TemplateSelection {
   if (!remembered) return { mode: "unselected", templateId: null, remember: false };
   const isSpecific = remembered.mode === "pick" && remembered.templateId !== null;
@@ -82,17 +66,6 @@ export function initialTemplateSelection(parentHasTemplate: boolean): TemplateSe
   };
 }
 
-/**
- * Whether the template step is complete: the user made a choice (not "unselected"), and any
- * specific template has finished validating (its id is set).
- *
- * "fromSample" is held to the same rule as "pick": both create a sample against a concrete
- * template, so both must clear the mandatory-without-default check before the step can advance.
- * Letting "fromSample" through unchecked meant the same template was blocked via "pick" but
- * accepted via "fromSample".
- *
- * The id is written only by a passing check, which is what makes its presence the signal.
- */
 export function templateStepValid(selection: {
   mode: TemplateMode;
   templateId: number | null;
@@ -115,10 +88,7 @@ export function resolveTemplateId(params: {
   const { mode, pickedTemplateId, originSampleTemplateId } = params;
   // "unselected" is unreachable here (Next is disabled first); resolved to no template defensively.
   if (mode === "none" || mode === "unselected") return null;
-  // "remembered" resolves like "pick": it's a concrete template restored from the saved default.
   if (mode === "pick" || mode === "remembered") return pickedTemplateId;
-  // fromSample reuses the origin's own template; a template-less parent resolves to no template,
-  // though the UI blocks that choice.
   return originSampleTemplateId;
 }
 
@@ -154,15 +124,6 @@ function fieldHasDefault(field: TemplateFieldsLike["fields"][number]): boolean {
   return field.content !== null && field.content !== undefined && String(field.content).trim() !== "";
 }
 
-/**
- * Whether a template is usable, with the arguments its rejection message needs. Kept as one
- * function since duplicating this check previously let two screens disagree about the same
- * template after a fix landed on only one copy.
- *
- * The `t` call stays at each call site, not here: i18next's TFunction is typed against the
- * catalog's key union, so accepting it as a parameter would need a cast. Since only the ICU
- * arguments are returned, the two call sites can't compute them differently.
- */
 export function templateBlockReason(
   template: TemplateFieldsLike,
   language: string,

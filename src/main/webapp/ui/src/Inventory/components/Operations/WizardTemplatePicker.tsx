@@ -12,8 +12,6 @@ import Search from "@/stores/models/Search";
 import type TemplateModel from "@/stores/models/TemplateModel";
 
 const SEARCH_DEBOUNCE_MS = 300;
-// The backend rejects a search term shorter than this (422). Below it, show the initial list rather
-// than sending a query that would only error.
 const MIN_SEARCH_CHARS = 2;
 
 /** `record` is the underlying model (null for a pre-filled placeholder that

@@ -36,8 +36,6 @@ public class PoolOperation extends CreatingOperation<ApiInventoryOperationReques
 
   @Override
   public String amountNotApplicableCode() {
-    // Pool takes a chosen amount unless the caller asked for takeAll, so this is the only way an
-    // amount can be refused here, and saying which choice refused it is what the caller can act on.
     return "errors.inventory.operation.amountTakenNotWithTakeAll";
   }
 

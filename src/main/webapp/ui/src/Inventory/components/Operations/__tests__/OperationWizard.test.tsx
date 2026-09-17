@@ -32,8 +32,6 @@ vi.mock("@/hooks/api/useUiPreference", () => ({
     const value = key in prefs.store ? prefs.store[key] : opts.defaultValue;
     return [value, (v: unknown) => (prefs.store[key] = v)];
   },
-  // The wizard reads per-operation bundles through readUiPreference over the raw map rather than
-  // through the bound hook (bundleFor); both must be present in this mock.
   useRawUiPreferences: () => prefs.store,
   readUiPreference: (uiPreferences: Record<string, unknown>, pref: symbol, defaultValue: unknown) => {
     const key = Symbol.keyFor(pref) ?? "";
@@ -231,7 +229,6 @@ vi.mock("../TemplateStep", () => ({
       <span data-testid="tmpl-id">{String(value.templateId)}</span>
       {/* The remembered banner renders this name, so a stale one is observable here. */}
       <span data-testid="tmpl-name">{value.templateName ?? ""}</span>
-      {/* The wizard owns the parent-template check now, so its status is observable here. */}
       <span data-testid="tmpl-checking">{String(Boolean(parentTemplateChecking))}</span>
       <span data-testid="tmpl-parent-error">{parentTemplateError ?? ""}</span>
       <span data-testid="tmpl-remembered-error">{rememberedTemplateError ?? ""}</span>
@@ -1217,11 +1214,6 @@ describe("OperationWizard remember bundle", () => {
   });
 
   it("performs a Pool: per-origin amounts posted for every origin, and remembered", async () => {
-    // No earlier test ran a multi-origin operation through to Perform: the multi-origin remember
-    // bundle (amountMode plus perSubsampleAmounts) was never persisted, representativeOrigin's
-    // smallest-origin choice was unexercised, and the multi-origin POST body was never asserted.
-    // commonQuantity threw for a multi-origin molarity selection and nothing noticed, because
-    // reduce on a one-element array never calls its callback and every test used one origin.
     const user = userEvent.setup();
     const onClose = vi.fn();
     const first = makeMockSubSample({});
@@ -1473,11 +1465,6 @@ describe("OperationWizard remember bundle", () => {
   });
 });
 
-// Every rejection the suite above serves is a field-scoped 400. The submit handler has one catch
-// for everything, so a non-field rejection (a bare message with a 409 status) and a connection
-// failure share it, and what they share had never been asserted: the message chosen, that EVERY
-// origin is re-read (the snapshot and the over-removal gate both read origin.quantity), and that
-// the wizard stays put.
 describe("OperationWizard rejection paths and multi-origin gating", () => {
   it("keeps a Pool open on a non-field rejection, shows its message and re-reads every origin", async () => {
     server.use(
@@ -1563,9 +1550,7 @@ describe("OperationWizard rejection paths and multi-origin gating", () => {
   });
 
   it("performs Passage with an explicit zero decrement and no client-computed passage number", async () => {
-    // Passage declares no amount-taken input and leaves the origin untouched. No test drove it: the
-    // zero-decrement branch of buildOriginUpdates and the amounts step with only count/each-amount
-    // were reachable only through it.
+    // Passage declares no amount-taken input and leaves the origin untouched.
     const user = userEvent.setup();
     const onClose = vi.fn();
     const origin = makeMockSubSample({});

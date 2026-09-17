@@ -215,13 +215,6 @@ public class WebConfig extends WebMvcConfigurationSupport {
     for (HttpMessageConverter<?> converter : converters) {
       if (converter instanceof MappingJackson2HttpMessageConverter jacksonConverter) {
         jacksonConverter.setPrettyPrint(true);
-        // A request field bound as Object/Map<String,Object> (e.g. the generic Inventory
-        // operations endpoint's `inputs`) has no declared BigDecimal target for Jackson to bind
-        // into, so by default it guesses Double for any JSON number written with a decimal point -
-        // and Double cannot hold every value DECIMAL(19,3) can (9007199254740992.001 would silently
-        // become 9007199254740992.0). A field bound to a typed BigDecimal is unaffected either way,
-        // since Jackson never has to guess its type; this only changes what a decimal-point token
-        // deserializes as when the target type isn't declared.
         jacksonConverter
             .getObjectMapper()
             .configure(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS, true);

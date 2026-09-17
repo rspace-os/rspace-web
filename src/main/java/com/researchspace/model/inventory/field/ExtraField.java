@@ -28,7 +28,6 @@ import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexingDe
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.ObjectPath;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.PropertyValue;
 
-/** Sample field is used to hold field data for Samples. */
 @Entity
 @Getter
 @Setter
@@ -148,9 +147,6 @@ public abstract class ExtraField extends InventoryRecordConnectedEntity implemen
     getEditInfo().setModifiedBy(modifiedBy);
   }
 
-  /**
-   * @return type of the field
-   */
   @Transient
   public abstract FieldType getType();
 

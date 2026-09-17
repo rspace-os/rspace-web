@@ -38,8 +38,6 @@ type OriginFieldSpec = { nameKey: InventoryKey; contentFrom: string; type?: "tex
 
 // Evaluated in array order, so a later entry may read an earlier one's `into` via an `input` arg.
 type Computed = {
-  // The registry's own key type: the load-time check that used to catch a typo is gone, so this
-  // is what stops one reaching applyComputedValues as an undefined lookup at render.
   fn: OperationFunctionName;
   into: string;
   args: Record<string, ComputedArgSource>;
@@ -52,7 +50,6 @@ type Effect = {
   countFrom?: string;
   eachAmountFrom?: string;
   amountTakenFrom?: string;
-  // When true, empty every origin. Mutually exclusive with amountTakenFrom.
   emptiesOrigin?: boolean;
   originFields?: ReadonlyArray<OriginFieldSpec>;
   processNameFrom?: string;
@@ -79,8 +76,6 @@ export type InventoryOperation = {
   confirmSummary?: ReadonlyArray<ConfirmSummaryField>;
 };
 
-// Frozen: each of these is aliased into six of the seven operations, so a mutation of one
-// operation's input config would otherwise reach all of them.
 const sampleName = {
   key: "sampleName",
   type: "text",
@@ -299,8 +294,6 @@ export function amountKeysFor(operation: InventoryOperation): ReadonlySet<string
   return new Set([countFrom, eachAmountFrom, amountTakenFrom].filter((k): k is string => Boolean(k)));
 }
 
-// The per-origin amount modes belong to a multi-origin operation that takes an amount; a
-// single-origin operation always uses the one shared "same" mode.
 export function usesAmountModes(operation: InventoryOperation): boolean {
   return Boolean(operation.requiresMultiple) && operation.effect.amountTakenFrom !== undefined;
 }

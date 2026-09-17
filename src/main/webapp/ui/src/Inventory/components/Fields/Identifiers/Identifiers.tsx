@@ -54,14 +54,12 @@ const IdentifierWrapper = observer(
     const { t } = useTranslation(["inventory", "common"]);
     const isRadio = (field: IdentifierField): boolean => Boolean(field.radioOptions);
 
-    /* different name to avoid confusion with 'editable' (parent) */
     const fixedValue = (field: IdentifierField) => Boolean(!field.handler);
 
     const [openRecommendedSection, setOpenRecommendedSection] = useState(true);
 
     const handleUpdate = (f: IdentifierField, value: string | number) => {
       if (f.handler) f.handler(value);
-      /* setAttributesDirty on item */
       activeResult.updateIdentifiers();
     };
 

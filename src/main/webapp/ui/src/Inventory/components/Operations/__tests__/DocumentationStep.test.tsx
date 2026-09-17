@@ -3,8 +3,6 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import DocumentationStep from "../DocumentationStep";
 
-// Stub the ELN picker (the real one mounts a Search/fetcher); when open, clicking it plays back a
-// document through onPick.
 vi.mock("@/Inventory/components/Fields/Link/ElnRecordPicker", () => ({
   default: ({ open, onPick }: { open: boolean; onPick: (t: { globalId: string; name: string }) => void }) =>
     open ? (

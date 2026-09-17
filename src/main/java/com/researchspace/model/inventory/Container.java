@@ -50,7 +50,6 @@ import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexedEmbedded;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexingDependency;
 
-/** Represents RSpace Inventory Container. */
 @Entity
 @Audited
 @Slf4j
@@ -128,23 +127,10 @@ public class Container extends MovableInventoryRecord implements Serializable {
   private boolean canStoreContainers = true;
   private boolean canStoreInstruments = true;
 
-  /**
-   * Create a container of specified type.
-   *
-   * @param type
-   */
   public Container(ContainerType type) {
     this.containerType = type;
   }
 
-  /**
-   * Makes a valid ListContainer with no content
-   *
-   * @param canStoreContainers
-   * @param canStoreSamples
-   * @param canStoreInstruments
-   * @return
-   */
   public static Container createListContainer(
       boolean canStoreContainers, boolean canStoreSamples, boolean canStoreInstruments) {
     Container rc = new Container(ContainerType.LIST);
@@ -152,16 +138,6 @@ public class Container extends MovableInventoryRecord implements Serializable {
     return rc;
   }
 
-  /**
-   * Makes a valid GridContainer of fixed dimensions
-   *
-   * @param columns
-   * @param rows
-   * @param canStoreContainers
-   * @param canStoreSamples
-   * @param canStoreInstruments
-   * @return
-   */
   public static Container createGridContainer(
       int columns,
       int rows,
@@ -175,14 +151,6 @@ public class Container extends MovableInventoryRecord implements Serializable {
     return rc;
   }
 
-  /**
-   * Makes a valid ImageContainer with no locations defined
-   *
-   * @param canStoreContainers
-   * @param canStoreSamples
-   * @param canStoreInstruments
-   * @return
-   */
   public static Container createImageContainer(
       boolean canStoreContainers, boolean canStoreSamples, boolean canStoreInstruments) {
     Container rc = new Container(ContainerType.IMAGE);
@@ -243,9 +211,6 @@ public class Container extends MovableInventoryRecord implements Serializable {
     refreshActiveExtraFields();
   }
 
-  /**
-   * @return the list of barcodes of this SubSample, including deleted fields.
-   */
   @OneToMany(mappedBy = "container", cascade = CascadeType.ALL, orphanRemoval = true)
   @OrderBy(value = "id")
   @Override
@@ -269,9 +234,6 @@ public class Container extends MovableInventoryRecord implements Serializable {
     refreshActiveIdentifiers();
   }
 
-  /**
-   * @return the list of files attached to this Container
-   */
   @OneToMany(mappedBy = "container", cascade = CascadeType.ALL, orphanRemoval = true)
   @OrderBy(value = "id")
   protected List<InventoryFile> getFiles() {
@@ -412,14 +374,12 @@ public class Container extends MovableInventoryRecord implements Serializable {
     Validate.notNull(coordY);
     validateNewCoordinates(coordX, coordY);
 
-    // if location already exists, return it
     Optional<ContainerLocation> existingLocation =
         findSavedLocationByIdOrCoordinates(null, coordX, coordY);
     if (existingLocation.isPresent()) {
       return existingLocation.get();
     }
 
-    // if coordinates are not saved yet, create new location
     ContainerLocation newLocation = new ContainerLocation(this);
     newLocation.setCoordX(coordX);
     newLocation.setCoordY(coordY);
@@ -652,7 +612,6 @@ public class Container extends MovableInventoryRecord implements Serializable {
 
     Container copy = shallowCopy();
     copy.setContainerType(containerType);
-    // images
     copy.setImageFileProperty(getImageFileProperty());
     copy.setThumbnailFileProperty(getThumbnailFileProperty());
     copy.setLocationsImageFileProperty(getLocationsImageFileProperty());

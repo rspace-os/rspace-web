@@ -74,8 +74,4 @@ function Alerts({ children }: AlertsArgs): React.ReactNode {
   );
 }
 
-/**
- * This component maintains the state of the current alerts and displays them
- * in the top-right corner of the viewport.
- */
 export default observer(Alerts);

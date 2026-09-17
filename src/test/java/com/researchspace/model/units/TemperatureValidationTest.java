@@ -19,7 +19,6 @@ class TemperatureValidationTest extends JakartaValidatorTestJU5 {
     q.setUnitId(RSUnitDef.CELSIUS.getId());
     Measurable m = new Measurable(q);
     assertValid(m);
-    // c
     q.setNumericValue(new BigDecimal(-274));
     assertNErrors(m, 1, true);
     q.setNumericValue(new BigDecimal(-273));
