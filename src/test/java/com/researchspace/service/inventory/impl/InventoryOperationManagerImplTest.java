@@ -854,7 +854,7 @@ class InventoryOperationManagerImplTest {
     when(sampleApiMgr.createNewApiSample(any(), eq(user)))
         .thenReturn(new ApiSampleWithFullSubSamples("HeLa p3"));
 
-    manager.perform(
+    manager.performBiobankOperation(
         new PassageOperation(),
         creating(
             new ApiInventoryOperationRequests.Passage(), facadeOrigin(100L, null), "HeLa p3", 1),
@@ -884,7 +884,7 @@ class InventoryOperationManagerImplTest {
     when(sampleApiMgr.createNewApiSample(any(), eq(user)))
         .thenReturn(new ApiSampleWithFullSubSamples("Aliquots"));
 
-    manager.perform(
+    manager.performBiobankOperation(
         new AliquotOperation(),
         creating(
             new ApiInventoryOperationRequests.Aliquot(),
@@ -905,7 +905,9 @@ class InventoryOperationManagerImplTest {
     request.setOrigin(facadeOrigin(100L, null));
 
     assertNull(
-        manager.perform(new DestroyOperation(), request, List.of(100L), user).sample(),
+        manager
+            .performBiobankOperation(new DestroyOperation(), request, List.of(100L), user)
+            .sample(),
         "a terminal operation creates no sample, but still reports its origins");
 
     ArgumentCaptor<QuantityInfo> taken = ArgumentCaptor.forClass(QuantityInfo.class);
@@ -920,7 +922,7 @@ class InventoryOperationManagerImplTest {
     when(sampleApiMgr.createNewApiSample(any(), eq(user)))
         .thenReturn(new ApiSampleWithFullSubSamples("Aliquots"));
 
-    manager.perform(
+    manager.performBiobankOperation(
         new AliquotOperation(),
         creating(
             new ApiInventoryOperationRequests.Aliquot(),
@@ -939,7 +941,7 @@ class InventoryOperationManagerImplTest {
     when(sampleApiMgr.createNewApiSample(any(), eq(user)))
         .thenReturn(new ApiSampleWithFullSubSamples("Revived"));
 
-    manager.perform(
+    manager.performBiobankOperation(
         new ReviveOperation(),
         creating(
             new ApiInventoryOperationRequests.Revive(),
@@ -975,7 +977,7 @@ class InventoryOperationManagerImplTest {
         List.of(facadeOrigin(200L, millilitres("1")), facadeOrigin(100L, millilitres("1"))));
 
     InventoryOperationManager.OperationOutcome outcome =
-        manager.perform(new PoolOperation(), request, List.of(200L, 100L), user);
+        manager.performBiobankOperation(new PoolOperation(), request, List.of(200L, 100L), user);
 
     assertEquals(
         List.of(200L, 100L), outcome.originsAfter().stream().map(ApiSubSample::getId).toList());
@@ -992,7 +994,7 @@ class InventoryOperationManagerImplTest {
     request.setTakeAll(true);
     request.setOrigins(List.of(facadeOrigin(200L, null), facadeOrigin(100L, null)));
 
-    manager.perform(new PoolOperation(), request, List.of(200L, 100L), user);
+    manager.performBiobankOperation(new PoolOperation(), request, List.of(200L, 100L), user);
 
     ArgumentCaptor<QuantityInfo> taken = ArgumentCaptor.forClass(QuantityInfo.class);
     verify(subSampleApiMgr).registerApiSubSampleUsage(eq(200L), taken.capture(), eq(user));
@@ -1020,7 +1022,9 @@ class InventoryOperationManagerImplTest {
     BindException rejection =
         assertThrows(
             BindException.class,
-            () -> manager.perform(new AliquotOperation(), request, List.of(100L), user));
+            () ->
+                manager.performBiobankOperation(
+                    new AliquotOperation(), request, List.of(100L), user));
 
     assertEquals(
         "errors.inventory.operation.createdAmountNotPositive",
@@ -1044,7 +1048,9 @@ class InventoryOperationManagerImplTest {
     BindException rejection =
         assertThrows(
             BindException.class,
-            () -> manager.perform(new AliquotOperation(), request, List.of(100L), user));
+            () ->
+                manager.performBiobankOperation(
+                    new AliquotOperation(), request, List.of(100L), user));
 
     assertEquals(
         "errors.inventory.field.linkTargetNotFound",
