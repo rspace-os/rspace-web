@@ -1,6 +1,7 @@
 package com.researchspace.api.v1.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -24,6 +25,7 @@ import com.researchspace.service.SystemPropertyManager;
 import com.researchspace.service.SystemPropertyName;
 import com.researchspace.service.inventory.SubSampleApiManager;
 import com.researchspace.service.inventory.impl.InventoryEditLockTracker;
+import com.researchspace.service.inventory.impl.InventoryOperationInFlightOrigins;
 import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,6 +48,7 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
 
   private @Autowired SubSampleApiManager subSampleApiManager;
   private @Autowired InventoryEditLockTracker editLockTracker;
+  private @Autowired InventoryOperationInFlightOrigins inFlightOrigins;
 
   private @Autowired SystemPropertyManager systemPropertyManager;
 
@@ -209,6 +212,60 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
     // the parent sample lock was this request's own and is given back
     assertNull(editLockTracker.getLockOwnerForItem(source.getGlobalId()));
     editLockTracker.attemptToUnlock(origin.getGlobalId(), anyUser);
+  }
+
+  // --- the in-flight claim: a second request on an origin still being operated on (RSDEV-1231) ---
+
+  /**
+   * The same user's double submit, made deterministic: the first request is stood in for by a claim
+   * held on the origin for the duration of the second.
+   */
+  @Test
+  public void anOriginStillBeingOperatedOnByTheSameUserIsRefusedWithoutTouchingIt()
+      throws Exception {
+    ApiSampleWithFullSubSamples source = createBasicSampleForUser(anyUser);
+    ApiSubSample origin = source.getSubSamples().get(0);
+    java.math.BigDecimal originalAmount = origin.getQuantity().getNumericValue();
+    try (InventoryOperationInFlightOrigins.Claim firstRequest =
+        inFlightOrigins.claim(java.util.List.of(origin.getGlobalId()))) {
+
+      ApiError error = performExpectingConflict(aliquotTakingJson(origin, "0.1"));
+
+      assertEquals(ApiErrorCodes.EDIT_CONFLICT.getCode(), error.getInternalCode());
+      assertTrue(
+          error.getMessage().contains(origin.getGlobalId()),
+          () -> "the conflict must name the origin, got " + error.getMessage());
+      ApiSubSample reloaded = subSampleApiManager.getApiSubSampleById(origin.getId(), anyUser);
+      assertEquals(0, originalAmount.compareTo(reloaded.getQuantity().getNumericValue()));
+      // the refused request took no edit lock either
+      assertNull(editLockTracker.getLockOwnerForItem(origin.getGlobalId()));
+      assertNull(editLockTracker.getLockOwnerForItem(source.getGlobalId()));
+    }
+
+    post("aliquot", aliquotTakingJson(origin, "0.1")).andExpect(status().isCreated());
+    assertFalse(inFlightOrigins.isInFlight(origin.getGlobalId()));
+  }
+
+  /** A Pool naming one origin still in flight is refused whole, and its other origin stays free. */
+  @Test
+  public void aPoolWithOneOriginStillBeingOperatedOnIsRefusedWhole() throws Exception {
+    ApiSubSample first = createBasicSampleForUser(anyUser).getSubSamples().get(0);
+    ApiSubSample second = createBasicSampleForUser(anyUser).getSubSamples().get(0);
+    int unitId = first.getQuantity().getUnitId();
+    String poolJson =
+        poolBody(
+            originJson(first, quantityJson("1", unitId))
+                + ","
+                + originJson(second, quantityJson("1", unitId)),
+            creatingFields("Pooled", 1, quantityJson("2", unitId)));
+    try (InventoryOperationInFlightOrigins.Claim otherRequest =
+        inFlightOrigins.claim(java.util.List.of(second.getGlobalId()))) {
+
+      post("pool", poolJson).andExpect(status().isConflict());
+
+      assertFalse(inFlightOrigins.isInFlight(first.getGlobalId()));
+    }
+    post("pool", poolJson).andExpect(status().isCreated());
   }
 
   @Test
