@@ -12,12 +12,14 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.Test;
 
 class InventoryOperationInFlightOriginsTest {
 
+  private final AtomicLong now = new AtomicLong(1_000_000L);
   private final InventoryOperationInFlightOrigins inFlight =
-      new InventoryOperationInFlightOrigins();
+      new InventoryOperationInFlightOrigins(now::get);
 
   @Test
   void aFreeOriginIsClaimedAndRefusedToTheNextCallerUntilReleased() {
@@ -73,21 +75,33 @@ class InventoryOperationInFlightOriginsTest {
   }
 
   /**
-   * A slow request is still a live one. Nothing bounds how long the manager call inside the claim
-   * takes, so however long it runs its origins stay its own: no elapsed time frees them, and a
-   * repeated attempt is refused every time rather than eventually succeeding (RSDEV-1231).
+   * A claim orphaned by a crash between claim and release must not block the origin forever. The
+   * limit is deliberately far longer than any operation runs, so a live request keeps its origins
+   * for its whole lifetime; only one that has outlived the limit is replaced (RSDEV-1231).
    */
   @Test
-  void aLiveClaimIsNeverStolenHoweverLongItsRequestRuns() {
-    InventoryOperationInFlightOrigins.Claim slow = inFlight.claim(List.of("SS1"));
-
-    for (int attempt = 0; attempt < 3; attempt++) {
-      assertThrows(
-          InventoryOperationInProgressException.class, () -> inFlight.claim(List.of("SS1")));
-    }
+  void aClaimOlderThanTheStaleLimitIsTreatedAsFree() {
+    inFlight.claim(List.of("SS1"));
+    now.addAndGet(InventoryOperationInFlightOrigins.STALE_AFTER_MILLIS - 1);
     assertThrows(InventoryOperationInProgressException.class, () -> inFlight.claim(List.of("SS1")));
+
+    now.addAndGet(1);
+
+    assertFalse(inFlight.isInFlight("SS1"));
+    inFlight.claim(List.of("SS1")).close();
+  }
+
+  /** The orphan's late release must not free the origin the replacing request now holds. */
+  @Test
+  void anOrphanedClaimReleasedAfterBeingReplacedLeavesTheReplacementStanding() {
+    InventoryOperationInFlightOrigins.Claim orphan = inFlight.claim(List.of("SS1"));
+    now.addAndGet(InventoryOperationInFlightOrigins.STALE_AFTER_MILLIS);
+    InventoryOperationInFlightOrigins.Claim replacement = inFlight.claim(List.of("SS1"));
+
+    orphan.close();
+
     assertTrue(inFlight.isInFlight("SS1"));
-    slow.close();
+    replacement.close();
     assertFalse(inFlight.isInFlight("SS1"));
   }
 
@@ -95,6 +109,13 @@ class InventoryOperationInFlightOriginsTest {
   void anEmptyClaimHoldsNothing() {
     inFlight.claim(List.of()).close();
     assertFalse(inFlight.isInFlight("SS1"));
+  }
+
+  @Test
+  void theDefaultClockIsWallTime() {
+    InventoryOperationInFlightOrigins wallClock = new InventoryOperationInFlightOrigins();
+    wallClock.claim(List.of("SS1"));
+    assertTrue(wallClock.isInFlight("SS1"));
   }
 
   /**
