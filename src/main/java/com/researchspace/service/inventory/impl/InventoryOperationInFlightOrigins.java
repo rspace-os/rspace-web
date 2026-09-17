@@ -33,15 +33,21 @@ public class InventoryOperationInFlightOrigins {
    * absorbs the rollback and the release itself. Change one and the other has to move with it;
    * {@code InventoryOperationTransactionRuleTest} fails if the ordering is ever broken.
    */
-  public static final long STALE_AFTER_MILLIS = Duration.ofMinutes(8).plusSeconds(10).toMillis();
+  public static final long STALE_AFTER_NANOS = Duration.ofMinutes(8).plusSeconds(10).toNanos();
 
-  private record Entry(Object token, long sinceMillis) {}
+  private record Entry(Object token, long sinceNanos) {}
 
   private final ConcurrentHashMap<String, Entry> claimed = new ConcurrentHashMap<>();
+
+  /**
+   * Elapsed time, not wall time. {@link System#nanoTime()} has no relation to the calendar and no
+   * adjustment moves it, so a clock correction cannot age a live claim past the limit in one step.
+   * Its absolute value is meaningless, so only differences are ever compared.
+   */
   private final LongSupplier clock;
 
   public InventoryOperationInFlightOrigins() {
-    this(System::currentTimeMillis);
+    this(System::nanoTime);
   }
 
   InventoryOperationInFlightOrigins(LongSupplier clock) {
@@ -78,7 +84,7 @@ public class InventoryOperationInFlightOrigins {
           claimed.compute(
               globalId,
               (id, entry) ->
-                  entry == null || now - entry.sinceMillis() >= STALE_AFTER_MILLIS
+                  entry == null || now - entry.sinceNanos() >= STALE_AFTER_NANOS
                       ? new Entry(claim.token, now)
                       : entry);
       if (winner.token() != claim.token) {
@@ -93,6 +99,6 @@ public class InventoryOperationInFlightOrigins {
   /** Whether a live claim holds this origin. */
   public boolean isInFlight(String globalId) {
     Entry entry = claimed.get(globalId);
-    return entry != null && clock.getAsLong() - entry.sinceMillis() < STALE_AFTER_MILLIS;
+    return entry != null && clock.getAsLong() - entry.sinceNanos() < STALE_AFTER_NANOS;
   }
 }
