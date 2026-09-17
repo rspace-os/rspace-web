@@ -26,11 +26,6 @@ export const operationFunctions = {
   /**
    * A running counter: `current + 1`, or `start` when `current` is not a count to carry on from.
    * Passage uses it as "parent sample's passage number + 1, else 1".
-   *
-   * `current` comes from a free-text field, so it can hold anything. The endpoint accepts the
-   * result only as a positive whole number, so a fraction or a negative would build a request the
-   * wizard's own backend rejects every time; those restart from `start` instead. The safe-integer
-   * bound is the point past which +1 stops changing the value at all.
    */
   increment: {
     params: ["current", "start"],

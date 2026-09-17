@@ -83,11 +83,6 @@ public class ApiControllerAdvice extends RestControllerAdvice {
     return new ResponseEntity<Object>(apiError, new HttpHeaders(), apiError.getStatus());
   }
 
-  /*
-   * EDIT_CONFLICT is the only conflict code com.researchspace.apiutils.ApiErrorCodes offers;
-   * adding one would mean a release of rspace-rest-api-utils, which is not worth it for a message
-   * that names the conflicting instrument itself (RSDEV-1326, decision 7).
-   */
   @ResponseStatus(HttpStatus.CONFLICT)
   @ExceptionHandler(PidinstAlreadyLinkedException.class)
   protected ResponseEntity<Object> handlePidinstAlreadyLinkedException(

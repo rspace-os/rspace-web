@@ -29,11 +29,6 @@ import org.junit.jupiter.api.Test;
  */
 class InventoryOperationsErrorCatalogTest {
 
-  /**
-   * Only {@code server.*.json} files are searched because {@link
-   * com.researchspace.service.JsonMessageSource} flattens exactly those with no prefix; every other
-   * catalog is namespaced by filename and so cannot be addressed by a bare code.
-   */
   private static final Path CATALOG_DIR =
       Path.of("src/main/webapp/ui/src/modules/common/i18n/locales/en-US");
 
@@ -51,9 +46,8 @@ class InventoryOperationsErrorCatalogTest {
   /**
    * Every file in the controller package whose name starts with Operation or InventoryOperation is
    * matched, rather than named one by one, so splitting a validator cannot quietly take its codes
-   * out of scope: that is exactly what happened when the 994-line validator became four classes.
-   * The whole operations package is scanned for the same reason, and the two files outside both
-   * packages are named explicitly.
+   * out of scope. The whole operations package is scanned for the same reason, and the two files
+   * outside both packages are named explicitly.
    */
   private static Path[] sourcesRaisingOperationErrors() throws IOException {
     List<Path> sources = new ArrayList<>();
@@ -81,9 +75,7 @@ class InventoryOperationsErrorCatalogTest {
   /**
    * The endpoint raised this many distinct codes when the guard was last reviewed. Raise it when
    * codes are added; an unexplained DROP means a source file stopped being scanned rather than that
-   * rules were removed, which is the failure this floor exists to catch. Lowered from 40 to 30 when
-   * the config layer went and its nine config-shape codes went with it, then raised to 38 when the
-   * pattern learned the brace form and picked up the eight bean-validation keys.
+   * rules were removed, which is the failure this floor exists to catch.
    */
   private static final int MINIMUM_CODES_RAISED = 38;
 

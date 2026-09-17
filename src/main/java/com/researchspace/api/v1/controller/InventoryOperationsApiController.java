@@ -179,8 +179,6 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
       throw new BindException(facadeFieldNames(coreRejection.getBindingResult(), singleOrigin));
     }
 
-    // The manager read these inside its own transaction, so they are one consistent snapshot of
-    // what the operation produced. Only the hypermedia is added here.
     ApiSampleWithFullSubSamples sample = outcome.sample();
     List<ApiSubSample> originsAfter = outcome.originsAfter();
     originsAfter.forEach(this::buildAndAddInventoryRecordLinks);
@@ -199,7 +197,6 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
     return ResponseEntity.created(location).body(result);
   }
 
-  /** The manager call, so the lock helper can wrap it. */
   @FunctionalInterface
   private interface OperationCall {
     InventoryOperationManager.OperationOutcome call() throws BindException;

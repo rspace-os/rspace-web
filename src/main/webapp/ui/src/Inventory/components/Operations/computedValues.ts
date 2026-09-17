@@ -14,33 +14,12 @@ type SampleField = {
 };
 
 export type ComputedContext = {
-  /**
-   * Fields on the origin's parent sample, for `parentSampleField` args: the parent's template-defined
-   * fields AND its ad-hoc extra (custom) fields, combined by the caller. Both have to be included - a
-   * value like Passage number is often added as a custom field, so it lives in `extraFields`, and
-   * passing only `fields` makes every `parentSampleField` lookup fall back to its start value (the
-   * original Passage "stuck at 1" bug).
-   */
   parentFields: ReadonlyArray<SampleField>;
   /** The current input values, for `input` args, and where each result is written. */
   values: OperationInputs;
   resolveFieldName: (key: InventoryKey) => string;
 };
 
-/**
- * The content of the field a `parentSampleField` arg refers to, matched by definition KEY first and
- * by localized name second.
- *
- * The key is exact and locale-independent, so it is what keeps a lineage intact: a Passage counter
- * whose previous generation was created under a different locale, or under an earlier wording of the
- * same translation, is still found and still increments. Matching only on the current locale's
- * resolution of the key silently missed it and restarted the count at 1, forking the lineage into
- * one counter per locale.
- *
- * The name fallback is PERMANENT, not migration cover: it is how a user's own hand-created "Passage
- * number" (no key at all) is picked up on the first Passage of an existing culture, which is
- * deliberate behaviour rather than an accident.
- */
 function parentFieldValue(fields: ReadonlyArray<SampleField>, key: string, name: string): string | number | undefined {
   const wanted = name.trim().toLowerCase();
   const field =

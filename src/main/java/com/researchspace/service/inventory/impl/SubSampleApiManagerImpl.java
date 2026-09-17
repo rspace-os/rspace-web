@@ -345,7 +345,7 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
                 origSubSample.getName(), i + 2);
         copy = origSubSample.copy(ss -> newName, newQ, user);
       } else {
-        copy = origSubSample.copy(user); // prt-238
+        copy = origSubSample.copy(user);
       }
       setWorkbenchAsParentForNewInventoryRecord(workbench, copy);
       setNewCreatorForCopiedInventoryRecord(copy, user);
@@ -423,7 +423,6 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
         publisher.publishEvent(new InventoryRestoreEvent(dbSubSample, user));
 
         if (!partOfSampleRestore) {
-          // refresh parent sample
           parentSample.refreshActiveSubSamples();
           parentSample.recalculateTotalQuantity();
         }

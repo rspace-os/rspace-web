@@ -41,16 +41,10 @@ describe("fetchAdditionalInfo", () => {
       firstCallDone = true;
     });
     await subsample.fetchAdditionalInfo();
-    /*
-     * The second call should not have resolved until the first resolved and
-     * set firstCallDone to true
-     */
     expect(firstCallDone).toBe(true);
   });
 
   test("A refresh that failed does not poison later refreshes: the next call issues a new request.", async () => {
-    // The in-progress promise used to be cleared only on success, so after one rejection every
-    // later call awaited the same rejected promise instead of re-fetching.
     const subsample = makeMockSubSample();
     const query = vi.spyOn(InvApiService, "query") as MockInstance;
     query.mockImplementationOnce(() => Promise.reject(new Error("network down")));

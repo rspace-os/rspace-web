@@ -16,9 +16,7 @@ export type ProcessValues = {
   values: OperationInputs;
   template: TemplateDefault;
   documentation: DocumentationSelection;
-  /** Absent in an older bundle, which means "same". */
   amountMode?: AmountMode;
-  /** Set only when amountMode is "perSubsample". */
   perSubsampleAmounts?: PerSubsampleAmounts;
 };
 
@@ -50,10 +48,6 @@ function normalizePerSubsampleAmounts(value: unknown): PerSubsampleAmounts {
   return out;
 }
 
-/**
- * An unrecognised mode falls back to "unselected" rather than being passed through, which used to
- * silently swap in the wrong template.
- */
 function normalizeTemplateDefault(stored: unknown): TemplateDefault {
   if (typeof stored !== "object" || stored === null) return UNSELECTED_TEMPLATE;
   const { mode, templateId, templateName, quantityCategory } = stored as {

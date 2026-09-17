@@ -283,8 +283,6 @@ describe("TemplateStep in English", () => {
 
 describe("TemplateStep failure and clearing paths", () => {
   it("reports a failed template lookup instead of leaving an unhandled rejection", async () => {
-    // The check ran in a detached async task with no catch: a rejection escaped unhandled and the
-    // user saw only the spinner stop.
     currentTemplate = {
       ...makeTemplate([]),
       fetchAdditionalInfo: () => Promise.reject(new Error("network down")),

@@ -3,7 +3,6 @@ package com.researchspace.service.inventory.operations;
 import com.researchspace.api.v1.model.ApiQuantityInfo;
 import java.math.BigDecimal;
 
-/** Small conversions every operation's {@code build} needs. */
 final class Amounts {
 
   /** Used when a defaulted zero amount has no unit to inherit. */

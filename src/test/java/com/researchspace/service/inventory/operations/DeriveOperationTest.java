@@ -41,8 +41,6 @@ class DeriveOperationTest {
 
   @Test
   void namesTheProvenanceLinkAfterTheProcessTheCallerNamed() {
-    // The catalog pattern quotes {processName}, so an operation that supplies only originName
-    // stores the literal placeholder, while the wizard's preview shows the real name.
     ApiExtraField link =
         DERIVE
             .build(

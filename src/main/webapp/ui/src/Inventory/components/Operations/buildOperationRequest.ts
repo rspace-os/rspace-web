@@ -19,7 +19,6 @@ import type {
   PerSubsampleAmounts,
 } from "./types";
 
-/** One origin on the wire: which subsample, and how much this operation takes from it. */
 type FacadeOrigin = { globalId: string; amountTaken?: OperationQuantity };
 
 /**
