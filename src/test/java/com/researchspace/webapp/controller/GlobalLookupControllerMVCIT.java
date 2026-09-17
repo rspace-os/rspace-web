@@ -1,9 +1,8 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.GlobalIdentifier;
@@ -41,14 +40,9 @@ public class GlobalLookupControllerMVCIT extends MVCTestBase {
 
     // notebook versions not supported, attempt to use versioned global id should throw exception
     GlobalIdentifier nbVersionGid = new GlobalIdentifier(GlobalIdPrefix.NB, 12345L, 23L);
-    try {
-      assertRedirect(nbVersionGid, NotebookEditorController.ROOT_URL);
-      fail("expected redirect error on global identifier: " + nbVersionGid);
-    } catch (AssertionError ae) {
-      assertTrue(
-          ae.getMessage().contains("but: was \"error\""),
-          "expected redirect to 'error', but msg was: " + ae.getMessage());
-    }
+    this.mockMvc
+        .perform(get("/globalId/{oid}", nbVersionGid.getIdString()))
+        .andExpect(view().name("error"));
 
     GlobalIdentifier flGid = new GlobalIdentifier(GlobalIdPrefix.FL, 12345L);
     assertRedirect(flGid, WorkspaceController.ROOT_URL);
