@@ -1,9 +1,9 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import type { ReactNode } from "react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
 import { server } from "@/__tests__/mswServer";
 import { CalendarSubscriptionPopover } from "../CalendarSubscriptionPopover";
@@ -26,13 +26,6 @@ function renderPopover(archived = false) {
 }
 
 describe("CalendarSubscriptionPopover", () => {
-  beforeEach(() => {
-    Object.defineProperty(navigator, "clipboard", {
-      configurable: true,
-      value: { writeText: vi.fn().mockResolvedValue(undefined) },
-    });
-  });
-
   afterEach(() => {
     vi.restoreAllMocks();
   });
@@ -207,6 +200,62 @@ describe("CalendarSubscriptionPopover", () => {
     ).toHaveValue(urlFor("w"));
     expect(posts).toBe(1);
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("disables generation retry until a conflict status refresh completes", async () => {
+    const user = userEvent.setup();
+    let gets = 0;
+    let posts = 0;
+    let releaseStatus = () => {};
+    const statusRefresh = new Promise<void>((resolve) => {
+      releaseStatus = resolve;
+    });
+    server.use(
+      http.get(path, async () => {
+        gets += 1;
+        if (gets === 1) {
+          return HttpResponse.json(
+            { active: false, updatedAt: null, subscriptionUrl: null },
+            { headers: { ETag: '"inactive"' } },
+          );
+        }
+        await statusRefresh;
+        return HttpResponse.json(
+          { active: true, updatedAt, subscriptionUrl: urlFor("w") },
+          { headers: { ETag: '"winner"' } },
+        );
+      }),
+      http.post(path, ({ request }) => {
+        posts += 1;
+        expect(request.headers.get("If-Match")).toBe('"inactive"');
+        return HttpResponse.json(
+          { status: 409, code: "errors.api.v2.bookingCalendar.subscriptionConflict" },
+          { status: 409 },
+        );
+      }),
+    );
+    renderPopover();
+
+    try {
+      await user.click(
+        screen.getByRole("button", { name: "booking:bookableItemDetails.calendarSubscription.trigger" }),
+      );
+      await waitFor(() => expect(gets).toBe(2));
+
+      const retry = await screen.findByRole("button", {
+        name: "booking:bookableItemDetails.calendarSubscription.retry",
+      });
+      expect(retry).toBeDisabled();
+      await user.click(retry);
+      expect(posts).toBe(1);
+
+      releaseStatus();
+      expect(
+        await screen.findByRole("textbox", { name: "booking:bookableItemDetails.calendarSubscription.copyPrompt" }),
+      ).toHaveValue(urlFor("w"));
+    } finally {
+      releaseStatus();
+    }
   });
 
   it("copies the link and reports a clipboard failure without moving focus", async () => {

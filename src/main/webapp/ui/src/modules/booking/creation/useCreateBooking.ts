@@ -33,13 +33,26 @@ export function bookingProblemKey(
   return "bookings.errors.generic";
 }
 
+export function bookingCreationProblemKey(
+  error: unknown,
+): ReturnType<typeof bookingProblemKey> | "bookings.errors.outcomeUncertain" {
+  return isBookingCreationOutcomeUncertain(error) ? "bookings.errors.outcomeUncertain" : bookingProblemKey(error);
+}
+
 export function bookingProblemMessage(error: unknown, t: TFunction<"booking">): string {
   return t(bookingProblemKey(error));
+}
+
+/** A create request may have committed even when its response was not received. */
+export function isBookingCreationOutcomeUncertain(error: unknown): boolean {
+  if (error == null) return false;
+  return !(error instanceof ApiV2ProblemError) || error.status >= 500;
 }
 
 export function useCreateBooking(token: string) {
   const queryClient = useQueryClient();
   return useMutation({
+    retry: false,
     mutationFn: (submission: BookingFormSubmission) =>
       createBooking(
         {
@@ -55,6 +68,9 @@ export function useCreateBooking(token: string) {
       void queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] });
     },
     onError: (error) => {
+      if (isBookingCreationOutcomeUncertain(error)) {
+        void queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] });
+      }
       if (error instanceof ApiV2ProblemError && error.code === "errors.api.v2.booking.target.unavailable") {
         void queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] });
       }

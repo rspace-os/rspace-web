@@ -2,7 +2,7 @@ import { cleanup, render } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { userEvent } from "vitest/browser";
-import { worker } from "@/__tests__/browserSetup";
+import { worker } from "@/__tests__/browserMocks";
 import { expectNoAxeViolations } from "@/__tests__/pageObjects/accessibility";
 import { ImportDialogStory } from "./ImportDialog.story";
 import { PubchemImportDialogPage } from "./pageObjects/PubchemImportDialogPage";

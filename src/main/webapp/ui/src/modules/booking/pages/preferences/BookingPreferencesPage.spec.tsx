@@ -1,8 +1,9 @@
+import { createMemoryHistory } from "@tanstack/react-router";
 import { cleanup, render } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { page } from "vitest/browser";
-import { worker } from "@/__tests__/browserSetup";
+import { worker } from "@/__tests__/browserMocks";
 import { expectNoAxeViolations } from "@/__tests__/pageObjects/accessibility";
 import type { BookingDisplayPreferencesDocument } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { bookingPagesHandlers } from "../mocks/bookingPagesMocks";
@@ -32,26 +33,20 @@ function registerHandlers() {
   );
 }
 
-function navigate(path: string) {
-  window.history.pushState({}, "", path);
-  window.dispatchEvent(new PopStateEvent("popstate"));
-}
-
 registerHandlers();
 
 beforeEach(() => {
   stored = inheritedBrowserBookingPreferences;
-  window.history.replaceState({}, "", "/booking/preferences");
   registerHandlers();
 });
 
 afterEach(() => {
-  window.history.replaceState({}, "", "/");
   cleanup();
 });
 
 describe("Booking display preferences", () => {
   test("a custom preference survives reload and remains authoritative across Booking routes", async () => {
+    const browserUrl = window.location.href;
     const first = render(<BookingPreferencesPageStory />);
     await expect.element(preferences.heading).toBeVisible();
     await preferences.start.fill("09:00");
@@ -69,15 +64,18 @@ describe("Booking display preferences", () => {
     });
 
     first.unmount();
-    render(<BookingPreferencesPageStory />);
+    const history = createMemoryHistory({ initialEntries: ["/booking/preferences"] });
+    render(<BookingPreferencesPageStory history={history} />);
     await expect.element(preferences.custom).toBeChecked();
     await expect.element(preferences.customTimezone).toHaveValue("America/New_York");
 
-    navigate("/booking/calendar?date=2026-08-17");
-    await expect.element(page.getByLabelText("Time zone: America/New_York")).toBeVisible();
+    history.push("/booking/calendar?date=2026-08-17");
+    await expect
+      .element(page.getByRole("region", { name: /24-hour calendar for Confocal microscope.*America\/New_York/ }))
+      .toBeVisible();
     await expect.element(page.getByRole("region", { name: "Resource booking schedule" })).toBeVisible();
 
-    navigate("/booking/all-items?date=2026-08-28");
+    history.push("/booking/all-items?date=2026-08-28");
     await expect.element(page.getByRole("heading", { name: "All Bookable Items" })).toBeVisible();
     await expect.element(page.getByLabelText("Time zone: America/New_York")).not.toBeInTheDocument();
     const itemNames = ["Confocal microscope", "Electron microscope", "Mass spectrometer", "Flow cytometer"];
@@ -96,5 +94,6 @@ describe("Booking display preferences", () => {
       )
       .toEqual(new Set(["37.5%"]));
     await expectNoAxeViolations();
+    expect(window.location.href).toBe(browserUrl);
   });
 });

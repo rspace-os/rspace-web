@@ -98,6 +98,7 @@ class ApiV2AuthenticationInterceptorTest {
     assertSame(user, ApiV2Caller.from(request).subject());
     assertTrue(response.getHeader(HttpHeaders.CACHE_CONTROL).contains("no-store"));
     assertTrue(response.getHeader(HttpHeaders.CACHE_CONTROL).contains("private"));
+    assertTrue(response.getHeader(HttpHeaders.CACHE_CONTROL).contains("no-transform"));
   }
 
   @Test

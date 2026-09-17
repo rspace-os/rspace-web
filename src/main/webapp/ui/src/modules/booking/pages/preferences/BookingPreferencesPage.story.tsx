@@ -1,14 +1,15 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
-  createBrowserHistory,
+  createMemoryHistory,
   createRootRoute,
   createRoute,
   createRouter,
   Outlet,
+  type RouterHistory,
   RouterProvider,
 } from "@tanstack/react-router";
-import { NuqsAdapter } from "nuqs/adapters/react";
 import { Suspense } from "react";
+import { MemoryHistoryNuqsAdapter as NuqsAdapter } from "@/__tests__/MemoryHistoryNuqsAdapter";
 import { OAUTH_TOKEN } from "@/__tests__/mocks/oauthTokenMocks";
 import { BookingCreationStoreProvider } from "@/modules/booking/creation/bookingCreationStore";
 import { currentUserQueryKeys } from "@/modules/common/queries/currentUser";
@@ -23,7 +24,11 @@ import { createBookingPreferencesRoute } from "./routes";
 const storyClock = () => new Date("2026-08-28T16:00:00Z");
 
 /** A multi-route story that deliberately fetches preferences so reload persistence is observable. */
-export function BookingPreferencesPageStory() {
+export function BookingPreferencesPageStory({
+  history = createMemoryHistory({ initialEntries: ["/booking/preferences"] }),
+}: {
+  history?: RouterHistory;
+}) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
@@ -34,7 +39,13 @@ export function BookingPreferencesPageStory() {
     apiV2CollectionMetadataFromOpenApi(bookableItemsOpenApi, "booking-configurations"),
   );
 
-  const root = createRootRoute({ component: Outlet });
+  const root = createRootRoute({
+    component: () => (
+      <NuqsAdapter>
+        <Outlet />
+      </NuqsAdapter>
+    ),
+  });
   const booking = createRoute({ getParentRoute: () => root, path: "/booking", component: Outlet });
   const router = createRouter({
     routeTree: root.addChildren([
@@ -44,18 +55,16 @@ export function BookingPreferencesPageStory() {
         createAllBookableItemsRoute(booking, () => <AllBookableItemsPage clock={storyClock} />),
       ]),
     ]),
-    history: createBrowserHistory(),
+    history,
   });
 
   return (
     <QueryClientProvider client={queryClient}>
-      <NuqsAdapter>
-        <BookingCreationStoreProvider>
-          <Suspense fallback={null}>
-            <RouterProvider router={router as never} />
-          </Suspense>
-        </BookingCreationStoreProvider>
-      </NuqsAdapter>
+      <BookingCreationStoreProvider>
+        <Suspense fallback={null}>
+          <RouterProvider router={router as never} />
+        </Suspense>
+      </BookingCreationStoreProvider>
     </QueryClientProvider>
   );
 }

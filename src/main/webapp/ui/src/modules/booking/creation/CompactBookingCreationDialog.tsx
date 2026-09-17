@@ -6,7 +6,11 @@ import { useTranslation } from "react-i18next";
 import { BookingForm, type BookingFormState } from "@/modules/booking/creation/BookingForm";
 import type { BookingCreationDraft } from "@/modules/booking/creation/bookingCreationDraft";
 import { type BookingCreationContext, useBookingCreationStore } from "@/modules/booking/creation/bookingCreationStore";
-import { bookingProblemKey, useCreateBooking } from "@/modules/booking/creation/useCreateBooking";
+import {
+  bookingCreationProblemKey,
+  isBookingCreationOutcomeUncertain,
+  useCreateBooking,
+} from "@/modules/booking/creation/useCreateBooking";
 import { resolveBookingWindow } from "@/modules/booking/creation/ZonedBookingWindowFields";
 import { isBookingOverlapError } from "@/modules/booking/domain/booking";
 import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
@@ -96,18 +100,25 @@ function ActiveBookingCreationDialog({ creation }: { creation: BookingCreationCo
   const [formState, setFormState] = React.useState<BookingFormState | null>(null);
   const [confirmClose, setConfirmClose] = React.useState(false);
   const dirty = formState?.dirty ?? false;
+  const closingRef = React.useRef(false);
   const previousPathname = React.useRef(pathname);
+  const shouldBlock = React.useCallback(() => dirty && !closingRef.current, [dirty]);
+  const enableBeforeUnload = React.useCallback(() => dirty && !closingRef.current, [dirty]);
   const blocker = useBlocker({
-    shouldBlockFn: () => dirty,
+    shouldBlockFn: shouldBlock,
     withResolver: true,
-    enableBeforeUnload: dirty,
+    enableBeforeUnload,
   });
 
+  const closeCreation = React.useCallback(() => {
+    closingRef.current = true;
+    endCreation(creation.ownerId);
+  }, [creation.ownerId, endCreation]);
+
   const finish = React.useCallback(() => {
-    const { ownerId, triggerId } = creation;
-    endCreation(ownerId);
-    window.setTimeout(() => document.getElementById(triggerId)?.focus(), 0);
-  }, [creation, endCreation]);
+    closeCreation();
+    window.setTimeout(() => document.getElementById(creation.triggerId)?.focus(), 0);
+  }, [closeCreation, creation.triggerId]);
 
   React.useEffect(() => {
     const routeChanged = previousPathname.current !== pathname;
@@ -142,7 +153,7 @@ function ActiveBookingCreationDialog({ creation }: { creation: BookingCreationCo
       date: formState?.draft.startDate ?? creation.initialDate,
       target: formState?.target?.globalId ?? creation.target?.globalId,
     };
-    endCreation(creation.ownerId);
+    closeCreation();
     window.setTimeout(
       () =>
         void navigate({
@@ -169,10 +180,10 @@ function ActiveBookingCreationDialog({ creation }: { creation: BookingCreationCo
   const updateFormState = React.useCallback(
     (state: BookingFormState) => {
       setFormState(state);
-      if (!mutation.isError) return;
+      if (!mutation.isError || isBookingCreationOutcomeUncertain(mutation.error)) return;
       resetMutation();
     },
-    [mutation.isError, resetMutation],
+    [mutation.error, mutation.isError, resetMutation],
   );
 
   const availabilityTarget = formState?.target ?? creation?.target;
@@ -250,8 +261,11 @@ function ActiveBookingCreationDialog({ creation }: { creation: BookingCreationCo
             lockTarget={creation.lockTarget}
             token={token}
             pending={mutation.isPending}
-            error={mutation.error ? t(bookingProblemKey(mutation.error)) : undefined}
-            submissionBlocked={isBookingOverlapError(mutation.error)}
+            error={mutation.error ? t(bookingCreationProblemKey(mutation.error)) : undefined}
+            outcomeUncertain={isBookingCreationOutcomeUncertain(mutation.error)}
+            submissionBlocked={
+              isBookingOverlapError(mutation.error) || isBookingCreationOutcomeUncertain(mutation.error)
+            }
             onCancel={requestClose}
             onMoreOptions={maintenance ? undefined : openMoreOptions}
             onStateChange={updateFormState}

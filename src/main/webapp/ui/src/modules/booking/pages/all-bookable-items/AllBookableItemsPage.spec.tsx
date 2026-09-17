@@ -1,8 +1,9 @@
+import { createMemoryHistory, type RouterHistory } from "@tanstack/react-router";
 import { cleanup, render } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { page } from "vitest/browser";
-import { worker } from "@/__tests__/browserSetup";
+import { worker } from "@/__tests__/browserMocks";
 import { expectNoAxeViolations } from "@/__tests__/pageObjects/accessibility";
 import { bookingPagesHandlers, resetBookingPageRequests } from "@/modules/booking/pages/mocks/bookingPagesMocks";
 import { currentUser } from "../calendar/calendarFixtures";
@@ -19,17 +20,40 @@ function registerHandlers(): void {
 // otherwise race the first runtime handler update when this spec follows another file.
 registerHandlers();
 
+let history: RouterHistory;
+let browserUrl: string;
+
 beforeEach(() => {
+  history = createMemoryHistory({ initialEntries: ["/booking/all-items?date=2026-08-17"] });
+  browserUrl = window.location.href;
   resetBookingPageRequests();
-  window.history.replaceState({}, "", "/booking/all-items?date=2026-08-17");
   registerHandlers();
 });
 
 afterEach(() => {
   cleanup();
+  expect(window.location.href).toBe(browserUrl);
 });
 
 describe("the All Bookable Items page", () => {
+  test("explains the quick-filter capacity limit without offering a futile retry", async () => {
+    let requests = 0;
+    worker.use(
+      http.get("/api/v2/booking-configurations", () => {
+        requests += 1;
+        return HttpResponse.json({ docs: [], totalDocs: 1001, totalPages: 11 });
+      }),
+    );
+    render(<AllBookableItemsStory history={history} />);
+    await expect
+      .element(page.getByRole("alert"))
+      .toHaveTextContent("Availability quick filters are unavailable for more than 1,000 items.");
+    await expect.element(page.getByRole("button", { name: "Retry", exact: true })).not.toBeInTheDocument();
+    await expect.element(page.getByRole("button", { name: /Available now/ })).toBeDisabled();
+    await expect.element(pageObj.detailsButton).toBeVisible();
+    expect(requests).toBe(1);
+  });
+
   test.each([390, 1440])("keeps the quick-filter toolbar and results width stable at %s px", async (width) => {
     const originalViewport = { width: window.innerWidth, height: window.innerHeight };
     const response = Promise.withResolvers<void>();
@@ -40,8 +64,8 @@ describe("the All Bookable Items page", () => {
       }),
     );
     await page.viewport(width, 900);
-    window.history.replaceState({}, "", "/booking/all-items?date=2026-08-17&availability=available-now");
-    render(<AllBookableItemsStory containerWidth={width} />);
+    history.replace("/booking/all-items?date=2026-08-17&availability=available-now");
+    render(<AllBookableItemsStory history={history} containerWidth={width} />);
     try {
       const loading = page.getByText("Finding bookable items…", { exact: true });
       await expect.element(loading).toHaveClass("sr-only");
@@ -68,14 +92,14 @@ describe("the All Bookable Items page", () => {
   });
 
   test("navigates to the bookable item details page", async () => {
-    render(<AllBookableItemsStory />);
+    render(<AllBookableItemsStory history={history} />);
 
     await expect.element(pageObj.detailsButton).toBeVisible();
     await pageObj.detailsButton.click();
 
     await expect.element(pageObj.bookableItemDetailsHeading).toBeVisible();
     await expect.element(pageObj.bookableItemDetailsTarget).toBeVisible();
-    await expect.poll(() => window.location.pathname).toBe("/booking/bookable-items/IN123");
+    await expect.poll(() => history.location.pathname).toBe("/booking/bookable-items/IN123");
   });
 
   test("starts immutable maintenance creation from bookable item details for a direct sysadmin", async () => {
@@ -88,7 +112,7 @@ describe("the All Bookable Items page", () => {
         }),
       ),
     );
-    render(<AllBookableItemsStory />);
+    render(<AllBookableItemsStory history={history} />);
     await pageObj.detailsButton.click();
 
     await page.getByRole("button", { name: "More event creation options" }).click();
@@ -106,7 +130,7 @@ describe("the All Bookable Items page", () => {
     await page.viewport(1200, 900);
 
     try {
-      render(<AllBookableItemsStory containerWidth={600} />);
+      render(<AllBookableItemsStory history={history} containerWidth={600} />);
 
       await expect.element(pageObj.cards).toBeVisible();
       await expect.element(pageObj.tableElement).not.toBeVisible();
@@ -144,7 +168,7 @@ describe("the All Bookable Items page", () => {
     await page.viewport(1200, 900);
 
     try {
-      render(<AllBookableItemsStory containerWidth={360} />);
+      render(<AllBookableItemsStory history={history} containerWidth={360} />);
 
       await expect.element(pageObj.availableNow).toBeVisible();
       await expect.element(pageObj.freeLaterToday).toBeVisible();
@@ -161,7 +185,7 @@ describe("the All Bookable Items page", () => {
   });
 
   test("keeps a many-event slice scrollable and usable", async () => {
-    render(<AllBookableItemsStory />);
+    render(<AllBookableItemsStory history={history} />);
 
     await expect.element(pageObj.availabilitySlice("Confocal microscope", 11)).toBeVisible();
     pageObj.focusAvailabilitySlice("Confocal microscope", 11);
@@ -185,7 +209,7 @@ describe("the All Bookable Items page", () => {
   });
 
   test("shows the fixture maintenance blockout", async () => {
-    render(<AllBookableItemsStory />);
+    render(<AllBookableItemsStory history={history} />);
 
     const slice = pageObj.availabilitySlice("Confocal microscope", 1, "Blocked out", ".*10:00.*11:00.*");
     await slice.hover();
@@ -210,7 +234,7 @@ describe("the All Bookable Items page", () => {
   });
 
   test("opens slice details from keyboard focus and restores focus after Escape", async () => {
-    render(<AllBookableItemsStory />);
+    render(<AllBookableItemsStory history={history} />);
 
     await expect.element(pageObj.availabilitySlice("Confocal microscope", 11)).toBeVisible();
     pageObj.focusAvailabilitySlice("Confocal microscope", 11);
@@ -227,7 +251,7 @@ describe("the All Bookable Items page", () => {
     await page.viewport(400, 900);
 
     try {
-      render(<AllBookableItemsStory containerWidth={360} />);
+      render(<AllBookableItemsStory history={history} containerWidth={360} />);
 
       await pageObj.availabilitySlice("Confocal microscope", 11).click();
       await expect.element(pageObj.availabilityDetails).toBeVisible();
@@ -247,7 +271,7 @@ describe("the All Bookable Items page", () => {
     await page.viewport(1600, 900);
 
     try {
-      render(<AllBookableItemsStory />);
+      render(<AllBookableItemsStory history={history} />);
       await expect.element(pageObj.table).toBeVisible();
       await expect
         .poll(() => {
@@ -261,14 +285,14 @@ describe("the All Bookable Items page", () => {
   });
 
   test("switches cached availability filters using the shared display interval", async () => {
-    render(<AllBookableItemsStory />);
+    render(<AllBookableItemsStory history={history} />);
 
     await expect.element(pageObj.datePicker).toBeVisible();
     await pageObj.filtersButton.click();
     await pageObj.freeLaterToday.click();
 
     await expect
-      .poll(() => new URLSearchParams(window.location.search).get("where"))
+      .poll(() => new URLSearchParams(history.location.search).get("where"))
       .toBe("availability==free-later-today");
     await expect.element(pageObj.freeLaterToday).toHaveAttribute("aria-pressed", "true");
     await expect.element(pageObj.datePicker).toBeVisible();
@@ -277,12 +301,12 @@ describe("the All Bookable Items page", () => {
       .toHaveValue("Free later today");
     await pageObj.filtersPanel.getByRole("button", { name: "Remove filter 1" }).click();
     await pageObj.filtersPanel.getByRole("button", { name: "Apply filters" }).click();
-    await expect.poll(() => new URLSearchParams(window.location.search).get("where")).toBeNull();
+    await expect.poll(() => new URLSearchParams(history.location.search).get("where")).toBeNull();
     await expect.element(pageObj.freeLaterToday).toHaveAttribute("aria-pressed", "false");
 
     await pageObj.freeLaterToday.click();
     await expect
-      .poll(() => new URLSearchParams(window.location.search).get("where"))
+      .poll(() => new URLSearchParams(history.location.search).get("where"))
       .toBe("availability==free-later-today");
     await expect.element(pageObj.electronMicroscope).toBeVisible();
     await expect.element(pageObj.item).not.toBeInTheDocument();
@@ -297,7 +321,7 @@ describe("the All Bookable Items page", () => {
     await pageObj.availableNow.click();
 
     await expect
-      .poll(() => new URLSearchParams(window.location.search).get("where"))
+      .poll(() => new URLSearchParams(history.location.search).get("where"))
       .toBe("availability==available-now");
     await expect.element(pageObj.availableNow).toHaveAttribute("aria-pressed", "true");
     await expect.element(pageObj.item).toBeVisible();
@@ -306,12 +330,12 @@ describe("the All Bookable Items page", () => {
     await expect.element(pageObj.massSpectrometer).not.toBeInTheDocument();
     await pageObj.nextDay.click();
 
-    await expect.poll(() => window.location.search).toContain("date=2026-08-18");
-    await expect.poll(() => new URLSearchParams(window.location.search).get("where")).toBeNull();
+    await expect.poll(() => history.location.search).toContain("date=2026-08-18");
+    await expect.poll(() => new URLSearchParams(history.location.search).get("where")).toBeNull();
     await pageObj.resetTable.click();
 
-    await expect.poll(() => new URLSearchParams(window.location.search).get("where")).toBeNull();
-    await expect.poll(() => window.location.search).not.toContain("date=");
+    await expect.poll(() => new URLSearchParams(history.location.search).get("where")).toBeNull();
+    await expect.poll(() => history.location.search).not.toContain("date=");
     await expect.element(pageObj.availableNow).toHaveAttribute("aria-pressed", "false");
     await expect.element(pageObj.datePicker).toBeVisible();
     await expect.element(pageObj.electronMicroscope).toBeVisible();

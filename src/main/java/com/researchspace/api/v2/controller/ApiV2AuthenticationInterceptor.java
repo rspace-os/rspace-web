@@ -61,8 +61,11 @@ public class ApiV2AuthenticationInterceptor implements HandlerInterceptor {
             caller.actor().getUsername(),
             subject.getUsername());
       }
+      // Compression proxies may suffix ETags (for example, "inactive-gzip"). These responses
+      // expose version preconditions, so their validators must reach clients unchanged.
       response.setHeader(
-          HttpHeaders.CACHE_CONTROL, CacheControl.noStore().cachePrivate().getHeaderValue());
+          HttpHeaders.CACHE_CONTROL,
+          CacheControl.noStore().cachePrivate().noTransform().getHeaderValue());
     }
     return true;
   }

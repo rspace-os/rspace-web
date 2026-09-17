@@ -80,6 +80,7 @@ type BookingFormCommonProps = {
   pending: boolean;
   error?: string;
   submissionBlocked?: boolean;
+  outcomeUncertain?: boolean;
   density?: "comfortable" | "compact";
   layout?: "stacked" | "inline";
   formId?: string;
@@ -212,7 +213,7 @@ export function BookingForm(props: BookingFormProps) {
   const submit = async (input: PurposeInput) => {
     // Commit validation attributes before looking up the first invalid field.
     flushSync(() => setAttempted(true));
-    if (!target || !window || submittingRef.current) {
+    if (!target || !window || submittingRef.current || busy || props.submissionBlocked) {
       const formElement = document.getElementById(formId);
       (
         formElement?.querySelector<HTMLElement>("[aria-invalid='true']") ??
@@ -338,7 +339,23 @@ export function BookingForm(props: BookingFormProps) {
             )}
           </>
         )}
-        {props.error && <FieldError>{props.error}</FieldError>}
+        {props.error && (
+          <div className="space-y-2">
+            <FieldError>{props.error}</FieldError>
+            {props.outcomeUncertain && (
+              <p className="text-sm text-muted-foreground">
+                {t("bookings.errors.outcomeUncertainGuidance")}{" "}
+                <Link
+                  className="font-medium text-primary underline underline-offset-4"
+                  to="/booking/my-bookings"
+                  search={{ period: "upcoming" }}
+                >
+                  {t("bookings.errors.checkExistingBookings")}
+                </Link>
+              </p>
+            )}
+          </div>
+        )}
         <RenderFields
           fields={textFields}
           form={form}
@@ -355,7 +372,15 @@ export function BookingForm(props: BookingFormProps) {
       {inline ? null : compact ? (
         <ActionBar
           actions={[
-            ...(props.onMoreOptions ? [{ label: t("bookings.form.moreOptions"), onClick: props.onMoreOptions }] : []),
+            ...(props.onMoreOptions
+              ? [
+                  {
+                    label: t("bookings.form.moreOptions"),
+                    onClick: props.onMoreOptions,
+                    disabled: busy || props.outcomeUncertain,
+                  },
+                ]
+              : []),
             {
               label: editing
                 ? t("bookings.form.save")

@@ -90,6 +90,7 @@ class BookingCalendarSubscriptionControllerMVCIT {
             .andExpect(header().string(HttpHeaders.ETAG, "\"inactive\""))
             .andExpect(header().string("Cache-Control", containsString("no-store")))
             .andExpect(header().string("Cache-Control", containsString("private")))
+            .andExpect(header().string("Cache-Control", containsString("no-transform")))
             .andExpect(jsonPath("$.active").value(false))
             .andExpect(jsonPath("$.subscriptionUrl").value((Object) null))
             .andReturn();

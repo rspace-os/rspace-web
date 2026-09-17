@@ -1,7 +1,6 @@
 import { cleanup, render } from "@testing-library/react";
-import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
-import { worker } from "@/__tests__/browserSetup";
+import { worker } from "@/__tests__/browserMocks";
 import { galleryAppShellHandlers } from "@/__tests__/mocks/galleryMocks";
 import { expectNoAxeViolations } from "@/__tests__/pageObjects/accessibility";
 import {
@@ -12,47 +11,10 @@ import {
 } from "./CallableImagePreview.story";
 import { CallableImagePreviewPage } from "./pageObjects/CallableImagePreviewPage";
 
-/*
- * IMAGE MOCKING: PhotoSwipe loads the image URL via a real <img> fetch. We
- * serve every https://via.placeholder.com/** request with a minimal 1×1
- * transparent SVG so the onLoad event fires and PhotoSwipe can open.
- * The invalid-URL case returns a 404, which means the image never loads and
- * PhotoSwipe is never opened (matching the Playwright spec's expectation that
- * the trigger button remains visible with no modal).
- *
- * analyticsProperties, preference*, and property* endpoints are already
- * covered by appShellHandlers (analyticsProperties) and galleryAppShellHandlers
- * (preference*, property*) — we do NOT re-mock them here.
- */
-
-const placeholderImageHandler = () =>
-  http.get(
-    "https://via.placeholder.com/*",
-    () =>
-      /*
-       * Return a minimal SVG as the image body. The component only needs the
-       * onLoad event to fire (to get image dimensions and open PhotoSwipe); it
-       * does not inspect the actual pixel data. Using an SVG avoids the need for
-       * `atob`/binary decoding, which is unreliable inside MSW handler scope
-       * when running under Vitest browser mode's Playwright provider.
-       */
-      new HttpResponse(`<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"></svg>`, {
-        status: 200,
-        headers: {
-          "Content-Type": "image/svg+xml",
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "GET",
-        },
-      }),
-  );
-
-const invalidImageHandler = () =>
-  http.get("https://invalid-url-that-should-fail.example.com/*", () => new HttpResponse("Not Found", { status: 404 }));
-
 const preview = new CallableImagePreviewPage();
 
 beforeEach(() => {
-  worker.use(...galleryAppShellHandlers(), placeholderImageHandler(), invalidImageHandler());
+  worker.use(...galleryAppShellHandlers());
 });
 
 afterEach(() => {

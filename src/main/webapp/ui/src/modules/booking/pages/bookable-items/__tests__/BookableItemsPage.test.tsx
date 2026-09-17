@@ -11,16 +11,17 @@ import {
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
-import { NuqsAdapter } from "nuqs/adapters/react";
 import { type ComponentType, type ReactNode, Suspense } from "react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
 import { createRealI18nWrapper } from "@/__tests__/helpers/realI18n";
+import { MemoryHistoryNuqsAdapter as NuqsAdapter } from "@/__tests__/MemoryHistoryNuqsAdapter";
 import { server } from "@/__tests__/mswServer";
 import bookingEnglish from "@/modules/common/i18n/locales/en-US/booking.json";
 import commonEnglish from "@/modules/common/i18n/locales/en-US/common.json";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { mutateBookableItems } from "../BookableItemsPage";
+import { calendarSubscriptionQueryKey } from "../bookableItemCalendarSubscription";
 import { ownerBookingAccess } from "../mocks/bookableItemsMocks";
 import { createBookableItemRoute, createBookableItemsRoute } from "../routes";
 
@@ -30,10 +31,6 @@ beforeEach(() => {
   vi.mocked(useCurrentUserQuery).mockReturnValue({
     data: { hasSysAdminRole: true, session: { operatedAs: false } },
   } as ReturnType<typeof useCurrentUserQuery>);
-});
-
-afterEach(() => {
-  window.history.replaceState({}, "", "/");
 });
 
 const bookingConfiguration = {
@@ -212,7 +209,13 @@ function renderBookableItemsPage(
   wrapper?: ComponentType<{ children: ReactNode }>,
 ) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  const rootRoute = createRootRoute({ component: Outlet });
+  const rootRoute = createRootRoute({
+    component: () => (
+      <NuqsAdapter>
+        <Outlet />
+      </NuqsAdapter>
+    ),
+  });
   const bookingRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: "/booking",
@@ -227,14 +230,12 @@ function renderBookableItemsPage(
 
   const page = (
     <QueryClientProvider client={queryClient}>
-      <NuqsAdapter>
-        <Suspense fallback={null}>
-          <RouterProvider router={router as never} />
-        </Suspense>
-      </NuqsAdapter>
+      <Suspense fallback={null}>
+        <RouterProvider router={router as never} />
+      </Suspense>
     </QueryClientProvider>
   );
-  return render(page, wrapper ? { wrapper } : undefined);
+  return { ...render(page, wrapper ? { wrapper } : undefined), queryClient, history: router.history };
 }
 
 function realI18nWrapper() {
@@ -344,7 +345,8 @@ describe("BookableItemsPage", () => {
         return HttpResponse.json({ data: bookingConfiguration });
       }),
     );
-    renderBookableItemsPage();
+    const { queryClient } = renderBookableItemsPage();
+    const invalidateQueries = vi.spyOn(queryClient, "invalidateQueries");
 
     const archiveButtons = await screen.findAllByRole("button", { name: "booking:bookableItems.actions.archive" });
     expect(archiveButtons).toHaveLength(2);
@@ -359,6 +361,38 @@ describe("BookableItemsPage", () => {
     expect(deleteRequest?.headers.get("Authorization")).toBe("Bearer new-token");
     expect(deleteRequest?.headers.get("If-Match")).toBe('"0"');
     expect(deleteRequest?.headers.get("X-Requested-With")).toBe("XMLHttpRequest");
+    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ["api-v2", "bookings"] });
+    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: calendarSubscriptionQueryKey(7) });
+  });
+
+  it("restores a configuration and refreshes dependent queries", async () => {
+    vi.mocked(useCurrentUserQuery).mockReturnValue({
+      data: { hasSysAdminRole: false, session: { operatedAs: false } },
+    } as ReturnType<typeof useCurrentUserQuery>);
+    const user = userEvent.setup();
+    const archived = { ...bookingConfiguration, state: "ARCHIVED" as const, configurationVersion: 2 };
+    let current: typeof archived | typeof bookingConfiguration = archived;
+    let patchRequest: Request | undefined;
+    server.use(
+      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
+      http.get("/api/v2/openapi.json", () => HttpResponse.json(openApi)),
+      http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionResponse([current]))),
+      http.patch("/api/v2/booking-configurations/7", ({ request }) => {
+        patchRequest = request;
+        current = bookingConfiguration;
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+    const { queryClient } = renderBookableItemsPage();
+    const invalidateQueries = vi.spyOn(queryClient, "invalidateQueries");
+
+    await user.click(await screen.findByRole("button", { name: "booking:bookableItems.actions.menu" }));
+    await user.click(await screen.findByRole("menuitem", { name: "booking:bookableItems.actions.restore" }));
+
+    await waitFor(() => expect(patchRequest).toBeDefined());
+    expect(patchRequest?.headers.get("If-Match")).toBe('"2"');
+    await waitFor(() => expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ["api-v2", "bookings"] }));
+    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: calendarSubscriptionQueryKey(7) });
   });
 
   it("debounces search and searches the target name", async () => {
@@ -373,11 +407,11 @@ describe("BookableItemsPage", () => {
         return HttpResponse.json(collectionResponse([bookingConfiguration]));
       }),
     );
-    renderBookableItemsPage();
+    const { history } = renderBookableItemsPage();
 
     await user.type(await screen.findByRole("textbox", { name: "common:tableList.search.label" }), "confocal");
 
-    await waitFor(() => expect(new URLSearchParams(window.location.search).get("bookable-items.q")).toBe("confocal"));
+    await waitFor(() => expect(new URLSearchParams(history.location.search).get("bookable-items.q")).toBe("confocal"));
     await waitFor(() => expect(searchRequests).toEqual(["target.name=contains=confocal"]));
   });
 
@@ -421,7 +455,6 @@ describe("BookableItemsPage", () => {
       }),
     );
     const columns = encodeURIComponent(JSON.stringify({ fields: ["target.name", "target.deleted"] }));
-    window.history.replaceState({}, "", `/?bookable-items.columns=${columns}`);
 
     renderBookableItemsPage(`/booking/config/bookable-items?bookable-items.columns=${columns}`);
 
@@ -534,7 +567,8 @@ describe("BookableItemsPage", () => {
         return new HttpResponse(null, { status: 204 });
       }),
     );
-    renderBookableItemsPage("/booking/config/bookable-items", await realI18nWrapper());
+    const { queryClient } = renderBookableItemsPage("/booking/config/bookable-items", await realI18nWrapper());
+    const invalidateQueries = vi.spyOn(queryClient, "invalidateQueries");
 
     await user.click(await screen.findByRole("checkbox", { name: "Select Confocal microscope" }));
     await user.click(screen.getByRole("button", { name: "Next page" }));
@@ -554,6 +588,9 @@ describe("BookableItemsPage", () => {
     expect(deleteRequests[0]).toEqual({ where: "id=in=(7,8)", body: "", contentType: null });
     await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
     await waitFor(() => expect(screen.getByRole("table")).toHaveAttribute("aria-busy", "false"));
+    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ["api-v2", "bookings"] });
+    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: calendarSubscriptionQueryKey(7) });
+    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: calendarSubscriptionQueryKey(8) });
   });
 
   it("keeps selection and re-enables the action after a failed bulk request", async () => {

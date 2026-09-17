@@ -46,6 +46,7 @@ import {
   type BookingConfigurationLifecycleAction,
 } from "./BookingConfigurationActionsMenu";
 import { BookingEventList } from "./BookingEventList";
+import { calendarSubscriptionQueryKey } from "./bookableItemCalendarSubscription";
 import {
   BOOKING_CONFIGURATION_READ_FIELDS,
   type BookingConfiguration,
@@ -184,9 +185,11 @@ function SpotlightHeader({
         data-slot="bookable-item-header-actions"
         className="flex w-full min-w-0 flex-wrap items-center gap-3 sm:w-auto sm:shrink-0 [&_[data-slot=badge]]:h-[30px] [&_button]:h-[30px] [&_button]:min-h-[30px]"
       >
-        <Badge variant={configuration.enabled ? "default" : "secondary"}>
-          {configuration.enabled ? t("bookableItemDetails.enabled") : t("bookableItemDetails.disabled")}
-        </Badge>
+        {configuration.state !== "ARCHIVED" ? (
+          <Badge variant={configuration.enabled ? "default" : "secondary"}>
+            {configuration.enabled ? t("bookableItemDetails.enabled") : t("bookableItemDetails.disabled")}
+          </Badge>
+        ) : null}
         {configuration.state === "ARCHIVED" ? (
           <Badge variant="secondary">{t("bookableItemDetails.archived")}</Badge>
         ) : null}
@@ -413,7 +416,11 @@ function LoadedBookableItemPage({
   const archiveMutation = useMutation({
     mutationFn: () => archiveBookingConfiguration(configuration.id, configuration.configurationVersion, token),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] }),
+        queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] }),
+        queryClient.invalidateQueries({ queryKey: calendarSubscriptionQueryKey(configuration.id) }),
+      ]);
       setArchiveOpen(false);
       setSaveAnnouncement("archived");
     },
@@ -428,7 +435,11 @@ function LoadedBookableItemPage({
   const restoreMutation = useMutation({
     mutationFn: () => restoreBookingConfiguration(configuration.id, configuration.configurationVersion, token),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] }),
+        queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] }),
+        queryClient.invalidateQueries({ queryKey: calendarSubscriptionQueryKey(configuration.id) }),
+      ]);
       setSaveAnnouncement("restored");
     },
     onError: async (error) => {

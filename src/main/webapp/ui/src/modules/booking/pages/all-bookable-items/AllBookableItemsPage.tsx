@@ -29,6 +29,7 @@ import { cn } from "@/modules/common/utils/cn";
 import { calendarAvailabilityRow, useCalendarAvailability } from "../calendar/calendarAvailability";
 import {
   type AllBookableItem,
+  AvailabilityCandidateLimitError,
   type AvailabilityQuickFilter,
   hasAvailabilityFilter,
   resolveAvailabilityFilters,
@@ -446,6 +447,7 @@ function AllBookableItemsContent({
       ),
       icon: mode === "available-now" ? <Clock3Icon aria-hidden="true" /> : <CalendarClockIcon aria-hidden="true" />,
       pressed: quickMode === mode,
+      disabled: quickIndex.error instanceof AvailabilityCandidateLimitError && quickMode !== mode,
       onClick: () =>
         setFilters({
           ...filters,
@@ -464,10 +466,18 @@ function AllBookableItemsContent({
       ) : null}
       {quickIndex.isError ? (
         <div role="alert" className="flex items-center gap-3">
-          <span>{t("allBookableItems.quickFilters.error")}</span>
-          <Button type="button" variant="outline" onClick={() => void quickIndex.refetch()}>
-            {t("allBookableItems.quickFilters.retry")}
-          </Button>
+          <span>
+            {t(
+              quickIndex.error instanceof AvailabilityCandidateLimitError
+                ? "allBookableItems.quickFilters.limit"
+                : "allBookableItems.quickFilters.error",
+            )}
+          </span>
+          {quickIndex.error instanceof AvailabilityCandidateLimitError ? null : (
+            <Button type="button" variant="outline" onClick={() => void quickIndex.refetch()}>
+              {t("allBookableItems.quickFilters.retry")}
+            </Button>
+          )}
         </div>
       ) : null}
       <TableList

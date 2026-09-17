@@ -2,7 +2,7 @@ import { menuClasses } from "@mui/material/Menu";
 import { cleanup, render } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
-import { worker } from "@/__tests__/browserSetup";
+import { worker } from "@/__tests__/browserMocks";
 import { SidebarPage } from "./pageObjects/SidebarPage";
 import { CreateMenuStory, DMPToolCreateMenuStory } from "./Sidebar.story";
 

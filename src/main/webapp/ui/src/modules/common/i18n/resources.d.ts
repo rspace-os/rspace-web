@@ -804,6 +804,7 @@ export default interface Resources {
         "error": "Could not find available items.",
         "freeLaterToday": "Free later today",
         "legend": "Quick filters",
+        "limit": "Availability quick filters are unavailable for more than 1,000 items. Clear any availability filter, then search or browse items to see their availability.",
         "loading": "Finding bookable items…",
         "retry": "Retry",
         "scope": "Availability uses the selected display date and timezone."
@@ -850,9 +851,9 @@ export default interface Resources {
           "openingHours": "Outside opening hours"
         },
         "states": {
-          "blockout": "Outside opening hours",
+          "blockout": "Blocked out",
           "booking": "Booked",
-          "overlap": "Booked and outside opening hours"
+          "overlap": "Booked and blocked out"
         },
         "trigger": "{itemName}, {state}, {period}, {count, plural, one {# event} other {# events}}"
       },
@@ -909,10 +910,10 @@ export default interface Resources {
         "previousPage": "Previous, page {page, number}",
         "refresh": "Refresh",
         "restart": "Restart from first page",
-        "resultsThrough": "Results through {date}",
+        "resultsThrough": "Results through {date} (UTC)",
         "singular": "Audit event",
         "status": {
-          "loaded": "Page {page, number} of {totalPages, number}. {count, plural, one {# audit event} other {# audit events}}. Results through {date}.",
+          "loaded": "Page {page, number} of {totalPages, number}. {count, plural, one {# audit event} other {# audit events}}. Results through {date} (UTC).",
           "loading": "Loading audit events.",
           "refreshing": "Updating audit events."
         },
@@ -931,6 +932,25 @@ export default interface Resources {
           "inverted": "From must be on or before To.",
           "required": "Choose a date.",
           "tooWide": "Choose a period of no more than 183 days."
+        },
+        "values": {
+          "allowDoubleBooking": "Allow concurrent bookings",
+          "bufferAfter": "Buffer after (minutes)",
+          "bufferBefore": "Buffer before (minutes)",
+          "configuration": "Booking configuration",
+          "empty": "No details recorded",
+          "enabled": "Enabled",
+          "end": "End (UTC)",
+          "increment": "Time increment (minutes)",
+          "kind": "Event type",
+          "maximumDuration": "Maximum duration (minutes)",
+          "openingEnd": "Closing time",
+          "openingStart": "Opening time",
+          "purpose": "Purpose / notes",
+          "start": "Start (UTC)",
+          "state": "Status",
+          "target": "Bookable item",
+          "timezone": "Scheduling timezone"
         }
       },
       "calendarSubscription": {
@@ -1199,6 +1219,7 @@ export default interface Resources {
       },
       "editTitle": "Edit Booking",
       "errors": {
+        "checkExistingBookings": "Check My Bookings",
         "concurrentModification": "This event changed while you were editing it. Review the latest details and try again.",
         "deleteForbidden": "You no longer have permission to cancel this booking.",
         "deleteGeneric": "RSpace could not cancel the booking. Try again.",
@@ -1217,7 +1238,9 @@ export default interface Resources {
         "notFound": "This booking was not found or is not visible.",
         "occurrenceRequired": "Select which occurrence of this local time to use.",
         "openingHours": "This booking must be within the bookable item's opening hours.",
-        "overlap": "This period overlaps another booking.",
+        "outcomeUncertain": "RSpace could not confirm whether the booking was saved.",
+        "outcomeUncertainGuidance": "Check your bookings before starting another booking to avoid creating a duplicate.",
+        "overlap": "This period overlaps another booking or a maintenance event.",
         "targetUnavailable": "This bookable item is unavailable.",
         "windowRequired": "Enter a valid start and end."
       },
@@ -8225,6 +8248,7 @@ export default interface Resources {
           "mandatoryFieldEmpty": "Field ''{0}'' is mandatory, but provided value was empty",
           "mandatoryFieldNoSelection": "Field ''{0}'' is mandatory, but no option is provided",
           "notFound": "No inventory entity field with id: {0}",
+          "numberInvalid": "''{0}'' is not a valid number or exceeds the supported precision and range.",
           "validation": "{0}"
         },
         "file": {

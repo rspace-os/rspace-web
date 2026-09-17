@@ -136,14 +136,14 @@ describe("booking sidebar", () => {
 
   it("is supplied to the shell by the booking route", async () => {
     const { container } = renderAt("/booking");
-    expect(await screen.findByRole("heading", { name: "Calendar destination" })).toBeVisible();
+    expect(await screen.findByRole("heading", { name: "booking:sidebar.dashboard" })).toBeVisible();
     expect(screen.getAllByRole("main")).toHaveLength(1);
 
     // i18next runs in cimode under vitest, so t() renders "<namespace>:<key>"
     for (const key of ["administration", "approvalQueue"]) {
       expect(await screen.findByRole("button", { name: `booking:sidebar.${key}` })).toBeInTheDocument();
     }
-    expect(screen.queryByRole("button", { name: "booking:sidebar.dashboard" })).not.toBeInTheDocument();
+    expect(await screen.findByRole("link", { name: "booking:sidebar.dashboard" })).toHaveAttribute("href", "/booking");
 
     expect(await screen.findByRole("link", { name: "booking:sidebar.myBookings" })).toHaveAttribute(
       "href",
@@ -176,6 +176,20 @@ describe("booking sidebar", () => {
     );
 
     await expectAccessible(container);
+  });
+
+  it("returns to Dashboard from Calendar for non-sysadmins", async () => {
+    const user = userEvent.setup();
+    renderAt("/booking/calendar?calendar-resources.q=Confocal", false);
+    expect(await screen.findByRole("heading", { name: "Calendar destination" })).toBeVisible();
+    const dashboard = await screen.findByRole("link", { name: "booking:sidebar.dashboard" });
+    expect(dashboard).not.toHaveAttribute("aria-current", "page");
+
+    await user.click(dashboard);
+
+    expect(await screen.findByRole("heading", { name: "booking:sidebar.dashboard" })).toBeVisible();
+    expect(dashboard).toHaveAttribute("aria-current", "page");
+    expect(screen.queryByRole("heading", { name: "Calendar destination" })).not.toBeInTheDocument();
   });
 
   it("collapses the Administration sub-items", async () => {

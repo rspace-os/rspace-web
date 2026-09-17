@@ -42,7 +42,9 @@ pnpm run test-browser:watch                        # watch mode
 - CI runs **one engine per matrix job** via `VITEST_BROWSERS`, and emits a
   per-engine JUnit file. The `browser-tests` job in
   `.github/workflows/lint-and-test.yml` is the wiring.
-- `retry: 2` and `fileParallelism: false` are set deliberately (see gotchas).
+- Files use Vitest's default isolation and `fileParallelism: false`;
+  `clearMocks: true` clears call history between tests without resetting mock implementations.
+  `retry: 2` is configured for browser timing failures (see gotchas).
 
 ## The pattern (four artifacts)
 
@@ -59,8 +61,10 @@ accessible handle, via a local `css=` cast helper (templates in `REFERENCE.md`).
 
 ## Shared infrastructure (reuse, do not re-create)
 
-- `src/__tests__/browserSetup.ts` — the shared MSW `worker`, its start/reset
-  lifecycle, the CDP media reset, and `suppressFireAndForget404(...)`.
+- `src/__tests__/browserMocks.ts` — the per-file MSW `worker` and
+  `suppressFireAndForget404(...)`. Import helpers here, not from the setup file.
+- `src/__tests__/browserSetup.ts` — starts/stops that client, resets handlers,
+  storage and CDP media. Vitest loads it through `setupFiles`.
 - `src/__tests__/mswAppShellHandlers.ts` — default app-shell handlers (whoami,
   nav data, analytics, livechat) registered as worker defaults; they survive
   `resetHandlers()`.
@@ -75,9 +79,14 @@ accessible handle, via a local `css=` cast helper (templates in `REFERENCE.md`).
 
 ## Top gotchas (full list in REFERENCE.md)
 
-- **MSW worker is origin-global and never stopped between files** — that is why
-  `fileParallelism: false`. Do not add a `worker.stop()`; it deactivates
-  interception for later files and 404s them.
+- **Each file has an isolated iframe and MSW client.** `browserSetup.ts` awaits
+  start before tests and stops that client after the file. Files remain serial
+  because storage and browser emulation need cleanup. Do not import the setup
+  file from specs: that registers lifecycle hooks again. Firefox uses MSW's
+  built-in fetch/XHR fallback because service-worker interception fails across
+  isolated iframe transitions; Chromium/WebKit use service workers. A synthetic
+  `beforeunload` also stops MSW; tests dispatching it must restart their client
+  before subsequent tests run.
 - **CSS locators only as a third-party workaround.** Vitest has no public CSS
   locator; use the `.locator("css=...")` cast helper and comment WHY semantic
   failed (DataGrid cell column identity, PhotoSwipe, react-pdf, TinyMCE iframe).

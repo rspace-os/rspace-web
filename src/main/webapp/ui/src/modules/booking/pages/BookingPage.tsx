@@ -1,9 +1,10 @@
-import { type AnyRoute, createRoute, Link, linkOptions, Outlet, redirect } from "@tanstack/react-router";
+import { type AnyRoute, createRoute, Link, linkOptions, Outlet } from "@tanstack/react-router";
 import {
   CalendarIcon,
   CalendarPlusIcon,
   CheckSquareIcon,
   ChevronRightIcon,
+  LayoutDashboardIcon,
   LibraryBigIcon,
   ListIcon,
   SettingsIcon,
@@ -29,9 +30,17 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/modules/common/ui/sidebar";
+import { Heading } from "@/modules/common/ui/typography";
 
 const items = (today: string) =>
   [
+    {
+      key: "dashboard",
+      icon: LayoutDashboardIcon,
+      link: (
+        <Link {...linkOptions({ to: "/booking", search: {}, activeOptions: { exact: true, includeSearch: false } })} />
+      ),
+    },
     {
       key: "calendar",
       icon: CalendarIcon,
@@ -75,6 +84,7 @@ export function BookingSidebar() {
   const preferences = useBookingDisplayPreferences();
   const sidebarItems = items(todayInTimeZone(preferences.timeZone));
   const labels = {
+    dashboard: t("sidebar.dashboard"),
     calendar: t("sidebar.calendar"),
     allItems: t("sidebar.allItems"),
     addBooking: t("sidebar.addBooking"),
@@ -135,14 +145,22 @@ export function BookingSidebar() {
   );
 }
 
+/** Dashboard is the Booking landing page; Calendar remains a separate route. */
 export function createBookingIndexRoute<TParentRoute extends AnyRoute>(bookingRoute: TParentRoute) {
   return createRoute({
     getParentRoute: () => bookingRoute,
     path: "/",
-    beforeLoad: () => {
-      throw redirect({ to: "/booking/calendar", replace: true });
-    },
+    component: BookingDashboard,
   });
+}
+
+function BookingDashboard() {
+  const { t } = useTranslation("booking");
+  return (
+    <main className="space-y-6 p-4 sm:p-8">
+      <Heading>{t("sidebar.dashboard")}</Heading>
+    </main>
+  );
 }
 
 export default function BookingPage() {

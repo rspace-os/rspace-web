@@ -992,7 +992,9 @@ security events. Other credentials never consult the browser identity.
 Starting and ending legacy Shiro run-as rotates the opaque browser authentication context. Tokens
 from before either transition therefore fail immediately, even if their JWT expiry has not passed.
 The UI mints a fresh v2 token after each page load. It does not trust a token retained in session
-storage across a run-as redirect. Authenticated responses use `Cache-Control: no-store, private`.
+storage across a run-as redirect. Authenticated responses default to
+`Cache-Control: no-store, private, no-transform`. Preserve `no-transform` on responses with ETags:
+compression proxies must not rewrite the validator that clients return in `If-Match`.
 Public configuration and OpenAPI responses keep their explicit cache policies.
 
 The legacy UI-token endpoint refuses token creation during run-as. REST API v1 also rejects a

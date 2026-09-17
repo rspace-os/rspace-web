@@ -149,13 +149,24 @@ export async function fetchBookingConfigurationAudit(input: {
 }
 
 /** Recorded values for one event. Nested values are JSON-encoded, never dropped. */
-export function recordedValues(payload: AuditEvent["payload"]): Array<[string, string]> {
-  return Object.entries(payload).map(([key, value]) => [
-    key,
-    value === null || value === undefined
-      ? "—"
-      : typeof value === "object"
-        ? JSON.stringify(value)
-        : String(value as string | number | boolean),
-  ]);
+export function recordedValues(payload: AuditEvent["payload"], locale: string): Array<[string, string]> {
+  const dateFormat = new Intl.DateTimeFormat(locale, {
+    dateStyle: "medium",
+    timeStyle: "long",
+    timeZone: "UTC",
+  });
+  return Object.entries(payload).map(([key, value]) => {
+    if ((key === "start" || key === "end") && (typeof value === "number" || typeof value === "string")) {
+      const date = new Date(value);
+      if (Number.isFinite(date.getTime())) return [key, dateFormat.format(date)];
+    }
+    return [
+      key,
+      value === null || value === undefined
+        ? "—"
+        : typeof value === "object"
+          ? JSON.stringify(value)
+          : String(value as string | number | boolean),
+    ];
+  });
 }

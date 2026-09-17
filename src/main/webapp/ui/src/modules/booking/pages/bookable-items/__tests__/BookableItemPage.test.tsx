@@ -377,6 +377,7 @@ describe("BookableItemPage", () => {
     renderPage("/booking/bookable-items/IN123/details?edit=true");
 
     expect(await screen.findByText("booking:bookableItemDetails.archived")).toBeVisible();
+    expect(screen.queryByText("booking:bookableItemDetails.enabled")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "booking:bookableItemDetails.edit" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "booking:bookings.actions.newBooking" })).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "booking:bookableItemDetails.calendarSubscription.trigger" }));
@@ -642,7 +643,7 @@ describe("BookableItemPage", () => {
     // every cell matches twice.
     expect((await screen.findAllByText("Morgan Ellis (morgan.ellis)"))[0]).toBeVisible();
     expect(screen.getAllByText("WRITE")[0]).toBeVisible();
-    expect(screen.getAllByText("maxBookingDurationMinutes")[0]).toBeVisible();
+    expect(screen.getAllByText("booking:bookableItemDetails.audit.values.maximumDuration")[0]).toBeVisible();
     await waitFor(() => expect(auditRequests).toBe(1));
   });
 

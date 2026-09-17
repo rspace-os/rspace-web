@@ -1,7 +1,7 @@
 import { CalendarCheck2Icon, PlusIcon } from "lucide-react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
-import { BookingDateControls, BookingTimeZoneBadge } from "@/modules/booking/components/BookingToolbar";
+import { BookingDateControls } from "@/modules/booking/components/BookingToolbar";
 import {
   DayTimeline,
   type DayTimelineEvent,
@@ -24,6 +24,7 @@ import { TableList, type TableListProps } from "@/modules/common/table-list/Tabl
 import { useTableList } from "@/modules/common/table-list/useTableList";
 import { Badge } from "@/modules/common/ui/badge";
 import { Button } from "@/modules/common/ui/button";
+import { ButtonGroup } from "@/modules/common/ui/button-group";
 import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
 import { Skeleton } from "@/modules/common/ui/skeleton";
 import { cn } from "@/modules/common/utils/cn";
@@ -273,24 +274,20 @@ function SegmentedControl<Option extends string>({
   onChange: (option: Option) => void;
 }) {
   return (
-    <fieldset>
-      <legend className="sr-only">{legend}</legend>
-      <div className="flex w-fit rounded-sm border bg-background p-1">
-        {options.map((option) => (
-          <Button
-            key={option}
-            type="button"
-            size="sm"
-            variant={value === option ? "secondary" : "ghost"}
-            aria-pressed={value === option}
-            disabled={isDisabled?.(option)}
-            onClick={() => onChange(option)}
-          >
-            {optionLabel(option)}
-          </Button>
-        ))}
-      </div>
-    </fieldset>
+    <ButtonGroup aria-label={legend}>
+      {options.map((option) => (
+        <Button
+          key={option}
+          type="button"
+          variant={value === option ? "secondary" : "outline"}
+          aria-pressed={value === option}
+          disabled={isDisabled?.(option)}
+          onClick={() => onChange(option)}
+        >
+          {optionLabel(option)}
+        </Button>
+      ))}
+    </ButtonGroup>
   );
 }
 
@@ -334,7 +331,6 @@ function CalendarFilterControls({
       <fieldset className="min-w-0">
         <legend className="sr-only">{t("calendar.displayControls")}</legend>
         <div className="flex flex-wrap items-center gap-2">
-          <BookingTimeZoneBadge timeZone={timezone} label={t("availabilityBar.timezone", { timezone })} />
           <SegmentedControl
             legend={t("calendar.layout.legend")}
             options={calendarLayouts}

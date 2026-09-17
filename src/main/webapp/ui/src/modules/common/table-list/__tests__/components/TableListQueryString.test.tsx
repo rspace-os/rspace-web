@@ -1,20 +1,14 @@
 import { createMemoryHistory, createRootRoute, createRouter, RouterProvider } from "@tanstack/react-router";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { NuqsAdapter } from "nuqs/adapters/tanstack-router";
 import { NuqsTestingAdapter, type OnUrlUpdateFunction } from "nuqs/adapters/testing";
 import { useState } from "react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { MemoryHistoryNuqsAdapter as NuqsAdapter } from "@/__tests__/MemoryHistoryNuqsAdapter";
 import type { SortRule } from "@/modules/common/collection/collectionConfig";
 import { TableList } from "../../TableList";
 import type { FilterState, TableListQueryStringOptions } from "../../tableListState";
 import { config, emptyFilters, records, type TestRecord } from "../fixtures/tableListFixtures";
-
-const originalLocation = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-
-function setWindowSearch(search: URLSearchParams | string) {
-  window.history.replaceState({}, "", `/?${search.toString().replace(/^\?/, "")}`);
-}
 
 function persistedView(overrides: Partial<Record<"search" | "where" | "columns" | "sort", string | null>>) {
   return JSON.stringify({ v: 1, search: null, where: null, columns: null, sort: null, ...overrides });
@@ -49,18 +43,12 @@ function Harness({
 }
 
 describe("TableList query string sharing", () => {
-  beforeEach(() => {
-    window.history.replaceState({}, "", originalLocation);
-    window.localStorage.clear();
-  });
-
   afterEach(() => {
     vi.restoreAllMocks();
-    window.localStorage.clear();
-    window.history.replaceState({}, "", originalLocation);
   });
 
-  it("restores shared columns through the TanStack Router adapter", async () => {
+  it("restores shared columns from memory history without changing the browser URL", async () => {
+    const originalLocation = window.location.href;
     const rootRoute = createRootRoute({
       component: () => (
         <NuqsAdapter>
@@ -76,9 +64,6 @@ describe("TableList query string sharing", () => {
         ],
       }),
     });
-    setWindowSearch(
-      "records.q=Ada&records.where=owner%3D%3DAda&records.columns={%22fields%22:[%22title%22,%22score%22]}",
-    );
     render(<RouterProvider router={router as never} />);
 
     expect(await screen.findByRole("columnheader", { name: /common:tableList.examples.fields.title/ })).toBeVisible();
@@ -89,6 +74,7 @@ describe("TableList query string sharing", () => {
     expect(
       screen.queryByRole("columnheader", { name: /common:tableList.examples.fields.owner/ }),
     ).not.toBeInTheDocument();
+    expect(window.location.href).toBe(originalLocation);
   });
 
   it("drops only the per-actor field a saved view can no longer resolve", async () => {
@@ -98,7 +84,6 @@ describe("TableList query string sharing", () => {
       "records.where": 'owner==Ada;customFields.SF999=="BSL-2"',
       "records.columns": JSON.stringify({ fields: ["title", "customFields.SF999"] }),
     });
-    setWindowSearch(params);
     render(
       <NuqsTestingAdapter searchParams={params} hasMemory>
         <Harness collection={withCustomFields} />
@@ -139,7 +124,6 @@ describe("TableList query string sharing", () => {
     const params = new URLSearchParams({
       "records.where": "owner==Ada;customFields.SF104=ge=not-a-number",
     });
-    setWindowSearch(params);
 
     render(
       <NuqsTestingAdapter searchParams={params} hasMemory>
@@ -180,7 +164,6 @@ describe("TableList query string sharing", () => {
       expression: { kind: "comparison", field: "owner", operator: "equals", value: "Ada" },
     };
     const params = new URLSearchParams({ "records.filters": JSON.stringify(filters) });
-    setWindowSearch(params);
     render(
       <NuqsTestingAdapter searchParams={params} hasMemory onUrlUpdate={onUrlUpdate}>
         <Harness />
@@ -269,7 +252,6 @@ describe("TableList query string sharing", () => {
   it("lets raw empty and invalid URL state override storage and writes the canonical result", async () => {
     window.localStorage.setItem("rspace.tableList.records.view", persistedView({ search: "Ada" }));
     const params = new URLSearchParams({ "records.q": "", "records.where": "not valid rsql" });
-    setWindowSearch(params);
 
     render(
       <NuqsTestingAdapter searchParams={params} hasMemory>

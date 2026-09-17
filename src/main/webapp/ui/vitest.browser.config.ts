@@ -135,6 +135,10 @@ export default defineConfig({
   // Vite re-optimize and reload — Vitest warns this can make browser tests flaky.
   optimizeDeps: {
     include: [
+      // Keep nuqs and its router adapter in the same pre-bundled module graph.
+      "nuqs/adapters/tanstack-router",
+      "nuqs/adapters/testing",
+      "nuqs/adapters/custom",
       // Bookable-item tabs are discovered lazily through the route tree.
       "@base-ui/react/tabs",
       // Pulled in by Inventory/Identifiers/IGSN/IgsnTable at runtime; pre-bundling
@@ -163,13 +167,10 @@ export default defineConfig({
     // first-attempt timing miss does not fail the run; a test that fails every
     // attempt is a real failure.
     retry: 2,
-    // Run spec files SERIALLY within a browser instance. All files share one
-    // origin-level MSW service worker (browserSetup starts it once and never
-    // stops it); if two files ran concurrently their `worker.use()` /
-    // `resetHandlers()` calls would race on that shared worker, intermittently
-    // dropping each other's request handlers. Serial files keep the worker
-    // owned by exactly one file at a time. (The per-browser CI matrix already
-    // gives cross-engine parallelism at the job level.)
+    // Vitest's default isolation gives each file a fresh iframe/module graph
+    // and MSW client.
+    clearMocks: true,
+    // Keep files serial while browser-origin storage and emulation are shared.
     fileParallelism: false,
     // In CI, additionally emit a JUnit report so the per-browser matrix job can
     // publish results (mirrors the jsdom `vitest-tests` job). Each CI job sets
@@ -179,10 +180,21 @@ export default defineConfig({
     outputFile: process.env.CI ? { junit: `browser-junit-${browsers.join("-")}.xml` } : undefined,
     browser: {
       enabled: true,
-      provider: playwright(),
       headless: true,
       screenshotFailures: false,
-      instances: browsers.map((browser) => ({ browser })),
+      // Firefox stops delivering requests to MSW after Vitest replaces an isolated
+      // iframe. Disable its Service Worker API so MSW uses its built-in fetch/XHR
+      // fallback in each iframe. Chromium/WebKit keep service-worker interception.
+      instances: browsers.map((browser) => ({
+        browser,
+        provider: playwright({
+          // Assertions use English copy and decimal points on every host OS.
+          contextOptions: { locale: "en-US" },
+          ...(browser === "firefox"
+            ? { launchOptions: { firefoxUserPrefs: { "dom.serviceWorkers.enabled": false } } }
+            : {}),
+        }),
+      })),
     },
   },
 });

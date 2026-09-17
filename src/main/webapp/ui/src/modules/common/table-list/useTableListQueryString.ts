@@ -106,10 +106,9 @@ export function useTableListQueryString<TDocument>(
       sort: names.sort,
     },
   });
-  const urlOwnsInitialState = useRef(
-    typeof window !== "undefined" &&
-      Object.values(names).some((name) => new URLSearchParams(window.location.search).has(name)),
-  );
+  // Read presence through the same adapter as the parsed state (including memory history).
+  const [rawQueryState] = useQueryStates(Object.fromEntries(Object.values(names).map((name) => [name, parseAsString])));
+  const urlOwnsInitialState = useRef(Object.values(rawQueryState).some((value) => value !== null));
   const [storageReady, setStorageReady] = useState(urlOwnsInitialState.current);
   const featuresRef = useRef(features);
   const restoring = useRef<RestoringState>({});

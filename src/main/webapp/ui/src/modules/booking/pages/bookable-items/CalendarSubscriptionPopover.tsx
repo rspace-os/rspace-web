@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CalendarIcon, CalendarPlusIcon, CheckIcon, CopyIcon, LoaderCircleIcon, XIcon } from "lucide-react";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { ApiV2ProblemError } from "@/modules/booking/domain/booking";
 import { Button, buttonVariants } from "@/modules/common/ui/button";
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "@/modules/common/ui/input-group";
 import {
@@ -55,10 +56,7 @@ export function CalendarSubscriptionPopover({
   });
 
   const createMutation = useMutation({
-    mutationFn: () => {
-      if (status.data === undefined) throw new Error("Calendar subscription status is unavailable");
-      return createOrReplaceCalendarSubscription(configurationId, token, status.data.etag);
-    },
+    mutationFn: (etag: string) => createOrReplaceCalendarSubscription(configurationId, token, etag),
     retry: false,
     onMutate: () => {
       setCopied(false);
@@ -68,18 +66,22 @@ export function CalendarSubscriptionPopover({
       queryClient.setQueryData(queryKey, created);
       setFocusGoogle(true);
     },
-    onError: () => {
-      void status.refetch();
+    onError: async (error) => {
+      if (error instanceof ApiV2ProblemError && error.status === 409) await status.refetch();
     },
   });
 
   const subscriptionUrl = status.data?.subscriptionUrl ?? null;
+  const createSubscription = useCallback(() => {
+    const currentStatus = status.data;
+    if (currentStatus?.subscriptionUrl === null) createMutation.mutate(currentStatus.etag);
+  }, [createMutation, status.data]);
 
   useEffect(() => {
     if (archived || !open || !autoGenerateOnOpenRef.current || status.isFetching || !status.isSuccess) return;
     autoGenerateOnOpenRef.current = false;
-    if (status.data.subscriptionUrl === null) createMutation.mutate();
-  }, [archived, createMutation, open, status.data, status.isFetching, status.isSuccess]);
+    createSubscription();
+  }, [archived, createSubscription, open, status.isFetching, status.isSuccess]);
 
   const focusGoogleAction = useCallback(
     (element: HTMLAnchorElement | null) => {
@@ -186,7 +188,7 @@ export function CalendarSubscriptionPopover({
       return (
         <div className="space-y-3">
           <p role="alert">{t("bookableItemDetails.calendarSubscription.statusError")}</p>
-          <Button type="button" variant="outline" onClick={() => void status.refetch()}>
+          <Button type="button" variant="outline" disabled={status.isFetching} onClick={() => void status.refetch()}>
             {t("bookableItemDetails.calendarSubscription.retry")}
           </Button>
         </div>
@@ -199,11 +201,16 @@ export function CalendarSubscriptionPopover({
         </p>
       );
     }
-    if (createMutation.isError) {
+    if (createMutation.isError || (status.isFetching && status.data?.subscriptionUrl === null)) {
       return (
         <div className="space-y-3">
           <p role="alert">{t("bookableItemDetails.calendarSubscription.generateError")}</p>
-          <Button type="button" variant="outline" onClick={() => createMutation.mutate()}>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={createMutation.isPending || status.isFetching}
+            onClick={createSubscription}
+          >
             {t("bookableItemDetails.calendarSubscription.retry")}
           </Button>
         </div>

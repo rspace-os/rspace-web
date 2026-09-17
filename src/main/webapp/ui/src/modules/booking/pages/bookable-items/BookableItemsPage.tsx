@@ -35,6 +35,7 @@ import {
   BookingConfigurationActionsMenu,
   type BookingConfigurationLifecycleAction,
 } from "./BookingConfigurationActionsMenu";
+import { calendarSubscriptionQueryKey } from "./bookableItemCalendarSubscription";
 import {
   type BookingConfigurationRow,
   BookingConfigurationSchema,
@@ -259,7 +260,7 @@ function ArchiveBookableItemDialog({
   configuration: BookingConfigurationRow;
   close: () => void;
   onArchive: (id: number, version: number) => Promise<void>;
-  onArchived: () => void;
+  onArchived: (configurationId: number) => Promise<void>;
 }) {
   const { t } = useTranslation(["booking", "common"]);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -272,7 +273,7 @@ function ArchiveBookableItemDialog({
     try {
       await onArchive(configuration.id, requiredVersion(configuration));
       close();
-      onArchived();
+      await onArchived(configuration.id);
     } catch (error) {
       setDeleteError(error);
     } finally {
@@ -319,7 +320,7 @@ function PermanentDeleteBookableItemDialog({
   configuration: BookingConfigurationRow;
   close: () => void;
   onDelete: (id: number, version: number) => Promise<void>;
-  onDeleted: () => void;
+  onDeleted: () => Promise<void>;
 }) {
   const { t } = useTranslation(["booking", "common"]);
   const [confirmation, setConfirmation] = useState("");
@@ -334,7 +335,7 @@ function PermanentDeleteBookableItemDialog({
     try {
       await onDelete(configuration.id, requiredVersion(configuration));
       close();
-      onDeleted();
+      await onDeleted();
     } catch (error) {
       setDeleteError(error);
     } finally {
@@ -552,13 +553,21 @@ function BookableItemsContent() {
     [token],
   );
   const onChanged = useCallback(
-    () => void queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] }),
+    async (configurationId?: number) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] }),
+        queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] }),
+        ...(configurationId === undefined
+          ? []
+          : [queryClient.invalidateQueries({ queryKey: calendarSubscriptionQueryKey(configurationId) })]),
+      ]);
+    },
     [queryClient],
   );
   const restoreMutation = useMutation({
     mutationFn: (configuration: BookingConfigurationRow) =>
       restoreBookingConfiguration(configuration.id, requiredVersion(configuration), token),
-    onSuccess: onChanged,
+    onSuccess: (_data, configuration) => onChanged(configuration.id),
   });
   const onRestore = useCallback(
     (configuration: BookingConfigurationRow) => restoreMutation.mutateAsync(configuration),
@@ -568,10 +577,20 @@ function BookableItemsContent() {
   const bulkMutation = useMutation({
     mutationFn: ({ action, selectedRowIds: mutationRowIds }: BookableItemsBulkMutation) =>
       mutateBookableItems(action, mutationRowIds, token),
-    onSuccess: async () => {
+    onSuccess: async (_data, variables) => {
       setSelectedRowIds(new Set());
       setFailedBulkAction(null);
-      await queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] }),
+        ...(variables.action === "archive"
+          ? [
+              queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] }),
+              ...variables.selectedRowIds.map((id) =>
+                queryClient.invalidateQueries({ queryKey: calendarSubscriptionQueryKey(Number(id)) }),
+              ),
+            ]
+          : []),
+      ]);
     },
     onError: (_error, variables) => setFailedBulkAction(variables.action),
   });

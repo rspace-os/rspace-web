@@ -12,7 +12,7 @@ suite under `src/main/webapp/ui/src/tinyMCE/stoichiometry/__tests__/`.
 import { cleanup, render } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
-import { worker } from "@/__tests__/browserSetup";
+import { worker } from "@/__tests__/browserMocks";
 import { oauthTokenHandler } from "@/__tests__/mocks/inventoryMocks";
 import { SomeStory } from "./Component.story";
 import { ComponentPage } from "./pageObjects/ComponentPage";
@@ -96,12 +96,23 @@ document/page divs, the TinyMCE contenteditable iframe body.
 
 ## Gotcha catalogue
 
-- **MSW worker lifecycle.** One origin-global service worker, started once in
-  `browserSetup.ts` and never stopped. Files run serially (`fileParallelism:
-  false`) so `worker.use()`/`resetHandlers()` never race. Adding `worker.stop()`
-  in a teardown deactivates interception for later files and 404s them
-  (cross-file flakiness). Files after the first call `worker.start()` redundantly;
-  that warning is silenced in `browserSetup.ts`.
+- **MSW worker lifecycle.** Vitest's default isolation gives each test file a
+  fresh iframe and a separate client from `browserMocks.ts`. `browserSetup.ts` awaits
+  `worker.start()` before tests, resets handlers after each test, and stops the
+  client after the file. Specs import `browserMocks`, never `browserSetup`, so
+  lifecycle hooks are registered only by `setupFiles`. Service-worker
+  registration is origin-wide, but handlers belong to the iframe client.
+  Firefox disables the Service Worker API via Playwright's `firefoxUserPrefs`
+  so MSW uses its built-in fetch/XHR fallback. With service workers enabled,
+  Firefox stops delivering mocked requests after Vitest replaces the first
+  isolated iframe. Chromium and WebKit still exercise service-worker interception.
+  The fallback intercepts only fetch/XHR, not native `<img>` loads. Use inline
+  image data or local assets for image fixtures, as in `CallableImagePreview.story.tsx`.
+  `fileParallelism: false` keeps storage and browser-emulation cleanup serial.
+  Playwright contexts use `locale: "en-US"` so number formatting matches the
+  suite's English assertions regardless of the host OS locale.
+  Synthetic `beforeunload` events also trigger MSW's shutdown listener; restart
+  the client in that test's teardown before the next test uses it.
 - **`suppressFireAndForget404([...])`.** Components that fire un-awaited requests
   (folder listings, thumbnails) can 404 after teardown and surface as an
   `unhandledrejection` that fails the run even though every assertion passed.

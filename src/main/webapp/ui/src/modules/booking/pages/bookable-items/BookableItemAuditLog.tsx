@@ -30,12 +30,31 @@ const PRESET_DAYS = [7, 30, 90] as const;
 const RANGE_SEPARATOR = "\u2013";
 
 function RecordedValues({ row }: { row: AuditRow }) {
+  const { t, i18n } = useTranslation("booking");
+  const labels: Record<string, string> = {
+    start: t("bookableItemDetails.audit.values.start"),
+    end: t("bookableItemDetails.audit.values.end"),
+    kind: t("bookableItemDetails.audit.values.kind"),
+    purpose: t("bookableItemDetails.audit.values.purpose"),
+    state: t("bookableItemDetails.audit.values.state"),
+    target: t("bookableItemDetails.audit.values.target"),
+    bookingConfigurationId: t("bookableItemDetails.audit.values.configuration"),
+    enabled: t("bookableItemDetails.audit.values.enabled"),
+    timezone: t("bookableItemDetails.audit.values.timezone"),
+    openingStart: t("bookableItemDetails.audit.values.openingStart"),
+    openingEnd: t("bookableItemDetails.audit.values.openingEnd"),
+    slotGranularityMinutes: t("bookableItemDetails.audit.values.increment"),
+    maxBookingDurationMinutes: t("bookableItemDetails.audit.values.maximumDuration"),
+    bufferBeforeMinutes: t("bookableItemDetails.audit.values.bufferBefore"),
+    bufferAfterMinutes: t("bookableItemDetails.audit.values.bufferAfter"),
+    allowDoubleBooking: t("bookableItemDetails.audit.values.allowDoubleBooking"),
+  };
   return (
-    <dl className="grid min-w-52 grid-cols-[max-content_1fr] gap-x-3 gap-y-1 font-mono text-xs">
-      {recordedValues(row.payload).map(([label, value]) => (
+    <dl className="grid min-w-52 grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-x-3 gap-y-1 text-xs">
+      {recordedValues(row.payload, i18n.language).map(([label, value]) => (
         <div className="contents" key={label}>
-          <dt className="text-muted-foreground">{label}</dt>
-          <dd className="break-all">{value}</dd>
+          <dt className="break-words text-muted-foreground">{labels[label] ?? label}</dt>
+          <dd className="break-words">{value === "{}" ? t("bookableItemDetails.audit.values.empty") : value}</dd>
         </div>
       ))}
     </dl>
@@ -136,7 +155,9 @@ function AuditTimestamp({ value }: { value: string }) {
   const { i18n } = useTranslation("booking");
   return (
     <time dateTime={value}>
-      {new Intl.DateTimeFormat(i18n.language, { dateStyle: "medium", timeStyle: "medium" }).format(new Date(value))}
+      {new Intl.DateTimeFormat(i18n.language, { dateStyle: "medium", timeStyle: "long", timeZone: "UTC" }).format(
+        new Date(value),
+      )}
     </time>
   );
 }

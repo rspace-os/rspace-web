@@ -6,7 +6,11 @@ import { useBookableItem } from "@/modules/booking/creation/BookableItemPicker";
 import { BookingForm, type BookingFormState, type BookingFormSubmission } from "@/modules/booking/creation/BookingForm";
 import type { BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
 import { bookingCreationDraftFromHistoryState } from "@/modules/booking/creation/bookingCreationDraft";
-import { bookingProblemKey, useCreateBooking } from "@/modules/booking/creation/useCreateBooking";
+import {
+  bookingCreationProblemKey,
+  isBookingCreationOutcomeUncertain,
+  useCreateBooking,
+} from "@/modules/booking/creation/useCreateBooking";
 import { isBookingOverlapError } from "@/modules/booking/domain/booking";
 import { todayInTimeZone, useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
@@ -136,10 +140,10 @@ function AddBookingContent() {
   const updatePageState = useCallback(
     (state: BookingFormState) => {
       setSelectedTarget(state.target);
-      if (!mutation.isError) return;
+      if (!mutation.isError || isBookingCreationOutcomeUncertain(mutation.error)) return;
       resetMutation();
     },
-    [mutation.isError, resetMutation],
+    [mutation.error, mutation.isError, resetMutation],
   );
   const submit = async (submission: BookingFormSubmission) => {
     await mutation.mutateAsync(submission);
@@ -174,8 +178,11 @@ function AddBookingContent() {
               initialPurpose={transferredDraft?.purpose}
               token={token}
               pending={mutation.isPending}
-              error={mutation.error ? t(bookingProblemKey(mutation.error)) : undefined}
-              submissionBlocked={isBookingOverlapError(mutation.error)}
+              error={mutation.error ? t(bookingCreationProblemKey(mutation.error)) : undefined}
+              outcomeUncertain={isBookingCreationOutcomeUncertain(mutation.error)}
+              submissionBlocked={
+                isBookingOverlapError(mutation.error) || isBookingCreationOutcomeUncertain(mutation.error)
+              }
               showRulesSummary={false}
               onStateChange={updatePageState}
               onSubmit={submit}
