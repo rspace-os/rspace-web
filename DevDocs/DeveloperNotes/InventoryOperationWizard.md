@@ -331,8 +331,9 @@ checkbox with explanatory helper text beneath it, `rememberProcessValuesHelp`) g
 everything kept for a process name — the template choice, the
 documentation link, and the collected amounts — as a single bundle
 (`processValues.ts`, preference `INVENTORY_OPERATION_PROCESS_VALUES`; supersedes the
-earlier per-item template/doc/amount preferences). Ticking it loads the saved bundle
-into the form; unticking resets the form to defaults **without deleting** what was
+earlier per-item template/doc/amount preferences). Ticking it only marks the current
+form for saving; it never reloads the stored bundle, so untick, edit, re-tick saves the
+edited values. Unticking resets the form to defaults **without deleting** what was
 saved. The checkbox reflects the saved state as the process name changes (checked +
 loaded when that name has a bundle, unchecked + defaults otherwise). On a successful
 Perform, and only when ticked, the bundle is saved, the name added to the operation's
