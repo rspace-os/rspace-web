@@ -212,3 +212,4 @@ irods.realConnection.server.password=
 
 deployment.description=Localhost deployment for testing purposes
 deployment.helpEmail=support@researchspace.com
+deployment.test.fb.instance=false
