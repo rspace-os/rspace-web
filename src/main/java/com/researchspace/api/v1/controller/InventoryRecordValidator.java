@@ -78,13 +78,6 @@ abstract class InventoryRecordValidator {
     }
   }
 
-  // No rejection of operationFieldKey here, deliberately. The DTO property is READ_ONLY, so a value
-  // in any request body is dropped at binding before this method runs. Rejecting it in this shared
-  // method was tried and was wrong twice over: the template validators never call this method, so
-  // a forged key still persisted; and rejecting a value the API itself returns broke
-  // read-modify-write, so any client that GETs an operation-created sample, edits one field and
-  // PUTs it back got a 400 on a field it never touched.
-
   boolean isValidUnit(ApiQuantityInfo quantity) {
     return quantity.getUnitId() != null && RSUnitDef.exists(quantity.getUnitId());
   }
@@ -150,7 +143,6 @@ abstract class InventoryRecordValidator {
     }
   }
 
-  // obtain InventoryRecord list of reserved names through container class
   private final Set<String> reservedGenericFieldNames = (new Container()).getReservedFieldNames();
 
   protected Set<String> getReservedFieldNames() {

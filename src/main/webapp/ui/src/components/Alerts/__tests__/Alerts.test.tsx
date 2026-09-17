@@ -34,8 +34,6 @@ describe("Alerts", () => {
   });
 
   test("renders an alert carrying a React element icon", () => {
-    // Pins the shallow-observation fix: deep-proxying a React element icon crashed React
-    // in dev; the store must keep such alerts renderable.
     render(
       <Alerts>
         <DisplaysAlertWithElementIcon />

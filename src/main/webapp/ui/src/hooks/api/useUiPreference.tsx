@@ -4,9 +4,6 @@ import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import AlertContext, { mkAlert } from "@/stores/contexts/Alert";
 
-/**
- * This constant ensures that we don't end up with clashing keys
- */
 /*
  * The keys of the UI_JSON_SETTINGS object. The backend accepts only these names on a keyed
  * preference write (UI_JSON_SETTINGS_KEYS in UserManagerImpl), so adding a preference here means
@@ -91,10 +88,6 @@ export function UiPreferences({ children }: { children: React.ReactNode }): Reac
       });
   }, []);
 
-  /*
-   * If it turns out that loading this data will likely take a while,
-   * then we will want to replace this null with a loading spinner.
-   */
   if (!uiPreferences) return null;
   return (
     <UiPreferencesContext.Provider value={{ uiPreferences, setUiPreferences, pendingWrites }}>
@@ -165,11 +158,7 @@ export default function useUiPreference<T>(
 
   return [
     v,
-    // Takes a VALUE, not React's SetStateAction. It was typed as a full setter but treated
-    // `newValue` as a value everywhere below, so `setPref(prev => prev + 1)` stored the function
-    // object in the context and JSON.stringify'd it into the POST body, persisting undefined.
-    // Every caller passes a value; narrowing the type makes the updater
-    // form a compile error rather than a silent data loss.
+    // Takes a VALUE, not React's SetStateAction.
     (newValue: T) => {
       setUiPreferences((old: { [k in keyof typeof PREFERENCES]: unknown } | null) => {
         if (old === null) return old;
@@ -196,8 +185,6 @@ export default function useUiPreference<T>(
           "value",
           JSON.stringify({
             value: newValue,
-            // we save the time so that we have the option of implementing an
-            // eviction polciy in the future
             time: Date.now(),
           }),
         );

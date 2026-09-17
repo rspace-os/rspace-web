@@ -71,13 +71,13 @@ public class SampleApiPostValidatorTest extends InventoryRecordValidationTestBas
     full.setName("ok");
 
     // past value is ok
-    full.setExpiryDate(LocalDate.of(2019, 1, 1)); // a date in the past
+    full.setExpiryDate(LocalDate.of(2019, 1, 1));
     Errors e = new BeanPropertyBindingResult(full, "fullpost");
     validator.validate(full, e);
     assertEquals(0, e.getErrorCount());
 
     // future value is ok
-    full.setExpiryDate(LocalDate.now().plus(1, ChronoUnit.YEARS)); // a date in the future
+    full.setExpiryDate(LocalDate.now().plus(1, ChronoUnit.YEARS));
     e = new BeanPropertyBindingResult(full, "fullpost");
     validator.validate(full, e);
     assertEquals(0, e.getErrorCount());
@@ -145,7 +145,6 @@ public class SampleApiPostValidatorTest extends InventoryRecordValidationTestBas
     validator.validate(full, e);
     assertEquals(0, e.getErrorCount());
 
-    // min > max, should be rejected
     full.setStorageTempMin(new ApiQuantityInfo(BigDecimal.valueOf(20L), RSUnitDef.CELSIUS));
     e = resetErrorsAndValidate(full);
     assertEquals(1, e.getErrorCount());
@@ -164,7 +163,6 @@ public class SampleApiPostValidatorTest extends InventoryRecordValidationTestBas
     e = resetErrorsAndValidate(full);
     assertEquals(0, e.getErrorCount());
 
-    // min == max, should be OK
     full.setStorageTempMax(new ApiQuantityInfo(BigDecimal.valueOf(3L), RSUnitDef.CELSIUS));
     full.setStorageTempMin(new ApiQuantityInfo(BigDecimal.valueOf(3L), RSUnitDef.CELSIUS));
     e = resetErrorsAndValidate(full);

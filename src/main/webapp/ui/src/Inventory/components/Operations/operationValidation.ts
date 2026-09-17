@@ -20,51 +20,23 @@ export function amountIsStorable(value: number): boolean {
   return Math.round(value * 1000) / 1000 === value;
 }
 
-/**
- * Whether a child count is a whole number within [min, max].
- *
- * Both bounds come from the operation definition the server serves, not from a constant retyped
- * here, so a server-side change to the cap cannot drift from what the wizard offers. `max` is
- * undefined only for a definition that declares none, which is unbounded by the definition's own
- * account.
- */
 export function validSubSampleCount(count: unknown, min = 1, max?: number): boolean {
   const n = Number(count);
   return Number.isInteger(n) && n >= min && (max === undefined || n <= max);
 }
 
-/**
- * Whether a temperature input's value is above its configured Celsius ceiling (e.g. cryopreserve must
- * be stored at or below -18 °C, the operation's own `maxCelsius`). Returns false for a
- * non-temperature input, an unconfigured ceiling, or an incomplete value - none of which is an
- * over-temperature. Pure and shared by detailsValid (gating) and the field's inline error.
- */
 export function temperatureExceedsMax(input: OperationInputConfig, value: OperationQuantity | undefined): boolean {
   if (input.type !== "temperature" || input.maxCelsius === undefined) return false;
   if (!value || !Number.isFinite(value.numericValue)) return false;
   return value.numericValue > input.maxCelsius;
 }
 
-/**
- * Whether a temperature input's value is below its configured Celsius floor (e.g. revive must be
- * stored at or above 4 °C, the operation's own `minCelsius`). The mirror of
- * temperatureExceedsMax: false for a non-temperature input, an unconfigured floor, or an incomplete
- * value. Pure and shared by detailsValid (gating) and the field's inline error.
- */
 export function temperatureBelowMin(input: OperationInputConfig, value: OperationQuantity | undefined): boolean {
   if (input.type !== "temperature" || input.minCelsius === undefined) return false;
   if (!value || !Number.isFinite(value.numericValue)) return false;
   return value.numericValue < input.minCelsius;
 }
 
-/**
- * Whether a temperature input's value is one the backend would reject regardless of the configured
- * bounds: below absolute zero (the control is fixed to Celsius, so below -273.15), or finer than
- * the DECIMAL(19,3) column stores. Without this a value like -300 or -80.0005 satisfied the
- * configured Cryopreserve ceiling and enabled Perform, only to fail at the backend via
- * @ValidTemperature / the storability check. Pure and shared by
- * detailsValid (gating) and the field's inline error.
- */
 export function temperatureNotStorable(input: OperationInputConfig, value: OperationQuantity | undefined): boolean {
   if (input.type !== "temperature") return false;
   if (!value || !Number.isFinite(value.numericValue)) return false;
@@ -268,12 +240,6 @@ export function reconcileRestoredQuantities({
  * <p>"empty" is a subsample holding nothing (0, or a quantity never set). "unsupportedCategory" is
  * one whose unit is outside volume, mass and dimensionless - a molarity or a concentration - which
  * the backend rejects because an operation's amountTaken must be an amount unit.
- *
- * Both disable the step, and both did before this existed: the wizard gates on commonQuantity(),
- * which returns 0 for a unit with no category, so a real 1 M origin disabled Next while the only
- * alert on screen was "the origin holds nothing", whose own condition was false. The user got a
- * dead button with no explanation. Shared so the gate and the two places that explain it cannot
- * drift apart.
  */
 export type OriginBlockedReason = "empty" | "unsupportedCategory";
 

@@ -113,7 +113,6 @@ public class FieldmarkServiceManagerImpl implements FieldmarkServiceManager {
       }
       FieldmarkNotebookDTO notebookDTO = getFieldmarkNotebookDTO(importRequest, user);
 
-      // create sample template
       ApiSampleTemplatePost sampleTemplatePost = createSampleTemplateRequest(notebookDTO);
       BindingResult bindingResult =
           new BeanPropertyBindingResult(sampleTemplatePost, "templatePost");
@@ -121,13 +120,11 @@ public class FieldmarkServiceManagerImpl implements FieldmarkServiceManager {
       ApiSampleTemplate createdSampleTemplate =
           sampleApiMgr.createSampleTemplate(sampleTemplatePost, user);
 
-      // create container
       ApiContainer containerPost = createContainerRequest(notebookDTO, user);
       bindingResult = new BeanPropertyBindingResult(containerPost, "containerPost");
       validateCreateContainerInput(containerPost, bindingResult);
       ApiContainer createdContainer = containerApiMgr.createNewApiContainer(containerPost, user);
 
-      // create samples and associate identifiers (if it is the case)
       importResult = new FieldmarkApiImportResult(createdContainer, createdSampleTemplate);
       for (FieldmarkRecordDTO currentRecordDTO : notebookDTO.getRecords().values()) {
 
@@ -145,8 +142,6 @@ public class FieldmarkServiceManagerImpl implements FieldmarkServiceManager {
           apiHandler.assertInventoryAndDataciteEnabled(user);
           assignIdentifierToSample(user, currentRecordDTO, createdSample);
         }
-        // for each ATTACHMENT field get "globalID" and "content" (having file identifier) and
-        // then upload the right file
         for (ApiInventoryEntityField currentField : createdSample.getFields()) {
           if (ApiFieldType.ATTACHMENT.equals(currentField.getType())) {
             String sampleFieldGlobalId = currentField.getGlobalId();

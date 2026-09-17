@@ -90,7 +90,6 @@ describe("useUiPreference", () => {
     await waitFor(() => expect(fields).toHaveLength(1));
     expect(fields[0].preference).toBe("UI_JSON_SETTINGS");
     expect(fields[0].key).toBe("GALLERY_VIEW_MODE");
-    // the time is stored so an eviction policy stays possible later
     const sent = JSON.parse(fields[0].value) as { value: string; time: number };
     expect(sent.value).toBe("grid");
     expect(typeof sent.time).toBe("number");

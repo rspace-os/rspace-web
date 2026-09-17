@@ -101,7 +101,6 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
     testData.setPassword("pwprd");
     testData.getRoles().add(Role.USER_ROLE);
 
-    // set expected behavior on dao
     when(userDao.get(1L)).thenReturn(testData);
 
     final User user = userManager.getUser("1");
@@ -118,13 +117,10 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
     User user = TestFactory.createAnyUser("any");
     final String uname = user.getUsername();
 
-    // set expected behavior on role dao
     when(roleDao.getRoleByName(Constants.SYSADMIN_ROLE)).thenReturn(Role.SYSTEM_ROLE);
 
     Role role = roleManager.getRole(Constants.SYSADMIN_ROLE);
     user.addRole(role);
-
-    // set expected behavior on user dao
 
     final User user1 = user;
     when(userDao.saveUser(user)).thenReturn(user1);
@@ -139,7 +135,6 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
 
   @Test
   public void testUserExistsException() throws Exception {
-    // set expectations
     final User user = new User("admin");
     user.setEmail("matt@raibledesigns.com");
     user.setPassword("pwprd");
@@ -159,7 +154,6 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
     testData.setPassword("pwprd");
     testData.setTempAccount(true);
 
-    // set expected behavior on dao
     when(userDao.get(1L)).thenReturn(testData);
 
     final User user = userManager.getUser("1");
@@ -349,14 +343,6 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
 
   @Test
   public void mergeUiJsonSettingRejectsAMergeThatWouldOverflowTheStoredColumn() {
-    // The merged blob is one TEXT column (65535 chars). The UserPreference constructor fail-fast
-    // validates that limit (SettingsType.validate), so a merge that would overflow throws before
-    // anything is saved and the controller maps it to a 400; this test pins that the keyed path
-    // cannot reach the database with an oversized blob.
-    //
-    // The overflow is reached by ACCUMULATION, not by one huge value: the per-key ceiling (S6)
-    // rejects a single value big enough to overflow the column on its own, so this guard now only
-    // fires when several within-ceiling values together exceed the column.
     userWithUiJsonSettings("{\"GALLERY_VIEW_MODE\":{\"value\":\"" + "x".repeat(62_000) + "\"}}");
     String withinPerKeyCeiling = "{\"value\":\"" + "x".repeat(6_000) + "\"}";
     assertThrows(
@@ -367,9 +353,6 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
 
   @Test
   public void mergeUiJsonSettingRejectsAMergeWhoseBytesOverflowTheColumnThoughItsCharactersDoNot() {
-    // MySQL bounds a TEXT column in BYTES, while SettingsType.validate bounds it in Java
-    // CHARACTERS. A blob of multi-byte characters therefore passes that check and then fails
-    // inside the INSERT as a 500. 25000 euro signs are 25000 characters but 75000 utf8 bytes.
     userWithUiJsonSettings(
         "{\"GALLERY_VIEW_MODE\":{\"value\":\"" + "\u20ac".repeat(25_000) + "\"}}");
 

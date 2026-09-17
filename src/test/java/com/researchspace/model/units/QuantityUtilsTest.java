@@ -170,7 +170,6 @@ public class QuantityUtilsTest {
         "divide method requires dividend quantity and non-zero divisor as parameters",
         iae.getMessage());
 
-    // sanity check
     SomeQuantifiableThing zeroDotOneMgQuantity =
         new SomeQuantifiableThing(BigDecimal.valueOf(0.1), RSUnitDef.MILLI_GRAM);
     QuantityInfo result = qUtils.divide(zeroDotOneMgQuantity, BigDecimal.valueOf(2));
@@ -211,9 +210,9 @@ public class QuantityUtilsTest {
     result = qUtils.divide(onePicoGram, BigDecimal.valueOf(500));
     assertEquals("0.002 pg", result.toPlainString());
     result = qUtils.divide(onePicoGram, BigDecimal.valueOf(1500));
-    assertEquals("0.001 pg", result.toPlainString()); // rounds to 0.001
+    assertEquals("0.001 pg", result.toPlainString());
     result = qUtils.divide(onePicoGram, BigDecimal.valueOf(2001));
-    assertEquals("0 pg", result.toPlainString()); // rounds to 0
+    assertEquals("0 pg", result.toPlainString());
   }
 
   @Test
@@ -316,7 +315,6 @@ public class QuantityUtilsTest {
     SomeQuantifiableThing q4 =
         new SomeQuantifiableThing(BigDecimal.valueOf(23), RSUnitDef.MILLI_GRAM);
 
-    // correct ordering is 2,3,1 (ascending)
     List<Quantifiable> toSort = TransformerUtils.toList(q1, q2, q3, q4);
     Comparator<Quantifiable> cmp = qUtils.getComparatorFor(q1);
     Collections.sort(toSort, cmp);
@@ -327,7 +325,6 @@ public class QuantityUtilsTest {
   @DisplayName("Parse quantity info out of various Strings")
   public void parseQuantityInfoStrings() {
 
-    // mass units
     QuantityInfo quantityInfo = QuantityUtils.parseQuantityInfo("2kg");
     assertEquals("2 kg", quantityInfo.toPlainString());
     quantityInfo = QuantityUtils.parseQuantityInfo("5.5 g");
@@ -341,7 +338,6 @@ public class QuantityUtilsTest {
     quantityInfo = QuantityUtils.parseQuantityInfo("0.4 pg");
     assertEquals("0.4 pg", quantityInfo.toPlainString());
 
-    // volume units
     quantityInfo = QuantityUtils.parseQuantityInfo("12l");
     assertEquals("12 l", quantityInfo.toPlainString());
     quantityInfo = QuantityUtils.parseQuantityInfo("5.25 ml");
@@ -353,7 +349,6 @@ public class QuantityUtilsTest {
     quantityInfo = QuantityUtils.parseQuantityInfo("16.3pl");
     assertEquals("16.3 pl", quantityInfo.toPlainString());
 
-    // cubic volume units
     quantityInfo = QuantityUtils.parseQuantityInfo("4m³");
     assertEquals("4 ㎥", quantityInfo.toPlainString());
     quantityInfo = QuantityUtils.parseQuantityInfo("3 dm³");
@@ -413,9 +408,6 @@ public class QuantityUtilsTest {
 
   @Test
   public void theConversionStopsAtTheFirstUnitThatFits() {
-    // Stepping
-    // further would cost integer digits for nothing and would relabel the quantity more than the
-    // storage required.
     QuantityInfo remainder =
         qUtils.subtract(
             QuantityInfo.of(new BigDecimal("5"), RSUnitDef.GRAM),
@@ -438,10 +430,6 @@ public class QuantityUtilsTest {
 
   @Test
   public void theLadderIsTraversedToItsBottomRungWithoutRunningOffTheEnd() {
-    // Both
-    // operands are QuantityInfos and so already hold at most 3dp in their own units, which means
-    // the difference always holds at most 3dp in the category's SMALLEST unit: the loop can always
-    // find a rung and the give-up branch is defensive rather than reachable from here.
     QuantityInfo remainder =
         qUtils.subtract(
             QuantityInfo.of(new BigDecimal("1"), RSUnitDef.KILO),

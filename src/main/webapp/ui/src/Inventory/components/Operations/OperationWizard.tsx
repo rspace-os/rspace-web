@@ -477,7 +477,6 @@ function OperationWizard({
     setValues(next);
   };
 
-  // Neither ticking nor unticking deletes the stored bundle.
   const onRememberChange = (checked: boolean) => {
     if (!operation) return;
     setRemember(checked);
@@ -886,8 +885,6 @@ function OperationWizard({
               <SubmitSpinnerButton
                 onClick={() => void submit()}
                 loading={submitting}
-                // fastPath itself requires allStepsValid() in the same render, so only submitting
-                // can disable Perform here.
                 disabled={submitting || locksLapsed()}
                 label={t("operations.wizard.perform")}
               />

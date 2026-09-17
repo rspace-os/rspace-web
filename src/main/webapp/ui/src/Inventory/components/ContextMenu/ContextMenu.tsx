@@ -41,8 +41,6 @@ function ContextMenu({
 
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [overflow, setOverflow] = useState<Set<number>>(new Set());
-  // Buttons stay hidden until the first width measurement so that only the
-  // ones that actually fit are ever shown, rather than flashing the full set.
   const [measured, setMeasured] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
 

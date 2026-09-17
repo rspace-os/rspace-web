@@ -109,7 +109,6 @@ public class StoichiometryInventoryLinkManagerImplTest {
     StoichiometryInventoryLinkRequest req = new StoichiometryInventoryLinkRequest();
     req.setInventoryItemGlobalId("SA200");
 
-    // molecule already linked
     molecule.setInventoryLink(new StoichiometryInventoryLink());
 
     when(moleculeManager.getById(10L)).thenReturn(molecule);
@@ -260,7 +259,6 @@ public class StoichiometryInventoryLinkManagerImplTest {
     original.setStoichiometryMolecule(molecule);
     original.setInventoryRecord(invSubSample);
 
-    // SubSample has only 5 g stock
     invSubSample.setQuantity(new QuantityInfo(BigDecimal.valueOf(5), RSUnitDef.GRAM.getId()));
 
     when(linkDao.getSafeNull(321L)).thenReturn(java.util.Optional.of(original));

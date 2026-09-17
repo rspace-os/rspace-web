@@ -30,12 +30,6 @@ const operationIcons: Record<string, IconDefinition> = {
   trash: faTrash,
 };
 
-/**
- * Step 1: choose an operation. Every fetched operation definition is shown; each is enabled or
- * greyed-out for the current selection: single-origin operations need exactly one subsample, Pool
- * needs two or more of the same measurement category. A disabled operation shows the reason as its
- * secondary line instead of its description.
- */
 export default function OperationPicker({
   operations,
   onSelect,
@@ -55,7 +49,6 @@ export default function OperationPicker({
   // and so checked by the compiler.
   const label = resolveLabelFrom(t);
   return (
-    // A flex column with a small gap keeps the spacing even without per-item margins.
     <List sx={{ display: "flex", flexDirection: "column", gap: "2px" }}>
       {operations.map((operation) => {
         const availability = operationAvailability(operation, selectionCount, allSameCategory);
@@ -79,8 +72,6 @@ export default function OperationPicker({
                 <FontAwesomeIcon icon={icon} />
               </ListItemIcon>
             ) : null}
-            {/* The operation name is emphasised (bold); the description reads as the lighter secondary
-                line. A Typography element as `primary` sets the weight portably across MUI versions. */}
             <ListItemText
               primary={
                 <Typography component="span" sx={{ fontWeight: 700 }}>

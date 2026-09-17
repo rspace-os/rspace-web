@@ -314,7 +314,7 @@ public class ApiExtraFieldsHelper implements Validator {
     }
     // Read-only on the DTO, so this value is already server-authored or null, never client input.
     newField.setOperationFieldKey(apiField.getOperationFieldKey());
-    parentInvRec.addExtraField(newField); // update parent's field list
+    parentInvRec.addExtraField(newField);
   }
 
   private ExtraLinkField buildExtraLinkField(

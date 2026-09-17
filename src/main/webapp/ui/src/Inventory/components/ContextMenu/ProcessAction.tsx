@@ -27,10 +27,6 @@ type ProcessActionArgs = {
   closeMenu: () => void;
 };
 
-/**
- * ContextActions only shows this entry for a processable selection (isProcessableSelection), so no
- * per-action gating remains here.
- */
 const ProcessAction = forwardRef<React.ElementRef<typeof MenuItem>, ProcessActionArgs>(
   ({ as, disabled, selectedResults, closeMenu }, ref) => {
     const { t } = useTranslation("inventory");
@@ -50,7 +46,6 @@ const ProcessAction = forwardRef<React.ElementRef<typeof MenuItem>, ProcessActio
 
     const releaseAll = (records: Array<SubSampleModel>) => Promise.allSettled(records.map((r) => r.releaseLock(true)));
 
-    // Holds an edit lock on each origin while the wizard is open.
     const openWithOriginsLocked = async () => {
       if (busy.current) return;
       busy.current = true;

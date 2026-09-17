@@ -13,7 +13,6 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.validation.MapBindingResult;
 
-/** The rules that need RSUnitDef to say what a unit id means. */
 class OperationQuantityRulesTest {
 
   // A map-backed result, so a rule can be exercised on the field name it would use in production

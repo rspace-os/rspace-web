@@ -122,11 +122,6 @@ describe("parentSampleField matching", () => {
   });
 
   it("matches a keyed field gathered from either of the parent's two field lists", () => {
-    // Both lists must be searched: a Passage number can be a template field or an ad-hoc custom
-    // one. Asserting that a gather helper merely preserves the property would prove nothing - a
-    // spread of both arrays passes such a test with the key matching removed entirely. This goes
-    // through the lookup instead, with a same-named decoy in the other list
-    // so only key matching can produce the right answer.
     for (const listName of ["fields", "extraFields"] as const) {
       const keyed = {
         name: "Passagenummer",

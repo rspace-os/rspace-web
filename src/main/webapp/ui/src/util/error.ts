@@ -100,18 +100,14 @@ export function getApiErrorDetail(
   fallback: string,
   formatOriginIndex?: (reason: string, index: number) => string,
 ): string {
-  return (
-    Parsers.objectPath(["response", "data", "errors"], error)
-      .flatMap(Parsers.isArray)
-      .flatMap(([first]) => (typeof first === "undefined" ? Result.Error<unknown>([]) : Result.Ok(first)))
-      .flatMap(Parsers.isString)
-      .map((detail) => withOriginIndex(detail, formatOriginIndex))
-      .flatMap((detail) => (detail.length > 0 ? Result.Ok(detail) : Result.Error<string>([])))
-      // Always Ok, so this is the last step: there is no trailing .orElse, which was unreachable and
-      // read as a live fallback.
-      .orElseTry(() => Result.Ok(getErrorMessage(error, fallback)))
-      .orElse(fallback)
-  );
+  return Parsers.objectPath(["response", "data", "errors"], error)
+    .flatMap(Parsers.isArray)
+    .flatMap(([first]) => (typeof first === "undefined" ? Result.Error<unknown>([]) : Result.Ok(first)))
+    .flatMap(Parsers.isString)
+    .map((detail) => withOriginIndex(detail, formatOriginIndex))
+    .flatMap((detail) => (detail.length > 0 ? Result.Ok(detail) : Result.Error<string>([])))
+    .orElseTry(() => Result.Ok(getErrorMessage(error, fallback)))
+    .orElse(fallback);
 }
 
 /** An `origins[N]` path, whose index is the one part of the path the user needs. */

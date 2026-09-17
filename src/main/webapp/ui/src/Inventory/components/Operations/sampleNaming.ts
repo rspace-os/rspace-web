@@ -8,7 +8,6 @@
 
 // A trailing subsample serial (".01", ".12") the backend adds to each subsample of a sample.
 const SUBSAMPLE_SERIAL = /\.\d+$/;
-// A trailing dedup suffix ("_1", "_2") firstAvailableName appends to disambiguate a name.
 const DEDUP_SUFFIX = /_\d+$/;
 
 /**
