@@ -477,27 +477,12 @@ function OperationWizard({
     setValues(next);
   };
 
+  // Ticking only marks the current form for saving on Perform. It must not reload the stored
+  // bundle: the user may have unticked, changed the values, and ticked again to save the new ones.
   const onRememberChange = (checked: boolean) => {
     if (!operation) return;
     setRemember(checked);
-    if (checked) {
-      const key = rememberKey(operation, values);
-      const bundle = bundleFor(operation, key);
-      if (bundle) {
-        const restoredTemplate = restoredTemplateSelection(templateSelectionFor(bundle.template));
-        const reconciled = reconcileForOrigins(
-          operation,
-          restoredTemplate,
-          { ...values, ...bundle.values },
-          bundle.perSubsampleAmounts ?? {},
-        );
-        setValues(reconciled.values);
-        setTemplateSelection(restoredTemplate);
-        setDocumentation(bundle.documentation);
-        setAmountMode(bundle.amountMode ?? resolveDefaultAmountMode(operation));
-        setPerSubsampleAmounts(reconciled.perSubsampleAmounts);
-      }
-    } else {
+    if (!checked) {
       setValues((v) => freshValues(operation, origin, v));
       setTemplateSelection(initialTemplateSelection(parentHasTemplate));
       setDocumentation(null);

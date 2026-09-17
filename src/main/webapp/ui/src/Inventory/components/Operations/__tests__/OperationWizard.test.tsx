@@ -1400,6 +1400,43 @@ describe("OperationWizard remember bundle", () => {
     expect(prefs.store.INVENTORY_OPERATION_PROCESS_VALUES_DERIVE).toEqual(saved); // store untouched
   });
 
+  it("re-ticking remember keeps the values typed after unticking and saves those, not the old bundle", async () => {
+    prefs.store.INVENTORY_OPERATION_PROCESS_VALUES_DERIVE = {
+      "derive dna": {
+        values: { count: 4, eachAmount: { numericValue: 7, unitId: 3 }, amountTaken: { numericValue: 1, unitId: 3 } },
+        template: { mode: "pick", templateId: 9, templateName: "T9" },
+        documentation: null,
+      },
+    };
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    const origin = makeMockSubSample({});
+    vi.spyOn(origin, "fetchAdditionalInfo").mockResolvedValue(undefined);
+    render(<OperationWizard open onClose={onClose} origins={[origin]} />);
+    await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
+    await user.type(screen.getByTestId("proc"), "dna"); // loads + ticks the saved bundle
+    await waitFor(() => expect(screen.getByTestId("remember")).toHaveTextContent("true"), { timeout: 3000 });
+    await user.click(screen.getByTestId("toggle-remember")); // untick: back to details, defaults
+    await user.click(screen.getByTestId("fill-amounts")); // new data: eachAmount 5
+    await user.click(nextButton()); // -> template
+    await user.click(screen.getByTestId("tmpl-pick5"));
+    await user.click(nextButton()); // -> amounts
+    await user.click(nextButton()); // -> documentation
+    await user.click(nextButton()); // -> confirm
+    await user.click(screen.getByTestId("toggle-remember")); // re-tick: must keep the new data
+    await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
+
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    expect(posted[0]).toMatchObject({ count: 1, eachAmount: { numericValue: 5, unitId: 3 }, templateId: 5 });
+    expect(prefs.store.INVENTORY_OPERATION_PROCESS_VALUES_DERIVE).toEqual({
+      "derive dna": {
+        values: { count: 1, eachAmount: { numericValue: 5, unitId: 3 }, amountTaken: { numericValue: 1, unitId: 3 } },
+        template: { mode: "pick", templateId: 5, templateName: "T5" },
+        documentation: null,
+      },
+    });
+  });
+
   it("pre-fills the last-used process name and, on Review / edit, shows its bundle", async () => {
     // A complete remembered bundle loads on open, so the wizard offers the step-one fast path (DevDocs/adr/0007):
     // the confirmation and Perform, with the details form only behind "Review / edit".
