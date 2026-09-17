@@ -27,11 +27,12 @@ import com.researchspace.service.inventory.InventoryIdentifierApiManager;
 import com.researchspace.service.inventory.PidinstLookupManager;
 import com.researchspace.webapp.integrations.b2inst.B2instConnectorDummy;
 import java.io.InputStream;
-import java.util.List;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -235,19 +236,23 @@ public class PidinstLookupApiControllerMVCIT extends API_MVC_InventoryTestBase {
    * The status is the part of the minimum-length rule a unit test cannot see: the manager throws,
    * and it is {@code ApiControllerAdvice} that decides what a direct API caller actually gets. This
    * also pins the change from the controller's old blank check, which answered 400.
+   *
+   * <p>The value goes on as a request parameter rather than in the URL, because {@code
+   * MockMvcRequestBuilders.get} encodes the URL it is given: a whitespace query written as {@code
+   * %20%20} arrives as that literal six-character string, which is long enough to pass the very
+   * rule under test.
    */
-  @Test
-  public void searchRefusesAQueryShorterThanTheMinimumWith422() throws Exception {
+  @ParameterizedTest
+  @ValueSource(strings = {"qvt", "  ", ""})
+  public void searchRefusesAQueryShorterThanTheMinimumWith422(String tooShort) throws Exception {
     User anyUser = createInitAndLoginAnyUser();
     String apiKey = createNewApiKeyForUser(anyUser);
 
-    for (String tooShort : List.of("qvt", "%20%20", "")) {
-      mockMvc
-          .perform(
-              createBuilderForInventoryGet(
-                  API_VERSION.ONE, apiKey, "/pidinst/search?query=" + tooShort, anyUser))
-          .andExpect(status().isUnprocessableEntity());
-    }
+    mockMvc
+        .perform(
+            createBuilderForInventoryGet(API_VERSION.ONE, apiKey, "/pidinst/search", anyUser)
+                .param("query", tooShort))
+        .andExpect(status().isUnprocessableEntity());
   }
 
   @Test
