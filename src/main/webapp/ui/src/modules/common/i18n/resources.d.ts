@@ -4998,6 +4998,9 @@ export default interface Resources {
         },
         "limit": "(maximum of 10,000 events per download)"
       },
+      "errors": {
+        "listTooLong": "User, group and community lists must be {max} characters or fewer."
+      },
       "filter": {
         "communityPrompt": "Enter a Community to audit",
         "dateRangePrompt": "Date range to audit",
@@ -5886,6 +5889,7 @@ export default interface Resources {
       "nameLowercase": "name",
       "password": "Password",
       "pdfName": "PDF name",
+      "recipients": "Recipients",
       "renameRecordAction": "rename this record",
       "repository": "Repository",
       "svg": "SVG",
@@ -9620,7 +9624,8 @@ export default interface Resources {
     },
     "form": {
       "choiceOptions": {
-        "invalidFormat": "Choice options specified in invalid format - field names can't contain '=' or '&' characters."
+        "invalidFormat": "Choice options specified in invalid format - field names can't contain '=' or '&' characters.",
+        "label": "Choice options"
       },
       "editor": {
         "addFieldButton": "Add Field",

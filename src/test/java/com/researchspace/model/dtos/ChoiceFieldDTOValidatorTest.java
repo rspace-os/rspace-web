@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.field.ChoiceFieldForm;
+import com.researchspace.model.field.FieldUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.validation.BeanPropertyBindingResult;
@@ -79,6 +80,16 @@ public class ChoiceFieldDTOValidatorTest {
     dto = INVALID_CHARS_IN_NAME;
     validator.validate(dto, errors);
     assertTrue(ValidationTestUtils.hasError("form.choiceOptions.invalidFormat", errors));
+  }
+
+  @Test
+  public void testOverlongChoiceOptionsRejectedAsTooLong() {
+    Errors errors = new BeanPropertyBindingResult(VALID, "MyObject");
+    ChoiceFieldDTO<ChoiceFieldForm> dto = createValid();
+    dto.setChoiceValues("a=" + "b".repeat(FieldUtils.MAX_OPTIONS_LENGTH));
+    validator.validate(dto, errors);
+    assertTrue(ValidationTestUtils.hasError("errors.maxLength", errors));
+    assertFalse(ValidationTestUtils.hasError("form.choiceOptions.invalidFormat", errors));
   }
 
   @Test

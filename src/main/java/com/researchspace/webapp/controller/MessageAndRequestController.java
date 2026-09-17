@@ -55,6 +55,7 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -78,6 +79,10 @@ public class MessageAndRequestController extends BaseController implements Appli
 
   static final String CALENDAR_FILE_BODY = "CALENDAR_FILE_BODY";
   private static final String RECIPIENT_NAMES = "recipientnames";
+
+  /** Upper bound for the recipients autocomplete list, well above what the form produces. */
+  private static final int MAX_RECIPIENT_NAMES_LENGTH = 4096;
+
   private @Autowired CommunicationManager commMgr;
   private @Autowired ExternalMessageHandler externalMessageHandler;
   private @Autowired PropertyHolder propertyHolder;
@@ -361,6 +366,15 @@ public class MessageAndRequestController extends BaseController implements Appli
     if (!isAdminSendToAll(subject, mor)) {
       ValidationUtils.rejectIfEmptyOrWhitespace(
           errors, RECIPIENT_NAMES, "errors.emptyString.generic");
+      if (StringUtils.length(mor.getRecipientnames()) > MAX_RECIPIENT_NAMES_LENGTH) {
+        errors.rejectValue(
+            RECIPIENT_NAMES,
+            "errors.maxLength",
+            new Object[] {
+              new DefaultMessageSourceResolvable("label.recipients"), MAX_RECIPIENT_NAMES_LENGTH
+            },
+            null);
+      }
     }
     if (errors.hasErrors()) {
       return null;
