@@ -1,5 +1,5 @@
 import { ThemeProvider } from "@mui/material/styles";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { InventoryRecord } from "@/stores/definitions/InventoryRecord";
@@ -131,5 +131,33 @@ describe("ProcessAction lock acquisition", () => {
     expect(details).toHaveLength(1);
     expect(details[0].record).toBe(held);
     expect(lockOwnerName(holder)).toBe("Carol Holder");
+  });
+
+  it("ignores a second click while the first acquisition is still in flight", async () => {
+    // Both clicks land before either settles, and the later attempt is the one that finishes last.
+    // Its WAS_ALREADY_LOCKED result must not be mistaken for "this wizard locked nothing", which
+    // would leave the lock the first attempt took held after close.
+    const origin = makeMockSubSample({});
+    let finishSecond: (status: "WAS_ALREADY_LOCKED") => void = () => {};
+    const secondAttempt = new Promise<"WAS_ALREADY_LOCKED">((resolve) => {
+      finishSecond = resolve;
+    });
+    const acquire = vi
+      .spyOn(origin, "acquireEditLock")
+      .mockResolvedValueOnce("LOCKED_OK")
+      .mockReturnValueOnce(secondAttempt);
+    const release = vi.spyOn(origin, "releaseLock").mockResolvedValue(true);
+    renderAction([origin]);
+
+    const button = screen.getByRole("button", { name: /operations\.action\.process/i });
+    fireEvent.click(button);
+    fireEvent.click(button);
+    finishSecond("WAS_ALREADY_LOCKED");
+
+    await waitFor(() => expect(screen.getByTestId("wizard")).toBeInTheDocument());
+    expect(acquire).toHaveBeenCalledTimes(1);
+
+    await userEvent.click(screen.getByRole("button", { name: /close wizard/i }));
+    await waitFor(() => expect(release).toHaveBeenCalled());
   });
 });
