@@ -17,6 +17,7 @@ import com.researchspace.service.archive.export.ExportFailureException;
 import com.researchspace.service.chemistry.ChemistryClientException;
 import com.researchspace.service.chemistry.StoichiometryException;
 import com.researchspace.service.inventory.InventoryEditLockHeldException;
+import com.researchspace.service.inventory.InventoryOperationInProgressException;
 import com.researchspace.service.inventory.PidinstAlreadyLinkedException;
 import jakarta.ws.rs.NotFoundException;
 import java.util.ArrayList;
@@ -109,6 +110,21 @@ public class ApiControllerAdvice extends RestControllerAdvice {
             messages.getMessage(
                 "errors.inventory.editLock.heldBy",
                 new Object[] {ex.getGlobalId(), ex.getOwnerDisplayName()}),
+            "");
+    return new ResponseEntity<Object>(apiError, new HttpHeaders(), apiError.getStatus());
+  }
+
+  @ResponseStatus(HttpStatus.CONFLICT)
+  @ExceptionHandler(InventoryOperationInProgressException.class)
+  public ResponseEntity<Object> handleInventoryOperationInProgress(
+      final InventoryOperationInProgressException ex, final WebRequest request) {
+    log.warn("inventory operation already in progress: {}", ex.getMessage());
+    final ApiError apiError =
+        new ApiError(
+            HttpStatus.CONFLICT,
+            ApiErrorCodes.EDIT_CONFLICT.getCode(),
+            messages.getMessage(
+                "errors.inventory.operation.inProgress", new Object[] {ex.getGlobalId()}),
             "");
     return new ResponseEntity<Object>(apiError, new HttpHeaders(), apiError.getStatus());
   }

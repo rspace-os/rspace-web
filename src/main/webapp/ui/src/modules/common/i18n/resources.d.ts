@@ -7112,6 +7112,7 @@ export default interface Resources {
           "createdAmountNotPositive": "Each created subsample must be given a quantity greater than zero.",
           "documentationLinkTargetInvalid": "A documentation link must target an ELN document, notebook or Gallery file.",
           "duplicateOrigin": "An origin subsample may appear at most once in an operation.",
+          "inProgress": "Another operation on {0} is still in progress. Wait for it to finish, then reload and try again.",
           "inputAboveMaximum": "Must be at most {value}.",
           "inputBelowMinimum": "Must be at least {value}.",
           "inputNotStorable": "Supports at most 3 decimal places.",

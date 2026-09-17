@@ -159,6 +159,7 @@
         }
       },
       "operation": {
+        "inProgress": "Another operation on {0} is still in progress. Wait for it to finish, then reload and try again.",
         "amountTakenCategoryMismatch": "The amount taken must use the origin's measurement category (e.g. millilitres from a volume origin).",
         "amountTakenExceedsOrigin": "Cannot take more from an origin than it currently holds.",
         "amountTakenInvalid": "Each origin must specify a non-negative amount, with a unit, to take from it.",

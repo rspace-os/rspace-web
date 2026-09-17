@@ -13,6 +13,7 @@ import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.chemistry.ChemistryClientException;
 import com.researchspace.service.inventory.InventoryEditLockHeldException;
+import com.researchspace.service.inventory.InventoryOperationInProgressException;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
@@ -83,6 +84,24 @@ class ApiControllerAdviceTest {
 
     assertEquals(
         "SA9 is currently being edited by bob.", ((ApiError) response.getBody()).getMessage());
+  }
+
+  @Test
+  void anOperationAlreadyInProgressOnAnOriginIsAConflictNamingIt() {
+    ApiControllerAdvice advice = new ApiControllerAdvice();
+    advice.messages = new MessageSourceUtils(new JsonMessageSource());
+
+    ResponseEntity<Object> response =
+        advice.handleInventoryOperationInProgress(
+            new InventoryOperationInProgressException("SS123"), null);
+
+    ApiError error = (ApiError) response.getBody();
+    assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
+    assertEquals(ApiErrorCodes.EDIT_CONFLICT.getCode(), error.getInternalCode());
+    assertEquals(
+        "Another operation on SS123 is still in progress. Wait for it to finish, then reload and"
+            + " try again.",
+        error.getMessage());
   }
 
   private static class TestForm {

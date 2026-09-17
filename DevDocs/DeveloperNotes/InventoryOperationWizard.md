@@ -199,8 +199,11 @@ names.
 The controller checks what it can before touching anything: the body's own
 annotations have already run at binding, then `OperationOriginRules` checks the origin
 list and the documentation target, then each origin's global id is parsed to a
-subsample id. It takes the Inventory edit-session lock on every origin and every
-parent sample, in ascending global-id order, and calls the manager.
+subsample id. It claims every origin as in flight (`InventoryOperationInFlightOrigins`,
+409 if another request still holds one, whoever sent it), takes the Inventory
+edit-session lock on every origin and every parent sample, in ascending global-id
+order, and calls the manager. Claim and locks are released after the manager's
+transaction has ended.
 
 The manager runs in one transaction. It asserts edit permission on each origin while
 snapshotting its live state (`OriginState`: id, global id, name, quantity, and the
