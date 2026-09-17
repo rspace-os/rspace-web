@@ -1,11 +1,11 @@
 import fs from "node:fs";
-import { createRequire } from "node:module";
+import {createRequire} from "node:module";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import {fileURLToPath} from "node:url";
 import react from "@vitejs/plugin-react";
-import { playwright } from "@vitest/browser-playwright";
-import type { Alias, Plugin } from "vite";
-import { configDefaults, defineConfig } from "vitest/config";
+import {playwright} from "@vitest/browser-playwright";
+import type {Alias, Plugin} from "vite";
+import {configDefaults, defineConfig} from "vitest/config";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -88,6 +88,17 @@ const browsers = (process.env.VITEST_BROWSERS ?? "chromium,firefox,webkit")
 // Chromium/WebKit and on a local Firefox, so we skip just these files on
 // Firefox AND only in CI; every other Firefox file still runs. CI runs one
 // browser per job, so `VITEST_BROWSERS=firefox` identifies the Firefox leg.
+//
+// The three import/identifier dialogs are here for a second, distinct reason:
+// on Firefox a spec that mounts TinyMCE (e.g. NewNote.spec.tsx) leaves the
+// next file's requests unintercepted, so MSW passes them through to the dev
+// server and the component sees a 404 instead of its mock. Reproduced locally
+// by running NewNote.spec.tsx immediately before FieldmarkImportDialog.spec.tsx
+// and before PidinstImportDialog.spec.tsx; each passes alone and fails in that
+// pair. The service worker is still active and controlling when it happens, and
+// the poisoning spec leaves nothing in the DOM, so this is inside MSW's
+// per-client request resolution across Vitest's per-file iframes, not something
+// the specs themselves can clean up. Fix that and these three can come back.
 const isCI = Boolean(process.env.CI);
 const isFirefoxOnlyRun = browsers.length === 1 && browsers[0] === "firefox";
 const firefoxCiSkippedFiles =
@@ -100,6 +111,7 @@ const firefoxCiSkippedFiles =
         "**/tinyMCE/pubchem/ImportDialog.spec.tsx",
         "**/tinyMCE/pyrat/PyratDialog.spec.tsx",
         "**/Inventory/components/FieldmarkImportDialog.spec.tsx",
+        "**/Inventory/components/PidinstImportDialog.spec.tsx",
         "**/Inventory/Identifiers/IGSN/IgsnTable.spec.tsx",
         "**/components/Tags/__tests__/TagsCombobox.spec.tsx",
         "**/eln/sysadmin/users/__tests__/TagsCombobox.spec.tsx",
