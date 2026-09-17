@@ -557,13 +557,17 @@ function OperationWizard({
 
   /** Extends the edit-session lock on each origin as the wizard's steps complete (RSDEV-1231). */
   const extendOriginLocks = () => {
-    renewals.current = Promise.allSettled(
+    const batch = Promise.allSettled(
       origins.map((o) =>
         o.acquireEditLock().catch((error: unknown) => {
           console.warn("Could not extend the edit lock on an operation origin", error);
         }),
       ),
     );
+    // Folded in, not replaced: stepping again while a batch is still in flight would otherwise drop
+    // the older one, and it could then land after the release. Batches are not chained to each
+    // other, so a slow renewal never delays a later one; only close waits for them all.
+    renewals.current = Promise.allSettled([renewals.current, batch]);
   };
 
   /** Hands back to the caller only once no renewal can still land behind its release. */
