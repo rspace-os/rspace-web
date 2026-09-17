@@ -307,6 +307,26 @@ describe("PidinstImportDialog", () => {
     expect(await screen.findByText("1 of 1 record found at B2INST.")).toBeVisible();
   });
 
+  test("says nothing about totals when the search matched no importable records", async () => {
+    const user = userEvent.setup();
+    // DataCite reports what its index matched; the hits are what survives filtering to published
+    // instruments, so "0 of 128" would sit directly above "no records match"
+    stubEndpoints({ searchReply: [200, { provider: "PIDINST_DATACITE", total: 128, hits: [] }] });
+    await renderOpenDialog(
+      await wrapWithRealI18n(<PidinstImportDialogStory />, {
+        resources: { common: commonEn, inventory: inventoryEn },
+        defaultNS: "inventory",
+      }),
+    );
+
+    await user.type(screen.getByRole("textbox", { name: "Search the registry" }), "microscope");
+    await user.click(screen.getByRole("button", { name: "Search" }));
+
+    expect(await screen.findByText("No published instrument records match this search.")).toBeVisible();
+    expect(screen.getByRole("status")).toHaveTextContent("");
+    expect(screen.queryByText(/records found at/)).toBeNull();
+  });
+
   test("does not navigate away when the dialog is closed mid-import", async () => {
     const user = userEvent.setup();
     const onImported = vi.fn();

@@ -437,7 +437,7 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
             {/* rendered even with nothing to say: a live region inserted together with its text
                 is not announced, so the first search's summary would be silent */}
             <Typography variant="body2" aria-live="polite" role="status">
-              {result && (
+              {result && result.hits.length > 0 && (
                 <>
                   <span>
                     {t("pidinstImport.results.summary", {
