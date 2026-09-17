@@ -7,6 +7,7 @@ import { ruby } from "@jupyter-kit/core/langs/ruby";
 import { createKatexPlugin } from "@jupyter-kit/katex";
 import { type Ipynb, Notebook } from "@jupyter-kit/react";
 import Box from "@mui/material/Box";
+import DOMPurify from "dompurify";
 import { createRoot } from "react-dom/client";
 import axios from "@/common/axios";
 import "@jupyter-kit/theme-default/default.css";
@@ -83,12 +84,9 @@ function getNextAttachmentDivs(button: Element | null): Element[] {
 }
 
 function parseAttachmentsFromTextField(fieldId: string | null): Element[] {
-  // template content is inert: nothing in the field HTML is fetched or run while we query it
-  const template = document.createElement("template");
+  const fragment = DOMPurify.sanitize(getTextFieldHtml(fieldId), { RETURN_DOM_FRAGMENT: true });
 
-  template.innerHTML = getTextFieldHtml(fieldId);
-
-  return [...template.content.querySelectorAll(".attachmentDiv")];
+  return [...fragment.querySelectorAll(".attachmentDiv")];
 }
 
 function getAttachmentRecordId(attachment: Element, isNotebook: boolean): string | null {
