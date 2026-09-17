@@ -301,7 +301,7 @@ The following optional properties enable RSpace to connect to Orcid  API (if thi
 
 The following properties enable BioPortal ontology term suggestions in tag autocomplete:
 * **bioportal.base.url** BioPortal website, used only to build a display link for a matched term
-* **bioportal.api.base.url** The BioPortal REST API base URL used to fetch search suggestions, e.g. `https://data.bioontology.org`
+* **bioportal.api.base.url** BioPortal REST API URL for search suggestions. It must be `https://data.bioontology.org`; requests always use that fixed origin
 * **bioportal.api.key** API key for the BioPortal REST API; without it, BioPortal suggestions are silently unavailable
 
 The following optional properties enable RSpace to connect to RaID API (if this integration is enabled):

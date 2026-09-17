@@ -21,6 +21,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.web.client.RestClientException;
 
 @ExtendWith(MockitoExtension.class)
 class BioPortalOntologiesServiceTest {
@@ -29,7 +30,15 @@ class BioPortalOntologiesServiceTest {
   @InjectMocks private BioPortalOntologiesService testee;
 
   @Test
-  void shouldSwallowClientExceptions() {
+  void shouldSwallowProviderRestClientExceptions() {
+    doThrow(new RestClientException("boom"))
+        .when(bioOntologiesClientMock)
+        .search(any(String.class));
+    assertEquals(0, testee.getBioOntologyDataForQuery("abc").size());
+  }
+
+  @Test
+  void shouldSwallowUnexpectedMappingExceptions() {
     doThrow(RuntimeException.class).when(bioOntologiesClientMock).search(any(String.class));
     assertEquals(0, testee.getBioOntologyDataForQuery("abc").size());
   }
@@ -69,11 +78,11 @@ class BioPortalOntologiesServiceTest {
                 new BioPortalSearchResult(
                     "http://purl.bioontology.org/ontology/NCBITAXON/480744",
                     "Ctenotus hanloni",
-                    new BioPortalLinks("https://data.bioontology.org/ontologies/NCBITAXON", null)),
+                    new BioPortalLinks("https://data.bioontology.org/ontologies/NCBITAXON")),
                 new BioPortalSearchResult(
                     "http://purl.obolibrary.org/obo/VTO_0018361",
                     "Ctenotus hanloni",
-                    new BioPortalLinks("https://data.bioontology.org/ontologies/VTO", null))));
+                    new BioPortalLinks("https://data.bioontology.org/ontologies/VTO"))));
     when(bioOntologiesClientMock.getBioportalBaseUrl())
         .thenReturn("https://bioportal.bioontology.org");
 
@@ -104,11 +113,11 @@ class BioPortalOntologiesServiceTest {
                 new BioPortalSearchResult(
                     "http://purl.obolibrary.org/obo/CHEAR_1",
                     "Toluene",
-                    new BioPortalLinks("https://data.bioontology.org/ontologies/CHEAR", null)),
+                    new BioPortalLinks("https://data.bioontology.org/ontologies/CHEAR")),
                 new BioPortalSearchResult(
                     "http://purl.obolibrary.org/obo/HHEAR_1",
                     "Toluene",
-                    new BioPortalLinks("https://data.bioontology.org/ontologies/HHEAR", null))));
+                    new BioPortalLinks("https://data.bioontology.org/ontologies/HHEAR"))));
     when(bioOntologiesClientMock.getBioportalBaseUrl())
         .thenReturn("https://bioportal.bioontology.org");
 
@@ -124,11 +133,11 @@ class BioPortalOntologiesServiceTest {
     when(bioOntologiesClientMock.search("abc"))
         .thenReturn(
             List.of(
-                new BioPortalSearchResult("some-uri", "Something", new BioPortalLinks(null, null)),
+                new BioPortalSearchResult("some-uri", "Something", new BioPortalLinks(null)),
                 new BioPortalSearchResult(
                     "http://purl.obolibrary.org/obo/GAZ_00593210",
                     "Lev Tolstoy",
-                    new BioPortalLinks("https://data.bioontology.org/ontologies/GAZ", null))));
+                    new BioPortalLinks("https://data.bioontology.org/ontologies/GAZ"))));
     when(bioOntologiesClientMock.getBioportalBaseUrl())
         .thenReturn("https://bioportal.bioontology.org");
 
@@ -147,12 +156,12 @@ class BioPortalOntologiesServiceTest {
                 new BioPortalSearchResult(
                     "http://purl.obolibrary.org/obo/GAZ_00593210",
                     "Lev Tolstoy",
-                    new BioPortalLinks("https://data.bioontology.org/ontologies/GAZ", null)),
+                    new BioPortalLinks("https://data.bioontology.org/ontologies/GAZ")),
                 null,
                 new BioPortalSearchResult(
                     "http://purl.obolibrary.org/obo/GAZ_00245556",
                     "Town of Tolstoy",
-                    new BioPortalLinks("https://data.bioontology.org/ontologies/GAZ", null))));
+                    new BioPortalLinks("https://data.bioontology.org/ontologies/GAZ"))));
     when(bioOntologiesClientMock.getBioportalBaseUrl())
         .thenReturn("https://bioportal.bioontology.org");
 
@@ -171,7 +180,7 @@ class BioPortalOntologiesServiceTest {
                 new BioPortalSearchResult(
                     "http://purl.obolibrary.org/obo/GAZ_00593210",
                     " ",
-                    new BioPortalLinks("https://data.bioontology.org/ontologies/GAZ", null))));
+                    new BioPortalLinks("https://data.bioontology.org/ontologies/GAZ"))));
 
     assertEquals(0, testee.getBioOntologyDataForQuery("abc").size());
   }
@@ -184,7 +193,7 @@ class BioPortalOntologiesServiceTest {
                 new BioPortalSearchResult(
                     " ",
                     "Lev Tolstoy",
-                    new BioPortalLinks("https://data.bioontology.org/ontologies/GAZ", null))));
+                    new BioPortalLinks("https://data.bioontology.org/ontologies/GAZ"))));
 
     assertEquals(0, testee.getBioOntologyDataForQuery("abc").size());
   }

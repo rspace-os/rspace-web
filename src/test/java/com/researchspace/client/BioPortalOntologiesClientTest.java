@@ -11,8 +11,11 @@ import static org.springframework.test.web.client.match.MockRestRequestMatchers.
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withServerError;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
+import com.researchspace.core.testutil.CoreTestUtils;
+import com.researchspace.core.testutil.StringAppenderForTestLogging;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import org.apache.logging.log4j.LogManager;
 import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
@@ -190,6 +193,31 @@ class BioPortalOntologiesClientTest {
   }
 
   @Test
+  void shouldShareCacheEntryAcrossDifferentCaseOfSameQuery() {
+    mockServer
+        .expect(requestTo(startsWithUri(API_BASE_URL + "/search")))
+        .andExpect(queryParam("q", "Tolstoy"))
+        .andRespond(withSuccess(singleResultJson(), MediaType.APPLICATION_JSON));
+
+    List<BioPortalSearchResult> first = client.search("Tolstoy");
+    List<BioPortalSearchResult> second = client.search("tolstoy");
+
+    assertSame(first, second); // same cache entry regardless of case, so only one upstream call
+    mockServer.verify();
+  }
+
+  @Test
+  void shouldReturnUnmodifiableResultList() {
+    mockServer
+        .expect(requestTo(startsWithUri(API_BASE_URL + "/search")))
+        .andRespond(withSuccess(singleResultJson(), MediaType.APPLICATION_JSON));
+
+    List<BioPortalSearchResult> results = client.search("Tolstoy");
+
+    assertThrows(UnsupportedOperationException.class, () -> results.add(null));
+  }
+
+  @Test
   void shouldNotShareCacheEntriesAcrossDifferentQueries() {
     mockServer
         .expect(requestTo(startsWithUri(API_BASE_URL + "/search")))
@@ -266,6 +294,8 @@ class BioPortalOntologiesClientTest {
 
   @Test
   void shouldReturnEmptyAndSkipRequestWhenApiBaseUrlIsMaliciousSubdomainSuffix() {
+    StringAppenderForTestLogging strLog =
+        CoreTestUtils.configureStringLogger(LogManager.getLogger(BioPortalOntologiesClient.class));
     // "startsWith" would fall for this; exact host match won't
     ReflectionTestUtils.setField(
         client, "bioportalApiBaseUrl", "https://data.bioontology.org.evil.example");
@@ -274,16 +304,21 @@ class BioPortalOntologiesClientTest {
 
     assertEquals(0, results.size());
     mockServer.verify(); // no expectations were set up, and none should have been requested
+    assertTrue(strLog.logContents.contains("https://data.bioontology.org.evil.example"));
+    assertTrue(strLog.logContents.contains("data.bioontology.org"));
   }
 
   @Test
   void shouldReturnEmptyAndSkipRequestWhenApiBaseUrlIsBlank() {
+    StringAppenderForTestLogging strLog =
+        CoreTestUtils.configureStringLogger(LogManager.getLogger(BioPortalOntologiesClient.class));
     ReflectionTestUtils.setField(client, "bioportalApiBaseUrl", "");
 
     List<BioPortalSearchResult> results = client.search("Tolstoy");
 
     assertEquals(0, results.size());
     mockServer.verify(); // no expectations were set up, and none should have been requested
+    assertTrue(strLog.logContents.contains("BioPortal API base URL is not configured"));
   }
 
   @Test
@@ -301,12 +336,17 @@ class BioPortalOntologiesClientTest {
 
   @Test
   void shouldReturnEmptyAndSkipRequestWhenApiBaseUrlIsMalformed() {
+    StringAppenderForTestLogging strLog =
+        CoreTestUtils.configureStringLogger(LogManager.getLogger(BioPortalOntologiesClient.class));
     ReflectionTestUtils.setField(client, "bioportalApiBaseUrl", "not a url");
 
     List<BioPortalSearchResult> results = client.search("Tolstoy");
 
     assertEquals(0, results.size());
     mockServer.verify(); // no expectations were set up, and none should have been requested
+
+    assertTrue(strLog.logContents.contains("not a url"));
+    assertTrue(strLog.logContents.contains("is not a valid URI"));
   }
 
   private static String lastPathSegment(String url) {

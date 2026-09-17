@@ -13,6 +13,4 @@ import lombok.NoArgsConstructor;
 public class BioPortalLinks {
 
   @JsonProperty private String ontology;
-
-  @JsonProperty private String ui;
 }

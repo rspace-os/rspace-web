@@ -11,12 +11,13 @@ import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClientException;
 
 @Slf4j
 @Service
 public class BioPortalOntologiesService {
 
-  /** Below this length, a search term is not eligible for a BioPortal lookup. */
+  /** Search terms shorter than three characters are ignored. */
   private static final int MIN_SEARCH_TERM_LENGTH = 2;
 
   private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy/MM/dd");
@@ -59,8 +60,10 @@ public class BioPortalOntologiesService {
                   + OntologyDocManager.RSPACE_EXTONTOLOGY_VERSION_DELIM
                   + ontologyVersion);
         }
+      } catch (RestClientException e) {
+        return bioOntologyTerms;
       } catch (Exception e) {
-        log.warn("BioPortal ontology suggestions unavailable: {}", e.getClass().getSimpleName());
+        log.error("Unexpected error building BioPortal ontology suggestions", e);
       }
     }
     return bioOntologyTerms;

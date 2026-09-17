@@ -7,6 +7,8 @@ import java.net.URISyntaxException;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.Getter;
@@ -48,6 +50,7 @@ public class BioPortalOntologiesClient {
   @Value("${bioportal.base.url}")
   private String bioportalBaseUrl;
 
+  // Validated as an allowlist; requests use CANONICAL_API_ORIGIN.
   @Value("${bioportal.api.base.url}")
   private String bioportalApiBaseUrl;
 
@@ -64,7 +67,10 @@ public class BioPortalOntologiesClient {
   }
 
   private final AtomicBoolean missingApiKeyLogged = new AtomicBoolean(false);
-  private final AtomicBoolean invalidApiBaseUrlLogged = new AtomicBoolean(false);
+
+  private volatile ValidatedApiBaseUri cachedValidation;
+
+  private record ValidatedApiBaseUri(String candidate, URI result) {}
 
   private final Cache<String, List<BioPortalSearchResult>> searchCache =
       CacheBuilder.newBuilder()
@@ -81,40 +87,53 @@ public class BioPortalOntologiesClient {
     }
     URI validatedApiBaseUri = validateApiBaseUri(bioportalApiBaseUrl);
     if (validatedApiBaseUri == null) {
-      if (invalidApiBaseUrlLogged.compareAndSet(false, true)) {
-        log.warn(
-            "BioPortal API base URL is not a valid https://{} URL; BioPortal suggestions are"
-                + " unavailable",
-            ALLOWED_API_HOST);
-      }
       return Collections.emptyList();
     }
-    List<BioPortalSearchResult> cached = searchCache.getIfPresent(searchTerm);
+    String cacheKey = searchTerm.toLowerCase(Locale.ROOT);
+    List<BioPortalSearchResult> cached = searchCache.getIfPresent(cacheKey);
     if (cached != null) {
       return cached;
     }
-    // not cached on failure: a thrown RestClientException propagates to the caller unstored
-    List<BioPortalSearchResult> results = doSearch(validatedApiBaseUri, searchTerm);
-    searchCache.put(searchTerm, results);
+    List<BioPortalSearchResult> results =
+        Collections.unmodifiableList(doSearch(validatedApiBaseUri, searchTerm));
+    searchCache.put(cacheKey, results);
     return results;
   }
 
-  // Gates on the configured value but returns CANONICAL_API_ORIGIN, not the parsed candidate,
-  // so a stray port/user-info/query never reaches the request. Null skips the call.
-  private static URI validateApiBaseUri(String candidate) {
+  private URI validateApiBaseUri(String candidate) {
+    ValidatedApiBaseUri cached = cachedValidation;
+    if (cached != null && Objects.equals(cached.candidate(), candidate)) {
+      return cached.result();
+    }
+    URI result = computeValidatedApiBaseUri(candidate);
+    cachedValidation = new ValidatedApiBaseUri(candidate, result);
+    return result;
+  }
+
+  // Check the configured value, then discard it in favor of the fixed origin.
+  private static URI computeValidatedApiBaseUri(String candidate) {
     if (StringUtils.isBlank(candidate)) {
+      log.warn("BioPortal API base URL is not configured; BioPortal suggestions are unavailable");
       return null;
     }
     URI parsed;
     try {
       parsed = new URI(candidate);
     } catch (URISyntaxException e) {
+      log.warn(
+          "BioPortal API base URL [{}] is not a valid URI ({}); BioPortal suggestions are"
+              + " unavailable",
+          candidate,
+          e.getMessage());
       return null;
     }
-    if (!ALLOWED_API_SCHEME.equalsIgnoreCase(parsed.getScheme())) {
-      return null;
-    }
-    if (!ALLOWED_API_HOST.equalsIgnoreCase(parsed.getHost())) {
+    if (!ALLOWED_API_SCHEME.equalsIgnoreCase(parsed.getScheme())
+        || !ALLOWED_API_HOST.equalsIgnoreCase(parsed.getHost())) {
+      log.warn(
+          "BioPortal API base URL [{}] does not match the required https://{} origin; BioPortal"
+              + " suggestions are unavailable",
+          candidate,
+          ALLOWED_API_HOST);
       return null;
     }
     return CANONICAL_API_ORIGIN;
@@ -142,9 +161,7 @@ public class BioPortalOntologiesClient {
           ? Collections.emptyList()
           : response.getCollection();
     } catch (RestClientException e) {
-      log.warn(
-          "BioPortal search request failed: provider=BioPortal error={}",
-          e.getClass().getSimpleName());
+      log.warn("BioPortal search request failed: provider=BioPortal uri={}", uri, e);
       throw e;
     }
   }
