@@ -194,7 +194,7 @@ class InventoryOperationsApiControllerTest {
 
   private void managerCreates(ApiSampleWithFullSubSamples created, long... originIds)
       throws BindException {
-    when(operationManager.perform(any(), any(), any(), eq(user)))
+    when(operationManager.performBiobankOperation(any(), any(), any(), eq(user)))
         .thenReturn(
             new OperationOutcome(
                 created,
@@ -245,7 +245,7 @@ class InventoryOperationsApiControllerTest {
 
   @Test
   void theOriginsAreClaimedWhileTheManagerRunsAndFreedAfterItReturns() throws Exception {
-    when(operationManager.perform(any(), any(), any(), eq(user)))
+    when(operationManager.performBiobankOperation(any(), any(), any(), eq(user)))
         .thenAnswer(
             invocation -> {
               assertTrue(inFlightOrigins.isInFlight("SS100"));
@@ -261,7 +261,7 @@ class InventoryOperationsApiControllerTest {
 
   @Test
   void theClaimIsFreedWhenTheManagerRejectsTheRequest() throws Exception {
-    when(operationManager.perform(any(), any(), any(), eq(user)))
+    when(operationManager.performBiobankOperation(any(), any(), any(), eq(user)))
         .thenThrow(new IllegalStateException("boom"));
     ApiInventoryOperationRequests.Aliquot request = aliquotFacade();
 
@@ -341,7 +341,7 @@ class InventoryOperationsApiControllerTest {
   /** A rejected operation must not leave the origins locked for the next five minutes. */
   @Test
   void releasesTheLocksWhenTheManagerRejectsTheRequest() throws Exception {
-    when(operationManager.perform(any(), any(), any(), eq(user)))
+    when(operationManager.performBiobankOperation(any(), any(), any(), eq(user)))
         .thenThrow(new IllegalStateException("boom"));
     ApiInventoryOperationRequests.Aliquot request = aliquotFacade();
 
@@ -406,7 +406,8 @@ class InventoryOperationsApiControllerTest {
     @SuppressWarnings("unchecked")
     ArgumentCaptor<List<Long>> originIds = ArgumentCaptor.forClass(List.class);
     verify(operationManager)
-        .perform(same(controller.poolOperation), same(request), originIds.capture(), eq(user));
+        .performBiobankOperation(
+            same(controller.poolOperation), same(request), originIds.capture(), eq(user));
     assertEquals(List.of(100L, 300L), originIds.getValue());
   }
 
@@ -633,7 +634,7 @@ class InventoryOperationsApiControllerTest {
         "origins[0].amountTaken",
         "errors.inventory.operation.amountTakenExceedsOrigin",
         "Cannot take more from an origin than it currently holds.");
-    when(operationManager.perform(any(), any(), any(), eq(user)))
+    when(operationManager.performBiobankOperation(any(), any(), any(), eq(user)))
         .thenThrow(new BindException(coreErrors));
     ApiInventoryOperationRequests.Aliquot request = aliquotFacade();
 

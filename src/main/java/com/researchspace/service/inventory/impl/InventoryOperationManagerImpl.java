@@ -54,7 +54,7 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
   private static final QuantityUtils quantityUtils = new QuantityUtils();
 
   @Override
-  public <R extends ApiInventoryOperationRequests.Request> OperationOutcome perform(
+  public <R extends ApiInventoryOperationRequests.Request> OperationOutcome performBiobankOperation(
       InventoryOperation<R> operation, R request, List<Long> originIds, User user)
       throws BindException {
     // Permission is asserted while the state is snapshotted, before anything is validated against
@@ -123,9 +123,9 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
   /**
    * The transactional core, run on a request an operation built. Not on {@link
    * InventoryOperationManager}: it dereferences every origin's id and amount without guards and
-   * asserts nothing about permission itself, so it is only safe after {@link #perform} has
-   * snapshotted and validated. Reached by self-invocation, which is why {@code perform} carries the
-   * rollback rule.
+   * asserts nothing about permission itself, so it is only safe after {@link
+   * #performBiobankOperation} has snapshotted and validated. Reached by self-invocation, which is
+   * why {@code performBiobankOperation} carries the rollback rule.
    */
   ApiSampleWithFullSubSamples performOperation(ApiInventoryOperationPost request, User user)
       throws BindException {
