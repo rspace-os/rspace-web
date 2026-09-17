@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ProcessValues } from "../processValues";
-import { normalizeProcessValues, processValuesAfterPerform } from "../processValues";
+import { normalizeProcessValues } from "../processValues";
 
 const bundle: ProcessValues = {
   values: { count: 2, eachAmount: { numericValue: 5, unitId: 3 }, amountTaken: { numericValue: 5, unitId: 3 } },
@@ -27,15 +27,17 @@ describe("normalizeProcessValues", () => {
   });
 });
 
-describe("processValuesAfterPerform", () => {
-  it("stores the bundle under the key", () => {
-    expect(processValuesAfterPerform({}, "derive dna", bundle)).toEqual({ "derive dna": bundle });
+describe("normalizeProcessValues (documentation)", () => {
+  it("passes through a well-formed document", () => {
+    expect(
+      normalizeProcessValues({ values: {}, documentation: { globalId: "SD1", name: "My SOP" } })?.documentation,
+    ).toEqual({ globalId: "SD1", name: "My SOP" });
   });
 
-  it("does not mutate the input map", () => {
-    const current = { existing: bundle };
-    processValuesAfterPerform(current, "derive dna", bundle);
-    expect(current).toEqual({ existing: bundle });
+  it("rejects a document that is not an object carrying both a global id and a name", () => {
+    for (const stored of [undefined, null, "SD1", { globalId: "SD1" }, { name: "My SOP" }]) {
+      expect(normalizeProcessValues({ values: {}, documentation: stored })?.documentation).toBeNull();
+    }
   });
 });
 
