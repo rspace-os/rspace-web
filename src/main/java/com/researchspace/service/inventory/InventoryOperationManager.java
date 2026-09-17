@@ -55,7 +55,7 @@ public interface InventoryOperationManager {
    *     rollback-for BindException} (BindException is checked, so Spring's default rules would
    *     otherwise COMMIT on it).
    */
-  <R extends ApiInventoryOperationRequests.Request> OperationOutcome performBiobankOperation(
+  <R extends ApiInventoryOperationRequests.Request> OperationOutcome performOperation(
       InventoryOperation<R> operation, R request, List<Long> originIds, User user)
       throws BindException;
 }
