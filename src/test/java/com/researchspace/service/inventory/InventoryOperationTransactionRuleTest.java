@@ -127,7 +127,7 @@ class InventoryOperationTransactionRuleTest {
 
   /**
    * The in-flight claim releases an origin once its claim reaches {@link
-   * InventoryOperationInFlightOrigins#STALE_AFTER_MILLIS}, which only avoids overlapping two
+   * InventoryOperationInFlightOrigins#STALE_AFTER_NANOS}, which only avoids overlapping two
    * requests on one origin if no live operation can still be running by then. Bounding the
    * transaction below that limit is what makes it true rather than assumed.
    *
@@ -147,8 +147,8 @@ class InventoryOperationTransactionRuleTest {
         "performBiobankOperation declares no transaction timeout, so nothing bounds an operation"
             + " below the in-flight claim limit that frees its origins");
     assertTrue(
-        Duration.ofSeconds(Long.parseLong(perform)).toMillis()
-            < InventoryOperationInFlightOrigins.STALE_AFTER_MILLIS,
+        Duration.ofSeconds(Long.parseLong(perform)).toNanos()
+            < InventoryOperationInFlightOrigins.STALE_AFTER_NANOS,
         "performBiobankOperation's transaction timeout must expire before its in-flight claim does,"
             + " otherwise a live operation can still have its origins taken by a second request");
 
