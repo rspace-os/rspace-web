@@ -27,15 +27,13 @@ public class InventoryOperationInFlightOrigins {
   /**
    * A claim this old is taken to have been orphaned, and the next request replaces it.
    *
-   * <p>This is a judgement, not a proof: {@code perform} declares no transaction timeout, so
-   * nothing establishes that every live operation finishes inside the limit. A request still
-   * running when its claim is replaced would overlap the request that replaced it. Five minutes is
-   * chosen to put that far outside the range any real operation occupies while still releasing an
-   * origin orphaned by a crash within one edit-lock lifetime, rather than holding it until the
-   * process restarts. Bounding {@code perform} below this limit would turn the judgement into a
-   * guarantee.
+   * <p>Ten seconds past the transaction timeout on {@code performBiobankOperation}, which is what
+   * makes this safe rather than merely likely: a live operation is rolled back at eight minutes, so
+   * no request can still be writing when its claim is released at eight minutes ten. The margin
+   * absorbs the rollback and the release itself. Change one and the other has to move with it;
+   * {@code InventoryOperationTransactionRuleTest} fails if the ordering is ever broken.
    */
-  static final long STALE_AFTER_MILLIS = Duration.ofMinutes(5).toMillis();
+  public static final long STALE_AFTER_MILLIS = Duration.ofMinutes(8).plusSeconds(10).toMillis();
 
   private record Entry(Object token, long sinceMillis) {}
 
