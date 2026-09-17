@@ -137,13 +137,29 @@ describe("PidinstImportDialog", () => {
     expect(screen.getByText(/Only the first 2 records are shown/)).toBeVisible();
   });
 
-  test("refuses a blank search without calling the server", async () => {
+  test("refuses a search shorter than the minimum without calling the server", async () => {
     const user = userEvent.setup();
     await renderOpenDialog();
+    const searchButton = () => screen.getByRole("button", { name: "common:actions.search" });
+    const field = screen.getByRole("textbox", { name: "inventory:pidinstImport.search.label" });
+    const tooShort = "inventory:pidinstImport.search.validation.tooShort";
 
-    expect(screen.getByRole("button", { name: "common:actions.search" })).toBeDisabled();
-    await user.type(screen.getByRole("textbox", { name: "inventory:pidinstImport.search.label" }), "   ");
-    expect(screen.getByRole("button", { name: "common:actions.search" })).toBeDisabled();
+    expect(searchButton()).toBeDisabled();
+    expect(screen.queryByText(tooShort)).toBeNull();
+
+    await user.type(field, "   ");
+    expect(searchButton()).toBeDisabled();
+
+    // the same trimming the server applies, so the button and the endpoint agree on the length
+    await user.clear(field);
+    await user.type(field, "  qvt  ");
+    expect(searchButton()).toBeDisabled();
+    expect(screen.getByText(tooShort)).toBeVisible();
+
+    await user.clear(field);
+    await user.type(field, "qvtb");
+    expect(searchButton()).toBeEnabled();
+    expect(screen.queryByText(tooShort)).toBeNull();
 
     expect(mockAxios.history.get.filter((r) => r.url === SEARCH_URL)).toHaveLength(0);
   });

@@ -1770,7 +1770,7 @@
       "placeholder": "Name, manufacturer, owner, DOI or Handle",
       "searching": "Searching the PID registry…",
       "validation": {
-        "empty": "Enter a search term."
+        "tooShort": "Enter at least {min} characters to search."
       }
     },
     "searchError": "Could not search the PID registry.",
