@@ -176,7 +176,9 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
           withOriginsLocked(
               originIds,
               user,
-              () -> inventoryOperationManager.perform(operation, request, originIds, user));
+              () ->
+                  inventoryOperationManager.performBiobankOperation(
+                      operation, request, originIds, user));
     } catch (BindException coreRejection) {
       throw new BindException(facadeFieldNames(coreRejection.getBindingResult(), singleOrigin));
     }
