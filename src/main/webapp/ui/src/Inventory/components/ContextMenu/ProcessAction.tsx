@@ -41,35 +41,51 @@ const ProcessAction = forwardRef<React.ElementRef<typeof MenuItem>, ProcessActio
     // releasing that would strip protection the wizard never took.
     const taken = React.useRef<Array<SubSampleModel>>([]);
 
+    // One acquisition lifecycle at a time. The entry stays clickable while acquisition is pending,
+    // so without this a double click starts a second round whose WAS_ALREADY_LOCKED results (the
+    // first round already holds the locks) would overwrite taken.current and leak them at close.
+    // A ref, not state, because both clicks can land before React re-renders.
+    const busy = React.useRef(false);
+
     const releaseAll = (records: Array<SubSampleModel>) => Promise.allSettled(records.map((r) => r.releaseLock(true)));
 
     // Holds an edit lock on each origin while the wizard is open.
     const openWithOriginsLocked = async () => {
-      const results = await Promise.allSettled(origins.map((o) => o.acquireEditLock()));
-      const newlyLocked = origins.filter((_, i) => {
-        const result = results[i];
-        return result.status === "fulfilled" && result.value === "LOCKED_OK";
-      });
-      const failure = results.find((r) => r.status === "rejected");
-      if (failure) {
-        await releaseAll(newlyLocked);
-        const shown = displayErrorIfAllLocksCouldNotBeAcquired({
-          error: new AggregateError(results.filter((r) => r.status === "rejected").map((r) => r.reason)),
-          title: t("operations.wizard.originsLocked"),
-          message: t("contextMenu.edit.someoneEditingThem"),
-          beingEditedBy: (name) => t("contextMenu.edit.beingEditedBy", { name }),
-          addAlert: getRootStore().uiStore.addAlert,
+      if (busy.current) return;
+      busy.current = true;
+      let opened = false;
+      try {
+        const results = await Promise.allSettled(origins.map((o) => o.acquireEditLock()));
+        const newlyLocked = origins.filter((_, i) => {
+          const result = results[i];
+          return result.status === "fulfilled" && result.value === "LOCKED_OK";
         });
-        if (!shown) console.error("Could not lock the operation origins", failure.reason);
-        return;
+        const failure = results.find((r) => r.status === "rejected");
+        if (failure) {
+          await releaseAll(newlyLocked);
+          const shown = displayErrorIfAllLocksCouldNotBeAcquired({
+            error: new AggregateError(results.filter((r) => r.status === "rejected").map((r) => r.reason)),
+            title: t("operations.wizard.originsLocked"),
+            message: t("contextMenu.edit.someoneEditingThem"),
+            beingEditedBy: (name) => t("contextMenu.edit.beingEditedBy", { name }),
+            addAlert: getRootStore().uiStore.addAlert,
+          });
+          if (!shown) console.error("Could not lock the operation origins", failure.reason);
+          return;
+        }
+        taken.current = newlyLocked;
+        opened = true;
+        setOpen(true);
+      } finally {
+        // Held past a successful open: the wizard is the lifecycle, and onCloseHandler ends it.
+        if (!opened) busy.current = false;
       }
-      taken.current = newlyLocked;
-      setOpen(true);
     };
 
     const onCloseHandler = () => {
       void releaseAll(taken.current);
       taken.current = [];
+      busy.current = false;
       setOpen(false);
       closeMenu();
     };
