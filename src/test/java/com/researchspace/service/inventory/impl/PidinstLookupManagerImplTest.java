@@ -394,11 +394,6 @@ class PidinstLookupManagerImplTest {
     assertThrows(ApiRuntimeException.class, () -> manager.search("  ab  ", user));
   }
 
-  /**
-   * DataCite indexes the DOI as a keyword, so free text never matches a suffix or part of one:
-   * "qvtb-aw74" finds nothing though 10.82316/qvtb-aw74 is findable. Verified against
-   * api.test.datacite.org on 2026-09-16.
-   */
   @Test
   void dataCiteRetriesADoiWildcardWhenFreeTextFindsNothing() {
     onADataCiteDeployment();
@@ -427,7 +422,6 @@ class PidinstLookupManagerImplTest {
         .searchInstrumentDois("doi:*Zeiss*", 50, InventorySettingType.PIDINST);
   }
 
-  /** A phrase is free text, and pasting one into a wildcard would build a broken query. */
   @Test
   void dataCiteDoesNotRetryAQueryThatIsNotADoiFragment() {
     onADataCiteDeployment();

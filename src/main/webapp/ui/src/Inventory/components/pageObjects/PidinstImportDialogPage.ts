@@ -33,7 +33,6 @@ export class PidinstImportDialogPage {
     return page.getByRole("alert").filter({ hasText: "Could not import the instrument." });
   }
 
-  /** The warning the Import button raises in its popover when the selection cannot be imported. */
   validationAlert(text: string): Locator {
     return page.getByRole("alert").filter({ hasText: text });
   }

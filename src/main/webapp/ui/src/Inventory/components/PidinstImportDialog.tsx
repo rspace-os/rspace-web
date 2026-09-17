@@ -255,7 +255,6 @@ function RecordPreview({ record }: { record: PidinstRecord }) {
 type PidinstImportDialogArgs = {
   open: boolean;
   onClose: () => void;
-  /** Called once the server has created the instrument, before the dialog closes. */
   onImported: (instrument: { id: number; globalId: string }) => void;
 };
 
