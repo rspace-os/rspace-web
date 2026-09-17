@@ -1,6 +1,7 @@
 package com.researchspace.api.v1.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -37,11 +38,13 @@ import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.SystemPropertyName;
 import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.inventory.InventoryEditLockHeldException;
+import com.researchspace.service.inventory.InventoryOperationInProgressException;
 import com.researchspace.service.inventory.InventoryOperationManager;
 import com.researchspace.service.inventory.InventoryOperationManager.OperationOutcome;
 import com.researchspace.service.inventory.SampleApiManager;
 import com.researchspace.service.inventory.SubSampleApiManager;
 import com.researchspace.service.inventory.impl.InventoryEditLockTracker;
+import com.researchspace.service.inventory.impl.InventoryOperationInFlightOrigins;
 import com.researchspace.service.inventory.operations.AliquotOperation;
 import com.researchspace.service.inventory.operations.CryopreserveOperation;
 import com.researchspace.service.inventory.operations.DeriveOperation;
@@ -86,6 +89,8 @@ class InventoryOperationsApiControllerTest {
   private final SampleApiManager sampleApiMgr = mock(SampleApiManager.class);
   private final SubSampleApiManager subSampleApiMgr = mock(SubSampleApiManager.class);
   private final InventoryEditLockTracker tracker = mock(InventoryEditLockTracker.class);
+  private final InventoryOperationInFlightOrigins inFlightOrigins =
+      new InventoryOperationInFlightOrigins();
   private final SystemPropertyPermissionManager systemPropertyManager =
       mock(SystemPropertyPermissionManager.class);
 
@@ -121,6 +126,7 @@ class InventoryOperationsApiControllerTest {
     controller.sampleApiMgr = sampleApiMgr;
     controller.subSampleApiMgr = subSampleApiMgr;
     controller.tracker = tracker;
+    controller.inFlightOrigins = inFlightOrigins;
     originExists(100L, 10L);
     lockIsFree("SS100");
     lockIsFree("SA10");
@@ -216,6 +222,70 @@ class InventoryOperationsApiControllerTest {
           .andExpect(status().isUnsupportedMediaType());
     }
     verifyNoInteractions(operationManager);
+  }
+
+  // --- the in-flight claim that refuses a second overlapping request, whoever sent it ---
+
+  /** The same user's double submit: the edit lock would extend, the claim refuses. */
+  @Test
+  void anOriginAnotherRequestIsOperatingOnIsRefusedBeforeAnyLockOrManagerCall() {
+    InventoryOperationInFlightOrigins.Claim otherRequest = inFlightOrigins.claim(List.of("SS100"));
+    ApiInventoryOperationRequests.Aliquot request = aliquotFacade();
+
+    InventoryOperationInProgressException refused =
+        assertThrows(
+            InventoryOperationInProgressException.class,
+            () -> controller.aliquot(request, bindingResultFor(request), user));
+
+    assertEquals("SS100", refused.getGlobalId());
+    verifyNoInteractions(tracker);
+    verifyNoInteractions(operationManager);
+    otherRequest.close();
+  }
+
+  @Test
+  void theOriginsAreClaimedWhileTheManagerRunsAndFreedAfterItReturns() throws Exception {
+    when(operationManager.perform(any(), any(), any(), eq(user)))
+        .thenAnswer(
+            invocation -> {
+              assertTrue(inFlightOrigins.isInFlight("SS100"));
+              return new OperationOutcome(
+                  new ApiSampleWithFullSubSamples("Aliquots"), List.of(originAfter(100L)));
+            });
+    ApiInventoryOperationRequests.Aliquot request = aliquotFacade();
+
+    controller.aliquot(request, bindingResultFor(request), user);
+
+    assertFalse(inFlightOrigins.isInFlight("SS100"));
+  }
+
+  @Test
+  void theClaimIsFreedWhenTheManagerRejectsTheRequest() throws Exception {
+    when(operationManager.perform(any(), any(), any(), eq(user)))
+        .thenThrow(new IllegalStateException("boom"));
+    ApiInventoryOperationRequests.Aliquot request = aliquotFacade();
+
+    assertThrows(
+        IllegalStateException.class,
+        () -> controller.aliquot(request, bindingResultFor(request), user));
+
+    assertFalse(inFlightOrigins.isInFlight("SS100"));
+  }
+
+  /** A Pool refused on its second origin must not leave its first origin claimed. */
+  @Test
+  void aPoolRefusedOnOneOriginHoldsNoneOfThem() {
+    originExists(300L, 20L);
+    InventoryOperationInFlightOrigins.Claim otherRequest = inFlightOrigins.claim(List.of("SS300"));
+    ApiInventoryOperationRequests.Pool request = poolFacade("SS100", "SS300");
+
+    assertThrows(
+        InventoryOperationInProgressException.class,
+        () -> controller.pool(request, bindingResultFor(request), user));
+
+    assertFalse(inFlightOrigins.isInFlight("SS100"));
+    assertTrue(inFlightOrigins.isInFlight("SS300"));
+    otherRequest.close();
   }
 
   // --- the edit-session lock the controller holds around the manager ---

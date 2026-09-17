@@ -77,7 +77,7 @@ class InventoryOperationsErrorCatalogTest {
    * codes are added; an unexplained DROP means a source file stopped being scanned rather than that
    * rules were removed, which is the failure this floor exists to catch.
    */
-  private static final int MINIMUM_CODES_RAISED = 38;
+  private static final int MINIMUM_CODES_RAISED = 39;
 
   /**
    * A dotted code in a string literal: errors.inventory.operation.foo, api.errors.bar. The optional

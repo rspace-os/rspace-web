@@ -15,6 +15,7 @@ import com.researchspace.service.SystemPropertyName;
 import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.inventory.InventoryEditLockHeldException;
 import com.researchspace.service.inventory.InventoryOperationManager;
+import com.researchspace.service.inventory.impl.InventoryOperationInFlightOrigins;
 import com.researchspace.service.inventory.operations.AliquotOperation;
 import com.researchspace.service.inventory.operations.CryopreserveOperation;
 import com.researchspace.service.inventory.operations.DeriveOperation;
@@ -56,6 +57,7 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
 
   @Autowired InventoryOperationManager inventoryOperationManager;
   @Autowired SystemPropertyPermissionManager systemPropertyManager;
+  @Autowired InventoryOperationInFlightOrigins inFlightOrigins;
 
   @Autowired AliquotOperation aliquotOperation;
   @Autowired PassageOperation passageOperation;
@@ -207,14 +209,18 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
           .thenComparing(id -> new GlobalIdentifier(id).getDbId());
 
   /**
-   * Runs the operation with the Inventory edit-session lock held on every origin and every parent
-   * sample, in ascending id order.
+   * Runs the operation with every origin claimed as in flight and the Inventory edit-session lock
+   * held on every origin and every parent sample, in ascending id order. The claim is what refuses
+   * a second overlapping request from the SAME user (a double submit), which the edit lock treats
+   * as an extension; it is released after the manager's transaction has ended.
    */
   private InventoryOperationManager.OperationOutcome withOriginsLocked(
       List<Long> originIds, User user, OperationCall work) throws BindException {
     SortedSet<String> toLock = new TreeSet<>(ASCENDING_GLOBAL_ID);
+    List<String> originGlobalIds = new ArrayList<>();
     for (Long originId : originIds) {
       SubSample subSample = subSampleApiMgr.assertUserCanEditSubSample(originId, user);
+      originGlobalIds.add(subSample.getGlobalIdentifier());
       toLock.add(subSample.getGlobalIdentifier());
       SampleEntity parent = subSample.getSample();
       if (parent != null) {
@@ -222,7 +228,7 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
       }
     }
     List<String> taken = new ArrayList<>();
-    try {
+    try (InventoryOperationInFlightOrigins.Claim claim = inFlightOrigins.claim(originGlobalIds)) {
       for (String globalId : toLock) {
         ApiInventoryEditLock lock = tracker.attemptToLockForEdit(globalId, user);
         if (ApiInventoryEditLockStatus.CANNOT_LOCK.equals(lock.getStatus())) {
