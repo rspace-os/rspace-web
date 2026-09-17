@@ -315,12 +315,16 @@ public class QuantityUtils {
   }
 
   /**
-   * The exact factor converting one unit into an adjacent smaller one. Read off the unit
+   * The exact factor converting one unit into another in the same category. Read off the unit
    * definitions rather than assumed to be 1000, and applied with {@link BigDecimal}, so no step of
-   * the ladder loses precision.
+   * the ladder loses precision. Raw-typed because the unit definitions are wildcard-typed; callers
+   * assert comparability first, so the conversion cannot mix categories.
    */
   @SuppressWarnings({"unchecked", "rawtypes"})
-  private static BigDecimal exactUnitFactor(RSUnitDef from, RSUnitDef to) {
+  public static BigDecimal exactUnitFactor(RSUnitDef from, RSUnitDef to) {
+    if (from == to) {
+      return BigDecimal.ONE;
+    }
     Quantity oneFromUnit = Quantities.getQuantity(BigDecimal.ONE, from.getDefinition());
     return exactValueOf(oneFromUnit.to(to.getDefinition()));
   }

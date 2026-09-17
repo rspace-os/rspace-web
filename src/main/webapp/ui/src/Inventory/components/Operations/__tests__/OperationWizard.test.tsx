@@ -24,7 +24,6 @@ const prefs = vi.hoisted(() => ({ store: {} as Record<string, unknown> }));
 
 vi.mock("@/hooks/api/useUiPreference", () => ({
   PREFERENCES: {
-    INVENTORY_OPERATION_PROCESS_VALUES: Symbol.for("INVENTORY_OPERATION_PROCESS_VALUES"),
     INVENTORY_OPERATION_PROCESS_NAMES: Symbol.for("INVENTORY_OPERATION_PROCESS_NAMES"),
     INVENTORY_OPERATION_PROCESS_NAME_DEFAULTS: Symbol.for("INVENTORY_OPERATION_PROCESS_NAME_DEFAULTS"),
   },
@@ -392,7 +391,7 @@ describe("OperationWizard step flow", () => {
     // active one. A check owned by TemplateStep therefore never ran while the user was on step one,
     // which is exactly where the fast path lives, so Perform was permanently disabled for the most
     // common template mode. The check belongs to the wizard for that reason.
-    prefs.store.INVENTORY_OPERATION_PROCESS_VALUES = {
+    prefs.store.INVENTORY_OPERATION_PROCESS_VALUES_DERIVE = {
       "derive dna": {
         values: { count: 2, eachAmount: { numericValue: 1, unitId: 3 }, amountTaken: { numericValue: 1, unitId: 3 } },
         template: { mode: "fromSample", templateId: null },
@@ -421,7 +420,7 @@ describe("OperationWizard step flow", () => {
       deleted: true,
       fields: [],
     });
-    prefs.store.INVENTORY_OPERATION_PROCESS_VALUES = {
+    prefs.store.INVENTORY_OPERATION_PROCESS_VALUES_DERIVE = {
       "derive dna": {
         values: { count: 2, eachAmount: { numericValue: 1, unitId: 3 }, amountTaken: { numericValue: 1, unitId: 3 } },
         template: { mode: "pick", templateId: 9, templateName: "Cell line" },
@@ -457,7 +456,7 @@ describe("OperationWizard step flow", () => {
           : { id: id ?? 4, name: "Parent template", quantityCategory: "volume", deleted: false, fields: [] },
       ),
     );
-    prefs.store.INVENTORY_OPERATION_PROCESS_VALUES = {
+    prefs.store.INVENTORY_OPERATION_PROCESS_VALUES_DERIVE = {
       "derive dna": {
         values: { count: 2, eachAmount: { numericValue: 1, unitId: 3 }, amountTaken: { numericValue: 1, unitId: 3 } },
         template: { mode: "pick", templateId: 9, templateName: "Cell line" },
@@ -516,7 +515,7 @@ describe("OperationWizard step flow", () => {
       deleted: false,
       fields: [],
     });
-    prefs.store.INVENTORY_OPERATION_PROCESS_VALUES = {
+    prefs.store.INVENTORY_OPERATION_PROCESS_VALUES_DERIVE = {
       "derive dna": {
         values: { count: 2, eachAmount: { numericValue: 1, unitId: 3 }, amountTaken: { numericValue: 1, unitId: 3 } },
         template: { mode: "pick", templateId: 9, templateName: "Cell line" },
@@ -606,7 +605,7 @@ describe("OperationWizard step flow", () => {
     // radio is disabled in that state, so Next stuck with no spinner, no message and nothing the
     // user could change. Falling back to "unselected" asks for the one thing
     // that resolves it.
-    prefs.store.INVENTORY_OPERATION_PROCESS_VALUES = {
+    prefs.store.INVENTORY_OPERATION_PROCESS_VALUES_DERIVE = {
       "derive dna": {
         values: { count: 2, eachAmount: { numericValue: 1, unitId: 3 }, amountTaken: { numericValue: 1, unitId: 3 } },
         template: { mode: "fromSample", templateId: null },
@@ -1206,7 +1205,7 @@ describe("OperationWizard remember bundle", () => {
       templateId: 5,
       documentedByGlobalId: "SD1",
     });
-    expect(prefs.store.INVENTORY_OPERATION_PROCESS_VALUES).toEqual({
+    expect(prefs.store.INVENTORY_OPERATION_PROCESS_VALUES_DERIVE).toEqual({
       "derive dna extraction": {
         values: { count: 1, eachAmount: { numericValue: 5, unitId: 3 }, amountTaken: { numericValue: 1, unitId: 3 } },
         template: { mode: "pick", templateId: 5, templateName: "T5" },
@@ -1257,7 +1256,7 @@ describe("OperationWizard remember bundle", () => {
 
     // and the multi-origin half of the remember bundle round-trips: the mode and the per-origin
     // amounts, keyed by global id, neither of which any single-origin run can exercise
-    const bundle = prefs.store.INVENTORY_OPERATION_PROCESS_VALUES as Record<
+    const bundle = prefs.store.INVENTORY_OPERATION_PROCESS_VALUES_POOL as Record<
       string,
       { amountMode?: string; perSubsampleAmounts?: Record<string, unknown> }
     >;
@@ -1279,12 +1278,12 @@ describe("OperationWizard remember bundle", () => {
     await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
 
     await waitFor(() => expect(onClose).toHaveBeenCalled());
-    expect(prefs.store.INVENTORY_OPERATION_PROCESS_VALUES).toBeUndefined();
+    expect(prefs.store.INVENTORY_OPERATION_PROCESS_VALUES_DERIVE).toBeUndefined();
     expect(prefs.store.INVENTORY_OPERATION_PROCESS_NAMES).toBeUndefined();
   });
 
   it("loads a saved bundle (ticked) when its process name is entered", async () => {
-    prefs.store.INVENTORY_OPERATION_PROCESS_VALUES = {
+    prefs.store.INVENTORY_OPERATION_PROCESS_VALUES_DERIVE = {
       "derive dna": {
         values: { count: 4, eachAmount: { numericValue: 7, unitId: 3 }, amountTaken: { numericValue: 2, unitId: 3 } },
         template: { mode: "pick", templateId: 9, templateName: "T9" },
@@ -1304,7 +1303,7 @@ describe("OperationWizard remember bundle", () => {
     // The bundle key is operation + process name only, so a bundle saved on a millilitre origin is
     // offered on a gram one. Left alone it makes every step read as valid and offers one-click
     // Perform on a request the endpoint is certain to reject (amountTakenCategoryMismatch).
-    prefs.store.INVENTORY_OPERATION_PROCESS_VALUES = {
+    prefs.store.INVENTORY_OPERATION_PROCESS_VALUES_DERIVE = {
       "derive dna": {
         values: {
           count: 4,
@@ -1338,7 +1337,7 @@ describe("OperationWizard remember bundle", () => {
   });
 
   it("keeps a restored bundle intact when its units are a different unit of the SAME category", async () => {
-    prefs.store.INVENTORY_OPERATION_PROCESS_VALUES = {
+    prefs.store.INVENTORY_OPERATION_PROCESS_VALUES_DERIVE = {
       "derive dna": {
         values: {
           count: 4,
@@ -1366,7 +1365,7 @@ describe("OperationWizard remember bundle", () => {
   });
 
   it("resets to blank defaults (unticked) for a new, unsaved process name", async () => {
-    prefs.store.INVENTORY_OPERATION_PROCESS_VALUES = {
+    prefs.store.INVENTORY_OPERATION_PROCESS_VALUES_DERIVE = {
       "derive dna": {
         values: { count: 4, eachAmount: { numericValue: 7, unitId: 3 }, amountTaken: { numericValue: 2, unitId: 3 } },
         template: { mode: "pick", templateId: 9, templateName: "T9" },
@@ -1394,7 +1393,7 @@ describe("OperationWizard remember bundle", () => {
         documentation: null,
       },
     };
-    prefs.store.INVENTORY_OPERATION_PROCESS_VALUES = saved;
+    prefs.store.INVENTORY_OPERATION_PROCESS_VALUES_DERIVE = saved;
     const user = userEvent.setup();
     render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
     await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
@@ -1406,14 +1405,14 @@ describe("OperationWizard remember bundle", () => {
     // unticking drops the fast path (nothing is remembered any more): back to the details step,
     // with the form reset to defaults
     expect(screen.getByTestId("count")).toHaveTextContent("1");
-    expect(prefs.store.INVENTORY_OPERATION_PROCESS_VALUES).toEqual(saved); // store untouched
+    expect(prefs.store.INVENTORY_OPERATION_PROCESS_VALUES_DERIVE).toEqual(saved); // store untouched
   });
 
   it("pre-fills the last-used process name and, on Review / edit, shows its bundle", async () => {
     // A complete remembered bundle loads on open, so the wizard offers the step-one fast path (DevDocs/adr/0007):
     // the confirmation and Perform, with the details form only behind "Review / edit".
     prefs.store.INVENTORY_OPERATION_PROCESS_NAME_DEFAULTS = { derive: "boil" };
-    prefs.store.INVENTORY_OPERATION_PROCESS_VALUES = {
+    prefs.store.INVENTORY_OPERATION_PROCESS_VALUES_DERIVE = {
       "derive boil": {
         values: { count: 3, eachAmount: { numericValue: 8, unitId: 3 }, amountTaken: { numericValue: 1, unitId: 3 } },
         template: { mode: "none", templateId: null },
@@ -1434,7 +1433,7 @@ describe("OperationWizard remember bundle", () => {
 
   it("performs a remembered run directly from the step-one fast path", async () => {
     prefs.store.INVENTORY_OPERATION_PROCESS_NAME_DEFAULTS = { derive: "boil" };
-    prefs.store.INVENTORY_OPERATION_PROCESS_VALUES = {
+    prefs.store.INVENTORY_OPERATION_PROCESS_VALUES_DERIVE = {
       "derive boil": {
         values: { count: 3, eachAmount: { numericValue: 8, unitId: 3 }, amountTaken: { numericValue: 1, unitId: 3 } },
         template: { mode: "none", templateId: null },
@@ -1469,7 +1468,7 @@ describe("OperationWizard remember bundle", () => {
     await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
 
     await waitFor(() => expect(onClose).toHaveBeenCalled());
-    const stored = prefs.store.INVENTORY_OPERATION_PROCESS_VALUES as Record<string, unknown>;
+    const stored = prefs.store.INVENTORY_OPERATION_PROCESS_VALUES_CRYOPRESERVE as Record<string, unknown>;
     expect(Object.keys(stored)).toEqual(["cryopreserve"]);
   });
 });
