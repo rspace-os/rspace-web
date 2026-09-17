@@ -52,7 +52,7 @@ import {
   processValuesPreferenceFor,
   rememberKey,
 } from "./processNames";
-import { normalizeProcessValues, type ProcessValues, processValuesAfterPerform } from "./processValues";
+import { normalizeProcessValues, type ProcessValues } from "./processValues";
 import { derivedSampleName, firstAvailableName } from "./sampleNaming";
 import TemplateStep, { type TemplateSelection } from "./TemplateStep";
 import {
@@ -391,12 +391,7 @@ function OperationWizard({
 
   const bundleFor = (op: InventoryOperation, key: string): ProcessValues | null => {
     const own = readUiPreference<Record<string, ProcessValues>>(uiPreferences, processValuesPreferenceFor(op.key), {});
-    const legacy = readUiPreference<Record<string, ProcessValues>>(
-      uiPreferences,
-      PREFERENCES.INVENTORY_OPERATION_PROCESS_VALUES,
-      {},
-    );
-    return normalizeProcessValues(own[key] ?? legacy[key]);
+    return normalizeProcessValues(own[key]);
   };
 
   const stateForKey = (op: InventoryOperation, vals: OperationInputs) => {
@@ -700,7 +695,7 @@ function OperationWizard({
             ? { amountMode, perSubsampleAmounts: amountMode === "perSubsample" ? perSubsampleAmounts : {} }
             : {}),
         };
-        setProcessValues(processValuesAfterPerform(processValues ?? {}, key, bundle));
+        setProcessValues({ ...(processValues ?? {}), [key]: bundle });
         if (operation.effect.processNameFrom) {
           const name = String(values[operation.effect.processNameFrom] ?? "");
           const list = processNames?.[operation.key] ?? [];
