@@ -76,7 +76,9 @@ and API field names were ported instead.
    matching. The rule lives in `PidinstLookupManagerImpl.search`, not the controller, so a direct
    caller gets it too; it subsumes the blank check the controller used to make, and answers 422
    with `errors.inventory.identifier.pidinstQueryTooShort` rather than a bare
-   IllegalArgumentException.
+   IllegalArgumentException. The import dialog mirrors the number and keeps Search disabled below
+   it, naming the minimum under the field, so the ordinary case never makes the round trip; the
+   server stays the authority, and a client that ignores it still gets the 422.
 7. **A DataCite free-text search that finds nothing is retried as `doi:*<query>*`** (RSDEV-1325).
    DataCite indexes the DOI as a keyword, so free text never matches a suffix or part of one: a
    search for `qvtb-aw74` answers nothing though `10.82316/qvtb-aw74` is findable, which is what a

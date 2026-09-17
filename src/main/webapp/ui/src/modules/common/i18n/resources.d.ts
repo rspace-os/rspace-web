@@ -2656,7 +2656,7 @@ export default interface Resources {
         "sample": "Info on creating samples.",
         "template": "Info on creating templates."
       },
-      "importPidinst": "Import Instrument from PIDINST",
+      "importPidinst": "From PIDINST registry",
       "newContainer": "New Container",
       "newInstrument": "New Instrument",
       "newInstrumentTemplate": "New Instrument Template",
@@ -4025,7 +4025,7 @@ export default interface Resources {
         "placeholder": "Name, manufacturer, owner, DOI or Handle",
         "searching": "Searching the PID registry…",
         "validation": {
-          "empty": "Enter a search term."
+          "tooShort": "Enter at least {min} characters to search."
         }
       },
       "searchError": "Could not search the PID registry.",
@@ -6882,6 +6882,7 @@ export default interface Resources {
           "pidinstImportPidRequired": "A PID is required to import an instrument.",
           "pidinstMandatoryMissing": "The registry record has no {0}, which the \"Instrument (PIDINST 1.0)\" template requires, so it cannot be imported.",
           "pidinstNotFound": "No published instrument record was found for \"{0}\" at the enabled PIDINST provider.",
+          "pidinstQueryTooShort": "Enter at least {0} characters to search the PID registry.",
           "refreshNoIdentifier": "This item has no identifier to refresh. Register an identifier before refreshing its status.",
           "typeUnsupported": "identifiers of type {0} are not supported yet"
         },

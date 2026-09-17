@@ -65,6 +65,9 @@ export type PidinstRecord = {
   linkedInstrumentGlobalId?: string;
 };
 
+/** Mirrors PidinstLookupManager.MIN_QUERY_LENGTH, which rejects a shorter query with a 422. */
+const MIN_QUERY_LENGTH = 4;
+
 type PidinstSearchResult = {
   provider: string;
   total: number;
@@ -277,12 +280,14 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
   const hits = result?.hits ?? [];
   const selected = hits.find((hit) => hit.pid === selectedPid) ?? null;
 
+  const queryTooShort = query.trim().length < MIN_QUERY_LENGTH;
+
   const providerLabel = (provider: string) =>
     provider === "PIDINST_B2INST" ? t("pidinstImport.providers.b2inst") : t("pidinstImport.providers.datacite");
 
   async function runSearch() {
     const trimmed = query.trim();
-    if (trimmed === "") return;
+    if (trimmed.length < MIN_QUERY_LENGTH) return;
     setSearching(true);
     setSelectedPid(null);
     try {
@@ -436,8 +441,14 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
                   size="small"
                   fullWidth
                   disabled={searching || importing}
+                  // the space keeps the helper row reserved, so the results below do not jump as it appears
+                  helperText={
+                    queryTooShort && query.trim() !== ""
+                      ? t("pidinstImport.search.validation.tooShort", { min: MIN_QUERY_LENGTH })
+                      : " "
+                  }
                 />
-                <Button type="submit" variant="outlined" disabled={searching || importing || query.trim() === ""}>
+                <Button type="submit" variant="outlined" disabled={searching || importing || queryTooShort}>
                   {t("common:actions.search")}
                 </Button>
               </Stack>
