@@ -1,4 +1,4 @@
-import type { FrameLocator, Locator, Page } from "@playwright/test";
+import { expect, type FrameLocator, type Locator, type Page } from "@playwright/test";
 import { KetcherDialogComponent } from "@/modules/chemistry/__tests__/pageObjects/KetcherDialogComponent";
 import { StoichiometryDialogComponent } from "@/tinyMCE/stoichiometry/__tests__/pageObjects/StoichiometryDialogComponent";
 
@@ -15,6 +15,12 @@ export class ChemistryFieldContent {
 
   get standaloneStoichiometryTableElement(): Locator {
     return this.frame.locator('[data-stoichiometry-table-only="true"]');
+  }
+
+  /** Waits until a newly inserted standalone table has received its persisted table id. */
+  async waitForStandaloneStoichiometryTable(): Promise<void> {
+    await this.standaloneStoichiometryTableElement.waitFor({ state: "attached" });
+    await expect(this.standaloneStoichiometryTableElement).toHaveAttribute("data-stoichiometry-table", /.+/);
   }
 
   async openKetcherEditDialog(): Promise<KetcherDialogComponent> {

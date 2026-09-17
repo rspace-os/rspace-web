@@ -4,7 +4,10 @@ import type { Locator, Page } from "@playwright/test";
 export class PickInventoryItemDialogComponent {
   readonly root: Locator;
 
-  constructor(page: Page, moleculeName: string) {
+  constructor(
+    private readonly page: Page,
+    moleculeName: string,
+  ) {
     this.root = page.getByRole("dialog", { name: `Pick inventory item for ${moleculeName}` });
   }
 
@@ -18,11 +21,13 @@ export class PickInventoryItemDialogComponent {
 
   async search(query: string): Promise<void> {
     await this.searchInput.fill(query);
-    await this.root.getByRole("button", { name: "Search", exact: true }).first().click();
+    await this.root.getByRole("button", { name: "Search", exact: true }).click();
   }
 
   row(name: string): Locator {
-    return this.root.getByRole("row", { name });
+    return this.root.getByRole("row").filter({
+      has: this.page.getByRole("cell", { name, exact: true }),
+    });
   }
 
   async select(name: string): Promise<void> {

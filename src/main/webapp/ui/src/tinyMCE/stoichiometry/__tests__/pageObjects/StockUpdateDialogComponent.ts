@@ -38,13 +38,16 @@ export class StockUpdateDialogComponent {
   }
 
   async save(): Promise<void> {
-    await Promise.all([
+    const [response] = await Promise.all([
       this.page.waitForResponse(
         (res) =>
           res.request().method() === "POST" && new URL(res.url()).pathname.endsWith("/stoichiometry/link/deductStock"),
       ),
       this.saveButton.click(),
     ]);
+    if (!response.ok()) {
+      throw new Error(`POST /stoichiometry/link/deductStock failed: ${response.status()} ${response.statusText()}`);
+    }
   }
 
   async errorMessage(): Promise<string> {

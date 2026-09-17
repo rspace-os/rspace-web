@@ -53,10 +53,6 @@ export class ChemistrySearchDialogComponent {
     await this.multipleMoleculesWarning.waitFor({ state: "visible" });
   }
 
-  resultRow(recordName: string): Locator {
-    return this.resultsDialog.getByRole("row", { name: recordName });
-  }
-
   async resultCount(): Promise<number> {
     return this.resultsDialog
       .getByRole("row")

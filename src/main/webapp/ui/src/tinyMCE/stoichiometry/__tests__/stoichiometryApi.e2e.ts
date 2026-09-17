@@ -1,35 +1,8 @@
 import { expect, type Locator } from "@playwright/test";
 import { toMoleculeUpdate } from "@/__tests__/e2e/api/models/stoichiometry";
-import type { TinyMceEditor } from "@/__tests__/e2e/components/document/TinyMceEditor";
 import { dynamicUserTest as test } from "@/__tests__/e2e/fixtures/dynamicUser";
-import type { DocumentEditorPage } from "@/__tests__/e2e/pageObjects/document/DocumentEditorPage";
-import type { WorkspacePage } from "@/__tests__/e2e/pageObjects/workspace/WorkspacePage";
 import { tags } from "@/__tests__/e2e/tags";
-import { fixturePath } from "@/__tests__/e2e/testData";
-import type { StoichiometryDialogComponent } from "./pageObjects/StoichiometryDialogComponent";
-
-const REACTION_CDXML = fixturePath(import.meta.url, "fixtures/basic_reaction.cdxml");
-const REACTION_FILE_NAME = "basic_reaction.cdxml";
-
-/** Creates a Basic Document, inserts the reaction fixture from the Gallery, and calculates its stoichiometry table. */
-async function insertReactionAndCalculate(pageWorkspace: WorkspacePage): Promise<{
-  docEditor: DocumentEditorPage;
-  field: TinyMceEditor;
-  stoichiometryDialog: StoichiometryDialogComponent;
-}> {
-  await pageWorkspace.open();
-  const docEditor = await pageWorkspace.createBasicDocument();
-  const picker = await docEditor.openGalleryPicker();
-  await picker.goToSection("Chemistry");
-  await picker.uploadFile(REACTION_CDXML, REACTION_FILE_NAME);
-  await picker.selectItem(REACTION_FILE_NAME);
-  await picker.add();
-
-  const field = await docEditor.getField("New List of Materials");
-  const stoichiometryDialog = await field.chemistry.openStoichiometryDialog();
-  await stoichiometryDialog.calculate();
-  return { docEditor, field, stoichiometryDialog };
-}
+import { insertReactionAndCalculate } from "./stoichiometryTestHelpers";
 
 /** Reads the `data-stoichiometry-table` JSON attribute (`{id, revision}`) off a view-mode field's rendered HTML. */
 async function getStoichiometryTableAttr(fieldDiv: Locator): Promise<{ id: number; revision: number | null }> {

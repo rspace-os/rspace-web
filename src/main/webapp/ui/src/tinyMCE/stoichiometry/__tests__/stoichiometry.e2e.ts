@@ -1,37 +1,12 @@
 import { expect, type Locator } from "@playwright/test";
-import type { TinyMceEditor } from "@/__tests__/e2e/components/document/TinyMceEditor";
 import { dynamicUserTest as test } from "@/__tests__/e2e/fixtures/dynamicUser";
-import type { DocumentEditorPage } from "@/__tests__/e2e/pageObjects/document/DocumentEditorPage";
-import type { WorkspacePage } from "@/__tests__/e2e/pageObjects/workspace/WorkspacePage";
 import { tags } from "@/__tests__/e2e/tags";
 import { fixturePath, uniqueName } from "@/__tests__/e2e/testData";
-import type { StoichiometryDialogComponent } from "./pageObjects/StoichiometryDialogComponent";
+import { insertReactionAndCalculate } from "./stoichiometryTestHelpers";
 
-const REACTION_CDXML = fixturePath(import.meta.url, "fixtures/basic_reaction.cdxml");
-const REACTION_FILE_NAME = "basic_reaction.cdxml";
 const MAGNESIUM_CITRATE_CDXML = fixturePath(import.meta.url, "fixtures/magnesium_citrate.cdxml");
 const MAGNESIUM_CITRATE_FILE_NAME = "magnesium_citrate.cdxml";
 const ASPIRIN_SMILES = "CC(=O)Oc1ccccc1C(=O)O";
-
-/** Creates a Basic Document, inserts the reaction fixture from the Gallery, and calculates its stoichiometry table. */
-async function insertReactionAndCalculate(pageWorkspace: WorkspacePage): Promise<{
-  docEditor: DocumentEditorPage;
-  field: TinyMceEditor;
-  stoichiometryDialog: StoichiometryDialogComponent;
-}> {
-  await pageWorkspace.open();
-  const docEditor = await pageWorkspace.createBasicDocument();
-  const picker = await docEditor.openGalleryPicker();
-  await picker.goToSection("Chemistry");
-  await picker.uploadFile(REACTION_CDXML, REACTION_FILE_NAME);
-  await picker.selectItem(REACTION_FILE_NAME);
-  await picker.add();
-
-  const field = await docEditor.getField("New List of Materials");
-  const stoichiometryDialog = await field.chemistry.openStoichiometryDialog();
-  await stoichiometryDialog.calculate();
-  return { docEditor, field, stoichiometryDialog };
-}
 
 /** Reads every embedded stoichiometry table's id from a view-mode field's rendered HTML (`data-stoichiometry-table`). */
 async function getStoichiometryTableIds(fieldDiv: Locator): Promise<number[]> {
@@ -240,12 +215,7 @@ test.describe("Stoichiometry", { tag: tags.APPS }, () => {
     await standaloneDialog.addManually("e2e-standalone-for-copy", ASPIRIN_SMILES);
     await standaloneDialog.saveChanges();
     await standaloneDialog.close();
-    await expect
-      .poll(async () => {
-        const attr = await field.chemistry.standaloneStoichiometryTableElement.getAttribute("data-stoichiometry-table");
-        return attr ? (JSON.parse(attr) as { id?: number }).id : undefined;
-      })
-      .toBeTruthy();
+    await field.chemistry.waitForStandaloneStoichiometryTable();
 
     const docViewPage = await docEditor.saveAndView();
     const originalFieldDiv = await docViewPage.getFieldViewContent("New List of Materials");

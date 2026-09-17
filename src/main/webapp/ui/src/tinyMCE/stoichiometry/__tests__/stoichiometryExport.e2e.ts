@@ -3,8 +3,9 @@ import type { ExportFormat, ExportWizardComponent } from "@/__tests__/e2e/compon
 import type { NotificationsDialogComponent } from "@/__tests__/e2e/components/shared/NotificationsDialogComponent";
 import { dynamicUserTest as test } from "@/__tests__/e2e/fixtures/dynamicUser";
 import { tags } from "@/__tests__/e2e/tags";
-import { fixturePath, uniqueName } from "@/__tests__/e2e/testData";
+import { uniqueName } from "@/__tests__/e2e/testData";
 import { listZipEntries, readZipEntryText } from "@/__tests__/e2e/zipArchive";
+import { REACTION_CDXML, REACTION_FILE_NAME } from "./stoichiometryTestHelpers";
 
 /**
  * Submits the export wizard for the currently-viewed document and waits for its notification.
@@ -35,9 +36,6 @@ async function exportCurrentDocument(
 
   await expect.poll(() => componentNotifications.getBadgeCount(), { timeout: 60_000 }).toBeGreaterThan(baselineCount);
 }
-
-const REACTION_CDXML = fixturePath(import.meta.url, "fixtures/basic_reaction.cdxml");
-const REACTION_FILE_NAME = "basic_reaction.cdxml";
 
 /** Slices out one `<tr>...</tr>` row's markup by the molecule name in its first cell. */
 function tableRowHtml(html: string, moleculeName: string): string {

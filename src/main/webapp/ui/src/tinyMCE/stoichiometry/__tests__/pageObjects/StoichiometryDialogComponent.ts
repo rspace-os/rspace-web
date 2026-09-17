@@ -61,7 +61,9 @@ export class StoichiometryDialogComponent {
   }
 
   row(compoundName: string): Locator {
-    return this.grid.getByRole("row", { name: compoundName });
+    return this.grid.getByRole("row").filter({
+      has: this.page.getByRole("gridcell", { name: compoundName, exact: true }),
+    });
   }
 
   async hasCompound(compoundName: string): Promise<boolean> {

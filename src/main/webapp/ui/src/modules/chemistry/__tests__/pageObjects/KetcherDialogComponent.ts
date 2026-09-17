@@ -53,7 +53,7 @@ export class KetcherDialogComponent {
   /** Opens Ketcher's native "Calculated Values" panel and returns its Chemical Formula line. */
   async getCalculatedFormula(): Promise<string> {
     await this.root.locator('[data-testid="Calculated Values button"]:visible').click();
-    const formulaRow = this.page.getByText("Chemical Formula:").locator("xpath=parent::*").first();
+    const formulaRow = this.page.locator('[data-testid="Chemical Formula-wrapper"]');
     const text = await formulaRow.innerText();
     await this.page.getByRole("button", { name: "Close" }).click();
     return text.replace("Chemical Formula:", "").trim();
@@ -93,7 +93,8 @@ export class KetcherDialogComponent {
   async cancel(): Promise<void> {
     await this.cancelButton.click();
     const discardButton = this.page.getByRole("button", { name: "Discard" });
-    if (await discardButton.isVisible({ timeout: 1_000 }).catch(() => false)) {
+    await Promise.race([discardButton.waitFor({ state: "visible" }), this.root.waitFor({ state: "detached" })]);
+    if (await discardButton.isVisible()) {
       await discardButton.click();
     }
     await this.root.waitFor({ state: "detached" });

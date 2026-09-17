@@ -29,7 +29,14 @@ async function insertAspirinViaKetcher(
 ): Promise<{ docEditor: DocumentEditorPage; docId: number }> {
   await pageWorkspace.open();
   const docEditor = await pageWorkspace.createBasicDocument();
-  const docId = Number(new URL(page.url()).pathname.split("/").pop());
+  const docIdSegment = new URL(page.url()).pathname.split("/").pop();
+  if (!docIdSegment) {
+    throw new Error(`Could not parse a document id segment from URL: ${page.url()}`);
+  }
+  const docId = Number(docIdSegment);
+  if (Number.isNaN(docId) || docId === 0) {
+    throw new Error(`Parsed document id is not a valid, non-zero number: "${docIdSegment}" (from ${page.url()})`);
+  }
   const ketcherDialog = await docEditor.openKetcherDialog();
   await ketcherDialog.setMoleculeFromSmiles(ASPIRIN_SMILES);
   await ketcherDialog.insert();
@@ -290,6 +297,10 @@ test.describe(`Chemistry service [${INTEGRATION_MODE}]`, { tag: tags.APPS }, () 
     await pageWorkspace.table.selectRecord(docName);
     await pageWorkspace.selectionBar.delete();
     expect(await pageWorkspace.table.row(docName).count()).toBe(0);
+
+    const deletedSearchDialog = await searchExactForAspirin(pageWorkspace);
+    expect(await deletedSearchDialog.resultCount()).toBeGreaterThan(0);
+    await deletedSearchDialog.close();
 
     await pageDeletedItems.open();
     await pageDeletedItems.isLoaded();
