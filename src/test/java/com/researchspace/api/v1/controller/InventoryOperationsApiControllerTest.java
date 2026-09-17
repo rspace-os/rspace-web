@@ -54,6 +54,7 @@ import com.researchspace.service.inventory.operations.PoolOperation;
 import com.researchspace.service.inventory.operations.ReviveOperation;
 import com.researchspace.webapp.config.WebConfig;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -194,7 +195,7 @@ class InventoryOperationsApiControllerTest {
 
   private void managerCreates(ApiSampleWithFullSubSamples created, long... originIds)
       throws BindException {
-    when(operationManager.performBiobankOperation(any(), any(), any(), eq(user)))
+    when(operationManager.performOperation(any(), any(), any(), eq(user)))
         .thenReturn(
             new OperationOutcome(
                 created,
@@ -245,7 +246,7 @@ class InventoryOperationsApiControllerTest {
 
   @Test
   void theOriginsAreClaimedWhileTheManagerRunsAndFreedAfterItReturns() throws Exception {
-    when(operationManager.performBiobankOperation(any(), any(), any(), eq(user)))
+    when(operationManager.performOperation(any(), any(), any(), eq(user)))
         .thenAnswer(
             invocation -> {
               assertTrue(inFlightOrigins.isInFlight("SS100"));
@@ -259,9 +260,32 @@ class InventoryOperationsApiControllerTest {
     assertFalse(inFlightOrigins.isInFlight("SS100"));
   }
 
+  /**
+   * The claim outlives the edit locks: were it released first, a second request could claim the
+   * origin and then meet this request's still-held parent-sample lock, or pass it as the same user
+   * and run on after this request's release had stripped the locks from under it.
+   */
+  @Test
+  void theClaimIsStillHeldWhileTheEditLocksAreGivenBack() throws Exception {
+    managerCreates(new ApiSampleWithFullSubSamples("Aliquots"), 100L);
+    List<Boolean> claimedAtUnlock = new ArrayList<>();
+    when(tracker.attemptToUnlock(anyString(), eq(user)))
+        .thenAnswer(
+            invocation -> {
+              claimedAtUnlock.add(inFlightOrigins.isInFlight("SS100"));
+              return true;
+            });
+    ApiInventoryOperationRequests.Aliquot request = aliquotFacade();
+
+    controller.aliquot(request, bindingResultFor(request), user);
+
+    assertEquals(List.of(true, true), claimedAtUnlock, "origin and parent unlocks");
+    assertFalse(inFlightOrigins.isInFlight("SS100"));
+  }
+
   @Test
   void theClaimIsFreedWhenTheManagerRejectsTheRequest() throws Exception {
-    when(operationManager.performBiobankOperation(any(), any(), any(), eq(user)))
+    when(operationManager.performOperation(any(), any(), any(), eq(user)))
         .thenThrow(new IllegalStateException("boom"));
     ApiInventoryOperationRequests.Aliquot request = aliquotFacade();
 
@@ -341,7 +365,7 @@ class InventoryOperationsApiControllerTest {
   /** A rejected operation must not leave the origins locked for the next five minutes. */
   @Test
   void releasesTheLocksWhenTheManagerRejectsTheRequest() throws Exception {
-    when(operationManager.performBiobankOperation(any(), any(), any(), eq(user)))
+    when(operationManager.performOperation(any(), any(), any(), eq(user)))
         .thenThrow(new IllegalStateException("boom"));
     ApiInventoryOperationRequests.Aliquot request = aliquotFacade();
 
@@ -406,7 +430,7 @@ class InventoryOperationsApiControllerTest {
     @SuppressWarnings("unchecked")
     ArgumentCaptor<List<Long>> originIds = ArgumentCaptor.forClass(List.class);
     verify(operationManager)
-        .performBiobankOperation(
+        .performOperation(
             same(controller.poolOperation), same(request), originIds.capture(), eq(user));
     assertEquals(List.of(100L, 300L), originIds.getValue());
   }
@@ -634,7 +658,7 @@ class InventoryOperationsApiControllerTest {
         "origins[0].amountTaken",
         "errors.inventory.operation.amountTakenExceedsOrigin",
         "Cannot take more from an origin than it currently holds.");
-    when(operationManager.performBiobankOperation(any(), any(), any(), eq(user)))
+    when(operationManager.performOperation(any(), any(), any(), eq(user)))
         .thenThrow(new BindException(coreErrors));
     ApiInventoryOperationRequests.Aliquot request = aliquotFacade();
 
