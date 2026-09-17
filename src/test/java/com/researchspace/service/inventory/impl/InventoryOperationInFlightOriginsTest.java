@@ -6,21 +6,18 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.service.inventory.InventoryOperationInProgressException;
-import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.Test;
 
 class InventoryOperationInFlightOriginsTest {
 
-  private final AtomicLong now = new AtomicLong(1_000_000L);
   private final InventoryOperationInFlightOrigins inFlight =
-      new InventoryOperationInFlightOrigins(now::get);
+      new InventoryOperationInFlightOrigins();
 
   @Test
   void aFreeOriginIsClaimedAndRefusedToTheNextCallerUntilReleased() {
@@ -76,33 +73,21 @@ class InventoryOperationInFlightOriginsTest {
   }
 
   /**
-   * A claim orphaned by a crash between claim and release must not block the origin forever. The
-   * limit is deliberately far longer than any operation runs, so a live request keeps its origins
-   * for its whole lifetime; only one that has outlived the limit is replaced (RSDEV-1231).
+   * A slow request is still a live one. Nothing bounds how long the manager call inside the claim
+   * takes, so however long it runs its origins stay its own: no elapsed time frees them, and a
+   * repeated attempt is refused every time rather than eventually succeeding (RSDEV-1231).
    */
   @Test
-  void aClaimOlderThanTheStaleLimitIsTreatedAsFree() {
-    inFlight.claim(List.of("SS1"));
-    now.addAndGet(InventoryOperationInFlightOrigins.STALE_AFTER_NANOS - 1);
+  void aLiveClaimIsNeverStolenHoweverLongItsRequestRuns() {
+    InventoryOperationInFlightOrigins.Claim slow = inFlight.claim(List.of("SS1"));
+
+    for (int attempt = 0; attempt < 3; attempt++) {
+      assertThrows(
+          InventoryOperationInProgressException.class, () -> inFlight.claim(List.of("SS1")));
+    }
     assertThrows(InventoryOperationInProgressException.class, () -> inFlight.claim(List.of("SS1")));
-
-    now.addAndGet(1);
-
-    assertFalse(inFlight.isInFlight("SS1"));
-    inFlight.claim(List.of("SS1")).close();
-  }
-
-  /** The orphan's late release must not free the origin the replacing request now holds. */
-  @Test
-  void anOrphanedClaimReleasedAfterBeingReplacedLeavesTheReplacementStanding() {
-    InventoryOperationInFlightOrigins.Claim orphan = inFlight.claim(List.of("SS1"));
-    now.addAndGet(InventoryOperationInFlightOrigins.STALE_AFTER_NANOS);
-    InventoryOperationInFlightOrigins.Claim replacement = inFlight.claim(List.of("SS1"));
-
-    orphan.close();
-
     assertTrue(inFlight.isInFlight("SS1"));
-    replacement.close();
+    slow.close();
     assertFalse(inFlight.isInFlight("SS1"));
   }
 
@@ -110,22 +95,6 @@ class InventoryOperationInFlightOriginsTest {
   void anEmptyClaimHoldsNothing() {
     inFlight.claim(List.of()).close();
     assertFalse(inFlight.isInFlight("SS1"));
-  }
-
-  /**
-   * The default clock measures elapsed time, so no calendar adjustment can age a live claim: a
-   * wall-clock source would let one NTP step forward cross the limit in an instant and hand a
-   * running request's origins away (RSDEV-1231).
-   */
-  @Test
-  void theDefaultClockIsMonotonicElapsedTime() {
-    InventoryOperationInFlightOrigins elapsed = new InventoryOperationInFlightOrigins();
-    elapsed.claim(List.of("SS1"));
-    assertTrue(elapsed.isInFlight("SS1"));
-    assertTrue(
-        InventoryOperationInFlightOrigins.STALE_AFTER_NANOS
-            > Duration.ofMinutes(8).toNanos() + Duration.ofSeconds(9).toNanos(),
-        "the limit must be expressed in the same unit the clock reports");
   }
 
   /**
