@@ -1762,8 +1762,8 @@
     "results": {
       "none": "No published instrument records match this search.",
       "prompt": "Search to list published instrument records.",
-      "summary": "{shown} of {total} records found at {provider}.",
-      "truncated": "Only the first {shown} records are shown. Refine the search to find a specific instrument."
+      "summary": "{shown} of {total, plural, one {# record} other {# records}} found at {provider}.",
+      "truncated": "Only the first {shown, plural, one {# record is} other {# records are}} shown. Refine the search to find a specific instrument."
     },
     "search": {
       "label": "Search the registry",

@@ -3038,9 +3038,13 @@ paths:
         - in: query
           name: query
           required: true
-          description: Free text, or a DOI or Handle for a direct lookup.
+          description: >
+            Free text, or a DOI or Handle for a direct lookup. At least 4 characters after
+            trimming; shorter, blank or whitespace-only queries are refused with a 422 and never
+            reach the registry.
           schema:
             type: string
+            minLength: 4
       responses:
         "200":
           description: One page of hits from the enabled provider.
@@ -3050,6 +3054,12 @@ paths:
                 $ref: "#/components/schemas/PidinstSearchResult"
         "404":
           description: No PIDINST provider is enabled on this deployment.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "422":
+          description: The query is shorter than 4 characters after trimming.
           content:
             application/json:
               schema:

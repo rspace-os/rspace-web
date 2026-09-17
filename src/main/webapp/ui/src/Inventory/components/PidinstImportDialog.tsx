@@ -16,7 +16,6 @@ import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import { useConfirm } from "@/components/ConfirmProvider";
 import useOauthToken from "@/hooks/auth/useOauthToken";
-import i18n from "@/modules/common/i18n";
 import TransRichText, { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import { getErrorMessage } from "@/util/error";
 import createAccentedTheme, { type AccentColor } from "../../accentedTheme";
@@ -27,12 +26,13 @@ import GlobalId from "../../components/GlobalId";
 import ValidatingSubmitButton, { IsInvalid, IsValid } from "../../components/ValidatingSubmitButton";
 import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
-import type { LinkableRecord } from "../../stores/definitions/LinkableRecord";
+import LinkableRecordFromGlobalId from "../../stores/models/LinkableRecordFromGlobalId";
 import { DataGridColumn } from "../../util/table";
 
 /**
- * `theme.palette.record.instrument` (#ab4c08 / #fce8d5) expressed as the HSL slots
- * createAccentedTheme needs, so the dialog is coloured like Instrument items.
+ * Instrument colours for the dialog. `main` is `theme.palette.record.instrument.bg` (#ab4c08)
+ * exactly, as HSL; the remaining slots are derived from it and tuned for contrast rather than
+ * taken from the palette, so `background` is a flatter, darker tint than `lighter` (#fce8d5).
  */
 const INSTRUMENT_ACCENT_COLOR: AccentColor = {
   main: { hue: 25, saturation: 91, lightness: 35 },
@@ -79,32 +79,6 @@ type ImportedInstrumentResponse = {
   globalId: string;
   name: string;
 };
-
-/** Lets the success toast and the "Linked to" cell link to an instrument by globalId alone. */
-class InstrumentLink implements LinkableRecord {
-  id: number | null;
-  globalId: string | null;
-  name: string;
-
-  constructor({ globalId, name }: { globalId: string; name: string }) {
-    this.globalId = globalId;
-    this.name = name;
-    this.id = 0;
-  }
-
-  get recordTypeLabel(): string {
-    return i18n.t("inventory:recordTypes.instrument.singular");
-  }
-
-  get iconName(): string {
-    return "instrument";
-  }
-
-  get permalinkURL(): string {
-    if (!this.globalId) throw new Error("Impossible");
-    return `/globalId/${this.globalId}`;
-  }
-}
 
 const joined = (values: ReadonlyArray<string>): string => values.join("; ");
 
@@ -185,14 +159,7 @@ function RecordPreview({ record }: { record: PidinstRecord }) {
         <Alert severity="info" sx={{ mb: 1, alignItems: "center" }}>
           <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
             <span>{t("pidinstImport.preview.alreadyLinked")}</span>
-            <GlobalId
-              record={
-                new InstrumentLink({
-                  globalId: record.linkedInstrumentGlobalId,
-                  name: record.name ?? "",
-                })
-              }
-            />
+            <GlobalId record={new LinkableRecordFromGlobalId(record.linkedInstrumentGlobalId)} />
           </Stack>
         </Alert>
       )}
@@ -275,6 +242,11 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
   const [selectedPid, setSelectedPid] = React.useState<null | string>(null);
   const [importing, setImporting] = React.useState(false);
   const [columnsMenuAnchorEl, setColumnsMenuAnchorEl] = React.useState<HTMLElement | null>(null);
+  /**
+   * Set when the user closes the dialog while an import is still running. A ref rather than state
+   * because the in-flight import reads it after the close, outside the render that started it.
+   */
+  const closedDuringImport = React.useRef(false);
 
   const hits = result?.hits ?? [];
   const selected = hits.find((hit) => hit.pid === selectedPid) ?? null;
@@ -298,7 +270,10 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
       });
       setResult(data);
     } catch (e) {
-      console.error(e);
+      // the whole AxiosError carries config.headers, and those hold the bearer token
+      console.error("PIDINST search failed", getErrorMessage(e, t("errors.unknownReason")));
+      // cleared so the grid does not keep listing the last successful search under the new query
+      setResult(null);
       addAlert(
         mkAlert({
           variant: "error",
@@ -313,6 +288,7 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
 
   async function importRecord(record: PidinstRecord): Promise<boolean> {
     setImporting(true);
+    closedDuringImport.current = false;
     const importingAlert = mkAlert({
       variant: "notice",
       title: t("pidinstImport.importing.title"),
@@ -338,15 +314,20 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
             {
               variant: "success",
               title: data.name,
-              record: new InstrumentLink({ globalId: data.globalId, name: data.name }),
+              record: new LinkableRecordFromGlobalId(data.globalId),
             },
           ],
         }),
       );
-      onImported({ id: data.id, globalId: data.globalId });
+      // closing mid-import promises only that the result will not be shown here; moving the user
+      // to the new instrument anyway would be the opposite of what they chose. The toast above
+      // still links to it, so the import is not lost.
+      if (!closedDuringImport.current) {
+        onImported({ id: data.id, globalId: data.globalId });
+      }
       return true;
     } catch (e) {
-      console.error(e);
+      console.error("PIDINST import failed", getErrorMessage(e, t("errors.unknownReason")));
       addAlert(
         mkAlert({
           variant: "error",
@@ -383,6 +364,7 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
       t("pidinstImport.closeConfirm.cancel"),
     ).then((confirmed) => {
       if (confirmed) {
+        closedDuringImport.current = true;
         onClose();
         resetState();
       }
@@ -442,7 +424,7 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
                   disabled={searching || importing}
                   // the space keeps the helper row reserved, so the results below do not jump as it appears
                   helperText={
-                    queryTooShort && query.trim() !== ""
+                    queryTooShort && query !== ""
                       ? t("pidinstImport.search.validation.tooShort", { min: MIN_QUERY_LENGTH })
                       : " "
                   }
@@ -452,23 +434,27 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
                 </Button>
               </Stack>
             </Box>
-            {result && (
-              <Typography variant="body2" aria-live="polite">
-                <span>
-                  {t("pidinstImport.results.summary", {
-                    shown: result.hits.length,
-                    total: result.total,
-                    provider: providerLabel(result.provider),
-                  })}
-                </span>
-                {result.total > result.hits.length && (
-                  <>
-                    {" "}
-                    <span>{t("pidinstImport.results.truncated", { shown: result.hits.length })}</span>
-                  </>
-                )}
-              </Typography>
-            )}
+            {/* rendered even with nothing to say: a live region inserted together with its text
+                is not announced, so the first search's summary would be silent */}
+            <Typography variant="body2" aria-live="polite" role="status">
+              {result && (
+                <>
+                  <span>
+                    {t("pidinstImport.results.summary", {
+                      shown: result.hits.length,
+                      total: result.total,
+                      provider: providerLabel(result.provider),
+                    })}
+                  </span>
+                  {result.total > result.hits.length && (
+                    <>
+                      {" "}
+                      <span>{t("pidinstImport.results.truncated", { shown: result.hits.length })}</span>
+                    </>
+                  )}
+                </>
+              )}
+            </Typography>
             {/* fixed so a long result set scrolls inside the grid instead of pushing the preview off-screen */}
             <Box sx={{ height: "380px" }}>
               <DataGridWithRadioSelection
@@ -522,14 +508,7 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
                       sortable: false,
                       renderCell: ({ row }) =>
                         row.linkedInstrumentGlobalId ? (
-                          <GlobalId
-                            record={
-                              new InstrumentLink({
-                                globalId: row.linkedInstrumentGlobalId,
-                                name: row.name ?? "",
-                              })
-                            }
-                          />
+                          <GlobalId record={new LinkableRecordFromGlobalId(row.linkedInstrumentGlobalId)} />
                         ) : null,
                     },
                   ),

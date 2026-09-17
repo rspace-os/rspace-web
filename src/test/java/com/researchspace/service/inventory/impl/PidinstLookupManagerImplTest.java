@@ -1,5 +1,7 @@
 package com.researchspace.service.inventory.impl;
 
+import static com.researchspace.service.inventory.PidinstLookupManager.MIN_QUERY_LENGTH;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -51,6 +53,8 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -395,6 +399,30 @@ class PidinstLookupManagerImplTest {
   }
 
   @Test
+  void theRefusalCarriesTheMinimumSoTheMessageCanNameIt() {
+    ApiRuntimeException thrown =
+        assertThrows(ApiRuntimeException.class, () -> manager.search("qvt", user));
+
+    // the catalogue entry is "Enter at least {0} characters...", so a dropped or wrong argument
+    // ships a sentence with a hole in it, which asserting the code alone cannot see
+    assertArrayEquals(new Object[] {MIN_QUERY_LENGTH}, thrown.getArgs());
+  }
+
+  @Test
+  void searchAcceptsAQueryOfExactlyTheMinimum() {
+    onADataCiteDeployment();
+    String shortest = "qvtb";
+    assertEquals(MIN_QUERY_LENGTH, shortest.length(), "the point of this test is the boundary");
+    when(dataCiteConnector.searchInstrumentDois(shortest, 50, InventorySettingType.PIDINST))
+        .thenReturn(dataCitePage(1, dataCiteInstrument(DOI, "findable", "Instrument")));
+
+    ApiPidinstSearchResult result = manager.search(shortest, user);
+
+    // pins < against <=: an off-by-one here refuses what the dialog's own minimum lets through
+    assertEquals(1, result.getHits().size());
+  }
+
+  @Test
   void dataCiteRetriesADoiWildcardWhenFreeTextFindsNothing() {
     onADataCiteDeployment();
     when(dataCiteConnector.searchInstrumentDois("qvtb-aw74", 50, InventorySettingType.PIDINST))
@@ -433,6 +461,47 @@ class PidinstLookupManagerImplTest {
     assertTrue(result.getHits().isEmpty());
     verify(dataCiteConnector, never())
         .searchInstrumentDois("doi:*Carl Zeiss*", 50, InventorySettingType.PIDINST);
+  }
+
+  /**
+   * A space is the weakest possible negative case: it would still be refused by a class that had
+   * been widened to admit query-string metacharacters. These are the characters that actually break
+   * the query - verified 2026-09-17 against api.datacite.org, where {@code doi:*"broken*} answers
+   * 400 - so widening DOI_FRAGMENT to let one through fails here.
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"qvtb\"aw74", "qvtb*aw74", "qvtb?aw74", "qvtb:aw74", "qvtb(aw74"})
+  void dataCiteDoesNotRetryAQueryCarryingQueryStringSyntax(String query) {
+    onADataCiteDeployment();
+    // answers any query, so a retry that should not happen fails the verify below rather than
+    // dying on an unstubbed call
+    when(dataCiteConnector.searchInstrumentDois(anyString(), eq(50), any()))
+        .thenReturn(dataCitePage(0));
+
+    manager.search(query, user);
+
+    verify(dataCiteConnector, never())
+        .searchInstrumentDois("doi:*" + query + "*", 50, InventorySettingType.PIDINST);
+  }
+
+  /**
+   * The slash is reserved in query-string syntax but DataCite accepts it inside a wildcard term, so
+   * it is deliberately in DOI_FRAGMENT: it is what lets a pasted prefix/suffix pair match. Pinned
+   * because the syntax alone argues for removing it, which would silently drop that case.
+   */
+  @Test
+  void dataCiteRetriesAPastedPrefixAndSuffixPair() {
+    onADataCiteDeployment();
+    when(dataCiteConnector.searchInstrumentDois(
+            "82316/qvtb-aw74", 50, InventorySettingType.PIDINST))
+        .thenReturn(dataCitePage(0));
+    when(dataCiteConnector.searchInstrumentDois(
+            "doi:*82316/qvtb-aw74*", 50, InventorySettingType.PIDINST))
+        .thenReturn(dataCitePage(1, dataCiteInstrument(DOI, "findable", "Instrument")));
+
+    ApiPidinstSearchResult result = manager.search("82316/qvtb-aw74", user);
+
+    assertEquals(1, result.getHits().size());
   }
 
   @Test

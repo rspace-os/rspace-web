@@ -86,9 +86,14 @@ and API field names were ported instead.
    suffix returns 0, `doi:*qvtb-aw74*` returns 1, `doi:*qvtb*` returns 1, and the wildcard matches
    across the slash and whatever the case. The retry runs only when the first page is empty, so a
    search that already found something still costs one call, and only when the query is a bare
-   `[A-Za-z0-9._/-]+`, so what the user typed cannot turn the wildcard into a different query. The
-   B2INST side is left alone: InvenioRDM tokenises its Handle field, and no equivalent miss has
-   been reported.
+   `[A-Za-z0-9._/-]+`, so what the user typed cannot close the `doi:` clause or open another. That
+   allow-list is evidence-led rather than derived from the syntax: `/` and `-` *are* reserved in
+   query-string syntax but DataCite accepts them inside a wildcard term, and keeping `/` is what
+   lets a pasted prefix/suffix pair match. Verified 2026-09-17 against api.datacite.org:
+   `doi:*qvtb/aw74*` answers 200, `doi:*5281/zenodo*` (12.89M) narrows `doi:*5281*` (12.91M) so the
+   wildcard really does span the slash, and `doi:*"broken*` answers 400. Widening the class further
+   needs the same kind of evidence, and both halves are pinned by tests. The B2INST side is left
+   alone: InvenioRDM tokenises its Handle field, and no equivalent miss has been reported.
 
 ## Considered options
 
@@ -104,8 +109,11 @@ and API field names were ported instead.
   back): the create endpoint would have to re-fetch the PID to verify client-sent
   metadata, and `identifiers` are ignored on create today.
 - **For the DOI miss: always search `(<query>) OR doi:*<query>*`.** One call instead of two on a
-  miss, but it interpolates user text into Elasticsearch query syntax on every search, where a
-  stray quote or `AND` changes the query or errors. Rejected in favour of the guarded retry.
+  miss, but it would make RSpace *build a clause* out of user text on every search, so a stray
+  quote errors the query rather than simply not matching. (The plain query is already passed to the
+  same Elasticsearch-backed `query` parameter, so the difference is who composes the syntax, not
+  whether the parameter interprets it.) Rejected in favour of the guarded retry, which composes a
+  clause only on an empty page and only from characters DataCite is known to accept.
 - **For the DOI miss: reconstruct the full DOI from the deployment's repository prefix.** Exact,
   but it only finds a DOI minted under that prefix, and the lookup is for the whole registry.
 - **Allow duplicate links, flagged**: rejected in favour of one RSpace record per PID;

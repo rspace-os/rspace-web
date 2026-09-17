@@ -57,9 +57,18 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
           "^(?:https?://(?:dx\\.)?doi\\.org/)?(10\\.\\d{4,9}/\\S+)$", Pattern.CASE_INSENSITIVE);
 
   /**
-   * A query that may be pasted into DataCite's {@code doi:*...*} wildcard: no whitespace and no
-   * character that means something in Elasticsearch query syntax, so the retry cannot be turned
-   * into a different query by what the user typed.
+   * A query that may be pasted into DataCite's {@code doi:*...*} wildcard. DataCite's {@code query}
+   * is Elasticsearch query-string syntax, so this is an allow-list of the characters that leave the
+   * wildcard a single term: it excludes whitespace and every character that would close the clause
+   * or start a new one ({@code " * ? : ( ) [ ] { } ^ ~ \ + = ! < > &} and {@code |}), so what the
+   * user typed cannot turn the retry into a different query.
+   *
+   * <p>It admits {@code /} and {@code -}, which <em>are</em> reserved in query-string syntax, on
+   * the evidence that DataCite accepts them inside a wildcard term rather than on the syntax alone:
+   * verified 2026-09-17 against api.datacite.org, where {@code doi:*qvtb/aw74*} answers 200 and
+   * {@code doi:*5281/zenodo*} (12.89M) narrows {@code doi:*5281*} (12.91M), so the wildcard really
+   * does span the slash, while {@code doi:*"broken*} answers 400. Keeping {@code /} is what lets a
+   * pasted prefix/suffix pair match; widening this class further needs the same kind of evidence.
    */
   static final Pattern DOI_FRAGMENT = Pattern.compile("^[A-Za-z0-9._/-]+$");
 

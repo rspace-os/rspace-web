@@ -1,5 +1,6 @@
 package com.researchspace.service.inventory;
 
+import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiPidinstSearchResult;
 import com.researchspace.api.v1.model.ApiTargetLocation;
@@ -29,6 +30,8 @@ public interface PidinstLookupManager {
    * because only those may be linked to an instrument. Hits are sorted by name and carry {@code
    * linkedInstrumentGlobalId} when an instrument in this deployment already links the PID.
    *
+   * @throws ApiRuntimeException when the query is shorter than {@link #MIN_QUERY_LENGTH} after
+   *     trimming, so a direct caller is held to the same rule as the import dialog
    * @throws UnsupportedOperationException when no PIDINST provider is enabled
    */
   ApiPidinstSearchResult search(String query, User user);
