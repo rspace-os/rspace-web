@@ -1,15 +1,12 @@
 package com.researchspace.service.inventory;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.researchspace.service.inventory.impl.InventoryOperationInFlightOrigins;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.nio.file.Path;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -126,44 +123,18 @@ class InventoryOperationTransactionRuleTest {
   }
 
   /**
-   * The in-flight claim releases an origin once its claim reaches {@link
-   * InventoryOperationInFlightOrigins#STALE_AFTER_NANOS}, which only avoids overlapping two
-   * requests on one origin if no live operation can still be running by then. Bounding the
-   * transaction below that limit is what makes it true rather than assumed.
-   *
-   * <p>The bound is on {@code performBiobankOperation} alone: txAdvice is shared by every {@code
-   * *Manager} advisor, so a timeout on the {@code *} rule would cap every manager call in the
-   * application.
+   * No {@code tx:method} may declare a timeout. txAdvice is shared by every {@code *Manager}
+   * advisor, so one here would cap unrelated manager calls; and the in-flight claim is released by
+   * its owner rather than on age, so nothing depends on an operation being bounded (RSDEV-1231).
    */
   @Test
-  void performBiobankOperationIsBoundedBelowTheInFlightClaimLimitAndNothingElseIsBounded()
-      throws Exception {
-    Map<String, String> timeouts = txAdviceTimeouts(PRODUCTION);
-
-    String perform = timeouts.get("performBiobankOperation");
-    assertNotNull(perform, "txAdvice declares no rule for performBiobankOperation: " + PRODUCTION);
-    assertFalse(
-        perform.isBlank(),
-        "performBiobankOperation declares no transaction timeout, so nothing bounds an operation"
-            + " below the in-flight claim limit that frees its origins");
-    assertTrue(
-        Duration.ofSeconds(Long.parseLong(perform)).toNanos()
-            < InventoryOperationInFlightOrigins.STALE_AFTER_NANOS,
-        "performBiobankOperation's transaction timeout must expire before its in-flight claim does,"
-            + " otherwise a live operation can still have its origins taken by a second request");
-
-    List<String> alsoBounded =
-        timeouts.entrySet().stream()
-            .filter(
-                rule ->
-                    !"performBiobankOperation".equals(rule.getKey()) && !rule.getValue().isBlank())
+  void noTransactionRuleDeclaresATimeout() throws Exception {
+    List<String> bounded =
+        txAdviceTimeouts(PRODUCTION).entrySet().stream()
+            .filter(rule -> !rule.getValue().isBlank())
             .map(Map.Entry::getKey)
             .toList();
-    assertTrue(
-        alsoBounded.isEmpty(),
-        "txAdvice is shared by every *Manager advisor, so only performBiobankOperation may declare"
-            + " a timeout: "
-            + alsoBounded);
+    assertTrue(bounded.isEmpty(), "txAdvice is shared by every *Manager advisor: " + bounded);
   }
 
   @Test

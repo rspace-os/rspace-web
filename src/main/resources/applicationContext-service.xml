@@ -80,7 +80,7 @@
                  point (the core it
                  calls is self-invoked, so no advice applies to that call at all).
                  InventoryOperationTransactionRuleTest pins this to the interface. -->
-            <tx:method name="performBiobankOperation" timeout="480"
+            <tx:method name="performBiobankOperation"
                 rollback-for="org.springframework.validation.BindException"/>
             <tx:method name="*"/>
         </tx:attributes>
