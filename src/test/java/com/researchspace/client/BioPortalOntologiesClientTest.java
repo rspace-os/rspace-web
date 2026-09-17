@@ -1,6 +1,7 @@
 package com.researchspace.client;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -13,13 +14,20 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 
 import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.core.testutil.StringAppenderForTestLogging;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.Logger;
+import org.apache.logging.log4j.core.appender.OutputStreamAppender;
+import org.apache.logging.log4j.core.layout.PatternLayout;
 import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -190,6 +198,86 @@ class BioPortalOntologiesClientTest {
 
     assertSame(first, second); // same cached instance, so the server was hit only once
     mockServer.verify();
+  }
+
+  @Test
+  void shouldNotLogRequestDataOnTransportFailure() {
+    String searchTerm = "Confidential Falcon compound";
+    mockServer
+        .expect(requestTo(startsWithUri(API_BASE_URL + "/search")))
+        .andRespond(
+            request -> {
+              IOException failure =
+                  new IOException(
+                      "Failed request " + request.getURI(),
+                      new IOException(
+                          "Authorization: "
+                              + request.getHeaders().getFirst(HttpHeaders.AUTHORIZATION)));
+              failure.addSuppressed(new IOException("Provider echoed " + searchTerm));
+              throw failure;
+            });
+
+    String logs =
+        captureFailureLogs(
+            () -> assertThrows(RestClientException.class, () -> client.search(searchTerm)));
+
+    assertSafeFailureLog(logs, searchTerm);
+    assertTrue(logs.contains("ResourceAccessException"));
+    mockServer.verify();
+  }
+
+  @Test
+  void shouldNotLogResponseBodyOnHttpFailure() {
+    String searchTerm = "Confidential Falcon compound";
+    mockServer
+        .expect(requestTo(startsWithUri(API_BASE_URL + "/search")))
+        .andRespond(withServerError().body("Provider echoed " + searchTerm + " test-api-key"));
+
+    String logs =
+        captureFailureLogs(
+            () -> assertThrows(RestClientException.class, () -> client.search(searchTerm)));
+
+    assertSafeFailureLog(logs, searchTerm);
+    assertTrue(logs.contains("status=500"));
+    mockServer.verify();
+  }
+
+  private static void assertSafeFailureLog(String logs, String searchTerm) {
+    assertFalse(logs.contains(searchTerm), logs);
+    assertFalse(logs.contains(UriUtils.encodeQueryParam(searchTerm, StandardCharsets.UTF_8)), logs);
+    assertFalse(logs.contains("test-api-key"));
+    assertFalse(logs.contains("q="));
+    assertTrue(logs.contains("WARN"));
+    assertTrue(logs.contains("endpoint=" + API_BASE_URL + "/search"));
+    assertTrue(logs.contains("at org.springframework.web.client.RestTemplate."));
+    assertEquals(1, logs.split("BioPortal search request failed", -1).length - 1);
+  }
+
+  private static String captureFailureLogs(Runnable action) {
+    Logger logger = (Logger) LogManager.getLogger(BioPortalOntologiesClient.class);
+    Level originalLevel = logger.getLevel();
+    boolean originalAdditive = logger.isAdditive();
+    ByteArrayOutputStream output = new ByteArrayOutputStream();
+    OutputStreamAppender appender =
+        OutputStreamAppender.newBuilder()
+            .setName("bioportal-failure-test")
+            .setTarget(output)
+            .setLayout(
+                PatternLayout.newBuilder().withPattern("%level %message%n%throwable").build())
+            .build();
+    appender.start();
+    logger.addAppender(appender);
+    logger.setLevel(Level.WARN);
+    logger.setAdditive(false);
+    try {
+      action.run();
+      return output.toString(StandardCharsets.UTF_8);
+    } finally {
+      logger.removeAppender(appender);
+      appender.stop();
+      logger.setLevel(originalLevel);
+      logger.setAdditive(originalAdditive);
+    }
   }
 
   @Test

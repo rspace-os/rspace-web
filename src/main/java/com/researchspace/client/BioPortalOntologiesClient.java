@@ -21,6 +21,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -161,7 +162,19 @@ public class BioPortalOntologiesClient {
           ? Collections.emptyList()
           : response.getCollection();
     } catch (RestClientException e) {
-      log.warn("BioPortal search request failed: provider=BioPortal uri={}", uri, e);
+      // e may be carrying request/response data log its trace, never e itself.
+      Throwable safeStack = new Throwable("BioPortal failure stack (exception details omitted)");
+      safeStack.setStackTrace(e.getStackTrace());
+      String status =
+          e instanceof RestClientResponseException responseException
+              ? Integer.toString(responseException.getStatusCode().value())
+              : "unavailable";
+      log.warn(
+          "BioPortal search request failed: provider=BioPortal endpoint={} error={} status={}",
+          CANONICAL_API_ORIGIN.resolve("/search"),
+          e.getClass().getSimpleName(),
+          status,
+          safeStack);
       throw e;
     }
   }
