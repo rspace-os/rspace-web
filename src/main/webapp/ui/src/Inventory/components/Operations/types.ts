@@ -49,9 +49,9 @@ export type OperationLinkField = OperationFieldKey & {
 
 export type OperationTextFieldValue = OperationFieldKey & {
   name: string;
-  // "number" is available for origin custom fields (effect.originFields); the created sample's own
-  // textFields only ever produce "text". Inventory subsample fields have no native date type, so a
-  // date (Destroy's disposed) is a text field holding an ISO date. See ApiExtraField.
+  // "number" is available for origin custom fields (effect.originFields). Inventory subsample
+  // fields have no native date type, so a date (Destroy's disposed) is a text field holding an
+  // ISO date. See ApiExtraField.
   type: "text" | "number";
   newFieldRequest: true;
   content: string;

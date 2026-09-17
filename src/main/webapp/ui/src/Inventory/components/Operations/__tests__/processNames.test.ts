@@ -88,10 +88,11 @@ describe("processValuesPreferenceFor", () => {
     expect(new Set(keys.map(([key]) => processValuesPreferenceFor(key))).size).toBe(keys.length);
   });
 
-  it("falls back to the legacy shared key for an operation type it does not recognise", () => {
-    // Only reachable if a new operation type is added server-side before this map is; falling back
-    // to the retained legacy collection is safer than throwing or guessing one of the seven.
-    expect(processValuesPreferenceFor("teleport")).toBe(PREFERENCES.INVENTORY_OPERATION_PROCESS_VALUES);
+  it("derives the same name for an operation type the map does not list", () => {
+    // Only reachable if a new operation type is added before this map is. Deriving the name keeps
+    // the two halves of a bundle together; the backend's allowlist then refuses the write, which
+    // is the right answer for an operation that does not exist.
+    expect(processValuesPreferenceFor("teleport")).toBe(Symbol.for("INVENTORY_OPERATION_PROCESS_VALUES_TELEPORT"));
   });
 });
 

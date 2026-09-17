@@ -32,10 +32,9 @@ export type ConfirmSummaryField =
   | "originFields";
 
 type LinkSpec = { relationType: string; fieldNameKey: InventoryKey };
-type TextFieldSpec = { nameKey: InventoryKey; contentFrom: string };
 // Subsample custom fields support only text and number (no native date type), so a date value is
 // stored as a text field holding an ISO date.
-type OriginFieldSpec = TextFieldSpec & { type?: "text" | "number" };
+type OriginFieldSpec = { nameKey: InventoryKey; contentFrom: string; type?: "text" | "number" };
 
 // Evaluated in array order, so a later entry may read an earlier one's `into` via an `input` arg.
 type Computed = {
@@ -60,7 +59,6 @@ type Effect = {
   storageTempFrom?: string;
   computed?: ReadonlyArray<Computed>;
   links: ReadonlyArray<LinkSpec>;
-  textFields?: ReadonlyArray<TextFieldSpec>;
 };
 
 export type InventoryOperation = {
@@ -71,7 +69,6 @@ export type InventoryOperation = {
   // unmatched key renders no icon.
   iconKey?: string;
   requiresMultiple?: boolean;
-  takeAmountPerSubsample?: boolean;
   defaultAmountMode?: AmountMode;
   noOutput?: boolean;
   documentationStep: boolean;
@@ -161,7 +158,6 @@ export const operations: ReadonlyArray<InventoryOperation> = [
         },
       ],
       links: [{ relationType: "IsDerivedFrom", fieldNameKey: "operations.passage.linkFieldName" }],
-      textFields: [{ nameKey: "operations.passage.numberField", contentFrom: "passageNumber" }],
     },
     confirmSummary: ["template", "subsamples", "linkBack", "documentation"],
   },
@@ -171,7 +167,6 @@ export const operations: ReadonlyArray<InventoryOperation> = [
     descriptionKey: "operations.pool.description",
     iconKey: "flask",
     requiresMultiple: true,
-    takeAmountPerSubsample: true,
     defaultAmountMode: "all",
     documentationStep: true,
     inputs: [sampleName, count, eachAmount, amountTaken("operations.fields.amountTakenEach")],
@@ -239,7 +234,6 @@ export const operations: ReadonlyArray<InventoryOperation> = [
       amountTakenFrom: "amountTaken",
       storageTempFrom: "storageTemp",
       links: [{ relationType: "IsDerivedFrom", fieldNameKey: "operations.cryopreserve.linkFieldName" }],
-      textFields: [{ nameKey: "operations.cryopreserve.cryomediumField", contentFrom: "cryomedium" }],
     },
     confirmSummary: ["template", "subsamples", "amountTaken", "storageTemp", "linkBack", "documentation"],
   },
@@ -305,14 +299,10 @@ export function amountKeysFor(operation: InventoryOperation): ReadonlySet<string
   return new Set([countFrom, eachAmountFrom, amountTakenFrom].filter((k): k is string => Boolean(k)));
 }
 
-// `takeAmountPerSubsample` defaults to true for a multi-origin operation that takes an amount, so an
-// unset value still enables the per-origin modes; single-origin operations are always false.
+// The per-origin amount modes belong to a multi-origin operation that takes an amount; a
+// single-origin operation always uses the one shared "same" mode.
 export function usesAmountModes(operation: InventoryOperation): boolean {
-  return (
-    Boolean(operation.requiresMultiple) &&
-    operation.effect.amountTakenFrom !== undefined &&
-    (operation.takeAmountPerSubsample ?? true)
-  );
+  return Boolean(operation.requiresMultiple) && operation.effect.amountTakenFrom !== undefined;
 }
 
 // Always "same" for an operation that does not use amount modes, so a stray value can never

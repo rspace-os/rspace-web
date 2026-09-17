@@ -6,7 +6,6 @@
 
 import type { UnitCategory } from "@/stores/stores/UnitStore";
 import type { DocumentationSelection } from "./DocumentationStep";
-import { normalizeDocumentation } from "./documentationResolution";
 import type { TemplateDefault, TemplateMode } from "./templateResolution";
 import type { AmountMode, OperationInputs, PerSubsampleAmounts } from "./types";
 
@@ -25,6 +24,13 @@ export type ProcessValues = {
 
 const UNSELECTED_TEMPLATE: TemplateDefault = { mode: "unselected", templateId: null };
 const AMOUNT_MODES: ReadonlyArray<AmountMode> = ["same", "all", "perSubsample"];
+
+function normalizeDocumentation(stored: unknown): DocumentationSelection {
+  const s = stored as { globalId?: unknown; name?: unknown } | null | undefined;
+  return s && typeof s.globalId === "string" && typeof s.name === "string"
+    ? { globalId: s.globalId, name: s.name }
+    : null;
+}
 
 function normalizeAmountMode(value: unknown): AmountMode {
   return typeof value === "string" && (AMOUNT_MODES as ReadonlyArray<string>).includes(value)
@@ -87,12 +93,4 @@ export function normalizeProcessValues(stored: unknown): ProcessValues | null {
   if (s.perSubsampleAmounts !== undefined)
     result.perSubsampleAmounts = normalizePerSubsampleAmounts(s.perSubsampleAmounts);
   return result;
-}
-
-export function processValuesAfterPerform(
-  current: Record<string, ProcessValues>,
-  key: string,
-  bundle: ProcessValues,
-): Record<string, ProcessValues> {
-  return { ...current, [key]: bundle };
 }
