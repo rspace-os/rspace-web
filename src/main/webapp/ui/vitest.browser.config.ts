@@ -1,11 +1,11 @@
 import fs from "node:fs";
-import {createRequire} from "node:module";
+import { createRequire } from "node:module";
 import path from "node:path";
-import {fileURLToPath} from "node:url";
+import { fileURLToPath } from "node:url";
 import react from "@vitejs/plugin-react";
-import {playwright} from "@vitest/browser-playwright";
-import type {Alias, Plugin} from "vite";
-import {configDefaults, defineConfig} from "vitest/config";
+import { playwright } from "@vitest/browser-playwright";
+import type { Alias, Plugin } from "vite";
+import { configDefaults, defineConfig } from "vitest/config";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
