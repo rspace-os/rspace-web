@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.service.inventory.InventoryOperationInProgressException;
+import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
@@ -82,7 +83,7 @@ class InventoryOperationInFlightOriginsTest {
   @Test
   void aClaimOlderThanTheStaleLimitIsTreatedAsFree() {
     inFlight.claim(List.of("SS1"));
-    now.addAndGet(InventoryOperationInFlightOrigins.STALE_AFTER_MILLIS - 1);
+    now.addAndGet(InventoryOperationInFlightOrigins.STALE_AFTER_NANOS - 1);
     assertThrows(InventoryOperationInProgressException.class, () -> inFlight.claim(List.of("SS1")));
 
     now.addAndGet(1);
@@ -95,7 +96,7 @@ class InventoryOperationInFlightOriginsTest {
   @Test
   void anOrphanedClaimReleasedAfterBeingReplacedLeavesTheReplacementStanding() {
     InventoryOperationInFlightOrigins.Claim orphan = inFlight.claim(List.of("SS1"));
-    now.addAndGet(InventoryOperationInFlightOrigins.STALE_AFTER_MILLIS);
+    now.addAndGet(InventoryOperationInFlightOrigins.STALE_AFTER_NANOS);
     InventoryOperationInFlightOrigins.Claim replacement = inFlight.claim(List.of("SS1"));
 
     orphan.close();
@@ -111,11 +112,20 @@ class InventoryOperationInFlightOriginsTest {
     assertFalse(inFlight.isInFlight("SS1"));
   }
 
+  /**
+   * The default clock measures elapsed time, so no calendar adjustment can age a live claim: a
+   * wall-clock source would let one NTP step forward cross the limit in an instant and hand a
+   * running request's origins away (RSDEV-1231).
+   */
   @Test
-  void theDefaultClockIsWallTime() {
-    InventoryOperationInFlightOrigins wallClock = new InventoryOperationInFlightOrigins();
-    wallClock.claim(List.of("SS1"));
-    assertTrue(wallClock.isInFlight("SS1"));
+  void theDefaultClockIsMonotonicElapsedTime() {
+    InventoryOperationInFlightOrigins elapsed = new InventoryOperationInFlightOrigins();
+    elapsed.claim(List.of("SS1"));
+    assertTrue(elapsed.isInFlight("SS1"));
+    assertTrue(
+        InventoryOperationInFlightOrigins.STALE_AFTER_NANOS
+            > Duration.ofMinutes(8).toNanos() + Duration.ofSeconds(9).toNanos(),
+        "the limit must be expressed in the same unit the clock reports");
   }
 
   /**
