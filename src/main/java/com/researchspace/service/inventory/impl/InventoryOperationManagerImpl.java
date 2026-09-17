@@ -54,7 +54,7 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
   private static final QuantityUtils quantityUtils = new QuantityUtils();
 
   @Override
-  public <R extends ApiInventoryOperationRequests.Request> OperationOutcome performBiobankOperation(
+  public <R extends ApiInventoryOperationRequests.Request> OperationOutcome performOperation(
       InventoryOperation<R> operation, R request, List<Long> originIds, User user)
       throws BindException {
     // Permission is asserted while the state is snapshotted, before anything is validated against
@@ -92,7 +92,7 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
             // session has none, so this falls back to the server's.
             LocalDate.parse(new SessionTimeZoneUtils().formatDateForClient(new Date())));
 
-    ApiSampleWithFullSubSamples created = performOperation(built, user);
+    ApiSampleWithFullSubSamples created = execute(built, user);
 
     // The origins as they stand afterwards, read HERE rather than by the caller: still inside this
     // transaction, so they are one consistent snapshot of what this operation produced, and one
@@ -123,11 +123,11 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
   /**
    * The transactional core, run on a request an operation built. Not on {@link
    * InventoryOperationManager}: it dereferences every origin's id and amount without guards and
-   * asserts nothing about permission itself, so it is only safe after {@link
-   * #performBiobankOperation} has snapshotted and validated. Reached by self-invocation, which is
-   * why {@code performBiobankOperation} carries the rollback rule.
+   * asserts nothing about permission itself, so it is only safe after {@link #performOperation} has
+   * snapshotted and validated. Reached by self-invocation, which is why {@code performOperation}
+   * carries the rollback rule.
    */
-  ApiSampleWithFullSubSamples performOperation(ApiInventoryOperationPost request, User user)
+  ApiSampleWithFullSubSamples execute(ApiInventoryOperationPost request, User user)
       throws BindException {
     // Inside this transaction and before any origin is read, so the template validated is the
     // template the sample is created from.

@@ -27,8 +27,8 @@ import org.xml.sax.SAXException;
  * unresolvable documentation target does exactly that) then answers 500 in place of the 400.
  *
  * <p>The rule lives in XML and binds by method NAME, so renaming {@link
- * InventoryOperationManager#performBiobankOperation} would silently drop it with no test going red.
- * This test matches the declared patterns the way {@code NameMatchTransactionAttributeSource} does,
+ * InventoryOperationManager#performOperation} would silently drop it with no test going red. This
+ * test matches the declared patterns the way {@code NameMatchTransactionAttributeSource} does,
  * against the interface's real methods, so a rename fails here.
  */
 class InventoryOperationTransactionRuleTest {
