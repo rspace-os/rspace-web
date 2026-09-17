@@ -555,8 +555,14 @@ function OperationWizard({
    */
   const renewals = React.useRef<Promise<unknown>>(Promise.resolve());
 
+  // Set the moment a close begins. Close waits for the renewals outstanding at that instant, so a
+  // batch started afterwards would not be waited for and could land behind the caller's release.
+  // A closing wizard has no lock left to keep alive, so it simply stops renewing.
+  const closing = React.useRef(false);
+
   /** Extends the edit-session lock on each origin as the wizard's steps complete (RSDEV-1231). */
   const extendOriginLocks = () => {
+    if (closing.current) return;
     const batch = Promise.allSettled(
       origins.map((o) =>
         o.acquireEditLock().catch((error: unknown) => {
@@ -572,6 +578,8 @@ function OperationWizard({
 
   /** Hands back to the caller only once no renewal can still land behind its release. */
   const closeAfterRenewals = () => {
+    if (closing.current) return;
+    closing.current = true;
     void renewals.current.then(onClose);
   };
 
@@ -722,6 +730,7 @@ function OperationWizard({
           setProcessNameDefaults(processNameDefaultAfterPerform(processNameDefaults ?? {}, operation.key, name));
         }
       }
+      closing.current = true;
       await renewals.current;
       onClose();
       await Promise.all(origins.map((o) => o.fetchAdditionalInfo()));
