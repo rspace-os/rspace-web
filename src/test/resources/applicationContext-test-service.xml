@@ -47,7 +47,7 @@
         <tx:attributes>
             <!-- Mirrors applicationContext-service.xml (RSDEV-1231); the mirror is asserted by
                  InventoryOperationTransactionRuleTest. -->
-            <tx:method name="performBiobankOperation"
+            <tx:method name="performOperation"
                 rollback-for="org.springframework.validation.BindException"/>
             <tx:method name="*"/>
         </tx:attributes>
