@@ -1,12 +1,15 @@
 package com.researchspace.service.inventory;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.researchspace.service.inventory.impl.InventoryOperationInFlightOrigins;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -27,9 +30,9 @@ import org.xml.sax.SAXException;
  * unresolvable documentation target does exactly that) then answers 500 in place of the 400.
  *
  * <p>The rule lives in XML and binds by method NAME, so renaming {@link
- * InventoryOperationManager#perform} would silently drop it with no test going red. This test
- * matches the declared patterns the way {@code NameMatchTransactionAttributeSource} does, against
- * the interface's real methods, so a rename fails here.
+ * InventoryOperationManager#performBiobankOperation} would silently drop it with no test going red.
+ * This test matches the declared patterns the way {@code NameMatchTransactionAttributeSource} does,
+ * against the interface's real methods, so a rename fails here.
  */
 class InventoryOperationTransactionRuleTest {
 
@@ -61,6 +64,29 @@ class InventoryOperationTransactionRuleTest {
       return rules;
     }
     return rules;
+  }
+
+  /** Each {@code tx:method} of the shared {@code txAdvice} with its declared timeout, if any. */
+  private static Map<String, String> txAdviceTimeouts(Path context)
+      throws IOException, SAXException, ParserConfigurationException {
+    DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+    factory.setNamespaceAware(true);
+    Document document = factory.newDocumentBuilder().parse(context.toFile());
+    NodeList advices = document.getElementsByTagNameNS("*", "advice");
+    Map<String, String> timeouts = new LinkedHashMap<>();
+    for (int i = 0; i < advices.getLength(); i++) {
+      Element advice = (Element) advices.item(i);
+      if (!"txAdvice".equals(advice.getAttribute("id"))) {
+        continue;
+      }
+      NodeList methods = advice.getElementsByTagNameNS("*", "method");
+      for (int j = 0; j < methods.getLength(); j++) {
+        Element method = (Element) methods.item(j);
+        timeouts.put(method.getAttribute("name"), method.getAttribute("timeout"));
+      }
+      return timeouts;
+    }
+    return timeouts;
   }
 
   /** The pattern Spring would apply: an exact name wins, otherwise the longest match does. */
@@ -99,6 +125,47 @@ class InventoryOperationTransactionRuleTest {
             + unprotected);
   }
 
+  /**
+   * The in-flight claim releases an origin once its claim reaches {@link
+   * InventoryOperationInFlightOrigins#STALE_AFTER_MILLIS}, which only avoids overlapping two
+   * requests on one origin if no live operation can still be running by then. Bounding the
+   * transaction below that limit is what makes it true rather than assumed.
+   *
+   * <p>The bound is on {@code performBiobankOperation} alone: txAdvice is shared by every {@code
+   * *Manager} advisor, so a timeout on the {@code *} rule would cap every manager call in the
+   * application.
+   */
+  @Test
+  void performBiobankOperationIsBoundedBelowTheInFlightClaimLimitAndNothingElseIsBounded()
+      throws Exception {
+    Map<String, String> timeouts = txAdviceTimeouts(PRODUCTION);
+
+    String perform = timeouts.get("performBiobankOperation");
+    assertNotNull(perform, "txAdvice declares no rule for performBiobankOperation: " + PRODUCTION);
+    assertFalse(
+        perform.isBlank(),
+        "performBiobankOperation declares no transaction timeout, so nothing bounds an operation"
+            + " below the in-flight claim limit that frees its origins");
+    assertTrue(
+        Duration.ofSeconds(Long.parseLong(perform)).toMillis()
+            < InventoryOperationInFlightOrigins.STALE_AFTER_MILLIS,
+        "performBiobankOperation's transaction timeout must expire before its in-flight claim does,"
+            + " otherwise a live operation can still have its origins taken by a second request");
+
+    List<String> alsoBounded =
+        timeouts.entrySet().stream()
+            .filter(
+                rule ->
+                    !"performBiobankOperation".equals(rule.getKey()) && !rule.getValue().isBlank())
+            .map(Map.Entry::getKey)
+            .toList();
+    assertTrue(
+        alsoBounded.isEmpty(),
+        "txAdvice is shared by every *Manager advisor, so only performBiobankOperation may declare"
+            + " a timeout: "
+            + alsoBounded);
+  }
+
   @Test
   void theTestContextMirrorsTheProductionTransactionRules() throws Exception {
     assertEquals(
@@ -106,5 +173,9 @@ class InventoryOperationTransactionRuleTest {
         txAdviceRollbackRules(TEST_MIRROR),
         "the test context's txAdvice has drifted from production, so every Spring test would be"
             + " asserting rules the application does not have");
+    assertEquals(
+        txAdviceTimeouts(PRODUCTION),
+        txAdviceTimeouts(TEST_MIRROR),
+        "the test context's txAdvice timeouts have drifted from production");
   }
 }
