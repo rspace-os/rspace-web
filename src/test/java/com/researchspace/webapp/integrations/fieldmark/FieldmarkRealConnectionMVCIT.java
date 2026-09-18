@@ -28,10 +28,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.test.web.servlet.MvcResult;
 
 /**
- * Runs against the real Fieldmark service when explicitly enabled; requires the FIELDMARK_TOKEN
+ * Runs on nightly builds against the real Fieldmark service; requires the FIELDMARK_TOKEN
  * environment variable to hold a valid bearer token.
  */
-@EnabledIfSystemProperty(named = "fieldmark.realConnectionTests", matches = "true")
+@EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
 public class FieldmarkRealConnectionMVCIT extends API_MVC_TestBase {
 
   private static final FieldmarkApiImportRequest IMPORT_REQUEST =

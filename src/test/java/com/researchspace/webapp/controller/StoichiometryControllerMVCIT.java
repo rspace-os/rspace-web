@@ -54,10 +54,9 @@ import org.springframework.test.web.servlet.MvcResult;
 
 @WebAppConfiguration
 @TestPropertySource(properties = "chemistry.provider=indigo")
-@TestExecutionListeners({
-  BeanOverrideTestExecutionListener.class,
-  MockitoResetTestExecutionListener.class
-})
+@TestExecutionListeners(
+    value = {BeanOverrideTestExecutionListener.class, MockitoResetTestExecutionListener.class},
+    mergeMode = TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS)
 @Tag("chemistry")
 public class StoichiometryControllerMVCIT extends API_MVC_TestBase {
 
