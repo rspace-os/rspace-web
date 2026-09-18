@@ -75,18 +75,23 @@ async function renderOpenDialog(ui = <PidinstImportDialogStory />) {
   return result;
 }
 
-async function search(user: ReturnType<typeof userEvent.setup>, query: string) {
-  await user.type(screen.getByRole("textbox", { name: "inventory:pidinstImport.search.label" }), query);
-  await user.click(screen.getByRole("button", { name: "common:actions.search" }));
+/**
+ * A confirm dialog that has been answered stays mounted under the transition mock, so MUI keeps
+ * `aria-hidden` on the import dialog behind it. Tests that carry on afterwards pass `hidden` to
+ * reach it; nothing about the component depends on this.
+ */
+async function search(user: ReturnType<typeof userEvent.setup>, query: string, hidden = false) {
+  await user.type(screen.getByRole("textbox", { name: "inventory:pidinstImport.search.label", hidden }), query);
+  await user.click(screen.getByRole("button", { name: "common:actions.search", hidden }));
   await waitFor(() => {
-    expect(screen.getByRole("gridcell", { name: HITS[0].name })).toBeVisible();
+    expect(screen.getByRole("gridcell", { name: HITS[0].name, hidden })).toBeInTheDocument();
   });
 }
 
 /** The row's radio, found through the name cell because every radio label is the same i18n key in cimode. */
-function radioFor(name: string): HTMLElement {
-  const row = screen.getByRole("gridcell", { name }).closest('[role="row"]') as HTMLElement;
-  return within(row).getByRole("radio");
+function radioFor(name: string, hidden = false): HTMLElement {
+  const row = screen.getByRole("gridcell", { name, hidden }).closest('[role="row"]') as HTMLElement;
+  return within(row).getByRole("radio", { hidden });
 }
 
 describe("PidinstImportDialog", () => {
@@ -322,8 +327,10 @@ describe("PidinstImportDialog", () => {
     await user.type(screen.getByRole("textbox", { name: "Search the registry" }), "microscope");
     await user.click(screen.getByRole("button", { name: "Search" }));
 
-    expect(await screen.findByText("No published instrument records match this search.")).toBeVisible();
-    expect(screen.getByRole("status")).toHaveTextContent("");
+    // once in the grid's empty overlay, and once in the live region, which is the only one of the
+    // two that a screen reader announces
+    expect(await screen.findAllByText("No published instrument records match this search.")).toHaveLength(2);
+    expect(screen.getByRole("status")).toHaveTextContent("No published instrument records match this search.");
     expect(screen.queryByText(/records found at/)).toBeNull();
   });
 
@@ -358,5 +365,164 @@ describe("PidinstImportDialog", () => {
       expect(screen.getByText("inventory:pidinstImport.importSuccess")).toBeVisible();
     });
     expect(onImported).not.toHaveBeenCalled();
+  });
+
+  test("calls onClose once when an import finishes after the dialog was closed", async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    let finishImport: (() => void) | undefined;
+    stubEndpoints();
+    mockAxios.onPost(IMPORT_URL).reply(
+      () =>
+        new Promise((resolve) => {
+          finishImport = () => {
+            resolve([201, CREATED_INSTRUMENT]);
+          };
+        }),
+    );
+    await renderOpenDialog(<PidinstImportDialogStory onClose={onClose} />);
+    await search(user, "microscope");
+    await user.click(radioFor("Confocal Microscope"));
+    await user.click(screen.getByRole("button", { name: "common:actions.import" }));
+    await user.click(screen.getByRole("button", { name: "common:actions.close" }));
+    await user.click(screen.getByRole("button", { name: "inventory:pidinstImport.closeConfirm.confirm" }));
+    expect(onClose).toHaveBeenCalledTimes(1);
+
+    finishImport?.();
+
+    await waitFor(() => {
+      expect(screen.getByText("inventory:pidinstImport.importSuccess")).toBeVisible();
+    });
+    // the close the user confirmed already ran; closing again would shut a dialog they reopened
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  test("does not navigate away when an import from a closed session finishes during a later one", async () => {
+    const user = userEvent.setup();
+    const onImported = vi.fn();
+    stubEndpoints();
+    const finishers: Array<(value: [number, unknown]) => void> = [];
+    mockAxios.onPost(IMPORT_URL).reply(
+      () =>
+        new Promise((resolve) => {
+          finishers.push(resolve);
+        }),
+    );
+    await renderOpenDialog(<PidinstImportDialogStory onImported={onImported} />);
+    await search(user, "microscope");
+    await user.click(radioFor("Confocal Microscope"));
+    await user.click(screen.getByRole("button", { name: "common:actions.import" }));
+    await user.click(screen.getByRole("button", { name: "common:actions.close" }));
+    await user.click(screen.getByRole("button", { name: "inventory:pidinstImport.closeConfirm.confirm" }));
+
+    // a fresh session in the same mounted dialog, exactly as reopening it from the Create menu gives
+    await search(user, "microscope", true);
+    await user.click(radioFor("Confocal Microscope", true));
+    await user.click(screen.getByRole("button", { name: "common:actions.import", hidden: true }));
+
+    // the abandoned import lands while the second one is still running
+    finishers[0]?.([201, CREATED_INSTRUMENT]);
+
+    await waitFor(() => {
+      expect(screen.getByText("inventory:pidinstImport.importSuccess")).toBeVisible();
+    });
+    expect(onImported).not.toHaveBeenCalled();
+  });
+
+  test("ignores a search that resolves after the dialog was closed", async () => {
+    const user = userEvent.setup();
+    stubEndpoints();
+    let finishSearch: ((value: [number, unknown]) => void) | undefined;
+    mockAxios.onGet(SEARCH_URL).reply(
+      () =>
+        new Promise((resolve) => {
+          finishSearch = resolve;
+        }),
+    );
+    const { rerender } = await renderOpenDialog();
+    await user.type(screen.getByRole("textbox", { name: "inventory:pidinstImport.search.label" }), "microscope");
+    await user.click(screen.getByRole("button", { name: "common:actions.search" }));
+
+    await user.click(screen.getByRole("button", { name: "common:actions.close" }));
+    rerender(<PidinstImportDialogStory open={false} />);
+    rerender(<PidinstImportDialogStory open={true} />);
+
+    finishSearch?.([200, SEARCH_RESULT]);
+
+    await waitFor(() => {
+      expect(screen.getByRole("textbox", { name: "inventory:pidinstImport.search.label" })).toHaveValue("");
+    });
+    expect(screen.queryByRole("gridcell", { name: "Confocal Microscope" })).toBeNull();
+    expect(screen.getByRole("status")).toHaveTextContent("");
+  });
+
+  test("names DataCite as the registry a hit came from", async () => {
+    const user = userEvent.setup();
+    stubEndpoints({
+      searchReply: [
+        200,
+        {
+          provider: "PIDINST_DATACITE",
+          total: 1,
+          hits: [{ ...HITS[0], pid: "10.82316/qvtb-aw74", provider: "PIDINST_DATACITE" }],
+        },
+      ],
+    });
+    await renderOpenDialog(
+      await wrapWithRealI18n(<PidinstImportDialogStory />, {
+        resources: { common: commonEn, inventory: inventoryEn },
+        defaultNS: "inventory",
+      }),
+    );
+
+    await user.type(screen.getByRole("textbox", { name: "Search the registry" }), "microscope");
+    await user.click(screen.getByRole("button", { name: "Search" }));
+
+    expect(await screen.findByText("1 of 1 record found at DataCite.")).toBeVisible();
+  });
+
+  test("names a provider it has no label for rather than calling it DataCite", async () => {
+    const user = userEvent.setup();
+    stubEndpoints({
+      searchReply: [200, { provider: "PIDINST_SOMETHING_NEW", total: 1, hits: [HITS[0]] }],
+    });
+    await renderOpenDialog(
+      await wrapWithRealI18n(<PidinstImportDialogStory />, {
+        resources: { common: commonEn, inventory: inventoryEn },
+        defaultNS: "inventory",
+      }),
+    );
+
+    await user.type(screen.getByRole("textbox", { name: "Search the registry" }), "microscope");
+    await user.click(screen.getByRole("button", { name: "Search" }));
+
+    // every non-B2INST value used to be labelled DataCite, so a third registry would have been
+    // named wrongly to every user with nothing failing
+    expect(await screen.findByText("1 of 1 record found at PIDINST_SOMETHING_NEW.")).toBeVisible();
+  });
+
+  test("clears the previous result while the next search is running", async () => {
+    const user = userEvent.setup();
+    stubEndpoints();
+    await renderOpenDialog();
+    await search(user, "microscope");
+    expect(screen.getByRole("status")).not.toHaveTextContent("");
+
+    let finishSearch: ((value: [number, unknown]) => void) | undefined;
+    mockAxios.onGet(SEARCH_URL).reply(
+      () =>
+        new Promise((resolve) => {
+          finishSearch = resolve;
+        }),
+    );
+    await user.clear(screen.getByRole("textbox", { name: "inventory:pidinstImport.search.label" }));
+    await user.type(screen.getByRole("textbox", { name: "inventory:pidinstImport.search.label" }), "spectrometer");
+    await user.click(screen.getByRole("button", { name: "common:actions.search" }));
+
+    // the old count would otherwise sit above the rows the overlay is covering
+    await waitFor(() => {
+      expect(screen.getByRole("status")).toHaveTextContent("");
+    });
+    finishSearch?.([200, SEARCH_RESULT]);
   });
 });

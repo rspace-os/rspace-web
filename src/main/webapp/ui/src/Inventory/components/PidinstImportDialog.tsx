@@ -219,6 +219,20 @@ function RecordPreview({ record }: { record: PidinstRecord }) {
   );
 }
 
+/**
+ * Taken from https://www.a11yproject.com/posts/how-to-hide-content/, as in VisuallyHiddenHeading.
+ * 1px rather than 0px because VoiceOver will not announce an element with no dimensions.
+ */
+const visuallyHidden = {
+  position: "absolute",
+  height: "1px",
+  width: "1px",
+  overflow: "hidden",
+  whiteSpace: "nowrap",
+  clip: "rect(1px, 1px, 1px, 1px)",
+  clipPath: "inset(50%)",
+} as const;
+
 type PidinstImportDialogArgs = {
   open: boolean;
   onClose: () => void;
@@ -243,24 +257,34 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
   const [importing, setImporting] = React.useState(false);
   const [columnsMenuAnchorEl, setColumnsMenuAnchorEl] = React.useState<HTMLElement | null>(null);
   /**
-   * Set when the user closes the dialog while an import is still running. A ref rather than state
-   * because the in-flight import reads it after the close, outside the render that started it.
+   * Bumped every time the dialog is reset, so work started in an earlier opening can tell that its
+   * session is over. A ref rather than state because an in-flight request reads it after the close,
+   * outside the render that started it. The dialog stays mounted while it is closed (CreateNew only
+   * flips `open`), so without this a late completion lands in whatever session is open next.
    */
-  const closedDuringImport = React.useRef(false);
+  const sessionRef = React.useRef(0);
 
   const hits = result?.hits ?? [];
   const selected = hits.find((hit) => hit.pid === selectedPid) ?? null;
 
   const queryTooShort = query.trim().length < MIN_QUERY_LENGTH;
 
-  const providerLabel = (provider: string) =>
-    provider === "PIDINST_B2INST" ? t("pidinstImport.providers.b2inst") : t("pidinstImport.providers.datacite");
+  const providerLabel = (provider: string) => {
+    if (provider === "PIDINST_B2INST") return t("pidinstImport.providers.b2inst");
+    if (provider === "PIDINST_DATACITE") return t("pidinstImport.providers.datacite");
+    // a provider this dialog has no name for: the raw value beats naming the wrong registry
+    return provider;
+  };
 
   async function runSearch() {
     const trimmed = query.trim();
     if (trimmed.length < MIN_QUERY_LENGTH) return;
+    const session = sessionRef.current;
     setSearching(true);
     setSelectedPid(null);
+    // cleared before the request, not just on failure, so the summary does not report the previous
+    // query's count over the rows the loading overlay is covering
+    setResult(null);
     try {
       const { data } = await axios.get<PidinstSearchResult>("/api/inventory/v1/pidinst/search", {
         params: { query: trimmed },
@@ -268,12 +292,12 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
           Authorization: `Bearer ${await getToken()}`,
         },
       });
+      if (sessionRef.current !== session) return;
       setResult(data);
     } catch (e) {
       // the whole AxiosError carries config.headers, and those hold the bearer token
       console.error("PIDINST search failed", getErrorMessage(e, t("errors.unknownReason")));
-      // cleared so the grid does not keep listing the last successful search under the new query
-      setResult(null);
+      if (sessionRef.current !== session) return;
       addAlert(
         mkAlert({
           variant: "error",
@@ -282,13 +306,13 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
         }),
       );
     } finally {
-      setSearching(false);
+      if (sessionRef.current === session) setSearching(false);
     }
   }
 
   async function importRecord(record: PidinstRecord): Promise<boolean> {
+    const session = sessionRef.current;
     setImporting(true);
-    closedDuringImport.current = false;
     const importingAlert = mkAlert({
       variant: "notice",
       title: t("pidinstImport.importing.title"),
@@ -321,10 +345,10 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
       );
       // closing mid-import promises only that the result will not be shown here; moving the user
       // to the new instrument anyway would be the opposite of what they chose. The toast above
-      // still links to it, so the import is not lost.
-      if (!closedDuringImport.current) {
-        onImported({ id: data.id, globalId: data.globalId });
-      }
+      // still links to it, so the import is not lost. Reporting failure to the caller is what stops
+      // it closing the dialog a second time, over whatever session is open by then.
+      if (sessionRef.current !== session) return false;
+      onImported({ id: data.id, globalId: data.globalId });
       return true;
     } catch (e) {
       console.error("PIDINST import failed", getErrorMessage(e, t("errors.unknownReason")));
@@ -337,12 +361,13 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
       );
       return false;
     } finally {
-      setImporting(false);
+      if (sessionRef.current === session) setImporting(false);
       removeAlert(importingAlert);
     }
   }
 
   function resetState() {
+    sessionRef.current += 1;
     setQuery("");
     setResult(null);
     setSearching(false);
@@ -364,7 +389,6 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
       t("pidinstImport.closeConfirm.cancel"),
     ).then((confirmed) => {
       if (confirmed) {
-        closedDuringImport.current = true;
         onClose();
         resetState();
       }
@@ -453,6 +477,14 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
                     </>
                   )}
                 </>
+              )}
+              {result && result.hits.length === 0 && (
+                /* the grid says this too, but its empty-state overlay is not a live region, so a
+                   fruitless search would otherwise announce nothing at all. Hidden rather than
+                   shown because the sentence is already on screen a few pixels below. */
+                <Box component="span" sx={visuallyHidden}>
+                  {t("pidinstImport.results.none")}
+                </Box>
               )}
             </Typography>
             {/* fixed so a long result set scrolls inside the grid instead of pushing the preview off-screen */}
