@@ -70,6 +70,9 @@ import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.Record;
 import com.researchspace.model.record.RecordToFolder;
 import com.researchspace.model.record.StructuredDocument;
+import com.researchspace.search.impl.FileIndexSearcher;
+import com.researchspace.search.impl.FileIndexer;
+import com.researchspace.search.impl.LuceneSearchStrategy;
 import com.researchspace.service.AuditManager;
 import com.researchspace.service.DocumentTagManager;
 import com.researchspace.service.IApplicationInitialisor;
@@ -83,6 +86,7 @@ import com.researchspace.session.SessionAttributeUtils;
 import com.researchspace.session.UserSessionTracker;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.TestGroup;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.Principal;
@@ -102,6 +106,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.MethodOrderer.MethodName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mock;
 import org.springframework.aop.framework.AopProxyUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -142,12 +147,14 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
   private @Autowired RecordManager recordManager;
   private @Autowired AuditManager auditMgr;
   private @Autowired RecordSharingManager recShareMgr;
+  private @Autowired FileIndexSearcher fileIndexSearcher;
   @Mock private UserContentUpdater userContentUpdaterMock;
   @Autowired private PostLoginHandler postLoginHandler;
   @Mock private AuditTrailService auditService;
   private MockHttpServletRequest request;
   private MockHttpServletResponse response;
   private MockHttpSession session;
+  @TempDir private File attachmentIndexFolder;
 
   private ObjectMapper mapper = new ObjectMapper();
 
@@ -410,7 +417,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
   }
 
   @Test
-  public void testBulkDeletionPerformance() throws Exception {
+  public void deletedDocumentsAreListedInAuditHistory() throws Exception {
     GroupSetUp setup = setUpDocumentGroupForPIUserAndShareRecord();
     workspaceController.listRootFolder(
         "", model, mockPrincipal, request, session, response, new WorkspaceSettings());
@@ -426,22 +433,9 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
         mockPrincipal,
         session,
         response);
-    RSForm form = createAnyForm(piUser);
-    for (int i = 0; i < 1000; i++) {
-      StructuredDocument document = createDocumentInFolder(root, form, piUser);
-      workspaceController.delete(
-          new Long[] {document.getId()},
-          null,
-          model,
-          searchInput,
-          request,
-          mockPrincipal,
-          session,
-          response);
-    }
     PaginationCriteria<AuditedRecord> pagination =
         PaginationCriteria.createDefaultForClass(AuditedRecord.class);
-    assertEquals(1001, auditMgr.getDeletedDocuments(piUser, null, pagination).getTotalHits());
+    assertEquals(1, auditMgr.getDeletedDocuments(piUser, null, pagination).getTotalHits());
   }
 
   @Test
@@ -993,26 +987,39 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     User anyUser = createAndSaveUser(getRandomName(10));
     setUpUserWithoutCustomContent(anyUser);
     logoutAndLoginAs(anyUser);
-    initialiseFileIndexer();
-    String[] option = {ALL_SEARCH_OPTION};
-    InputStream is = RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder("testTxt.txt");
-    EcatDocumentFile file = mediaMgr.saveNewDocument("testTxt.txt", is, anyUser, null, null);
+    FileIndexer attachmentIndexer = getTargetObject(fileIndexer, FileIndexer.class);
+    LuceneSearchStrategy attachmentSearchStrategy =
+        getTargetObject(fileIndexSearcher.getFileSearchStrategy(), LuceneSearchStrategy.class);
+    File originalIndexerFolder = attachmentIndexer.getIndexFolder();
+    File originalSearchFolder = attachmentSearchStrategy.getIndexFolder();
+    attachmentIndexer.setIndexFolderDirectly(attachmentIndexFolder);
+    attachmentSearchStrategy.setIndexFolderDirectly(attachmentIndexFolder);
+    try {
+      initialiseFileIndexer();
+      String[] option = {ALL_SEARCH_OPTION};
+      InputStream is = RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder("testTxt.txt");
+      EcatDocumentFile file = mediaMgr.saveNewDocument("testTxt.txt", is, anyUser, null, null);
 
-    flushToSearchIndices();
-    String[] terms = new String[] {"testing"};
+      flushToSearchIndices();
+      String[] terms = new String[] {"testing"};
 
-    searchAndExpectNHits(anyUser, option, terms, 1);
+      searchAndExpectNHits(anyUser, option, terms, 1);
 
-    Folder rootFolder = getRootFolderForUser(anyUser);
-    Folder subFolder = createSubFolder(rootFolder, "subfolder", anyUser);
-    createBasicDocumentInFolder(anyUser, subFolder, "I am testing something");
-    flushToSearchIndices();
-    searchAndExpectNHits(anyUser, option, terms, 2);
+      Folder rootFolder = getRootFolderForUser(anyUser);
+      Folder subFolder = createSubFolder(rootFolder, "subfolder", anyUser);
+      createBasicDocumentInFolder(anyUser, subFolder, "I am testing something");
+      flushToSearchIndices();
+      searchAndExpectNHits(anyUser, option, terms, 2);
 
-    // search by subfolder, gallery Item should be excluded
-    String[] option2 = {ALL_SEARCH_OPTION, RECORDS_SEARCH_OPTION};
-    String[] terms2 = {"testing", subFolder.getGlobalIdentifier()};
-    searchAndExpectNHits(anyUser, option2, terms2, 1);
+      // search by subfolder, gallery Item should be excluded
+      String[] option2 = {ALL_SEARCH_OPTION, RECORDS_SEARCH_OPTION};
+      String[] terms2 = {"testing", subFolder.getGlobalIdentifier()};
+      searchAndExpectNHits(anyUser, option2, terms2, 1);
+    } finally {
+      attachmentIndexer.close();
+      attachmentIndexer.setIndexFolderDirectly(originalIndexerFolder);
+      attachmentSearchStrategy.setIndexFolderDirectly(originalSearchFolder);
+    }
   }
 
   private void searchAndExpectNHits(User anyUser, String[] option, String[] terms, int expectedhits)

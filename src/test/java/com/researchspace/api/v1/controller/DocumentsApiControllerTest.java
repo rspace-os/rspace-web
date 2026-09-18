@@ -52,7 +52,6 @@ import jakarta.ws.rs.NotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -121,6 +120,11 @@ public class DocumentsApiControllerTest extends SpringTransactionalTest {
     StructuredDocument otherTestDoc = createBasicDocumentInRootFolderWithText(piUser, "other test");
     shareRecordWithUser(piUser, otherDoc, testUser);
     shareRecordWithUser(piUser, otherTestDoc, testUser);
+
+    long firstModificationTime = firstDoc.getModificationDateMillis();
+    secondDoc.setModificationDate(firstModificationTime + 1);
+    thirdDoc.setModificationDate(firstModificationTime + 2);
+    otherTestDoc.setModificationDate(firstModificationTime + 3);
 
     flushToSearchIndices();
 
@@ -192,9 +196,8 @@ public class DocumentsApiControllerTest extends SpringTransactionalTest {
 
     List<ApiDocumentInfo> twoLastModifiedInfoList = twoLastModifiedResults.getDocuments();
     assertEquals(2, twoLastModifiedInfoList.size());
-    assertTrue(
-        twoLastModifiedInfoList.get(0).getLastModifiedMillis()
-            <= twoLastModifiedInfoList.get(1).getLastModifiedMillis());
+    apiModelTestUtils.assertApiDocumentInfoMatchSDoc(twoLastModifiedInfoList.get(0), firstDoc);
+    apiModelTestUtils.assertApiDocumentInfoMatchSDoc(twoLastModifiedInfoList.get(1), secondDoc);
 
     // get next page
     DocumentApiPaginationCriteria next = pg3.nextPage();
@@ -206,20 +209,9 @@ public class DocumentsApiControllerTest extends SpringTransactionalTest {
 
     List<ApiDocumentInfo> nextTwoLastModifiedInfoList = nextResults.getDocuments();
     assertEquals(2, nextTwoLastModifiedInfoList.size());
-    assertTrue(
-        twoLastModifiedInfoList.get(1).getLastModifiedMillis()
-            <= nextTwoLastModifiedInfoList.get(0).getLastModifiedMillis());
-    assertTrue(
-        nextTwoLastModifiedInfoList.get(0).getLastModifiedMillis()
-            <= nextTwoLastModifiedInfoList.get(1).getLastModifiedMillis());
-    Set<Long> pagedResultIds =
-        List.of(twoLastModifiedInfoList, nextTwoLastModifiedInfoList).stream()
-            .flatMap(List::stream)
-            .map(ApiDocumentInfo::getId)
-            .collect(Collectors.toSet());
-    assertEquals(
-        Set.of(firstDoc.getId(), secondDoc.getId(), thirdDoc.getId(), otherTestDoc.getId()),
-        pagedResultIds);
+    apiModelTestUtils.assertApiDocumentInfoMatchSDoc(nextTwoLastModifiedInfoList.get(0), thirdDoc);
+    apiModelTestUtils.assertApiDocumentInfoMatchSDoc(
+        nextTwoLastModifiedInfoList.get(1), otherTestDoc);
 
     // try advanced search, should find first and third document
     ApiSearchQuery query3 = new ApiSearchQuery();

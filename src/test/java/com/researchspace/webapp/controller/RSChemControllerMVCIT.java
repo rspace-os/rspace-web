@@ -42,7 +42,6 @@ import org.jsoup.Jsoup;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.TestPropertySource;
@@ -279,7 +278,6 @@ public class RSChemControllerMVCIT extends MVCTestBase {
   }
 
   @Test
-  @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
   public void testChemImageCreationDuplication() throws Exception {
     doc1 = createBasicDocumentInRootFolderWithText(user, "any");
     Field fld = doc1.getFields().get(0);
@@ -297,7 +295,6 @@ public class RSChemControllerMVCIT extends MVCTestBase {
   }
 
   @Test
-  @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
   public void cachingPerformanceOfChemImages() throws Exception {
     final int NUM_CHEMS = 30;
     // set up
@@ -341,7 +338,6 @@ public class RSChemControllerMVCIT extends MVCTestBase {
 
   @Test
   // RSPAC-1928
-  @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
   public void fileUploadSuccess() throws Exception {
 
     MockMultipartFile mf1 =

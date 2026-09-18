@@ -224,6 +224,7 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
         subSampleApiMgr.getApiSubSampleById(retrievedTestUserSubSample.getId(), pi);
     assertEquals(testUserSubSample.getName(), fullTestUserSubSample.getName());
     // pi have update and transfer permission to user's subsample
+    assertEquals(3, fullTestUserSubSample.getPermittedActions().size());
     assertTrue(fullTestUserSubSample.getPermittedActions().contains(UPDATE));
     assertTrue(fullTestUserSubSample.getPermittedActions().contains(CHANGE_OWNER));
     assertTrue(fullTestUserSubSample.getPermittedActions().contains(READ));

@@ -33,6 +33,7 @@ public class ConcurrentSearchIT extends RealTransactionSpringTestBase {
     for (int i = 0; i < searchCount; i++) {
       users[i] = doCreateAndInitUser(getRandomAlphabeticString("search"));
       terms[i] = CoreTestUtils.getRandomName(20);
+      logoutAndLoginAs(users[i]);
       documentIds[i] = createBasicDocumentInRootFolderWithText(users[i], terms[i]).getId();
     }
     doInTransaction(
