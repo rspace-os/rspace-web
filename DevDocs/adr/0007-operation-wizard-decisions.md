@@ -4,12 +4,24 @@ Date: 2026-08-24 (consolidates decisions made 2026-07-10 to 2026-08-20)
 
 ## Status
 
-Accepted. The single ADR for the operation wizard; consolidates and supersedes
-the former ADRs 0006 (frontend-declared operations, thin atomic backend) through
-0016. The mechanics of each decision live in the code and its tests; this ADR
-records only the WHY and the traps.
+Accepted, and amended three times since. The single ADR for the operation
+wizard; consolidates and supersedes the former ADRs 0006 (frontend-declared
+operations, thin atomic backend) through 0016. The mechanics of each decision
+live in the code and its tests; this ADR records only the WHY and the traps.
+
+**Read the amendments at the end first.** The sections dated 2026-08-24 below
+describe operations as entries in `operations_config.json` executed by one
+generic `POST /api/inventory/v1/operations`. Neither survived: the endpoint was
+replaced by seven typed endpoints (amended 2026-09-11) and the config by Java
+classes (amended 2026-09-16). Superseded sections are marked as such where they
+begin, and are kept because the amendments are only legible against the reasoning
+they overturned.
 
 ## Foundation: operations are config, executed by one thin atomic endpoint
+
+> **Superseded** by [Amended 2026-09-11: the seven typed endpoints are the public API](#amended-2026-09-11-the-seven-typed-endpoints-are-the-public-api)
+> and [Amended 2026-09-16: operations are code, not config](#amended-2026-09-16-operations-are-code-not-config).
+> Kept for the reasoning it records, not as a description of the system.
 
 Every operation (Derive, Cryopreserve, Aliquot, Pool, Revive, Passage, Destroy)
 is declared in `operations_config.json`: key, label, applicability, wizard
@@ -28,6 +40,9 @@ was rejected as defeating the config goal. The backend does resolve
 2026-08-20), but still generically, interpreting config rather than branching.
 
 ## The one thing a future reader must know first
+
+> **Superseded** by [Amended 2026-09-16: operations are code, not config](#amended-2026-09-16-operations-are-code-not-config).
+> Kept for the reasoning it records, not as a description of the system.
 
 **User-configurable operations are the decided end state, deliberately not built
 yet.** The whole framework exists so that operations eventually become
@@ -49,6 +64,9 @@ user-editable store without changing the endpoint or its consumers. A hard-coded
 Java rule registry was rejected because stage 2 would throw it away.
 
 ## Why the backend validates against that config copy
+
+> **Superseded** by [Amended 2026-09-16: operations are code, not config](#amended-2026-09-16-operations-are-code-not-config).
+> Kept for the reasoning it records, not as a description of the system.
 
 The endpoint is public API, so every rule the wizard enforces is a trust-boundary
 rule and must hold server-side; the validator interprets the config entry
@@ -92,6 +110,12 @@ to consume. An amount finer than the 3 decimal places quantities persist at
 would differ from the validated one (0.0004 ml would take nothing). Created amounts are independent of the amount taken (fresh medium
 can be added during Derive). A zero decrement is a complete no-op, for
 operations that link to an origin without consuming it (Passage).
+
+> **Superseded from here to the end of this section** by D5 of
+> [Amended 2026-09-16](#amended-2026-09-16-operations-are-code-not-config):
+> `amountMode` and `expectedQuantity` are gone from the wire entirely, and Pool's
+> take-all is `takeAll: true` on the body (D4). The `amountTaken` rules above still
+> hold.
 
 `amountMode` says how the client decided the amount: `explicit` for a value the
 user typed, `all` for a declared claim on the origin's whole quantity (Destroy's
@@ -264,6 +288,9 @@ follow-up.
 
 ## Operation definitions are validated at registry construction
 
+> **Superseded** by [Amended 2026-09-16: operations are code, not config](#amended-2026-09-16-operations-are-code-not-config).
+> Kept for the reasoning it records, not as a description of the system.
+
 `InventoryOperationConfigRegistry` rejects a definition that parses yet means
 something the request validator does not implement, collecting every violation
 into one failure so a bad config file is one round trip to fix. Without it each
@@ -285,6 +312,9 @@ them against the validator's own function table. This becomes the save-time
 validation when Stage 2 makes definitions user-editable.
 
 ## Computations are a dev-only code registry, not an expression language
+
+> **Superseded** by [Amended 2026-09-16: operations are code, not config](#amended-2026-09-16-operations-are-code-not-config).
+> Kept for the reasoning it records, not as a description of the system.
 
 Values config cannot express (passage number = parent's + 1, disposal date =
 today) come from named pure functions in `operationFunctions.ts`, selected and
