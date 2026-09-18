@@ -48,6 +48,27 @@ public class InventoryImportInventoryEntityFieldCreatorTest {
   }
 
   @Test
+  public void urlBearingValueIsNonTextUpToExactlyTheRaisedLimit() {
+    // the boundary itself: an off-by-one in the length guard silently stops suggesting Link
+    // for a cell on a long hostname, and the wide 150-vs-576 cases above would not notice
+    String url = "https://x.example.com/y";
+    // text first, as in longValueContainingUrlIsNotForcedToText: a value that IS a bare URI is
+    // suggested as URI, which is a different branch from the length guard under test here
+    String prefix = "see " + url + " ";
+    String atLimit = prefix + StringUtils.repeat("y", 500 - prefix.length());
+    assertEquals(500, atLimit.length());
+    assertEquals(
+        FieldType.STRING,
+        helper.getSuggestedSampleFieldForNameAndValues("n", List.of(atLimit)).getType());
+
+    String overLimit = atLimit + "y";
+    assertEquals(501, overLimit.length());
+    assertEquals(
+        FieldType.TEXT,
+        helper.getSuggestedSampleFieldForNameAndValues("n", List.of(overLimit)).getType());
+  }
+
+  @Test
   public void longValueContainingUrlIsNotForcedToText() {
     String url = "https://rsdev-1354-export-import-inventory-links-bb57ac5e-3.researchspace.com/x";
     String longWithUrl = "see " + url + " " + StringUtils.repeat("y", 150 - url.length() - 5);

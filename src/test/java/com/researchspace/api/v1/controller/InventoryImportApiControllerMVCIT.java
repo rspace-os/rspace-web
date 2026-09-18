@@ -11,9 +11,13 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 
 import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiField.ApiFieldType;
+import com.researchspace.api.v1.model.ApiInstrument;
+import com.researchspace.api.v1.model.ApiInstrumentTemplatePost;
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult;
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult.InventoryBulkOperationStatus;
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
+import com.researchspace.api.v1.model.ApiInventoryImportInstrumentImportResult;
+import com.researchspace.api.v1.model.ApiInventoryImportInstrumentParseResult;
 import com.researchspace.api.v1.model.ApiInventoryImportPartialResult;
 import com.researchspace.api.v1.model.ApiInventoryImportResult;
 import com.researchspace.api.v1.model.ApiInventoryImportSampleImportResult;
@@ -1380,6 +1384,86 @@ public class InventoryImportApiControllerMVCIT extends API_MVC_InventoryTestBase
               return referencing.get(0).getLink().getTargetRevisionId();
             });
     assertNotNull(storedRevision, "a pin to a version that exists must capture its revision");
+  }
+
+  /**
+   * RSDEV-1354: instruments persist through a different path from samples (instrument template
+   * creation, then {@code InstrumentEntityApiManagerImpl}), so a link that survives the sample
+   * import says nothing about this one. Guards against a link being populated on the parsed DTO and
+   * then silently dropped on the way to the database for instruments only.
+   */
+  @Test
+  public void parseAndImportInstrumentCsvWithLinkColumn() throws Exception {
+    String serverUrl = propertyHolder.getServerUrl();
+    if (serverUrl.endsWith("/")) {
+      serverUrl = serverUrl.substring(0, serverUrl.length() - 1);
+    }
+    String csv =
+        "Name,Related\n"
+            + "linked instrument,IsDerivedFrom "
+            + serverUrl
+            + "/globalId/SA999999v2\n"
+            + "unlinked instrument,\n";
+
+    MvcResult result =
+        mockMvc
+            .perform(
+                multipart(createUrl(API_VERSION.ONE, "/import/parseFile"))
+                    .file(
+                        new MockMultipartFile(
+                            "file",
+                            "instrumentLinks.csv",
+                            "text/csv",
+                            csv.getBytes(StandardCharsets.UTF_8)))
+                    .contentType(MediaType.MULTIPART_FORM_DATA)
+                    .param("recordType", "INSTRUMENTS")
+                    .header("apiKey", apiKey))
+            .andReturn();
+    assertNull(result.getResolvedException());
+    ApiInventoryImportInstrumentParseResult parseResult =
+        getFromJsonResponseBody(result, ApiInventoryImportInstrumentParseResult.class);
+    ApiInstrumentTemplatePost templateInfo = parseResult.getTemplateInfo();
+    assertEquals(ApiFieldType.LINK, templateInfo.getFields().get(1).getType());
+    templateInfo.getFields().remove(0); // Name column maps to the instrument name
+
+    String settingsJson =
+        "{ \"instrumentSettings\": { \"fieldMappings\": { \"Name\": \"name\"},"
+            + " \"templateInfo\": "
+            + JacksonUtil.toJson(templateInfo)
+            + "} }";
+    result =
+        mockMvc
+            .perform(
+                multipart(createUrl(API_VERSION.ONE, "/import/importFiles"))
+                    .file(
+                        new MockMultipartFile(
+                            "instrumentsFile",
+                            "instrumentLinks.csv",
+                            "text/csv",
+                            csv.getBytes(StandardCharsets.UTF_8)))
+                    .contentType(MediaType.MULTIPART_FORM_DATA)
+                    .param("importSettings", settingsJson)
+                    .header("apiKey", apiKey))
+            .andReturn();
+    assertNull(result.getResolvedException());
+
+    ApiInventoryImportResult importResult =
+        getFromJsonResponseBody(result, ApiInventoryImportResult.class);
+    ApiInventoryImportInstrumentImportResult instrumentResults = importResult.getInstrumentResult();
+    assertEquals(InventoryBulkOperationStatus.COMPLETED, instrumentResults.getStatus());
+    assertEquals(2, instrumentResults.getSuccessCount());
+
+    ApiInstrument linked = (ApiInstrument) instrumentResults.getResults().get(0).getRecord();
+    ApiInventoryEntityField linkField = linked.getFields().get(0);
+    assertEquals(ApiFieldType.LINK, linkField.getType());
+    ApiInventoryLink link = linkField.getLink();
+    assertNotNull(link);
+    assertEquals("IsDerivedFrom", link.getRelationType());
+    assertEquals("SA999999", link.getTargetGlobalId());
+    assertEquals(2L, link.getVersionPin());
+
+    ApiInstrument unlinked = (ApiInstrument) instrumentResults.getResults().get(1).getRecord();
+    assertNull(unlinked.getFields().get(0).getLink());
   }
 
   private MockMultipartFile getTestCsvFile(String paramName, String fileName)
