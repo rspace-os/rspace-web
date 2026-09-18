@@ -10,7 +10,7 @@ import org.springframework.validation.Errors;
  * One Inventory operation: what it takes from its origins, what it may be asked to do, and the
  * request the manager's transactional core executes.
  *
- * <p>Operations are code, not configuration (DevDocs/adr/0007, amended 2026-09-16). Each
+ * <p>Operations are code, not configuration (DevDocs/adr/0011). Each
  * implementation owns its typed request body, its own value rules beyond the annotations that body
  * carries, and the sample it builds.
  */

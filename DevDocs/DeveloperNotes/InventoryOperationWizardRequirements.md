@@ -2,7 +2,7 @@
 
 Traceability for RSDEV-1231 (biobank workflow), against the proposal in epic
 RSDEV-1228. This maps *what was asked for* to *how it was built*. The mechanics
-live in `InventoryOperationWizard.md`; the rationale lives in `DevDocs/adr/0007`
+live in `InventoryOperationWizard.md`; the rationale lives in `DevDocs/adr/0011`
 and the vocabulary in the top-level `CONTEXT.md`. This file does not repeat them.
 
 ## One-line summary
@@ -17,26 +17,26 @@ operations are config-only.
 
 | # | Requirement (RSDEV-1228/1231) | Status | How implemented |
 | --- | --- | --- | --- |
-| 1 | Reusable/extensible operation "recipe" framework | Done | Each operation is a class in `com.researchspace.service.inventory.operations` implementing `InventoryOperation<R>`, over one shared transactional core, one shared set of quantity and origin rules and one generic wizard. Adding one is a class, a request body, an endpoint and a wizard entry (DevDocs/adr/0007, amended 2026-09-16). |
+| 1 | Reusable/extensible operation "recipe" framework | Done | Each operation is a class in `com.researchspace.service.inventory.operations` implementing `InventoryOperation<R>`, over one shared transactional core, one shared set of quantity and origin rules and one generic wizard. Adding one is a class, a request body, an endpoint and a wizard entry (DevDocs/adr/0011). |
 | 2 | Per-instance/per-operation configurability | Done | Each config entry declares inputs, effect wiring, links, text fields, and the confirm summary. The wizard and endpoint never branch on the operation. |
 | 3 | Ship initial operations | Done | **Aliquot**, **Passage**, **Pool**, **Derive**, **Cryopreserve**, **Revive** and **Destroy** ship, one class each. Cryopreserve is Derive plus a Cryomedium field and a storage temperature bounded at -18 C. Aliquot takes equal-volume aliquots and links with `IsPartOf`. Pool can also pour every origin out completely (`takeAll`). |
-| 4 | Remaining operations (Pool, Revive, Passage, Destroy) | Done | Shipped config-only on this branch: Pool is multi-origin with a per-origin amount mode (DevDocs/adr/0007), Destroy is a terminal in-place operation (DevDocs/adr/0007), Revive and Passage are further single-origin operations. |
-| 5 | Eligible-resource determination | Done (subsample-only) | `operationAvailability` enables each operation for the current selection: a single-origin operation needs exactly one subsample; a multi-origin operation (Pool) needs two or more subsamples of the same measurement category (DevDocs/adr/0007). |
+| 4 | Remaining operations (Pool, Revive, Passage, Destroy) | Done | Shipped config-only on this branch: Pool is multi-origin with a per-origin amount mode (DevDocs/adr/0011), Destroy is a terminal in-place operation (DevDocs/adr/0011), Revive and Passage are further single-origin operations. |
+| 5 | Eligible-resource determination | Done (subsample-only) | `operationAvailability` enables each operation for the current selection: a single-origin operation needs exactly one subsample; a multi-origin operation (Pool) needs two or more subsamples of the same measurement category (DevDocs/adr/0011). |
 | 6 | Parameter/details steps | Done | `OperationDetailsStep` renders Details and Amounts slices (a `section` prop selects inputs); `detailsValid` validates each step's own inputs. |
 | 7 | Relation types (IsDerivedFrom, IsPartOf, IsVariantFormOf) | Done (via config) | `effect.links[]` carries a `relationType` from `DataCiteRelationType`. In use: `IsDerivedFrom` (Derive, Cryopreserve) and `IsPartOf` (Aliquot); `IsVariantFormOf` is available by config, no code change. |
 | 8 | Provenance link back to the origin | Done | `buildOperationRequest` puts every link (provenance + optional doc link) on the **new sample only**, never the subsamples. Reuses the RSDEV-1131 `link` field. |
 | 9 | Creation-complete confirmation screen | Done | `OperationConfirmation`: a preview Card of the sample to be created (header = name + operation; body = a `DescriptionList` label:value grid). Rows are picked/ordered by the operation's `confirmSummary` (RSDEV-1231 summary redesign). |
-| 10 | Atomic creation (sample + N subsamples + links + origin adjust) | Done | `POST /api/inventory/v1/operations/<key>`, one transaction around `InventoryOperationManager.performOperation` (applied by the inventory `*Manager` `txAdvice` AOP advisor in `applicationContext-service.xml`, not an explicit `@Transactional`; `InventoryOperationTransactionRuleTest` pins the `rollback-for BindException` rule to the method name): decrement each origin first, then create (DevDocs/adr/0007 ordering), reusing `SampleApiManager`. |
-| 11 | Origin quantity is only ever decreased | Done | Wizard captures a **positive** amount-taken (DevDocs/adr/0007); backend subtracts it. `registerApiSubSampleUsage` clamps at zero as defence-in-depth. |
-| 12 | Reject taking more than the origin holds | Done | Unit-aware, both sides: inline block in the Amounts step (`amountTakenExceedsOrigin` in `operationValidation.ts`) and HTTP 400 at the endpoint. The backend check needs the origin's live quantity, so it lives in `InventoryOperationManagerImpl.amountTakenExceedsOrigin` and runs inside the operation's transaction, not in the stateless validator (DevDocs/adr/0007). |
-| 13 | Template for the new sample | Done | Own framework step (DevDocs/adr/0007): parent-sample template, an existing template (`WizardTemplatePicker`), or none. Never creates a template; a template with undefaulted mandatory fields is blocked in-step (`templateResolution.ts`). |
+| 10 | Atomic creation (sample + N subsamples + links + origin adjust) | Done | `POST /api/inventory/v1/operations/<key>`, one transaction around `InventoryOperationManager.performOperation` (applied by the inventory `*Manager` `txAdvice` AOP advisor in `applicationContext-service.xml`, not an explicit `@Transactional`; `InventoryOperationTransactionRuleTest` pins the `rollback-for BindException` rule to the method name): decrement each origin first, then create (DevDocs/adr/0011 ordering), reusing `SampleApiManager`. |
+| 11 | Origin quantity is only ever decreased | Done | Wizard captures a **positive** amount-taken (DevDocs/adr/0011); backend subtracts it. `registerApiSubSampleUsage` clamps at zero as defence-in-depth. |
+| 12 | Reject taking more than the origin holds | Done | Unit-aware, both sides: inline block in the Amounts step (`amountTakenExceedsOrigin` in `operationValidation.ts`) and HTTP 400 at the endpoint. The backend check needs the origin's live quantity, so it lives in `InventoryOperationManagerImpl.amountTakenExceedsOrigin` and runs inside the operation's transaction, not in the stateless validator (DevDocs/adr/0011). |
+| 13 | Template for the new sample | Done | Own framework step (DevDocs/adr/0011): parent-sample template, an existing template (`WizardTemplatePicker`), or none. Never creates a template; a template with undefaulted mandatory fields is blocked in-step (`templateResolution.ts`). |
 | 14 | Optional documentation (SOP/protocol) link | Done | `DocumentationStep`, gated by `documentationStep` in config; targets an ELN document with `IsDocumentedBy`. |
-| 15 | Server-side enforcement of permissions/invariants | Done | The server builds the sample from the typed inputs and the definition, so nothing a client sends can shape it. Presence, bounds and column lengths are jakarta annotations on the request body, so they fail at binding; `OperationOriginRules` checks the origin list and the documentation target's kind; `OperationQuantityRules` checks everything needing `RSUnitDef`; anything left is the operation's own `validate`. Everything needing live state is in `InventoryOperationManagerImpl.checkOriginLiveState`, inside the operation's own transaction with origins processed in ascending id order: empty origin, over-removal, one measurement category, and must-empty for a terminal operation. Permission is asserted before state is read (DevDocs/adr/0007). |
-| 16 | Bounded storage temperature (Cryopreserve) | Done | An operation may bound its storage temperature (Cryopreserve: at most -18 C; Revive: 4 to 120 C); an out-of-range value shows the inline `storageTempMin` / `storageTempMax` error and blocks the step. Enforced on both sides: `OperationQuantityRules.temperature` compares the value against the operation's bounds unit-aware (so a value sent in Kelvin or Fahrenheit is judged on the temperature it denotes), and the operation writes that one value to both storage-temperature fields of the sample it builds (DevDocs/adr/0007). A temperature below absolute zero is rejected whatever the operation's own bounds allow, and a `storageTemp` object carrying a unit but no number is rejected too; both used to pass validation and fail while the sample was being persisted. |
+| 15 | Server-side enforcement of permissions/invariants | Done | The server builds the sample from the typed inputs and the definition, so nothing a client sends can shape it. Presence, bounds and column lengths are jakarta annotations on the request body, so they fail at binding; `OperationOriginRules` checks the origin list and the documentation target's kind; `OperationQuantityRules` checks everything needing `RSUnitDef`; anything left is the operation's own `validate`. Everything needing live state is in `InventoryOperationManagerImpl.checkOriginLiveState`, inside the operation's own transaction with origins processed in ascending id order: empty origin, over-removal, one measurement category, and must-empty for a terminal operation. Permission is asserted before state is read (DevDocs/adr/0011). |
+| 16 | Bounded storage temperature (Cryopreserve) | Done | An operation may bound its storage temperature (Cryopreserve: at most -18 C; Revive: 4 to 120 C); an out-of-range value shows the inline `storageTempMin` / `storageTempMax` error and blocks the step. Enforced on both sides: `OperationQuantityRules.temperature` compares the value against the operation's bounds unit-aware (so a value sent in Kelvin or Fahrenheit is judged on the temperature it denotes), and the operation writes that one value to both storage-temperature fields of the sample it builds (DevDocs/adr/0011). A temperature below absolute zero is rejected whatever the operation's own bounds allow, and a `storageTemp` object carrying a unit but no number is rejected too; both used to pass validation and fail while the sample was being persisted. |
 
 ## RSDEV-1231-specific work (this branch)
 
-- **Every operation has a process name** (DevDocs/adr/0007): user-entered for Derive (a
+- **Every operation has a process name** (DevDocs/adr/0011): user-entered for Derive (a
   free-solo autocomplete of saved names), fixed to the operation key for
   Cryopreserve. It is the single key for remembered values and seeds the sample
   name (`processNames.ts`, `sampleNaming.ts`).
@@ -54,8 +54,8 @@ operations are config-only.
 - **Pool, Revive, Passage, Destroy**: further operations added config-only. Pool is
   the first multi-origin operation (combines several same-category subsamples, links
   each with `HasPart`) and offers an "amount to take" mode - same amount, take all,
-  or per subsample - via `takeAmountPerSubsample`/`defaultAmountMode` (DevDocs/adr/0007). Destroy is terminal: it empties the origin and stamps a disposal date on
-  it, creating no new sample (DevDocs/adr/0007).
+  or per subsample - via `takeAmountPerSubsample`/`defaultAmountMode` (DevDocs/adr/0011). Destroy is terminal: it empties the origin and stamps a disposal date on
+  it, creating no new sample (DevDocs/adr/0011).
 - **Bounded temperature input**: `maxCelsius` on a `temperature` input, with the
   `storageTempMax` inline error (Cryopreserve's `storageTemp` at or below `-18` °C).
 
@@ -69,7 +69,7 @@ Documentation (optional) to Confirm**:
   subsample (contextual picker in item view), which is the source.
 - No **location/destination** step: destination/placement is out of scope for this
   slice; the new sample lands per the normal creation defaults.
-- Template is an explicit framework step (DevDocs/adr/0007), not folded into "parameters".
+- Template is an explicit framework step (DevDocs/adr/0011), not folded into "parameters".
 
 ## Out of scope (confirmed)
 

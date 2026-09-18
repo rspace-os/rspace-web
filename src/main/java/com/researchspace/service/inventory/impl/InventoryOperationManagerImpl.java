@@ -163,7 +163,7 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
   }
 
   /**
-   * The live-state rules (DevDocs/adr/0007): every origin must currently hold something, the amount
+   * The live-state rules (DevDocs/adr/0011): every origin must currently hold something, the amount
    * taken may not exceed what an origin holds, and an origin-emptying operation (e.g. Destroy) must
    * take exactly what the origin holds. Permission is asserted BEFORE reading state, so an
    * under-permissioned caller gets an authorization failure, not a misleading "origin empty" 400.
