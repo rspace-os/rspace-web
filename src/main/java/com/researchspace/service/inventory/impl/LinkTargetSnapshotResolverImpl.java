@@ -74,6 +74,21 @@ public class LinkTargetSnapshotResolverImpl implements LinkTargetSnapshotResolve
             ? auditManager.getObjectForRevision(cls, dbId, targetRevisionId)
             : auditManager.getNewestRevisionForEntity(cls, dbId);
     if (snapshot == null || snapshot.getEntity() == null) {
+      if (isInventoryPrefix(prefix)
+          && linkTargetResolver.targetIsKnownMissing(new GlobalIdentifier(prefix, dbId))) {
+        // No audit snapshot AND no live record: the target never existed on this server (a
+        // CSV-imported dangling link, RSDEV-1354). Report it as deleted so the card shows
+        // "Target deleted" instead of a working-looking Open. A live record whose audit rows
+        // were merely purged falls through to the redacted summary below, keeping its Open.
+        // This is a deliberate, narrow carve-out from ADR-0002, not an application of it: an
+        // existing-but-unreadable inventory record still answers readable=false, so the two
+        // payloads differ and a caller walking ids learns which inventory ids are occupied. Name,
+        // type and owner stay unset either way, so what leaks is the id high-water mark rather
+        // than any content, and that was judged a fair price for not offering a dead Open link.
+        summary.setReadable(true);
+        summary.setDeleted(true);
+      }
+      // ELN targets stay redacted: nonexistent must look exactly like unreadable (ADR-0002)
       return summary;
     }
     Object entity = snapshot.getEntity();

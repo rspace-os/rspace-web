@@ -1,0 +1,84 @@
+package com.researchspace.service.inventory.csvimport;
+
+import com.researchspace.api.v1.model.ApiInventoryLink;
+import com.researchspace.model.core.GlobalIdentifier;
+import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.service.inventory.DataCiteRelationType;
+import com.researchspace.service.inventory.InventoryLinkValidator;
+import com.researchspace.service.inventory.InventoryUrls;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+/**
+ * Parses the CSV cell the exporters write for a link field: {@code "<RelationType>
+ * <serverUrl>/globalId/<GID>[vN]"}. Only URLs on this server are accepted (RSDEV-1354), so a Global
+ * ID from another RSpace instance is never silently attached to the wrong local record.
+ *
+ * <p>Round-trip contract, deliberately narrower for ELN targets than for inventory ones: an
+ * exported link whose <em>inventory</em> target has since gone re-imports as a dangling link, while
+ * one whose ELN target (SD/NB/GL) has gone fails its row. Storing the ELN one would need a
+ * permission-free existence probe, which is exactly the disclosure ADR-0002 exists to prevent, and
+ * a rejected row is recoverable where a silent disclosure is not. Both kinds still export.
+ */
+@Component
+public class CsvLinkValueParser {
+
+  private static final Pattern CELL = Pattern.compile("^(\\S+)\\s+(\\S+)$");
+
+  @Autowired IPropertyHolder properties;
+  @Autowired MessageSourceUtils messages;
+
+  /**
+   * @return the link described by the cell, flagged lenient so a target that no longer exists on
+   *     this server still imports as a dangling link. A target that does exist is still checked for
+   *     readability, so a hand-written cell cannot name a record the importer may not read.
+   * @throws IllegalArgumentException with a user-facing message when the cell is not a link
+   */
+  public ApiInventoryLink parse(String cell) {
+    ApiInventoryLink link = tryParse(cell);
+    if (link == null) {
+      throw new IllegalArgumentException(
+          messages.getMessage("errors.inventory.import.linkValueInvalid", new Object[] {cell}));
+    }
+    return link;
+  }
+
+  public boolean isParseable(String cell) {
+    return tryParse(cell) != null;
+  }
+
+  private ApiInventoryLink tryParse(String cell) {
+    if (cell == null) {
+      return null;
+    }
+    Matcher m = CELL.matcher(cell.trim());
+    if (!m.matches() || !DataCiteRelationType.isValid(m.group(1))) {
+      return null;
+    }
+    String url = m.group(2);
+    String prefix = InventoryUrls.globalIdPagePrefix(properties.getServerUrl()).orElse(null);
+    // no server URL configured: nothing can be shown to name a local record, so accept nothing
+    // rather than letting the prefix collapse to "/globalId/" and match a relative-looking cell
+    if (prefix == null || !url.regionMatches(true, 0, prefix, 0, prefix.length())) {
+      return null;
+    }
+    GlobalIdentifier gid;
+    try {
+      gid = new GlobalIdentifier(url.substring(prefix.length()));
+    } catch (IllegalArgumentException ex) {
+      return null;
+    }
+    if (!InventoryLinkValidator.isAllowedTargetPrefix(gid.getPrefix())) {
+      return null;
+    }
+    ApiInventoryLink link = new ApiInventoryLink();
+    link.setRelationType(m.group(1));
+    link.setTargetGlobalId(new GlobalIdentifier(gid.getPrefix(), gid.getDbId()).getIdString());
+    link.setVersionPin(gid.hasVersionId() ? gid.getVersionId() : null);
+    link.setSkipTargetCheck(true);
+    return link;
+  }
+}

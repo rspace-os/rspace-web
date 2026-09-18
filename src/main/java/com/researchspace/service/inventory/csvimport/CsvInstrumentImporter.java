@@ -1,5 +1,6 @@
 package com.researchspace.service.inventory.csvimport;
 
+import com.researchspace.api.v1.model.ApiField.ApiFieldType;
 import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInstrumentTemplate;
 import com.researchspace.api.v1.model.ApiInstrumentTemplatePost;
@@ -15,6 +16,7 @@ import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.model.inventory.field.InventoryEntityField;
+import com.researchspace.service.inventory.csvexport.InventoryItemCsvExporter;
 import jakarta.annotation.PostConstruct;
 import java.io.IOException;
 import java.io.InputStream;
@@ -178,7 +180,7 @@ public class CsvInstrumentImporter extends InventoryItemCsvImporter {
         if (line.length != expectedColumnsNumber) {
           throw new IllegalArgumentException(
               messages.getMessage(
-                  "errors.inventory.import.instrumentCsvLineUnexpectedColumnCount",
+                  "errors.inventory.import.csvLineUnexpectedColumnCount",
                   new Object[] {expectedColumnsNumber, line.length}));
         }
         for (int currentColumnIndex = 0; currentColumnIndex < line.length; currentColumnIndex++) {
@@ -208,6 +210,11 @@ public class CsvInstrumentImporter extends InventoryItemCsvImporter {
             if (!StringUtils.isBlank(value)) {
               if (instrumentField.isOptionsStoringField()) {
                 instrumentField.setSelectedOptions(Arrays.asList(value));
+              } else if (ApiFieldType.LINK.equals(instrumentField.getType())) {
+                // see CsvSampleImporter: the absent-column sentinel is no link, not a bad one
+                if (!InventoryItemCsvExporter.isAbsentCsvValue(value)) {
+                  instrumentField.setLink(linkParser.parse(value));
+                }
               } else {
                 instrumentField.setContent(value);
               }

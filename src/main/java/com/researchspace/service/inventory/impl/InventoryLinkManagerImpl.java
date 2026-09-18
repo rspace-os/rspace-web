@@ -33,7 +33,7 @@ public class InventoryLinkManagerImpl implements InventoryLinkManager {
   @Override
   public InventoryLink createLink(ApiInventoryLink apiLink, User actor) {
     validateForWrite(apiLink);
-    assertTargetExistsAndReadable(apiLink, actor);
+    assertTargetAcceptable(apiLink, actor);
     InventoryLink entity = new InventoryLink();
     applyApiToEntity(apiLink, entity);
     return linkDao.save(entity);
@@ -42,7 +42,7 @@ public class InventoryLinkManagerImpl implements InventoryLinkManager {
   @Override
   public InventoryLink updateLink(InventoryLink existing, ApiInventoryLink apiLink, User actor) {
     validateForWrite(apiLink);
-    assertTargetExistsAndReadable(apiLink, actor);
+    assertTargetAcceptable(apiLink, actor);
     applyApiToEntity(apiLink, existing);
     return linkDao.save(existing);
   }
@@ -114,11 +114,6 @@ public class InventoryLinkManagerImpl implements InventoryLinkManager {
   }
 
   /**
-   * Rejects links whose target does not resolve to a real record the actor can READ. Applies to all
-   * targets, Inventory and ELN alike. The version suffix (if any) is ignored: only the base record
-   * needs to exist and be readable.
-   */
-  /**
    * Structural validation of an incoming link payload, mirroring {@link InventoryLinkValidator}.
    * The controller-layer validator can be bypassed (an extra-field update payload that omits {@code
    * type} skips the LINK validation branch, and structured sample fields never run it), so the
@@ -152,12 +147,23 @@ public class InventoryLinkManagerImpl implements InventoryLinkManager {
     return gid;
   }
 
-  private void assertTargetExistsAndReadable(ApiInventoryLink apiLink, User actor) {
+  /**
+   * Rejects a link whose target does not resolve to a record the actor can READ, on both write
+   * paths. The CSV importer's leniency (RSDEV-1354) is narrowed here to the case it exists for: a
+   * target that provably does not exist stores as a dangling link, while one that exists but is
+   * unreadable is still rejected, so a hand-written CSV cell cannot forge a link to another user's
+   * record.
+   */
+  private void assertTargetAcceptable(ApiInventoryLink apiLink, User actor) {
     GlobalIdentifier gid = new GlobalIdentifier(apiLink.getTargetGlobalId());
-    if (!linkTargetResolver.targetExistsAndIsReadable(gid, actor)) {
-      throw new ApiRuntimeException(
-          "errors.inventory.field.linkTargetNotFound", apiLink.getTargetGlobalId());
+    if (linkTargetResolver.targetExistsAndIsReadable(gid, actor)) {
+      return;
     }
+    if (apiLink.isSkipTargetCheck() && linkTargetResolver.targetIsKnownMissing(gid)) {
+      return;
+    }
+    throw new ApiRuntimeException(
+        "errors.inventory.field.linkTargetNotFound", apiLink.getTargetGlobalId());
   }
 
   private void applyApiToEntity(ApiInventoryLink api, InventoryLink entity) {

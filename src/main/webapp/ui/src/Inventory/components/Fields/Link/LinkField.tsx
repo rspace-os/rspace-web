@@ -77,15 +77,22 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
   // renders the card exactly as before the summary existed (no pill, Open on)
   const targetSummary = useLinkTargetSummary(props.link.targetGlobalId);
   const targetDeleted = targetSummary?.deleted === true;
-  // ELN targets the viewer cannot read get a "No access" pill; inventory
-  // targets ignore readability because every logged-in user keeps the
-  // limited-read view. A redacted summary always has deleted=false, so the
-  // two pills can never co-occur.
+  // ELN targets the viewer cannot read get a "No access" pill; an unreadable
+  // inventory target does not, because its own page still shows the viewer
+  // whatever limited view they have, so the pill would be misleading. A
+  // redacted summary always has deleted=false, so the two pills can never
+  // co-occur. An inventory target that does not exist at all (e.g. a
+  // CSV-imported dangling link, RSDEV-1354) is reported as deleted=true, so
+  // it shows "Target deleted" (ADR-0002 amendment).
   const noAccess = targetSummary?.readable === false && !targetIsInventory;
+  // a target that never existed here resolves to a summary with no name or type
+  // (RSDEV-1354): a trashed inventory item still reports both
+  const targetNeverExisted = targetDeleted && targetSummary?.name == null && targetSummary?.type == null;
   // deleted inventory items live on in the trash and their viewer works, so
   // only deleted or unreadable ELN targets lose Open (their routes are just
-  // error pages)
-  const openBlocked = !targetIsInventory && (targetDeleted || noAccess);
+  // error pages) - plus an inventory target with nothing behind it at all,
+  // whose page is an error page too
+  const openBlocked = targetNeverExisted || (!targetIsInventory && (targetDeleted || noAccess));
 
   const openHref = openHrefForLink(props.link, targetIsInventory);
   return (

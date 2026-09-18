@@ -1,5 +1,6 @@
 package com.researchspace.service.inventory.csvimport;
 
+import com.researchspace.api.v1.model.ApiField.ApiFieldType;
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult;
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiInventoryImportResult;
@@ -19,6 +20,7 @@ import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.record.IRecordFactory;
 import com.researchspace.model.units.RSUnitDef;
+import com.researchspace.service.inventory.csvexport.InventoryItemCsvExporter;
 import jakarta.annotation.PostConstruct;
 import java.io.IOException;
 import java.io.InputStream;
@@ -210,11 +212,9 @@ public class CsvSampleImporter extends InventoryItemCsvImporter {
       try {
         if (line.length != expectedColumnsNumber) {
           throw new IllegalArgumentException(
-              "Unexpected number of values in CSV line, "
-                  + "expected: "
-                  + expectedColumnsNumber
-                  + ", was: "
-                  + line.length);
+              messages.getMessage(
+                  "errors.inventory.import.csvLineUnexpectedColumnCount",
+                  new Object[] {expectedColumnsNumber, line.length}));
         }
         for (int currentColumnIndex = 0; currentColumnIndex < line.length; currentColumnIndex++) {
           String value = line[currentColumnIndex];
@@ -224,10 +224,11 @@ public class CsvSampleImporter extends InventoryItemCsvImporter {
               if (!StringUtils.isBlank(value)) {
                 if (csvProcessingResult.getResultNumberForImportId(value) != null) {
                   throw new IllegalArgumentException(
-                      "Import identifier '"
-                          + value
-                          + "' was already used in row "
-                          + (csvProcessingResult.getResultNumberForImportId(value) + 1));
+                      messages.getMessage(
+                          "errors.inventory.import.importIdentifierAlreadyUsed",
+                          new Object[] {
+                            value, csvProcessingResult.getResultNumberForImportId(value) + 1
+                          }));
                 }
                 csvProcessingResult.addResultNumberWithImportId(resultCount, value);
               }
@@ -253,6 +254,12 @@ public class CsvSampleImporter extends InventoryItemCsvImporter {
             if (!StringUtils.isBlank(value)) {
               if (sampleField.isOptionsStoringField()) {
                 sampleField.setSelectedOptions(Arrays.asList(value)); // assumes a single option
+              } else if (ApiFieldType.LINK.equals(sampleField.getType())) {
+                // the exporter writes its absent-column sentinel for a row that has no such
+                // column; that is no link, not a malformed one, so it must not fail the row
+                if (!InventoryItemCsvExporter.isAbsentCsvValue(value)) {
+                  sampleField.setLink(linkParser.parse(value));
+                }
               } else {
                 sampleField.setContent(value);
               }

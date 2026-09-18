@@ -7,7 +7,11 @@ import com.researchspace.archive.ExportScope;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.field.ExtraField;
+import com.researchspace.model.inventory.field.ExtraLinkField;
+import com.researchspace.model.inventory.field.InventoryLink;
+import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.service.inventory.InventoryUrls;
 import com.researchspace.service.inventory.csvexport.CsvExportCommentGenerator.ExportedCommentProperty;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -30,6 +34,18 @@ public abstract class InventoryItemCsvExporter {
   public static final String CSV_VALUE_LIST_SEPARATOR = "\n----\n";
 
   public static final String CSV_VALUE_UNAVAILABLE_ITEM_PROPERTY = "#N/A";
+
+  /**
+   * Whether a cell holds no value: either empty, or the sentinel this exporter writes for a column
+   * the row does not have. A multi-record export gives every row the union of all columns, so an
+   * extra-field or per-template column carries the sentinel on every unrelated row; a reader that
+   * took it for real data would not survive the round trip its own export produced.
+   *
+   * <p>Recogniser kept beside the value it recognises, so the two cannot drift apart.
+   */
+  public static boolean isAbsentCsvValue(String value) {
+    return StringUtils.isBlank(value) || CSV_VALUE_UNAVAILABLE_ITEM_PROPERTY.equals(value.trim());
+  }
 
   /** CSV headings remain en-US because scripts and re-import treat them as a stable contract. */
   public static final Locale CSV_HEADER_LOCALE = Locale.US;
@@ -100,6 +116,27 @@ public abstract class InventoryItemCsvExporter {
 
   protected @Autowired CsvExportCommentGenerator exportCommentGenerator;
   protected @Autowired MessageSourceUtils messages;
+  protected @Autowired IPropertyHolder properties;
+
+  /**
+   * CSV cell for a link field: {@code "<RelationType> <serverUrl>/globalId/<GID>[vN]"}, or empty
+   * when the field holds no link. The version pin travels as the {@code vN} suffix so a single
+   * Global ID URL carries the whole link.
+   */
+  protected String csvValueForLink(InventoryLink link) {
+    if (link == null) {
+      return "";
+    }
+    String versionSuffix = link.getVersionPin() == null ? "" : "v" + link.getVersionPin();
+    // one home for the /globalId/ segment and the server-URL normalisation, shared with the
+    // importer that has to recognise this cell again: a second copy could disagree
+    return InventoryUrls.globalIdPageUrl(
+            properties.getServerUrl(), link.getTargetGlobalId() + versionSuffix)
+        .map(url -> link.getRelationType() + " " + url)
+        // no server URL configured: the cell cannot name a resolvable target, so export the
+        // relation alone rather than an address pointing at nowhere
+        .orElse(link.getRelationType());
+  }
 
   public String getCsvCommentHeader() {
     return messages.getMessageForLocale("export.inventory.csv.commentHeader", CSV_HEADER_LOCALE);
@@ -171,7 +208,10 @@ public abstract class InventoryItemCsvExporter {
 
     if (CsvExportMode.FULL.equals(exportMode) && item.getActiveExtraFields() != null) {
       for (ExtraField ef : item.getActiveExtraFields()) {
-        String valueForProp = ef.getData();
+        String valueForProp =
+            ef instanceof ExtraLinkField
+                ? csvValueForLink(((ExtraLinkField) ef).getLink())
+                : ef.getData();
         int columnIndexForValue = csvColumnNames.indexOf(getColumnNameForExtraField(ef));
         itemProperties.set(columnIndexForValue, valueForProp != null ? valueForProp : "");
       }
