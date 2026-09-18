@@ -23,6 +23,7 @@ pipeline {
         string(name: 'MAVEN_TOOLCHAIN_JAVA_VENDOR', defaultValue: 'openjdk', description: 'Java vendor Maven toolchain')
         string(name: 'NIGHTLY_BUILD', defaultValue: '', description: 'optional nightly build configuration')
         booleanParam(name: 'ONLY_BUILD_WAR', defaultValue: false, description: 'It only build the WAR file without deploying in AWS')
+        booleanParam(name: 'STORYBOOK', defaultValue: false, description: 'Build and bundle Storybook in the WAR; serving requires dev.storybook.preview.enabled=true')
         booleanParam(name: 'AWS_DEPLOY', defaultValue: false, description: 'Deploy branch build to AWS')
         booleanParam(name: 'AWS_DEPLOY_PROD_RELEASE', defaultValue: false, description: 'Deploy main branch build created in prodRelease mode to AWS')
         booleanParam(name: 'FULL_JAVA_TESTS', defaultValue: false, description: 'Run all Java tests')
@@ -102,6 +103,7 @@ pipeline {
                 anyOf {
                     expression { return params.AWS_DEPLOY }
                     expression { return params.ONLY_BUILD_WAR }
+                    expression { return params.STORYBOOK }
                     changeset '**/*.js'
                     changeset '**/*.ts'
                     changeset '**/*.tsx'
@@ -120,7 +122,7 @@ pipeline {
             steps {
                 echo 'Building feature branch'
                 sh '''
-                ./mvnw clean package -DgenerateReactDist -DskipTests=true \
+                ./mvnw clean package -DgenerateReactDist -DgenerateStorybook=${STORYBOOK} -DskipTests=true \
                 -Denvironment=keepdbintact -Dspring.profiles.active=prod -DRS.logLevel=INFO \
                 -Djava-version=${MAVEN_TOOLCHAIN_JAVA_VERSION} -Djava-vendor=${MAVEN_TOOLCHAIN_JAVA_VENDOR} \
                 -DpropertyFileDirPlaceholder=\\$\\{propertyFileDir\\}
@@ -147,7 +149,7 @@ pipeline {
             steps {
                 echo "Building prodRelease .war package"
                  sh '''
-                 ./mvnw clean package -DgenerateReactDist -DskipTests=true \
+                 ./mvnw clean package -DgenerateReactDist -DgenerateStorybook=${STORYBOOK} -DskipTests=true \
                 -Denvironment=prodRelease -Dspring.profiles.active=prod -DRS.logLevel=WARN -Ddeployment=production \
                 -Djava-version=${MAVEN_TOOLCHAIN_JAVA_VERSION} \
                 -Djava-vendor=${MAVEN_TOOLCHAIN_JAVA_VENDOR} \
@@ -248,7 +250,7 @@ pipeline {
                 // this is to create a valid datbase name from the branch name
 
                 echo "sanitised DB Name is $SANITIZED_DBNAME"
-                sh "./mvnw clean verify -DgenerateReactDist -Djava-version=${params.MAVEN_TOOLCHAIN_JAVA_VERSION} \
+                sh "./mvnw clean verify -DgenerateReactDist -DgenerateStorybook=${params.STORYBOOK} -Djava-version=${params.MAVEN_TOOLCHAIN_JAVA_VERSION} \
                   -Djava-vendor=${params.MAVEN_TOOLCHAIN_JAVA_VENDOR} \
                   -Djavax.xml.accessExternalDTD=all\
                   -Dlog4j2.configurationFile=log4j2-dev.xml -Dsurefire.rerunFailingTestsCount=2\
