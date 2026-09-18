@@ -20,6 +20,7 @@ import com.researchspace.api.v1.model.ApiInventoryImportSampleImportResult;
 import com.researchspace.api.v1.model.ApiInventoryImportSampleParseResult;
 import com.researchspace.api.v1.model.ApiInventoryImportSubSampleImportResult;
 import com.researchspace.api.v1.model.ApiInventoryLink;
+import com.researchspace.api.v1.model.ApiInventoryLinkTargetSummary;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiInventorySearchResult;
 import com.researchspace.api.v1.model.ApiSampleTemplatePost;
@@ -29,15 +30,21 @@ import com.researchspace.apiutils.ApiError;
 import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.dao.DigitalObjectIdentifierDao;
+import com.researchspace.dao.InventoryLinkDao;
 import com.researchspace.model.User;
+import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.inventory.Container.ContainerType;
 import com.researchspace.model.inventory.DigitalObjectIdentifier;
 import com.researchspace.model.inventory.SampleSource;
 import com.researchspace.model.inventory.SampleTemplate;
+import com.researchspace.model.inventory.field.InventoryLinkField;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.ApiAvailabilityHandler;
+import com.researchspace.service.inventory.ContainerApiManager;
 import com.researchspace.service.inventory.InventoryImportManager;
+import com.researchspace.service.inventory.InventoryLinkManager;
+import com.researchspace.service.inventory.SampleApiManager;
 import com.researchspace.service.inventory.csvimport.CsvSampleImporter;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -77,6 +84,8 @@ public class InventoryImportApiControllerMVCIT extends API_MVC_InventoryTestBase
   @Autowired private DigitalObjectIdentifierDao doiDao;
   @Autowired private CsvSampleImporter csvSampleImporter;
   @Autowired private InventoryImportManager importApiMgr;
+  @Autowired private InventoryLinkManager inventoryLinkManager;
+  @Autowired private InventoryLinkDao inventoryLinkDao;
   @Autowired private IPropertyHolder propertyHolder;
   @Mock private ApiAvailabilityHandler apiHandler;
 
@@ -1272,6 +1281,105 @@ public class InventoryImportApiControllerMVCIT extends API_MVC_InventoryTestBase
     ApiSampleWithFullSubSamples unlinked =
         (ApiSampleWithFullSubSamples) sampleResults.getResults().get(1).getRecord();
     assertNull(unlinked.getFields().get(0).getLink());
+  }
+
+  /**
+   * RSDEV-1354, the other half of {@link #parseAndImportSampleCsvWithLinkColumn}: that case pins
+   * the dangling path, where the target does not exist and so no revision can resolve. This one
+   * imports a link whose target is a real, readable record pinned at a real version, and checks the
+   * two things only a live target can show: the summary resolves to the target's own name and type,
+   * and the stored link captured an actual Envers revision rather than degrading to "latest".
+   */
+  @Test
+  public void parseAndImportSampleCsvWithLinkToExistingVersionedTarget() throws Exception {
+    ApiSampleWithFullSubSamples target = createBasicSampleForUser(anyUser);
+    String targetGlobalId = "SA" + target.getId();
+    String serverUrl = propertyHolder.getServerUrl();
+    if (serverUrl.endsWith("/")) {
+      serverUrl = serverUrl.substring(0, serverUrl.length() - 1);
+    }
+    // a newly created sample is at version 1, so v1 is a version that really exists
+    String csv =
+        "Name,Related\n"
+            + "linked sample,IsDerivedFrom "
+            + serverUrl
+            + "/globalId/"
+            + targetGlobalId
+            + "v1\n";
+
+    MvcResult result =
+        mockMvc
+            .perform(
+                multipart(createUrl(API_VERSION.ONE, "/import/parseFile"))
+                    .file(
+                        new MockMultipartFile(
+                            "file", "links.csv", "text/csv", csv.getBytes(StandardCharsets.UTF_8)))
+                    .contentType(MediaType.MULTIPART_FORM_DATA)
+                    .param("recordType", "SAMPLES")
+                    .header("apiKey", apiKey))
+            .andReturn();
+    assertNull(result.getResolvedException());
+    ApiInventoryImportSampleParseResult parseResult =
+        getFromJsonResponseBody(result, ApiInventoryImportSampleParseResult.class);
+    ApiSampleTemplatePost templateInfo = parseResult.getTemplateInfo();
+    assertEquals(ApiFieldType.LINK, templateInfo.getFields().get(1).getType());
+    templateInfo.setExpiryDate(null);
+    templateInfo.getFields().remove(0); // Name column maps to the sample name
+
+    String settingsJson =
+        "{ \"sampleSettings\": { \"fieldMappings\": { \"Name\": \"name\"}, \"templateInfo\": "
+            + JacksonUtil.toJson(templateInfo)
+            + "} }";
+    result =
+        mockMvc
+            .perform(
+                multipart(createUrl(API_VERSION.ONE, "/import/importFiles"))
+                    .file(
+                        new MockMultipartFile(
+                            "samplesFile",
+                            "links.csv",
+                            "text/csv",
+                            csv.getBytes(StandardCharsets.UTF_8)))
+                    .contentType(MediaType.MULTIPART_FORM_DATA)
+                    .param("importSettings", settingsJson)
+                    .header("apiKey", apiKey))
+            .andReturn();
+    assertNull(result.getResolvedException());
+
+    ApiInventoryImportResult importResult =
+        getFromJsonResponseBody(result, ApiInventoryImportResult.class);
+    ApiInventoryImportSampleImportResult sampleResults = importResult.getSampleResult();
+    assertEquals(InventoryBulkOperationStatus.COMPLETED, sampleResults.getStatus());
+    assertEquals(1, sampleResults.getSuccessCount());
+
+    ApiSampleWithFullSubSamples linked =
+        (ApiSampleWithFullSubSamples) sampleResults.getResults().get(0).getRecord();
+    ApiInventoryLink link = linked.getFields().get(0).getLink();
+    assertNotNull(link);
+    assertEquals(targetGlobalId, link.getTargetGlobalId());
+    assertEquals(1L, link.getVersionPin());
+
+    // the target is live and readable, so the card shows its name and type rather than the
+    // "Target deleted" state a dangling link produces
+    ApiInventoryLinkTargetSummary summary =
+        inventoryLinkManager.getTargetSummary(targetGlobalId, anyUser);
+    assertEquals(target.getName(), summary.getName());
+    assertEquals("SAMPLE", summary.getType());
+    assertTrue(summary.isReadable());
+    assertFalse(summary.isDeleted());
+
+    // the pin resolved to a real audit revision. A dangling import stores null here, meaning
+    // "resolve latest at read time", so a null would mean the pin never bound to anything.
+    Long storedRevision =
+        doInTransaction(
+            () -> {
+              List<InventoryLinkField> referencing =
+                  inventoryLinkDao.findReferencingStructuredLinkFields(
+                      GlobalIdPrefix.SA, target.getId());
+              assertEquals(1, referencing.size());
+              return referencing.get(0).getLink().getTargetRevisionId();
+            });
+    assertNotNull(storedRevision, "a pin to a version that exists must capture its revision");
   }
 
   private MockMultipartFile getTestCsvFile(String paramName, String fileName)
