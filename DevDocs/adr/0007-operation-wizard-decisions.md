@@ -108,14 +108,16 @@ clamped to zero: silent clamping destroys material state the user did not intend
 to consume. An amount finer than the 3 decimal places quantities persist at
 (`QuantityInfo`) is rejected the same way, not rounded: the stored decrement
 would differ from the validated one (0.0004 ml would take nothing). Created amounts are independent of the amount taken (fresh medium
-can be added during Derive). A zero decrement is a complete no-op, for
-operations that link to an origin without consuming it (Passage).
+can be added during Derive). A zero decrement is no longer accepted anywhere
+(amended 2026-09-16): an operation that takes an amount requires it to be
+greater than zero, and one that does not, such as Passage, rejects the field
+whatever its value rather than reading zero as a no-op.
 
-> **Superseded from here to the end of this section** by D5 of
+> **Superseded, the next two paragraphs only**, by D5 of
 > [Amended 2026-09-16](#amended-2026-09-16-operations-are-code-not-config):
 > `amountMode` and `expectedQuantity` are gone from the wire entirely, and Pool's
-> take-all is `takeAll: true` on the body (D4). The `amountTaken` rules above still
-> hold.
+> take-all is `takeAll: true` on the body (D4). What follows them in this section,
+> from "Off by default" onwards, is current.
 
 `amountMode` says how the client decided the amount: `explicit` for a value the
 user typed, `all` for a declared claim on the origin's whole quantity (Destroy's
