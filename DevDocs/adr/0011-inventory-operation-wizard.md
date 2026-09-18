@@ -14,8 +14,10 @@ traps. The developer notes are `DevDocs/DeveloperNotes/InventoryOperationWizard.
 ## Context
 
 Inventory needed seven subsample operations (Aliquot, Passage, Pool, Derive, Cryopreserve,
-Revive, Destroy): each creates a sample with subsamples and provenance links and decrements
-the origin subsamples, as one unit. The first design declared each operation in
+Revive, Destroy). Six create a sample with subsamples and provenance links, and of those
+five also decrement the origin subsamples, all as one unit. Two are exceptions: Passage
+creates its output but deliberately takes nothing from its origin, and Destroy empties its
+origin and creates no sample at all. The first design declared each operation in
 `operations_config.json`, executed by one generic `POST /api/inventory/v1/operations`, with
 the client building the sample and the server validating that built object against the
 config. That design existed for a stage 2 of user-editable operations that is not
@@ -129,8 +131,9 @@ back, so the claim outlives the manager's transaction. A second request naming a
 origin is a 409 `EDIT_CONFLICT`, whoever sent it. Presence is the whole rule: no timing
 window, no expiry. A time-based eviction was built and removed: no transaction timeout
 bounds the manager call, so a slow request is indistinguishable from an abandoned one, and
-guessing would hand a live request's origins to a second one. try-with-resources releases
-on every exit, and a process that dies takes the map with it.
+guessing would hand a live request's origins to a second one. The controller releases the
+claim in a `finally` nested inside the one that gives the edit locks back, so every exit
+path drops it, and a process that dies takes the map with it.
 
 On the UI side `ProcessAction` refuses to open the wizard when any origin was already
 locked by this user elsewhere, because the holder may be this user's own edit form in
@@ -180,8 +183,6 @@ amount whose category no longer fits is repaired before it reaches the form.
   visible field: remembered values and derived sample naming key off it, and one uniform
   key beats per-operation branches.
 - **Disposal dates are text fields holding an ISO date**: extra fields have no date type.
-- **"Template from the origin's sample" may leave a stray template on failure**: template
-  creation happens before the operation transaction. Accepted as harmless and deletable.
 - **Category and precision rules also apply to the created subsamples**: each new subsample
   quantity must be in the origin's category (or the template's, when one is chosen) and
   storable at 3dp. There is no top-level quantity on the wire; the server derives it.
@@ -189,9 +190,11 @@ amount whose category no longer fits is repaired before it reaches the form.
   Inventory record is rejected.
 - **Process is offered in every Inventory context menu except the picker**: epic RSDEV-1228
   names both the list view and the item view as entry points.
-- **Bean Validation cascades over `origins`** only; the shared sample DTOs are not on the
-  wire. `origins` carries the 100 cap at binding so an over-long list is rejected before
-  Jackson materialises every element.
+- **Bean Validation stops at the request object**: there is no `@Valid` cascade into
+  `origins`, because `Origin` carries no constraints of its own, and the shared sample DTOs
+  are not on the wire. `origins` carries the 100 cap as a `@Size`, which Jackson has already
+  materialised the list to reach, so the cap bounds the downstream validation and service
+  work rather than the deserialization.
 - **Sample-name uniqueness ignores soft-deleted samples**: the wizard de-duplicates a
   derived name against `SampleApiManager.nameExistsForUser`, which counted deleted samples
   and kept suggesting a suffix for a free name. The DAO query now excludes them. This also
