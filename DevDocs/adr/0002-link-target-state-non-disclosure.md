@@ -50,6 +50,15 @@ knowledge the viewer is not entitled to.
   template, so an unrelated `OWNER_ONLY` record really is unreadable.) ELN
   targets keep the conflation above; the pinned unit test asserts it on an ELN
   prefix, and a companion test pins the inventory unreadable payload.
+  Two limits of the carve-out, both deliberate: the "no record" verdict is
+  taken from a live existence probe, not from the absence of an Envers
+  snapshot, so a live record whose audit rows were purged keeps its Open
+  rather than being mislabelled deleted; and the probe covers inventory
+  prefixes only, so an exported link to a since-deleted ELN record fails its
+  import row instead of re-importing as a dangling link. Storing that one
+  would need a permission-free ELN existence probe, which is the disclosure
+  this ADR exists to prevent, and a rejected row is recoverable where a
+  disclosure is not.
 * The gallery "Related inventory items" attachments endpoint (RSDEV-173,
   `GET /workspace/getAttachingInventoryItems/{globalId}`) applies the same
   non-disclosure gate: an unreadable, nonexistent, or malformed target Global ID

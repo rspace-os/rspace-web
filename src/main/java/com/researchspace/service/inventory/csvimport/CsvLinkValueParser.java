@@ -16,6 +16,12 @@ import org.springframework.stereotype.Component;
  * Parses the CSV cell the exporters write for a link field: {@code "<RelationType>
  * <serverUrl>/globalId/<GID>[vN]"}. Only URLs on this server are accepted (RSDEV-1354), so a Global
  * ID from another RSpace instance is never silently attached to the wrong local record.
+ *
+ * <p>Round-trip contract, deliberately narrower for ELN targets than for inventory ones: an
+ * exported link whose <em>inventory</em> target has since gone re-imports as a dangling link, while
+ * one whose ELN target (SD/NB/GL) has gone fails its row. Storing the ELN one would need a
+ * permission-free existence probe, which is exactly the disclosure ADR-0002 exists to prevent, and
+ * a rejected row is recoverable where a silent disclosure is not. Both kinds still export.
  */
 @Component
 public class CsvLinkValueParser {
