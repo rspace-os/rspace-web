@@ -49,7 +49,7 @@ import org.springframework.web.bind.annotation.RequestBody;
  * sample, and enforces the live-state rules inside its own transaction.
  *
  * <p>No per-operation logic lives here: each endpoint names its operation and nothing else (see
- * DevDocs/adr/0007).
+ * DevDocs/adr/0011).
  */
 @ApiController
 public class InventoryOperationsApiController extends BaseApiInventoryController

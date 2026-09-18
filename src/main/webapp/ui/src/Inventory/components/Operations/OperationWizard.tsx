@@ -173,7 +173,7 @@ function OperationWizard({
   const [amountMode, setAmountMode] = React.useState<AmountMode>("same");
   const [perSubsampleAmounts, setPerSubsampleAmounts] = React.useState<PerSubsampleAmounts>({});
   // When a complete remembered bundle loads, step one offers Perform straight away; "reviewing" is set
-  // once the user chooses to step through the wizard instead (DevDocs/adr/0007).
+  // once the user chooses to step through the wizard instead (DevDocs/adr/0011).
   const [reviewing, setReviewing] = React.useState(false);
   // Whether the user has hand-edited the derived sample name; once they have, the wizard stops
   // re-deriving it from the process name.
