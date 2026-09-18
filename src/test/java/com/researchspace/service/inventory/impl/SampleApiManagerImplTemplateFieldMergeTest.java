@@ -1,18 +1,22 @@
 package com.researchspace.service.inventory.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.api.v1.model.ApiExtraField;
 import com.researchspace.api.v1.model.ApiExtraField.ExtraFieldTypeEnum;
+import com.researchspace.api.v1.model.ApiInventoryLink;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.inventory.field.InventoryLinkField;
 import com.researchspace.model.inventory.field.InventoryNumberField;
 import com.researchspace.model.inventory.field.InventoryStringField;
+import com.researchspace.service.inventory.operations.OperationFieldNames;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -51,6 +55,36 @@ class SampleApiManagerImplTemplateFieldMergeTest {
       fields.add(new InventoryStringField(name));
     }
     return fields;
+  }
+
+  private static ApiExtraField generatedLink(String name, String targetGlobalId) {
+    ApiExtraField field = new ApiExtraField(ExtraFieldTypeEnum.LINK);
+    field.setName(name);
+    field.setNewFieldRequest(true);
+    field.setOperationFieldKey(OperationFieldNames.DOCUMENTATION_LINK_KEY);
+    ApiInventoryLink link = new ApiInventoryLink();
+    link.setRelationType("IsDocumentedBy");
+    link.setTargetGlobalId(targetGlobalId);
+    field.setLink(link);
+    return field;
+  }
+
+  @Test
+  void renamesAGeneratedLinkThatCollidesWithAnInheritedFieldName() {
+    // A link cannot be merged into a text field, so a template that happens to declare a field
+    // named like the documentation link left both active and the request died at the duplicate-name
+    // check, with no way for the user to repair a template and a target that are each valid.
+    ApiSampleWithFullSubSamples sample = sampleWith(generatedLink("Documented by", "SD123"));
+    List<InventoryEntityField> templateFields = inherited("Documented by");
+
+    SampleApiManagerImpl.mergeOperationFieldsIntoInheritedTemplateFields(sample, templateFields);
+
+    assertEquals(1, sample.getExtraFields().size(), "a link is never absorbed into a text field");
+    assertNotEquals(
+        "documented by",
+        sample.getExtraFields().get(0).getName().trim().toLowerCase(Locale.ROOT),
+        "the generated link must not keep a name the uniqueness check will reject");
+    assertNull(templateFields.get(0).getFieldData(), "the inherited field is left untouched");
   }
 
   @Test

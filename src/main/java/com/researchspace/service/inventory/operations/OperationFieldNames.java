@@ -70,6 +70,28 @@ public final class OperationFieldNames {
   }
 
   /**
+   * A free name for a generated link whose composed name is already taken, using the same
+   * target-global-id then ordinal suffixes as {@link #withUniqueFieldNames}. A link cannot be
+   * merged into an identically named template field the way a text value can, since it holds a
+   * structured {@link ApiInventoryLink} rather than text, so renaming it is the only way to keep a
+   * valid template and a valid target from colliding at the duplicate-name check.
+   */
+  public static String freeLinkName(ApiExtraField link, Set<String> taken) {
+    String suffix = " (" + link.getLink().getTargetGlobalId() + ")";
+    String candidate = fit(link.getName(), suffix.length()) + suffix;
+    for (int ordinal = 2; taken.contains(comparable(candidate)); ordinal++) {
+      String ordinalSuffix = suffix + " (" + ordinal + ")";
+      candidate = fit(link.getName(), ordinalSuffix.length()) + ordinalSuffix;
+    }
+    return candidate;
+  }
+
+  /** Names as the duplicate-name check compares them: trimmed and lowercased. */
+  public static String comparable(String name) {
+    return name == null ? "" : name.trim().toLowerCase(Locale.ROOT);
+  }
+
+  /**
    * Truncates a composed name to leave {@code reserve} characters for the uniqueness suffix.
    * Generated names can interpolate an origin's own name, which may already be at the 255-char
    * column limit; without this bound, an over-long name failed at the INSERT as a 500 after the
@@ -80,9 +102,5 @@ public final class OperationFieldNames {
   static String fit(String name, int reserve) {
     int room = Math.max(0, BaseRecord.DEFAULT_VARCHAR_LENGTH - reserve);
     return name.length() <= room ? name : name.substring(0, room).stripTrailing();
-  }
-
-  private static String comparable(String name) {
-    return name == null ? "" : name.trim().toLowerCase(Locale.ROOT);
   }
 }
