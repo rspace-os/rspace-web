@@ -41,7 +41,7 @@ import org.springframework.test.web.servlet.ResultActions;
  * builds one new Sample parenting N subsamples from them and the operation's own rules, puts a
  * provenance link back to each origin on the new Sample, and reduces each origin subsample by the
  * amount taken from it (never increasing it), all in one transaction. The live-state rules of that
- * transaction are exercised here against a real database. See DevDocs/adr/0007.
+ * transaction are exercised here against a real database. See DevDocs/adr/0011.
  */
 @WebAppConfiguration
 public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTestBase {
@@ -346,7 +346,7 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
 
   @Test
   public void rejectsTakingMoreThanTheOriginHolds() throws Exception {
-    // DevDocs/adr/0007: taking more than the origin currently holds must be rejected (400), not
+    // DevDocs/adr/0011: taking more than the origin currently holds must be rejected (400), not
     // clamped, and must leave the origin untouched.
     ApiSampleWithFullSubSamples source = createBasicSampleForUser(anyUser);
     ApiSubSample origin = source.getSubSamples().get(0);

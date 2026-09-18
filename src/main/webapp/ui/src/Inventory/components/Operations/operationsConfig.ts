@@ -1,4 +1,4 @@
-// See DevDocs/adr/0007-operation-wizard-decisions.md for this module's design.
+// See DevDocs/adr/0011-inventory-operation-wizard.md for this module's design.
 import type { ParseKeys } from "i18next";
 import type { OperationFunctionName } from "./operationFunctions";
 import type { AmountMode } from "./types";

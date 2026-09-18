@@ -7,9 +7,9 @@ quantity. Aliquot, Passage, Pool, Derive, Cryopreserve, Revive and Destroy ship.
 **Pool** is multi-origin (2+ subsamples into one pooled sample, `HasPart` links back
 to each) and can pour every origin out completely; **Destroy** is **terminal**, it
 creates no sample, empties the origin, and stamps a disposal date on the origin
-itself (DevDocs/adr/0007).
+itself (DevDocs/adr/0011).
 
-The design rationale is in the single consolidated ADR `DevDocs/adr/0007`, whose
+The design rationale is in the single consolidated ADR `DevDocs/adr/0011`, whose
 2026-09-16 amendment records why the operations stopped being configuration. The
 shared vocabulary is in the top-level `CONTEXT.md`.
 
@@ -230,7 +230,7 @@ measurement category, and an emptying operation must take exactly what is there.
 report through the same `rejectValue` to `BindException` to HTTP 400 path as the shape
 rules.
 
-The decrement-before-create order (DevDocs/adr/0007) makes the new subsample the
+The decrement-before-create order (DevDocs/adr/0011) makes the new subsample the
 most-recently-modified record, so it sorts first in a modification-date-descending
 listing. Reducing reuses `SubSampleApiManager.registerApiSubSampleUsage`, which
 subtracts unit-aware and clamps at zero as defence-in-depth, so an origin can never be
@@ -270,7 +270,7 @@ so a click outside does not dismiss it and discard progress (Escape and Cancel s
 close it).
 
 Five steps: **Details → Template → Amounts → Documentation (optional) → Confirm**.
-An operation may show a subset by declaring `steps` (DevDocs/adr/0007): a terminal operation
+An operation may show a subset by declaring `steps` (DevDocs/adr/0011): a terminal operation
 (Destroy) uses **Confirm** only, skipping Details, Template and Amounts (it needs no input,
 creates no sample, and empties the origin, so none applies). Its description is shown on the
 Confirm step as an info panel, and its "cannot operate on an empty subsample" guard is
@@ -314,7 +314,7 @@ enforced there too (Perform is blocked with the reason shown).
    cannot survive into the request). The **amount taken from the origin** always
    uses the origin subsample's own category (you remove mass from a mass sample),
    regardless of the template, and must not exceed the origin's current quantity
-   (DevDocs/adr/0007): over-removal is flagged inline and blocks Next
+   (DevDocs/adr/0011): over-removal is flagged inline and blocks Next
    (`amountTakenExceedsOrigin`).
 
 Details and Amounts are two slices of the same `OperationDetailsStep` (a `section`
@@ -341,11 +341,11 @@ autocomplete list (`INVENTORY_OPERATION_PROCESS_NAMES`), and recorded as the
 most-recently-used name (`INVENTORY_OPERATION_PROCESS_NAME_DEFAULTS`, pre-filled on the
 next run).
 
-## The amount model (DevDocs/adr/0007)
+## The amount model (DevDocs/adr/0011)
 
 The wizard captures the **amount taken from the origin** (a **positive** decrement).
 The backend reduces the origin by it, so an operation can only ever decrease the
-origin, never increase it. Taking **more than the origin holds is rejected** (DevDocs/adr/0007),
+origin, never increase it. Taking **more than the origin holds is rejected** (DevDocs/adr/0011),
 unit-aware, both in the wizard (Next blocked, inline message) and at the endpoint (HTTP
 400) — the zero-clamp in `registerApiSubSampleUsage` remains only as defence-in-depth.
 Each created subsample's amount is an independent input; the created total need not
@@ -367,7 +367,7 @@ fitted name: truncated rather than rejected, because pooling two origins already
 column limit has to remain possible and the link target carries the meaning. It is remembered as part of the single per-process bundle (see
 "Remembered process values" above), not a separate preference.
 
-## Template for the new sample (DevDocs/adr/0007)
+## Template for the new sample (DevDocs/adr/0011)
 
 The template choice is its **own framework-level step** (present for every operation,
 not per-operation config), between Details and Amounts. Its category also governs the
@@ -375,7 +375,7 @@ Amounts step's units (above). Three choices, in this order:
 
 - **From this sample's parent Sample** — reuses the origin subsample's parent Sample's
   own template (`origin.sample.templateId`). The wizard **never creates** a template
-  (DevDocs/adr/0007); when the parent has none this option is **disabled with a hint** and the
+  (DevDocs/adr/0011); when the parent has none this option is **disabled with a hint** and the
   user must pick an existing template or none, or create a template separately first.
 - **An existing template** — chosen from `WizardTemplatePicker`, a single-select,
   server-backed autocomplete (same interaction as the process-name field, but the user
@@ -427,7 +427,7 @@ fields in the wizard is deferred.
 
 Per-origin (unequal) pooling amounts, link-field de-duplication across consecutive
 in-place operations, and list-view entry points. Multi-origin operations (Pool) are
-supported (DevDocs/adr/0007), and terminal operations that create no new sample and add a custom
-field to the origin (Destroy) are supported (DevDocs/adr/0007): the server adds the declared
+supported (DevDocs/adr/0011), and terminal operations that create no new sample and add a custom
+field to the origin (Destroy) are supported (DevDocs/adr/0011): the server adds the declared
 origin field itself. General in-place editing of arbitrary existing
 origin fields (beyond adding new ones) is still out of scope.
