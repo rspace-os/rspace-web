@@ -26,18 +26,21 @@ export class KetcherDialogComponent {
     await this.root.locator('[data-testid="open-file-button"]:visible').click();
     const openModal = this.page.locator('[data-testid="openStructureModal"]');
     await openModal.waitFor({ state: "visible" });
-    const [chooser] = await Promise.all([
-      this.page.waitForEvent("filechooser"),
-      openModal.getByRole("button", { name: "Open from file" }).click(),
-    ]);
-    await chooser.setFiles(filePath);
+    await openModal.locator('[data-testid="open-from-file-button"] input[type="file"]').setInputFiles(filePath);
     await this.page.getByRole("button", { name: "Add to Canvas" }).click();
     await openModal.waitFor({ state: "detached" });
+    await this.waitForMoleculeLoaded();
+    await this.canvas.click();
+  }
+
+  // Ketcher 3.18's KET schema nests molecule data under root.nodes, not the older mol0/mol1/... keys.
+  private async waitForMoleculeLoaded(): Promise<void> {
     await this.page.waitForFunction(async () => {
       const ket = await (window as unknown as KetcherWindow).ketcher?.getKet();
-      return typeof ket === "string" && Object.keys(JSON.parse(ket)).some((key) => key.startsWith("mol"));
+      if (typeof ket !== "string") return false;
+      const parsed = JSON.parse(ket) as { root?: { nodes?: unknown[] } };
+      return (parsed.root?.nodes?.length ?? 0) > 0;
     });
-    await this.canvas.click();
   }
 
   /** Selects one of Ketcher's atom toolbar tools (e.g. "C", "P", "F") for placing on the canvas. */
@@ -68,13 +71,32 @@ export class KetcherDialogComponent {
     await this.canvas.waitFor({ state: "visible" });
   }
 
+  // window.ketcher exists before its WASM parser is ready: setMolecule can silently no-op,
+  // or briefly "take" then revert to empty on its own. No DOM signal marks true readiness,
+  // so this retries and reconfirms the molecule is still there before trusting it.
   async setMoleculeFromSmiles(smiles: string): Promise<void> {
     await this.page.waitForFunction(() => (window as unknown as KetcherWindow).ketcher !== undefined);
-    await this.page.evaluate(
-      (structure) => (window as unknown as KetcherWindow).ketcher?.setMolecule(structure),
-      smiles,
-    );
-    await this.canvas.click();
+    for (let attempt = 0; attempt < 5; attempt++) {
+      await this.page.evaluate(
+        (structure) => (window as unknown as KetcherWindow).ketcher?.setMolecule(structure),
+        smiles,
+      );
+      if (await this.hasMoleculeLoaded()) {
+        await this.page.waitForTimeout(300);
+        if (await this.hasMoleculeLoaded()) {
+          await this.canvas.click();
+          return;
+        }
+      }
+    }
+    throw new Error(`setMoleculeFromSmiles: molecule for "${smiles}" did not stay loaded after 5 attempts`);
+  }
+
+  private async hasMoleculeLoaded(): Promise<boolean> {
+    const ket = await this.page.evaluate(async () => (window as unknown as KetcherWindow).ketcher?.getKet());
+    if (typeof ket !== "string") return false;
+    const parsed = JSON.parse(ket) as { root?: { nodes?: unknown[] } };
+    return (parsed.root?.nodes?.length ?? 0) > 0;
   }
 
   async insert(): Promise<void> {

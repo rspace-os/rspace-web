@@ -7,6 +7,10 @@ import { insertReactionAndCalculate } from "./stoichiometryTestHelpers";
 const MAGNESIUM_CITRATE_CDXML = fixturePath(import.meta.url, "fixtures/magnesium_citrate.cdxml");
 const MAGNESIUM_CITRATE_FILE_NAME = "magnesium_citrate.cdxml";
 const ASPIRIN_SMILES = "CC(=O)Oc1ccccc1C(=O)O";
+// `addFromPubChem` uses the same mock/real PubChem split as pubchem.e2e.ts (see e2e-mocking.md).
+// Its asserted molecular weight is never a PubChem value though -- PubChem only supplies a
+// name/SMILES/formula; weight is always computed locally by the (never-mocked) chemistry
+// container, so this passes in both modes without a mode-conditional assertion.
 
 /** Reads every embedded stoichiometry table's id from a view-mode field's rendered HTML (`data-stoichiometry-table`). */
 async function getStoichiometryTableIds(fieldDiv: Locator): Promise<number[]> {

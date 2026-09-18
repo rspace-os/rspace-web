@@ -1,6 +1,6 @@
 import type { Locator, Page } from "@playwright/test";
 import { CreateSnippetDialogComponent } from "@/__tests__/e2e/components/document/CreateSnippetDialogComponent";
-import { resolveFieldId } from "@/__tests__/e2e/components/document/DocumentFieldHelpers";
+import { activateFieldForEditing, resolveFieldId } from "@/__tests__/e2e/components/document/DocumentFieldHelpers";
 import { DocumentToolbar } from "@/__tests__/e2e/components/document/DocumentToolbar";
 import { InternalLinkDialogComponent } from "@/__tests__/e2e/components/document/InternalLinkDialogComponent";
 import { MaterialsDialogComponent } from "@/__tests__/e2e/components/document/MaterialsDialogComponent";
@@ -76,9 +76,8 @@ export class DocumentEditorPage extends DocumentPage {
 
   async getField(fieldName: string, index = 0): Promise<TinyMceEditor> {
     const fieldId = await resolveFieldId(this.page, fieldName, index, "getField");
-    const editorId = `rtf_${fieldId}`;
-    await this.page.locator(`iframe#${editorId}_ifr`).waitFor({ state: "visible" });
-    return new TinyMceEditor(this.page, editorId).waitForReady();
+    await activateFieldForEditing(this.page, fieldId);
+    return new TinyMceEditor(this.page, `rtf_${fieldId}`).waitForReady();
   }
 
   async saveAndView(): Promise<DocumentPage> {

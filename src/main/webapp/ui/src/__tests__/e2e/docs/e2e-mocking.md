@@ -117,7 +117,7 @@ fixture change is always intentional and reviewable in a diff.
 
 | Integration | Property overridden | Handlers |
 |-------------|---------------------|---------|
-| PubChem | `pubchem.base.url` | `src/modules/pubchem/__tests__/mock.ts` |
+| PubChem | `pubchem.base.url` | `src/modules/pubchem/__tests__/mock.ts` — also exercised indirectly by `src/modules/chemistry/__tests__/chemistry.e2e.ts` and `src/modules/stoichiometry/__tests__/stoichiometry.e2e.ts` |
 | Fieldmark | `fieldmark.api.url` | `src/modules/fieldmark/__tests__/mock.ts` |
 | Zenodo | `zenodo.url` | `src/modules/zenodo/__tests__/mock.ts` |
 | Galaxy | `galaxy.server.config` (JSON array; mock uses alias `"mock"`) | `src/modules/galaxy/__tests__/mock.ts` |

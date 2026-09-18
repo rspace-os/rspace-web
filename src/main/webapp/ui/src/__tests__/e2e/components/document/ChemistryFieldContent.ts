@@ -1,6 +1,9 @@
 import { expect, type FrameLocator, type Locator, type Page } from "@playwright/test";
 import { KetcherDialogComponent } from "@/modules/chemistry/__tests__/pageObjects/KetcherDialogComponent";
-import { StoichiometryDialogComponent } from "@/tinyMCE/stoichiometry/__tests__/pageObjects/StoichiometryDialogComponent";
+import { StoichiometryDialogComponent } from "@/modules/stoichiometry/__tests__/pageObjects/StoichiometryDialogComponent";
+
+// Matches a chemistry image in both edit-mode (FrameLocator) and view-mode (plain Locator) field HTML.
+export const CHEM_IMAGE_SELECTOR = 'img[src*="sourceType=CHEM"]';
 
 export class ChemistryFieldContent {
   constructor(
@@ -10,7 +13,7 @@ export class ChemistryFieldContent {
   ) {}
 
   get chemElement(): Locator {
-    return this.frame.locator('img[src*="sourceType=CHEM"]');
+    return this.frame.locator(CHEM_IMAGE_SELECTOR);
   }
 
   get standaloneStoichiometryTableElement(): Locator {
