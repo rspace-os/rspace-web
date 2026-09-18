@@ -6,6 +6,7 @@ import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.inventory.DataCiteRelationType;
 import com.researchspace.service.inventory.InventoryLinkValidator;
+import com.researchspace.service.inventory.InventoryUrls;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,8 +26,9 @@ public class CsvLinkValueParser {
   @Autowired MessageSourceUtils messages;
 
   /**
-   * @return the link described by the cell, flagged to skip the exists-and-readable check so a
-   *     target that is missing or unreadable on this server still imports as a dangling link
+   * @return the link described by the cell, flagged lenient so a target that no longer exists on
+   *     this server still imports as a dangling link. A target that does exist is still checked for
+   *     readability, so a hand-written cell cannot name a record the importer may not read.
    * @throws IllegalArgumentException with a user-facing message when the cell is not a link
    */
   public ApiInventoryLink parse(String cell) {
@@ -51,8 +53,10 @@ public class CsvLinkValueParser {
       return null;
     }
     String url = m.group(2);
-    String prefix = globalIdUrlPrefix();
-    if (!url.regionMatches(true, 0, prefix, 0, prefix.length())) {
+    String prefix = InventoryUrls.globalIdPagePrefix(properties.getServerUrl()).orElse(null);
+    // no server URL configured: nothing can be shown to name a local record, so accept nothing
+    // rather than letting the prefix collapse to "/globalId/" and match a relative-looking cell
+    if (prefix == null || !url.regionMatches(true, 0, prefix, 0, prefix.length())) {
       return null;
     }
     GlobalIdentifier gid;
@@ -70,13 +74,5 @@ public class CsvLinkValueParser {
     link.setVersionPin(gid.hasVersionId() ? gid.getVersionId() : null);
     link.setSkipTargetCheck(true);
     return link;
-  }
-
-  private String globalIdUrlPrefix() {
-    String serverUrl = properties.getServerUrl();
-    if (serverUrl.endsWith("/")) {
-      serverUrl = serverUrl.substring(0, serverUrl.length() - 1);
-    }
-    return serverUrl + "/globalId/";
   }
 }

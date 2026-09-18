@@ -179,7 +179,7 @@ public class CsvInstrumentImporter extends InventoryItemCsvImporter {
         if (line.length != expectedColumnsNumber) {
           throw new IllegalArgumentException(
               messages.getMessage(
-                  "errors.inventory.import.instrumentCsvLineUnexpectedColumnCount",
+                  "errors.inventory.import.csvLineUnexpectedColumnCount",
                   new Object[] {expectedColumnsNumber, line.length}));
         }
         for (int currentColumnIndex = 0; currentColumnIndex < line.length; currentColumnIndex++) {

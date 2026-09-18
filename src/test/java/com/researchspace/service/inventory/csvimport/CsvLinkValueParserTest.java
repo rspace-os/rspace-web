@@ -53,6 +53,12 @@ public class CsvLinkValueParserTest {
     assertNull(link.getVersionPin());
   }
 
+  @Test
+  void nullCellIsNotALink() {
+    assertFalse(parser.isParseable(null));
+    assertThrows(IllegalArgumentException.class, () -> parser.parse(null));
+  }
+
   @ParameterizedTest
   @ValueSource(
       strings = {

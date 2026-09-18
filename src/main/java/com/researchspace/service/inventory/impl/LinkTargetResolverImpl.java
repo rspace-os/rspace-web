@@ -92,6 +92,24 @@ public class LinkTargetResolverImpl implements LinkTargetResolver {
     return false;
   }
 
+  @Override
+  public boolean targetIsKnownMissing(GlobalIdentifier target) {
+    if (target == null) {
+      return false;
+    }
+    GlobalIdentifier base =
+        target.hasVersionId() ? new GlobalIdentifier(target.getPrefix(), target.getDbId()) : target;
+    if (!INVENTORY_PREFIXES.contains(base.getPrefix())) {
+      return false;
+    }
+    try {
+      inventoryPermissionUtils.getInvRecByGlobalIdOrThrowNotFoundException(base);
+      return false;
+    } catch (NotFoundException e) {
+      return true;
+    }
+  }
+
   private boolean isInventoryReadable(GlobalIdentifier target, User user) {
     try {
       return inventoryPermissionUtils.canUserReadInventoryRecord(target, user);
