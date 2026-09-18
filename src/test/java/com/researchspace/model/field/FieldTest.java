@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -190,7 +189,6 @@ public class FieldTest {
   }
 
   @Test
-  @Disabled("mysteriously started failing on jenkins")
   public void testGetNewListOfTempFields() {
 
     ArrayList<Field> fieldList = new ArrayList<>();

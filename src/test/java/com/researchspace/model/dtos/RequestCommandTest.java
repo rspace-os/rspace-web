@@ -8,14 +8,18 @@ import com.researchspace.comms.CommunicationTargetFinderPolicy.TargetFinderPolic
 import com.researchspace.model.User;
 import com.researchspace.model.comms.MessageType;
 import com.researchspace.model.comms.MsgOrReqstCreationCfg;
+import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.EnumSet;
 import org.apache.commons.lang3.ArrayUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 
 public class RequestCommandTest extends SpringTransactionalTest {
+
+  private @Autowired IPermissionUtils permissionUtils;
 
   @AfterEach
   public void tearDown() throws Exception {

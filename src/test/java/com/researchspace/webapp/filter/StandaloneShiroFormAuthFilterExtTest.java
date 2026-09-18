@@ -38,6 +38,7 @@ import org.springframework.mock.web.MockHttpServletResponse;
 public class StandaloneShiroFormAuthFilterExtTest extends SpringTransactionalTest {
 
   private StandaloneShiroFormAuthFilterExt filter;
+  private @Autowired IPropertyHolder propertyHolder;
 
   private MockHttpServletRequest req;
   private MockHttpServletResponse resp;

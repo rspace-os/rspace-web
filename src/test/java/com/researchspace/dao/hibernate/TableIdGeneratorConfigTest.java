@@ -15,13 +15,11 @@ import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.record.RSForm;
 import java.util.ArrayList;
 import java.util.List;
-import org.hibernate.SessionFactory;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.generator.Generator;
 import org.hibernate.id.enhanced.TableGenerator;
 import org.hibernate.metamodel.MappingMetamodel;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * Guards the id-generation layout for TABLE-strategy entities: each entity allocates from its own
@@ -31,8 +29,6 @@ import org.springframework.beans.factory.annotation.Autowired;
  * instead, interleaving ids across unrelated tables.
  */
 public class TableIdGeneratorConfigTest extends BaseDaoTestCase {
-
-  @Autowired SessionFactory sessionFactory;
 
   @Test
   public void noTableStrategyEntityUsesTheSharedDefaultSegment() {

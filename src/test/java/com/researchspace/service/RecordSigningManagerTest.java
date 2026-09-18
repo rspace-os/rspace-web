@@ -22,6 +22,7 @@ import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.views.RecordCopyResult;
 import com.researchspace.model.views.SigningResult;
+import com.researchspace.properties.IMutablePropertyHolder;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.testutils.TestFactory;
@@ -36,6 +37,7 @@ public class RecordSigningManagerTest extends SpringTransactionalTest {
 
   private @Autowired RecordSigningManager signingMgr;
   private @Autowired SignatureDao signingDao;
+  private @Autowired IMutablePropertyHolder propertyHolder;
   private User user;
 
   @BeforeEach

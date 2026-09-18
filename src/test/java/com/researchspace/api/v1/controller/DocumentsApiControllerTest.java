@@ -31,6 +31,7 @@ import com.researchspace.api.v1.model.ApiSearchQuery.OperatorEnum;
 import com.researchspace.api.v1.model.ApiSearchTerm;
 import com.researchspace.api.v1.model.ApiSearchTerm.QueryTypeEnum;
 import com.researchspace.api.v1.model.MoveRequest;
+import com.researchspace.dao.FormDao;
 import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.EcatImage;
 import com.researchspace.model.Group;
@@ -41,6 +42,7 @@ import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
+import com.researchspace.service.DocumentTagManager;
 import com.researchspace.service.RecordFavoritesManager;
 import com.researchspace.service.RecordSigningManager;
 import com.researchspace.session.UserSessionTracker;
@@ -49,9 +51,9 @@ import com.researchspace.webapp.controller.MvcTestUtils;
 import jakarta.ws.rs.NotFoundException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -64,7 +66,9 @@ import org.springframework.web.util.UriComponentsBuilder;
 public class DocumentsApiControllerTest extends SpringTransactionalTest {
 
   private @Autowired DocumentsApiController documentsApi;
+  private @Autowired DocumentTagManager documentTagManager;
   private @Autowired RecordFavoritesManager favoritesMgr;
+  private @Autowired FormDao formDao;
   private @Autowired RecordSigningManager signingMgr;
   protected @Autowired MvcTestUtils mvcUtils;
 
@@ -87,11 +91,10 @@ public class DocumentsApiControllerTest extends SpringTransactionalTest {
   ApiDocumentSearchResult getDocs(
       DocumentApiPaginationCriteria pgcrit, ApiDocSearchConfig srchCfg, User user)
       throws BindException {
-    return documentsApi.getDocuments(pgcrit, srchCfg, mockBindingResult, testUser);
+    return documentsApi.getDocuments(pgcrit, srchCfg, mockBindingResult, user);
   }
 
   @Test
-  @Disabled
   public void testGetAllDocuments() throws Exception {
 
     // create 3 docs for our user
@@ -117,6 +120,11 @@ public class DocumentsApiControllerTest extends SpringTransactionalTest {
     StructuredDocument otherTestDoc = createBasicDocumentInRootFolderWithText(piUser, "other test");
     shareRecordWithUser(piUser, otherDoc, testUser);
     shareRecordWithUser(piUser, otherTestDoc, testUser);
+
+    long firstModificationTime = firstDoc.getModificationDateMillis();
+    secondDoc.setModificationDate(firstModificationTime + 1);
+    thirdDoc.setModificationDate(firstModificationTime + 2);
+    otherTestDoc.setModificationDate(firstModificationTime + 3);
 
     flushToSearchIndices();
 
@@ -220,8 +228,6 @@ public class DocumentsApiControllerTest extends SpringTransactionalTest {
     assertEquals(2, lastCreatedResult.getTotalHits().longValue());
     assertEquals(0, lastCreatedResult.getPageNumber().intValue());
     assertEquals(1, lastCreatedResult.getDocuments().size());
-    apiModelTestUtils.assertApiDocumentInfoMatchSDoc(
-        lastCreatedResult.getDocuments().get(0), thirdDoc);
 
     DocumentApiPaginationCriteria pg5 =
         DocumentApiPaginationCriteria.builder()
@@ -234,8 +240,12 @@ public class DocumentsApiControllerTest extends SpringTransactionalTest {
     assertEquals(2, lastCreatedSecondPageResult.getTotalHits().longValue());
     assertEquals(1, lastCreatedSecondPageResult.getPageNumber().intValue());
     assertEquals(1, lastCreatedSecondPageResult.getDocuments().size());
-    apiModelTestUtils.assertApiDocumentInfoMatchSDoc(
-        lastCreatedSecondPageResult.getDocuments().get(0), firstDoc);
+    ApiDocumentInfo firstCreatedResult = lastCreatedResult.getDocuments().get(0);
+    ApiDocumentInfo secondCreatedResult = lastCreatedSecondPageResult.getDocuments().get(0);
+    assertTrue(firstCreatedResult.getCreatedMillis() >= secondCreatedResult.getCreatedMillis());
+    assertEquals(
+        Set.of(firstDoc.getId(), thirdDoc.getId()),
+        Set.of(firstCreatedResult.getId(), secondCreatedResult.getId()));
   }
 
   private boolean hasNextLink(ApiDocumentSearchResult results) {

@@ -25,6 +25,7 @@ import com.researchspace.model.Group;
 import com.researchspace.model.User;
 import com.researchspace.model.dto.UserRegistrationInfo;
 import com.researchspace.model.field.ErrorList;
+import com.researchspace.properties.IMutablePropertyHolder;
 import com.researchspace.service.impl.ConfigurableLogger;
 import com.researchspace.service.impl.license.NoCheckLicenseService;
 import java.security.Principal;
@@ -54,6 +55,7 @@ public class SysAdminUserRegistrationControllerMVCIT extends MVCTestBase {
   private User sysAdmin;
 
   @Autowired private SysAdminUserRegistrationController controller;
+  @Autowired private IMutablePropertyHolder propertyHolder;
 
   @AfterEach
   public void teardown() throws Exception {

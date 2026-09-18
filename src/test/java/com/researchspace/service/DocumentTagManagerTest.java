@@ -13,6 +13,7 @@ import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.openMocks;
 
 import com.researchspace.core.util.TransformerUtils;
+import com.researchspace.dao.FormDao;
 import com.researchspace.model.Group;
 import com.researchspace.model.User;
 import com.researchspace.model.record.Notebook;
@@ -41,6 +42,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 public class DocumentTagManagerTest extends SpringTransactionalTest {
   private @Autowired DocumentTagManager tagMgr;
+  private @Autowired FormDao formDao;
   @Mock private BioPortalOntologiesService bioPortalOntologiesServiceMock;
 
   @Autowired
@@ -227,15 +229,10 @@ public class DocumentTagManagerTest extends SpringTransactionalTest {
     // no hits
     assertNTags(0, any, "nomatch");
     assertEquals(
-        1,
-        documentTagManager
-            .getTagsPlusMetaForViewableInventoryDocuments(any, "INVENTORY_TAG")
-            .size());
-    assertEquals(
-        1, documentTagManager.getTagsPlusMetaForViewableInventoryDocuments(any, "tag").size());
-    assertEquals(
-        0, documentTagManager.getTagsPlusMetaForViewableELNDocuments(any, "INVENTORY_TAG").size());
-    assertEquals(4, documentTagManager.getTagsPlusMetaForViewableELNDocuments(any, "tag").size());
+        1, tagMgr.getTagsPlusMetaForViewableInventoryDocuments(any, "INVENTORY_TAG").size());
+    assertEquals(1, tagMgr.getTagsPlusMetaForViewableInventoryDocuments(any, "tag").size());
+    assertEquals(0, tagMgr.getTagsPlusMetaForViewableELNDocuments(any, "INVENTORY_TAG").size());
+    assertEquals(4, tagMgr.getTagsPlusMetaForViewableELNDocuments(any, "tag").size());
   }
 
   @Test

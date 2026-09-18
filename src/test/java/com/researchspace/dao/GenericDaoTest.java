@@ -8,18 +8,15 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.researchspace.model.User;
 import com.researchspace.testutils.TestFactory;
-import org.hibernate.SessionFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.orm.ObjectRetrievalFailureException;
 
 public class GenericDaoTest extends BaseDaoTestCase {
   Logger log = LoggerFactory.getLogger(GenericDaoTest.class);
   GenericDao<User, Long> genericDao;
-  @Autowired SessionFactory sessionFactory;
 
   @BeforeEach
   public void setUp() {

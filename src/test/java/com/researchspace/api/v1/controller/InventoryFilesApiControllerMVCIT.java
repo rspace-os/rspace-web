@@ -19,7 +19,7 @@ import java.io.InputStream;
 import java.util.Arrays;
 import javax.imageio.ImageIO;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -29,11 +29,7 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MvcResult;
 
 @WebAppConfiguration
-@TestPropertySource(
-    properties = {
-      "chemistry.service.url=http://your-chem-service:8090",
-      "chemistry.provider=indigo"
-    })
+@TestPropertySource(properties = "chemistry.provider=indigo")
 public class InventoryFilesApiControllerMVCIT extends API_MVC_InventoryTestBase {
 
   @BeforeEach
@@ -94,9 +90,7 @@ public class InventoryFilesApiControllerMVCIT extends API_MVC_InventoryTestBase 
     assertEquals(0, apiContainer.getAttachments().size());
   }
 
-  @Disabled(
-      "Requires chemistry service to run. See"
-          + " https://documentation.researchspace.com/article/1jbygguzoa")
+  @Tag("chemistry")
   @Test
   public void uploadRetrieveImageInventoryFileAttachment() throws Exception {
     User anyUser = createInitAndLoginAnyUser();

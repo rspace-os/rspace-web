@@ -5,8 +5,17 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.axiope.search.FileSearchResult;
+import com.researchspace.model.User;
+import com.researchspace.testutils.TestFactory;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import org.apache.commons.io.FileUtils;
 import org.apache.lucene.codecs.CodecUtil;
 import org.apache.lucene.store.Directory;
@@ -23,7 +32,7 @@ public class FileIndexerTest {
 
   @TempDir File dataFolder;
 
-  private FileIndexer indexer = new FileIndexer();
+  private final FileIndexer indexer = new FileIndexer();
 
   @AfterEach
   void tearDown() throws IOException {
@@ -68,6 +77,48 @@ public class FileIndexerTest {
     reopened.init(false);
     assertEquals(1, reopened.getWriter().getDocStats().numDocs);
     reopened.close();
+  }
+
+  @Test
+  void concurrentlyIndexedFilesAreAllSearchable() throws Exception {
+    List<String> searchTerms =
+        List.of("alphaunique", "bravounique", "charlieunique", "deltaunique");
+    List<File> files = new ArrayList<>();
+    for (int i = 0; i < searchTerms.size(); i++) {
+      File file = new File(dataFolder, i + ".txt");
+      FileUtils.writeStringToFile(file, "content containing " + searchTerms.get(i), UTF_8);
+      files.add(file);
+    }
+
+    indexer.setIndexFolderDirectly(indexFolder);
+    indexer.init(true);
+    ExecutorService executor = Executors.newFixedThreadPool(files.size());
+    try {
+      List<Future<?>> indexingTasks = new ArrayList<>();
+      for (File file : files) {
+        indexingTasks.add(
+            executor.submit(
+                () -> {
+                  indexer.indexFile(file);
+                  return null;
+                }));
+      }
+      for (Future<?> task : indexingTasks) {
+        task.get(10, TimeUnit.SECONDS);
+      }
+    } finally {
+      executor.shutdownNow();
+    }
+
+    LuceneSearchStrategy searcher = new LuceneSearchStrategy();
+    searcher.setIndexFolderDirectly(indexFolder);
+    User user = TestFactory.createAnyUser("any");
+    for (int i = 0; i < files.size(); i++) {
+      List<FileSearchResult> results = searcher.searchFiles(searchTerms.get(i), user);
+      String expectedFileName = files.get(i).getName();
+      assertTrue(
+          results.stream().map(FileSearchResult::getFileName).anyMatch(expectedFileName::equals));
+    }
   }
 
   /**
