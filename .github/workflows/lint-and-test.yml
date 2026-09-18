@@ -69,6 +69,8 @@ jobs:
               - 'src/test/resources/**'
               - 'src/main/webapp/WEB-INF/**'
               - 'pom.xml'
+              - 'scripts/run-chemistry-tests.sh'
+              - '.github/workflows/**'
 
   fast-junit-tests:
     runs-on: ubuntu-latest
