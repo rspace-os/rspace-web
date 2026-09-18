@@ -2567,6 +2567,8 @@ paths:
                 $ref: "#/components/schemas/Error"
         "404":
           $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/OperationOriginBusy"
         "422":
           $ref: "#/components/responses/UnprocessableQuery"
   /operations/passage:
@@ -2604,8 +2606,8 @@ paths:
         "400":
           description: >
             Rejected, leaving the origin unchanged. `sampleName` or `eachAmount` is missing;
-            `count` is below 1 or above 100; an `amountTaken` other than zero was sent, which
-            this operation cannot honour; the origin is empty; or `templateId` names a template
+            `count` is below 1, above 100 or not a whole number; an `amountTaken` was sent, which
+            this operation does not accept; the origin is empty; or `templateId` names a template
             the created sample does not conform to. Each error names the field that was sent.
           content:
             application/json:
@@ -2613,6 +2615,8 @@ paths:
                 $ref: "#/components/schemas/Error"
         "404":
           $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/OperationOriginBusy"
         "422":
           $ref: "#/components/responses/UnprocessableQuery"
   /operations/pool:
@@ -2668,6 +2672,8 @@ paths:
                 $ref: "#/components/schemas/Error"
         "404":
           $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/OperationOriginBusy"
         "422":
           $ref: "#/components/responses/UnprocessableQuery"
   /operations/derive:
@@ -2713,6 +2719,8 @@ paths:
                 $ref: "#/components/schemas/Error"
         "404":
           $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/OperationOriginBusy"
         "422":
           $ref: "#/components/responses/UnprocessableQuery"
   /operations/cryopreserve:
@@ -2766,6 +2774,8 @@ paths:
                 $ref: "#/components/schemas/Error"
         "404":
           $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/OperationOriginBusy"
         "422":
           $ref: "#/components/responses/UnprocessableQuery"
   /operations/revive:
@@ -2813,6 +2823,8 @@ paths:
                 $ref: "#/components/schemas/Error"
         "404":
           $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/OperationOriginBusy"
         "422":
           $ref: "#/components/responses/UnprocessableQuery"
   /operations/destroy:
@@ -2845,14 +2857,17 @@ paths:
         "400":
           description: >
             Rejected, leaving the origin unchanged. The origin is missing, is not identified by a
-            subsample global id, is already empty, or an `amountTaken` was sent that is not the
-            origin's entire remaining quantity. Each error names the field that was sent.
+            subsample global id, or is already empty; or an `amountTaken` was sent, which this
+            operation does not accept: it always takes whatever the origin holds when it runs.
+            Each error names the field that was sent.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
         "404":
           $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/OperationOriginBusy"
         "422":
           $ref: "#/components/responses/UnprocessableQuery"
   /import/parseFile:
@@ -4192,6 +4207,15 @@ components:
   responses:
     UnprocessableQuery:
       description: Query could not be processed.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    OperationOriginBusy:
+      description: >
+        The operation did not start, and every origin is unchanged. Either another request is
+        already acting on one of the origins, or another user's edit session holds one of them.
+        The message names the origin. Retry once that request or edit session has finished.
       content:
         application/json:
           schema:
