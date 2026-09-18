@@ -67,16 +67,30 @@ export const apiTest = uiTest.extend<ApiFixtures>({
   },
   clientSysadmin: async ({ apiContext }, use) => {
     const client = new SysadminClient(apiContext, SYSADMIN.apiKey);
+    let cleanupError: Error | undefined;
     try {
       await use(client);
     } finally {
-      // allSettled: one failed disable must not hide another's failure, or the test's own.
-      const results = await Promise.allSettled(client.createdUserIds.toReversed().map((id) => client.disableUser(id)));
-      for (const result of results) {
-        if (result.status === "rejected") {
-          console.error("Failed to disable e2e user during teardown:", result.reason);
-        }
+      // allSettled: one failed disable must not hide another's failure. Users a scenario already
+      // deleted itself are excluded via pendingCleanup.
+      const pending = client.pendingCleanup;
+      const results = await Promise.allSettled(pending.map((user) => client.disableUser(user.id)));
+      const failures = results
+        .map((result, index) => ({ result, user: pending[index] }))
+        .filter(
+          (entry): entry is typeof entry & { result: PromiseRejectedResult } => entry.result.status === "rejected",
+        );
+      for (const { result, user } of failures) {
+        console.error(`Failed to disable e2e user "${user.username}" (id ${user.id}) during teardown:`, result.reason);
       }
+      if (failures.length > 0) {
+        cleanupError = new Error(
+          `${failures.length} e2e user(s) failed cleanup: ${failures.map(({ user }) => user.username).join(", ")}`,
+        );
+      }
+    }
+    if (cleanupError) {
+      throw cleanupError;
     }
   },
 

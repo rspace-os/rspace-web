@@ -115,9 +115,8 @@ document/page divs, the TinyMCE contenteditable iframe body.
   `aria-hidden`, so it has no a11y name. Use `titleAccess="..."` (renders
   `<svg role="img"><title>...</title></svg>`) and query `getByRole("img", {
   name })`. This is a real component fix, not just a test change.
-- **MUI `Select` inside `FormField`.** Its `aria-labelledby` points at its own id,
-  so role/label queries miss it. Add `SelectDisplayProps={{ "data-testid":
-  "MySelect" }}` and use `getByTestId`.
+- **MUI `Select` inside `FormField`.** Give it an accessible name through
+  `SelectDisplayProps`; query by role and name, as required by `AGENTS.md`.
 - **MUI DataGrid ARIA.** Data rows contain `gridcell`s, the header row contains
   `columnheader`s; select data rows with
   `getByRole("row").filter({ has: page.getByRole("gridcell") })`. A cell's
