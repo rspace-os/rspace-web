@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -50,10 +51,13 @@ import com.researchspace.webapp.integrations.datacite.DataCiteConnector;
 import jakarta.ws.rs.NotFoundException;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
@@ -425,7 +429,9 @@ class PidinstLookupManagerImplTest {
   @Test
   void dataCiteRetriesADoiWildcardWhenFreeTextFindsNothing() {
     onADataCiteDeployment();
-    when(dataCiteConnector.searchInstrumentDois("qvtb-aw74", 50, InventorySettingType.PIDINST))
+    // the free-text call carries the hyphen escaped; the retry's clause is composed from the raw
+    // query, so only the first of these two is
+    when(dataCiteConnector.searchInstrumentDois("qvtb\\-aw74", 50, InventorySettingType.PIDINST))
         .thenReturn(dataCitePage(0));
     when(dataCiteConnector.searchInstrumentDois(
             "doi:*qvtb-aw74*", 50, InventorySettingType.PIDINST))
@@ -463,6 +469,70 @@ class PidinstLookupManagerImplTest {
         .searchInstrumentDois("doi:*Carl Zeiss*", 50, InventorySettingType.PIDINST);
   }
 
+  static Stream<Arguments> queriesCarryingQueryStringSyntax() {
+    return Stream.of(
+        arguments("Zeiss\"broken", "Zeiss\\\"broken"),
+        arguments("Zeiss[broken", "Zeiss\\[broken"),
+        arguments("(Zeiss", "\\(Zeiss"),
+        arguments("Zeiss!", "Zeiss\\!"),
+        arguments("Zeiss^2", "Zeiss\\^2"),
+        arguments("Zeiss &&", "Zeiss \\&\\&"),
+        arguments("Zeiss OR", "Zeiss \\OR"),
+        arguments("NOT Zeiss", "\\NOT Zeiss"),
+        arguments("Zeiss AND Bruker", "Zeiss \\AND Bruker"));
+  }
+
+  /**
+   * DataCite's {@code query} is Elasticsearch query-string syntax, so user text reaches it escaped:
+   * unbalanced syntax answers 400 rather than no hits, which the dialog can only show as an error.
+   * Verified 2026-09-18 against api.datacite.org, where {@code foo"bar}, {@code foo[bar}, {@code
+   * (foo}, {@code foo!}, {@code foo^}, {@code zeiss &&} and a dangling {@code abc OR} all answer
+   * 400 while every escaped form answers 200.
+   */
+  @ParameterizedTest
+  @MethodSource("queriesCarryingQueryStringSyntax")
+  void dataCiteFreeTextSearchEscapesQueryStringSyntax(String typed, String sent) {
+    onADataCiteDeployment();
+    when(dataCiteConnector.searchInstrumentDois(anyString(), eq(50), any()))
+        .thenReturn(dataCitePage(0));
+
+    manager.search(typed, user);
+
+    verify(dataCiteConnector).searchInstrumentDois(sent, 50, InventorySettingType.PIDINST);
+  }
+
+  /**
+   * The slash is reserved in query-string syntax, but DataCite answers 400 for {@code
+   * 10.5281\/zenodo} and 200 for {@code 10.5281/zenodo} (verified 2026-09-18), so escaping it would
+   * break the DOI fragments this search exists to match.
+   */
+  @Test
+  void dataCiteFreeTextSearchLeavesTheSlashAlone() {
+    onADataCiteDeployment();
+    when(dataCiteConnector.searchInstrumentDois(anyString(), eq(50), any()))
+        .thenReturn(dataCitePage(0));
+
+    manager.search("82316/qvtb", user);
+
+    verify(dataCiteConnector).searchInstrumentDois("82316/qvtb", 50, InventorySettingType.PIDINST);
+  }
+
+  /**
+   * Escaping is the free-text call's business; the retry composes its own clause from the raw
+   * query, so the allow-listed fragment must reach {@code doi:*...*} unescaped.
+   */
+  @Test
+  void dataCiteWildcardRetryUsesTheUnescapedQuery() {
+    onADataCiteDeployment();
+    when(dataCiteConnector.searchInstrumentDois(anyString(), eq(50), any()))
+        .thenReturn(dataCitePage(0));
+
+    manager.search("qvtb-aw74", user);
+
+    verify(dataCiteConnector)
+        .searchInstrumentDois("doi:*qvtb-aw74*", 50, InventorySettingType.PIDINST);
+  }
+
   /**
    * A space is the weakest possible negative case: it would still be refused by a class that had
    * been widened to admit query-string metacharacters. These are the characters that actually break
@@ -493,7 +563,7 @@ class PidinstLookupManagerImplTest {
   void dataCiteRetriesAPastedPrefixAndSuffixPair() {
     onADataCiteDeployment();
     when(dataCiteConnector.searchInstrumentDois(
-            "82316/qvtb-aw74", 50, InventorySettingType.PIDINST))
+            "82316/qvtb\\-aw74", 50, InventorySettingType.PIDINST))
         .thenReturn(dataCitePage(0));
     when(dataCiteConnector.searchInstrumentDois(
             "doi:*82316/qvtb-aw74*", 50, InventorySettingType.PIDINST))
