@@ -20,6 +20,7 @@ import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.record.IRecordFactory;
 import com.researchspace.model.units.RSUnitDef;
+import com.researchspace.service.inventory.csvexport.InventoryItemCsvExporter;
 import jakarta.annotation.PostConstruct;
 import java.io.IOException;
 import java.io.InputStream;
@@ -254,7 +255,11 @@ public class CsvSampleImporter extends InventoryItemCsvImporter {
               if (sampleField.isOptionsStoringField()) {
                 sampleField.setSelectedOptions(Arrays.asList(value)); // assumes a single option
               } else if (ApiFieldType.LINK.equals(sampleField.getType())) {
-                sampleField.setLink(linkParser.parse(value));
+                // the exporter writes its absent-column sentinel for a row that has no such
+                // column; that is no link, not a malformed one, so it must not fail the row
+                if (!InventoryItemCsvExporter.isAbsentCsvValue(value)) {
+                  sampleField.setLink(linkParser.parse(value));
+                }
               } else {
                 sampleField.setContent(value);
               }

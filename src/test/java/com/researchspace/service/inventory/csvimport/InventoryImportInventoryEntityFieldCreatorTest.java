@@ -11,6 +11,7 @@ import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.inventory.field.InventoryRadioField;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.service.inventory.csvexport.InventoryItemCsvExporter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -44,6 +45,32 @@ public class InventoryImportInventoryEntityFieldCreatorTest {
     values.add("Cites https://elsewhere.example.com/globalId/SD9");
     field = helper.getSuggestedSampleFieldForNameAndValues("links", values);
     assertEquals(FieldType.STRING, field.getType());
+  }
+
+  @Test
+  public void exportSentinelDoesNotStopAColumnBeingSuggestedAsLink() {
+    // a multi-record export fills columns a row does not have with "#N/A", so an extra-field or
+    // per-template link column carries the sentinel on every unrelated row. Treating it as real
+    // data infers STRING and the round trip the feature promises never gets off the ground.
+    List<String> values = new ArrayList<>();
+    values.add("IsDerivedFrom https://rspace.example.com/globalId/SA1v2");
+    values.add(InventoryItemCsvExporter.CSV_VALUE_UNAVAILABLE_ITEM_PROPERTY);
+    values.add("Cites https://rspace.example.com/globalId/SD9");
+
+    assertEquals(
+        FieldType.LINK, helper.getSuggestedSampleFieldForNameAndValues("links", values).getType());
+  }
+
+  @Test
+  public void aColumnOfNothingButExportSentinelsIsNotALinkColumn() {
+    // filtering the sentinel out must not leave an empty set voting yes by default: a column no
+    // exported record actually filled in says nothing about links
+    List<String> values = new ArrayList<>();
+    values.add(InventoryItemCsvExporter.CSV_VALUE_UNAVAILABLE_ITEM_PROPERTY);
+    values.add(InventoryItemCsvExporter.CSV_VALUE_UNAVAILABLE_ITEM_PROPERTY);
+
+    assertEquals(
+        FieldType.STRING, helper.getSuggestedSampleFieldForNameAndValues("n", values).getType());
   }
 
   @Test

@@ -6,8 +6,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 
+import com.fasterxml.jackson.dataformat.csv.CsvMapper;
+import com.fasterxml.jackson.dataformat.csv.CsvParser;
 import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiField.ApiFieldType;
 import com.researchspace.api.v1.model.ApiInstrument;
@@ -26,6 +29,10 @@ import com.researchspace.api.v1.model.ApiInventoryLink;
 import com.researchspace.api.v1.model.ApiInventoryLinkTargetSummary;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiInventorySearchResult;
+import com.researchspace.api.v1.model.ApiJob;
+import com.researchspace.api.v1.model.ApiLinkItem;
+import com.researchspace.api.v1.model.ApiSample;
+import com.researchspace.api.v1.model.ApiSampleTemplate;
 import com.researchspace.api.v1.model.ApiSampleTemplatePost;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
@@ -47,11 +54,14 @@ import com.researchspace.service.ApiAvailabilityHandler;
 import com.researchspace.service.inventory.ContainerApiManager;
 import com.researchspace.service.inventory.InventoryLinkManager;
 import com.researchspace.service.inventory.SampleApiManager;
+import com.researchspace.service.inventory.csvexport.InventoryItemCsvExporter;
 import com.researchspace.service.inventory.csvimport.CsvSampleImporter;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -71,6 +81,11 @@ public class InventoryImportApiControllerMVCIT extends API_MVC_InventoryTestBase
       "antibody_import_complex_template.csv";
   private static final String ANTIBODY_IMPORT_REAL_DATA_CSV = "antibody_import_real_data.csv";
   private static final String ANTIBODY_IMPORT_ERRORS_CSV = "antibody_import_with_errors.csv";
+
+  private static final String LINK_FIELD_NAME = "Related items";
+  private static final String SAMPLE_WITHOUT_LINK_COLUMN = "sample without link column";
+  private static final String CSV_EXPORT_COMMENT_HEADER = "# RSpace Inventory Export";
+  private static final String CSV_EXPORTED_CONTENT_SAMPLES = "# Exported content: SAMPLES";
 
   private static final String CONTAINER_IMPORT_ALL_COLUMNS_CSV = "container_import_all_columns.csv";
   private static final String SAMPLE_IMPORT_INTO_CONTAINERS_CSV =
@@ -1462,6 +1477,213 @@ public class InventoryImportApiControllerMVCIT extends API_MVC_InventoryTestBase
 
     ApiInstrument unlinked = (ApiInstrument) instrumentResults.getResults().get(1).getRecord();
     assertNull(unlinked.getFields().get(0).getLink());
+  }
+
+  /**
+   * RSDEV-1354: a multi-record CSV export gives every row the union of all exported records'
+   * columns, filling the columns a row does not have with the exporter's {@code #N/A} sentinel, so
+   * a per-template link column carries that sentinel on every row belonging to another template.
+   * Re-importing the exporter's own output must still suggest the column as a Link field and must
+   * leave the sentinel rows linkless instead of failing them. Before the fix the column was
+   * inferred as a String because the sentinel is not a parseable link, and forcing a Link template
+   * made every sentinel row fail with a link parse error.
+   */
+  @Test
+  public void exportedMultiRowSampleCsvWithSentinelLinkColumnReimportsAsLinks() throws Exception {
+    ApiSampleWithFullSubSamples linkTarget = createBasicSampleForUser(anyUser, "link target");
+    ApiSampleWithFullSubSamples linkedSample = createSampleWithLinkTo(linkTarget);
+    ApiSampleWithFullSubSamples otherTemplateSample =
+        createBasicSampleForUser(anyUser, SAMPLE_WITHOUT_LINK_COLUMN);
+
+    String samplesCsv = exportSamplesSectionAsCsv(linkedSample, otherTemplateSample);
+    List<String[]> exportedRows = parseCsvRows(samplesCsv);
+    String[] header = exportedRows.get(0);
+    int linkColumnIndex = indexOfColumnStartingWith(header, LINK_FIELD_NAME);
+    int nameColumnIndex = indexOfColumnStartingWith(header, "Name");
+    String[] rowWithoutLinkColumn =
+        exportedRows.stream()
+            .filter(row -> SAMPLE_WITHOUT_LINK_COLUMN.equals(row[nameColumnIndex]))
+            .findFirst()
+            .orElseThrow();
+    assertEquals(
+        InventoryItemCsvExporter.CSV_VALUE_UNAVAILABLE_ITEM_PROPERTY,
+        rowWithoutLinkColumn[linkColumnIndex],
+        "the export should fill the other template's link column with its sentinel");
+
+    MvcResult result =
+        mockMvc
+            .perform(
+                multipart(createUrl(API_VERSION.ONE, "/import/parseFile"))
+                    .file(
+                        new MockMultipartFile(
+                            "file",
+                            "exportedSamples.csv",
+                            "text/csv",
+                            samplesCsv.getBytes(StandardCharsets.UTF_8)))
+                    .contentType(MediaType.MULTIPART_FORM_DATA)
+                    .param("recordType", "SAMPLES")
+                    .header("apiKey", apiKey))
+            .andReturn();
+    assertNull(result.getResolvedException());
+    ApiInventoryImportSampleParseResult parseResult =
+        getFromJsonResponseBody(result, ApiInventoryImportSampleParseResult.class);
+    ApiSampleTemplatePost templateInfo = parseResult.getTemplateInfo();
+    assertEquals(
+        ApiFieldType.LINK,
+        templateInfo.getFields().get(linkColumnIndex).getType(),
+        "a link column with sentinel rows should still be suggested as a Link field");
+
+    templateInfo.setExpiryDate(null);
+    templateInfo.getFields().remove(nameColumnIndex);
+    String settingsJson =
+        "{ \"sampleSettings\": { \"fieldMappings\": { \"Name\": \"name\"}, \"templateInfo\": "
+            + JacksonUtil.toJson(templateInfo)
+            + "} }";
+    result =
+        mockMvc
+            .perform(
+                multipart(createUrl(API_VERSION.ONE, "/import/importFiles"))
+                    .file(
+                        new MockMultipartFile(
+                            "samplesFile",
+                            "exportedSamples.csv",
+                            "text/csv",
+                            samplesCsv.getBytes(StandardCharsets.UTF_8)))
+                    .contentType(MediaType.MULTIPART_FORM_DATA)
+                    .param("importSettings", settingsJson)
+                    .header("apiKey", apiKey))
+            .andReturn();
+    assertNull(result.getResolvedException());
+
+    ApiInventoryImportResult importResult =
+        getFromJsonResponseBody(result, ApiInventoryImportResult.class);
+    ApiInventoryImportSampleImportResult sampleResults = importResult.getSampleResult();
+    assertEquals(InventoryBulkOperationStatus.COMPLETED, sampleResults.getStatus());
+    assertEquals(2, sampleResults.getSuccessCount());
+
+    ApiInventoryEntityField reimportedLink =
+        linkFieldOfImportedSampleNamed(sampleResults, linkedSample.getName());
+    assertEquals(ApiFieldType.LINK, reimportedLink.getType());
+    assertNotNull(reimportedLink.getLink(), "the exported link should survive the round trip");
+    assertEquals("References", reimportedLink.getLink().getRelationType());
+    assertEquals(linkTarget.getGlobalId(), reimportedLink.getLink().getTargetGlobalId());
+
+    ApiInventoryEntityField sentinelLink =
+        linkFieldOfImportedSampleNamed(sampleResults, SAMPLE_WITHOUT_LINK_COLUMN);
+    assertEquals(ApiFieldType.LINK, sentinelLink.getType());
+    assertNull(sentinelLink.getLink(), "a sentinel cell means no link, not a malformed one");
+  }
+
+  private ApiSampleWithFullSubSamples createSampleWithLinkTo(ApiSampleWithFullSubSamples target)
+      throws Exception {
+    ApiSampleTemplatePost templatePost = new ApiSampleTemplatePost();
+    templatePost.setName("template with link field");
+    templatePost.setDefaultUnitId(RSUnitDef.GRAM.getId());
+    templatePost.setSampleSource(SampleSource.LAB_CREATED);
+    ApiInventoryEntityField linkField = new ApiInventoryEntityField();
+    linkField.setName(LINK_FIELD_NAME);
+    linkField.setType(ApiFieldType.LINK);
+    linkField.setAllowedRelationTypes(List.of("References"));
+    templatePost.setFields(List.of(linkField));
+    MvcResult result =
+        mockMvc
+            .perform(
+                createBuilderForPostWithJSONBody(apiKey, "/sampleTemplates", anyUser, templatePost))
+            .andReturn();
+    assertNull(result.getResolvedException());
+    ApiSampleTemplate template = getFromJsonResponseBody(result, ApiSampleTemplate.class);
+
+    ApiSampleWithFullSubSamples toCreate = new ApiSampleWithFullSubSamples("sample with link");
+    toCreate.setTemplateId(template.getId());
+    ApiSampleWithFullSubSamples created = sampleApiMgr.createNewApiSample(toCreate, anyUser);
+
+    ApiInventoryLink link = new ApiInventoryLink();
+    link.setRelationType("References");
+    link.setTargetGlobalId(target.getGlobalId());
+    ApiInventoryEntityField fieldUpdate = new ApiInventoryEntityField();
+    fieldUpdate.setId(
+        sampleApiMgr.getApiSampleById(created.getId(), anyUser).getFields().get(0).getId());
+    fieldUpdate.setType(ApiFieldType.LINK);
+    fieldUpdate.setLink(link);
+    ApiSampleWithFullSubSamples sampleUpdate = new ApiSampleWithFullSubSamples(created.getName());
+    sampleUpdate.setId(created.getId());
+    sampleUpdate.setFields(List.of(fieldUpdate));
+    ApiSample updated = sampleApiMgr.updateApiSample(sampleUpdate, anyUser);
+    assertNotNull(updated.getFields().get(0).getLink(), "the sample should start out linked");
+    return created;
+  }
+
+  private String exportSamplesSectionAsCsv(ApiSampleWithFullSubSamples... samples)
+      throws Exception {
+    String globalIds =
+        Arrays.stream(samples)
+            .map(s -> "\"" + s.getGlobalId() + "\"")
+            .collect(Collectors.joining(", "));
+    MvcResult result =
+        mockMvc
+            .perform(
+                multipart(createUrl(API_VERSION.ONE, "/export"))
+                    .param(
+                        "exportSettings",
+                        "{ \"globalIds\": ["
+                            + globalIds
+                            + "], \"resultFileType\": \"SINGLE_CSV\" }")
+                    .header("apiKey", apiKey))
+            .andReturn();
+    assertNull(result.getResolvedException());
+    ApiJob job = getFromJsonResponseBody(result, ApiJob.class);
+    String downloadLink = job.getLinkOfType(ApiLinkItem.ENCLOSURE_REL).get().getLink();
+    result =
+        mockMvc
+            .perform(
+                get(downloadLink.substring(downloadLink.indexOf("/api/"))).header("apiKey", apiKey))
+            .andReturn();
+    assertNull(result.getResolvedException());
+    return samplesSectionOf(result.getResponse().getContentAsString());
+  }
+
+  private static String samplesSectionOf(String exportedCsv) {
+    int samplesContent = exportedCsv.indexOf(CSV_EXPORTED_CONTENT_SAMPLES);
+    assertTrue(samplesContent > 0, exportedCsv);
+    int sectionStart = exportedCsv.lastIndexOf(CSV_EXPORT_COMMENT_HEADER, samplesContent);
+    int nextSectionStart = exportedCsv.indexOf(CSV_EXPORT_COMMENT_HEADER, samplesContent);
+    return nextSectionStart < 0
+        ? exportedCsv.substring(sectionStart)
+        : exportedCsv.substring(sectionStart, nextSectionStart);
+  }
+
+  private static List<String[]> parseCsvRows(String csv) throws IOException {
+    CsvMapper mapper = new CsvMapper();
+    mapper.enable(CsvParser.Feature.WRAP_AS_ARRAY);
+    mapper.enable(CsvParser.Feature.SKIP_EMPTY_LINES);
+    List<String[]> rows = mapper.readerFor(String[].class).<String[]>readValues(csv).readAll();
+    return rows.stream()
+        .filter(row -> !row[0].startsWith(InventoryItemCsvExporter.CSV_COMMENT_PREFIX))
+        .collect(Collectors.toList());
+  }
+
+  private static int indexOfColumnStartingWith(String[] header, String columnNamePrefix) {
+    for (int i = 0; i < header.length; i++) {
+      if (header[i].startsWith(columnNamePrefix)) {
+        return i;
+      }
+    }
+    throw new IllegalStateException(
+        "no column starting with '" + columnNamePrefix + "' in " + Arrays.toString(header));
+  }
+
+  private static ApiInventoryEntityField linkFieldOfImportedSampleNamed(
+      ApiInventoryImportSampleImportResult results, String sampleName) {
+    ApiSampleWithFullSubSamples sample =
+        results.getResults().stream()
+            .map(r -> (ApiSampleWithFullSubSamples) r.getRecord())
+            .filter(r -> sampleName.equals(r.getName()))
+            .findFirst()
+            .orElseThrow();
+    return sample.getFields().stream()
+        .filter(f -> f.getName().startsWith(LINK_FIELD_NAME))
+        .findFirst()
+        .orElseThrow();
   }
 
   private MockMultipartFile getTestCsvFile(String paramName, String fileName)
