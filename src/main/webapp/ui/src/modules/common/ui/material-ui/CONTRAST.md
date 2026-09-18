@@ -18,6 +18,12 @@ been disabled or marked as expected failures. Consequently, the full
 Storybook test command currently exits nonzero. TypeScript, lint, and the
 static Storybook build passed independently.
 
+CI runs `pnpm storybook:test:ci`. That command compares the failed story names
+with `.storybook/known-test-failures.json` and verifies that every recorded
+failure still comes only from axe's `color-contrast` rule. It fails for a new
+failure, a different accessibility rule, another test error, or a recorded
+failure that has been fixed but not removed from the baseline.
+
 ## Observed color pairs
 
 Colors below are the computed foreground and background reported by axe;
@@ -51,6 +57,7 @@ Run from the repository root:
 
 ```bash
 pnpm storybook:test
+pnpm storybook:test:ci
 pnpm storybook:test Button.stories.tsx
 ```
 

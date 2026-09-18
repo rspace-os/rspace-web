@@ -31,7 +31,8 @@
     "test-e2e:debug": "cd src/main/webapp/ui && cross-env PW_LOG=trace playwright test --config playwright-e2e.config.ts",
     "storybook": "cd src/main/webapp/ui && storybook dev -p 6006",
     "storybook:build": "cd src/main/webapp/ui && storybook build",
-    "storybook:test": "cd src/main/webapp/ui && vitest run --config .storybook/vitest.config.ts"
+    "storybook:test": "cd src/main/webapp/ui && vitest run --config .storybook/vitest.config.ts",
+    "storybook:test:ci": "cd src/main/webapp/ui && node .storybook/check-test-baseline.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.9",

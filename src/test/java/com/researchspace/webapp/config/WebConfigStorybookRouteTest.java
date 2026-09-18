@@ -51,10 +51,18 @@ class WebConfigStorybookRouteTest {
     WebConfig config = configWithStorybookEnabled(false);
     ResourceHandlerRegistry resources =
         new ResourceHandlerRegistry(new StaticApplicationContext(), new MockServletContext());
+    ViewControllerRegistry views = new ViewControllerRegistry(new StaticApplicationContext());
 
     config.addResourceHandlers(resources);
+    config.addViewControllers(views);
 
     assertFalse(resources.hasMappingForPattern("/public/storybook/**"));
+    @SuppressWarnings("unchecked")
+    List<ViewControllerRegistration> registrations =
+        (List<ViewControllerRegistration>) ReflectionTestUtils.getField(views, "registrations");
+    assertFalse(
+        registrations.stream()
+            .anyMatch(registration -> "/public/storybook".equals(urlPath(registration))));
   }
 
   private WebConfig configWithStorybookEnabled(boolean storybookEnabled) {

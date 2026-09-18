@@ -2,6 +2,7 @@ import CssBaseline from "@mui/material/CssBaseline";
 import { ThemeProvider } from "@mui/material/styles";
 import { ArgTypes, Description, Markdown, Stories, Title } from "@storybook/addon-docs/blocks";
 import type { Preview } from "@storybook/react-vite";
+import I18nRoot from "../src/modules/common/i18n/I18nRoot";
 import theme from "../src/theme";
 
 const docsGuidance =
@@ -32,10 +33,12 @@ const preview: Preview = {
   },
   decorators: [
     (Story) => (
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <Story />
-      </ThemeProvider>
+      <I18nRoot>
+        <ThemeProvider theme={theme}>
+          <CssBaseline />
+          <Story />
+        </ThemeProvider>
+      </I18nRoot>
     ),
   ],
 };

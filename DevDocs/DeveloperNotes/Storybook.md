@@ -1,8 +1,8 @@
 # Storybook
 
-RSpace uses Storybook as a browser-based catalogue for React component in our
+RSpace uses Storybook as a browser-based catalogue for React components in our
 design system. It lets developers inspect states and prop combinations in isolation,
-document component behaviour, and run interaction and accessibility checks in 
+document component behaviour, and run interaction and accessibility checks in a
 real browser.
 
 ## Start Storybook
@@ -17,9 +17,13 @@ pnpm storybook:test Button.stories.tsx  # focus on matching stories
 ```
 
 The root scripts change into `src/main/webapp/ui`, where Storybook's Vite
-configuration and module aliases are defined. Storybook discovers stories
-under the frontend source tree, including files named `*.stories.tsx` and
-`*.compound.stories.tsx`.
+configuration and module aliases are defined. Storybook discovers files named
+`*.stories.ts` or `*.stories.tsx` under the frontend source tree. Legacy
+`*.story.tsx` files remain application-only and are not loaded by Storybook.
+
+Storybook wraps every story with the application's React `I18nRoot`, which
+loads the React i18n resources used by components. The legacy JSP i18n plugins
+remain application-only and are not part of the Storybook Vite configuration.
 
 ## How the catalogue is organised
 
@@ -39,7 +43,7 @@ documents:
 
 ```tsx
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { Button } from "@mui/material";
+import Button from "@mui/material/Button";
 
 const meta = {
   component: Button,
@@ -72,7 +76,8 @@ record its exact revision in the relevant attribution file.
 
 After changing stories, run `pnpm tsc` and `pnpm lint`. Run a focused
 `pnpm storybook:test` command while iterating, then the full Storybook test
-command before review. Run `pnpm storybook:build` when changing Storybook
+baseline with `pnpm storybook:test:ci` before review. Run
+`pnpm storybook:build` when changing Storybook
 configuration or documentation metadata. Browser checks cover the rendered
 states and declared interactions; review new keyboard, focus, responsive, and
 visual states manually as well. Known Material UI contrast failures and their
@@ -88,8 +93,11 @@ To preview the static catalogue in a local RSpace development server:
 3. Open `/public/storybook` on that instance.
 
 The route prefers the Storybook bundle packaged at `WEB-INF/storybook` and
-falls back to the local, gitignored `storybook-static` directory. A WAR build
-includes the bundle only when Storybook generation is enabled:
+falls back to the local, gitignored `storybook-static` directory. The route is
+under `/public/**` and does not require authentication, so anyone who can reach
+the instance can view it while enabled. Enable it only on local or development
+instances and leave it disabled in production. A WAR build includes the bundle
+only when Storybook generation is enabled:
 
 ```bash
 mvn clean package -DgenerateReactDist -DgenerateStorybook=true -DskipTests=true

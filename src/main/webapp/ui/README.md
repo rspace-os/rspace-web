@@ -94,7 +94,8 @@ To review the built catalog inside a local RSpace development server, run
 `deployment.properties`, and open `/public/storybook` on that instance.
 The route serves the WAR's `WEB-INF/storybook` bundle first, falling back to the
 gitignored `storybook-static` directory for local development. It is not
-registered when the property is false.
+registered when the property is false. When enabled, `/public/storybook` is
+unauthenticated and must only be exposed on local/dev instances.
 
 Check **STORYBOOK** in Jenkins to build and bundle the catalog in the WAR.
 For a local WAR build, run
@@ -102,8 +103,9 @@ For a local WAR build, run
 The checkbox defaults off. Omitting `generateStorybook`, or setting it to
 `false`, excludes Storybook even if a local static build exists. Use a clean
 build when changing the option. Bundling does not enable the public route:
-set `dev.storybook.preview.enabled=true` in the deployed instance's
-`deployment.properties` to expose it. Leave it disabled on production instances.
+set `dev.storybook.preview.enabled=true` in the local/dev instance's
+`deployment.properties` to expose it on a local/dev instance. Leave it disabled
+on deployed production instances because the route is unauthenticated.
 
 ## Testing Strategy
 

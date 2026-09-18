@@ -6,6 +6,31 @@ commit [`3e1139552dfb53ade9751ce546d332c984bd338b`](https://github.com/laststanc
 The upstream project declares the MIT license. Every adapted source file links
 to its exact upstream revision.
 
+The upstream repository does not include a license file, so the adapted source
+is accompanied by the standard MIT permission notice:
+
+MIT License
+
+Copyright (c) 2021-2025 Ryota Murakami and contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
 The stories use RSpace's installed Material UI 9 packages and Storybook's
 React/Vite framework. Upstream stories that require `@mui/lab`, plus its
 design-token and layout showcases, were not imported.
