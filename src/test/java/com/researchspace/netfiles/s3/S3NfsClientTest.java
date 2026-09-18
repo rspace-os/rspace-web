@@ -118,10 +118,10 @@ public class S3NfsClientTest {
   public void uploadFile_destinationKeyAlreadyExists_throwsIOExceptionAndDoesNotUpload()
       throws IOException {
     when(s3Utilities.isFileInS3("dest/folder", "Picture1.png")).thenReturn(true);
+    File source = new File("Picture1.png");
 
     IOException ex =
-        assertThrows(
-            IOException.class, () -> client.uploadFile(new File("Picture1.png"), "dest/folder"));
+        assertThrows(IOException.class, () -> client.uploadFile(source, "dest/folder"));
     assertTrue(ex.getMessage().contains("already exists"));
     verify(s3Utilities, never()).uploadToS3(any(), any(), any());
   }
@@ -163,8 +163,9 @@ public class S3NfsClientTest {
   public void createFolder_whenFileExistsAtPath_throws() {
     S3FolderContentItem file = new S3FolderContentItem("new", false, 10L, Instant.now());
     when(s3Utilities.getObjectDetails("parent/new")).thenReturn(file);
+    Map<String, String> metadata = Map.of();
 
-    assertThrows(IOException.class, () -> client.createFolder("parent/new", Map.of()));
+    assertThrows(IOException.class, () -> client.createFolder("parent/new", metadata));
   }
 
   @Test
@@ -172,8 +173,9 @@ public class S3NfsClientTest {
     // Re-creating an existing folder must not overwrite its created-by/created-at provenance.
     S3FolderContentItem folder = new S3FolderContentItem("new", true, null, null);
     when(s3Utilities.getObjectDetails("parent/new")).thenReturn(folder);
+    Map<String, String> metadata = Map.of();
 
-    assertThrows(IOException.class, () -> client.createFolder("parent/new", Map.of()));
+    assertThrows(IOException.class, () -> client.createFolder("parent/new", metadata));
     verify(s3Utilities, never()).createFolder(any(), any());
   }
 

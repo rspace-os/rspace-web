@@ -39,12 +39,12 @@ public class CloudGroupManagerTest extends SpringTransactionalTest {
     TestGroup tg = createTestGroup(1);
     User subject = tg.u1();
     logoutAndLoginAs(subject);
+    String piUsername = tg.getPi().getUsername();
+    var group = tg.getGroup();
     // non community fail
     assertThrows(
         AuthorizationException.class,
-        () ->
-            grpPermUtils.assertLeaveGroupPermissions(
-                tg.getPi().getUsername(), subject, tg.getGroup()));
+        () -> grpPermUtils.assertLeaveGroupPermissions(piUsername, subject, group));
     // now succeeds
     propertyHolder.setCloud("true");
     assertEquals(
@@ -54,8 +54,6 @@ public class CloudGroupManagerTest extends SpringTransactionalTest {
     // sole  pi not able to remove himself
     assertThrows(
         AuthorizationException.class,
-        () ->
-            grpPermUtils.assertLeaveGroupPermissions(
-                tg.getPi().getUsername(), subject, tg.getGroup()));
+        () -> grpPermUtils.assertLeaveGroupPermissions(piUsername, subject, group));
   }
 }

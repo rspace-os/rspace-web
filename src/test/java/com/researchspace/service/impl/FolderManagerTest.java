@@ -1,6 +1,5 @@
 package com.researchspace.service.impl;
 
-import static com.researchspace.core.testutil.CoreTestUtils.assertIllegalArgumentException;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -51,7 +50,8 @@ public class FolderManagerTest {
 
   @Test
   public void testCreateGallerySubfolderThrowsIAEIfInvalid() {
-    assertIllegalArgumentException(
+    assertThrows(
+        IllegalArgumentException.class,
         () -> folderManagerImpl.createGallerySubfolder("any", "unknown", anyUser));
   }
 
@@ -65,11 +65,12 @@ public class FolderManagerTest {
     when(folderDao.get(child.getId())).thenReturn(child);
 
     // this should trigger IACO
+    Long childId = child.getId();
     assertThrows(
         IllegalAddChildOperation.class,
         () ->
             folderManagerImpl.addChild(
-                child.getId(), parent, anyUser, ACLPropagationPolicy.DEFAULT_POLICY, false));
+                childId, parent, anyUser, ACLPropagationPolicy.DEFAULT_POLICY, false));
 
     assertChildNotAddedtoParent(parent);
 

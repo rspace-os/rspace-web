@@ -15,6 +15,7 @@ import com.researchspace.properties.PropertyHolder;
 import com.researchspace.service.LicenseService;
 import com.researchspace.service.UserEnablementUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
+import org.apache.shiro.authz.AuthorizationException;
 import org.hamcrest.Matcher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -65,10 +66,11 @@ public class SysAdminControllerSpringTest extends SpringTransactionalTest {
     props.setLicenseExceededCustomMessage(customMessage);
     try {
       Matcher<String> matcher = containsString(customMessage);
+      Long userId = user.getId();
       assertThat(
           assertThrows(
                   LicenseExceededException.class,
-                  () -> sysCtrller.setUserAccountEnablement(user.getId(), true))
+                  () -> sysCtrller.setUserAccountEnablement(userId, true))
               .getMessage(),
           matcher);
     } finally {
@@ -86,7 +88,9 @@ public class SysAdminControllerSpringTest extends SpringTransactionalTest {
     User toremove = createAndSaveRandomUser();
 
     logoutAndLoginAs(admin);
-    assertAuthorisationExceptionThrown(() -> sysCtrller.removeUserAccount(toremove.getId()));
+    var userId = toremove.getId();
+
+    assertThrows(AuthorizationException.class, () -> sysCtrller.removeUserAccount(userId));
 
     logoutAndLoginAsSysAdmin();
     ResponseEntity<Object> res = sysCtrller.removeUserAccount(toremove.getId());

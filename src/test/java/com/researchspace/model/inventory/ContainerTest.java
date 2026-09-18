@@ -477,10 +477,8 @@ public class ContainerTest {
     assertEquals("Can't set workbench as lastNonWorkbenchParent", iae.getMessage());
 
     // try attaching a file to workbench
-    iae =
-        assertThrows(
-            IllegalArgumentException.class,
-            () -> workbench.addAttachedFile(new InventoryFile(null, null)));
+    InventoryFile attachment = new InventoryFile(null, null);
+    iae = assertThrows(IllegalArgumentException.class, () -> workbench.addAttachedFile(attachment));
     assertEquals("Can't attach files to Workbench", iae.getMessage());
   }
 }

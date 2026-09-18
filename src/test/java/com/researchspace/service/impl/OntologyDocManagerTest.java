@@ -146,18 +146,18 @@ public class OntologyDocManagerTest {
   }
 
   @Test
-  public void shouldThrowExceptionWhenIncorrectUrlColumnSpecified() {
+  public void shouldThrowExceptionWhenIncorrectUrlColumnSpecified() throws IOException {
     when(userManager.getAuthenticatedUserInSession()).thenReturn(userMock);
     setUpMocksForCreatingontologyDocumentToWriteTo();
-    Exception thrown =
-        assertThrows(
-            RuntimeException.class,
-            () ->
-                testee.writeImportToOntologyDoc(
-                    new FileInputStream(multipleLinesontologyDocument), 2, 2, "name", "version"));
-    assertEquals(
-        "Import failed: You have specified a url column which does not contain urls.",
-        thrown.getMessage());
+    try (FileInputStream input = new FileInputStream(multipleLinesontologyDocument)) {
+      Exception thrown =
+          assertThrows(
+              RuntimeException.class,
+              () -> testee.writeImportToOntologyDoc(input, 2, 2, "name", "version"));
+      assertEquals(
+          "Import failed: You have specified a url column which does not contain urls.",
+          thrown.getMessage());
+    }
     verify(signingManagerMock, never())
         .signRecordNoPublishEvent(
             1L, userMock, witnesses, "Signed as the ontology name, version version");

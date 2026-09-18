@@ -7,6 +7,7 @@ import static com.researchspace.core.util.TransformerUtils.toList;
 import static com.researchspace.testutils.MockAndStubUtils.modifyUserCreationDate;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.jdbc.JdbcTestUtils.countRowsInTable;
@@ -248,7 +249,7 @@ public class SysadminUsersAPIControllerMVCIT extends API_MVC_TestBase {
                     .param("createdBefore", "abcde")
                     .header("apiKey", apiKey))
             .andReturn();
-    assertException(result, BindException.class);
+    assertInstanceOf(BindException.class, result.getResolvedException());
   }
 
   @Test

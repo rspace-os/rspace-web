@@ -1,7 +1,7 @@
 package com.researchspace.model.oauth;
 
-import static com.researchspace.core.testutil.CoreTestUtils.assertIllegalArgumentException;
 import static com.researchspace.model.record.TestFactory.createAnyUser;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.researchspace.model.User;
 import java.util.stream.Stream;
@@ -22,7 +22,7 @@ public class OAuthTokenTest {
   @ParameterizedTest(name = "{index}: user:{0}, clientId:{1}, tokenType:{2})")
   @MethodSource("constructorValidationArguments")
   void constructorValidationNoNullArgs(User user, String clientId, OAuthTokenType tokenType) {
-    assertIllegalArgumentException(() -> new OAuthToken(user, clientId, tokenType));
+    assertThrows(IllegalArgumentException.class, () -> new OAuthToken(user, clientId, tokenType));
   }
 
   static Stream<Arguments> constructorValidationArguments() {

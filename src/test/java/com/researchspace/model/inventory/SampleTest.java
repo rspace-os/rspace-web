@@ -269,10 +269,9 @@ public class SampleTest {
     SampleTemplate template = sample.copyToTemplate(anyUser);
 
     // try attaching a file to workbench
+    InventoryFile attachment = new InventoryFile(null, null);
     IllegalArgumentException iae =
-        assertThrows(
-            IllegalArgumentException.class,
-            () -> template.addAttachedFile(new InventoryFile(null, null)));
+        assertThrows(IllegalArgumentException.class, () -> template.addAttachedFile(attachment));
     assertEquals("Sample Templates don't support file attachments yet", iae.getMessage());
   }
 

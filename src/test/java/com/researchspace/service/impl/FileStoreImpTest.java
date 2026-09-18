@@ -94,7 +94,9 @@ public class FileStoreImpTest {
     String corruptedName = utf8File.getName().replace("ł", "?");
     // mimic messed up stream
     fp.setRelPath(corruptedName);
-    assertThrows(FileNotFoundException.class, () -> tss.handlePossibleUTF8Error(fp, fnfe()));
+    FileNotFoundException originalException = fnfe();
+    assertThrows(
+        FileNotFoundException.class, () -> tss.handlePossibleUTF8Error(fp, originalException));
   }
 
   @Test
@@ -107,7 +109,9 @@ public class FileStoreImpTest {
     String corruptedName = utf8File.getName().replace("ł", "?");
     // mimic messed up stream
     fp.setRelPath(corruptedName);
-    assertThrows(IllegalStateException.class, () -> tss.handlePossibleUTF8Error(fp, fnfe()));
+    FileNotFoundException originalException = fnfe();
+    assertThrows(
+        IllegalStateException.class, () -> tss.handlePossibleUTF8Error(fp, originalException));
   }
 
   @TempDir Path tempDir;

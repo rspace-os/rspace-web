@@ -81,13 +81,14 @@ public class InventoryItemCsvImporterTest extends SpringTransactionalTest {
     sampleProcessingResult.addCreatedTemplateResult(templateInfo);
     ApiInventoryImportResult processingResult = new ApiInventoryImportResult();
     processingResult.setSampleResult(sampleProcessingResult);
+    InputStream blankCsv = IOUtils.toInputStream(" ");
 
     IllegalArgumentException iae =
         assertThrows(
             IllegalArgumentException.class,
             () ->
                 sampleCsvImporter.readCsvIntoImportResult(
-                    IOUtils.toInputStream(" "), nameColumnMapping, processingResult, user));
+                    blankCsv, nameColumnMapping, processingResult, user));
     assertTrue(iae.getMessage().contains("CSV file seems to be empty"), iae.getMessage());
 
     // invalid mapping for csv file ('Name' column not found)

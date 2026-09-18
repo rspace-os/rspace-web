@@ -99,7 +99,7 @@ Use React functional components with TypeScript. Prefer React Query for new serv
 - Context-only tests need `@WithSpringContext` plus `@DefaultTestContext` or `@ContextConfiguration`. Keep Spring's default test execution listeners.
 - For multiple configurations, use one outer class and a `@Nested` class per configuration. Put `@TestPropertySource` and `@ContextConfiguration` on nested classes.
 - Gate whole classes unavailable in CI with `@EnabledIfSystemProperty`; method-level gates still load Spring.
-- Reuse `BaseManagerTestCaseBase` helpers: `assertExceptionThrown`, `assertAuthorisationExceptionThrown`, `assertLazyInitializationExceptionThrown`.
+- Use JUnit's `assertThrows` directly, keeping setup outside its executable. For exceptions already captured by MockMvc, use `assertInstanceOf` on `getResolvedException()`.
 </important>
 
 <important if="changing user-visible behavior">

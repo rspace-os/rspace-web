@@ -6,9 +6,11 @@ import static com.researchspace.core.util.MediaUtils.IMAGES_MEDIA_FLDER_NAME;
 import static com.researchspace.testutils.RSpaceTestUtils.getAnyPdf;
 import static org.hamcrest.Matchers.hasItem;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
@@ -339,9 +341,11 @@ public class GalleryControllerMVCIT extends MVCTestBase {
      * parameters at the same time - which is not expected, as we either upload new version
      * of existing media/attachment, or attach completely new file to the field */
     final Long audioId = audioFileId;
-    assertExceptionThrown(
-        () -> galleryController.uploadFile(mfAudio, audioId, null, field.getId()),
-        IllegalArgumentException.class);
+    var fieldId = field.getId();
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> galleryController.uploadFile(mfAudio, audioId, null, fieldId));
   }
 
   private void initialiseIndexFolder() throws IOException, Exception {
@@ -680,7 +684,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
                     .param("id[]", attachment.getId() + "," + attachment2.getId())
                     .param("revision[]", ",,,,"))
             .andReturn();
-    assertException(res, IllegalArgumentException.class);
+    assertInstanceOf(IllegalArgumentException.class, res.getResolvedException());
 
     // non existent id + existing ID
     res =
