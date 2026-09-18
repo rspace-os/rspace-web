@@ -1,5 +1,6 @@
 package com.researchspace.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -59,7 +60,7 @@ public class UserAppConfigManagerTest extends SpringTransactionalTest {
         userAppCfgMgr.getAppConfigElementSetById(
             savedCfg.getAppConfigElementSets().iterator().next().getId());
     assertEquals("slack.app", savedCfg.getApp().getName());
-    assertEquals(1, savedCfg.getAppConfigElementSets().size());
+    assertThat(savedCfg.getAppConfigElementSets()).hasSize(1);
     assertEquals(
         SLACK_CHANNEL1,
         retrievedElementSet.findElementByPropertyName(SLACK_CHANNEL_NAME).getValue());
@@ -79,7 +80,7 @@ public class UserAppConfigManagerTest extends SpringTransactionalTest {
     AppConfigElementSet deleted = userAppCfgMgr.deleteAppConfigSet(idToDelete, u1);
     assertNotNull(deleted);
     List<UserAppConfig> cfgs = userAppCfgMgr.getAll();
-    assertEquals(0, cfgs.get(0).getAppConfigElementSets().size());
+    assertThat(cfgs.get(0).getAppConfigElementSets()).isEmpty();
   }
 
   @Test

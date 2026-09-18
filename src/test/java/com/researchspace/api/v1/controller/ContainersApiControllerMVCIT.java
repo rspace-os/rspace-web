@@ -1,6 +1,7 @@
 package com.researchspace.api.v1.controller;
 
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -57,8 +58,8 @@ public class ContainersApiControllerMVCIT extends API_MVC_InventoryTestBase {
         getFromJsonResponseBody(result, ApiContainerSearchResult.class);
     assertNotNull(topContainers);
     assertEquals(2, topContainers.getTotalHits().intValue());
-    assertEquals(2, topContainers.getContainers().size());
-    assertEquals(1, topContainers.getLinks().size());
+    assertThat(topContainers.getContainers()).hasSize(2);
+    assertThat(topContainers.getLinks()).hasSize(1);
 
     ApiContainerInfo listContainerInfo = topContainers.getContainers().get(1);
     assertEquals(
@@ -68,7 +69,7 @@ public class ContainersApiControllerMVCIT extends API_MVC_InventoryTestBase {
     assertEquals(0, listContainerInfo.getContentSummary().getSubSampleCount());
     assertEquals(3, listContainerInfo.getContentSummary().getContainerCount());
     assertEquals(anyUser.getFullName(), listContainerInfo.getModifiedByFullName());
-    assertEquals(1, listContainerInfo.getLinks().size());
+    assertThat(listContainerInfo.getLinks()).hasSize(1);
 
     // retrieve list container, with details
     result =
@@ -82,10 +83,10 @@ public class ContainersApiControllerMVCIT extends API_MVC_InventoryTestBase {
         ContentInitializerForDevRunManager.EXAMPLE_TOP_LIST_CONTAINER_NAME,
         retrievedContainer.getName());
     assertEquals(3, retrievedContainer.getContentSummary().getTotalCount());
-    assertEquals(3, retrievedContainer.getLocations().size());
-    assertEquals(3, retrievedContainer.getStoredContent().size());
-    assertEquals(1, retrievedContainer.getLinks().size());
-    assertEquals(0, retrievedContainer.getParentContainers().size());
+    assertThat(retrievedContainer.getLocations()).hasSize(3);
+    assertThat(retrievedContainer.getStoredContent()).hasSize(3);
+    assertThat(retrievedContainer.getLinks()).hasSize(1);
+    assertThat(retrievedContainer.getParentContainers()).isEmpty();
     ApiInventoryRecordInfo retrievedSubcontainerInfo =
         retrievedContainer.getLocations().get(0).getContent();
     assertEquals("box #1 (list container)", retrievedSubcontainerInfo.getName());
@@ -119,9 +120,9 @@ public class ContainersApiControllerMVCIT extends API_MVC_InventoryTestBase {
     assertEquals(4, retrievedSubContainer.getContentSummary().getTotalCount());
     assertEquals(3, retrievedSubContainer.getContentSummary().getContainerCount());
     assertEquals(1, retrievedSubContainer.getContentSummary().getSubSampleCount());
-    assertEquals(4, retrievedSubContainer.getLocations().size());
+    assertThat(retrievedSubContainer.getLocations()).hasSize(4);
     assertNotNull(retrievedSubContainer.getParentContainer());
-    assertEquals(1, retrievedSubContainer.getParentContainers().size());
+    assertThat(retrievedSubContainer.getParentContainers()).hasSize(1);
     assertEquals(anyUser.getFullName(), retrievedSubContainer.getModifiedByFullName());
     assertEquals(
         ContentInitializerForDevRunManager.EXAMPLE_TOP_LIST_CONTAINER_NAME,
@@ -147,7 +148,7 @@ public class ContainersApiControllerMVCIT extends API_MVC_InventoryTestBase {
     ApiContainer retrievedSubSubContainer = getFromJsonResponseBody(result, ApiContainer.class);
     assertNotNull(retrievedSubSubContainer);
     assertEquals("box A (list container)", retrievedSubSubContainer.getName());
-    assertEquals(2, retrievedSubSubContainer.getParentContainers().size());
+    assertThat(retrievedSubSubContainer.getParentContainers()).hasSize(2);
     assertEquals(
         "box #1 (list container)", retrievedSubSubContainer.getParentContainers().get(0).getName());
     assertEquals(
@@ -163,11 +164,11 @@ public class ContainersApiControllerMVCIT extends API_MVC_InventoryTestBase {
     assertNull(result.getResolvedException(), "unexpected: " + result.getResolvedException());
     ApiContainer retrievedSecondContainer = getFromJsonResponseBody(result, ApiContainer.class);
     assertNotNull(retrievedSecondContainer);
-    assertEquals(
-        4, retrievedSecondContainer.getLinks().size()); // self/image/thumbnail/locationsImg links
-    assertEquals(4, retrievedSecondContainer.getLocations().size()); // 4 pre-defined locations
+    assertThat(retrievedSecondContainer.getLinks())
+        .hasSize(4); // self/image/thumbnail/locationsImg links
+    assertThat(retrievedSecondContainer.getLocations()).hasSize(4); // 4 pre-defined locations
     assertNull(retrievedSecondContainer.getLocations().get(0).getContent()); // locations empty
-    assertEquals(1, retrievedSecondContainer.getAttachments().size());
+    assertThat(retrievedSecondContainer.getAttachments()).hasSize(1);
     ApiInventoryFile imageContainerAttachment = retrievedSecondContainer.getAttachments().get(0);
     assertEquals(
         ContentInitializerForDevRunManager.EXAMPLE_TOP_IMAGE_CONTAINER_ATTACHMENT_NAME,
@@ -185,7 +186,7 @@ public class ContainersApiControllerMVCIT extends API_MVC_InventoryTestBase {
                     imageContainer.getId()))
             .andExpect(status().isOk())
             .andReturn();
-    assertEquals(87958, result.getResponse().getContentAsByteArray().length);
+    assertThat(result.getResponse().getContentAsByteArray()).hasSize(87958);
 
     result =
         mockMvc
@@ -198,7 +199,7 @@ public class ContainersApiControllerMVCIT extends API_MVC_InventoryTestBase {
                     imageContainer.getId()))
             .andExpect(status().isOk())
             .andReturn();
-    assertEquals(3177, result.getResponse().getContentAsByteArray().length);
+    assertThat(result.getResponse().getContentAsByteArray()).hasSize(3177);
 
     result =
         mockMvc
@@ -211,7 +212,7 @@ public class ContainersApiControllerMVCIT extends API_MVC_InventoryTestBase {
                     imageContainer.getId()))
             .andExpect(status().isOk())
             .andReturn();
-    assertEquals(124580, result.getResponse().getContentAsByteArray().length);
+    assertThat(result.getResponse().getContentAsByteArray()).hasSize(124580);
 
     // retrieve attachment
     result =
@@ -225,7 +226,7 @@ public class ContainersApiControllerMVCIT extends API_MVC_InventoryTestBase {
                     imageContainerAttachment.getId()))
             .andExpect(status().isOk())
             .andReturn();
-    assertEquals(47, result.getResponse().getContentAsByteArray().length);
+    assertThat(result.getResponse().getContentAsByteArray()).hasSize(47);
   }
 
   @Test
@@ -274,7 +275,7 @@ public class ContainersApiControllerMVCIT extends API_MVC_InventoryTestBase {
     assertNotNull(defaultContainer.getId());
     assertEquals("Simplest Container", defaultContainer.getName());
     assertNull(defaultContainer.getGridLayout());
-    assertEquals(0, defaultContainer.getLocations().size());
+    assertThat(defaultContainer.getLocations()).isEmpty();
     assertEquals(ContainerType.LIST.name(), defaultContainer.getCType());
     verifyAuditAction(AuditAction.CREATE, 1);
 
@@ -314,8 +315,8 @@ public class ContainersApiControllerMVCIT extends API_MVC_InventoryTestBase {
     ApiContainer customContainer = getFromJsonResponseBody(result, ApiContainer.class);
     assertNotNull(customContainer.getId());
     assertEquals("My Container", customContainer.getName());
-    assertEquals(1, customContainer.getExtraFields().size());
-    assertEquals(2, customContainer.getLocations().size());
+    assertThat(customContainer.getExtraFields()).hasSize(1);
+    assertThat(customContainer.getLocations()).hasSize(2);
     assertEquals(ContainerType.IMAGE.name(), customContainer.getCType());
     ApiContainerLocation firstLocation = customContainer.getLocations().get(0);
     ApiContainerLocation secondLocation = customContainer.getLocations().get(1);
@@ -342,7 +343,7 @@ public class ContainersApiControllerMVCIT extends API_MVC_InventoryTestBase {
     ApiContainer editedContainer = getFromJsonResponseBody(editResult, ApiContainer.class);
     assertNotNull(editedContainer);
     assertEquals("newContainerName", editedContainer.getName());
-    assertEquals(2, editedContainer.getLocations().size());
+    assertThat(editedContainer.getLocations()).hasSize(2);
     assertEquals(3, editedContainer.getLocations().get(0).getCoordY()); // edited one
     assertEquals(4, editedContainer.getLocations().get(1).getCoordY()); // newly created one
     verifyAuditAction(AuditAction.WRITE, 1);
@@ -380,7 +381,7 @@ public class ContainersApiControllerMVCIT extends API_MVC_InventoryTestBase {
     assertNotNull(gridContainer.getGridLayout());
     assertEquals(3, gridContainer.getGridLayout().getColumnsNumber());
     assertEquals(2, gridContainer.getGridLayout().getRowsNumber());
-    assertEquals(0, gridContainer.getLocations().size()); // no locations created by default
+    assertThat(gridContainer.getLocations()).isEmpty(); // no locations created by default
   }
 
   @Test
@@ -556,7 +557,7 @@ public class ContainersApiControllerMVCIT extends API_MVC_InventoryTestBase {
     ApiContainer apiContainer = getFromJsonResponseBody(retrieveResult, ApiContainer.class);
     assertNotNull(apiContainer);
     assertEquals(1, apiContainer.getContentSummary().getTotalCount());
-    assertEquals(1, apiContainer.getLocations().size());
+    assertThat(apiContainer.getLocations()).hasSize(1);
     ApiContainerLocationWithContent locationWithSubSample = apiContainer.getLocations().get(0);
     assertNotNull(locationWithSubSample.getContent());
 
@@ -634,7 +635,7 @@ public class ContainersApiControllerMVCIT extends API_MVC_InventoryTestBase {
             .andReturn();
     movingContainer = getFromJsonResponseBody(editResult, ApiContainer.class);
     assertNotNull(movingContainer);
-    assertEquals(1, movingContainer.getParentContainers().size());
+    assertThat(movingContainer.getParentContainers()).hasSize(1);
     assertEquals(containerA.getId(), movingContainer.getParentContainer().getId());
     verifyAuditAction(AuditAction.MOVE, 3);
 
@@ -883,7 +884,7 @@ public class ContainersApiControllerMVCIT extends API_MVC_InventoryTestBase {
         getFromJsonResponseBody(result, ApiContainerSearchResult.class);
     assertNotNull(topContainers);
     assertEquals(2, topContainers.getTotalHits().intValue());
-    assertEquals(2, topContainers.getContainers().size());
+    assertThat(topContainers.getContainers()).hasSize(2);
     assertEquals("pi's container", topContainers.getContainers().get(0).getName());
     assertEquals("user's container", topContainers.getContainers().get(1).getName());
 

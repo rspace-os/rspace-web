@@ -1,6 +1,6 @@
 package com.researchspace.core.util;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -18,14 +18,14 @@ public class SecureRandomStringUtilsTest {
   public void getURLSafeSecureRandomString() {
     int EXPECTED_LENGTH = 1;
     String random = SecureStringUtils.getURLSafeSecureRandomString(EXPECTED_LENGTH);
-    assertTrue(EXPECTED_LENGTH <= random.length());
+    assertThat(random).hasSizeGreaterThanOrEqualTo(EXPECTED_LENGTH);
   }
 
   @Test
   public void getAlphanumericRandom() {
     int length = 32;
     String randomAlphaNumeric = SecureStringUtils.getSecureRandomAlphanumeric(length);
-    assertEquals(length, randomAlphaNumeric.length());
+    assertThat(randomAlphaNumeric).hasSize(length);
     assertTrue(StringUtils.isAlphanumeric(randomAlphaNumeric));
   }
 }

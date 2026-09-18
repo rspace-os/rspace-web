@@ -1,6 +1,7 @@
 package com.researchspace.api.v1.controller;
 
 import static com.researchspace.core.util.JacksonUtil.toJson;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -31,7 +32,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import org.apache.commons.collections4.CollectionUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataAccessException;
@@ -68,7 +68,7 @@ public class FormsApiControllerMVCIT extends API_MVC_TestBase {
 
     ApiFormSearchResult apiForms = getFromJsonResponseBody(result, ApiFormSearchResult.class);
     assertNotNull(apiForms);
-    assertTrue(apiForms.getForms().isEmpty());
+    assertThat(apiForms.getForms()).isEmpty();
 
     // 5 in total now
     final Number TOTAL_HITS = 5;
@@ -102,8 +102,8 @@ public class FormsApiControllerMVCIT extends API_MVC_TestBase {
     apiForms = getFromJsonResponseBody(result, ApiFormSearchResult.class);
     assertNotNull(apiForms);
     assertEquals(TOTAL_HITS.longValue(), apiForms.getTotalHits().longValue());
-    assertEquals(PAGE_SIZE, apiForms.getForms().size());
-    assertEquals(2, apiForms.getLinks().size());
+    assertThat(apiForms.getForms()).hasSize(PAGE_SIZE.intValue());
+    assertThat(apiForms.getLinks()).hasSize(2);
   }
 
   @Test
@@ -129,8 +129,8 @@ public class FormsApiControllerMVCIT extends API_MVC_TestBase {
             .andExpect(status().isOk())
             .andReturn();
     ApiForm apiFormGet = getFromJsonResponseBody(result2, ApiForm.class);
-    assertEquals(apiForm.getFields().size(), apiFormGet.getFields().size());
-    assertEquals(4, apiForm.getLinks().size());
+    assertThat(apiFormGet.getFields()).hasSameSizeAs(apiForm.getFields());
+    assertThat(apiForm.getLinks()).hasSize(4);
     // other user unauthorised
     otherUser = createInitAndLoginAnyUser();
     String otherUserKey = createNewApiKeyForUser(otherUser);
@@ -175,7 +175,7 @@ public class FormsApiControllerMVCIT extends API_MVC_TestBase {
             .andExpect(status().isOk())
             .andReturn();
     ApiForm apiForm = getFromJsonResponseBody(result2, ApiForm.class);
-    assertEquals(seleniumForm.getFieldForms().size(), apiForm.getFields().size());
+    assertThat(apiForm.getFields()).hasSameSizeAs(seleniumForm.getFieldForms());
   }
 
   @Test
@@ -283,8 +283,7 @@ public class FormsApiControllerMVCIT extends API_MVC_TestBase {
             .andExpect(status().isCreated())
             .andReturn();
     ApiForm formWithUpdatedIcon = getFromJsonResponseBody(result, ApiForm.class);
-    assertTrue(
-        formWithUpdatedIcon.getLinks().stream().anyMatch(link -> link.getRel().equals("icon")));
+    assertThat(formWithUpdatedIcon.getLinks()).anyMatch(link -> link.getRel().equals("icon"));
 
     Long iconId2 = formMgr.get(apiForm.getId(), anyUser).getIconId();
 
@@ -315,7 +314,7 @@ public class FormsApiControllerMVCIT extends API_MVC_TestBase {
 
     ApiForm apiForm = postValidForm(formPost);
     log.info("{}", apiForm);
-    assertEquals(9, apiForm.getFields().size());
+    assertThat(apiForm.getFields()).hasSize(9);
     assertEquals(formPost.getName(), apiForm.getName());
 
     // create a document with the new form
@@ -378,7 +377,7 @@ public class FormsApiControllerMVCIT extends API_MVC_TestBase {
     ApiForm apiForm2 = doFormEditPut(formPost, apiForm.getId());
     assertEquals(formPost.getName(), apiForm2.getName());
     assertEquals(formPost.getTags(), apiForm2.getTags());
-    assertEquals(originalFieldCount + 1, apiForm2.getFields().size());
+    assertThat(apiForm2.getFields()).hasSize(originalFieldCount + 1);
     // assert the new field is added in the correct place
     assertEquals("sff2", apiForm2.getFields().get(2).getName());
 
@@ -393,7 +392,7 @@ public class FormsApiControllerMVCIT extends API_MVC_TestBase {
 
     // now save. We should remove two fields.
     ApiForm apiForm3 = doFormEditPut(formPost, apiForm.getId());
-    assertEquals(originalFieldCount - 1, apiForm3.getFields().size());
+    assertThat(apiForm3.getFields()).hasSize(originalFieldCount - 1);
     assertEquals("sff2", apiForm3.getFields().get(0).getName());
   }
 
@@ -416,7 +415,7 @@ public class FormsApiControllerMVCIT extends API_MVC_TestBase {
     formPost.getFields().add(2, stringFF);
     expectedNames.add(2, stringFF.getName());
     ApiForm apiFormWithAddedField = doFormEditPut(formPost, returnedApiForm.getId());
-    assertEquals(originalFieldCount + 1, apiFormWithAddedField.getFields().size());
+    assertThat(apiFormWithAddedField.getFields()).hasSize(originalFieldCount + 1);
     // assert the new field is added in the correct place
     assertEquals("sff2", apiFormWithAddedField.getFields().get(2).getName());
     assertEquals(FormState.PUBLISHED, apiFormWithAddedField.getFormState());
@@ -443,7 +442,7 @@ public class FormsApiControllerMVCIT extends API_MVC_TestBase {
 
     assertEquals(FormState.PUBLISHED, apiForm3_fieldsRemoved.getFormState());
     assertEquals(2, apiForm3_fieldsRemoved.getVersion().intValue());
-    assertEquals(originalFieldCount - 1, apiForm3_fieldsRemoved.getFields().size());
+    assertThat(apiForm3_fieldsRemoved.getFields()).hasSize(originalFieldCount - 1);
     // this is now the first field in the form.
     assertEquals("sff2", apiForm3_fieldsRemoved.getFields().get(0).getName());
     assertFieldOrder(apiForm3_fieldsRemoved, expectedNames);
@@ -462,7 +461,7 @@ public class FormsApiControllerMVCIT extends API_MVC_TestBase {
     assertEquals("XYZ123", apiForm4_fieldEdited.getFields().get(0).getName());
     assertEquals(
         "ABCDE", ((ApiStringFormField) apiForm4_fieldEdited.getFields().get(0)).getDefaultValue());
-    assertEquals(originalFieldCount - 1, apiForm4_fieldEdited.getFields().size());
+    assertThat(apiForm4_fieldEdited.getFields()).hasSize(originalFieldCount - 1);
     assertFieldOrder(apiForm4_fieldEdited, expectedNames);
 
     // -------------- reordering a field---------------//
@@ -475,7 +474,7 @@ public class FormsApiControllerMVCIT extends API_MVC_TestBase {
     assertEquals(
         "ABCDE",
         ((ApiStringFormField) apiForm5_fieldEdited.getFields().get(newIndex)).getDefaultValue());
-    assertEquals(originalFieldCount - 1, apiForm5_fieldEdited.getFields().size());
+    assertThat(apiForm5_fieldEdited.getFields()).hasSize(originalFieldCount - 1);
     assertFieldOrder(apiForm5_fieldEdited, expectedNames);
   }
 
@@ -484,7 +483,7 @@ public class FormsApiControllerMVCIT extends API_MVC_TestBase {
         apiFormWithAddedField.getFields().stream()
             .map(ApiFormField::getName)
             .collect(Collectors.toList());
-    assertTrue(CollectionUtils.isEqualCollection(actualNames, expectedNames));
+    assertThat(actualNames).containsExactlyInAnyOrderElementsOf(expectedNames);
   }
 
   private ApiForm postANewForm(FormTemplatesCommon.FormPost formPost) throws Exception {

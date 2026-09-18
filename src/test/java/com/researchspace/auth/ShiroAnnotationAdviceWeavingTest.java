@@ -1,5 +1,6 @@
 package com.researchspace.auth;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -158,16 +159,16 @@ public class ShiroAnnotationAdviceWeavingTest {
 
   private static Class<?> exactlyOneAssignableTo(List<Class<?>> declared, Class<?> contract) {
     List<Class<?>> matches = declared.stream().filter(contract::isAssignableFrom).toList();
-    assertEquals(
-        1,
-        matches.size(),
-        () ->
-            "expected security.xml to declare exactly one bean assignable to "
-                + contract.getName()
-                + " but found "
-                + matches
-                + " among declared classes "
-                + declared);
+    assertThat(matches)
+        .withFailMessage(
+            () ->
+                "expected security.xml to declare exactly one bean assignable to "
+                    + contract.getName()
+                    + " but found "
+                    + matches
+                    + " among declared classes "
+                    + declared)
+        .hasSize(1);
     return matches.get(0);
   }
 }

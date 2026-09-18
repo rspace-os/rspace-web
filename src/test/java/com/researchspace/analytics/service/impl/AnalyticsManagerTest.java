@@ -1,5 +1,6 @@
 package com.researchspace.analytics.service.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -128,12 +129,12 @@ public class AnalyticsManagerTest extends SpringTransactionalTest {
     when(licenseService.getServerUniqueId()).thenReturn(Optional.of(SERVER_ID));
     String analyticsUserId = analyticsManager.getAnalyticsUserId(testUser);
 
-    assertTrue(
-        analyticsUserId.startsWith("" + testUser.getId()),
-        "analyticsUserId should start with user id, but was: " + analyticsUserId);
-    assertTrue(
-        analyticsUserId.endsWith(SERVER_ID),
-        "analyticsUserId should end with license id, but was: " + analyticsUserId);
+    assertThat(analyticsUserId)
+        .as("analyticsUserId should start with user id, but was: " + analyticsUserId)
+        .startsWith("" + testUser.getId());
+    assertThat(analyticsUserId)
+        .as("analyticsUserId should end with license id, but was: " + analyticsUserId)
+        .endsWith(SERVER_ID);
   }
 
   @Test

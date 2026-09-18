@@ -2,6 +2,7 @@ package com.researchspace.linkedelements;
 
 import static com.researchspace.testutils.FieldTestUtils.createTextField;
 import static org.apache.commons.io.FileUtils.readFileToString;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -112,13 +113,13 @@ public class RichTextUpdaterTest extends SpringTransactionalTest {
     String newData = updater.replaceImageSrcURL("5079041-9214", fieldData, REPLACEMENT_PNG);
     // now check that HTML was altered
     Document altered = Jsoup.parse(newData);
-    assertFalse(altered.getElementsByAttributeValue("src", REPLACEMENT_PNG).isEmpty());
+    assertThat(altered.getElementsByAttributeValue("src", REPLACEMENT_PNG)).isNotEmpty();
 
     // now check that if id doesn't match, no replacement:
     String newData2 = updater.replaceImageSrcURL("wrongId", fieldData, REPLACEMENT_PNG);
     // now check that HTML was altered
     Document altered2 = Jsoup.parse(newData2);
-    assertTrue(altered2.getElementsByAttributeValue("src", REPLACEMENT_PNG).isEmpty());
+    assertThat(altered2.getElementsByAttributeValue("src", REPLACEMENT_PNG)).isEmpty();
   }
 
   @Test
@@ -148,7 +149,7 @@ public class RichTextUpdaterTest extends SpringTransactionalTest {
     GlobalIdentifier recordOid = new GlobalIdentifier(GlobalIdPrefix.SD, 4670L, null);
     String newData = updater.replaceLinkedRecordURL(recordOid, fieldData, REPLACEMENT_LINK);
     Document altered = Jsoup.parse(newData);
-    assertEquals(1, altered.getElementsByAttributeValue("href", REPLACEMENT_LINK).size());
+    assertThat(altered.getElementsByAttributeValue("href", REPLACEMENT_LINK)).hasSize(1);
     assertEquals(
         "Sensitivity of Cancer cell line XYZ to Drug A",
         altered.getElementsByAttributeValue("href", REPLACEMENT_LINK).get(0).text());
@@ -157,7 +158,7 @@ public class RichTextUpdaterTest extends SpringTransactionalTest {
     GlobalIdentifier versionedOid = new GlobalIdentifier(GlobalIdPrefix.SD, 4670L, 2L);
     String newData2 = updater.replaceLinkedRecordURL(versionedOid, fieldData, REPLACEMENT_LINK);
     Document altered2 = Jsoup.parse(newData2);
-    assertEquals(1, altered2.getElementsByAttributeValue("href", REPLACEMENT_LINK).size());
+    assertThat(altered2.getElementsByAttributeValue("href", REPLACEMENT_LINK)).hasSize(1);
     assertEquals(
         "SD4670v2: Sensitivity of Cancer cell line XYZ to Drug A",
         altered2.getElementsByAttributeValue("href", REPLACEMENT_LINK).get(0).text());
@@ -166,7 +167,7 @@ public class RichTextUpdaterTest extends SpringTransactionalTest {
     GlobalIdentifier otherOid = new GlobalIdentifier(GlobalIdPrefix.SD, 15L, null);
     String newData3 = updater.replaceLinkedRecordURL(otherOid, fieldData, REPLACEMENT_LINK);
     Document altered3 = Jsoup.parse(newData3);
-    assertEquals(0, altered3.getElementsByAttributeValue("href", REPLACEMENT_LINK).size());
+    assertThat(altered3.getElementsByAttributeValue("href", REPLACEMENT_LINK)).isEmpty();
   }
 
   @Test
@@ -184,11 +185,11 @@ public class RichTextUpdaterTest extends SpringTransactionalTest {
     oldKey2NewKey.put(32770L, 4L);
     String updated = updater.updateSketchIdsInCopy(oldKey2NewKey, test);
 
-    assertFalse(updated.contains("32769"));
-    assertFalse(updated.contains("32770"));
+    assertThat(updated).doesNotContain("32769");
+    assertThat(updated).doesNotContain("32770");
 
-    assertTrue(updated.contains("/image/getImageSketch/3"));
-    assertTrue(updated.contains("/image/getImageSketch/4"));
+    assertThat(updated).contains("/image/getImageSketch/3");
+    assertThat(updated).contains("/image/getImageSketch/4");
   }
 
   @Test
@@ -284,11 +285,11 @@ public class RichTextUpdaterTest extends SpringTransactionalTest {
     String updated =
         updater.updateImageIdsAndAnnoIdsInCopy(oldKey2NewKey, null, copy.getFieldData());
     // ORIG_ID Could be on the String because now src = /images/getImage/3-1/{ramdom long}
-    assertFalse(updated.contains("id=" + ORIG_ID));
+    assertThat(updated).doesNotContain("id=" + ORIG_ID);
     assertTrue(testAttributeValue("id", updated, "3-1"));
     assertTrue(testAttributeValue("id", updated, "3-10"));
-    assertTrue(updated.contains("src=\"/image/getImage/3-1/"));
-    assertTrue(updated.contains("src=\"/image/getImage/3-10/"));
+    assertThat(updated).contains("src=\"/image/getImage/3-1/");
+    assertThat(updated).contains("src=\"/image/getImage/3-10/");
   }
 
   private TextField createATextField() {
@@ -306,14 +307,16 @@ public class RichTextUpdaterTest extends SpringTransactionalTest {
     String updatedV28 =
         updater.updateImageIdsAndAnnoIdsInCopy(
             oldFieldId2NewFieldId, oldAnnoId2NewAnnoId, ANNOTATED_IMG_V28);
-    assertTrue(
-        updatedV28.startsWith(ANNOTATED_IMG_V28_EXPECTED_START), "updatedV28: " + updatedV28);
+    assertThat(updatedV28)
+        .as("updatedV28: " + updatedV28)
+        .startsWith(ANNOTATED_IMG_V28_EXPECTED_START);
 
     String updatedV29 =
         updater.updateImageIdsAndAnnoIdsInCopy(
             oldFieldId2NewFieldId, oldAnnoId2NewAnnoId, ANNOTATED_IMG_V29);
-    assertTrue(
-        updatedV29.startsWith(ANNOTATED_IMG_V29_EXPECTED_START), "updatedV29: " + updatedV29);
+    assertThat(updatedV29)
+        .as("updatedV29: " + updatedV29)
+        .startsWith(ANNOTATED_IMG_V29_EXPECTED_START);
   }
 
   @Test
@@ -326,7 +329,7 @@ public class RichTextUpdaterTest extends SpringTransactionalTest {
     // there are no revisions to remove yet, so this returns false
     assertFalse(updater.removeRevisionsFromChemWithId(tf, 1 + ""));
     updater.updateLinksWithRevisions(tf, 23);
-    assertTrue(tf.getFieldData().contains("revision=23"));
+    assertThat(tf.getFieldData()).contains("revision=23");
     Elements els = updater.getElementsOfType(tf.getFieldData(), "img");
     String newSrcURI = els.listIterator().next().attr("src");
     new URI(newSrcURI); // should be valid URI
@@ -336,14 +339,14 @@ public class RichTextUpdaterTest extends SpringTransactionalTest {
     String newSrcURI2 = els2.listIterator().next().attr("src");
     new URI(newSrcURI2); // should be valid URI
     final String EXPECTED_NEW_REVISION = "revision=24";
-    assertTrue(tf.getFieldData().contains(EXPECTED_NEW_REVISION));
+    assertThat(tf.getFieldData()).contains(EXPECTED_NEW_REVISION);
 
     // now remove by wrong id; revision is still there
     assertFalse(updater.removeRevisionsFromChemWithId(tf, 12 + ""));
-    assertTrue(tf.getFieldData().contains(EXPECTED_NEW_REVISION));
+    assertThat(tf.getFieldData()).contains(EXPECTED_NEW_REVISION);
     // remove using correct ID, is  removed.
     assertTrue(updater.removeRevisionsFromChemWithId(tf, 1 + ""));
-    assertFalse(tf.getFieldData().contains(EXPECTED_NEW_REVISION));
+    assertThat(tf.getFieldData()).doesNotContain(EXPECTED_NEW_REVISION);
 
     // test updating doc attachment with revision number
     EcatDocumentFile file = TestFactory.createEcatDocument(1L, TestFactory.createAnyUser("any"));
@@ -351,7 +354,7 @@ public class RichTextUpdaterTest extends SpringTransactionalTest {
     updater.updateLinksWithRevisions(tf, 25);
     Elements els3 = updater.getElementsOfType(tf.getFieldData(), "a");
     String newSrcURI3 = els3.listIterator().next().attr("href");
-    assertTrue(newSrcURI3.endsWith("revision=25"));
+    assertThat(newSrcURI3).endsWith("revision=25");
   }
 
   @Test
@@ -376,7 +379,7 @@ public class RichTextUpdaterTest extends SpringTransactionalTest {
     Document jSoupDoc = Jsoup.parse(initialData);
     initialData = jSoupDoc.body().html();
 
-    assertFalse(initialData.contains("revision"));
+    assertThat(initialData).doesNotContain("revision");
 
     Field field = createTextField();
     field.setData(initialData);
@@ -386,25 +389,24 @@ public class RichTextUpdaterTest extends SpringTransactionalTest {
     // check updated content
     String updatedData = field.getData();
     // image
-    assertTrue(
-        updatedData.contains(
-            "src=\"/thumbnail/data?sourceType=IMAGE&amp;sourceId=9214&amp;sourceParentId=5079041&amp;width=171&amp;height=147&amp;time=1406822005870&amp;revision=23\""));
+    assertThat(updatedData)
+        .contains(
+            "src=\"/thumbnail/data?sourceType=IMAGE&amp;sourceId=9214&amp;sourceParentId=5079041&amp;width=171&amp;height=147&amp;time=1406822005870&amp;revision=23\"");
     // audio/video - no player
-    assertTrue(updatedData.contains("href=\"/Streamfile/79000?revision=23\""));
-    assertTrue(updatedData.contains("href=\"/Streamfile/81000?revision=23\""));
+    assertThat(updatedData).contains("href=\"/Streamfile/79000?revision=23\"");
+    assertThat(updatedData).contains("href=\"/Streamfile/81000?revision=23\"");
     // audio/video - with flash player
-    assertTrue(updatedData.contains("href=\"/Streamfile/65600?revision=23\""));
-    assertTrue(
-        updatedData.contains(
-            "file=%2FStreamfile%2F65600%2FJames_Bond_Theme_from_Quantum_of_Solace.mp4%3Frevision=23&amp;controlbar.position=over\""));
-    assertTrue(updatedData.contains("href=\"/Streamfile/65620?revision=23\""));
-    assertTrue(
-        updatedData.contains(
-            "file=%2FStreamfile%2F65620%2Fslowik.mp3%3Frevision=23&amp;controlbar.position=over"));
+    assertThat(updatedData).contains("href=\"/Streamfile/65600?revision=23\"");
+    assertThat(updatedData)
+        .contains(
+            "file=%2FStreamfile%2F65600%2FJames_Bond_Theme_from_Quantum_of_Solace.mp4%3Frevision=23&amp;controlbar.position=over\"");
+    assertThat(updatedData).contains("href=\"/Streamfile/65620?revision=23\"");
+    assertThat(updatedData)
+        .contains(
+            "file=%2FStreamfile%2F65620%2Fslowik.mp3%3Frevision=23&amp;controlbar.position=over");
     // misc attachment
-    assertTrue(
-        updatedData.contains(
-            "href=\"/Streamfile/45/46533307407_commons-collections-3.2.1.jar?revision=23\""));
+    assertThat(updatedData)
+        .contains("href=\"/Streamfile/45/46533307407_commons-collections-3.2.1.jar?revision=23\"");
     // also, data-revision attribute should be present for every tag
     assertEquals(6, StringUtils.countMatches(updatedData, "data-rsrevision"));
 
@@ -416,7 +418,9 @@ public class RichTextUpdaterTest extends SpringTransactionalTest {
     fieldUpdated = updater.updateLinksWithRevisions(field, null);
     assertTrue(fieldUpdated);
     String clearedData = field.getData();
-    assertFalse(clearedData.contains("revision"), "data still contains 'revision': " + clearedData);
+    assertThat(clearedData)
+        .as("data still contains 'revision': " + clearedData)
+        .doesNotContain("revision");
     assertEquals(initialData, clearedData);
 
     // let's run the same update again - the field shouldn't be marked as updated
@@ -435,8 +439,8 @@ public class RichTextUpdaterTest extends SpringTransactionalTest {
 
     String newImgStartsWith = "<img id=\"124\" class=\"chem\" src=\"/chemical/getImageChem/124/";
     String newImgEndsWith = " alt=\"image\">";
-    assertTrue(updatedText.startsWith(newImgStartsWith), updatedText);
-    assertTrue(updatedText.endsWith(newImgEndsWith), updatedText);
+    assertThat(updatedText).as(updatedText).startsWith(newImgStartsWith);
+    assertThat(updatedText).as(updatedText).endsWith(newImgEndsWith);
   }
 
   @Test
@@ -464,9 +468,9 @@ public class RichTextUpdaterTest extends SpringTransactionalTest {
     tf.setFieldData(mathExample);
 
     updater.updateLinksWithRevisions(tf, 23);
-    assertTrue(
-        tf.getFieldData().contains("data=\"/svg/2?revision=23\""),
-        "math object source should contain revision number");
+    assertThat(tf.getFieldData())
+        .as("math object source should contain revision number")
+        .contains("data=\"/svg/2?revision=23\"");
   }
 
   @Test
@@ -476,7 +480,7 @@ public class RichTextUpdaterTest extends SpringTransactionalTest {
         "<p>some content</p><div><img class='videoDropped' id='12-34' src='xxx'/><img"
             + " class='videoDropped' id='12-35' src='xxx'/></div>";
     String replaced = updater.replaceAVTableWithLinkToResource(html, "12-34", "x.mp4", "name");
-    assertTrue(replaced.contains("x.mp4"), replaced);
+    assertThat(replaced).as(replaced).contains("x.mp4");
   }
 
   @Test
@@ -487,8 +491,8 @@ public class RichTextUpdaterTest extends SpringTransactionalTest {
     String appended = updater.insertHrefToChemistryFile(imgToAppendTo, "123", "chem.mol", "name");
     String newImgStartsWith = "<img id=\"123\"";
     String newImgEndsWith = "<p><a href=\"chem.mol\">name</a></p>";
-    assertTrue(appended.startsWith(newImgStartsWith), appended);
-    assertTrue(appended.endsWith(newImgEndsWith), appended);
+    assertThat(appended).as(appended).startsWith(newImgStartsWith);
+    assertThat(appended).as(appended).endsWith(newImgEndsWith);
   }
 
   @Test
@@ -496,15 +500,15 @@ public class RichTextUpdaterTest extends SpringTransactionalTest {
 
     String original = updater.generateAnyURLStringForExternalDocLink();
     assertVelocityVariablesReplaced(original);
-    assertFalse(original.contains(MediaUtils.APP_ICON_FOLDER), original);
+    assertThat(original).as(original).doesNotContain(MediaUtils.APP_ICON_FOLDER);
     String ICON_LOCATION = "/images/icons";
 
     Field field = createTextField();
     field.setFieldData(original);
     field = updater.updateAttachmentIcons(field);
-    assertTrue(field.getFieldData().contains(MediaUtils.APP_ICON_FOLDER), field.getFieldData());
-    assertTrue(field.getFieldData().contains(ICON_LOCATION), field.getFieldData());
-    assertFalse(field.getFieldData().contains(RichTextUpdater.DUMMY_ICON_PATH));
+    assertThat(field.getFieldData()).as(field.getFieldData()).contains(MediaUtils.APP_ICON_FOLDER);
+    assertThat(field.getFieldData()).as(field.getFieldData()).contains(ICON_LOCATION);
+    assertThat(field.getFieldData()).doesNotContain(RichTextUpdater.DUMMY_ICON_PATH);
   }
 
   @Test
@@ -513,10 +517,10 @@ public class RichTextUpdaterTest extends SpringTransactionalTest {
     Field field = FieldTestUtils.createTextField();
     field.setId(2L);
     String originalAV = updater.generateURLString(video, field.getId());
-    assertTrue(originalAV.contains("2-1"));
+    assertThat(originalAV).contains("2-1");
     field.setId(3L); // new field
     String newAV = updater.updateAVIdsInCopy(originalAV, field.getId());
-    assertTrue(newAV.contains("3-1"));
+    assertThat(newAV).contains("3-1");
   }
 
   @Test
@@ -526,8 +530,8 @@ public class RichTextUpdaterTest extends SpringTransactionalTest {
     toLinkTo.setName("doc SD515");
     toLinkTo.setId(515L);
     String original = updater.generateURLStringForInternalLink(toLinkTo);
-    assertTrue(original.contains("/globalId/SD515"), original);
-    assertTrue(original.contains("SD515: doc SD515"), original);
+    assertThat(original).as(original).contains("/globalId/SD515");
+    assertThat(original).as(original).contains("SD515: doc SD515");
 
     Field field = FieldTestUtils.createTextField();
     field.setFieldData(original);
@@ -537,11 +541,11 @@ public class RichTextUpdaterTest extends SpringTransactionalTest {
     String updatedFieldData =
         updater.updateLinkedDocument(field.getFieldData(), oldToNew, newLinkIds);
     // link href should be updated
-    assertTrue(updatedFieldData.contains("/globalId/SD516"), updatedFieldData);
+    assertThat(updatedFieldData).as(updatedFieldData).contains("/globalId/SD516");
     // global id at the start of link content should be updated, but the target document name remain
     // unchanged
-    assertTrue(updatedFieldData.contains("SD516: doc SD515"), updatedFieldData);
-    assertEquals(1, newLinkIds.size());
+    assertThat(updatedFieldData).as(updatedFieldData).contains("SD516: doc SD515");
+    assertThat(newLinkIds).hasSize(1);
     assertEquals(516L, newLinkIds.get(0).longValue());
   }
 
@@ -553,8 +557,8 @@ public class RichTextUpdaterTest extends SpringTransactionalTest {
         "/thumbnail/data?sourceType=IMAGE&sourceId=16342&sourceParentId=12877825&width=644&height=328&time=1406822005870";
     String content = "<img id='999-123' class='imageDropped' src='" + thumbURL + "'/>";
     String updateed = updater.updateThumbnailParentIds(content, field.getId());
-    assertTrue(updateed.contains("sourceParentId=12345"));
-    assertTrue(updateed.contains("12345-123"));
+    assertThat(updateed).contains("sourceParentId=12345");
+    assertThat(updateed).contains("12345-123");
   }
 
   @Test
@@ -569,7 +573,7 @@ public class RichTextUpdaterTest extends SpringTransactionalTest {
     Field updated =
         updater.changeDataForImportedField(
             field, NEWID, mp, FieldParserConstants.ATTACHMENT_CLASSNAME, 0);
-    assertFalse(updated.getFieldData().contains(OLDID + ""));
+    assertThat(updated.getFieldData()).doesNotContain(OLDID + "");
   }
 
   @Test
@@ -613,7 +617,7 @@ public class RichTextUpdaterTest extends SpringTransactionalTest {
     long OLD_AUDIO_ID = 65620L; // from file
     long NEW_AUDIOID = 400000L;
     EcatAudio audio = TestFactory.createEcatAudio(NEW_AUDIOID, TestFactory.createAnyUser("any"));
-    assertTrue(StringUtils.countMatches(oldmedia, OLD_AUDIO_ID + "") > 0);
+    assertThat(StringUtils.countMatches(oldmedia, OLD_AUDIO_ID + "")).isGreaterThan(0);
     Field updated2 = updater.changeMediaData(field, audio, 0, FieldParserConstants.AUDIO_CLASSNAME);
     // quite low chance that random integer replacing id will contain '65620'
     assertEquals(0, StringUtils.countMatches(updated2.getFieldData(), OLD_AUDIO_ID + ""));
@@ -637,14 +641,14 @@ public class RichTextUpdaterTest extends SpringTransactionalTest {
             "../any.txt");
     tf.setFieldData(updated);
     Document d = Jsoup.parse(tf.getFieldData());
-    assertEquals(1, d.getElementsByAttribute(NfsElement.FULL_PATH_DATA_ATTR_NAME).size());
-    assertEquals(1, d.getElementsByTag("a").size());
+    assertThat(d.getElementsByAttribute(NfsElement.FULL_PATH_DATA_ATTR_NAME)).hasSize(1);
+    assertThat(d.getElementsByTag("a")).hasSize(1);
     assertEquals("../any.txt", d.getElementsByTag("a").get(0).attr("href"));
 
     tf = updater.updateNfsLinksOnImport(tf);
     Document d2 = Jsoup.parse(tf.getFieldData());
-    assertEquals(0, d2.getElementsByAttribute(NfsElement.FULL_PATH_DATA_ATTR_NAME).size());
-    assertEquals(1, d2.getElementsByTag("a").size());
+    assertThat(d2.getElementsByAttribute(NfsElement.FULL_PATH_DATA_ATTR_NAME)).isEmpty();
+    assertThat(d2.getElementsByTag("a")).hasSize(1);
     assertEquals("#", d2.getElementsByTag("a").get(0).attr("href"));
   }
 }

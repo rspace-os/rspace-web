@@ -1,8 +1,8 @@
 package com.researchspace.service.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.service.EmailContent;
 import com.researchspace.service.JsonMessageSource;
@@ -52,9 +52,9 @@ class EmailContentGeneratorTest {
 
     assertFalse(model.containsKey("msg"));
     assertEquals("RSpace admin is using your account", content.subject());
-    assertTrue(content.htmlContent().startsWith("<html lang=\"de-DE\">\n<body>\n"));
-    assertTrue(content.htmlContent().endsWith("\n</body>\n</html>"));
-    assertTrue(content.plainTextContent().contains("RSpace admin"));
+    assertThat(content.htmlContent()).startsWith("<html lang=\"de-DE\">\n<body>\n");
+    assertThat(content.htmlContent()).endsWith("\n</body>\n</html>");
+    assertThat(content.plainTextContent()).contains("RSpace admin");
   }
 
   @Test
@@ -89,8 +89,8 @@ class EmailContentGeneratorTest {
             "velocityTemplates/accountOperations/accountEnablementNotification.vm",
             model);
 
-    assertFalse(content.htmlContent().contains("<head>"));
-    assertTrue(content.plainTextContent().contains(systemUser.getEmail()));
+    assertThat(content.htmlContent()).doesNotContain("<head>");
+    assertThat(content.plainTextContent()).contains(systemUser.getEmail());
   }
 
   private void setDeploymentLocale(String languageTag) {

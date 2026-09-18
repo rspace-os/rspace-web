@@ -1,5 +1,6 @@
 package com.researchspace.netfiles;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -93,9 +94,9 @@ public class NfsFactoryTest {
       factory.getNfsClient(testUserKeyPair, testFileSystem);
       fail("should throw exception about invalid privatekey");
     } catch (IllegalArgumentException e) {
-      assertTrue(
-          e.getCause().getMessage().contains("invalid privatekey"),
-          "exception message cause should mention invalid privatekey");
+      assertThat(e.getCause().getMessage())
+          .as("exception message cause should mention invalid privatekey")
+          .contains("invalid privatekey");
     }
 
     testFileSystem.setAuthType(null);
@@ -113,7 +114,7 @@ public class NfsFactoryTest {
         assertThrows(
             IllegalStateException.class,
             () -> factory.getNfsClient(testUsername, testPassword, testFileSystem));
-    assertTrue(exception1.getMessage().contains("url"));
+    assertThat(exception1.getMessage()).contains("url");
 
     testFileSystem.setUrl(testServerUrl);
     testFileSystem.setClientType(null);
@@ -122,7 +123,7 @@ public class NfsFactoryTest {
         assertThrows(
             IllegalStateException.class,
             () -> factory.getNfsClient(testUsername, testPassword, testFileSystem));
-    assertTrue(exception2.getMessage().contains("client"));
+    assertThat(exception2.getMessage()).contains("client");
 
     testFileSystem.setUrl(testServerUrl);
     testFileSystem.setClientType(NfsClientType.SFTP);
@@ -131,7 +132,7 @@ public class NfsFactoryTest {
         assertThrows(
             IllegalStateException.class,
             () -> factory.getNfsClient(testUsername, testPassword, testFileSystem));
-    assertTrue(exception3.getMessage().contains("auth"));
+    assertThat(exception3.getMessage()).contains("auth");
   }
 
   @Test

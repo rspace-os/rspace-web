@@ -1,6 +1,6 @@
 package com.researchspace.service.impl;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -87,9 +87,10 @@ class NfsExportManagerImplTest {
 
     manager.scanFileSystemsForFoundNfsLinks(plan, nfsClients, exportConfig);
 
-    assertEquals(
-        messages.getMessage(NfsExportManagerImpl.RESOURCE_NOT_ACCESSIBLE_MSG_KEY),
-        plan.getCheckedNfsLinkMessages().get(FS_ID + "_/test.txt"));
+    assertThat(plan.getCheckedNfsLinkMessages())
+        .containsEntry(
+            FS_ID + "_/test.txt",
+            messages.getMessage(NfsExportManagerImpl.RESOURCE_NOT_ACCESSIBLE_MSG_KEY));
     verify(nfsClient, never()).queryForNfsFile(any(NfsTarget.class));
   }
 

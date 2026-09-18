@@ -1,6 +1,8 @@
 package com.researchspace.model.units;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -45,7 +47,7 @@ public class QuantityUtilsTest {
     Quantity<Mass> q1 = qUtils.getQuantityFor(inGrammes, Mass.class);
     Quantity<Mass> q2 = qUtils.getQuantityFor(inMilliGrammes, Mass.class);
     Quantity<? extends Quantity<?>> sum = q1.add(q2);
-    assertEquals(5.052, sum.getValue().doubleValue(), 0.001);
+    assertThat(sum.getValue().doubleValue()).isCloseTo(5.052, within(0.001));
     assertEquals(Units.GRAM, sum.getUnit());
   }
 
@@ -292,15 +294,15 @@ public class QuantityUtilsTest {
     // correct ordering is 2,3,1 (ascending)
     List<Quantifiable> toSort = TransformerUtils.toList(q1, q2, q3);
     Collections.sort(toSort, qUtils.MassComparator);
-    assertEquals(q2, toSort.get(0));
-    assertEquals(q3, toSort.get(1));
-    assertEquals(q1, toSort.get(2));
+    assertThat(toSort).element(0).isEqualTo(q2);
+    assertThat(toSort).element(1).isEqualTo(q3);
+    assertThat(toSort).element(2).isEqualTo(q1);
 
     // correct ordering is 1,3,2 (descending)
     Collections.sort(toSort, Collections.reverseOrder(qUtils.MassComparator));
-    assertEquals(q1, toSort.get(0));
-    assertEquals(q3, toSort.get(1));
-    assertEquals(q2, toSort.get(2));
+    assertThat(toSort).element(0).isEqualTo(q1);
+    assertThat(toSort).element(1).isEqualTo(q3);
+    assertThat(toSort).element(2).isEqualTo(q2);
   }
 
   @Test
@@ -318,7 +320,7 @@ public class QuantityUtilsTest {
     List<Quantifiable> toSort = TransformerUtils.toList(q1, q2, q3, q4);
     Comparator<Quantifiable> cmp = qUtils.getComparatorFor(q1);
     Collections.sort(toSort, cmp);
-    assertEquals(q4, toSort.get(3));
+    assertThat(toSort).element(3).isEqualTo(q4);
   }
 
   @Test

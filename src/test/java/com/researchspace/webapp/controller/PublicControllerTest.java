@@ -1,5 +1,6 @@
 package com.researchspace.webapp.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
@@ -68,7 +69,7 @@ public class PublicControllerTest {
     // mockery.assertIsSatisfied();
     assertEquals(HttpStatus.OK, resp.getStatusCode());
     assertEquals(MediaType.IMAGE_PNG, resp.getHeaders().getContentType());
-    assertEquals(defaultImageSize, resp.getBody().length);
+    assertThat(resp.getBody()).hasSize(defaultImageSize);
     assertEquals(DEFAULT_LOGO_NAME, publicController.bannerImgName());
   }
 
@@ -107,7 +108,7 @@ public class PublicControllerTest {
     // mockery.assertIsSatisfied();
     assertEquals(HttpStatus.OK, resp.getStatusCode());
     assertEquals(MediaType.IMAGE_JPEG, resp.getHeaders().getContentType());
-    assertEquals(testImageSize, resp.getBody().length);
+    assertThat(resp.getBody()).hasSize(testImageSize);
     assertEquals("IS1.jpg", publicController.bannerImgName());
 
     // now we test getting another default image ( for use with RSpace logos)
@@ -116,14 +117,14 @@ public class PublicControllerTest {
     // mockery.assertIsSatisfied();
     assertEquals(HttpStatus.OK, resp.getStatusCode());
     assertEquals(MediaType.IMAGE_PNG, resp.getHeaders().getContentType());
-    assertEquals(10830, resp.getBody().length);
+    assertThat(resp.getBody()).hasSize(10830);
     assertEquals("biggerLogo.png", publicController.bannerImgName());
   }
 
   private void assertDefaultImage(final int defaultImageSize, ResponseEntity<byte[]> resp) {
     assertEquals(HttpStatus.OK, resp.getStatusCode());
     assertEquals(MediaType.IMAGE_PNG, resp.getHeaders().getContentType());
-    assertEquals(defaultImageSize, resp.getBody().length);
+    assertThat(resp.getBody()).hasSize(defaultImageSize);
   }
 
   @Test

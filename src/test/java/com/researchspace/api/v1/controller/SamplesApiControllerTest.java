@@ -2,6 +2,7 @@ package com.researchspace.api.v1.controller;
 
 import static com.researchspace.api.v1.controller.SamplesApiControllerMVCIT.NUM_FIELDS_IN_COMPLEX_SAMPLE;
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -178,36 +179,36 @@ public class SamplesApiControllerTest extends SpringTransactionalTest {
   public void retrievePaginatedSampleList() throws BindException {
     List<ApiInventoryRecordInfo> createdSampleList =
         createMultipleSamplesForUser("sample XYZ", 21, testUser);
-    assertEquals(21, createdSampleList.size());
+    assertThat(createdSampleList).hasSize(21);
 
     // no pagination parameters
     ApiSampleSearchResult defaultSamples =
         samplesApi.getSamplesForUser(null, null, mockBindingResult, testUser);
     assertEquals(21, defaultSamples.getTotalHits().intValue());
-    assertEquals(20, defaultSamples.getSamples().size());
-    assertEquals(2, defaultSamples.getLinks().size());
+    assertThat(defaultSamples.getSamples()).hasSize(20);
+    assertThat(defaultSamples.getLinks()).hasSize(2);
     ApiSampleInfo firstSampleInfo = defaultSamples.getSamples().get(0);
     assertEquals("sample XYZ-01", firstSampleInfo.getName());
     assertEquals(testUser.getFullName(), firstSampleInfo.getModifiedByFullName());
-    assertEquals(EXPECTED_SAMPLE_LINKS_COUNT, firstSampleInfo.getLinks().size());
+    assertThat(firstSampleInfo.getLinks()).hasSize(EXPECTED_SAMPLE_LINKS_COUNT);
 
     // third page, default ordering
     InventoryApiPaginationCriteria apiPgCrit = new InventoryApiPaginationCriteria(2, 5, null);
     ApiSampleSearchResult paginatedSamples =
         samplesApi.getSamplesForUser(apiPgCrit, null, mockBindingResult, testUser);
     assertEquals(21, paginatedSamples.getTotalHits().intValue());
-    assertEquals(5, paginatedSamples.getSamples().size());
+    assertThat(paginatedSamples.getSamples()).hasSize(5);
     assertEquals("sample XYZ-11", paginatedSamples.getSamples().get(0).getName());
-    assertEquals(5, paginatedSamples.getLinks().size());
+    assertThat(paginatedSamples.getLinks()).hasSize(5);
 
     // third page, reverse ordering
     apiPgCrit = new InventoryApiPaginationCriteria(2, 5, "name desc");
     ApiSampleSearchResult paginatedSamplesDesc =
         samplesApi.getSamplesForUser(apiPgCrit, null, mockBindingResult, testUser);
     assertEquals(21, paginatedSamplesDesc.getTotalHits().intValue());
-    assertEquals(5, paginatedSamplesDesc.getSamples().size());
+    assertThat(paginatedSamplesDesc.getSamples()).hasSize(5);
     assertEquals("sample XYZ-11", paginatedSamplesDesc.getSamples().get(0).getName());
-    assertEquals(5, paginatedSamplesDesc.getLinks().size());
+    assertThat(paginatedSamplesDesc.getLinks()).hasSize(5);
   }
 
   private ApiSampleWithFullSubSamples createSampleWithSubSamples(String tags) {
@@ -248,13 +249,13 @@ public class SamplesApiControllerTest extends SpringTransactionalTest {
     assertEquals(
         SubSampleName.ALIQUOT.getDisplayName(), createdSample.getSubSampleAlias().getAlias());
     // fields/links
-    assertEquals(0, createdSample.getFields().size());
-    assertEquals(EXPECTED_SAMPLE_LINKS_COUNT, createdSample.getLinks().size());
+    assertThat(createdSample.getFields()).isEmpty();
+    assertThat(createdSample.getLinks()).hasSize(EXPECTED_SAMPLE_LINKS_COUNT);
     ApiLinkItem sampleLink = createdSample.getLinks().get(0);
     assertEquals(ApiLinkItem.SELF_REL, sampleLink.getRel());
-    assertTrue(sampleLink.getLink().endsWith("/api/inventory/v1/samples/" + createdSample.getId()));
+    assertThat(sampleLink.getLink()).endsWith("/api/inventory/v1/samples/" + createdSample.getId());
     // subsamples
-    assertEquals(2, createdSample.getSubSamples().size());
+    assertThat(createdSample.getSubSamples()).hasSize(2);
     assertEquals(2, createdSample.getSubSamplesCount());
     ApiSubSampleInfo createdSubSample = createdSample.getSubSamples().get(0);
     assertNotNull(createdSubSample.getId());
@@ -309,34 +310,34 @@ public class SamplesApiControllerTest extends SpringTransactionalTest {
         newSample.getQuantity().toQuantityInfo(), createdSample.getQuantity().toQuantityInfo());
     assertEquals(
         SubSampleName.ALIQUOT.getDisplayName(), createdSample.getSubSampleAlias().getAlias());
-    assertEquals(EXPECTED_SAMPLE_LINKS_COUNT, createdSample.getLinks().size());
+    assertThat(createdSample.getLinks()).hasSize(EXPECTED_SAMPLE_LINKS_COUNT);
 
     // check default subsample
-    assertEquals(1, createdSample.getSubSamples().size());
+    assertThat(createdSample.getSubSamples()).hasSize(1);
     ApiSubSampleInfo createdSubSample = createdSample.getSubSamples().get(0);
     assertNotNull(createdSubSample.getId());
     assertEquals("complex sample XYZ.01", createdSubSample.getName());
     assertEquals(
         newSample.getQuantity().toQuantityInfo(), createdSubSample.getQuantity().toQuantityInfo());
-    assertEquals(3, createdSubSample.getLinks().size()); // self + image links
+    assertThat(createdSubSample.getLinks()).hasSize(3); // self + image links
 
     // check fields and default values assignment
-    assertEquals(NUM_FIELDS_IN_COMPLEX_SAMPLE, createdSample.getFields().size());
+    assertThat(createdSample.getFields()).hasSize(NUM_FIELDS_IN_COMPLEX_SAMPLE);
     assertEquals("text", createdSample.getFields().get(4).getContent());
-    assertEquals(List.of("option1"), createdSample.getFields().get(8).getSelectedOptions());
-    assertEquals(List.of("optionA"), createdSample.getFields().get(9).getSelectedOptions());
-    assertEquals(1, createdSample.getExtraFields().size());
+    assertThat(createdSample.getFields().get(8).getSelectedOptions()).containsExactly("option1");
+    assertThat(createdSample.getFields().get(9).getSelectedOptions()).containsExactly("optionA");
+    assertThat(createdSample.getExtraFields()).hasSize(1);
 
     // retrieve
     ApiSample retrievedSample = samplesApi.getSampleById(createdSample.getId(), testUser);
     assertEquals(testUser.getFullName(), retrievedSample.getModifiedByFullName());
     assertNotNull(retrievedSample.getOwner());
-    assertEquals(EXPECTED_SAMPLE_LINKS_COUNT, retrievedSample.getLinks().size());
-    assertEquals(1, retrievedSample.getSubSamples().size());
+    assertThat(retrievedSample.getLinks()).hasSize(EXPECTED_SAMPLE_LINKS_COUNT);
+    assertThat(retrievedSample.getSubSamples()).hasSize(1);
     ApiSubSampleInfo retrievedSubSample = retrievedSample.getSubSamples().get(0);
     assertEquals(testUser.getFullName(), retrievedSubSample.getModifiedByFullName());
     assertNotNull(retrievedSubSample.getOwner());
-    assertEquals(3, retrievedSubSample.getLinks().size());
+    assertThat(retrievedSubSample.getLinks()).hasSize(3);
   }
 
   @Test
@@ -386,16 +387,16 @@ public class SamplesApiControllerTest extends SpringTransactionalTest {
     assertEquals(newSample.getName(), createdSample.getName());
 
     // check fields and values assignment
-    assertEquals(NUM_FIELDS_IN_COMPLEX_SAMPLE, createdSample.getFields().size());
+    assertThat(createdSample.getFields()).hasSize(NUM_FIELDS_IN_COMPLEX_SAMPLE);
     assertEquals("3.14", createdSample.getFields().get(0).getContent());
     assertNull(
         createdSample
             .getFields()
             .get(1)
             .getContent()); // defaults get overridden by content in request
-    assertEquals(List.of("option1"), createdSample.getFields().get(8).getSelectedOptions());
-    assertEquals(
-        List.of("optionA", "optionB"), createdSample.getFields().get(9).getSelectedOptions());
+    assertThat(createdSample.getFields().get(8).getSelectedOptions()).containsExactly("option1");
+    assertThat(createdSample.getFields().get(9).getSelectedOptions())
+        .containsExactly("optionA", "optionB");
   }
 
   @Test
@@ -421,13 +422,13 @@ public class SamplesApiControllerTest extends SpringTransactionalTest {
         quantity9dot999ML,
         sampleWithSubSamples
             .getQuantity()); // expected - that's actual sum of rounded individual quantities
-    assertEquals(EXPECTED_SAMPLE_LINKS_COUNT, sampleWithSubSamples.getLinks().size());
+    assertThat(sampleWithSubSamples.getLinks()).hasSize(EXPECTED_SAMPLE_LINKS_COUNT);
     ApiLinkItem sampleLink = sampleWithSubSamples.getLinks().get(0);
     assertEquals(ApiLinkItem.SELF_REL, sampleLink.getRel());
-    assertTrue(
-        sampleLink.getLink().endsWith("/api/inventory/v1/samples/" + sampleWithSubSamples.getId()));
+    assertThat(sampleLink.getLink())
+        .endsWith("/api/inventory/v1/samples/" + sampleWithSubSamples.getId());
     // subsample serie
-    assertEquals(3, sampleWithSubSamples.getSubSamples().size());
+    assertThat(sampleWithSubSamples.getSubSamples()).hasSize(3);
     assertEquals("sample XYZ.01", sampleWithSubSamples.getSubSamples().get(0).getName());
     assertEquals("sample XYZ.03", sampleWithSubSamples.getSubSamples().get(2).getName());
     // total sample quantity split when calculating subsamples
@@ -445,7 +446,7 @@ public class SamplesApiControllerTest extends SpringTransactionalTest {
     assertTrue(deletedSample.isDeleted());
     assertNotNull(deletedSample.getDeletedDate());
     // subsamples still active
-    assertEquals(3, deletedSample.getSubSamples().size());
+    assertThat(deletedSample.getSubSamples()).hasSize(3);
   }
 
   @Test
@@ -493,7 +494,7 @@ public class SamplesApiControllerTest extends SpringTransactionalTest {
     ApiSampleWithFullSubSamples sampleWithEmptyBarcode =
         samplesApi.createNewSample(newSample, mockBindingResult, testUser);
     assertNotNull(sampleWithEmptyBarcode); // no error
-    assertEquals(1, sampleWithEmptyBarcode.getBarcodes().size());
+    assertThat(sampleWithEmptyBarcode.getBarcodes()).hasSize(1);
     ApiBarcode createdBarcode = sampleWithEmptyBarcode.getBarcodes().get(0);
     assertNull(createdBarcode.getData());
     assertEquals(testUser.getUsername(), createdBarcode.getCreatedBy());
@@ -542,20 +543,20 @@ public class SamplesApiControllerTest extends SpringTransactionalTest {
         samplesApi.getSamplesForUser(null, null, mockBindingResult, exampleContentUser);
     assertEquals(2, userSamples.getTotalHits().intValue());
     ApiSampleInfo basicSampleInfo = userSamples.getSamples().get(0);
-    assertEquals(EXPECTED_SAMPLE_LINKS_COUNT, basicSampleInfo.getLinks().size());
+    assertThat(basicSampleInfo.getLinks()).hasSize(EXPECTED_SAMPLE_LINKS_COUNT);
     assertEquals(
         ContentInitializerForDevRunManager.EXAMPLE_BASIC_SAMPLE_NAME, basicSampleInfo.getName());
     ApiLinkItem sampleLink = basicSampleInfo.getLinks().get(0);
     assertEquals(ApiLinkItem.SELF_REL, sampleLink.getRel());
-    assertTrue(
-        sampleLink.getLink().endsWith("/api/inventory/v1/samples/" + basicSampleInfo.getId()));
+    assertThat(sampleLink.getLink())
+        .endsWith("/api/inventory/v1/samples/" + basicSampleInfo.getId());
 
     // get full details of complex sample
     ApiSample complexSample =
         samplesApi.getSampleById(userSamples.getSamples().get(1).getId(), exampleContentUser);
     assertEquals(
         ContentInitializerForDevRunManager.EXAMPLE_COMPLEX_SAMPLE_NAME, complexSample.getName());
-    assertEquals(0, complexSample.getAttachments().size());
+    assertThat(complexSample.getAttachments()).isEmpty();
 
     // check attachment field of complex sample has a file attached to it
     ApiInventoryEntityField attachmentField = complexSample.getFields().get(6);
@@ -563,7 +564,7 @@ public class SamplesApiControllerTest extends SpringTransactionalTest {
     assertNotNull(attachmentField.getAttachment());
     assertEquals("loremIpsem20para.txt", attachmentField.getAttachment().getName());
     assertEquals(10295L, attachmentField.getAttachment().getSize());
-    assertEquals(2, attachmentField.getAttachment().getLinks().size());
+    assertThat(attachmentField.getAttachment().getLinks()).hasSize(2);
   }
 
   @Test
@@ -577,7 +578,7 @@ public class SamplesApiControllerTest extends SpringTransactionalTest {
     assertEquals(2, userSamples.getTotalHits().intValue());
     ApiSampleInfo complexSampleInfo = userSamples.getSamples().get(1);
     ApiSample complexSample = samplesApi.getSampleById(complexSampleInfo.getId(), userWithContent);
-    assertEquals(1, complexSample.getExtraFields().size());
+    assertThat(complexSample.getExtraFields()).hasSize(1);
 
     // change sample name, add new extra field
     ApiSampleWithFullSubSamples sampleUpdate = new ApiSampleWithFullSubSamples();
@@ -590,11 +591,11 @@ public class SamplesApiControllerTest extends SpringTransactionalTest {
     ApiSampleWithoutSubSamples updatedSample =
         samplesApi.updateSample(
             complexSampleInfo.getId(), sampleUpdate, mockBindingResult, userWithContent);
-    assertEquals(EXPECTED_SAMPLE_LINKS_COUNT, updatedSample.getLinks().size());
+    assertThat(updatedSample.getLinks()).hasSize(EXPECTED_SAMPLE_LINKS_COUNT);
     complexSample = samplesApi.getSampleById(complexSampleInfo.getId(), userWithContent);
     assertEquals(complexSample, updatedSample);
     assertEquals("updated name", complexSample.getName());
-    assertEquals(2, complexSample.getExtraFields().size());
+    assertThat(complexSample.getExtraFields()).hasSize(2);
 
     ApiExtraField newlyAddedExtraField = complexSample.getExtraFields().get(1);
     assertNotNull(newlyAddedExtraField.getId());
@@ -620,7 +621,7 @@ public class SamplesApiControllerTest extends SpringTransactionalTest {
             complexSampleInfo.getId(), sampleUpdate, mockBindingResult, userWithContent);
     complexSample = samplesApi.getSampleById(complexSampleInfo.getId(), userWithContent);
     assertEquals(complexSample, updatedSample);
-    assertEquals(1, complexSample.getExtraFields().size());
+    assertThat(complexSample.getExtraFields()).hasSize(1);
     assertEquals("updated field name", complexSample.getExtraFields().get(0).getName());
     assertEquals("updated field content", complexSample.getExtraFields().get(0).getContent());
 
@@ -735,7 +736,7 @@ public class SamplesApiControllerTest extends SpringTransactionalTest {
     ApiSampleWithFullSubSamples basicSample = createBasicSampleForUser(testUser);
     ApiInventoryRecordRevisionList revisions =
         samplesApi.getSampleAllRevisions(basicSample.getId(), testUser);
-    assertEquals(0, revisions.getRevisions().size());
+    assertThat(revisions.getRevisions()).isEmpty();
 
     // a missing revision surfaces as 404, not a 200 null body
     Long sampleId = basicSample.getId();

@@ -1,6 +1,6 @@
 package com.researchspace.service;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.researchspace.model.comms.NotificationType;
 import java.util.Locale;
@@ -16,7 +16,9 @@ class NotificationTypeMessagesTest {
     for (NotificationType type : NotificationType.values()) {
       String key = NotificationTypeMessages.keyFor(type);
       String message = messages.getMessageForLocale(key, enUS);
-      assertFalse(message.startsWith("notificationType."), "key leaked as literal text: " + key);
+      assertThat(message)
+          .as("key leaked as literal text: " + key)
+          .doesNotStartWith("notificationType.");
     }
   }
 }

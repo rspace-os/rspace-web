@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -203,7 +204,7 @@ class GalleryFilestoresApiControllerWriteOpsTest {
             BindException.class,
             () -> controller.uploadFromGallery(validFilestorePathId, request, errors, user));
 
-    assertEquals(2, ex.getAllErrors().size());
+    assertThat(ex.getAllErrors()).hasSize(2);
   }
 
   @Test
@@ -271,7 +272,7 @@ class GalleryFilestoresApiControllerWriteOpsTest {
         controller.transferBetweenFilestores(
             srcId, request, new BeanPropertyBindingResult(request, "request"), user);
 
-    assertEquals(1, result.getFileInfoDetails().size());
+    assertThat(result.getFileInfoDetails()).hasSize(1);
     assertTrue(result.getFileInfoDetails().iterator().next().getSucceeded());
   }
 
@@ -353,7 +354,7 @@ class GalleryFilestoresApiControllerWriteOpsTest {
         controller.transferBetweenFilestores(
             srcId, request, new BeanPropertyBindingResult(request, "request"), user);
 
-    assertEquals(1, result.getFileInfoDetails().size());
+    assertThat(result.getFileInfoDetails()).hasSize(1);
     assertFalse(result.getFileInfoDetails().iterator().next().getSucceeded());
     assertNotNull(result.getFileInfoDetails().iterator().next().getReason());
     verify(srcClient, never()).deleteFile(anyString());
@@ -558,7 +559,7 @@ class GalleryFilestoresApiControllerWriteOpsTest {
             BindException.class,
             () -> controller.uploadFromGallery(validFilestorePathId, request, errors, user));
 
-    assertEquals(1, ex.getAllErrors().size());
+    assertThat(ex.getAllErrors()).hasSize(1);
     assertEquals("recordIds", ex.getGlobalError().getObjectName());
     assertEquals("gallery.filestore.folder.uploadRejected", ex.getGlobalError().getCode());
     assertNull(ex.getGlobalError().getDefaultMessage());

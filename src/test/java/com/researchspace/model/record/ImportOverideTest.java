@@ -1,7 +1,7 @@
 package com.researchspace.model.record;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -35,6 +35,6 @@ class ImportOverideTest {
     String TOO_LONG_USERNAME = randomAlphabetic(User.MAX_UNAME_LENGTH + 1);
     ImportOverride imp =
         new ImportOverride(Instant.now(), Instant.now().plusSeconds(500), TOO_LONG_USERNAME);
-    assertEquals(User.MAX_UNAME_LENGTH, imp.getOriginalCreatorUsername().length());
+    assertThat(imp.getOriginalCreatorUsername()).hasSize(User.MAX_UNAME_LENGTH);
   }
 }

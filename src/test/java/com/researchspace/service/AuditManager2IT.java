@@ -1,6 +1,7 @@
 package com.researchspace.service;
 
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -73,48 +74,44 @@ public class AuditManager2IT extends RealTransactionSpringTestBase {
 
     EcatComment comment = addNewCommentToField("comment1", doc.getFields().get(0), piUser);
 
-    assertEquals(1, auditMgr.getRevisionsForEntity(EcatComment.class, comment.getComId()).size());
+    assertThat(auditMgr.getRevisionsForEntity(EcatComment.class, comment.getComId())).hasSize(1);
     // simulate saving of text field following comment addition.
     recordMgr.forceVersionUpdate(doc.getId(), DeltaType.COMMENT, null, piUser);
     addNewCommentItemToExistingComment(
         "comment2", comment.getComId(), doc.getFields().get(0), piUser);
     List<AuditedEntity<EcatComment>> history =
         auditMgr.getRevisionsForEntity(EcatComment.class, comment.getComId());
-    assertEquals(2, history.size());
+    assertThat(history).hasSize(2);
     AuditedEntity<StructuredDocument> mostRecentDoc =
         auditMgr.getNewestRevisionForEntity(StructuredDocument.class, doc.getId());
-    assertEquals(
-        1, // no longer force revision update, for RSPAC-311 bug
-        auditMgr
-            .getCommentItemsForCommentAtDocumentRevision(
-                comment.getComId(), mostRecentDoc.getRevision().intValue())
-            .size());
+    assertThat(
+            auditMgr.getCommentItemsForCommentAtDocumentRevision(
+                comment.getComId(), mostRecentDoc.getRevision().intValue()))
+        .hasSize(1);
   }
 
   @Test
   public void getImageAnnotationRevisions() throws Exception {
     StructuredDocument doc = setUpLoginAsPIUserAndCreateADocument();
     EcatImageAnnotation annotation = addImageAnnotationToField(doc.getFields().get(0), piUser);
-    assertEquals(
-        1, auditMgr.getRevisionsForEntity(EcatImageAnnotation.class, annotation.getId()).size());
+    assertThat(auditMgr.getRevisionsForEntity(EcatImageAnnotation.class, annotation.getId()))
+        .hasSize(1);
     updateExistingImageAnnotation(
         annotation.getId(),
         doc.getFields().get(0),
         piUser,
         getTestZwibblerAnnotationString(getRandomName(5)));
-    assertEquals(
-        2, auditMgr.getRevisionsForEntity(EcatImageAnnotation.class, annotation.getId()).size());
+    assertThat(auditMgr.getRevisionsForEntity(EcatImageAnnotation.class, annotation.getId()))
+        .hasSize(2);
   }
 
   @Test
   public void getChemStructureRevisions() throws Exception {
     StructuredDocument doc = setUpLoginAsPIUserAndCreateADocument();
     RSChemElement chemElement = addChemStructureToField(doc.getFields().get(0), piUser);
-    assertEquals(
-        1, auditMgr.getRevisionsForEntity(RSChemElement.class, chemElement.getId()).size());
+    assertThat(auditMgr.getRevisionsForEntity(RSChemElement.class, chemElement.getId())).hasSize(1);
     updateExistingChemElement(chemElement.getId(), doc.getFields().get(0), piUser);
-    assertEquals(
-        2, auditMgr.getRevisionsForEntity(RSChemElement.class, chemElement.getId()).size());
+    assertThat(auditMgr.getRevisionsForEntity(RSChemElement.class, chemElement.getId())).hasSize(2);
   }
 
   @Test
@@ -130,11 +127,11 @@ public class AuditManager2IT extends RealTransactionSpringTestBase {
 
     // if pgcriteria is null, we get all records:
     List<AuditedRecord> historyListAll = auditMgr.getHistory(doc, null);
-    assertEquals(ORIGINAL_COUNT + NUM_UPDATES, historyListAll.size());
+    assertThat(historyListAll).hasSize(ORIGINAL_COUNT + NUM_UPDATES);
 
     List<AuditedRecord> historyList =
         auditMgr.getHistory(doc, createDefaultAuditedRecordListPagCrit());
-    assertEquals(PaginationCriteria.getDefaultResultsPerPage(), historyList.size());
+    assertThat(historyList).hasSize(PaginationCriteria.getDefaultResultsPerPage());
     Number revision = historyList.get(0).getRevision();
 
     // now we'll check search:
@@ -143,26 +140,26 @@ public class AuditManager2IT extends RealTransactionSpringTestBase {
     PaginationCriteria<AuditedRecord> pgCrit = createDefaultAuditedRecordListPagCrit();
     pgCrit.setSearchCriteria(searchCrit);
     List<AuditedRecord> historyList2 = auditMgr.getHistory(doc, pgCrit);
-    assertEquals(PaginationCriteria.getDefaultResultsPerPage(), historyList2.size());
+    assertThat(historyList2).hasSize(PaginationCriteria.getDefaultResultsPerPage());
     assertNRevisionsForDocument(doc, ORIGINAL_COUNT + NUM_UPDATES, searchCrit);
 
     // now check search using unknown name, should return none:
     searchCrit.setModifiedBy("UNKNOWN");
     List<AuditedRecord> historyList3 = auditMgr.getHistory(doc, pgCrit);
-    assertEquals(0, historyList3.size());
+    assertThat(historyList3).isEmpty();
     assertNRevisionsForDocument(doc, 0, searchCrit);
 
     // now lets search between an impossible date range, should return none
     searchCrit.setDateRange("2500-01-01");
     searchCrit.setModifiedBy(piUser.getUsername());
     List<AuditedRecord> historyList4 = auditMgr.getHistory(doc, pgCrit);
-    assertEquals(0, historyList4.size());
+    assertThat(historyList4).isEmpty();
     assertNRevisionsForDocument(doc, 0, searchCrit);
 
     // now lets search between an impossible date range, should return none
     searchCrit.setDateRange("1918-06-01, 2013-01-01");
     List<AuditedRecord> historyList5 = auditMgr.getHistory(doc, pgCrit);
-    assertEquals(0, historyList5.size());
+    assertThat(historyList5).isEmpty();
     assertNRevisionsForDocument(doc, 0, searchCrit);
 
     // now let's search by modification of a field
@@ -185,7 +182,7 @@ public class AuditManager2IT extends RealTransactionSpringTestBase {
     List<AuditedRecord> historyList6 = auditMgr.getHistory(sd, pgCrit);
     // there is one revision of each method, so there should be two matches,
     // as these queries are 'or'd together.
-    assertEquals(2, historyList6.size());
+    assertThat(historyList6).hasSize(2);
     assertNRevisionsForDocument(sd, 2, searchCrit);
 
     AuditedRecord oldversion = auditMgr.getDocumentRevisionOrVersion(doc, revision, null);
@@ -266,7 +263,7 @@ public class AuditManager2IT extends RealTransactionSpringTestBase {
     assertEquals(targetFolder, doc.getParent());
 
     List<AuditedRecord> allRevisions = auditMgr.getHistory(doc, null);
-    assertEquals(2, allRevisions.size()); // two revisions
+    assertThat(allRevisions).hasSize(2); // two revisions
 
     AuditedRecord firstRevision =
         auditMgr.getDocumentRevisionOrVersion(doc, allRevisions.get(0).getRevision(), null);
@@ -317,8 +314,7 @@ public class AuditManager2IT extends RealTransactionSpringTestBase {
     for (Folder original : children) {
       Folder refreshed = folderDao.get(original.getId());
       assertFalse(refreshed.isDeleted());
-      assertTrue(
-          refreshed.getChildren().stream().noneMatch(RecordToFolder::isRecordInFolderDeleted));
+      assertThat(refreshed.getChildren()).noneMatch(RecordToFolder::isRecordInFolderDeleted);
     }
     commitTransaction();
   }
@@ -374,7 +370,7 @@ public class AuditManager2IT extends RealTransactionSpringTestBase {
     // restore
     assertEquals(4, auditMgr.getNumRevisionsForDocument(DOC_ID, null).intValue());
 
-    assertTrue(restoredFirstRevisionDoc.getDeltaStr().contains(DeltaType.RESTORED.toString()));
+    assertThat(restoredFirstRevisionDoc.getDeltaStr()).contains(DeltaType.RESTORED.toString());
     Field newestRevision = auditMgr.getNewestRevisionForEntity(Field.class, fieldId).getEntity();
     // check that the latest revision in the _AUD table is the same as the current document.
     // RSPAC-222
@@ -411,7 +407,7 @@ public class AuditManager2IT extends RealTransactionSpringTestBase {
         ann.getImageId(),
         piUser);
     // so now, there are 2 revisions of
-    assertEquals(2, auditMgr.getRevisionsForEntity(EcatImageAnnotation.class, ann.getId()).size());
+    assertThat(auditMgr.getRevisionsForEntity(EcatImageAnnotation.class, ann.getId())).hasSize(2);
 
     // now we'll add some text to prompt revision 2 of document
     field.setFieldData(field.getFieldData() + "<p>New data</p>");
@@ -420,12 +416,12 @@ public class AuditManager2IT extends RealTransactionSpringTestBase {
     // now restore 2nd revision of doc - i.e., that which should link to 1st annotation
     List<AuditedEntity<StructuredDocument>> revisions =
         auditMgr.getRevisionsForEntity(StructuredDocument.class, doc.getId());
-    assertEquals(3, revisions.size());
+    assertThat(revisions).hasSize(3);
     final int firstAnnotationRevision = revisions.get(1).getRevision().intValue();
     StructuredDocument restored =
         auditMgr.restoreRevisionAsCurrent(firstAnnotationRevision, doc.getId());
     String restoredField = restored.getFields().get(0).getFieldData();
-    assertTrue(restoredField.contains("revision=" + firstAnnotationRevision));
+    assertThat(restoredField).contains("revision=" + firstAnnotationRevision);
   }
 
   private void assertUserVersionIncremented(StructuredDocument from, StructuredDocument to) {
@@ -495,7 +491,7 @@ public class AuditManager2IT extends RealTransactionSpringTestBase {
     pg.setSortOrder(SortOrder.DESC);
     pg.setOrderBy("modificationDate");
     List<AuditedRecord> resList = auditMgr.getDeletedDocuments(u1, "", pg).getResults();
-    assertEquals(3, resList.size());
+    assertThat(resList).hasSize(3);
     assertTrue(
         resList
                 .get(0)
@@ -603,7 +599,7 @@ public class AuditManager2IT extends RealTransactionSpringTestBase {
     User other2 = userMgr.get(other.getId());
     grp = grpMgr.getGroup(grp.getId()); // refresh grp with shared folder id
     Folder labGrpFlder = folderDao.getSharedFolderForGroup(grp);
-    assertEquals(1, labGrpFlder.getChildren().size());
+    assertThat(labGrpFlder.getChildren()).hasSize(1);
     BaseRecord shared = (BaseRecord) labGrpFlder.getChildren().iterator().next().getRecord();
     commitTransaction();
     assertEquals(1, getTotalSearchHitsInFolder(labGrpFlder));
@@ -665,7 +661,7 @@ public class AuditManager2IT extends RealTransactionSpringTestBase {
     other = userMgr.getUserByUsername(other.getUsername());
     grp = grpMgr.getGroup(grp.getId()); // update group from DB
     Folder shared = folderDao.getSharedFolderForGroup(grp);
-    assertEquals(1, shared.getChildren().size());
+    assertThat(shared.getChildren()).hasSize(1);
     commitTransaction();
 
     // now the owner deletes the top-level child folder:
@@ -693,7 +689,7 @@ public class AuditManager2IT extends RealTransactionSpringTestBase {
     // add image to doc, ensure doc has two revs and image has one
     EcatImage image = addImageToField(doc.getFields().get(0), piUser);
     List<AuditedRecord> docWithImageRevs = auditMgr.getHistory(doc, null);
-    assertEquals(initDocRevs + 1, docWithImageRevs.size());
+    assertThat(docWithImageRevs).hasSize(initDocRevs + 1);
 
     List<AuditedEntity<EcatImage>> imageRevs =
         auditMgr.getRevisionsForEntity(EcatImage.class, image.getId());
@@ -705,9 +701,9 @@ public class AuditManager2IT extends RealTransactionSpringTestBase {
     // check both image and doc have new revision
     List<AuditedEntity<EcatImage>> updatedImageRevs =
         auditMgr.getRevisionsForEntity(EcatImage.class, image.getId());
-    assertEquals(initImgRevs + 1, updatedImageRevs.size());
+    assertThat(updatedImageRevs).hasSize(initImgRevs + 1);
     List<AuditedRecord> docWithUpdatedImageRevs = auditMgr.getHistory(doc, null);
-    assertEquals(initDocRevs + 2, docWithUpdatedImageRevs.size());
+    assertThat(docWithUpdatedImageRevs).hasSize(initDocRevs + 2);
 
     // check details of latest image and doc revision
     BaseRecord latestImg = updatedImageRevs.get(updatedImageRevs.size() - 1).getEntity();
@@ -731,9 +727,9 @@ public class AuditManager2IT extends RealTransactionSpringTestBase {
     // confirm both image and doc are updated
     List<AuditedEntity<EcatImage>> twiceUpdatedImageRevs =
         auditMgr.getRevisionsForEntity(EcatImage.class, image.getId());
-    assertEquals(initImgRevs + 2, twiceUpdatedImageRevs.size());
+    assertThat(twiceUpdatedImageRevs).hasSize(initImgRevs + 2);
     List<AuditedRecord> docWithTwiceUpdatedImageRevs = auditMgr.getHistory(doc, null);
-    assertEquals(initDocRevs + 3, docWithTwiceUpdatedImageRevs.size());
+    assertThat(docWithTwiceUpdatedImageRevs).hasSize(initDocRevs + 3);
 
     // check details of latest image and doc revision
     latestImg = twiceUpdatedImageRevs.get(twiceUpdatedImageRevs.size() - 1).getEntity();
@@ -777,7 +773,7 @@ public class AuditManager2IT extends RealTransactionSpringTestBase {
     assertEquals(initialNumberOfRevisions + 1, finalNumberOfRevisions);
     // Check if field data contains correct name of first audio file
     String restoredFieldData = restored.getFields().get(0).getFieldData();
-    assertTrue(restoredFieldData.contains("mpthreetest"));
+    assertThat(restoredFieldData).contains("mpthreetest");
   }
 
   @Test
@@ -812,7 +808,7 @@ public class AuditManager2IT extends RealTransactionSpringTestBase {
     assertEquals(initialNumberOfRevisions + 1, finalNumberOfRevisions);
     // Check if field data contains correct name of first audio file
     String restoredFieldData = restored.getFields().get(0).getFieldData();
-    assertTrue(restoredFieldData.contains("revision=" + revisionToRestore.intValue()));
+    assertThat(restoredFieldData).contains("revision=" + revisionToRestore.intValue());
   }
 
   @Test
@@ -849,7 +845,7 @@ public class AuditManager2IT extends RealTransactionSpringTestBase {
     assertEquals(initialNumberOfRevisions + 1, finalNumberOfRevisions);
     // Check if field data contains correct name of first audio file
     String restoredFieldData = restored.getFields().get(0).getFieldData();
-    assertTrue(restoredFieldData.contains("revision=" + revisionToRestore.intValue()));
+    assertThat(restoredFieldData).contains("revision=" + revisionToRestore.intValue());
   }
 
   @Test
@@ -882,7 +878,7 @@ public class AuditManager2IT extends RealTransactionSpringTestBase {
     assertEquals(initialNumberOfRevisions + 1, finalNumberOfRevisions);
     // Check if field data contains correct name of first audio file
     String restoredFieldData = restored.getFields().get(0).getFieldData();
-    assertTrue(restoredFieldData.contains("Picture1"));
+    assertThat(restoredFieldData).contains("Picture1");
   }
 
   @Test
@@ -916,7 +912,7 @@ public class AuditManager2IT extends RealTransactionSpringTestBase {
     assertEquals(initialNumberOfRevisions + 1, finalNumberOfRevisions);
     // Check if field data contains correct name of first audio file
     String restoredFieldData = restored.getFields().get(0).getFieldData();
-    assertTrue(restoredFieldData.contains("genFilesi"));
+    assertThat(restoredFieldData).contains("genFilesi");
   }
 
   int getNumberOfVisibleDeletedDocumentsForUser(User user) {

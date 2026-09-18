@@ -1,5 +1,6 @@
 package com.researchspace.dao.hibernate;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.axiope.search.IFileIndexer;
@@ -305,7 +306,7 @@ public class WithinRecordsSearchTest extends SearchSpringTestBase {
             PaginationCriteria.createDefaultForClass(BaseRecord.class), options, terms, -1L, true);
 
     List<BaseRecord> results = searchMgr.searchWorkspaceRecords(cfg, userSearching).getResults();
-    assertEquals(recordsToExpect.size(), results.size());
+    assertThat(results).hasSize(recordsToExpect.size());
     assertEquals(new HashSet<>(recordsToExpect), new HashSet<>(results));
   }
 }

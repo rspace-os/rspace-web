@@ -1,7 +1,7 @@
 package com.researchspace.service.archive.export;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -67,33 +67,33 @@ public class NfsElementFieldExporterTest {
   @Test
   public void testUrlReplacementWithNfsClient() throws URISyntaxException, IOException {
     exportConfig.setIncludeNfsLinks(true);
-    assertEquals(0, tmpNfsArchiveFolder.list().length);
+    assertThat(tmpNfsArchiveFolder.list()).isEmpty();
 
     String updatedLink = nfsExporter.getReplacementUrl(context, testNfsElem);
     String[] nfsFilePathInArchive = updatedLink.split("/");
 
-    assertEquals(1, tmpNfsArchiveFolder.listFiles().length);
+    assertThat(tmpNfsArchiveFolder.listFiles()).hasSize(1);
     File foundArchiveFolder = tmpNfsArchiveFolder.listFiles()[0];
-    assertTrue(foundArchiveFolder.exists());
-    assertTrue(foundArchiveFolder.isDirectory());
-    assertEquals(nfsFilePathInArchive[0], foundArchiveFolder.getName());
+    assertThat(foundArchiveFolder).exists();
+    assertThat(foundArchiveFolder).isDirectory();
+    assertThat(foundArchiveFolder).hasName(nfsFilePathInArchive[0]);
 
-    assertEquals(1, foundArchiveFolder.listFiles().length);
+    assertThat(foundArchiveFolder.listFiles()).hasSize(1);
     File foundNfsFile = foundArchiveFolder.listFiles()[0];
-    assertTrue(foundNfsFile.exists());
-    assertTrue(foundNfsFile.isFile());
-    assertEquals(testFileDetails.getName(), foundNfsFile.getName());
+    assertThat(foundNfsFile).exists();
+    assertThat(foundNfsFile).isFile();
+    assertThat(foundNfsFile).hasName(testFileDetails.getName());
   }
 
   @Test
   public void testUrlReplacementForNfsClientError() throws URISyntaxException, IOException {
     exportConfig.setIncludeNfsLinks(true);
-    assertEquals(0, tmpNfsArchiveFolder.list().length);
+    assertThat(tmpNfsArchiveFolder.list()).isEmpty();
 
     when(nfsContext.getDownloadedNfsResourceDetails(testNfsElem, support)).thenReturn(null);
 
     String updatedLink = nfsExporter.getReplacementUrl(context, testNfsElem);
-    assertEquals(0, tmpNfsArchiveFolder.list().length);
+    assertThat(tmpNfsArchiveFolder.list()).isEmpty();
     assertEquals("21:/test.txt", updatedLink, "nfs link should not be replaced if download error");
   }
 }

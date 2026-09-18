@@ -1,8 +1,8 @@
 package com.researchspace.webapp.controller;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -35,7 +35,6 @@ import com.researchspace.webapp.controller.RSChemController.ChemEditorInputDto;
 import com.researchspace.webapp.controller.RSChemController.ChemSearchResultsPage;
 import java.security.Principal;
 import java.util.List;
-import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -77,7 +76,7 @@ public class RSChemControllerMVCIT extends MVCTestBase {
     ConvertedStructureDto convertedStructureDto =
         getFromJsonResponseBody(result, ConvertedStructureDto.class);
     assertEquals("mrv", convertedStructureDto.getFormat());
-    assertFalse(StringUtils.isBlank(convertedStructureDto.getStructure()));
+    assertThat(convertedStructureDto.getStructure()).isNotBlank();
   }
 
   /**
@@ -118,7 +117,7 @@ public class RSChemControllerMVCIT extends MVCTestBase {
 
     // and retrieve it, shoud get a byte [] of the image
     result = mockMvc.perform(get(imgUrl).principal(principal)).andReturn();
-    assertTrue(result.getResponse().getContentAsByteArray().length > 0);
+    assertThat(result.getResponse().getContentAsByteArray().length).isGreaterThan(0);
 
     // now let's simulate loading chem element to edit:
     result =
@@ -146,13 +145,13 @@ public class RSChemControllerMVCIT extends MVCTestBase {
 
     // and retrieve image again, should get a byte [] of the image
     result = mockMvc.perform(get(imgUrl).principal(principal)).andReturn();
-    assertTrue(result.getResponse().getContentAsByteArray().length > 0);
+    assertThat(result.getResponse().getContentAsByteArray().length).isGreaterThan(0);
 
     // now lets check we can get the 1st revision:
     List<AuditedEntity<RSChemElement>> revisions =
         auditMgr.getRevisionsForEntity(RSChemElement.class, savedChemElement.getId());
     int EXPECTED_NUM_REVISIONS = 2;
-    assertEquals(EXPECTED_NUM_REVISIONS, revisions.size());
+    assertThat(revisions).hasSize(EXPECTED_NUM_REVISIONS);
     String rev1 = revisions.get(0).getRevision().intValue() + "";
     result =
         mockMvc
@@ -164,7 +163,7 @@ public class RSChemControllerMVCIT extends MVCTestBase {
             .andExpect(status().is2xxSuccessful())
             .andReturn();
     chemStr = getFromJsonAjaxReturnObject(result, ChemEditorInputDto.class).getChemElements();
-    assertFalse(chemStr.contains("NEWDATA"));
+    assertThat(chemStr).doesNotContain("NEWDATA");
   }
 
   private String generateChemElementImageURl(RSChemElement el) {

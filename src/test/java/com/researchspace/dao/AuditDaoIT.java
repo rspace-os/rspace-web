@@ -1,5 +1,6 @@
 package com.researchspace.dao;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -120,7 +121,7 @@ public class AuditDaoIT extends RealTransactionSpringTestBase {
     // insert, 3 mods + delete
     assertEquals(5, dao.getRevisionCountForDocument(sd1, null).intValue());
     PaginationCriteria<AuditedRecord> pgCrit = createDefaultPagCrit();
-    assertEquals(5, dao.getRevisionsForDocument(sd1, pgCrit).size()); // sanity check
+    assertThat(dao.getRevisionsForDocument(sd1, pgCrit)).hasSize(5); // sanity check
     ISearchResults<AuditedRecord> asd =
         dao.getRestorableDeletedRecords(user, sd1.getName(), pgCrit);
     assertEquals(1, asd.getHits().intValue());
@@ -214,7 +215,7 @@ public class AuditDaoIT extends RealTransactionSpringTestBase {
     PaginationCriteria<AuditedRecord> pgCrit = createDefaultPagCrit();
     List<AuditedRecord> rc = dao.getRevisionsForDocument(sd1, pgCrit);
 
-    assertEquals(2, rc.size()); // original insert, plus modification
+    assertThat(rc).hasSize(2); // original insert, plus modification
     assertEquals(NEW_DATE, rc.get(1).getRecordAsDocument().getFields().get(0).getFieldData());
     commitTransaction();
 
@@ -239,7 +240,7 @@ public class AuditDaoIT extends RealTransactionSpringTestBase {
     openTransaction();
     List<AuditedEntity<EcatDocumentFile>> docFileRevisions =
         dao.getRevisionsForObject(EcatDocumentFile.class, docFile.getId());
-    assertEquals(1, docFileRevisions.size());
+    assertThat(docFileRevisions).hasSize(1);
     commitTransaction();
 
     // now let's change doc file: fileproperty pointing to image file and new modification date
@@ -253,7 +254,7 @@ public class AuditDaoIT extends RealTransactionSpringTestBase {
     // now check both doc file revisions
     openTransaction();
     docFileRevisions = dao.getRevisionsForObject(EcatDocumentFile.class, docFile.getId());
-    assertEquals(2, docFileRevisions.size());
+    assertThat(docFileRevisions).hasSize(2);
     EcatDocumentFile firstRev = docFileRevisions.get(0).getEntity();
     EcatDocumentFile secondRev = docFileRevisions.get(1).getEntity();
     assertEquals(docFileOrgFile, firstRev.getName());
@@ -276,8 +277,8 @@ public class AuditDaoIT extends RealTransactionSpringTestBase {
     modifyDocument(sd, "newData");
 
     openTransaction();
-    assertEquals(initDocs + 2, dao.getEveryDocumentAndRevisionModifiedByUser(user).size());
-    assertEquals(0, dao.getEveryDocumentAndRevisionModifiedByUser(new User("unnown")).size());
+    assertThat(dao.getEveryDocumentAndRevisionModifiedByUser(user)).hasSize(initDocs + 2);
+    assertThat(dao.getEveryDocumentAndRevisionModifiedByUser(new User("unnown"))).isEmpty();
     commitTransaction();
   }
 

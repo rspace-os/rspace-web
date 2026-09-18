@@ -1,5 +1,6 @@
 package com.researchspace.service.inventory;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -124,13 +125,13 @@ public class DefaultInstrumentTemplatePermissionsTest extends SpringTransactiona
     ApiInstrumentTemplate api = new ApiInstrumentTemplate(locked);
     invPermissionUtils.setPermissionsInApiInventoryRecord(api, locked, owner);
 
-    assertTrue(api.getPermittedActions().contains(ApiInventoryRecordPermittedAction.READ));
-    assertFalse(
-        api.getPermittedActions().contains(ApiInventoryRecordPermittedAction.UPDATE),
-        "locked template must not expose UPDATE");
-    assertFalse(
-        api.getPermittedActions().contains(ApiInventoryRecordPermittedAction.CHANGE_OWNER),
-        "locked template must not expose CHANGE_OWNER");
+    assertThat(api.getPermittedActions()).contains(ApiInventoryRecordPermittedAction.READ);
+    assertThat(api.getPermittedActions())
+        .as("locked template must not expose UPDATE")
+        .doesNotContain(ApiInventoryRecordPermittedAction.UPDATE);
+    assertThat(api.getPermittedActions())
+        .as("locked template must not expose CHANGE_OWNER")
+        .doesNotContain(ApiInventoryRecordPermittedAction.CHANGE_OWNER);
   }
 
   @Test
