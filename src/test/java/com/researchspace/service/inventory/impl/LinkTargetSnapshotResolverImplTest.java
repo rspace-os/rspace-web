@@ -144,11 +144,10 @@ class LinkTargetSnapshotResolverImplTest {
 
   @Test
   void resolveSummaryReportsMissingInventoryTargetAsDeleted() {
-    // an inventory target with no audit snapshot never existed here (e.g. a CSV-imported dangling
-    // link, RSDEV-1354) or had its audit rows purged; either way the card shows "Target deleted".
-    // Inventory existence is not secret (every user has the limited-read view), so ADR-0002's
-    // nonexistent-equals-unreadable rule is not needed for these prefixes.
+    // no audit snapshot AND no live record: the target never existed here (e.g. a CSV-imported
+    // dangling link, RSDEV-1354), so the card shows "Target deleted" (ADR-0002 amendment)
     when(auditManager.getNewestRevisionForEntity(Sample.class, 10L)).thenReturn(null);
+    when(linkTargetResolver.targetIsKnownMissing(any())).thenReturn(true);
 
     ApiInventoryLinkTargetSummary summary =
         resolver.resolveSummary(GlobalIdPrefix.SA, 10L, null, null, user);
@@ -157,6 +156,21 @@ class LinkTargetSnapshotResolverImplTest {
     assertNull(summary.getName());
     assertTrue(summary.isDeleted());
     assertTrue(summary.isReadable());
+  }
+
+  @Test
+  void resolveSummaryDoesNotCallLiveInventoryTargetDeletedWhenAuditRowsArePurged() {
+    // a live record whose Envers rows were purged has no snapshot either. Calling it deleted
+    // would strip Open from a target whose page works perfectly well, so the absence of audit
+    // history alone must not decide: only a record that is really gone is reported deleted.
+    when(auditManager.getNewestRevisionForEntity(Sample.class, 10L)).thenReturn(null);
+    when(linkTargetResolver.targetIsKnownMissing(any())).thenReturn(false);
+
+    ApiInventoryLinkTargetSummary summary =
+        resolver.resolveSummary(GlobalIdPrefix.SA, 10L, null, null, user);
+
+    assertEquals("SA10", summary.getGlobalId());
+    assertFalse(summary.isDeleted());
   }
 
   @Test

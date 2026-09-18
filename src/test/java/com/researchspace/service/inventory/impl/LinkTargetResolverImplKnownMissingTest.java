@@ -37,17 +37,35 @@ class LinkTargetResolverImplKnownMissingTest {
 
   @Test
   void existingInventoryTargetIsNotKnownMissingEvenWhenUnreadable() {
+    Sample sample = mock(Sample.class);
+    when(sample.getOid()).thenReturn(new GlobalIdentifier(GlobalIdPrefix.SA, 1L));
     when(inventoryPermissionUtils.getInvRecByGlobalIdOrThrowNotFoundException(any()))
-        .thenReturn(mock(Sample.class));
+        .thenReturn(sample);
 
     assertFalse(resolver.targetIsKnownMissing(new GlobalIdentifier(GlobalIdPrefix.SA, 1L)));
   }
 
   @Test
+  void siblingTypeOnTheSameRowDoesNotCountAsPresent() {
+    // SA and IT share one retriever, so probing IT123 loads sample row 123: only a record
+    // whose own prefix matches the requested one proves the target is there
+    Sample sample = mock(Sample.class);
+    when(sample.getOid()).thenReturn(new GlobalIdentifier(GlobalIdPrefix.SA, 123L));
+    when(inventoryPermissionUtils.getInvRecByGlobalIdOrThrowNotFoundException(any()))
+        .thenReturn(sample);
+
+    assertTrue(resolver.targetIsKnownMissing(new GlobalIdentifier(GlobalIdPrefix.IT, 123L)));
+  }
+
+  @Test
   void elnTargetIsNeverKnownMissing() {
-    // probing an ELN record's existence without a permission check is the disclosure
-    // ADR-0002 forbids, so the lenient import path never applies to one
+    // probing an ELN record's existence without a permission check is the disclosure ADR-0002
+    // forbids, so the lenient import path never applies to one. The visible consequence is the
+    // documented asymmetry in CsvLinkValueParser: an exported link to a since-deleted ELN record
+    // fails its import row, where the inventory equivalent imports as a dangling link.
     assertFalse(resolver.targetIsKnownMissing(new GlobalIdentifier(GlobalIdPrefix.SD, 1L)));
+    assertFalse(resolver.targetIsKnownMissing(new GlobalIdentifier(GlobalIdPrefix.NB, 1L)));
+    assertFalse(resolver.targetIsKnownMissing(new GlobalIdentifier(GlobalIdPrefix.GL, 1L)));
   }
 
   @Test

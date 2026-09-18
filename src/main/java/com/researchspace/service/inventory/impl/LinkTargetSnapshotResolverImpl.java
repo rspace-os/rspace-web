@@ -74,10 +74,12 @@ public class LinkTargetSnapshotResolverImpl implements LinkTargetSnapshotResolve
             ? auditManager.getObjectForRevision(cls, dbId, targetRevisionId)
             : auditManager.getNewestRevisionForEntity(cls, dbId);
     if (snapshot == null || snapshot.getEntity() == null) {
-      if (isInventoryPrefix(prefix)) {
-        // No inventory record here at all: never existed on this server (a CSV-imported dangling
-        // link, RSDEV-1354) or its audit rows were purged. Report it as deleted so the card shows
-        // "Target deleted" instead of a working-looking Open.
+      if (isInventoryPrefix(prefix)
+          && linkTargetResolver.targetIsKnownMissing(new GlobalIdentifier(prefix, dbId))) {
+        // No audit snapshot AND no live record: the target never existed on this server (a
+        // CSV-imported dangling link, RSDEV-1354). Report it as deleted so the card shows
+        // "Target deleted" instead of a working-looking Open. A live record whose audit rows
+        // were merely purged falls through to the redacted summary below, keeping its Open.
         // This is a deliberate, narrow carve-out from ADR-0002, not an application of it: an
         // existing-but-unreadable inventory record still answers readable=false, so the two
         // payloads differ and a caller walking ids learns which inventory ids are occupied. Name,

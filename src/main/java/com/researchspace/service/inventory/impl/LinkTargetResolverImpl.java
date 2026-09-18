@@ -103,8 +103,12 @@ public class LinkTargetResolverImpl implements LinkTargetResolver {
       return false;
     }
     try {
-      inventoryPermissionUtils.getInvRecByGlobalIdOrThrowNotFoundException(base);
-      return false;
+      InventoryRecord found =
+          inventoryPermissionUtils.getInvRecByGlobalIdOrThrowNotFoundException(base);
+      // the retriever resolves some prefixes by numeric id alone (SA and IT share one sample
+      // lookup), so a row of the sibling type is not the requested target: only a record whose
+      // own oid prefix matches proves the target is there
+      return found.getOid() == null || found.getOid().getPrefix() != base.getPrefix();
     } catch (NotFoundException e) {
       return true;
     }
