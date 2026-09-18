@@ -76,6 +76,7 @@ reuse the running instance.
 ./docker/dev/rspace-dev up --fresh        # rebuild DB from scratch
 ./docker/dev/rspace-dev up --chemistry    # also start the chemistry microservice
 ./docker/dev/rspace-dev up --e2e          # run third-party integration mocks
+./docker/dev/rspace-dev up --observability # also start the OpenTelemetry + Elastic APM/ELK stack
 ```
 
 `--e2e` runs the Playwright integration mock server inside the stack's shared
@@ -89,6 +90,9 @@ React UI is useless without the Java backend and database serving its API,
 session, and integration data. Even for a pure frontend change, `up` (which
 starts db + backend + frontend together) is required — do not stand up only the
 Vite server (e.g. host `pnpm run serve`) to test a UI change.
+
+`--chemistry` and `--observability` are independent and persist in `.env`.
+Observability adds four resource-heavy containers.
 
 First boot takes several minutes (Maven + pnpm downloads). Watch readiness:
 
@@ -198,6 +202,16 @@ destroy it on your own. Offer the two levels:
 
 Recommend `down` by default (fast to resume); reserve `nuke` for when the user
 wants the local data and volumes gone. Only run either after the user confirms.
+
+## Observability (optional)
+
+`up --observability` enables backend and browser telemetry and starts the
+Collector, APM Server, Elasticsearch, and Kibana. Use the Kibana URL printed by
+`ps` and open `/app/apm`.
+
+The first boot needs internet access and may take a few minutes. `down` removes
+the containers; `nuke` also deletes their data. See `docker/dev/README.md` for
+details.
 
 ## Browser automation
 
