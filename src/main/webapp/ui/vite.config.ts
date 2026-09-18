@@ -1,18 +1,24 @@
 import fs from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import react from "@vitejs/plugin-react";
 import browserslist from "browserslist";
 import browserslistToEsbuild from "browserslist-to-esbuild";
 import { browserslistToTargets } from "lightningcss";
 import type { Alias, Plugin, PluginOption, UserConfig } from "vite";
+import { normalizePath } from "vite";
 import { defineConfig } from "vitest/config";
 import bundleEntries from "./bundleEntries.json";
 import { flattenMessages } from "./src/modules/common/i18n/flattenMessages";
-import { browserDefines, resolveFromRoot, sourceAlias, tinymceDir } from "./vite.shared.ts";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Module ids always use forward slashes, so paths compared against one have to be normalised or
 // nothing matches on Windows, where `path.resolve` returns backslashes.
+const resolveFromRoot = (relativePath: string) => normalizePath(path.resolve(__dirname, relativePath));
+
 const legacyI18nEntryPath = resolveFromRoot("src/modules/common/i18n/legacyI18n.ts");
 const listFormatPath = resolveFromRoot("src/modules/common/i18n/listFormat.ts");
 const localesPath = resolveFromRoot("src/modules/common/i18n/locales");
@@ -184,6 +190,19 @@ const TINYMCE_MIME: Record<string, string> = {
 // Subset of the package needed at runtime (omit TS/source files from dist).
 const TINYMCE_RUNTIME_ENTRIES = ["tinymce.min.js", "models", "themes", "icons", "skins", "plugins"];
 
+// Resolve the installed TinyMCE package and read its version. The version is
+// the cache-busting token for the lazily-loaded TinyMCE assets (see the
+// `define` of __TINYMCE_VERSION__ below and StyledTinyMceEditor.tsx): a new
+// TinyMCE release changes the `?v=` suffix and invalidates browser/proxy
+// caches, matching the `?v=<token>` convention RSpace uses elsewhere
+// (com.axiope.webapp.taglib.AssetUrlTag).
+const tinymceDir = path.dirname(createRequire(import.meta.url).resolve("tinymce/package.json"));
+const tinymceVersion = (
+  JSON.parse(fs.readFileSync(path.join(tinymceDir, "package.json"), "utf8")) as {
+    version: string;
+  }
+).version;
+
 function tinymceAssets(base: string): Plugin {
   // `base` always has a trailing slash in Vite, e.g. "/ui/dist/". Depending on
   // middleware ordering Vite may or may not have stripped the base from
@@ -291,15 +310,35 @@ export default defineConfig(async ({ mode }) => {
     );
   }
 
+  // Some chemistry deps (openchemlib, pulled in lazily by the Ketcher editor)
+  // bundle Node's `util` polyfill, which reads bare `process.*`
+  // (process.stderr.isTTY, process.nextTick, …) at module-eval time. The
+  // browser has no `process`, so the chunk throws "process is not defined" the
+  // moment Ketcher loads. Provide a minimal global shim. esbuild/rolldown only
+  // substitute *unbound* `process` references, so deps that declare their own
+  // local `process` are untouched. The shim carries NODE_ENV so code that reads
+  // process.env.NODE_ENV (e.g. React) still sees the right mode.
+  const processShim = `{env:{NODE_ENV:${JSON.stringify(
+    mode === "production" ? "production" : "development",
+  )}},platform:"browser",browser:true,version:"",versions:{},argv:[],nextTick:(cb)=>Promise.resolve().then(cb),cwd:()=>"/",emitWarning:()=>{}}`;
+
   const config: UserConfig = {
     base: "/ui/dist/",
-    // Shared browser shims and TinyMCE constants keep isolated component
-    // builds aligned with the application build.
-    define: browserDefines(mode),
+    define: {
+      global: "globalThis",
+      process: processShim,
+      // Cache-busting token + base URL for the lazily-loaded, self-hosted
+      // TinyMCE assets. The base is injected at build time rather than
+      // hard-coded so different build targets can use different paths.
+      __TINYMCE_VERSION__: JSON.stringify(tinymceVersion),
+      // Full directory URL the TinyMCE assets are served from (the
+      // rspace:tinymce-assets plugin serves /ui/dist/tinymce/*).
+      __TINYMCE_BASE__: JSON.stringify("/ui/dist/tinymce/"),
+    },
     plugins,
     resolve: {
       tsconfigPaths: true,
-      alias: isVitest ? [sourceAlias, ...vitestAliases] : [],
+      alias: isVitest ? [{ find: /^@\//, replacement: `${resolveFromRoot("src")}/` }, ...vitestAliases] : [],
       ...(isVitest ? { externalConditions: ["require"] } : {}),
     },
     // HTTP requests for /ui/dist/* are reverse-proxied by Jetty (see
