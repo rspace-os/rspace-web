@@ -672,7 +672,7 @@ describe("OperationWizard step flow", () => {
   });
 
   it("blocks Next on the amounts step when the amount taken exceeds the origin (over-removal)", async () => {
-    // origin (makeMockSubSample) holds 1 ml; taking 5 ml must be blocked (DevDocs/adr/0007).
+    // origin (makeMockSubSample) holds 1 ml; taking 5 ml must be blocked (DevDocs/adr/0011).
     const user = userEvent.setup();
     render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
     await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
@@ -717,7 +717,7 @@ describe("OperationWizard step flow", () => {
 
   it("blocks the details step for Pool when ANY pooled origin is empty, not just the smallest", async () => {
     // Pool's default amount mode is "all" (take each origin's full quantity), which would silently
-    // no-op an empty origin; the backend also rejects empty origins outright (DevDocs/adr/0007), so
+    // no-op an empty origin; the backend also rejects empty origins outright (DevDocs/adr/0011), so
     // the wizard must gate on every origin's quantity.
     const user = userEvent.setup();
     render(
@@ -919,7 +919,7 @@ describe("OperationWizard step flow", () => {
     await waitFor(() => expect(onClose).toHaveBeenCalled());
     // Destroy empties the origin, so no amount travels at all: the server takes whatever is
     // there at processing time. The disposed date is stamped server-side in the session's
-    // timezone (DevDocs/adr/0007, M4), so nothing about it travels either.
+    // timezone (DevDocs/adr/0011), so nothing about it travels either.
     expect(postedTo[0]).toBe("destroy");
     expect(posted[0]).toEqual({ origin: { globalId: "SS1" } });
   });
@@ -1438,7 +1438,7 @@ describe("OperationWizard remember bundle", () => {
   });
 
   it("pre-fills the last-used process name and, on Review / edit, shows its bundle", async () => {
-    // A complete remembered bundle loads on open, so the wizard offers the step-one fast path (DevDocs/adr/0007):
+    // A complete remembered bundle loads on open, so the wizard offers the step-one fast path (DevDocs/adr/0011):
     // the confirmation and Perform, with the details form only behind "Review / edit".
     prefs.store.INVENTORY_OPERATION_PROCESS_NAME_DEFAULTS = { derive: "boil" };
     prefs.store.INVENTORY_OPERATION_PROCESS_VALUES_DERIVE = {
