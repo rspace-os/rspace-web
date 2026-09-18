@@ -16,6 +16,7 @@ import java.util.Set;
 @XmlType(
     propOrder = {
       "fieldId",
+      "mandatory",
       "code",
       "fieldName",
       "fieldType",
@@ -40,6 +41,7 @@ import java.util.Set;
     })
 public class ArchivalField {
   long fieldId;
+  boolean isMandatory;
   String code;
   String fieldName;
   String fieldType;
@@ -66,6 +68,11 @@ public class ArchivalField {
   @XmlAttribute(name = "id", required = true)
   public long getFieldId() {
     return fieldId;
+  }
+
+  @XmlAttribute(name = "required", required = true)
+  public boolean isMandatory() {
+    return isMandatory;
   }
 
   @XmlElement
@@ -213,6 +220,10 @@ public class ArchivalField {
 
   public void setFieldId(long id) {
     fieldId = id;
+  }
+
+  public void setMandatory(boolean isMandatory) {
+    this.isMandatory = isMandatory;
   }
 
   public void setCode(String code) {

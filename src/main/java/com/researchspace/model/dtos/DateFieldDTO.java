@@ -19,7 +19,17 @@ public class DateFieldDTO<T> extends AbstractFormFieldDTO<DateFieldForm> {
 
   public DateFieldDTO(
       String defaultValue, String minValue, String maxValue, String dateFormat, String name) {
-    super(name, false);
+    this(defaultValue, minValue, maxValue, dateFormat, name, false);
+  }
+
+  public DateFieldDTO(
+      String defaultValue,
+      String minValue,
+      String maxValue,
+      String dateFormat,
+      String name,
+      boolean isMandatory) {
+    super(name, isMandatory);
     this.defaultValue = defaultValue;
     this.minValue = minValue;
     this.maxValue = maxValue;

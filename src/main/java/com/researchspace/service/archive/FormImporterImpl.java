@@ -84,11 +84,14 @@ public class FormImporterImpl implements FormImporter {
                   aff.getDecimalPlace(),
                   aff.getDefaultValue(),
                   FieldType.NUMBER,
-                  aff.getName()));
+                  aff.getName(),
+                  aff.isMandatory()));
           break;
         case STRING:
           String tr = aff.isPassword() ? "true" : "false";
-          persistFieldForm(form, new StringFieldDTO<>(aff.getName(), tr, aff.getDefaultValue()));
+          persistFieldForm(
+              form,
+              new StringFieldDTO<>(aff.getName(), aff.isMandatory(), tr, aff.getDefaultValue()));
           break;
         case RADIO:
           persistFieldForm(
@@ -98,13 +101,18 @@ public class FormImporterImpl implements FormImporter {
                   aff.getSelection(),
                   aff.getName(),
                   aff.isDisplayAsPickList(),
-                  aff.isSortAlphabetic()));
+                  aff.isSortAlphabetic(),
+                  aff.isMandatory()));
           break;
         case CHOICE:
           persistFieldForm(
               form,
               new ChoiceFieldDTO<>(
-                  aff.getOptions(), aff.getMultipleChoice(), aff.getSelection(), aff.getName()));
+                  aff.getOptions(),
+                  aff.getMultipleChoice(),
+                  aff.getSelection(),
+                  aff.getName(),
+                  aff.isMandatory()));
           break;
         case DATE:
           persistFieldForm(
@@ -114,7 +122,8 @@ public class FormImporterImpl implements FormImporter {
                   aff.getMin(),
                   aff.getMax(),
                   aff.getDateFormat(),
-                  aff.getName()));
+                  aff.getName(),
+                  aff.isMandatory()));
           break;
         case TIME:
           persistFieldForm(
@@ -124,12 +133,15 @@ public class FormImporterImpl implements FormImporter {
                   aff.getMin(),
                   aff.getMax(),
                   aff.getDateFormat(),
-                  aff.getName()));
+                  aff.getName(),
+                  aff.isMandatory()));
           break;
 
         default: // Text
           TextFieldForm tfm =
-              persistFieldForm(form, new TextFieldDTO<>(aff.getName(), aff.getDefaultValue()));
+              persistFieldForm(
+                  form,
+                  new TextFieldDTO<>(aff.getName(), aff.isMandatory(), aff.getDefaultValue()));
           setFieldForm(tfm, aff);
       }
     }
