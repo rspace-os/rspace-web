@@ -51,16 +51,19 @@ import com.researchspace.service.inventory.InventoryFieldNameUniquenessValidator
 import com.researchspace.service.inventory.InventoryMoveHelper;
 import com.researchspace.service.inventory.SampleApiManager;
 import com.researchspace.service.inventory.SubSampleApiManager;
+import com.researchspace.service.inventory.operations.OperationFieldNames;
 import jakarta.ws.rs.NotFoundException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -438,6 +441,52 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
       if (target != null && !target.validate(field.getContent()).hasErrorMessages()) {
         target.setFieldData(field.getContent());
         generated.remove();
+      }
+    }
+    renameGeneratedLinksCollidingWithInheritedFields(apiSample, inheritedFields);
+  }
+
+  /**
+   * Renames a generated link field whose name matches one the sample inherits from its template.
+   * Such a link cannot be merged away by {@link #mergeOperationFieldsIntoInheritedTemplateFields},
+   * so without this a template that happens to declare a field named like the operation's link (a
+   * "Documented by" field plus a documentation target, say) left both active and failed {@link
+   * InventoryFieldNameUniquenessValidator#assertNoDuplicateFieldNames}, with nothing the user could
+   * change to complete an otherwise valid request. All inherited names count here, link fields
+   * included, because the duplicate check does not care about type.
+   */
+  private static void renameGeneratedLinksCollidingWithInheritedFields(
+      ApiSampleWithFullSubSamples apiSample, List<InventoryEntityField> inheritedFields) {
+    Set<String> taken = new HashSet<>();
+    for (InventoryEntityField inherited : inheritedFields) {
+      taken.add(OperationFieldNames.comparable(inherited.getName()));
+    }
+    for (ApiExtraField field : apiSample.getExtraFields()) {
+      if (field != null && StringUtils.isNotBlank(field.getName())) {
+        taken.add(OperationFieldNames.comparable(field.getName()));
+      }
+    }
+    for (ApiExtraField field : apiSample.getExtraFields()) {
+      if (field == null
+          || StringUtils.isBlank(field.getOperationFieldKey())
+          || !ExtraFieldTypeEnum.LINK.equals(field.getType())
+          || StringUtils.isBlank(field.getName())
+          // The suffix that makes the name unique is the link target, so a link without one has
+          // nothing to be renamed with and keeps the ordinary duplicate-name rejection.
+          || field.getLink() == null
+          || StringUtils.isBlank(field.getLink().getTargetGlobalId())) {
+        continue;
+      }
+      boolean collidesWithTemplate =
+          inheritedFields.stream()
+              .anyMatch(
+                  inherited ->
+                      OperationFieldNames.comparable(inherited.getName())
+                          .equals(OperationFieldNames.comparable(field.getName())));
+      if (collidesWithTemplate) {
+        String free = OperationFieldNames.freeLinkName(field, taken);
+        taken.add(OperationFieldNames.comparable(free));
+        field.setName(free);
       }
     }
   }
