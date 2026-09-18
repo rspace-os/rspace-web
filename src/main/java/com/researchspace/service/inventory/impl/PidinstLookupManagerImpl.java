@@ -214,6 +214,11 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
    * DataCite indexes the DOI as a keyword, so free text never matches a suffix or part of one, and
    * a user who pasted half a DOI gets nothing. A {@code doi:*...*} wildcard does match, so an empty
    * first page is retried that way (ADR 0009 decision 7).
+   *
+   * <p>The free-text call carries the query escaped and the retry does not: the retry's clause is
+   * composed here from what the user typed, and {@link #DOI_FRAGMENT} already limits that to
+   * characters which cannot close it. Both gates read the raw query, so escaping cannot change
+   * which searches retry.
    */
   private DataCiteDoiSearchResult searchDataCite(String query) {
     DataCiteDoiSearchResult hits =
