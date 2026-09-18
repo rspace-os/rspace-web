@@ -77,6 +77,18 @@ public class CsvLinkValueParserTest {
   }
 
   @Test
+  void blankServerUrlAcceptsNothingRatherThanMatchingARelativeLookingCell() {
+    // the prefix must not be allowed to collapse to "/globalId/", or a cell naming no host at
+    // all would parse as a link to a local record
+    IPropertyHolder unset = mock(IPropertyHolder.class);
+    when(unset.getServerUrl()).thenReturn("");
+    parser.properties = unset;
+
+    assertFalse(parser.isParseable("Cites /globalId/SA1"));
+    assertFalse(parser.isParseable("Cites https://rspace.example.com/globalId/SA1"));
+  }
+
+  @Test
   void isParseableIsTrueForValidCell() {
     assertTrue(parser.isParseable("Cites https://rspace.example.com/globalId/SD9"));
   }

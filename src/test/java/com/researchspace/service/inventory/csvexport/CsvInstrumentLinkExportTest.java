@@ -42,6 +42,17 @@ public class CsvInstrumentLinkExportTest {
     assertEquals("", exporter.csvValueForLink(null));
   }
 
+  @Test
+  void blankServerUrlExportsTheRelationAloneRatherThanAnAddressToNowhere() {
+    // a deployment with server.urls.prefix unset cannot name a resolvable target, so the cell
+    // carries the relation only. Deliberately asymmetric: such a cell will not re-import.
+    IPropertyHolder unset = mock(IPropertyHolder.class);
+    when(unset.getServerUrl()).thenReturn("");
+    exporter.properties = unset;
+
+    assertEquals("Cites", exporter.csvValueForLink(link("Cites", GlobalIdPrefix.SA, 1L, null)));
+  }
+
   private static InventoryLink link(String relation, GlobalIdPrefix prefix, long dbId, Long pin) {
     InventoryLink link = new InventoryLink();
     link.setRelationType(relation);
