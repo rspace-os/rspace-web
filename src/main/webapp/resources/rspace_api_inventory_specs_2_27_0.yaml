@@ -4214,8 +4214,9 @@ components:
     OperationOriginBusy:
       description: >
         The operation did not start, and every origin is unchanged. Either another request is
-        already acting on one of the origins, or another user's edit session holds one of them.
-        The message names the origin. Retry once that request or edit session has finished.
+        already acting on one of the origins, or another user's edit session holds an origin or
+        one of its parent samples. The message names the blocked record. Retry once that request or
+        edit session has finished.
       content:
         application/json:
           schema:
