@@ -20,7 +20,7 @@
 
     <c:choose>
       <c:when test="${page.link=='#'}">
-        <li class="active"><a class="${page.className}" href="#">${page.name}</a></li>
+        <li class="active"><span aria-current="page">${page.name}</span></li>
       </c:when>
       <c:otherwise>
         <c:choose>
