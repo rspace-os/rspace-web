@@ -10,6 +10,7 @@ import com.researchspace.model.inventory.SampleRequest;
 import com.researchspace.model.inventory.SampleRequestRole;
 import com.researchspace.model.inventory.SampleRequestStatus;
 import java.util.Set;
+import org.springframework.context.ApplicationEventPublisher;
 
 /** Handles requests for material from Inventory samples. */
 public interface SampleRequestApiManager {
@@ -54,4 +55,7 @@ public interface SampleRequestApiManager {
       Set<SampleRequestStatus> statuses,
       Long sampleId,
       User user);
+
+  /** Exposed so tests can swap in a mock publisher, as the other inventory managers do. */
+  void setPublisher(ApplicationEventPublisher publisher);
 }

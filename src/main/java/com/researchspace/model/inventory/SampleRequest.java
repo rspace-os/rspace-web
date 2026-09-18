@@ -1,6 +1,10 @@
 package com.researchspace.model.inventory;
 
 import com.researchspace.model.User;
+import com.researchspace.model.audittrail.AuditDomain;
+import com.researchspace.model.audittrail.AuditTrailData;
+import com.researchspace.model.audittrail.AuditTrailIdentifier;
+import com.researchspace.model.audittrail.AuditTrailProperty;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -16,6 +20,7 @@ import jakarta.persistence.OrderBy;
 import jakarta.persistence.TableGenerator;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
+import jakarta.persistence.Transient;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
@@ -29,6 +34,7 @@ import lombok.Setter;
  * is always the sample's current owner, so a transfer of ownership moves any open request with it.
  */
 @Entity
+@AuditTrailData(auditDomain = AuditDomain.REQUEST)
 @Getter
 @Setter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
@@ -65,6 +71,7 @@ public class SampleRequest implements Serializable {
       pkColumnName = "sequence_name",
       valueColumnName = "next_val",
       allocationSize = 50)
+  @AuditTrailProperty(name = "requestId")
   public Long getId() {
     return id;
   }
@@ -81,14 +88,26 @@ public class SampleRequest implements Serializable {
    * cannot block it. Matches how InventoryRecord records createdBy and modifiedBy.
    */
   @Column(nullable = false, length = User.MAX_UNAME_LENGTH)
+  @AuditTrailProperty(name = "requester")
   public String getRequesterUsername() {
     return requesterUsername;
   }
 
   @Enumerated(EnumType.STRING)
   @Column(nullable = false, length = 20)
+  @AuditTrailProperty(name = "status")
   public SampleRequestStatus getStatus() {
     return status;
+  }
+
+  /**
+   * The audit entry's id, which the auditing page renders as a global id link. A request has none
+   * of its own, so the sample's is used and a search by that id finds the request too.
+   */
+  @Transient
+  @AuditTrailIdentifier
+  public String getRequestedSampleGlobalId() {
+    return sample != null ? sample.getGlobalIdentifier() : null;
   }
 
   /** Free text: what the requester needs and why. Converted into an operation by the fulfiller. */
