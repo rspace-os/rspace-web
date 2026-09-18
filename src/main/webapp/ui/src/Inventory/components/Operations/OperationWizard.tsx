@@ -146,11 +146,17 @@ function OperationWizard({
   open,
   onClose,
   origins,
+  pendingRenewals,
 }: {
   open: boolean;
   onClose: () => void;
   /** The selected origin subsamples: one for a single-origin operation, two or more for Pool. */
   origins: Array<SubSampleModel>;
+  /**
+   * Where to publish the outstanding lock renewals, so a caller that releases the locks without
+   * going through onClose (an unmount) can order its release behind them too.
+   */
+  pendingRenewals?: React.MutableRefObject<Promise<unknown>>;
 }): React.ReactNode {
   const { t, i18n } = useTranslation(["inventory", "common"]);
   const resolveLabel = resolveLabelFrom(t);
@@ -538,7 +544,9 @@ function OperationWizard({
    * POST then re-locks an origin whose wizard is already gone, with nothing left to release it.
    * The latest renewal is kept here and closeAfterRenewals waits for it (RSDEV-1231).
    */
-  const renewals = React.useRef<Promise<unknown>>(Promise.resolve());
+  const ownRenewals = React.useRef<Promise<unknown>>(Promise.resolve());
+  // The caller's ref when it supplied one, so its own release can wait on the same batches.
+  const renewals = pendingRenewals ?? ownRenewals;
 
   // Set the moment a close begins. Close waits for the renewals outstanding at that instant, so a
   // batch started afterwards would not be waited for and could land behind the caller's release.
