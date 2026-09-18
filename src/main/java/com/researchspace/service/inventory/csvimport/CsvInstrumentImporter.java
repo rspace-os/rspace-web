@@ -16,6 +16,7 @@ import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.model.inventory.field.InventoryEntityField;
+import com.researchspace.service.inventory.csvexport.InventoryItemCsvExporter;
 import jakarta.annotation.PostConstruct;
 import java.io.IOException;
 import java.io.InputStream;
@@ -210,7 +211,10 @@ public class CsvInstrumentImporter extends InventoryItemCsvImporter {
               if (instrumentField.isOptionsStoringField()) {
                 instrumentField.setSelectedOptions(Arrays.asList(value));
               } else if (ApiFieldType.LINK.equals(instrumentField.getType())) {
-                instrumentField.setLink(linkParser.parse(value));
+                // see CsvSampleImporter: the absent-column sentinel is no link, not a bad one
+                if (!InventoryItemCsvExporter.isAbsentCsvValue(value)) {
+                  instrumentField.setLink(linkParser.parse(value));
+                }
               } else {
                 instrumentField.setContent(value);
               }

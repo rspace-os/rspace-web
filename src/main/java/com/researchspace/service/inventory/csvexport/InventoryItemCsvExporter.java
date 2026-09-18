@@ -35,6 +35,18 @@ public abstract class InventoryItemCsvExporter {
 
   public static final String CSV_VALUE_UNAVAILABLE_ITEM_PROPERTY = "#N/A";
 
+  /**
+   * Whether a cell holds no value: either empty, or the sentinel this exporter writes for a column
+   * the row does not have. A multi-record export gives every row the union of all columns, so an
+   * extra-field or per-template column carries the sentinel on every unrelated row; a reader that
+   * took it for real data would not survive the round trip its own export produced.
+   *
+   * <p>Recogniser kept beside the value it recognises, so the two cannot drift apart.
+   */
+  public static boolean isAbsentCsvValue(String value) {
+    return StringUtils.isBlank(value) || CSV_VALUE_UNAVAILABLE_ITEM_PROPERTY.equals(value.trim());
+  }
+
   /** CSV headings remain en-US because scripts and re-import treat them as a stable contract. */
   public static final Locale CSV_HEADER_LOCALE = Locale.US;
 

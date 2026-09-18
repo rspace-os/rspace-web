@@ -16,6 +16,7 @@ import com.researchspace.api.v1.model.ApiInventoryLink;
 import com.researchspace.model.User;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.service.inventory.csvexport.InventoryItemCsvExporter;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
@@ -64,6 +65,22 @@ public class CsvInstrumentImporterLinkFieldTest {
     assertEquals("IsCalibratedBy", link.getRelationType());
     assertEquals("SD7", link.getTargetGlobalId());
     assertNull(link.getVersionPin());
+    assertNull(field.getContent());
+  }
+
+  @Test
+  void exportSentinelIsTreatedAsNoLinkRatherThanFailingTheRow() {
+    List<String[]> lines =
+        List.<String[]>of(
+            new String[] {"i1", InventoryItemCsvExporter.CSV_VALUE_UNAVAILABLE_ITEM_PROPERTY});
+
+    importer.convertLinesToInstruments(result, lines, Map.of(0, "name"), 2, new User("u"));
+
+    assertEquals(0, result.getErrorCount());
+    assertEquals(1, result.getSuccessCount());
+    ApiInventoryEntityField field =
+        ((ApiInstrument) result.getResults().get(0).getRecord()).getFields().get(0);
+    assertNull(field.getLink());
     assertNull(field.getContent());
   }
 

@@ -14,6 +14,7 @@ import com.researchspace.model.inventory.field.InventoryTimeField;
 import com.researchspace.model.inventory.field.InventoryUriField;
 import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.model.units.RSUnitDef;
+import com.researchspace.service.inventory.csvexport.InventoryItemCsvExporter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -82,9 +83,16 @@ public class InventoryImportSampleFieldCreator {
     if (isSuggestedFieldForValues(valueSet, new InventoryUriField())) {
       return new InventoryUriField(name);
     }
-    // link: every value has to parse. allMatch on an empty set would be vacuously true, but the
-    // caller returns before here when there are no values
-    if (valueSet.stream().allMatch(linkParser::isParseable)) {
+    // link: every value that is actually present has to parse. The export sentinel for a column
+    // this row does not have is an absence, not a non-link value; counting it would stop any
+    // multi-record export ever being re-imported as links. At least one value has to be present
+    // though: allMatch on an all-absent column is vacuously true, and a column nobody filled in
+    // is not evidence of a link column
+    Set<String> presentValues =
+        valueSet.stream()
+            .filter(v -> !InventoryItemCsvExporter.isAbsentCsvValue(v))
+            .collect(Collectors.toSet());
+    if (!presentValues.isEmpty() && presentValues.stream().allMatch(linkParser::isParseable)) {
       return new InventoryLinkField(name);
     }
     // time

@@ -17,6 +17,7 @@ import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.model.User;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.service.inventory.csvexport.InventoryItemCsvExporter;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
@@ -83,6 +84,24 @@ public class CsvSampleImporterLinkFieldTest {
     assertEquals(1, result.getErrorCount());
     assertEquals(1, result.getSuccessCount());
     assertEquals("bad link cell", result.getResults().get(0).getError().getErrors().get(0));
+  }
+
+  @Test
+  void exportSentinelIsTreatedAsNoLinkRatherThanFailingTheRow() {
+    // "#N/A" is what the exporter writes for a column this row does not have; re-importing it
+    // must leave the field empty, exactly as a blank cell does, not reject the record
+    List<String[]> lines =
+        List.of(
+            new String[] {"s1", InventoryItemCsvExporter.CSV_VALUE_UNAVAILABLE_ITEM_PROPERTY},
+            new String[] {"s2", "Cites https://rspace.example.com/globalId/SD9"});
+
+    importer.convertLinesToSamples(result, lines, Map.of(0, "name"), 2, new User("u"));
+
+    assertEquals(0, result.getErrorCount());
+    assertEquals(2, result.getSuccessCount());
+    assertNull(field(0).getLink());
+    assertNull(field(0).getContent());
+    assertEquals("SD9", field(1).getLink().getTargetGlobalId());
   }
 
   private ApiInventoryEntityField field(int row) {
