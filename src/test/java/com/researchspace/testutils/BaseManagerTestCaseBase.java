@@ -158,6 +158,7 @@ import org.apache.shiro.mgt.SecurityManager;
 import org.apache.shiro.util.ThreadContext;
 import org.hibernate.LazyInitializationException;
 import org.hibernate.SessionFactory;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.slf4j.Logger;
@@ -292,6 +293,15 @@ public abstract class BaseManagerTestCaseBase {
       // go through the wrong (contaminating) manager and reject UsernamePasswordToken.
       // We use unbindSubject() rather than remove() to avoid clearing unrelated thread-local state.
       ThreadContext.unbindSubject();
+    }
+  }
+
+  @AfterEach
+  public void closeFileIndexer() throws IOException {
+    // Different Spring test contexts can share the attachment index directory. Release the
+    // writer after every test so the next context cannot inherit a stale Lucene write lock.
+    if (fileIndexer != null && fileIndexer.isInitialised()) {
+      fileIndexer.close();
     }
   }
 
