@@ -315,9 +315,15 @@ pipeline {
 
             post {
                 always {
-                    sh 'docker stop "${CHEMISTRY_CONTAINER_NAME}" || true'
-                    sh 'rm -rf "${RS_FILE_BASE}"'
-                    sh 'mysql -h 127.0.0.1 -P 3306 -urspacedbuser -prspacedbpwd -e "drop database if exists ${SANITIZED_DBNAME}"'
+                    script {
+                        try {
+                            junit testResults: 'target/surefire-reports/*.xml', allowEmptyResults: true
+                        } finally {
+                            sh 'docker stop "${CHEMISTRY_CONTAINER_NAME}" || true'
+                            sh 'rm -rf "${RS_FILE_BASE}"'
+                            sh 'mysql -h 127.0.0.1 -P 3306 -urspacedbuser -prspacedbpwd -e "drop database if exists ${SANITIZED_DBNAME}"'
+                        }
+                    }
                 }
                 failure {
                     notify currentBuild.result
@@ -326,9 +332,6 @@ pipeline {
                 fixed {
                     notify currentBuild.result
                     notifySlack('SUCCESS', 'Chemistry tests fixed')
-                }
-                success {
-                    junit 'target/surefire-reports/*.xml'
                 }
             }
         }
