@@ -82,7 +82,7 @@ function OperationConfirmation({
   // raw template string is shown). A multi-origin operation lists every origin in the linkBack row
   // below instead, so this single value is only its single-origin fallback.
   const linkName = effect.links.length ? resolveLabel(effect.links[0].fieldNameKey, { ...values, originName }) : "";
-  // Preview the values the operation will compute (DevDocs/adr/0007) so the origin-field rows show real
+  // Preview the values the operation will compute (DevDocs/adr/0011) so the origin-field rows show real
   // content. Computed here with no parent fields, which is exact for everything this card actually
   // renders: the only computed value it surfaces is an origin field, and the sole operation with
   // those (Destroy) computes `today`, which needs no parent fields. A parent-dependent computed value

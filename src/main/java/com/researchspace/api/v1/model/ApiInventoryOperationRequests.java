@@ -16,7 +16,7 @@ import lombok.Setter;
 
 /**
  * The request bodies of the seven typed operation endpoints, {@code POST /operations/<key>}: the
- * public API contract (shapes frozen in DevDocs/adr/0007). Each carries what is consumed ({@code
+ * public API contract (shapes frozen in DevDocs/adr/0011). Each carries what is consumed ({@code
  * origin}, or {@code origins} for Pool, identified by global id), the values that operation needs,
  * and for a creating operation the template (numeric like {@code POST /samples}) and the
  * documentation target (no other sample metadata; set it with a follow-up {@code PUT}).
