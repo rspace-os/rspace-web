@@ -89,7 +89,14 @@ and API field names were ported instead.
    a query console. `/` is left alone on the same evidence that keeps it in the allow-list below:
    `10.5281\/zenodo` answers 400 where `10.5281/zenodo` answers 200, so escaping it would break the
    pasted fragments this search exists to match. Escaping costs nothing elsewhere: `\Zeiss` and
-   `Zeiss` both answer 71, `spectrometer\*` and `spectrometer` both 146.
+   `Zeiss` both answer 71, `spectrometer\*` and `spectrometer` both 146. `<`, `>` and `=` are
+   deliberately *not* escaped, and cannot be: a backslash before one is ignored. They need no
+   handling, because a range exists only against a field and the `:` that builds one is escaped.
+   `publicationYear:>2020` answers 95,411,191, but `publicationYear\:>2020`, which is what RSpace
+   sends, answers 15, the same as the plain `publicationYear 2020`. Loose, `Zeiss>4` answers 6,539,
+   exactly what `Zeiss 4` and every other separator the analyser splits on answer, so the character
+   is inert rather than parsed; comparing it against `Zeiss` alone (42,170) only measures the second
+   term. Pinned by a test, because this has already been raised once in review.
 
    The retry is the second half. DataCite indexes the DOI as a keyword, so free text never matches a suffix or part of one: a
    search for `qvtb-aw74` answers nothing though `10.82316/qvtb-aw74` is findable, which is what a

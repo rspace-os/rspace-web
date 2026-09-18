@@ -502,6 +502,27 @@ class PidinstLookupManagerImplTest {
   }
 
   /**
+   * The range operators are left alone on purpose, and a reviewer has already asked for them once.
+   * A backslash before one is ignored, so they cannot be escaped, and they need no handling: a
+   * range exists only against a field, and the {@code :} that builds one is escaped above. Measured
+   * 2026-09-18 against api.datacite.org: {@code publicationYear:>2020} answers 95,411,191 while
+   * {@code publicationYear\:>2020}, which is what this sends, answers 15, the same as the plain
+   * {@code publicationYear 2020}. Loose, {@code Zeiss>4} answers 6,539, exactly what {@code Zeiss
+   * 4} and every other separator answer, so it is inert rather than parsed.
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"Zeiss>4", "Zeiss<4", "Zeiss=4"})
+  void dataCiteFreeTextSearchLeavesRangeOperatorsAlone(String query) {
+    onADataCiteDeployment();
+    when(dataCiteConnector.searchInstrumentDois(anyString(), eq(50), any()))
+        .thenReturn(dataCitePage(0));
+
+    manager.search(query, user);
+
+    verify(dataCiteConnector).searchInstrumentDois(query, 50, InventorySettingType.PIDINST);
+  }
+
+  /**
    * The slash is reserved in query-string syntax, but DataCite answers 400 for {@code
    * 10.5281\/zenodo} and 200 for {@code 10.5281/zenodo} (verified 2026-09-18), so escaping it would
    * break the DOI fragments this search exists to match.
