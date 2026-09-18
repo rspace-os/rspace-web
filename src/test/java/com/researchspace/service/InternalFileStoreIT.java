@@ -10,8 +10,7 @@ import com.researchspace.model.FileProperty;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import java.io.IOException;
 import java.io.InputStream;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,23 +21,13 @@ public class InternalFileStoreIT extends RealTransactionSpringTestBase {
 
   @Autowired private InternalFileStore internalFileStore;
 
-  @BeforeEach
-  public void setUp() throws Exception {
-    super.setUp();
-  }
-
-  @AfterEach
-  public void tearDown() throws Exception {
-    super.tearDown();
-  }
-
   @Test
   void failedStreamWriteRollsBackPersistedMetadata() throws IOException {
     assertTrue(AopUtils.isAopProxy(internalFileStore));
     assertFalse(TransactionSynchronizationManager.isActualTransactionActive());
     internalFileStore.setupInternalFileStoreRoot();
     FileProperty property = new FileProperty();
-    property.setFileUser(piUser.getUsername());
+    property.setFileUser(UUID.randomUUID().toString());
     JdbcTemplate jdbc = new JdbcTemplate(dataSource);
     try (InputStream input =
         new InputStream() {
