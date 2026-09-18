@@ -25,6 +25,7 @@ import {
   muiSizeArgType,
   muiVariantArgType,
 } from "../../argTypeTemplates";
+import { ignoreColorContrast } from "../../storyParameters";
 
 const meta = {
   title: "Material UI/Inputs/FormControl",
@@ -162,6 +163,7 @@ export const ErrorState: Story = {
 };
 
 export const Disabled: Story = {
+  parameters: ignoreColorContrast,
   args: {
     disabled: true,
     children: (

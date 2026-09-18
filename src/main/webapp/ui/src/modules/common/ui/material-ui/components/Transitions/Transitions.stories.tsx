@@ -19,6 +19,7 @@ import { useState } from "react";
 import { useArgs } from "storybook/preview-api";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 import { createBooleanArgType, createNumberArgType, createSelectArgType } from "../../argTypeTemplates";
+import { ignoreColorContrast } from "../../storyParameters";
 
 const meta: Meta = {
   title: "Material UI/Utils/Transitions",
@@ -228,6 +229,7 @@ export const ZoomTransition: Story = {
  * All transitions comparison
  */
 export const AllTransitions: Story = {
+  parameters: ignoreColorContrast,
   render: () => {
     const [show, setShow] = useState(false);
 

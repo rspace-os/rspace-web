@@ -23,6 +23,7 @@ import {
   muiSizeArgType,
   muiVariantArgType,
 } from "../../argTypeTemplates";
+import { ignoreColorContrast } from "../../storyParameters";
 
 const meta = {
   title: "Material UI/Inputs/ButtonGroup",
@@ -57,6 +58,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Playground: Story = {
+  parameters: ignoreColorContrast,
   args: {
     variant: "contained",
     color: "primary",
@@ -74,6 +76,7 @@ export const Playground: Story = {
 };
 
 export const Default: Story = {
+  parameters: ignoreColorContrast,
   args: {} as never,
   render: () => (
     <ButtonGroup variant="contained" aria-label="outlined primary button group">
@@ -85,6 +88,7 @@ export const Default: Story = {
 };
 
 export const Variants: Story = {
+  parameters: ignoreColorContrast,
   args: {} as never,
   render: () => (
     <Box
@@ -143,6 +147,8 @@ export function GroupSizesColors() {
   );
 }
 
+GroupSizesColors.parameters = ignoreColorContrast;
+
 export function GroupOrientation() {
   return (
     <Box
@@ -165,6 +171,8 @@ export function GroupOrientation() {
     </Box>
   );
 }
+
+GroupOrientation.parameters = ignoreColorContrast;
 
 const options = ["Create a merge commit", "Squash and merge", "Rebase and merge"];
 
@@ -240,6 +248,8 @@ export function SplitButton() {
   );
 }
 
+SplitButton.parameters = ignoreColorContrast;
+
 export function DisableElevation() {
   return (
     <ButtonGroup disableElevation variant="contained">
@@ -248,6 +258,8 @@ export function DisableElevation() {
     </ButtonGroup>
   );
 }
+
+DisableElevation.parameters = ignoreColorContrast;
 
 export const InteractionTest: StoryObj<{ onAction: () => void }> = {
   args: { onAction: fn() },

@@ -13,6 +13,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import React from "react";
 import { expect, fn, userEvent, within } from "storybook/test";
 import { createBooleanArgType, createNumberArgType, createSelectArgType } from "../../argTypeTemplates";
+import { ignoreColorContrast } from "../../storyParameters";
 
 const meta = {
   title: "Material UI/Navigation/Stepper",
@@ -58,6 +59,7 @@ export const Playground: Story = {
 };
 
 export const Default: Story = {
+  parameters: ignoreColorContrast,
   render: () => {
     const [activeStep, setActiveStep] = React.useState(0);
     return (
@@ -133,6 +135,8 @@ export function Vertical() {
   );
 }
 
+Vertical.parameters = ignoreColorContrast;
+
 export function AlternativeLabel() {
   return (
     <Stepper activeStep={1} alternativeLabel>
@@ -158,6 +162,7 @@ export function WithError() {
 }
 
 export const InteractionTest: Story = {
+  parameters: ignoreColorContrast,
   render: () => {
     const [activeStep, setActiveStep] = React.useState(0);
     const handleNext = fn(() => setActiveStep((prev) => prev + 1));

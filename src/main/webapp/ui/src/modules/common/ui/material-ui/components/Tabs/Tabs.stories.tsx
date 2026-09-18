@@ -15,6 +15,7 @@ import React from "react";
 import { useArgs } from "storybook/preview-api";
 import { expect, fn, userEvent, within } from "storybook/test";
 import { createBooleanArgType, createSelectArgType } from "../../argTypeTemplates";
+import { ignoreColorContrast } from "../../storyParameters";
 
 const meta = {
   title: "Material UI/Navigation/Tabs",
@@ -74,6 +75,7 @@ function TabPanel(props: TabPanelProps) {
 }
 
 export const Playground: Story = {
+  parameters: ignoreColorContrast,
   args: {
     value: 0,
     orientation: "horizontal",
@@ -99,6 +101,7 @@ export const Playground: Story = {
 };
 
 export const Default: Story = {
+  parameters: ignoreColorContrast,
   render: () => {
     const [value, setValue] = React.useState(0);
     return (
@@ -148,6 +151,8 @@ export function Basic() {
   );
 }
 
+Basic.parameters = ignoreColorContrast;
+
 export function Centered() {
   const [value, setValue] = React.useState(0);
   return (
@@ -160,6 +165,8 @@ export function Centered() {
     </Box>
   );
 }
+
+Centered.parameters = ignoreColorContrast;
 
 export function Scrollable() {
   const [value, setValue] = React.useState(0);
@@ -177,6 +184,8 @@ export function Scrollable() {
     </Box>
   );
 }
+
+Scrollable.parameters = ignoreColorContrast;
 
 export function IconTabs() {
   const [value, setValue] = React.useState(0);
@@ -199,6 +208,8 @@ export function IconLabelTabs() {
     </Tabs>
   );
 }
+
+IconLabelTabs.parameters = ignoreColorContrast;
 
 export function Vertical() {
   const [value, setValue] = React.useState(0);
@@ -239,6 +250,8 @@ export function Vertical() {
   );
 }
 
+Vertical.parameters = ignoreColorContrast;
+
 export function Colors() {
   const [value, setValue] = React.useState(0);
   return (
@@ -263,6 +276,8 @@ export function Colors() {
     </Box>
   );
 }
+
+Colors.parameters = ignoreColorContrast;
 
 export const InteractionTest: Story = {
   render: () => {

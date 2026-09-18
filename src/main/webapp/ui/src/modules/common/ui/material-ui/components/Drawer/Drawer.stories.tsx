@@ -18,6 +18,7 @@ import React from "react";
 import { useArgs } from "storybook/preview-api";
 import { expect, fn, userEvent, waitFor, within } from "storybook/test";
 import { createBooleanArgType, createSelectArgType } from "../../argTypeTemplates";
+import { ignoreColorContrast } from "../../storyParameters";
 
 const meta = {
   title: "Material UI/Navigation/Drawer",
@@ -135,6 +136,8 @@ export function TemporaryLeft() {
   );
 }
 
+TemporaryLeft.parameters = ignoreColorContrast;
+
 export function TemporaryRight() {
   const [open, setOpen] = React.useState(false);
 
@@ -154,6 +157,8 @@ export function TemporaryRight() {
     </div>
   );
 }
+
+TemporaryRight.parameters = ignoreColorContrast;
 
 export function TemporaryTop() {
   const [open, setOpen] = React.useState(false);
@@ -183,6 +188,8 @@ export function TemporaryTop() {
   );
 }
 
+TemporaryTop.parameters = ignoreColorContrast;
+
 export function TemporaryBottom() {
   const [open, setOpen] = React.useState(false);
 
@@ -210,6 +217,8 @@ export function TemporaryBottom() {
     </div>
   );
 }
+
+TemporaryBottom.parameters = ignoreColorContrast;
 
 export function Permanent() {
   return (

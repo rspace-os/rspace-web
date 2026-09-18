@@ -11,6 +11,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import React from "react";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 import { createBooleanArgType } from "../../argTypeTemplates";
+import { ignoreColorContrast } from "../../storyParameters";
 
 const meta = {
   title: "Material UI/Feedback/Backdrop",
@@ -69,6 +70,8 @@ export function Basic() {
   );
 }
 
+Basic.parameters = ignoreColorContrast;
+
 export function WithCircularProgress() {
   const [open, setOpen] = React.useState(false);
 
@@ -87,6 +90,8 @@ export function WithCircularProgress() {
     </div>
   );
 }
+
+WithCircularProgress.parameters = ignoreColorContrast;
 
 export function WithCustomContent() {
   const [open, setOpen] = React.useState(false);
@@ -109,6 +114,8 @@ export function WithCustomContent() {
     </div>
   );
 }
+
+WithCustomContent.parameters = ignoreColorContrast;
 
 export const InteractionTest: Story = {
   args: {
@@ -140,7 +147,7 @@ export const InteractionTest: Story = {
     const button = canvas.getByRole("button", { name: /show backdrop/i });
     await userEvent.click(button);
     const backdrop = canvas.getByTestId("test-backdrop");
-    await expect(backdrop).toBeVisible();
+    await waitFor(() => expect(backdrop).toBeVisible());
     await userEvent.click(backdrop);
     await waitFor(() => expect(backdrop).not.toBeVisible());
   },

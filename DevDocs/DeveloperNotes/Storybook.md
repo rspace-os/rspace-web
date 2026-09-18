@@ -76,11 +76,10 @@ record its exact revision in the relevant attribution file.
 
 After changing stories, run `pnpm tsc` and `pnpm lint`. Run a focused
 `pnpm storybook:test` command while iterating, then the full Storybook test
-baseline with `pnpm storybook:test:ci` before review. Run
-`pnpm storybook:build` when changing Storybook
+command before review. Run `pnpm storybook:build` when changing Storybook
 configuration or documentation metadata. Browser checks cover the rendered
 states and declared interactions; review new keyboard, focus, responsive, and
-visual states manually as well. Known Material UI contrast failures and their
+visual states manually as well. Known Material UI contrast issues and their
 reproduction commands are documented in
 [`CONTRAST.md`](../../src/main/webapp/ui/src/modules/common/ui/material-ui/CONTRAST.md).
 

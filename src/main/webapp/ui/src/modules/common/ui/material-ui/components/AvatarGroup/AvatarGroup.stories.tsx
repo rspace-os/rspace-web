@@ -8,6 +8,7 @@ import Stack from "@mui/material/Stack";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, within } from "storybook/test";
 import { createNumberArgType, createSelectArgType, muiVariantArgType } from "../../argTypeTemplates";
+import { ignoreColorContrast } from "../../storyParameters";
 
 const meta = {
   title: "Material UI/Data Display/AvatarGroup",
@@ -27,6 +28,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
+  parameters: ignoreColorContrast,
   args: {
     max: 4,
     children: [
@@ -60,6 +62,7 @@ export const Default: Story = {
 };
 
 export const MaxAvatars: Story = {
+  parameters: ignoreColorContrast,
   args: {},
   render: () => (
     <Stack spacing={2}>
@@ -112,6 +115,7 @@ export const MaxAvatars: Story = {
 };
 
 export const TotalAvatars: Story = {
+  parameters: ignoreColorContrast,
   args: {
     total: 24,
     children: [
@@ -171,6 +175,7 @@ export const Spacing: Story = {
 };
 
 export const WithLetterAvatars: Story = {
+  parameters: ignoreColorContrast,
   args: {
     children: [
       <Avatar key="1" sx={{ bgcolor: "#1976d2" }}>
@@ -187,6 +192,7 @@ export const WithLetterAvatars: Story = {
 };
 
 export const InteractionTest: Story = {
+  parameters: ignoreColorContrast,
   args: {
     max: 3,
     children: [

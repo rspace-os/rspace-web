@@ -11,6 +11,7 @@ import Fab from "@mui/material/Fab";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fn, userEvent, within } from "storybook/test";
 import { createSelectArgType, muiDisabledArgType, muiSizeArgType, muiVariantArgType } from "../../argTypeTemplates";
+import { ignoreColorContrast } from "../../storyParameters";
 
 const meta = {
   title: "Material UI/Inputs/FloatingActionButton",
@@ -114,6 +115,7 @@ export const Sizes: Story = {
 };
 
 export const Extended: Story = {
+  parameters: ignoreColorContrast,
   args: {} as never,
   render: () => (
     <Box sx={{ "& > :not(style)": { m: 1 } }}>

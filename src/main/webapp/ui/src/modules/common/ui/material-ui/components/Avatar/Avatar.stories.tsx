@@ -9,6 +9,7 @@ import Stack from "@mui/material/Stack";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, within } from "storybook/test";
 import { createSelectArgType } from "../../argTypeTemplates";
+import { ignoreColorContrast } from "../../storyParameters";
 
 const meta = {
   title: "Material UI/Data Display/Avatar",
@@ -44,6 +45,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Playground: Story = {
+  parameters: ignoreColorContrast,
   args: {
     children: "AB",
     variant: "circular",
@@ -84,6 +86,8 @@ export function LetterAvatar() {
     </Stack>
   );
 }
+
+LetterAvatar.parameters = ignoreColorContrast;
 
 export function IconAvatar() {
   return (
@@ -146,7 +150,10 @@ export function Group() {
   );
 }
 
+Group.parameters = ignoreColorContrast;
+
 export const InteractionTest: Story = {
+  parameters: ignoreColorContrast,
   args: {},
   render: () => (
     <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>

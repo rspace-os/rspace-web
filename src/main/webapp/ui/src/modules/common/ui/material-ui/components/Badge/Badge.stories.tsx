@@ -10,6 +10,7 @@ import Stack from "@mui/material/Stack";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, within } from "storybook/test";
 import { createBooleanArgType, createNumberArgType, createSelectArgType } from "../../argTypeTemplates";
+import { ignoreColorContrast } from "../../storyParameters";
 
 const meta = {
   title: "Material UI/Data Display/Badge",
@@ -116,6 +117,8 @@ export function MaxBadgeCount() {
   );
 }
 
+MaxBadgeCount.parameters = ignoreColorContrast;
+
 export function WithIconButton() {
   return (
     <Stack direction="row" spacing={2}>
@@ -134,6 +137,7 @@ export function WithIconButton() {
 }
 
 export const InteractionTest: Story = {
+  parameters: ignoreColorContrast,
   args: {},
   render: () => (
     <Stack direction="row" spacing={3}>

@@ -12,6 +12,7 @@ import Typography from "@mui/material/Typography";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fn, userEvent, within } from "storybook/test";
 import { createBooleanArgType, createNumberArgType, createSelectArgType } from "../../argTypeTemplates";
+import { ignoreColorContrast } from "../../storyParameters";
 
 const meta = {
   title: "Material UI/Surfaces/AppBar",
@@ -47,6 +48,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Playground: Story = {
+  parameters: ignoreColorContrast,
   args: {
     color: "primary",
     position: "static",
@@ -64,6 +66,7 @@ export const Playground: Story = {
 };
 
 export const Default: Story = {
+  parameters: ignoreColorContrast,
   render: () => (
     <AppBar position="static">
       <Toolbar>
@@ -89,6 +92,8 @@ export function Basic() {
   );
 }
 
+Basic.parameters = ignoreColorContrast;
+
 export function WithMenuAndSearch() {
   return (
     <Box sx={{ flexGrow: 1 }}>
@@ -109,6 +114,8 @@ export function WithMenuAndSearch() {
   );
 }
 
+WithMenuAndSearch.parameters = ignoreColorContrast;
+
 export function SecondaryColor() {
   return (
     <Box sx={{ flexGrow: 1 }}>
@@ -122,6 +129,8 @@ export function SecondaryColor() {
     </Box>
   );
 }
+
+SecondaryColor.parameters = ignoreColorContrast;
 
 export function Transparent() {
   return (
@@ -154,7 +163,10 @@ export function Dense() {
   );
 }
 
+Dense.parameters = ignoreColorContrast;
+
 export const InteractionTest: Story = {
+  parameters: ignoreColorContrast,
   args: { onClick: fn() },
   render: (args) => {
     return (

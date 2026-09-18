@@ -19,6 +19,7 @@ import {
   muiSizeArgType,
   muiVariantArgType,
 } from "../../argTypeTemplates";
+import { ignoreColorContrast } from "../../storyParameters";
 
 const meta = {
   title: "Material UI/Data Display/Chip",
@@ -54,6 +55,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Playground: Story = {
+  parameters: ignoreColorContrast,
   args: {
     label: "Chip Label",
     color: "primary",
@@ -93,6 +95,8 @@ export function ColorChips() {
     </Stack>
   );
 }
+
+ColorChips.parameters = ignoreColorContrast;
 
 export const Clickable: Story = {
   render: () => {

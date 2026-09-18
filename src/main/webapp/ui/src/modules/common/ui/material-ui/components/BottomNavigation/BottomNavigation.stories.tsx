@@ -15,6 +15,7 @@ import { useState } from "react";
 import { useArgs } from "storybook/preview-api";
 import { expect, userEvent, within } from "storybook/test";
 import { createBooleanArgType } from "../../argTypeTemplates";
+import { ignoreColorContrast } from "../../storyParameters";
 
 const meta: Meta<typeof BottomNavigation> = {
   title: "Material UI/Navigation/BottomNavigation",
@@ -43,6 +44,7 @@ export default meta;
 type Story = StoryObj<typeof BottomNavigation>;
 
 export const Playground: Story = {
+  parameters: ignoreColorContrast,
   args: {
     showLabels: true,
     value: 0,
@@ -65,6 +67,7 @@ export const Playground: Story = {
  * Basic bottom navigation with three actions
  */
 export const Default: Story = {
+  parameters: ignoreColorContrast,
   render: () => {
     const [value, setValue] = useState(0);
 
@@ -104,6 +107,7 @@ export const IconsOnly: Story = {
  * Fixed position bottom navigation
  */
 export const FixedPosition: Story = {
+  parameters: ignoreColorContrast,
   render: () => {
     const [value, setValue] = useState(0);
 

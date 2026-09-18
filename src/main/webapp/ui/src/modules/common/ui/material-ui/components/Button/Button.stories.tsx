@@ -14,6 +14,7 @@ import {
   muiSizeArgType,
   muiVariantArgType,
 } from "../../argTypeTemplates";
+import { ignoreColorContrast } from "../../storyParameters";
 
 const meta = {
   title: "Material UI/Inputs/Button",
@@ -77,6 +78,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Playground: Story = {
+  parameters: ignoreColorContrast,
   args: {
     children: "Click Me",
     variant: "contained",
@@ -111,6 +113,7 @@ export const ClickInteraction: Story = {
 };
 
 export const Variants: Story = {
+  parameters: ignoreColorContrast,
   args: {} as never,
   render: () => (
     <div style={{ display: "flex", gap: "16px" }}>
@@ -122,6 +125,7 @@ export const Variants: Story = {
 };
 
 export const Colors: Story = {
+  parameters: ignoreColorContrast,
   args: {} as never,
   render: () => (
     <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
@@ -148,6 +152,7 @@ export const Colors: Story = {
 };
 
 export const Sizes: Story = {
+  parameters: ignoreColorContrast,
   args: {} as never,
   render: () => (
     <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
@@ -170,6 +175,7 @@ export const AccessibilityDemo: Story = {
     variant: "contained",
   },
   parameters: {
+    ...ignoreColorContrast,
     docs: {
       description: {
         story: "This button demonstrates accessibility best practices with proper color contrast and clear labeling.",

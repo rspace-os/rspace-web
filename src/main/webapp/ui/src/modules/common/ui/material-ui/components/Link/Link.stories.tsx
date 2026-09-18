@@ -8,6 +8,7 @@ import Typography from "@mui/material/Typography";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fn, userEvent, within } from "storybook/test";
 import { createSelectArgType } from "../../argTypeTemplates";
+import { ignoreColorContrast } from "../../storyParameters";
 
 const meta = {
   title: "Material UI/Navigation/Link",
@@ -72,6 +73,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Playground: Story = {
+  parameters: ignoreColorContrast,
   args: {
     href: "https://mui.com",
     children: "Playground Link",
@@ -81,6 +83,7 @@ export const Playground: Story = {
 };
 
 export const Default: Story = {
+  parameters: ignoreColorContrast,
   args: {
     href: "https://mui.com",
     children: "Default Link",
@@ -103,6 +106,8 @@ export function UnderlineVariants() {
   );
 }
 
+UnderlineVariants.parameters = ignoreColorContrast;
+
 export function Colors() {
   return (
     <Stack spacing={2}>
@@ -122,6 +127,8 @@ export function Colors() {
   );
 }
 
+Colors.parameters = ignoreColorContrast;
+
 export function ButtonBehavior() {
   return (
     <Link component="button" variant="body2" onClick={fn()}>
@@ -129,6 +136,8 @@ export function ButtonBehavior() {
     </Link>
   );
 }
+
+ButtonBehavior.parameters = ignoreColorContrast;
 
 export function WithinText() {
   return (
@@ -138,7 +147,10 @@ export function WithinText() {
   );
 }
 
+WithinText.parameters = ignoreColorContrast;
+
 export const InteractionTest: Story = {
+  parameters: ignoreColorContrast,
   args: {
     href: "#test",
     children: "Test Link",

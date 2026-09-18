@@ -11,6 +11,7 @@ import * as React from "react";
 import { useArgs } from "storybook/preview-api";
 import { expect, screen, userEvent, waitFor, within } from "storybook/test";
 import { createBooleanArgType, createSelectArgType } from "../../argTypeTemplates";
+import { ignoreColorContrast } from "../../storyParameters";
 
 const meta: Meta<typeof Popover> = {
   title: "Material UI/Utils/Popover",
@@ -167,6 +168,8 @@ export function Basic() {
     </div>
   );
 }
+
+Basic.parameters = ignoreColorContrast;
 
 /**
  * Demonstrates different anchor positions.

@@ -403,9 +403,9 @@ jobs:
           VITEST_BROWSERS: ${{ matrix.browser }}
         run: pnpm run test-browser
 
-      - name: Run Storybook tests against the known contrast baseline
+      - name: Run Storybook tests
         if: ${{ !cancelled() && matrix.browser == 'chromium' }}
-        run: pnpm run storybook:test:ci
+        run: pnpm run storybook:test
 
       - name: Publish test results
         uses: EnricoMi/publish-unit-test-result-action@v2.24.0

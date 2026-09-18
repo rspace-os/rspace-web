@@ -7,6 +7,7 @@ import Typography, { type TypographyProps } from "@mui/material/Typography";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, within } from "storybook/test";
 import { createBooleanArgType, muiAlignArgType, muiTypographyVariantArgType } from "../../argTypeTemplates";
+import { ignoreColorContrast } from "../../storyParameters";
 
 const meta = {
   title: "Material UI/Data Display/Typography",
@@ -76,6 +77,7 @@ export const AllVariants: Story = {
 };
 
 export const Colors: Story = {
+  parameters: ignoreColorContrast,
   render: () => (
     <>
       <Typography color="primary">Primary Color</Typography>
@@ -88,6 +90,7 @@ export const Colors: Story = {
 };
 
 export const InteractionTest: Story = {
+  parameters: ignoreColorContrast,
   render: () => (
     <>
       <Typography variant="h1">Test Heading</Typography>

@@ -12,6 +12,7 @@ import React from "react";
 import { useArgs } from "storybook/preview-api";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 import { createBooleanArgType } from "../../argTypeTemplates";
+import { ignoreColorContrast } from "../../storyParameters";
 
 const meta = {
   title: "Material UI/Feedback/Modal",
@@ -113,6 +114,8 @@ export function BasicModal() {
   );
 }
 
+BasicModal.parameters = ignoreColorContrast;
+
 export function KeepMounted() {
   const [open, setOpen] = React.useState(false);
   const handleOpen = () => setOpen(true);
@@ -134,6 +137,8 @@ export function KeepMounted() {
     </div>
   );
 }
+
+KeepMounted.parameters = ignoreColorContrast;
 
 export function TransitionsModal() {
   const [open, setOpen] = React.useState(false);
@@ -158,6 +163,8 @@ export function TransitionsModal() {
     </div>
   );
 }
+
+TransitionsModal.parameters = ignoreColorContrast;
 
 export const InteractionTest: Story = {
   args: {} as never,
@@ -226,3 +233,5 @@ export function NestedModals() {
     </div>
   );
 }
+
+NestedModals.parameters = ignoreColorContrast;

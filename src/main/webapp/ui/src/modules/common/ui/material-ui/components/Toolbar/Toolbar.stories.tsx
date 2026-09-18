@@ -14,6 +14,7 @@ import Typography from "@mui/material/Typography";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, within } from "storybook/test";
 import { createBooleanArgType, muiVariantArgType } from "../../argTypeTemplates";
+import { ignoreColorContrast } from "../../storyParameters";
 
 const meta = {
   title: "Material UI/Navigation/Toolbar",
@@ -31,6 +32,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
+  parameters: ignoreColorContrast,
   args: {
     children: (
       <>
@@ -55,6 +57,7 @@ export const Default: Story = {
 };
 
 export const Variants: Story = {
+  parameters: ignoreColorContrast,
   args: {},
   render: () => (
     <Box sx={{ flexGrow: 1, display: "flex", flexDirection: "column", gap: 2 }}>
@@ -114,6 +117,7 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
 }));
 
 export const WithSearch: Story = {
+  parameters: ignoreColorContrast,
   args: {},
   render: () => (
     <Box sx={{ flexGrow: 1 }}>
@@ -138,6 +142,7 @@ export const WithSearch: Story = {
 };
 
 export const DisableGutters: Story = {
+  parameters: ignoreColorContrast,
   args: {},
   render: () => (
     <Box sx={{ flexGrow: 1 }}>
@@ -153,6 +158,7 @@ export const DisableGutters: Story = {
 };
 
 export const InteractionTest: Story = {
+  parameters: ignoreColorContrast,
   args: {
     children: (
       <>

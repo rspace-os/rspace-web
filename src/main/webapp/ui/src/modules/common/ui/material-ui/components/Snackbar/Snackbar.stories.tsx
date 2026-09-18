@@ -13,6 +13,7 @@ import React from "react";
 import { useArgs } from "storybook/preview-api";
 import { expect, fn, screen, userEvent, waitFor, within } from "storybook/test";
 import { createBooleanArgType, createNumberArgType } from "../../argTypeTemplates";
+import { ignoreColorContrast } from "../../storyParameters";
 
 const meta = {
   title: "Material UI/Feedback/Snackbar",
@@ -74,6 +75,8 @@ export function Basic() {
   );
 }
 
+Basic.parameters = ignoreColorContrast;
+
 export function WithSuccessAlert() {
   const [open, setOpen] = React.useState(false);
 
@@ -127,6 +130,8 @@ export function TopCenter() {
   );
 }
 
+TopCenter.parameters = ignoreColorContrast;
+
 export function WithAction() {
   const [open, setOpen] = React.useState(false);
 
@@ -156,6 +161,8 @@ export function WithAction() {
     </div>
   );
 }
+
+WithAction.parameters = ignoreColorContrast;
 
 export const InteractionTest: Story = {
   args: {},

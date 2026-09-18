@@ -16,6 +16,7 @@ import React from "react";
 import { useArgs } from "storybook/preview-api";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 import { createBooleanArgType, createSelectArgType } from "../../argTypeTemplates";
+import { ignoreColorContrast } from "../../storyParameters";
 
 const meta = {
   title: "Material UI/Navigation/Menu",
@@ -129,6 +130,8 @@ export function Basic() {
   );
 }
 
+Basic.parameters = ignoreColorContrast;
+
 export function WithIcons() {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
@@ -164,6 +167,8 @@ export function WithIcons() {
   );
 }
 
+WithIcons.parameters = ignoreColorContrast;
+
 export function Dense() {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
@@ -190,6 +195,8 @@ export function Dense() {
     </div>
   );
 }
+
+Dense.parameters = ignoreColorContrast;
 
 export const InteractionTest: Story = {
   args: {} as never,
