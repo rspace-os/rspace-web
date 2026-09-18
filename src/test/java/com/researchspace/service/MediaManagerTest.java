@@ -36,6 +36,7 @@ import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import net.coobird.thumbnailator.Thumbnails;
@@ -208,7 +209,7 @@ public class MediaManagerTest extends SpringTransactionalTest {
     // updateMediaFile will later modify in-place, so comparing image.getXxx() after the update
     // would see new values.
     String imageNameBefore = image.getName();
-    java.util.Date imageModDateBefore = image.getEditInfo().getModificationDate();
+    Date imageModDateBefore = image.getEditInfo().getModificationDate();
     Long imageSizeBefore = image.getSize();
     String imageFileNameBefore = image.getFileName();
     Long imageWorkingFPIdBefore = image.getWorkingImageFP().getId();

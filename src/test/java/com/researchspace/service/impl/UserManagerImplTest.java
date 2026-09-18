@@ -16,10 +16,14 @@ import com.researchspace.Constants;
 import com.researchspace.analytics.service.AnalyticsManager;
 import com.researchspace.dao.CommunityDao;
 import com.researchspace.dao.RoleDao;
+import com.researchspace.dao.UserAccountEventDao;
 import com.researchspace.dao.UserDao;
 import com.researchspace.model.Community;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
+import com.researchspace.model.permissions.IPermissionUtils;
+import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.service.IVerificationPasswordValidator;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserExistsException;
@@ -44,12 +48,26 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
   private @Mock UserDao userDao;
   private @Mock RoleDao roleDao;
   private @Mock CommunityDao communityDao;
+  private @Mock UserAccountEventDao accountEventDao;
+  private @Mock IPermissionUtils permissionUtils;
   private @Mock AnalyticsManager analyticsManager;
+  private @Mock IPropertyHolder properties;
+  private @Mock IVerificationPasswordValidator verificationPasswordValidator;
 
   @BeforeEach
   public void setUp() throws Exception {
     ReflectionTestUtils.setField(
         userManager, "messages", new MessageSourceUtils(new JsonMessageSource()));
+    // UserManagerImpl declares a UserDao constructor, so @InjectMocks satisfies it by
+    // constructor injection and does not also field-inject. Wire its @Autowired fields by hand.
+    ReflectionTestUtils.setField(userManager, "communityDao", communityDao);
+    ReflectionTestUtils.setField(userManager, "roleDao", roleDao);
+    ReflectionTestUtils.setField(userManager, "accountEventDao", accountEventDao);
+    ReflectionTestUtils.setField(userManager, "permissnUtils", permissionUtils);
+    ReflectionTestUtils.setField(userManager, "analyticsManager", analyticsManager);
+    ReflectionTestUtils.setField(userManager, "properties", properties);
+    ReflectionTestUtils.setField(
+        userManager, "verificationPasswordValidator", verificationPasswordValidator);
   }
 
   @Test
