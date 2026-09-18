@@ -11,19 +11,34 @@ import ProcessAction, { isProcessableSelection } from "../ProcessAction";
 
 // The wizard itself is under test elsewhere; here only the menu entry and the lock it takes on the
 // way in matter, so the wizard is a marker that says whether it opened.
+// Lets a test stand in for a renewal POST the real wizard has in flight, so the ordering the
+// wizard guarantees on close can be checked on the unmount path too.
+let settleRenewal: () => void = () => {};
 vi.mock("../../Operations/OperationWizard", () => ({
   default: ({
     open,
     onClose,
     origins,
+    pendingRenewals,
   }: {
     open: boolean;
     onClose: () => void;
     origins: Array<{ globalId: string }>;
+    pendingRenewals?: { current: Promise<unknown> };
   }) =>
     open ? (
       <div data-testid="wizard" data-origins={origins.map((o) => o.globalId).join(",")}>
         <button type="button" onClick={onClose} aria-label="close wizard" />
+        <button
+          type="button"
+          aria-label="start renewal"
+          onClick={() => {
+            if (!pendingRenewals) return;
+            pendingRenewals.current = new Promise<void>((resolve) => {
+              settleRenewal = resolve;
+            });
+          }}
+        />
       </div>
     ) : null,
 }));
@@ -216,6 +231,25 @@ describe("ProcessAction lock acquisition", () => {
     await waitFor(() => expect(screen.getByTestId("wizard")).toBeInTheDocument());
     expect(screen.getByTestId("wizard")).toHaveAttribute("data-origins", "SS1");
     expect(acquireSwappedIn).not.toHaveBeenCalled();
+  });
+  it("waits for an in-flight renewal before releasing when the action unmounts", async () => {
+    // Renewal is a POST that recreates the lock. Releasing while one is in flight lets the DELETE
+    // go first, and the late POST then re-locks an origin whose wizard is gone, with nothing left
+    // to release it. The wizard orders these on close; unmount has to order them the same way.
+    const origin = makeMockSubSample({});
+    vi.spyOn(origin, "acquireEditLock").mockResolvedValue("LOCKED_OK");
+    const release = vi.spyOn(origin, "releaseLock").mockResolvedValue(true);
+    const { unmount } = renderAction([origin]);
+
+    await userEvent.click(screen.getByRole("button", { name: /operations\.action\.process/i }));
+    await waitFor(() => expect(screen.getByTestId("wizard")).toBeInTheDocument());
+    await userEvent.click(screen.getByRole("button", { name: /start renewal/i }));
+
+    unmount();
+    expect(release).not.toHaveBeenCalled();
+
+    settleRenewal();
+    await waitFor(() => expect(release).toHaveBeenCalled());
   });
   it("blocks reopening until the release started at close has settled", async () => {
     // Reopening while the DELETE is still in flight would acquire the lock this wizard is in the
