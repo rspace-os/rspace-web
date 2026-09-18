@@ -43,8 +43,9 @@ public interface DataCiteConnector {
    *
    * <p>The query reaches DataCite's {@code query} parameter as written, and that parameter is
    * Elasticsearch query-string syntax rather than plain text: bare words work as free text, and a
-   * caller may also pass a clause such as {@code doi:*suffix*}. A caller that builds a clause owns
-   * escaping what it interpolates, because an unbalanced quote answers 400 rather than no hits.
+   * caller may also pass a clause such as {@code doi:*suffix*}. Escaping is the caller's, whether
+   * it passes user text or builds a clause around it, because unbalanced syntax answers 400 rather
+   * than no hits.
    */
   DataCiteDoiSearchResult searchInstrumentDois(
       String query, int pageSize, InventorySettingType settingType);

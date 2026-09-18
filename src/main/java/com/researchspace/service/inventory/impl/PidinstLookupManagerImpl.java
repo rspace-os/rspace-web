@@ -72,6 +72,29 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
    */
   static final Pattern DOI_FRAGMENT = Pattern.compile("^[A-Za-z0-9._/-]+$");
 
+  /**
+   * The characters DataCite's {@code query} reserves, escaped before a free-text search so the
+   * user's words are matched rather than parsed. Left unescaped they answer 400, not an empty page,
+   * and the dialog can only show that as an error: verified 2026-09-18 against api.datacite.org,
+   * where {@code foo"bar}, {@code foo[bar}, {@code foo{bar}, {@code (foo}, {@code foo!},
+   * {@code foo^} and {@code zeiss &&} all answer 400 while every escaped form answers 200.
+   *
+   * <p>{@code /} is deliberately absent although query-string syntax reserves it: DataCite answers
+   * 400 for {@code 10.5281\/zenodo} and 200 for {@code 10.5281/zenodo}, so escaping it would break
+   * the pasted DOI fragments this search exists to match. Escaping costs nothing where it is not
+   * needed, checked the same day: {@code \Zeiss} and {@code Zeiss} both answer 71,
+   * {@code spectrometer\*} and {@code spectrometer} both 146.
+   */
+  private static final Pattern DATACITE_RESERVED =
+      Pattern.compile("([\\\\+\\-&|!(){}\\[\\]^\"~*?:])");
+
+  /**
+   * The bare boolean operators, which no character class catches. A dangling one is a parse error
+   * in its own right ({@code abc OR} and {@code NOT} at the end both answer 400), and escaping the
+   * first letter is what stops the parser reading the word as an operator.
+   */
+  private static final Pattern DATACITE_OPERATOR = Pattern.compile("\\b(AND|OR|NOT)\\b");
+
   /** A Handle under an ePIC prefix (B2INST mints 21.xxx), bare or behind hdl.handle.net. */
   static final Pattern HANDLE_QUERY =
       Pattern.compile(
@@ -194,12 +217,24 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
    */
   private DataCiteDoiSearchResult searchDataCite(String query) {
     DataCiteDoiSearchResult hits =
-        dataCiteConnector.searchInstrumentDois(query, MAX_HITS, InventorySettingType.PIDINST);
+        dataCiteConnector.searchInstrumentDois(
+            escapeForDataCite(query), MAX_HITS, InventorySettingType.PIDINST);
     if (!hits.getData().isEmpty() || !DOI_FRAGMENT.matcher(query).matches()) {
       return hits;
     }
     return dataCiteConnector.searchInstrumentDois(
         "doi:*" + query + "*", MAX_HITS, InventorySettingType.PIDINST);
+  }
+
+  /**
+   * What the user typed, as a literal term for DataCite's Elasticsearch {@code query}. Only the
+   * free-text call needs this: the wildcard retry composes its own clause and is already guarded by
+   * {@link #DOI_FRAGMENT}, which admits nothing that could close it.
+   */
+  private static String escapeForDataCite(String query) {
+    String escaped = DATACITE_RESERVED.matcher(query).replaceAll("\\\\$1");
+    // after the character pass, so the backslash it inserts is not escaped again
+    return DATACITE_OPERATOR.matcher(escaped).replaceAll("\\\\$1");
   }
 
   private IdentifierType enabledProvider() {

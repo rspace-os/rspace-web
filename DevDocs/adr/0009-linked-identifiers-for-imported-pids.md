@@ -79,8 +79,19 @@ and API field names were ported instead.
    IllegalArgumentException. The import dialog mirrors the number and keeps Search disabled below
    it, naming the minimum under the field, so the ordinary case never makes the round trip; the
    server stays the authority, and a client that ignores it still gets the 422.
-7. **A DataCite free-text search that finds nothing is retried as `doi:*<query>*`** (RSDEV-1325).
-   DataCite indexes the DOI as a keyword, so free text never matches a suffix or part of one: a
+7. **The DataCite free-text query is escaped, and a search that finds nothing is retried as
+   `doi:*<query>*`** (RSDEV-1325). DataCite's `query` is Elasticsearch query-string syntax whatever
+   the caller intends, so user text reaches it escaped: unbalanced syntax answers 400 rather than an
+   empty page, and a dialog can only show a 400 as an error. Verified 2026-09-18 against
+   api.datacite.org: `foo"bar`, `foo[bar`, `foo{bar`, `(foo`, `foo!`, `foo^`, `zeiss &&` and a
+   dangling `abc OR` all answer 400, and every escaped form answers 200. The escape covers the
+   reserved characters and the bare `AND`/`OR`/`NOT`, so the search box is literal text rather than
+   a query console. `/` is left alone on the same evidence that keeps it in the allow-list below:
+   `10.5281\/zenodo` answers 400 where `10.5281/zenodo` answers 200, so escaping it would break the
+   pasted fragments this search exists to match. Escaping costs nothing elsewhere: `\Zeiss` and
+   `Zeiss` both answer 71, `spectrometer\*` and `spectrometer` both 146.
+
+   The retry is the second half. DataCite indexes the DOI as a keyword, so free text never matches a suffix or part of one: a
    search for `qvtb-aw74` answers nothing though `10.82316/qvtb-aw74` is findable, which is what a
    user who pasted half a DOI sees. Verified against api.test.datacite.org on 2026-09-16: the bare
    suffix returns 0, `doi:*qvtb-aw74*` returns 1, `doi:*qvtb*` returns 1, and the wildcard matches
