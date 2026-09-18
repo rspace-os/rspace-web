@@ -84,6 +84,16 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
    * the pasted DOI fragments this search exists to match. Escaping costs nothing where it is not
    * needed, checked the same day: {@code \Zeiss} and {@code Zeiss} both answer 71,
    * {@code spectrometer\*} and {@code spectrometer} both 146.
+   *
+   * <p>{@code <}, {@code >} and {@code =} are absent too, and cannot be added: a backslash before
+   * one is ignored, so escaping them is not available even in principle. They need no handling,
+   * because a range only exists attached to a field and {@code :} is escaped here, which is what
+   * builds one. Measured 2026-09-18: {@code publicationYear:>2020} answers 95,411,191 but
+   * {@code publicationYear\:>2020}, which is what this sends, answers 15, the same as the plain
+   * {@code publicationYear 2020}. Loose, {@code Zeiss>4} answers 6,539, which is exactly what
+   * {@code Zeiss 4} answers and what every separator the analyser splits on answers, so the
+   * character is inert rather than parsed. Comparing it against {@code Zeiss} alone (42,170) only
+   * measures the second term.
    */
   private static final Pattern DATACITE_RESERVED =
       Pattern.compile("([\\\\+\\-&|!(){}\\[\\]^\"~*?:])");
