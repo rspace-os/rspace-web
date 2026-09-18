@@ -12,9 +12,17 @@ import ProcessAction, { isProcessableSelection } from "../ProcessAction";
 // The wizard itself is under test elsewhere; here only the menu entry and the lock it takes on the
 // way in matter, so the wizard is a marker that says whether it opened.
 vi.mock("../../Operations/OperationWizard", () => ({
-  default: ({ open, onClose }: { open: boolean; onClose: () => void }) =>
+  default: ({
+    open,
+    onClose,
+    origins,
+  }: {
+    open: boolean;
+    onClose: () => void;
+    origins: Array<{ globalId: string }>;
+  }) =>
     open ? (
-      <div data-testid="wizard">
+      <div data-testid="wizard" data-origins={origins.map((o) => o.globalId).join(",")}>
         <button type="button" onClick={onClose} aria-label="close wizard" />
       </div>
     ) : null,
@@ -161,6 +169,53 @@ describe("ProcessAction lock acquisition", () => {
     expect(screen.queryByTestId("wizard")).not.toBeInTheDocument();
     expect(releaseFresh).toHaveBeenCalled();
     expect(releaseElsewhere).not.toHaveBeenCalled();
+  });
+  it("releases a lock that arrives after the action has unmounted", async () => {
+    // The toolbar owns the selection: emptying it unmounts this action while the POSTs are still
+    // in flight. Nothing is left to close the wizard, so a lock granted after that point is never
+    // given back and the origin stays locked until the server expires it.
+    const origin = makeMockSubSample({});
+    let grant: (status: "LOCKED_OK") => void = () => {};
+    vi.spyOn(origin, "acquireEditLock").mockReturnValue(
+      new Promise<"LOCKED_OK">((resolve) => {
+        grant = resolve;
+      }),
+    );
+    const release = vi.spyOn(origin, "releaseLock").mockResolvedValue(true);
+    const { unmount } = renderAction([origin]);
+
+    fireEvent.click(screen.getByRole("button", { name: /operations\.action\.process/i }));
+    unmount();
+    grant("LOCKED_OK");
+
+    await waitFor(() => expect(release).toHaveBeenCalled());
+  });
+  it("opens on the origins it locked, not on a selection that changed while it was acquiring", async () => {
+    // The toolbar can swap the selection mid-acquisition. The locks were taken on the old origins,
+    // so a wizard handed the new ones would operate on a record nothing holds a lock for, and close
+    // would give back a lock for a record the user never processed.
+    const locked = makeMockSubSample({});
+    const swappedIn = makeMockSubSample({ id: 2, globalId: "SS2" });
+    let grant: (status: "LOCKED_OK") => void = () => {};
+    vi.spyOn(locked, "acquireEditLock").mockReturnValue(
+      new Promise<"LOCKED_OK">((resolve) => {
+        grant = resolve;
+      }),
+    );
+    const acquireSwappedIn = vi.spyOn(swappedIn, "acquireEditLock").mockResolvedValue("LOCKED_OK");
+    const { rerender } = renderAction([locked]);
+
+    fireEvent.click(screen.getByRole("button", { name: /operations\.action\.process/i }));
+    rerender(
+      <ThemeProvider theme={materialTheme}>
+        <ProcessAction as="button" disabled="" selectedResults={[swappedIn]} closeMenu={() => {}} />
+      </ThemeProvider>,
+    );
+    grant("LOCKED_OK");
+
+    await waitFor(() => expect(screen.getByTestId("wizard")).toBeInTheDocument());
+    expect(screen.getByTestId("wizard")).toHaveAttribute("data-origins", "SS1");
+    expect(acquireSwappedIn).not.toHaveBeenCalled();
   });
   it("blocks reopening until the release started at close has settled", async () => {
     // Reopening while the DELETE is still in flight would acquire the lock this wizard is in the
