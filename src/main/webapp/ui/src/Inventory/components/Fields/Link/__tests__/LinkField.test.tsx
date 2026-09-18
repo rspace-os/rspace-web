@@ -147,6 +147,22 @@ describe("LinkField", () => {
     expect(screen.getByRole("link", { name: "inventory:fields.link.linkField.openLabel" })).toBeInTheDocument();
   });
 
+  it("shows the Target deleted pill and blocks Open for an inventory target that never existed", () => {
+    // a CSV-imported dangling link (RSDEV-1354): the record was never on this
+    // server, so unlike a trashed item there is no viewer to open, and the
+    // summary says so by reporting no name and no type
+    mockUseLinkTargetSummary.mockReturnValue({
+      globalId: "SA42",
+      name: null,
+      type: null,
+      deleted: true,
+      readable: true,
+    });
+    renderField();
+    expect(screen.getByText("inventory:fields.link.linkField.targetDeleted")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "inventory:fields.link.linkField.openLabel" })).not.toBeInTheDocument();
+  });
+
   it("shows the No access pill and removes Open for an unreadable ELN target", () => {
     // the server redacts targets the viewer cannot read (unshared, never
     // shared, nonexistent, or hard-deleted by another owner all look alike);

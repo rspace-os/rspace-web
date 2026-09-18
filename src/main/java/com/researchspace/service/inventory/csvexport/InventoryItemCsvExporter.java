@@ -11,6 +11,7 @@ import com.researchspace.model.inventory.field.ExtraLinkField;
 import com.researchspace.model.inventory.field.InventoryLink;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.service.inventory.InventoryUrls;
 import com.researchspace.service.inventory.csvexport.CsvExportCommentGenerator.ExportedCommentProperty;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -114,17 +115,15 @@ public abstract class InventoryItemCsvExporter {
     if (link == null) {
       return "";
     }
-    String serverUrl = properties.getServerUrl();
-    if (serverUrl.endsWith("/")) {
-      serverUrl = serverUrl.substring(0, serverUrl.length() - 1);
-    }
     String versionSuffix = link.getVersionPin() == null ? "" : "v" + link.getVersionPin();
-    return link.getRelationType()
-        + " "
-        + serverUrl
-        + "/globalId/"
-        + link.getTargetGlobalId()
-        + versionSuffix;
+    // one home for the /globalId/ segment and the server-URL normalisation, shared with the
+    // importer that has to recognise this cell again: a second copy could disagree
+    return InventoryUrls.globalIdPageUrl(
+            properties.getServerUrl(), link.getTargetGlobalId() + versionSuffix)
+        .map(url -> link.getRelationType() + " " + url)
+        // no server URL configured: the cell cannot name a resolvable target, so export the
+        // relation alone rather than an address pointing at nowhere
+        .orElse(link.getRelationType());
   }
 
   public String getCsvCommentHeader() {

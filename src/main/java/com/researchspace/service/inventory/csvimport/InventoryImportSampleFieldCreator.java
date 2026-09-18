@@ -38,7 +38,7 @@ public class InventoryImportSampleFieldCreator {
    * Same limit for a value containing a URL: a hostname can push a single-line value (a URI, or a
    * "RelationType url" link cell) well past 100 characters without it being prose (RSDEV-1354).
    */
-  public static final int MAX_NON_TEXT_LENGTH_WITH_URL = 500;
+  static final int MAX_NON_TEXT_LENGTH_WITH_URL = 500;
 
   private static final Pattern URL_TOKEN = Pattern.compile("(?i)\\bhttps?://\\S+");
 
@@ -82,6 +82,8 @@ public class InventoryImportSampleFieldCreator {
     if (isSuggestedFieldForValues(valueSet, new InventoryUriField())) {
       return new InventoryUriField(name);
     }
+    // link: every value has to parse. allMatch on an empty set would be vacuously true, but the
+    // caller returns before here when there are no values
     if (valueSet.stream().allMatch(linkParser::isParseable)) {
       return new InventoryLinkField(name);
     }

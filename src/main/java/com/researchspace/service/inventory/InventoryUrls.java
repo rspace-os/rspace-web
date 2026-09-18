@@ -99,6 +99,20 @@ public final class InventoryUrls {
   }
 
   /**
+   * The prefix every globalId page address on this server starts with, or empty when the server URL
+   * is missing. Exposed so a reader that has to recognise addresses {@link #globalIdPageUrl} wrote
+   * (the CSV link importer, RSDEV-1354) normalises the server URL exactly as the builder did,
+   * rather than keeping a second copy that could disagree.
+   */
+  public static Optional<String> globalIdPagePrefix(String serverUrl) {
+    String trimmed = StringUtils.trimToEmpty(serverUrl);
+    if (trimmed.isEmpty()) {
+      return Optional.empty();
+    }
+    return Optional.of(StringUtils.stripEnd(trimmed, "/") + GLOBAL_ID_PATH);
+  }
+
+  /**
    * Whether an address names the public landing page of the identifier with this suffix, i.e.
    * whether RSpace itself wrote it. Lets a caller undo that write without touching an address a
    * user chose.

@@ -238,6 +238,9 @@ class LinkTargetSnapshotResolverImplTest {
     assertNull(s.getName());
     assertNull(s.getType());
     assertFalse(s.isReadable());
+    // pins the inventory half of the RSDEV-1354 asymmetry: an existing but unreadable
+    // inventory target stays redacted and undeleted, unlike a missing one
+    assertFalse(s.isDeleted());
   }
 
   @Test

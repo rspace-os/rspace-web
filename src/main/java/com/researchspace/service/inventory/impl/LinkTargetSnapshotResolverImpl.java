@@ -77,8 +77,12 @@ public class LinkTargetSnapshotResolverImpl implements LinkTargetSnapshotResolve
       if (isInventoryPrefix(prefix)) {
         // No inventory record here at all: never existed on this server (a CSV-imported dangling
         // link, RSDEV-1354) or its audit rows were purged. Report it as deleted so the card shows
-        // "Target deleted" instead of a working-looking Open. Existence of inventory records is
-        // not secret (every user keeps the limited-read view), so this does not breach ADR-0002.
+        // "Target deleted" instead of a working-looking Open.
+        // This is a deliberate, narrow carve-out from ADR-0002, not an application of it: an
+        // existing-but-unreadable inventory record still answers readable=false, so the two
+        // payloads differ and a caller walking ids learns which inventory ids are occupied. Name,
+        // type and owner stay unset either way, so what leaks is the id high-water mark rather
+        // than any content, and that was judged a fair price for not offering a dead Open link.
         summary.setReadable(true);
         summary.setDeleted(true);
       }

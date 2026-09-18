@@ -211,11 +211,9 @@ public class CsvSampleImporter extends InventoryItemCsvImporter {
       try {
         if (line.length != expectedColumnsNumber) {
           throw new IllegalArgumentException(
-              "Unexpected number of values in CSV line, "
-                  + "expected: "
-                  + expectedColumnsNumber
-                  + ", was: "
-                  + line.length);
+              messages.getMessage(
+                  "errors.inventory.import.csvLineUnexpectedColumnCount",
+                  new Object[] {expectedColumnsNumber, line.length}));
         }
         for (int currentColumnIndex = 0; currentColumnIndex < line.length; currentColumnIndex++) {
           String value = line[currentColumnIndex];
@@ -225,10 +223,11 @@ public class CsvSampleImporter extends InventoryItemCsvImporter {
               if (!StringUtils.isBlank(value)) {
                 if (csvProcessingResult.getResultNumberForImportId(value) != null) {
                   throw new IllegalArgumentException(
-                      "Import identifier '"
-                          + value
-                          + "' was already used in row "
-                          + (csvProcessingResult.getResultNumberForImportId(value) + 1));
+                      messages.getMessage(
+                          "errors.inventory.import.importIdentifierAlreadyUsed",
+                          new Object[] {
+                            value, csvProcessingResult.getResultNumberForImportId(value) + 1
+                          }));
                 }
                 csvProcessingResult.addResultNumberWithImportId(resultCount, value);
               }

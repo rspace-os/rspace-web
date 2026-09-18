@@ -490,10 +490,10 @@ public class InventoryImportApiControllerMVCIT extends API_MVC_InventoryTestBase
     assertEquals(1, samplesResult.getSuccessCountBeforeFirstError());
     assertApiErrorContainsMessage(
         samplesResult.getResults().get(1).getError(),
-        "Unexpected number of values in CSV line, expected: 2, was: 3");
+        "Unexpected CSV line field count: expected 2 values, but found 3 values.");
     assertApiErrorContainsMessage(
         samplesResult.getResults().get(2).getError(),
-        "Unexpected number of values in CSV line, expected: 2, was: 1");
+        "Unexpected CSV line field count: expected 2 values, but found 1 value.");
     assertApiErrorContainsMessage(
         samplesResult.getResults().get(3).getError(), "name is a required field");
     assertApiErrorContainsMessage(

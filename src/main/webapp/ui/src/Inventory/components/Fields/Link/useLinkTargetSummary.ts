@@ -12,10 +12,13 @@ export type LinkTargetSummary = {
   type: string | null;
   deleted: boolean;
   /**
-   * False when the viewer cannot read the target. Deliberately conflates
-   * unshared, never-shared, nonexistent, and hard-deleted-by-another-owner:
-   * all are redacted identically (ADR-0002), so false never discloses
-   * whether the record exists.
+   * False when the viewer cannot read the target. For ELN targets this
+   * deliberately conflates unshared, never-shared, nonexistent, and
+   * hard-deleted-by-another-owner: all are redacted identically (ADR-0002),
+   * so false never discloses whether the record exists. An inventory target
+   * that does not exist is the documented exception (RSDEV-1354): it reports
+   * readable true with deleted true and a null name/type, so the card can say
+   * "Target deleted" rather than silently offering a dead link.
    */
   readable: boolean;
 };
