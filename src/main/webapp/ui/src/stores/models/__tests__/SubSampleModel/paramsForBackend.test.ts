@@ -27,7 +27,7 @@ describe("computed: paramsForBackend", () => {
 
   /*
    * Quantity is stock, not a label. Every other editable field is echoed back on save and the last
-   * write wins, which is the accepted norm (DevDocs/adr/0007). Echoing a quantity the user never
+   * write wins, which is the accepted norm (DevDocs/adr/0011). Echoing a quantity the user never
    * touched is not: an operation that deducted from this subsample between the page load and the
    * save is undone by the save, restoring stock that material was already made from. The server
    * cannot tell that payload apart from a user deliberately setting the same number, so the client

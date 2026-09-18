@@ -1,5 +1,5 @@
 /**
- * The operation function registry (DevDocs/adr/0007). Each entry is a named, pure "Operation function" that
+ * The operation function registry (DevDocs/adr/0011). Each entry is a named, pure "Operation function" that
  * an operation's `effect.computed` selects to produce a single value at submit. An operation
  * declares *which* function and *how to source its arguments* in its own definition; the
  * computation itself lives here. This is the escape hatch for effects a declaration

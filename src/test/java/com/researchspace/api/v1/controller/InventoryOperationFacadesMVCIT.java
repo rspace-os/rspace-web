@@ -27,8 +27,8 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MvcResult;
 
 /**
- * The seven typed operation endpoints (DevDocs/adr/0007 M6), each posted in the shape frozen in
- * DevDocs/adr/0007: the created sample and each origin's remaining quantity come back in one
+ * The seven typed operation endpoints (DevDocs/adr/0011 M6), each posted in the shape frozen in
+ * DevDocs/adr/0011: the created sample and each origin's remaining quantity come back in one
  * envelope (D2), a creating operation answers 201 with a Location, Destroy 200; plus the
  * facade-only rules a unit test cannot reach end to end: every error names a field the caller sent,
  * and the server defaults apply.

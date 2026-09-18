@@ -345,7 +345,7 @@ resolved during design. This file is a glossary only — no implementation detai
 - **Origin** — the existing subsample(s) selected as input to an Operation. Only
   subsamples are eligible; never a Sample, Container, or Instrument. An Operation
   may decrement or leave unchanged an Origin's quantity (never increase it;
-  DevDocs/adr/0007), and may add a field to the Origin (an Origin field).
+  DevDocs/adr/0011), and may add a field to the Origin (an Origin field).
 - **Origin field** — a custom field an Operation adds to an Origin subsample itself
   (as distinct from a field on the Derived Sample), e.g. Destroy's disposal date.
   _Avoid_: origin annotation, in-place field.
