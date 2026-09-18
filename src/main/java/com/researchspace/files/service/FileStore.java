@@ -42,7 +42,7 @@ public interface FileStore {
    * extensions are omitted. A second collision fails without retrying.
    *
    * @param fileProperty, a new constructed FileProperty,
-   * @param sourceFile, specify the resource/file location
+   * @param sourceFile a server-created file; untrusted content should use the stream overload
    * @param behaviourOnDuplicate, a {@link FileDuplicateStrategy}
    * @return new file URI in file store, or {@code null} when a duplicate is rejected.
    */

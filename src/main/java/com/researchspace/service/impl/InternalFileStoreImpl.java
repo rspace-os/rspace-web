@@ -95,6 +95,7 @@ public class InternalFileStoreImpl implements InternalFileStore {
 
   // ------------ facade ----------------------------------
   @Override
+  @SuppressWarnings("lgtm[java/path-injection]") // Callers supply server-created files.
   public URI save(FileProperty meta, File sourceFile, FileDuplicateStrategy behaviourOnDuplicate)
       throws IOException {
     try (InputStream input = new FileInputStream(sourceFile)) {
