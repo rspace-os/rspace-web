@@ -51,6 +51,12 @@ const ProcessAction = forwardRef<React.ElementRef<typeof MenuItem>, ProcessActio
     // A ref, not state, because both clicks can land before React re-renders.
     const busy = React.useRef(false);
 
+    // The open wizard keeps its outstanding lock renewals here. A renewal is a POST that recreates
+    // the lock, so releasing while one is in flight lets the DELETE go first and the late POST
+    // re-locks an origin nothing is left to release. The wizard's own close waits for these, and
+    // the unmount below has to wait for them the same way.
+    const renewals = React.useRef<Promise<unknown>>(Promise.resolve());
+
     // The toolbar owns the selection, so emptying it unmounts this action mid-acquisition. Nothing
     // is left to close the wizard then, so a lock granted after that point has to be given back
     // here or it stays held until the server expires it.
@@ -58,8 +64,9 @@ const ProcessAction = forwardRef<React.ElementRef<typeof MenuItem>, ProcessActio
     React.useEffect(
       () => () => {
         unmounted.current = true;
-        void releaseAll(taken.current);
+        const held = taken.current;
         taken.current = [];
+        void renewals.current.then(() => releaseAll(held));
       },
       [],
     );
@@ -148,6 +155,7 @@ const ProcessAction = forwardRef<React.ElementRef<typeof MenuItem>, ProcessActio
                 open={open}
                 onClose={onCloseHandler}
                 origins={open ? lockedOrigins : origins}
+                pendingRenewals={renewals}
               />
             ) : null}
           </ContextMenuAction>
