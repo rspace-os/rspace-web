@@ -50,7 +50,8 @@ class ExternalUpdateMessageKeysTest {
         "errors.inventory.identifier.pidinstAlreadyLinked",
         "errors.inventory.identifier.pidinstMandatoryMissing",
         "errors.inventory.identifier.pidinstNotFound",
-        "errors.inventory.identifier.pidinstImportPidRequired"
+        "errors.inventory.identifier.pidinstImportPidRequired",
+        "errors.inventory.identifier.pidinstQueryTooShort"
       })
   void everyCodeResolvesToRealText(String code) {
     // an unknown code throws NoSuchMessageException here, which is the failure this exists to catch

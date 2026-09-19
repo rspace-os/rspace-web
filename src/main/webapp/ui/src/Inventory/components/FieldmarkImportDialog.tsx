@@ -438,6 +438,8 @@ export default function FieldmarkImportDialog({ open, onClose }: FieldmarkImport
                 disableColumnFilter
                 hideFooter
                 autoHeight
+                // without this the toolbar slot does not render, so the hidden columns have no Columns button
+                showToolbar
                 localeText={{
                   noRowsLabel: t("fieldmarkImport.noNotebooks"),
                 }}
