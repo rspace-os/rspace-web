@@ -800,7 +800,9 @@ function initTinyMCE(selector) {
 		}
 
 		const chemistryProvider = properties["chemistry.provider"];
-		chemistryAvailable = integrations.CHEMISTRY.available;
+		// Both gates must be on: the sysadmin setting and the user's Apps page toggle.
+		chemistryAvailable = chemistryEnabled;
+		RS.chemistryEnabled = chemistryEnabled;
 
 		// File repositories section
 		var enabledFileRepositories = "";
