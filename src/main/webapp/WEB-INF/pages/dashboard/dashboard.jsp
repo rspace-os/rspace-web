@@ -53,7 +53,7 @@
     <a class="dashboardOptions" id="createCalendarEntryDlgLink" href="#"><spring:message code="dashboard.new.calendar.entry"/>  </a>
     <jsp:include page="../workspace/calendarDialog.jsp" />
 	</div>
-	<div class="dashboardContainer notificationList"><jsp:include page="notifications_ajax.jsp"></jsp:include></div>
+	<div class="dashboardContainer notificationList bootstrap-custom-flat"><jsp:include page="notifications_ajax.jsp"></jsp:include></div>
 </div>
 
 <%-- Dialog for creating request --%>
