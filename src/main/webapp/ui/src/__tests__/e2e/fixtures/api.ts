@@ -8,6 +8,7 @@ import { MailpitClient } from "../api/clients/MailpitClient";
 import { ShareClient } from "../api/clients/ShareClient";
 import { SnippetsClient } from "../api/clients/SnippetsClient";
 import { StatusClient } from "../api/clients/StatusClient";
+import { StoichiometryClient } from "../api/clients/StoichiometryClient";
 import { SysadminClient } from "../api/clients/SysadminClient";
 import { env } from "../env";
 import { SYSADMIN } from "../users";
@@ -22,6 +23,7 @@ type ApiFixtures = {
   clientSnippets: SnippetsClient;
   clientShare: ShareClient;
   clientStatus: StatusClient;
+  clientStoichiometry: StoichiometryClient;
   clientSysadmin: SysadminClient;
   clientMailpit: MailpitClient;
 };
@@ -59,6 +61,9 @@ export const apiTest = uiTest.extend<ApiFixtures>({
   },
   clientStatus: async ({ apiContext, appUser }, use) => {
     await use(new StatusClient(apiContext, appUser.apiKey));
+  },
+  clientStoichiometry: async ({ apiContext, appUser }, use) => {
+    await use(new StoichiometryClient(apiContext, appUser.apiKey));
   },
   clientSysadmin: async ({ apiContext }, use) => {
     const client = new SysadminClient(apiContext, SYSADMIN.apiKey);

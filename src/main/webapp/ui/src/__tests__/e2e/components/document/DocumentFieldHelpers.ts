@@ -1,5 +1,19 @@
 import type { Page } from "@playwright/test";
 
+// Multi-field documents (e.g. Experiment) render each field collapsed until its own
+// #edit_<fieldId> pencil is clicked; Basic Document fields are already expanded. Races
+// both signals rather than a one-shot isVisible() check, which would false-trigger a
+// click before a fresh load/reload finishes mounting an already-expanded iframe.
+export async function activateFieldForEditing(page: Page, fieldId: string): Promise<void> {
+  const iframe = page.locator(`iframe#rtf_${fieldId}_ifr`);
+  const editButton = page.locator(`#edit_${fieldId}`);
+  await Promise.race([
+    iframe.waitFor({ state: "visible" }),
+    editButton.waitFor({ state: "visible" }).then(() => editButton.click()),
+  ]);
+  await iframe.waitFor({ state: "visible" });
+}
+
 export async function resolveFieldId(
   page: Page,
   fieldName: string,
