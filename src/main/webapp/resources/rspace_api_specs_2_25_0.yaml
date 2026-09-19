@@ -1762,6 +1762,11 @@ paths:
                 - DELETE
                 - EXPORT
                 - READ
+                - REQUEST_APPROVED
+                - REQUEST_CANCELLED
+                - REQUEST_FULFILLED
+                - REQUEST_REJECTED
+                - REQUEST_SENT
                 - RESTORE
                 - SEARCH
                 - SHARE
@@ -1792,6 +1797,7 @@ paths:
                 - MESSAGING
                 - NOTEBOOK
                 - RECORD
+                - REQUEST
                 - UNKNOWN
                 - USER
                 - WORKSPACE

@@ -23,6 +23,7 @@
   "templateId": null,
   "templateVersion": null,
   "template": true,
+  "requestable": null,
   "revisionId": null,
   "version": null,
   "historicalVersion": false,

@@ -1,0 +1,141 @@
+package com.researchspace.model.inventory;
+
+import com.researchspace.model.User;
+import com.researchspace.model.audittrail.AuditDomain;
+import com.researchspace.model.audittrail.AuditTrailData;
+import com.researchspace.model.audittrail.AuditTrailIdentifier;
+import com.researchspace.model.audittrail.AuditTrailProperty;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
+import jakarta.persistence.TableGenerator;
+import jakarta.persistence.Temporal;
+import jakarta.persistence.TemporalType;
+import jakarta.persistence.Transient;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+
+/**
+ * A request from one user for material from another user's sample. The approver is not stored: it
+ * is always the sample's current owner, so a transfer of ownership moves any open request with it.
+ */
+@Entity
+@AuditTrailData(auditDomain = AuditDomain.REQUEST)
+@Getter
+@Setter
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+public class SampleRequest implements Serializable {
+
+  /** Length of the note column. Longer notes are rejected rather than truncated. */
+  public static final int NOTE_COLUMN_LENGTH = 2000;
+
+  private static final long serialVersionUID = 1L;
+
+  private Long id;
+  private Sample sample;
+  private String requesterUsername;
+  private SampleRequestStatus status = SampleRequestStatus.PENDING;
+  private String note;
+  private Date created = new Date();
+  private List<SampleRequestStatusChange> statusChanges = new ArrayList<>();
+
+  /** for hibernate and pagination criteria */
+  public SampleRequest() {}
+
+  public SampleRequest(Sample sample, User requester, String note) {
+    this.sample = sample;
+    this.requesterUsername = requester.getUsername();
+    this.note = note;
+  }
+
+  @Id
+  @EqualsAndHashCode.Include
+  @GeneratedValue(strategy = GenerationType.TABLE, generator = "samplerequest_gen")
+  @TableGenerator(
+      name = "samplerequest_gen",
+      table = "hibernate_sequences",
+      pkColumnName = "sequence_name",
+      valueColumnName = "next_val",
+      allocationSize = 50)
+  @AuditTrailProperty(name = "requestId")
+  public Long getId() {
+    return id;
+  }
+
+  /** The sample the material is being asked for. Its current owner is the approver. */
+  @ManyToOne(optional = false)
+  @JoinColumn(nullable = false)
+  public Sample getSample() {
+    return sample;
+  }
+
+  /**
+   * Username rather than a User reference, so the record survives the requester's deletion and
+   * cannot block it. Matches how InventoryRecord records createdBy and modifiedBy.
+   */
+  @Column(nullable = false, length = User.MAX_UNAME_LENGTH)
+  @AuditTrailProperty(name = "requester")
+  public String getRequesterUsername() {
+    return requesterUsername;
+  }
+
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false, length = 20)
+  @AuditTrailProperty(name = "status")
+  public SampleRequestStatus getStatus() {
+    return status;
+  }
+
+  /**
+   * The audit entry's id, which the auditing page renders as a global id link. A request has none
+   * of its own, so the sample's is used and a search by that id finds the request too.
+   */
+  @Transient
+  @AuditTrailIdentifier
+  public String getRequestedSampleGlobalId() {
+    return sample != null ? sample.getGlobalIdentifier() : null;
+  }
+
+  /** Free text: what the requester needs and why. Converted into an operation by the fulfiller. */
+  @Column(nullable = false, length = NOTE_COLUMN_LENGTH)
+  public String getNote() {
+    return note;
+  }
+
+  @Temporal(TemporalType.TIMESTAMP)
+  @Column(nullable = false, updatable = false)
+  public Date getCreated() {
+    return created;
+  }
+
+  /** Full status history, oldest first, starting with the PENDING entry written at creation. */
+  @OneToMany(mappedBy = "sampleRequest", cascade = CascadeType.ALL, orphanRemoval = true)
+  @OrderBy("created, id")
+  public List<SampleRequestStatusChange> getStatusChanges() {
+    return statusChanges;
+  }
+
+  /** Records a new current status and appends it to the history. */
+  public SampleRequestStatusChange recordStatus(
+      User author, SampleRequestStatus newStatus, String reason) {
+    SampleRequestStatusChange change =
+        new SampleRequestStatusChange(this, author, newStatus, reason);
+    statusChanges.add(change);
+    setStatus(newStatus);
+    return change;
+  }
+}
