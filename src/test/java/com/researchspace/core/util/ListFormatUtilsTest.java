@@ -1,4 +1,4 @@
-package com.researchspace.service;
+package com.researchspace.core.util;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 

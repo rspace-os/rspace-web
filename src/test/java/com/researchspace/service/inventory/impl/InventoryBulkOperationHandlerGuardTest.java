@@ -1,15 +1,21 @@
 package com.researchspace.service.inventory.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.api.v1.controller.InventoryBulkOperationsApiController.InventoryBulkOperationConfig;
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationPost.BulkApiOperationType;
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiSample;
+import com.researchspace.apiutils.ApiError;
 import com.researchspace.model.User;
+import com.researchspace.model.field.ErrorList;
+import com.researchspace.model.field.LocalizedIllegalArgumentException;
+import com.researchspace.model.units.QuantityUtils;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import java.util.List;
@@ -66,5 +72,60 @@ class InventoryBulkOperationHandlerGuardTest {
         0, result.getErrorCount(), "delete-only constraint must not fail a successful update");
     assertEquals(
         1, result.getSuccessCount(), "an already-committed update must be reported as a success");
+  }
+
+  @Test
+  void localizedValidationExceptionIsResolvedForBulkErrors() {
+    InventoryBulkOperationHandler handler = new InventoryBulkOperationHandler();
+    ReflectionTestUtils.setField(
+        handler, "messages", new MessageSourceUtils(new JsonMessageSource()));
+    ErrorList validationErrors = new ErrorList();
+    validationErrors.addErrorMsgCode("validation.inventoryField.optionsNotAllowed");
+
+    ApiError error =
+        handler.convertExceptionToApiError(
+            new LocalizedIllegalArgumentException(
+                "validation.inventoryField.invalidForFieldType",
+                validationErrors,
+                "invalid",
+                "Radio"));
+
+    assertEquals(
+        "[invalid] is invalid for field type Radio: Some supplied values are not allowed options",
+        error.getErrors().get(0));
+  }
+
+  @Test
+  void localizedExceptionWithCauseIsResolvedForBulkErrors() {
+    InventoryBulkOperationHandler handler = new InventoryBulkOperationHandler();
+    ReflectionTestUtils.setField(
+        handler, "messages", new MessageSourceUtils(new JsonMessageSource()));
+    LocalizedIllegalArgumentException exception =
+        assertThrows(
+            LocalizedIllegalArgumentException.class, () -> QuantityUtils.parseQuantityInfo("asdf"));
+
+    ApiError error = handler.convertExceptionToApiError(exception);
+
+    assertEquals("Could not parse quantity [asdf]", error.getErrors().get(0));
+  }
+
+  @Test
+  void resolvesApiErrorsDirectlyAndThroughWrapperWhilePreservingOrdinaryMessages() {
+    InventoryBulkOperationHandler handler = new InventoryBulkOperationHandler();
+    ReflectionTestUtils.setField(
+        handler, "messages", new MessageSourceUtils(new JsonMessageSource()));
+    RuntimeException coded = new ApiRuntimeException("errors.required", "Name");
+    for (Exception exception : List.of(coded, new RuntimeException("wrapper", coded))) {
+      assertEquals(
+          "Name is a required field.",
+          handler.convertExceptionToApiError(exception).getErrors().get(0));
+    }
+    assertEquals(
+        "outer",
+        handler
+            .convertExceptionToApiError(
+                new RuntimeException("outer", new RuntimeException("inner")))
+            .getErrors()
+            .get(0));
   }
 }

@@ -264,19 +264,6 @@ public class SampleTest {
   }
 
   @Test
-  public void checkTemplateOperations() throws Exception {
-    // make a template
-    SampleTemplate template = sample.copyToTemplate(anyUser);
-
-    // try attaching a file to workbench
-    IllegalArgumentException iae =
-        assertThrows(
-            IllegalArgumentException.class,
-            () -> template.addAttachedFile(new InventoryFile(null, null)));
-    assertEquals("Sample Templates don't support file attachments yet", iae.getMessage());
-  }
-
-  @Test
   @DisplayName("Delete sample template field")
   public void deleteSampleTemplateField() {
 

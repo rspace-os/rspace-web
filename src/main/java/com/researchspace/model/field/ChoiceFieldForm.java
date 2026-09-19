@@ -41,7 +41,7 @@ public class ChoiceFieldForm extends FieldForm {
   }
 
   @Column(length = 1000)
-  @NotBlank(message = "choice options {errors.required.field}")
+  @NotBlank(message = "{validation.fieldForm.choiceOptionsRequired}")
   public String getChoiceOptions() {
     return choiceOptions;
   }
@@ -120,7 +120,7 @@ public class ChoiceFieldForm extends FieldForm {
   public ErrorList validate(String data) {
     ErrorList el = new ErrorList();
     if (data.length() > 0 && !FieldUtils.isValidRadioOrChoiceString(data)) {
-      el.addErrorMsg("Invalid data for Choice Field [" + data + "]");
+      el.addErrorMsgCode("validation.fieldData.invalidChoice", data);
     }
     return el;
   }

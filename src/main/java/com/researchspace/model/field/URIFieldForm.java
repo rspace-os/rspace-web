@@ -54,7 +54,9 @@ public class URIFieldForm extends FieldForm {
     try {
       new URI(data);
     } catch (URISyntaxException e) {
-      return ErrorList.createErrListWithSingleMsg("Invalid URI syntax; " + e.getMessage());
+      ErrorList errors = new ErrorList();
+      errors.addErrorMsgCode("validation.fieldData.invalidUri", e.getMessage());
+      return errors;
     }
     return new ErrorList();
   }

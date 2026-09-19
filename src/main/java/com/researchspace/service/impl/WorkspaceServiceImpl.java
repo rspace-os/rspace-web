@@ -1,5 +1,6 @@
 package com.researchspace.service.impl;
 
+import com.researchspace.core.util.ListFormatUtils;
 import com.researchspace.model.Group;
 import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.User;
@@ -19,7 +20,6 @@ import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.DefaultRecordContext;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.GroupManager;
-import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.SharingHandler;

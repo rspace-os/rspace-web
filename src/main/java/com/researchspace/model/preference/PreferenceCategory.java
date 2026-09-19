@@ -1,24 +1,14 @@
 package com.researchspace.model.preference;
 
 public enum PreferenceCategory {
-  MESSAGING("Messaging and notifications"),
+  MESSAGING,
 
-  MESSAGING_BROADCAST("Preferred delivery method"),
+  MESSAGING_BROADCAST,
 
-  EXTERNAL_DATA("External data"),
+  EXTERNAL_DATA,
 
   /** Category for personalization of UI */
-  UI("User interface"),
+  UI,
 
-  INTEGRATIONS("Integrations configuration");
-
-  private String displayString;
-
-  public String getDisplayString() {
-    return displayString;
-  }
-
-  PreferenceCategory(String displayString) {
-    this.displayString = displayString;
-  }
+  INTEGRATIONS
 }

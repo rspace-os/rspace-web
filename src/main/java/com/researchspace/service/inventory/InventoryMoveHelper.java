@@ -185,8 +185,7 @@ public class InventoryMoveHelper {
             dbRecords.add(invRecRetriever.getInstrumentIfExists(recInfo.getId()));
             break;
           default:
-            throw new IllegalArgumentException(
-                "bulk move doesn't support records of type: " + recInfo.getClass().getName());
+            throw new ApiRuntimeException("errors.inventory.bulk.moveUnsupportedType", recInfoType);
         }
       }
 
