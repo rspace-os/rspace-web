@@ -1,0 +1,114 @@
+import { describe, expect, it } from "vitest";
+import { PREFERENCES } from "@/hooks/api/useUiPreference";
+import type { InventoryOperation } from "../operationsConfig";
+import {
+  addProcessName,
+  filterProcessNames,
+  processNameDefaultAfterPerform,
+  processValuesPreferenceFor,
+  rememberKey,
+} from "../processNames";
+import { operations } from "./testOperations";
+
+// Operation keys never contain spaces, so a single space separates operation key from process name.
+const DERIVE_DNA = ["derive", "dna extraction"].join(" ");
+const DERIVE_BOIL = ["derive", "boil"].join(" ");
+function op(key: string): InventoryOperation {
+  const found = operations.find((o) => o.key === key);
+  if (!found) throw new Error(`no operation "${key}"`);
+  return found;
+}
+const derive = op("derive");
+const cryopreserve = op("cryopreserve");
+
+describe("rememberKey", () => {
+  it("keys a process-name operation by operation + resolved (trimmed) process name", () => {
+    expect(rememberKey(derive, { processName: "dna extraction" })).toBe(DERIVE_DNA);
+    expect(rememberKey(derive, { processName: "  boil  " })).toBe(DERIVE_BOIL);
+  });
+
+  it("keys a fixed-process operation by the operation key", () => {
+    expect(rememberKey(cryopreserve, {})).toBe("cryopreserve");
+  });
+
+  it("falls back to the operation key when the process name is empty/whitespace", () => {
+    expect(rememberKey(derive, { processName: "   " })).toBe("derive");
+    expect(rememberKey(derive, {})).toBe("derive");
+  });
+});
+
+describe("addProcessName", () => {
+  it("appends a new trimmed name", () => {
+    expect(addProcessName(["dna extraction"], "boil")).toEqual(["dna extraction", "boil"]);
+    expect(addProcessName([], "  dna extraction  ")).toEqual(["dna extraction"]);
+  });
+
+  it("dedupes and ignores empty", () => {
+    expect(addProcessName(["boil"], "  boil  ")).toEqual(["boil"]);
+    expect(addProcessName(["boil"], "   ")).toEqual(["boil"]);
+  });
+});
+
+describe("filterProcessNames", () => {
+  const options = ["dna extraction", "boil"];
+
+  it("shows all when the input is empty or whitespace-only", () => {
+    expect(filterProcessNames(options, "")).toEqual(options);
+    expect(filterProcessNames(options, "   ")).toEqual(options);
+  });
+
+  it("prefix-filters case-insensitively, ignoring leading whitespace", () => {
+    expect(filterProcessNames(options, "d")).toEqual(["dna extraction"]);
+    expect(filterProcessNames(options, "D")).toEqual(["dna extraction"]);
+    expect(filterProcessNames(options, " d")).toEqual(["dna extraction"]);
+    expect(filterProcessNames(options, "boil")).toEqual(["boil"]);
+  });
+
+  it("returns nothing when the prefix matches no option (user can still free-type)", () => {
+    expect(filterProcessNames(options, "de")).toEqual([]);
+  });
+});
+
+describe("processValuesPreferenceFor", () => {
+  it("gives every one of the seven operations its own, distinct preference key", () => {
+    const keys = [
+      ["aliquot", PREFERENCES.INVENTORY_OPERATION_PROCESS_VALUES_ALIQUOT],
+      ["passage", PREFERENCES.INVENTORY_OPERATION_PROCESS_VALUES_PASSAGE],
+      ["pool", PREFERENCES.INVENTORY_OPERATION_PROCESS_VALUES_POOL],
+      ["derive", PREFERENCES.INVENTORY_OPERATION_PROCESS_VALUES_DERIVE],
+      ["cryopreserve", PREFERENCES.INVENTORY_OPERATION_PROCESS_VALUES_CRYOPRESERVE],
+      ["revive", PREFERENCES.INVENTORY_OPERATION_PROCESS_VALUES_REVIVE],
+      ["destroy", PREFERENCES.INVENTORY_OPERATION_PROCESS_VALUES_DESTROY],
+    ] as const;
+    for (const [key, expected] of keys) expect(processValuesPreferenceFor(key)).toBe(expected);
+    // distinct, not just present: no two operations were accidentally mapped to the same symbol
+    expect(new Set(keys.map(([key]) => processValuesPreferenceFor(key))).size).toBe(keys.length);
+  });
+
+  it("derives the same name for an operation type the map does not list", () => {
+    // Only reachable if a new operation type is added before this map is. Deriving the name keeps
+    // the two halves of a bundle together; the backend's allowlist then refuses the write, which
+    // is the right answer for an operation that does not exist.
+    expect(processValuesPreferenceFor("teleport")).toBe(Symbol.for("INVENTORY_OPERATION_PROCESS_VALUES_TELEPORT"));
+  });
+});
+
+describe("processNameDefaultAfterPerform", () => {
+  // The wizard calls this only for a remembered Perform, so there is no "remember off" branch:
+  // unticking never deletes what was saved.
+  it("stores the trimmed name as the operation's default", () => {
+    expect(processNameDefaultAfterPerform({}, "derive", "  dna extraction  ")).toEqual({
+      derive: "dna extraction",
+    });
+  });
+
+  it("defensively drops the stored default rather than storing a blank name", () => {
+    expect(processNameDefaultAfterPerform({ derive: "boil" }, "derive", "   ")).toEqual({});
+  });
+
+  it("does not mutate the input map", () => {
+    const current = { derive: "boil" };
+    processNameDefaultAfterPerform(current, "derive", "dna");
+    expect(current).toEqual({ derive: "boil" });
+  });
+});

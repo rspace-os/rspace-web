@@ -55,7 +55,6 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
       InventorySearchDeletedOption deletedItemsOption,
       User user) {
 
-    // prepare owner and permission limiting query fragment
     List<String> userGroupMembers =
         invPermissionUtils.getUsernameOfUserAndAllMembersOfTheirGroups(user);
     List<String> userGroupsUniqueNames =
@@ -65,7 +64,6 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
         getOwnedByAndPermittedItemsSqlQueryFragment(
             ownedBy, user, userGroupMembers, userGroupsUniqueNames, visibleOwners);
 
-    // get the page of results
     if (pgCrit == null) {
       pgCrit = PaginationCriteria.createDefaultForClass(Sample.class);
     }
@@ -80,7 +78,6 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
     String parentTemplateQueryFragment =
         limitByParentTemplate ? "and STemplate.id=:parentTemplateId " : "";
 
-    // get total count
     // type() discriminator anchor (matching the instrument DAOs): keeps the WHERE clause
     // non-empty when deletedOption=INCLUDE makes the deleted fragment blank; redundant with the
     // discriminator Hibernate adds for the concrete entity
@@ -104,7 +101,6 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
       return new SearchResultsImpl<>(new ArrayList<>(), pgCrit, 0);
     }
 
-    // get a page of samples
     Query<Sample> samplePageQueryBase =
         sessionFactory
             .getCurrentSession()
@@ -216,12 +212,13 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
     // preserving the legacy behaviour that treated them as a single name-uniqueness namespace.
     // The explicit editInfo.name path is required: unqualified embedded sub-properties (like
     // "name") resolve only on concrete-leaf persisters, not on the abstract hierarchy root.
+    // Soft-deleted samples are excluded, so a deleted sample's name can be reused.
     long count =
         sessionFactory
             .getCurrentSession()
             .createQuery(
                 "select count(se) from SampleEntity se where se.editInfo.name=:name and"
-                    + " se.owner=:owner",
+                    + " se.owner=:owner and se.deleted=false",
                 Long.class)
             .setParameter("name", name)
             .setParameter("owner", owner)

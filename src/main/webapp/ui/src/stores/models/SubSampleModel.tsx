@@ -63,7 +63,7 @@ export type Note = {
 };
 
 export type SubSampleAttrs = {
-  id: Id; // can't be null, because created on the server first
+  id: Id;
   type: string;
   globalId: GlobalId | null;
   name?: string;
@@ -168,16 +168,13 @@ export default class SubSampleModel
     return this.sample.subSampleAlias;
   }
 
-  /*
-   * A plain object that can be encoded to JSON for submission to the backend
-   * when API calls are made. It is vital that there are no cyclical memory
-   * references in the object returned by this computed properties. See
-   * ./__tests__/SubSampleModel/paramsForBackend.test.js for the tests that assert
-   * that this object can be serialised; any changes should be reflected there.
-   */
   get paramsForBackend(): Record<string, unknown> {
     const params = { ...super.paramsForBackend };
-    if (this.currentlyEditableFields.has("quantity")) params.quantity = this.quantity;
+    // Only when the user actually set it: see HasQuantityMixin.quantityEdited for why an echoed
+    // quantity is stock loss rather than the last-write-wins a name gets. A record with no id yet
+    // is being created, where the quantity is part of what is being created.
+    if (this.currentlyEditableFields.has("quantity") && (this.id === null || this.quantityEdited))
+      params.quantity = this.quantity;
     return params;
   }
 
@@ -197,7 +194,6 @@ export default class SubSampleModel
         break;
       case "create":
         this.setEditable(FIELDS, true);
-      // subsamples do not have a create state
     }
   }
 
@@ -344,10 +340,6 @@ export default class SubSampleModel
     );
   }
 
-  /*
-   * The current value of the editable fields, as required by the interface
-   * `HasEditableFields` and `HasUneditableFields`.
-   */
   get fieldValues(): SubSampleEditableFields & SubSampleUneditableFields {
     return {
       ...super.fieldValues,

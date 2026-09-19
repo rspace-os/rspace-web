@@ -169,7 +169,6 @@ public class QuantityUtilsTest {
         "divide method requires dividend quantity and non-zero divisor as parameters",
         iae.getMessage());
 
-    // sanity check
     SomeQuantifiableThing zeroDotOneMgQuantity =
         new SomeQuantifiableThing(BigDecimal.valueOf(0.1), RSUnitDef.MILLI_GRAM);
     QuantityInfo result = qUtils.divide(zeroDotOneMgQuantity, BigDecimal.valueOf(2));
@@ -210,9 +209,9 @@ public class QuantityUtilsTest {
     result = qUtils.divide(onePicoGram, BigDecimal.valueOf(500));
     assertEquals("0.002 pg", result.toPlainString());
     result = qUtils.divide(onePicoGram, BigDecimal.valueOf(1500));
-    assertEquals("0.001 pg", result.toPlainString()); // rounds to 0.001
+    assertEquals("0.001 pg", result.toPlainString());
     result = qUtils.divide(onePicoGram, BigDecimal.valueOf(2001));
-    assertEquals("0 pg", result.toPlainString()); // rounds to 0
+    assertEquals("0 pg", result.toPlainString());
   }
 
   @Test
@@ -315,7 +314,6 @@ public class QuantityUtilsTest {
     SomeQuantifiableThing q4 =
         new SomeQuantifiableThing(BigDecimal.valueOf(23), RSUnitDef.MILLI_GRAM);
 
-    // correct ordering is 2,3,1 (ascending)
     List<Quantifiable> toSort = TransformerUtils.toList(q1, q2, q3, q4);
     Comparator<Quantifiable> cmp = qUtils.getComparatorFor(q1);
     Collections.sort(toSort, cmp);
@@ -326,7 +324,6 @@ public class QuantityUtilsTest {
   @DisplayName("Parse quantity info out of various Strings")
   public void parseQuantityInfoStrings() {
 
-    // mass units
     QuantityInfo quantityInfo = QuantityUtils.parseQuantityInfo("2kg");
     assertEquals("2 kg", quantityInfo.toPlainString());
     quantityInfo = QuantityUtils.parseQuantityInfo("5.5 g");
@@ -340,7 +337,6 @@ public class QuantityUtilsTest {
     quantityInfo = QuantityUtils.parseQuantityInfo("0.4 pg");
     assertEquals("0.4 pg", quantityInfo.toPlainString());
 
-    // volume units
     quantityInfo = QuantityUtils.parseQuantityInfo("12l");
     assertEquals("12 l", quantityInfo.toPlainString());
     quantityInfo = QuantityUtils.parseQuantityInfo("5.25 ml");
@@ -352,7 +348,6 @@ public class QuantityUtilsTest {
     quantityInfo = QuantityUtils.parseQuantityInfo("16.3pl");
     assertEquals("16.3 pl", quantityInfo.toPlainString());
 
-    // cubic volume units
     quantityInfo = QuantityUtils.parseQuantityInfo("4m³");
     assertEquals("4 ㎥", quantityInfo.toPlainString());
     quantityInfo = QuantityUtils.parseQuantityInfo("3 dm³");
@@ -388,5 +383,57 @@ public class QuantityUtilsTest {
         assertThrows(IllegalArgumentException.class, () -> QuantityUtils.parseQuantityInfo("asdf"));
     assertEquals(
         "Cannot parse quantity string: Failed to parse number-literal 'asdf'.", iae.getMessage());
+  }
+
+  /**
+   * A remainder that will not fit 3dp in the unit it is expressed in usually fits in a smaller one.
+   *
+   * <p>The column stores a NUMBER AND A UNIT ID, not a number. 4.9975 g needs 4 decimal places, so
+   * DECIMAL(19,3) rounds it and 0.0005 g of stock disappears. The same value is 4997.5 mg, which
+   * needs one. Every category ladder steps by 1000, so moving one unit down shifts the point three
+   * places and drops the scale by three: any terminating decimal that fits the ladder at all fits
+   * at 3dp in some unit of it.
+   */
+  @Test
+  public void aRemainderIsStoredInTheFinestUnitThatHoldsItExactly() {
+    QuantityInfo remainder =
+        qUtils.subtract(
+            QuantityInfo.of(new BigDecimal("5"), RSUnitDef.GRAM),
+            QuantityInfo.of(new BigDecimal("2.5"), RSUnitDef.MILLI_GRAM));
+
+    assertEquals(RSUnitDef.MILLI_GRAM.getId(), remainder.getUnitId());
+    assertEquals(0, new BigDecimal("4997.5").compareTo(remainder.getNumericValue()));
+  }
+
+  @Test
+  public void theConversionStopsAtTheFirstUnitThatFits() {
+    QuantityInfo remainder =
+        qUtils.subtract(
+            QuantityInfo.of(new BigDecimal("5"), RSUnitDef.GRAM),
+            QuantityInfo.of(new BigDecimal("2.5"), RSUnitDef.MILLI_GRAM));
+
+    assertEquals(RSUnitDef.MILLI_GRAM.getId(), remainder.getUnitId());
+  }
+
+  @Test
+  public void anOrdinaryQuantityKeepsItsUnit() {
+    // The regression that matters most: the conversion must not fire on normal work.
+    QuantityInfo remainder =
+        qUtils.subtract(
+            QuantityInfo.of(new BigDecimal("5"), RSUnitDef.GRAM),
+            QuantityInfo.of(new BigDecimal("1"), RSUnitDef.GRAM));
+
+    assertEquals(RSUnitDef.GRAM.getId(), remainder.getUnitId());
+    assertEquals(0, new BigDecimal("4").compareTo(remainder.getNumericValue()));
+  }
+
+  @Test
+  public void theLadderIsTraversedToItsBottomRungWithoutRunningOffTheEnd() {
+    QuantityInfo remainder =
+        qUtils.subtract(
+            QuantityInfo.of(new BigDecimal("1"), RSUnitDef.KILO),
+            QuantityInfo.of(new BigDecimal("0.5"), RSUnitDef.PICO_GRAM));
+
+    assertEquals(RSUnitDef.PICO_GRAM.getId(), remainder.getUnitId());
   }
 }

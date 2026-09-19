@@ -2,11 +2,14 @@ package com.researchspace.service.impl;
 
 import static java.lang.String.format;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.researchspace.CacheNames;
 import com.researchspace.Constants;
 import com.researchspace.analytics.service.AnalyticsManager;
 import com.researchspace.core.util.CryptoUtils;
 import com.researchspace.core.util.ISearchResults;
+import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.core.util.SearchResultsImpl;
 import com.researchspace.dao.CommunityDao;
 import com.researchspace.dao.RoleDao;
@@ -35,6 +38,7 @@ import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserExistsException;
 import com.researchspace.service.UserManager;
 import com.researchspace.session.SessionAttributeUtils;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -341,6 +345,106 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
     subject.setPreference(userPreference);
     save(subject);
     return userPreference;
+  }
+
+  private static final int MAX_UI_JSON_SETTING_VALUE_CHARS = 6500;
+
+  /**
+   * Aggregate ceiling for the whole merged object, in BYTES, matching {@code UserPreference.value}
+   * (MySQL TEXT, utf8mb4). Two gaps make this the only check the INSERT agrees with: the per-key
+   * ceiling above bounds one value, while eighteen of them each within it still add up past the
+   * column; and {@link com.researchspace.model.preference.SettingsType#validate} counts Java
+   * characters, while the column is bounded in bytes, so a blob of multi-byte characters passes it
+   * and then fails during persistence.
+   */
+  private static final int MAX_UI_JSON_SETTINGS_BYTES = 65535;
+
+  /**
+   * The keys a UI settings object may hold: exactly the names the client declares in its
+   * PREFERENCES map (src/main/webapp/ui/src/hooks/api/useUiPreference.tsx). Adding a preference
+   * there means adding it here.
+   *
+   * <p>An allowlist rather than a syntax rule: the key is written verbatim into the user's single
+   * settings column and nothing ever deletes one, so an open-ended rule would let a caller add
+   * names until the column hit its TEXT limit, after which the oversize guard permanently rejects
+   * every later keyed write for that user.
+   */
+  private static final Set<String> UI_JSON_SETTINGS_KEYS =
+      Set.of(
+          "GALLERY_VIEW_MODE",
+          "GALLERY_SORT_BY",
+          "GALLERY_SORT_ORDER",
+          "GALLERY_PICKER_INITIAL_SECTION",
+          "GALLERY_SIDEBAR_OPEN",
+          "INVENTORY_FORM_SECTIONS_EXPANDED",
+          "INVENTORY_HIDDEN_RIGHT_PANEL",
+          "INVENTORY_OPERATION_PROCESS_VALUES_ALIQUOT",
+          "INVENTORY_OPERATION_PROCESS_VALUES_PASSAGE",
+          "INVENTORY_OPERATION_PROCESS_VALUES_POOL",
+          "INVENTORY_OPERATION_PROCESS_VALUES_DERIVE",
+          "INVENTORY_OPERATION_PROCESS_VALUES_CRYOPRESERVE",
+          "INVENTORY_OPERATION_PROCESS_VALUES_REVIVE",
+          "INVENTORY_OPERATION_PROCESS_VALUES_DESTROY",
+          "INVENTORY_OPERATION_PROCESS_NAMES",
+          "INVENTORY_OPERATION_PROCESS_NAME_DEFAULTS",
+          "SYSADMIN_USERS_TABLE_COLUMNS");
+
+  @Override
+  @CachePut(value = "com.researchspace.model.UserPreference", key = "#subject + 'UI_JSON_SETTINGS'")
+  @CacheEvict(value = CacheNames.INTEGRATION_INFO, key = "#subject + 'UI_JSON_SETTINGS'")
+  public UserPreference mergeUiJsonSetting(String key, String valueJson, String subject) {
+    // Null-checked separately: Set.of is an immutable set, whose contains(null) throws NPE rather
+    // than answering false.
+    if (key == null || !UI_JSON_SETTINGS_KEYS.contains(key)) {
+      throw new IllegalArgumentException(
+          messages.getMessage("errors.preference.invalidKey", new Object[] {key}));
+    }
+    if (valueJson != null && valueJson.length() > MAX_UI_JSON_SETTING_VALUE_CHARS) {
+      throw new IllegalArgumentException(
+          messages.getMessage(
+              "errors.preference.valueTooLarge",
+              new Object[] {key, MAX_UI_JSON_SETTING_VALUE_CHARS}));
+    }
+    JsonNode newValue = JacksonUtil.fromJson(valueJson, JsonNode.class);
+    if (newValue == null) {
+      throw new IllegalArgumentException(
+          messages.getMessage("errors.preference.invalidJsonValue", new Object[] {key}));
+    }
+    User user = userDao.getUserByUsername(subject);
+    ObjectNode settings =
+        uiJsonSettingsFrom(
+            user.getValueForPreference(Preference.UI_JSON_SETTINGS).getValue(), user.getUsername());
+    settings.set(key, newValue);
+    String serialized = settings.toString();
+    if (serialized.getBytes(StandardCharsets.UTF_8).length > MAX_UI_JSON_SETTINGS_BYTES) {
+      throw new IllegalArgumentException(
+          messages.getMessage(
+              "errors.preference.settingsTooLarge",
+              new Object[] {key, MAX_UI_JSON_SETTINGS_BYTES}));
+    }
+    UserPreference merged = new UserPreference(Preference.UI_JSON_SETTINGS, user, serialized);
+    user.setPreference(merged);
+    // Deliberately not delegating to setPreference: a self-invocation bypasses the Spring cache
+    // proxy, so the annotations above would never run.
+    save(user);
+    return merged;
+  }
+
+  /**
+   * A blank or unparseable stored value starts a fresh object rather than failing every later
+   * write, since refusing to write over a corrupt value would leave the user unable to save any
+   * preference again.
+   */
+  private ObjectNode uiJsonSettingsFrom(String stored, String username) {
+    if (StringUtils.isEmpty(stored)) {
+      return JacksonUtil.createObjectNode();
+    }
+    JsonNode parsed = JacksonUtil.fromJson(stored, JsonNode.class);
+    if (parsed == null || !parsed.isObject()) {
+      log.warn("Discarding unreadable UI_JSON_SETTINGS for user {}", username);
+      return JacksonUtil.createObjectNode();
+    }
+    return (ObjectNode) parsed;
   }
 
   @Override

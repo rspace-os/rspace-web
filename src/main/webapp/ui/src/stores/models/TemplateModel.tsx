@@ -18,7 +18,9 @@ import type { RecordDetails } from "../definitions/Record";
 import type { CoreFetcherArgs } from "../definitions/Search";
 import type { AdjustableTableRowOptions } from "../definitions/Tables";
 import type { Template } from "../definitions/Template";
+import { categoryOfUnit } from "../definitions/Units";
 import getRootStore from "../stores/getRootStore";
+import type { UnitCategory } from "../stores/UnitStore";
 import FieldModel, { type FieldModelAttrs } from "./FieldModel";
 import SampleModel, {
   defaultEditableSampleFields,
@@ -31,7 +33,7 @@ import Search from "./Search";
 const mainSearch = () => getRootStore().searchStore.search;
 
 export type TemplateAttrs = Omit<SampleAttrs, "quantity"> & {
-  id: Id; // can't be null, because created on the server first
+  id: Id;
   iconId: number | null;
   defaultUnitId: number | null;
   historicalVersion: boolean;
@@ -272,13 +274,6 @@ export default class TemplateModel extends SampleModel implements Template {
     }
   }
 
-  /*
-   * A plain object that can be encoded to JSON for submission to the backend
-   * when API calls are made. It is vital that there are no cyclical memory
-   * references in the object returned by this computed properties. See
-   * ./__tests__/TemplateModel/paramsForBackend.test.js for the tests that assert
-   * that this object can be serialised; any changes should be reflected there.
-   */
   get paramsForBackend(): Record<string, unknown> {
     const params = super.paramsForBackend;
     if (this.currentlyEditableFields.has("defaultUnitId")) params.defaultUnitId = this.defaultUnitId;
@@ -485,6 +480,27 @@ export default class TemplateModel extends SampleModel implements Template {
     return Object.values(this.subSampleAlias).every(
       (v) => typeof v === "string" && v !== "custom" && v !== "customs" && v.length > 1 && v.length <= 30,
     );
+  }
+
+  /**
+   * The measurement category the template's samples are made in.
+   *
+   * Overridden because the inherited HasQuantity getter derives the category from `quantity`, which
+   * is always null on a template: it would fall back to unit id 3 and report every template as
+   * "volume", so a mass or count template would offer volume units. A template declares its unit as
+   * `defaultUnitId` instead.
+   *
+   * The static unit table is consulted before the unit store because the store is seeded from
+   * localStorage and holds nothing until GET /units has resolved once; going to the store first
+   * throws for every id until then. categoryOfUnit needs no store, so it is right immediately; the
+   * store still answers for molarity and concentration, which the static table does not enumerate.
+   */
+  get quantityCategory(): UnitCategory {
+    const known = categoryOfUnit(this.defaultUnitId);
+    if (known) return known;
+    const unit = getRootStore().unitStore.getUnit(this.defaultUnitId);
+    if (!unit) throw new Error("Could not get unit category");
+    return unit.category;
   }
 
   validateQuantity(): ValidationResult {

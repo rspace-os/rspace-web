@@ -1,0 +1,52 @@
+/**
+ * The operation function registry (DevDocs/adr/0011). Each entry is a named, pure "Operation function" that
+ * an operation's `effect.computed` selects to produce a single value at submit. An operation
+ * declares *which* function and *how to source its arguments* in its own definition; the
+ * computation itself lives here. This is the escape hatch for effects a declaration
+ * cannot express (e.g. Passage's "parent's passage number + 1, else 1") without inventing a new
+ * per-operation primitive each time. It is intentionally a curated, dev-authored registry, NOT an
+ * end-user expression language.
+ *
+ * A function declares its parameter names only (the config binds each to a source); it must be
+ * defensive about its inputs, since an argument may resolve to `undefined` (e.g. an absent field).
+ * All functions return a single string or number. To add a computation, add an entry here and
+ * reference it by name from an operation; `Computed.fn` is typed to this registry's keys, so the
+ * compiler rejects a name that is not here.
+ */
+
+export type OperationFunctionArgs = Record<string, string | number | undefined>;
+
+export type OperationFunction = {
+  /** config must bind exactly these. */
+  params: ReadonlyArray<string>;
+  fn: (args: OperationFunctionArgs) => string | number;
+};
+
+export const operationFunctions = {
+  /**
+   * A running counter: `current + 1`, or `start` when `current` is not a count to carry on from.
+   * Passage uses it as "parent sample's passage number + 1, else 1".
+   */
+  increment: {
+    params: ["current", "start"],
+    fn: ({ current, start }) => {
+      const n = Number(current);
+      const countable = Number.isSafeInteger(n) && n >= 0;
+      return countable ? n + 1 : Number(start);
+    },
+  },
+  /**
+   * Destroy writes it into the origin's "disposed" field. Built from local date parts (not
+   * toISOString, which is UTC) so it is the user's local "today" even near midnight.
+   */
+  today: {
+    params: [] as ReadonlyArray<string>,
+    fn: () => {
+      const d = new Date();
+      const pad = (n: number) => String(n).padStart(2, "0");
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    },
+  },
+} satisfies Record<string, OperationFunction>;
+
+export type OperationFunctionName = keyof typeof operationFunctions;

@@ -75,6 +75,19 @@ public class ApiExtraField extends IdentifiableNameableApiObject {
   @JsonProperty(value = "deleteFieldRequest", access = Access.WRITE_ONLY)
   private boolean deleteFieldRequest;
 
+  /**
+   * Identifies which entry of an operation definition produced this field. Resolved field names
+   * interpolate user input ({@code {processName}}, {@code {originName}}) and are localized, so the
+   * definition key, not the name, is the field's stable identity: the next run of an operation
+   * recognises the previous generation's field by this key.
+   *
+   * <p>READ_ONLY: only the server sets it. A value in any request body is ignored at binding rather
+   * than rejected, so a client that GETs a record and sends it back is not 400ed for a value it
+   * never chose.
+   */
+  @JsonProperty(value = "operationFieldKey", access = Access.READ_ONLY)
+  private String operationFieldKey;
+
   /** The data type of this field */
   public enum ExtraFieldTypeEnum {
     @JsonProperty("text")
@@ -115,6 +128,7 @@ public class ApiExtraField extends IdentifiableNameableApiObject {
     setDeleted(field.isDeleted());
     setContent(field.getData());
     setGlobalId(field.getOid().toString());
+    setOperationFieldKey(field.getOperationFieldKey());
     if (field instanceof ExtraLinkField && ((ExtraLinkField) field).getLink() != null) {
       setLink(new ApiInventoryLink(((ExtraLinkField) field).getLink()));
     }
@@ -169,11 +183,6 @@ public class ApiExtraField extends IdentifiableNameableApiObject {
     return false;
   }
 
-  /**
-   * TEXT is default (if not provided)
-   *
-   * @return
-   */
   @JsonIgnore
   public FieldType getTypeAsFieldType() {
     return type == null ? FieldType.TEXT : type.toFieldTypeEnum();

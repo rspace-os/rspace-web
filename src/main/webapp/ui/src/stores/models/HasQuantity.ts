@@ -32,11 +32,19 @@ export function HasQuantityMixin<TBase extends new (...args: any[]) => Inventory
 
     quantity: Quantity | null;
 
+    /**
+     * Whether the user has edited the quantity since it was last loaded from the server. The
+     * client only sends a quantity that was actually edited, rather than always resending the
+     * loaded value.
+     */
+    quantityEdited: boolean;
+
     // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
     constructor(...args: any[]) {
       super(...args);
       makeObservable(this, {
         quantity: observable,
+        quantityEdited: observable,
         quantityCategory: computed,
         quantityUnitId: computed,
         quantityValue: computed,
@@ -46,6 +54,27 @@ export function HasQuantityMixin<TBase extends new (...args: any[]) => Inventory
       });
       const [, params] = args as [factory: Factory, params: object];
       this.quantity = Parsers.getValueWithKey("quantity")(params).elseThrow() as Quantity | null;
+      this.quantityEdited = false;
+    }
+
+    /** Intent, not a comparison with the loaded value: a user who retypes the number they were shown has still set it. */
+    // biome-ignore lint/complexity/noBannedTypes: matches the base signature
+    setAttributesDirty(params: {}) {
+      if ("quantity" in params) this.quantityEdited = true;
+      super.setAttributesDirty(params);
+    }
+
+    /**
+     * The quantity assignment and the quantityEdited reset must stay together: clearing the flag
+     * without refreshing the value it is a baseline for leaves it out of sync.
+     */
+    populateFromJson(factory: Factory, passedParams: object, defaultParams: object = {}): void {
+      super.populateFromJson(factory, passedParams, defaultParams);
+      const params = { ...defaultParams, ...passedParams };
+      Parsers.getValueWithKey("quantity")(params).do((quantity) => {
+        this.quantity = quantity as Quantity | null;
+        this.quantityEdited = false;
+      });
     }
 
     get quantityCategory(): UnitCategory {

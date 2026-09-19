@@ -15,6 +15,7 @@ import com.researchspace.webapp.controller.RSpaceTag;
 import com.researchspace.webapp.controller.TagValidator;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -65,8 +66,13 @@ abstract class InventoryRecordValidator {
       int i = 0;
       for (ApiExtraField aef : inventoryRecord.getExtraFields()) {
         errors.pushNestedPath(String.format("extraFields[%d]", i++));
-        validateExtraFieldName(aef.getName(), errors);
-        ValidationUtils.invokeValidator(extraFieldHelper, aef, errors);
+        // A null element ("extraFields": [null]) is already a bean-validation error at binding,
+        // but the controllers accept a BindingResult so this validator still runs; dereferencing
+        // the element would turn that reported 400 into a 500.
+        if (aef != null) {
+          validateExtraFieldName(aef.getName(), errors);
+          ValidationUtils.invokeValidator(extraFieldHelper, aef, errors);
+        }
         errors.popNestedPath();
       }
     }
@@ -87,6 +93,10 @@ abstract class InventoryRecordValidator {
 
   void validateTags(List<ApiTagInfo> tags, Errors errors) {
     tags.stream()
+        // A null element ("tags": [null]) is already a bean-validation error at binding, but the
+        // controllers accept a BindingResult so this validator still runs; dereferencing the
+        // element would turn that reported 400 into a 500.
+        .filter(Objects::nonNull)
         .forEach(
             tag -> {
               validateTooLong("tags", tag.getValue(), EditInfo.DESCRIPTION_LENGTH, errors);
@@ -133,7 +143,6 @@ abstract class InventoryRecordValidator {
     }
   }
 
-  // obtain InventoryRecord list of reserved names through container class
   private final Set<String> reservedGenericFieldNames = (new Container()).getReservedFieldNames();
 
   protected Set<String> getReservedFieldNames() {

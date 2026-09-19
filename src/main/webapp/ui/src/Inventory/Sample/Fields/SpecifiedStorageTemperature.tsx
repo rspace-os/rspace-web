@@ -6,10 +6,10 @@ import InputAdornment from "@mui/material/InputAdornment";
 import MenuItem from "@mui/material/MenuItem";
 import Select, { type SelectChangeEvent } from "@mui/material/Select";
 import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
 import { observer } from "mobx-react-lite";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import NumberField from "../../../components/Inputs/NumberField";
 import {
   ABSOLUTE_ZERO,
   CELSIUS,
@@ -23,7 +23,7 @@ import {
 } from "../../../stores/definitions/Units";
 import BatchFormField from "../../components/Inputs/BatchFormField";
 
-const DECIMAL = 10; // for parseInt/parseFloat
+const DECIMAL = 10;
 
 type LabelArgs = {
   min: number;
@@ -43,6 +43,47 @@ const Label = ({ min, max, unitId }: LabelArgs): React.ReactNode => {
   if (min === max) return render(min);
   return <>{t("sample.fields.storageTemperature.between", { max: render(max), min: render(min) })}</>;
 };
+
+/*
+ * Anything the user can type on the way to a temperature: the empty string, a
+ * lone minus sign, and a trailing decimal point all have to be held.
+ */
+const PARTIAL_TEMPERATURE = /^-?\d*(\.\d*)?$/;
+
+type TemperatureFieldArgs = {
+  value: string;
+  onChange: (value: string) => void;
+  error: boolean;
+  label: string;
+};
+
+/*
+ * Deliberately a text input and not type="number". A number input reports an
+ * empty value for any input that is not yet a complete number, so a lone minus
+ * sign is erased the moment the last digit is deleted and cannot be typed as
+ * the first character of a negative temperature either. Holding the raw string
+ * lets the user clear the digits, leave the sign in place, and keep typing.
+ */
+const TemperatureField = ({ value, onChange, error, label }: TemperatureFieldArgs) => (
+  <TextField
+    value={value}
+    onChange={(e) => {
+      if (PARTIAL_TEMPERATURE.test(e.target.value)) onChange(e.target.value);
+    }}
+    variant="outlined"
+    size="small"
+    error={error}
+    fullWidth
+    slotProps={{
+      input: {
+        startAdornment: <InputAdornment position="start">{label}</InputAdornment>,
+      },
+      htmlInput: {
+        "aria-label": label,
+      },
+    }}
+  />
+);
 
 type TemperatureButtonArgs = {
   onClick: () => void;
@@ -192,45 +233,19 @@ function SpecifiedStorageTemperature({
                   <>
                     <Grid container direction="row" spacing={1}>
                       <Grid size={6}>
-                        <NumberField
+                        <TemperatureField
                           value={minField}
-                          onChange={(e) => {
-                            handleMinFieldChange(e.target.value);
-                          }}
-                          variant="outlined"
-                          size="small"
+                          onChange={handleMinFieldChange}
                           error={validateTemperature({ numericValue: min, unitId }).isError}
-                          fullWidth
-                          slotProps={{
-                            input: {
-                              startAdornment: (
-                                <InputAdornment position="start">
-                                  {t("sample.fields.storageTemperature.min")}
-                                </InputAdornment>
-                              ),
-                            },
-                          }}
+                          label={t("sample.fields.storageTemperature.min")}
                         />
                       </Grid>
                       <Grid size={6}>
-                        <NumberField
+                        <TemperatureField
                           value={maxField}
-                          onChange={(e) => {
-                            handleMaxFieldChange(e.target.value);
-                          }}
-                          variant="outlined"
-                          size="small"
+                          onChange={handleMaxFieldChange}
                           error={validateTemperature({ numericValue: max, unitId }).isError}
-                          fullWidth
-                          slotProps={{
-                            input: {
-                              startAdornment: (
-                                <InputAdornment position="start">
-                                  {t("sample.fields.storageTemperature.max")}
-                                </InputAdornment>
-                              ),
-                            },
-                          }}
+                          label={t("sample.fields.storageTemperature.max")}
                         />
                       </Grid>
                     </Grid>

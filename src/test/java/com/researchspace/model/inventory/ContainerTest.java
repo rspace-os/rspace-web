@@ -75,6 +75,24 @@ public class ContainerTest {
   }
 
   @Test
+  void addsContentToACoordinateNothingHoldsWhenStoredLocationsAreNotContiguous() {
+    // A persisted gap (e.g. from a partial rollback) means the collection's size no longer
+    // matches the highest coordinate in use, so the next coordinate must come from what is
+    // actually in use, not from count()+1.
+    Container listContainer = Container.createListContainer(true, true, true);
+    listContainer.setId(1L);
+    listContainer.addToNewLocation(new SubSample());
+    listContainer.addToNewLocation(new SubSample());
+    listContainer.getLocations().get(0).setCoordX(3);
+
+    SubSample nextRecord = new SubSample();
+    listContainer.addToNewLocation(nextRecord);
+
+    assertEquals(3, listContainer.getContentCount());
+    assertEquals(4, nextRecord.getParentLocation().getCoordX());
+  }
+
+  @Test
   void addContentToGridContainer() throws Exception {
 
     Container gridContainer6by4 = Container.createGridContainer(6, 4, true, true, true);

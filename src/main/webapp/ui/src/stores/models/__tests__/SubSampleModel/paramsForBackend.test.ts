@@ -1,5 +1,6 @@
 import { describe, expect, test, vi } from "vitest";
-import { makeMockSubSample, makeMockSubSampleWithParentContainer } from "./mocking";
+import AlwaysNewFactory from "../../Factory/AlwaysNewFactory";
+import { makeMockSubSample, makeMockSubSampleWithParentContainer, subsampleAttrs } from "./mocking";
 
 vi.mock("../../../use-stores", () => () => {});
 vi.mock("../../../../stores/stores/getRootStore", () => ({
@@ -11,11 +12,7 @@ vi.mock("../../../../stores/stores/getRootStore", () => ({
 }));
 describe("computed: paramsForBackend", () => {
   /*
-   * `paramsForBackend` is used for submitting the SubSampleModel to the API and
-   * as such must be JSON serialisable. Most significantly, this means not
-   * having any cyclical memory references, which is verified by demonstrating
-   * that a call to JSON.stringify does not throw any errors and returns a
-   * valid string.
+   * Not throwing on JSON.stringify demonstrates there are no cyclical references.
    */
   describe("paramsForBackend should be JSON serialisable when", () => {
     test("the subSample is on the bench.", () => {
@@ -25,6 +22,73 @@ describe("computed: paramsForBackend", () => {
     test("the subSample has a parent container.", () => {
       const subSample = makeMockSubSampleWithParentContainer();
       expect(JSON.stringify(subSample.paramsForBackend)).toEqual(expect.any(String));
+    });
+  });
+
+  /*
+   * Quantity is stock, not a label. Every other editable field is echoed back on save and the last
+   * write wins, which is the accepted norm (DevDocs/adr/0011). Echoing a quantity the user never
+   * touched is not: an operation that deducted from this subsample between the page load and the
+   * save is undone by the save, restoring stock that material was already made from. The server
+   * cannot tell that payload apart from a user deliberately setting the same number, so the client
+   * does not send it.
+   */
+  describe("quantity", () => {
+    const editing = () => {
+      const subSample = makeMockSubSample();
+      subSample.setEditable(new Set(["name", "quantity"]), true);
+      return subSample;
+    };
+
+    test("is omitted from an edit that did not touch it.", () => {
+      expect(editing().paramsForBackend).not.toHaveProperty("quantity");
+    });
+
+    test("is sent when the user edited it.", () => {
+      const subSample = editing();
+      subSample.setFieldsDirty({ quantity: { numericValue: 4, unitId: 3 } });
+      expect(subSample.paramsForBackend).toHaveProperty("quantity", {
+        numericValue: 4,
+        unitId: 3,
+      });
+    });
+
+    test("is not left outstanding when a mid-edit refetch resets the baseline.", () => {
+      // populateFromJson clears quantityEdited, so quantity must be assigned from the incoming
+      // params in the same call - otherwise the cleared flag would not correspond to a new
+      // baseline.
+      const subSample = editing();
+      subSample.setFieldsDirty({ quantity: { numericValue: 4, unitId: 3 } });
+
+      subSample.populateFromJson(new AlwaysNewFactory(), {
+        ...subsampleAttrs({ quantity: { numericValue: 9, unitId: 3 } }),
+        sample: subSample.sample,
+      });
+
+      expect(subSample.quantity).toEqual({ numericValue: 9, unitId: 3 });
+    });
+
+    test("is sent on a create even though the user never touched it.", () => {
+      // A record with no id yet is being created, so its quantity is part of what is being created
+      // rather than an echo of something stored. Every other case here uses the fixture's id of 1,
+      // so without this a simplification to quantityEdited alone would create subsamples holding
+      // nothing.
+      const subSample = makeMockSubSample({ id: null });
+      subSample.setEditable(new Set(["name", "quantity"]), true);
+
+      expect(subSample.paramsForBackend).toHaveProperty("quantity", {
+        numericValue: 1,
+        unitId: 3,
+      });
+    });
+
+    test("is sent when the user retyped the value it already had.", () => {
+      const subSample = editing();
+      subSample.setFieldsDirty({ quantity: { numericValue: 1, unitId: 3 } });
+      expect(subSample.paramsForBackend).toHaveProperty("quantity", {
+        numericValue: 1,
+        unitId: 3,
+      });
     });
   });
 });

@@ -4,11 +4,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiQuantityInfo;
+import com.researchspace.api.v1.model.ApiSampleFullPost;
 import com.researchspace.api.v1.model.ApiSampleTemplate;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
+import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.units.RSUnitDef;
+import com.researchspace.service.inventory.SampleApiPostFullValidator;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -37,16 +40,13 @@ public class SampleApiPostFullValidatorTest extends InventoryRecordValidationTes
   @Test
   public void validateQuantityUnit() {
 
-    // template defining grams as a default unit
     SampleTemplate baseTemplate = new SampleTemplate();
     baseTemplate.setDefaultUnitId(RSUnitDef.GRAM.getId());
 
-    // incoming sample with millilitre quantity
     ApiSampleWithFullSubSamples apiSamplePost = new ApiSampleWithFullSubSamples();
     apiSamplePost.setQuantity(new ApiQuantityInfo(BigDecimal.ONE, RSUnitDef.MILLI_LITRE.getId()));
 
-    // lets run the validation
-    SamplesApiController.ApiSampleFullPost fullPost = new SamplesApiController.ApiSampleFullPost();
+    ApiSampleFullPost fullPost = new ApiSampleFullPost();
     fullPost.setApiSample(apiSamplePost);
     fullPost.setTemplate(baseTemplate);
 
@@ -57,13 +57,47 @@ public class SampleApiPostFullValidatorTest extends InventoryRecordValidationTes
     assertEquals(
         "errors.inventory.sample.unitIncompatibleWithTemplate", e.getFieldError().getCode());
 
-    // sanity check with comparable quantity
     fullPost
         .getApiSample()
         .setQuantity(new ApiQuantityInfo(BigDecimal.ONE, RSUnitDef.MILLI_GRAM.getId()));
     e = new BeanPropertyBindingResult(apiSamplePost, "apiSample");
     validator.validate(fullPost, e);
     assertEquals(0, e.getErrorCount());
+  }
+
+  @Test
+  public void validateSubSampleQuantityUnitsAgainstTemplate() {
+    // The sample's total is derived from its subsamples when any are posted, so a comparable
+    // top-level quantity must not stand in front of children in another category.
+    SampleTemplate massTemplate = new SampleTemplate();
+    massTemplate.setDefaultUnitId(RSUnitDef.GRAM.getId());
+
+    ApiSampleWithFullSubSamples apiSamplePost = new ApiSampleWithFullSubSamples();
+    apiSamplePost.setQuantity(new ApiQuantityInfo(BigDecimal.ONE, RSUnitDef.MILLI_GRAM.getId()));
+    ApiSubSample child = new ApiSubSample();
+    child.setQuantity(new ApiQuantityInfo(BigDecimal.ONE, RSUnitDef.MILLI_LITRE.getId()));
+    apiSamplePost.setSubSamples(List.of(child));
+
+    ApiSampleFullPost fullPost = new ApiSampleFullPost();
+    fullPost.setApiSample(apiSamplePost);
+    fullPost.setTemplate(massTemplate);
+
+    Errors mismatched = new BeanPropertyBindingResult(apiSamplePost, "apiSample");
+    validator.validate(fullPost, mismatched);
+    assertEquals(
+        1, mismatched.getErrorCount(), () -> "unexpected errors: " + mismatched.getAllErrors());
+    assertEquals("subSamples[0].quantity", mismatched.getFieldError().getField());
+    assertEquals(
+        "errors.inventory.sample.unitIncompatibleWithTemplate",
+        mismatched.getFieldError().getCode());
+
+    // the template fixes the category, not the unit: a microgram child is fine under a gram
+    // template
+    child.setQuantity(new ApiQuantityInfo(BigDecimal.ONE, RSUnitDef.MICRO_GRAM.getId()));
+    Errors comparable = new BeanPropertyBindingResult(apiSamplePost, "apiSample");
+    validator.validate(fullPost, comparable);
+    assertEquals(
+        0, comparable.getErrorCount(), () -> "unexpected errors: " + comparable.getAllErrors());
   }
 
   @Test
@@ -74,13 +108,12 @@ public class SampleApiPostFullValidatorTest extends InventoryRecordValidationTes
 
     // check sample post with default fields (not specifying 'fields' array)
     ApiSampleWithFullSubSamples apiSamplePost = new ApiSampleWithFullSubSamples();
-    SamplesApiController.ApiSampleFullPost fullPost = new SamplesApiController.ApiSampleFullPost();
+    ApiSampleFullPost fullPost = new ApiSampleFullPost();
     fullPost.setApiSample(apiSamplePost);
     fullPost.setTemplate(
         sampleApiMgr.getSampleTemplateByIdWithPopulatedFields(
             mandatoryFieldsTemplate.getId(), testUser));
 
-    // let's run the validation for incoming sample without fields (default values will be used)
     Errors e = new BeanPropertyBindingResult(apiSamplePost, "apiSample");
     validator.validate(fullPost, e);
     assertEquals(2, e.getErrorCount());
@@ -112,7 +145,6 @@ public class SampleApiPostFullValidatorTest extends InventoryRecordValidationTes
     assertEquals(
         "myRadio (mandatory - no default value)", e.getFieldErrors().get(3).getArguments()[0]);
 
-    // sanity check with valid non-empty field data
     apiSamplePost.getFields().get(0).setContent("test content");
     apiSamplePost.getFields().get(1).setContent("test content");
     apiSamplePost.getFields().get(3).setSelectedOptions(List.of("a"));

@@ -16,6 +16,8 @@ import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.archive.export.ExportFailureException;
 import com.researchspace.service.chemistry.ChemistryClientException;
 import com.researchspace.service.chemistry.StoichiometryException;
+import com.researchspace.service.inventory.InventoryEditLockHeldException;
+import com.researchspace.service.inventory.InventoryOperationInProgressException;
 import com.researchspace.service.inventory.PidinstAlreadyLinkedException;
 import jakarta.ws.rs.NotFoundException;
 import java.util.ArrayList;
@@ -82,11 +84,6 @@ public class ApiControllerAdvice extends RestControllerAdvice {
     return new ResponseEntity<Object>(apiError, new HttpHeaders(), apiError.getStatus());
   }
 
-  /*
-   * EDIT_CONFLICT is the only conflict code com.researchspace.apiutils.ApiErrorCodes offers;
-   * adding one would mean a release of rspace-rest-api-utils, which is not worth it for a message
-   * that names the conflicting instrument itself (RSDEV-1326, decision 7).
-   */
   @ResponseStatus(HttpStatus.CONFLICT)
   @ExceptionHandler(PidinstAlreadyLinkedException.class)
   protected ResponseEntity<Object> handlePidinstAlreadyLinkedException(
@@ -97,6 +94,37 @@ public class ApiControllerAdvice extends RestControllerAdvice {
             HttpStatus.CONFLICT,
             ApiErrorCodes.EDIT_CONFLICT.getCode(),
             ex.getLocalizedMessage(),
+            "");
+    return new ResponseEntity<Object>(apiError, new HttpHeaders(), apiError.getStatus());
+  }
+
+  @ResponseStatus(HttpStatus.CONFLICT)
+  @ExceptionHandler(InventoryEditLockHeldException.class)
+  public ResponseEntity<Object> handleInventoryEditLockHeld(
+      final InventoryEditLockHeldException ex, final WebRequest request) {
+    log.warn("inventory edit lock held: {}", ex.getMessage());
+    final ApiError apiError =
+        new ApiError(
+            HttpStatus.CONFLICT,
+            ApiErrorCodes.EDIT_CONFLICT.getCode(),
+            messages.getMessage(
+                "errors.inventory.editLock.heldBy",
+                new Object[] {ex.getGlobalId(), ex.getOwnerDisplayName()}),
+            "");
+    return new ResponseEntity<Object>(apiError, new HttpHeaders(), apiError.getStatus());
+  }
+
+  @ResponseStatus(HttpStatus.CONFLICT)
+  @ExceptionHandler(InventoryOperationInProgressException.class)
+  public ResponseEntity<Object> handleInventoryOperationInProgress(
+      final InventoryOperationInProgressException ex, final WebRequest request) {
+    log.warn("inventory operation already in progress: {}", ex.getMessage());
+    final ApiError apiError =
+        new ApiError(
+            HttpStatus.CONFLICT,
+            ApiErrorCodes.EDIT_CONFLICT.getCode(),
+            messages.getMessage(
+                "errors.inventory.operation.inProgress", new Object[] {ex.getGlobalId()}),
             "");
     return new ResponseEntity<Object>(apiError, new HttpHeaders(), apiError.getStatus());
   }

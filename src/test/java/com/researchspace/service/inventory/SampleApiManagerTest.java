@@ -463,7 +463,6 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     extraEmptyNumeric.setContent("");
     newSample.setExtraFields(List.of(extraNumeric, extraEmptyNumeric));
 
-    // add extra string to one of the subsamples
     ApiSubSample subSample1 = new ApiSubSample();
     ApiExtraField extraText = new ApiExtraField();
     extraText.setContent("test content");
@@ -679,7 +678,6 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
 
     ApiSampleWithFullSubSamples duplicate = sampleApiMgr.duplicate(newSample.getId(), testUser);
     assertNotNull(duplicate.getTemplateId());
-    // all extra fields are created ok
     assertEquals(
         initialSampleFieldCount + duplicate.getFields().size(),
         getCountOfEntityTable("InventoryEntityField"));
@@ -1089,25 +1087,25 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
 
     // try edit by testUser
     testSample.setName("updated name");
-    IllegalArgumentException iae =
+    InventoryEditLockHeldException held =
         assertThrows(
-            IllegalArgumentException.class,
+            InventoryEditLockHeldException.class,
             () -> sampleApiMgr.updateApiSample(testSample, testUser));
-    assertTrue(iae.getMessage().startsWith("Item is currently edited by another user ("));
+    assertEquals(piUser.getUsername(), held.getOwner().getUsername());
 
     // try delete by testUser
-    iae =
+    held =
         assertThrows(
-            IllegalArgumentException.class,
+            InventoryEditLockHeldException.class,
             () -> sampleApiMgr.markSampleAsDeleted(testSample.getId(), false, testUser));
-    assertTrue(iae.getMessage().startsWith("Item is currently edited by another user ("));
+    assertEquals(piUser.getUsername(), held.getOwner().getUsername());
 
     // try transfer by testUser
-    iae =
+    held =
         assertThrows(
-            IllegalArgumentException.class,
+            InventoryEditLockHeldException.class,
             () -> sampleApiMgr.changeApiSampleOwner(testSample, testUser));
-    assertTrue(iae.getMessage().startsWith("Item is currently edited by another user ("));
+    assertEquals(piUser.getUsername(), held.getOwner().getUsername());
 
     // pi can edit fine
     ApiSample updatedSample = sampleApiMgr.updateApiSample(testSample, piUser);

@@ -1,6 +1,7 @@
 import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";
 import { match } from "../../util/Util";
+import type { UnitCategory } from "../stores/UnitStore";
 
 /**
  * @module
@@ -84,6 +85,21 @@ const isMass = (q: QuantityUnitId) => Object.values(massIds).includes(q);
  * Checks where a quantity's unit is one that comes in a discrete amount.
  */
 const isUnitless = (q: QuantityUnitId) => Object.values(unitlessIds).includes(q);
+
+/**
+ * The measurement category a unit belongs to, or null for a unit id this module does not know.
+ *
+ * Returns null rather than throwing, unlike `atomicUnitOfSameCategory`: an unrecognised unit here
+ * is a valid answer ("not this category"), not a programming error, so `UNSET_UNIT` and other
+ * sentinels come back as null.
+ */
+export const categoryOfUnit = (id: QuantityUnitId): UnitCategory | null =>
+  match<void, () => UnitCategory | null>([
+    [() => isVolume(id), () => "volume"],
+    [() => isMass(id), () => "mass"],
+    [() => isUnitless(id), () => "dimensionless"],
+    [() => true, () => null],
+  ])()();
 
 /**
  * For each category of quantity, there is a smallest unit of that category

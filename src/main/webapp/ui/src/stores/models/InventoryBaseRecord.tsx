@@ -90,7 +90,7 @@ export const isSortable = (propKey: string): boolean => sortProperties.map((p) =
 
 const calculateUploadProgress = (soFar: number, total: number): number => Math.floor((soFar / total) * 10) * 10;
 
-type LockOwner = {
+export type LockOwner = {
   firstName: string;
   lastName: string;
   username: string;
@@ -195,8 +195,8 @@ export default class InventoryBaseRecord
   type: ApiRecordType;
   name: InventoryBaseRecordEditableFields["name"] = "";
   description: InventoryBaseRecordEditableFields["description"] = "";
-  selected: boolean = false; // whether its checkbox is selected
-  infoLoaded: boolean = false; // whether the full information is fetched
+  selected: boolean = false;
+  infoLoaded: boolean = false;
   extraFields: Array<ExtraField> = [];
   // @ts-expect-error currentlyVisibleFields is initialised by populateFromJson
   currentlyVisibleFields: Set<string>;
@@ -663,7 +663,6 @@ export default class InventoryBaseRecord
     const warningTime = 60000;
     const runningOut = Date.now() >= this.lockExpiry.getTime() - warningTime;
     const editLockExpired = Date.now() >= this.lockExpiry.getTime();
-    // prevent error: don't open a second dialog if one is already open
     const dialogOpen = getRootStore().uiStore.confirmationDialogProps !== null;
     if (runningOut && !dialogOpen) {
       if (
@@ -703,7 +702,6 @@ export default class InventoryBaseRecord
     }
 
     if (editLockExpired) {
-      // updating observed boolean to disable Save button
       runInAction(() => {
         this.lockExpired = true;
       });
@@ -728,6 +726,21 @@ export default class InventoryBaseRecord
     } else {
       clearInterval(this.expiryCheckInterval);
     }
+  }
+
+  /**
+   * Takes (or extends) the edit-session lock without entering edit state or scheduling an
+   * expiry-check interval: those exist to protect an edit in progress, and this method starts none.
+   */
+  async acquireEditLock(): Promise<LockStatus> {
+    const { status, lockOwner, remainingTimeInSeconds } = await this.checkLock(true);
+    if (status === "CANNOT_LOCK") throw new RecordLockedError(this, lockOwner);
+    runInAction(() => {
+      this.lastEditInput = new Date();
+      this.lockExpiry = new Date(this.lastEditInput.getTime() + remainingTimeInSeconds * 1000);
+      this.lockExpired = false;
+    });
+    return status;
   }
 
   autoExtendLock() {
@@ -819,7 +832,6 @@ export default class InventoryBaseRecord
 
     try {
       if (value) {
-        // editing (fresh or extended)
         const { status, lockOwner, remainingTimeInSeconds } = await this.checkLock(silent);
         if (status === "LOCKED_OK") {
           runInAction(() => {
@@ -859,7 +871,6 @@ export default class InventoryBaseRecord
           throw new Error("Unknown lock status.");
         }
       } else {
-        // canceling
         // biome-ignore lint/suspicious/noImplicitAnyLet: initial biome migration
         let lockReleased;
         if (this.state === "edit") {
@@ -885,27 +896,22 @@ export default class InventoryBaseRecord
     }
   }
 
-  // to be implemented by the classes that extend this abstract one
   updateFieldsState(): void {
     throw new Error("Abstract method; not implemented.");
   }
 
-  // to be implemented by the classes that extend this abstract one
   setFieldsStateForBatchEditing(): void {
     throw new Error("Abstract method; not implemented.");
   }
 
-  // to be implemented by the classes that extend this abstract one
   get usableInLoM(): boolean {
     throw new Error("Abstract method; not implemented.");
   }
 
-  // to be implemented by the classes that extend this abtract one (and can be created inside a container)
   get beingCreatedInContainer(): boolean {
     return false;
   }
 
-  // to be implemented by the classes that extend this abtract one (and can be created inside a container)
   get inContainerParams(): ContainerInContainerParams | SampleInContainerParams | null {
     return null;
   }
@@ -970,7 +976,6 @@ export default class InventoryBaseRecord
           : `${this.recordType}s/${id}`;
       this.fetchingAdditionalInfo = ApiService.query<object>(endpoint, new URLSearchParams(queryParameters));
       const { data } = await this.fetchingAdditionalInfo;
-      this.fetchingAdditionalInfo = null;
       runInAction(() => {
         this.infoLoaded = true;
       });
@@ -993,6 +998,7 @@ export default class InventoryBaseRecord
       console.error(`Error fetching additional info for ${this.globalId ?? "UNKNOWN"}`, error);
       throw new Error(`Error fetching additional info for ${this.globalId ?? "UNKNOWN"}`, { cause: error });
     } finally {
+      this.fetchingAdditionalInfo = null;
       this.setLoading(false);
     }
   }
@@ -1034,7 +1040,6 @@ export default class InventoryBaseRecord
           }),
         );
       }
-      // copy over attachments as data from first POST doesn't have them
       newRecord.attachments = data.attachments;
       await this.setEditing(false);
       await searchStore.search.setActiveResult(newRecord);
@@ -1105,10 +1110,6 @@ export default class InventoryBaseRecord
     }
   }
 
-  /*
-   * This provides a mechanism for the child classes to attach additional data
-   * this analytics event
-   */
   // biome-ignore lint/complexity/noBannedTypes: initial biome migration
   get dataAttachedToRecordCreatedAnaylticsEvent(): {} {
     return {
@@ -1221,10 +1222,6 @@ export default class InventoryBaseRecord
     }
   }
 
-  /*
-   * After changes to a record have been saved, any associated attachments must
-   * also be saved via the API.
-   */
   async saveAttachments(_newRecord?: InventoryRecord): Promise<void> {
     await this.submitAttachmentChanges();
   }
@@ -1245,13 +1242,7 @@ export default class InventoryBaseRecord
   }
 
   isFieldEditable(field: string): boolean {
-    return (
-      !this.loading &&
-      !this.deleted &&
-      // a historical version is read-only by construction
-      !this.historicalVersion &&
-      this.currentlyEditableFields.has(field)
-    );
+    return !this.loading && !this.deleted && !this.historicalVersion && this.currentlyEditableFields.has(field);
   }
 
   setVisible(fields: Set<string>, value: boolean) {
@@ -1274,16 +1265,11 @@ export default class InventoryBaseRecord
     });
   }
 
-  /*
-   * The HasEditableFields interface requires a method for disabling and
-   * enabling the various fields.
-   */
   setFieldEditable(fieldName: string, value: boolean): void {
     this.setEditable(new Set([fieldName]), value);
   }
 
   setEditableExtraFields(extraFields: Array<ExtraField>, value: boolean) {
-    // can make an extraField not editable and control its state individually
     extraFields.forEach((ef) => {
       ef.editable = value;
     });
@@ -1467,7 +1453,6 @@ export default class InventoryBaseRecord
     }
   }
 
-  /* attributes are updated on identifer. this action to be used separate from publishing */
   updateIdentifiers() {
     this.setAttributesDirty({ identifiers: this.identifiers });
   }
@@ -1681,10 +1666,6 @@ export default class InventoryBaseRecord
     await this.setEditing(false);
   }
 
-  /*
-   * The current value of the editable fields, as required by the interface
-   * `HasEditableFields` and `HasUneditableFields`.
-   */
   get fieldValues(): InventoryBaseRecordEditableFields & InventoryBaseRecordUneditableFields {
     return {
       name: this.name,

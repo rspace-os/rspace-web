@@ -51,18 +51,33 @@ public class SampleApiPostValidatorTest extends InventoryRecordValidationTestBas
   }
 
   @Test
+  public void aNullCollectionElementDoesNotBreakCustomValidation() {
+    // A null element in extraFields, tags or subSamples is a bean-validation error at binding, but
+    // the controllers accept a BindingResult, so this validator still runs over the lists; it must
+    // skip the null elements rather than turn the reported 400 into a 500.
+    ApiSampleWithFullSubSamples full = new ApiSampleWithFullSubSamples();
+    full.setName("ok");
+    full.getExtraFields().add(null);
+    full.getTags().add(null);
+    full.getSubSamples().add(null);
+    Errors e = new BeanPropertyBindingResult(full, "fullpost");
+    validator.validate(full, e);
+    assertEquals(0, e.getErrorCount());
+  }
+
+  @Test
   public void validateExpiryDate() {
     ApiSampleWithFullSubSamples full = new ApiSampleWithFullSubSamples();
     full.setName("ok");
 
     // past value is ok
-    full.setExpiryDate(LocalDate.of(2019, 1, 1)); // a date in the past
+    full.setExpiryDate(LocalDate.of(2019, 1, 1));
     Errors e = new BeanPropertyBindingResult(full, "fullpost");
     validator.validate(full, e);
     assertEquals(0, e.getErrorCount());
 
     // future value is ok
-    full.setExpiryDate(LocalDate.now().plus(1, ChronoUnit.YEARS)); // a date in the future
+    full.setExpiryDate(LocalDate.now().plus(1, ChronoUnit.YEARS));
     e = new BeanPropertyBindingResult(full, "fullpost");
     validator.validate(full, e);
     assertEquals(0, e.getErrorCount());
@@ -130,22 +145,24 @@ public class SampleApiPostValidatorTest extends InventoryRecordValidationTestBas
     validator.validate(full, e);
     assertEquals(0, e.getErrorCount());
 
-    // min > max, should be rejected
     full.setStorageTempMin(new ApiQuantityInfo(BigDecimal.valueOf(20L), RSUnitDef.CELSIUS));
     e = resetErrorsAndValidate(full);
     assertEquals(1, e.getErrorCount());
 
-    // set invalid unit, should be rejected
+    // and only for being an invalid unit: a litre is not
+    // comparable to a temperature either, but reporting that as well told the user nothing they
+    // did not already have to fix
     full.setStorageTempMin(new ApiQuantityInfo(BigDecimal.valueOf(5L), RSUnitDef.LITRE));
     e = resetErrorsAndValidate(full);
-    assertEquals(2, e.getErrorCount());
+    assertEquals(1, e.getErrorCount(), "unexpected errors: " + e.getAllErrors());
+    assertEquals("storageTempMin", e.getFieldError().getField());
+    assertEquals("errors.inventory.temperature.invalidUnit", e.getFieldError().getCode());
 
     // set min temperature in different unit (but still 5 degrees C), should pass
     full.setStorageTempMin(new ApiQuantityInfo(BigDecimal.valueOf(278L), RSUnitDef.KELVIN));
     e = resetErrorsAndValidate(full);
     assertEquals(0, e.getErrorCount());
 
-    // min == max, should be OK
     full.setStorageTempMax(new ApiQuantityInfo(BigDecimal.valueOf(3L), RSUnitDef.CELSIUS));
     full.setStorageTempMin(new ApiQuantityInfo(BigDecimal.valueOf(3L), RSUnitDef.CELSIUS));
     e = resetErrorsAndValidate(full);
@@ -233,5 +250,22 @@ public class SampleApiPostValidatorTest extends InventoryRecordValidationTestBas
     ApiExtraField ef = new ApiExtraField();
     ef.setName(name);
     return ef;
+  }
+
+  @Test
+  public void aTemperatureWithAUnitButNoNumberIsRejectedNotDereferenced() {
+    // A valid temperature unit with no numericValue used to pass the unit check and then be sorted
+    // against the other bound, where the unit-aware comparison dereferences the missing number and
+    // turns a malformed request into a 500. Whether a temperature is
+    // required at all is each caller's own rule, so this only has to not blow up.
+    ApiSampleWithFullSubSamples full = new ApiSampleWithFullSubSamples();
+    full.setName("s1");
+    full.setStorageTempMin(new ApiQuantityInfo(null, RSUnitDef.CELSIUS));
+    full.setStorageTempMax(new ApiQuantityInfo(null, RSUnitDef.CELSIUS));
+
+    Errors e = new BeanPropertyBindingResult(full, "fullpost");
+    validator.validate(full, e);
+
+    assertEquals(0, e.getErrorCount(), "unexpected errors: " + e.getAllErrors());
   }
 }

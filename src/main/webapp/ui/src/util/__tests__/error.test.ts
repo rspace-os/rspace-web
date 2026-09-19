@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 
-import { getErrorMessage } from "../error";
+import { getApiErrorDetail, getErrorMessage } from "../error";
 
 describe("getErrorMessage", () => {
   test("should extract message from axios response data", () => {
@@ -89,5 +89,97 @@ describe("getErrorMessage", () => {
       message: "fake error message",
     };
     expect(getErrorMessage(error, "fallback")).toBe("fallback");
+  });
+});
+
+describe("getApiErrorDetail", () => {
+  test("returns the first error, with its path prefix stripped", () => {
+    const error = {
+      response: {
+        data: {
+          message: "Errors detected: 1",
+          errors: ["origins[0].amountTaken: Cannot take more from an origin than it currently holds"],
+        },
+      },
+    };
+    expect(getApiErrorDetail(error, "fallback")).toBe("Cannot take more from an origin than it currently holds");
+  });
+
+  test("shows only the first of several errors", () => {
+    const error = {
+      response: {
+        data: {
+          message: "Errors detected: 2",
+          errors: ["origins[0].id: first", "origins[1].id: second"],
+        },
+      },
+    };
+    expect(getApiErrorDetail(error, "fallback")).toBe("first");
+  });
+
+  test("drops the origin index when the caller supplies no way to word it", () => {
+    const error = {
+      response: {
+        data: { message: "Errors detected: 1", errors: ["origins[3].amountTaken: Cannot take more"] },
+      },
+    };
+    expect(getApiErrorDetail(error, "fallback")).toBe("Cannot take more");
+  });
+
+  test("names which origin failed, so a Pool rejection is actionable", () => {
+    // Stripping the whole path left "Cannot take more than the subsample holds" with no indication
+    // which of five pooled origins was at fault. Reported 1-based: the user reads it, nothing sends
+    // it back.
+    const error = {
+      response: {
+        data: {
+          message: "Errors detected: 1",
+          errors: ["origins[3].amountTaken: Cannot take more from an origin than it currently holds"],
+        },
+      },
+    };
+    expect(getApiErrorDetail(error, "fallback", (reason, index) => `${reason} [#${index}]`)).toBe(
+      "Cannot take more from an origin than it currently holds [#4]",
+    );
+  });
+
+  test("adds no origin marker to an error that is not about an origin", () => {
+    const error = { response: { data: { errors: ["newSample.name: This field is too long"] } } };
+    expect(getApiErrorDetail(error, "fallback")).toBe("This field is too long");
+  });
+
+  test("keeps an error that has no path prefix", () => {
+    const error = { response: { data: { errors: ["Something went wrong"] } } };
+    expect(getApiErrorDetail(error, "fallback")).toBe("Something went wrong");
+  });
+
+  test("falls back to the message when the only error is blank", () => {
+    const error = { response: { data: { message: "Edit conflict", errors: [""] } } };
+    expect(getApiErrorDetail(error, "fallback")).toBe("Edit conflict");
+  });
+
+  test("falls back when an error is nothing but a field path", () => {
+    const error = { response: { data: { message: "Errors detected: 1", errors: ["origins[0].id:"] } } };
+    expect(getApiErrorDetail(error, "fallback")).toBe("Errors detected: 1");
+  });
+
+  test("does not strip a leading word that is not a field path", () => {
+    const error = { response: { data: { errors: ["Warning: stock is low"] } } };
+    expect(getApiErrorDetail(error, "fallback")).toBe("Warning: stock is low");
+  });
+
+  test("falls back to the message when the errors array is empty", () => {
+    const error = { response: { data: { message: "Errors detected: 0", errors: [] } } };
+    expect(getApiErrorDetail(error, "fallback")).toBe("Errors detected: 0");
+  });
+
+  test("falls back to the message when there is no errors array", () => {
+    const error = { response: { data: { message: "Plain failure" } } };
+    expect(getApiErrorDetail(error, "fallback")).toBe("Plain failure");
+  });
+
+  test("falls back for a non-Axios error", () => {
+    expect(getApiErrorDetail(new Error("boom"), "fallback")).toBe("boom");
+    expect(getApiErrorDetail(null, "fallback")).toBe("fallback");
   });
 });

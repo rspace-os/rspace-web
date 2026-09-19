@@ -28,7 +28,6 @@ import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexingDe
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.ObjectPath;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.PropertyValue;
 
-/** Sample field is used to hold field data for Samples. */
 @Entity
 @Getter
 @Setter
@@ -44,6 +43,22 @@ public abstract class ExtraField extends InventoryRecordConnectedEntity implemen
   private Long id;
   private EditInfo editInfo;
   protected boolean deleted;
+
+  /**
+   * The operation-definition key that generated this field, or null if none did.
+   *
+   * <p>This is the field's stable identity across runs, unlike its name: a generated name is a
+   * localized label, so matching on it instead of this key would miss a previous run's field after
+   * a locale or wording change and reset a computed counter rather than continue it.
+   *
+   * <p>Only the server sets this: {@code ApiExtraField.operationFieldKey} is read-only on the DTO,
+   * so a client-supplied value is dropped at binding rather than rejected. That annotation is the
+   * only thing enforcing it; there is no second check at the write point.
+   *
+   * <p>Only covers fields added as new extra fields; a field merged into an inherited template
+   * field has no such column and falls back to name matching.
+   */
+  private String operationFieldKey;
 
   public ExtraField() {
     editInfo = new EditInfo();
@@ -132,9 +147,6 @@ public abstract class ExtraField extends InventoryRecordConnectedEntity implemen
     getEditInfo().setModifiedBy(modifiedBy);
   }
 
-  /**
-   * @return type of the field
-   */
   @Transient
   public abstract FieldType getType();
 
@@ -156,5 +168,6 @@ public abstract class ExtraField extends InventoryRecordConnectedEntity implemen
     copy.setEditInfo(getEditInfo().shallowCopy());
     copy.setData(getData());
     copy.setDeleted(isDeleted());
+    copy.setOperationFieldKey(getOperationFieldKey());
   }
 }

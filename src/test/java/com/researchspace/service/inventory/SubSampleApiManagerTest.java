@@ -180,20 +180,6 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
         subSampleApiMgr.getApiSubSampleById(retrievedPiSubSample.getId(), testUser);
     assertFalse(fullPiSubSample.isClearedForPublicView());
 
-    /* *
-     *
-     * //FIXME
-     *
-     * For some reason next assertion fails in Jenkins:
-     *  - `assertEquals(2, fullPiSubSample.getPermittedActions().size())`
-     *
-     * in fact in JENKINS `fullPiSubSample.getPermittedActions()` is `[READ, UPDATE, CHANGE_OWNER]`
-     * and that is wrong because there should not be the `CHANGE_OWNER`.
-     *
-     * The `CHANGE_OWNER` is there because the condition `user.getUsername().equals(invRecOwner)`is `true`
-     * at this method `invPermissions.setPermissionsInApiInventoryRecord(recordInfo, invRec, user)`
-     *
-     * */
     System.out.println(
         " ### fullPiSubSample ### IN LOCAL is 2 (correct) , in JENKINS sometime is 3 ### : "
             + fullPiSubSample.getPermittedActions());
@@ -1119,20 +1105,21 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
         invLockTracker.attemptToLockForEdit(apiSubSample.getGlobalId(), piUser);
     assertEquals(ApiInventoryEditLockStatus.LOCKED_OK, apiLock.getStatus());
 
-    // try edit by testUser
+    // a conflict (409 at the API boundary), not a bad request
     apiSubSample.setName("updated name");
-    IllegalArgumentException iae =
+    InventoryEditLockHeldException held =
         assertThrows(
-            IllegalArgumentException.class,
+            InventoryEditLockHeldException.class,
             () -> subSampleApiMgr.updateApiSubSample(apiSubSample, testUser));
-    assertTrue(iae.getMessage().startsWith("Item is currently edited by another user ("));
+    assertEquals(apiSubSample.getGlobalId(), held.getGlobalId());
+    assertEquals(piUser.getUsername(), held.getOwner().getUsername());
 
     // try delete by testUser
-    iae =
+    held =
         assertThrows(
-            IllegalArgumentException.class,
+            InventoryEditLockHeldException.class,
             () -> subSampleApiMgr.markSubSampleAsDeleted(apiSubSample.getId(), testUser, false));
-    assertTrue(iae.getMessage().startsWith("Item is currently edited by another user ("));
+    assertEquals(apiSubSample.getGlobalId(), held.getGlobalId());
 
     // pi can edit fine
     ApiSubSample updatedSubSample = subSampleApiMgr.updateApiSubSample(apiSubSample, piUser);

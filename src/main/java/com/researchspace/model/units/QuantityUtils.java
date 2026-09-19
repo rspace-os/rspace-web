@@ -172,16 +172,13 @@ public class QuantityUtils {
   }
 
   <Q extends Quantity<Q>> int doCompare(Quantifiable q1, Quantifiable q2, Class<Q> clazz) {
-    // if are same units, we can just compare the numeric values
     if (q1.getUnitId().equals(q2.getUnitId())) {
       return q1.getNumericValue().compareTo(q2.getNumericValue());
     }
-    // return Integer.MAX if not comparable
     if (!isComparableQuantities(q1, q2)) {
       return INCOMPARABLE;
     }
 
-    // else we have to convert to common units.
     Quantity<Q> qA = getQuantityFor(q1, clazz).toSystemUnit();
     Quantity<Q> qB = getQuantityFor(q2, clazz).toSystemUnit();
     return BigDecimal.valueOf(qA.getValue().doubleValue())
@@ -206,12 +203,23 @@ public class QuantityUtils {
     isTrue(
         isComparableQuantities(toSum),
         "items to sum are not commensurate - they have different unit categories");
-    Quantity<?> result = getForQuantifiable(toSum, new QuantitySummingVisitor());
-    result = convertToMoreUsefulUnit(result);
+    return asQuantityInfo(getForQuantifiable(toSum, new QuantitySummingVisitor()));
+  }
 
-    return QuantityInfo.of(
-        BigDecimal.valueOf(result.getValue().doubleValue()),
-        RSUnitDef.getUnitDefByUnit(result.getUnit()).get());
+  /**
+   * Subtract an amount from a quantity, keeping the result exactly storable.
+   *
+   * @param from the quantity being drawn down
+   * @param amountTaken the amount to remove, in any commensurate unit
+   * @return the remainder, in the largest unit of its category that holds it exactly
+   */
+  public QuantityInfo subtract(QuantityInfo from, QuantityInfo amountTaken) {
+    List<Quantifiable> operands = List.of(from, amountTaken.negate());
+    isTrue(
+        isComparableQuantities(operands),
+        "items to subtract are not commensurate - they have different unit categories");
+    return convertToStorableUnit(
+        convertToMoreUsefulUnit(getForQuantifiable(operands, new QuantitySummingVisitor())));
   }
 
   /**
@@ -232,14 +240,83 @@ public class QuantityUtils {
     }
 
     QuantityInfo divisorAsQuantity = QuantityInfo.of(divisor, RSUnitDef.DIMENSIONLESS);
-    Quantity<?> result =
+    return asQuantityInfo(
         getForQuantifiable(
-            Arrays.asList(quantity, divisorAsQuantity), new QuantityDividingVisitor());
-    result = convertToMoreUsefulUnit(result);
+            Arrays.asList(quantity, divisorAsQuantity), new QuantityDividingVisitor()));
+  }
 
+  /**
+   * The single exit from the arithmetic: choose the unit the result reads best in, then build the
+   * {@link QuantityInfo}.
+   *
+   * <p>{@link #convertToMoreUsefulUnit} is about READABILITY - a sub-unit result reads better one
+   * step down, and 2000 mg reads better as 2 g. Storability is a separate question with a different
+   * answer, so it is applied by {@link #subtract} alone rather than here.
+   *
+   * <p>The value is carried across as a {@link BigDecimal} whenever the arithmetic produced one,
+   * rather than through {@code doubleValue()}. A double cannot represent every terminating decimal,
+   * so that round trip could introduce error before {@link QuantityInfo} has even seen the value.
+   */
+  private QuantityInfo asQuantityInfo(Quantity<?> result) {
+    Quantity<?> inBestUnit = convertToMoreUsefulUnit(result);
     return QuantityInfo.of(
-        BigDecimal.valueOf(result.getValue().doubleValue()),
-        RSUnitDef.getUnitDefByUnit(result.getUnit()).get());
+        exactValueOf(inBestUnit), RSUnitDef.getUnitDefByUnit(inBestUnit.getUnit()).get());
+  }
+
+  private static BigDecimal exactValueOf(Quantity<?> quantity) {
+    Number value = quantity.getValue();
+    return value instanceof BigDecimal exact ? exact : new BigDecimal(value.toString());
+  }
+
+  /**
+   * Steps a quantity down the unit ladder until its value fits the storage column exactly.
+   *
+   * <p>The column stores a NUMBER AND A UNIT ID, not a number. 4.9975 g needs four decimal places,
+   * so {@code DECIMAL(19,3)} rounds it and 0.0005 g of stock disappears; the same value is 4997.5
+   * mg, which needs one. Every category ladder steps by 1000, so one unit down shifts the point
+   * three places and drops the scale by three, and any terminating decimal that fits the ladder at
+   * all fits at 3dp somewhere on it.
+   *
+   * <p>Bounded and terminating: each step consumes one rung and the ladder is finite. Normal work
+   * never enters the loop, because 5 g and 250 ml already fit - it fires only where the alternative
+   * is losing stock to rounding.
+   *
+   * <p>Returns the quantity UNCONVERTED when no unit on the ladder holds it, for example 1 kg less
+   * 0.0005 pg. That amount is genuinely unrepresentable, and relabelling buys nothing; rejecting it
+   * is the caller's job ({@code InventoryOperationManagerImpl.amountTakenLostToRounding}).
+   */
+  private QuantityInfo convertToStorableUnit(Quantity<?> result) {
+    RSUnitDef originalUnit = RSUnitDef.getUnitDefByUnit(result.getUnit()).get();
+    BigDecimal originalValue = exactValueOf(result);
+
+    RSUnitDef unit = originalUnit;
+    BigDecimal value = originalValue;
+    while (!QuantityInfo.canStoreWithoutRounding(value)) {
+      RSUnitDef smaller = RSUnitDef.getUnitSmallerThan(unit);
+      if (smaller == null) {
+        // a part-converted value under the original unit's label would be
+        // wrong by a factor of a thousand per rung descended.
+        return QuantityInfo.of(originalValue, originalUnit);
+      }
+      value = value.multiply(exactUnitFactor(unit, smaller));
+      unit = smaller;
+    }
+    return QuantityInfo.of(value, unit);
+  }
+
+  /**
+   * The exact factor converting one unit into another in the same category. Read off the unit
+   * definitions rather than assumed to be 1000, and applied with {@link BigDecimal}, so no step of
+   * the ladder loses precision. Raw-typed because the unit definitions are wildcard-typed; callers
+   * assert comparability first, so the conversion cannot mix categories.
+   */
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  public static BigDecimal exactUnitFactor(RSUnitDef from, RSUnitDef to) {
+    if (from == to) {
+      return BigDecimal.ONE;
+    }
+    Quantity oneFromUnit = Quantities.getQuantity(BigDecimal.ONE, from.getDefinition());
+    return exactValueOf(oneFromUnit.to(to.getDefinition()));
   }
 
   /**
@@ -270,7 +347,6 @@ public class QuantityUtils {
       return orgQuantity;
     }
 
-    // if abs(value) < 1: try switching to smaller unit
     if (Math.abs(orgQuantityValue) < 1.0) {
       RSUnitDef smallerUnit = RSUnitDef.getUnitSmallerThan(initialUnit);
       if (smallerUnit != null) {
@@ -278,13 +354,11 @@ public class QuantityUtils {
       }
     }
 
-    // if abs(value) >= 1000 and divides by 1000 without remainder: try switching to larger unit
     if (Math.abs(orgQuantityValue) >= 1000.0) {
       /* let's multiply to 1000, cast to long, then divide by 1000 * 1000 to check if there
        * is something on last 3 decimal and non-decimal places of the original double*/
       long quantityAsLong1000Times = (long) (orgQuantityValue * 1000);
       if (quantityAsLong1000Times % (1000 * 1000) == 0) {
-        // try switching to larger unit
         RSUnitDef largerUnit = RSUnitDef.getUnitLargerThan(initialUnit);
         if (largerUnit != null) {
           return orgQuantity.to(largerUnit.getDefinition());
